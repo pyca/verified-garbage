@@ -14,8 +14,8 @@ namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.MillerRabin.AArch64 VG.Proof.Bignum.AArch64
 
 theorem generation_ct (H : GenerationHashes) (M : Mont) (T : PrimeTest) :
-    ConstantTime isa (Spec.Dsa.generateParametersContract abi 464).pre
-      (Spec.Dsa.generateParametersContract abi 464).pub
+    ConstantTime isa (Spec.Dsa.generateParametersContract abi 720).pre
+      (Spec.Dsa.generateParametersContract abi 720).pub
       (Impl.Dsa.AArch64.Generation.code H.sha1 H.sha256 M.mm T.run) := by
   intro s t xs ys u v hs ht hp es et
   have ha := generationABI_of hs

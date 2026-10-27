@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 namespace VG.Proof.Dsa.AArch64.Generation
-open VG VG.AArch64 VG.Proof.Bignum.AArch64 VG.Proof.MillerRabin.AArch64
+open VG VG.AArch64 VG.Proof.Bignum.AArch64
 open VG.Proof.Pbkdf2.Md.AArch64 VG.Impl.Dsa.AArch64.Generation VG.Impl.Bignum.AArch64
 
 private def searchLoopInv (pLen qLen remaining : Nat) : State → State → Prop :=
@@ -17,7 +17,7 @@ private def searchLoopInv (pLen qLen remaining : Nat) : State → State → Prop
 
 section
 variable (G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash)
-variable (M : Mont) (T : PrimeTest) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
+variable (T : PrimeTest) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
 variable (sizes : GenerationSizes pLen qLen)
 variable (hG : Calls.StreamOK (if qLen = 20 then G1 else G256).stream)
 variable (hmatch : ∀ x, H.hash x = hG.SH.H.hash x)
@@ -33,7 +33,7 @@ theorem searchIteration_ready {p : SearchPublic} {s : State} (h : SearchBefore p
       (32 * pLen) ((8 * pLen - 1) / (8 * qLen) + 1)) s (SearchIterationAfter pLen qLen p) := by
   unfold pSearchIteration
   simp only [seqs]
-  refine WP.seq (WP.mono (searchBody_ready G1 G256 M T hG hmatch hsize hhash hseedsize hd h)
+  refine WP.seq (WP.mono (searchBody_ready G1 G256 T hG hmatch hsize hhash hseedsize hd h)
     fun _ ht => searchIteration_tail ⟨ht, h.2.2.2⟩ ?_ ?_)
   all_goals rcases sizes with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> decide
 
@@ -47,10 +47,10 @@ private theorem searchLoop_step (remaining : Nat) :
       (pSearchIteration (pAttempt G1 G256 T.run pLen qLen)
         (32 * pLen) ((8 * pLen - 1) / (8 * qLen) + 1))
       (Two fun p s => 32 * pLen - p.counter = remaining ∧ SearchIterationAfter pLen qLen p s) := by
-    refine two_post ((searchIteration_ct G1 G256 M T H pLen qLen sizes hG hmatch hsize hhash hseedsize hd).mono
+    refine two_post ((searchIteration_ct G1 G256 T H pLen qLen sizes hG hmatch hsize hhash hseedsize hd).mono
       (fun _ _ => two_mono fun _ _ h => h.2) (fun _ _ _ => True.intro)) ?_
     intro p s h
-    exact WP.mono (searchIteration_ready G1 G256 M T H pLen qLen sizes hG hmatch hsize hhash hseedsize hd h.2)
+    exact WP.mono (searchIteration_ready G1 G256 T H pLen qLen sizes hG hmatch hsize hhash hseedsize hd h.2)
       fun _ ht => ⟨h.1, ht⟩
   refine step.mono (fun _ _ h => h) ?_
   rintro s t ⟨p, ⟨hr, hs⟩, ⟨_, ht⟩, hsp⟩
@@ -68,7 +68,7 @@ theorem pSearchLoop_ct : RelCT isa (Two (SearchBefore pLen qLen))
       (32 * pLen) ((8 * pLen - 1) / (8 * qLen) + 1)) (.zero .x .x3)) (fun _ _ => True) := by
   rintro s t a b s' t' ⟨p, hs, ht, hsp⟩ es et
   exact RelCT.loop (searchLoopInv pLen qLen)
-    (searchLoop_step G1 G256 M T H pLen qLen sizes hG hmatch hsize hhash hseedsize hd)
+    (searchLoop_step G1 G256 T H pLen qLen sizes hG hmatch hsize hhash hseedsize hd)
     (32 * pLen - p.counter) s t a b s' t' ⟨p, ⟨rfl, hs⟩, ⟨rfl, ht⟩, hsp⟩ es et
 
 end

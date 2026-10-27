@@ -31,13 +31,22 @@ structure PPrimalityPlan where
     (⟨construct.hash.S, oRsa⟩ : Region).Disjoint r
   pPrime : ∀ r ∈ [⟨construct.B, arithmeticBytes⟩,
       ⟨VG.Proof.Bignum.off (construct.hash.W 5) witness, construct.len⟩,
-      ⟨construct.hash.F, frameBytes⟩],
+      below construct.hash.F callStack, ⟨construct.hash.F, frameBytes⟩],
     (⟨VG.Proof.Bignum.off (construct.hash.W 5) Impl.Dsa.Generation.Layout.p, construct.len⟩ : Region).Disjoint r
   exponentPrime : ∀ r ∈ [⟨construct.B, arithmeticBytes⟩,
       ⟨VG.Proof.Bignum.off (construct.hash.W 5) witness, construct.len⟩,
-      ⟨construct.hash.F, frameBytes⟩],
+      below construct.hash.F callStack, ⟨construct.hash.F, frameBytes⟩],
     (⟨VG.Proof.Bignum.off (construct.hash.W 5) exponent, construct.len⟩ : Region).Disjoint r
   tapeConstruct : ∀ r ∈ construct.changed, (⟨rp, rand.length⟩ : Region).Disjoint r
+  hashStack : (⟨construct.hash.S, oRsa⟩ : Region).Disjoint (below construct.hash.F callStack)
+  stackSize : callStack ≤ construct.hash.F.toNat
+  arenaBound : (construct.hash.W 5).toNat + domainCheck ≤ 2 ^ 64
+  tapeBound : rp.toNat + rand.length ≤ 2 ^ 64
+  tapeArena : (⟨rp, rand.length⟩ : Region).Disjoint ⟨construct.hash.W 5, domainCheck⟩
+  tapeFrame : (⟨rp, rand.length⟩ : Region).Disjoint ⟨construct.hash.F, frameBytes⟩
+  tapeStack : (⟨rp, rand.length⟩ : Region).Disjoint (below construct.hash.F callStack)
+  arenaFrame : (⟨construct.hash.W 5, domainCheck⟩ : Region).Disjoint ⟨construct.hash.F, frameBytes⟩
+  arenaStack : (⟨construct.hash.W 5, domainCheck⟩ : Region).Disjoint (below construct.hash.F callStack)
 
 def PPrimalityPlan.prime (p : PPrimalityPlan) (h : VG.Proof.Dsa.Generation.PDomain p.construct.len p.construct.value) : PrimeParams where
   B := p.construct.B
@@ -72,31 +81,40 @@ def PPrimalityPlan.call (p : PPrimalityPlan) (h : VG.Proof.Dsa.Generation.PDomai
   prime := p.prime h
   F := p.construct.hash.F
   hash := p.construct.hash.S
-  candidate := Impl.Dsa.Generation.Layout.p
   W := p.construct.hash.W
-  size := p.size
-  candidateMax := by decide
-  checksMax := by dsimp [PPrimalityPlan.prime]; split <;> decide
-  wordsMax := by dsimp [PPrimalityPlan.prime]; rcases p.construct.width with hh | hh | hh <;> omega
-  tableRoom := by
-    dsimp [PPrimalityPlan.prime]
-    rw [p.size]
-    rcases p.construct.width with hh | hh | hh <;> rw [hh] <;> decide
-  large := h.large
-  policy := h.policy
-  checks := h.checks.symm
+  bits := 8 * p.construct.len
+  supported := by
+    rcases p.construct.width with hh | hh | hh <;> rw [hh] <;> unfold ProbablePrime.Supported <;> decide
+  len := by dsimp [PPrimalityPlan.prime]; omega
+  base := p.construct.base.symm
   witnessPtr := rfl
   tapePtr := p.tapePtr
   tapeLength := p.tapeLength
-  frameHeaders := p.construct.frameHeaders
-  frameOutside := p.construct.frameOutside
-  framePrime := p.framePrime
-  hashPrime := p.hashPrime
+  geometry := {
+    stackSize := p.stackSize
+    arenaBound := p.arenaBound
+    tapeBound := p.tapeBound
+    tapeArena := p.tapeArena
+    tapeFrame := p.tapeFrame
+    tapeStack := p.tapeStack
+    arenaFrame := p.arenaFrame
+    arenaStack := p.arenaStack
+    hashTest := by
+      have hlen : 8 * p.construct.len / 8 = p.construct.len := by omega
+      have hp := p.hashPrime
+      rw [← p.construct.base] at hp
+      rw [hlen]
+      intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact hp _ List.mem_cons_self
+      · exact hp _ (List.mem_cons_of_mem _ List.mem_cons_self)
+      · exact p.hashStack }
 
 def PPrimalityPlan.testWrites (p : PPrimalityPlan) : List Region :=
   [⟨p.construct.B, arithmeticBytes⟩,
     ⟨VG.Proof.Bignum.off (p.construct.hash.W 5) witness, p.construct.len⟩,
-    ⟨p.construct.hash.F, frameBytes⟩]
+    below p.construct.hash.F callStack, ⟨p.construct.hash.F, frameBytes⟩]
 
 def PPrimalityPlan.changed (p : PPrimalityPlan) : List Region :=
   p.construct.changed ++ p.testWrites

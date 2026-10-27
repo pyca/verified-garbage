@@ -46,9 +46,8 @@ theorem searchEntry_ready {pLen qLen : Nat} (H : Spec.Mgf1.Hash) {p : SearchPubl
       exact p.plan.tapeSeparate _ (by
         change (⟨p.plan.attempt.construct.hash.F, frameBytes⟩ : Region) ∈ searchWrites p.plan.attempt p.plan.C
         simp [searchWrites])) p.plan.attempt.randMax hk.rd hk.wr
-  · intro i hi
-    rw [hk.wr]
+  · refine ⟨?_, by rw [hk.rd, hk.wr]; exact hs.tapeCover⟩
     simpa [SearchPublic.attempt, SearchPublic.attemptPlan, PPrimalityPlan.reframe, PConstructPlan.reframe,
-      HashPlan.reframe, attemptWords, upd] using hs.witnessWrite i hi
+      HashPlan.reframe, attemptWords, upd] using hs.arena.congr hk.wr
 
 end VG.Proof.Dsa.AArch64.Generation

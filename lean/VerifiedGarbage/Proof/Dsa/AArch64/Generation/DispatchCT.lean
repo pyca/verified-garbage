@@ -22,7 +22,7 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 @[expose] public section
 namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
-open VG.Proof.RsaOaep.AArch64 VG.Proof.MillerRabin.AArch64 VG.Impl.Dsa.AArch64.Generation
+open VG.Proof.RsaOaep.AArch64 VG.Impl.Dsa.AArch64.Generation
 
 def DispatchBefore (p : ParameterPublic) : State → Prop :=
   ParameterStart p.context.geo.pLen p.context.geo.qLen p

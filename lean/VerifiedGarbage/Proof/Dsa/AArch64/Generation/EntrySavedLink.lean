@@ -16,12 +16,12 @@ theorem link_separate {s : State} (h : GenerationABI s) :
     ∀ r ∈ (contextOf h).changed ++ [⟨s.gpr .x0, (s.gpr .x1).toNat⟩], (linkRegion s).Disjoint r := by
   intro r hr
   change r ∈ [⟨stackArg s 2, usedBytes (s.gpr .x2).toNat⟩,
-    ⟨generationBase s, frameBytes⟩, below (generationBase s) 16, ⟨s.gpr .x0, (s.gpr .x1).toNat⟩] at hr
+    ⟨generationBase s, frameBytes⟩, below (generationBase s) 272, ⟨s.gpr .x0, (s.gpr .x1).toNat⟩] at hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact (h.stackScratch.sub_left (link_sub s)).sub_right (generation_scratch_sub h)
   · exact (Offset.base_disjoint (generationBase s) (e := 296) (n := 152) (k := frameBytes) (by decide) (by decide)).symm
-  · exact Offset.disjoint_below (generationBase s) (n := 16) (d := 296) (k := 152) (by decide)
+  · exact Offset.disjoint_below (generationBase s) (n := 272) (d := 296) (k := 152) (by decide)
   · exact h.stackOut.sub_left (link_sub s)
 
 theorem link_saved {s t : State} (h : GenerationABI s)

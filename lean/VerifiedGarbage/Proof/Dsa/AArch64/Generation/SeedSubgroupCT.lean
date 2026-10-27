@@ -13,7 +13,7 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 @[expose] public section
 namespace VG.Proof.Dsa.AArch64.Generation
-open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MillerRabin.AArch64
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
 open VG.Impl.Dsa.AArch64.Generation
 
 theorem seedArguments_ct (qLen : Nat) (hlen : qLen = 20 ∨ qLen = 32) :
@@ -23,11 +23,11 @@ theorem seedArguments_ct (qLen : Nat) (hlen : qLen = 20 ∨ qLen = 32) :
     exact two_post (two_taint [] (by intro _ _ _ _ _ _ h; cases h) (by taint_decide))
       (fun _ _ h => seedArguments_ready h)
 
-theorem seedSubgroup_ct (H : GenerationHashes) (M : Mont) (T : PrimeTest)
+theorem seedSubgroup_ct (H : GenerationHashes) (T : PrimeTest)
     (qLen : Nat) (hlen : qLen = 20 ∨ qLen = 32) :
     RelCT isa (Two (SeedBefore qLen))
       (.seq (.block (seedArguments qLen)) (subgroup H.sha1 H.sha256 T.run qLen)) (fun _ _ => True) :=
   RelCT.seq (seedArguments_ct qLen hlen)
-    (two_map SeedPublic.subgroup (fun _ _ h => seedPrepared_subgroup h) (subgroup_ct H M T qLen hlen))
+    (two_map SeedPublic.subgroup (fun _ _ h => seedPrepared_subgroup h) (subgroup_ct H T qLen hlen))
 
 end VG.Proof.Dsa.AArch64.Generation

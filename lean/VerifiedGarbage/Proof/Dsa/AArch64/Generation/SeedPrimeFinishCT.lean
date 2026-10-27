@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSuccess
 @[expose] public section
 namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
-open VG.Proof.RsaOaep.AArch64 VG.Proof.MillerRabin.AArch64 VG.Impl.Dsa.AArch64.Generation
+open VG.Proof.RsaOaep.AArch64 VG.Impl.Dsa.AArch64.Generation
 
 theorem seedGeneratorBefore_congr {pLen qLen : Nat} {p : SeedGeneratorPublic} {s t : State}
     (h : SeedGeneratorBefore pLen qLen p s) (hm : t.mem = s.mem) (hk : Keep [.x3, .x4] s t) :
@@ -46,8 +46,8 @@ theorem seedPrimeFinish_ct (H : GenerationHashes) (M : Mont)  (T : PrimeTest)
       (.seq (primeSearch H.sha1 H.sha256 T.run pLen qLen)
         (onSuccess (.seq (generatorSearch M.mm pLen) (onSuccess (finishDomain M.mm pLen qLen)))))
       (fun _ _ => True) := by
-  refine RelCT.seq (two_post (seedPrime_ct H M T pLen qLen sizes)
-    (fun _ _ h => seedPrime_after H M T h)) ?_
+  refine RelCT.seq (two_post (seedPrime_ct H T pLen qLen sizes)
+    (fun _ _ h => seedPrime_after H T h)) ?_
   apply onSuccess_ct (Φ := SeedPrimeAfter pLen qLen) SeedPublic.context SeedPublic.primeStatus
     (fun _ _ h => h.1) (fun _ _ _ h hm hk => seedPrimeAfter_congr h hm hk)
   exact (seedGeneratorFinish_ct M pLen qLen sizes).mono
