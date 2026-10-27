@@ -275,6 +275,30 @@ pub fn bench(c: &mut Criterion) {
         }
         group.finish();
     }
+    // The same search from a fixed tape: every iteration, and the base and
+    // head of a comparison, test the same candidates and witnesses, so the
+    // timing compares implementations rather than how many candidates the
+    // random draws happened to need. OpenSSL cannot be given its draws.
+    for generator in [2, 5] {
+        let mut group = c.benchmark_group(format!("ffdh_parameters_fixed_g{generator}"));
+        group.sample_size(10);
+        group.bench_function(BenchmarkId::new(VG, 512 / 8), |b| {
+            b.iter(|| {
+                let mut x = 0x9E37_79B9_7F4A_7C15u64 ^ u64::from(generator);
+                Parameters::generate_with_rng(black_box(512), generator, |buf: &mut [u8]| {
+                    for byte in buf {
+                        x ^= x << 13;
+                        x ^= x >> 7;
+                        x ^= x << 17;
+                        *byte = x as u8;
+                    }
+                    Ok::<_, ()>(())
+                })
+                .unwrap()
+            })
+        });
+        group.finish();
+    }
 }
 #[cfg(not(any(
     target_arch = "x86",
