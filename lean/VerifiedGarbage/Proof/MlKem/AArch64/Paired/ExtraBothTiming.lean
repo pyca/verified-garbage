@@ -9,84 +9,72 @@ import VerifiedGarbage.Proof.Framework.Offset
 namespace VG.Proof.MlKem.AArch64.Paired
 open VG VG.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 
-structure BothReadyW (w16 : Bool) (L M : List Zq) (A B : Nat→Byte) (p a b : Addr) (s : State) : Prop where
- pointer : s.gpr .x19=p
- scratch : Covers [⟨p,2048⟩] s.wr
- farA : (Region.mk p 2048).Disjoint (polyRegion a)
- farB : (Region.mk p 2048).Disjoint (polyRegion b)
- apart : (polyRegion a).Disjoint (polyRegion b)
- left : ExtraReadyW w16 L A 400 1680 a s
- right : ExtraReadyW w16 M B 904 1696 b s
- table : ∀mask<256,(Region.mk (s.gpr .x16+BitVec.ofNat 64 (16*mask)) 16).Disjoint ⟨p,2048⟩
+theorem bothStart_ct : ConstantTime isa (fun _=>True) (VG.AArch64.Taint.Agree (Taint.ofRegs []))
+    (.block [.addImm .x .x20 .x19 400,.addImm .x .x1 .x19 1680,.movz .x .x22 1 0,.movz .x .x23 2 0]) :=
+  VG.Taint.constantTime (A:=taint) (Taint.ofRegs []) (fun _ _ _ _ h=>h) (hc:=.block []) rfl
 
-theorem BothReadyW.afterLeft {w16 : Bool} {s t : State} {L M : List Zq} {A B : Nat→Byte} {p a b : Addr}
- (h : BothReadyW w16 L M A B p a b s)
- (ht : ExtraPostW w16 L A a (s.gpr .x19+1680) .x22 s t) (cs : Rej8.Constants t) : ExtraReadyW w16 M B 904 1696 b t := by
- have tp : t.gpr .x19=p := (ht.keep.get .x19).trans h.pointer
- have hf : Frame [polyRegion a,⟨p+1680,16⟩] s.mem t.mem := by simpa only [h.pointer] using ht.frame
- refine ⟨?_,cs,h.right.len,?_,?_,?_,?_,?_⟩
- · rw [tp]
-   apply (show Rej8.EnvW w16 56 B (p+BitVec.ofNat 64 904) b s by simpa only [h.pointer] using h.right.env).frame
-     ht.keep.rd ht.keep.wr (ht.keep.get .x16) hf
-   · intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-     rcases hr with rfl|rfl
-     · exact h.farA.sub_left (Offset.sub_base p (by decide))
-     · exact Offset.disjoint p (by decide) (by decide) (by decide)
-   · intro mask hm r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-     rcases hr with rfl|rfl
-     · exact h.left.env.tableDisj mask hm
-     · exact (h.table mask hm).sub_right (Offset.sub_base p (by decide))
- · exact coeffs_frame h.right.coeffs h.right.len hf (by
-    intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl|rfl
-    · exact h.apart.symm
-    · exact h.farB.symm.sub_right (Offset.sub_base p (by decide)))
- · rw [tp]
-   exact checkpoint_frame (by simpa only [h.pointer] using h.right.saved) hf (by
-    intro r hr; simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl|rfl
-    · exact h.farA.sub_left (Offset.sub_base p (by decide))
-    · exact Offset.disjoint p (by decide) (by decide) (by decide))
- · simpa only [ht.keep.wr,ht.keep.get .x19] using h.right.out0
- · simpa only [ht.keep.wr,ht.keep.get .x19] using h.right.out1
- · simpa only [ht.keep.get .x19] using h.right.apart
+theorem bothNext_ct : ConstantTime isa (fun _=>True) (VG.AArch64.Taint.Agree (Taint.ofRegs []))
+    (.block [.logic .and .x .x22 .x22 .x0,.addImm .x .x20 .x20 504,.addImm .x .x1 .x1 16,
+      .subImm .x .x23 .x23 1]) :=
+  VG.Taint.constantTime (A:=taint) (Taint.ofRegs []) (fun _ _ _ _ h=>h) (hc:=.block []) rfl
+
+theorem bothEnd_ct : ConstantTime isa (fun _=>True) (VG.AArch64.Taint.Agree (Taint.ofRegs []))
+    (.block [Impl.MlKem.AArch64.mov .x6 .x22]) :=
+  VG.Taint.constantTime (A:=taint) (Taint.ofRegs []) (fun _ _ _ _ h=>h) (hc:=.block []) rfl
+
+/-- An iteration of `extraBoth` from a stream ready at the same place in both runs. -/
+theorem bothBody_relCT {w16 : Bool} {t v : State} {L : List Zq} {B : Nat→Byte} {aP : Addr}
+    (pt : ReadyW w16 L B (t.gpr .x20) (t.gpr .x1) aP t) (pv : ReadyW w16 L B (v.gpr .x20) (v.gpr .x1) aP v)
+    (ct : Rej8.Constants t) (cv : Rej8.Constants v) (sp : t.sp=v.sp) (h20 : t.gpr .x20=v.gpr .x20)
+    (h1 : t.gpr .x1=v.gpr .x1) (h16 : t.gpr .x16=v.gpr .x16) :
+    RelCT isa (fun x y=>x=t ∧ y=v) (bothBody w16) (fun _ _=>True) := by
+  refine RelCT.seq (R:=fun x y : State=>x.sp=y.sp) ?_ ?_
+  · intro x y tx ty x' y' h ex ey
+    have r := extra_relCT pt pv ct cv sp h20 h1 h16 x y tx ty x' y' h ex ey
+    exact ⟨r.1,r.2.1.keep.sp.trans (sp.trans r.2.2.keep.sp.symm)⟩
+  · intro x y tx ty x' y' h ex ey
+    exact ⟨bothNext_ct x y tx ty x' y' trivial trivial (agree_of h (by simp)) ex ey,trivial⟩
 
 theorem extraBoth_relCT {w16 : Bool} {s u : State} {L M : List Zq} {A B : Nat→Byte} {p a b : Addr}
- (hs : BothReadyW w16 L M A B p a b s) (hu : BothReadyW w16 L M A B p a b u)
- (sp : s.sp=u.sp) (table : s.gpr .x16=u.gpr .x16) :
- RelCT isa (fun x y=>x=s ∧ y=u) (extraBoth w16) (fun _ _=>True) := by
- have h19 : s.gpr .x19=u.gpr .x19 := hs.pointer.trans hu.pointer.symm
- have first : RelCT isa (fun x y=>x=s ∧ y=u)
-     (Impl.MlKem.AArch64.Paired.extraReject 400 1680 .x22 w16)
-     (fun x y=> (ExtraPostW w16 L A a (s.gpr .x19+1680) .x22 s x ∧ Rej8.Constants x) ∧
-       (ExtraPostW w16 L A a (u.gpr .x19+1680) .x22 u y ∧ Rej8.Constants y)) := by
-  intro x y tx ty x' y' h ex ey
-  rcases h with ⟨hx,hy⟩
-  subst x; subst y
-  have result := extra_relCT (flag:=.x22) (by decide) (by decide) (by decide) (by decide) hs.left hu.left sp h19 table s u tx ty x' y' ⟨rfl,rfl⟩ ex ey
-  have cx := exec_post (Rej8.WP.constants (extra_ok s (by decide) (by decide) (by decide) (by decide)
-    hs.left.env hs.left.constants hs.left.len hs.left.coeffs hs.left.saved hs.left.out0 hs.left.out1 hs.left.apart)
-    hs.left.constants (by cases w16 <;> rfl)) ex
-  have cy := exec_post (Rej8.WP.constants (extra_ok u (by decide) (by decide) (by decide) (by decide)
-    hu.left.env hu.left.constants hu.left.len hu.left.coeffs hu.left.saved hu.left.out0 hu.left.out1 hu.left.apart)
-    hu.left.constants (by cases w16 <;> rfl)) ey
-  exact ⟨result.1,⟨result.2.1,cx.2⟩,⟨result.2.2,cy.2⟩⟩
- refine RelCT.seq first ?_
- intro x y tx ty x' y' h ex ey
- have px := hs.afterLeft h.1.1 h.1.2
- have py := hu.afterLeft h.2.1 h.2.2
- have sx : x.sp=y.sp := h.1.1.keep.sp.trans (sp.trans h.2.1.keep.sp.symm)
- have tx16 : x.gpr .x16=y.gpr .x16 := by rw [h.1.1.keep.get .x16,h.2.1.keep.get .x16,table]
- have tx19 : x.gpr .x19=y.gpr .x19 := by rw [h.1.1.keep.get .x19,h.2.1.keep.get .x19,h19]
- have rest : RelCT isa (fun a b=>a=x ∧ b=y)
-     (.seq (Impl.MlKem.AArch64.Paired.extraReject 904 1696 .x23 w16)
-       (.block [.logic .and .x .x6 .x22 .x23])) (fun _ _=>True) := by
-  refine RelCT.seq (extra_relCT (by decide) (by decide) (by decide) (by decide) px py sx tx19 tx16) ?_
-  intro v w vt wt v' w' hw ev ew
-  have ct : ConstantTime isa (fun _=>True) (VG.AArch64.Taint.Agree (Taint.ofRegs []))
-    (.block [.logic .and .x .x6 .x22 .x23]) := by
-      exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs []) (fun _ _ _ _ h=>h) (hc:=.block []) rfl
-  exact ⟨ct v w vt wt v' w' trivial trivial
-    (agree_of (hw.1.keep.sp.trans (sx.trans hw.2.keep.sp.symm)) (by simp)) ev ew,trivial⟩
- exact rest x y tx ty x' y' ⟨rfl,rfl⟩ ex ey
+    (hs : BothReadyW w16 L M A B p a b s) (hu : BothReadyW w16 L M A B p a b u)
+    (sp : s.sp=u.sp) (table : s.gpr .x16=u.gpr .x16) :
+    RelCT isa (fun x y=>x=s ∧ y=u) (Impl.MlKem.AArch64.Paired.extraBoth w16) (fun _ _=>True) := by
+  let I : Nat → State → State → Prop := fun n t v =>
+    (n=2 ∧ BothInv w16 L M A B p a b s 0 t ∧ BothInv w16 L M A B p a b u 0 v) ∨
+    (n=1 ∧ BothInv w16 L M A B p a b s 1 t ∧ BothInv w16 L M A B p a b u 1 v)
+  have start : RelCT isa (fun x y=>x=s ∧ y=u)
+      (.block [.addImm .x .x20 .x19 400,.addImm .x .x1 .x19 1680,.movz .x .x22 1 0,.movz .x .x23 2 0]) (I 2) := by
+    intro x y tx ty x' y' h ex ey
+    rcases h with ⟨rfl,rfl⟩
+    exact ⟨bothStart_ct x y tx ty x' y' trivial trivial (agree_of sp (by simp)) ex ey,
+      .inl ⟨rfl,exec_post (bothStart_ok hs) ex,exec_post (bothStart_ok hu) ey⟩⟩
+  have loop : RelCT isa (I 2) (.loop (bothBody w16) (.nonzero .x .x23)) (fun t v=>t.sp=v.sp) := by
+    refine RelCT.loop (M:=isa) I (fun n => ?_) 2
+    intro t v tt tv t' v' hI et ev
+    rcases hI with ⟨rfl,it,iv⟩|⟨rfl,it,iv⟩
+    · obtain ⟨kt,_,ct,t20,t1,_,_,ra,_⟩ := id it
+      obtain ⟨kv,_,cv,v20,v1,_,_,rb,_⟩ := id iv
+      have tq := bothBody_relCT (by rw [t20,t1]; exact ra) (by rw [v20,v1]; exact rb) ct cv
+        (kt.sp.trans (sp.trans kv.sp.symm)) (t20.trans v20.symm) (t1.trans v1.symm)
+        (by rw [kt.get .x16,kv.get .x16,table]) t v tt tv t' v' ⟨rfl,rfl⟩ et ev
+      have it' := (exec_post (bothStep0_ok hs it) et).1
+      have iv' := (exec_post (bothStep0_ok hu iv) ev).1
+      have et23 : isa.eval (.nonzero .x .x23) t'=some true := by rw [eval_nonzero,it'.2.2.2.2.2.1]; rfl
+      have ev23 : isa.eval (.nonzero .x .x23) v'=some true := by rw [eval_nonzero,iv'.2.2.2.2.2.1]; rfl
+      refine ⟨tq.1,by rw [et23,ev23],fun h => (by rw [et23] at h; cases h),fun _ => ⟨1,by decide,.inr ⟨rfl,it',iv'⟩⟩⟩
+    · obtain ⟨kt,_,ct,t20,t1,_,_,_,_,rb⟩ := id it
+      obtain ⟨kv,_,cv,v20,v1,_,_,_,_,rb'⟩ := id iv
+      have tq := bothBody_relCT (by rw [t20,t1]; exact rb) (by rw [v20,v1]; exact rb') ct cv
+        (kt.sp.trans (sp.trans kv.sp.symm)) (t20.trans v20.symm) (t1.trans v1.symm)
+        (by rw [kt.get .x16,kv.get .x16,table]) t v tt tv t' v' ⟨rfl,rfl⟩ et ev
+      have it' := (exec_post (bothStep1_ok hs it) et).1
+      have iv' := (exec_post (bothStep1_ok hu iv) ev).1
+      have et23 : isa.eval (.nonzero .x .x23) t'=some false := by rw [eval_nonzero,it'.2.2.2.1]; rfl
+      have ev23 : isa.eval (.nonzero .x .x23) v'=some false := by rw [eval_nonzero,iv'.2.2.2.1]; rfl
+      refine ⟨tq.1,by rw [et23,ev23],fun _ => it'.1.sp.trans (sp.trans iv'.1.sp.symm),
+        fun h => by rw [et23] at h; cases h⟩
+  refine RelCT.seq start (RelCT.seq loop ?_)
+  intro t v tt tv t' v' h et ev
+  exact ⟨bothEnd_ct t v tt tv t' v' trivial trivial (agree_of h (by simp)) et ev,trivial⟩
+
 end VG.Proof.MlKem.AArch64.Paired

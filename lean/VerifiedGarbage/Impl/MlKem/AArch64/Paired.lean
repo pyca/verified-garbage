@@ -65,17 +65,26 @@ def fullSample (L : KemLay) (kg : Bool) (a : Nat) (w16 : Bool := false) : Prog i
   (.loop (.block [.movz .x .x13 0 0,.str .w .x13 .x3 0,.addImm .x .x3 .x3 (if w16 then 2 else 4),.subImm .x .x4 .x4 1]) (.nonzero .x .x4)),
  .block [.ldr .x .x22 .x19 1848,.ldr .x .x23 .x19 1856]]
 
-def extraReject (buf slot : Nat) (flag : Reg) (w16 : Bool := false) : Prog isa :=
- seqs [.block [.ldr .x .x3 .x19 slot,.ldr .x .x4 .x19 (slot+8)],
- .ite (.zero .x .x4) (.block [.movz .x flag 1 0])
-  (seqs [.block [.addImm .x .x2 .x19 buf,.movz .x .x5 56 0,.movz .x .x9 3329 0,.movz .x .x10 15 0],
-   rejLoop w16,.block [mov flag .x0,.str .x .x3 .x19 slot,.str .x .x4 .x19 (slot+8)]])]
+/-- Resume the stream whose buffer is at `x20` from the cursor saved at `x1`
+(its output pointer and the coefficients it lacks); `x0` is 1 when it has
+all 256. -/
+def extraReject (w16 : Bool := false) : Prog isa :=
+ seqs [.block [.ldr .x .x3 .x1 0,.ldr .x .x4 .x1 8],
+ .ite (.zero .x .x4) (.block [.movz .x .x0 1 0])
+  (seqs [.block [mov .x2 .x20,.movz .x .x5 56 0,.movz .x .x9 3329 0,.movz .x .x10 15 0],
+   rejLoop w16,.block [.str .x .x3 .x1 0,.str .x .x4 .x1 8]])]
+/-- `extraReject` for both streams (buffers at 400 and 904, cursors at 1680
+and 1696), as a loop counted by `x23`; `x6` is 1 when both are complete. -/
+def extraBoth (w16 : Bool := false) : Prog isa :=
+ seqs [.block [.addImm .x .x20 .x19 400,.addImm .x .x1 .x19 1680,.movz .x .x22 1 0,.movz .x .x23 2 0],
+ .loop (.seq (extraReject w16) (.block [.logic .and .x .x22 .x22 .x0,.addImm .x .x20 .x20 504,
+   .addImm .x .x1 .x1 16,.subImm .x .x23 .x23 1])) (.nonzero .x .x23),
+ .block [mov .x6 .x22]]
 def extraStep (w16 : Bool := false) : Prog isa :=
  seqs [.block [.addImm .x .x20 .x19 400,.addImm .x .x21 .x19 904],
  VG.Impl.Sha3.AArch64.Neon.X2.call true .x19 .x19 1536,
  .block (VG.Impl.Sha3.AArch64.Neon.X2.squeeze 21 .x19 .x20 .x21 ++ rejConsts),
- extraReject 400 1680 .x22 w16,extraReject 904 1696 .x23 w16,
- .block [.logic .and .x .x6 .x22 .x23]]
+ extraBoth w16]
 def zeroExtra (slot : Nat) (w16 : Bool := false) : Prog isa :=
  .seq (.block [.ldr .x .x3 .x19 slot,.ldr .x .x4 .x19 (slot+8)])
  (.ite (.zero .x .x4) (.block [])

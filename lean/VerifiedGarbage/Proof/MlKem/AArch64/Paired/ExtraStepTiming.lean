@@ -55,13 +55,11 @@ theorem nextBlock_ready {w16 : Bool} {s : State} {A B : Spec.Sha3.State} {L M : 
  have ea := cu.envW (w16 := w16) ux (N:=56) (off:=400) (by decide) (by decide) (Or.inl rfl) (fun i hi=>ra.byte hi)
  have eb := cu.envW (w16 := w16) ux (N:=56) (off:=904) (by decide) (by decide) (Or.inr rfl) (fun i hi=>rb.byte hi)
  have iw {o l : Nat} (ho : o+l≤2048) := Noise.inScratch cu.scratch ho (by decide)
- refine ⟨ku,ux,up,cu.scratch,cu.farA,cu.farB,cu.apart,?_,?_,?_⟩
- · exact ⟨by simpa only [up] using ea,cs,hl,ua,by rw [up]; exact usa,
-     by rw [up]; exact iw (by decide),by rw [up]; exact iw (by decide),
-     by rw [up]; exact cu.farA.symm.sub_right (Offset.sub_base p (by decide))⟩
- · exact ⟨by simpa only [up] using eb,cs,hm,ub,by rw [up]; exact usb,
-     by rw [up]; exact iw (by decide),by rw [up]; exact iw (by decide),
-     by rw [up]; exact cu.farB.symm.sub_right (Offset.sub_base p (by decide))⟩
+ refine ⟨ku,ux,up,cu.scratch,cu.farA,cu.farB,cu.apart,?_,?_,?_,cs⟩
+ · exact ⟨ea,hl,ua,usa,iw (o:=1680) (by decide),by rw [BitVec.add_assoc]; exact iw (o:=1688) (by decide),
+     cu.farA.symm.sub_right (Offset.sub_base p (by decide))⟩
+ · exact ⟨eb,hm,ub,usb,iw (o:=1696) (by decide),by rw [BitVec.add_assoc]; exact iw (o:=1704) (by decide),
+     cu.farB.symm.sub_right (Offset.sub_base p (by decide))⟩
  · intro mask hm; rw [ux]; exact cu.tableScratch.sub_left (Rej8.table_sub c hm)
 theorem extraStep_relCT {w16 : Bool} {s u : State} {A B : Spec.Sha3.State} {L M : List Zq} {p a b c : Addr}
  (hs : StepReadyW w16 A B L M p a b c s) (hu : StepReadyW w16 A B L M p a b c u)
@@ -80,7 +78,7 @@ theorem extraStep_relCT {w16 : Bool} {s u : State} {A B : Spec.Sha3.State} {L M 
   exact ⟨nextBlock_ct s u tx ty x' y' trivial trivial
     (agree_of sp (by intro r hr; rw [List.mem_singleton.mp hr]; exact hs.pointer.trans hu.pointer.symm)) ex ey,
     px,py,kx.sp.trans (sp.trans ky.sp.symm),tx16.trans ty16.symm⟩
- have grouped : RelCT isa (fun x y=>x=s ∧ y=u) (.seq nextBlock (extraBoth w16)) (fun _ _=>True) := by
+ have grouped : RelCT isa (fun x y=>x=s ∧ y=u) (.seq nextBlock (Impl.MlKem.AArch64.Paired.extraBoth w16)) (fun _ _=>True) := by
   refine RelCT.seq first ?_
   intro x y tx ty x' y' h ex ey
   exact extraBoth_relCT h.1 h.2.1 h.2.2.1 h.2.2.2 x y tx ty x' y' ⟨rfl,rfl⟩ ex ey
