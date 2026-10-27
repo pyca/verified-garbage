@@ -46,9 +46,6 @@ abbrev sx (bits : Nat) (s t : State) : State := (pcPushed t).withRegions (cCd bi
 /-- `cF`'s base. -/
 abbrev fB (s : State) : Addr := State.addr s.sp - 144#64
 
-/-- The widths `In` needs. -/
-abbrev Bits (bits : Nat) : Prop := bits = 160 ∨ bits = 256 ∨ bits = 1024 ∨ bits = 2048 ∨ bits = 3072
-
 section
 variable {bits : Nat} {s t : State}
 

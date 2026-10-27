@@ -6,12 +6,13 @@ public import VerifiedGarbage.Spec.Dsa.ProbablePrime
 /-!
 # DSA's probable-prime test on ARMv7
 
-`vg_dsa_probable_prime_{bits}(ws, ws_len, rand, rand_len, used)`: `ws`,
-`ws_len`, `rand` and `rand_len` in `r0`–`r3`, `used` on the stack. The
-candidate is the `bits / 8` big-endian bytes at byte 0 of `ws`; the rest of
-`ws`, from byte `keyOff`, is the key working space of the RSA candidate
-(`Impl/RsaKeyGen/Arm/Candidate.lean`), whose trial division, exponent setup
-and Montgomery constants this test runs as they are.
+`vg_dsa_probable_prime(ws, ws_len, rand, rand_len, used, bits)`: `ws`,
+`ws_len`, `rand` and `rand_len` in `r0`–`r3`, `used` and `bits` on the
+stack, `bits` one of `sizes`. The candidate is the `bits / 8` big-endian
+bytes at byte 0 of `ws`; the rest of `ws`, from byte `keyOff`, is the key
+working space of the RSA candidate (`Impl/RsaKeyGen/Arm/Candidate.lean`),
+whose trial division, exponent setup and Montgomery constants this test runs
+as they are.
 
 The function allocates 32 bytes and pushes the RSA candidate's frame of 56
 bytes (`r0`–`r12` and `lr`) below them, so that the frame words that code
@@ -19,9 +20,9 @@ reads are this function's: before the push, the allocation holds `rand` and
 `rand_len` (`aoR`, `aoRl`), the key working space and its length in 64-bit
 words, RSA's for the arithmetic's width (`aoS`, `aoSl`), `ws` (`aoP`), and the candidate's bytes, the octets
 of a witness and the uniform witnesses needed (`aoEl`, `aoPl`, `aoChk`), so
-that the body depends on `bits` only through these words; `r1` is `L = 8 w`
-(`foL`, `w` the 64-bit words of the arithmetic, at least 4) and `r2` is
-`used` (`foUsed`).
+that the body depends on `bits` only through these words, which `pre`
+computes from `bits` (`bitsOf`); `r1` is `L = 8 w` (`foL`, `w` the 64-bit
+words of the arithmetic, at least 4) and `r2` is `used` (`foUsed`).
 
 1. The key working space zeroed, `c` loaded into the array `aC` from the
    candidate's bytes, the octets read `sUsed := 0`, the constants 1 and 2.
@@ -75,21 +76,38 @@ def layout (bits : Nat) : Spec.Dsa.ProbablePrime.Layout where
 
 /-! ## Entry -/
 
+/-- The sizes the test takes. -/
+def sizes : List Nat := [160, 256, 1024, 2048, 3072]
+
 /-- The frame word of the uniform witnesses needed, the allocation's last. -/
 def aoChk : Nat := 84
 
+/-- `L = 8 w` from `bits` in `r2`, into `r1`: `32 ⌈bits / 256⌉`, which is
+`8 w` for each of `sizes`. -/
+def wordsOf : List Instr :=
+  [.dp .add .r1 .r2 (.imm 255), .mov .r1 (.shifted .r1 .lsr 8), .mov .r1 (.shifted .r1 .lsl 5)]
+
+/-- From `bits` in `r2` and `L` in `r1`, the allocation's words that depend
+on the size (through `r3`): the key working space's 64-bit words
+`16 L + 32`, the candidate's bytes `bits / 8`, the octets of a witness
+`8 ⌈bits / 64⌉`, and the uniform witnesses needed, 64, or 128 above 2048
+bits: `64 + 64 ⌊(bits − 1) / 2048⌋` for each of `sizes`. -/
+def bitsOf : List Instr :=
+  [.mov .r3 (.shifted .r1 .lsl 4), .dp .add .r3 .r3 (.imm 32), .str .r3 .r12 (aoSl - 56),
+    .mov .r3 (.shifted .r2 .lsr 3), .str .r3 .r12 (aoEl - 56),
+    .dp .add .r3 .r2 (.imm 63), .mov .r3 (.shifted .r3 .lsr 6), .mov .r3 (.shifted .r3 .lsl 3),
+    .str .r3 .r12 (aoPl - 56),
+    .dp .sub .r3 .r2 (.imm 1), .mov .r3 (.shifted .r3 .lsr 11), .mov .r3 (.shifted .r3 .lsl 6),
+    .dp .add .r3 .r3 (.imm 64), .str .r3 .r12 (aoChk - 56)]
+
 /-- Before the push (`sp` 32 below the caller's): the arguments into the
-allocation where the candidate's code reads them after the push, `used`
-into `r2` and `L` into `r1`; only caller-saved registers change. -/
-def pre (bits : Nat) : List Instr :=
+allocation where the candidate's code reads them after the push, the words
+of the size `bits` (the second stack argument), `used` into `r2` and `L`
+into `r1`; only caller-saved registers change. -/
+def pre : List Instr :=
   [.addSp .r12 0, .str .r2 .r12 (aoR - 56), .str .r3 .r12 (aoRl - 56), .str .r0 .r12 (aoP - 56),
-    .dp .add .r3 .r0 (.imm (BitVec.ofNat 32 keyOff)), .str .r3 .r12 (aoS - 56),
-    .mov .r3 (.imm (BitVec.ofNat 32 (keyWords bits / 32))), .mov .r3 (.shifted .r3 .lsl 5),
-    .str .r3 .r12 (aoSl - 56),
-    .mov .r3 (.imm (BitVec.ofNat 32 (len bits))), .str .r3 .r12 (aoEl - 56),
-    .mov .r3 (.imm (BitVec.ofNat 32 (draw bits))), .str .r3 .r12 (aoPl - 56),
-    .mov .r3 (.imm (BitVec.ofNat 32 (checks bits))), .str .r3 .r12 (aoChk - 56),
-    .ldr .r2 .r12 32, .mov .r1 (.imm (BitVec.ofNat 32 (8 * words bits)))]
+    .dp .add .r3 .r0 (.imm (BitVec.ofNat 32 keyOff)), .str .r3 .r12 (aoS - 56), .ldr .r2 .r12 36] ++
+    wordsOf ++ bitsOf ++ [.ldr .r2 .r12 32]
 
 /-- `sUsed := 0` and the constants 1 and 2. -/
 def consts : List Instr := setS sUsed 0 ++ VG.Impl.RsaKeyGen.Arm.Key.setWd aOne 0 1 ++ VG.Impl.RsaKeyGen.Arm.Key.setWd aTwo 0 2
@@ -157,10 +175,10 @@ def mrPart (name : String) (round : Prog isa) : Prog isa :=
 def body (name : String) (round : Prog isa) : Prog isa :=
   seqs (loadC ++ trial ++ [.ite .eq (mrPart name round) (.block ([.mov .r3 (.imm 0)] ++ done 2))])
 
-/-- `vg_dsa_probable_prime_{bits}`, calling the round `round` named `name`. -/
-def code (bits : Nat) (name : String) (round : Prog isa) : Prog isa :=
+/-- `vg_dsa_probable_prime`, calling the round `round` named `name`. -/
+def code (name : String) (round : Prog isa) : Prog isa :=
   .frame (.alloc 32)
-    (.seq (.block (pre bits))
+    (.seq (.block pre)
       (.frame (.push [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
         (.seq (body name round) (.block PcFn.restore)) (.pop .r12 56)))
     (.free 32)
