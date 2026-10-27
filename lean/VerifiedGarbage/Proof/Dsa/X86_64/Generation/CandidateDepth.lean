@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashDepth
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Subgroup
-import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeDepth
 import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Contract
@@ -20,12 +19,12 @@ namespace VG.Proof.Dsa.X86_64.Generation
 open VG VG.X86_64 VG.Impl.Dsa.X86_64.Generation VG.Impl.Bignum.X86_64
 open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
 
-theorem checkPrime_depth (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
-    (hm : ∀ o a b, generationDepth (mul o a b)) (hr : generationDepth round)
-    (w candidate len draw checks : Nat) : generationDepth (checkPrime mul round w candidate len draw checks) := by
-  exact (show generationDepth (workspace w) by exact (show 0 ≤ 128 by decide)).seq
-    ((show generationDepth (.block (headerArguments (primeArguments candidate len draw checks))) by exact (show 0 ≤ 128 by decide)).seq
-      (primeBytes_depth mul round hm hr len draw))
+theorem primeCall_depth (prime : Nat → Prog isa) (hp : ∀ bits, callerDepth (prime bits)) (bits : Nat) :
+    callerDepth (primeCall prime bits) := by
+  unfold callerDepth at hp ⊢
+  simp only [primeCall, primeCallResult, primeCallStatus, Code.x86_64Depth, Nat.max_le, Nat.zero_le,
+    and_true, true_and]
+  exact hp bits
 
 theorem qCandidate_depth {H1 H256 : Stream} (h1 : HashDepth H1) (h256 : HashDepth H256) (len : Nat) :
     generationDepth (qCandidate H1 H256 len) := by
@@ -33,11 +32,9 @@ theorem qCandidate_depth {H1 H256 : Stream} (h1 : HashDepth H1) (h256 : HashDept
     (show generationDepth Impl.Ffdh.X86_64.ParameterCandidate.shape by exact (show 0 ≤ 128 by decide)))
 
 theorem subgroup_depth {H1 H256 : Stream} (h1 : HashDepth H1) (h256 : HashDepth H256)
-    (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
-    (hm : ∀ o a b, generationDepth (mul o a b)) (hr : generationDepth round) (len : Nat) :
-    generationDepth (subgroup H1 H256 mul round len) := by
-  exact (qCandidate_depth h1 h256 len).seq ((show generationDepth (.block workspaceBase) by exact (show 0 ≤ 128 by decide)).seq
-    ((checkPrime_depth mul round hm hr _ _ _ _ _).seq (show generationDepth (.block primeResult) by exact (show 0 ≤ 128 by decide))))
+    (prime : Nat → Prog isa) (hp : ∀ bits, callerDepth (prime bits)) (len : Nat) :
+    callerDepth (subgroup H1 H256 prime len) :=
+  (callerDepth.of (qCandidate_depth h1 h256 len)).seq (primeCall_depth prime hp _)
 
 theorem pConstruct_depth {H : Stream} (h : HashDepth H) (pLen qLen : Nat) :
     generationDepth (pConstruct H pLen qLen) := by
@@ -46,21 +43,18 @@ theorem pConstruct_depth {H : Stream} (h : HashDepth H) (pLen qLen : Nat) :
       ((show generationDepth (workspace (pLen / 8)) by exact (show 0 ≤ 128 by decide)).seq
         (show generationDepth (candidateFromFrame pLen qLen) by exact (show 0 ≤ 128 by decide))))
 
-theorem pTest_depth (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
-    (hm : ∀ o a b, generationDepth (mul o a b)) (hr : generationDepth round) (pLen : Nat) :
-    generationDepth (pTest mul round pLen) := by
+theorem pTest_depth (prime : Nat → Prog isa) (hp : ∀ bits, callerDepth (prime bits)) (pLen : Nat) :
+    callerDepth (pTest prime pLen) := by
   unfold pTest
-  apply generationDepth.seq (show generationDepth (.block candidateWidth) by exact (show 0 ≤ 128 by decide))
-  apply generationDepth.ite (show generationDepth (.block (stackStatus 3)) by exact (show 0 ≤ 128 by decide))
-  exact (checkPrime_depth mul round hm hr _ _ _ _ _).seq (show generationDepth (.block primeResult) by exact (show 0 ≤ 128 by decide))
+  exact (callerDepth.of (generationDepth.block _)).seq
+    ((callerDepth.of (generationDepth.block _)).ite (primeCall_depth prime hp _) _)
 
 theorem pAttempt_depth {H1 H256 : Stream} (h1 : HashDepth H1) (h256 : HashDepth H256)
-    (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
-    (hm : ∀ o a b, generationDepth (mul o a b)) (hr : generationDepth round) (pLen qLen : Nat) :
-    generationDepth (pAttempt H1 H256 mul round pLen qLen) := by
+    (prime : Nat → Prog isa) (hp : ∀ bits, callerDepth (prime bits)) (pLen qLen : Nat) :
+    callerDepth (pAttempt H1 H256 prime pLen qLen) := by
   have hh : HashDepth (if qLen = 20 then H1 else H256) := by split <;> with_reducible assumption
-  exact (show generationDepth (.block pAttemptArgs) by exact (show 0 ≤ 128 by decide)).seq
-    (((pConstruct_depth hh pLen qLen).seq (pTest_depth mul round hm hr pLen)).seq
-      (show generationDepth (.block searchReturn) by exact (show 0 ≤ 128 by decide)))
+  exact (callerDepth.of (generationDepth.block _)).seq
+    (((callerDepth.of (pConstruct_depth hh pLen qLen)).seq (pTest_depth prime hp pLen)).seq
+      (callerDepth.of (generationDepth.block _)))
 
 end VG.Proof.Dsa.X86_64.Generation

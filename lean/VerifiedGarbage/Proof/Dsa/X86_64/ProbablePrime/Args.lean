@@ -7,9 +7,9 @@ import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 
 /-! # The probable-prime test's arguments in the arithmetic workspace's header
 
-The block writes what the generation's `primeArguments` writes, from
-registers instead of the generation's frame: as `argumentWrites` of
-`argList`, whose frame words are the registers `rsi`, `r9` and `rcx`. -/
+The block writes the test's header arguments from registers: as
+`argumentWrites` of `argList`, whose frame words are the registers `rsi`,
+`r9` and `rcx`. -/
 
 @[expose] public section
 namespace VG.Proof.Dsa.X86_64.ProbablePrime

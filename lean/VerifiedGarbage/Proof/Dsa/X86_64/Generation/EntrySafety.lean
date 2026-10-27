@@ -26,30 +26,30 @@ open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
 variable {checkName : String}
 
 theorem seedAttempt_safe {H1 H256 : Stream} (h1 : HashSafety H1) (h256 : HashSafety H256)
-    (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
-    (hs : generationSafe sq) (hm : ∀ o a b, generationSafe (mul o a b)) (hr : generationSafe round)
-    (pLen qLen : Nat) : generationSafe (seedAttempt (checkName := checkName) H1 H256 sq mul round pLen qLen) := by
+    (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (prime : Nat → Prog isa)
+    (hs : generationSafe sq) (hm : ∀ o a b, generationSafe (mul o a b)) (hp : ∀ bits, generationSafe (prime bits))
+    (pLen qLen : Nat) : generationSafe (seedAttempt (checkName := checkName) H1 H256 sq mul prime pLen qLen) := by
   have finish : generationSafe (finishDomain (checkName := checkName) sq mul pLen qLen) :=
     (show generationSafe (pack pLen qLen) from rfl).seq (validate_safe (checkName := checkName) sq mul hs hm pLen qLen)
   exact ((show generationSafe (.block (seedArguments qLen)) from rfl).seq
-    (subgroup_safe h1 h256 mul round hm hr qLen)).seq
-    (onSuccess_safe ((primeSearch_safe h1 h256 mul round hm hr pLen qLen).seq
+    (subgroup_safe h1 h256 prime hp qLen)).seq
+    (onSuccess_safe ((primeSearch_safe h1 h256 prime hp pLen qLen).seq
       (onSuccess_safe ((generatorSearch_safe sq mul hs hm pLen).seq (onSuccess_safe finish)))))
 
 theorem generate_safe {H1 H256 : Stream} (h1 : HashSafety H1) (h256 : HashSafety H256)
-    (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
-    (hs : generationSafe sq) (hm : ∀ o a b, generationSafe (mul o a b)) (hr : generationSafe round)
-    (pLen qLen : Nat) : generationSafe (generate (checkName := checkName) H1 H256 sq mul round pLen qLen) :=
-  (tapeLoop_safe (seedAttempt_safe (checkName := checkName) h1 h256 sq mul round hs hm hr pLen qLen) _ _).seq
+    (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (prime : Nat → Prog isa)
+    (hs : generationSafe sq) (hm : ∀ o a b, generationSafe (mul o a b)) (hp : ∀ bits, generationSafe (prime bits))
+    (pLen qLen : Nat) : generationSafe (generate (checkName := checkName) H1 H256 sq mul prime pLen qLen) :=
+  (tapeLoop_safe (seedAttempt_safe (checkName := checkName) h1 h256 sq mul prime hs hm hp pLen qLen) _ _).seq
     (show generationSafe finishOutput from rfl)
 
 theorem dispatch_safe {H1 H256 : Stream} (h1 : HashSafety H1) (h256 : HashSafety H256)
-    (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
-    (hs : generationSafe sq) (hm : ∀ o a b, generationSafe (mul o a b)) (hr : generationSafe round) :
-    generationSafe (dispatch (checkName := checkName) H1 H256 sq mul round) := by
-  have h128 := generate_safe (checkName := checkName) h1 h256 sq mul round hs hm hr 128 20
-  have h256' := generate_safe (checkName := checkName) h1 h256 sq mul round hs hm hr 256 32
-  have h384 := generate_safe (checkName := checkName) h1 h256 sq mul round hs hm hr 384 32
+    (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (prime : Nat → Prog isa)
+    (hs : generationSafe sq) (hm : ∀ o a b, generationSafe (mul o a b)) (hp : ∀ bits, generationSafe (prime bits)) :
+    generationSafe (dispatch (checkName := checkName) H1 H256 sq mul prime) := by
+  have h128 := generate_safe (checkName := checkName) h1 h256 sq mul prime hs hm hp 128 20
+  have h256' := generate_safe (checkName := checkName) h1 h256 sq mul prime hs hm hp 256 32
+  have h384 := generate_safe (checkName := checkName) h1 h256 sq mul prime hs hm hp 384 32
   exact (show generationSafe (.block [.mov .rax (.mem (Impl.Mgf1.X86_64.sp 136)),
     .alu .cmp .rax (.imm 128)]) from rfl).seq
     (h128.ite ((show generationSafe (.block [.alu .cmp .rax (.imm 256)]) from rfl).seq
@@ -61,11 +61,11 @@ theorem generationSafe.frame {body : Prog isa} (h : generationSafe body) (bytes 
   rw [h]; rfl
 
 theorem entry_safe {H1 H256 : Stream} (h1 : HashSafety H1) (h256 : HashSafety H256)
-    (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
-    (hs : generationSafe sq) (hm : ∀ o a b, generationSafe (mul o a b)) (hr : generationSafe round) :
-    generationSafe (code (checkName := checkName) H1 H256 sq mul round) := by
+    (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (prime : Nat → Prog isa)
+    (hs : generationSafe sq) (hm : ∀ o a b, generationSafe (mul o a b)) (hp : ∀ bits, generationSafe (prime bits)) :
+    generationSafe (code (checkName := checkName) H1 H256 sq mul prime) := by
   have body := (show generationSafe (.block (entryHeader ++ entryIncoming ++ entryDerived)) from rfl).seq
-    (dispatch_safe (checkName := checkName) h1 h256 sq mul round hs hm hr)
+    (dispatch_safe (checkName := checkName) h1 h256 sq mul prime hs hm hp)
   exact ((show generationSafe (.block saveRegisters) from rfl).seq
     ((body.frame 296).seq (show generationSafe (.block restoreRegisters) from rfl))).frame 48
 
