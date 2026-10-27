@@ -450,6 +450,53 @@ def fmt_time(ns):
     return f"{ns:.0f} ns"
 
 
+def argon_control(binaries, work):
+    """Diagnostic A/A and A/B controls; no optimization code changes."""
+    import hashlib
+    import struct
+    symbols = {}
+    for side, binary in binaries.items():
+        data = pathlib.Path(binary).read_bytes()
+        phoff = struct.unpack_from("<Q", data, 32)[0]
+        entsize, num = struct.unpack_from("<HH", data, 54)
+        segments = [struct.unpack_from("<IIQQQQQQ", data, phoff + i * entsize) for i in range(num)]
+        found = {}
+        for line in subprocess.check_output(["nm", "-S", "--defined-only", binary], text=True).splitlines():
+            cols = line.split()
+            if len(cols) != 4 or "argon2" not in cols[3] or cols[2].lower() != "t":
+                continue
+            addr, size = int(cols[0], 16), int(cols[1], 16)
+            for typ, flags, off, va, pa, filesz, memsz, align in segments:
+                if typ == 1 and va <= addr and addr + size <= va + filesz:
+                    code = data[off + addr - va:off + addr - va + size]
+                    found[cols[3]] = {"address": addr, "size": size, "sha256": hashlib.sha256(code).hexdigest()}
+                    break
+        symbols[side] = found
+    print("ARGON_SYMBOLS " + json.dumps(symbols), flush=True)
+    for name in symbols["base"].keys() & symbols["head"].keys():
+        if "vg_argon2_compress" in name:
+            print("ARGON_KERNEL_IDENTICAL " + json.dumps({"name": name, "equal": symbols["base"][name] == symbols["head"][name]}), flush=True)
+    controls = {"A0": fresh_copy(binaries["base"], 1000),
+                "A1": fresh_copy(binaries["base"], 1001),
+                "B": fresh_copy(binaries["head"], 1002)}
+    for rep in range(5):
+        for group in ["argon2d", "argon2id"]:
+            for memory in [1024, 16384]:
+                order = ["A0", "A1", "A0", "B"] if rep % 2 == 0 else ["B", "A0", "A1", "A0"]
+                for pos, tag in enumerate(order):
+                    home = work / f"{rep}-{group}-{memory}-{pos}-{tag}"
+                    subprocess.run([controls[tag], "--bench", "--noplot", "--warm-up-time", "0.3",
+                                    "--measurement-time", "1", "--sample-size", "10", "--nresamples", "1000",
+                                    f"^{group}/verified-garbage/{memory}$"],
+                                   env={**os.environ, "VG_BENCH_MODULES": "argon2", "VG_BENCHES": "argon2",
+                                        "CRITERION_HOME": str(home)}, check=True)
+                    path = next(home.rglob("new/estimates.json"))
+                    print("ARGON_CONTROL " + json.dumps({"rep": rep, "group": group, "memory": memory,
+                          "position": pos, "tag": tag, "estimates": json.loads(path.read_text()),
+                          "sample": json.loads(path.with_name("sample.json").read_text())}), flush=True)
+    return 0
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("base", type=pathlib.Path)
@@ -495,6 +542,8 @@ def main():
     # Both sides run the same groups, which head's list of them decides. It
     # also says which benchmark has each group, so that the sides can run
     # one benchmark at a time, if both binaries have head's benchmarks.
+    if args.modules == "argon2":
+        return argon_control(binaries, args.work_dir.resolve())
     listed, owner = list_groups(binaries["head"], modules["head"])
     if note is not None and binaries["base"] is not None:
         owner = None
