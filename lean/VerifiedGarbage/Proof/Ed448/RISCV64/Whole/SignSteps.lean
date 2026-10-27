@@ -126,6 +126,7 @@ structure S2 (s t : State) : Prop where
   sc : Spec.Ed448.decodeLE (bytesAt t.mem (sF s + BitVec.ofNat 64 136) 57) =
     Spec.Ed448.prune (Spec.Sha3.shake256 (bytesAt s.mem (s.gpr .a1) 57) 114)
   pre : bytesAt t.mem (sF s + BitVec.ofNat 64 193) 57 = (Spec.Sha3.shake256 (bytesAt s.mem (s.gpr .a1) 57) 114).drop 57
+  pk : bytesAt t.mem (sF s + BitVec.ofNat 64 384) 57 = bytesAt s.mem (s.gpr .a2) 57
 
 theorem expand_ok {s t : State} (hp : SignPre s) (h : S1 s t) : WP isa signExpand t (S2 s) := by
   have g21 : t.gpr .s2 = s.gpr .a1 := h.inv.regs _ (by decide)
@@ -151,7 +152,7 @@ theorem expand_ok {s t : State} (hp : SignPre s) (h : S1 s t) : WP isa signExpan
     (by decide) (by rw [h₂.regs _ (by decide)]; rfl)
     (fun j hj => by
       rw [h₂.wr, hp.wr, Offset.add_add]; exact in_base (P := sF s) (len := 520) (d := 136 + j) (by simp) (by omega) (by omega))
-    fun u um usp urd uwr ug => WP.block_nil ⟨?_, ?_, ?_, ?_⟩
+    fun u um usp urd uwr ug => WP.block_nil ⟨?_, ?_, ?_, ?_, ?_⟩
   · refine h₂.step signRegs_pres urd uwr usp (fun r hr => ug r fun e => by revert hr; rw [e]; decide)
       (um ▸ pruned_frame _ _) (fun r hr => ?_) fun r hr => ?_
     · rw [List.mem_singleton.mp hr]; exact ⟨fR s, by simp, fsub (by decide)⟩
@@ -168,5 +169,9 @@ theorem expand_ok {s t : State} (hp : SignPre s) (h : S1 s t) : WP isa signExpan
       exact Offset.disjoint (sF s) (d := 193) (n := 57) (e := 136) (k := 57) (.inr (by decide)) (by decide) (by decide),
       show sF s + BitVec.ofNat 64 193 = sF s + BitVec.ofNat 64 136 + BitVec.ofNat 64 57 by rw [Offset.add_add],
       bytesAt_sha3, ← bytesAt_drop57, hh]
+  · rw [um, ← bytesAt_sha3, bytes_keep (pruned_frame _ _) (by decide) fun r hr => by
+      rw [List.mem_singleton.mp hr]
+      exact Offset.disjoint (sF s) (d := 384) (n := 57) (e := 136) (k := 57) (.inr (by decide)) (by decide) (by decide),
+      bytesAt_sha3, keep_hash hp h.inv (o := 136) (d := 384) (n := 57) (by decide) (by decide) (by decide) k₂, h.pk]
 
 end VG.Proof.Ed448.RISCV64.Whole
