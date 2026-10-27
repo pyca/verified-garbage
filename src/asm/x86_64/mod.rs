@@ -404,6 +404,9 @@ pub(crate) mod p224_check_point;
 pub(crate) mod p224_inverse;
 
 #[rustfmt::skip]
+pub(crate) mod p224_mul_base;
+
+#[rustfmt::skip]
 pub(crate) mod p256_check_point;
 
 #[rustfmt::skip]
