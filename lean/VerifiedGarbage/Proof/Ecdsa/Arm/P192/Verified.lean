@@ -82,6 +82,7 @@ theorem p192_ok : CfgOk p192 where
   sh := by rw [p192_sh]; decide
   fp := ⟨rfl, rfl, Mont.p192p_ok, rfl⟩
   fn := ⟨rfl, rfl, Mont.p192n_ok, rfl⟩
+  mulNf := fun _ h => nomatch h
 
 theorem pre_of {s : State} (h : signArm.pre s) : Pre p192 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h

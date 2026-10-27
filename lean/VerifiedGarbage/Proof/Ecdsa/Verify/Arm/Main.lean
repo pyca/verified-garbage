@@ -170,6 +170,7 @@ theorem verifyWith_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List
 /-- The existing implementation is an instance of the generic verification pipeline. -/
 theorem verify_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : VPre c s₀) :
     WP isa (Impl.Ecdsa.Verify.Arm.Cfg.verify c) s₀ fun s' => VKeep s₀ s' ∧ VPost c s₀ s' :=
-  verifyWith_ok hc hC hp (fun _ _ _ => generatorWP_ladder hc)
+  verifyWith_ok hc hC hp (fun _ M _ => generatorWP_gen hc (by
+    rw [shiftRight_eq_zero (Nat.lt_trans M.u_lt hc.n_enc), mul_zero_pt]; exact rep_infinity' hC))
 
 end VG.Proof.Ecdsa.Verify.Arm

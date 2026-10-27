@@ -49,5 +49,6 @@ theorem brainpoolp512r1_ok : CfgOk brainpoolp512r1 where
   sh := by rw [brainpoolp512r1_sh]; decide
   fp := ⟨rfl, rfl, Mont.brainpoolp512r1p_ok, rfl⟩
   fn := ⟨rfl, rfl, Mont.brainpoolp512r1n_ok, rfl⟩
+  mulNf := fun _ h => nomatch h
 
 end VG.Proof.Ecdsa.Arm.BrainpoolP512r1

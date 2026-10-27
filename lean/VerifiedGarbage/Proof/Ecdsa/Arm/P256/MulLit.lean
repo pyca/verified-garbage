@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.P256.Arm
+public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -27,5 +28,9 @@ time, properties of every instruction): the literal of the code
 namespace VG
 
 materialize_code Impl.Ecdsa.Arm.mulP256
+
+/-- `vg_p256_mul`'s code has no frame, which its calls need. -/
+theorem Impl.Ecdsa.Arm.mulP256_noFrames : Impl.Ecdsa.Arm.p256.mulFn.noFrames = true := by
+  show Impl.Ecdsa.Arm.mulP256.noFrames = true; lit_decide
 
 end VG

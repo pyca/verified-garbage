@@ -46,7 +46,7 @@ theorem comb_generator_ok (hC : Law Spec.Secp256k1.curve) {s : State} {base T : 
   have U' := U
   rw [Point.ladWp,ladWx_eq] at U'
   have Ft := F.unch hc.n10 hs.nowrap (fixedOk_slWkP hc.n10 (by decide)) U'
-  exact ⟨keep,U,modP_of hc Ft.mp,lt,rep⟩
+  exact ⟨keep, U.mono fun w hw => List.mem_append_left _ hw, modP_of hc Ft.mp, lt, rep⟩
 
 /-- Setup and bit extraction preserve the ROM used by either signing or key generation. -/
 theorem comb_generator_stage (hC : Law Spec.Secp256k1.curve) {s₀ s : State} {base T : Addr} {A : Args}
