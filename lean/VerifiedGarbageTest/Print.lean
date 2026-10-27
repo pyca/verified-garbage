@@ -5,6 +5,7 @@ import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.TCB.Arm.Print
 import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.TCB.RISCV64.Print
+import VerifiedGarbage.Artifacts.Ct.RISCV64
 
 /-!
 # Golden tests for the trusted printers
@@ -648,6 +649,48 @@ def sampleRV : Prog RISCV64.isa :=
 #guard Rust.template RISCV64.printer.call
     (RISCV64.printer.function (.block [.li .a0 1, .lla .a5 "VG_TABLE"] : Prog RISCV64.isa)) ==
   "        r\"addi a0, zero, 1\nlla a5, {VG_TABLE}\nret\",\n"
+
+-- Every RISC-V function's text enables the M extension for itself alone
+-- (`Rust.funcOptions`): `.option push` and `.option arch, +m` are its first
+-- lines and `.option pop` its last, after its labels, branches and return
+-- (`vg_ct_eq`, the code of `src/asm/riscv64/ct.rs`). Other targets' functions
+-- get no such directives.
+#guard Rust.funcOptions RISCV64.target.name ==
+  ([".option push", ".option arch, +m"], [".option pop"])
+#guard ["x86_64", "x86", "aarch64", "arm", "powerpc64le"].all (Rust.funcOptions · == ([], []))
+#guard match Artifacts.Ct.RISCV64.artifacts with
+  | [a] => ((Rust.function a (fun _ => "")).splitOn "naked_asm!(\n").getLast! == "        r\".option push
+.option arch, +m
+addi a4, zero, 0
+sub a7, a1, a3
+beqz a7, 20f
+addi a0, zero, 0
+j 21f
+20:
+addi a5, zero, 0
+beqz a1, 22f
+24:
+add t0, a0, a5
+lbu t1, 0(t0)
+add t0, a2, a5
+lbu t2, 0(t0)
+xor t1, t1, t2
+or a4, a4, t1
+addi a5, a5, 1
+sub a7, a5, a1
+bnez a7, 24b
+j 23f
+22:
+23:
+addi a4, a4, -1
+srli a0, a4, 63
+21:
+ret
+.option pop\",
+    )
+}
+"
+  | _ => false
 
 #guard Arm.encodable 0xff000000 && Arm.encodable 0x3fc && !Arm.encodable 0x101 && !Arm.encodable 0x1fe00
 

@@ -18,7 +18,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_triple_des_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 384]) {
     core::arch::naked_asm!(
-        r"lbu t0, 0(a0)
+        r".option push
+.option arch, +m
+lbu t0, 0(a0)
 slli t0, t0, 8
 lbu t1, 1(a0)
 or t0, t0, t1
@@ -1596,7 +1598,8 @@ addi t1, t1, 1
 addi t2, t2, -1
 bnez t2, 223b
 215:
-ret",
+ret
+.option pop",
     )
 }
 
@@ -1617,7 +1620,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_triple_des_ecb_encrypt(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        r"beqz a2, 20f
+        r".option push
+.option arch, +m
+beqz a2, 20f
 addi sp, sp, -640
 addi t0, sp, 0
 sd s1, 0(t0)
@@ -3508,7 +3513,8 @@ addi sp, sp, 640
 j 21f
 20:
 21:
-ret",
+ret
+.option pop",
     )
 }
 
@@ -3529,7 +3535,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_triple_des_ecb_decrypt(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        r"beqz a2, 20f
+        r".option push
+.option arch, +m
+beqz a2, 20f
 addi sp, sp, -640
 addi t0, sp, 0
 sd s1, 0(t0)
@@ -5420,6 +5428,7 @@ addi sp, sp, 640
 j 21f
 20:
 21:
-ret",
+ret
+.option pop",
     )
 }

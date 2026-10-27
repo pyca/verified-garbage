@@ -19,7 +19,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm3_compress(state: *mut [u32; 8], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 72]) {
     core::arch::naked_asm!(
-        r"addi a3, a3, 7
+        r".option push
+.option arch, +m
+addi a3, a3, 7
 andi a3, a3, -8
 sd s0, 64(a3)
 beqz a2, 20f
@@ -4255,7 +4257,8 @@ j 21f
 20:
 21:
 ld s0, 64(a3)
-ret",
+ret
+.option pop",
     )
 }
 
@@ -4270,7 +4273,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm3_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
-        r"lui t0, 473089
+        r".option push
+.option arch, +m
+lui t0, 473089
 addiw t0, t0, 1647
 sb t0, 0(a0)
 srli t1, t0, 8
@@ -4342,7 +4347,8 @@ srli t1, t0, 16
 sb t1, 30(a0)
 srli t1, t0, 24
 sb t1, 31(a0)
-ret",
+ret
+.option pop",
     )
 }
 
@@ -4361,7 +4367,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm3_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -144
+        r".option push
+.option arch, +m
+addi sp, sp, -144
 addi t0, sp, 0
 sd ra, 80(t0)
 sd s1, 88(t0)
@@ -4473,7 +4481,8 @@ ld s5, 120(s2)
 ld s6, 128(s2)
 ld s2, 96(s2)
 addi sp, sp, 144
-ret",
+ret
+.option pop",
         vg_sm3_compress = sym super::sm3::vg_sm3_compress,
     )
 }
@@ -4494,7 +4503,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm3_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -144
+        r".option push
+.option arch, +m
+addi sp, sp, -144
 addi t0, sp, 0
 sd ra, 80(t0)
 sd s1, 88(t0)
@@ -4714,7 +4725,8 @@ ld s5, 120(s2)
 ld s6, 128(s2)
 ld s2, 96(s2)
 addi sp, sp, 144
-ret",
+ret
+.option pop",
         vg_sm3_compress = sym super::sm3::vg_sm3_compress,
     )
 }

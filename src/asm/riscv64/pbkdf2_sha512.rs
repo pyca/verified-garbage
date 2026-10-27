@@ -20,7 +20,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_iterate(key: *const [u8; 384], u: *const [u8; 64], n: u32, t: *mut [u8; 64], scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
-        r"slli a2, a2, 32
+        r".option push
+.option arch, +m
+slli a2, a2, 32
 srli a2, a2, 32
 addi a4, a4, 7
 andi a4, a4, -8
@@ -1437,7 +1439,8 @@ ld s4, 176(s2)
 ld s5, 184(s2)
 ld s6, 192(s2)
 ld s2, 160(s2)
-ret",
+ret
+.option pop",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
     )
 }
@@ -1459,7 +1462,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -400
+        r".option push
+.option arch, +m
+addi sp, sp, -400
 addi sp, sp, -784
 addi t0, sp, 0
 sd ra, 0(t0)
@@ -2058,7 +2063,8 @@ ld s7, 56(s1)
 ld s1, 8(s1)
 addi sp, sp, 784
 addi sp, sp, 400
-ret",
+ret
+.option pop",
         vg_hmac_sha512_init = sym super::hmac_sha512::vg_hmac_sha512_init,
         vg_sha512_update = sym super::sha512::vg_sha512_update,
         vg_hmac_sha512_finalize = sym super::hmac_sha512::vg_hmac_sha512_finalize,

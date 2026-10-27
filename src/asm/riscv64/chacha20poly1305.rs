@@ -20,7 +20,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -624
+        r".option push
+.option arch, +m
+addi sp, sp, -624
 addi a7, sp, 0
 addi t0, a7, 7
 andi t0, t0, -8
@@ -308,7 +310,8 @@ sd t6, 592(t5)
 sd t6, 600(t5)
 sd t6, 608(t5)
 addi sp, sp, 624
-ret",
+ret
+.option pop",
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
         vg_poly1305_update = sym super::poly1305::vg_poly1305_update,
@@ -335,7 +338,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r"addi sp, sp, -624
+        r".option push
+.option arch, +m
+addi sp, sp, -624
 addi a7, sp, 0
 addi t0, a7, 7
 andi t0, t0, -8
@@ -691,7 +696,8 @@ sd t6, 592(t5)
 sd t6, 600(t5)
 sd t6, 608(t5)
 addi sp, sp, 624
-ret",
+ret
+.option pop",
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
         vg_poly1305_update = sym super::poly1305::vg_poly1305_update,
@@ -721,7 +727,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -16
+        r".option push
+.option arch, +m
+addi sp, sp, -16
 sd ra, 8(sp)
 addi t5, sp, 16
 ld t5, 0(t5)
@@ -795,7 +803,8 @@ addi a6, t5, 0
 call {vg_chacha20_poly1305_seal}
 ld ra, 8(sp)
 addi sp, sp, 16
-ret",
+ret
+.option pop",
         vg_chacha20_poly1305_seal = sym super::chacha20poly1305::vg_chacha20_poly1305_seal,
     )
 }

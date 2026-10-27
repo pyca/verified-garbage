@@ -18,7 +18,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blowfish_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 4168]) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -2032
+        r".option push
+.option arch, +m
+addi sp, sp, -2032
 addi sp, sp, -2032
 addi sp, sp, -112
 addi a7, sp, 0
@@ -5046,7 +5048,8 @@ bnez t4, 224b
 addi sp, sp, 112
 addi sp, sp, 2032
 addi sp, sp, 2032
-ret",
+ret
+.option pop",
     )
 }
 
@@ -5067,7 +5070,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blowfish_ecb_encrypt(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        r"beqz a2, 20f
+        r".option push
+.option arch, +m
+beqz a2, 20f
 addi sp, sp, -2032
 addi sp, sp, -2032
 addi sp, sp, -112
@@ -5505,7 +5510,8 @@ addi sp, sp, 2032
 j 21f
 20:
 21:
-ret",
+ret
+.option pop",
     )
 }
 
@@ -5526,7 +5532,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blowfish_ecb_decrypt(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        r"beqz a2, 20f
+        r".option push
+.option arch, +m
+beqz a2, 20f
 addi sp, sp, -2032
 addi sp, sp, -2032
 addi sp, sp, -112
@@ -5964,6 +5972,7 @@ addi sp, sp, 2032
 j 21f
 20:
 21:
-ret",
+ret
+.option pop",
     )
 }

@@ -19,7 +19,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -512
+        r".option push
+.option arch, +m
+addi sp, sp, -512
 addi a3, sp, 0
 addi a5, a3, 0
 addi a5, a5, 7
@@ -1343,7 +1345,8 @@ sd t6, 488(t5)
 sd t6, 496(t5)
 sd t6, 504(t5)
 addi sp, sp, 512
-ret",
+ret
+.option pop",
     )
 }
 
@@ -1366,7 +1369,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_expand_key_scratch(key: *const u8, key_len: usize, schedule: *mut [u8; 240], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        r"addi a5, a3, 0
+        r".option push
+.option arch, +m
+addi a5, a3, 0
 addi a5, a5, 7
 andi a5, a5, -8
 sd s0, 320(a5)
@@ -2621,7 +2626,8 @@ ld s8, 384(a5)
 ld s9, 392(a5)
 ld s10, 400(a5)
 ld s11, 408(a5)
-ret",
+ret
+.option pop",
     )
 }
 
@@ -2644,7 +2650,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ctr32(schedule: *const [u8; 240], rounds: usize, counter: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        r"addi a5, a5, 7
+        r".option push
+.option arch, +m
+addi a5, a5, 7
 andi a5, a5, -8
 sd s0, 320(a5)
 sd s1, 328(a5)
@@ -4817,7 +4825,8 @@ ld s8, 384(a5)
 ld s9, 392(a5)
 ld s10, 400(a5)
 ld s11, 408(a5)
-ret",
+ret
+.option pop",
     )
 }
 
@@ -4839,7 +4848,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_encrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        r"addi a5, a4, 0
+        r".option push
+.option arch, +m
+addi a5, a4, 0
 addi a4, a3, 0
 addi a3, a2, 0
 addi a5, a5, 7
@@ -6911,7 +6922,8 @@ ld s8, 384(a5)
 ld s9, 392(a5)
 ld s10, 400(a5)
 ld s11, 408(a5)
-ret",
+ret
+.option pop",
     )
 }
 
@@ -6933,7 +6945,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_decrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        r"addi a5, a4, 0
+        r".option push
+.option arch, +m
+addi a5, a4, 0
 addi a4, a3, 0
 addi a3, a2, 0
 addi a5, a5, 7
@@ -9155,6 +9169,7 @@ ld s8, 384(a5)
 ld s9, 392(a5)
 ld s10, 400(a5)
 ld s11, 408(a5)
-ret",
+ret
+.option pop",
     )
 }

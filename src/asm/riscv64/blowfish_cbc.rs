@@ -20,7 +20,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blowfish_cbc_encrypt_chained(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -160
+        r".option push
+.option arch, +m
+addi sp, sp, -160
 addi sp, sp, -2032
 addi sp, sp, -2032
 addi t0, sp, 0
@@ -670,7 +672,8 @@ bnez t2, 29b
 addi sp, sp, 2032
 addi sp, sp, 2032
 addi sp, sp, 160
-ret",
+ret
+.option pop",
     )
 }
 
@@ -692,7 +695,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blowfish_cbc_decrypt_chained(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -160
+        r".option push
+.option arch, +m
+addi sp, sp, -160
 addi sp, sp, -2032
 addi sp, sp, -2032
 addi t0, sp, 0
@@ -1376,6 +1381,7 @@ bnez t2, 29b
 addi sp, sp, 2032
 addi sp, sp, 2032
 addi sp, sp, 160
-ret",
+ret
+.option pop",
     )
 }

@@ -18,7 +18,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha224_init(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -176
+        r".option push
+.option arch, +m
+addi sp, sp, -176
 addi t0, sp, 0
 sd ra, 128(t0)
 sd s7, 136(t0)
@@ -149,7 +151,8 @@ ld s10, 160(s8)
 ld s11, 168(s8)
 ld s8, 144(s8)
 addi sp, sp, 176
-ret",
+ret
+.option pop",
         vg_sha224_init = sym super::sha256::vg_sha224_init,
         vg_sha256_update = sym super::sha256::vg_sha256_update,
         vg_sha224_finalize = sym super::sha256::vg_sha224_finalize,
@@ -173,7 +176,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -80
+        r".option push
+.option arch, +m
+addi sp, sp, -80
 addi t0, sp, 0
 sd ra, 32(t0)
 sd s7, 40(t0)
@@ -268,7 +273,8 @@ ld s10, 64(s8)
 ld s11, 72(s8)
 ld s8, 48(s8)
 addi sp, sp, 80
-ret",
+ret
+.option pop",
         vg_sha224_finalize = sym super::sha256::vg_sha224_finalize,
         vg_sha256_update = sym super::sha256::vg_sha256_update,
     )

@@ -20,7 +20,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_x25519(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
-        r"addi a3, a3, 7
+        r".option push
+.option arch, +m
+addi a3, a3, 7
 andi a3, a3, -8
 lbu a4, 0(a2)
 lbu a5, 1(a2)
@@ -3668,6 +3670,7 @@ srli a4, a2, 16
 sb a4, 30(a0)
 srli a4, a2, 24
 sb a4, 31(a0)
-ret",
+ret
+.option pop",
     )
 }

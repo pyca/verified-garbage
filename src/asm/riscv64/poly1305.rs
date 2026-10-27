@@ -17,7 +17,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8; 32]) {
     core::arch::naked_asm!(
-        r"lbu t0, 0(a1)
+        r".option push
+.option arch, +m
+lbu t0, 0(a1)
 sb t0, 24(a0)
 lbu t0, 1(a1)
 sb t0, 25(a0)
@@ -129,7 +131,8 @@ addi t0, zero, 0
 sb t0, 22(a0)
 addi t0, zero, 0
 sb t0, 23(a0)
-ret",
+ret
+.option pop",
     )
 }
 
@@ -148,7 +151,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_poly1305_blocks(state: *mut [u64; 16], blocks: *const [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        r"addi a3, a1, 0
+        r".option push
+.option arch, +m
+addi a3, a1, 0
 lbu a5, 24(a0)
 lbu a4, 25(a0)
 slli a4, a4, 8
@@ -430,7 +435,8 @@ srli a1, a4, 16
 sb a1, 22(a0)
 srli a1, a4, 24
 sb a1, 23(a0)
-ret",
+ret
+.option pop",
     )
 }
 
@@ -449,7 +455,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_poly1305_update(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r"andi t6, a1, 15
+        r".option push
+.option arch, +m
+andi t6, a1, 15
 lbu a5, 24(a0)
 lbu a4, 25(a0)
 slli a4, a4, 8
@@ -865,7 +873,8 @@ srli a1, a4, 16
 sb a1, 22(a0)
 srli a1, a4, 24
 sb a1, 23(a0)
-ret",
+ret
+.option pop",
     )
 }
 
@@ -885,7 +894,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_poly1305_finalize(state: *mut [u64; 16], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r"andi t6, a1, 15
+        r".option push
+.option arch, +m
+andi t6, a1, 15
 lbu a5, 24(a0)
 lbu a4, 25(a0)
 slli a4, a4, 8
@@ -1209,7 +1220,8 @@ srli a1, a4, 16
 sb a1, 14(a2)
 srli a1, a4, 24
 sb a1, 15(a2)
-ret",
+ret
+.option pop",
     )
 }
 
@@ -1231,7 +1243,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_poly1305_finalize_scratch(state: *mut [u64; 16], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 16]) {
     core::arch::naked_asm!(
-        r"andi t6, a1, 15
+        r".option push
+.option arch, +m
+andi t6, a1, 15
 lbu a5, 24(a0)
 lbu a4, 25(a0)
 slli a4, a4, 8
@@ -1555,6 +1569,7 @@ srli a1, a4, 16
 sb a1, 14(a2)
 srli a1, a4, 24
 sb a1, 15(a2)
-ret",
+ret
+.option pop",
     )
 }

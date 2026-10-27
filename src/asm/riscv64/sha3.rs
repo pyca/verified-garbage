@@ -18,7 +18,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_f1600(state: *mut [u64; 25], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -608
+        r".option push
+.option arch, +m
+addi sp, sp, -608
 addi t6, sp, 0
 sd s0, 592(t6)
 sd s1, 600(t6)
@@ -1781,7 +1783,8 @@ sb t2, 199(s1)
 ld s0, 400(a0)
 ld s1, 408(a0)
 addi sp, sp, 608
-ret",
+ret
+.option pop",
     )
 }
 
@@ -1801,7 +1804,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_absorb(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize) -> usize {
     core::arch::naked_asm!(
-        r"addi sp, sp, -560
+        r".option push
+.option arch, +m
+addi sp, sp, -560
 addi t0, sp, 0
 sd ra, 512(t0)
 sd s2, 520(t0)
@@ -1846,7 +1851,8 @@ ld s4, 536(t0)
 ld s5, 544(t0)
 ld s6, 552(t0)
 addi sp, sp, 560
-ret",
+ret
+.option pop",
         vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
     )
 }
@@ -1865,7 +1871,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_pad(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -528
+        r".option push
+.option arch, +m
+addi sp, sp, -528
 addi t0, sp, 0
 sd ra, 512(t0)
 add t1, a0, a2
@@ -1882,7 +1890,8 @@ call {vg_keccak_f1600}
 addi t0, sp, 0
 ld ra, 512(t0)
 addi sp, sp, 528
-ret",
+ret
+.option pop",
         vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
     )
 }
@@ -1903,7 +1912,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_squeeze(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize) -> usize {
     core::arch::naked_asm!(
-        r"addi sp, sp, -560
+        r".option push
+.option arch, +m
+addi sp, sp, -560
 addi t0, sp, 0
 sd ra, 512(t0)
 sd s2, 520(t0)
@@ -1946,7 +1957,8 @@ ld s4, 536(t0)
 ld s5, 544(t0)
 ld s6, 552(t0)
 addi sp, sp, 560
-ret",
+ret
+.option pop",
         vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
     )
 }
