@@ -41,7 +41,7 @@ namespace VG.Proof.Camellia.PPC64LE.Modes
 
 open VG VG.PPC64LE VG.PPC64LE.RegUpd VG.Impl.Camellia.PPC64LE VG.Impl.Modes
 open VG.Proof.Modes.PPC64LE (SeqPre ivR scrRegion S P Dp N Changes)
-open VG.Proof.Camellia.PPC64LE (modePub)
+open VG.Proof.Camellia.PPC64LE (modePub modeContract)
 open VG.Proof.Camellia.PPC64LE.Mode (dirCoreSpec KeyArgs dirCipher)
 open VG.Proof.Camellia (schedWords)
 
@@ -122,23 +122,6 @@ def cfbDecPost (s s' : State) : Prop :=
 def ctrPost (s s' : State) : Prop :=
   dataAt s'.mem s = Spec.Ctr.crypt (ciph s) (ivAt s.mem s) (dataAt s.mem s) ∧
     ivAt s'.mem s = Spec.Ctr.next (ivAt s.mem s) (s.gpr .r7).toNat
-
-/-- A mode's function on PPC64LE with its working space as the sixth
-argument, and the postcondition `post`. -/
-def modeContract (post : State → State → Prop) : Contract isa where
-  pre s :=
-    let key : Region := ⟨s.gpr .r3, 272⟩
-    let iv : Region := ⟨s.gpr .r5, 16⟩
-    let data : Region := ⟨s.gpr .r6, 16 * (s.gpr .r7).toNat⟩
-    let scratch : Region := ⟨s.gpr .r8, 8 * modeSlots⟩
-    s.rd = [key] ∧ s.wr = [iv, data, scratch] ∧
-      key.Disjoint iv ∧ key.Disjoint data ∧ key.Disjoint scratch ∧ iv.Disjoint data ∧
-      iv.Disjoint scratch ∧ data.Disjoint scratch ∧
-      (s.gpr .r3).toNat + 272 ≤ 2 ^ 64 ∧ (s.gpr .r5).toNat + 16 ≤ 2 ^ 64 ∧
-      (s.gpr .r6).toNat + 16 * (s.gpr .r7).toNat ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + 8 * modeSlots ≤ 2 ^ 64 ∧
-      ((s.gpr .r4).toNat = 18 ∨ (s.gpr .r4).toNat = 24)
-  post := post
-  pub := modePub
 
 theorem modeSlots_eq : modeSlots = 422 := rfl
 theorem extraSlot_eq : extraSlot = 420 := rfl
@@ -391,38 +374,38 @@ theorem modePub_iff (s₁ s₂ : State) : modePub s₁ s₂ ↔
 
 theorem cbcEncryptChained_verified :
     Verified target cbcEncryptChained (Proof.Camellia.cbcEncChainedScratchContract abi 422) := by
-  refine Verified.of_correct cbcEncryptChained_correct (cbcEncryptChained_constantTime _) ?_
+  refine Verified.of_correct cbcEncryptChained_correct cbcEncryptChained_constantTime ?_
   sig_implies [Proof.Camellia.cbcEncChainedScratchContract, Proof.Camellia.cbcChainedScratchSig,
     Spec.Camellia.cbcChainedSig, Proof.Camellia.cbcChainedPre, Proof.Camellia.cbcEncChainedPost, abi, argRegs,
     modeContract, cbcEncPost, modePub_iff, modeSlots_eq] [modeSat] using modeSat
 
 theorem cbcDecryptChained_verified :
     Verified target cbcDecryptChained (Proof.Camellia.cbcDecChainedScratchContract abi 422) := by
-  refine Verified.of_correct cbcDecryptChained_correct (cbcDecryptChained_constantTime _) ?_
+  refine Verified.of_correct cbcDecryptChained_correct cbcDecryptChained_constantTime ?_
   sig_implies [Proof.Camellia.cbcDecChainedScratchContract, Proof.Camellia.cbcChainedScratchSig,
     Spec.Camellia.cbcChainedSig, Proof.Camellia.cbcChainedPre, Proof.Camellia.cbcDecChainedPost, abi, argRegs,
     modeContract, cbcDecPost, modePub_iff, modeSlots_eq] [modeSat] using modeSat
 
 theorem ofb_verified : Verified target ofb (Proof.Camellia.ofbScratchContract abi 422) := by
-  refine Verified.of_correct ofb_correct (ofb_constantTime _) ?_
+  refine Verified.of_correct ofb_correct ofb_constantTime ?_
   sig_implies [Proof.Camellia.ofbScratchContract, Proof.Camellia.ofbScratchSig, Spec.Camellia.ofbSig,
     Spec.Camellia.ofbPre, Spec.Camellia.ofbPost, abi, argRegs, modeContract, ofbPost, modePub_iff,
     modeSlots_eq] [modeSat] using modeSat
 
 theorem cfbEncrypt_verified : Verified target cfbEncrypt (Proof.Camellia.cfbEncScratchContract abi 422) := by
-  refine Verified.of_correct cfbEncrypt_correct (cfbEncrypt_constantTime _) ?_
+  refine Verified.of_correct cfbEncrypt_correct cfbEncrypt_constantTime ?_
   sig_implies [Proof.Camellia.cfbEncScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig,
     Spec.Camellia.cfbPre, Spec.Camellia.cfbEncryptPost, abi, argRegs, modeContract, cfbEncPost, modePub_iff,
     modeSlots_eq] [modeSat] using modeSat
 
 theorem cfbDecrypt_verified : Verified target cfbDecrypt (Proof.Camellia.cfbDecScratchContract abi 422) := by
-  refine Verified.of_correct cfbDecrypt_correct (cfbDecrypt_constantTime _) ?_
+  refine Verified.of_correct cfbDecrypt_correct cfbDecrypt_constantTime ?_
   sig_implies [Proof.Camellia.cfbDecScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig,
     Spec.Camellia.cfbPre, Spec.Camellia.cfbDecryptPost, abi, argRegs, modeContract, cfbDecPost, modePub_iff,
     modeSlots_eq] [modeSat] using modeSat
 
 theorem ctr_verified : Verified target ctr (Proof.Camellia.ctrScratchContract abi 422) := by
-  refine Verified.of_correct ctr_correct (ctr_constantTime _) ?_
+  refine Verified.of_correct ctr_correct ctr_constantTime ?_
   sig_implies [Proof.Camellia.ctrScratchContract, Proof.Camellia.ctrScratchSig, Spec.Camellia.ctrSig,
     Spec.Camellia.ctrPre, Spec.Camellia.ctrPost, abi, argRegs, modeContract, ctrPost, modePub_iff,
     modeSlots_eq] [modeSat] using modeSat
