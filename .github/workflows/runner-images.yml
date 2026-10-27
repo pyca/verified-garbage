@@ -115,7 +115,10 @@ jobs:
               git --version
               python3 -V
               openssl version
-              pkg-config --exists openssl
+              # OpenSSL for the benchmarks where they are built (not riscv64).
+              if command -v pkg-config; then
+                pkg-config --exists openssl
+              fi
               zstd --version
               rustc -vV
               # Clippy and rustfmt only where the image has them (the lint
