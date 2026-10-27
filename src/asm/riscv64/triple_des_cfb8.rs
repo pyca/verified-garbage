@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.TripleDes.cfb8EncryptContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the input block or the data.
 ///
-/// Baseline RV64I: one block at a time, with ECB's verified block function inlined (Boolean S-box circuits and no table lookups). The mode is the generic one of `Impl/Modes/RISCV64/`, which runs in a frame of 640 bytes on the stack, 16-byte aligned: it keeps its state in `s1`–`s4`, saving our caller's there, and the block function reads a copy of the schedule there, made a byte at a time, since the contracts state no alignment for it. The frame is zeroed before returning.
+/// Baseline RV64I: one block at a time, with ECB's verified block function inlined (the eight S-boxes looked up at once in the 64 lanes of a word, from words of constants in the frame, with no table lookups at secret addresses). The mode is the generic one of `Impl/Modes/RISCV64/`, which runs in a frame of 944 bytes on the stack, 16-byte aligned: it keeps its state in `s1`–`s4`, saving our caller's there, and the block function reads a copy of the schedule there, made a byte at a time, since the contracts state no alignment for it. The frame is zeroed before returning.
 ///
 /// # Safety
 ///
@@ -14,13 +14,13 @@
 /// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the 640 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the 944 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_triple_des_cfb8_encrypt(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m
-addi sp, sp, -640
+addi sp, sp, -944
 addi t0, sp, 0
 sd s1, 0(t0)
 sd s2, 8(t0)
@@ -65,7 +65,7 @@ sb t2, 38(s4)
 srli t2, t0, 24
 sb t2, 39(s4)
 addi s2, a2, 0
-addi t0, s4, 256
+addi t0, s4, 560
 addi t2, a0, 0
 addi t4, zero, 384
 20:
@@ -111,14 +111,397 @@ srli t2, t0, 16
 sb t2, 54(s4)
 srli t2, t0, 24
 sb t2, 55(s4)
-sd s0, 56(s4)
-sd s5, 64(s4)
-sd s6, 72(s4)
-sd s7, 80(s4)
-sd s8, 88(s4)
-sd s9, 96(s4)
-sd s10, 104(s4)
-sd s11, 112(s4)
+sd s5, 56(s4)
+sd s6, 64(s4)
+sd s7, 72(s4)
+sd s8, 80(s4)
+sd s9, 88(s4)
+sd s10, 96(s4)
+lui t0, 577791
+addiw t0, t0, -1625
+slli t0, t0, 32
+lui t1, 297411
+addiw t1, t1, -1923
+add t0, t0, t1
+sd t0, 120(s4)
+lui t0, 514972
+addiw t0, t0, 1995
+slli t0, t0, 32
+lui t1, 1006958
+addiw t1, t1, 857
+add t0, t0, t1
+sd t0, 128(s4)
+lui t0, 167205
+addiw t0, t0, 62
+slli t0, t0, 32
+lui t1, 548376
+addiw t1, t1, 2018
+add t0, t0, t1
+sd t0, 136(s4)
+lui t0, 949404
+addiw t0, t0, 1990
+slli t0, t0, 32
+lui t1, 650735
+addiw t1, t1, 1965
+add t0, t0, t1
+sd t0, 144(s4)
+lui t0, 912917
+addiw t0, t0, -1333
+slli t0, t0, 32
+lui t1, 151463
+addiw t1, t1, 1048
+add t0, t0, t1
+sd t0, 152(s4)
+lui t0, 613275
+addiw t0, t0, -1339
+slli t0, t0, 32
+lui t1, 511468
+addiw t1, t1, 933
+add t0, t0, t1
+sd t0, 160(s4)
+lui t0, 272347
+addiw t0, t0, -761
+slli t0, t0, 32
+lui t1, 730620
+addiw t1, t1, -703
+add t0, t0, t1
+sd t0, 168(s4)
+lui t0, 369978
+addiw t0, t0, 1843
+slli t0, t0, 32
+lui t1, 358874
+addiw t1, t1, 825
+add t0, t0, t1
+sd t0, 176(s4)
+lui t0, 923080
+addiw t0, t0, 1425
+slli t0, t0, 32
+lui t1, 647834
+addiw t1, t1, -61
+add t0, t0, t1
+sd t0, 184(s4)
+lui t0, 443197
+addiw t0, t0, 1588
+slli t0, t0, 32
+lui t1, 764907
+addiw t1, t1, 2009
+add t0, t0, t1
+sd t0, 192(s4)
+lui t0, 653439
+addiw t0, t0, 995
+slli t0, t0, 32
+lui t1, 497702
+addiw t1, t1, 159
+add t0, t0, t1
+sd t0, 200(s4)
+lui t0, 1042229
+addiw t0, t0, 1965
+slli t0, t0, 32
+lui t1, 687598
+addiw t1, t1, 825
+add t0, t0, t1
+sd t0, 208(s4)
+lui t0, 97124
+addiw t0, t0, -131
+slli t0, t0, 32
+lui t1, 965742
+addiw t1, t1, 446
+add t0, t0, t1
+sd t0, 216(s4)
+lui t0, 234364
+addiw t0, t0, -1364
+slli t0, t0, 32
+lui t1, 443387
+addiw t1, t1, 825
+add t0, t0, t1
+sd t0, 224(s4)
+lui t0, 475776
+addiw t0, t0, 1754
+slli t0, t0, 32
+lui t1, 115598
+addiw t1, t1, -1244
+add t0, t0, t1
+sd t0, 232(s4)
+lui t0, 812632
+addiw t0, t0, -164
+slli t0, t0, 32
+lui t1, 453076
+addiw t1, t1, -267
+add t0, t0, t1
+sd t0, 240(s4)
+lui t0, 997947
+addiw t0, t0, 757
+slli t0, t0, 32
+lui t1, 988933
+addiw t1, t1, 1546
+add t0, t0, t1
+sd t0, 248(s4)
+lui t0, 355759
+addiw t0, t0, 821
+slli t0, t0, 32
+lui t1, 228455
+addiw t1, t1, -1037
+add t0, t0, t1
+sd t0, 256(s4)
+lui t0, 807395
+addiw t0, t0, -446
+slli t0, t0, 32
+lui t1, 221408
+addiw t1, t1, -1732
+add t0, t0, t1
+sd t0, 264(s4)
+lui t0, 773613
+addiw t0, t0, 1622
+slli t0, t0, 32
+lui t1, 814790
+addiw t1, t1, -87
+add t0, t0, t1
+sd t0, 272(s4)
+lui t0, 432450
+addiw t0, t0, -920
+slli t0, t0, 32
+lui t1, 369724
+addiw t1, t1, 934
+add t0, t0, t1
+sd t0, 280(s4)
+lui t0, 350061
+addiw t0, t0, -1478
+slli t0, t0, 32
+lui t1, 349677
+addiw t1, t1, -1691
+add t0, t0, t1
+sd t0, 288(s4)
+lui t0, 773308
+addiw t0, t0, 1973
+slli t0, t0, 32
+lui t1, 457282
+addiw t1, t1, -293
+add t0, t0, t1
+sd t0, 296(s4)
+lui t0, 439792
+addiw t0, t0, -1444
+slli t0, t0, 32
+lui t1, 355758
+addiw t1, t1, 2005
+add t0, t0, t1
+sd t0, 304(s4)
+lui t0, 238487
+addiw t0, t0, -1185
+slli t0, t0, 32
+lui t1, 815585
+addiw t1, t1, -1291
+add t0, t0, t1
+sd t0, 312(s4)
+lui t0, 443229
+addiw t0, t0, 1994
+slli t0, t0, 32
+lui t1, 382958
+addiw t1, t1, -363
+add t0, t0, t1
+sd t0, 320(s4)
+lui t0, 353801
+addiw t0, t0, 1066
+slli t0, t0, 32
+lui t1, 658810
+addiw t1, t1, 1376
+add t0, t0, t1
+sd t0, 328(s4)
+lui t0, 379968
+addiw t0, t0, -172
+slli t0, t0, 32
+lui t1, 933327
+addiw t1, t1, -1477
+add t0, t0, t1
+sd t0, 336(s4)
+lui t0, 656557
+addiw t0, t0, 385
+slli t0, t0, 32
+lui t1, 56148
+addiw t1, t1, -935
+add t0, t0, t1
+sd t0, 344(s4)
+lui t0, 211421
+addiw t0, t0, -342
+slli t0, t0, 32
+lui t1, 443238
+addiw t1, t1, -667
+add t0, t0, t1
+sd t0, 352(s4)
+lui t0, 48984
+addiw t0, t0, -2016
+slli t0, t0, 32
+lui t1, 865972
+addiw t1, t1, 647
+add t0, t0, t1
+sd t0, 360(s4)
+lui t0, 982268
+addiw t0, t0, -1373
+slli t0, t0, 32
+lui t1, 523070
+addiw t1, t1, -411
+add t0, t0, t1
+sd t0, 368(s4)
+lui t0, 0
+addiw t0, t0, 0
+slli t0, t0, 32
+lui t1, 64
+addiw t1, t1, -1
+add t0, t0, t1
+sd t0, 376(s4)
+lui t0, 0
+addiw t0, t0, 4
+slli t0, t0, 32
+lui t1, 1048560
+addiw t1, t1, 0
+add t0, t0, t1
+sd t0, 384(s4)
+lui t0, 0
+addiw t0, t0, 1023
+slli t0, t0, 32
+lui t1, 0
+addiw t1, t1, 1023
+add t0, t0, t1
+sd t0, 392(s4)
+lui t0, 64
+addiw t0, t0, -256
+slli t0, t0, 32
+lui t1, 64
+addiw t1, t1, -256
+add t0, t0, t1
+sd t0, 400(s4)
+lui t0, 1008
+addiw t0, t0, 63
+slli t0, t0, 32
+lui t1, 1008
+addiw t1, t1, 63
+add t0, t0, t1
+sd t0, 408(s4)
+lui t0, 16128
+addiw t0, t0, 1008
+slli t0, t0, 32
+lui t1, 16128
+addiw t1, t1, 1008
+add t0, t0, t1
+sd t0, 416(s4)
+lui t0, 0
+addiw t0, t0, 0
+slli t0, t0, 32
+lui t1, 4096
+addiw t1, t1, -1
+add t0, t0, t1
+sd t0, 424(s4)
+lui t0, 16
+addiw t0, t0, 0
+slli t0, t0, 32
+lui t1, 1044480
+addiw t1, t1, 0
+add t0, t0, t1
+sd t0, 432(s4)
+lui t0, 1
+addiw t0, t0, -1
+slli t0, t0, 32
+lui t1, 1
+addiw t1, t1, -1
+add t0, t0, t1
+sd t0, 440(s4)
+lui t0, 4095
+addiw t0, t0, 0
+slli t0, t0, 32
+lui t1, 4095
+addiw t1, t1, 0
+add t0, t0, t1
+sd t0, 448(s4)
+lui t0, 1008
+addiw t0, t0, 63
+slli t0, t0, 32
+lui t1, 1008
+addiw t1, t1, 63
+add t0, t0, t1
+sd t0, 456(s4)
+lui t0, 64513
+addiw t0, t0, -64
+slli t0, t0, 32
+lui t1, 64513
+addiw t1, t1, -64
+add t0, t0, t1
+sd t0, 464(s4)
+lui t0, 4112
+addiw t0, t0, 257
+slli t0, t0, 32
+lui t1, 4112
+addiw t1, t1, 257
+add t0, t0, t1
+sd t0, 472(s4)
+lui t0, 61681
+addiw t0, t0, -241
+slli t0, t0, 32
+lui t1, 61681
+addiw t1, t1, -241
+add t0, t0, t1
+sd t0, 480(s4)
+lui t0, 0
+addiw t0, t0, 1
+slli t0, t0, 32
+lui t1, 0
+addiw t1, t1, -1
+add t0, t0, t1
+sd t0, 488(s4)
+lui t0, 16417
+addiw t0, t0, -2048
+slli t0, t0, 32
+lui t1, 0
+addiw t1, t1, 0
+add t0, t0, t1
+sd t0, 496(s4)
+lui t0, 16
+addiw t0, t0, 8
+slli t0, t0, 32
+lui t1, 0
+addiw t1, t1, 0
+add t0, t0, t1
+sd t0, 504(s4)
+lui t0, 64
+addiw t0, t0, 1
+slli t0, t0, 32
+lui t1, 32768
+addiw t1, t1, 0
+add t0, t0, t1
+sd t0, 512(s4)
+lui t0, 0
+addiw t0, t0, 512
+slli t0, t0, 32
+lui t1, 64
+addiw t1, t1, 0
+add t0, t0, t1
+sd t0, 520(s4)
+lui t0, 0
+addiw t0, t0, 0
+slli t0, t0, 32
+lui t1, 16384
+addiw t1, t1, 256
+add t0, t0, t1
+sd t0, 528(s4)
+lui t0, 0
+addiw t0, t0, 4
+slli t0, t0, 32
+lui t1, 16
+addiw t1, t1, 0
+add t0, t0, t1
+sd t0, 536(s4)
+lui t0, 0
+addiw t0, t0, 0
+slli t0, t0, 32
+lui t1, 4096
+addiw t1, t1, 1024
+add t0, t0, t1
+sd t0, 544(s4)
+lui t0, 0
+addiw t0, t0, 0
+slli t0, t0, 32
+lui t1, 129
+addiw t1, t1, -2044
+add t0, t0, t1
+sd t0, 552(s4)
 lbu t0, 48(s4)
 slli t0, t0, 8
 lbu t1, 49(s4)
@@ -406,1266 +789,299 @@ addi t6, a6, -3
 beqz t6, 25f
 addi t6, a6, -2
 beqz t6, 27f
-addi a3, s4, 512
+addi a3, s4, 816
 addi a4, zero, 16
 addi a5, zero, 8
 j 28f
 27:
-addi a3, s4, 504
+addi a3, s4, 808
 addi a4, zero, 16
 addi a5, zero, -8
 28:
 j 26f
 25:
-addi a3, s4, 256
+addi a3, s4, 560
 addi a4, zero, 16
 addi a5, zero, 8
 26:
 29:
-ld t6, 0(a3)
-srli t0, a2, 27
-srli a7, t6, 42
-xor t0, t0, a7
-andi t0, t0, 1
-srli t1, a2, 28
-srli a7, t6, 43
-xor t1, t1, a7
-andi t1, t1, 1
-srli t2, a2, 29
-srli a7, t6, 44
-xor t2, t2, a7
-andi t2, t2, 1
-srli t3, a2, 30
-srli a7, t6, 45
-xor t3, t3, a7
-andi t3, t3, 1
-srli t4, a2, 31
-srli a7, t6, 46
-xor t4, t4, a7
-andi t4, t4, 1
-addi t5, a2, 0
-srli a7, t6, 47
-xor t5, t5, a7
-andi t5, t5, 1
-xor t6, t0, t0
-xor a7, t0, t6
-xori a7, a7, -1
-and s0, t4, a7
-xor s5, t0, t4
-and s6, t1, s5
-xor s6, s0, s6
-xor s7, a7, s0
-and s8, t1, s7
-xor s8, t0, s8
-and s8, t5, s8
-xor s6, s6, s8
-and s8, t4, t0
-xor s9, s8, t6
-xori s9, s9, -1
-and s10, t1, s9
-xor s11, s8, s10
-sd s5, 120(s4)
-xor s5, t4, t6
-xori s5, s5, -1
-sd t0, 128(s4)
-xor t0, s5, s10
-sd s10, 136(s4)
-and s10, t5, t0
-xor s11, s11, s10
-and s11, t3, s11
-xor s6, s6, s11
-and t4, t1, t4
-xor s11, s9, t4
-and s10, t1, s5
-sd t4, 144(s4)
-xor t4, a7, s10
-and t4, t5, t4
-xor s11, s11, t4
-and t4, t1, a7
-sd s5, 152(s4)
-xor s5, s7, t4
-and s5, t5, s5
-and s5, t3, s5
-xor s11, s11, s5
-and s11, t2, s11
-xor s6, s6, s11
-xor a7, a7, s8
-xor s8, a7, s10
-xor s11, s0, t6
-xori s11, s11, -1
-and a7, t1, a7
-xor a7, s11, a7
-and s5, t5, a7
-xor s8, s8, s5
-xor s5, s7, t6
-xori s5, s5, -1
-xor s10, s5, s10
-sd s6, 160(s4)
-and s6, t1, s0
-xor s0, s0, s6
-and s0, t5, s0
-xor s6, s10, s0
-and s6, t3, s6
-xor s8, s8, s6
-xor a7, a7, s0
-ld s0, 128(s4)
-and s6, t1, s0
-sd t0, 168(s4)
-xor t0, s11, s6
-and t0, t5, t0
-sd t6, 176(s4)
-xor t6, s7, t0
-and t6, t3, t6
-xor a7, a7, t6
-and a7, t2, a7
-xor s8, s8, a7
-xor a7, s7, s6
-and t6, t5, s10
-xor a7, a7, t6
-xor s9, s9, t4
-and s5, t1, s5
-xor s11, s11, s5
-and s11, t5, s11
-xor s9, s9, s11
-and s9, t3, s9
-xor a7, a7, s9
-ld s9, 136(s4)
-and s11, t5, s9
-xor s10, s10, s11
-xor s0, s0, s6
-xor s0, s0, t0
-and s0, t3, s0
-xor s10, s10, s0
-and s10, t2, s10
-xor a7, a7, s10
-ld s10, 120(s4)
-ld s0, 176(s4)
-xor s10, s10, s0
-xori s10, s10, -1
-xor s10, s10, t1
-xor s9, s9, s0
-xori s9, s9, -1
-and s9, t5, s9
-xor s9, s10, s9
-ld t0, 168(s4)
-xor t0, t0, s0
-xori t0, t0, -1
-and t0, t5, t0
-ld s0, 152(s4)
-xor s0, s0, t0
-and s0, t3, s0
-xor s9, s9, s0
-ld s0, 144(s4)
-xor s0, s7, s0
-and s0, t5, s0
-xor s6, s6, s0
-xor s7, s7, t1
-and t5, t5, s7
-xor s10, s10, t5
-and t3, t3, s10
-xor s6, s6, t3
-and t2, t2, s6
-xor t3, s9, t2
-ld t0, 160(s4)
-addi t1, s8, 0
-addi t2, a7, 0
-andi t0, t0, 1
-slli t0, t0, 1
-xor a1, a1, t0
-andi t1, t1, 1
-slli t1, t1, 9
-xor a1, a1, t1
-andi t2, t2, 1
-slli t2, t2, 15
-xor a1, a1, t2
-andi t3, t3, 1
-slli t3, t3, 23
-xor a1, a1, t3
-ld t6, 0(a3)
-srli t0, a2, 23
-srli a7, t6, 36
-xor t0, t0, a7
-andi t0, t0, 1
-srli t1, a2, 24
-srli a7, t6, 37
-xor t1, t1, a7
-andi t1, t1, 1
-srli t2, a2, 25
-srli a7, t6, 38
-xor t2, t2, a7
-andi t2, t2, 1
-srli t3, a2, 26
-srli a7, t6, 39
-xor t3, t3, a7
-andi t3, t3, 1
-srli t4, a2, 27
-srli a7, t6, 40
-xor t4, t4, a7
-andi t4, t4, 1
-srli t5, a2, 28
-srli a7, t6, 41
-xor t5, t5, a7
-andi t5, t5, 1
-xor t6, t0, t0
-xor a7, t0, t0
-xori a7, a7, -1
-xor s0, t5, t6
-xori s0, s0, -1
-and s5, t1, t5
-xor s6, t5, s5
-and s7, t0, s6
-xor s7, s0, s7
-xor s8, s5, t6
-xori s8, s8, -1
-and s9, t0, s8
-xor s10, s6, s9
-and s10, t4, s10
-xor s7, s7, s10
-and s11, t1, s0
-sd s9, 120(s4)
-xor s9, s0, s11
-xor s6, s6, t6
-xori s6, s6, -1
-sd s0, 128(s4)
-and s0, t0, s6
-sd s8, 136(s4)
-xor s8, s9, s0
-sd s0, 144(s4)
-xor s0, s9, t6
-xori s0, s0, -1
-sd s9, 152(s4)
-and s9, t0, s0
-xor s9, t1, s9
-and s9, t4, s9
-xor s8, s8, s9
-and s8, t3, s8
-xor s7, s7, s8
-and s8, t0, s11
-xor s8, a7, s8
-xor s9, t5, t1
-sd s11, 160(s4)
-and s11, t0, s9
-sd a7, 168(s4)
-xor a7, t1, s11
-and a7, t4, a7
-xor s8, s8, a7
-and s8, t2, s8
-xor s7, s7, s8
-xor s9, s9, t6
-xori s9, s9, -1
-and s5, t0, s5
-xor s8, s9, s5
-xor s6, s6, s11
-and s6, t4, s6
-xor s8, s8, s6
-xor s0, s0, s10
-and s0, t3, s0
-xor s8, s8, s0
-ld s0, 152(s4)
-and s10, t0, s0
-xor s10, t5, s10
-and s10, t4, s10
-ld s6, 136(s4)
-xor s10, s6, s10
-ld s11, 128(s4)
-and a7, t0, s11
-xor s0, s0, a7
-and t5, t4, t5
-xor s0, s0, t5
-and s0, t3, s0
-xor s10, s10, s0
-and s10, t2, s10
-xor s8, s8, s10
-xor s10, s9, t0
-xor s10, s10, t4
-xor s0, s6, s5
-and s0, t4, s0
-xor s0, t0, s0
-and s0, t3, s0
-xor s10, s10, s0
-and t0, t0, t1
-ld t1, 168(s4)
-xor t1, t1, t0
-ld s0, 120(s4)
-xor s6, s6, s0
-and s6, t4, s6
-xor t1, t1, s6
-and t0, t3, t0
-xor t1, t1, t0
-and t1, t2, t1
-xor s10, s10, t1
-xor s9, s9, s0
-ld s0, 144(s4)
-and s0, t4, s0
-xor s9, s9, s0
-xor s0, s5, t6
-xori s0, s0, -1
-xor s11, s11, a7
-and s11, t4, s11
-xor s0, s0, s11
-and t3, t3, s0
-xor s9, s9, t3
-ld t3, 160(s4)
-xor t3, t3, s5
-xor t6, t3, t6
-xori t6, t6, -1
-and t4, t4, t6
-xor t3, t3, t4
-and t2, t2, t3
-xor t3, s9, t2
-addi t0, s7, 0
-addi t1, s8, 0
-addi t2, s10, 0
-andi t0, t0, 1
-slli t0, t0, 14
-xor a1, a1, t0
-andi t1, t1, 1
-slli t1, t1, 30
-xor a1, a1, t1
-andi t2, t2, 1
+ld t4, 0(a3)
+ld t0, 488(s4)
+and t0, a2, t0
+slli t1, t0, 1
+srli t2, t0, 31
+xor t1, t1, t2
+slli t2, t0, 33
+xor t0, t1, t2
+ld t1, 376(s4)
+and t1, t0, t1
+ld t2, 384(s4)
+and t2, t0, t2
+slli t2, t2, 16
+xor t0, t1, t2
+ld t1, 392(s4)
+and t1, t0, t1
+ld t2, 400(s4)
+and t2, t0, t2
+slli t2, t2, 8
+xor t0, t1, t2
+ld t1, 408(s4)
+and t1, t0, t1
+ld t2, 416(s4)
+and t2, t0, t2
 slli t2, t2, 4
-xor a1, a1, t2
-andi t3, t3, 1
-slli t3, t3, 19
-xor a1, a1, t3
-ld t6, 0(a3)
-srli t0, a2, 19
-srli a7, t6, 30
-xor t0, t0, a7
-andi t0, t0, 1
-srli t1, a2, 20
-srli a7, t6, 31
-xor t1, t1, a7
-andi t1, t1, 1
-srli t2, a2, 21
-srli a7, t6, 32
-xor t2, t2, a7
-andi t2, t2, 1
-srli t3, a2, 22
-srli a7, t6, 33
-xor t3, t3, a7
-andi t3, t3, 1
-srli t4, a2, 23
-srli a7, t6, 34
-xor t4, t4, a7
-andi t4, t4, 1
-srli t5, a2, 24
-srli a7, t6, 35
-xor t5, t5, a7
-andi t5, t5, 1
-xor t6, t0, t0
-xor a7, t0, t0
-xori a7, a7, -1
-xor s0, t5, t6
-xori s0, s0, -1
-and s5, t4, s0
-xor s6, t5, s5
-and s7, t4, t5
-xor s8, s0, s7
-and s9, t0, s8
-xor s10, s6, s9
-xor s11, s8, t6
-xori s11, s11, -1
-and s7, t0, s7
-sd s6, 120(s4)
-xor s6, s11, s7
-sd s11, 128(s4)
-and s11, t1, s6
-xor s11, s10, s11
-sd s10, 136(s4)
-and s10, t1, s8
-xor s6, s6, s10
-and s6, t3, s6
-xor s11, s11, s6
-and t5, t0, t5
-xor a7, a7, t5
-and s6, t1, s0
-xor a7, a7, s6
-and s7, t3, s7
-xor a7, a7, s7
-and a7, t2, a7
-xor s11, s11, a7
-xor a7, s0, t4
-xor s9, a7, s9
-xor s7, s5, t6
-xori s7, s7, -1
-and s6, t0, s5
-xor s6, s7, s6
-and s10, t1, s6
-sd s11, 144(s4)
-xor s11, s9, s10
-sd s8, 152(s4)
-xor s8, t4, t6
-xori s8, s8, -1
-sd a7, 160(s4)
-and a7, t0, s8
-xor t4, t4, a7
-sd s8, 168(s4)
-and s8, t0, s0
-xor s0, s0, s8
-and s0, t1, s0
-xor t4, t4, s0
-and t4, t3, t4
-xor s11, s11, t4
-ld t4, 136(s4)
-xor t4, t4, t6
-xori t4, t4, -1
-xor s9, s9, t6
-xori s9, s9, -1
-and s9, t1, s9
-xor t4, t4, s9
-ld s9, 120(s4)
-xor s0, s9, t6
-xori s0, s0, -1
-and s9, t0, s0
-sd s0, 136(s4)
-xor s0, s7, s9
-sd s9, 176(s4)
-xor s9, s8, t6
-xori s9, s9, -1
-and s9, t1, s9
-xor s0, s0, s9
-and s0, t3, s0
-xor t4, t4, s0
-and t4, t2, t4
-xor s11, s11, t4
-and t4, t0, s7
-ld s0, 128(s4)
-xor s0, s0, t4
-xor t4, s6, t6
-xori t4, t4, -1
-and t4, t1, t4
-xor s0, s0, t4
-xor s6, s6, s10
-and s6, t3, s6
-xor s0, s0, s6
-xor a7, s5, a7
-xor a7, a7, s9
-and s9, t1, t5
-xor s5, s5, s9
-and s5, t3, s5
-xor a7, a7, s5
-and a7, t2, a7
-xor s0, s0, a7
-xor s7, s7, t5
+xor t0, t1, t2
+ld t1, 424(s4)
+and t1, t4, t1
+ld t2, 432(s4)
+and t2, t4, t2
+slli t2, t2, 8
+xor t4, t1, t2
+ld t1, 440(s4)
+and t1, t4, t1
+ld t2, 448(s4)
+and t2, t4, t2
+slli t2, t2, 4
+xor t4, t1, t2
+ld t1, 456(s4)
+and t1, t4, t1
+ld t2, 464(s4)
+and t2, t4, t2
+slli t2, t2, 2
+xor t4, t1, t2
+xor t0, t0, t4
+ld t3, 472(s4)
+and s5, t0, t3
+slli t1, s5, 1
+xor s5, s5, t1
+slli t1, s5, 2
+xor s5, s5, t1
+slli t1, s5, 4
+xor s5, s5, t1
+srli s6, t0, 1
+and s6, s6, t3
+slli t1, s6, 1
+xor s6, s6, t1
+slli t1, s6, 2
+xor s6, s6, t1
+slli t1, s6, 4
+xor s6, s6, t1
+srli s7, t0, 2
+and s7, s7, t3
+slli t1, s7, 1
 xor s7, s7, t1
-ld t5, 160(s4)
-xor t5, t5, t6
-xori t5, t5, -1
-and t0, t0, t5
-ld t5, 168(s4)
-xor t5, t5, t0
-and t5, t1, t5
-ld t0, 152(s4)
-xor t0, t0, t5
-and t0, t3, t0
-xor s7, s7, t0
+slli t1, s7, 2
+xor s7, s7, t1
+slli t1, s7, 4
+xor s7, s7, t1
+srli s8, t0, 3
+and s8, s8, t3
+slli t1, s8, 1
+xor s8, s8, t1
+slli t1, s8, 2
+xor s8, s8, t1
+slli t1, s8, 4
+xor s8, s8, t1
+srli s9, t0, 4
+and s9, s9, t3
+slli t1, s9, 1
+xor s9, s9, t1
+slli t1, s9, 2
+xor s9, s9, t1
+slli t1, s9, 4
+xor s9, s9, t1
+srli s10, t0, 5
+and s10, s10, t3
+slli t1, s10, 1
+xor s10, s10, t1
+slli t1, s10, 2
+xor s10, s10, t1
+slli t1, s10, 4
+xor s10, s10, t1
 ld t0, 120(s4)
-xor t0, t0, s8
-ld t5, 136(s4)
-ld t6, 176(s4)
-xor t6, t5, t6
-and t6, t1, t6
-xor t0, t0, t6
+ld t1, 128(s4)
+and t1, t1, s5
+xor t0, t0, t1
+ld t1, 136(s4)
+ld t2, 144(s4)
+and t2, t2, s5
+xor t1, t1, t2
+xor t1, t0, t1
+and t1, t1, s6
+xor t0, t0, t1
+ld t1, 152(s4)
+ld t2, 160(s4)
+and t2, t2, s5
+xor t1, t1, t2
+ld t2, 168(s4)
+ld t3, 176(s4)
+and t3, t3, s5
+xor t2, t2, t3
+xor t2, t1, t2
+and t2, t2, s6
+xor t1, t1, t2
+xor t1, t0, t1
+and t1, t1, s7
+xor t0, t0, t1
+ld t1, 184(s4)
+ld t2, 192(s4)
+and t2, t2, s5
+xor t1, t1, t2
+ld t2, 200(s4)
+ld t3, 208(s4)
+and t3, t3, s5
+xor t2, t2, t3
+xor t2, t1, t2
+and t2, t2, s6
+xor t1, t1, t2
+ld t2, 216(s4)
+ld t3, 224(s4)
+and t3, t3, s5
+xor t2, t2, t3
+ld t3, 232(s4)
+ld t4, 240(s4)
+and t4, t4, s5
+xor t3, t3, t4
+xor t3, t2, t3
+and t3, t3, s6
+xor t2, t2, t3
+xor t2, t1, t2
+and t2, t2, s7
+xor t1, t1, t2
+xor t1, t0, t1
 and t1, t1, s8
-xor t5, t5, t1
-and t3, t3, t5
-xor t0, t0, t3
-and t2, t2, t0
-xor t3, s7, t2
-ld t0, 144(s4)
-addi t1, s11, 0
-addi t2, s0, 0
-andi t0, t0, 1
-slli t0, t0, 26
-xor a1, a1, t0
+xor t0, t0, t1
+ld t1, 248(s4)
+ld t2, 256(s4)
+and t2, t2, s5
+xor t1, t1, t2
+ld t2, 264(s4)
+ld t3, 272(s4)
+and t3, t3, s5
+xor t2, t2, t3
+xor t2, t1, t2
+and t2, t2, s6
+xor t1, t1, t2
+ld t2, 280(s4)
+ld t3, 288(s4)
+and t3, t3, s5
+xor t2, t2, t3
+ld t3, 296(s4)
+ld t4, 304(s4)
+and t4, t4, s5
+xor t3, t3, t4
+xor t3, t2, t3
+and t3, t3, s6
+xor t2, t2, t3
+xor t2, t1, t2
+and t2, t2, s7
+xor t1, t1, t2
+ld t2, 312(s4)
+ld t3, 320(s4)
+and t3, t3, s5
+xor t2, t2, t3
+ld t3, 328(s4)
+ld t4, 336(s4)
+and t4, t4, s5
+xor t3, t3, t4
+xor t3, t2, t3
+and t3, t3, s6
+xor t2, t2, t3
+ld t3, 344(s4)
+ld t4, 352(s4)
+and t4, t4, s5
+xor t3, t3, t4
+ld t4, 360(s4)
+ld t5, 368(s4)
+and t5, t5, s5
+xor t4, t4, t5
+xor t4, t3, t4
+and t4, t4, s6
+xor t3, t3, t4
+xor t3, t2, t3
+and t3, t3, s7
+xor t2, t2, t3
+xor t2, t1, t2
+and t2, t2, s8
+xor t1, t1, t2
+xor t1, t0, t1
+and t1, t1, s9
+xor t0, t0, t1
+ld t6, 480(s4)
+xor t6, s10, t6
+and t0, t0, t6
+srli t1, t0, 4
+xor t0, t0, t1
+srli t1, t0, 57
+andi t1, t1, 1
+slli t1, t1, 1
+xor a1, a1, t1
+srli t1, t0, 51
+andi t1, t1, 33
+slli t1, t1, 4
+xor a1, a1, t1
+srli t1, t0, 59
+andi t1, t1, 1
+slli t1, t1, 15
+xor a1, a1, t1
+srli t1, t0, 40
 andi t1, t1, 1
 slli t1, t1, 2
 xor a1, a1, t1
-andi t2, t2, 1
-slli t2, t2, 16
-xor a1, a1, t2
-andi t3, t3, 1
-slli t3, t3, 8
-xor a1, a1, t3
-ld t6, 0(a3)
-srli t0, a2, 15
-srli a7, t6, 24
-xor t0, t0, a7
-andi t0, t0, 1
-srli t1, a2, 16
-srli a7, t6, 25
-xor t1, t1, a7
+ld t1, 496(s4)
+and t1, t1, t0
+srli t1, t1, 35
+xor a1, a1, t1
+ld t1, 504(s4)
+and t1, t1, t0
+srli t1, t1, 29
+xor a1, a1, t1
+srli t1, t0, 42
 andi t1, t1, 1
-srli t2, a2, 17
-srli a7, t6, 26
-xor t2, t2, a7
-andi t2, t2, 1
-srli t3, a2, 18
-srli a7, t6, 27
-xor t3, t3, a7
-andi t3, t3, 1
-srli t4, a2, 19
-srli a7, t6, 28
-xor t4, t4, a7
-andi t4, t4, 1
-srli t5, a2, 20
-srli a7, t6, 29
-xor t5, t5, a7
-andi t5, t5, 1
-xor t6, t0, t0
-xor a7, t0, t0
-xori a7, a7, -1
-xor s0, t3, t6
-xori s0, s0, -1
-and s5, t1, t3
-xor s6, s0, s5
-and s7, t5, s6
-xor s8, s0, s7
-xor s9, t3, t1
-xor s10, s9, t6
-xori s10, s10, -1
-and s11, t5, s10
-sd s7, 120(s4)
-xor s7, s9, s11
-and s7, t4, s7
-xor s8, s8, s7
-xor s7, t1, t6
-xori s7, s7, -1
-sd t3, 128(s4)
-xor t3, t1, s11
-sd s11, 136(s4)
-and s11, t4, t3
-sd t0, 144(s4)
-xor t0, s7, s11
-and t0, t2, t0
-xor s8, s8, t0
-xor t0, s6, t6
-xori t0, t0, -1
-and t0, t5, t0
-xor t0, s10, t0
-and t0, t4, t0
-xor t3, t3, t0
-xor s5, s5, t6
-xori s5, s5, -1
-and t0, t1, s0
-xor a7, a7, t0
-sd s11, 152(s4)
-and s11, t5, a7
-xor s5, s5, s11
-and s9, t4, s9
-xor s5, s5, s9
-and s5, t2, s5
-xor t3, t3, s5
-ld s5, 144(s4)
-sd s9, 160(s4)
-and s9, s5, t3
-xor s8, s8, s9
-and s9, t5, t0
-xor s10, s10, s9
-sd s8, 168(s4)
-xor s8, s11, t6
-xori s8, s8, -1
-and s8, t4, s8
-xor s8, s10, s8
-sd t5, 176(s4)
-xor t5, t0, s11
-sd t0, 184(s4)
-ld t0, 128(s4)
-sd s7, 192(s4)
-ld s7, 136(s4)
-xor s7, t0, s7
-and s7, t4, s7
-xor t5, t5, s7
-and t5, t2, t5
-xor s8, s8, t5
-xor t3, t3, t6
-xori t3, t3, -1
-and t3, s5, t3
-xor s8, s8, t3
-xor s6, s6, s11
-and s0, t4, s0
-xor s6, s6, s0
-xor t1, t1, s7
-and t1, t2, t1
-xor s6, s6, t1
-xor s10, s10, t6
-xori s10, s10, -1
-xor a7, a7, s9
-and a7, t4, a7
-xor s10, s10, a7
-ld a7, 192(s4)
-ld t1, 120(s4)
-xor a7, a7, t1
-ld s7, 160(s4)
-xor a7, a7, s7
-and a7, t2, a7
-xor s10, s10, a7
-and a7, s5, s10
-xor s6, s6, a7
-ld a7, 184(s4)
-ld s7, 176(s4)
-xor s7, a7, s7
-xor t0, t0, a7
-xor t0, t0, s9
-and t4, t4, t0
-xor s7, s7, t4
-xor t1, t1, t6
-xori t1, t1, -1
-ld t4, 152(s4)
-xor t1, t1, t4
-and t2, t2, t1
-xor s7, s7, t2
-xor s10, s10, t6
-xori s10, s10, -1
-and s5, s5, s10
-xor t3, s7, s5
-ld t0, 168(s4)
-addi t1, s8, 0
-addi t2, s6, 0
-andi t0, t0, 1
-slli t0, t0, 31
-xor a1, a1, t0
+slli t1, t1, 16
+xor a1, a1, t1
+ld t1, 512(s4)
+and t1, t1, t0
+srli t1, t1, 20
+xor a1, a1, t1
+ld t1, 520(s4)
+and t1, t1, t0
+srli t1, t1, 15
+xor a1, a1, t1
+srli t1, t0, 33
 andi t1, t1, 1
 slli t1, t1, 22
 xor a1, a1, t1
-andi t2, t2, 1
-slli t2, t2, 12
-xor a1, a1, t2
-andi t3, t3, 1
-slli t3, t3, 6
-xor a1, a1, t3
-ld t6, 0(a3)
-srli t0, a2, 11
-srli a7, t6, 18
-xor t0, t0, a7
-andi t0, t0, 1
-srli t1, a2, 12
-srli a7, t6, 19
-xor t1, t1, a7
-andi t1, t1, 1
-srli t2, a2, 13
-srli a7, t6, 20
-xor t2, t2, a7
-andi t2, t2, 1
-srli t3, a2, 14
-srli a7, t6, 21
-xor t3, t3, a7
-andi t3, t3, 1
-srli t4, a2, 15
-srli a7, t6, 22
-xor t4, t4, a7
-andi t4, t4, 1
-srli t5, a2, 16
-srli a7, t6, 23
-xor t5, t5, a7
-andi t5, t5, 1
-xor t6, t0, t0
-xor a7, t0, t0
-xori a7, a7, -1
-xor s0, t3, t6
-xori s0, s0, -1
-and s5, s0, t5
-xor s6, a7, s5
-xor t0, t0, t6
-xori t0, t0, -1
-and s7, t0, s6
-xor s8, t5, s7
-xor s9, t5, t6
-xori s9, s9, -1
-and s10, s0, s9
-xor s11, s9, s10
-xor t4, t4, t6
-xori t4, t4, -1
-sd s7, 120(s4)
-and s7, t4, s11
-xor s7, s8, s7
-sd s8, 128(s4)
-xor s8, s9, s5
-sd a7, 136(s4)
-and a7, t4, s8
-xor a7, t3, a7
-xor t2, t2, t6
-xori t2, t2, -1
-and a7, t2, a7
-xor s7, s7, a7
-and a7, t0, s9
-xor a7, s0, a7
-sd t3, 144(s4)
-xor t3, t5, s0
-and s5, t0, s5
-xor s5, t3, s5
-and s5, t4, s5
-xor a7, a7, s5
-xor s5, s11, t6
-xori s5, s5, -1
-and s5, t0, s5
-sd s0, 152(s4)
-xor s0, s9, t0
-and s0, t4, s0
-xor s5, s5, s0
-and s5, t2, s5
-xor a7, a7, s5
-xor t1, t1, t6
-xori t1, t1, -1
-and a7, t1, a7
-xor s7, s7, a7
-and a7, t0, s11
-xor s5, s6, a7
-xor s5, s5, t4
-xor s0, s10, t6
-xori s0, s0, -1
-sd s7, 160(s4)
-and s7, t0, s0
-sd s6, 168(s4)
-ld s6, 136(s4)
-xor s6, s6, s7
-and s10, t0, s10
-sd t6, 136(s4)
-and t6, t4, s10
-xor s6, s6, t6
-and s6, t2, s6
-xor s5, s5, s6
-xor s10, s8, s10
-and s10, t4, s10
-ld s6, 144(s4)
-xor s10, s6, s10
-and t5, t0, t5
-xor s9, s9, t5
-and t6, t4, s9
-xor t6, s7, t6
-and t6, t2, t6
-xor s10, s10, t6
-and s10, t1, s10
-xor s5, s5, s10
-xor s10, s11, t0
-xor s10, s10, t4
-xor s0, s0, a7
-xor a7, t3, s7
-and a7, t4, a7
-xor s0, s0, a7
-and s0, t2, s0
-xor s10, s10, s0
-ld s0, 136(s4)
-xor a7, t3, s0
-xori a7, a7, -1
-and t6, t0, a7
-xor s11, s11, t6
-and s11, t2, s11
-sd s5, 176(s4)
-ld s5, 168(s4)
-xor s5, s5, s11
-and s5, t1, s5
-xor s10, s10, s5
-ld s5, 152(s4)
-xor s5, s5, s7
-ld s7, 128(s4)
-and s7, t4, s7
-xor s5, s5, s7
-xor s7, s8, t0
-and s7, t4, s7
-xor s9, s9, s7
-and s9, t2, s9
-xor s5, s5, s9
-ld s9, 120(s4)
-xor a7, a7, s9
-and t0, t0, s6
-xor t3, t3, t0
-and t3, t4, t3
-xor a7, a7, t3
-xor s8, s8, s0
-xori s8, s8, -1
-xor s8, s8, t6
-xor t5, t5, s0
-xori t5, t5, -1
-and t4, t4, t5
-xor s8, s8, t4
-and t2, t2, s8
-xor a7, a7, t2
-and t1, t1, a7
-xor t3, s5, t1
-ld t0, 160(s4)
-ld t1, 176(s4)
-addi t2, s10, 0
-andi t0, t0, 1
-slli t0, t0, 29
-xor a1, a1, t0
-andi t1, t1, 1
-slli t1, t1, 7
+ld t1, 528(s4)
+and t1, t1, t0
+srli t1, t1, 8
 xor a1, a1, t1
-andi t2, t2, 1
-slli t2, t2, 18
-xor a1, a1, t2
-andi t3, t3, 1
-slli t3, t3, 24
-xor a1, a1, t3
-ld t6, 0(a3)
-srli t0, a2, 7
-srli a7, t6, 12
-xor t0, t0, a7
-andi t0, t0, 1
-srli t1, a2, 8
-srli a7, t6, 13
-xor t1, t1, a7
-andi t1, t1, 1
-srli t2, a2, 9
-srli a7, t6, 14
-xor t2, t2, a7
-andi t2, t2, 1
-srli t3, a2, 10
-srli a7, t6, 15
-xor t3, t3, a7
-andi t3, t3, 1
-srli t4, a2, 11
-srli a7, t6, 16
-xor t4, t4, a7
-andi t4, t4, 1
-srli t5, a2, 12
-srli a7, t6, 17
-xor t5, t5, a7
-andi t5, t5, 1
-xor t6, t0, t0
-xor a7, t0, t0
-xori a7, a7, -1
-xor s0, t4, t6
-xori s0, s0, -1
-and s5, t3, s0
-xor s6, s5, t1
-xor s7, t4, s5
-and s8, t1, t3
-xor s9, s7, s8
-and s9, t2, s9
-xor s6, s6, s9
-xor s9, s8, t6
-xori s9, s9, -1
-xor s10, t3, t6
-xori s10, s10, -1
-and s11, t1, s10
-sd s8, 120(s4)
-xor s8, t3, s11
-sd s10, 128(s4)
-and s10, t2, s8
-xor s9, s9, s10
-and s9, t5, s9
-xor s6, s6, s9
-xor s9, s0, t3
-sd s8, 136(s4)
-and s8, t1, s9
-sd s10, 144(s4)
-xor s10, s5, s8
-and s10, t2, s10
-and t3, t3, t4
-sd s11, 152(s4)
-xor s11, s0, t3
-sd s0, 160(s4)
-xor s0, s9, t6
-xori s0, s0, -1
-xor s0, s0, s8
-and s0, t2, s0
-xor s0, s11, s0
-and s0, t5, s0
-xor s10, s10, s0
-and s10, t0, s10
-xor s6, s6, s10
-and s10, t1, s5
-xor s0, t3, s10
-and t4, t1, t4
-xor a7, a7, t4
-sd s6, 168(s4)
-and s6, t2, a7
-xor s0, s0, s6
-ld s6, 152(s4)
-xor s7, s7, s6
-and t4, t2, t4
-xor s7, s7, t4
-and s7, t5, s7
-xor s0, s0, s7
-and s7, t2, t1
-xor a7, a7, s7
-ld s7, 128(s4)
-xor s7, s7, s10
-sd s11, 128(s4)
-ld s11, 160(s4)
-sd s10, 176(s4)
-and s10, t1, s11
-sd t4, 184(s4)
-and t4, t2, s10
-xor s7, s7, t4
-and s7, t5, s7
-xor a7, a7, s7
-and a7, t0, a7
-xor s0, s0, a7
-xor s9, s9, s6
-ld a7, 120(s4)
-xor s11, s11, a7
-and s11, t2, s11
-xor s9, s9, s11
-xor s11, s5, t6
-xori s11, s11, -1
-and a7, t1, t3
-xor a7, s11, a7
-and s8, t2, s8
-xor a7, a7, s8
-and a7, t5, a7
-xor s9, s9, a7
-ld a7, 184(s4)
-xor a7, a7, t6
-xori a7, a7, -1
-ld t6, 176(s4)
-xor s5, s5, t6
-xor t3, t3, t1
-and t3, t2, t3
-xor s5, s5, t3
-and s5, t5, s5
-xor a7, a7, s5
-and a7, t0, a7
-xor s9, s9, a7
-ld a7, 128(s4)
-xor s5, a7, t1
-ld t3, 144(s4)
-xor s5, s5, t3
-ld t3, 136(s4)
-and t6, t5, t3
-xor s5, s5, t6
-xor s6, s11, s6
-and s6, t2, s6
-xor t3, t3, s6
-and t1, t1, s11
-xor s11, s11, t1
-xor a7, a7, s10
-and t2, t2, a7
-xor s11, s11, t2
-and t5, t5, s11
-xor t3, t3, t5
-and t0, t0, t3
-xor t3, s5, t0
-ld t0, 168(s4)
-addi t1, s0, 0
-addi t2, s9, 0
-andi t0, t0, 1
-slli t0, t0, 13
-xor a1, a1, t0
-andi t1, t1, 1
+ld t1, 536(s4)
+and t1, t1, t0
+srli t1, t1, 3
+xor a1, a1, t1
+ld t1, 544(s4)
+and t1, t1, t0
+xor a1, a1, t1
+srli t1, t0, 17
+andi t1, t1, 257
 slli t1, t1, 21
 xor a1, a1, t1
-andi t2, t2, 1
-slli t2, t2, 3
-xor a1, a1, t2
-andi t3, t3, 1
-slli t3, t3, 28
-xor a1, a1, t3
-ld t6, 0(a3)
-srli t0, a2, 3
-srli a7, t6, 6
-xor t0, t0, a7
-andi t0, t0, 1
-srli t1, a2, 4
-srli a7, t6, 7
-xor t1, t1, a7
-andi t1, t1, 1
-srli t2, a2, 5
-srli a7, t6, 8
-xor t2, t2, a7
-andi t2, t2, 1
-srli t3, a2, 6
-srli a7, t6, 9
-xor t3, t3, a7
-andi t3, t3, 1
-srli t4, a2, 7
-srli a7, t6, 10
-xor t4, t4, a7
-andi t4, t4, 1
-srli t5, a2, 8
-srli a7, t6, 11
-xor t5, t5, a7
-andi t5, t5, 1
-xor t6, t0, t0
-xor a7, t0, t0
-xori a7, a7, -1
-xor s0, t5, t0
-and s5, t0, t5
-and s6, t2, s5
-xor s7, s0, s6
-xor s8, s5, t6
-xori s8, s8, -1
-and s9, t2, s8
-xor s10, a7, s9
-and s11, t3, s10
-xor s7, s7, s11
-xor s11, t5, t6
-xori s11, s11, -1
-sd s6, 120(s4)
-and s6, t0, s11
-sd s11, 128(s4)
-and s11, t2, s6
-sd s6, 136(s4)
-xor s6, a7, s11
-sd a7, 144(s4)
-and a7, t3, s8
-xor s6, s6, a7
-and s6, t4, s6
-xor s7, s7, s6
-and s6, t3, s9
-xor s10, s10, s6
-and s6, t2, t0
-xor s6, s5, s6
-and s6, t4, s6
-xor s10, s10, s6
-and s10, t1, s10
-xor s7, s7, s10
-xor s10, s5, t2
-xor s6, s0, t6
-xori s6, s6, -1
-sd s7, 152(s4)
-xor s7, s6, s11
-and s7, t3, s7
-xor s10, s10, s7
-and s7, t2, t5
-sd a7, 160(s4)
-ld a7, 144(s4)
-sd s0, 168(s4)
-xor s0, a7, s7
-xor s5, t5, s5
-xor a7, s5, s11
-and a7, t3, a7
-xor s0, s0, a7
-and s0, t4, s0
-xor s10, s10, s0
-ld s0, 128(s4)
-sd s11, 176(s4)
-ld s11, 136(s4)
-sd s7, 184(s4)
-xor s7, s0, s11
-xor t0, t0, t6
-xori t0, t0, -1
-and t0, t2, t0
-xor t0, s7, t0
-xor t0, t0, a7
-and a7, t2, s6
-sd s7, 192(s4)
-and s7, t3, s5
-xor a7, a7, s7
-and a7, t4, a7
-xor t0, t0, a7
-and t0, t1, t0
-xor s10, s10, t0
-xor s5, s5, t6
-xori s5, s5, -1
-and s0, t2, s0
-xor t6, s5, s0
-and t0, t3, t5
-xor t6, t6, t0
-xor s6, s6, s9
-ld s9, 184(s4)
-xor s8, s8, s9
-and s8, t3, s8
-xor s6, s6, s8
-and s6, t4, s6
-xor t6, t6, s6
-ld s6, 168(s4)
-and s6, t2, s6
-and s6, t3, s6
-ld s8, 144(s4)
-xor s8, s8, s6
-ld s6, 176(s4)
-and s6, t4, s6
-xor s8, s8, s6
-and s8, t1, s8
-xor t6, t6, s8
-xor s11, s11, s9
-ld s8, 160(s4)
-xor s11, s11, s8
-xor s0, t5, s0
-ld s8, 192(s4)
-and t2, t2, s8
-xor s8, s8, t2
-and s8, t3, s8
-xor s0, s0, s8
-and s0, t4, s0
-xor s11, s11, s0
-ld s0, 120(s4)
-xor s5, s5, s0
-xor t5, t5, t2
-and t3, t3, t5
-xor s5, s5, t3
-xor s9, s9, t0
-and t4, t4, s9
-xor s5, s5, t4
-and t1, t1, s5
-xor t3, s11, t1
-ld t0, 152(s4)
-addi t1, s10, 0
-addi t2, t6, 0
-andi t0, t0, 1
-slli t0, t0, 25
-xor a1, a1, t0
-andi t1, t1, 1
-slli t1, t1, 10
+andi t1, t0, 1
+slli t1, t1, 5
 xor a1, a1, t1
-andi t2, t2, 1
-slli t2, t2, 20
-xor a1, a1, t2
-andi t3, t3, 1
-xor a1, a1, t3
-ld t6, 0(a3)
-srli t0, a2, 31
-addi a7, t6, 0
-xor t0, t0, a7
-andi t0, t0, 1
-addi t1, a2, 0
-srli a7, t6, 1
-xor t1, t1, a7
-andi t1, t1, 1
-srli t2, a2, 1
-srli a7, t6, 2
-xor t2, t2, a7
-andi t2, t2, 1
-srli t3, a2, 2
-srli a7, t6, 3
-xor t3, t3, a7
-andi t3, t3, 1
-srli t4, a2, 3
-srli a7, t6, 4
-xor t4, t4, a7
-andi t4, t4, 1
-srli t5, a2, 4
-srli a7, t6, 5
-xor t5, t5, a7
-andi t5, t5, 1
-xor t6, t0, t0
-xor a7, t0, t0
-xori a7, a7, -1
-xor s0, t0, t6
-xori s0, s0, -1
-xor s5, t5, s0
-xor t3, t3, t6
-xori t3, t3, -1
-xor s6, s5, t3
-xor t1, t1, t6
-xori t1, t1, -1
-xor s6, s6, t1
-and s7, t3, t0
-and s8, s0, t5
-and s9, t3, s8
-xor s10, s0, s9
-and s10, t1, s10
-xor s10, s7, s10
-xor t4, t4, t6
-xori t4, t4, -1
-and s10, t4, s10
-xor s6, s6, s10
-xor s10, t5, t6
-xori s10, s10, -1
-and s11, s0, s10
-sd t0, 120(s4)
-xor t0, a7, s11
-sd s5, 128(s4)
-xor s5, t0, s7
-and s5, t1, s5
-xor s0, s0, s5
-xor s5, t5, s8
-sd t0, 136(s4)
-and t0, t3, s5
-xor a7, a7, t0
-sd s7, 144(s4)
-and s7, t1, s10
-xor a7, a7, s7
-and a7, t4, a7
-xor s0, s0, a7
-xor t2, t2, t6
-xori t2, t2, -1
-and s0, t2, s0
-xor s6, s6, s0
-xor s0, s8, t6
-xori s0, s0, -1
-xor a7, s0, t0
-xor s5, s5, t6
-xori s5, s5, -1
-sd s6, 152(s4)
-and s6, t3, s5
-xor s10, s10, s6
-and s10, t1, s10
-xor a7, a7, s10
-xor s10, s9, t6
-xori s10, s10, -1
-sd s5, 160(s4)
-and s5, t1, s9
-xor s5, s10, s5
-and s5, t4, s5
-xor a7, a7, s5
-xor s5, t5, s11
-sd t0, 168(s4)
-ld t0, 144(s4)
-xor t0, s5, t0
-sd s10, 144(s4)
-ld s10, 128(s4)
-and s10, t1, s10
-sd s8, 128(s4)
-xor s8, t0, s10
-xor t0, t0, t6
-xori t0, t0, -1
-xor s5, s5, t6
-xori s5, s5, -1
-and s5, t1, s5
-xor t0, t0, s5
-and t0, t4, t0
-xor s8, s8, t0
-and s8, t2, s8
-xor a7, a7, s8
-xor s8, s11, s9
-and t0, t3, s0
-xor t5, t5, t0
-and t0, t1, t5
-xor s8, s8, t0
-xor s6, s0, s6
-and s6, t4, s6
-xor s8, s8, s6
-xor s0, s0, s7
-ld s6, 128(s4)
-xor s9, s6, s9
-xor s9, s9, s7
-and s9, t4, s9
-xor s0, s0, s9
-and s0, t2, s0
-xor s8, s8, s0
-ld s0, 144(s4)
-and s0, t1, s0
-xor t5, t5, s0
-and t3, t3, s11
-xor s6, s6, t3
-ld t3, 120(s4)
-ld s11, 168(s4)
-xor t3, t3, s11
-and t3, t1, t3
-xor t3, s6, t3
-and t3, t4, t3
-xor t5, t5, t3
-ld t3, 136(s4)
-xor t3, t3, s10
-xor s6, s6, t6
-xori s6, s6, -1
-ld t6, 160(s4)
-and t1, t1, t6
-xor s6, s6, t1
-and t4, t4, s6
-xor t3, t3, t4
-and t2, t2, t3
-xor t3, t5, t2
-ld t0, 152(s4)
-addi t1, a7, 0
-addi t2, s8, 0
-andi t0, t0, 1
-slli t0, t0, 11
-xor a1, a1, t0
-andi t1, t1, 1
+ld t1, 552(s4)
+and t1, t1, t0
+slli t1, t1, 9
+xor a1, a1, t1
+srli t1, t0, 1
+andi t1, t1, 257
 slli t1, t1, 17
 xor a1, a1, t1
-andi t2, t2, 1
-slli t2, t2, 5
-xor a1, a1, t2
-andi t3, t3, 1
-slli t3, t3, 27
-xor a1, a1, t3
+srli t1, t0, 3
+andi t1, t1, 1
+slli t1, t1, 27
+xor a1, a1, t1
 addi t0, a1, 0
 addi a1, a2, 0
 addi a2, t0, 0
@@ -1951,14 +1367,12 @@ srli t1, t2, 8
 sb t1, 54(s4)
 srli t1, t2, 0
 sb t1, 55(s4)
-ld s0, 56(s4)
-ld s5, 64(s4)
-ld s6, 72(s4)
-ld s7, 80(s4)
-ld s8, 88(s4)
-ld s9, 96(s4)
-ld s10, 104(s4)
-ld s11, 112(s4)
+ld s5, 56(s4)
+ld s6, 64(s4)
+ld s7, 72(s4)
+ld s8, 80(s4)
+ld s9, 88(s4)
+ld s10, 96(s4)
 lbu t0, 0(s2)
 lbu t1, 48(s4)
 xor t0, t0, t1
@@ -2027,13 +1441,13 @@ ld s3, 16(t3)
 ld s4, 24(t3)
 addi t0, zero, 0
 addi t1, t3, 0
-addi t2, zero, 80
+addi t2, zero, 118
 210:
 sd t0, 0(t1)
 addi t1, t1, 8
 addi t2, t2, -1
 bnez t2, 210b
-addi sp, sp, 640
+addi sp, sp, 944
 ret
 .option pop",
     )
@@ -2043,7 +1457,7 @@ ret
 ///
 /// Contract: `VG.Spec.TripleDes.cfb8DecryptContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the input block or the data.
 ///
-/// Baseline RV64I: one block at a time, with ECB's verified block function inlined (Boolean S-box circuits and no table lookups). The mode is the generic one of `Impl/Modes/RISCV64/`, which runs in a frame of 640 bytes on the stack, 16-byte aligned: it keeps its state in `s1`–`s4`, saving our caller's there, and the block function reads a copy of the schedule there, made a byte at a time, since the contracts state no alignment for it. The frame is zeroed before returning.
+/// Baseline RV64I: one block at a time, with ECB's verified block function inlined (the eight S-boxes looked up at once in the 64 lanes of a word, from words of constants in the frame, with no table lookups at secret addresses). The mode is the generic one of `Impl/Modes/RISCV64/`, which runs in a frame of 944 bytes on the stack, 16-byte aligned: it keeps its state in `s1`–`s4`, saving our caller's there, and the block function reads a copy of the schedule there, made a byte at a time, since the contracts state no alignment for it. The frame is zeroed before returning.
 ///
 /// # Safety
 ///
@@ -2051,13 +1465,13 @@ ret
 /// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the 640 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the 944 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_triple_des_cfb8_decrypt(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m
-addi sp, sp, -640
+addi sp, sp, -944
 addi t0, sp, 0
 sd s1, 0(t0)
 sd s2, 8(t0)
@@ -2102,7 +1516,7 @@ sb t2, 38(s4)
 srli t2, t0, 24
 sb t2, 39(s4)
 addi s2, a2, 0
-addi t0, s4, 256
+addi t0, s4, 560
 addi t2, a0, 0
 addi t4, zero, 384
 20:
@@ -2148,14 +1562,397 @@ srli t2, t0, 16
 sb t2, 54(s4)
 srli t2, t0, 24
 sb t2, 55(s4)
-sd s0, 56(s4)
-sd s5, 64(s4)
-sd s6, 72(s4)
-sd s7, 80(s4)
-sd s8, 88(s4)
-sd s9, 96(s4)
-sd s10, 104(s4)
-sd s11, 112(s4)
+sd s5, 56(s4)
+sd s6, 64(s4)
+sd s7, 72(s4)
+sd s8, 80(s4)
+sd s9, 88(s4)
+sd s10, 96(s4)
+lui t0, 577791
+addiw t0, t0, -1625
+slli t0, t0, 32
+lui t1, 297411
+addiw t1, t1, -1923
+add t0, t0, t1
+sd t0, 120(s4)
+lui t0, 514972
+addiw t0, t0, 1995
+slli t0, t0, 32
+lui t1, 1006958
+addiw t1, t1, 857
+add t0, t0, t1
+sd t0, 128(s4)
+lui t0, 167205
+addiw t0, t0, 62
+slli t0, t0, 32
+lui t1, 548376
+addiw t1, t1, 2018
+add t0, t0, t1
+sd t0, 136(s4)
+lui t0, 949404
+addiw t0, t0, 1990
+slli t0, t0, 32
+lui t1, 650735
+addiw t1, t1, 1965
+add t0, t0, t1
+sd t0, 144(s4)
+lui t0, 912917
+addiw t0, t0, -1333
+slli t0, t0, 32
+lui t1, 151463
+addiw t1, t1, 1048
+add t0, t0, t1
+sd t0, 152(s4)
+lui t0, 613275
+addiw t0, t0, -1339
+slli t0, t0, 32
+lui t1, 511468
+addiw t1, t1, 933
+add t0, t0, t1
+sd t0, 160(s4)
+lui t0, 272347
+addiw t0, t0, -761
+slli t0, t0, 32
+lui t1, 730620
+addiw t1, t1, -703
+add t0, t0, t1
+sd t0, 168(s4)
+lui t0, 369978
+addiw t0, t0, 1843
+slli t0, t0, 32
+lui t1, 358874
+addiw t1, t1, 825
+add t0, t0, t1
+sd t0, 176(s4)
+lui t0, 923080
+addiw t0, t0, 1425
+slli t0, t0, 32
+lui t1, 647834
+addiw t1, t1, -61
+add t0, t0, t1
+sd t0, 184(s4)
+lui t0, 443197
+addiw t0, t0, 1588
+slli t0, t0, 32
+lui t1, 764907
+addiw t1, t1, 2009
+add t0, t0, t1
+sd t0, 192(s4)
+lui t0, 653439
+addiw t0, t0, 995
+slli t0, t0, 32
+lui t1, 497702
+addiw t1, t1, 159
+add t0, t0, t1
+sd t0, 200(s4)
+lui t0, 1042229
+addiw t0, t0, 1965
+slli t0, t0, 32
+lui t1, 687598
+addiw t1, t1, 825
+add t0, t0, t1
+sd t0, 208(s4)
+lui t0, 97124
+addiw t0, t0, -131
+slli t0, t0, 32
+lui t1, 965742
+addiw t1, t1, 446
+add t0, t0, t1
+sd t0, 216(s4)
+lui t0, 234364
+addiw t0, t0, -1364
+slli t0, t0, 32
+lui t1, 443387
+addiw t1, t1, 825
+add t0, t0, t1
+sd t0, 224(s4)
+lui t0, 475776
+addiw t0, t0, 1754
+slli t0, t0, 32
+lui t1, 115598
+addiw t1, t1, -1244
+add t0, t0, t1
+sd t0, 232(s4)
+lui t0, 812632
+addiw t0, t0, -164
+slli t0, t0, 32
+lui t1, 453076
+addiw t1, t1, -267
+add t0, t0, t1
+sd t0, 240(s4)
+lui t0, 997947
+addiw t0, t0, 757
+slli t0, t0, 32
+lui t1, 988933
+addiw t1, t1, 1546
+add t0, t0, t1
+sd t0, 248(s4)
+lui t0, 355759
+addiw t0, t0, 821
+slli t0, t0, 32
+lui t1, 228455
+addiw t1, t1, -1037
+add t0, t0, t1
+sd t0, 256(s4)
+lui t0, 807395
+addiw t0, t0, -446
+slli t0, t0, 32
+lui t1, 221408
+addiw t1, t1, -1732
+add t0, t0, t1
+sd t0, 264(s4)
+lui t0, 773613
+addiw t0, t0, 1622
+slli t0, t0, 32
+lui t1, 814790
+addiw t1, t1, -87
+add t0, t0, t1
+sd t0, 272(s4)
+lui t0, 432450
+addiw t0, t0, -920
+slli t0, t0, 32
+lui t1, 369724
+addiw t1, t1, 934
+add t0, t0, t1
+sd t0, 280(s4)
+lui t0, 350061
+addiw t0, t0, -1478
+slli t0, t0, 32
+lui t1, 349677
+addiw t1, t1, -1691
+add t0, t0, t1
+sd t0, 288(s4)
+lui t0, 773308
+addiw t0, t0, 1973
+slli t0, t0, 32
+lui t1, 457282
+addiw t1, t1, -293
+add t0, t0, t1
+sd t0, 296(s4)
+lui t0, 439792
+addiw t0, t0, -1444
+slli t0, t0, 32
+lui t1, 355758
+addiw t1, t1, 2005
+add t0, t0, t1
+sd t0, 304(s4)
+lui t0, 238487
+addiw t0, t0, -1185
+slli t0, t0, 32
+lui t1, 815585
+addiw t1, t1, -1291
+add t0, t0, t1
+sd t0, 312(s4)
+lui t0, 443229
+addiw t0, t0, 1994
+slli t0, t0, 32
+lui t1, 382958
+addiw t1, t1, -363
+add t0, t0, t1
+sd t0, 320(s4)
+lui t0, 353801
+addiw t0, t0, 1066
+slli t0, t0, 32
+lui t1, 658810
+addiw t1, t1, 1376
+add t0, t0, t1
+sd t0, 328(s4)
+lui t0, 379968
+addiw t0, t0, -172
+slli t0, t0, 32
+lui t1, 933327
+addiw t1, t1, -1477
+add t0, t0, t1
+sd t0, 336(s4)
+lui t0, 656557
+addiw t0, t0, 385
+slli t0, t0, 32
+lui t1, 56148
+addiw t1, t1, -935
+add t0, t0, t1
+sd t0, 344(s4)
+lui t0, 211421
+addiw t0, t0, -342
+slli t0, t0, 32
+lui t1, 443238
+addiw t1, t1, -667
+add t0, t0, t1
+sd t0, 352(s4)
+lui t0, 48984
+addiw t0, t0, -2016
+slli t0, t0, 32
+lui t1, 865972
+addiw t1, t1, 647
+add t0, t0, t1
+sd t0, 360(s4)
+lui t0, 982268
+addiw t0, t0, -1373
+slli t0, t0, 32
+lui t1, 523070
+addiw t1, t1, -411
+add t0, t0, t1
+sd t0, 368(s4)
+lui t0, 0
+addiw t0, t0, 0
+slli t0, t0, 32
+lui t1, 64
+addiw t1, t1, -1
+add t0, t0, t1
+sd t0, 376(s4)
+lui t0, 0
+addiw t0, t0, 4
+slli t0, t0, 32
+lui t1, 1048560
+addiw t1, t1, 0
+add t0, t0, t1
+sd t0, 384(s4)
+lui t0, 0
+addiw t0, t0, 1023
+slli t0, t0, 32
+lui t1, 0
+addiw t1, t1, 1023
+add t0, t0, t1
+sd t0, 392(s4)
+lui t0, 64
+addiw t0, t0, -256
+slli t0, t0, 32
+lui t1, 64
+addiw t1, t1, -256
+add t0, t0, t1
+sd t0, 400(s4)
+lui t0, 1008
+addiw t0, t0, 63
+slli t0, t0, 32
+lui t1, 1008
+addiw t1, t1, 63
+add t0, t0, t1
+sd t0, 408(s4)
+lui t0, 16128
+addiw t0, t0, 1008
+slli t0, t0, 32
+lui t1, 16128
+addiw t1, t1, 1008
+add t0, t0, t1
+sd t0, 416(s4)
+lui t0, 0
+addiw t0, t0, 0
+slli t0, t0, 32
+lui t1, 4096
+addiw t1, t1, -1
+add t0, t0, t1
+sd t0, 424(s4)
+lui t0, 16
+addiw t0, t0, 0
+slli t0, t0, 32
+lui t1, 1044480
+addiw t1, t1, 0
+add t0, t0, t1
+sd t0, 432(s4)
+lui t0, 1
+addiw t0, t0, -1
+slli t0, t0, 32
+lui t1, 1
+addiw t1, t1, -1
+add t0, t0, t1
+sd t0, 440(s4)
+lui t0, 4095
+addiw t0, t0, 0
+slli t0, t0, 32
+lui t1, 4095
+addiw t1, t1, 0
+add t0, t0, t1
+sd t0, 448(s4)
+lui t0, 1008
+addiw t0, t0, 63
+slli t0, t0, 32
+lui t1, 1008
+addiw t1, t1, 63
+add t0, t0, t1
+sd t0, 456(s4)
+lui t0, 64513
+addiw t0, t0, -64
+slli t0, t0, 32
+lui t1, 64513
+addiw t1, t1, -64
+add t0, t0, t1
+sd t0, 464(s4)
+lui t0, 4112
+addiw t0, t0, 257
+slli t0, t0, 32
+lui t1, 4112
+addiw t1, t1, 257
+add t0, t0, t1
+sd t0, 472(s4)
+lui t0, 61681
+addiw t0, t0, -241
+slli t0, t0, 32
+lui t1, 61681
+addiw t1, t1, -241
+add t0, t0, t1
+sd t0, 480(s4)
+lui t0, 0
+addiw t0, t0, 1
+slli t0, t0, 32
+lui t1, 0
+addiw t1, t1, -1
+add t0, t0, t1
+sd t0, 488(s4)
+lui t0, 16417
+addiw t0, t0, -2048
+slli t0, t0, 32
+lui t1, 0
+addiw t1, t1, 0
+add t0, t0, t1
+sd t0, 496(s4)
+lui t0, 16
+addiw t0, t0, 8
+slli t0, t0, 32
+lui t1, 0
+addiw t1, t1, 0
+add t0, t0, t1
+sd t0, 504(s4)
+lui t0, 64
+addiw t0, t0, 1
+slli t0, t0, 32
+lui t1, 32768
+addiw t1, t1, 0
+add t0, t0, t1
+sd t0, 512(s4)
+lui t0, 0
+addiw t0, t0, 512
+slli t0, t0, 32
+lui t1, 64
+addiw t1, t1, 0
+add t0, t0, t1
+sd t0, 520(s4)
+lui t0, 0
+addiw t0, t0, 0
+slli t0, t0, 32
+lui t1, 16384
+addiw t1, t1, 256
+add t0, t0, t1
+sd t0, 528(s4)
+lui t0, 0
+addiw t0, t0, 4
+slli t0, t0, 32
+lui t1, 16
+addiw t1, t1, 0
+add t0, t0, t1
+sd t0, 536(s4)
+lui t0, 0
+addiw t0, t0, 0
+slli t0, t0, 32
+lui t1, 4096
+addiw t1, t1, 1024
+add t0, t0, t1
+sd t0, 544(s4)
+lui t0, 0
+addiw t0, t0, 0
+slli t0, t0, 32
+lui t1, 129
+addiw t1, t1, -2044
+add t0, t0, t1
+sd t0, 552(s4)
 lbu t0, 48(s4)
 slli t0, t0, 8
 lbu t1, 49(s4)
@@ -2443,1266 +2240,299 @@ addi t6, a6, -3
 beqz t6, 25f
 addi t6, a6, -2
 beqz t6, 27f
-addi a3, s4, 512
+addi a3, s4, 816
 addi a4, zero, 16
 addi a5, zero, 8
 j 28f
 27:
-addi a3, s4, 504
+addi a3, s4, 808
 addi a4, zero, 16
 addi a5, zero, -8
 28:
 j 26f
 25:
-addi a3, s4, 256
+addi a3, s4, 560
 addi a4, zero, 16
 addi a5, zero, 8
 26:
 29:
-ld t6, 0(a3)
-srli t0, a2, 27
-srli a7, t6, 42
-xor t0, t0, a7
-andi t0, t0, 1
-srli t1, a2, 28
-srli a7, t6, 43
-xor t1, t1, a7
-andi t1, t1, 1
-srli t2, a2, 29
-srli a7, t6, 44
-xor t2, t2, a7
-andi t2, t2, 1
-srli t3, a2, 30
-srli a7, t6, 45
-xor t3, t3, a7
-andi t3, t3, 1
-srli t4, a2, 31
-srli a7, t6, 46
-xor t4, t4, a7
-andi t4, t4, 1
-addi t5, a2, 0
-srli a7, t6, 47
-xor t5, t5, a7
-andi t5, t5, 1
-xor t6, t0, t0
-xor a7, t0, t6
-xori a7, a7, -1
-and s0, t4, a7
-xor s5, t0, t4
-and s6, t1, s5
-xor s6, s0, s6
-xor s7, a7, s0
-and s8, t1, s7
-xor s8, t0, s8
-and s8, t5, s8
-xor s6, s6, s8
-and s8, t4, t0
-xor s9, s8, t6
-xori s9, s9, -1
-and s10, t1, s9
-xor s11, s8, s10
-sd s5, 120(s4)
-xor s5, t4, t6
-xori s5, s5, -1
-sd t0, 128(s4)
-xor t0, s5, s10
-sd s10, 136(s4)
-and s10, t5, t0
-xor s11, s11, s10
-and s11, t3, s11
-xor s6, s6, s11
-and t4, t1, t4
-xor s11, s9, t4
-and s10, t1, s5
-sd t4, 144(s4)
-xor t4, a7, s10
-and t4, t5, t4
-xor s11, s11, t4
-and t4, t1, a7
-sd s5, 152(s4)
-xor s5, s7, t4
-and s5, t5, s5
-and s5, t3, s5
-xor s11, s11, s5
-and s11, t2, s11
-xor s6, s6, s11
-xor a7, a7, s8
-xor s8, a7, s10
-xor s11, s0, t6
-xori s11, s11, -1
-and a7, t1, a7
-xor a7, s11, a7
-and s5, t5, a7
-xor s8, s8, s5
-xor s5, s7, t6
-xori s5, s5, -1
-xor s10, s5, s10
-sd s6, 160(s4)
-and s6, t1, s0
-xor s0, s0, s6
-and s0, t5, s0
-xor s6, s10, s0
-and s6, t3, s6
-xor s8, s8, s6
-xor a7, a7, s0
-ld s0, 128(s4)
-and s6, t1, s0
-sd t0, 168(s4)
-xor t0, s11, s6
-and t0, t5, t0
-sd t6, 176(s4)
-xor t6, s7, t0
-and t6, t3, t6
-xor a7, a7, t6
-and a7, t2, a7
-xor s8, s8, a7
-xor a7, s7, s6
-and t6, t5, s10
-xor a7, a7, t6
-xor s9, s9, t4
-and s5, t1, s5
-xor s11, s11, s5
-and s11, t5, s11
-xor s9, s9, s11
-and s9, t3, s9
-xor a7, a7, s9
-ld s9, 136(s4)
-and s11, t5, s9
-xor s10, s10, s11
-xor s0, s0, s6
-xor s0, s0, t0
-and s0, t3, s0
-xor s10, s10, s0
-and s10, t2, s10
-xor a7, a7, s10
-ld s10, 120(s4)
-ld s0, 176(s4)
-xor s10, s10, s0
-xori s10, s10, -1
-xor s10, s10, t1
-xor s9, s9, s0
-xori s9, s9, -1
-and s9, t5, s9
-xor s9, s10, s9
-ld t0, 168(s4)
-xor t0, t0, s0
-xori t0, t0, -1
-and t0, t5, t0
-ld s0, 152(s4)
-xor s0, s0, t0
-and s0, t3, s0
-xor s9, s9, s0
-ld s0, 144(s4)
-xor s0, s7, s0
-and s0, t5, s0
-xor s6, s6, s0
-xor s7, s7, t1
-and t5, t5, s7
-xor s10, s10, t5
-and t3, t3, s10
-xor s6, s6, t3
-and t2, t2, s6
-xor t3, s9, t2
-ld t0, 160(s4)
-addi t1, s8, 0
-addi t2, a7, 0
-andi t0, t0, 1
-slli t0, t0, 1
-xor a1, a1, t0
-andi t1, t1, 1
-slli t1, t1, 9
-xor a1, a1, t1
-andi t2, t2, 1
-slli t2, t2, 15
-xor a1, a1, t2
-andi t3, t3, 1
-slli t3, t3, 23
-xor a1, a1, t3
-ld t6, 0(a3)
-srli t0, a2, 23
-srli a7, t6, 36
-xor t0, t0, a7
-andi t0, t0, 1
-srli t1, a2, 24
-srli a7, t6, 37
-xor t1, t1, a7
-andi t1, t1, 1
-srli t2, a2, 25
-srli a7, t6, 38
-xor t2, t2, a7
-andi t2, t2, 1
-srli t3, a2, 26
-srli a7, t6, 39
-xor t3, t3, a7
-andi t3, t3, 1
-srli t4, a2, 27
-srli a7, t6, 40
-xor t4, t4, a7
-andi t4, t4, 1
-srli t5, a2, 28
-srli a7, t6, 41
-xor t5, t5, a7
-andi t5, t5, 1
-xor t6, t0, t0
-xor a7, t0, t0
-xori a7, a7, -1
-xor s0, t5, t6
-xori s0, s0, -1
-and s5, t1, t5
-xor s6, t5, s5
-and s7, t0, s6
-xor s7, s0, s7
-xor s8, s5, t6
-xori s8, s8, -1
-and s9, t0, s8
-xor s10, s6, s9
-and s10, t4, s10
-xor s7, s7, s10
-and s11, t1, s0
-sd s9, 120(s4)
-xor s9, s0, s11
-xor s6, s6, t6
-xori s6, s6, -1
-sd s0, 128(s4)
-and s0, t0, s6
-sd s8, 136(s4)
-xor s8, s9, s0
-sd s0, 144(s4)
-xor s0, s9, t6
-xori s0, s0, -1
-sd s9, 152(s4)
-and s9, t0, s0
-xor s9, t1, s9
-and s9, t4, s9
-xor s8, s8, s9
-and s8, t3, s8
-xor s7, s7, s8
-and s8, t0, s11
-xor s8, a7, s8
-xor s9, t5, t1
-sd s11, 160(s4)
-and s11, t0, s9
-sd a7, 168(s4)
-xor a7, t1, s11
-and a7, t4, a7
-xor s8, s8, a7
-and s8, t2, s8
-xor s7, s7, s8
-xor s9, s9, t6
-xori s9, s9, -1
-and s5, t0, s5
-xor s8, s9, s5
-xor s6, s6, s11
-and s6, t4, s6
-xor s8, s8, s6
-xor s0, s0, s10
-and s0, t3, s0
-xor s8, s8, s0
-ld s0, 152(s4)
-and s10, t0, s0
-xor s10, t5, s10
-and s10, t4, s10
-ld s6, 136(s4)
-xor s10, s6, s10
-ld s11, 128(s4)
-and a7, t0, s11
-xor s0, s0, a7
-and t5, t4, t5
-xor s0, s0, t5
-and s0, t3, s0
-xor s10, s10, s0
-and s10, t2, s10
-xor s8, s8, s10
-xor s10, s9, t0
-xor s10, s10, t4
-xor s0, s6, s5
-and s0, t4, s0
-xor s0, t0, s0
-and s0, t3, s0
-xor s10, s10, s0
-and t0, t0, t1
-ld t1, 168(s4)
-xor t1, t1, t0
-ld s0, 120(s4)
-xor s6, s6, s0
-and s6, t4, s6
-xor t1, t1, s6
-and t0, t3, t0
-xor t1, t1, t0
-and t1, t2, t1
-xor s10, s10, t1
-xor s9, s9, s0
-ld s0, 144(s4)
-and s0, t4, s0
-xor s9, s9, s0
-xor s0, s5, t6
-xori s0, s0, -1
-xor s11, s11, a7
-and s11, t4, s11
-xor s0, s0, s11
-and t3, t3, s0
-xor s9, s9, t3
-ld t3, 160(s4)
-xor t3, t3, s5
-xor t6, t3, t6
-xori t6, t6, -1
-and t4, t4, t6
-xor t3, t3, t4
-and t2, t2, t3
-xor t3, s9, t2
-addi t0, s7, 0
-addi t1, s8, 0
-addi t2, s10, 0
-andi t0, t0, 1
-slli t0, t0, 14
-xor a1, a1, t0
-andi t1, t1, 1
-slli t1, t1, 30
-xor a1, a1, t1
-andi t2, t2, 1
+ld t4, 0(a3)
+ld t0, 488(s4)
+and t0, a2, t0
+slli t1, t0, 1
+srli t2, t0, 31
+xor t1, t1, t2
+slli t2, t0, 33
+xor t0, t1, t2
+ld t1, 376(s4)
+and t1, t0, t1
+ld t2, 384(s4)
+and t2, t0, t2
+slli t2, t2, 16
+xor t0, t1, t2
+ld t1, 392(s4)
+and t1, t0, t1
+ld t2, 400(s4)
+and t2, t0, t2
+slli t2, t2, 8
+xor t0, t1, t2
+ld t1, 408(s4)
+and t1, t0, t1
+ld t2, 416(s4)
+and t2, t0, t2
 slli t2, t2, 4
-xor a1, a1, t2
-andi t3, t3, 1
-slli t3, t3, 19
-xor a1, a1, t3
-ld t6, 0(a3)
-srli t0, a2, 19
-srli a7, t6, 30
-xor t0, t0, a7
-andi t0, t0, 1
-srli t1, a2, 20
-srli a7, t6, 31
-xor t1, t1, a7
-andi t1, t1, 1
-srli t2, a2, 21
-srli a7, t6, 32
-xor t2, t2, a7
-andi t2, t2, 1
-srli t3, a2, 22
-srli a7, t6, 33
-xor t3, t3, a7
-andi t3, t3, 1
-srli t4, a2, 23
-srli a7, t6, 34
-xor t4, t4, a7
-andi t4, t4, 1
-srli t5, a2, 24
-srli a7, t6, 35
-xor t5, t5, a7
-andi t5, t5, 1
-xor t6, t0, t0
-xor a7, t0, t0
-xori a7, a7, -1
-xor s0, t5, t6
-xori s0, s0, -1
-and s5, t4, s0
-xor s6, t5, s5
-and s7, t4, t5
-xor s8, s0, s7
-and s9, t0, s8
-xor s10, s6, s9
-xor s11, s8, t6
-xori s11, s11, -1
-and s7, t0, s7
-sd s6, 120(s4)
-xor s6, s11, s7
-sd s11, 128(s4)
-and s11, t1, s6
-xor s11, s10, s11
-sd s10, 136(s4)
-and s10, t1, s8
-xor s6, s6, s10
-and s6, t3, s6
-xor s11, s11, s6
-and t5, t0, t5
-xor a7, a7, t5
-and s6, t1, s0
-xor a7, a7, s6
-and s7, t3, s7
-xor a7, a7, s7
-and a7, t2, a7
-xor s11, s11, a7
-xor a7, s0, t4
-xor s9, a7, s9
-xor s7, s5, t6
-xori s7, s7, -1
-and s6, t0, s5
-xor s6, s7, s6
-and s10, t1, s6
-sd s11, 144(s4)
-xor s11, s9, s10
-sd s8, 152(s4)
-xor s8, t4, t6
-xori s8, s8, -1
-sd a7, 160(s4)
-and a7, t0, s8
-xor t4, t4, a7
-sd s8, 168(s4)
-and s8, t0, s0
-xor s0, s0, s8
-and s0, t1, s0
-xor t4, t4, s0
-and t4, t3, t4
-xor s11, s11, t4
-ld t4, 136(s4)
-xor t4, t4, t6
-xori t4, t4, -1
-xor s9, s9, t6
-xori s9, s9, -1
-and s9, t1, s9
-xor t4, t4, s9
-ld s9, 120(s4)
-xor s0, s9, t6
-xori s0, s0, -1
-and s9, t0, s0
-sd s0, 136(s4)
-xor s0, s7, s9
-sd s9, 176(s4)
-xor s9, s8, t6
-xori s9, s9, -1
-and s9, t1, s9
-xor s0, s0, s9
-and s0, t3, s0
-xor t4, t4, s0
-and t4, t2, t4
-xor s11, s11, t4
-and t4, t0, s7
-ld s0, 128(s4)
-xor s0, s0, t4
-xor t4, s6, t6
-xori t4, t4, -1
-and t4, t1, t4
-xor s0, s0, t4
-xor s6, s6, s10
-and s6, t3, s6
-xor s0, s0, s6
-xor a7, s5, a7
-xor a7, a7, s9
-and s9, t1, t5
-xor s5, s5, s9
-and s5, t3, s5
-xor a7, a7, s5
-and a7, t2, a7
-xor s0, s0, a7
-xor s7, s7, t5
+xor t0, t1, t2
+ld t1, 424(s4)
+and t1, t4, t1
+ld t2, 432(s4)
+and t2, t4, t2
+slli t2, t2, 8
+xor t4, t1, t2
+ld t1, 440(s4)
+and t1, t4, t1
+ld t2, 448(s4)
+and t2, t4, t2
+slli t2, t2, 4
+xor t4, t1, t2
+ld t1, 456(s4)
+and t1, t4, t1
+ld t2, 464(s4)
+and t2, t4, t2
+slli t2, t2, 2
+xor t4, t1, t2
+xor t0, t0, t4
+ld t3, 472(s4)
+and s5, t0, t3
+slli t1, s5, 1
+xor s5, s5, t1
+slli t1, s5, 2
+xor s5, s5, t1
+slli t1, s5, 4
+xor s5, s5, t1
+srli s6, t0, 1
+and s6, s6, t3
+slli t1, s6, 1
+xor s6, s6, t1
+slli t1, s6, 2
+xor s6, s6, t1
+slli t1, s6, 4
+xor s6, s6, t1
+srli s7, t0, 2
+and s7, s7, t3
+slli t1, s7, 1
 xor s7, s7, t1
-ld t5, 160(s4)
-xor t5, t5, t6
-xori t5, t5, -1
-and t0, t0, t5
-ld t5, 168(s4)
-xor t5, t5, t0
-and t5, t1, t5
-ld t0, 152(s4)
-xor t0, t0, t5
-and t0, t3, t0
-xor s7, s7, t0
+slli t1, s7, 2
+xor s7, s7, t1
+slli t1, s7, 4
+xor s7, s7, t1
+srli s8, t0, 3
+and s8, s8, t3
+slli t1, s8, 1
+xor s8, s8, t1
+slli t1, s8, 2
+xor s8, s8, t1
+slli t1, s8, 4
+xor s8, s8, t1
+srli s9, t0, 4
+and s9, s9, t3
+slli t1, s9, 1
+xor s9, s9, t1
+slli t1, s9, 2
+xor s9, s9, t1
+slli t1, s9, 4
+xor s9, s9, t1
+srli s10, t0, 5
+and s10, s10, t3
+slli t1, s10, 1
+xor s10, s10, t1
+slli t1, s10, 2
+xor s10, s10, t1
+slli t1, s10, 4
+xor s10, s10, t1
 ld t0, 120(s4)
-xor t0, t0, s8
-ld t5, 136(s4)
-ld t6, 176(s4)
-xor t6, t5, t6
-and t6, t1, t6
-xor t0, t0, t6
+ld t1, 128(s4)
+and t1, t1, s5
+xor t0, t0, t1
+ld t1, 136(s4)
+ld t2, 144(s4)
+and t2, t2, s5
+xor t1, t1, t2
+xor t1, t0, t1
+and t1, t1, s6
+xor t0, t0, t1
+ld t1, 152(s4)
+ld t2, 160(s4)
+and t2, t2, s5
+xor t1, t1, t2
+ld t2, 168(s4)
+ld t3, 176(s4)
+and t3, t3, s5
+xor t2, t2, t3
+xor t2, t1, t2
+and t2, t2, s6
+xor t1, t1, t2
+xor t1, t0, t1
+and t1, t1, s7
+xor t0, t0, t1
+ld t1, 184(s4)
+ld t2, 192(s4)
+and t2, t2, s5
+xor t1, t1, t2
+ld t2, 200(s4)
+ld t3, 208(s4)
+and t3, t3, s5
+xor t2, t2, t3
+xor t2, t1, t2
+and t2, t2, s6
+xor t1, t1, t2
+ld t2, 216(s4)
+ld t3, 224(s4)
+and t3, t3, s5
+xor t2, t2, t3
+ld t3, 232(s4)
+ld t4, 240(s4)
+and t4, t4, s5
+xor t3, t3, t4
+xor t3, t2, t3
+and t3, t3, s6
+xor t2, t2, t3
+xor t2, t1, t2
+and t2, t2, s7
+xor t1, t1, t2
+xor t1, t0, t1
 and t1, t1, s8
-xor t5, t5, t1
-and t3, t3, t5
-xor t0, t0, t3
-and t2, t2, t0
-xor t3, s7, t2
-ld t0, 144(s4)
-addi t1, s11, 0
-addi t2, s0, 0
-andi t0, t0, 1
-slli t0, t0, 26
-xor a1, a1, t0
+xor t0, t0, t1
+ld t1, 248(s4)
+ld t2, 256(s4)
+and t2, t2, s5
+xor t1, t1, t2
+ld t2, 264(s4)
+ld t3, 272(s4)
+and t3, t3, s5
+xor t2, t2, t3
+xor t2, t1, t2
+and t2, t2, s6
+xor t1, t1, t2
+ld t2, 280(s4)
+ld t3, 288(s4)
+and t3, t3, s5
+xor t2, t2, t3
+ld t3, 296(s4)
+ld t4, 304(s4)
+and t4, t4, s5
+xor t3, t3, t4
+xor t3, t2, t3
+and t3, t3, s6
+xor t2, t2, t3
+xor t2, t1, t2
+and t2, t2, s7
+xor t1, t1, t2
+ld t2, 312(s4)
+ld t3, 320(s4)
+and t3, t3, s5
+xor t2, t2, t3
+ld t3, 328(s4)
+ld t4, 336(s4)
+and t4, t4, s5
+xor t3, t3, t4
+xor t3, t2, t3
+and t3, t3, s6
+xor t2, t2, t3
+ld t3, 344(s4)
+ld t4, 352(s4)
+and t4, t4, s5
+xor t3, t3, t4
+ld t4, 360(s4)
+ld t5, 368(s4)
+and t5, t5, s5
+xor t4, t4, t5
+xor t4, t3, t4
+and t4, t4, s6
+xor t3, t3, t4
+xor t3, t2, t3
+and t3, t3, s7
+xor t2, t2, t3
+xor t2, t1, t2
+and t2, t2, s8
+xor t1, t1, t2
+xor t1, t0, t1
+and t1, t1, s9
+xor t0, t0, t1
+ld t6, 480(s4)
+xor t6, s10, t6
+and t0, t0, t6
+srli t1, t0, 4
+xor t0, t0, t1
+srli t1, t0, 57
+andi t1, t1, 1
+slli t1, t1, 1
+xor a1, a1, t1
+srli t1, t0, 51
+andi t1, t1, 33
+slli t1, t1, 4
+xor a1, a1, t1
+srli t1, t0, 59
+andi t1, t1, 1
+slli t1, t1, 15
+xor a1, a1, t1
+srli t1, t0, 40
 andi t1, t1, 1
 slli t1, t1, 2
 xor a1, a1, t1
-andi t2, t2, 1
-slli t2, t2, 16
-xor a1, a1, t2
-andi t3, t3, 1
-slli t3, t3, 8
-xor a1, a1, t3
-ld t6, 0(a3)
-srli t0, a2, 15
-srli a7, t6, 24
-xor t0, t0, a7
-andi t0, t0, 1
-srli t1, a2, 16
-srli a7, t6, 25
-xor t1, t1, a7
+ld t1, 496(s4)
+and t1, t1, t0
+srli t1, t1, 35
+xor a1, a1, t1
+ld t1, 504(s4)
+and t1, t1, t0
+srli t1, t1, 29
+xor a1, a1, t1
+srli t1, t0, 42
 andi t1, t1, 1
-srli t2, a2, 17
-srli a7, t6, 26
-xor t2, t2, a7
-andi t2, t2, 1
-srli t3, a2, 18
-srli a7, t6, 27
-xor t3, t3, a7
-andi t3, t3, 1
-srli t4, a2, 19
-srli a7, t6, 28
-xor t4, t4, a7
-andi t4, t4, 1
-srli t5, a2, 20
-srli a7, t6, 29
-xor t5, t5, a7
-andi t5, t5, 1
-xor t6, t0, t0
-xor a7, t0, t0
-xori a7, a7, -1
-xor s0, t3, t6
-xori s0, s0, -1
-and s5, t1, t3
-xor s6, s0, s5
-and s7, t5, s6
-xor s8, s0, s7
-xor s9, t3, t1
-xor s10, s9, t6
-xori s10, s10, -1
-and s11, t5, s10
-sd s7, 120(s4)
-xor s7, s9, s11
-and s7, t4, s7
-xor s8, s8, s7
-xor s7, t1, t6
-xori s7, s7, -1
-sd t3, 128(s4)
-xor t3, t1, s11
-sd s11, 136(s4)
-and s11, t4, t3
-sd t0, 144(s4)
-xor t0, s7, s11
-and t0, t2, t0
-xor s8, s8, t0
-xor t0, s6, t6
-xori t0, t0, -1
-and t0, t5, t0
-xor t0, s10, t0
-and t0, t4, t0
-xor t3, t3, t0
-xor s5, s5, t6
-xori s5, s5, -1
-and t0, t1, s0
-xor a7, a7, t0
-sd s11, 152(s4)
-and s11, t5, a7
-xor s5, s5, s11
-and s9, t4, s9
-xor s5, s5, s9
-and s5, t2, s5
-xor t3, t3, s5
-ld s5, 144(s4)
-sd s9, 160(s4)
-and s9, s5, t3
-xor s8, s8, s9
-and s9, t5, t0
-xor s10, s10, s9
-sd s8, 168(s4)
-xor s8, s11, t6
-xori s8, s8, -1
-and s8, t4, s8
-xor s8, s10, s8
-sd t5, 176(s4)
-xor t5, t0, s11
-sd t0, 184(s4)
-ld t0, 128(s4)
-sd s7, 192(s4)
-ld s7, 136(s4)
-xor s7, t0, s7
-and s7, t4, s7
-xor t5, t5, s7
-and t5, t2, t5
-xor s8, s8, t5
-xor t3, t3, t6
-xori t3, t3, -1
-and t3, s5, t3
-xor s8, s8, t3
-xor s6, s6, s11
-and s0, t4, s0
-xor s6, s6, s0
-xor t1, t1, s7
-and t1, t2, t1
-xor s6, s6, t1
-xor s10, s10, t6
-xori s10, s10, -1
-xor a7, a7, s9
-and a7, t4, a7
-xor s10, s10, a7
-ld a7, 192(s4)
-ld t1, 120(s4)
-xor a7, a7, t1
-ld s7, 160(s4)
-xor a7, a7, s7
-and a7, t2, a7
-xor s10, s10, a7
-and a7, s5, s10
-xor s6, s6, a7
-ld a7, 184(s4)
-ld s7, 176(s4)
-xor s7, a7, s7
-xor t0, t0, a7
-xor t0, t0, s9
-and t4, t4, t0
-xor s7, s7, t4
-xor t1, t1, t6
-xori t1, t1, -1
-ld t4, 152(s4)
-xor t1, t1, t4
-and t2, t2, t1
-xor s7, s7, t2
-xor s10, s10, t6
-xori s10, s10, -1
-and s5, s5, s10
-xor t3, s7, s5
-ld t0, 168(s4)
-addi t1, s8, 0
-addi t2, s6, 0
-andi t0, t0, 1
-slli t0, t0, 31
-xor a1, a1, t0
+slli t1, t1, 16
+xor a1, a1, t1
+ld t1, 512(s4)
+and t1, t1, t0
+srli t1, t1, 20
+xor a1, a1, t1
+ld t1, 520(s4)
+and t1, t1, t0
+srli t1, t1, 15
+xor a1, a1, t1
+srli t1, t0, 33
 andi t1, t1, 1
 slli t1, t1, 22
 xor a1, a1, t1
-andi t2, t2, 1
-slli t2, t2, 12
-xor a1, a1, t2
-andi t3, t3, 1
-slli t3, t3, 6
-xor a1, a1, t3
-ld t6, 0(a3)
-srli t0, a2, 11
-srli a7, t6, 18
-xor t0, t0, a7
-andi t0, t0, 1
-srli t1, a2, 12
-srli a7, t6, 19
-xor t1, t1, a7
-andi t1, t1, 1
-srli t2, a2, 13
-srli a7, t6, 20
-xor t2, t2, a7
-andi t2, t2, 1
-srli t3, a2, 14
-srli a7, t6, 21
-xor t3, t3, a7
-andi t3, t3, 1
-srli t4, a2, 15
-srli a7, t6, 22
-xor t4, t4, a7
-andi t4, t4, 1
-srli t5, a2, 16
-srli a7, t6, 23
-xor t5, t5, a7
-andi t5, t5, 1
-xor t6, t0, t0
-xor a7, t0, t0
-xori a7, a7, -1
-xor s0, t3, t6
-xori s0, s0, -1
-and s5, s0, t5
-xor s6, a7, s5
-xor t0, t0, t6
-xori t0, t0, -1
-and s7, t0, s6
-xor s8, t5, s7
-xor s9, t5, t6
-xori s9, s9, -1
-and s10, s0, s9
-xor s11, s9, s10
-xor t4, t4, t6
-xori t4, t4, -1
-sd s7, 120(s4)
-and s7, t4, s11
-xor s7, s8, s7
-sd s8, 128(s4)
-xor s8, s9, s5
-sd a7, 136(s4)
-and a7, t4, s8
-xor a7, t3, a7
-xor t2, t2, t6
-xori t2, t2, -1
-and a7, t2, a7
-xor s7, s7, a7
-and a7, t0, s9
-xor a7, s0, a7
-sd t3, 144(s4)
-xor t3, t5, s0
-and s5, t0, s5
-xor s5, t3, s5
-and s5, t4, s5
-xor a7, a7, s5
-xor s5, s11, t6
-xori s5, s5, -1
-and s5, t0, s5
-sd s0, 152(s4)
-xor s0, s9, t0
-and s0, t4, s0
-xor s5, s5, s0
-and s5, t2, s5
-xor a7, a7, s5
-xor t1, t1, t6
-xori t1, t1, -1
-and a7, t1, a7
-xor s7, s7, a7
-and a7, t0, s11
-xor s5, s6, a7
-xor s5, s5, t4
-xor s0, s10, t6
-xori s0, s0, -1
-sd s7, 160(s4)
-and s7, t0, s0
-sd s6, 168(s4)
-ld s6, 136(s4)
-xor s6, s6, s7
-and s10, t0, s10
-sd t6, 136(s4)
-and t6, t4, s10
-xor s6, s6, t6
-and s6, t2, s6
-xor s5, s5, s6
-xor s10, s8, s10
-and s10, t4, s10
-ld s6, 144(s4)
-xor s10, s6, s10
-and t5, t0, t5
-xor s9, s9, t5
-and t6, t4, s9
-xor t6, s7, t6
-and t6, t2, t6
-xor s10, s10, t6
-and s10, t1, s10
-xor s5, s5, s10
-xor s10, s11, t0
-xor s10, s10, t4
-xor s0, s0, a7
-xor a7, t3, s7
-and a7, t4, a7
-xor s0, s0, a7
-and s0, t2, s0
-xor s10, s10, s0
-ld s0, 136(s4)
-xor a7, t3, s0
-xori a7, a7, -1
-and t6, t0, a7
-xor s11, s11, t6
-and s11, t2, s11
-sd s5, 176(s4)
-ld s5, 168(s4)
-xor s5, s5, s11
-and s5, t1, s5
-xor s10, s10, s5
-ld s5, 152(s4)
-xor s5, s5, s7
-ld s7, 128(s4)
-and s7, t4, s7
-xor s5, s5, s7
-xor s7, s8, t0
-and s7, t4, s7
-xor s9, s9, s7
-and s9, t2, s9
-xor s5, s5, s9
-ld s9, 120(s4)
-xor a7, a7, s9
-and t0, t0, s6
-xor t3, t3, t0
-and t3, t4, t3
-xor a7, a7, t3
-xor s8, s8, s0
-xori s8, s8, -1
-xor s8, s8, t6
-xor t5, t5, s0
-xori t5, t5, -1
-and t4, t4, t5
-xor s8, s8, t4
-and t2, t2, s8
-xor a7, a7, t2
-and t1, t1, a7
-xor t3, s5, t1
-ld t0, 160(s4)
-ld t1, 176(s4)
-addi t2, s10, 0
-andi t0, t0, 1
-slli t0, t0, 29
-xor a1, a1, t0
-andi t1, t1, 1
-slli t1, t1, 7
+ld t1, 528(s4)
+and t1, t1, t0
+srli t1, t1, 8
 xor a1, a1, t1
-andi t2, t2, 1
-slli t2, t2, 18
-xor a1, a1, t2
-andi t3, t3, 1
-slli t3, t3, 24
-xor a1, a1, t3
-ld t6, 0(a3)
-srli t0, a2, 7
-srli a7, t6, 12
-xor t0, t0, a7
-andi t0, t0, 1
-srli t1, a2, 8
-srli a7, t6, 13
-xor t1, t1, a7
-andi t1, t1, 1
-srli t2, a2, 9
-srli a7, t6, 14
-xor t2, t2, a7
-andi t2, t2, 1
-srli t3, a2, 10
-srli a7, t6, 15
-xor t3, t3, a7
-andi t3, t3, 1
-srli t4, a2, 11
-srli a7, t6, 16
-xor t4, t4, a7
-andi t4, t4, 1
-srli t5, a2, 12
-srli a7, t6, 17
-xor t5, t5, a7
-andi t5, t5, 1
-xor t6, t0, t0
-xor a7, t0, t0
-xori a7, a7, -1
-xor s0, t4, t6
-xori s0, s0, -1
-and s5, t3, s0
-xor s6, s5, t1
-xor s7, t4, s5
-and s8, t1, t3
-xor s9, s7, s8
-and s9, t2, s9
-xor s6, s6, s9
-xor s9, s8, t6
-xori s9, s9, -1
-xor s10, t3, t6
-xori s10, s10, -1
-and s11, t1, s10
-sd s8, 120(s4)
-xor s8, t3, s11
-sd s10, 128(s4)
-and s10, t2, s8
-xor s9, s9, s10
-and s9, t5, s9
-xor s6, s6, s9
-xor s9, s0, t3
-sd s8, 136(s4)
-and s8, t1, s9
-sd s10, 144(s4)
-xor s10, s5, s8
-and s10, t2, s10
-and t3, t3, t4
-sd s11, 152(s4)
-xor s11, s0, t3
-sd s0, 160(s4)
-xor s0, s9, t6
-xori s0, s0, -1
-xor s0, s0, s8
-and s0, t2, s0
-xor s0, s11, s0
-and s0, t5, s0
-xor s10, s10, s0
-and s10, t0, s10
-xor s6, s6, s10
-and s10, t1, s5
-xor s0, t3, s10
-and t4, t1, t4
-xor a7, a7, t4
-sd s6, 168(s4)
-and s6, t2, a7
-xor s0, s0, s6
-ld s6, 152(s4)
-xor s7, s7, s6
-and t4, t2, t4
-xor s7, s7, t4
-and s7, t5, s7
-xor s0, s0, s7
-and s7, t2, t1
-xor a7, a7, s7
-ld s7, 128(s4)
-xor s7, s7, s10
-sd s11, 128(s4)
-ld s11, 160(s4)
-sd s10, 176(s4)
-and s10, t1, s11
-sd t4, 184(s4)
-and t4, t2, s10
-xor s7, s7, t4
-and s7, t5, s7
-xor a7, a7, s7
-and a7, t0, a7
-xor s0, s0, a7
-xor s9, s9, s6
-ld a7, 120(s4)
-xor s11, s11, a7
-and s11, t2, s11
-xor s9, s9, s11
-xor s11, s5, t6
-xori s11, s11, -1
-and a7, t1, t3
-xor a7, s11, a7
-and s8, t2, s8
-xor a7, a7, s8
-and a7, t5, a7
-xor s9, s9, a7
-ld a7, 184(s4)
-xor a7, a7, t6
-xori a7, a7, -1
-ld t6, 176(s4)
-xor s5, s5, t6
-xor t3, t3, t1
-and t3, t2, t3
-xor s5, s5, t3
-and s5, t5, s5
-xor a7, a7, s5
-and a7, t0, a7
-xor s9, s9, a7
-ld a7, 128(s4)
-xor s5, a7, t1
-ld t3, 144(s4)
-xor s5, s5, t3
-ld t3, 136(s4)
-and t6, t5, t3
-xor s5, s5, t6
-xor s6, s11, s6
-and s6, t2, s6
-xor t3, t3, s6
-and t1, t1, s11
-xor s11, s11, t1
-xor a7, a7, s10
-and t2, t2, a7
-xor s11, s11, t2
-and t5, t5, s11
-xor t3, t3, t5
-and t0, t0, t3
-xor t3, s5, t0
-ld t0, 168(s4)
-addi t1, s0, 0
-addi t2, s9, 0
-andi t0, t0, 1
-slli t0, t0, 13
-xor a1, a1, t0
-andi t1, t1, 1
+ld t1, 536(s4)
+and t1, t1, t0
+srli t1, t1, 3
+xor a1, a1, t1
+ld t1, 544(s4)
+and t1, t1, t0
+xor a1, a1, t1
+srli t1, t0, 17
+andi t1, t1, 257
 slli t1, t1, 21
 xor a1, a1, t1
-andi t2, t2, 1
-slli t2, t2, 3
-xor a1, a1, t2
-andi t3, t3, 1
-slli t3, t3, 28
-xor a1, a1, t3
-ld t6, 0(a3)
-srli t0, a2, 3
-srli a7, t6, 6
-xor t0, t0, a7
-andi t0, t0, 1
-srli t1, a2, 4
-srli a7, t6, 7
-xor t1, t1, a7
-andi t1, t1, 1
-srli t2, a2, 5
-srli a7, t6, 8
-xor t2, t2, a7
-andi t2, t2, 1
-srli t3, a2, 6
-srli a7, t6, 9
-xor t3, t3, a7
-andi t3, t3, 1
-srli t4, a2, 7
-srli a7, t6, 10
-xor t4, t4, a7
-andi t4, t4, 1
-srli t5, a2, 8
-srli a7, t6, 11
-xor t5, t5, a7
-andi t5, t5, 1
-xor t6, t0, t0
-xor a7, t0, t0
-xori a7, a7, -1
-xor s0, t5, t0
-and s5, t0, t5
-and s6, t2, s5
-xor s7, s0, s6
-xor s8, s5, t6
-xori s8, s8, -1
-and s9, t2, s8
-xor s10, a7, s9
-and s11, t3, s10
-xor s7, s7, s11
-xor s11, t5, t6
-xori s11, s11, -1
-sd s6, 120(s4)
-and s6, t0, s11
-sd s11, 128(s4)
-and s11, t2, s6
-sd s6, 136(s4)
-xor s6, a7, s11
-sd a7, 144(s4)
-and a7, t3, s8
-xor s6, s6, a7
-and s6, t4, s6
-xor s7, s7, s6
-and s6, t3, s9
-xor s10, s10, s6
-and s6, t2, t0
-xor s6, s5, s6
-and s6, t4, s6
-xor s10, s10, s6
-and s10, t1, s10
-xor s7, s7, s10
-xor s10, s5, t2
-xor s6, s0, t6
-xori s6, s6, -1
-sd s7, 152(s4)
-xor s7, s6, s11
-and s7, t3, s7
-xor s10, s10, s7
-and s7, t2, t5
-sd a7, 160(s4)
-ld a7, 144(s4)
-sd s0, 168(s4)
-xor s0, a7, s7
-xor s5, t5, s5
-xor a7, s5, s11
-and a7, t3, a7
-xor s0, s0, a7
-and s0, t4, s0
-xor s10, s10, s0
-ld s0, 128(s4)
-sd s11, 176(s4)
-ld s11, 136(s4)
-sd s7, 184(s4)
-xor s7, s0, s11
-xor t0, t0, t6
-xori t0, t0, -1
-and t0, t2, t0
-xor t0, s7, t0
-xor t0, t0, a7
-and a7, t2, s6
-sd s7, 192(s4)
-and s7, t3, s5
-xor a7, a7, s7
-and a7, t4, a7
-xor t0, t0, a7
-and t0, t1, t0
-xor s10, s10, t0
-xor s5, s5, t6
-xori s5, s5, -1
-and s0, t2, s0
-xor t6, s5, s0
-and t0, t3, t5
-xor t6, t6, t0
-xor s6, s6, s9
-ld s9, 184(s4)
-xor s8, s8, s9
-and s8, t3, s8
-xor s6, s6, s8
-and s6, t4, s6
-xor t6, t6, s6
-ld s6, 168(s4)
-and s6, t2, s6
-and s6, t3, s6
-ld s8, 144(s4)
-xor s8, s8, s6
-ld s6, 176(s4)
-and s6, t4, s6
-xor s8, s8, s6
-and s8, t1, s8
-xor t6, t6, s8
-xor s11, s11, s9
-ld s8, 160(s4)
-xor s11, s11, s8
-xor s0, t5, s0
-ld s8, 192(s4)
-and t2, t2, s8
-xor s8, s8, t2
-and s8, t3, s8
-xor s0, s0, s8
-and s0, t4, s0
-xor s11, s11, s0
-ld s0, 120(s4)
-xor s5, s5, s0
-xor t5, t5, t2
-and t3, t3, t5
-xor s5, s5, t3
-xor s9, s9, t0
-and t4, t4, s9
-xor s5, s5, t4
-and t1, t1, s5
-xor t3, s11, t1
-ld t0, 152(s4)
-addi t1, s10, 0
-addi t2, t6, 0
-andi t0, t0, 1
-slli t0, t0, 25
-xor a1, a1, t0
-andi t1, t1, 1
-slli t1, t1, 10
+andi t1, t0, 1
+slli t1, t1, 5
 xor a1, a1, t1
-andi t2, t2, 1
-slli t2, t2, 20
-xor a1, a1, t2
-andi t3, t3, 1
-xor a1, a1, t3
-ld t6, 0(a3)
-srli t0, a2, 31
-addi a7, t6, 0
-xor t0, t0, a7
-andi t0, t0, 1
-addi t1, a2, 0
-srli a7, t6, 1
-xor t1, t1, a7
-andi t1, t1, 1
-srli t2, a2, 1
-srli a7, t6, 2
-xor t2, t2, a7
-andi t2, t2, 1
-srli t3, a2, 2
-srli a7, t6, 3
-xor t3, t3, a7
-andi t3, t3, 1
-srli t4, a2, 3
-srli a7, t6, 4
-xor t4, t4, a7
-andi t4, t4, 1
-srli t5, a2, 4
-srli a7, t6, 5
-xor t5, t5, a7
-andi t5, t5, 1
-xor t6, t0, t0
-xor a7, t0, t0
-xori a7, a7, -1
-xor s0, t0, t6
-xori s0, s0, -1
-xor s5, t5, s0
-xor t3, t3, t6
-xori t3, t3, -1
-xor s6, s5, t3
-xor t1, t1, t6
-xori t1, t1, -1
-xor s6, s6, t1
-and s7, t3, t0
-and s8, s0, t5
-and s9, t3, s8
-xor s10, s0, s9
-and s10, t1, s10
-xor s10, s7, s10
-xor t4, t4, t6
-xori t4, t4, -1
-and s10, t4, s10
-xor s6, s6, s10
-xor s10, t5, t6
-xori s10, s10, -1
-and s11, s0, s10
-sd t0, 120(s4)
-xor t0, a7, s11
-sd s5, 128(s4)
-xor s5, t0, s7
-and s5, t1, s5
-xor s0, s0, s5
-xor s5, t5, s8
-sd t0, 136(s4)
-and t0, t3, s5
-xor a7, a7, t0
-sd s7, 144(s4)
-and s7, t1, s10
-xor a7, a7, s7
-and a7, t4, a7
-xor s0, s0, a7
-xor t2, t2, t6
-xori t2, t2, -1
-and s0, t2, s0
-xor s6, s6, s0
-xor s0, s8, t6
-xori s0, s0, -1
-xor a7, s0, t0
-xor s5, s5, t6
-xori s5, s5, -1
-sd s6, 152(s4)
-and s6, t3, s5
-xor s10, s10, s6
-and s10, t1, s10
-xor a7, a7, s10
-xor s10, s9, t6
-xori s10, s10, -1
-sd s5, 160(s4)
-and s5, t1, s9
-xor s5, s10, s5
-and s5, t4, s5
-xor a7, a7, s5
-xor s5, t5, s11
-sd t0, 168(s4)
-ld t0, 144(s4)
-xor t0, s5, t0
-sd s10, 144(s4)
-ld s10, 128(s4)
-and s10, t1, s10
-sd s8, 128(s4)
-xor s8, t0, s10
-xor t0, t0, t6
-xori t0, t0, -1
-xor s5, s5, t6
-xori s5, s5, -1
-and s5, t1, s5
-xor t0, t0, s5
-and t0, t4, t0
-xor s8, s8, t0
-and s8, t2, s8
-xor a7, a7, s8
-xor s8, s11, s9
-and t0, t3, s0
-xor t5, t5, t0
-and t0, t1, t5
-xor s8, s8, t0
-xor s6, s0, s6
-and s6, t4, s6
-xor s8, s8, s6
-xor s0, s0, s7
-ld s6, 128(s4)
-xor s9, s6, s9
-xor s9, s9, s7
-and s9, t4, s9
-xor s0, s0, s9
-and s0, t2, s0
-xor s8, s8, s0
-ld s0, 144(s4)
-and s0, t1, s0
-xor t5, t5, s0
-and t3, t3, s11
-xor s6, s6, t3
-ld t3, 120(s4)
-ld s11, 168(s4)
-xor t3, t3, s11
-and t3, t1, t3
-xor t3, s6, t3
-and t3, t4, t3
-xor t5, t5, t3
-ld t3, 136(s4)
-xor t3, t3, s10
-xor s6, s6, t6
-xori s6, s6, -1
-ld t6, 160(s4)
-and t1, t1, t6
-xor s6, s6, t1
-and t4, t4, s6
-xor t3, t3, t4
-and t2, t2, t3
-xor t3, t5, t2
-ld t0, 152(s4)
-addi t1, a7, 0
-addi t2, s8, 0
-andi t0, t0, 1
-slli t0, t0, 11
-xor a1, a1, t0
-andi t1, t1, 1
+ld t1, 552(s4)
+and t1, t1, t0
+slli t1, t1, 9
+xor a1, a1, t1
+srli t1, t0, 1
+andi t1, t1, 257
 slli t1, t1, 17
 xor a1, a1, t1
-andi t2, t2, 1
-slli t2, t2, 5
-xor a1, a1, t2
-andi t3, t3, 1
-slli t3, t3, 27
-xor a1, a1, t3
+srli t1, t0, 3
+andi t1, t1, 1
+slli t1, t1, 27
+xor a1, a1, t1
 addi t0, a1, 0
 addi a1, a2, 0
 addi a2, t0, 0
@@ -3988,14 +2818,12 @@ srli t1, t2, 8
 sb t1, 54(s4)
 srli t1, t2, 0
 sb t1, 55(s4)
-ld s0, 56(s4)
-ld s5, 64(s4)
-ld s6, 72(s4)
-ld s7, 80(s4)
-ld s8, 88(s4)
-ld s9, 96(s4)
-ld s10, 104(s4)
-ld s11, 112(s4)
+ld s5, 56(s4)
+ld s6, 64(s4)
+ld s7, 72(s4)
+ld s8, 80(s4)
+ld s9, 88(s4)
+ld s10, 96(s4)
 lbu t0, 33(s4)
 sb t0, 32(s4)
 lbu t0, 34(s4)
@@ -4064,13 +2892,13 @@ ld s3, 16(t3)
 ld s4, 24(t3)
 addi t0, zero, 0
 addi t1, t3, 0
-addi t2, zero, 80
+addi t2, zero, 118
 210:
 sd t0, 0(t1)
 addi t1, t1, 8
 addi t2, t2, -1
 bnez t2, 210b
-addi sp, sp, 640
+addi sp, sp, 944
 ret
 .option pop",
     )
