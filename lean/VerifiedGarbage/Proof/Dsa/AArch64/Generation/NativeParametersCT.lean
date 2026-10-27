@@ -55,13 +55,13 @@ theorem parameter_reset {pLen qLen : Nat} {p : ParameterPublic} {s : State}
   exact ⟨⟨_, ht, by simp [seedTape, upd, ParameterPublic.start], by simpa [seedTape, upd, ParameterPublic.start] using hu⟩,
     hp, hq⟩
 
-theorem nativeParameters_ct (H : GenerationHashes) (M : Mont)  (K : Kernel)
+theorem nativeParameters_ct (H : GenerationHashes) (M : Mont)  (T : PrimeTest)
     (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
     RelCT isa (Two (ParameterStart pLen qLen))
-      (parameterSearch H.sha1 H.sha256 M.mm K.run pLen qLen) (fun _ _ => True) := by
+      (parameterSearch H.sha1 H.sha256 M.mm T.run pLen qLen) (fun _ _ => True) := by
   unfold parameterSearch tapeLoop
   refine RelCT.seq (two_post (two_taint [] (by intro _ _ _ _ _ _ h; cases h) (by taint_decide))
     (fun _ _ h => parameter_reset h)) ?_
-  exact two_map ParameterPublic.start (fun _ _ h => h) (parameterLoop_ct H M K pLen qLen sizes)
+  exact two_map ParameterPublic.start (fun _ _ h => h) (parameterLoop_ct H M T pLen qLen sizes)
 
 end VG.Proof.Dsa.AArch64.Generation

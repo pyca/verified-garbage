@@ -18,14 +18,14 @@ open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch6
 open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
 open VG.Proof.MillerRabin.AArch64
 
-theorem seedPrimeFinish_ok (H : GenerationHashes) (M : Mont) (K : Kernel)
+theorem seedPrimeFinish_ok (H : GenerationHashes) (M : Mont) (T : PrimeTest)
     {p : GenerationContext} {W : Nat → BitVec 64} {s : State}
     (h : GenerationMemory p W s) (seed : GenerationTape p.geo) (hlen : seed.bytes.length = p.geo.qLen)
     (hseed : GenerationTapeMemory seed s) (h1 : W 1 = seed.ptr)
     (hq : Spec.Rsa.bytesAt s.mem (VG.Proof.Bignum.off p.geo.B q) p.geo.qLen =
       Spec.Dsa.encodeBE p.geo.qLen (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes))
     {used : Nat} (h16 : W 16 = BitVec.ofNat 64 used) (hu : used ≤ p.rand.bytes.length) :
-    WP isa (.seq (Impl.Dsa.AArch64.Generation.primeSearch H.sha1 H.sha256 M.mm K.run p.geo.pLen p.geo.qLen)
+    WP isa (.seq (Impl.Dsa.AArch64.Generation.primeSearch H.sha1 H.sha256 T.run p.geo.pLen p.geo.qLen)
       (Impl.Dsa.AArch64.Generation.onSuccess
         (.seq (Impl.Dsa.AArch64.Generation.generatorSearch M.mm p.geo.pLen)
           (Impl.Dsa.AArch64.Generation.onSuccess (Impl.Dsa.AArch64.Generation.finishDomain M.mm p.geo.pLen p.geo.qLen))))) s
@@ -36,7 +36,7 @@ theorem seedPrimeFinish_ok (H : GenerationHashes) (M : Mont) (K : Kernel)
     have shape := VG.Proof.Dsa.Generation.qCandidate_shape
       (by rcases p.geo.qWidth with hh | hh <;> omega : 2 ≤ 8 * p.geo.qLen) seed.bytes
     simpa only [show (256 : Nat) = 2 ^ 8 by decide, ← Nat.pow_mul] using shape.2.2
-  refine WP.seq (WP.mono (seedPrime_ok H M K h seed hlen hseed h1 hq h16 hu)
+  refine WP.seq (WP.mono (seedPrime_ok H M T h seed hlen hseed h1 hq h16 hu)
     fun u ⟨Wu, usedu, huu, mu, u16, slots, bqu, result, fu, ru, wu⟩ => ?_)
   rcases result with ⟨h19, hr⟩ | ⟨h19, value, hr, domain, bp, be⟩ | ⟨h19, hr⟩
   · apply onSuccess_generation_ok mu

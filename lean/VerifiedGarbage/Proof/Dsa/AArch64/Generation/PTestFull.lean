@@ -13,7 +13,7 @@ namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
 open VG.Proof.Rsa.AArch64 VG.Proof.RsaOaep.AArch64 VG.Proof.MillerRabin.AArch64
 
-theorem pTest_full_ok (M : Mont) (K : Kernel) {p : PrimeCallPlan} {used : Nat} {s : State}
+theorem pTest_full_ok (M : Mont) (T : PrimeTest) {p : PrimeCallPlan} {used : Nat} {s : State}
     {V : Nat → Byte} {bs : List Byte} {pp : Addr}
     (L : Lay s p.F p.hash) (R : Rep s.mem p.F p.hash V p.W)
     (h : Ws s p.prime.B p.prime.Z p.prime.w)
@@ -29,7 +29,7 @@ theorem pTest_full_ok (M : Mont) (K : Kernel) {p : PrimeCallPlan} {used : Nat} {
     (hout : ∀ i < p.prime.len, InRegions s.wr (VG.Proof.Bignum.off p.prime.p i) 1)
     (hlen : bs.length = p.prime.len) (hvalue : Spec.Rsa.os2ip bs = p.prime.N)
     (hsrc : Src s p.prime.B p.prime.Z (p.W 5 + BitVec.ofNat 64 p.candidate) bs) :
-    WP isa (Impl.Dsa.AArch64.Generation.pTest M.mm K.run p.prime.len) s fun t =>
+    WP isa (Impl.Dsa.AArch64.Generation.pTest T.run p.prime.len) s fun t =>
       let res := Spec.Dsa.probablePrime p.prime.N (p.prime.rand.drop used)
       ∃ used' status, used' ≤ p.prime.rand.length ∧ Lay t p.F p.hash ∧
         Rep t.mem p.F p.hash V (upd (upd p.W 16 (BitVec.ofNat 64 used')) 19 status) ∧
@@ -43,12 +43,12 @@ theorem pTest_full_ok (M : Mont) (K : Kernel) {p : PrimeCallPlan} {used : Nat} {
   have Ru : Rep u.mem p.F p.hash V p.W := hm ▸ R
   have Lu := lay_of_rep L R Ru rfl ku.sp ku.wr
   refine WP.ite false (by simp [hcf, hfull]) (fun he => Bool.noConfusion he) (fun _ => ?_)
-  have hcode : Impl.Dsa.AArch64.Generation.checkPrime M.mm K.run (p.prime.len / 8)
+  have hcode : Impl.Dsa.AArch64.Generation.checkPrime M.mm T.run (p.prime.len / 8)
       Impl.Dsa.Generation.Layout.p p.prime.len p.prime.len (if p.prime.len ≤ 256 then 64 else 128) =
-      Impl.Dsa.AArch64.Generation.checkPrime M.mm K.run p.prime.w p.candidate p.prime.len
+      Impl.Dsa.AArch64.Generation.checkPrime M.mm T.run p.prime.w p.candidate p.prime.len
         p.prime.drawBytes p.prime.checks := by rw [hwords, hdraw, hchecks, hcandidate]
   rw [hcode]
-  refine WP.mono (primeCall_ok M K Lu Ru (h.scr.congr ku.wr)
+  refine WP.mono (primeCall_ok M T Lu Ru (h.scr.congr ku.wr)
     ((ku.gpr _ (by decide)).trans h.x0) hused hu
     (htape.congrK (fun a _ => by rw [hm]) ku)
     (fun i hi => by rw [ku.wr]; exact hout i hi) hlen hvalue
