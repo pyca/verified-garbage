@@ -59,17 +59,20 @@ def checkOthers : Bool := multiples.all fun k => scales.all fun l =>
 def own (C : MulBase.Curve) (i : Nat) : Bool :=
   (C.slot 17 ≤ i && i < C.slot 31) || (C.slot 40 ≤ i && i < C.slot 41) ||
     (C.k < 6 && C.slot 41 ≤ i && i < C.slot 42) ||
-    (C.tmpAt ≤ i && i < C.tmpAt + 8 * C.k) || (C.bitsAt ≤ i && i < C.bitsAt + 64 * C.k + 8)
+    (C.tmpAt ≤ i && i < C.tmpAt + 8 * C.k) || (C.bitsAt ≤ i && i < C.bitsAt + 64 * C.k + 8) ||
+    (C.tail && C.bitsAt ≤ i)
 
 theorem own_iff (C : MulBase.Curve) (i : Nat) : own C i = true ↔ C.Own i := by
   simp [own, Curve.Own, or_assoc, and_assoc]
 
-/-- The bytes of what the caller provides, and of the other tables of bits,
-are not in the own working space. -/
+/-- The bytes of what the caller provides, and (but with `tail`, whose own
+working space they are) of the other tables of bits, are not in the own
+working space; with `tail`, every byte from the table of bits on is. -/
 def checkApart (C : MulBase.Curve) : Bool :=
   let words := 8 * C.k
   (List.range words).all (fun i => !own C (C.modAt + i) && !own C (C.zeroAt + i) && !own C (C.kAt + i)) &&
-    (List.range (2 * (64 * C.k + 8))).all (fun i => !own C (C.bitsAt + 64 * C.k + 8 + i)) &&
+    (C.tail || (List.range (2 * (64 * C.k + 8))).all fun i => !own C (C.bitsAt + 64 * C.k + 8 + i)) &&
+    (!C.tail || (List.range (Mont.wsBytes - C.bitsAt)).all fun i => own C (C.bitsAt + i)) &&
     (List.range C.ptBytes).all (fun i => !own C (C.pAt + i))
 
 #guard curves.all checkApart
@@ -77,6 +80,8 @@ def checkApart (C : MulBase.Curve) : Bool :=
 #guard p384.ownDoc =
   "Bytes 880 to 1551, 1984 to 2031, 4048 to 4095 and 2224 to 2615 of `ws`"
 #guard p384.kAt = 1552 ∧ p384.pAt = 736 ∧ p384.modAt = 64 ∧ p384.zeroAt = 208
+#guard p521.ownDoc = "Bytes 1288 to 2295, 2944 to 3015 and 3304 to 8191 of `ws`"
+#guard p521.kAt = 2296 ∧ p521.pAt = 1072 ∧ p521.modAt = 64 ∧ p521.zeroAt = 280
 #guard [p224, p256].all fun C =>
   C.ownDoc == "Bytes 608 to 1055, 1344 to 1407, 128 to 159 and 1504 to 1767 of `ws`" &&
     C.kAt == 1056 && C.pAt == 512 && C.modAt == 64 && C.zeroAt == 160

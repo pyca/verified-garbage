@@ -6,8 +6,8 @@ public import VerifiedGarbage.Spec.Weierstrass.MulBase
 # The multiplication of a point, in a curve's working space, as a function
 
 **Trusted** (as every file in `Spec/`). The contract of one function for each
-curve of `curves` (so far P-192, secp256k1, brainpoolP256r1,
-brainpoolP384r1 and brainpoolP512r1), on the working space where the x86-64 code of the curve's
+curve of `curves` (so far P-192, P-224, P-256, P-384, P-521, secp256k1,
+brainpoolP256r1, brainpoolP384r1 and brainpoolP512r1), on the working space where the x86-64 code of the curve's
 ECDSA signature and verification, public key derivation and ECDH keeps its
 numbers, so that all of them can call one copy of the multiplication instead
 of repeating it:
@@ -44,6 +44,20 @@ AArch64) are the function's own working space (`Own`); on return they are unspec
 hold intermediate values, secret ones among them. Every other byte of `ws`
 keeps its value but the result's (`Keeps`).
 
+The code of P-224, P-256, P-384 and P-521 multiplies by windows of `k`'s
+digits rather than by a ladder, from a table of multiples of `Q`, with the
+addition formulas for `a = -3`, which read `b R mod p` (which the function
+stores itself, as `Spec/Weierstrass/PointOps.lean` has it, in slot 40). For
+those curves, slot 40 and every byte from slot 45 on, where each target's
+code keeps its tables, its working areas and the temporary areas of its
+products, are the function's own working space too (`tail`); and the result
+is stated only for `k` in `[1, n - 1]`, for `n` the order of the curve's base
+point (`inRange`), the scalars the windows' proofs cover (their recoding and
+their Jacobian additions): for any other `k` the coordinates are
+unspecified, but every byte outside the own working space and the result
+keeps its value as above. A caller whose scalar may be outside that range
+discards the result, or handles that scalar itself.
+
 Everything is secret but the pointer, which is public, and the function is
 constant time.
 -/
@@ -59,8 +73,11 @@ open MulBase (Represents sig)
 group and prime `p`), its name (the function is `vg_<curve>_mul`, in the
 Rust module `<curve>_mul`), the count `k` of 64-bit words of a coordinate,
 with `p < 2^(64 k)`, how the documentation names it, the slot of its
-products' temporary area, and the count of words past the table of bits
-where the function may keep the callee-saved registers it changes. -/
+products' temporary area, the count of words past the table of bits
+where the function may keep the callee-saved registers it changes, whether
+slot 40 and every byte from slot 45 on are the function's own working space
+too (`tail`), and whether the result is stated only for `k` in `[1, n - 1]`
+(`inRange`). -/
 structure Curve where
   W : Weierstrass.Curve
   curve : String
@@ -68,6 +85,8 @@ structure Curve where
   desc : String
   tmp : Nat
   saved : Nat := 1
+  tail : Bool := false
+  inRange : Bool := false
 
 namespace Curve
 
@@ -124,10 +143,12 @@ def mont (x : Nat) : Nat := x * 2 ^ (64 * C.k) % C.W.p
 
 /-- Byte `i` is in the function's own working space: slots 17 to 30, the
 temporary slot, or the `64 k + 8 saved` bytes of the table of bits and the
-words past it. -/
+words past it; with `tail`, also slot 40 and every byte from the table of
+bits on. -/
 def Own (i : Nat) : Prop :=
   (C.slot 17 ≤ i ∧ i < C.slot 31) ∨ (C.tmpAt ≤ i ∧ i < C.tmpAt + 8 * C.k) ∨
-    (C.bitsAt ≤ i ∧ i < C.bitsAt + 64 * C.k + 8 * C.saved)
+    (C.bitsAt ≤ i ∧ i < C.bitsAt + 64 * C.k + 8 * C.saved) ∨
+    (C.tail = true ∧ ((C.slot 40 ≤ i ∧ i < C.slot 41) ∨ C.bitsAt ≤ i))
 
 /-- Every byte of `ws` but those of the function's own working space and of
 the result keeps its value. -/
@@ -169,6 +190,25 @@ def mulContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
     (post := fun ws m m' _ => C.Result (mul (C.scalar ws m) (C.point ws m)) ws m m')
     (stack := stack)
 
+/-- The result for `k` in `[1, n - 1]`: there, `Result`'s coordinates of
+`P = [k]Q`; for every `k`, its `Keeps`. -/
+def ResultInRange (k : Nat) (Q : Point C.W) (ws : Addr) (m m' : Mem) : Prop :=
+  let c := C.toPoint.pointAt m' ws C.pAt
+  (1 ≤ k → k < C.W.n → C.toPoint.Below c ∧
+    Represents (W := C.W) (C.toPoint.dec c.1) (C.toPoint.dec c.2.1) (C.toPoint.dec c.2.2) (mul k Q)) ∧
+    C.Keeps ws m m'
+
+/-- `mul` for a curve with `inRange`: `P = [k]Q` for `k` in `[1, n - 1]`. -/
+def mulInRangeContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
+  sig.contract A (pre := fun ws m => C.ConstsOk ws m ∧ C.PointOk ws m)
+    (post := fun ws m m' _ => C.ResultInRange (C.scalar ws m) (C.point ws m) ws m m')
+    (stack := stack)
+
+/-- The function's contract: `mulInRangeContract` with `inRange`, else
+`mulContract`. -/
+def contract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
+  if C.inRange then C.mulInRangeContract A stack else C.mulContract A stack
+
 /-! ## The function -/
 
 /-- The Rust module of the curve's function. -/
@@ -176,26 +216,37 @@ def module : String := C.curve ++ "_mul"
 
 /-- What the documentation says the function's own working space is. -/
 def ownDoc : String :=
+  if C.tail then
+    s!"Bytes {rangeDoc (C.slot 17) (C.slot 31 - C.slot 17)}, {rangeDoc (C.slot 40) (8 * C.k)}\
+      {if C.tmp < 45 then ", " ++ rangeDoc C.tmpAt (8 * C.k) else ""} and \
+      {rangeDoc C.bitsAt (wsBytes - C.bitsAt)} of `ws`"
+  else
   s!"Bytes {rangeDoc (C.slot 17) (C.slot 31 - C.slot 17)}, \
     {rangeDoc C.tmpAt (8 * C.k)} and {rangeDoc C.bitsAt (64 * C.k + 8 * C.saved)} of `ws`"
+
+/-- What the documentation says of the scalars the result is stated for. -/
+def rangeNote : String :=
+  if C.inRange then s!", for `k` in `[1, n - 1]`, `n` the order of {C.desc}'s base point (for any \
+    other `k` the coordinates are unspecified)" else ""
 
 /-- `vg_<curve>_mul` on every target. -/
 def mulApi : Api where
   module := C.module
   name := s!"vg_{C.curve}_mul"
   sig := sig
-  contracts := some fun A stack => C.mulContract A stack
+  contracts := some fun A stack => C.contract A stack
   summary := s!"The multiple `P = [k]Q` of a point `Q` of {C.desc}, for the number `k` of {C.k} \
     64-bit words (`{8 * C.k}` bytes), little-endian, at byte {C.kAt} of `ws`, and `Q`'s affine \
     coordinates `x` and `y` at bytes {C.qAt} and {C.qAt + 8 * C.k}, in projective coordinates \
     (`(X : Y : Z)` for `(X / Z, Y / Z)`, and `(0 : Y : 0)` for the point at infinity) in \
     `Q`'s place, at bytes {rangeDoc C.pAt C.ptBytes}: coordinates of {C.k} 64-bit words, little-endian, in \
-    Montgomery's form modulo {C.desc}'s prime `p`, below it. The function reads `p` at byte \
+    Montgomery's form modulo {C.desc}'s prime `p`, below it{C.rangeNote}. The function reads `p` at byte \
     {C.modAt}, zero at byte {C.zeroAt}, and one, `a` and `3 b` in Montgomery's form at bytes \
     {C.oneAt}, {C.aAt} and {C.b3At}. {C.ownDoc} are the function's own working space; every other \
     byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect \
     timing.\n\n\
-    Contract: `mulContract` of `VG.Spec.Weierstrass.Mul.Curve`."
+    Contract: `{if C.inRange then "mulInRangeContract" else "mulContract"}` of \
+    `VG.Spec.Weierstrass.Mul.Curve`."
   safety := [s!"The {C.k} words at byte {C.modAt} of `ws` must be {C.desc}'s prime `p`, the \
       {C.k} words at byte {C.zeroAt} zero, and those at bytes {C.oneAt}, {C.aAt} and {C.b3At} \
       `R mod p`, `a R mod p` and `3 b R mod p`, for `R = 2^{64 * C.k}`.",
@@ -209,6 +260,26 @@ end Curve
 /-! ## The curves -/
 
 def p192 : Curve := { W := Spec.P192.curve, curve := "p192", k := 4, desc := "P-192", tmp := 2 }
+
+/-! P-224's, P-256's, P-384's and P-521's code multiplies by windows (`tail`,
+`inRange`); their temporary areas are where `MulBase`'s and
+`Spec/Weierstrass/Inverse.lean`'s are (x86-64's `Impl.Ecdsa.X86_64.Cfg.sl`):
+slot 2 for four words, 83 for six, 55 for nine, the last two in the tail,
+which also holds AArch64's (slots 82 and 54, `Mont.moAt`). -/
+
+def p224 : Curve :=
+  { W := Spec.P224.curve, curve := "p224", k := 4, desc := "P-224", tmp := 2, tail := true,
+    inRange := true }
+def p256 : Curve :=
+  { W := Spec.P256.curve, curve := "p256", k := 4, desc := "P-256", tmp := 2, tail := true,
+    inRange := true }
+def p384 : Curve :=
+  { W := Spec.P384.curve, curve := "p384", k := 6, desc := "P-384", tmp := 83, tail := true,
+    inRange := true }
+def p521 : Curve :=
+  { W := Spec.P521.curve, curve := "p521", k := 9, desc := "P-521", tmp := 55, tail := true,
+    inRange := true }
+
 def secp256k1 : Curve :=
   { W := Spec.Secp256k1.curve, curve := "secp256k1", k := 4, desc := "secp256k1", tmp := 2 }
 def brainpoolp256r1 : Curve :=
@@ -226,6 +297,7 @@ def brainpoolp512r1 : Curve :=
     tmp := 2, saved := 6 }
 
 /-- Every curve. -/
-def curves : List Curve := [p192, secp256k1, brainpoolp256r1, brainpoolp384r1, brainpoolp512r1]
+def curves : List Curve :=
+  [p192, p224, p256, p384, p521, secp256k1, brainpoolp256r1, brainpoolp384r1, brainpoolp512r1]
 
 end VG.Spec.Weierstrass.Mul

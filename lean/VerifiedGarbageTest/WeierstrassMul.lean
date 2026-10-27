@@ -21,18 +21,25 @@ open Spec.Weierstrass Spec.Weierstrass.Mul
 /-- Byte `i` is in the own working space, as a `Bool`. -/
 def own (C : Mul.Curve) (i : Nat) : Bool :=
   (C.slot 17 ≤ i && i < C.slot 31) || (C.tmpAt ≤ i && i < C.tmpAt + 8 * C.k) ||
-    (C.bitsAt ≤ i && i < C.bitsAt + 64 * C.k + 8 * C.saved)
+    (C.bitsAt ≤ i && i < C.bitsAt + 64 * C.k + 8 * C.saved) ||
+    (C.tail && ((C.slot 40 ≤ i && i < C.slot 41) || C.bitsAt ≤ i))
 
 theorem own_iff (C : Mul.Curve) (i : Nat) : own C i = true ↔ C.Own i := by
   simp [own, Curve.Own, or_assoc]
 
-/-- The bytes of what the caller provides, of the result and of the other
-tables of bits are not in the own working space. -/
+/-- The bytes of what the caller provides, of the result and (but with
+`tail`, whose own working space they are) of the other tables of bits are
+not in the own working space; with `tail`, every byte from the table of bits
+on is, and none of slots 41 to 44, where the x86-64 code keeps, among
+others, its flag. -/
 def checkApart (C : Mul.Curve) : Bool :=
   let words := 8 * C.k
   (List.range words).all (fun i => [C.modAt, C.zeroAt, C.oneAt, C.aAt, C.b3At, C.qAt, C.qAt + words,
       C.kAt].all fun o => !own C (o + i)) &&
-    (List.range (2 * (64 * C.k + 8))).all (fun i => !own C (C.bitsAt + 64 * C.k + 8 * C.saved + i)) &&
+    (C.tail || (List.range (2 * (64 * C.k + 8))).all fun i =>
+      !own C (C.bitsAt + 64 * C.k + 8 * C.saved + i)) &&
+    (!C.tail || ((List.range (Mont.wsBytes - C.bitsAt)).all fun i => own C (C.bitsAt + i)) &&
+      (List.range (C.slot 45 - C.slot 41)).all fun i => !own C (C.slot 41 + i)) &&
     (List.range C.ptBytes).all (fun i => !own C (C.pAt + i))
 
 #guard curves.all checkApart
@@ -47,6 +54,14 @@ def checkInputs (C : Mul.Curve) : Bool :=
 
 #guard curves.all checkInputs
 
+#guard [p224, p256].all fun C =>
+  C.ownDoc == "Bytes 608 to 1055, 1344 to 1375, 128 to 159 and 1504 to 8191 of `ws`" &&
+    C.kAt == 1056 && C.pAt == 512 && C.oneAt == 224 && C.aAt == 256 && C.b3At == 288
+#guard p384.ownDoc == "Bytes 880 to 1551, 1984 to 2031 and 2224 to 8191 of `ws`" &&
+  p384.kAt == 1552 && p384.pAt == 736
+#guard p521.ownDoc == "Bytes 1288 to 2295, 2944 to 3015 and 3304 to 8191 of `ws`" &&
+  p521.kAt == 2296 && p521.pAt == 1072
+#guard [p224, p256, p384, p521].all fun C => C.mulApi.summary.contains "for `k` in `[1, n - 1]`"
 #guard [p192, secp256k1].all fun C =>
   C.ownDoc == "Bytes 608 to 1055, 128 to 159 and 1504 to 1767 of `ws`" &&
     C.kAt == 1056 && C.pAt == 512 && C.modAt == 64 && C.zeroAt == 160 && C.oneAt == 224 &&
