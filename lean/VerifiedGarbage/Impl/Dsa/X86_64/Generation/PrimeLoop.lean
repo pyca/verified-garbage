@@ -22,10 +22,10 @@ def primeIteration (body : Prog isa) : Prog isa := seqs [
   .ite .b (.block [.mov32 .rax (.imm 0), .store (hdr kStat) .rax]) body,
   .block [.mov .rax (.mem (hdr kStat)), .alu .cmp .rax (.imm 4)]]
 
-def drawRound (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa) (len drawBytes : Nat) : Prog isa :=
-  .seq (drawCopy len drawBytes) (sampleRound mul round len)
+def drawRound (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa) : Prog isa :=
+  .seq drawCopy (sampleRound mul round)
 
-def millerRabin (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa) (len drawBytes : Nat) : Prog isa :=
-  .seq (.block primeLoopInit) (.loop (primeIteration (drawRound mul round len drawBytes)) .e)
+def millerRabin (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa) : Prog isa :=
+  .seq (.block primeLoopInit) (.loop (primeIteration (drawRound mul round)) .e)
 
 end VG.Impl.Dsa.X86_64.Generation

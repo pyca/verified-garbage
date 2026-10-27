@@ -35,7 +35,7 @@ theorem sampleRound_ok (M : Mont) (K : Kernel) {B p : Addr} {Z w N i uni ch : Na
     (hUni : word s.mem B (8 * kUni) = BitVec.ofNat 64 uni)
     (hC : word s.mem B (8 * kChecks) = BitVec.ofNat 64 ch)
     (hi : i < 2 ^ 62) (huni : uni < 2 ^ 62) (hch : ch < 2 ^ 62) :
-    WP isa (Impl.Dsa.X86_64.Generation.sampleRound M.mm K.run bs.length) s fun t =>
+    WP isa (Impl.Dsa.X86_64.Generation.sampleRound M.mm K.run) s fun t =>
       let wt := Spec.RsaKeyGen.witness (N - 1) (Spec.Rsa.os2ip bs)
       let f := Spec.MillerRabin.round N wt.1
       ModulusReady t B Z w mi N ∧

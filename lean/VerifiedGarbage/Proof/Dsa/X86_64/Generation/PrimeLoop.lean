@@ -14,7 +14,7 @@ open VG.Proof.MillerRabin.X86_64
 
 theorem millerRabin_ok (M : Mont) (K : Kernel) {P : PrimeParams} {mi : BitVec 64} {used : Nat} {s : State}
     (h : PrimeState P mi used s) (hu : used ≤ P.rand.length) :
-    WP isa (Impl.Dsa.X86_64.Generation.millerRabin M.mm K.run P.len P.drawBytes) s
+    WP isa (Impl.Dsa.X86_64.Generation.millerRabin M.mm K.run) s
       (PrimeLoopEnd P mi s (primeRest P 1 0 used)) := by
   unfold Impl.Dsa.X86_64.Generation.millerRabin
   refine WP.seq (WP.mono (primeLoopInit_ok h hu) fun u hI => ?_)

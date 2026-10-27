@@ -65,7 +65,8 @@ def PrimeTestReady (bits : Nat) (a : PrimeTestPublic bits) (u : State) : Prop :=
   ∃ s W V, PrimeCallInputs bits a.F a.S a.A a.rp a.rand a.N a.used W V s ∧
     u.gpr .rdi = a.A ∧ u.gpr .rsi = BitVec.ofNat 64 (domainCheck / 8) ∧
     u.gpr .rdx = a.rp + BitVec.ofNat 64 a.used ∧ u.gpr .rcx = BitVec.ofNat 64 (a.rand.length - a.used) ∧
-    u.gpr .r8 = off a.F 152 ∧ u.mem = s.mem ∧ u.gpr .rsp = a.F ∧ u.rd = s.rd ∧ u.wr = s.wr
+    u.gpr .r8 = off a.F 152 ∧ u.gpr .r9 = BitVec.ofNat 64 bits ∧ u.mem = s.mem ∧ u.gpr .rsp = a.F ∧
+    u.rd = s.rd ∧ u.wr = s.wr
 
 /-- The test's status. -/
 def PrimeTestPublic.status {bits : Nat} (a : PrimeTestPublic bits) : Nat :=
@@ -82,31 +83,37 @@ def PrimeTestDone (bits : Nat) (a : PrimeTestPublic bits) (t : State) : Prop :=
 def PrimeTestStatus (bits : Nat) (a : PrimeTestPublic bits) (t : State) : Prop :=
   t.gpr .rsp = a.F ∧ t.gpr .rax = BitVec.ofNat 64 a.status
 
-theorem primeCallArgs_ct (bits : Nat) :
-    RelCT isa (Two (PrimeTestBefore bits)) (.block Impl.Dsa.X86_64.Generation.primeCallArgs)
+theorem primeCallArgs_ct {bits : Nat} (hb : ProbablePrime.Supported bits) :
+    RelCT isa (Two (PrimeTestBefore bits)) (.block (Impl.Dsa.X86_64.Generation.primeCallArgs bits))
       (Two (PrimeTestReady bits)) := by
-  refine two_post (two_taint [.rsp] (fun a s₁ s₂ ⟨_, _, h₁⟩ ⟨_, _, h₂⟩ r hr => by
+  have pins : Pins (PrimeTestBefore bits) [.rsp] := fun a s₁ s₂ ⟨_, _, h₁⟩ ⟨_, _, h₂⟩ r hr => by
     obtain rfl := List.mem_singleton.mp hr
-    exact h₁.layout.rsp.trans h₂.layout.rsp.symm) (by taint_decide)) fun a s ⟨W, V, h⟩ => ?_
-  exact WP.mono (primeCallArgs_ok h) fun u ⟨hdi, hsi, hdx, hcx, h8, hm, ku⟩ =>
-    ⟨s, W, V, h, hdi, hsi, hdx, hcx, h8, hm, (ku.gpr (by decide)).trans h.layout.rsp, ku.2.1, ku.2.2⟩
+    exact h₁.layout.rsp.trans h₂.layout.rsp.symm
+  refine two_post ?_ fun a s ⟨W, V, h⟩ => ?_
+  · rcases hb with rfl | rfl | rfl | rfl | rfl <;> exact two_taint [.rsp] pins (by taint_decide)
+  exact WP.mono (primeCallArgs_ok hb h) fun u ⟨hdi, hsi, hdx, hcx, h8, h9, hm, ku⟩ =>
+    ⟨s, W, V, h, hdi, hsi, hdx, hcx, h8, h9, hm, (ku.gpr (by decide)).trans h.layout.rsp, ku.2.1, ku.2.2⟩
 
 theorem primeCallTest_ct (T : PrimeTest) {bits : Nat} (hb : ProbablePrime.Supported bits) :
-    RelCT isa (Two (PrimeTestReady bits)) (T.run bits) (Two (PrimeTestDone bits)) := by
-  refine two_post ?_ fun a u ⟨s, W, V, h, hdi, hsi, hdx, hcx, h8, hm, hsp, hrd, hwr⟩ =>
-    WP.mono (primeCall_call_ok T hb h a.geometry hdi hsi hdx hcx h8 hm hsp hrd hwr) fun t C => ⟨C.rsp, C.status⟩
-  refine RelCT.callEx (T.verified bits hb).1 (T.verified bits hb).2.1 fun s₁ s₂ ⟨a, h₁, h₂⟩ => ?_
-  obtain ⟨_, _, _, i₁, hdi₁, hsi₁, hdx₁, hcx₁, h8₁, hm₁, hsp₁, hrd₁, hwr₁⟩ := h₁
-  obtain ⟨_, _, _, i₂, hdi₂, hsi₂, hdx₂, hcx₂, h8₂, hm₂, hsp₂, hrd₂, hwr₂⟩ := h₂
-  have E₁ := primeCall_entry hb i₁ a.geometry hdi₁ hsi₁ hdx₁ hcx₁ h8₁ hm₁ hsp₁ hrd₁ hwr₁
-  have E₂ := primeCall_entry hb i₂ a.geometry hdi₂ hsi₂ hdx₂ hcx₂ h8₂ hm₂ hsp₂ hrd₂ hwr₂
+    RelCT isa (Two (PrimeTestReady bits)) T.run (Two (PrimeTestDone bits)) := by
+  refine two_post ?_ fun a u ⟨s, W, V, h, hdi, hsi, hdx, hcx, h8, h9, hm, hsp, hrd, hwr⟩ =>
+    WP.mono (primeCall_call_ok T hb h a.geometry hdi hsi hdx hcx h8 h9 hm hsp hrd hwr)
+      fun t C => ⟨C.rsp, C.status⟩
+  refine RelCT.callEx T.verified.1 T.verified.2.1 fun s₁ s₂ ⟨a, h₁, h₂⟩ => ?_
+  obtain ⟨_, _, _, i₁, hdi₁, hsi₁, hdx₁, hcx₁, h8₁, h9₁, hm₁, hsp₁, hrd₁, hwr₁⟩ := h₁
+  obtain ⟨_, _, _, i₂, hdi₂, hsi₂, hdx₂, hcx₂, h8₂, h9₂, hm₂, hsp₂, hrd₂, hwr₂⟩ := h₂
+  have E₁ := primeCall_entry hb i₁ a.geometry hdi₁ hsi₁ hdx₁ hcx₁ h8₁ h9₁ hm₁ hsp₁ hrd₁ hwr₁
+  have E₂ := primeCall_entry hb i₂ a.geometry hdi₂ hsi₂ hdx₂ hcx₂ h8₂ h9₂ hm₂ hsp₂ hrd₂ hwr₂
   refine ⟨_, _, _, _, E₁.pre, E₂.pre, ?_, E₁.reads, E₁.writes, E₂.reads, E₂.writes, hsp₁.trans hsp₂.symm⟩
-  sig_pub [ProbablePrime.contract, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi, argRegs]
+  sig_pub [ProbablePrime.contract, Spec.Dsa.ProbablePrime.sizedContract, Spec.Dsa.ProbablePrime.sizedSig,
+    abi, argRegs]
   have hl : (BitVec.ofNat 64 (a.rand.length - a.used)).toNat = a.rand.length - a.used := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := i₁.tapeSize; omega)]
-  rw [hsp₁, hsp₂, hdi₁, hdi₂, hdx₁, hdx₂, hcx₁, hcx₂, hsi₁, hsi₂, h8₁, h8₂, hl, E₁.candidate, E₂.candidate,
-    E₁.tape, E₂.tape]
-  exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+  have hbits : (BitVec.ofNat 64 bits).toNat = bits := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hb.le; omega)]
+  rw [hsp₁, hsp₂, hdi₁, hdi₂, hdx₁, hdx₂, hcx₁, hcx₂, hsi₁, hsi₂, h8₁, h8₂, h9₁, h9₂, hl, hbits,
+    E₁.candidate, E₂.candidate, E₁.tape, E₂.tape]
+  exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
 theorem primeCallResult_ct (bits : Nat) :
     RelCT isa (Two (PrimeTestDone bits)) Impl.Dsa.X86_64.Generation.primeCallResult fun _ _ => True := by
@@ -130,6 +137,6 @@ theorem primeCall_ct (T : PrimeTest) {bits : Nat} (hb : ProbablePrime.Supported 
     RelCT isa (Two (PrimeTestBefore bits)) (Impl.Dsa.X86_64.Generation.primeCall T.run bits)
       fun _ _ => True := by
   unfold Impl.Dsa.X86_64.Generation.primeCall
-  exact RelCT.seq (primeCallArgs_ct bits) (RelCT.seq (primeCallTest_ct T hb) (primeCallResult_ct bits))
+  exact RelCT.seq (primeCallArgs_ct hb) (RelCT.seq (primeCallTest_ct T hb) (primeCallResult_ct bits))
 
 end VG.Proof.Dsa.X86_64.Generation

@@ -21,17 +21,6 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Dsa.X86_64.ProbablePrime VG.Impl.Dsa.Generation.Layout
 open VG.Proof.Dsa.X86_64.Generation (PrimeParams)
 
-/-- The candidate widths parameter generation tests. -/
-def Supported (bits : Nat) : Prop :=
-  bits = 160 ∨ bits = 256 ∨ bits = 1024 ∨ bits = 2048 ∨ bits = 3072
-
-theorem Supported.of_mem {bits : Nat} (h : bits ∈ ([160, 256, 1024, 2048, 3072] : List Nat)) :
-    Supported bits := by
-  simpa only [Supported, List.mem_cons, List.not_mem_nil, or_false] using h
-
-theorem Supported.le {bits : Nat} (hb : Supported bits) : 160 ≤ bits ∧ bits ≤ 3072 := by
-  rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
-
 /-- The frame's stack pointer. -/
 abbrev frameSp (s : State) : Addr := s.gpr .rsp - BitVec.ofNat 64 56
 

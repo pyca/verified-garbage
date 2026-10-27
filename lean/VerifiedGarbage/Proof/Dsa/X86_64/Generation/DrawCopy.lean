@@ -26,19 +26,21 @@ theorem drawCopy_ok {s : State} {B rp op : Addr} {Z w N drawBytes used : Nat} {m
     (hlen : 2 ≤ bs.length) (hld : bs.length ≤ drawBytes) (hmax : drawBytes ≤ 1024)
     (hrp : word s.mem B (8 * kRand) = rp) (hop : word s.mem B (8 * kOut) = op)
     (hus : word s.mem B (8 * kUsed) = BitVec.ofNat 64 used)
+    (hdl : word s.mem B (8 * kLen) = BitVec.ofNat 64 drawBytes)
+    (hll : word s.mem B (8 * kUsedP) = BitVec.ofNat 64 bs.length)
     (hsrc : Src s B Z (off rp (used + (drawBytes - bs.length))) bs)
     (hwr : ∀ i < bs.length, InRegions s.wr (off op i) 1)
     (hout : Region.Disjoint ⟨B, Z⟩ ⟨op, bs.length⟩)
     (hsep : ∀ i < bs.length, ∀ j < bs.length,
       off (off rp (used + (drawBytes - bs.length))) i ≠ off op j) :
-    WP isa (Impl.Dsa.X86_64.Generation.drawCopy bs.length drawBytes) s fun t =>
+    WP isa Impl.Dsa.X86_64.Generation.drawCopy s fun t =>
       ModulusReady t B Z w mi N ∧ Spec.Rsa.bytesAt t.mem op bs.length = bs ∧
       word t.mem B (8 * kUsed) = BitVec.ofNat 64 (used + drawBytes) ∧
       WorkFrame B [(8 * kUsed, 8)] [⟨op, bs.length⟩] s.mem t.mem ∧ Keep mmRegs s t := by
   have hz : 256 ≤ Z := by have := hd.z; simp only [slot, hdrBytes] at this; omega_arith
   unfold Impl.Dsa.X86_64.Generation.drawCopy
   simp only [seqs]
-  refine WP.seq (WP.mono (drawCopyArgs_ok h.good hd.z hld hmax hrp hop hus)
+  refine WP.seq (WP.mono (drawCopyArgs_ok h.good hd.z hld hrp hop hus hdl hll)
     fun u ⟨h15, hsi, hdi, hcx, hdx, hmu, ku⟩ => ?_)
   have hfu : Frm B [(8 * kUsed, 8)] s.mem u.mem := by
     rw [hmu]

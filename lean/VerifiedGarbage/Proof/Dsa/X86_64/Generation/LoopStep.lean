@@ -17,7 +17,7 @@ theorem primeIteration_ok (M : Mont) (K : Kernel) {P : PrimeParams} {mi : BitVec
     {res : Option (Bool × List Byte)} {i uni used : Nat}
     (h : PrimeLoopState P mi s₀ res i uni used s) :
     WP isa (Impl.Dsa.X86_64.Generation.primeIteration
-      (Impl.Dsa.X86_64.Generation.drawRound M.mm K.run P.len P.drawBytes)) s fun t =>
+      (Impl.Dsa.X86_64.Generation.drawRound M.mm K.run)) s fun t =>
         (isa.eval .e t = some false ∧ PrimeLoopEnd P mi s₀ res t) ∨
         (isa.eval .e t = some true ∧ ∃ uni', PrimeLoopState P mi s₀ res (i + 1) uni' (used + P.drawBytes) t) := by
   unfold Impl.Dsa.X86_64.Generation.primeIteration

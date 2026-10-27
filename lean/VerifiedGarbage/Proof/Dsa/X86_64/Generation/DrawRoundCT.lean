@@ -23,27 +23,21 @@ def DrawPublic.sample (p : DrawPublic) (h : p.used + p.prime.drawBytes ≤ p.pri
 
 theorem drawSample_state {len drawBytes : Nat} {p : DrawPublic} {s : State}
     (h : DrawSized len drawBytes p s) :
-    WP isa (Impl.Dsa.X86_64.Generation.drawCopy len drawBytes) s
+    WP isa (Impl.Dsa.X86_64.Generation.drawCopy) s
       (SampleRoundBefore len (p.sample h.2)) := by
   obtain ⟨mi, hs⟩ := h.1.1
   have hw := drawBuffer_ok hs h.2
-  rw [h.1.2.1, h.1.2.2] at hw
   exact WP.mono hw fun _ ht =>
     ⟨⟨⟨mi, ht.2.1⟩, (p.prime.slice_length h.2).trans h.1.2.1⟩, ht.1.stack⟩
 
-theorem drawRound_ct (M : Mont) (K : Kernel) (len drawBytes : Nat)
-    {hc₁ hc₂ : VG.Taint.Hint VG.X86_64.Taint.T}
-    (ht₁ : (taint.check (Taint.ofRegs [.rdi])
-      (.block (Impl.Dsa.X86_64.Generation.drawCopyArgs len drawBytes)) hc₁).isSome = true)
-    (ht₂ : (taint.check (Taint.ofRegs [.rdi])
-      (.block (Impl.Dsa.X86_64.Generation.forceWitness len)) hc₂).isSome = true) :
+theorem drawRound_ct (M : Mont) (K : Kernel) (len drawBytes : Nat) :
     RelCT isa (Two (DrawSized len drawBytes))
-      (Impl.Dsa.X86_64.Generation.drawRound M.mm K.run len drawBytes) (fun _ _ => True) := by
+      (Impl.Dsa.X86_64.Generation.drawRound M.mm K.run) (fun _ _ => True) := by
   unfold Impl.Dsa.X86_64.Generation.drawRound
   refine RelCT.seq (two_post (Ψ := fun p s => ∃ h, SampleRoundBefore len (p.sample h) s)
-    (two_map id (fun _ _ h => h.1) (drawCopy_ct len drawBytes ht₁))
+    (two_map id (fun _ _ h => h.1) (drawCopy_ct len drawBytes))
     (fun _ _ h => WP.mono (drawSample_state h) fun _ ht => ⟨h.2, ht⟩)) ?_
-  apply (sampleRound_ct M K len ht₂).mono
+  apply (sampleRound_ct M K len).mono
   · rintro s t ⟨p, ⟨hs, h⟩, ⟨ht, h'⟩⟩
     exact ⟨p.sample hs, h, h'⟩
   · exact fun _ _ h => h

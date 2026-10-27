@@ -31,7 +31,7 @@ theorem iteration_public (M : Mont) (K : Kernel) {p : PrimeIterationPublic} {mi 
     {s₀ s : State} {res : Option (Bool × List Byte)}
     (h : PrimeLoopState p.draw.prime mi s₀ res p.i p.uni p.draw.used s) :
     WP isa (Impl.Dsa.X86_64.Generation.primeIteration
-      (Impl.Dsa.X86_64.Generation.drawRound M.mm K.run p.draw.prime.len p.draw.prime.drawBytes)) s
+      (Impl.Dsa.X86_64.Generation.drawRound M.mm K.run)) s
       (fun t => isa.eval .e t = some p.continues ∧
         (p.continues = true → word t.mem p.draw.prime.B (8 * kUni) = BitVec.ofNat 64 p.nextUniform)) := by
   unfold Impl.Dsa.X86_64.Generation.primeIteration
