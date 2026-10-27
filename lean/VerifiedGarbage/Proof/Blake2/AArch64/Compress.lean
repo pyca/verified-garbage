@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Blake2.Spec
 public import VerifiedGarbage.Impl.Blake2.AArch64
+import VerifiedGarbage.Proof.Blake2.AArch64.Schedule
 public import VerifiedGarbage.Spec.Blake2.Contract
 public import VerifiedGarbage.Proof.Blake2.AArch64.Contract
 import VerifiedGarbage.Proof.Blake2.AArch64.Lit
@@ -261,20 +262,30 @@ theorem round_ok (hR : ROk P) (r : Nat) {M : Block z.bits} {p : Addr} {sB s : St
     {v : Work z.bits} (hM : Msg M p sB) (h : RI sB v s) :
     WP isa (Impl.Blake2.AArch64.round P r) s (RI sB (Spec.Blake2.round P M v r)) := by
   unfold Impl.Blake2.AArch64.round
-  refine WP.seq (WP.mono (gAt_ok P hR (x := 0) (y := 4) (c := 8) (d := 12) (by decide) (by decide)
-    (by decide) (by decide) (by decide) r 0 hM h) fun s h => ?_)
-  refine WP.seq (WP.mono (gAt_ok P hR (x := 1) (y := 5) (c := 9) (d := 13) (by decide) (by decide)
-    (by decide) (by decide) (by decide) r 1 hM h) fun s h => ?_)
-  refine WP.seq (WP.mono (gAt_ok P hR (x := 2) (y := 6) (c := 10) (d := 14) (by decide) (by decide)
-    (by decide) (by decide) (by decide) r 2 hM h) fun s h => ?_)
-  refine WP.seq (WP.mono (gAt_ok P hR (x := 3) (y := 7) (c := 11) (d := 15) (by decide) (by decide)
-    (by decide) (by decide) (by decide) r 3 hM h) fun s h => ?_)
-  refine WP.seq (WP.mono (gAt_ok P hR (x := 0) (y := 5) (c := 10) (d := 15) (by decide) (by decide)
-    (by decide) (by decide) (by decide) r 4 hM h) fun s h => ?_)
-  refine WP.seq (WP.mono (gAt_ok P hR (x := 1) (y := 6) (c := 11) (d := 12) (by decide) (by decide)
-    (by decide) (by decide) (by decide) r 5 hM h) fun s h => ?_)
-  refine WP.seq (WP.mono (gAt_ok P hR (x := 2) (y := 7) (c := 8) (d := 13) (by decide) (by decide)
-    (by decide) (by decide) (by decide) r 6 hM h) fun s h => ?_)
+  have hm := hM.of_RI h
+  refine WP.seq (Schedule.wp P r false hR.1 hR.2.1 hR.2.2.1 hR.2.2.2
+    (fun j => by rw [hm.x1]; exact hm.inr j j.isLt) ?_)
+  rw [Schedule.referencePass_false, WP.block_append_iff, WP.block_append_iff,
+    WP.block_append_iff]
+  refine WP.mono (gAt_ok P hR (x := 0) (y := 4) (c := 8) (d := 12) (by decide) (by decide)
+    (by decide) (by decide) (by decide) r 0 hM h) fun s h => ?_
+  refine WP.mono (gAt_ok P hR (x := 1) (y := 5) (c := 9) (d := 13) (by decide) (by decide)
+    (by decide) (by decide) (by decide) r 1 hM h) fun s h => ?_
+  refine WP.mono (gAt_ok P hR (x := 2) (y := 6) (c := 10) (d := 14) (by decide) (by decide)
+    (by decide) (by decide) (by decide) r 2 hM h) fun s h => ?_
+  refine WP.mono (gAt_ok P hR (x := 3) (y := 7) (c := 11) (d := 15) (by decide) (by decide)
+    (by decide) (by decide) (by decide) r 3 hM h) fun s h => ?_
+  have hm := hM.of_RI h
+  refine Schedule.wp P r true hR.1 hR.2.1 hR.2.2.1 hR.2.2.2
+    (fun j => by rw [hm.x1]; exact hm.inr j j.isLt) ?_
+  rw [Schedule.referencePass_true, WP.block_append_iff, WP.block_append_iff,
+    WP.block_append_iff]
+  refine WP.mono (gAt_ok P hR (x := 0) (y := 5) (c := 10) (d := 15) (by decide) (by decide)
+    (by decide) (by decide) (by decide) r 4 hM h) fun s h => ?_
+  refine WP.mono (gAt_ok P hR (x := 1) (y := 6) (c := 11) (d := 12) (by decide) (by decide)
+    (by decide) (by decide) (by decide) r 5 hM h) fun s h => ?_
+  refine WP.mono (gAt_ok P hR (x := 2) (y := 7) (c := 8) (d := 13) (by decide) (by decide)
+    (by decide) (by decide) (by decide) r 6 hM h) fun s h => ?_
   refine WP.mono (gAt_ok P hR (x := 3) (y := 4) (c := 9) (d := 14) (by decide) (by decide)
     (by decide) (by decide) (by decide) r 7 hM h) fun s h => ?_
   exact h
