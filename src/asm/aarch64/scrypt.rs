@@ -1541,11 +1541,17 @@ add x9, x19, #0
 add x10, x24, #0
 lsr x11, x22, #3
 22:
-ldr x12, [x9, #0]
-str x12, [x10, #0]
-add x9, x9, #8
-add x10, x10, #8
-sub x11, x11, #1
+ldr q0, [x9, #0]
+ldr q1, [x9, #16]
+ldr q2, [x9, #32]
+ldr q3, [x9, #48]
+str q0, [x10, #0]
+str q1, [x10, #16]
+str q2, [x10, #32]
+str q3, [x10, #48]
+add x9, x9, #64
+add x10, x10, #64
+sub x11, x11, #8
 cbnz x11, 22b
 add x0, x24, #0
 lsr x1, x22, #7
@@ -1568,14 +1574,26 @@ add x9, x19, #0
 add x11, x21, #192
 lsr x12, x22, #3
 24:
-ldr x13, [x9, #0]
-ldr x14, [x10, #0]
-eor x13, x13, x14
-str x13, [x11, #0]
-add x9, x9, #8
-add x10, x10, #8
-add x11, x11, #8
-sub x12, x12, #1
+ldr q0, [x9, #0]
+ldr q1, [x9, #16]
+ldr q2, [x9, #32]
+ldr q3, [x9, #48]
+ldr q4, [x10, #0]
+ldr q5, [x10, #16]
+ldr q6, [x10, #32]
+ldr q7, [x10, #48]
+eor v0.16b, v0.16b, v4.16b
+eor v1.16b, v1.16b, v5.16b
+eor v2.16b, v2.16b, v6.16b
+eor v3.16b, v3.16b, v7.16b
+str q0, [x11, #0]
+str q1, [x11, #16]
+str q2, [x11, #32]
+str q3, [x11, #48]
+add x9, x9, #64
+add x10, x10, #64
+add x11, x11, #64
+sub x12, x12, #8
 cbnz x12, 24b
 add x0, x21, #192
 lsr x1, x22, #7

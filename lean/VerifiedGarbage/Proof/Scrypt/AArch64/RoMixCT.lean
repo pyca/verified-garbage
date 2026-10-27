@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Scrypt.AArch64.Common
+import VerifiedGarbage.Proof.Scrypt.AArch64.Transfer.Loops
 public import VerifiedGarbage.Proof.Scrypt.RoMix
 public import VerifiedGarbage.Impl.Scrypt.AArch64.RoMix
 import VerifiedGarbage.Proof.Scrypt.AArch64.Resident.Verified
@@ -34,9 +35,12 @@ meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Impl.Scrypt.AArch64.BlockMix
+public import VerifiedGarbage.Proof.MdStream.AArch64.Common
+public import VerifiedGarbage.Spec.Scrypt.Contract
 
 /-!
 # scryptROMix on AArch64: the precondition
@@ -296,184 +300,6 @@ open VG.Proof.MdStream.AArch64 (Upd Mupd wp_add wp_sub wp_addImm wp_subImm wp_ld
   eval_nonzero ofNat_beq_zero ofNat_pred sub_beq)
 open VG.Proof.Scrypt.AArch64.BlockMix (wp_eor)
 open VG.Proof.Scrypt.Memory (toNat_ofNat_lt add_ofNat)
-
-/-! ## Arithmetic -/
-
-theorem add_zero' (p : Addr) : p + BitVec.ofNat 64 0 = p := BitVec.add_zero _
-
-/-- A pointer advanced by one word. -/
-theorem next_ptr (p : Addr) (k : Nat) :
-    p + BitVec.ofNat 64 (8 * k) + BitVec.ofNat 64 8 = p + BitVec.ofNat 64 (8 * (k + 1)) := by
-  rw [add_ofNat, Nat.mul_succ]
-
-/-- The count after one more iteration of `n`. -/
-theorem dec_count {n k : Nat} (hk : k < n) :
-    BitVec.ofNat 64 (n - k) - BitVec.ofNat 64 1 = BitVec.ofNat 64 (n - (k + 1)) := by
-  rw [show BitVec.ofNat 64 1 = 1 from rfl, ofNat_pred (by omega_arith), Nat.sub_sub]
-
-theorem dec_ne {n k : Nat} (hk : k < n) (hn : n < 2 ^ 64) :
-    (BitVec.ofNat 64 (n - (k + 1)) != 0) = decide (k + 1 ≠ n) := by
-  rw [bne, ofNat_beq_zero (by omega_arith)]
-  by_cases h : k + 1 = n
-  · simp only [h, Nat.sub_self, decide_true, Bool.not_true, ne_eq, not_true_eq_false, decide_false]
-  · simp only [show n - (k + 1) ≠ 0 by omega_arith, decide_false, Bool.not_false, ne_eq, h,
-      not_false_eq_true, decide_true]
-
-theorem ofNat_zero_add (p : Addr) : p + BitVec.ofNat 64 (8 * 0) = p := by
-  rw [Nat.mul_zero]; exact BitVec.add_zero _
-
-/-! ## Counted loops -/
-
-/-- A do-while loop on `cbnz cr` that runs its body `n > 0` times: the
-register is zero exactly after the last iteration. -/
-theorem count_loop {body : Prog isa} {cr : Reg} {n : Nat} (hn : 0 < n) (I : Nat → State → Prop)
-    (hstep : ∀ k < n, ∀ s, I k s →
-      WP isa body s fun s' => I (k + 1) s' ∧ (s'.gpr cr != 0) = decide (k + 1 ≠ n))
-    {s : State} (h0 : I 0 s) : WP isa (.loop body (.nonzero .x cr)) s (I n) := by
-  refine WP.loop (M := isa) (fun m s => ∃ k, m = n - k ∧ k < n ∧ I k s) ?_ n s ⟨0, by omega_arith, hn, h0⟩
-  rintro m s ⟨k, rfl, hk, hi⟩
-  refine WP.mono (hstep k hk s hi) fun s' ⟨hi', hc⟩ => ?_
-  have hz : isa.eval (.nonzero .x cr) s' = some (decide (k + 1 ≠ n)) := by
-    show VG.AArch64.eval (.nonzero .x cr) s' = _
-    rw [eval_nonzero, hc]
-  by_cases hl : k + 1 = n
-  · refine .inl ⟨by rw [hz]; simp [hl], ?_⟩
-    rwa [hl] at hi'
-  · exact .inr ⟨by rw [hz]; simp [hl], n - (k + 1), by omega_arith, k + 1, rfl, by omega_arith, hi'⟩
-
-/-! ## `copyLoop` -/
-
-/-- After `k` words of `copyLoop`. -/
-structure CopyInv (s : State) (src dst : Addr) (n k : Nat) (t : State) : Prop where
-  rd : t.rd = s.rd
-  wr : t.wr = s.wr
-  sp : t.sp = s.sp
-  other : ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x11 → r ≠ .x12 → t.gpr r = s.gpr r
-  x9 : t.gpr .x9 = src + BitVec.ofNat 64 (8 * k)
-  x10 : t.gpr .x10 = dst + BitVec.ofNat 64 (8 * k)
-  x11 : t.gpr .x11 = BitVec.ofNat 64 (n - k)
-  mem : t.mem = writeBytes s.mem dst (bytesAt s.mem src (8 * k))
-
-theorem copy_step {s : State} {src dst : Addr} {n : Nat} (hlt : 8 * n < 2 ^ 64)
-    (hin : ∀ k < n, InRegions (s.rd ++ s.wr) (src + BitVec.ofNat 64 (8 * k)) 8)
-    (hout : ∀ k < n, InRegions s.wr (dst + BitVec.ofNat 64 (8 * k)) 8)
-    (hsep : Region.Disjoint ⟨src, 8 * n⟩ ⟨dst, 8 * n⟩) {k : Nat} (hk : k < n) {t : State}
-    (h : CopyInv s src dst n k t) :
-    WP isa (.block [.ldr .x .x12 .x9 0, .str .x .x12 .x10 0, .addImm .x .x9 .x9 8,
-      .addImm .x .x10 .x10 8, .subImm .x .x11 .x11 1]) t
-      fun t' => CopyInv s src dst n (k + 1) t' ∧ (t'.gpr .x11 != 0) = decide (k + 1 ≠ n) := by
-  refine wp_ldr (a := src + BitVec.ofNat 64 (8 * k)) (by decide) (by rw [h.x9, add_zero'])
-    (by rw [h.rd, h.wr]; exact hin k hk) fun t₁ u₁ => ?_
-  refine wp_str (a := dst + BitVec.ofNat 64 (8 * k)) (by decide)
-    (by rw [u₁.other _ (by decide), h.x10, add_zero'])
-    (by rw [u₁.wr, h.wr]; exact hout k hk) fun t₂ u₂ => ?_
-  refine wp_addImm (by decide) fun t₃ u₃ => wp_addImm (by decide) fun t₄ u₄ =>
-    wp_subImm (by decide) fun t₅ u₅ => WP.block_nil ?_
-  have g : ∀ r, r ≠ .x12 → t₂.gpr r = t.gpr r := fun r hr => by rw [u₂.gpr, u₁.other r hr]
-  have e11 : t₅.gpr .x11 = BitVec.ofNat 64 (n - (k + 1)) := by
-    rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), g _ (by decide), h.x11, dec_count hk]
-  refine ⟨⟨by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd, h.rd], by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr, h.wr],
-    by rw [u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp, h.sp], fun r h9 h10 h11 h12 => ?_, ?_, ?_, e11, ?_⟩, ?_⟩
-  · rw [u₅.other r h11, u₄.other r h10, u₃.other r h9, g r h12, h.other r h9 h10 h11 h12]
-  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, g _ (by decide), h.x9, next_ptr]
-  · rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), g _ (by decide), h.x10, next_ptr]
-  · rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.gpr, u₁.mem, h.mem, Nat.mul_succ]
-    exact Proof.Scrypt.Memory.copy_mem s.mem src dst k 8
-      (hsep.sep (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith)
-        (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith)) (by omega_arith)
-  · rw [e11, dec_ne hk (by omega_arith)]
-
-/-- `copyLoop` copies `8 n` bytes from `x9` to `x10` (`x11 = n > 0` words). -/
-theorem copyLoop_ok {s : State} {src dst : Addr} {n : Nat} (hn : 0 < n) (hlt : 8 * n < 2 ^ 64)
-    (h9 : s.gpr .x9 = src) (h10 : s.gpr .x10 = dst) (h11 : s.gpr .x11 = BitVec.ofNat 64 n)
-    (hin : ∀ k < n, InRegions (s.rd ++ s.wr) (src + BitVec.ofNat 64 (8 * k)) 8)
-    (hout : ∀ k < n, InRegions s.wr (dst + BitVec.ofNat 64 (8 * k)) 8)
-    (hsep : Region.Disjoint ⟨src, 8 * n⟩ ⟨dst, 8 * n⟩) :
-    WP isa copyLoop s fun s' => s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
-      (∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x11 → r ≠ .x12 → s'.gpr r = s.gpr r) ∧
-      s'.mem = writeBytes s.mem dst (bytesAt s.mem src (8 * n)) := by
-  refine WP.mono (count_loop hn (CopyInv s src dst n)
-    (fun k hk t h => copy_step hlt hin hout hsep hk h) ?_)
-    fun t h => ⟨h.rd, h.wr, h.sp, h.other, h.mem⟩
-  exact ⟨rfl, rfl, rfl, fun _ _ _ _ _ => rfl, by rw [ofNat_zero_add, h9], by rw [ofNat_zero_add, h10],
-    by rw [h11, Nat.sub_zero], by rw [Nat.mul_zero]; exact (writeBytes_nil _ _).symm⟩
-
-/-! ## `xorLoop` -/
-
-/-- After `k` words of `xorLoop`. -/
-structure XorInv (s : State) (x y d : Addr) (n k : Nat) (t : State) : Prop where
-  rd : t.rd = s.rd
-  wr : t.wr = s.wr
-  sp : t.sp = s.sp
-  other : ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x11 → r ≠ .x12 → r ≠ .x13 → r ≠ .x14 →
-    t.gpr r = s.gpr r
-  x9 : t.gpr .x9 = x + BitVec.ofNat 64 (8 * k)
-  x10 : t.gpr .x10 = y + BitVec.ofNat 64 (8 * k)
-  x11 : t.gpr .x11 = d + BitVec.ofNat 64 (8 * k)
-  x12 : t.gpr .x12 = BitVec.ofNat 64 (n - k)
-  mem : t.mem = writeBytes s.mem d (xorBytes (bytesAt s.mem x (8 * k)) (bytesAt s.mem y (8 * k)))
-
-theorem xor_step {s : State} {x y d : Addr} {n : Nat} (hlt : 8 * n < 2 ^ 64)
-    (hinx : ∀ k < n, InRegions (s.rd ++ s.wr) (x + BitVec.ofNat 64 (8 * k)) 8)
-    (hiny : ∀ k < n, InRegions (s.rd ++ s.wr) (y + BitVec.ofNat 64 (8 * k)) 8)
-    (hout : ∀ k < n, InRegions s.wr (d + BitVec.ofNat 64 (8 * k)) 8)
-    (hdx : Region.Disjoint ⟨d, 8 * n⟩ ⟨x, 8 * n⟩) (hdy : Region.Disjoint ⟨d, 8 * n⟩ ⟨y, 8 * n⟩)
-    {k : Nat} (hk : k < n) {t : State} (h : XorInv s x y d n k t) :
-    WP isa (.block [.ldr .x .x13 .x9 0, .ldr .x .x14 .x10 0, .logic .eor .x .x13 .x13 .x14,
-      .str .x .x13 .x11 0, .addImm .x .x9 .x9 8, .addImm .x .x10 .x10 8, .addImm .x .x11 .x11 8,
-      .subImm .x .x12 .x12 1]) t
-      fun t' => XorInv s x y d n (k + 1) t' ∧ (t'.gpr .x12 != 0) = decide (k + 1 ≠ n) := by
-  refine wp_ldr (a := x + BitVec.ofNat 64 (8 * k)) (by decide) (by rw [h.x9, add_zero'])
-    (by rw [h.rd, h.wr]; exact hinx k hk) fun t₁ u₁ => ?_
-  refine wp_ldr (a := y + BitVec.ofNat 64 (8 * k)) (by decide)
-    (by rw [u₁.other _ (by decide), h.x10, add_zero'])
-    (by rw [u₁.rd, u₁.wr, h.rd, h.wr]; exact hiny k hk) fun t₂ u₂ => ?_
-  refine wp_eor fun t₃ u₃ => ?_
-  refine wp_str (a := d + BitVec.ofNat 64 (8 * k)) (by decide)
-    (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), h.x11,
-      add_zero'])
-    (by rw [u₃.wr, u₂.wr, u₁.wr, h.wr]; exact hout k hk) fun t₄ u₄ => ?_
-  refine wp_addImm (by decide) fun t₅ u₅ => wp_addImm (by decide) fun t₆ u₆ =>
-    wp_addImm (by decide) fun t₇ u₇ => wp_subImm (by decide) fun t₈ u₈ => WP.block_nil ?_
-  have g : ∀ r, r ≠ .x13 → r ≠ .x14 → t₄.gpr r = t.gpr r := fun r h13 h14 => by
-    rw [u₄.gpr, u₃.other r h13, u₂.other r h14, u₁.other r h13]
-  have e12 : t₈.gpr .x12 = BitVec.ofNat 64 (n - (k + 1)) := by
-    rw [u₈.gpr, u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide),
-      g _ (by decide) (by decide), h.x12, dec_count hk]
-  refine ⟨⟨by rw [u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd, h.rd],
-    by rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr, h.wr],
-    by rw [u₈.sp, u₇.sp, u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp, h.sp],
-    fun r h9 h10 h11 h12 h13 h14 => ?_, ?_, ?_, ?_, e12, ?_⟩, ?_⟩
-  · rw [u₈.other r h12, u₇.other r h11, u₆.other r h10, u₅.other r h9, g r h13 h14,
-      h.other r h9 h10 h11 h12 h13 h14]
-  · rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr,
-      g _ (by decide) (by decide), h.x9, next_ptr]
-  · rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.gpr, u₅.other _ (by decide),
-      g _ (by decide) (by decide), h.x10, next_ptr]
-  · rw [u₈.other _ (by decide), u₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide),
-      g _ (by decide) (by decide), h.x11, next_ptr]
-  · rw [u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.gpr, u₃.mem, u₂.other .x13 (by decide), u₂.gpr,
-      u₂.mem, u₁.gpr, u₁.mem, h.mem]
-    exact Proof.Scrypt.Memory.xor_mem s.mem hk hlt hdx hdy
-  · rw [e12, dec_ne hk (by omega_arith)]
-
-/-- `xorLoop` writes `[x9] xor [x10]` to `x11`, `8 n` bytes (`x12 = n > 0` words). -/
-theorem xorLoop_ok {s : State} {x y d : Addr} {n : Nat} (hn : 0 < n) (hlt : 8 * n < 2 ^ 64)
-    (h9 : s.gpr .x9 = x) (h10 : s.gpr .x10 = y) (h11 : s.gpr .x11 = d)
-    (h12 : s.gpr .x12 = BitVec.ofNat 64 n)
-    (hinx : ∀ k < n, InRegions (s.rd ++ s.wr) (x + BitVec.ofNat 64 (8 * k)) 8)
-    (hiny : ∀ k < n, InRegions (s.rd ++ s.wr) (y + BitVec.ofNat 64 (8 * k)) 8)
-    (hout : ∀ k < n, InRegions s.wr (d + BitVec.ofNat 64 (8 * k)) 8)
-    (hdx : Region.Disjoint ⟨d, 8 * n⟩ ⟨x, 8 * n⟩) (hdy : Region.Disjoint ⟨d, 8 * n⟩ ⟨y, 8 * n⟩) :
-    WP isa xorLoop s fun s' => s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
-      (∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x11 → r ≠ .x12 → r ≠ .x13 → r ≠ .x14 → s'.gpr r = s.gpr r) ∧
-      s'.mem = writeBytes s.mem d (xorBytes (bytesAt s.mem x (8 * n)) (bytesAt s.mem y (8 * n))) := by
-  refine WP.mono (count_loop hn (XorInv s x y d n)
-    (fun k hk t h => xor_step hlt hinx hiny hout hdx hdy hk h) ?_)
-    fun t h => ⟨h.rd, h.wr, h.sp, h.other, h.mem⟩
-  exact ⟨rfl, rfl, rfl, fun _ _ _ _ _ _ _ => rfl, by rw [ofNat_zero_add, h9],
-    by rw [ofNat_zero_add, h10], by rw [ofNat_zero_add, h11], by rw [h12, Nat.sub_zero],
-    by rw [Nat.mul_zero]; exact (writeBytes_nil _ _).symm⟩
 
 /-! ## `nLoop` -/
 
@@ -900,19 +726,19 @@ theorem vAt_succ (s₀ : State) (i : Nat) :
   show _ = vP s₀ + BitVec.ofNat 64 (128 * rr s₀ * (i + 1))
   rw [add_ofNat, Nat.mul_succ]
 
-theorem b_word {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 16 * rr s₀) :
-    InRegions (s₀.rd ++ s₀.wr) (bP s₀ + BitVec.ofNat 64 (8 * k)) 8 := by
+theorem b_word {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 2 * rr s₀) :
+    InRegions (s₀.rd ++ s₀.wr) (bP s₀ + BitVec.ofNat 64 (64 * k)) 64 := by
   have := r_lt hp
   rw [hp.rd, hp.wr]
   exact InRegions.of_mem (R := bR s₀) (by simp) (contains_off (by omega_arith) (by omega_arith))
 
-theorem v_word {s₀ : State} (hp : Pre s₀) {i k : Nat} (hi : i < NN s₀) (hk : k < 16 * rr s₀) :
-    InRegions s₀.wr (vAt s₀ i + BitVec.ofNat 64 (8 * k)) 8 := by
+theorem v_word {s₀ : State} (hp : Pre s₀) {i k : Nat} (hi : i < NN s₀) (hk : k < 2 * rr s₀) :
+    InRegions s₀.wr (vAt s₀ i + BitVec.ofNat 64 (64 * k)) 64 := by
   rw [hp.wr]
   have e := vl_mul hp
   have := v_le hi
   have lt := v_lt hp
-  show InRegions _ (vP s₀ + BitVec.ofNat 64 (128 * rr s₀ * i) + BitVec.ofNat 64 (8 * k)) 8
+  show InRegions _ (vP s₀ + BitVec.ofNat 64 (128 * rr s₀ * i) + BitVec.ofNat 64 (64 * k)) 64
   rw [add_ofNat]
   exact InRegions.of_mem (R := vR s₀) (by simp) (contains_off (by rw [e]; omega_arith) (by omega_arith))
 
@@ -935,11 +761,11 @@ theorem step2_ok {c : Prog isa} (hS : BlockMixSpec c) {s₀ : State} (hp : Pre s
   have ewr : d.wr = s₀.wr := by rw [ud.wr, ub.wr, ua.wr, h.wr]
   have esp : d.sp = s₀.sp := by rw [ud.sp, ub.sp, ua.sp, h.sp]
   have hme : d.mem = s.mem := by rw [ud.mem, ub.mem, ua.mem]
-  have e8 : 8 * (16 * rr s₀) = 128 * rr s₀ := by omega_arith
-  refine WP.seq (WP.mono (copyLoop_ok (src := bP s₀) (dst := vAt s₀ i) (n := 16 * rr s₀) (by omega_arith)
+  have e8 : 64 * (2 * rr s₀) = 128 * rr s₀ := by omega_arith
+  refine WP.seq (WP.mono (copyLoop_ok (src := bP s₀) (dst := vAt s₀ i) (n := 2 * rr s₀) (by omega_arith)
     (by omega_arith) (by rw [ud.other _ (by decide), ub.other _ (by decide), ua.gpr, h.x19])
     (by rw [ud.other _ (by decide), ub.gpr, ua.other _ (by decide), h.x24])
-    (by rw [ud.gpr, ub.other _ (by decide), ua.other _ (by decide), h.x22, sh3 hp])
+    (by rw [ud.gpr, ub.other _ (by decide), ua.other _ (by decide), h.x22, sh3 hp]; congr 1; omega_arith)
     (fun k hk => by rw [erd, ewr]; exact b_word hp hk)
     (fun k hk => by rw [ewr]; exact v_word hp hi hk)
     (by rw [e8]; exact (vAt_b hp hi).symm.sub_left b_sub'))
@@ -1060,8 +886,8 @@ theorem j_addr {s₀ : State} (hp : Pre s₀) :
       bP s₀ + BitVec.ofNat 64 (128 * rr s₀ - 64) :=
   add_sub64 _ (by have := hp.pos; omega_arith)
 
-theorem t_word {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 16 * rr s₀) :
-    InRegions s₀.wr (tP s₀ + BitVec.ofNat 64 (8 * k)) 8 := by
+theorem t_word {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 2 * rr s₀) :
+    InRegions s₀.wr (tP s₀ + BitVec.ofNat 64 (64 * k)) 64 := by
   have := hp.s_nw
   rw [hp.wr, add_ofNat]
   exact InRegions.of_mem (R := scR s₀) (by simp) (contains_off (by omega_arith) (by omega_arith))
@@ -1160,7 +986,7 @@ theorem step3_ok {c : Prog isa} (hS : BlockMixSpec c) {s₀ : State} (hp : Pre s
   have pos := hp.pos
   have hN := NN_lt hp
   have hj := jOf_lt hp s.mem
-  have e8 : 8 * (16 * rr s₀) = 128 * rr s₀ := by omega_arith
+  have e8 : 64 * (2 * rr s₀) = 128 * rr s₀ := by omega_arith
   unfold step3
   refine WP.seq (WP.mono (j_ok hp h.x19 h.x22 h.x24 h.rd h.wr) fun a ua => ?_)
   refine WP.seq (wp_madd fun b ub => wp_mov fun d ud => wp_addImm (by decide) fun e ue =>
@@ -1176,14 +1002,14 @@ theorem step3_ok {c : Prog isa} (hS : BlockMixSpec c) {s₀ : State} (hp : Pre s
     rw [uf.other _ (by decide), ue.other _ (by decide), ud.other _ (by decide), ub.gpr,
       ua.gpr, ua.other _ (by decide), ua.other _ (by decide), h.x20, h.x22, vAt_madd]
   refine WP.seq (WP.mono (xorLoop_ok (x := bP s₀) (y := vAt s₀ (jOf s₀ s.mem)) (d := tP s₀)
-    (n := 16 * rr s₀) (by omega_arith) (by omega_arith)
+    (n := 2 * rr s₀) (by omega_arith) (by omega_arith)
     (by rw [uf.other _ (by decide), ue.other _ (by decide), ud.gpr, ub.other _ (by decide),
       ua.other _ (by decide), h.x19])
     h10
     (by rw [uf.other _ (by decide), ue.gpr, ud.other _ (by decide), ub.other _ (by decide),
       ua.other _ (by decide), h.x21])
     (by rw [uf.gpr, ue.other _ (by decide), ud.other _ (by decide), ub.other _ (by decide),
-      ua.other _ (by decide), h.x22, sh3 hp])
+      ua.other _ (by decide), h.x22, sh3 hp]; congr 1; omega_arith)
     (fun k hk => by rw [rdf, wrf]; exact b_word hp hk)
     (fun k hk => by rw [rdf, wrf]; exact InRegions.right (v_word hp hj hk))
     (fun k hk => by rw [wrf]; exact t_word hp hk)

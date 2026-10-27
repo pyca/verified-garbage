@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Scrypt.AArch64.BlockMix
+public import VerifiedGarbage.Impl.Scrypt.AArch64.Transfer
 
 /-!
 # scryptROMix: AArch64 implementation
@@ -37,16 +38,11 @@ last: the epilogue reads the others through it. -/
 def rmSaved : List (Reg × Nat) :=
   [(.x19, 128), (.x20, 136), (.x22, 144), (.x23, 152), (.x24, 160), (.x30, 168), (.x21, 176)]
 
-/-- The 8-byte words `[x10] ← [x9]`, `x11` of them. -/
-def copyLoop : Prog isa :=
-  .loop (.block [.ldr .x .x12 .x9 0, .str .x .x12 .x10 0, .addImm .x .x9 .x9 8,
-    .addImm .x .x10 .x10 8, .subImm .x .x11 .x11 1]) (.nonzero .x .x11)
+/-- Copy in 64-byte vector packets; x11 counts eight-byte words and is a multiple of eight. -/
+def copyLoop : Prog isa := Transfer.copyLoop
 
-/-- The 8-byte words `[x11] ← [x9] xor [x10]`, `x12` of them. -/
-def xorLoop : Prog isa :=
-  .loop (.block [.ldr .x .x13 .x9 0, .ldr .x .x14 .x10 0, .logic .eor .x .x13 .x13 .x14,
-    .str .x .x13 .x11 0, .addImm .x .x9 .x9 8, .addImm .x .x10 .x10 8, .addImm .x .x11 .x11 8,
-    .subImm .x .x12 .x12 1]) (.nonzero .x .x12)
+/-- XOR in 64-byte vector packets; x12 counts eight-byte words and is a multiple of eight. -/
+def xorLoop : Prog isa := Transfer.xorLoop
 
 /-- Saving our caller's registers; `x19 = b`, `x20 = v`, `x21 = scratch`,
 `x22 = 128 r`; `x9 = r`, `x10 = 1`, `x11 = 2 vlen` for `nLoop`. -/
