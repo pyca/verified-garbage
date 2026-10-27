@@ -306,18 +306,20 @@ def signWith (generator : Prog isa) : Prog isa :=
 the public key, ECDH and verification call: the ladder of `ladderP`, its
 point at `ACC`, `PT`, `ONEP` (a copy of `Q`, which the contract has in
 `R`'s first two slots), over the bits of `k` at `K`'s slot; it keeps the
-callee-saved registers `r4`–`r11` and `lr` past the numbered slots (slot
-45's place, the start of the contract's tail, below the point functions'
-slots and the field arithmetic's own working space), and returns with
-`r12` the working space. -/
+callee-saved registers `r4`–`r9`, `r11` and `lr` past the numbered slots
+(slot 45's place, the start of the contract's tail, below the point
+functions' slots and the field arithmetic's own working space), and `r10`
+in `lr`, which the ladder keeps through its calls in registers alone (so a
+public `r10`, such as a caller's `out`, stays known to be public through the
+stores of secrets in memory); it returns with `r12` the working space. -/
 
 /-- The ladder of `vg_<curve>_mul`: the signature's, from the point at `ACC`,
 `PT`, `ONEP`. -/
 def mulLadder : LadderCfg := { c.ladderCfg with G := c.pt ACC PT ONEP }
 
-/-- Where `vg_<curve>_mul` keeps the callee-saved registers: past the
-numbered slots. -/
-def mulSaved : List (Reg × Nat) := saved.map fun (r, d) => (r, c.sl nslots + d)
+/-- Where `vg_<curve>_mul` keeps the callee-saved registers but `r10`: past
+the numbered slots. -/
+def mulSaved : List (Reg × Nat) := (saved.filter (·.1 != .r10)).map fun (r, d) => (r, c.sl nslots + d)
 
 /-- `vg_<curve>_mul`'s body: the table of `k`'s bits, `Q` (in `R`'s first
 two slots) copied to `ACC` and `PT`, `R = O = (0 : 1 : 0)` (from zero and
@@ -330,10 +332,12 @@ def mulBody : Prog isa :=
     (Point.ladderP c.mulLadder c.SP)
 
 /-- `vg_<curve>_mul`: the working space from `r0` to `r12`, the callee-saved
-registers kept (`mulSaved`) around the body. -/
+registers kept around the body (`mulSaved`, and `r10` in `lr`). -/
 def mulFn : Prog isa :=
   .seq (.block (.mov wb (.reg .r0) :: c.mulSaved.map fun (r, d) => .str r wb d)) <|
-  .seq c.mulBody (.block (c.mulSaved.map fun (r, d) => .ldr r wb d))
+  .seq (.block [.mov .lr (.reg .r10)]) <|
+  .seq c.mulBody <|
+  .seq (.block [.mov .r10 (.reg .lr)]) (.block (c.mulSaved.map fun (r, d) => .ldr r wb d))
 
 /-- A call of `vg_<curve>_mul` (`C`'s) on the point at `px`, `py`: the point
 copied to `R`'s first two slots, `lr` kept in `r10` across the call, as the

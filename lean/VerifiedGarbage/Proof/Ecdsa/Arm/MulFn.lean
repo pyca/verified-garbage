@@ -304,7 +304,7 @@ abbrev mulSW (c : Cfg) : List (Nat × Nat) := [(c.sl nslots, 36)]
 abbrev mulFW (c : Cfg) : List (Nat × Nat) := mulBW c ++ mulSW c
 
 theorem mulSaved_eq (c : Cfg) : c.mulSaved = [(.r4, c.sl 45), (.r5, c.sl 45 + 4), (.r6, c.sl 45 + 8),
-    (.r7, c.sl 45 + 12), (.r8, c.sl 45 + 16), (.r9, c.sl 45 + 20), (.r10, c.sl 45 + 24),
+    (.r7, c.sl 45 + 12), (.r8, c.sl 45 + 16), (.r9, c.sl 45 + 20),
     (.r11, c.sl 45 + 28), (.lr, c.sl 45 + 32)] := rfl
 
 /-- The registers' words lie past the numbered slots, below the field
@@ -349,7 +349,7 @@ theorem mulSaved_bounds (h7 : c.n < 10) : ∀ p ∈ c.mulSaved, p.2 + 4 ≤ size
   have := wk_le c h7 (M := c.MP') rfl
   rw [mulSaved_eq]; intro p hp
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith
 
 theorem mulSaved_pairwise (c : Cfg) :
     c.mulSaved.Pairwise (fun p q => p.2 + 4 ≤ q.2 ∨ q.2 + 4 ≤ p.2) := by
@@ -362,7 +362,7 @@ theorem mulSaved_regs (c : Cfg) : (c.mulSaved.map Prod.fst).Nodup ∧ ∀ p ∈ 
   rw [mulSaved_eq]
   refine ⟨by simp only [List.map_cons, List.map_nil]; decide, fun p hp => ?_⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp
 
 /-- `vg_<curve>_mul`, from the working space at `r0` (`base`), its `8192`
 bytes the only memory it may access, and what `mulBody_ok` needs of them:
@@ -390,7 +390,13 @@ theorem mulFn_ok (hc : CfgOk c) {s : State} {base : Addr} (hb : State.addr (s.gp
     by rw [u₁.wr, hwr]; simp⟩, by omega, by decide⟩
   have hf₁ : Far s₁ base 8192 := ⟨by rw [u₁.wr, hwr]; simp, hfit⟩
   refine WP.mono (strs_ok hs₁ c.mulSaved (mulSaved_bounds h7) (mulSaved_pairwise c))
-    fun s₂ ⟨K₂, O₂, V₂⟩ => ?_
+    fun s₂₀ ⟨K₂₀, O₂₀, V₂₀⟩ => ?_
+  refine WP.seq (wp_mov (op2_reg _ _) fun s₂ u₂ => WP.block_nil ?_)
+  have K₂ : Rest [.lr] s₁ s₂ := (K₂₀.mono fun _ h => absurd h List.not_mem_nil).trans (u₂.rest (by simp))
+  have O₂ : Outs base (c.mulSaved.map fun p => (p.2, 4)) s₁.mem s₂.mem := by rw [u₂.mem]; exact O₂₀
+  have V₂ : ∀ p ∈ c.mulSaved, s₂.mem.readW (off base p.2) 32 = s₁.gpr p.1 := fun p hp => by
+    rw [u₂.mem]; exact V₂₀ p hp
+  have l₂ : s₂.gpr .lr = s.gpr .r10 := by rw [u₂.gpr, K₂₀.gpr _ (by simp), u₁.other _ (by decide)]
   have hs₂ := hs₁.of_rest K₂ (by decide)
   have hf₂ := hf₁.of_rest K₂
   have e₂ : ∀ {i}, i < 45 → sv c base s₂ i = sv c base s i := fun hi => by
@@ -399,7 +405,7 @@ theorem mulFn_ok (hc : CfgOk c) {s : State} {base : Addr} (hb : State.addr (s.gp
     refine (VG.Proof.Weierstrass.Arm.Outs.wordsVal O₂ (fun r hr => ?_) (by omega_arith)).trans ?_
     · rw [mulSaved_eq] at hr
       simp only [List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> left <;> dsimp only <;> omega_arith
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> left <;> dsimp only <;> omega_arith
     · rw [u₁.mem]
   have tv : ∀ {i}, i < 45 → tmv c.C c.n base s₂ (c.sl i) = tmv c.C c.n base s (c.sl i) := fun hi => by
     show toM _ _ (sv c base s₂ _) = toM _ _ (sv c base s _); rw [e₂ hi]
@@ -415,8 +421,17 @@ theorem mulFn_ok (hc : CfgOk c) {s : State} {base : Addr} (hb : State.addr (s.gp
     (by rw [e₂ (by decide)]; exact hap) (by rw [e₂ (by decide)]; exact hb3)
     (by rw [e₂ (by decide)]; exact hone) (by rw [e₂ (by decide)]; exact hzero)
     (by rw [e₂ (by decide)]; exact hqx) (by rw [e₂ (by decide)]; exact hqy) hstep₂ hO₂)
-    fun s₃ ⟨K₃, U₃, M₃, L₃, R₃⟩ => ?_)
-  have hs₃ := hs₂.of_rest K₃ (by decide)
+    fun s₃₀ ⟨K₃, U₃₀, M₃, L₃₀, R₃₀⟩ => ?_)
+  refine WP.seq (wp_mov (op2_reg _ _) fun s₃ u₃ => WP.block_nil ?_)
+  have l₃ : s₃.gpr .r10 = s.gpr .r10 := by rw [u₃.gpr, K₃.gpr _ (by decide), l₂]
+  have U₃ : Unch base (mulBW c) s₂.mem s₃.mem := by rw [u₃.mem]; exact U₃₀
+  have L₃ : ∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s₃.mem base x c.n < c.C.p := by
+    rw [u₃.mem]; exact L₃₀
+  have R₃ : Q 0 (tmv c.C c.n base s₃ (c.sl RX)) (tmv c.C c.n base s₃ (c.sl RY))
+      (tmv c.C c.n base s₃ (c.sl RZ)) := by
+    show Q 0 (toM _ _ (wordsVal s₃.mem _ _ _)) (toM _ _ (wordsVal s₃.mem _ _ _)) (toM _ _ (wordsVal s₃.mem _ _ _))
+    rw [u₃.mem]; exact R₃₀
+  have hs₃ := (hs₂.of_rest K₃ (by decide)).of_rest (u₃.rest (ws := [.r10]) (by simp)) (by decide)
   refine WP.mono (ldrs_ok hs₃ c.mulSaved (mulSaved_bounds h7) (mulSaved_regs c).1 (mulSaved_regs c).2)
     fun s₄ ⟨M₄, K₄, V₄⟩ => ?_
   -- The words of the registers, kept by the body.
@@ -426,19 +441,24 @@ theorem mulFn_ok (hc : CfgOk c) {s : State} {base : Addr} (hb : State.addr (s.gp
     have hp' : c.sl 45 ≤ p.2 ∧ p.2 + 4 ≤ c.sl 45 + 36 := by
       rw [mulSaved_eq] at hp
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
-      rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith
+      rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith
     rcases save_apart h7 w hw with h | h <;> [exact .inl (by omega_arith); exact .inr (by omega_arith)]
-  refine ⟨⟨fun r hr => ?_, by rw [K₄.sp, K₃.sp, K₂.sp, u₁.sp]⟩, ?_, by rw [K₄.rd, K₃.rd, K₂.rd, u₁.rd],
-    by rw [K₄.wr, K₃.wr, K₂.wr, u₁.wr], ?_, ?_, ?_⟩
-  · have hp : ∃ d, (r, d) ∈ c.mulSaved := by
+  refine ⟨⟨fun r hr => ?_, by rw [K₄.sp, u₃.sp, K₃.sp, K₂.sp, u₁.sp]⟩, ?_,
+    by rw [K₄.rd, u₃.rd, K₃.rd, K₂.rd, u₁.rd], by rw [K₄.wr, u₃.wr, K₃.wr, K₂.wr, u₁.wr], ?_, ?_, ?_⟩
+  · by_cases h10 : r = .r10
+    · subst h10
+      rw [K₄.gpr _ (by simp only [mulSaved_eq, List.map_cons, List.map_nil]; decide), l₃]
+    have hp : ∃ d, (r, d) ∈ c.mulSaved := by
       simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rw [mulSaved_eq]
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      all_goals first | exact absurd rfl h10 |
         exact ⟨_, by repeat (first | exact List.mem_cons_self | apply List.mem_cons_of_mem)⟩
     obtain ⟨d, hd⟩ := hp
     rw [V₄ _ hd, kept _ hd, V₂ _ hd, u₁.other _ (by
       intro h; subst h; simp [preserved] at hr)]
-  · rw [K₄.gpr _ (by simp only [mulSaved_eq, List.map_cons, List.map_nil]; decide), K₃.gpr _ (by decide), K₂.gpr _ (by decide), u₁.gpr]
+  · rw [K₄.gpr _ (by simp only [mulSaved_eq, List.map_cons, List.map_nil]; decide), u₃.other _ (by decide),
+      K₃.gpr _ (by decide), K₂.gpr _ (by decide), u₁.gpr]
   · rw [M₄]
     have := (VG.Proof.Weierstrass.Arm.Outs.unch O₂).trans U₃
     rw [u₁.mem] at this
@@ -447,7 +467,7 @@ theorem mulFn_ok (hc : CfgOk c) {s : State} {base : Addr} (hb : State.addr (s.gp
     · rw [mulSaved_eq] at hw
       simp only [List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at hw
       refine ⟨(c.sl nslots, 36), List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
-      rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
         exact ⟨by dsimp only [nslots]; omega_arith, by dsimp only [nslots]; omega_arith⟩
     · exact ⟨w, List.mem_append_left _ hw, Nat.le_refl _, Nat.le_refl _⟩
   · rw [M₄]; exact L₃
