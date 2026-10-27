@@ -12,9 +12,10 @@
 //! `vg_scrypt_sha2` with the SHA-256 instructions.
 //!
 //! ROMix (contract `VG.Spec.Scrypt.roMixContract`) calls the verified
-//! `vg_scrypt_blockmix`, which calls `vg_salsa20_8` (on x86-64 it computes
-//! Salsa20/8 itself). This module only checks the parameters and allocates
-//! the memory scrypt works in (and, for [`verify`], compares the derived key
+//! `vg_scrypt_blockmix`, which computes Salsa20/8 itself on x86-64 and
+//! AArch64 and calls `vg_salsa20_8` on the other architectures. This module
+//! only checks the parameters and allocates the memory scrypt works in
+//! (and, for [`verify`], compares the derived key
 //! with the expected one).
 //!
 //! scryptROMix reads its table `V` at indices derived from the password, so
@@ -362,5 +363,106 @@ mod derive_tests {
         )
         .unwrap();
         assert_eq!(out, derive_with(selected));
+    }
+}
+
+#[cfg(all(test, target_arch = "aarch64"))]
+mod blockmix_tests {
+    /// Independent scalar transcription of RFC 7914 sections 3 and 4. Odd
+    /// block sizes exercise the even/odd output partition beyond RFC vectors.
+    fn reference(input: &[[u8; 128]]) -> alloc::vec::Vec<[u8; 128]> {
+        let mut x = [0u32; 16];
+        for (w, b) in x
+            .iter_mut()
+            .zip(input.last().unwrap()[64..].as_chunks::<4>().0)
+        {
+            *w = u32::from_le_bytes(*b);
+        }
+        let r = input.len();
+        let mut out = alloc::vec![[0u8; 128]; r];
+        let out_bytes = out.as_flattened_mut();
+        for (i, block) in input.as_flattened().as_chunks::<64>().0.iter().enumerate() {
+            for (w, b) in x.iter_mut().zip(block.as_chunks::<4>().0) {
+                *w ^= u32::from_le_bytes(*b);
+            }
+            let original = x;
+            let quarter = |x: &mut [u32; 16], a: usize, b: usize, c: usize, d: usize| {
+                x[b] ^= x[a].wrapping_add(x[d]).rotate_left(7);
+                x[c] ^= x[b].wrapping_add(x[a]).rotate_left(9);
+                x[d] ^= x[c].wrapping_add(x[b]).rotate_left(13);
+                x[a] ^= x[d].wrapping_add(x[c]).rotate_left(18);
+            };
+            for _ in 0..4 {
+                for (a, b, c, d) in [
+                    (0, 4, 8, 12),
+                    (5, 9, 13, 1),
+                    (10, 14, 2, 6),
+                    (15, 3, 7, 11),
+                    (0, 1, 2, 3),
+                    (5, 6, 7, 4),
+                    (10, 11, 8, 9),
+                    (15, 12, 13, 14),
+                ] {
+                    quarter(&mut x, a, b, c, d);
+                }
+            }
+            for (w, o) in x.iter_mut().zip(original) {
+                *w = w.wrapping_add(o);
+            }
+            let offset = 64 * (i / 2 + (i % 2) * r);
+            for (b, w) in out_bytes[offset..offset + 64]
+                .as_chunks_mut::<4>()
+                .0
+                .iter_mut()
+                .zip(x)
+            {
+                b.copy_from_slice(&w.to_le_bytes());
+            }
+        }
+        out
+    }
+
+    #[test]
+    fn blockmix_matches_scalar() {
+        let mut seed = 0x5c12_7971_44a0_e987u64;
+        for r in [1, 2, 3, 8, 13, 17, 32] {
+            for pattern in 0..32 {
+                let mut input = alloc::vec![[0u8; 128]; r];
+                for b in input.as_flattened_mut() {
+                    seed ^= seed << 13;
+                    seed ^= seed >> 7;
+                    seed ^= seed << 17;
+                    *b = match pattern {
+                        0 => 0,
+                        1 => 255,
+                        _ => seed as u8,
+                    };
+                }
+                let before = input.clone();
+                let mut output = alloc::vec![[0xa5; 128]; r + 2];
+                let mut scratch = [[0x5a5a_5a5au32; 32]; 3];
+                // The contract admits disjoint buffers of r 128-byte chunks
+                // and one 128-byte scratch array, with positive r.
+                unsafe {
+                    crate::arch::scrypt::vg_scrypt_blockmix(
+                        input.as_ptr(),
+                        r,
+                        output[1..].as_mut_ptr(),
+                        r,
+                        &mut scratch[1],
+                    );
+                }
+                assert_eq!(
+                    output[1..r + 1],
+                    reference(&input),
+                    "r={r} pattern={pattern}"
+                );
+                assert_eq!(input, before);
+                assert_eq!(output[0], [0xa5; 128]);
+                assert_eq!(output[r + 1], [0xa5; 128]);
+                assert_eq!(scratch[0], [0x5a5a_5a5a; 32]);
+                assert_eq!(scratch[2], [0x5a5a_5a5a; 32]);
+            }
+        }
     }
 }

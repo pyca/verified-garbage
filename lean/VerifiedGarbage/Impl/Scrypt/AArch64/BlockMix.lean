@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Scrypt.AArch64.Salsa
+public import VerifiedGarbage.Impl.Scrypt.AArch64.Resident
 
 /-!
 # scryptBlockMix: AArch64 implementation
@@ -8,6 +9,10 @@ public import VerifiedGarbage.Impl.Scrypt.AArch64.Salsa
 `blockmix(b = x0, r = x1, y = x2, ry = x3, scratch = x4)` writes
 scryptBlockMix (RFC 7914 §4) of the `128 * r` bytes at `b` to the `128 * r`
 bytes at `y`.
+
+The generic reference implementation below uses a Salsa call per block.
+Production `blockMix` uses `Resident.code` instead, retaining Salsa's sixteen
+scalar words in registers across blocks and reusing the same permutation.
 
 As on x86-64 (`Impl/Scrypt/X86_64/BlockMix.lean`), step 2's `Y[i]` go straight
 to their places in step 3's output: `Y[2k]` to `y + 64k` and `Y[2k + 1]` to
@@ -78,6 +83,10 @@ def blockMixMain (salsa : Prog isa) : Prog isa :=
 def blockMixWith (salsa : Prog isa) : Prog isa :=
   .frame (.push .x30) (blockMixMain salsa) (.pop .x30)
 
-def blockMix : Prog isa := blockMixWith salsa
+/-- The original call-based implementation, retained for the generic proof helpers. -/
+def referenceBlockMix : Prog isa := blockMixWith salsa
+
+/-- The production implementation retains the Salsa state in scalar registers. -/
+def blockMix : Prog isa := Resident.code
 
 end VG.Impl.Scrypt.AArch64

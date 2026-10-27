@@ -755,19 +755,19 @@ def bmSat : State where
   wr := [⟨0x2000, 128⟩, ⟨0x3000, 128⟩]
 
 theorem blockMix_correct (s : State) (hs : Proof.Scrypt.blockMixAArch64.pre s) :
-    ∃ t s', Exec isa Impl.Scrypt.AArch64.blockMix s t s' ∧ abiPreserved s s' ∧
+    ∃ t s', Exec isa Impl.Scrypt.AArch64.referenceBlockMix s t s' ∧ abiPreserved s s' ∧
       Proof.Scrypt.blockMixAArch64.post s s' := by
   obtain ⟨t, s', he, h⟩ :=
     BlockMix.correct salsaSpec main_fdepth (pre_of hs).1 (pre_of hs).2
   exact ⟨t, s', he, ⟨h.1.1, h.1.2, Exec.preservedV he (by lit_decide)⟩, h.2⟩
 
 theorem blockMix_ct : ConstantTime isa Proof.Scrypt.blockMixAArch64.pre
-    Proof.Scrypt.blockMixAArch64.pub Impl.Scrypt.AArch64.blockMix := by
+    Proof.Scrypt.blockMixAArch64.pub Impl.Scrypt.AArch64.referenceBlockMix := by
   exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
     (fun _ _ _ _ hp => agree₀ hp) (by taint_decide)
 
 theorem blockMix_verified :
-    Verified AArch64.target Impl.Scrypt.AArch64.blockMix (Spec.Scrypt.blockMixContract AArch64.abi
+    Verified AArch64.target Impl.Scrypt.AArch64.referenceBlockMix (Spec.Scrypt.blockMixContract AArch64.abi
       16) :=
   Verified.of_correct blockMix_correct blockMix_ct
     { pre := by
