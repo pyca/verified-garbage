@@ -262,10 +262,12 @@ end Curve
 def p192 : Curve := { W := Spec.P192.curve, curve := "p192", k := 4, desc := "P-192", tmp := 2 }
 
 /-! P-224's, P-256's, P-384's and P-521's code multiplies by windows (`tail`,
-`inRange`); their temporary areas are where `MulBase`'s and
-`Spec/Weierstrass/Inverse.lean`'s are (x86-64's `Impl.Ecdsa.X86_64.Cfg.sl`):
-slot 2 for four words, 83 for six, 55 for nine, the last two in the tail,
-which also holds AArch64's (slots 82 and 54, `Mont.moAt`). -/
+`inRange`). Their temporary slot is slot 2 for every word count: ARMv7's,
+PPC64LE's and x86's code names slot 2 as its products' temporary area (which
+calls of the Montgomery functions leave), and the temporary areas that
+x86-64's and AArch64's products write for six and nine words (slots 83 and
+55, `Impl.Ecdsa.X86_64.Cfg.sl`; 82 and 54, `Mont.moAt`) are in the tail,
+their slot 2's place unused. -/
 
 def p224 : Curve :=
   { W := Spec.P224.curve, curve := "p224", k := 4, desc := "P-224", tmp := 2, tail := true,
@@ -274,10 +276,10 @@ def p256 : Curve :=
   { W := Spec.P256.curve, curve := "p256", k := 4, desc := "P-256", tmp := 2, tail := true,
     inRange := true }
 def p384 : Curve :=
-  { W := Spec.P384.curve, curve := "p384", k := 6, desc := "P-384", tmp := 83, tail := true,
+  { W := Spec.P384.curve, curve := "p384", k := 6, desc := "P-384", tmp := 2, tail := true,
     inRange := true }
 def p521 : Curve :=
-  { W := Spec.P521.curve, curve := "p521", k := 9, desc := "P-521", tmp := 55, tail := true,
+  { W := Spec.P521.curve, curve := "p521", k := 9, desc := "P-521", tmp := 2, tail := true,
     inRange := true }
 
 def secp256k1 : Curve :=
