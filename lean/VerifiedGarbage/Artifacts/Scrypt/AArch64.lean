@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Scrypt.AArch64.BlockMixVerified
+public import VerifiedGarbage.Proof.Scrypt.AArch64.Resident.Verified
 public import VerifiedGarbage.Proof.Scrypt.AArch64.RoMixCT
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -19,7 +19,7 @@ def artifacts : List Artifact := [
   Spec.Scrypt.blockMixApi.artifact AArch64.target {
     code := Impl.Scrypt.AArch64.blockMix
     stack := 16
-    verified := Proof.Scrypt.AArch64.BlockMix.blockMix_verified },
+    verified := Proof.Scrypt.AArch64.Resident.blockMix_verified },
   Spec.Scrypt.roMixApi.artifact AArch64.target {
     code := Impl.Scrypt.AArch64.roMix
     stack := 16

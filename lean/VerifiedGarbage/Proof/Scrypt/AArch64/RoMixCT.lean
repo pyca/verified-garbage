@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Scrypt.AArch64.Common
 public import VerifiedGarbage.Proof.Scrypt.RoMix
 public import VerifiedGarbage.Impl.Scrypt.AArch64.RoMix
-import VerifiedGarbage.Proof.Scrypt.AArch64.BlockMixVerified
+import VerifiedGarbage.Proof.Scrypt.AArch64.Resident.Verified
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Scrypt.AArch64.Common
 meta import VerifiedGarbage.Proof.Scrypt.RoMix
 meta import VerifiedGarbage.Impl.Scrypt.AArch64.RoMix
-meta import VerifiedGarbage.Proof.Scrypt.AArch64.BlockMixVerified
+meta import VerifiedGarbage.Proof.Scrypt.AArch64.Resident.Verified
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 meta import VerifiedGarbage.Proof.Framework.AArch64.Spill
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
@@ -1329,7 +1329,7 @@ theorem blockMixSpec : BlockMixSpec Impl.Scrypt.AArch64.blockMix := by
   have tr : (BitVec.ofNat 64 r).toNat = r := toNat_ofNat_lt (by omega_arith)
   obtain ⟨p, c₁, c₂⟩ := bm_pre h0 h1 h2 h3 h4 hr hlt hds hsd hss hsp bsrc bdst bscr nsrc ndst nscr
     isrc idst iscr
-  refine WP.callF (k := Proof.Scrypt.blockMixAArch64) BlockMix.blockMix_correct p c₁ c₂ ?_
+  refine WP.callF (k := Proof.Scrypt.blockMixAArch64) Resident.blockMix_correct p c₁ c₂ ?_
     (by rw [blockMix_fdepth]; decide)
   intro s₂ hrd hwr hsp' hf hcs hpost
   simp only [Proof.Scrypt.blockMixAArch64, State.withRegions_gpr, State.withRegions_mem,
@@ -1494,7 +1494,7 @@ theorem call_rel {s₀ s₀' : State} (hp : Pre s₀) (hp' : Pre s₀') (hq : Pu
   have er : rr s₀' = rr s₀ := hq.rr.symm
   have call := RelCT.call (n := "vg_scrypt_blockmix") (P := fun s s' =>
       (KR s₀ bp q s ∧ Args s₀ A s) ∧ (KR s₀' bp' q' s' ∧ Args s₀' A s'))
-    BlockMix.blockMix_correct BlockMix.blockMix_ct [⟨A, 128 * rr s₀⟩]
+    Resident.blockMix_correct Resident.blockMix_ct [⟨A, 128 * rr s₀⟩]
     [⟨bP s₀, 128 * rr s₀⟩, ⟨sc s₀, 128⟩] fun s s' ⟨⟨h, ha⟩, ⟨h', ha'⟩⟩ => by
       obtain ⟨p₁, c₁, w₁⟩ := call_pre hp hA h ha
       obtain ⟨p₂, c₂, w₂⟩ := call_pre hp' hA' h' ha'
