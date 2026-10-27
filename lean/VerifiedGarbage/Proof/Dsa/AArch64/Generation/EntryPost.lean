@@ -9,7 +9,7 @@ namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
 
 theorem entry_shared_post {s t : State} (h : EntryResult s t) :
-    (Spec.Dsa.generateParametersContract abi 720).post s t := by
+    (Spec.Dsa.generateParametersContract abi 736).post s t := by
   sig_post [Spec.Dsa.generateParametersContract, Spec.Dsa.generateParametersSig, abi, argRegs, generationStackArgs]
   sig_post [Spec.Dsa.generateParametersContract, Spec.Dsa.generateParametersSig, abi, argRegs, generationStackArgs]
   refine ⟨?_, h.bytes⟩

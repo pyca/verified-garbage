@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorStage
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedOutcome
 public import VerifiedGarbage.Proof.Dsa.Generation.SeedResult
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.SeedSearch
@@ -17,12 +18,12 @@ namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
 open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
 
-theorem seedAttempt_ok (H : GenerationHashes) (M : Mont) (T : PrimeTest)
+theorem seedAttempt_ok (H : GenerationHashes) (G : GeneratorStage) (T : PrimeTest)
     {p : GenerationContext} {W : Nat → BitVec 64} {s : State}
     (h : GenerationMemory p W s) (seed : GenerationTape p.geo) (hlen : seed.bytes.length = p.geo.qLen)
     (hseed : GenerationTapeMemory seed s) (h1 : W 1 = seed.ptr)
     {used : Nat} (h16 : W 16 = BitVec.ofNat 64 used) (hu : used ≤ p.rand.bytes.length) :
-    WP isa (Impl.Dsa.AArch64.Generation.seedAttempt H.sha1 H.sha256 M.mm T.run p.geo.pLen p.geo.qLen) s
+    WP isa (Impl.Dsa.AArch64.Generation.seedAttempt H.sha1 H.sha256 G.run T.run p.geo.pLen p.geo.qLen) s
       (SeedFinished p W (VG.Proof.Dsa.Generation.seedResult (8 * p.geo.pLen) (8 * p.geo.qLen) seed.bytes
         ((Spec.Dsa.generationChunks p.geo.pLen p.hs.bytes).map Spec.Dsa.decodeBE) (p.rand.bytes.drop used)) s) := by
   unfold Impl.Dsa.AArch64.Generation.seedAttempt
@@ -75,7 +76,7 @@ theorem seedAttempt_ok (H : GenerationHashes) (M : Mont) (T : PrimeTest)
         have seedv := seedu.frame (p := p) (by rw [hm]; exact Frame.refl _ _) kv.rd kv.wr
         have qv : Spec.Rsa.bytesAt v.mem (VG.Proof.Bignum.off p.geo.B q) p.geo.qLen =
             Spec.Dsa.encodeBE p.geo.qLen (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes) := hm ▸ bqu
-        have call := seedPrimeFinish_ok H M T mv seed hlen seedv u1 qv u16 huu
+        have call := seedPrimeFinish_ok H G T mv seed hlen seedv u1 qv u16 huu
         have expected : VG.Proof.Dsa.Generation.seedResult (8 * p.geo.pLen) (8 * p.geo.qLen) seed.bytes
             ((Spec.Dsa.generationChunks p.geo.pLen p.hs.bytes).map Spec.Dsa.decodeBE) (p.rand.bytes.drop used) =
             VG.Proof.Dsa.Generation.primeResult (8 * p.geo.pLen) (8 * p.geo.qLen)

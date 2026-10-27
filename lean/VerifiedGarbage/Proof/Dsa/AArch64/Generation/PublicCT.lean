@@ -30,7 +30,7 @@ structure GenerationPublicAgree (s t : State) : Prop where
   rand : Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat = Spec.Rsa.bytesAt t.mem (stackArg t 0) (stackArg t 1).toNat
 
 theorem generation_public_related {s t : State}
-    (h : (Spec.Dsa.generateParametersContract abi 720).pub s t) : GenerationPublicAgree s t := by
+    (h : (Spec.Dsa.generateParametersContract abi 736).pub s t) : GenerationPublicAgree s t := by
   sig_pub [Spec.Dsa.generateParametersContract, Spec.Dsa.generateParametersSig, abi, argRegs, generationStackArgs] at h
   simp only [List.getD_cons_succ, List.getD_cons_zero] at h
   obtain ⟨hsp, hleak, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3⟩ := h

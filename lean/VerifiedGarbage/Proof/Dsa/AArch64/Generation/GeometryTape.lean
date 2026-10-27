@@ -32,6 +32,7 @@ structure GenerationTape (p : GenerationGeometry) where
   arena : (⟨ptr, bytes.length⟩ : Region).Disjoint ⟨p.B, usedBytes p.pLen⟩
   frame : (⟨ptr, bytes.length⟩ : Region).Disjoint ⟨p.F, frameBytes⟩
   stack : (⟨ptr, bytes.length⟩ : Region).Disjoint (below p.F 272)
+  callStack : (⟨ptr, bytes.length⟩ : Region).Disjoint (below p.F 288)
 
 theorem GenerationTape.part {p : GenerationGeometry} (tape : GenerationTape p) {d n : Nat}
     (h : d + n ≤ usedBytes p.pLen) : (⟨tape.ptr, tape.bytes.length⟩ : Region).Disjoint (p.part d n) :=
@@ -54,6 +55,8 @@ def GenerationTape.slice {p : GenerationGeometry} (tape : GenerationTape p) (use
   frame := tape.frame.sub_left (Offset.sub_base _ (by
     simp only [List.length_take, List.length_drop]; omega))
   stack := tape.stack.sub_left (Offset.sub_base _ (by
+    simp only [List.length_take, List.length_drop]; omega))
+  callStack := tape.callStack.sub_left (Offset.sub_base _ (by
     simp only [List.length_take, List.length_drop]; omega))
 
 theorem GenerationTape.source {p : GenerationGeometry} (tape : GenerationTape p) {s : State}

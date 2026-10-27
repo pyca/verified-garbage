@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.BackendVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Dsa.AArch64.ProbablePrime.Verified
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generator.Verified
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Dsa.AArch64.Backend
 public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveVerified
@@ -10,7 +11,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyABI
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ChunkCheck
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ChunkTake
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ConstantTime
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextGeneratorFrame
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSearchFrame
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSeed
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSuccess
@@ -94,10 +94,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchStable
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchStatus
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchTailReadyCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedAttempt
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedGenerator
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedGeneratorCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedGeneratorFinish
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedGeneratorFinishCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedPhaseStableCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedPrime
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedPrimeCT
@@ -172,7 +168,6 @@ import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyABI
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ChunkCheck
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ChunkTake
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ConstantTime
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextGeneratorFrame
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSearchFrame
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSeed
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSuccess
@@ -256,10 +251,6 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchStable
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchStatus
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchTailReadyCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedAttempt
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedGenerator
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedGeneratorCT
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedGeneratorFinish
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedGeneratorFinishCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedPhaseStableCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedPrime
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedPrimeCT
@@ -342,12 +333,15 @@ def artifacts (v1 v256 : Proof.Pbkdf2.Md.AArch64.MdHash) (v : RoundImpl) : List 
       let hashes := v1.features ++ v256.features.filter (!v1.features.contains ·)
       [Spec.Dsa.generateParametersApi.artifact AArch64.target {
         suffix := Emit.qualifiedName "" [("sha1", v1.suffix), ("sha256", v256.suffix), ("mr", v.suffix)]
-        stack := 720
+        stack := 736
         notes := ["The complete bounded parameter search runs in verified code: seed hashing, \
           subgroup construction, prime search, shared windowed Miller–Rabin tests, generator \
           selection, domain validation, and output copying or zeroing. The three input tapes \
-          are public under the contract. Only 1024/160, 2048/256, and 3072/256 are generated."]
-        code := Impl.Dsa.AArch64.Generation.code v1.H v256.H v.mont.mm (Proof.Dsa.AArch64.ProbablePrime.primeTest v).run
+          are public under the contract. Only 1024/160, 2048/256, and 3072/256 are generated.",
+          "The probable-prime tests and the generator search with the domain check are calls of \
+          the shared `vg_dsa_probable_prime_*` and `vg_dsa_generator_*` functions."]
+        code := Impl.Dsa.AArch64.Generation.code v1.H v256.H (Proof.Dsa.AArch64.Generator.generatorStage v).run
+          (Proof.Dsa.AArch64.ProbablePrime.primeTest v).run
         verified := backend_verified v1 v256 v h1 h256
         features := hashes ++ v.features.filter (!hashes.contains ·) }]
     else []

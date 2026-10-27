@@ -32,6 +32,9 @@ structure GenerationGeometry where
   stackSize : 272 ≤ F.toNat
   frameArena : (⟨F, frameBytes⟩ : Region).Disjoint ⟨B, usedBytes pLen⟩
   stackArena : (below F 272).Disjoint ⟨B, usedBytes pLen⟩
+  /-- The stack the generator stage's contract asks for below the frame. -/
+  callSize : 288 ≤ F.toNat
+  callArena : (below F 288).Disjoint ⟨B, usedBytes pLen⟩
 
 def GenerationGeometry.part (p : GenerationGeometry) (offset len : Nat) : Region := ⟨VG.Proof.Bignum.off p.B offset, len⟩
 def GenerationGeometry.hash (p : GenerationGeometry) : Addr := VG.Proof.Bignum.off p.B VG.Impl.Dsa.Generation.Layout.hash

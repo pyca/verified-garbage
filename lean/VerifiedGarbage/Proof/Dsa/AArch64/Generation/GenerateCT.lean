@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorStage
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OutputCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.NativeParametersCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ParameterInvariant
@@ -16,12 +17,12 @@ open VG.Proof.RsaOaep.AArch64 VG.Impl.Dsa.AArch64.Generation
 def ParameterPublic.output (p : ParameterPublic) : OutputPublic :=
   ⟨p.context, (p.context.remaining 0 p.randUsed).isSome⟩
 
-theorem nativeParameters_output (H : GenerationHashes) (M : Mont)  (T : PrimeTest)
+theorem nativeParameters_output (H : GenerationHashes) (G : GeneratorStage)  (T : PrimeTest)
     {pLen qLen : Nat} {p : ParameterPublic} {s : State} (h : ParameterStart pLen qLen p s) :
-    WP isa (parameterSearch H.sha1 H.sha256 M.mm T.run pLen qLen) s (OutputBefore p.output) := by
+    WP isa (parameterSearch H.sha1 H.sha256 G.run T.run pLen qLen) s (OutputBefore p.output) := by
   obtain ⟨⟨W, hm, h16⟩, hp, hq⟩ := h
   subst pLen; subst qLen
-  refine WP.mono (nativeParameters_ok H M T hm h16 p.randBound)
+  refine WP.mono (nativeParameters_ok H G T hm h16 p.randBound)
     fun t ⟨Wt, ht, outcome, _, _, wr⟩ => ?_
   refine ⟨Wt, ht, ?_⟩
   change (Wt 19 == (1#64)) = (p.context.remaining 0 p.randUsed).isSome
@@ -29,12 +30,12 @@ theorem nativeParameters_output (H : GenerationHashes) (M : Mont)  (T : PrimeTes
   · rcases h19 with hs | hs <;> simp [hs, he]
   · simp [h19, he]
 
-theorem generate_ct (H : GenerationHashes) (M : Mont)  (T : PrimeTest)
+theorem generate_ct (H : GenerationHashes) (G : GeneratorStage)  (T : PrimeTest)
     (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
     RelCT isa (Two (ParameterStart pLen qLen))
-      (generate H.sha1 H.sha256 M.mm T.run pLen qLen) (fun _ _ => True) := by
-  refine RelCT.seq (two_post (nativeParameters_ct H M T pLen qLen sizes)
-    (fun _ _ h => nativeParameters_output H M T h)) ?_
+      (generate H.sha1 H.sha256 G.run T.run pLen qLen) (fun _ _ => True) := by
+  refine RelCT.seq (two_post (nativeParameters_ct H G T pLen qLen sizes)
+    (fun _ _ h => nativeParameters_output H G T h)) ?_
   exact two_map ParameterPublic.output (fun _ _ h => h) finishOutput_ct
 
 end VG.Proof.Dsa.AArch64.Generation

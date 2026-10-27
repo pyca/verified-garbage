@@ -1,8 +1,9 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorStage
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedPrimeResultCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructCT
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedGeneratorFinishCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorCallCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedPrimeCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OnSuccessCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedPhaseStableCT
@@ -40,17 +41,17 @@ theorem seedPrimeAfter_related {pLen qLen : Nat} {s t : State}
   subst vt; subst rt
   exact ⟨p.generatorPublic vs rs ds, hgs, hgt, hsp⟩
 
-theorem seedPrimeFinish_ct (H : GenerationHashes) (M : Mont)  (T : PrimeTest)
+theorem seedPrimeFinish_ct (H : GenerationHashes) (G : GeneratorStage)  (T : PrimeTest)
     (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
     RelCT isa (Two (SeedPrimeBefore pLen qLen))
       (.seq (primeSearch H.sha1 H.sha256 T.run pLen qLen)
-        (onSuccess (.seq (generatorSearch M.mm pLen) (onSuccess (finishDomain M.mm pLen qLen)))))
+        (onSuccess (generatorCall G.run pLen)))
       (fun _ _ => True) := by
   refine RelCT.seq (two_post (seedPrime_ct H T pLen qLen sizes)
     (fun _ _ h => seedPrime_after H T h)) ?_
   apply onSuccess_ct (Φ := SeedPrimeAfter pLen qLen) SeedPublic.context SeedPublic.primeStatus
     (fun _ _ h => h.1) (fun _ _ _ h hm hk => seedPrimeAfter_congr h hm hk)
-  exact (seedGeneratorFinish_ct M pLen qLen sizes).mono
+  exact (generatorCall_ct G pLen qLen sizes).mono
     (fun _ _ h => seedPrimeAfter_related h) (fun _ _ h => h)
 
 end VG.Proof.Dsa.AArch64.Generation
