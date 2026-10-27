@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.AArch64
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontBrainpoolP384r1
 import VerifiedGarbage.Proof.BrainpoolP384r1.Point
 import VerifiedGarbage.Proof.BrainpoolP384r1.Prime
 import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP384r1Literals
@@ -57,8 +58,20 @@ theorem brainpoolp384r1_ok (hI : Weierstrass.AArch64.InvSounds) : BaseCfgOk brai
   inv_p := InvOk.ofMod (by decide +kernel) (by decide)
   inv_n := fun _ => ⟨hI Proof.BrainpoolP384r1.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
   chain_n := fun h => absurd h (by decide)
-  call_p := fun _ _ h => nomatch (show Mont.callOf brainpoolp384r1.MP' = none by decide +kernel).symm.trans h
-  call_n := fun _ _ h => nomatch (show Mont.callOf brainpoolp384r1.MN' = none by decide +kernel).symm.trans h
+  call_p := by
+    intro f m h
+    have e : Mont.callOf brainpoolp384r1.MP' = some
+        (Spec.Weierstrass.Mont.brainpoolp384r1p.fn "mul", Spec.BrainpoolP384r1.p) := by decide +kernel
+    rw [e] at h
+    cases h
+    exact ⟨rfl, Mont.brainpoolp384r1p_ok⟩
+  call_n := by
+    intro f m h
+    have e : Mont.callOf brainpoolp384r1.MN' = some
+        (Spec.Weierstrass.Mont.brainpoolp384r1n.fn "mul", Spec.BrainpoolP384r1.n) := by decide +kernel
+    rw [e] at h
+    cases h
+    exact ⟨rfl, Mont.brainpoolp384r1n_ok⟩
   inv_at := .inr (by decide +kernel)
   inv_fn := fun _ => ⟨by decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide⟩
   padd := fun h => absurd rfl h

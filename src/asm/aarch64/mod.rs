@@ -71,6 +71,9 @@ pub(crate) mod brainpoolp384r1_check_point;
 pub(crate) mod brainpoolp384r1_inverse;
 
 #[rustfmt::skip]
+pub(crate) mod brainpoolp384r1_mont;
+
+#[rustfmt::skip]
 pub(crate) mod brainpoolp384r1_mul;
 
 #[rustfmt::skip]
