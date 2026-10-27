@@ -30,7 +30,9 @@ structure PrimeCallPublic where
   draw : DrawPublic
   arena : Addr
   wr : List Region
-  layout : PrimeHeaderLayout arena wr
+  /-- The arena is the generation's last writable region, or the second of
+  a called test's (`vg_dsa_probable_prime_*`). -/
+  layout : PrimeHeaderLayout arena wr ∨ CalleeHeaderLayout arena wr
   base : draw.prime.B = off arena 28672
   width : draw.prime.w ≤ 48
   tab : slot draw.prime.w aTab + 2048 ≤ draw.prime.Z
@@ -43,12 +45,22 @@ def PrimeCallBefore (len drawBytes : Nat) (p : PrimeCallPublic) (s : State) : Pr
 
 theorem primeTrial_ct (len drawBytes : Nat) : RelCT isa (Two (PrimeCallBefore len drawBytes))
     (seqs trial) (fun _ _ => True) := by
-  apply primeHeader_ct PrimeCallPublic.arena PrimeCallPublic.wr gS
-    (fun p => gvs p.draw.prime.B p.draw.prime.w) [] (by decide) (fun _ => gvs_fst _ _) ?_
-    (pins_nil _) (by taint_decide)
-  intro p s h
-  obtain ⟨mi, hs⟩ := h.1
-  exact ⟨p.layout, by rw [← p.base]; exact good_hp hs.good h.2.1⟩
+  intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨p, h₁, h₂⟩ e₁ e₂
+  rcases p.layout with hl | hl
+  · refine primeHeader_ct (Φ := fun p s => PrimeCallBefore len drawBytes p s ∧ PrimeHeaderLayout p.arena p.wr)
+      PrimeCallPublic.arena PrimeCallPublic.wr gS
+      (fun p => gvs p.draw.prime.B p.draw.prime.w) [] (by decide) (fun _ => gvs_fst _ _) ?_
+      (pins_nil _) (by taint_decide) _ _ _ _ _ _ ⟨p, ⟨h₁, hl⟩, h₂, hl⟩ e₁ e₂
+    intro p s h
+    obtain ⟨mi, hs⟩ := h.1.1
+    exact ⟨h.2, by rw [← p.base]; exact good_hp hs.good h.1.2.1⟩
+  · refine calleeHeader_ct (Φ := fun p s => PrimeCallBefore len drawBytes p s ∧ CalleeHeaderLayout p.arena p.wr)
+      PrimeCallPublic.arena PrimeCallPublic.wr gS
+      (fun p => gvs p.draw.prime.B p.draw.prime.w) [] (by decide) (fun _ => gvs_fst _ _) ?_
+      (pins_nil _) (by taint_decide) _ _ _ _ _ _ ⟨p, ⟨h₁, hl⟩, h₂, hl⟩ e₁ e₂
+    intro p s h
+    obtain ⟨mi, hs⟩ := h.1.1
+    exact ⟨h.2, by rw [← p.base]; exact good_hp hs.good h.1.2.1⟩
 
 def PrimeCallTested (len drawBytes : Nat) (p : PrimeCallPublic) (s : State) : Prop :=
   PrimeCallBefore len drawBytes p s ∧

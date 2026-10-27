@@ -46,7 +46,7 @@ def PPrimalityPublic.call (p : PPrimalityPublic) (domain : PDomain p.plan.constr
       draw := ⟨p.plan.prime domain, p.used⟩
       arena := p.plan.construct.hash.W 5
       wr := p.wr
-      layout := p.header
+      layout := Or.inl p.header
       base := p.plan.construct.base.symm
       width := (p.plan.call domain).wordsMax
       tab := (p.plan.call domain).tableRoom

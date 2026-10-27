@@ -52,7 +52,7 @@ def SubgroupPublic.call (p : SubgroupPublic) : PrimeFramePublic where
       draw := ⟨p.plan.prime, p.used⟩
       arena := p.plan.W 5
       wr := p.wr
-      layout := p.header
+      layout := Or.inl p.header
       base := p.plan.base.symm
       width := by rw [p.plan.words]; decide
       tab := by rw [p.plan.words, p.plan.size]; decide +kernel
