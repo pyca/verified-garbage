@@ -472,6 +472,11 @@ def main():
     p.add_argument("--shard", default="", help="i/n: only the i-th of n shares of the benchmarks")
     p.add_argument("--arch", choices=EXECUTABLES, help="fail unless the binaries are this architecture's")
     args = p.parse_args()
+    # Experimental Lean-emitted kernels, outside the production PR.
+    experiment = pathlib.Path(__file__).resolve().parent.parent / "experiments" / "scrypt"
+    subprocess.run(["cc", "-O3", str(experiment / "bench.c"),
+                    str(experiment / "prototypes-linux.S"), "-o", "/tmp/scrypt-kernels"], check=True)
+    subprocess.run(["/tmp/scrypt-kernels"], check=True)
     shard, shards = map(int, (args.shard or "1/1").split("/"))
     if not 1 <= shard <= shards:
         p.error("--shard must be i/n with 1 <= i <= n")
