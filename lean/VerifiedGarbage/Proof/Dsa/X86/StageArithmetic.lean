@@ -26,10 +26,10 @@ theorem stageProduct_ok {base : Addr} {size pLen qLen p q output : Nat} {s : Sta
   have N : (qLen + 7) / 8 ≤ 48 := by omega
   have C := VG.Proof.Dsa.X86.Layout.context_bound N
   have low : 14720 ≤ output := ho
-  refine WP.mono (coreProduct_ok M.scr M.saved rfl (by omega) (by omega) (by omega) M.qReady Ra Rb M.qValue
+  refine WP.mono (coreProduct_ok M.scr M.saved M.room M.extent rfl (by omega) (by omega) (by omega) M.qReady Ra Rb M.qValue
     (by have := M.qLarge; omega) M.qOdd (Nat.le_trans hb M.extent) (by omega)) fun t ⟨V, O, K⟩ => ?_
   have F : StageResult base s t output qLen (operandValue s base a qLen * operandValue s base b qLen % q) :=
-    ⟨StageFrame.of_frame K (by intro reg hr; exact hr) O N, V⟩
+    ⟨StageFrame.of_stackFrame K (by intro reg hr; exact hr) O N, V⟩
   exact ⟨M.keep (F.toStageFrame.run (.inl ⟨ho, hb⟩)) F.keeps (by decide) (by decide), F⟩
 
 theorem stageProductP_ok {base : Addr} {size pLen qLen p q output : Nat} {s : State} {a b : Pointer}
@@ -44,10 +44,10 @@ theorem stageProductP_ok {base : Addr} {size pLen qLen p q output : Nat} {s : St
   have N : (pLen + 7) / 8 ≤ 48 := by omega
   have C := VG.Proof.Dsa.X86.Layout.context_bound N
   have low : 14720 ≤ output := ho
-  refine WP.mono (coreProductMod_ok M.scr M.saved rfl (by omega) (by omega) (by omega) M.pReady Ra Rb M.pValue
+  refine WP.mono (coreProductMod_ok M.scr M.saved M.room M.extent rfl (by omega) (by omega) (by omega) M.pReady Ra Rb M.pValue
     M.pLarge M.pOdd (Nat.le_trans hb M.extent) (by omega)) fun t ⟨V, O, K⟩ => ?_
   have F : StageResult base s t output pLen (operandValue s base a pLen * operandValue s base b pLen % p) :=
-    ⟨StageFrame.of_frame K (by intro reg hr; exact hr) O N, V⟩
+    ⟨StageFrame.of_stackFrame K (by intro reg hr; exact hr) O N, V⟩
   exact ⟨M.keep (F.toStageFrame.run (.inl ⟨ho, hb⟩)) F.keeps (by decide) (by decide), F⟩
 
 theorem stageSum_ok {base : Addr} {size pLen qLen p q output : Nat} {s : State} {a b : Pointer}
