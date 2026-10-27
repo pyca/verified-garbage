@@ -472,6 +472,10 @@ def main():
     p.add_argument("--shard", default="", help="i/n: only the i-th of n shares of the benchmarks")
     p.add_argument("--arch", choices=EXECUTABLES, help="fail unless the binaries are this architecture's")
     args = p.parse_args()
+    if args.modules == "scrypt":
+        args.rounds = 3
+        args.warm_up_time = 0.5
+        args.measurement_time = 2.0
     shard, shards = map(int, (args.shard or "1/1").split("/"))
     if not 1 <= shard <= shards:
         p.error("--shard must be i/n with 1 <= i <= n")
@@ -594,6 +598,10 @@ def main():
             print(name, file=sys.stderr)
             references[library] = run(binaries["head"], args.work_dir.resolve() / library, library, args, head,
                                        modules["head"], groups)
+
+    if args.modules == "scrypt":
+        for path in sorted(work.rglob("new/estimates.json")):
+            print("SCRYPT_SAMPLE " + json.dumps({"path": str(path.relative_to(work)), "estimates": json.loads(path.read_text()), "sample": json.loads(path.with_name("sample.json").read_text())}), flush=True)
 
     title = ", ".join([*([f"VG_CPU_FEATURES={cpu_features}"] if cpu_features else []),
                        *([f"shard {shard}/{shards}"] if shards > 1 else [])])
