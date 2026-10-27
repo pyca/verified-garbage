@@ -401,6 +401,8 @@ jobs:
           repository: C2SP/wycheproof
           path: wycheproof
           persist-credentials: false
+          # Naming the branch saves the action's lookup of the default one.
+          ref: main
 
       - name: Install Rust
         run: rustup toolchain install ${{ matrix.rust }} --profile minimal --component llvm-tools
@@ -534,6 +536,8 @@ jobs:
           repository: C2SP/wycheproof
           path: wycheproof
           persist-credentials: false
+          # Naming the branch saves the action's lookup of the default one.
+          ref: main
 
       - name: Install Rust
         run: rustup toolchain install ${{ matrix.rust }} --profile minimal --target thumbv7neon-unknown-linux-gnueabihf
@@ -694,6 +698,8 @@ jobs:
           repository: C2SP/wycheproof
           path: wycheproof
           persist-credentials: false
+          # Naming the branch saves the action's lookup of the default one.
+          ref: main
       - name: This runner's CPU
         run: |
           if [ "$(uname -m)" = aarch64 ]; then
