@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTest
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PrimeCall
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeState
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
@@ -13,6 +14,7 @@ import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 
 /-! # Calling the probable-prime test, which returns its cursor and status to the generation frame -/
 
@@ -58,6 +60,13 @@ structure PrimeCallGeometry (bits : Nat) (F S A rp : Addr) (n : Nat) : Prop wher
 /-- What the call may change. -/
 def primeCallChanged (bits : Nat) (F A : Addr) : List Region :=
   [⟨off A arithmetic, arithmeticBytes⟩, ⟨off A witness, bits / 8⟩, below F 192, ⟨F, frameBytes⟩]
+
+theorem bytes_of_src {s : State} {B p : Addr} {Z : Nat} {bs : List Byte} (h : Src s B Z p bs) :
+    Spec.Rsa.bytesAt s.mem p bs.length = bs := by
+  apply List.ext_getElem (by simp [bytesAt_length])
+  intro i h₁ h₂
+  simp only [bytesAt_eq, List.getElem_map, List.getElem_range]
+  exact h.val i h₂
 
 /-- The arguments, from the frame. -/
 theorem primeCallArgs_ok {bits : Nat} {F S A rp : Addr} {rand : List Byte} {N used : Nat}
@@ -463,5 +472,39 @@ theorem primeCall_ok (T : PrimeTest) {bits : Nat} (hb : ProbablePrime.Supported 
     · simp only [Option.some.injEq, Prod.mk.injEq] at h'
       obtain ⟨rfl, rfl⟩ := h'
       exact ⟨rfl, rfl⟩
+
+/-- A test of the generation's: its parameters, and where they lie. -/
+structure PrimeCallPlan where
+  prime : PrimeParams
+  hash : Addr
+  W : Nat → BitVec 64
+  bits : Nat
+  supported : ProbablePrime.Supported bits
+  len : prime.len = bits / 8
+  base : prime.B = off (W 5) arithmetic
+  witnessPtr : prime.p = off (W 5) witness
+  tapePtr : W 13 = prime.rp
+  tapeLength : W 15 = BitVec.ofNat 64 prime.rand.length
+  geometry : PrimeCallGeometry bits prime.sp hash (W 5) prime.rp prime.rand.length
+
+def PrimeCallPlan.changed (p : PrimeCallPlan) : List Region :=
+  [⟨p.prime.B, arithmeticBytes⟩, ⟨p.prime.p, p.prime.len⟩, below p.prime.sp 192, ⟨p.prime.sp, frameBytes⟩]
+
+theorem PrimeCallPlan.changed_eq (p : PrimeCallPlan) :
+    p.changed = primeCallChanged p.bits p.prime.sp (p.W 5) := by
+  rw [PrimeCallPlan.changed, primeCallChanged, p.base, p.witnessPtr, p.len]
+
+/-- A shaped candidate of `8 * len` bits has exactly that many: from the plan's
+`PrimeParams`. -/
+theorem PrimeParams.bitLength_eq (P : PrimeParams) : Spec.Dsa.bitLength P.N = 8 * P.len := by
+  have hk : 0 < 8 * P.len := by have := P.len2; omega
+  obtain ⟨hlo, hhi⟩ := (VG.Proof.Dsa.bitLength_iff_bounds hk).mp
+    (show Spec.Dsa.bitLength (P.N - 1) = 8 * P.len from P.predBits)
+  apply (VG.Proof.Dsa.bitLength_iff_bounds hk).mpr
+  have ho := P.odd
+  have h3 := P.n3
+  have heven : 2 ^ (8 * P.len) % 2 = 0 := by
+    rw [show 8 * P.len = (8 * P.len - 1) + 1 by omega, Nat.pow_succ]; omega
+  constructor <;> omega
 
 end VG.Proof.Dsa.X86_64.Generation

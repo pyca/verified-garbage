@@ -41,7 +41,14 @@ theorem GenerationMemory.subgroupState {p : GenerationContext} {W : Nat → BitV
     outputWrite := ?_
     witnessWrite := ?_
     usedSlot := h16
-    usedBound := hu }
+    usedBound := hu
+    arena := (by
+      have hb := (h.slots 5 (by simp [generationSlots])).trans p.baseSlot
+      have := h.scratch.sub (o := 0) (n := domainCheck) (by unfold usedBytes; omega) (by decide)
+      simp only [off, BitVec.add_zero] at this
+      change Scr s (W 5) domainCheck
+      rw [hb]; exact this)
+    tapeCover := h.rand.cover }
   · change LabAt s p.geo.F p.geo.hash W seed.ptr p.geo.qLen
     refine ⟨h27, (h.slots 28 (by simp [generationSlots])).trans p.hashLenSlot, by omega, ?_, ?_, ?_⟩
     · simpa only [hlen] using hseed.cover

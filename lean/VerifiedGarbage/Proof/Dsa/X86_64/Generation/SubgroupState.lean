@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeState
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCall
 import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
@@ -55,6 +56,7 @@ structure SubgroupPlan where
       ⟨prime.p, prime.len⟩, below prime.sp 192], (⟨hash, oRsa⟩ : Region).Disjoint r
   outputPrime : ∀ r ∈ [⟨prime.B, Impl.Dsa.Generation.Layout.arithmeticBytes⟩,
       ⟨prime.p, prime.len⟩, below prime.sp 192], (⟨output, prime.len⟩ : Region).Disjoint r
+  geometry : PrimeCallGeometry (8 * prime.len) prime.sp hash (W 5) prime.rp prime.rand.length
 
 def SubgroupPlan.hashWrites (p : SubgroupPlan) : List Region :=
   [⟨p.output, p.prime.len⟩, ⟨p.hash, oRsa⟩, retR p.prime.sp]
@@ -76,6 +78,8 @@ structure SubgroupState (p : SubgroupPlan) (used : Nat) (s : State) : Prop where
   witnessWrite : ∀ i < p.prime.len, InRegions s.wr (off p.prime.p i) 1
   usedSlot : p.W 16 = BitVec.ofNat 64 used
   usedBound : used ≤ p.prime.rand.length
+  arena : Scr s (p.W 5) Impl.Dsa.Generation.Layout.domainCheck
+  tapeCover : Covers [⟨p.prime.rp, p.prime.rand.length⟩] (s.rd ++ s.wr)
 
 theorem SubgroupPlan.bits (p : SubgroupPlan) : Spec.Dsa.bitLength p.prime.N = 8 * p.prime.len := by
   rw [p.modulus]

@@ -41,7 +41,7 @@ def GenerationGeometry.primalityPlan (p : GenerationGeometry) (seed rand : Gener
     tapePtr := h13
     tapeLength := h15
     randMax := rand.size
-    stackSize := by have := p.stackSize; omega
+    stackSize := p.stackSize
     stackSeparate := (p.stack_part ha).symm
     bufferSeparate := ?_
     bufferOutside := ?_
@@ -51,7 +51,13 @@ def GenerationGeometry.primalityPlan (p : GenerationGeometry) (seed rand : Gener
     hashPrime := ?_
     pPrime := ?_
     exponentPrime := ?_
-    tapeConstruct := ?_ }
+    tapeConstruct := ?_
+    arenaBound := ?_
+    tapeBound := rand.bound
+    tapeArena := ?_
+    tapeFrame := rand.frame
+    arenaFrame := ?_
+    arenaStack := ?_ }
   · change (p.part arithmetic arithmeticBytes).Disjoint ⟨off (W 5) witness, p.pLen⟩
     rw [h5]
     exact p.parts_disjoint ha hw (Or.inr (by unfold witness arithmetic; omega))
@@ -118,5 +124,15 @@ def GenerationGeometry.primalityPlan (p : GenerationGeometry) (seed rand : Gener
     · exact rand.part ha
     · exact rand.part hp
     · exact rand.part he
+  all_goals
+    have hd : domainCheck ≤ usedBytes p.pLen := by unfold usedBytes; omega
+    have hs : Region.Sub ⟨W 5, domainCheck⟩ ⟨p.B, usedBytes p.pLen⟩ := by
+      rw [h5]; exact Region.sub_prefix hd
+  · change (W 5).toNat + domainCheck ≤ 2 ^ 64
+    have := p.arenaBound
+    rw [h5]; omega
+  · exact rand.arena.sub_right hs
+  · exact (p.frameArena.sub_right hs).symm
+  · exact (p.stackArena.sub_right hs).symm
 
 end VG.Proof.Dsa.X86_64.Generation

@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTest
 public import VerifiedGarbage.Spec.Dsa.Generate
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryRun
@@ -21,16 +21,16 @@ open VG.Proof.MillerRabin.X86_64
 
 variable {checkName : String}
 
-theorem generation_correct (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel)
-    (sp : (Impl.Dsa.X86_64.Generation.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run).all
+theorem generation_correct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
+    (sp : (Impl.Dsa.X86_64.Generation.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run).all
       (fun i => !isa.writesSp i) = true)
-    (depth : (Impl.Dsa.X86_64.Generation.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run).x86_64Depth ≤ 536)
-    (ctl : ctlOk (Impl.Dsa.X86_64.Generation.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run) = true)
+    (depth : (Impl.Dsa.X86_64.Generation.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run).x86_64Depth ≤ 536)
+    (ctl : ctlOk (Impl.Dsa.X86_64.Generation.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run) = true)
     (s : State) (pre : (Spec.Dsa.generateParametersContract abi 536).pre s) :
-    ∃ trace t, Exec isa (Impl.Dsa.X86_64.Generation.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run) s trace t ∧
+    ∃ trace t, Exec isa (Impl.Dsa.X86_64.Generation.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run) s trace t ∧
       abiPreserved s t ∧ (Spec.Dsa.generateParametersContract abi 536).post s t := by
   have h := generationABI_of pre
-  obtain ⟨trace, t, he, result, callee, _, _⟩ := entryRun_ok (checkName := checkName) H M Sq K h
+  obtain ⟨trace, t, he, result, callee, _, _⟩ := entryRun_ok (checkName := checkName) H M Sq T h
   refine ⟨trace, t, he, ⟨callee, ?_, VG.X86_64.Exec.ctl ctl he⟩, entry_shared_post result⟩
   have hf := Exec.stackFrame (SpSafe.of_all sp) he (by omega)
   have hfb := VG.X86_64.Frame.below_mono hf depth (by decide)

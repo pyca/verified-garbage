@@ -3,7 +3,7 @@ public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterInvariant
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTest
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterBody
 import VerifiedGarbage.Proof.Framework.Omega
@@ -23,17 +23,17 @@ open VG.Impl.Dsa.X86_64.Generation (seedTape)
 
 variable {checkName : String}
 
-theorem nativeParameters_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel)
+theorem nativeParameters_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
     {p : GenerationContext} {W : Nat → BitVec 64} {s : State} {randUsed : Nat}
     (h : GenerationMemory p W s) (h16 : W 16 = BitVec.ofNat 64 randUsed) (hu : randUsed ≤ p.rand.bytes.length) :
-    WP isa (Impl.Dsa.X86_64.Generation.parameterSearch (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run p.geo.pLen p.geo.qLen) s
+    WP isa (Impl.Dsa.X86_64.Generation.parameterSearch (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run p.geo.pLen p.geo.qLen) s
       (ParameterFinished p (p.remaining 0 randUsed) s) := by
   let I := ParameterInvariant p (p.remaining 0 randUsed) s
   let Q := ParameterFinished p (p.remaining 0 randUsed) s
   have hw : 0 < p.geo.qLen ∧ p.geo.qLen < 2 ^ 31 := by
     rcases p.geo.qWidth with hh | hh <;> omega
   have driver : TapeDriver seedTape p.geo.F p.geo.hash p.geo.qLen p.seeds.bytes.length
-      (Impl.Dsa.X86_64.Generation.seedAttempt (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run p.geo.pLen p.geo.qLen) I Q :=
+      (Impl.Dsa.X86_64.Generation.seedAttempt (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run p.geo.pLen p.geo.qLen) I Q :=
     { baseBound := by decide
       totalBound := by decide
       usedBound := by decide
@@ -54,7 +54,7 @@ theorem nativeParameters_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : 
         exact parameter_done hi hex R Lu Ru fu ku
       step := by
         intro used u v Vt Wt hi hav _ R _ Lv Rv fv kv
-        exact parameter_body_ok (checkName := checkName) H M Sq K hi (by omega) R Lv Rv fv kv }
+        exact parameter_body_ok (checkName := checkName) H M Sq T hi (by omega) R Lv Rv fv kv }
   obtain ⟨V, R⟩ := h.rep
   unfold Impl.Dsa.X86_64.Generation.parameterSearch
   apply driver.run_ok h.layout R

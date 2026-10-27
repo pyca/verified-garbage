@@ -13,24 +13,24 @@ open VG.Proof.MillerRabin.X86_64
 
 variable {checkName : String}
 
-theorem entryInner_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel)
+theorem entryInner_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
     {s u : State} (h : GenerationABI s)
     (hg : u.gpr = (allocState 48 s).gpr) (hr : u.rd = s.rd)
     (hw : u.wr = (allocState 48 s).wr)
     (hf : Frame [⟨savedBase s, 48⟩] s.mem u.mem)
     (saved : Saved u.mem (savedBase s) s.gpr spillSlots) :
     WP isa (.frame (.alloc 296)
-      (Impl.Dsa.X86_64.Generation.entryBody (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run) (.free 296)) u fun t =>
+      (Impl.Dsa.X86_64.Generation.entryBody (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run) (.free 296)) u fun t =>
       EntryResult s t ∧ Saved t.mem (savedBase s) s.gpr spillSlots ∧
       t.gpr .rsp = u.gpr .rsp ∧ t.rd = u.rd ∧ t.wr = u.wr := by
   apply alloc_frame_ok (by decide) (outer_stack_room h hg)
-  apply WP.mono (entryBody_abi (checkName := checkName) H M Sq K h hg hr hw hf saved)
+  apply WP.mono (entryBody_abi (checkName := checkName) H M Sq T h hg hr hw hf saved)
   intro t ⟨result, saved, sp, rd, wr⟩
   exact ⟨sp, wr, result.free 296, saved, freeState_rsp sp, rd, freeState_wr wr⟩
 
-theorem entryRun_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel)
+theorem entryRun_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
     {s : State} (h : GenerationABI s) :
-    WP isa (Impl.Dsa.X86_64.Generation.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run) s fun t =>
+    WP isa (Impl.Dsa.X86_64.Generation.code (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run) s fun t =>
       EntryResult s t ∧ (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   unfold Impl.Dsa.X86_64.Generation.code
   apply alloc_frame_ok (by decide) (by have hl := h.stackLower; omega)
@@ -46,7 +46,7 @@ theorem entryRun_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel)
       simp only [spillSlots, List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     simp [allocState, State.setReg, hn]
-  refine WP.seq (WP.mono (entryInner_ok (checkName := checkName) H M Sq K h hg hr hw hf saved') ?_)
+  refine WP.seq (WP.mono (entryInner_ok (checkName := checkName) H M Sq T h hg hr hw hf saved') ?_)
   intro v ⟨result, sv, spv, rdv, wrv⟩
   have vsp : v.gpr .rsp = savedBase s := by rw [spv, hg]; rfl
   have vwr : (⟨v.gpr .rsp, 48⟩ : Region) ∈ v.wr := by

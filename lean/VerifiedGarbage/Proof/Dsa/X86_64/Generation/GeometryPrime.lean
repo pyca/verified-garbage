@@ -57,7 +57,7 @@ def GenerationGeometry.qPrime (p : GenerationGeometry) (rand : GenerationTape p)
   randMax := rand.size
   stackSize := by have := p.stackSize; omega
   stackSeparate := (p.stack_part (d := arithmetic) (n := arithmeticBytes) (by
-    rcases p.width with h | h | h <;> rw [h] <;> decide)).symm
+    rcases p.width with h | h | h <;> rw [h] <;> decide)).symm.sub_right (below_sub (by decide) (by decide))
   bufferSeparate := p.parts_disjoint
     (by rcases p.width with h | h | h <;> rw [h] <;> decide)
     (by rcases p.lengths with ⟨h1,h2⟩ | ⟨h1,h2⟩ | ⟨h1,h2⟩ <;> rw [h1,h2] <;> decide)
@@ -70,6 +70,6 @@ def GenerationGeometry.qPrime (p : GenerationGeometry) (rand : GenerationTape p)
       (by left; rcases p.qWidth with h | h <;> rw [h] <;> decide))
     exact Offset.contains_base _ (by omega) (by rcases p.qWidth with h | h <;> omega)
   tapeBuffer := rand.part (by rcases p.lengths with ⟨h1,h2⟩ | ⟨h1,h2⟩ | ⟨h1,h2⟩ <;> rw [h1,h2] <;> decide)
-  tapeStack := rand.stack
+  tapeStack := rand.stack.sub_right (below_sub (by decide) (by decide))
 
 end VG.Proof.Dsa.X86_64.Generation

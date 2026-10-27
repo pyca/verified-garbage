@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryFrame
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTest
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryAllocated
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySave
 
@@ -40,13 +40,13 @@ theorem EntryResult.congr {s t u : State} (h : EntryResult s t)
 theorem EntryResult.free {s t : State} (h : EntryResult s t) (n : Nat) :
     EntryResult s (freeState n t) := h.congr rfl rfl
 
-theorem entryBody_abi (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel)
+theorem entryBody_abi (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
     {s u : State} (h : GenerationABI s)
     (hg : u.gpr = (allocState 48 s).gpr) (hr : u.rd = s.rd)
     (hw : u.wr = (allocState 48 s).wr)
     (hf : Frame [⟨savedBase s, 48⟩] s.mem u.mem)
     (saved : Saved u.mem (savedBase s) s.gpr spillSlots) :
-    WP isa (Impl.Dsa.X86_64.Generation.entryBody (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run)
+    WP isa (Impl.Dsa.X86_64.Generation.entryBody (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run)
       (allocState 296 u) fun t =>
       EntryResult s t ∧ Saved t.mem (savedBase s) s.gpr spillSlots ∧
       t.gpr .rsp = (allocState 296 u).gpr .rsp ∧ t.rd = u.rd ∧ t.wr = (allocState 296 u).wr := by
@@ -65,7 +65,7 @@ theorem entryBody_abi (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel
     simpa only [contextOf, tapeOf, geometryOf, bytesAt_length] using h.seedsLength
   have hs : (contextOf h).hs.bytes.length % (contextOf h).geo.pLen = 0 := by
     simpa only [contextOf, tapeOf, geometryOf, bytesAt_length] using h.hsLength
-  apply WP.mono (entryBody_ok (checkName := checkName) H M Sq K init (outputPlanOf h) output seeds hs)
+  apply WP.mono (entryBody_ok (checkName := checkName) H M Sq T init (outputPlanOf h) output seeds hs)
   intro t ⟨status, bytes, ft, sp, rd, wr⟩
   have outlen : 2 * (contextOf h).geo.pLen + (contextOf h).geo.qLen = (s.gpr .rsi).toNat := h.outLength.symm
   rw [outlen] at bytes ft

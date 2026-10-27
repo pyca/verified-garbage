@@ -23,7 +23,7 @@ theorem pAttempt_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {p : PPrimalityPlan
     (hG : Calls.StreamOK (if p.construct.hash.len = 20 then G1 else G256))
     {H : Spec.Mgf1.Hash} (hHh : ∀ x, H.hash x = hG.SH.H.hash x)
     (hsize : ∀ bytes, (H.hash bytes).length = (if p.construct.hash.len = 20 then G1 else G256).D)
-    (M : Mont) (K : Kernel)
+    (T : PrimeTest)
     (hd : (if p.construct.hash.len = 20 then G1 else G256).D = p.construct.hash.len)
     {s : State} {W : Nat → BitVec 64} {C : Addr} {counter stride used : Nat}
     (entry : AttemptEntry p.construct H W s) (ctrl : SearchControl C counter stride s)
@@ -34,13 +34,14 @@ theorem pAttempt_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {p : PPrimalityPlan
     (hused : p.construct.hash.W 16 = BitVec.ofNat 64 used) (hu : used ≤ p.rand.length)
     (htape : Src s p.construct.B p.construct.Z p.rp p.rand)
     (htapeFrame : (⟨p.rp, p.rand.length⟩ : Region).Disjoint ⟨p.construct.hash.F, frameBytes⟩)
-    (hwitness : ∀ i < p.construct.len, InRegions s.wr (off (off (p.construct.hash.W 5) witness) i) 1)
+    (hA : Scr s (p.construct.hash.W 5) domainCheck)
+    (htc : Covers [⟨p.rp, p.rand.length⟩] (s.rd ++ s.wr))
     (hcontrol : ∀ r ∈ ⟨p.construct.hash.F, frameBytes⟩ :: p.changed, (⟨C, 24⟩ : Region).Disjoint r)
     (hframeControl : (⟨p.construct.hash.F, frameBytes⟩ : Region).Disjoint ⟨C, 24⟩)
     (hhashControl : (⟨p.construct.hash.S, oRsa⟩ : Region).Disjoint ⟨C, 24⟩)
     (hpControl : (⟨off (p.construct.hash.W 5) Impl.Dsa.Generation.Layout.p, p.construct.len⟩ : Region).Disjoint ⟨C, 24⟩)
     (heControl : (⟨off (p.construct.hash.W 5) exponent, p.construct.len⟩ : Region).Disjoint ⟨C, 24⟩) :
-    WP isa (Impl.Dsa.X86_64.Generation.pAttempt G1 G256 M.mm K.run p.construct.len p.construct.hash.len) s fun t =>
+    WP isa (Impl.Dsa.X86_64.Generation.pAttempt G1 G256 T.run p.construct.len p.construct.hash.len) s fun t =>
       SearchControl C counter stride t ∧
       ∃ (used' : Nat) (status : BitVec 64) (V : Nat → Byte),
         used' ≤ p.rand.length ∧ Lay t p.construct.hash.F p.construct.hash.S ∧
@@ -61,8 +62,8 @@ theorem pAttempt_ok {G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream} {p : PPrimalityPlan
     (by rw [ctrl.offset, hoff])) fun u ⟨stateU, fu, ku⟩ => ?_)
   have tape := source_of_frame htape fu (by
     intro r hr; rcases List.mem_singleton.mp hr with rfl; exact htapeFrame) p.randMax ku.2.1 ku.2.2
-  refine WP.seq (WP.mono (pConstructTest_ok hG hHh hsize M K hd stateU hhash hseedsize hused
-    hu tape (fun i hi => by rw [ku.2.2]; exact hwitness i hi)) fun v hv => ?_)
+  refine WP.seq (WP.mono (pConstructTest_ok hG hHh hsize T hd stateU hhash hseedsize hused
+    hu tape (hA.congr ku.2.2) (by rw [ku.2.1, ku.2.2]; exact htc)) fun v hv => ?_)
   obtain ⟨used', status, V, hvused, Lv, Rv, vp, ve, hexhaust, hres, fv, rdv, wrv⟩ := hv
   have total : Frame (⟨p.construct.hash.F, frameBytes⟩ :: p.changed) s.mem v.mem :=
     (fu.mono (by intro r hr; rcases List.mem_singleton.mp hr with rfl; simp)).trans

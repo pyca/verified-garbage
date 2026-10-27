@@ -60,6 +60,8 @@ structure SearchMemory (p : SearchPlan) (W : Nat → BitVec 64) (s : State) : Pr
     InRegions s.wr (off (off (p.attempt.construct.hash.W 5) exponent) i) 1
   witnessWrite : ∀ i < p.attempt.construct.len,
     InRegions s.wr (off (off (p.attempt.construct.hash.W 5) witness) i) 1
+  arena : Scr s (p.attempt.construct.hash.W 5) domainCheck
+  tapeCover : Covers [⟨p.attempt.rp, p.attempt.rand.length⟩] (s.rd ++ s.wr)
 
 theorem SearchMemory.frame {p : SearchPlan} {W W' : Nat → BitVec 64} {s t : State}
     (h : SearchMemory p W s) (L : Lay t p.attempt.construct.hash.F p.attempt.construct.hash.S)
@@ -87,5 +89,7 @@ theorem SearchMemory.frame {p : SearchPlan} {W W' : Nat → BitVec 64} {s t : St
   pWrite i hi := by rw [hwr]; exact h.pWrite i hi
   exponentWrite i hi := by rw [hwr]; exact h.exponentWrite i hi
   witnessWrite i hi := by rw [hwr]; exact h.witnessWrite i hi
+  arena := h.arena.congr hwr
+  tapeCover := by rw [hrd, hwr]; exact h.tapeCover
 
 end VG.Proof.Dsa.X86_64.Generation

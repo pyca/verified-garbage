@@ -68,7 +68,14 @@ theorem GenerationMemory.searchState {p : GenerationContext} {W : Nat → BitVec
     shapedWrite := ?_
     pWrite := ?_
     exponentWrite := ?_
-    witnessWrite := ?_ }
+    witnessWrite := ?_
+    arena := (by
+      have hb := (h.slots 5 (by simp [generationSlots])).trans p.baseSlot
+      have := h.scratch.sub (o := 0) (n := domainCheck) (by unfold usedBytes; omega) (by decide)
+      simp only [off, BitVec.add_zero] at this
+      change Scr s (W 5) domainCheck
+      rw [hb]; exact this)
+    tapeCover := h.rand.cover }
   · intro k hk
     change W k = searchWords p.geo.B W k
     have : k ≠ 0 ∧ k ≠ 2 ∧ k ≠ 27 := by simp only [searchSlots, List.mem_cons, List.not_mem_nil, or_false] at hk; omega
