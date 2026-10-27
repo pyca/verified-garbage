@@ -374,16 +374,16 @@ mod blockmix_tests {
         let mut x = [0u32; 16];
         for (w, b) in x
             .iter_mut()
-            .zip(input.last().unwrap()[64..].chunks_exact(4))
+            .zip(input.last().unwrap()[64..].as_chunks::<4>().0)
         {
-            *w = u32::from_le_bytes(b.try_into().unwrap());
+            *w = u32::from_le_bytes(*b);
         }
         let r = input.len();
         let mut out = alloc::vec![[0u8; 128]; r];
         let out_bytes = out.as_flattened_mut();
-        for (i, block) in input.as_flattened().chunks_exact(64).enumerate() {
-            for (w, b) in x.iter_mut().zip(block.chunks_exact(4)) {
-                *w ^= u32::from_le_bytes(b.try_into().unwrap());
+        for (i, block) in input.as_flattened().as_chunks::<64>().0.iter().enumerate() {
+            for (w, b) in x.iter_mut().zip(block.as_chunks::<4>().0) {
+                *w ^= u32::from_le_bytes(*b);
             }
             let original = x;
             let quarter = |x: &mut [u32; 16], a: usize, b: usize, c: usize, d: usize| {
@@ -410,7 +410,12 @@ mod blockmix_tests {
                 *w = w.wrapping_add(o);
             }
             let offset = 64 * (i / 2 + (i % 2) * r);
-            for (b, w) in out_bytes[offset..offset + 64].chunks_exact_mut(4).zip(x) {
+            for (b, w) in out_bytes[offset..offset + 64]
+                .as_chunks_mut::<4>()
+                .0
+                .iter_mut()
+                .zip(x)
+            {
                 b.copy_from_slice(&w.to_le_bytes());
             }
         }
