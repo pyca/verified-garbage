@@ -11,11 +11,11 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 Untrusted: everything here is checked by Lean. `bigFrame_wp`: the body of
 `bigFrame n` runs from a state `FrameAt n s` of the state `s` before it:
-the same registers, memory and readable regions, the stack pointer `n`
-bytes lower, and writable regions that add, to those of `s`, the frame's
-bytes, an access within a 16-byte aligned chunk of it at a time
-(`FrameAt.inFrame`), and its lowest 2032 bytes (or all of it) as one region
-(`FrameAt.low`). If the body keeps the permissions and the stack
+the same registers, memory, readable regions and statics' addresses, the
+stack pointer `n` bytes lower, and writable regions that add, to those of
+`s`, the frame's bytes, an access within a 16-byte aligned chunk of it at a
+time (`FrameAt.inFrame`), and its lowest 2032 bytes (or all of it) as one
+region (`FrameAt.low`). If the body keeps the permissions and the stack
 pointer, as all code does, the frame ends with those of `s`.
 -/
 
@@ -36,19 +36,20 @@ structure FrameAt (n : Nat) (s t : State) : Prop where
   low : 0 < n → (⟨t.sp, min n 2032⟩ : Region) ∈ t.wr
   inFrame : ∀ o w, 0 < w → o + w ≤ n → o % 16 + w ≤ 16 →
     InRegions t.wr (t.sp + BitVec.ofNat 64 o) w
+  syms : t.syms = s.syms
 
 theorem FrameAt.refl (s : State) : FrameAt 0 s s :=
-  ⟨rfl, rfl, rfl, by simp, ⟨[], rfl⟩, fun h => absurd h (by decide), fun _ _ h0 h _ => absurd h (by omega)⟩
+  ⟨rfl, rfl, rfl, by simp, ⟨[], rfl⟩, fun h => absurd h (by decide), fun _ _ h0 h _ => absurd h (by omega), rfl⟩
 
 /-- A frame of `k` bytes around one of `n`, from `allocd k s`. -/
 theorem FrameAt.alloc {n k : Nat} {s t : State} (h : FrameAt n (allocd k s) t) (hk : k % 16 = 0)
     (hn : n % 16 = 0) (hsp : n + k ≤ s.sp.toNat) (hk' : k ≤ 2032) (hn' : n = 0 ∨ 2032 ≤ n) :
     FrameAt (n + k) s t := by
-  obtain ⟨g, m, r, sp, ⟨ws, hw⟩, lo, f⟩ := h
+  obtain ⟨g, m, r, sp, ⟨ws, hw⟩, lo, f, sy⟩ := h
   have hb : s.sp - BitVec.ofNat 64 k = t.sp + BitVec.ofNat 64 n := by
     rw [sp]; simp only [allocd, BitVec.sub_add_cancel]
   have hmem : (⟨s.sp - BitVec.ofNat 64 k, k⟩ : Region) ∈ t.wr := by rw [hw]; simp [allocd]
-  refine ⟨g, m, r, ?_, ⟨ws ++ [⟨s.sp - BitVec.ofNat 64 k, k⟩], by rw [hw]; simp [allocd]⟩, fun hp => ?_, ?_⟩
+  refine ⟨g, m, r, ?_, ⟨ws ++ [⟨s.sp - BitVec.ofNat 64 k, k⟩], by rw [hw]; simp [allocd]⟩, fun hp => ?_, ?_, sy⟩
   · rw [sp]
     apply BitVec.eq_of_toNat_eq
     simp only [allocd, BitVec.toNat_sub, BitVec.toNat_ofNat]

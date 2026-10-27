@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
+import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 
 /-!
 # One step of a mode on RISCV64
@@ -293,11 +294,11 @@ theorem pre_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : A
   have hR := regs hF hj
   have hA : AreasOk c s (lens c st) (areas c B D st j) allLocs := areasOk hF hj hI.b hI.dp hI.wr
   rw [← List.append_nil (c.opsCode M.pre)]
-  refine opsCode_wp c (ops_ok hpre) hA fun s₂ a₂ f₂ g₂ rd₂ wr₂ => WP.block_nil ?_
+  refine WP.of_syms (opsCode_wp c (ops_ok hpre) hA fun s₂ a₂ f₂ g₂ rd₂ wr₂ => WP.block_nil fun sy₂ => ?_)
   exact ⟨by rw [g₂ _ (by decide) (by decide) (by decide)]; exact hI.b,
     fun r hr => g₂ r (kept_ne r hr).1 (kept_ne r hr).2.1 (kept_ne r hr).2.2,
     by rw [rd₂, hI.rd], by rw [wr₂, hI.wr],
-    cs.ready_frame hI.ready (fun r hr _ _ _ _ => g₂ r (kept_ne r hr).1 (kept_ne r hr).2.1 (kept_ne r hr).2.2) rd₂ wr₂ f₂
+    cs.ready_frame hI.ready (fun r hr _ _ _ _ => g₂ r (kept_ne r hr).1 (kept_ne r hr).2.1 (kept_ne r hr).2.2) rd₂ wr₂ sy₂ f₂
       hR.areasW hR.areasCore, a₂,
     f₂.sub hR.areasFine⟩
 
@@ -380,10 +381,10 @@ theorem post_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : 
   have dp₃ : s₃.gpr .s2 = D + BitVec.ofNat 64 (st * j) := by rw [k₃ _ (by simp), hI.dp]
   have np₃ : s₃.gpr .s3 = BitVec.ofNat 64 (n - j) := by rw [k₃ _ (by simp), hI.np]
   have hA : AreasOk c s₃ (lens c st) (areas c B D st j) allLocs := areasOk hF hj hm.b dp₃ hm.wr
-  refine opsCode_wp c (ops_ok hpost) hA fun s₅ a₅ f₅ g₅ rd₅ wr₅ => ?_
+  refine WP.of_syms (opsCode_wp c (ops_ok hpost) hA fun s₅ a₅ f₅ g₅ rd₅ wr₅ => ?_)
   simp only [Core.advance]
   refine wp_addi (by omega_using [hM, hst, hbw]) fun s₆ u₆ =>
-    wp_subi (imm := 1) (by decide) fun s₇ u₇ => WP.block_nil ?_
+    wp_subi (imm := 1) (by decide) fun s₇ u₇ => WP.block_nil fun sy₇ => ?_
   have g₇ : ∀ r, r ≠ .t0 → r ≠ .t1 → r ≠ .t2 → r ≠ .s3 → r ≠ .s2 → s₇.gpr r = s₃.gpr r :=
     fun r h1 h2 h0 h3 h4 => by rw [u₇.other r h3, u₆.other r h4, g₅ r h1 h2 h0]
   have m₇ : s₇.mem = s₅.mem := by rw [u₇.mem, u₆.mem]
@@ -417,7 +418,7 @@ theorem post_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : 
   · rw [u₇.gpr, u₆.other _ (by decide), s3₅, ofNat_pred64 (by omega_using [hj])]
     congr 1
   · exact cs.ready_frame hm.ready (fun r hr _ h31 h30 _ => g₇ r (kept_ne r hr).1 (kept_ne r hr).2.1 (kept_ne r hr).2.2 h30 h31)
-      (by rw [u₇.rd, u₆.rd, rd₅]) (by rw [u₇.wr, u₆.wr, wr₅]) (by rw [m₇]; exact f₅)
+      (by rw [u₇.rd, u₆.rd, rd₅]) (by rw [u₇.wr, u₆.wr, wr₅]) sy₇ (by rw [m₇]; exact f₅)
       hR.areasW hR.areasCore
   · rw [m₇, chunksAt_set (j := j) (fun i hi hout => ?_), hI.data, out₅, run_set F c0 (by omega_using [hxs, hj])]
     refine all _ fun r hr hcon => ?_
