@@ -75,13 +75,15 @@ variable {w : Nat} (P : Spec.Blake2.Params w)
 /-! ## The rounds -/
 
 /-- `G` (RFC 7693 §3.1) on the words in `a, b, c, d`, with the message words
-`j` and `k` of the block. -/
+`j` and `k` of the block. Add the message word before `b`: the message
+load is independent of the preceding half's final rotation of `b`, keeping
+that rotation off the path through both additions. -/
 def g (a b c d : Reg) (j k : Nat) : List Instr := [
   .ldr (sz w) T .x1 (ws w * j),
-  .add (sz w) a a b, .add (sz w) a a T, .logic .eor (sz w) d d a, .ror (sz w) d d P.R1,
+  .add (sz w) a a T, .add (sz w) a a b, .logic .eor (sz w) d d a, .ror (sz w) d d P.R1,
   .add (sz w) c c d, .logic .eor (sz w) b b c, .ror (sz w) b b P.R2,
   .ldr (sz w) T .x1 (ws w * k),
-  .add (sz w) a a b, .add (sz w) a a T, .logic .eor (sz w) d d a, .ror (sz w) d d P.R3,
+  .add (sz w) a a T, .add (sz w) a a b, .logic .eor (sz w) d d a, .ror (sz w) d d P.R3,
   .add (sz w) c c d, .logic .eor (sz w) b b c, .ror (sz w) b b P.R4]
 
 /-- `G(v, x, y, z, u, m[s[2i]], m[s[2i+1]])` of round `r` (the `i`-th `G` of the
