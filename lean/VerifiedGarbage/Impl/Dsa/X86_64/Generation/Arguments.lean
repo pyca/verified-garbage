@@ -47,31 +47,9 @@ def candidateArguments (pLen qLen : Nat) : List HeaderArgument :=
 def candidateFromFrame (pLen qLen : Nat) : Prog isa :=
   .seq (.block (headerArguments (candidateArguments pLen qLen))) candidateBuild
 
-/-- Frame words 5, 13, 15 and 16 hold the scratch base, witness tape,
-its byte length and consumed-byte count, respectively. -/
-def primeArguments (candidate len draw checks : Nat) : List HeaderArgument :=
-  [⟨16, .frame 5 VG.Impl.Dsa.Generation.Layout.witness⟩, ⟨17, .literal draw⟩,
-   ⟨18, .literal len⟩, ⟨19, .literal checks⟩,
-   ⟨20, .frame 5 candidate⟩, ⟨23, .frame 13 0⟩,
-   ⟨24, .frame 15 0⟩, ⟨25, .frame 16 0⟩]
-
-def primeFromFrame (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
-    (candidate len draw checks : Nat) : Prog isa :=
-  .seq (.block (headerArguments (primeArguments candidate len draw checks)))
-    (primeBytes mul round len draw)
-
 /-- Select the arithmetic workspace using the saved scratch base. -/
 def workspaceBase : List Instr :=
   [.mov .rdi (.mem (sp 40)),
    .alu .add .rdi (.imm (BitVec.ofNat 32 VG.Impl.Dsa.Generation.Layout.arithmetic))]
-
-def checkPrime (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
-    (w candidate len draw checks : Nat) : Prog isa :=
-  .seq (workspace w) (primeFromFrame mul round candidate len draw checks)
-
-/-- Save the consumed witness count and status for the next search step. -/
-def primeResult : List Instr :=
-  [.mov .rax (.mem (hdr 25)), .store (sp 128) .rax,
-   .mov .rax (.mem (hdr 29)), .store (sp 152) .rax]
 
 end VG.Impl.Dsa.X86_64.Generation

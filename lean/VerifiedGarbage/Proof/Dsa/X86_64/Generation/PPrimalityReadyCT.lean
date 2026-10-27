@@ -23,7 +23,7 @@ theorem pPrimality_ready {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK
     (hd : G.D = qLen) {p : PPrimalityPublic} {s : State}
     (h : PPrimalityBefore n H pLen qLen p s) :
     WP isa (Impl.Dsa.X86_64.Generation.pConstruct G pLen qLen) s (PPrimalityAfter p) := by
-  obtain ⟨⟨W, hw, hs, _, hu⟩, hwr, hub, tape, writable, hp, hq⟩ := h
+  obtain ⟨⟨W, hw, hs, _, hu⟩, hwr, hub, tape, ⟨arena, cover⟩, hp, hq⟩ := h
   let q := p.plan.withWords W hw
   have step := pConstruct_ok hG hmatch hsize
     (p := q.construct) (hd.trans hq.symm) hs
@@ -37,7 +37,8 @@ theorem pPrimality_ready {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK
     simpa only [q, PPrimalityPlan.withWords, PConstructPlan.withWords, HashPlan.withWords,
       PConstructPlan.value, hw.1 5 (by decide)] using bt
   have sq := source_of_frame tape ff q.tapeConstruct p.plan.randMax rd wr
-  refine ⟨L, ⟨V, W, R, hw, hu⟩, ws, ?_, bt', ho, hb, ?_, sq, ?_, wr.trans hwr, hub⟩
+  refine ⟨L, ⟨V, W, R, hw, hu⟩, ws, ?_, bt', ho, hb, ?_, sq, arena.congr wr, by rw [rd, wr]; exact cover,
+    wr.trans hwr, hub⟩
   · simpa only [q, PPrimalityPlan.withWords, PConstructPlan.withWords, HashPlan.withWords,
       hw.1 5 (by decide)] using ptr
   · refine ⟨?_, ?_, ?_⟩
@@ -53,6 +54,5 @@ theorem pPrimality_ready {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Calls.StreamOK
       simp [Spec.Rsa.bytesAt, off, List.getD_eq_getElem?_getD, hi']
     · intro i hi
       exact p.plan.construct.pOutside i (by simpa only [VG.Proof.Dsa.encodeBE_length] using hi)
-  · intro i hi; rw [wr]; exact writable i hi
 
 end VG.Proof.Dsa.X86_64.Generation

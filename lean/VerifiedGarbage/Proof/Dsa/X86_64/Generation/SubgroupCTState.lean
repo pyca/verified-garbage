@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SubgroupState
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.QBuildCT
 public import VerifiedGarbage.Proof.Dsa.Encoding
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeFrameCTState
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCallCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HeaderCT
 import VerifiedGarbage.Proof.Framework.Omega
 public import Mathlib.Algebra.Group.Nat.Defs
 
@@ -29,7 +30,8 @@ def SubgroupPlan.withWords (p : SubgroupPlan) (W : Nat → BitVec 64)
            outputSlot := (hw 0 (by simp)).trans p.outputSlot
            witnessPtr := by rw [hw 5 (by simp)]; exact p.witnessPtr
            tapePtr := (hw 13 (by simp)).trans p.tapePtr
-           tapeLength := (hw 15 (by simp)).trans p.tapeLength }
+           tapeLength := (hw 15 (by simp)).trans p.tapeLength
+           geometry := by rw [hw 5 (by simp)]; exact p.geometry }
 
 def SubgroupBefore (n : Nat) (p : SubgroupPublic) (s : State) : Prop :=
   ∃ W, ∃ hw : ∀ i ∈ [0, 5, 13, 15], W i = p.plan.W i,
@@ -46,34 +48,14 @@ theorem subgroup_hash {n : Nat} {p : SubgroupPublic} {s : State}
   obtain ⟨V, R⟩ := hs.rep
   exact ⟨hf, hs.layout, V, W, R, hs.label, (p.plan.withWords W hw).outputSlot⟩
 
-def SubgroupPublic.call (p : SubgroupPublic) : PrimeFramePublic where
-  bytes := {
-    call := {
-      draw := ⟨p.plan.prime, p.used⟩
-      arena := p.plan.W 5
-      wr := p.wr
-      layout := p.header
-      base := p.plan.base.symm
-      width := by rw [p.plan.words]; decide
-      tab := by rw [p.plan.words, p.plan.size]; decide +kernel
-      large := p.plan.large
-      policy := by
-        rw [p.plan.bits, p.plan.words]
-        rcases p.plan.width with h | h <;> rw [h] <;> decide }
-    source := p.plan.output
-    bytes := Spec.Dsa.encodeBE p.plan.prime.len p.plan.prime.N
-    length := VG.Proof.Dsa.encodeBE_length _ _
-    value := p.plan.encoding }
-  candidate := Impl.Dsa.Generation.Layout.q
-  candidateBound := by decide
-  checksBound := by change p.plan.prime.checks < 2 ^ 31; rw [p.plan.checks]; decide
-  checks := by
-    change p.plan.prime.checks = Spec.Dsa.primeChecks (Spec.Dsa.bitLength p.plan.prime.N)
-    rw [p.plan.checks, p.plan.bits]
-    rcases p.plan.width with h | h <;> rw [h] <;> decide
-  source := p.plan.outputPtr.symm
-  witness := p.plan.witnessPtr.symm
-  separate := p.plan.frameHeaders
-  outside := p.plan.frameOutside
+def SubgroupPublic.primeCall (p : SubgroupPublic) : PrimeTestPublic (8 * p.plan.prime.len) where
+  F := p.plan.prime.sp
+  S := p.plan.hash
+  A := p.plan.W 5
+  rp := p.plan.prime.rp
+  rand := p.plan.prime.rand
+  N := p.plan.prime.N
+  used := p.used
+  geometry := p.plan.geometry
 
 end VG.Proof.Dsa.X86_64.Generation

@@ -40,21 +40,11 @@ theorem argumentRegisters_pins : Pins ArgumentRegisters [.rdi, .rsp] := by
   · exact hs.1.trans ht.1.symm
   · exact hs.2.trans ht.2.symm
 
-theorem primeArguments_ct (candidate len draw checks : Nat)
-    {hc : VG.Taint.Hint VG.X86_64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.rdi, .rsp])
-      (.block (headerArguments (primeArguments candidate len draw checks))) hc).isSome = true) : RelCT isa (Two ArgumentRegisters)
-    (.block (headerArguments (primeArguments candidate len draw checks))) (fun _ _ => True) :=
-  two_taint [.rdi, .rsp] argumentRegisters_pins ht
-
 theorem candidateArguments_ct (pLen qLen : Nat)
     {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (ht : (taint.check (Taint.ofRegs [.rdi, .rsp])
       (.block (headerArguments (candidateArguments pLen qLen))) hc).isSome = true) : RelCT isa (Two ArgumentRegisters)
     (.block (headerArguments (candidateArguments pLen qLen))) (fun _ _ => True) :=
   two_taint [.rdi, .rsp] argumentRegisters_pins ht
-
-theorem primeResult_ct : RelCT isa (Two ArgumentRegisters) (.block primeResult) (fun _ _ => True) :=
-  two_taint [.rdi, .rsp] argumentRegisters_pins (by taint_decide)
 
 end VG.Proof.Dsa.X86_64.Generation

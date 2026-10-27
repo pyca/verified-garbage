@@ -44,7 +44,7 @@ private theorem sat_arg_3 : stackArg generationSatState 3 = 0 := by decide +kern
 private theorem sat_arg_4 : stackArg generationSatState 4 = 0x10000 := by decide +kernel
 private theorem sat_arg_5 : stackArg generationSatState 5 = 9216 := by decide +kernel
 
-theorem generation_satisfiable : ∃ s, (Spec.Dsa.generateParametersContract abi 472).pre s := by
+theorem generation_satisfiable : ∃ s, (Spec.Dsa.generateParametersContract abi 536).pre s := by
   refine ⟨generationSatState, ?_⟩
   sig_pre [Spec.Dsa.generateParametersContract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six]
   sig_and_intros

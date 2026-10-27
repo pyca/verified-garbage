@@ -32,14 +32,14 @@ def SeedPrimeAfter (n pLen qLen : Nat) (p : SeedPublic) (s : State) : Prop :=
   (p.primeStatus = 1 → ∃ value rest, p.primeResult = some (some value, rest) ∧
     ∃ domain, SeedGeneratorBefore n pLen qLen (p.generatorPublic value rest domain) s)
 
-theorem seedPrime_after (H : GenerationHashes) (M : Mont) (K : Kernel)
+theorem seedPrime_after (H : GenerationHashes) (T : PrimeTest)
     {n pLen qLen : Nat} {p : SeedPublic} {s : State}
     (h : SeedPrimeBefore n pLen qLen p s) :
-    WP isa (Impl.Dsa.X86_64.Generation.primeSearch H.sha1 H.sha256 M.mm K.run pLen qLen) s
+    WP isa (Impl.Dsa.X86_64.Generation.primeSearch H.sha1 H.sha256 T.run pLen qLen) s
       (SeedPrimeAfter n pLen qLen p) := by
   obtain ⟨⟨⟨W, hm, h1, h16, h10⟩, seed, hf, hw, hq⟩, hp, bq⟩ := h
   subst pLen; subst qLen
-  refine WP.mono (seedPrime_ok H M K hm p.seed p.length seed h1 bq h16 p.bound)
+  refine WP.mono (seedPrime_ok H T hm p.seed p.length seed h1 bq h16 p.bound)
     fun t ⟨Wt, used, bound, ht, u16, slots, bq', outcome, ff, rd, wr⟩ => ?_
   rcases outcome with ⟨hs, hr⟩ | ⟨hs, value, hr, domain, bp, be⟩ | ⟨hs, hr⟩
   · have status : p.primeStatus = 0 := by simp [SeedPublic.primeStatus, SeedPublic.primeResult, hr]

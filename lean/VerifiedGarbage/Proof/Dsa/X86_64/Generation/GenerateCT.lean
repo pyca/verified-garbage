@@ -19,12 +19,12 @@ variable {checkName : String}
 def ParameterPublic.output (p : ParameterPublic) : OutputPublic :=
   ⟨p.context, (p.context.remaining 0 p.randUsed).isSome, p.ws⟩
 
-theorem nativeParameters_output (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel)
+theorem nativeParameters_output (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
     {n pLen qLen : Nat} {p : ParameterPublic} {s : State} (h : ParameterStart n pLen qLen p s) :
-    WP isa (parameterSearch (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run pLen qLen) s (OutputBefore n p.output) := by
+    WP isa (parameterSearch (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run pLen qLen) s (OutputBefore n p.output) := by
   obtain ⟨⟨W, hm, h16⟩, hf, _, hp, hq⟩ := h
   subst pLen; subst qLen
-  refine WP.mono (nativeParameters_ok (checkName := checkName) H M Sq K hm h16 p.randBound)
+  refine WP.mono (nativeParameters_ok (checkName := checkName) H M Sq T hm h16 p.randBound)
     fun t ⟨Wt, ht, outcome, _, _, wr⟩ => ?_
   refine ⟨⟨Wt, ht, ?_⟩, hf.congr (ht.layout.rsp.trans hm.layout.rsp.symm) wr⟩
   change (Wt 19 == 1) = (p.context.remaining 0 p.randUsed).isSome
@@ -32,12 +32,12 @@ theorem nativeParameters_output (H : GenerationHashes) (M : Mont) (Sq : MontS) (
   · rcases h19 with hs | hs <;> simp [hs, he]
   · simp [h19, he]
 
-theorem generate_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel)
+theorem generate_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
     (n : Nat) (hn : n = 2 ∨ n = 3) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
     RelCT isa (Two (ParameterStart n pLen qLen))
-      (generate (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run pLen qLen) (fun _ _ => True) := by
-  refine RelCT.seq (two_post (nativeParameters_ct (checkName := checkName) H M Sq K n hn pLen qLen sizes)
-    (fun _ _ h => nativeParameters_output (checkName := checkName) H M Sq K h)) ?_
+      (generate (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run pLen qLen) (fun _ _ => True) := by
+  refine RelCT.seq (two_post (nativeParameters_ct (checkName := checkName) H M Sq T n hn pLen qLen sizes)
+    (fun _ _ h => nativeParameters_output (checkName := checkName) H M Sq T h)) ?_
   exact two_map ParameterPublic.output (fun _ _ h => h) (finishOutput_ct n hn)
 
 end VG.Proof.Dsa.X86_64.Generation

@@ -4,10 +4,11 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryAllocated
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PublicCT
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTest
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PublicContextCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryFrame
+import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
 
 /-! # The inner ABI frame preserves the proved generator trace and stack pointer -/
 
@@ -34,14 +35,14 @@ theorem generation_free_rsp {s u v : State} {bytes : Nat}
     exact freeState_rsp hc.2.2.2.1
   · cases h
 
-theorem entryInner_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel)
+theorem entryInner_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
     {s t a b u v : State} (hs : GenerationABI s) (ht : GenerationABI t) (hp : GenerationPublicAgree s t)
     (ga : a.gpr = (allocState 48 s).gpr) (ra : a.rd = s.rd) (wa : a.wr = (allocState 48 s).wr)
     (fa : Frame [⟨savedBase s, 48⟩] s.mem a.mem)
     (gb : b.gpr = (allocState 48 t).gpr) (rb : b.rd = t.rd) (wb : b.wr = (allocState 48 t).wr)
     (fb : Frame [⟨savedBase t, 48⟩] t.mem b.mem) {tsa tsb : List Leak}
-    (ea : Exec isa (.frame (.alloc 296) (entryBody (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run) (.free 296)) a tsa u)
-    (eb : Exec isa (.frame (.alloc 296) (entryBody (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run) (.free 296)) b tsb v) :
+    (ea : Exec isa (.frame (.alloc 296) (entryBody (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run) (.free 296)) a tsa u)
+    (eb : Exec isa (.frame (.alloc 296) (entryBody (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run) (.free 296)) b tsb v) :
     tsa = tsb ∧ u.gpr .rsp = v.gpr .rsp := by
   cases ea with
   | frame pa ba qa =>
@@ -53,7 +54,7 @@ theorem entryInner_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel
       have ha := entryInitial_ct hs ga ra wa fa
       have hb := entryInitial_ct ht gb rb wb fb
       rw [← hp.parameter (hs := hs) (ht := ht)] at hb
-      have traces := (entryBody_ct (checkName := checkName) H M Sq K 3 (Or.inr rfl) _ _ _ _ _ _ ⟨parameterOf hs, ha, hb⟩ ba bb).1
+      have traces := (entryBody_ct (checkName := checkName) H M Sq T 3 (Or.inr rfl) _ _ _ _ _ _ ⟨parameterOf hs, ha, hb⟩ ba bb).1
       refine ⟨by simpa only [isa, addrs, List.map_nil, List.nil_append, List.append_nil] using traces, ?_⟩
       rw [generation_free_rsp qa, generation_free_rsp qb, ga, gb]
       change s.gpr .rsp - BitVec.ofNat 64 48 = t.gpr .rsp - BitVec.ofNat 64 48

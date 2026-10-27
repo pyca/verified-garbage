@@ -25,45 +25,44 @@ open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
 variable {checkName : String}
 
 theorem seedAttempt_depth {H1 H256 : Stream} (h1 : HashDepth H1) (h256 : HashDepth H256)
-    (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
-    (hs : generationDepth sq) (hm : ∀ o a b, generationDepth (mul o a b)) (hr : generationDepth round)
+    (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (prime : Nat → Prog isa)
+    (hs : generationDepth sq) (hm : ∀ o a b, generationDepth (mul o a b)) (hp : ∀ bits, callerDepth (prime bits))
     (hc : generationDepth (.call checkName (VG.Impl.Dsa.X86_64.Generate.checkParameters sq mul)))
-    (pLen qLen : Nat) : generationDepth (seedAttempt (checkName := checkName) H1 H256 sq mul round pLen qLen) := by
-  have finish : generationDepth (finishDomain (checkName := checkName) sq mul pLen qLen) :=
-    (show generationDepth (pack pLen qLen) by exact (show 0 ≤ 128 by decide)).seq (validate_depth (checkName := checkName) sq mul hc pLen qLen)
-  exact ((show generationDepth (.block (seedArguments qLen)) by exact (show 0 ≤ 128 by decide)).seq
-    (subgroup_depth h1 h256 mul round hm hr qLen)).seq
-    (onSuccess_depth ((primeSearch_depth h1 h256 mul round hm hr pLen qLen).seq
+    (pLen qLen : Nat) : callerDepth (seedAttempt (checkName := checkName) H1 H256 sq mul prime pLen qLen) := by
+  have finish : callerDepth (finishDomain (checkName := checkName) sq mul pLen qLen) :=
+    callerDepth.of ((show generationDepth (pack pLen qLen) by exact (show 0 ≤ 128 by decide)).seq
+      (validate_depth (checkName := checkName) sq mul hc pLen qLen))
+  exact ((callerDepth.of (generationDepth.block _)).seq
+    (subgroup_depth h1 h256 prime hp qLen)).seq
+    (onSuccess_depth ((primeSearch_depth h1 h256 prime hp pLen qLen).seq
       (onSuccess_depth ((generatorSearch_depth sq mul hs hm pLen).seq (onSuccess_depth finish)))))
 
 theorem generate_depth {H1 H256 : Stream} (h1 : HashDepth H1) (h256 : HashDepth H256)
-    (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
-    (hs : generationDepth sq) (hm : ∀ o a b, generationDepth (mul o a b)) (hr : generationDepth round)
+    (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (prime : Nat → Prog isa)
+    (hs : generationDepth sq) (hm : ∀ o a b, generationDepth (mul o a b)) (hp : ∀ bits, callerDepth (prime bits))
     (hc : generationDepth (.call checkName (VG.Impl.Dsa.X86_64.Generate.checkParameters sq mul)))
-    (pLen qLen : Nat) : generationDepth (generate (checkName := checkName) H1 H256 sq mul round pLen qLen) :=
-  (tapeLoop_depth (seedAttempt_depth (checkName := checkName) h1 h256 sq mul round hs hm hr hc pLen qLen) _ _).seq
-    (show generationDepth finishOutput by exact (show 0 ≤ 128 by decide))
+    (pLen qLen : Nat) : callerDepth (generate (checkName := checkName) H1 H256 sq mul prime pLen qLen) :=
+  (tapeLoop_depth (seedAttempt_depth (checkName := checkName) h1 h256 sq mul prime hs hm hp hc pLen qLen) _ _).seq
+    (callerDepth.of (show generationDepth finishOutput by exact (show 0 ≤ 128 by decide)))
 
 theorem dispatch_depth {H1 H256 : Stream} (h1 : HashDepth H1) (h256 : HashDepth H256)
-    (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
-    (hs : generationDepth sq) (hm : ∀ o a b, generationDepth (mul o a b)) (hr : generationDepth round)
+    (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (prime : Nat → Prog isa)
+    (hs : generationDepth sq) (hm : ∀ o a b, generationDepth (mul o a b)) (hp : ∀ bits, callerDepth (prime bits))
     (hc : generationDepth (.call checkName (VG.Impl.Dsa.X86_64.Generate.checkParameters sq mul))) :
-    generationDepth (dispatch (checkName := checkName) H1 H256 sq mul round) := by
-  have h128 := generate_depth (checkName := checkName) h1 h256 sq mul round hs hm hr hc 128 20
-  have h256' := generate_depth (checkName := checkName) h1 h256 sq mul round hs hm hr hc 256 32
-  have h384 := generate_depth (checkName := checkName) h1 h256 sq mul round hs hm hr hc 384 32
-  exact (show generationDepth (.block [.mov .rax (.mem (Impl.Mgf1.X86_64.sp 136)),
-    .alu .cmp .rax (.imm 128)]) by exact (show 0 ≤ 128 by decide)).seq
-    (h128.ite ((show generationDepth (.block [.alu .cmp .rax (.imm 256)]) by exact (show 0 ≤ 128 by decide)).seq
-      (h256'.ite h384 .e)) .e)
+    callerDepth (dispatch (checkName := checkName) H1 H256 sq mul prime) := by
+  have h128 := generate_depth (checkName := checkName) h1 h256 sq mul prime hs hm hp hc 128 20
+  have h256' := generate_depth (checkName := checkName) h1 h256 sq mul prime hs hm hp hc 256 32
+  have h384 := generate_depth (checkName := checkName) h1 h256 sq mul prime hs hm hp hc 384 32
+  exact (callerDepth.of (generationDepth.block _)).seq
+    (h128.ite ((callerDepth.of (generationDepth.block _)).seq (h256'.ite h384 .e)) .e)
 
 theorem entry_depth {H1 H256 : Stream} (h1 : HashDepth H1) (h256 : HashDepth H256)
-    (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
-    (hs : generationDepth sq) (hm : ∀ o a b, generationDepth (mul o a b)) (hr : generationDepth round)
+    (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (prime : Nat → Prog isa)
+    (hs : generationDepth sq) (hm : ∀ o a b, generationDepth (mul o a b)) (hp : ∀ bits, callerDepth (prime bits))
     (hc : generationDepth (.call checkName (VG.Impl.Dsa.X86_64.Generate.checkParameters sq mul))) :
-    (code (checkName := checkName) H1 H256 sq mul round).x86_64Depth ≤ 472 := by
-  have body := dispatch_depth (checkName := checkName) h1 h256 sq mul round hs hm hr hc
-  unfold generationDepth at body
+    (code (checkName := checkName) H1 H256 sq mul prime).x86_64Depth ≤ 536 := by
+  have body := dispatch_depth (checkName := checkName) h1 h256 sq mul prime hs hm hp hc
+  unfold callerDepth at body
   simp only [code, entryBody, Code.x86_64Depth, Instr.frameBytes, Nat.zero_max, Nat.max_zero]
   exact Nat.add_le_add_right (Nat.add_le_add_right body 296) 48
 

@@ -44,13 +44,13 @@ theorem GenerationMemory.search_frame {p : GenerationContext} {W : Nat → BitVe
       (by have := p.geo.hashSizes.2.1; unfold arithmeticBytes; omega)
   · exact part wrappedSeed p.geo.qLen (by decide) (by unfold arithmeticBytes; omega)
   · exact part VG.Impl.Dsa.Generation.Layout.hash oRsa (by decide) (by decide)
-  · exact ⟨below p.geo.F 128, by simp [GenerationContext.changed], below_sub (by decide) (by decide)⟩
+  · exact ⟨below p.geo.F 192, by simp [GenerationContext.changed], below_sub (by decide) (by decide)⟩
   · exact part arithmetic arithmeticBytes (by decide) (by rfl)
   · exact part VG.Impl.Dsa.Generation.Layout.p p.geo.pLen (by decide) (by unfold arithmeticBytes; omega)
   · exact part exponent p.geo.pLen (by decide) (by unfold arithmeticBytes; omega)
   · exact part arithmetic arithmeticBytes (by decide) (by rfl)
   · exact part witness p.geo.pLen (by decide) (by unfold arithmeticBytes; omega)
-  · exact ⟨below p.geo.F 128, by simp [GenerationContext.changed], fun _ h => h⟩
+  · exact ⟨below p.geo.F 192, by simp [GenerationContext.changed], fun _ h => h⟩
   · exact ⟨⟨p.geo.F, frameBytes⟩, by simp [GenerationContext.changed], fun _ h => h⟩
 
 end VG.Proof.Dsa.X86_64.Generation

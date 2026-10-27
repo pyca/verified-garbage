@@ -31,7 +31,7 @@ theorem GenerationMemory.subgroup_frame {p : GenerationContext} {W : Nat → Bit
     (hf : Frame (h.subgroupPlan seed hlen h0).changed m m') : Frame p.changed m m' := by
   apply GenerationContext.frame_parts hf
   change ∀ r ∈ [⟨off p.geo.B q, p.geo.qLen⟩, ⟨p.geo.hash, oRsa⟩, retR p.geo.F] ++
-    [⟨off p.geo.B arithmetic, arithmeticBytes⟩, ⟨off p.geo.B witness, p.geo.qLen⟩, below p.geo.F 128] ++
+    [⟨off p.geo.B arithmetic, arithmeticBytes⟩, ⟨off p.geo.B witness, p.geo.qLen⟩, below p.geo.F 192] ++
     [⟨p.geo.F, frameBytes⟩], ∃ out ∈ p.changed, Region.Sub r out
   have qn : p.geo.qLen ≤ 32 := by rcases p.geo.qWidth with hh | hh <;> omega
   have part (d n : Nat) (hd : d ≤ domainCheck) (hn : n ≤ arithmeticBytes) :
@@ -43,10 +43,10 @@ theorem GenerationMemory.subgroup_frame {p : GenerationContext} {W : Nat → Bit
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact part q p.geo.qLen (by decide) (by unfold arithmeticBytes; omega)
   · exact part VG.Impl.Dsa.Generation.Layout.hash oRsa (by decide) (by decide)
-  · exact ⟨below p.geo.F 128, by simp [GenerationContext.changed], below_sub (by decide) (by decide)⟩
+  · exact ⟨below p.geo.F 192, by simp [GenerationContext.changed], below_sub (by decide) (by decide)⟩
   · exact part arithmetic arithmeticBytes (by decide) (by rfl)
   · exact part witness p.geo.qLen (by decide) (by unfold arithmeticBytes; omega)
-  · exact ⟨below p.geo.F 128, by simp [GenerationContext.changed], fun _ h => h⟩
+  · exact ⟨below p.geo.F 192, by simp [GenerationContext.changed], fun _ h => h⟩
   · exact ⟨⟨p.geo.F, frameBytes⟩, by simp [GenerationContext.changed], fun _ h => h⟩
 
 end VG.Proof.Dsa.X86_64.Generation

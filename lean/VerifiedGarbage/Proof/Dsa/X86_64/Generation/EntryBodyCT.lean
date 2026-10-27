@@ -29,9 +29,9 @@ theorem entryReady_ct (n : Nat) :
     exact ⟨⟨W, ht, by rw [hz]; exact h16⟩,
       hf.congr (hk.gpr (by decide)) hk.2.2, hk.2.2.trans hw, rfl, rfl⟩
 
-theorem entryBody_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel)
+theorem entryBody_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
     (n : Nat) (hn : n = 2 ∨ n = 3) :
-    RelCT isa (Two (EntryBefore n)) (entryBody (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run) (fun _ _ => True) :=
-  RelCT.seq (entryReady_ct n) (dispatch_ct (checkName := checkName) H M Sq K n hn)
+    RelCT isa (Two (EntryBefore n)) (entryBody (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run) (fun _ _ => True) :=
+  RelCT.seq (entryReady_ct n) (dispatch_ct (checkName := checkName) H M Sq T n hn)
 
 end VG.Proof.Dsa.X86_64.Generation

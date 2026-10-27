@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Arguments
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PrimeCall
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PShape
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.CandidateWidth
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Search
@@ -38,11 +39,8 @@ def searchReturn : List Instr :=
   controlBase ++ [.mov .rax (.mem (sp 152)), .store (hdr 2) .rax]
 
 /-- The width rejection path does not invoke primality or advance witnesses. -/
-def pTest (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa) (pLen : Nat) : Prog isa :=
-  .seq (.block candidateWidth)
-    (.ite .b (.block (stackStatus 3))
-      (.seq (checkPrime mul round (pLen / 8) VG.Impl.Dsa.Generation.Layout.p pLen pLen
-        (if pLen ≤ 256 then 64 else 128)) (.block primeResult)))
+def pTest (prime : Nat → Prog isa) (pLen : Nat) : Prog isa :=
+  .seq (.block candidateWidth) (.ite .b (.block (stackStatus 3)) (primeCall prime (8 * pLen)))
 
 /-- Construct p and the generator exponent, retaining both in byte buffers. -/
 def pConstruct (G : Stream) (pLen qLen : Nat) : Prog isa :=
@@ -50,15 +48,13 @@ def pConstruct (G : Stream) (pLen qLen : Nat) : Prog isa :=
   .seq (.seq (pHashes G qLen count) (pShape qLen count pLen))
     (seqs [.block workspaceBase, workspace (pLen / 8), candidateFromFrame pLen qLen])
 
-def pAttempt (G1 G256 : Stream) (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
-    (pLen qLen : Nat) : Prog isa :=
+def pAttempt (G1 G256 : Stream) (prime : Nat → Prog isa) (pLen qLen : Nat) : Prog isa :=
   .seq (.block pAttemptArgs)
-    (.seq (.seq (pConstruct (if qLen = 20 then G1 else G256) pLen qLen) (pTest mul round pLen))
+    (.seq (.seq (pConstruct (if qLen = 20 then G1 else G256) pLen qLen) (pTest prime pLen))
       (.block searchReturn))
 
-def primeSearch (G1 G256 : Stream) (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
-    (pLen qLen : Nat) : Prog isa :=
+def primeSearch (G1 G256 : Stream) (prime : Nat → Prog isa) (pLen qLen : Nat) : Prog isa :=
   .seq (.block controlBase)
-    (pSearch (pAttempt G1 G256 mul round pLen qLen) (32 * pLen) ((8 * pLen - 1) / (8 * qLen) + 1))
+    (pSearch (pAttempt G1 G256 prime pLen qLen) (32 * pLen) ((8 * pLen - 1) / (8 * qLen) + 1))
 
 end VG.Impl.Dsa.X86_64.Generation

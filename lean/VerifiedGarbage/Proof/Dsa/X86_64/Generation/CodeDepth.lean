@@ -35,6 +35,19 @@ theorem generationDepth.block (is : List Instr) : generationDepth (.block is) :=
   change 0 ≤ 128
   decide
 
+/-- What code around the probable-prime calls may use below the frame: a
+call's return address and the 184 bytes of the test's stack. -/
+def callerDepth (c : Prog isa) : Prop := c.x86_64Depth ≤ 192
+
+theorem callerDepth.of {c : Prog isa} (h : generationDepth c) : callerDepth c :=
+  Nat.le_trans h (by decide)
+
+theorem callerDepth.seq {a b : Prog isa} (ha : callerDepth a) (hb : callerDepth b) :
+    callerDepth (.seq a b) := Nat.max_le.mpr ⟨ha, hb⟩
+
+theorem callerDepth.ite {a b : Prog isa} (ha : callerDepth a) (hb : callerDepth b) (cc : Cond) :
+    callerDepth (.ite cc a b) := Nat.max_le.mpr ⟨ha, hb⟩
+
 theorem generation_depth_seqs (l : List (Prog isa)) :
     (Impl.Bignum.X86_64.seqs l).x86_64Depth = l.foldr (fun c n => max c.x86_64Depth n) 0 := by
   induction l with

@@ -23,7 +23,7 @@ structure GenerationTape (p : GenerationGeometry) where
   size : bytes.length < 2 ^ 64
   arena : (⟨ptr, bytes.length⟩ : Region).Disjoint ⟨p.B, usedBytes p.pLen⟩
   frame : (⟨ptr, bytes.length⟩ : Region).Disjoint ⟨p.F, frameBytes⟩
-  stack : (⟨ptr, bytes.length⟩ : Region).Disjoint (below p.F 128)
+  stack : (⟨ptr, bytes.length⟩ : Region).Disjoint (below p.F 192)
 
 theorem GenerationTape.part {p : GenerationGeometry} (tape : GenerationTape p) {d n : Nat}
     (h : d + n ≤ usedBytes p.pLen) : (⟨tape.ptr, tape.bytes.length⟩ : Region).Disjoint (p.part d n) :=

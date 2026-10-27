@@ -41,7 +41,7 @@ structure SearchBodyAfter (n : Nat) (p : SearchPublic) (s : State) : Prop where
   wr : s.wr = p.wr
 
 theorem searchBody_ready (G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream)
-    (M : Mont) (K : Kernel) {n pLen qLen : Nat} {H : Spec.Mgf1.Hash}
+    (T : PrimeTest) {n pLen qLen : Nat} {H : Spec.Mgf1.Hash}
     (hG : Calls.StreamOK (if qLen = 20 then G1 else G256))
     (hmatch : ∀ x, H.hash x = hG.SH.H.hash x)
     (hsize : ∀ x, (H.hash x).length = (if qLen = 20 then G1 else G256).D)
@@ -49,10 +49,10 @@ theorem searchBody_ready (G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream)
     (hseedsize : ∀ bs, 8 * (Spec.Dsa.seedHash (8 * qLen) bs).length = 8 * qLen)
     (hd : (if qLen = 20 then G1 else G256).D = qLen) {p : SearchPublic} {s : State}
     (h : SearchBefore n pLen qLen p s) :
-    WP isa (Impl.Dsa.X86_64.Generation.pAttempt G1 G256 M.mm K.run pLen qLen) s (SearchBodyAfter n p) := by
+    WP isa (Impl.Dsa.X86_64.Generation.pAttempt G1 G256 T.run pLen qLen) s (SearchBodyAfter n p) := by
   obtain ⟨⟨W, hs, hu⟩, ctrl, frame, wr, ub, hp, hq⟩ := h
   subst qLen
-  have step := searchBody_ok hG hmatch hsize M K hd hhash hseedsize hs ctrl p.bound hu ub
+  have step := searchBody_ok hG hmatch hsize T hd hhash hseedsize hs ctrl p.bound hu ub
   rw [hp] at step
   refine WP.mono step fun t ⟨ct, W', used, status, memory, bound, wordUsed, _, wordStatus,
     _, _, exhausted, result, _, _, wrt⟩ => ?_

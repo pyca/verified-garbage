@@ -43,14 +43,14 @@ theorem seedPrimeAfter_related {n pLen qLen : Nat} {s t : State}
   subst vt; subst rt
   exact ⟨p.generatorPublic vs rs ds, hgs, hgt⟩
 
-theorem seedPrimeFinish_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel)
+theorem seedPrimeFinish_ct (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
     (n : Nat) (hn : n = 2 ∨ n = 3) (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
     RelCT isa (Two (SeedPrimeBefore n pLen qLen))
-      (.seq (primeSearch H.sha1 H.sha256 M.mm K.run pLen qLen)
+      (.seq (primeSearch H.sha1 H.sha256 T.run pLen qLen)
         (onSuccess (.seq (generatorSearch Sq.mm M.mm pLen) (onSuccess (finishDomain (checkName := checkName) Sq.mm M.mm pLen qLen)))))
       (fun _ _ => True) := by
-  refine RelCT.seq (two_post (seedPrime_ct H M K n hn pLen qLen sizes)
-    (fun _ _ h => seedPrime_after H M K h)) ?_
+  refine RelCT.seq (two_post (seedPrime_ct H T n hn pLen qLen sizes)
+    (fun _ _ h => seedPrime_after H T h)) ?_
   apply onSuccess_ct (Φ := SeedPrimeAfter n pLen qLen) SeedPublic.context SeedPublic.primeStatus
     (fun _ _ h => h.1) (fun _ _ _ h hm hk => seedPrimeAfter_congr h hm hk)
   exact (seedGeneratorFinish_ct (checkName := checkName) M Sq n pLen qLen sizes).mono

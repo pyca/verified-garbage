@@ -36,14 +36,14 @@ def SeedSubgroupAfter (n pLen qLen : Nat) (p : SeedPublic) (s : State) : Prop :=
   (∃ W, GenerationMemory p.context W s ∧ W 19 = p.subgroupStatus) ∧
   (p.subgroupStatus = 1 → SeedPrimeBefore n pLen qLen p.afterSubgroup s)
 
-theorem seedSubgroup_after (H : GenerationHashes) (M : Mont) (K : Kernel)
+theorem seedSubgroup_after (H : GenerationHashes) (T : PrimeTest)
     {n pLen qLen : Nat} {p : SeedPublic} {s : State}
     (h : SeedBefore n qLen p s) (hp : p.context.geo.pLen = pLen) :
     WP isa (.seq (.block (Impl.Dsa.X86_64.Generation.seedArguments qLen))
-      (Impl.Dsa.X86_64.Generation.subgroup H.sha1 H.sha256 M.mm K.run qLen)) s
+      (Impl.Dsa.X86_64.Generation.subgroup H.sha1 H.sha256 T.run qLen)) s
       (SeedSubgroupAfter n pLen qLen p) := by
   obtain ⟨⟨W, hm, h1, h16, h10⟩, seed, hf, hw, he⟩ := h
-  have step := seedSubgroup_ok H M K hm p.seed p.length seed h1 h16 p.bound
+  have step := seedSubgroup_ok H T hm p.seed p.length seed h1 h16 p.bound
   subst qLen
   refine WP.mono step fun t ⟨used', status, bound, ht, bytes, fail, result, ff, rd, wr⟩ => ?_
   have statusEq : status = p.subgroupStatus := by

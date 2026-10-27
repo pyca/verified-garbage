@@ -51,7 +51,13 @@ def GenerationGeometry.primalityPlan (p : GenerationGeometry) (seed rand : Gener
     hashPrime := ?_
     pPrime := ?_
     exponentPrime := ?_
-    tapeConstruct := ?_ }
+    tapeConstruct := ?_
+    arenaBound := ?_
+    tapeBound := rand.bound
+    tapeArena := ?_
+    tapeFrame := rand.frame
+    arenaFrame := ?_
+    arenaStack := ?_ }
   · change (p.part arithmetic arithmeticBytes).Disjoint ⟨off (W 5) witness, p.pLen⟩
     rw [h5]
     exact p.parts_disjoint ha hw (Or.inr (by unfold witness arithmetic; omega))
@@ -63,7 +69,7 @@ def GenerationGeometry.primalityPlan (p : GenerationGeometry) (seed rand : Gener
   · change (⟨rand.ptr, rand.bytes.length⟩ : Region).Disjoint ⟨off (W 5) witness, p.pLen⟩
     rw [h5]
     exact rand.part hw
-  · change ∀ r ∈ [⟨off p.B arithmetic, arithmeticBytes⟩, ⟨off (W 5) witness, p.pLen⟩, below p.F 128],
+  · change ∀ r ∈ [⟨off p.B arithmetic, arithmeticBytes⟩, ⟨off (W 5) witness, p.pLen⟩, below p.F 192],
       (⟨p.F, frameBytes⟩ : Region).Disjoint r
     rw [h5]
     intro r hr
@@ -72,7 +78,7 @@ def GenerationGeometry.primalityPlan (p : GenerationGeometry) (seed rand : Gener
     · exact p.frame_part ha
     · exact p.frame_part hw
     · exact p.frame_below
-  · change ∀ r ∈ [⟨off p.B arithmetic, arithmeticBytes⟩, ⟨off (W 5) witness, p.pLen⟩, below p.F 128],
+  · change ∀ r ∈ [⟨off p.B arithmetic, arithmeticBytes⟩, ⟨off (W 5) witness, p.pLen⟩, below p.F 192],
       (⟨p.hash, oRsa⟩ : Region).Disjoint r
     rw [h5]
     intro r hr
@@ -81,7 +87,7 @@ def GenerationGeometry.primalityPlan (p : GenerationGeometry) (seed rand : Gener
     · exact p.parts_disjoint hh ha (Or.inl (by decide))
     · exact p.parts_disjoint hh hw (Or.inl (by decide))
     · exact (p.stack_part hh).symm
-  · change ∀ r ∈ [⟨off p.B arithmetic, arithmeticBytes⟩, ⟨off (W 5) witness, p.pLen⟩, below p.F 128, ⟨p.F, frameBytes⟩],
+  · change ∀ r ∈ [⟨off p.B arithmetic, arithmeticBytes⟩, ⟨off (W 5) witness, p.pLen⟩, below p.F 192, ⟨p.F, frameBytes⟩],
       (⟨off (W 5) VG.Impl.Dsa.Generation.Layout.p, p.pLen⟩ : Region).Disjoint r
     rw [h5]
     intro r hr
@@ -91,7 +97,7 @@ def GenerationGeometry.primalityPlan (p : GenerationGeometry) (seed rand : Gener
     · exact p.parts_disjoint hp hw (Or.inl (by unfold VG.Impl.Dsa.Generation.Layout.p witness; omega))
     · exact (p.stack_part hp).symm
     · exact (p.frame_part hp).symm
-  · change ∀ r ∈ [⟨off p.B arithmetic, arithmeticBytes⟩, ⟨off (W 5) witness, p.pLen⟩, below p.F 128, ⟨p.F, frameBytes⟩],
+  · change ∀ r ∈ [⟨off p.B arithmetic, arithmeticBytes⟩, ⟨off (W 5) witness, p.pLen⟩, below p.F 192, ⟨p.F, frameBytes⟩],
       (⟨off (W 5) exponent, p.pLen⟩ : Region).Disjoint r
     rw [h5]
     intro r hr
@@ -118,5 +124,15 @@ def GenerationGeometry.primalityPlan (p : GenerationGeometry) (seed rand : Gener
     · exact rand.part ha
     · exact rand.part hp
     · exact rand.part he
+  all_goals
+    have hd : domainCheck ≤ usedBytes p.pLen := by unfold usedBytes; omega
+    have hs : Region.Sub ⟨W 5, domainCheck⟩ ⟨p.B, usedBytes p.pLen⟩ := by
+      rw [h5]; exact Region.sub_prefix hd
+  · change (W 5).toNat + domainCheck ≤ 2 ^ 64
+    have := p.arenaBound
+    rw [h5]; omega
+  · exact rand.arena.sub_right hs
+  · exact (p.frameArena.sub_right hs).symm
+  · exact (p.stackArena.sub_right hs).symm
 
 end VG.Proof.Dsa.X86_64.Generation

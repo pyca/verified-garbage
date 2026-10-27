@@ -35,7 +35,7 @@ structure GenerationContext where
 def generationSlots : List Nat := [3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 15, 17, 18, 28]
 
 def GenerationContext.changed (p : GenerationContext) : List Region :=
-  [⟨p.geo.B, usedBytes p.geo.pLen⟩, ⟨p.geo.F, frameBytes⟩, below p.geo.F 128]
+  [⟨p.geo.B, usedBytes p.geo.pLen⟩, ⟨p.geo.F, frameBytes⟩, below p.geo.F 192]
 
 structure GenerationTapeMemory {p : GenerationGeometry} (tape : GenerationTape p) (s : State) : Prop where
   cover : Covers [⟨tape.ptr, tape.bytes.length⟩] (s.rd ++ s.wr)

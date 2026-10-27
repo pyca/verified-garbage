@@ -35,7 +35,7 @@ theorem saved_disjoint {s : State} (h : GenerationABI s) :
   · change (⟨savedBase s, 48⟩ : Region).Disjoint ⟨generationBase s, frameBytes⟩
     rw [savedBase_eq]
     exact Offset.disjoint_base _ (by decide) (by decide)
-  · change (⟨savedBase s, 48⟩ : Region).Disjoint (below (generationBase s) 128)
+  · change (⟨savedBase s, 48⟩ : Region).Disjoint (below (generationBase s) 192)
     rw [savedBase_eq]
     exact Offset.disjoint_below _ (by decide)
   · exact h.stackOut.sub_left (saved_frame_sub s)

@@ -21,16 +21,16 @@ open VG.Proof.MillerRabin.X86_64
 
 variable {checkName : String}
 
-theorem seedAttempt_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kernel)
+theorem seedAttempt_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (T : PrimeTest)
     {p : GenerationContext} {W : Nat → BitVec 64} {s : State}
     (h : GenerationMemory p W s) (seed : GenerationTape p.geo) (hlen : seed.bytes.length = p.geo.qLen)
     (hseed : GenerationTapeMemory seed s) (h1 : W 1 = seed.ptr)
     {used : Nat} (h16 : W 16 = BitVec.ofNat 64 used) (hu : used ≤ p.rand.bytes.length) :
-    WP isa (Impl.Dsa.X86_64.Generation.seedAttempt (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm K.run p.geo.pLen p.geo.qLen) s
+    WP isa (Impl.Dsa.X86_64.Generation.seedAttempt (checkName := checkName) H.sha1 H.sha256 Sq.mm M.mm T.run p.geo.pLen p.geo.qLen) s
       (SeedFinished p W (VG.Proof.Dsa.Generation.seedResult (8 * p.geo.pLen) (8 * p.geo.qLen) seed.bytes
         ((Spec.Dsa.generationChunks p.geo.pLen p.hs.bytes).map Spec.Dsa.decodeBE) (p.rand.bytes.drop used)) s) := by
   unfold Impl.Dsa.X86_64.Generation.seedAttempt
-  refine WP.seq (WP.mono (seedSubgroup_ok H M K h seed hlen hseed h1 h16 hu)
+  refine WP.seq (WP.mono (seedSubgroup_ok H T h seed hlen hseed h1 h16 hu)
     fun u ⟨usedu, status, huu, mu, bqu, fail, result, fu, ru, wu⟩ => ?_)
   let Wu := upd (upd (seedWords W p.geo.qLen) 16 (BitVec.ofNat 64 usedu)) 19 status
   have u16 : Wu 16 = BitVec.ofNat 64 usedu := by simp [Wu, upd]
@@ -79,7 +79,7 @@ theorem seedAttempt_ok (H : GenerationHashes) (M : Mont) (Sq : MontS) (K : Kerne
         have seedv := seedu.frame (p := p) (by rw [hm]; exact Frame.refl _ _) kv.2.1 kv.2.2
         have qv : Spec.Rsa.bytesAt v.mem (off p.geo.B q) p.geo.qLen =
             Spec.Dsa.encodeBE p.geo.qLen (Spec.Dsa.qCandidate (8 * p.geo.qLen) seed.bytes) := hm ▸ bqu
-        have call := seedPrimeFinish_ok (checkName := checkName) H M Sq K mv seed hlen seedv u1 qv u16 huu
+        have call := seedPrimeFinish_ok (checkName := checkName) H M Sq T mv seed hlen seedv u1 qv u16 huu
         have expected : VG.Proof.Dsa.Generation.seedResult (8 * p.geo.pLen) (8 * p.geo.qLen) seed.bytes
             ((Spec.Dsa.generationChunks p.geo.pLen p.hs.bytes).map Spec.Dsa.decodeBE) (p.rand.bytes.drop used) =
             VG.Proof.Dsa.Generation.primeResult (8 * p.geo.pLen) (8 * p.geo.qLen)
