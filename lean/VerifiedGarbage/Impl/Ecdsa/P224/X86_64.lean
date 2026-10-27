@@ -11,12 +11,14 @@ namespace VG.Impl.Ecdsa.X86_64
 
 open VG.X86_64
 
-/-- P-224 as the code has it. -/
+/-- P-224 as the code has it. `[k]G` for the signature and the public key is a
+call of `vg_p224_mul_base` (`Cfg.mulBase`). -/
 def p224 : Cfg where
   n := 4
   C := Spec.P224.curve
   comb := some ⟨7, Impl.P224.p224Comb7, Impl.P224.p224Comb7Start, "VG_P224_COMB", false, false⟩
   fastN := true
+  mulBase := some Spec.Weierstrass.MulBase.p224
   inverse := some Spec.Weierstrass.Inverse.p224
   checkPoint := some Spec.Weierstrass.CheckPoint.p224
 

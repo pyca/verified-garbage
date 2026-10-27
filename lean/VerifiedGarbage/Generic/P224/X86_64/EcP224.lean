@@ -115,8 +115,8 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Ar
       code up to the inversion of `Z`, with `d` as both the key and the secret number: it saves \
       its caller's callee-saved registers in `scratch`; field elements are four 64-bit words in \
       Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS) with a final \
-      conditional subtraction; `[d]G` is the signature's comb over the 7-bit windows of `d`, from \
-      the static `VG_P224_COMB`; and `Z⁻¹` is by the signature's divsteps. The result (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so \
+      conditional subtraction; `[d]G` is the signature's call of `vg_p224_mul_base`, a comb over \
+      the 7-bit windows of `d`, from the static `VG_P224_COMB`; and `Z⁻¹` is by the signature's divsteps. The result (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so \
       the time depends only on the pointers."]
     consts := Impl.Ecdsa.X86_64.p224.combConsts
     code := Impl.EcKey.X86_64.publicKeyP224

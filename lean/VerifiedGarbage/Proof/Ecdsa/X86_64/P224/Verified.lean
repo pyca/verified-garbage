@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Contract
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Lit
 import VerifiedGarbage.Proof.P224.Point
@@ -12,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Lit
 meta import VerifiedGarbage.Proof.P224.Point
@@ -113,13 +115,20 @@ theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p224 s := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp [h]
 
+/-- `[k]G` is a call of `vg_p224_mul_base`, which calls no other function. -/
+theorem p224_mulBase : MulBaseOk p224 :=
+  ⟨fun _ => ⟨_, rfl, by decide, by lit_decide⟩, fun h => absurd h (by decide)⟩
+
+/-- The inlining checks, shared by correctness and the two call wrappers. -/
+theorem sign_inlineOk : signP224.InlineOk = true := by lit_decide
+
 theorem sign_x86 (hL : Law Spec.P224.curve)
     (hT : CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP224.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p224_ok hI) hL (p224_tbls hT) (pre_of hs)
-  have hok : signP224.InlineOk = true := by lit_decide
+  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p224_ok hI) hL (p224_tbls hT) (pre_of hs) p224_mulBase
+  have hok := sign_inlineOk
   have hsp := Code.clobbers_rsp_of_inlineOk hok
   have hmx : signP224.inline.allInstrs (fun i => !loadsMxcsr i) = true := by
     rw [Code.allInstrs_inline]; lit_decide
@@ -199,7 +208,7 @@ theorem sign_call_x86 (hL : Law Spec.P224.curve)
     (hT : CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start)
     (hI : InvSounds) (s : State) (hs : signX86_64.pre s) (hc : Clear (hole (s.gpr .rsp)) s) :
     ∃ t s', Exec isa signP224 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
-  ok_of_inline (k := signX86_64) (by lit_decide) (sign_x86 hL hT hI)
+  ok_of_inline (k := signX86_64) sign_inlineOk (sign_x86 hL hT hI)
     (fun s b hv u hs hc hp => post_patch s b hv u hs hc hp) s ⟨hs, hc⟩
 
 theorem sign_verified (hL : Law Spec.P224.curve)
@@ -207,7 +216,7 @@ theorem sign_verified (hL : Law Spec.P224.curve)
     (hI : InvSounds) :
     Verified X86_64.target signP224
       (Spec.Ecdsa.P224.inst.signContract (X86_64.abi.withConsts p224.combConsts) 8) :=
-  Verified.of_inline_ct (by lit_decide) (sign_x86 hL hT hI) sign_ct implies8
+  Verified.of_inline_ct sign_inlineOk (sign_x86 hL hT hI) sign_ct implies8
     (fun _ h => Sig.clear_of_pre_consts h) sign_patch
 
 end VG.Proof.Ecdsa.X86_64.P224
