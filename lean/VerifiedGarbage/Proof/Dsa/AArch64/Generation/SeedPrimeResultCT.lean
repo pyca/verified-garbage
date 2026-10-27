@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedPrime
 @[expose] public section
 namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
-open VG.Proof.RsaOaep.AArch64 VG.Proof.MillerRabin.AArch64
+open VG.Proof.RsaOaep.AArch64
 
 def SeedPublic.primeResult (p : SeedPublic) : Option (Option Nat × List Byte) :=
   Spec.Dsa.primeFromSeed (8 * p.context.geo.pLen) (8 * p.context.geo.qLen)
@@ -30,14 +30,14 @@ def SeedPrimeAfter (pLen qLen : Nat) (p : SeedPublic) (s : State) : Prop :=
   (p.primeStatus = 1 → ∃ value rest, p.primeResult = some (some value, rest) ∧
     ∃ domain, SeedGeneratorBefore pLen qLen (p.generatorPublic value rest domain) s)
 
-theorem seedPrime_after (H : GenerationHashes) (M : Mont) (K : Kernel)
+theorem seedPrime_after (H : GenerationHashes) (T : PrimeTest)
     {pLen qLen : Nat} {p : SeedPublic} {s : State}
     (h : SeedPrimeBefore pLen qLen p s) :
-    WP isa (Impl.Dsa.AArch64.Generation.primeSearch H.sha1 H.sha256 M.mm K.run pLen qLen) s
+    WP isa (Impl.Dsa.AArch64.Generation.primeSearch H.sha1 H.sha256 T.run pLen qLen) s
       (SeedPrimeAfter pLen qLen p) := by
   obtain ⟨⟨⟨W, hm, h1, h16, h10⟩, seed, hq⟩, hp, bq⟩ := h
   subst pLen; subst qLen
-  refine WP.mono (seedPrime_ok H M K hm p.seed p.length seed h1 bq h16 p.bound)
+  refine WP.mono (seedPrime_ok H T hm p.seed p.length seed h1 bq h16 p.bound)
     fun t ⟨Wt, used, bound, ht, u16, slots, bq', outcome, ff, rd, wr⟩ => ?_
   rcases outcome with ⟨hs, hr⟩ | ⟨hs, value, hr, domain, bp, be⟩ | ⟨hs, hr⟩
   · have status : p.primeStatus = 0 := by simp [SeedPublic.primeStatus, SeedPublic.primeResult, hr]

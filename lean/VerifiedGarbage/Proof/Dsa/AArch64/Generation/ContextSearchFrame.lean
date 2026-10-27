@@ -35,7 +35,7 @@ theorem GenerationMemory.search_frame {p : GenerationContext} {W : Nat → BitVe
       p.geo.part_sub (p.geo.small_bound hd hn)⟩
   intro r hr
   simp only [GenerationGeometry.pWork, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact part VG.Impl.Dsa.Generation.Layout.control 24 (by decide) (by decide)
   · exact ⟨⟨p.geo.F, frameBytes⟩, by simp [GenerationContext.changed], fun _ h => h⟩
   · exact part shaped p.geo.pLen (by decide) (by unfold arithmeticBytes; omega)
@@ -43,12 +43,13 @@ theorem GenerationMemory.search_frame {p : GenerationContext} {W : Nat → BitVe
       (by have := p.geo.hashSizes.2.1; unfold arithmeticBytes; omega)
   · exact part wrappedSeed p.geo.qLen (by decide) (by unfold arithmeticBytes; omega)
   · exact part VG.Impl.Dsa.Generation.Layout.hash oRsa (by decide) (by decide)
-  · exact ⟨below p.geo.F 16, by simp [GenerationContext.changed], below_sub (by decide) (by decide)⟩
+  · exact ⟨below p.geo.F 272, by simp [GenerationContext.changed], below_sub (by decide) (by decide)⟩
   · exact part arithmetic arithmeticBytes (by decide) (by rfl)
   · exact part VG.Impl.Dsa.Generation.Layout.p p.geo.pLen (by decide) (by unfold arithmeticBytes; omega)
   · exact part exponent p.geo.pLen (by decide) (by unfold arithmeticBytes; omega)
   · exact part arithmetic arithmeticBytes (by decide) (by rfl)
   · exact part witness p.geo.pLen (by decide) (by unfold arithmeticBytes; omega)
+  · exact ⟨below p.geo.F 272, by simp [GenerationContext.changed], fun _ h => h⟩
   · exact ⟨⟨p.geo.F, frameBytes⟩, by simp [GenerationContext.changed], fun _ h => h⟩
 
 end VG.Proof.Dsa.AArch64.Generation

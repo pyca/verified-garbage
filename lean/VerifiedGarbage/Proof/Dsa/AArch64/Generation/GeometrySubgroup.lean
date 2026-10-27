@@ -31,6 +31,8 @@ def GenerationGeometry.subgroupPlan (p : GenerationGeometry) (rand seed : Genera
     p.parts_disjoint hq hh (Or.inr (by decide))
   have hqw : (p.part q p.qLen).Disjoint (p.part witness p.qLen) :=
     p.parts_disjoint hq hw (by left; rcases p.qWidth with h | h <;> rw [h] <;> decide)
+  have hs : Region.Sub ⟨W 5, domainCheck⟩ ⟨p.B, usedBytes p.pLen⟩ := by
+    rw [h5]; exact Region.sub_prefix (by unfold usedBytes; omega)
   exact {
     prime := p.qPrime rand seed.bytes
     F := p.F
@@ -70,21 +72,43 @@ def GenerationGeometry.subgroupPlan (p : GenerationGeometry) (rand seed : Genera
     framePrime := by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
+      rcases hr with rfl | rfl | rfl
       · exact p.frame_part ha
       · exact p.frame_part hw
+      · exact p.frame_below
     hashPrime := by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
+      rcases hr with rfl | rfl | rfl
       · exact p.parts_disjoint hh ha (Or.inl (by decide))
       · exact p.parts_disjoint hh hw (Or.inl (by decide))
+      · exact (p.stack_part hh).symm
     outputPrime := by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
+      rcases hr with rfl | rfl | rfl
       · exact hqa
       · exact hqw
-      }
+      · exact (p.stack_part hq).symm
+    geometry := {
+      stackSize := p.stackSize
+      arenaBound := by have := p.arenaBound; rw [h5]; unfold usedBytes at this; omega
+      tapeBound := rand.bound
+      tapeArena := rand.arena.sub_right hs
+      tapeFrame := rand.frame
+      tapeStack := rand.stack
+      arenaFrame := (p.frameArena.sub_right hs).symm
+      arenaStack := (p.stackArena.sub_right hs).symm
+      hashTest := by
+        change ∀ r ∈ [(⟨VG.Proof.Bignum.off (W 5) arithmetic, arithmeticBytes⟩ : Region),
+          ⟨VG.Proof.Bignum.off (W 5) witness, 8 * p.qLen / 8⟩,
+          below p.F 272], (⟨p.hash, oRsa⟩ : Region).Disjoint r
+        rw [h5, Nat.mul_div_cancel_left _ (by decide)]
+        intro r hr
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact p.parts_disjoint hh ha (Or.inl (by decide))
+        · exact p.parts_disjoint hh hw (Or.inl (by decide))
+        · exact (p.stack_part hh).symm } }
 
 end VG.Proof.Dsa.AArch64.Generation

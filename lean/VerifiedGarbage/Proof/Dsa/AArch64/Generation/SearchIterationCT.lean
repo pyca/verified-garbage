@@ -21,11 +21,11 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 @[expose] public section
 namespace VG.Proof.Dsa.AArch64.Generation
-open VG VG.AArch64 VG.Proof.Bignum.AArch64 VG.Proof.MillerRabin.AArch64
+open VG VG.AArch64 VG.Proof.Bignum.AArch64
 open VG.Proof.Pbkdf2.Md.AArch64 VG.Impl.Dsa.AArch64.Generation VG.Impl.Bignum.AArch64
 
 theorem searchIteration_ct_of (G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash)
-    (M : Mont) (K : Kernel) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
+    (T : PrimeTest) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
     (sizes : GenerationSizes pLen qLen)
     (hG : Calls.StreamOK (if qLen = 20 then G1 else G256).stream)
     (hmatch : ∀ x, H.hash x = hG.SH.H.hash x)
@@ -38,23 +38,23 @@ theorem searchIteration_ct_of (G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash)
     (ht : (taint.check (Taint.ofRegs [.x0])
       (.block (pSearchAdvanceHead (32 * pLen) ((8 * pLen - 1) / (8 * qLen) + 1))) hc).isSome = true) :
     RelCT isa (Two (SearchBefore pLen qLen))
-      (pSearchIteration (pAttempt G1 G256 M.mm K.run pLen qLen)
+      (pSearchIteration (pAttempt G1 G256 T.run pLen qLen)
         (32 * pLen) ((8 * pLen - 1) / (8 * qLen) + 1))
       (Two (SearchIterationAfter pLen qLen)) := by
   unfold pSearchIteration
   simp only [seqs]
-  have body : RelCT isa (Two (SearchBefore pLen qLen)) (pAttempt G1 G256 M.mm K.run pLen qLen)
+  have body : RelCT isa (Two (SearchBefore pLen qLen)) (pAttempt G1 G256 T.run pLen qLen)
       (Two (SearchBodySized pLen qLen)) := by
-    refine two_post (searchBody_ct G1 G256 M K H pLen qLen sizes hG hmatch hsize hhash hseedsize hd) ?_
+    refine two_post (searchBody_ct G1 G256 T H pLen qLen sizes hG hmatch hsize hhash hseedsize hd) ?_
     intro p s h
-    exact WP.mono (searchBody_ready G1 G256 M K hG hmatch hsize hhash hseedsize hd h)
+    exact WP.mono (searchBody_ready G1 G256 T hG hmatch hsize hhash hseedsize hd h)
       fun _ ht => ⟨ht, h.2.2.2⟩
   refine RelCT.seq body (two_post ((two_map SearchPublic.control (fun _ _ h => searchBody_control h)
     (searchTail_ct (32 * pLen) ((8 * pLen - 1) / (8 * qLen) + 1) hl hs ht)).mono
     (fun _ _ h => h) (fun _ _ _ => True.intro)) (fun _ _ h => searchIteration_tail h hl hs))
 
 theorem searchIteration_ct (G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash)
-    (M : Mont) (K : Kernel) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
+    (T : PrimeTest) (H : Spec.Mgf1.Hash) (pLen qLen : Nat)
     (sizes : GenerationSizes pLen qLen)
     (hG : Calls.StreamOK (if qLen = 20 then G1 else G256).stream)
     (hmatch : ∀ x, H.hash x = hG.SH.H.hash x)
@@ -63,12 +63,12 @@ theorem searchIteration_ct (G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash)
     (hseedsize : ∀ bs, 8 * (Spec.Dsa.seedHash (8 * qLen) bs).length = 8 * qLen)
     (hd : (if qLen = 20 then G1 else G256).D = qLen) :
     RelCT isa (Two (SearchBefore pLen qLen))
-      (pSearchIteration (pAttempt G1 G256 M.mm K.run pLen qLen)
+      (pSearchIteration (pAttempt G1 G256 T.run pLen qLen)
         (32 * pLen) ((8 * pLen - 1) / (8 * qLen) + 1))
       (Two (SearchIterationAfter pLen qLen)) := by
   rcases sizes with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
   all_goals
-    exact searchIteration_ct_of G1 G256 M K H _ _ (by unfold GenerationSizes; decide)
+    exact searchIteration_ct_of G1 G256 T H _ _ (by unfold GenerationSizes; decide)
       hG hmatch hsize hhash hseedsize hd (by decide) (by decide) (by taint_decide)
 
 end VG.Proof.Dsa.AArch64.Generation

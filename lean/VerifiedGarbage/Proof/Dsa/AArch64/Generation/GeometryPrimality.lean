@@ -45,7 +45,16 @@ def GenerationGeometry.primalityPlan (p : GenerationGeometry) (seed rand : Gener
     hashPrime := ?_
     pPrime := ?_
     exponentPrime := ?_
-    tapeConstruct := ?_ }
+    tapeConstruct := ?_
+    hashStack := ?_
+    stackSize := p.stackSize
+    arenaBound := ?_
+    tapeBound := rand.bound
+    tapeArena := ?_
+    tapeFrame := rand.frame
+    tapeStack := rand.stack
+    arenaFrame := ?_
+    arenaStack := ?_ }
   · change (p.part arithmetic arithmeticBytes).Disjoint ⟨VG.Proof.Bignum.off (W 5) witness, p.pLen⟩
     rw [h5]
     exact p.parts_disjoint ha hw (Or.inr (by unfold witness arithmetic; omega))
@@ -73,23 +82,27 @@ def GenerationGeometry.primalityPlan (p : GenerationGeometry) (seed rand : Gener
     rcases hr with rfl | rfl
     · exact p.parts_disjoint hh ha (Or.inl (by decide))
     · exact p.parts_disjoint hh hw (Or.inl (by decide))
-  · change ∀ r ∈ [⟨VG.Proof.Bignum.off p.B arithmetic, arithmeticBytes⟩, ⟨VG.Proof.Bignum.off (W 5) witness, p.pLen⟩, ⟨p.F, frameBytes⟩],
+  · change ∀ r ∈ [⟨VG.Proof.Bignum.off p.B arithmetic, arithmeticBytes⟩, ⟨VG.Proof.Bignum.off (W 5) witness, p.pLen⟩,
+      below p.F callStack, ⟨p.F, frameBytes⟩],
       (⟨VG.Proof.Bignum.off (W 5) VG.Impl.Dsa.Generation.Layout.p, p.pLen⟩ : Region).Disjoint r
     rw [h5]
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl
     · exact p.parts_disjoint hp ha (Or.inl (by unfold VG.Impl.Dsa.Generation.Layout.p arithmetic; omega))
     · exact p.parts_disjoint hp hw (Or.inl (by unfold VG.Impl.Dsa.Generation.Layout.p witness; omega))
+    · exact (p.stack_part hp).symm
     · exact (p.frame_part hp).symm
-  · change ∀ r ∈ [⟨VG.Proof.Bignum.off p.B arithmetic, arithmeticBytes⟩, ⟨VG.Proof.Bignum.off (W 5) witness, p.pLen⟩, ⟨p.F, frameBytes⟩],
+  · change ∀ r ∈ [⟨VG.Proof.Bignum.off p.B arithmetic, arithmeticBytes⟩, ⟨VG.Proof.Bignum.off (W 5) witness, p.pLen⟩,
+      below p.F callStack, ⟨p.F, frameBytes⟩],
       (⟨VG.Proof.Bignum.off (W 5) exponent, p.pLen⟩ : Region).Disjoint r
     rw [h5]
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl
     · exact p.parts_disjoint he ha (Or.inl (by unfold exponent arithmetic; omega))
     · exact p.parts_disjoint he hw (Or.inl (by unfold exponent witness; omega))
+    · exact (p.stack_part he).symm
     · exact (p.frame_part he).symm
   · change ∀ r ∈ (⟨VG.Proof.Bignum.off (W 5) shaped, p.pLen⟩ ::
       [⟨VG.Proof.Bignum.off p.B hashes, (p.count + 1) * p.qLen⟩, ⟨VG.Proof.Bignum.off p.B wrappedSeed, p.qLen⟩, ⟨p.hash, oRsa⟩, retR p.F]) ++
@@ -108,5 +121,16 @@ def GenerationGeometry.primalityPlan (p : GenerationGeometry) (seed rand : Gener
     · exact rand.part ha
     · exact rand.part hp
     · exact rand.part he
+  · exact (p.stack_part hh).symm
+  all_goals
+    have hd : domainCheck ≤ usedBytes p.pLen := by unfold usedBytes; omega
+    have hs : Region.Sub ⟨W 5, domainCheck⟩ ⟨p.B, usedBytes p.pLen⟩ := by
+      rw [h5]; exact Region.sub_prefix hd
+  · change (W 5).toNat + domainCheck ≤ 2 ^ 64
+    have := p.arenaBound
+    rw [h5]; omega
+  · exact rand.arena.sub_right hs
+  · exact (p.frameArena.sub_right hs).symm
+  · exact (p.stackArena.sub_right hs).symm
 
 end VG.Proof.Dsa.AArch64.Generation

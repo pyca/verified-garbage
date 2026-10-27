@@ -57,6 +57,11 @@ def PPrimalityPlan.reframe (p : PPrimalityPlan) (W : Nat → BitVec 64) (offset 
     hashPrime := by dsimp only [PConstructPlan.reframe, HashPlan.reframe]; simpa only [h5] using p.hashPrime
     pPrime := by dsimp only [PConstructPlan.reframe, HashPlan.reframe]; simpa only [h5] using p.pPrime
     exponentPrime := by dsimp only [PConstructPlan.reframe, HashPlan.reframe]; simpa only [h5] using p.exponentPrime
+    hashStack := by dsimp only [PConstructPlan.reframe, HashPlan.reframe]; simpa only [h5] using p.hashStack
+    arenaBound := by dsimp only [PConstructPlan.reframe, HashPlan.reframe]; simpa only [h5] using p.arenaBound
+    tapeArena := by dsimp only [PConstructPlan.reframe, HashPlan.reframe]; simpa only [h5] using p.tapeArena
+    arenaFrame := by dsimp only [PConstructPlan.reframe, HashPlan.reframe]; simpa only [h5] using p.arenaFrame
+    arenaStack := by dsimp only [PConstructPlan.reframe, HashPlan.reframe]; simpa only [h5] using p.arenaStack
     tapeConstruct := by dsimp only [PConstructPlan.reframe, HashPlan.reframe]; simpa only [PConstructPlan.changed, HashPlan.changed, h5] using p.tapeConstruct }
 
 end VG.Proof.Dsa.AArch64.Generation

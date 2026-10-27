@@ -17,13 +17,13 @@ open VG.Proof.Rsa.AArch64 VG.Proof.RsaOaep.AArch64
 
 theorem pTest_small_ok {s : State} {B F S pp : Addr} {Z w len value : Nat}
     {V : Nat → Byte} {W : Nat → BitVec 64}
-    (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa))
+    (prime : Nat → Prog isa)
     (L : Lay s F S) (R : Rep s.mem F S V W)
     (h : Ws s B Z w) (hptr : VG.Proof.Bignum.word s.mem B 160 = pp)
     (hlen : 0 < len) (hbound : value < 256 ^ len)
     (hbytes : Spec.Rsa.bytesAt s.mem pp len = Spec.Dsa.encodeBE len value)
     (hrd : InRegions (s.rd ++ s.wr) pp 1) (hsmall : value < 2 ^ (8 * len - 1)) :
-    WP isa (Impl.Dsa.AArch64.Generation.pTest mul roundCode len) s fun t =>
+    WP isa (Impl.Dsa.AArch64.Generation.pTest prime len) s fun t =>
       Lay t F S ∧ Rep t.mem F S V (upd W 19 (BitVec.ofNat 64 3)) ∧
       Outside F 152 8 s.mem t.mem ∧ Keep [.x1, .x3] s t := by
   unfold Impl.Dsa.AArch64.Generation.pTest

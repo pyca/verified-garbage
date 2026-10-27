@@ -23,8 +23,8 @@ open VG.Impl.Dsa.AArch64.Generation
 def PTestSmallBefore (p : CandidateWidthPublic) (s : State) : Prop :=
   CandidateWidthBefore p s ∧ p.value < 2 ^ (8 * p.len - 1)
 
-theorem pTest_small_ct (mul : Nat → Nat → Nat → Prog isa) (round : List (Prog isa)) (len : Nat) :
-    RelCT isa (Two PTestSmallBefore) (pTest mul round len) (fun _ _ => True) := by
+theorem pTest_small_ct (prime : Nat → Prog isa) (len : Nat) :
+    RelCT isa (Two PTestSmallBefore) (pTest prime len) (fun _ _ => True) := by
   unfold pTest
   have guard : RelCT isa (Two PTestSmallBefore) (.block candidateWidth)
       (Two (fun (p : CandidateWidthPublic) s => s.sp = p.F ∧ eval (.zero .x .x3) s = some true)) := by

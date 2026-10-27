@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Hashes
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTest
 public import VerifiedGarbage.Spec.Dsa.Generate
 
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryInnerCT
@@ -12,19 +13,19 @@ import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.MillerRabin.AArch64 VG.Proof.Bignum.AArch64
 
-theorem generation_ct (H : GenerationHashes) (M : Mont) (K : Kernel) :
-    ConstantTime isa (Spec.Dsa.generateParametersContract abi 464).pre
-      (Spec.Dsa.generateParametersContract abi 464).pub
-      (Impl.Dsa.AArch64.Generation.code H.sha1 H.sha256 M.mm K.run) := by
+theorem generation_ct (H : GenerationHashes) (M : Mont) (T : PrimeTest) :
+    ConstantTime isa (Spec.Dsa.generateParametersContract abi 720).pre
+      (Spec.Dsa.generateParametersContract abi 720).pub
+      (Impl.Dsa.AArch64.Generation.code H.sha1 H.sha256 M.mm T.run) := by
   intro s t xs ys u v hs ht hp es et
   have ha := generationABI_of hs
   have hb := generationABI_of ht
   have agree := generation_public_related hp
   have ct : RelCT isa (fun s t => GenerationABI s ∧ GenerationABI t ∧ GenerationPublicAgree s t)
-      (Impl.Dsa.AArch64.Generation.code H.sha1 H.sha256 M.mm K.run) (fun _ _ => True) := by
+      (Impl.Dsa.AArch64.Generation.code H.sha1 H.sha256 M.mm T.run) (fun _ _ => True) := by
     apply RelCT.alloc
     rintro a b xa xb u v ⟨s, t, ⟨hs, ht, hp⟩, rfl, rfl⟩ ea eb
-    exact ⟨entryAllocated_ct H M K hs ht hp ea eb, True.intro⟩
+    exact ⟨entryAllocated_ct H M T hs ht hp ea eb, True.intro⟩
   exact (ct _ _ _ _ _ _ ⟨ha, hb, agree⟩ es et).1
 
 end VG.Proof.Dsa.AArch64.Generation
