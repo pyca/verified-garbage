@@ -4,7 +4,8 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.ProbablePrime.Params
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryAllocated
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntrySpill
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
-import VerifiedGarbage.Proof.Dsa.AArch64.ProbablePrime.Entry
+public import VerifiedGarbage.Proof.Dsa.AArch64.ProbablePrime.Entry
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeInput
 import VerifiedGarbage.Proof.Dsa.AArch64.ProbablePrime.Exit
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CheckPrime
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFootprint
@@ -66,12 +67,32 @@ theorem frame_contains (s : State) {d n : Nat} (h : d + n ≤ 448) :
     (⟨generationBase s, 448⟩ : Region).Contains (off (generationBase s) d) n :=
   Offset.contains_base _ h (by omega)
 
-theorem body_ok (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) {s : State}
-    (A : PrimeABI bits s) :
-    WP isa (body bits M.mm K.run) (allocState 448 s) fun t =>
-      t.sp = (allocState 448 s).sp ∧ t.wr = (allocState 448 s).wr ∧ t.rd = s.rd ∧
-      BodyPost bits s t := by
-  -- The frame, `ws`, the tape and `used`.
+/-- The frame's region. -/
+abbrev frameRegion (s : State) : Region := ⟨generationBase s, 448⟩
+
+/-- What the entry leaves: the test's arguments in the frame, the arithmetic
+workspace in `x0`, and the memory changed only in the frame. -/
+structure Prepared {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bits s) (u : State) : Prop where
+  scr : Scr u (params hb A).B (params hb A).Z
+  x0 : u.gpr .x0 = (params hb A).B
+  sp : u.sp = generationBase s
+  wr : u.wr = (allocState 448 s).wr
+  rd : u.rd = s.rd
+  frame : Frame [frameRegion s] s.mem u.mem
+  link : Frame [⟨generationBase s, 296⟩] (linkState s).mem u.mem
+  arena : word u.mem (generationBase s) 40 = s.gpr .x0
+  tapePtr : word u.mem (generationBase s) 112 = s.gpr .x2
+  tapeLength : word u.mem (generationBase s) 120 = s.gpr .x3
+  usedPtr : word u.mem (generationBase s) usedSlot = s.gpr .x4
+  used : word u.mem (generationBase s) 128 = 0
+  tape : Src u (params hb A).B (params hb A).Z (params hb A).rp (params hb A).rand
+  source : Src u (params hb A).B (params hb A).Z (off (s.gpr .x0) (candidate bits))
+    (Spec.Rsa.bytesAt s.mem (off (s.gpr .x0) (candidate bits)) (len bits))
+
+theorem prepared {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bits s) {u2 : State}
+    (m2 : u2.mem = entryMem (linkState s) (generationBase s))
+    (x02 : u2.gpr .x0 = off ((linkState s).gpr .x0) arithmetic) (k2 : Keep [.x0, .x3] (linkState s) u2) :
+    Prepared hb A u2 := by
   have hFn := frame_toNat A
   have hws : wsRegion s ∈ s.wr := by rw [A.wr]; exact List.mem_cons_self
   have hU : (⟨s.gpr .x4, 8⟩ : Region) ∈ s.wr := by rw [A.wr]; simp
@@ -84,14 +105,6 @@ theorem body_ok (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) {s : 
     A.stackUsed.sub_left (frame_sub s)
   have frand : Region.Disjoint ⟨generationBase s, 448⟩ ⟨s.gpr .x2, (s.gpr .x3).toNat⟩ :=
     A.stackRand.sub_left (frame_sub s)
-  have hwF : ∀ d, d + 8 ≤ 448 → InRegions (linkState s).wr (off (generationBase s) d) 8 :=
-    fun d hd => ⟨_, List.mem_cons_self, frame_contains s hd⟩
-  simp only [body, seqs]
-  -- Save the callee-saved registers.
-  refine WP.seq (WP.mono (VG.Proof.Dsa.AArch64.Generation.entrySave_ok s) fun u1 h1 => ?_)
-  subst h1
-  -- The arguments in the frame.
-  refine WP.seq (WP.mono (entry_ok (s := linkState s) (F := generationBase s) rfl hwF) fun u2 ⟨m2, x02, k2⟩ => ?_)
   have g0 : (linkState s).gpr .x0 = s.gpr .x0 := rfl
   have g2 : (linkState s).gpr .x2 = s.gpr .x2 := rfl
   have g3 : (linkState s).gpr .x3 = s.gpr .x3 := rfl
@@ -113,7 +126,6 @@ theorem body_ok (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) {s : 
   -- Words of the frame, and the candidate's and the tape's bytes.
   have ew := entryMem_word (linkState s) (generationBase s)
   rw [g0, g2, g3, g4] at ew
-  unfold test
   have hB : Scr u2 (params hb A).B (params hb A).Z := by
     have h0 : Scr u2 (s.gpr .x0) ((s.gpr .x1).toNat * 8) :=
       Scr.of_mem (by rw [wr2]; exact List.mem_cons_of_mem _ hws) A.wsBound
@@ -167,15 +179,71 @@ theorem body_ok (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) {s : 
         (contains_byte _ hi' (by omega))
       exact Offset.disjoint (s.gpr .x0) (Or.inl (by have : witness ≤ arithmetic := (by decide); omega))
         (by have : witness < 2 ^ 64 := (by decide); omega) (by decide)
+  have FL2 : Frame [⟨generationBase s, 296⟩] (linkState s).mem u2.mem := by
+    have c : ∀ {d : Nat}, d + 8 ≤ 296 → (⟨generationBase s, 296⟩ : Region).Contains (off (generationBase s) d) 8 :=
+      fun h => Offset.contains_base _ h (by omega)
+    rw [m2]
+    unfold entryMem
+    exact (((((Frame.refl _ _).writeW List.mem_cons_self _ (c (by decide))).writeW List.mem_cons_self _
+      (c (by decide))).writeW List.mem_cons_self _ (c (by decide))).writeW List.mem_cons_self _
+      (c (by decide))).writeW List.mem_cons_self _ (c (by decide))
+  refine ⟨hB, x02.trans (by rw [g0]; rfl), sp2, wr2, rd2, F02, FL2, by rw [m2]; exact ew.1, by rw [m2]; exact ew.2.1,
+    by rw [m2]; exact ew.2.2.1, by rw [m2]; exact ew.2.2.2.1, by rw [m2]; exact ew.2.2.2.2, htape, ?_⟩
+  have h := hsrc
+  rw [show 8 * 5 = 40 from rfl, m2, ew.1] at h
+  exact h
+
+/-- What the test leaves. -/
+structure Tested {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bits s) (u : State) : Prop where
+  input : ∃ used', PrimeInput (params hb A) used' u ∧ used' ≤ (params hb A).rand.length ∧
+    (Spec.Dsa.probablePrime (params hb A).N ((params hb A).rand.drop 0) = none →
+      word u.mem (params hb A).B (8 * kStat) = BitVec.ofNat 64 0) ∧
+    (∀ b rest, Spec.Dsa.probablePrime (params hb A).N ((params hb A).rand.drop 0) = some (b, rest) →
+      word u.mem (params hb A).B (8 * kStat) = BitVec.ofNat 64 (if b then 1 else 3) ∧
+      used' = (params hb A).rand.length - rest.length)
+  sp : u.sp = generationBase s
+  wr : u.wr = (allocState 448 s).wr
+  rd : u.rd = s.rd
+  frame : Frame [frameRegion s, ⟨(params hb A).B, arithmeticBytes⟩, ⟨(params hb A).p, len bits⟩] s.mem u.mem
+  link : Frame [⟨generationBase s, 296⟩, ⟨(params hb A).B, arithmeticBytes⟩, ⟨(params hb A).p, len bits⟩]
+    (linkState s).mem u.mem
+  usedPtr : word u.mem (generationBase s) usedSlot = s.gpr .x4
+
+theorem test_ok (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bits s)
+    {u2 : State} (P : Prepared hb A u2) :
+    WP isa (test bits M.mm K.run) u2 (Tested hb A) := by
+  have hFn := frame_toNat A
+  have hws : wsRegion s ∈ s.wr := by rw [A.wr]; exact List.mem_cons_self
+  have hU : (⟨s.gpr .x4, 8⟩ : Region) ∈ s.wr := by rw [A.wr]; simp
+  have hlen : len bits ≤ 384 := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
+  have hw48 : words bits ≤ 48 := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
+  have fws : ∀ {e k : Nat}, e + k ≤ domainCheck →
+      Region.Disjoint ⟨generationBase s, 448⟩ ⟨off (s.gpr .x0) e, k⟩ := fun h =>
+    (A.stackWs.sub_left (frame_sub s)).sub_right (ws_sub A h)
+  have fused : Region.Disjoint ⟨generationBase s, 448⟩ ⟨s.gpr .x4, 8⟩ :=
+    A.stackUsed.sub_left (frame_sub s)
+  have D0 : Region.Disjoint ⟨generationBase s, 448⟩ ⟨(params hb A).B, (params hb A).Z⟩ :=
+    fws (e := arithmetic) (k := arithmeticBytes) (by decide)
+  have frameOut : ∀ r ∈ [(⟨(params hb A).B, arithmeticBytes⟩ : Region), ⟨(params hb A).p, len bits⟩],
+      Region.Disjoint ⟨generationBase s, 448⟩ r := by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact D0
+    · exact fws (by have : witness + 384 ≤ domainCheck := (by decide); omega)
+  have inFrame : ∀ {d n : Nat}, d + n ≤ 448 → ∀ r ∈ [(⟨(params hb A).B, arithmeticBytes⟩ : Region),
+      ⟨(params hb A).p, len bits⟩], Region.Disjoint ⟨off (generationBase s) d, n⟩ r :=
+    fun h r hr => (frameOut r hr).sub_left (Offset.sub_base _ h)
+  unfold test
   have hlow := ((bitLength_iff_bounds (by have := hb.le; omega)).mp A.bits).1
   -- The test.
-  refine WP.seq (WP.mono (VG.Proof.Dsa.AArch64.Generation.checkPrime_ok M K (P := params hb A) (s := u2)
+  refine WP.mono (VG.Proof.Dsa.AArch64.Generation.checkPrime_ok M K (P := params hb A) (s := u2)
     (used := 0) (candidate := candidate bits) (W := fun k => word u2.mem (generationBase s) (8 * k))
-    hB (x02.trans (by rw [g0]; rfl))
+    P.scr P.x0
     (by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide)
     (by change checks bits < _; rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide)
-    sp2
-    (fun k hk => ⟨_, List.mem_append_right _ (by rw [wr2]; exact List.mem_cons_self),
+    P.sp
+    (fun k hk => ⟨_, List.mem_append_right _ (by rw [P.wr]; exact List.mem_cons_self),
       frame_contains s (by omega)⟩)
     (fun _ _ => rfl)
     (fun k hk j hj => D0.sep (frame_contains s (by omega))
@@ -183,21 +251,21 @@ theorem body_ok (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) {s : 
     (fun k hk i hi => by
       rw [off_off]
       exact out_scr D0 (frame_contains s (by omega)))
-    (by rw [show 8 * 5 = 40 from rfl, m2, ew.1]; rfl)
-    (by rw [show 8 * 14 = 112 from rfl, m2, ew.2.1]; rfl)
+    (by rw [show 8 * 5 = 40 from rfl, P.arena]; rfl)
+    (by rw [show 8 * 14 = 112 from rfl, P.tapePtr]; rfl)
     (by
-      rw [show 8 * 15 = 120 from rfl, m2, ew.2.2.1]
+      rw [show 8 * 15 = 120 from rfl, P.tapeLength]
       change s.gpr .x3 = BitVec.ofNat 64 (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat).length
       rw [bytesAt_length, ofNat_toNat64])
-    (by rw [show 8 * 16 = 128 from rfl, m2, ew.2.2.2.2]; rfl)
-    htape
+    (by rw [show 8 * 16 = 128 from rfl, P.used]; rfl)
+    P.tape
     (fun i hi => by
-      refine ⟨_, by rw [wr2]; exact List.mem_cons_of_mem _ hws, ?_⟩
+      refine ⟨_, by rw [P.wr]; exact List.mem_cons_of_mem _ hws, ?_⟩
       change (wsRegion s).Contains (off (off (s.gpr .x0) witness) i) 1
       rw [off_off]
       exact Offset.contains_base _ (by have := A.size; have : witness + 384 ≤ domainCheck := (by decide); change i < len bits at hi; omega)
         (by have : witness + 384 < 2 ^ 64 := (by decide); change i < len bits at hi; omega))
-    (bytesAt_length _ _ _) rfl hsrc (Nat.zero_le _) hw48
+    (bytesAt_length _ _ _) rfl (by rw [show 8 * 5 = 40 from rfl, P.arena]; exact P.source) (Nat.zero_le _) hw48
     (by change Bignum.slot (words bits) aTab + 2048 ≤ arithmeticBytes
         rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide)
     (by
@@ -210,11 +278,33 @@ theorem body_ok (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) {s : 
       rw [A.bits]; rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide)
     (by
       change checks bits = Spec.Dsa.primeChecks (Spec.Dsa.bitLength (candidateOf bits s))
-      rw [A.bits]; rfl)) fun u3 h3 => ?_)
+      rw [A.bits]; rfl)) fun u3 h3 => ?_
   obtain ⟨used', inp, hub, hnone, hsome, wf3, k3⟩ := h3
   have F23 : Frame [⟨(params hb A).B, arithmeticBytes⟩, ⟨(params hb A).p, len bits⟩] u2.mem u3.mem :=
     VG.Proof.Dsa.AArch64.Generation.prime_global_frame wf3
       (VG.Proof.Dsa.AArch64.Generation.checkPrimeRanges_bound hw48)
+  refine ⟨⟨used', inp, hub, hnone, hsome⟩, k3.sp.trans P.sp, k3.wr.trans P.wr, k3.rd.trans P.rd,
+    (P.frame.mono (by simp)).trans (F23.mono (by simp)), (P.link.mono (by simp)).trans (F23.mono (by simp)), ?_⟩
+  rw [← P.usedPtr]
+  exact F23.readW (Offset.contains_base _ (d := 0) (n := 8) (k := 8) (by decide) (by decide) |> fun h => by
+    simpa only [off, BitVec.add_zero] using h) (inFrame (d := usedSlot) (n := 8) (by decide)) (by decide)
+
+theorem finish_ok {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bits s) {u3 : State}
+    (T : Tested hb A u3) :
+    WP isa (.seq (.block exit) (.block Impl.Dsa.AArch64.Generation.entryRestore)) u3 fun t =>
+      t.sp = (allocState 448 s).sp ∧ t.wr = (allocState 448 s).wr ∧ t.rd = s.rd ∧ BodyPost bits s t := by
+  have hFn := frame_toNat A
+  have hws : wsRegion s ∈ s.wr := by rw [A.wr]; exact List.mem_cons_self
+  have hU : (⟨s.gpr .x4, 8⟩ : Region) ∈ s.wr := by rw [A.wr]; simp
+  have hlen : len bits ≤ 384 := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
+  have hw48 : words bits ≤ 48 := by rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
+  have fws : ∀ {e k : Nat}, e + k ≤ domainCheck →
+      Region.Disjoint ⟨generationBase s, 448⟩ ⟨off (s.gpr .x0) e, k⟩ := fun h =>
+    (A.stackWs.sub_left (frame_sub s)).sub_right (ws_sub A h)
+  have fused : Region.Disjoint ⟨generationBase s, 448⟩ ⟨s.gpr .x4, 8⟩ :=
+    A.stackUsed.sub_left (frame_sub s)
+  have D0 : Region.Disjoint ⟨generationBase s, 448⟩ ⟨(params hb A).B, (params hb A).Z⟩ :=
+    fws (e := arithmetic) (k := arithmeticBytes) (by decide)
   have frameOut : ∀ r ∈ [(⟨(params hb A).B, arithmeticBytes⟩ : Region), ⟨(params hb A).p, len bits⟩],
       Region.Disjoint ⟨generationBase s, 448⟩ r := by
     intro r hr
@@ -225,13 +315,7 @@ theorem body_ok (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) {s : 
   have inFrame : ∀ {d n : Nat}, d + n ≤ 448 → ∀ r ∈ [(⟨(params hb A).B, arithmeticBytes⟩ : Region),
       ⟨(params hb A).p, len bits⟩], Region.Disjoint ⟨off (generationBase s) d, n⟩ r :=
     fun h r hr => (frameOut r hr).sub_left (Offset.sub_base _ h)
-  have sp3 : u3.sp = generationBase s := k3.sp.trans sp2
-  have wr3 : u3.wr = (allocState 448 s).wr := k3.wr.trans wr2
-  have rd3 : u3.rd = s.rd := k3.rd.trans rd2
-  have hU3 : word u3.mem (generationBase s) usedSlot = s.gpr .x4 := by
-    rw [← ew.2.2.2.1, ← m2]
-    exact F23.readW (Offset.contains_base _ (d := 0) (n := 8) (k := 8) (by decide) (by decide) |> fun h => by
-      simpa only [off, BitVec.add_zero] using h) (inFrame (d := usedSlot) (n := 8) (by decide)) (by decide)
+  obtain ⟨⟨used', inp, hub, hnone, hsome⟩, sp3, wr3, rd3, F03, FL3, hU3⟩ := T
   -- The exit.
   refine WP.seq (WP.mono (exit_ok (u := u3) (B := (params hb A).B) (F := generationBase s) (U := s.gpr .x4)
     (used := BitVec.ofNat 64 used') (st := word u3.mem (params hb A).B (8 * kStat))
@@ -251,19 +335,11 @@ theorem body_ok (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) {s : 
   have wr4 : u4.wr = (allocState 448 s).wr := k4.wr.trans wr3
   have rd4 : u4.rd = s.rd := k4.rd.trans rd3
   -- What changed since the save: the entry's slots, the test's workspace and buffer, and `used`.
-  have FL2 : Frame [⟨generationBase s, 296⟩] (linkState s).mem u2.mem := by
-    have c : ∀ {d : Nat}, d + 8 ≤ 296 → (⟨generationBase s, 296⟩ : Region).Contains (off (generationBase s) d) 8 :=
-      fun h => Offset.contains_base _ h (by omega)
-    rw [m2]
-    unfold entryMem
-    exact (((((Frame.refl _ _).writeW List.mem_cons_self _ (c (by decide))).writeW List.mem_cons_self _
-      (c (by decide))).writeW List.mem_cons_self _ (c (by decide))).writeW List.mem_cons_self _
-      (c (by decide))).writeW List.mem_cons_self _ (c (by decide))
   have F34 : Frame [⟨s.gpr .x4, 8⟩] u3.mem u4.mem := by
     rw [m4]; exact (Frame.refl _ _).writeW List.mem_cons_self _ (Region.contains_self _ _)
   have FL4 : Frame [⟨generationBase s, 296⟩, ⟨(params hb A).B, arithmeticBytes⟩, ⟨(params hb A).p, len bits⟩,
       ⟨s.gpr .x4, 8⟩] (linkState s).mem u4.mem :=
-    ((FL2.mono (by simp)).trans (F23.mono (by simp))).trans (F34.mono (by simp))
+    (FL3.mono (by simp)).trans (F34.mono (by simp))
   have hlink : ∀ r ∈ [(⟨generationBase s, 296⟩ : Region), ⟨(params hb A).B, arithmeticBytes⟩,
       ⟨(params hb A).p, len bits⟩, ⟨s.gpr .x4, 8⟩],
       Region.Disjoint ⟨generationBase s + BitVec.ofNat 64 296, 152⟩ r := by
@@ -308,9 +384,23 @@ theorem body_ok (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) {s : 
     change BitVec.ofNat 64 ((Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat).length - rest.length) = _
     rw [bytesAt_length]
   · rw [R5.memory]
-    refine ((F02.mono (by simp [changed])).trans (F23.mono ?_)).trans (F34.mono (by simp [changed]))
+    refine (F03.mono ?_).trans (F34.mono (by simp [changed]))
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp [changed, params]
+    rcases hr with rfl | rfl | rfl <;> simp [changed, params]
+
+theorem body_ok (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) {s : State}
+    (A : PrimeABI bits s) :
+    WP isa (body bits M.mm K.run) (allocState 448 s) fun t =>
+      t.sp = (allocState 448 s).sp ∧ t.wr = (allocState 448 s).wr ∧ t.rd = s.rd ∧
+      BodyPost bits s t := by
+  have hwF : ∀ d, d + 8 ≤ 448 → InRegions (linkState s).wr (off (generationBase s) d) 8 :=
+    fun d hd => ⟨_, List.mem_cons_self, frame_contains s hd⟩
+  simp only [body, seqs]
+  refine WP.seq (WP.mono (VG.Proof.Dsa.AArch64.Generation.entrySave_ok s) fun u1 h1 => ?_)
+  subst h1
+  refine WP.seq (WP.mono (entry_ok (s := linkState s) (F := generationBase s) rfl hwF)
+    fun u2 ⟨m2, x02, k2⟩ => ?_)
+  exact WP.seq (WP.mono (test_ok M K hb A (prepared hb A m2 x02 k2)) fun u3 T => finish_ok hb A T)
 
 end VG.Proof.Dsa.AArch64.ProbablePrime
