@@ -80,9 +80,15 @@ def zeroExtra (slot : Nat) (w16 : Bool := false) : Prog isa :=
  .seq (.block [.ldr .x .x3 .x19 slot,.ldr .x .x4 .x19 (slot+8)])
  (.ite (.zero .x .x4) (.block [])
   (.loop (.block [.movz .x .x13 0 0,.str .w .x13 .x3 0,.addImm .x .x3 .x3 (if w16 then 2 else 4),.subImm .x .x4 .x4 1]) (.nonzero .x .x4)))
+/-- The fourth block, and the fifth while either stream lacks candidates
+(`x6 = 0`), as a loop: `x30` (saved by `init`, restored at the end of the
+pair) is the number of blocks left after this one. -/
+def retry (w16 : Bool := false) : Prog isa :=
+ .seq (.block [.movz .x .x30 1 0])
+ (.loop (.seq (extraStep w16) (.block [.sub .x .x7 .x6 .x30,.lsr .x .x7 .x7 63,.movz .x .x30 0 0]))
+  (.nonzero .x .x7))
 def extraPair (w16 : Bool := false) : Prog isa :=
- seqs [extraStep w16,.ite (.zero .x .x6) (extraStep w16) (.block []),
- .block [.logic .and .x .x24 .x24 .x6],zeroExtra 1680 w16,zeroExtra 1696 w16]
+ seqs [retry w16,.block [.logic .and .x .x24 .x24 .x6],zeroExtra 1680 w16,zeroExtra 1696 w16]
 
 def pair (L : KemLay) (keygen : Bool) (a : Nat) (w16 : Bool := false) : Prog isa :=
  let sb := if keygen then KG.SB else KEM.SB

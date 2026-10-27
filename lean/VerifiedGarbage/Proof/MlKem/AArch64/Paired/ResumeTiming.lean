@@ -23,31 +23,52 @@ def StepTimingW (w16 : Bool) (A B : Spec.Sha3.State) (p a b c : Addr) : Prop :=
 
 abbrev StepTiming := StepTimingW false
 
+theorem retryInit_ct : ConstantTime isa (fun _=>True) (VG.AArch64.Taint.Agree (Taint.ofRegs []))
+    (.block [.movz .x .x30 1 0]) :=
+  VG.Taint.constantTime (A:=taint) (Taint.ofRegs []) (fun _ _ _ _ h=>h) (hc:=.block []) rfl
+
+theorem retryCond_ct : ConstantTime isa (fun _=>True) (VG.AArch64.Taint.Agree (Taint.ofRegs []))
+    (.block [.sub .x .x7 .x6 .x30,.lsr .x .x7 .x7 63,.movz .x .x30 0 0]) :=
+  VG.Taint.constantTime (A:=taint) (Taint.ofRegs []) (fun _ _ _ _ h=>h) (hc:=.block []) rfl
+
+/-- An iteration of `Paired.retry` from the same count in both runs. -/
+theorem retryBody_relCT {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s u t v : State} {n : Nat}
+    (step : StepTimingW w16 A B p a b c) (it : RetryInv w16 A B p a b c s n t)
+    (iv : RetryInv w16 A B p a b c u n v) (sp : t.sp=v.sp) :
+    RelCT isa (fun t' v'=>t'=t ∧ v'=v) (.seq (Impl.MlKem.AArch64.Paired.extraStep w16)
+      (.block [.sub .x .x7 .x6 .x30,.lsr .x .x7 .x7 63,.movz .x .x30 0 0])) (fun _ _=>True) := by
+  refine RelCT.seq (R:=fun t' v' : State=>t'.sp=v'.sp) ?_ ?_
+  · intro t₀ v₀ tr ur t' v' h et ev
+    rcases h with ⟨rfl,rfl⟩
+    have n34 : 4-n=3 ∨ 4-n=4 := by have := it.le; omega
+    exact ⟨(step n34 it.progress iv.progress it.syms iv.syms sp t₀ v₀ tr ur t' v' ⟨rfl,rfl⟩ et ev).1,
+      (exec_post (advance_ok it.progress it.syms) et).keep.sp.trans
+        (sp.trans (exec_post (advance_ok iv.progress iv.syms) ev).keep.sp.symm)⟩
+  · intro t₀ v₀ tr ur t' v' h et ev
+    exact ⟨retryCond_ct t₀ v₀ tr ur t' v' trivial trivial (agree_of h (by simp)) et ev,trivial⟩
+
 theorem bounded_relCT {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s u : State}
     (step : StepTimingW w16 A B p a b c) (ps : ProgressW w16 A B 3 p a b c s) (pu : ProgressW w16 A B 3 p a b c u)
     (ss : s.syms "VG_MLKEM_REJ_SHUFFLE"=c) (us : u.syms "VG_MLKEM_REJ_SHUFFLE"=c) (sp : s.sp=u.sp) :
-    RelCT isa (fun t v=>t=s ∧ v=u)
-      (.seq (Impl.MlKem.AArch64.Paired.extraStep w16) (.ite (.zero .x .x6) (Impl.MlKem.AArch64.Paired.extraStep w16) (.block [])))
+    RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.retry w16)
       (fun t v=>BoundedW w16 A B p a b c s t ∧ BoundedW w16 A B p a b c u v) := by
-  let R := fun t v : State=>AdvancedW w16 A B 4 p a b c s t ∧ AdvancedW w16 A B 4 p a b c u v ∧
-    t.syms=s.syms ∧ v.syms=u.syms
-  have start : RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.extraStep w16) R := by
-    intro t v tr ur t' v' h et ev
-    rcases h with ⟨ht,hv⟩; subst t; subst v
-    exact ⟨(step (Or.inl rfl) ps pu ss us sp s u tr ur t' v' ⟨rfl,rfl⟩ et ev).1,
-      exec_post (advance_ok ps ss) et,exec_post (advance_ok pu us) ev,Exec.syms et,Exec.syms ev⟩
-  have trace : RelCT isa (fun t v=>t=s ∧ v=u)
-      (.seq (Impl.MlKem.AArch64.Paired.extraStep w16) (.ite (.zero .x .x6) (Impl.MlKem.AArch64.Paired.extraStep w16) (.block [])))
-      (fun _ _=>True) := by
-    refine RelCT.seq start (RelCT.ite ?_ ?_ (RelCT.block_nil (by intros; trivial)))
-    · intro t v h
-      have hx : t.gpr .x6=v.gpr .x6 := BitVec.eq_of_toNat_eq (h.1.flag.trans h.2.1.flag.symm)
-      change some (t.gpr .x6==0)=some (v.gpr .x6==0)
-      rw [hx]
+  let I := fun n t v=>RetryInv w16 A B p a b c s n t ∧ RetryInv w16 A B p a b c u n v
+  have trace : RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.retry w16) (fun _ _=>True) := by
+    refine RelCT.seq (R:=I 1) ?_ (RelCT.loop (M:=isa) (Q:=fun _ _=>True) I (fun n => ?_) 1)
     · intro t v tr ur t' v' h et ev
-      exact step (Or.inr rfl) h.1.1.progress h.1.2.1.progress
-        (by rw [h.1.2.2.1]; exact ss) (by rw [h.1.2.2.2]; exact us)
-        (h.1.1.keep.sp.trans (sp.trans h.1.2.1.keep.sp.symm)) t v tr ur t' v' ⟨rfl,rfl⟩ et ev
+      rcases h with ⟨rfl,rfl⟩
+      exact ⟨retryInit_ct t v tr ur t' v' trivial trivial (agree_of sp (by simp)) et ev,
+        exec_post (retryInit_ok ps ss) et,exec_post (retryInit_ok pu us) ev⟩
+    · intro t v tr ur t' v' h et ev
+      rcases h with ⟨it,iv⟩
+      have sp' : t.sp=v.sp := it.keep.sp.trans (sp.trans iv.keep.sp.symm)
+      have tq := (retryBody_relCT step it iv sp' t v tr ur t' v' ⟨rfl,rfl⟩ et ev).1
+      obtain ⟨et',-,it'⟩ := exec_post (retryStep_ok (fun _ ht hs=>advance_ok ht hs) it) et
+      obtain ⟨ev',-,iv'⟩ := exec_post (retryStep_ok (fun _ ht hs=>advance_ok ht hs) iv) ev
+      refine ⟨tq,by rw [et',ev'],fun _=>trivial,fun h=>?_⟩
+      have hr : retryAgain A B n=true := by rw [et'] at h; exact Option.some.inj h
+      have hn : n=1 := by simp only [retryAgain,decide_eq_true_eq] at hr; exact hr.1
+      exact ⟨0,by omega,it' hr,iv' hr⟩
   intro t v tr ur t' v' h et ev
   rcases h with ⟨ht,hv⟩; subst t; subst v
   exact ⟨(trace s u tr ur t' v' ⟨rfl,rfl⟩ et ev).1,
@@ -102,8 +123,7 @@ theorem resume_relCT {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s u 
     RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.extraPair w16)
       (fun t v=>ResumePostW w16 A B p a b s t ∧ ResumePostW w16 A B p a b u v) := by
   have trace : RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.extraPair w16) (fun _ _=>True) := by
-    change RelCT isa _ (.seq _ (.seq (.ite _ _ _) _)) _
-    apply RelCT.assoc
+    change RelCT isa _ (.seq (Impl.MlKem.AArch64.Paired.retry w16) (.seq (.block _) _)) _
     refine RelCT.seq (bounded_relCT step ps pu ss us sp) ?_
     refine RelCT.seq (R:=fun t v : State=>CleanupW w16 A B p a b c t ∧ CleanupW w16 A B p a b c v ∧ t.sp=v.sp) ?_ ?_
     · intro t v tr ur t' v' h et ev
