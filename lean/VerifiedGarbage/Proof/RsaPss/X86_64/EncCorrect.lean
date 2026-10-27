@@ -219,7 +219,7 @@ include K in
 theorem enc_xd : (encode H).x86_64Depth ≤ encStack := by
   simp only [encode, Code.x86_64Depth, encBody_xd K, X86_64.Instr.frameBytes]
   unfold encStack frameBytes
-  omega
+  decide
 
 /-- The epilogue: the callee-saved registers restored and the outcome. -/
 theorem restore_ok {s t : State} (D : EDone G s t) :

@@ -47,7 +47,7 @@ theorem signC_xd (hdE : encC.x86_64Depth ≤ encStack) (hd : privC.x86_64Depth �
   simp only [signC, signCBody, seqs, Code.x86_64Depth, signFail, byteLoop, X86_64.Instr.frameBytes, Nat.zero_max,
     Nat.max_zero]
   unfold signStack Rsa.X86_64.stackBytes frameBytes encStack at *
-  omega
+  exact Nat.add_le_add_right (Nat.max_le.mpr ⟨(by omega : _ ≤ 3264), by omega⟩) 392
 
 theorem signC_correct
     (hvE : ∀ s, (encK G).pre s → ∃ t s', Exec isa encC s t s' ∧ abiPreserved s s' ∧ (encK G).post s s')

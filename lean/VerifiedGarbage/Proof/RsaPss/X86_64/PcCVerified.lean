@@ -45,7 +45,7 @@ theorem codeC_xd (hdK : chkC.x86_64Depth ≤ chkStack) (v : PublicImpl) :
   simp only [verifyC, verifyCBody, seqs, Code.x86_64Depth, x86_64Depth_zero v.nosp v.depth, verifyFail,
     X86_64.Instr.frameBytes, Nat.zero_max, Nat.max_zero]
   unfold verifyStack frameBytes chkStack at *
-  omega
+  exact Nat.add_le_add_right (Nat.max_le.mpr ⟨(by omega : _ ≤ 408), by omega⟩) 392
 
 theorem codeC_correct
     (hvK : ∀ s, (chkK G).pre s → ∃ t s', Exec isa chkC s t s' ∧ abiPreserved s s' ∧ (chkK G).post s s')

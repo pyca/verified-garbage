@@ -331,7 +331,7 @@ include K in
 theorem chk_xd : (checkEncoding H).x86_64Depth ≤ chkStack := by
   simp only [checkEncoding, Code.x86_64Depth, chkBody_xd K, X86_64.Instr.frameBytes]
   unfold chkStack frameBytes
-  omega
+  decide
 
 /-- The epilogue: the callee-saved registers restored and the outcome. -/
 theorem restore_ok {s t : State} (D : CDone (chkOut G s) s t) :
