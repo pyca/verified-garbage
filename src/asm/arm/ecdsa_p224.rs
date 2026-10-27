@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.signContract`. Constant time: only the pointers may affect timing, not the key, the hash or `k`.
 ///
-/// The function saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`, and keeps `out` in `lr` (in `r10` during the calls). Field elements and scalars are sixteen 16-bit digits in Montgomery form, multiplied by digit-by-digit Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_p224_mul_mod_p` and the other functions of `p224_mont`) with a final conditional subtraction. `[k]G` is a double-and-add ladder over all 224 bits of `k`, with the complete addition formulas of Renes, Costello and Batina for every addition and doubling (calls of `vg_p224_point_double` and `vg_p224_point_add`) and a masked selection for each bit; the inversions modulo `p` and `n` are Fermat's, by square-and-always-multiply over the bits of `p - 2` and `n - 2`. The signature (or zeros) is selected by a mask, so the time depends only on the pointers.
+/// The function saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`, and keeps `out` in `lr` (in `r10` during the calls). Field elements and scalars are sixteen 16-bit digits in Montgomery form, multiplied by digit-by-digit Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_p224_mul_mod_p` and the other functions of `p224_mont`) with a final conditional subtraction. `[k]G` is a call of `vg_p224_mul`, a double-and-add ladder over all 224 bits of `k`, with the complete addition formulas of Renes, Costello and Batina for every addition and doubling (calls of `vg_p224_point_double` and `vg_p224_point_add`) and a masked selection for each bit; the inversions modulo `p` and `n` are Fermat's, by square-and-always-multiply over the bits of `p - 2` and `n - 2`. The signature (or zeros) is selected by a mask, so the time depends only on the pointers.
 ///
 /// # Safety
 ///
@@ -586,343 +586,41 @@ strb r7, [r5, #519]
 cmp r11, #0
 bne 22b
 ldr r4, [r12, #320]
-str r4, [r12, #3424]
-ldr r4, [r12, #324]
-str r4, [r12, #3428]
-ldr r4, [r12, #328]
-str r4, [r12, #3432]
-ldr r4, [r12, #332]
-str r4, [r12, #3436]
-ldr r4, [r12, #336]
-str r4, [r12, #3440]
-ldr r4, [r12, #340]
-str r4, [r12, #3444]
-ldr r4, [r12, #344]
-str r4, [r12, #3448]
-ldr r4, [r12, #348]
-str r4, [r12, #3452]
-ldr r4, [r12, #352]
-str r4, [r12, #3456]
-ldr r4, [r12, #356]
-str r4, [r12, #3460]
-ldr r4, [r12, #360]
-str r4, [r12, #3464]
-ldr r4, [r12, #364]
-str r4, [r12, #3468]
-ldr r4, [r12, #368]
-str r4, [r12, #3472]
-ldr r4, [r12, #372]
-str r4, [r12, #3476]
-ldr r4, [r12, #376]
-str r4, [r12, #3480]
-ldr r4, [r12, #380]
-str r4, [r12, #3484]
-ldr r4, [r12, #224]
-str r4, [r12, #3488]
-ldr r4, [r12, #228]
-str r4, [r12, #3492]
-ldr r4, [r12, #232]
-str r4, [r12, #3496]
-ldr r4, [r12, #236]
-str r4, [r12, #3500]
-ldr r4, [r12, #240]
-str r4, [r12, #3504]
-ldr r4, [r12, #244]
-str r4, [r12, #3508]
-ldr r4, [r12, #248]
-str r4, [r12, #3512]
-ldr r4, [r12, #252]
-str r4, [r12, #3516]
-ldr r4, [r12, #256]
-str r4, [r12, #3520]
-ldr r4, [r12, #260]
-str r4, [r12, #3524]
-ldr r4, [r12, #264]
-str r4, [r12, #3528]
-ldr r4, [r12, #268]
-str r4, [r12, #3532]
-ldr r4, [r12, #272]
-str r4, [r12, #3536]
-ldr r4, [r12, #276]
-str r4, [r12, #3540]
-ldr r4, [r12, #280]
-str r4, [r12, #3544]
-ldr r4, [r12, #284]
-str r4, [r12, #3548]
-ldr r4, [r12, #288]
-str r4, [r12, #3552]
-ldr r4, [r12, #292]
-str r4, [r12, #3556]
-ldr r4, [r12, #296]
-str r4, [r12, #3560]
-ldr r4, [r12, #300]
-str r4, [r12, #3564]
-ldr r4, [r12, #304]
-str r4, [r12, #3568]
-ldr r4, [r12, #308]
-str r4, [r12, #3572]
-ldr r4, [r12, #312]
-str r4, [r12, #3576]
-ldr r4, [r12, #316]
-str r4, [r12, #3580]
-mov r11, #224
-23:
-sub r11, r11, #1
-ldr r4, [r12, #512]
-str r4, [r12, #3328]
-ldr r4, [r12, #516]
-str r4, [r12, #3332]
-ldr r4, [r12, #520]
-str r4, [r12, #3336]
-ldr r4, [r12, #524]
-str r4, [r12, #3340]
-ldr r4, [r12, #528]
-str r4, [r12, #3344]
-ldr r4, [r12, #532]
-str r4, [r12, #3348]
-ldr r4, [r12, #536]
-str r4, [r12, #3352]
-ldr r4, [r12, #540]
-str r4, [r12, #3356]
-ldr r4, [r12, #544]
-str r4, [r12, #3360]
-ldr r4, [r12, #548]
-str r4, [r12, #3364]
-ldr r4, [r12, #552]
-str r4, [r12, #3368]
-ldr r4, [r12, #556]
-str r4, [r12, #3372]
-ldr r4, [r12, #560]
-str r4, [r12, #3376]
-ldr r4, [r12, #564]
-str r4, [r12, #3380]
-ldr r4, [r12, #568]
-str r4, [r12, #3384]
-ldr r4, [r12, #572]
-str r4, [r12, #3388]
-ldr r4, [r12, #576]
-str r4, [r12, #3392]
-ldr r4, [r12, #580]
-str r4, [r12, #3396]
-ldr r4, [r12, #584]
-str r4, [r12, #3400]
-ldr r4, [r12, #588]
-str r4, [r12, #3404]
-ldr r4, [r12, #592]
-str r4, [r12, #3408]
-ldr r4, [r12, #596]
-str r4, [r12, #3412]
-ldr r4, [r12, #600]
-str r4, [r12, #3416]
-ldr r4, [r12, #604]
-str r4, [r12, #3420]
-mov r10, lr
-mov r0, r12
-bl {vg_p224_point_double}
-mov lr, r10
-ldr r4, [r12, #3232]
-str r4, [r12, #3328]
-ldr r4, [r12, #3236]
-str r4, [r12, #3332]
-ldr r4, [r12, #3240]
-str r4, [r12, #3336]
-ldr r4, [r12, #3244]
-str r4, [r12, #3340]
-ldr r4, [r12, #3248]
-str r4, [r12, #3344]
-ldr r4, [r12, #3252]
-str r4, [r12, #3348]
-ldr r4, [r12, #3256]
-str r4, [r12, #3352]
-ldr r4, [r12, #3260]
-str r4, [r12, #3356]
-ldr r4, [r12, #3264]
-str r4, [r12, #3360]
-ldr r4, [r12, #3268]
-str r4, [r12, #3364]
-ldr r4, [r12, #3272]
-str r4, [r12, #3368]
-ldr r4, [r12, #3276]
-str r4, [r12, #3372]
-ldr r4, [r12, #3280]
-str r4, [r12, #3376]
-ldr r4, [r12, #3284]
-str r4, [r12, #3380]
-ldr r4, [r12, #3288]
-str r4, [r12, #3384]
-ldr r4, [r12, #3292]
-str r4, [r12, #3388]
-ldr r4, [r12, #3296]
-str r4, [r12, #3392]
-ldr r4, [r12, #3300]
-str r4, [r12, #3396]
-ldr r4, [r12, #3304]
-str r4, [r12, #3400]
-ldr r4, [r12, #3308]
-str r4, [r12, #3404]
-ldr r4, [r12, #3312]
-str r4, [r12, #3408]
-ldr r4, [r12, #3316]
-str r4, [r12, #3412]
-ldr r4, [r12, #3320]
-str r4, [r12, #3416]
-ldr r4, [r12, #3324]
-str r4, [r12, #3420]
-mov r10, lr
-mov r0, r12
-bl {vg_p224_point_add}
-mov lr, r10
-add r4, r12, r11
-add r4, r4, #4096
-ldrb r4, [r4, #0]
-mov r5, #0
-sub r10, r5, r4
-ldr r4, [r12, #3328]
-ldr r5, [r12, #3232]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
 str r4, [r12, #512]
-ldr r4, [r12, #3332]
-ldr r5, [r12, #3236]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #324]
 str r4, [r12, #516]
-ldr r4, [r12, #3336]
-ldr r5, [r12, #3240]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #328]
 str r4, [r12, #520]
-ldr r4, [r12, #3340]
-ldr r5, [r12, #3244]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #332]
 str r4, [r12, #524]
-ldr r4, [r12, #3344]
-ldr r5, [r12, #3248]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #336]
 str r4, [r12, #528]
-ldr r4, [r12, #3348]
-ldr r5, [r12, #3252]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #340]
 str r4, [r12, #532]
-ldr r4, [r12, #3352]
-ldr r5, [r12, #3256]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #344]
 str r4, [r12, #536]
-ldr r4, [r12, #3356]
-ldr r5, [r12, #3260]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #348]
 str r4, [r12, #540]
-ldr r4, [r12, #3360]
-ldr r5, [r12, #3264]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #352]
 str r4, [r12, #544]
-ldr r4, [r12, #3364]
-ldr r5, [r12, #3268]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #356]
 str r4, [r12, #548]
-ldr r4, [r12, #3368]
-ldr r5, [r12, #3272]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #360]
 str r4, [r12, #552]
-ldr r4, [r12, #3372]
-ldr r5, [r12, #3276]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #364]
 str r4, [r12, #556]
-ldr r4, [r12, #3376]
-ldr r5, [r12, #3280]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #368]
 str r4, [r12, #560]
-ldr r4, [r12, #3380]
-ldr r5, [r12, #3284]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #372]
 str r4, [r12, #564]
-ldr r4, [r12, #3384]
-ldr r5, [r12, #3288]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #376]
 str r4, [r12, #568]
-ldr r4, [r12, #3388]
-ldr r5, [r12, #3292]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #380]
 str r4, [r12, #572]
-ldr r4, [r12, #3392]
-ldr r5, [r12, #3296]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
-str r4, [r12, #576]
-ldr r4, [r12, #3396]
-ldr r5, [r12, #3300]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
-str r4, [r12, #580]
-ldr r4, [r12, #3400]
-ldr r5, [r12, #3304]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
-str r4, [r12, #584]
-ldr r4, [r12, #3404]
-ldr r5, [r12, #3308]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
-str r4, [r12, #588]
-ldr r4, [r12, #3408]
-ldr r5, [r12, #3312]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
-str r4, [r12, #592]
-ldr r4, [r12, #3412]
-ldr r5, [r12, #3316]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
-str r4, [r12, #596]
-ldr r4, [r12, #3416]
-ldr r5, [r12, #3320]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
-str r4, [r12, #600]
-ldr r4, [r12, #3420]
-ldr r5, [r12, #3324]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
-str r4, [r12, #604]
-cmp r11, #0
-bne 23b
+mov r10, lr
+mov r0, r12
+bl {vg_p224_mul}
+mov lr, r10
 ldr r4, [r12, #224]
 str r4, [r12, #992]
 ldr r4, [r12, #228]
@@ -940,7 +638,7 @@ str r4, [r12, #1016]
 ldr r4, [r12, #252]
 str r4, [r12, #1020]
 mov r11, #256
-24:
+23:
 sub r11, r11, #1
 mov r10, lr
 mov r0, r12
@@ -1010,7 +708,7 @@ and r5, r5, r10
 eor r4, r4, r5
 str r4, [r12, #1020]
 cmp r11, #0
-bne 24b
+bne 23b
 mov r10, lr
 mov r0, r12
 movw r1, #1152
@@ -1362,7 +1060,7 @@ str r4, [r12, #1016]
 ldr r4, [r12, #444]
 str r4, [r12, #1020]
 mov r11, #256
-25:
+24:
 sub r11, r11, #1
 mov r10, lr
 mov r0, r12
@@ -1432,7 +1130,7 @@ and r5, r5, r10
 eor r4, r4, r5
 str r4, [r12, #1020]
 cmp r11, #0
-bne 25b
+bne 24b
 mov r10, lr
 mov r0, r12
 movw r1, #1280
@@ -1574,8 +1272,7 @@ ldr r10, [r12, #24]
 ldr r11, [r12, #28]
 ldr lr, [r12, #32]
 bx lr",
-        vg_p224_point_double = sym super::p224_point::vg_p224_point_double,
-        vg_p224_point_add = sym super::p224_point::vg_p224_point_add,
+        vg_p224_mul = sym super::p224_mul::vg_p224_mul,
         vg_p224_mul_mod_p = sym super::p224_mont::vg_p224_mul_mod_p,
         vg_p224_add_mod_n = sym super::p224_mont::vg_p224_add_mod_n,
         vg_p224_mul_mod_n = sym super::p224_mont::vg_p224_mul_mod_n,
@@ -1586,7 +1283,7 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
 ///
-/// The function is `vg_ecdsa_p224_sign`'s setup, field arithmetic, ladder and inversions, with `vg_ecdh_p224`'s checks of the public key: it saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`; field elements and scalars are sixteen 16-bit digits in Montgomery form, multiplied by digit-by-digit Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_p224_mul_mod_p` and the other functions of `p224_mont`) with a final conditional subtraction. The key is checked without branches (its first byte, both coordinates below `p`, and the curve's equation), and the second ladder multiplies the key's point if it is valid, else `G`, so it always runs on a point of the curve. `s⁻¹` modulo `n` and `Z⁻¹` are Fermat's, by square-and-always-multiply; `[u]G` and `[v]Q` are double-and-add ladders over all 224 bits of `u` and `v`, with the complete addition formulas of Renes, Costello and Batina (calls of `vg_p224_point_double` and `vg_p224_point_add` in the ladders), which also add the two. The result is the conjunction of the checks (the key, `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `x ≡ r` modulo `n`) as a mask, so the time depends only on the pointers, although the contract would let every input affect it.
+/// The function is `vg_ecdsa_p224_sign`'s setup, field arithmetic, ladder and inversions, with `vg_ecdh_p224`'s checks of the public key: it saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`; field elements and scalars are sixteen 16-bit digits in Montgomery form, multiplied by digit-by-digit Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_p224_mul_mod_p` and the other functions of `p224_mont`) with a final conditional subtraction. The key is checked without branches (its first byte, both coordinates below `p`, and the curve's equation), and the second ladder multiplies the key's point if it is valid, else `G`, so it always runs on a point of the curve. `s⁻¹` modulo `n` and `Z⁻¹` are Fermat's, by square-and-always-multiply; `[u]G` and `[v]Q` are calls of `vg_p224_mul`, double-and-add ladders over all 224 bits of `u` and `v`, with the complete addition formulas of Renes, Costello and Batina (calls of `vg_p224_point_double` and `vg_p224_point_add` in the ladders), which also add the two. The result is the conjunction of the checks (the key, `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `x ≡ r` modulo `n`) as a mask, so the time depends only on the pointers, although the contract would let every input affect it.
 ///
 /// # Safety
 ///
@@ -3134,376 +2831,58 @@ movw r2, #1408
 movw r3, #192
 bl {vg_p224_mul_mod_n}
 mov lr, r10
-mov r11, #32
-24:
-sub r11, r11, #1
-add r4, r12, r11
-ldrb r4, [r4, #1152]
-add r5, r12, r11, lsl #3
-add r5, r5, #4096
-and r7, r4, #1
-strb r7, [r5, #0]
-lsr r7, r4, #1
-and r7, r7, #1
-strb r7, [r5, #1]
-lsr r7, r4, #2
-and r7, r7, #1
-strb r7, [r5, #2]
-lsr r7, r4, #3
-and r7, r7, #1
-strb r7, [r5, #3]
-lsr r7, r4, #4
-and r7, r7, #1
-strb r7, [r5, #4]
-lsr r7, r4, #5
-and r7, r7, #1
-strb r7, [r5, #5]
-lsr r7, r4, #6
-and r7, r7, #1
-strb r7, [r5, #6]
-lsr r7, r4, #7
-and r7, r7, #1
-strb r7, [r5, #7]
-cmp r11, #0
-bne 24b
+ldr r4, [r12, #1152]
+str r4, [r12, #1056]
+ldr r4, [r12, #1156]
+str r4, [r12, #1060]
+ldr r4, [r12, #1160]
+str r4, [r12, #1064]
+ldr r4, [r12, #1164]
+str r4, [r12, #1068]
+ldr r4, [r12, #1168]
+str r4, [r12, #1072]
+ldr r4, [r12, #1172]
+str r4, [r12, #1076]
+ldr r4, [r12, #1176]
+str r4, [r12, #1080]
+ldr r4, [r12, #1180]
+str r4, [r12, #1084]
 ldr r4, [r12, #320]
-str r4, [r12, #3424]
-ldr r4, [r12, #324]
-str r4, [r12, #3428]
-ldr r4, [r12, #328]
-str r4, [r12, #3432]
-ldr r4, [r12, #332]
-str r4, [r12, #3436]
-ldr r4, [r12, #336]
-str r4, [r12, #3440]
-ldr r4, [r12, #340]
-str r4, [r12, #3444]
-ldr r4, [r12, #344]
-str r4, [r12, #3448]
-ldr r4, [r12, #348]
-str r4, [r12, #3452]
-ldr r4, [r12, #352]
-str r4, [r12, #3456]
-ldr r4, [r12, #356]
-str r4, [r12, #3460]
-ldr r4, [r12, #360]
-str r4, [r12, #3464]
-ldr r4, [r12, #364]
-str r4, [r12, #3468]
-ldr r4, [r12, #368]
-str r4, [r12, #3472]
-ldr r4, [r12, #372]
-str r4, [r12, #3476]
-ldr r4, [r12, #376]
-str r4, [r12, #3480]
-ldr r4, [r12, #380]
-str r4, [r12, #3484]
-ldr r4, [r12, #224]
-str r4, [r12, #3488]
-ldr r4, [r12, #228]
-str r4, [r12, #3492]
-ldr r4, [r12, #232]
-str r4, [r12, #3496]
-ldr r4, [r12, #236]
-str r4, [r12, #3500]
-ldr r4, [r12, #240]
-str r4, [r12, #3504]
-ldr r4, [r12, #244]
-str r4, [r12, #3508]
-ldr r4, [r12, #248]
-str r4, [r12, #3512]
-ldr r4, [r12, #252]
-str r4, [r12, #3516]
-ldr r4, [r12, #256]
-str r4, [r12, #3520]
-ldr r4, [r12, #260]
-str r4, [r12, #3524]
-ldr r4, [r12, #264]
-str r4, [r12, #3528]
-ldr r4, [r12, #268]
-str r4, [r12, #3532]
-ldr r4, [r12, #272]
-str r4, [r12, #3536]
-ldr r4, [r12, #276]
-str r4, [r12, #3540]
-ldr r4, [r12, #280]
-str r4, [r12, #3544]
-ldr r4, [r12, #284]
-str r4, [r12, #3548]
-ldr r4, [r12, #288]
-str r4, [r12, #3552]
-ldr r4, [r12, #292]
-str r4, [r12, #3556]
-ldr r4, [r12, #296]
-str r4, [r12, #3560]
-ldr r4, [r12, #300]
-str r4, [r12, #3564]
-ldr r4, [r12, #304]
-str r4, [r12, #3568]
-ldr r4, [r12, #308]
-str r4, [r12, #3572]
-ldr r4, [r12, #312]
-str r4, [r12, #3576]
-ldr r4, [r12, #316]
-str r4, [r12, #3580]
-mov r11, #224
-25:
-sub r11, r11, #1
-ldr r4, [r12, #512]
-str r4, [r12, #3328]
-ldr r4, [r12, #516]
-str r4, [r12, #3332]
-ldr r4, [r12, #520]
-str r4, [r12, #3336]
-ldr r4, [r12, #524]
-str r4, [r12, #3340]
-ldr r4, [r12, #528]
-str r4, [r12, #3344]
-ldr r4, [r12, #532]
-str r4, [r12, #3348]
-ldr r4, [r12, #536]
-str r4, [r12, #3352]
-ldr r4, [r12, #540]
-str r4, [r12, #3356]
-ldr r4, [r12, #544]
-str r4, [r12, #3360]
-ldr r4, [r12, #548]
-str r4, [r12, #3364]
-ldr r4, [r12, #552]
-str r4, [r12, #3368]
-ldr r4, [r12, #556]
-str r4, [r12, #3372]
-ldr r4, [r12, #560]
-str r4, [r12, #3376]
-ldr r4, [r12, #564]
-str r4, [r12, #3380]
-ldr r4, [r12, #568]
-str r4, [r12, #3384]
-ldr r4, [r12, #572]
-str r4, [r12, #3388]
-ldr r4, [r12, #576]
-str r4, [r12, #3392]
-ldr r4, [r12, #580]
-str r4, [r12, #3396]
-ldr r4, [r12, #584]
-str r4, [r12, #3400]
-ldr r4, [r12, #588]
-str r4, [r12, #3404]
-ldr r4, [r12, #592]
-str r4, [r12, #3408]
-ldr r4, [r12, #596]
-str r4, [r12, #3412]
-ldr r4, [r12, #600]
-str r4, [r12, #3416]
-ldr r4, [r12, #604]
-str r4, [r12, #3420]
-mov r10, lr
-mov r0, r12
-bl {vg_p224_point_double}
-mov lr, r10
-ldr r4, [r12, #3232]
-str r4, [r12, #3328]
-ldr r4, [r12, #3236]
-str r4, [r12, #3332]
-ldr r4, [r12, #3240]
-str r4, [r12, #3336]
-ldr r4, [r12, #3244]
-str r4, [r12, #3340]
-ldr r4, [r12, #3248]
-str r4, [r12, #3344]
-ldr r4, [r12, #3252]
-str r4, [r12, #3348]
-ldr r4, [r12, #3256]
-str r4, [r12, #3352]
-ldr r4, [r12, #3260]
-str r4, [r12, #3356]
-ldr r4, [r12, #3264]
-str r4, [r12, #3360]
-ldr r4, [r12, #3268]
-str r4, [r12, #3364]
-ldr r4, [r12, #3272]
-str r4, [r12, #3368]
-ldr r4, [r12, #3276]
-str r4, [r12, #3372]
-ldr r4, [r12, #3280]
-str r4, [r12, #3376]
-ldr r4, [r12, #3284]
-str r4, [r12, #3380]
-ldr r4, [r12, #3288]
-str r4, [r12, #3384]
-ldr r4, [r12, #3292]
-str r4, [r12, #3388]
-ldr r4, [r12, #3296]
-str r4, [r12, #3392]
-ldr r4, [r12, #3300]
-str r4, [r12, #3396]
-ldr r4, [r12, #3304]
-str r4, [r12, #3400]
-ldr r4, [r12, #3308]
-str r4, [r12, #3404]
-ldr r4, [r12, #3312]
-str r4, [r12, #3408]
-ldr r4, [r12, #3316]
-str r4, [r12, #3412]
-ldr r4, [r12, #3320]
-str r4, [r12, #3416]
-ldr r4, [r12, #3324]
-str r4, [r12, #3420]
-mov r10, lr
-mov r0, r12
-bl {vg_p224_point_add}
-mov lr, r10
-add r4, r12, r11
-add r4, r4, #4096
-ldrb r4, [r4, #0]
-mov r5, #0
-sub r10, r5, r4
-ldr r4, [r12, #3328]
-ldr r5, [r12, #3232]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
 str r4, [r12, #512]
-ldr r4, [r12, #3332]
-ldr r5, [r12, #3236]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #324]
 str r4, [r12, #516]
-ldr r4, [r12, #3336]
-ldr r5, [r12, #3240]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #328]
 str r4, [r12, #520]
-ldr r4, [r12, #3340]
-ldr r5, [r12, #3244]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #332]
 str r4, [r12, #524]
-ldr r4, [r12, #3344]
-ldr r5, [r12, #3248]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #336]
 str r4, [r12, #528]
-ldr r4, [r12, #3348]
-ldr r5, [r12, #3252]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #340]
 str r4, [r12, #532]
-ldr r4, [r12, #3352]
-ldr r5, [r12, #3256]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #344]
 str r4, [r12, #536]
-ldr r4, [r12, #3356]
-ldr r5, [r12, #3260]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #348]
 str r4, [r12, #540]
-ldr r4, [r12, #3360]
-ldr r5, [r12, #3264]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #352]
 str r4, [r12, #544]
-ldr r4, [r12, #3364]
-ldr r5, [r12, #3268]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #356]
 str r4, [r12, #548]
-ldr r4, [r12, #3368]
-ldr r5, [r12, #3272]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #360]
 str r4, [r12, #552]
-ldr r4, [r12, #3372]
-ldr r5, [r12, #3276]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #364]
 str r4, [r12, #556]
-ldr r4, [r12, #3376]
-ldr r5, [r12, #3280]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #368]
 str r4, [r12, #560]
-ldr r4, [r12, #3380]
-ldr r5, [r12, #3284]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #372]
 str r4, [r12, #564]
-ldr r4, [r12, #3384]
-ldr r5, [r12, #3288]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #376]
 str r4, [r12, #568]
-ldr r4, [r12, #3388]
-ldr r5, [r12, #3292]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #380]
 str r4, [r12, #572]
-ldr r4, [r12, #3392]
-ldr r5, [r12, #3296]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
-str r4, [r12, #576]
-ldr r4, [r12, #3396]
-ldr r5, [r12, #3300]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
-str r4, [r12, #580]
-ldr r4, [r12, #3400]
-ldr r5, [r12, #3304]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
-str r4, [r12, #584]
-ldr r4, [r12, #3404]
-ldr r5, [r12, #3308]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
-str r4, [r12, #588]
-ldr r4, [r12, #3408]
-ldr r5, [r12, #3312]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
-str r4, [r12, #592]
-ldr r4, [r12, #3412]
-ldr r5, [r12, #3316]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
-str r4, [r12, #596]
-ldr r4, [r12, #3416]
-ldr r5, [r12, #3320]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
-str r4, [r12, #600]
-ldr r4, [r12, #3420]
-ldr r5, [r12, #3324]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
-str r4, [r12, #604]
-cmp r11, #0
-bne 25b
+mov r10, lr
+mov r0, r12
+bl {vg_p224_mul}
+mov lr, r10
 ldr r4, [r12, #512]
 str r4, [r12, #1376]
 ldr r4, [r12, #516]
@@ -3624,376 +3003,58 @@ str r4, [r12, #600]
 movw r4, #0
 movt r4, #0
 str r4, [r12, #604]
-mov r11, #32
-26:
-sub r11, r11, #1
-add r4, r12, r11
-ldrb r4, [r4, #1184]
-add r5, r12, r11, lsl #3
-add r5, r5, #4096
-and r7, r4, #1
-strb r7, [r5, #0]
-lsr r7, r4, #1
-and r7, r7, #1
-strb r7, [r5, #1]
-lsr r7, r4, #2
-and r7, r7, #1
-strb r7, [r5, #2]
-lsr r7, r4, #3
-and r7, r7, #1
-strb r7, [r5, #3]
-lsr r7, r4, #4
-and r7, r7, #1
-strb r7, [r5, #4]
-lsr r7, r4, #5
-and r7, r7, #1
-strb r7, [r5, #5]
-lsr r7, r4, #6
-and r7, r7, #1
-strb r7, [r5, #6]
-lsr r7, r4, #7
-and r7, r7, #1
-strb r7, [r5, #7]
-cmp r11, #0
-bne 26b
+ldr r4, [r12, #1184]
+str r4, [r12, #1056]
+ldr r4, [r12, #1188]
+str r4, [r12, #1060]
+ldr r4, [r12, #1192]
+str r4, [r12, #1064]
+ldr r4, [r12, #1196]
+str r4, [r12, #1068]
+ldr r4, [r12, #1200]
+str r4, [r12, #1072]
+ldr r4, [r12, #1204]
+str r4, [r12, #1076]
+ldr r4, [r12, #1208]
+str r4, [r12, #1080]
+ldr r4, [r12, #1212]
+str r4, [r12, #1084]
 ldr r4, [r12, #1280]
-str r4, [r12, #3424]
-ldr r4, [r12, #1284]
-str r4, [r12, #3428]
-ldr r4, [r12, #1288]
-str r4, [r12, #3432]
-ldr r4, [r12, #1292]
-str r4, [r12, #3436]
-ldr r4, [r12, #1296]
-str r4, [r12, #3440]
-ldr r4, [r12, #1300]
-str r4, [r12, #3444]
-ldr r4, [r12, #1304]
-str r4, [r12, #3448]
-ldr r4, [r12, #1308]
-str r4, [r12, #3452]
-ldr r4, [r12, #1440]
-str r4, [r12, #3456]
-ldr r4, [r12, #1444]
-str r4, [r12, #3460]
-ldr r4, [r12, #1448]
-str r4, [r12, #3464]
-ldr r4, [r12, #1452]
-str r4, [r12, #3468]
-ldr r4, [r12, #1456]
-str r4, [r12, #3472]
-ldr r4, [r12, #1460]
-str r4, [r12, #3476]
-ldr r4, [r12, #1464]
-str r4, [r12, #3480]
-ldr r4, [r12, #1468]
-str r4, [r12, #3484]
-ldr r4, [r12, #224]
-str r4, [r12, #3488]
-ldr r4, [r12, #228]
-str r4, [r12, #3492]
-ldr r4, [r12, #232]
-str r4, [r12, #3496]
-ldr r4, [r12, #236]
-str r4, [r12, #3500]
-ldr r4, [r12, #240]
-str r4, [r12, #3504]
-ldr r4, [r12, #244]
-str r4, [r12, #3508]
-ldr r4, [r12, #248]
-str r4, [r12, #3512]
-ldr r4, [r12, #252]
-str r4, [r12, #3516]
-ldr r4, [r12, #256]
-str r4, [r12, #3520]
-ldr r4, [r12, #260]
-str r4, [r12, #3524]
-ldr r4, [r12, #264]
-str r4, [r12, #3528]
-ldr r4, [r12, #268]
-str r4, [r12, #3532]
-ldr r4, [r12, #272]
-str r4, [r12, #3536]
-ldr r4, [r12, #276]
-str r4, [r12, #3540]
-ldr r4, [r12, #280]
-str r4, [r12, #3544]
-ldr r4, [r12, #284]
-str r4, [r12, #3548]
-ldr r4, [r12, #288]
-str r4, [r12, #3552]
-ldr r4, [r12, #292]
-str r4, [r12, #3556]
-ldr r4, [r12, #296]
-str r4, [r12, #3560]
-ldr r4, [r12, #300]
-str r4, [r12, #3564]
-ldr r4, [r12, #304]
-str r4, [r12, #3568]
-ldr r4, [r12, #308]
-str r4, [r12, #3572]
-ldr r4, [r12, #312]
-str r4, [r12, #3576]
-ldr r4, [r12, #316]
-str r4, [r12, #3580]
-mov r11, #224
-27:
-sub r11, r11, #1
-ldr r4, [r12, #512]
-str r4, [r12, #3328]
-ldr r4, [r12, #516]
-str r4, [r12, #3332]
-ldr r4, [r12, #520]
-str r4, [r12, #3336]
-ldr r4, [r12, #524]
-str r4, [r12, #3340]
-ldr r4, [r12, #528]
-str r4, [r12, #3344]
-ldr r4, [r12, #532]
-str r4, [r12, #3348]
-ldr r4, [r12, #536]
-str r4, [r12, #3352]
-ldr r4, [r12, #540]
-str r4, [r12, #3356]
-ldr r4, [r12, #544]
-str r4, [r12, #3360]
-ldr r4, [r12, #548]
-str r4, [r12, #3364]
-ldr r4, [r12, #552]
-str r4, [r12, #3368]
-ldr r4, [r12, #556]
-str r4, [r12, #3372]
-ldr r4, [r12, #560]
-str r4, [r12, #3376]
-ldr r4, [r12, #564]
-str r4, [r12, #3380]
-ldr r4, [r12, #568]
-str r4, [r12, #3384]
-ldr r4, [r12, #572]
-str r4, [r12, #3388]
-ldr r4, [r12, #576]
-str r4, [r12, #3392]
-ldr r4, [r12, #580]
-str r4, [r12, #3396]
-ldr r4, [r12, #584]
-str r4, [r12, #3400]
-ldr r4, [r12, #588]
-str r4, [r12, #3404]
-ldr r4, [r12, #592]
-str r4, [r12, #3408]
-ldr r4, [r12, #596]
-str r4, [r12, #3412]
-ldr r4, [r12, #600]
-str r4, [r12, #3416]
-ldr r4, [r12, #604]
-str r4, [r12, #3420]
-mov r10, lr
-mov r0, r12
-bl {vg_p224_point_double}
-mov lr, r10
-ldr r4, [r12, #3232]
-str r4, [r12, #3328]
-ldr r4, [r12, #3236]
-str r4, [r12, #3332]
-ldr r4, [r12, #3240]
-str r4, [r12, #3336]
-ldr r4, [r12, #3244]
-str r4, [r12, #3340]
-ldr r4, [r12, #3248]
-str r4, [r12, #3344]
-ldr r4, [r12, #3252]
-str r4, [r12, #3348]
-ldr r4, [r12, #3256]
-str r4, [r12, #3352]
-ldr r4, [r12, #3260]
-str r4, [r12, #3356]
-ldr r4, [r12, #3264]
-str r4, [r12, #3360]
-ldr r4, [r12, #3268]
-str r4, [r12, #3364]
-ldr r4, [r12, #3272]
-str r4, [r12, #3368]
-ldr r4, [r12, #3276]
-str r4, [r12, #3372]
-ldr r4, [r12, #3280]
-str r4, [r12, #3376]
-ldr r4, [r12, #3284]
-str r4, [r12, #3380]
-ldr r4, [r12, #3288]
-str r4, [r12, #3384]
-ldr r4, [r12, #3292]
-str r4, [r12, #3388]
-ldr r4, [r12, #3296]
-str r4, [r12, #3392]
-ldr r4, [r12, #3300]
-str r4, [r12, #3396]
-ldr r4, [r12, #3304]
-str r4, [r12, #3400]
-ldr r4, [r12, #3308]
-str r4, [r12, #3404]
-ldr r4, [r12, #3312]
-str r4, [r12, #3408]
-ldr r4, [r12, #3316]
-str r4, [r12, #3412]
-ldr r4, [r12, #3320]
-str r4, [r12, #3416]
-ldr r4, [r12, #3324]
-str r4, [r12, #3420]
-mov r10, lr
-mov r0, r12
-bl {vg_p224_point_add}
-mov lr, r10
-add r4, r12, r11
-add r4, r4, #4096
-ldrb r4, [r4, #0]
-mov r5, #0
-sub r10, r5, r4
-ldr r4, [r12, #3328]
-ldr r5, [r12, #3232]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
 str r4, [r12, #512]
-ldr r4, [r12, #3332]
-ldr r5, [r12, #3236]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #1284]
 str r4, [r12, #516]
-ldr r4, [r12, #3336]
-ldr r5, [r12, #3240]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #1288]
 str r4, [r12, #520]
-ldr r4, [r12, #3340]
-ldr r5, [r12, #3244]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #1292]
 str r4, [r12, #524]
-ldr r4, [r12, #3344]
-ldr r5, [r12, #3248]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #1296]
 str r4, [r12, #528]
-ldr r4, [r12, #3348]
-ldr r5, [r12, #3252]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #1300]
 str r4, [r12, #532]
-ldr r4, [r12, #3352]
-ldr r5, [r12, #3256]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #1304]
 str r4, [r12, #536]
-ldr r4, [r12, #3356]
-ldr r5, [r12, #3260]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #1308]
 str r4, [r12, #540]
-ldr r4, [r12, #3360]
-ldr r5, [r12, #3264]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #1440]
 str r4, [r12, #544]
-ldr r4, [r12, #3364]
-ldr r5, [r12, #3268]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #1444]
 str r4, [r12, #548]
-ldr r4, [r12, #3368]
-ldr r5, [r12, #3272]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #1448]
 str r4, [r12, #552]
-ldr r4, [r12, #3372]
-ldr r5, [r12, #3276]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #1452]
 str r4, [r12, #556]
-ldr r4, [r12, #3376]
-ldr r5, [r12, #3280]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #1456]
 str r4, [r12, #560]
-ldr r4, [r12, #3380]
-ldr r5, [r12, #3284]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #1460]
 str r4, [r12, #564]
-ldr r4, [r12, #3384]
-ldr r5, [r12, #3288]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #1464]
 str r4, [r12, #568]
-ldr r4, [r12, #3388]
-ldr r5, [r12, #3292]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
+ldr r4, [r12, #1468]
 str r4, [r12, #572]
-ldr r4, [r12, #3392]
-ldr r5, [r12, #3296]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
-str r4, [r12, #576]
-ldr r4, [r12, #3396]
-ldr r5, [r12, #3300]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
-str r4, [r12, #580]
-ldr r4, [r12, #3400]
-ldr r5, [r12, #3304]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
-str r4, [r12, #584]
-ldr r4, [r12, #3404]
-ldr r5, [r12, #3308]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
-str r4, [r12, #588]
-ldr r4, [r12, #3408]
-ldr r5, [r12, #3312]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
-str r4, [r12, #592]
-ldr r4, [r12, #3412]
-ldr r5, [r12, #3316]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
-str r4, [r12, #596]
-ldr r4, [r12, #3416]
-ldr r5, [r12, #3320]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
-str r4, [r12, #600]
-ldr r4, [r12, #3420]
-ldr r5, [r12, #3324]
-eor r5, r5, r4
-and r5, r5, r10
-eor r4, r4, r5
-str r4, [r12, #604]
-cmp r11, #0
-bne 27b
+mov r10, lr
+mov r0, r12
+bl {vg_p224_mul}
+mov lr, r10
 mov r10, lr
 mov r0, r12
 movw r1, #800
@@ -4339,7 +3400,7 @@ str r4, [r12, #1016]
 ldr r4, [r12, #252]
 str r4, [r12, #1020]
 mov r11, #256
-28:
+24:
 sub r11, r11, #1
 mov r10, lr
 mov r0, r12
@@ -4409,7 +3470,7 @@ and r5, r5, r10
 eor r4, r4, r5
 str r4, [r12, #1020]
 cmp r11, #0
-bne 28b
+bne 24b
 mov r10, lr
 mov r0, r12
 movw r1, #1152
@@ -4505,8 +3566,7 @@ bx lr",
         vg_p224_add_mod_p = sym super::p224_mont::vg_p224_add_mod_p,
         vg_p224_sub_mod_p = sym super::p224_mont::vg_p224_sub_mod_p,
         vg_p224_mul_mod_n = sym super::p224_mont::vg_p224_mul_mod_n,
-        vg_p224_point_double = sym super::p224_point::vg_p224_point_double,
-        vg_p224_point_add = sym super::p224_point::vg_p224_point_add,
+        vg_p224_mul = sym super::p224_mul::vg_p224_mul,
         vg_p224_sub_mod_n = sym super::p224_mont::vg_p224_sub_mod_n,
     )
 }
