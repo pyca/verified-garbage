@@ -34,8 +34,9 @@ structure EntryState (p : GenerationContext) (s : State) : Prop where
 
 theorem EntryState.geometry {p : GenerationContext} {s : State} (h : EntryState p s) : Geo p.geo.F p.geo.hash := by
   have hh := p.geo.small_bound (d := VG.Impl.Dsa.Generation.Layout.hash) (n := oRsa) (by decide) (by decide)
-  exact ⟨p.geo.stackSize, h.frameTop, p.geo.part_bound hh, p.geo.frame_part hh,
-    p.geo.stack_part hh, p.geo.frame_below.symm⟩
+  exact ⟨by have := p.geo.stackSize; omega, h.frameTop, p.geo.part_bound hh, p.geo.frame_part hh,
+    (p.geo.stack_part hh).sub_left (below_sub (a := 16) (by decide) (by decide)),
+    (p.geo.frame_below.sub_right (below_sub (a := 16) (by decide) (by decide))).symm⟩
 
 theorem EntryState.words {p : GenerationContext} {s : State} (h : EntryState p s) (W : Nat → BitVec 64) :
     ∀ k ∈ generationSlots, entryWords s.gpr (VG.Proof.Bignum.word s.mem p.geo.F) W k = p.saved k := by

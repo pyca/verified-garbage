@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Generation.NativeParameters
 @[expose] public section
 namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
-open VG.Proof.RsaOaep.AArch64 VG.Proof.MillerRabin.AArch64 VG.Impl.Dsa.AArch64.Generation
+open VG.Proof.RsaOaep.AArch64 VG.Impl.Dsa.AArch64.Generation
 
 def ParameterPublic.output (p : ParameterPublic) : OutputPublic :=
   ⟨p.context, (p.context.remaining 0 p.randUsed).isSome⟩

@@ -43,7 +43,7 @@ theorem allocated_tape {s : State} (h : GenerationABI s)
     (ptr : Addr) (len : BitVec 64)
     (bound : ptr.toNat + len.toNat ≤ 2 ^ 64)
     (arena : (⟨ptr, len.toNat⟩ : Region).Disjoint ⟨stackArg s 2, (stackArg s 3).toNat * 8⟩)
-    (stack : (below s.sp 464).Disjoint ⟨ptr, len.toNat⟩)
+    (stack : (below s.sp 720).Disjoint ⟨ptr, len.toNat⟩)
     (hin : (⟨ptr, len.toNat⟩ : Region) ∈ s.rd) :
     GenerationTapeMemory (tapeOf h ptr len bound arena stack) (allocState 448 s) where
   cover := by

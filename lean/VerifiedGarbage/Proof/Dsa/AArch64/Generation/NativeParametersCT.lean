@@ -21,7 +21,6 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
 open VG.Impl.Dsa.AArch64.Generation VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64
-open VG.Proof.MillerRabin.AArch64
 
 def ParameterStart (pLen qLen : Nat) (p : ParameterPublic) (s : State) : Prop :=
   (∃ W, GenerationMemory p.context W s ∧ W 16 = BitVec.ofNat 64 p.randUsed) ∧

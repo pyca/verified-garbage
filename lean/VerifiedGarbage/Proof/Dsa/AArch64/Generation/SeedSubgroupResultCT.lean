@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedSubgroup
 namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
 open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
-open VG.Proof.MillerRabin.AArch64
 
 def SeedPublic.subgroupResult (p : SeedPublic) : Option (Bool × List Byte) :=
   Spec.Dsa.probablePrime (Spec.Dsa.qCandidate (8 * p.context.geo.qLen) p.seed.bytes)
@@ -33,14 +32,14 @@ def SeedSubgroupAfter (pLen qLen : Nat) (p : SeedPublic) (s : State) : Prop :=
   (∃ W, GenerationMemory p.context W s ∧ W 19 = p.subgroupStatus) ∧
   (p.subgroupStatus = 1 → SeedPrimeBefore pLen qLen p.afterSubgroup s)
 
-theorem seedSubgroup_after (H : GenerationHashes) (M : Mont) (T : PrimeTest)
+theorem seedSubgroup_after (H : GenerationHashes) (T : PrimeTest)
     {pLen qLen : Nat} {p : SeedPublic} {s : State}
     (h : SeedBefore qLen p s) (hp : p.context.geo.pLen = pLen) :
     WP isa (.seq (.block (Impl.Dsa.AArch64.Generation.seedArguments qLen))
       (Impl.Dsa.AArch64.Generation.subgroup H.sha1 H.sha256 T.run qLen)) s
       (SeedSubgroupAfter pLen qLen p) := by
   obtain ⟨⟨W, hm, h1, h16, h10⟩, seed, he⟩ := h
-  have step := seedSubgroup_ok H M T hm p.seed p.length seed h1 h16 p.bound
+  have step := seedSubgroup_ok H T hm p.seed p.length seed h1 h16 p.bound
   subst qLen
   refine WP.mono step fun t ⟨used', status, bound, ht, bytes, fail, result, ff, rd, wr⟩ => ?_
   have statusEq : status = p.subgroupStatus := by

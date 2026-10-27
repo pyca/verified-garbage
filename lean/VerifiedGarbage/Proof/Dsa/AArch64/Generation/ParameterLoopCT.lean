@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 @[expose] public section
 namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
-open VG.Impl.Dsa.AArch64.Generation VG.Proof.MillerRabin.AArch64
+open VG.Impl.Dsa.AArch64.Generation
 
 theorem parameterIteration_ready (H : GenerationHashes) (M : Mont)  (T : PrimeTest) {pLen qLen : Nat}
     {p : ParameterPublic} {s : State} (h : ParameterBefore pLen qLen p s) :

@@ -13,7 +13,7 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 @[expose] public section
 namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum.AArch64
-open VG.Impl.Dsa.AArch64.Generation VG.Proof.MillerRabin.AArch64
+open VG.Impl.Dsa.AArch64.Generation
 
 theorem parameterIteration_ct_of (H : GenerationHashes) (M : Mont) (T : PrimeTest) (pLen qLen : Nat)
     (sizes : GenerationSizes pLen qLen)

@@ -18,7 +18,7 @@ open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch6
 open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
 open VG.Proof.MillerRabin.AArch64
 
-theorem seedSubgroup_ok (H : GenerationHashes) (M : Mont) (T : PrimeTest)
+theorem seedSubgroup_ok (H : GenerationHashes) (T : PrimeTest)
     {p : GenerationContext} {W : Nat → BitVec 64} {s : State}
     (h : GenerationMemory p W s) (seed : GenerationTape p.geo) (hlen : seed.bytes.length = p.geo.qLen)
     (hseed : GenerationTapeMemory seed s) (h1 : W 1 = seed.ptr) {used : Nat}
@@ -41,7 +41,7 @@ theorem seedSubgroup_ok (H : GenerationHashes) (M : Mont) (T : PrimeTest)
   have h25 : seedWords W p.geo.qLen 25 = seed.ptr := by simp [seedWords, upd, h1]
   have h16u : seedWords W p.geo.qLen 16 = BitVec.ofNat 64 used := by simpa [seedWords, upd] using h16
   have state := huMem.subgroupState seed hlen hseedU h0 h25 h16u hu
-  refine WP.mono (subgroup_ok H.h1 H.h256 H.hash1 H.hash256 H.size1 H.size256 H.width1 H.width256 M T state)
+  refine WP.mono (subgroup_ok H.h1 H.h256 H.hash1 H.hash256 H.size1 H.size256 H.width1 H.width256 T state)
     fun t ⟨used', status, Vt, bound, Lt, Rt, bytes, fail, result, ft, rd, wr⟩ => ?_
   have ff := huMem.subgroup_frame seed hlen h0 ft
   refine ⟨used', status, bound, huMem.frame Lt ⟨Vt, Rt⟩ ?_ ff rd wr,

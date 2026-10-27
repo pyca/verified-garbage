@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedAttempt
 @[expose] public section
 namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
-open VG.Impl.Dsa.AArch64.Generation VG.Proof.RsaOaep.AArch64 VG.Proof.MillerRabin.AArch64
+open VG.Impl.Dsa.AArch64.Generation VG.Proof.RsaOaep.AArch64
 
 def ParameterPublic.result (p : ParameterPublic) : Option (Option Spec.Dsa.Params × List Byte) :=
   VG.Proof.Dsa.Generation.seedResult (8 * p.context.geo.pLen) (8 * p.context.geo.qLen)

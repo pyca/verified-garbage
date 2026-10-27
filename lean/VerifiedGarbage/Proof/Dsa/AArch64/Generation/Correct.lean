@@ -13,9 +13,9 @@ namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum.AArch64 VG.Proof.MillerRabin.AArch64
 
 theorem generation_correct (H : GenerationHashes) (M : Mont) (T : PrimeTest)
-    (s : State) (pre : (Spec.Dsa.generateParametersContract abi 464).pre s) :
+    (s : State) (pre : (Spec.Dsa.generateParametersContract abi 720).pre s) :
     ∃ trace t, Exec isa (Impl.Dsa.AArch64.Generation.code H.sha1 H.sha256 M.mm T.run) s trace t ∧
-      abiPreserved s t ∧ (Spec.Dsa.generateParametersContract abi 464).post s t := by
+      abiPreserved s t ∧ (Spec.Dsa.generateParametersContract abi 720).post s t := by
   obtain ⟨trace, t, he, result, habi, _, _⟩ := entryRun_ok H M T (generationABI_of pre)
   exact ⟨trace, t, he, habi, entry_shared_post result⟩
 

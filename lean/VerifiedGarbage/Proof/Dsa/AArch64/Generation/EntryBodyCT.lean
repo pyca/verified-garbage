@@ -17,7 +17,7 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 @[expose] public section
 namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum.AArch64
-open VG.Proof.RsaOaep.AArch64 VG.Proof.MillerRabin.AArch64 VG.Impl.Dsa.AArch64.Generation
+open VG.Proof.RsaOaep.AArch64 VG.Impl.Dsa.AArch64.Generation
 
 def EntryBefore (p : ParameterPublic) (s : State) : Prop :=
   EntryState p.context s ∧ p.randUsed = 0

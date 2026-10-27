@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SubgroupCTState
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SourceFrame
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QBuild
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 
 /-! # Hash and shape the subgroup candidate before the native primality call -/
 
@@ -16,7 +18,7 @@ open VG.Impl.Dsa.AArch64.Generation
 theorem subgroup_candidate_ready (H : GenerationHashes)
     {p : SubgroupPublic} {s : State} (h : SubgroupBefore p s) :
     WP isa (qCandidate H.sha1 H.sha256) s fun t =>
-      PrimeFrameInputs p.call t ∧ Scr t p.plan.prime.B p.plan.prime.Z := by
+      PrimeTestBefore (8 * p.plan.prime.len) p.primeCall t := by
   obtain ⟨W, hw, hs⟩ := h
   let q := p.plan.withWords W hw
   have plen : p.plan.prime.len ≤ 32 := by rcases p.plan.width with h | h <;> omega
@@ -31,32 +33,33 @@ theorem subgroup_candidate_ready (H : GenerationHashes)
     have se : Spec.Rsa.bytesAt s.mem p.plan.seedPtr p.plan.prime.len = p.plan.seed := hs.seed
     rw [tq, se]
     exact congrArg (Spec.Dsa.encodeBE p.plan.prime.len) p.plan.modulus.symm
-  refine ⟨?_, hs.scratch.congr step.wr⟩
-  refine ⟨L.sp, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, hs.usedBound⟩
-  · intro k hk
-    exact L.ld (by unfold frameBytes; omega)
-  · exact (R'.fr 5 (by decide)).trans (hw 5 (by simp))
-  · exact (R'.fr 14 (by decide)).trans q.tapePtr
-  · exact (R'.fr 15 (by decide)).trans q.tapeLength
-  · exact (R'.fr 16 (by decide)).trans hs.usedSlot
-  · exact source_of_frame hs.tape ff p.plan.tapeHash p.plan.prime.randMax step.rd step.wr
-  · refine ⟨?_, ?_, ?_⟩
-    · intro i hi
-      have hi' : i < p.plan.prime.len := by
-        simpa only [SubgroupPublic.call, VG.Proof.Dsa.encodeBE_length] using hi
-      have w : InRegions t.wr (VG.Proof.Bignum.off p.plan.output i) 1 := by rw [step.wr]; exact hs.outputWrite i hi'
-      obtain ⟨r, hr, hc⟩ := w
-      exact ⟨r, List.mem_append_right _ hr, hc⟩
-    · intro i hi
-      simp only [SubgroupPublic.call] at hi ⊢
-      change t.mem (VG.Proof.Bignum.off p.plan.output i) = (Spec.Dsa.encodeBE p.plan.prime.len p.plan.prime.N)[i]
-      rw [List.getElem_eq_getD (0 : Byte), ← bt]
-      have hi' : i < p.plan.prime.len := by
-        simpa only [SubgroupPublic.call, VG.Proof.Dsa.encodeBE_length] using hi
-      simp [Spec.Rsa.bytesAt, VG.Proof.Bignum.off, List.getD_eq_getElem?_getD, hi']
-    · intro i hi
-      exact p.plan.outputOutside i (by
-        simpa only [SubgroupPublic.call, VG.Proof.Dsa.encodeBE_length] using hi)
-  · intro i hi; rw [step.wr]; exact hs.witnessWrite i hi
+  have hc : Impl.Dsa.AArch64.ProbablePrime.candidate (8 * p.plan.prime.len) = Impl.Dsa.Generation.Layout.q := by
+    unfold Impl.Dsa.AArch64.ProbablePrime.candidate
+    rcases p.plan.width with hh | hh <;> rw [hh] <;> decide
+  have h5 := hw 5 (by simp)
+  exact ⟨W, V', {
+    layout := L
+    rep := R'
+    arena := h5
+    arenaWrite := by have := hs.arena.congr step.wr; rwa [show q.W 5 = p.plan.W 5 from h5] at this
+    tapePtr := q.tapePtr
+    tapeLength := q.tapeLength
+    usedSlot := hs.usedSlot
+    usedBound := hs.usedBound
+    tapeSize := p.plan.prime.randMax
+    tapeCover := by rw [step.rd, step.wr]; exact hs.tapeCover
+    tapeBytes := bytes_of_src (source_of_frame hs.tape ff p.plan.tapeHash p.plan.prime.randMax step.rd step.wr)
+    candidate := by
+      rw [hc, Nat.mul_div_cancel_left _ (by decide)]
+      change Spec.Dsa.decodeBE (Spec.Rsa.bytesAt t.mem
+        (p.plan.W 5 + BitVec.ofNat 64 Impl.Dsa.Generation.Layout.q) p.plan.prime.len) = p.plan.prime.N
+      rw [p.plan.outputPtr, bt, VG.Proof.Dsa.decodeBE_os2ip]
+      exact p.plan.encoding
+    odd := by
+      change p.plan.prime.N % 2 = 1
+      rw [p.plan.modulus]
+      exact (VG.Proof.Dsa.Generation.qCandidate_shape
+        (show 2 ≤ 8 * p.plan.prime.len by rcases p.plan.width with hh | hh <;> omega) p.plan.seed).1
+    bitLen := p.plan.bits }⟩
 
 end VG.Proof.Dsa.AArch64.Generation

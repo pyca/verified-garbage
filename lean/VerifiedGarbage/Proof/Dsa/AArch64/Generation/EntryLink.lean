@@ -18,9 +18,9 @@ namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
 open VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
 
-theorem link_sub (s : State) : Region.Sub (linkRegion s) (below s.sp 464) := by
+theorem link_sub (s : State) : Region.Sub (linkRegion s) (below s.sp 720) := by
   intro a ha
-  apply Offset.sub_below s.sp (a := 448) (n := 448) (b := 464) (m := 464) (by decide) (by decide)
+  apply Offset.sub_below s.sp (a := 448) (n := 448) (b := 720) (m := 720) (by decide) (by decide)
   exact Offset.sub_base (generationBase s) (d := 296) (n := 152) (k := 448) (by decide) a ha
 
 theorem link_frame (s : State) : Frame [linkRegion s] s.mem (linkState s).mem := by
@@ -40,7 +40,7 @@ theorem link_frame (s : State) : Frame [linkRegion s] s.mem (linkState s).mem :=
 theorem link_tape {s : State} (h : GenerationABI s) (ptr : Addr) (len : BitVec 64)
     (bound : ptr.toNat + len.toNat ≤ 2 ^ 64)
     (arena : (⟨ptr, len.toNat⟩ : Region).Disjoint ⟨stackArg s 2, (stackArg s 3).toNat * 8⟩)
-    (stack : (below s.sp 464).Disjoint ⟨ptr, len.toNat⟩)
+    (stack : (below s.sp 720).Disjoint ⟨ptr, len.toNat⟩)
     (hin : (⟨ptr, len.toNat⟩ : Region) ∈ s.rd) :
     GenerationTapeMemory (tapeOf h ptr len bound arena stack) (linkState s) where
   cover := (allocated_tape h ptr len bound arena stack hin).cover

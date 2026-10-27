@@ -16,7 +16,6 @@ import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
 open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Layout
-open VG.Proof.MillerRabin.AArch64
 
 theorem seedPrimeFinish_ok (H : GenerationHashes) (M : Mont) (T : PrimeTest)
     {p : GenerationContext} {W : Nat → BitVec 64} {s : State}
@@ -36,7 +35,7 @@ theorem seedPrimeFinish_ok (H : GenerationHashes) (M : Mont) (T : PrimeTest)
     have shape := VG.Proof.Dsa.Generation.qCandidate_shape
       (by rcases p.geo.qWidth with hh | hh <;> omega : 2 ≤ 8 * p.geo.qLen) seed.bytes
     simpa only [show (256 : Nat) = 2 ^ 8 by decide, ← Nat.pow_mul] using shape.2.2
-  refine WP.seq (WP.mono (seedPrime_ok H M T h seed hlen hseed h1 hq h16 hu)
+  refine WP.seq (WP.mono (seedPrime_ok H T h seed hlen hseed h1 hq h16 hu)
     fun u ⟨Wu, usedu, huu, mu, u16, slots, bqu, result, fu, ru, wu⟩ => ?_)
   rcases result with ⟨h19, hr⟩ | ⟨h19, value, hr, domain, bp, be⟩ | ⟨h19, hr⟩
   · apply onSuccess_generation_ok mu
