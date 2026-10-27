@@ -59,13 +59,21 @@ def write : Prog isa :=
 
 def fail : Prog isa := .block [.mov .eax (.imm 0)]
 
-def encodeHash (h : Hash) : Prog isa :=
-  .seq (lens h) (.seq (.block [.alu .cmp .ebp (.reg .eax)])
+/-- For a number that names no hash function: a `tLen` longer than every
+modulus, so that the length check fails. -/
+def noLens : Prog isa := .block [.mov .ebx (.imm 2048), .mov .eax (.imm 0)]
+
+/-- The length checks, then `write`: zero if the digest's length `ebp` is
+not `hLen` (`eax`) or `k` (`ecx`) is less than `tLen + 11` (`ebx + 11`). -/
+def checked : Prog isa :=
+  .seq (.block [.alu .cmp .ebp (.reg .eax)])
     (.ite .ne fail
       (.seq (.block [.mov .eax (.reg .ebx), .alu .add .eax (.imm 11), .alu .cmp .ecx (.reg .eax)])
-        (.ite .b fail write))))
+        (.ite .b fail write)))
 
-def encode : Prog isa := dispatch (fun _ h => encodeHash h) fail hashes 0
+/-- The hash function's lengths, chosen by its number, then one copy of the
+checks and the encoding, whose prefix alone is chosen again. -/
+def encode : Prog isa := .seq (dispatch (fun _ h => lens h) noLens hashes 0) checked
 
 /-- OR all byte differences into EBP, using the core's verified byte loop. -/
 def compare : Prog isa :=
