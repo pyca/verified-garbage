@@ -18,7 +18,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_idea_cfb64_encrypt(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -64
+        r".option push
+.option arch, +m
+addi sp, sp, -64
 addi t0, sp, 0
 sd s1, 0(t0)
 sd s2, 8(t0)
@@ -1169,7 +1171,8 @@ addi t1, t1, 8
 addi t2, t2, -1
 bnez t2, 23b
 addi sp, sp, 64
-ret",
+ret
+.option pop",
     )
 }
 
@@ -1189,7 +1192,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_idea_cfb64_decrypt(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        r"addi sp, sp, -64
+        r".option push
+.option arch, +m
+addi sp, sp, -64
 addi t0, sp, 0
 sd s1, 0(t0)
 sd s2, 8(t0)
@@ -2340,6 +2345,7 @@ addi t1, t1, 8
 addi t2, t2, -1
 bnez t2, 23b
 addi sp, sp, 64
-ret",
+ret
+.option pop",
     )
 }

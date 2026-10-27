@@ -17,7 +17,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_idea_expand_key(key: *const [u8; 16], schedule: *mut [u8; 104]) {
     core::arch::naked_asm!(
-        r"lbu a2, 0(a0)
+        r".option push
+.option arch, +m
+lbu a2, 0(a0)
 slli a2, a2, 8
 lbu t0, 1(a0)
 or a2, a2, t0
@@ -305,7 +307,8 @@ srli t0, a2, 0
 sb t0, 102(a1)
 srli t0, t0, 8
 sb t0, 103(a1)
-ret",
+ret
+.option pop",
     )
 }
 
@@ -324,7 +327,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_idea_invert_key(schedule: *const [u8; 104], inverse: *mut [u8; 104]) {
     core::arch::naked_asm!(
-        r"lui t2, 16
+        r".option push
+.option arch, +m
+lui t2, 16
 addi t2, t2, -1
 lbu a3, 96(a0)
 lbu t3, 97(a0)
@@ -1482,7 +1487,8 @@ addi t1, a4, 0
 sb t1, 102(a1)
 srli t1, t1, 8
 sb t1, 103(a1)
-ret",
+ret
+.option pop",
     )
 }
 
@@ -1501,7 +1507,9 @@ ret",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_idea_ecb(schedule: *const [u8; 104], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        r"lui t2, 16
+        r".option push
+.option arch, +m
+lui t2, 16
 addi t2, t2, -1
 beqz a2, 20f
 22:
@@ -2433,6 +2441,7 @@ bnez a2, 22b
 j 21f
 20:
 21:
-ret",
+ret
+.option pop",
     )
 }
