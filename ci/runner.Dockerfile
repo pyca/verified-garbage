@@ -73,9 +73,11 @@ RUN printf '%s\n' \
 # * git and ca-certificates, for actions/checkout;
 # * python3, for the coverage export and the benchmark comparison;
 # * zstd, for actions/cache (through Swatinem/rust-cache);
-# * libssl-dev, pkg-config and openssl, for the benchmarks, which link
-#   OpenSSL (rust-openssl) and record its version, but not in riscv64.
-RUN bench="libssl-dev pkg-config openssl" && \
+# * openssl, with which the benchmarks record OpenSSL's version (and which
+#   ca-certificates depends on);
+# * libssl-dev and pkg-config, for the benchmarks, which link OpenSSL
+#   (rust-openssl), but not in riscv64.
+RUN bench="libssl-dev pkg-config" && \
     case "$(dpkg --print-architecture)" in \
         i386) foreign=amd64; packages="libc6:amd64 libstdc++6:amd64" ;; \
         arm64) foreign=armhf; packages="gcc-arm-linux-gnueabihf libc6-dev:armhf libssl-dev:armhf qemu-user" ;; \
@@ -131,6 +133,7 @@ RUN bench="libssl-dev pkg-config openssl" && \
         git \
         ca-certificates \
         python3 \
+        openssl \
         $bench \
         zstd && \
     apt-get clean && \

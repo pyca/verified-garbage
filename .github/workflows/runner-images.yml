@@ -114,9 +114,9 @@ jobs:
               /runner-node -e "console.log(process.version, process.arch)"
               git --version
               python3 -V
-              # OpenSSL where the benchmarks are built (not riscv64).
-              if command -v openssl; then
-                openssl version
+              openssl version
+              # OpenSSL for the benchmarks where they are built (not riscv64).
+              if command -v pkg-config; then
                 pkg-config --exists openssl
               fi
               zstd --version
