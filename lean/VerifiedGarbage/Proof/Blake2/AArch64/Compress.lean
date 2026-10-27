@@ -151,7 +151,13 @@ theorem g_ok (hR : ROk P) {a b c d : Reg}
     exec_ldr ok, isa, State.read, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write,
     RegUpd.wr_write, hs, hs', ha, hb, hc, hd, hx1, hij, hik, hx, hy,
     ext_trunc, Option.some.injEq, exists_eq_left']
-  refine ⟨rfl, rfl, rfl, rfl, ?_⟩
+  have add_left_comm (x y t : BitVec z.bits) : x + (y + t) = y + (x + t) := by
+    rw [← BitVec.add_assoc, BitVec.add_comm x y, BitVec.add_assoc]
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · simp only [mix, BitVec.add_assoc, add_left_comm, BitVec.add_comm]
+  · simp only [mix, BitVec.add_assoc, add_left_comm, BitVec.add_comm]
+  · simp only [mix, BitVec.add_assoc, add_left_comm, BitVec.add_comm]
+  · simp only [mix, BitVec.add_assoc, add_left_comm, BitVec.add_comm]
   and_intros
   · intro r ra rb rc rd rt
     simp only [ra, rb, rc, rd, rt, ite_false]
