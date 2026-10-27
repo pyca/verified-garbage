@@ -113146,7 +113146,7 @@ ret
 ///
 /// Contract: `VG.Spec.Rsa.crtValuesContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on the private key.
 ///
-/// The modulus and prime lengths are public. Balanced 2048/3072/4096-bit keys use thirty-step batched inversion at the prime width; other lengths use the general inverse. Each batch updates signed GCD rows and Montgomery-reduced coefficient rows. The shared key-workspace carry chains process eight words per iteration, then scalar tails, preserving carry between words. Private values select no branch. Callee-saved registers reside in scratch.
+/// The modulus and prime lengths are public. `qInv` comes from `64 w` steps of the binary extended Euclidean algorithm for `w`-word numbers, each step's swaps and subtractions under masks, as on x86-64, whatever the key's size. The shared key-workspace carry chains process eight words per iteration, then scalar tails, preserving carry between words. Private values select no branch. Callee-saved registers reside in scratch.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

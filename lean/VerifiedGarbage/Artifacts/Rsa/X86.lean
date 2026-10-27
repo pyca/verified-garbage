@@ -46,8 +46,9 @@ def artifacts : List Artifact := [
     spSafe := Proof.Rsa.X86.RtShape.check_spSafe false
     stack := 20 },
   Spec.Rsa.crtValuesApi.artifact X86.target {
-    notes := ["The modulus and prime lengths are public. `qInv` comes from the general inverse at \
-      the modulus's width, as on x86-64, whatever the key's size. The shared \
+    notes := ["The modulus and prime lengths are public. `qInv` comes from `64 w` steps of the \
+      binary extended Euclidean algorithm for `w`-word numbers, each step's swaps and subtractions \
+      under masks, as on x86-64, whatever the key's size. The shared \
       key-workspace carry chains process eight words per iteration, then scalar tails, preserving \
       carry between words. Private values select no branch. Callee-saved registers reside in scratch."]
     code := Impl.Rsa.X86.CrtValuesRt.code
