@@ -8,13 +8,18 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Camellia.CtrCipher
 import VerifiedGarbage.Proof.Camellia.X86.Crypt8
-import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
-public import VerifiedGarbage.Proof.Camellia.X86.PreparedVerified
-import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Camellia.X86.PreparedVerified
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.X86.Inline
 import VerifiedGarbage.Proof.Camellia.X86.Lit
+public import VerifiedGarbage.Impl.Camellia.X86.Prepared
+public import VerifiedGarbage.Proof.Camellia.Common
+public import VerifiedGarbage.Proof.Camellia.X86.Keys
+public import VerifiedGarbage.Proof.Camellia.X86.Prologue
+public import VerifiedGarbage.Proof.Framework.X86.TaintMono
 
 /-!
 # Camellia's core for the modes on x86 (32-bit)

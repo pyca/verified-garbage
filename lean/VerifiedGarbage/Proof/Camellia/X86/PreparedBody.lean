@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.Camellia.X86.Ecb
 public import VerifiedGarbage.Impl.Camellia.X86.Prepared
 import VerifiedGarbage.Proof.Camellia.Planes32
-import VerifiedGarbage.Proof.Camellia.X86.Crypt8
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 

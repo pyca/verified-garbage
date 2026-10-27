@@ -22,7 +22,6 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Camellia.X86.Crypt8
 import VerifiedGarbage.Proof.Camellia.Words
-import VerifiedGarbage.Proof.Camellia.CtrCipher
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
