@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Frame
 
 /-!
-# `vg_ed448_sign_cached` on RISCV64, with its frame as an argument
+# `vg_ed448_sign_cached` on RISC-V, with its frame as an argument
 
 The setup (`frame_ok`, `signSetup_ok`), the steps (`expand_ok`, `nonce_ok`,
 `challenge_ok`), then `F` from 16 to 448 zeroed (`wipe_ok`) and the
