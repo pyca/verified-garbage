@@ -45,9 +45,6 @@ theorem mul_ct : ConstantTime isa (mulArm C).pre (mulArm C).pub mulP256 :=
     (fun _ _ _ _ hp => Taint.agree_ofRegs fun r hr => by
       rw [List.mem_singleton] at hr; subst hr; exact hp.2) (by native_taint_decide)
 
-theorem no_frames : p256.mulFn.noFrames = true := by
-  show mulP256.noFrames = true; lit_decide
-
 theorem sat_consts : C.ConstsOk 0x1000 (mulSatMem p256) := by
   unfold Spec.Weierstrass.Mul.Curve.ConstsOk
   exact ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel⟩

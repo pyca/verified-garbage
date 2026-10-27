@@ -54,14 +54,14 @@ theorem combVerify_ok (hC : Law Spec.Secp256k1.curve) {s₀ : State} (hp : combV
     (show (⟨ptr s₀ .r3,8192⟩ : Region)∈s₀.wr by rw [hp.1.wr]; simp)
   apply verifyWith_ok secp256k1_ok hC hp.1
   intro s M syms
-  intro u hs hf F _ _ _ bits keep unch syu
+  intro u hs hf F _ _ _ _ _ _ bits _ keep unch syu
   have frame : Frame [⟨ptr s₀ .r3,8192⟩] s₀.mem u.mem := outside_frame
     (unch.outside (o := 0) (n := 8192) (by simp)) (Nat.le_refl _)
   have hu := ht.of_frame (by rw [keep.rd,keep.wr]) frame
     (by simpa only [List.mem_singleton,forall_eq] using hd)
   have mul := comb_generator_ok hC hs hf F hu (by rw [syu,syms])
     (hd.sub_right (Region.sub_prefix (by decide))) (k := sv secp256k1 (ptr s₀ .r3) s U)
-    (VG.Proof.Mont.wordsVal_lt _ _ _ _) bits
+    (VG.Proof.Mont.wordsVal_lt _ _ _ _) (bits rfl)
   exact WP.mono mul fun _ post => by simpa only [GeneratorPost,Nat.shiftRight_zero] using post
 
 end VG.Proof.Ecdsa.Verify.Arm.Secp256k1

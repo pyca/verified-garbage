@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Stages
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
+public import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
 import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
 import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
@@ -45,8 +46,8 @@ abbrev rLadder (c : Cfg) : LadderCfg := { c.ladderCfg with G := c.pt RX RY ONEP 
 /-- What the point's slots must be for the ladder from them: numbered slots,
 neither the modulus's nor the temporary area, and none the ladder writes. -/
 def PtSlots (px py : Nat) : Prop :=
-  ∀ i ∈ [px, py], i < 45 ∧ i ≠ MP ∧ i ≠ TMP ∧
-    i ∉ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TX, TY, TZ]
+  ∀ i ∈ [px, py], i < 45 ∧ i ≠ MP ∧ i ≠ TMP ∧ i ∉ [T0, T1, T2, T3, T4, T5, TX, TY, TZ] ∧
+    i ∉ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ]
 
 instance (px py : Nat) : Decidable (PtSlots px py) := by unfold PtSlots; infer_instance
 
@@ -61,7 +62,7 @@ theorem ptSlots_all {px py : Nat} (hp : PtSlots px py) {P : Nat → Prop}
   intro i hi
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
   rcases hi with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h <;>
-    subst h <;> first | exact hpq _ (by simp) | exact hc _ (by simp)
+    subst h <;> first | exact hc _ (by decide) | exact hpq _ (by simp)
 
 theorem pLadLay (hc : CfgOk c) {px py : Nat} (hp : PtSlots px py) : LadLay (pLadder c px py) size 8192 := by
   have hn := hc.n0
@@ -81,13 +82,13 @@ theorem pLadLay (hc : CfgOk c) {px py : Nat} (hp : PtSlots px py) : LadLay (pLad
   · intro i hi
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with h | h | h | h | h | h | h | h <;> subst h <;>
-      first | decide | exact fun h' => (hp _ (by simp)).2.2.2 (by simp_all)
+      first | decide | exact (hp _ (by simp)).2.2.2.1
   · refine map_sl_disj hn (l₁ := [AP, B3P, px, py, ONEP])
       (l₂ := [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ]) ?_
     intro i hi
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with h | h | h | h | h <;> subst h <;>
-      first | decide | exact fun h' => (hp _ (by simp)).2.2.2 (by simp only [List.mem_cons] at h' ⊢; tauto)
+      first | decide | exact (hp _ (by simp)).2.2.2.2
   · exact map_sl_disj hn (l₁ := [RX, RY, RZ]) (l₂ := [DX, DY, DZ, TX, TY, TZ]) (by decide)
   · intro w hw
     simp only [ladW, List.mem_append, List.mem_map, List.mem_singleton] at hw
@@ -585,5 +586,167 @@ theorem mulAt_ok (hc : CfgOk c) (C : Spec.Weierstrass.Mul.Curve) (hnf : c.mulFn.
     simpa only [List.append_assoc] using U₂.trans U
   · show Q 0 (toM _ _ (wordsVal s₈.mem _ _ _)) (toM _ _ (wordsVal s₈.mem _ _ _)) (toM _ _ (wordsVal s₈.mem _ _ _))
     rw [hm]; exact E
+
+/-! ## What `vg_<curve>_mul` writes besides the ladder -/
+
+/-- `ACC`, `PT` (its copy of `Q`), the table of `k`'s bits and the words past
+the numbered slots where it keeps the callee-saved registers. -/
+abbrev genX (c : Cfg) : List (Nat × Nat) := slW c [ACC, PT] ++ [(bitsAt c.n 0, 64 * c.n), (c.sl nslots, 36)]
+
+theorem apart_genX (h7 : c.n < 10) {i : Nat} (hi : i < 45) (hl : i ∉ [ACC, PT]) :
+    ∀ w ∈ genX c, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
+  refine apart_append (apart_slW hl) fun w hw => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+  rcases hw with rfl | rfl
+  · exact Or.inl (Nat.le_trans (sl_below_bits c h7 hi 0 0) (Nat.le_add_right _ _))
+  · exact Or.inl (sl_lt c (j := nslots) hi)
+
+theorem tbl_apart_genX (h7 : c.n < 10) {j t : Nat} (hj : j ≠ 0) (ht : t < 64 * c.n) :
+    ∀ w ∈ genX c, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
+  refine apart_append (tbl_apart_slW h7 (by decide) j t) fun w hw => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+  rcases hw with rfl | rfl
+  · exact tbl_apart_tbl hj ht _ (List.mem_singleton_self _)
+  · refine Or.inr ?_
+    rw [bitsAt_eq, sl_eq]; dsimp only [nslots]; omega_arith
+
+theorem fixedOk_genX (h7 : c.n < 10) : FixedOk c (genX c) := by
+  refine (fixedOk_slW (by decide)).append fun w hw => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+  rcases hw with rfl | rfl
+  · exact fixedOk_tbl h7 0 _ (List.mem_singleton_self _)
+  · exact Or.inr (Nat.le_of_lt_succ (Nat.lt_succ_of_le (Nat.le_trans (Nat.le_add_right _ _) (sl_lt c (by decide)))))
+
+theorem genX_le (h7 : c.n < 10) : ∀ w ∈ genX c, w.1 + w.2 ≤ 8192 := by
+  intro w hw
+  simp only [List.mem_append, List.mem_map, List.mem_cons, List.not_mem_nil, or_false] at hw
+  have := sl_le c h7 (i := 44) (by decide)
+  have := bitsAt_le c h7 (j := 0) (by decide)
+  rw [sl_eq] at *
+  rcases hw with ⟨i, rfl | rfl, rfl⟩ | rfl | rfl <;> simp only [sl_eq, ACC, PT, nslots] at * <;> omega_arith
+
+/-- Everything `vg_<curve>_mul` writes is at or past the temporary slot. -/
+theorem mulFW_ge (h7 : c.n < 10) : ∀ w ∈ mulFW c, c.sl TMP ≤ w.1 := by
+  intro w hw
+  have hwk := save_le_wk (c := c) h7
+  simp only [mulFW, mulBW, mulBX, mulSW, List.mem_append, VG.Proof.Weierstrass.Arm.Point.ladWp, ladWx_eq,
+    slW, List.mem_map, List.mem_cons, List.not_mem_nil, or_false] at hw
+  rw [wk_eq, sl_eq] at hwk
+  rcases hw with (((⟨j, hj, rfl⟩ | hw) | hw) | (⟨j, hj, rfl⟩ | hw)) | hw
+  · rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      simp only [sl_eq, RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TX, TY, TZ, TMP] <;> omega
+  · rw [hw, wk_eq, sl_eq]; simp only [TMP]; omega
+  · unfold VG.Proof.Weierstrass.Arm.Point.ptW at hw
+    split at hw
+    · rw [List.mem_singleton.mp hw, show c.ladderCfg.M.n = c.n from rfl]
+      have h1 := save_le_oAt (c := c) ‹_›
+      rw [sl_eq] at h1 ⊢; simp only [TMP]; omega
+    · simp at hw
+  · rcases hj with rfl | rfl <;> simp only [sl_eq, ACC, PT, TMP] <;> omega
+  · rw [hw, bitsAt_eq, sl_eq]; simp only [TMP]; omega
+  · rw [hw]; simp only [sl_eq, nslots, TMP]; omega
+
+/-! ## `R = [k]P`, by the call or the ladder -/
+
+/-- `qMul`: for any invariant `Q` of the ladder from the point at `px`, `py`,
+`ONEP` that accepts `O`, `Q 0` accepts what `R` holds at the end, for the
+scalar `k` at `K`'s slot (for the call) or whose bits are the table (for the
+ladder), from `R = O`; only `powClob`, the ladder's slots and `genX` change. -/
+theorem qMul_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) (hf : Far s base 8192)
+    {g : Reg → BitVec 32} (F : Fixed c base g s.mem) {px py : Nat} (hp : PtSlots px py)
+    (hpx : sv c base s px < c.C.p) (hpy : sv c base s py < c.C.p)
+    (hrx : sv c base s RX = 0) (hry : sv c base s RY = c.mont 1) (hrz : sv c base s RZ = 0)
+    {k : Nat} {Q : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
+    (hstep : Step (pLadder c px py) c.C base s k Q) (hO : Q (8 * c.C.len) 0 1 0)
+    (hk : c.mul.isSome → sv c base s K = k)
+    (ht : c.mul = none → ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0) :
+    WP isa (c.qMul px py) s fun t => Rest powClob s t ∧
+      Unch base (VG.Proof.Weierstrass.Arm.Point.ladWp c.ladderCfg c.wk ++ genX c) s.mem t.mem ∧
+      ModOkW c.MP' size c.C.p t.mem base ∧
+      (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal t.mem base x c.n < c.C.p) ∧
+      Q 0 (tmv c.C c.n base t (c.sl RX)) (tmv c.C c.n base t (c.sl RY)) (tmv c.C c.n base t (c.sl RZ)) := by
+  have h7 := hc.n10
+  have hn := hs.nowrap
+  have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
+  have hp3 := hc.p_ge
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+  have tone : toM c.C.p (2 ^ (64 * c.n)) (2 ^ (64 * c.n) % c.C.p) = 1 := toM_one hpR
+  unfold Cfg.qMul
+  cases hm : c.mul with
+  | none =>
+    simp only
+    have hlt : ∀ x ∈ ladR (pLadder c px py), wordsVal s.mem base x c.MP'.n < c.C.p := by
+      intro x hx
+      have hx' : x ∈ [AP, B3P, px, py, ONEP, RX, RY, RZ].map c.sl := hx
+      obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx'
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+      show sv c base s i < c.C.p
+      rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · exact lt_of_eq_of_lt F.ap (hmont _)
+      · exact lt_of_eq_of_lt F.b3p (hmont _)
+      · exact hpx
+      · exact hpy
+      · exact lt_of_eq_of_lt F.onep (Nat.mod_lt _ (by omega))
+      · exact lt_of_eq_of_lt hrx (by omega)
+      · exact lt_of_eq_of_lt hry (hmont _)
+      · exact lt_of_eq_of_lt hrz (by omega)
+    have hR : Q (pLadder c px py).nbits (tmv c.C c.n base s (pLadder c px py).R.x)
+        (tmv c.C c.n base s (pLadder c px py).R.y) (tmv c.C c.n base s (pLadder c px py).R.z) := by
+      show Q _ (toM _ _ (sv c base s RX)) (toM _ _ (sv c base s RY)) (toM _ _ (sv c base s RZ))
+      rw [hrx, hry, hrz, toM_cmont hc, toM_zero]
+      exact hO
+    refine WP.mono (VG.Proof.Weierstrass.Arm.Point.ladderP_ok (L := pLadder c px py) (k := k)
+      (pLadLay hc hp) (pLadWk hc hp) hc.fp (pLadPt hp) hpR (bitsAt_lt hc (j := 0) (by decide)) hs hf
+      (modP_of hc F.mp) hlt hstep hR (fun t h => ht hm t (Nat.lt_of_lt_of_le h (scalarBits_le hc)))
+      (scalarBits_enc hc)) fun t ⟨K, U, M, L, R⟩ => ⟨K, U.mono fun w hw => List.mem_append_left _ hw, M, L, R⟩
+  | some C =>
+    simp only
+    have hpx' := hp px (List.mem_cons_self)
+    have hpy' := hp py (List.mem_cons_of_mem _ List.mem_cons_self)
+    have hpxr : px ∉ [RX, RY] := fun h => hpx'.2.2.2.2 (by
+      rcases List.mem_cons.mp h with rfl | h
+      · exact List.mem_cons_self
+      · rw [List.mem_singleton.mp h]; exact List.mem_cons_of_mem _ List.mem_cons_self)
+    have hpyr : py ∉ [RX, RY] := fun h => hpy'.2.2.2.2 (by
+      rcases List.mem_cons.mp h with rfl | h
+      · exact List.mem_cons_self
+      · rw [List.mem_singleton.mp h]; exact List.mem_cons_of_mem _ List.mem_cons_self)
+    have hk' : sv c base s K = k := hk (by rw [hm]; rfl)
+    have hstep' : Step (pLadder c px py) c.C base s (sv c base s K) Q := by rw [hk']; exact hstep
+    have hO' : Q c.ladderCfg.nbits (tmv c.C c.n base s (c.sl ZERO)) (tmv c.C c.n base s (c.sl ONEP))
+        (tmv c.C c.n base s (c.sl ZERO)) := by
+      show Q _ (toM _ _ (sv c base s ZERO)) (toM _ _ (sv c base s ONEP)) (toM _ _ (sv c base s ZERO))
+      rw [show sv c base s ZERO = 0 from F.zero, show sv c base s ONEP = _ from F.onep, toM_zero, tone]
+      exact hO
+    refine WP.mono (mulAt_ok (px := px) (py := py) (Q := Q) hc C (hc.mulNf C hm) hs hf hpx'.1 hpy'.1
+      hpxr hpyr F.mp (lt_of_eq_of_lt F.ap (hmont _)) (lt_of_eq_of_lt F.b3p (hmont _))
+      (lt_of_eq_of_lt F.onep (Nat.mod_lt _ (by omega))) (lt_of_eq_of_lt F.zero (by omega)) hpx hpy
+      hstep' hO')
+      fun t ⟨K, U, L, R⟩ => ⟨K.mono (by simp [powClob, clob]), ?_, ?_, L, R⟩
+    · refine U.mono fun w hw => ?_
+      simp only [mulFW, mulBW, mulBX, mulSW, genX, List.mem_append] at hw ⊢
+      rcases hw with hw | ((hw | hw | hw) | hw)
+      · refine .inl ?_
+        rw [VG.Proof.Weierstrass.Arm.Point.ladWp, ladWx_eq]
+        simp only [slW, List.mem_map, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
+        obtain ⟨i, hi, rfl⟩ := hw
+        exact List.mem_append_left _ (List.mem_append_left _ (List.mem_map.mpr ⟨i, by
+          rcases hi with rfl | rfl <;> simp, rfl⟩))
+      · exact .inl hw
+      · exact .inr (.inl hw)
+      · exact .inr (.inr (by rw [List.mem_singleton.mp hw]; exact List.mem_cons_self))
+      · exact .inr (.inr (by rw [List.mem_singleton.mp hw]; exact List.mem_cons_of_mem _ List.mem_cons_self))
+    · have hmp : wordsVal t.mem base (c.sl MP) c.n = wordsVal s.mem base (c.sl MP) c.n := by
+        refine U.wordsVal (fun w hw => .inl ?_) ?_
+        · have h12 := sl_lt c (i := MP) (j := TMP) (by decide)
+          rcases List.mem_append.mp hw with hw | hw
+          · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
+            simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+            rcases hi with rfl | rfl <;> exact Nat.le_trans h12 (Nat.le_trans (Nat.le_add_right _ _)
+              (sl_lt c (by decide)))
+          · exact Nat.le_trans h12 (mulFW_ge h7 w hw)
+        · have := sl_le c h7 (i := MP) (by decide); dsimp only [size] at this; omega
+      exact modP_of hc (hmp.trans F.mp)
 
 end VG.Proof.Ecdsa.Arm

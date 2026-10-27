@@ -396,25 +396,28 @@ structure LadPost (c : Cfg) (base : Addr) (Q : Nat → Fe c.C → Fe c.C → Fe 
     Prop where
   scr : Scr s' base size
   rest : Rest powClob s s'
-  unch : Unch base (slWkP c [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5,
-    TX, TY, TZ, TMP] ++ slWk c [ACC, PT, TMP]) s.mem s'.mem
+  unch : Unch base ((slWkP c [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5,
+    TX, TY, TZ, TMP] ++ genX c) ++ slWk c [ACC, PT, TMP]) s.mem s'.mem
   q : Q 0 (tmv c.C c.n base s' (c.sl RX)) (tmv c.C c.n base s' (c.sl RY)) (tmv c.C c.n base s' (c.sl RZ))
   acc_lt : sv c base s' ACC < c.C.p
   acc : toM c.C.p (2 ^ (64 * c.n)) (sv c base s' ACC) = tmv c.C c.n base s' (c.sl RZ) ^ (c.C.p - 2)
   rz_lt : sv c base s' RZ < c.C.p
 
-/-- The ladder, from `R = O`, then `Z^(p-2)`, for any invariant `Q` that an
-iteration keeps and that `Q (8 len)` accepts `O`. -/
+/-- `R = [k]P` (`qMul`: by the call or the ladder), from `R = O`, then
+`Z^(p-2)`, for any invariant `Q` that an iteration of the ladder keeps and
+that `Q (8 len)` accepts `O`, for the scalar `k` at `K`'s slot (the call) or
+whose bits are the table (the ladder). -/
 theorem ladPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) (hf : Far s base 8192)
     {g : Reg → BitVec 32}
     (F : Fixed c base g s.mem) {k : Nat} {Q : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
     (hstep : Step (Impl.Ecdh.Arm.Cfg.ladderQ c) c.C base s k Q) (hO : Q (8 * c.C.len) 0 1 0)
     (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
     (hrx : sv c base s RX = 0) (hry : sv c base s RY = c.mont 1) (hrz : sv c base s RZ = 0)
+    (hk : c.mul.isSome → sv c base s K = k)
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
     (ht₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0)
     {rest : Prog isa} {R : State → Prop} (h : ∀ s', LadPost c base Q s s' → WP isa rest s' R) :
-    WP isa (.seq (VG.Impl.Weierstrass.Arm.Point.ladderP (Impl.Ecdh.Arm.Cfg.ladderQ c) c.SP) (.seq (pow c.powP c.SP) rest)) s R := by
+    WP isa (.seq (c.qMul PX PY) (.seq (pow c.powP c.SP) rest)) s R := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap
@@ -424,41 +427,21 @@ theorem ladPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
   have henc : encodable (BitVec.ofNat 32 (64 * c.n)) = true := by
     have : ∀ n < 10, encodable (BitVec.ofNat 32 (64 * n)) = true := by decide
     exact this _ h7
-  have hlt : ∀ x ∈ ladR (Impl.Ecdh.Arm.Cfg.ladderQ c), wordsVal s.mem base x c.MP'.n < c.C.p := by
-    intro x hx
-    have hx' : x ∈ [AP, B3P, PX, PY, ONEP, RX, RY, RZ].map c.sl := hx
-    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx'
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
-    show sv c base s i < c.C.p
-    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · exact lt_of_eq_of_lt F.ap (hmont _)
-    · exact lt_of_eq_of_lt F.b3p (hmont _)
-    · exact hpx
-    · exact hpy
-    · exact lt_of_eq_of_lt F.onep (Nat.mod_lt _ (by omega_arith))
-    · exact lt_of_eq_of_lt hrx (by omega_arith)
-    · exact lt_of_eq_of_lt hry (hmont _)
-    · exact lt_of_eq_of_lt hrz (by omega_arith)
-  have hR : Q (8 * c.C.len) (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY))
-      (tmv c.C c.n base s (c.sl RZ)) := by
-    show Q _ (toM _ _ (sv c base s RX)) (toM _ _ (sv c base s RY)) (toM _ _ (sv c base s RZ))
-    rw [hrx, hry, hrz, toM_cmont hc, toM_zero]
-    exact hO
-  refine WP.seq (WP.mono (VG.Proof.Weierstrass.Arm.Point.ladderP_ok (L := Impl.Ecdh.Arm.Cfg.ladderQ c) (k := k)
-    (ladLayQ hc) (ladWkQ hc) hc.fp ladPtQ hpR (bitsAt_lt hc (j := 0) (by decide)) hs hf (modP_of hc F.mp) hlt
-    hstep hR (fun t ht => ht₀ t (Nat.lt_of_lt_of_le ht (scalarBits_le hc))) (scalarBits_enc hc))
+  refine WP.seq (WP.mono (qMul_ok hc hs hf F (px := PX) (py := PY) (by decide) hpx hpy hrx hry hrz hstep
+    hO hk (fun _ => ht₀))
     fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_)
-  rw [VG.Proof.Weierstrass.Arm.Point.ladWp, ladWxQ_eq] at U₅
+  rw [VG.Proof.Weierstrass.Arm.Point.ladWp, ladWx_eq] at U₅
   have hs₅ := hs.of_rest K₅ (by decide)
   have hf₅ := hf.of_rest K₅
-  have F₅ := F.unch h7 hn (fixedOk_slWkP h7 (by decide)) U₅
+  have F₅ := F.unch h7 hn ((fixedOk_slWkP h7 (by decide)).append (fixedOk_genX h7)) U₅
   have rz₅ : wordsVal s₅.mem base (c.sl RZ) c.n < c.C.p :=
     L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
   refine WP.seq (WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc) (powWkP hc) hc.fp hpR
     (bitsAt_lt hc (j := 1) (by decide)) hs₅ hf₅ M₅ rz₅
     F₅.onep (fun t ht => by
       show s₅.mem (off base (bitsAt c.n 1 + t)) = _
-      rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_slWkP h7 (by decide))]
+      rw [tbl_unch U₅ h7 (j := 1) (by decide) ht
+        (apart_append (tbl_apart_slWkP h7 (by decide)) (tbl_apart_genX h7 (by decide) ht))]
       exact ht₁ t ht)
     (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega_arith) henc) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
   rw [powWxP_eq] at U₆

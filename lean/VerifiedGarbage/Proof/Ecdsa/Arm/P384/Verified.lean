@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Ecdsa.Arm.P384.MulLit
 import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 public import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Contract
 import VerifiedGarbage.Proof.P384.Point
@@ -13,6 +14,7 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Lit
 public import VerifiedGarbage.Impl.Ecdsa.P384.Arm
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P384.MulLit
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Contract
 meta import VerifiedGarbage.Proof.P384.Point
@@ -79,6 +81,7 @@ theorem p384_ok : CfgOk p384 where
   sh := by rw [p384_sh]; decide
   fp := ⟨rfl, rfl, Mont.p384p_ok, rfl⟩
   fn := ⟨rfl, rfl, Mont.p384n_ok, rfl⟩
+  mulNf := fun _ _ => Impl.Ecdsa.Arm.mulP384_noFrames
 
 theorem pre_of {s : State} (h : signArm.pre s) : Pre p384 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h
