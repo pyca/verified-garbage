@@ -41,18 +41,6 @@ def affineEntry (x y : Nat) : List Instr :=
 
 def addPoints : Prog isa := sum cfg
 
-/-- The previous digit pair, plus `G`, or the previous row's first pair plus `Q`. -/
-def tableStep (d : Nat) : Prog isa :=
-  let previous := if d % 4 = 0 then d-4 else d-1
-  let source := if previous = 0 then infinity else copyPt 4 resultPt (tablePt previous)
-  let (x,y) := if d % 4 = 0 then (PX,PY) else (GX,GY)
-  .seq (.block (source ++ affineEntry x y)) <|
-  .seq addPoints (.block (copyPt 4 (tablePt d) resultPt))
-
-def build : Nat → Prog isa
-  | 0 => .block []
-  | m+1 => .seq (build m) (tableStep (m+1))
-
 def double : Prog isa := .seq (.block (copyPt 4 entry resultPt)) addPoints
 
 /-- The digit pair `u[2j:2j+2] + 4 v[2j:2j+2]` in `x2`. -/
@@ -85,13 +73,49 @@ def stepFront : Prog isa :=
 def step : Prog isa :=
   .seq (.block [decCounter]) (.seq double (.seq double addDigit))
 
+/-- `x2 = k - x19`: the number of a table entry, from the build's counter. -/
+def indexFrom (k : Nat) : List Instr := [.movz .x .x2 (BitVec.ofNat 16 k) 0,.sub .x .x2 .x2 .x19]
+
+/-- Copy `n` words of a coordinate to the entry the pointer `x16` selects. -/
+def copyTo : Nat → Nat → Nat → List Instr
+  | 0, _, _ => []
+  | n+1, dst, src => [ld .x4 src,.str .x .x4 .x16 dst] ++ copyTo n (dst+8) (src+8)
+
+/-- The entry numbered `k - x19` into the result, or the point at infinity
+for number zero. -/
+def previousEntry (k : Nat) : Prog isa :=
+  .seq (.block (indexFrom k)) (.ite (.zero .x .x2) (.block infinity)
+    (.block (fetchHead ++ copyFrom 4 resultPt.x 0 ++ copyFrom 4 resultPt.y 32 ++ copyFrom 4 resultPt.z 64)))
+
+/-- `x2 = (x19 & 3) ^ 3`: zero exactly when the entry `15 - x19` starts a row. -/
+def rowTest : List Instr :=
+  [.movz .x .x5 3 0,.logic .and .x .x2 .x19 .x5,.logic .eor .x .x2 .x2 .x5]
+
+/-- The result into the entry numbered `15 - x19`. -/
+def storeEntry : List Instr :=
+  indexFrom 15 ++ fetchHead ++ copyTo 4 0 resultPt.x ++ copyTo 4 32 resultPt.y ++ copyTo 4 64 resultPt.z
+
+/-- Entry `d = 15 - x19`, with `x19` counting down from fifteen: the previous
+entry plus `G`, or the previous row's first entry plus `Q` (the point at
+infinity for the first entry of the first two rows), through pointers the
+counter selects, so that one complete addition serves all fifteen entries. -/
+def buildStep : Prog isa :=
+  .seq (.block (decCounter :: rowTest)) <|
+  .seq (.ite (.zero .x .x2)
+    (.seq (previousEntry 11) (.block (affineEntry PX PY)))
+    (.seq (previousEntry 14) (.block (affineEntry GX GY)))) <|
+  .seq addPoints (.block storeEntry)
+
+/-- The table's fifteen entries, in order. -/
+def build : Prog isa := .seq (.block [.movz .x .x19 15 0]) (.loop buildStep (.nonzero .x .x19))
+
 def prepare : Prog isa :=
   .seq (bits (cfg.sl U) bitsU 32) <|
   .seq (bits (cfg.sl V) bitsV 32)
     (.block (setConst 4 (cfg.sl EXPP) (cfg.mont (3 * cfg.C.b))))
 
 def setup : Prog isa :=
-  .seq prepare <| .seq (build 15) (.block (infinity ++ [.movz .x .x19 128 0]))
+  .seq prepare <| .seq build (.block (infinity ++ [.movz .x .x19 128 0]))
 
 def points : Prog isa :=
   .seq setup (.loop step (.nonzero .x .x19))
