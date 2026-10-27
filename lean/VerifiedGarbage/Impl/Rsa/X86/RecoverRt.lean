@@ -310,16 +310,17 @@ def fusedLoop : Prog isa := .seq
 def fusedPrepare : Prog isa := seqs [copy wid wR wM,
   .block [.mov .eax (.imm 0), .store (sc sTc) .eax, .store (sc sCnt) .eax]]
 
-def fusedRest : Prog isa := seqs [fusedPrepare, mont, fusedLoop, fin]
+def fusedRest : Prog isa := seqs [fusedPrepare, mont, fusedLoop]
 
-def rest : Prog isa := seqs [halving, mont, candLoop, fin]
+def rest : Prog isa := seqs [halving, mont, candLoop]
 
 /-- The fixed seven-bit fallback costs more at small widths. The public
 modulus length selects the existing schedule below 2048 bits. -/
 def recoveryChoice : List Instr := [
   .mov .eax (.mem (PublicFn.argument 5)), .alu .sub .eax (.imm 256)]
 
-def selectedRest : Prog isa := .seq (.block recoveryChoice) (.iteCold .b rest fusedRest)
+/-- Either schedule's search, then the factors from its result: `fin` is shared. -/
+def selectedRest : Prog isa := .seq (.block recoveryChoice) (.seq (.iteCold .b rest fusedRest) fin)
 
 def sized : Prog isa := .seq numbers (.ite .e selectedRest VG.Impl.Rsa.X86.Recover.failure)
 

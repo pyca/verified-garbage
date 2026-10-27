@@ -95,6 +95,21 @@ theorem fin_relCT {g : Geo} (pg : PubG g) {s0 t0 : State} {A B AW BW V W : Nat �
       (by simpa only [upd_ne _ _ (by decide : aOne ≠ mY)] using oneB) odd large))
     (pub_relCT' pg storesCheck (fun _ hs => KS.stage hs) (fun _ ht => KS.stage ht))
 
+/-- Two runs ready for `fin`: the squares' states over the same modulus and attempt, with what
+`fin_relCT` needs of each. -/
+def FinPair (g : Geo) (s t : State) : Prop :=
+  ∃ (s0 t0 : State) (A B AW BW V W : Nat → Nat) (m k c : Nat) (st tt : Nat × Bool × Bool),
+    SI g s0 A AW V m k c st s ∧ SI g t0 B BW W m k c tt t ∧
+    A mBase = m ∧ B mBase = m ∧ A aN = m ∧ B aN = m ∧ m < 2 ^ (64 * g.n) ∧
+    (m * V sInv + 1) % 2 ^ 32 = 0 ∧ (m * W sInv + 1) % 2 ^ 32 = 0 ∧ m % 2 = 1 ∧ 1 < m ∧
+    A aZ = 0 ∧ B aZ = 0 ∧ A aOne = 1 ∧ B aOne = 1 ∧ st.1 < m ∧ tt.1 < m
+
+theorem finPair_relCT {g : Geo} (pg : PubG g) :
+    RelCT isa (FinPair g) VG.Impl.Rsa.X86.RecoverRt.fin (fun _ _ => True) := by
+  rintro s t tr ur sf tf ⟨s0, t0, A, B, AW, BW, V, W, m, k, c, st, tt, hs, ht, vA, vB, mA, mB, bd, iA, iB, od, lg,
+    zA, zB, oA, oB, yl, zl⟩ e f
+  exact fin_relCT pg vA vB mA mB bd iA iB od lg zA zB oA oB yl zl _ _ _ _ _ _ ⟨hs, ht⟩ e f
+
 omit rsaBatchLaw in
 theorem CandidateData.search_ok {g : Geo} {m eLen dLen : Nat} (C : CandidateData g m eLen dLen)
     {s : State} (h : KS g C.s0 C.A liveM C.AW [wR] C.V [sInv, sTc, sCnt] s)
@@ -103,6 +118,7 @@ theorem CandidateData.search_ok {g : Geo} {m eLen dLen : Nat} (C : CandidateData
   candLoop_ok C.zero C.value C.bound C.inverse C.odd C.large C.one C.neg C.r2
     C.ae C.ad C.tc C.rb C.count C.limit C.wide h vc tc
 
+omit rsaBatchLaw in
 theorem rest_relCT (g : CallGeometry) (pg : PubG g.toGeo) (s0 t0 : State)
     (left : Inputs g s0) (right : Inputs g t0)
     (goS : GoOn (product g s0.mem)) (goT : GoOn (product g t0.mem))
@@ -114,7 +130,7 @@ theorem rest_relCT (g : CallGeometry) (pg : PubG g.toGeo) (s0 t0 : State)
     (tries : (recoverPrimes (inputValue g s0.mem 0) (inputValue g s0.mem 1) (inputValue g s0.mem 2)).2 =
       (recoverPrimes (inputValue g t0.mem 0) (inputValue g t0.mem 1) (inputValue g t0.mem 2)).2) :
     RelCT isa (fun s t => NumbersState g s0 s ∧ NumbersState g t0 t) VG.Impl.Rsa.X86.RecoverRt.rest
-      (fun _ _ => True) := by
+      (FinPair g.toGeo) := by
   intro s t tr ur sf tf ⟨hs, ht⟩ es et
   cases es with
   | @seq _ _ _ u _ _ _ e1 er =>
@@ -135,19 +151,15 @@ theorem rest_relCT (g : CallGeometry) (pg : PubG g.toGeo) (s0 t0 : State)
   rw [← modulus] at tries'
   have attempts : p.context.tries = q.context.tries :=
     p.attempts.trans (tries'.trans q.attempts.symm)
-  cases er with
-  | @seq _ _ _ a _ _ _ e3 e4 =>
-  cases fr with
-  | @seq _ _ _ b _ _ _ f3 f4 =>
   have eq3 := (candLoop_relCT pg p.context q.context p.counter q.counter
-    p.twos q.twos attempts _ _ _ _ _ _ ⟨p.state, q.state⟩ e3 f3).1
-  obtain ⟨j, st, _, cs, smallS, _, _⟩ := wp_result (p.context.search_ok p.state p.counter p.twos) e3
-  obtain ⟨l, tt, _, ds, smallT, _, _⟩ := wp_result (q.context.search_ok q.state q.counter q.twos) f3
-  have eq4 := (fin_relCT pg p.context.value q.context.value p.modulus q.modulus p.context.bound
-    (by simpa [VJ, upd, sInv, sCand, sCnt] using p.context.inverse)
-    (by simpa [VJ, upd, sInv, sCand, sCnt] using q.context.inverse)
-    p.context.odd (by have := p.context.large; omega) p.context.zero q.context.zero p.unit q.unit
-    smallS smallT _ _ _ _ _ _ ⟨cs, ds⟩ e4 f4).1
-  exact ⟨by rw [eq1, eq2, eq3, eq4], trivial⟩
+    p.twos q.twos attempts _ _ _ _ _ _ ⟨p.state, q.state⟩ er fr).1
+  obtain ⟨j, st, _, cs, smallS, _, _⟩ := wp_result (p.context.search_ok p.state p.counter p.twos) er
+  obtain ⟨l, tt, _, ds, smallT, _, _⟩ := wp_result (q.context.search_ok q.state q.counter q.twos) fr
+  exact ⟨by rw [eq1, eq2, eq3], _, _, _, _, _, _, _, _, _, _, _, _, _, cs, ds, p.context.value, q.context.value,
+    p.modulus, q.modulus, p.context.bound,
+    (by simpa [VJ, upd, sInv, sCand, sCnt] using p.context.inverse),
+    (by simpa [VJ, upd, sInv, sCand, sCnt] using q.context.inverse),
+    p.context.odd, (by have := p.context.large; omega), p.context.zero, q.context.zero, p.unit, q.unit,
+    smallS, smallT⟩
 
 end VG.Proof.Rsa.X86.Recover
