@@ -49,11 +49,19 @@ theorem sat_consts : C.ConstsOk 0x1000 (mulSatMem p521) := by
   unfold Spec.Weierstrass.Mul.Curve.ConstsOk
   exact ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel⟩
 
+theorem sat_x : (mulCurve p521 "p521" "P-521").toPoint.coordAt (mulSatMem p521) 0x1000 (p521.sl RX) =
+    p521.mont p521.C.gx := by decide +kernel
+
+theorem sat_y : (mulCurve p521 "p521" "P-521").toPoint.coordAt (mulSatMem p521) 0x1000 (p521.sl RY) =
+    p521.mont p521.C.gy := by decide +kernel
+
+theorem sat_point (hL : Weierstrass.Law Spec.P521.curve) : (mulCurve p521 "p521" "P-521").PointOk 0x1000 (mulSatMem p521) :=
+  mulSat_point p521_ok hL sat_x sat_y
+
 theorem sat_pre (hL : Weierstrass.Law Spec.P521.curve) : (C.mulInRangeContract Arm.abi).pre (mulSatState p521) :=
   Sig.contract_pre_of_check (by decide +kernel) (by
     sig_reduce [Sig.wfPre, Spec.Weierstrass.MulBase.sig, Arm.abi, Arm.argRegs, Arm.Loc.val, mulSatState]
-    exact ⟨by decide, sat_consts, mulSat_point (curve := "p521") (desc := "P-521") (saved := 1) p521_ok hL
-      (by decide +kernel) (by decide +kernel)⟩)
+    exact ⟨by decide, sat_consts, sat_point hL⟩)
 
 /-- `vg_p521_mul` on 32-bit ARM. -/
 theorem mul_verified (hL : Weierstrass.Law Spec.P521.curve) :
