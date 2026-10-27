@@ -32,7 +32,7 @@ mod legacy_vectors;
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 pub fn bench(c: &mut Criterion) {
-    use crate::{OPENSSL, VG};
+    use crate::{OPENSSL, VG, fixed_tape};
     use criterion::BenchmarkId;
     use openssl::{
         bn::BigNum,
@@ -80,7 +80,15 @@ pub fn bench(c: &mut Criterion) {
         )
         .unwrap();
         let digest = [0x42; 32];
-        let signature = key.sign(&digest).unwrap();
+        // The signature the verification benchmarks check, the same in
+        // every run.
+        let mut tape = fixed_tape((p_len * 8) as u64);
+        let signature = key
+            .sign_with_rng(&digest, |buf| {
+                tape(buf);
+                Ok(())
+            })
+            .unwrap();
         let der = DsaSig::from_private_components(
             BigNum::from_slice(&signature[..q_len]).unwrap(),
             BigNum::from_slice(&signature[q_len..]).unwrap(),
@@ -134,9 +142,20 @@ pub fn bench(c: &mut Criterion) {
             group.finish();
         }
 
+        // verified-garbage draws its nonces and keys below from a fixed tape
+        // (`sign` and `generate` but for `getrandom`); OpenSSL draws from
+        // its own generator.
         let mut group = c.benchmark_group(format!("dsa_sign_q{}", q_len * 8));
         group.bench_function(BenchmarkId::new(VG, size), |b| {
-            b.iter(|| black_box(&key).sign(black_box(&digest)).unwrap())
+            b.iter(|| {
+                let mut tape = fixed_tape(size as u64);
+                black_box(&key)
+                    .sign_with_rng(black_box(&digest), |buf| {
+                        tape(buf);
+                        Ok(())
+                    })
+                    .unwrap()
+            })
         });
         group.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
@@ -246,7 +265,17 @@ pub fn bench(c: &mut Criterion) {
             let mut group = c.benchmark_group(format!("dsa_generate_key_q{}", q_len * 8));
             group.bench_function(BenchmarkId::new(VG, size), |b| {
                 b.iter(|| {
-                    PrivateKey::generate(black_box(&p), black_box(&q), black_box(&g)).unwrap()
+                    let mut tape = fixed_tape(size as u64);
+                    PrivateKey::generate_with_rng(
+                        black_box(&p),
+                        black_box(&q),
+                        black_box(&g),
+                        |buf| {
+                            tape(buf);
+                            Ok(())
+                        },
+                    )
+                    .unwrap()
                 })
             });
             group.bench_function(BenchmarkId::new(OPENSSL, size), |b| {

@@ -7,8 +7,9 @@
 //! aws-lc-rs create a fresh operation context each iteration. The
 //! `_encaps_from_bytes` groups also check the encapsulation key's bytes each
 //! iteration (a server's work per TLS handshake): whatever a library
-//! computes from the key when it parses it is timed there. All
-//! encapsulators use fresh randomness. Key generation includes expansion from
+//! computes from the key when it parses it is timed there. verified-garbage
+//! encapsulates with a fixed `m` (`encapsulate` but for `getrandom`); OpenSSL
+//! and aws-lc-rs draw fresh randomness. Key generation includes expansion from
 //! the same seed. aws-lc-rs does not wrap AWS-LC's key generation from a seed,
 //! so that benchmark calls AWS-LC through aws-lc-sys, importing the seed as
 //! a PKCS #8 key (RFC 9935's `seed` form, which AWS-LC expands), and
@@ -38,9 +39,10 @@ macro_rules! mlkem_bench {
         let seed = [0x42; 64];
         let dk = $DecapsulationKey::from_seed(&seed).unwrap();
         let ek = dk.encapsulation_key();
-        // Keep the decapsulation input identical across benchmark binaries.
-        // Timed encapsulation below still draws fresh randomness.
-        let (_ss, ct) = ek.encapsulate_internal(&[0x42; 32]).unwrap();
+        // The randomness of verified-garbage's encapsulations, which keeps
+        // the decapsulation input identical across benchmark binaries.
+        let m = [0x42; 32];
+        let (_ss, ct) = ek.encapsulate_internal(&m).unwrap();
         #[cfg(feature = "openssl-mlkem")]
         let (openssl_key, openssl_public) = {
             use openssl::pkey::{KeyType, PKey};
@@ -127,7 +129,7 @@ macro_rules! mlkem_bench {
         let mut g = c.benchmark_group(concat!(stringify!($module), "_encaps"));
         g.bench_function(
             BenchmarkId::new(VG, $EncapsulationKey::CIPHERTEXT_SIZE + 32),
-            |b| b.iter(|| black_box(ek).encapsulate().unwrap()),
+            |b| b.iter(|| black_box(ek).encapsulate_internal(black_box(&m)).unwrap()),
         );
         #[cfg(feature = "openssl-mlkem")]
         g.bench_function(
@@ -155,7 +157,7 @@ macro_rules! mlkem_bench {
                 b.iter(|| {
                     $EncapsulationKey::from_bytes(black_box(&ek_bytes))
                         .unwrap()
-                        .encapsulate()
+                        .encapsulate_internal(black_box(&m))
                         .unwrap()
                 })
             },

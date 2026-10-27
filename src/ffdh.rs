@@ -159,6 +159,20 @@ impl Parameters {
         self.generate_with(getrandom::fill)
     }
 
+    /// [`generate_private_key`](Self::generate_private_key), with its random
+    /// bytes drawn from `fill` instead of the operating system.
+    ///
+    /// Not part of the API: it lets benchmarks compare implementations on
+    /// identical work, from fixed tapes. The key is secret only if `fill`
+    /// supplies uniformly random bytes.
+    #[doc(hidden)]
+    pub fn generate_private_key_with_rng<E>(
+        &self,
+        fill: impl FnMut(&mut [u8]) -> Result<(), E>,
+    ) -> Result<PrivateKey, Error> {
+        self.generate_with(fill)
+    }
+
     /// Verified code runs the whole search: it draws and checks each scalar
     /// and its public value, retries up to 128 times for an in-range scalar
     /// and up to 128 times for a public value that is not degenerate, and
@@ -326,6 +340,29 @@ mod tests {
         let mut g = vec![0; 17];
         g[0] = 1;
         Parameters::from_components(&p, &g, None).unwrap()
+    }
+    #[test]
+    fn key_generation_from_a_fixed_tape_is_deterministic() {
+        // The same tape gives the same key, as the fixed-tape benchmark
+        // relies on.
+        let params = composite_domain();
+        let generate = || {
+            let mut x = 0x9E37_79B9_7F4A_7C15u64;
+            params
+                .generate_private_key_with_rng(|buf: &mut [u8]| {
+                    for b in buf {
+                        x ^= x << 13;
+                        x ^= x >> 7;
+                        x ^= x << 17;
+                        *b = x as u8;
+                    }
+                    Ok::<_, ()>(())
+                })
+                .unwrap()
+        };
+        let (a, b) = (generate(), generate());
+        assert_eq!(a.private_component(), b.private_component());
+        assert_eq!(a.public_key().component(), b.public_key().component());
     }
     #[test]
     fn generation_from_a_fixed_tape_is_deterministic() {

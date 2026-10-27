@@ -19,7 +19,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::pkey::{Id, PKey};
     use verified_garbage::x448::{PrivateKey, x448};
 
-    use crate::{OPENSSL, VG};
+    use crate::{OPENSSL, VG, fixed_tape};
     let private = [0x42; 56];
     let peer = PrivateKey::from_bytes(&[0x24; 56]).public_key();
     // Each side's private key is loaded once, outside the measurements, as a
@@ -78,12 +78,16 @@ pub fn bench(c: &mut Criterion) {
     });
     g.finish();
 
-    // A new key pair: a random private key and its public key, which
-    // OpenSSL's key generation always derives.
+    // A new key pair: a private key and its public key, which OpenSSL's key
+    // generation always derives. verified-garbage's private key is from a
+    // fixed tape (`PrivateKey::generate` but for `getrandom`); OpenSSL draws
+    // from its own generator.
     let mut g = c.benchmark_group("x448_generate");
     g.bench_function(BenchmarkId::new(VG, 56), |b| {
         b.iter(|| {
-            let key = PrivateKey::generate().unwrap();
+            let mut bytes = [0; 56];
+            fixed_tape(56)(&mut bytes);
+            let key = PrivateKey::from_bytes(&bytes);
             (*key.as_bytes(), key.public_key())
         })
     });

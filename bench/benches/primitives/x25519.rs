@@ -23,7 +23,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::pkey::{Id, PKey};
     use verified_garbage::x25519::{PrivateKey, x25519};
 
-    use crate::{AWS_LC, OPENSSL, VG};
+    use crate::{AWS_LC, OPENSSL, VG, fixed_tape};
     let private = [0x42; 32];
     let peer = PrivateKey::from_bytes(&[0x24; 32]).public_key();
     // Each side's private key is loaded once, outside the measurements, as a
@@ -118,12 +118,16 @@ pub fn bench(c: &mut Criterion) {
     });
     g.finish();
 
-    // A new key pair: a random private key and its public key, which
-    // OpenSSL's and aws-lc-rs's key generation always derive.
+    // A new key pair: a private key and its public key, which OpenSSL's and
+    // aws-lc-rs's key generation always derive. verified-garbage's private
+    // key is from a fixed tape (`PrivateKey::generate` but for `getrandom`);
+    // the others draw from their own generators.
     let mut g = c.benchmark_group("x25519_generate");
     g.bench_function(BenchmarkId::new(VG, 32), |b| {
         b.iter(|| {
-            let key = PrivateKey::generate().unwrap();
+            let mut bytes = [0; 32];
+            fixed_tape(32)(&mut bytes);
+            let key = PrivateKey::from_bytes(&bytes);
             (*key.as_bytes(), key.public_key())
         })
     });
