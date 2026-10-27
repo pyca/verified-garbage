@@ -57,15 +57,8 @@ theorem pair_exec {w16 : Bool} {L : KemLay} {kg : Bool} {a : Nat} {s t : State} 
   obtain ⟨_,_,_,rfl,es,h⟩ := seq_parts h
   obtain ⟨_,_,_,rfl,ec,h⟩ := seq_parts h
   obtain ⟨_,_,_,rfl,ea,h⟩ := seq_parts h
-  obtain ⟨_,_,_,rfl,eca,h⟩ := seq_parts h
-  obtain ⟨_,_,_,rfl,eb,h⟩ := seq_parts h
-  obtain ⟨_,_,_,rfl,ecb,h⟩ := seq_parts h
   obtain ⟨_,_,_,rfl,ex,er⟩ := seq_parts h
-  have split := block_split (l:=[.str .x .x3 .x19 1696,.str .x .x4 .x19 1704])
-    (r:=[.logic .and .x .x6 .x22 .x23]) ecb
-  obtain ⟨_,_,_,rfl,ecbb,eand⟩ := seq_parts split
-  have ee := Exec.seq (Exec.seq ei (Exec.seq es (Exec.seq ec
-    (Exec.seq ea (Exec.seq eca (Exec.seq eb (Exec.seq ecbb eand))))))) (Exec.seq ex er)
+  have ee := Exec.seq (Exec.seq ei (Exec.seq es (Exec.seq ec ea))) (Exec.seq ex er)
   simpa only [beginCode,initialCode,finishCode,seqs,List.append_assoc] using ee
 
 theorem pair_relCT {w16 : Bool} {s u : State} {L : KemLay} {kg : Bool} {a : Nat}

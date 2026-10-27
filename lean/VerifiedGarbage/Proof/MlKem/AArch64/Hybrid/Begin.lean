@@ -38,7 +38,7 @@ def beginMCode (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (sb ss a b j m 
       (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (initialCode oa ob w16)))
 
 def beginRegs3 : List Reg := startRegs3 ++ [.x9, .x16] ++
-  [.x0, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x22, .x23]
+  [.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x20, .x21, .x22, .x23]
 
 /-- A hashing pair's memory beyond `Paired.BeginInput`. -/
 structure HashInput (S : Impl.MlKem.AArch64.Hybrid.HSrc) (p outA outB table e st : Addr) (s : State) : Prop where
@@ -164,7 +164,7 @@ theorem beginM_ok {w16 : Bool} (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc)
       have fut : Frame (stepWrites p outA outB) u.mem t.mem := fvBig.trans ftBig
       have sub : ∀ {o n : Nat}, o + n ≤ 2048 → Region.Sub ⟨p + BitVec.ofNat 64 o, n⟩ ⟨p, 2048⟩ :=
         fun h => Offset.sub_base p h
-      refine ⟨((ku.trans kv).trans ht'.keep).mono (by simp [beginRegs3,List.append_assoc]),
+      refine ⟨((ku.trans kv).trans ht'.keep).mono (by simp [beginRegs3,Paired.initialRegs,List.append_assoc]),
         ((fu.mono (by simp [startWrites, pairWrites3, stepWrites])).trans
           (fut.mono (fun r hr => List.mem_append_left _ hr))),svt,
         ⟨ctt,(ht'.keep.get .x19).trans v19,pt,?_,?_,?_,?_⟩,ht'.both,?_,?_⟩

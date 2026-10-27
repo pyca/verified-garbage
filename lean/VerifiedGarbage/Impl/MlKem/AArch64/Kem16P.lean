@@ -95,10 +95,7 @@ def pairP (sb ss off sd bt : Nat) (L : KemLay) (a N₀ m : Nat) : Prog isa :=
   seqs [.block (Paired.init sb ss a (a+1) L.k),
     .seq (stepP sd bt N₀ m 0) (.seq (stepP sd bt N₀ m 1) (stepP sd bt N₀ m 2)),
     .block Rej8.rejConsts,
-    Paired.reject 400 (off+1024*a) .x22 true,
-    .block [.str .x .x3 .x19 1680,.str .x .x4 .x19 1688],
-    Paired.reject 904 (off+1024*(a+1)) .x23 true,
-    .block [.str .x .x3 .x19 1696,.str .x .x4 .x19 1704,.logic .and .x .x6 .x22 .x23],
+    Paired.rejectBoth (off+1024*a) (off+1024*(a+1)) true,
     .ite (.zero .x .x6) (Paired.extraPair true) (.block []),
     .block ((Paired.saved.zipIdx.reverse.map fun (r,i) => .ldr .x r .x19 (1800+8*i)))]
 
