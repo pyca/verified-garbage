@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Camellia.X86.Ecb
+public import VerifiedGarbage.Impl.Camellia.X86.Prepared
 public import VerifiedGarbage.Impl.Modes.X86.Seq
 public import VerifiedGarbage.Impl.Modes.CbcChained
 
@@ -10,8 +10,10 @@ public import VerifiedGarbage.Impl.Modes.CbcChained
 `dirCore d`: the bitsliced ECB's pieces (`Ecb.lean`) as a core for the
 modes (`Impl/Modes/X86/Seq.lean`), whose key is two arguments: the schedule
 and the number of rounds. `prepare` builds the table of subkeys in the order
-of the direction `d` for 18 rounds or 24, and `crypt` runs the eight blocks
-of the tail buffer through the code written out for that number of rounds;
+of the direction `d` for 18 rounds or 24, and `crypt` calls
+`vg_camellia_crypt_prepared` (`Prepared.lean`), which runs the eight blocks
+of the tail buffer through the code written out for that number of rounds,
+its arguments pushed in a frame (16 bytes of stack with the return address);
 each reads the number of rounds from its stack argument (the analysis of
 constant time takes what the scratch buffer holds as secret once the modes
 store through the data pointer). The modes' slots follow ECB's 672: 682
@@ -33,12 +35,13 @@ def cmpRounds : List Instr := [.mov .eax (.mem (argOp 1)), .alu .cmp .eax (.imm 
 /-- Camellia's core for the direction `d`. -/
 def dirCore (d : Dir) : Modes.X86.Core where
   prepare := .seq (.block cmpRounds) (.ite .e (keys d 3) (keys d 4))
-  crypt := .seq (.block cmpRounds) (.ite .e (crypt8 3) (crypt8 4))
+  crypt := cryptCall
   slots := slots
   total := slots + 10
   buf := tailSlot
   G := 8
   bw := 4
+  stack := 16
   ka := 2
 
 /-- `vg_camellia_cbc_encrypt_chained`, with its scratch buffer as the sixth argument. -/
