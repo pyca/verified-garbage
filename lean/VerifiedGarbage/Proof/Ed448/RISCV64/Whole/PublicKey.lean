@@ -90,7 +90,7 @@ theorem publicKey_wp (hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : PkPre s)
         (fun p hp' => in_base hFw (by revert p; decide) (by revert p; decide)) ⟨_, by simp, hsS⟩ rfl
         (by decide) (by decide) (fun p hp' => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hp'
-          rcases hp' with rfl | rfl | rfl | rfl <;> rfl) fun u hu => WP.block_nil hu) fun t₁ h₁ => ?_)
+          rcases hp' with rfl | rfl | rfl | rfl <;> rfl) fun u hu _ => WP.block_nil hu) fun t₁ h₁ => ?_)
   have g22x : t₁.gpr .s8 = s.gpr .a1 := h₁.regs _ (by decide)
   have g23x : t₁.gpr .s9 = s.gpr .a2 := h₁.regs _ (by decide)
   have g24x : t₁.gpr .s10 = s.gpr .a3 := h₁.regs _ (by decide)

@@ -56,17 +56,18 @@ theorem setup_ok {s : State} {f : Reg} {o : Nat} {rs : List Reg} {ms : List (Reg
     (hin : ∀ p ∈ slots o rs, InRegions s.wr (s.gpr f + BitVec.ofNat 64 p.2) 8)
     (hW : ∃ R ∈ W, Region.Sub (slotArea (s.gpr f) o rs) R) (hms : ms.map Prod.fst = rs)
     (hsrc : ∀ p ∈ ms, p.2 ∉ rs) (hnd : rs.Nodup) (hv : ∀ p ∈ ms, v p.1 = s.gpr p.2)
-    (k : ∀ u, Inv s (s.gpr f) o rs v W u → WP isa (.block rest) u Q) :
+    (k : ∀ u, Inv s (s.gpr f) o rs v W u → (∀ r, r ∉ rs → u.gpr r = s.gpr r) → WP isa (.block rest) u Q) :
     WP isa (.block (saveRegs f o rs ++ ms.map (fun p => mov p.1 p.2) ++ rest)) s Q := by
   rw [List.append_assoc]
   refine save_ok hal hfits hlo hin fun u hu hsv hfr => ?_
   refine movs_ok ms (fun p hp => hms ▸ hsrc p hp) (hms ▸ hnd)
     fun u' m' rd' wr' sp' hm ho => k u' ⟨rd'.trans hu.rd, wr'.trans hu.wr, sp'.trans hu.sp, fun r hr => ?_,
       fun r hr hn => ?_, m' ▸ hsv, m' ▸ hfr.sub fun x hx => by
-        rw [List.mem_singleton.mp hx]; exact hW⟩
+        rw [List.mem_singleton.mp hx]; exact hW⟩ fun r hn => ?_
   · rw [← hms] at hr
     obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hr
     rw [hm p hp, hv p hp, hu.gpr _ (by simp)]
+  · rw [ho r (hms ▸ hn), hu.gpr _ (by simp)]
   · rw [ho r (hms ▸ hn), hu.gpr _ (by simp)]
 
 /-- A step that keeps the callee-saved registers, writing within `W` and apart from the slots. -/
