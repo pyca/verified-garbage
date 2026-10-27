@@ -137,8 +137,9 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Ar
       registers in `scratch`. Field elements and scalars are four 64-bit words in Montgomery \
       form, multiplied by word-by-word Montgomery multiplication (CIOS) with a final conditional \
       subtraction; the 28-byte encodings are read and written a word at a time, the top word's \
-      four bytes from the first eight or a byte at a time. `[k]G` is a fixed-base comb of 7-bit \
-      signed digits: the 37 windows `k_j` of the bits of the four words of `k` as digits \
+      four bytes from the first eight or a byte at a time. `[k]G` is a call of `vg_p224_mul_base`, \
+      which expands `k` into a table of its bits and runs a fixed-base comb of 7-bit signed \
+      digits: the 37 windows `k_j` of the bits of the four words of `k` as digits \
       `k_j - 64` from `-64` to `63`, `[k]G = [64 Σ 2^(7j)]G + Σ [(k_j - 64) 2^(7j)]G`, from 37 \
       tables of `[m 2^(7j)]G` (`m = 1 … 64`, affine, in Montgomery form) in the static \
       `VG_P224_COMB` (148 KB), with no doublings: each entry is selected in constant time by \

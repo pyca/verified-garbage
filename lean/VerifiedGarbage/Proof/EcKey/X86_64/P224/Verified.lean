@@ -95,7 +95,7 @@ theorem pk_x86 (hL : Weierstrass.Law Spec.P224.curve)
     (hI : Weierstrass.X86_64.InvSounds)
     (s : State) (hs : pkX86_64.pre s) :
     ∃ t s', Exec isa publicKeyP224.inline s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p224_ok hI) hL (p224_tbls hT) (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p224_ok hI) hL (p224_tbls hT) (pre_of hs) p224_mulBase
   have hsp : ∀ i ∈ instrs publicKeyP224.inline, Taint.clobbers i .rsp = false := by
     have h : publicKeyP224.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
       rw [← Code.allInstrs_mapBlocks (f := Instr.erase) fun i => by rw [Taint.clobbers_erase]]
