@@ -9,6 +9,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.Candidate
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateSchedule
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTimingInput
 public import VerifiedGarbage.Spec.MillerRabin
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateParameters
 
 /-! # Native argument entry and the complete candidate body obey the declared leak -/
 

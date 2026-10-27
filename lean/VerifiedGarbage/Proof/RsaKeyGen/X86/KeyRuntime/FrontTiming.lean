@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InputTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExportTiming
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StartPair
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateParameters
 
 /-! # Shared derivation and the existing output adapters publish only the specified retry bit -/
 

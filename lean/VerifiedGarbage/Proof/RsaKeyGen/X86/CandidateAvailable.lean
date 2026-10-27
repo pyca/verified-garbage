@@ -1,11 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDispatch
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFrontRt
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateSieveResult
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDrawn
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateSizedResult
 
-/-! # Every supported public output length selects its verified native width -/
+/-! # The candidate drawn and filtered at its run-time width, then tested -/
 
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.Candidate
@@ -29,35 +29,8 @@ theorem available_ok {mont round : Prog isa} {montName roundName : String}
     WP isa (VG.Impl.RsaKeyGen.X86.Candidate.available montName mont roundName round) s fun t =>
       FilteredOutputs E (Spec.Rsa.os2ip eBytes) (Spec.RsaKeyGen.otherPrime pBytes) entropy t ∧
       MutableFrame E s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
-  have bounds := v.width_bounds
-  have lengthBound : E.length < 2 ^ 32 := by have := v.length; unfold Spec.RsaKeyGen.primeLenValid at this; omega
-  have space : 256 ≤ E.size := v.geometry.headerFit
-  unfold VG.Impl.RsaKeyGen.X86.Candidate.available VG.Impl.RsaKeyGen.X86.Candidate.width
-  refine WP.seq (wp_movS (readSrc_sc I.scratch (d := 4) (by omega)) fun a A _ =>
-    wp_shr (by decide) fun b B _ => WP.block_nil ?_)
-  have M : b.mem = s.mem := B.mem.trans A.mem
-  have K : Keeps [.eax] s b := A.keeps.trans B.keeps
-  have width : b.gpr .eax = BitVec.ofNat 32 E.width := by
-    rw [B.gpr, A.gpr, I.header 1 (by decide)]
-    apply BitVec.eq_of_toNat_eq
-    simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    change (E.length % 2 ^ 32) / 8 = E.width % 2 ^ 32
-    rw [Nat.mod_eq_of_lt lengthBound, Nat.mod_eq_of_lt (by omega : E.width < 2 ^ 32)]
-    rfl
-  refine WP.seq (WP.mono (dispatch_ok (Q := fun t => FrontOutputs E eBytes pBytes entropy t ∧
-      MutableFrame E s.mem t.mem ∧ Keeps WitnessStep.clob s t) width (by omega)
-    VG.Impl.RsaKeyGen.X86.Candidate.widths ?_ ?_ fun c C => ?_) fun d ⟨front, Fd, Kd⟩ => ?_)
-  · exact List.mem_map.mpr ⟨E.width - 4, List.mem_range.mpr (by omega), by omega⟩
-  · intro w mem
-    obtain ⟨i, index, rfl⟩ := List.mem_map.mp mem
-    have bound := List.mem_range.mp index
-    omega
-  · have Mc : c.mem = s.mem := C.mem.trans M
-    have Kc : Keeps [.eax] s c := K.widen (C.keeps [])
-    refine WP.mono (sized_front_ok v (I.keepMem v Mc Kc (by decide) (by decide) (C.syms.trans (B.syms.trans A.syms)))
-      (by rw [Mc]; exact zeros) enough) fun t ⟨output, F, Kt⟩ => ?_
-    rw [Mc] at F
-    exact ⟨output, F, (Kc.mono (by unfold WitnessStep.clob; decide)).trans Kt⟩
+  unfold VG.Impl.RsaKeyGen.X86.Candidate.available
+  refine WP.seq (WP.mono (front_rt_ok v I zeros enough) fun d ⟨front, Fd, Kd⟩ => ?_)
   refine WP.seq (wp_cmpS rfl fun e Ee Z => WP.block_nil ?_)
   have Fe : MutableFrame E s.mem e.mem := by rw [Ee.mem]; exact Fd
   have Ke : Keeps WitnessStep.clob s e := Kd.widen (Ee.keeps [])

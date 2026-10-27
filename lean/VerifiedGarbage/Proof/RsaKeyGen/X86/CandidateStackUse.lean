@@ -131,20 +131,15 @@ theorem exponentCheck {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : 
   rw [exponentRt]
   omega
 
-theorem front (w : Nat) : stackUse (Candidate.front w) ≤ 24 := by
-  have sieve : stackUse (CandidateSieve.code w) = 24 := rfl
-  change max 0 (max 0 (max 0 (max 0 (max (stackUse (CandidateSieve.code w)) 0)))) ≤ 24
-  rw [sieve]
-  omega
+theorem front : stackUse VG.Impl.RsaKeyGen.X86.FrontRt.code = 24 := rfl
 
 theorem available {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (montName roundName : String) : stackUse (Candidate.available montName mont roundName round) ≤ 136 := by
-  have bound := dispatch front Candidate.widths
   have exponent := exponentCheck Hm Hr montName roundName
   unfold Candidate.available
-  generalize Candidate.dispatch Candidate.front Candidate.widths = d at bound ⊢
   generalize Candidate.exponentCheck montName mont roundName round = e at exponent ⊢
-  change max 0 (max (stackUse d) (max 0 (max (stackUse e) 0))) ≤ 136
+  change max (stackUse VG.Impl.RsaKeyGen.X86.FrontRt.code) (max 0 (max (stackUse e) 0)) ≤ 136
+  rw [front]
   omega
 
 theorem body {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)

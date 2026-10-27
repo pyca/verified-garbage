@@ -1,13 +1,14 @@
 module
 
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateAvailableTiming
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateWidthTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateClearTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateClearInput
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateBranch
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateInput
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFinishTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateSizedTiming
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFrontRtTiming
 
 /-! # The candidate's output clearing and entropy guard have a public trace -/
 

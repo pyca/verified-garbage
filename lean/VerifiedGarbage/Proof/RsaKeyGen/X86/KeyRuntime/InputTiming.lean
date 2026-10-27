@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Frame
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.CoreReadonlyTiming
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateParameters
 
 /-! # Established input traces supply the shared core's read-only argument view -/
 

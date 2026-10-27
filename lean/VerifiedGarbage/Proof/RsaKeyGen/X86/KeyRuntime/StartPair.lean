@@ -7,6 +7,8 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyArgContext
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyImportedPair
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyWritePortTiming
+import VerifiedGarbage.Proof.MillerRabin.X86.MontFrame
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateParameters
 
 /-! # Width comparisons preserve the shared core's input snapshots and argument records -/
 

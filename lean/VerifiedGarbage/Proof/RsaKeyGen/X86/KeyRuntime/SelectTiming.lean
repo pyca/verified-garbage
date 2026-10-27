@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyWidthTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDispatch
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateParameters
 
 /-! # One public-width dispatch theorem serves input and output adapters -/
 
