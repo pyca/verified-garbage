@@ -57,9 +57,9 @@ def checkInputs (C : Mul.Curve) : Bool :=
 #guard [p224, p256].all fun C =>
   C.ownDoc == "Bytes 608 to 1055, 1344 to 1375, 128 to 159 and 1504 to 8191 of `ws`" &&
     C.kAt == 1056 && C.pAt == 512 && C.oneAt == 224 && C.aAt == 256 && C.b3At == 288
-#guard p384.ownDoc == "Bytes 880 to 1551, 1984 to 2031 and 2224 to 8191 of `ws`" &&
+#guard p384.ownDoc == "Bytes 880 to 1551, 1984 to 2031, 160 to 207 and 2224 to 8191 of `ws`" &&
   p384.kAt == 1552 && p384.pAt == 736
-#guard p521.ownDoc == "Bytes 1288 to 2295, 2944 to 3015 and 3304 to 8191 of `ws`" &&
+#guard p521.ownDoc == "Bytes 1288 to 2295, 2944 to 3015, 208 to 279 and 3304 to 8191 of `ws`" &&
   p521.kAt == 2296 && p521.pAt == 1072
 #guard [p224, p256, p384, p521].all fun C => C.mulApi.summary.contains "for `k` in `[1, n - 1]`"
 #guard [p192, secp256k1].all fun C =>
