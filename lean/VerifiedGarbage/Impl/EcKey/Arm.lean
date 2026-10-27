@@ -56,8 +56,8 @@ def upToPowWith (generator : Prog isa) : Prog isa :=
   .seq generator <|
   .seq (pow c.powP c.SP) (.block [])
 
-/-- The common prefix with the variable-base ladder. -/
-def upToPow : Prog isa := upToPowWith c (Point.ladderP c.ladderCfg c.SP)
+/-- The common prefix with `gen`. -/
+def upToPow : Prog isa := upToPowWith c c.gen
 
 /-- `04 ‖ x ‖ y` (or zeros) to `out` (in `lr`), the flag's low bit to `r0`,
 and the callee-saved registers restored. -/
@@ -80,8 +80,8 @@ def middle : Prog isa :=
 /-- `vg_ec_<curve>_public_key`. -/
 def publicKeyWith (generator : Prog isa) : Prog isa := .seq (upToPowWith c generator) (middle c)
 
-/-- Public-key generation with the generic ladder. -/
-def publicKey : Prog isa := publicKeyWith c (Point.ladderP c.ladderCfg c.SP)
+/-- Public-key generation with `gen`. -/
+def publicKey : Prog isa := publicKeyWith c c.gen
 
 end Cfg
 

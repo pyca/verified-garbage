@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
 
 
 /-!
@@ -96,5 +97,19 @@ theorem slSub_ok {M : Mod} {S : Spec.Weierstrass.Mont.Modulus} {m : Nat} (hF : F
     (by rw [hF.k, hF.m, hMn]; exact hA) (by rw [hF.k, hF.m, hMn]; exact hB)) fun s' ⟨K, e⟩ => ?_
   rw [hF.k, hF.m, hMn] at e
   exact ⟨.of_call hF K, e⟩
+
+/-- `[o] = [a]`, on numbered slots. -/
+theorem copySl_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) {o a : Nat}
+    (ho : o < 45) (ha : a < 45) (hoa : o ≠ a) :
+    WP isa (.block (copy (2 * c.n) (c.sl o) (c.sl a))) s fun s' =>
+      sv c base s' o = sv c base s a ∧ VG.Proof.X25519.Arm.Rest [.r4] s s' ∧
+      Outside base (c.sl o) (8 * c.n) s.mem s'.mem := by
+  have := sl_apart c hoa
+  have := sl_le c hc.n10 ho
+  have := sl_le c hc.n10 ha
+  refine WP.mono (copy_ok (2 * c.n) hs (by omega) (by omega) (by omega)) fun s' ⟨e, k, O⟩ => ⟨?_, k, ?_⟩
+  · show wordsVal _ _ _ _ = wordsVal _ _ _ _
+    rw [wordsVal_eq_val32, wordsVal_eq_val32, e]
+  · rw [show 8 * c.n = 4 * (2 * c.n) by omega]; exact O
 
 end VG.Proof.Ecdsa.Arm
