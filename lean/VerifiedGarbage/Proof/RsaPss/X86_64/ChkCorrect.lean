@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.RsaPss.X86_64.EncParams
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
 
 /-!
 # EMSA-PSS's check of an encoding on x86-64: correctness

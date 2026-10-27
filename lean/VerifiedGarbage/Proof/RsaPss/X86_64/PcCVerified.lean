@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.PcCCorrect
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignCVerified
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
-import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 
 /-!
 # RSASSA-PSS verification with cached public-key values on x86-64, around

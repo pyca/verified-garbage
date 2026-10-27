@@ -8,6 +8,9 @@ import VerifiedGarbage.Proof.RsaPss.EncodeEq
 import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+import VerifiedGarbage.Proof.RsaPss.X86_64.Params
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
 
 /-!
 # EMSA-PSS's encoding on x86-64: correctness

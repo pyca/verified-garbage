@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.EncParams
+import VerifiedGarbage.Proof.RsaPss.X86_64.EncParams
 public import VerifiedGarbage.Spec.RsaPss
 import VerifiedGarbage.Proof.RsaPss.Params
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.RsaPss.X86_64.Encoding
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
 
 /-!
 # RSASSA-PSS signing and verification on x86-64, around the encoding: the

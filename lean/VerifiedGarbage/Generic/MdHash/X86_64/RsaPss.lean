@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Framework.X86_64.Registration
+public import VerifiedGarbage.TCB.Code
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Instances
 public import VerifiedGarbage.Proof.RsaPss.X86_64.EncCt
 public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkCt

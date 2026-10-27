@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCCall
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignCCall
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
 import VerifiedGarbage.Proof.RsaPss.SignEncode
 import VerifiedGarbage.Proof.RsaPss.SignCases
@@ -9,6 +9,9 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFrame
 import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 import VerifiedGarbage.Proof.Bignum.Octets
 import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.RsaPss.X86_64.EncCtx
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCParams
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignFrame
 
 /-!
 # RSASSA-PSS signing on x86-64, around the encoding: correctness

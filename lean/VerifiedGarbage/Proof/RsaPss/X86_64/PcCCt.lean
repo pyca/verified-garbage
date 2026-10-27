@@ -2,13 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtBase
 public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedContract
-public import VerifiedGarbage.Proof.RsaPss.X86_64.PcCVerified
+import VerifiedGarbage.Proof.RsaPss.X86_64.PcCVerified
 public import VerifiedGarbage.Proof.RsaPss.X86_64.PcChk
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCParams
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
 import VerifiedGarbage.Proof.RsaPss.X86_64.PcCCorrect
 import VerifiedGarbage.Proof.RsaPss.X86_64.PcChk
-import VerifiedGarbage.Proof.RsaPss.X86_64.PcCArgs
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignCCorrect
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignCFixed
 import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFixed
@@ -17,9 +16,10 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
 import VerifiedGarbage.Proof.RsaPss.Params
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignCCall
+public import VerifiedGarbage.Impl.RsaPss.X86_64.Encoding
+public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkCtx
+public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCall
 
 /-!
 # RSASSA-PSS verification with cached public-key values on x86-64, around

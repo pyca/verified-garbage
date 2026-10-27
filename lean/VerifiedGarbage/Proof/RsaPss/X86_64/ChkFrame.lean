@@ -2,9 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkCtx
 public import VerifiedGarbage.Proof.RsaPss.X86_64.EncParams
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
 import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
 
 /-!
 # EMSA-PSS's check of an encoding on x86-64: the precondition by name, the

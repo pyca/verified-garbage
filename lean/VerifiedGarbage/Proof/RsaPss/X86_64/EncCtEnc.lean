@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
+import VerifiedGarbage.Proof.RsaPss.X86_64.Params
 
 /-!
 # EMSA-PSS's encoding on x86-64: `signEnc` in two runs

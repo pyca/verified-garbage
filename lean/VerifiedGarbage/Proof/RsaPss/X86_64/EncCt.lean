@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.EncFixed
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignFixed
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.RsaPss.X86_64.Params
 
 /-!
 # EMSA-PSS's encoding on x86-64: constant time, and `Verified`

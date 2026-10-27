@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Impl.RsaPss.X86_64.Encoding
 public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCtx
-public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCall
+import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCall
 public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkCtx
 
 import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedArgs
@@ -11,6 +11,9 @@ import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyMain
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
+public import VerifiedGarbage.Impl.Rsa.X86_64
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFrame
 
 /-!
 # RSASSA-PSS verification with cached public-key values on x86-64, around

@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCParams
 public import VerifiedGarbage.Proof.RsaPss.X86_64.EncCtx
-import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.RsaPss.X86_64.Encoding
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
+public import VerifiedGarbage.Spec.RsaPss.Encoding
 
 /-!
 # RSASSA-PSS signing on x86-64, around the encoding: the call of `encode`

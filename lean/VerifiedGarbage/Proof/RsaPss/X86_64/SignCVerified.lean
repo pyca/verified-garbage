@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.EncCtx
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignCCorrect
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 import VerifiedGarbage.Proof.RsaPss.X86_64.Safe

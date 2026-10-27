@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.Params
+import VerifiedGarbage.Proof.RsaPss.X86_64.Params
 public import VerifiedGarbage.Impl.RsaPss.X86_64.Encoding
 public import VerifiedGarbage.Spec.RsaPss.Encoding
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
 
 /-!
 # EMSA-PSS's encoding and its check on x86-64: the parameters

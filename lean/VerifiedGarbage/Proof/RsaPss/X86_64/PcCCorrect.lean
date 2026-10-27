@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.PcChk
-public import VerifiedGarbage.Proof.RsaPss.X86_64.PcCArgs
+import VerifiedGarbage.Proof.RsaPss.X86_64.PcCArgs
 public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCall
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCParams
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyPadding
@@ -16,6 +16,9 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.RsaPss.X86_64.Encoding
+public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCtx
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCall
 
 /-!
 # RSASSA-PSS verification with cached public-key values on x86-64, around
