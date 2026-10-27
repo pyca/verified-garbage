@@ -15,10 +15,13 @@ structure StreamInput (s : State) (base : Addr) (size : Nat) (p : BitVec 32) (le
   fit : p.toNat + len ≤ 2 ^ 32
   read : ∀ i < len, InRegions (s.rd ++ s.wr) (p.setWidth 64 + BitVec.ofNat 64 i) 1
   far : ∀ i < len, size ≤ ofs base (p.setWidth 64 + BitVec.ofNat 64 i)
+  /-- All the bytes within one permitted region, as a callee's contract
+  names them. -/
+  whole : InRegions (s.rd ++ s.wr) (p.setWidth 64) len
 
 theorem StreamInput.keep {s t : State} {base : Addr} {size len : Nat} {p : BitVec 32}
     (I : StreamInput s base size p len) {rs : List Reg} (K : Keeps rs s t) : StreamInput t base size p len :=
-  ⟨I.fit, by rw [K.2.1, K.2.2]; exact I.read, I.far⟩
+  ⟨I.fit, by rw [K.2.1, K.2.2]; exact I.read, I.far, by rw [K.2.1, K.2.2]; exact I.whole⟩
 
 theorem streamRanges_whole {n size : Nat} {base : Addr} {s t : State}
     (h : contextBytes n ≤ size) (O : Outs base (streamRanges n) s.mem t.mem) : Outside base 0 size s.mem t.mem := by

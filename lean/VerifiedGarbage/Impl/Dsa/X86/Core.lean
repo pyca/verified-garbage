@@ -66,12 +66,12 @@ def sum (len : Nat) (a b : Pointer) (output : Nat) : Prog isa :=
   (.seq (ordinaryAdd n) (store len output)))
 
 /-- Reduce `len` bytes (an immediate, or a saved public length) at `input`
-modulo q. -/
+modulo q, by a call of the width's shared reduction (`Arith.reduceCall`). -/
 def reduce (qLen : Nat) (len : Src) (input : Pointer) (output : Nat) : Prog isa :=
   let n := (qLen + 7) / 8
-  .seq (setup qLen .q)
-  (.seq (.block (pointer input))
-  (.seq (reduceStream n len) (store qLen output)))
+  .seq (load n qLen (slot n 0) (.input .q))
+  (.seq (.block (pointer input ++ [.mov .ebx len]))
+  (.seq (Arith.reduceCall n) (store qLen output)))
 
 /-- The digest prefix the shape check saved. -/
 def digestPrefix : Src := .mem (sc (Layout.field .digestPrefixLen))

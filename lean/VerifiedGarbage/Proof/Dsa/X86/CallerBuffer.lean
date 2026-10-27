@@ -34,7 +34,8 @@ theorem CallerBuffer.ready {s : State} {base : Addr} {size n len : Nat} {p : Poi
 theorem CallerBuffer.stream {s : State} {base : Addr} {size n len : Nat} {p : Pointer}
     (B : CallerBuffer s base size p len) (hn : contextBytes n ≤ size) :
     StreamInput s base (contextBytes n) (pointerValue base s p) len := by
-  refine ⟨B.fits, fun i hi => B.read i 1 (by omega), ?_⟩
+  refine ⟨B.fits, fun i hi => B.read i 1 (by omega), ?_,
+    by simpa only [BitVec.add_zero] using B.read 0 len (by omega)⟩
   intro i hi
   have ilt : i < 2 ^ 64 := by have := B.fits; omega
   have inside : (⟨(pointerValue base s p).setWidth 64, len⟩ : Region).Contains

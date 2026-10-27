@@ -62,7 +62,7 @@ theorem verifyPowers_ok {base : Addr} {size pLen qLen p q g y uv vv : Nat} {s0 :
     have V := R3.wide_value M2 (by decide) (Nat.lt_trans (Nat.mod_lt _ pp) M.valueBounds.1)
     rw [T12, T2] at V
     exact V
-  refine WP.seq (WP.mono (stageReduce_ok (LenOperand.imm _ _ _ _ _) M3 (M3.wideStream (by decide) nq) (by omega)
+  refine WP.seq (WP.mono (stageReduce_ok (LenOperand.imm _ _ _ _ _) M3 (M3.wideStream (by decide) nq) (M3.wideStack (by decide)) (by omega)
     (by decide) (M3.scalarFit (by decide))) fun sf ⟨Mf, R4⟩ => ?_)
   refine WP.block_nil ⟨Mf, ?_, ⟨(E12.trans E3).trans (R4.toStageFrame.execution (.inl ⟨by decide, M3.scalarFit (by decide)⟩)), ?_⟩⟩
   · have V := R4.scalar_value M3 (by decide) (Nat.lt_trans (Nat.mod_lt _ qp) M.valueBounds.2)

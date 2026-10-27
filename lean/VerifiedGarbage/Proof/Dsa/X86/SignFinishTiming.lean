@@ -34,7 +34,7 @@ theorem signSumInputs_ok (L : CallLayout)
     (R.moduli.scalarReady (by decide) N) (by decide) (R.moduli.scalarFit (by decide))) fun s1 ⟨M1, F1⟩ => ?_)
   have R1 := R.keep (F1.toStageFrame.execution (.inl ⟨by decide, R.moduli.scalarFit (by decide)⟩))
   have U1 := F1.scalar_value R.moduli (by decide) (Nat.lt_trans (Nat.mod_lt _ qp) R.moduli.valueBounds.2)
-  refine WP.mono (stageReduce_ok R1.prefixOperand M1 (R1.stream D N) hd (by decide) (M1.scalarFit (by decide))) fun s2 ⟨_, F2⟩ => ?_
+  refine WP.mono (stageReduce_ok R1.prefixOperand M1 (R1.stream D (fun _ h => by cases h) N) (R1.stack D (fun _ h => by cases h)) hd (by decide) (M1.scalarFit (by decide))) fun s2 ⟨_, F2⟩ => ?_
   constructor
   · rw [F2.scalar_value M1 (by decide) (Nat.lt_trans (Nat.mod_lt _ qp) M1.valueBounds.2)]
     exact Nat.mod_lt _ qp
@@ -71,7 +71,7 @@ theorem callSignFinish_relCT (L : CallLayout)
   apply RelCT.assoc
   refine RelCT.seq ((RelCT.seq
     (callProductQ_relCT L (.input .x) (.local r) u Q X R (by decide) (by change 14816 + L.qLen ≤ 15712; omega))
-    (callReduce_relCT L (.input .digest) Core.digestPrefix L.digestPrefix z (.inr ⟨_, rfl⟩)
+    (callReduce_relCT (hl := fun _ h => by cases h) L (.input .digest) Core.digestPrefix L.digestPrefix z (.inr ⟨_, rfl⟩)
       (fun _ R => R.prefixOperand) Q D hd (by decide) (by change 14880 + L.qLen ≤ 15712; omega))).wp
     (fun s t H => ⟨signSumInputs_ok L X D hd s H.1, signSumInputs_ok L X D hd t H.2⟩)) ?_
   exact RelCT.seq (signSum_relCT L Q)

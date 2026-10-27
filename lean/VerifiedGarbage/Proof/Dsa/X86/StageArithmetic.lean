@@ -73,6 +73,7 @@ theorem stageReduce_ok {base : Addr} {size pLen qLen p q output len : Nat} {s : 
     {src : Src} (hsrc : LenOperand base size ((qLen + 7) / 8) s src len)
     (M : Moduli base size pLen qLen p q s)
     (Ri : StreamInput s base (contextBytes ((qLen + 7) / 8)) (pointerValue base s input) len)
+    (Rs : Region.Disjoint ⟨(pointerValue base s input).setWidth 64, len⟩ (callStack (s.gpr .esp)))
     (hi : len < 2 ^ 32) (ho : r ≤ output) (hb : output + qLen ≤ usedBytes) :
     WP isa (Core.reduce qLen src input output) s fun t =>
       Moduli base size pLen qLen p q t ∧ StageResult base s t output qLen (operandValue s base input len % q) := by
@@ -81,10 +82,10 @@ theorem stageReduce_ok {base : Addr} {size pLen qLen p q output len : Nat} {s : 
   have N : (qLen + 7) / 8 ≤ 48 := by omega
   have C := VG.Proof.Dsa.X86.Layout.context_bound N
   have low : 14720 ≤ output := ho
-  refine WP.mono (coreReduce_ok hsrc M.scr M.saved rfl (by omega) (by omega) (by omega) M.qReady Ri hi M.qValue
-    M.qLarge M.qOdd (Nat.le_trans hb M.extent) (by omega)) fun t ⟨V, O, K⟩ => ?_
+  refine WP.mono (coreReduce_ok hsrc M.scr M.saved M.room M.extent rfl (by omega) (by omega) (by omega) M.qReady
+    Ri Rs hi M.qValue M.qLarge M.qOdd (Nat.le_trans hb M.extent) (by omega)) fun t ⟨V, O, K⟩ => ?_
   have F : StageResult base s t output qLen (operandValue s base input len % q) :=
-    ⟨StageFrame.of_frame K (by intro reg hr; exact hr) O N, V⟩
+    ⟨StageFrame.of_stackFrame K (by intro reg hr; exact hr) O N, V⟩
   exact ⟨M.keep (F.toStageFrame.run (.inl ⟨ho, hb⟩)) F.keeps (by decide) (by decide), F⟩
 
 end VG.Proof.Dsa.X86
