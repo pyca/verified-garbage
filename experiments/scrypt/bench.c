@@ -9,19 +9,19 @@ typedef void(*rf)(void*,size_t,void*,size_t,void*,size_t);
 #define S(n) void trial_##n(uint32_t*,uint32_t*);
 S(scalar) S(neon) S(neon_loop) S(fold) S(fold_io) S(schedule) S(schedule_fold)
 #define B(n) void trial_bm_##n(const void*,size_t,void*,size_t,void*);void trial_rm_##n(void*,size_t,void*,size_t,void*,size_t);
-B(scalar) B(neon) B(neon_loop) B(fused) B(fused_loop) B(fold) B(fold_vcopy) B(fold_inline) B(fold_io) B(schedule) B(schedule_fold) B(resident_mem) B(resident_ins) B(resident_dup)
+B(scalar) B(neon) B(neon_loop) B(fused) B(fused_loop) B(fold) B(fold_vcopy) B(fold_inline) B(fold_io) B(schedule) B(schedule_fold) B(resident_mem) B(resident_ins) B(resident_dup) B(resident_ref)
 struct se{const char*n;sf f;}ss[]={{"scalar",trial_scalar},{"neon",trial_neon},{"neon_loop",trial_neon_loop},{"fold",trial_fold},{"fold_io",trial_fold_io},{"schedule",trial_schedule},{"schedule_fold",trial_schedule_fold}};
 struct be{const char*n;bf f;rf rm;}bs[]={
 #define X(n) {#n,trial_bm_##n,trial_rm_##n},
-X(scalar) X(neon) X(neon_loop) X(fused) X(fused_loop) X(fold) X(fold_vcopy) X(fold_inline) X(fold_io) X(schedule) X(schedule_fold) X(resident_mem) X(resident_ins) X(resident_dup)
+X(scalar) X(neon) X(neon_loop) X(fused) X(fused_loop) X(fold) X(fold_vcopy) X(fold_inline) X(fold_io) X(schedule) X(schedule_fold) X(resident_mem) X(resident_ins) X(resident_dup) X(resident_ref)
 };
 
 #define R(n) void trial_rm_##n(void*,size_t,void*,size_t,void*,size_t);
-R(resident_mem) R(resident_ins) R(resident_dup) R(resident_mem_v4) R(resident_ins_v4) R(resident_dup_v4)
+R(resident_mem) R(resident_ins) R(resident_dup) R(resident_ref) R(resident_ref_v4) R(resident_mem_v4) R(resident_ins_v4) R(resident_dup_v4)
 R(scalar_v1) R(scalar_v2) R(scalar_v4) R(schedule_v1) R(schedule_v2) R(schedule_v4)
 struct re{const char*n;rf rm;}rms[]={
 #define Q(n) {#n,trial_rm_##n},
-Q(scalar) Q(resident_mem) Q(resident_ins) Q(resident_dup) Q(resident_mem_v4) Q(resident_ins_v4) Q(resident_dup_v4) Q(schedule) Q(schedule_fold) Q(scalar_v1) Q(scalar_v2) Q(scalar_v4) Q(schedule_v1) Q(schedule_v2) Q(schedule_v4)
+Q(scalar) Q(resident_mem) Q(resident_ins) Q(resident_dup) Q(resident_ref) Q(resident_ref_v4) Q(resident_mem_v4) Q(resident_ins_v4) Q(resident_dup_v4) Q(schedule) Q(schedule_fold) Q(scalar_v1) Q(scalar_v2) Q(scalar_v4) Q(schedule_v1) Q(schedule_v2) Q(schedule_v4)
 };
 static uint64_t random_state=123;
 static uint64_t rnd(void){random_state^=random_state<<13;random_state^=random_state>>7;random_state^=random_state<<17;return random_state;}

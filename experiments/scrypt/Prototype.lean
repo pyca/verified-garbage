@@ -167,11 +167,25 @@ def resident (mode : Nat) : Prog isa := seqs [.block residentSetup,
  [.addImm .x .x19 .x19 64,.addImm .x .x20 .x20 64,.subImm .x .x21 .x21 1])) (.nonzero .x .x21),
  .block (residentSaved.map (fun (r,v) => Instr.umov .x r v 0))]
 
+def refResidentStep (out : Reg) : List Instr :=
+ (List.range 16).flatMap (fun k =>
+ [.ldr .w .x1 .x19 (4*k),.logic .eor .w (VG.Impl.Scrypt.AArch64.wreg k) (VG.Impl.Scrypt.AArch64.wreg k) .x1,
+ .str .w (VG.Impl.Scrypt.AArch64.wreg k) out (4*k)]) ++
+ (List.range 4).flatMap (fun _ => VG.Impl.Scrypt.AArch64.lines.flatMap (fun (i,j,k,n) => VG.Impl.Scrypt.AArch64.line i j k n)) ++
+ (List.range 16).flatMap (fun k =>
+ [.ldr .w .x1 out (4*k),.add .w (VG.Impl.Scrypt.AArch64.wreg k) (VG.Impl.Scrypt.AArch64.wreg k) .x1,
+ .str .w (VG.Impl.Scrypt.AArch64.wreg k) out (4*k)]) ++ [.addImm .x .x19 .x19 64]
+def refResident : Prog isa := seqs [
+ .block (VG.Impl.Scrypt.AArch64.bmPrologue ++ (List.range 16).map (fun k => Instr.ldr .w (VG.Impl.Scrypt.AArch64.wreg k) .x24 (4*k))),
+ .loop (.block (refResidentStep .x20 ++ refResidentStep .x21 ++
+ [VG.Impl.Scrypt.AArch64.mov .x24 .x21,.addImm .x .x20 .x20 64,.addImm .x .x21 .x21 64,.subImm .x .x23 .x23 1])) (.nonzero .x .x23),
+ .block VG.Impl.Scrypt.AArch64.bmEpilogue]
+
 def bmVariants : List (String × Prog isa) := [
  ("scalar",rename "vg_salsa20_8" "trial_scalar" (VG.Impl.Scrypt.AArch64.blockMixWith scalar)),
  ("neon",rename "vg_salsa20_8" "trial_neon" (VG.Impl.Scrypt.AArch64.blockMixWith neon)),
  ("neon_loop",rename "vg_salsa20_8" "trial_neon_loop" (VG.Impl.Scrypt.AArch64.blockMixWith neonLoop)),
- ("fused",fused),("fused_loop",fusedLoop),("resident_mem",resident 0),("resident_ins",resident 1),("resident_dup",resident 2),
+ ("fused",fused),("fused_loop",fusedLoop),("resident_mem",resident 0),("resident_ins",resident 1),("resident_dup",resident 2),("resident_ref",refResident),
  ("fold",rename "vg_salsa20_8" "trial_fold" (VG.Impl.Scrypt.AArch64.blockMixWith scalarFold)),
  ("fold_vcopy",rename "vg_salsa20_8" "trial_fold" (vectorBm scalarFold)),
  ("fold_inline",inlineBm scalarFold),
@@ -184,7 +198,7 @@ def variants : List (String × Prog isa) := [("trial_scalar",scalar),("trial_neo
  bmVariants.map (fun (n,b) => ("trial_rm_" ++ n, rename "vg_scrypt_blockmix" ("trial_bm_" ++ n) (VG.Impl.Scrypt.AArch64.roMixWith b)))
 def more : List (String × Prog isa) := [1,2,4].flatMap (fun u =>
  [("scalar",rename "vg_salsa20_8" "trial_scalar" (VG.Impl.Scrypt.AArch64.blockMixWith scalar)),
- ("schedule",rename "vg_salsa20_8" "trial_schedule" (VG.Impl.Scrypt.AArch64.blockMixWith (scheduled false))),("resident_mem",resident 0),("resident_ins",resident 1),("resident_dup",resident 2)].map (fun (n,b) =>
+ ("schedule",rename "vg_salsa20_8" "trial_schedule" (VG.Impl.Scrypt.AArch64.blockMixWith (scheduled false))),("resident_mem",resident 0),("resident_ins",resident 1),("resident_dup",resident 2),("resident_ref",refResident)].map (fun (n,b) =>
  ("trial_rm_" ++ n ++ "_v" ++ toString u,rename "vg_scrypt_blockmix" ("trial_bm_"++n) (rmWith (vcopyLoop u) (vxorLoop u) b))))
 def emit (name : String) (p : Prog isa) (apple : Bool) : String :=
  let pre := if apple then "_" else ""
