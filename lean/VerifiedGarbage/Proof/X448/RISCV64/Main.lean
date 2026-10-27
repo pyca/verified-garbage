@@ -1,13 +1,12 @@
 module
 
 import VerifiedGarbage.Proof.X448.RISCV64.Bits
-public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.X448.RISCV64.Setup
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.X448.RISCV64.Mul
 import VerifiedGarbage.Proof.X448.RISCV64.Freeze
 import VerifiedGarbage.Proof.X448.RISCV64.Invert
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.RISCV64.Isa
 
 /-!
 # X448 on RISCV64: the whole function
