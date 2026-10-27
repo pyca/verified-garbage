@@ -42,7 +42,14 @@ impl Parameters {
         })
     }
 
-    fn generate_with_rng(
+    /// [`generate`](Self::generate), with its entropy tapes filled by
+    /// `random` instead of the operating system.
+    ///
+    /// Not part of the API: it lets benchmarks compare implementations on
+    /// identical work, from fixed tapes. The result is generated as FIPS
+    /// 186-4 requires only if `random` supplies uniformly random bytes.
+    #[doc(hidden)]
+    pub fn generate_with_rng(
         bits: usize,
         mut random: impl FnMut(&mut [u8]) -> Result<(), Error>,
     ) -> Result<Self, Error> {
