@@ -37,7 +37,6 @@ theorem topD_ok {B : Addr} {Z sl : Nat} {m₀ : Mem} {yl : Nat} (hsl : sl < 32)
     t'.mem = t.mem ∧ t'.c = t.c) ?_ (by rfl) (by rfl) (by rfl)) fun _ ⟨h, k⟩ => ⟨h, k.mono (by simp)⟩
   unfold topD
   brun [hdr_enc hsl, h0, hl, hh sl hsl, hy, BitVec.ofNat_add_ofNat, shr_ofNat (show yl + 7 < 2 ^ 64 by omega_arith)]
-  rfl
 
 theorem modChecks_eq (sX sXlen sDX sYlen : Nat) : modChecks sX sXlen sDX sYlen =
     loadA aM sX sXlen ++ (([.block (decA aM)] : List (Prog isa)) ++ (loadA aX sDX sXlen ++ (ltA aX aM ++ (loadA aX sD sDlen ++

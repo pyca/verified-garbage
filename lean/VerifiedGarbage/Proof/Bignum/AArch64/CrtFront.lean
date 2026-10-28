@@ -245,7 +245,7 @@ theorem nPart_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp d
   have hZ : slot ((k + 7) / 8) 8 ≤ Z := by unfold offQ at hZq; omega_using [hZq]
   have hn' : B.toNat + slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega_using [hn, hZ]
   have hZs : ∀ {rs : List (Nat × Nat)}, (∀ r ∈ rs, r.1 + r.2 ≤ slot ((k + 7) / 8) 8) → ∀ r ∈ rs, r.1 + r.2 ≤ Z :=
-    fun h' r hr => (h' r hr).trans hZ
+    fun h' r hr => Nat.le_trans (h' r hr) hZ
   have lN := slot_le (w := (k + 7) / 8) (show Public.aN < 8 by decide)
   have lX := slot_le (w := (k + 7) / 8) (show Public.aX < 8 by decide)
   have lO := slot_le (w := (k + 7) / 8) (show Public.aOne < 8 by decide)
@@ -427,7 +427,7 @@ theorem checksPart_ok {s t₄ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dp
   have h8 := hdr_lt_slot ((k + 7) / 8) 8 (show 31 < 32 by decide)
   have hwp2 : 2 ≤ wsWords pl := by unfold wsWords; omega_using []
   have hwq2 : 2 ≤ wsWords ql := by unfold wsWords; omega_using []
-  refine WP.mono (checks_ok hr.n.good (by omega_using [hk1]) (by omega_using [hk2]) (le_refl _) (by unfold offQ; omega_using [])
+  refine WP.mono (checks_ok hr.n.good (by omega_using [hk1]) (by omega_using [hk2]) (Nat.le_refl _) (by unfold offQ; omega_using [])
     (by unfold offQ at hZq ⊢; omega_using [hZq]) hwp2 (wsWords_le (by have := h.pl2; omega_using [this]) (by omega_using [hk1])) hwq2
     (wsWords_le (by have := h.ql2; omega_using [this]) (by omega_using [hk1])) hr.wsP hr.wsQ hr.pws hr.qws hr.n.nv.n hr.n.msk hr.pv hr.qv
     hr.qiv hodd)

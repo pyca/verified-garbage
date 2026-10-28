@@ -201,7 +201,7 @@ theorem qPhase_gen (M : Mont) (E : Nat → Nat → List (Prog isa)) (hE : PowOk 
   refine wp_seqs_append (by simp) (by simp) ?_
   refine WP.mono (hE hg₂ hw28 hlo hhi hwx2 hwx (sl := sWsQ) (by decide)
     (by rw [hb₂ _ (by decide) (by decide) (by decide)]; exact hslv) (hws₁.of_words fun i hi => hxo i (by omega_arith))
-    (hX₁.of_below f₂ (fun r hr => (gRanges_le w r hr).trans hlo) hoL)
+    (hX₁.of_below f₂ (fun r hr => Nat.le_trans (gRanges_le w r hr) hlo) hoL)
     hX1 hXodd hcg (by rw [hYq₂]; exact hlq₁) (fun hd => by rw [hYq₂]; exact hyq₁ hd) (sd := sDq) (slen := sQlen)
     (by decide) (by decide) (by rw [hb₂ _ (by decide) (by decide) (by decide)]; exact hep)
     (by rw [hb₂ _ (by decide) (by decide) (by decide)]; exact hel) hL1 hL2 (he.congrK i02 (k₁.trans k₂)))
