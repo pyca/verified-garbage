@@ -38,7 +38,7 @@ structure Bx (L : Lay) (s : State) (B : Addr) (Z len N : Nat) : Prop where
 
 variable {L : Lay} {B : Addr} {Z len N : Nat}
 
-theorem Bx.fits {s : State} (h : Bx L s B Z len N) : VG.Impl.Rsa.X86.InvBatch.offset (kw len) 16 ≤ Z := by
+theorem Bx.fits {s : State} (h : Bx L s B Z len N) : VG.Impl.Rsa.X86.InvBatchRt.offset (kw len) 16 ≤ Z := by
   have := h.ws.ws.fits
   rw [offset_eq]
   exact Nat.le_trans (Nat.add_le_add_left (Nat.mul_le_mul_right _ h.room) _) this
@@ -46,7 +46,7 @@ theorem Bx.fits {s : State} (h : Bx L s B Z len N) : VG.Impl.Rsa.X86.InvBatch.of
 theorem Bx.nowrap {s : State} (h : Bx L s B Z len N) : B.toNat + Z ≤ 2 ^ 32 := h.ws.ws.workspace.nowrap
 
 theorem Bx.halfZ {s : State} (h : Bx L s B Z len N) : halfSlot + 4 ≤ Z := by
-  have := h.fits; simp only [VG.Impl.Rsa.X86.InvBatch.offset, halfSlot] at *; omega
+  have := h.fits; simp only [VG.Impl.Rsa.X86.InvBatchRt.offset, halfSlot] at *; omega
 
 /-- Writes to `[o, o + c)` above the header, inside the working space, keep the context. -/
 theorem Bx.keep {s t : State} (h : Bx L s B Z len N) {rs : List Reg} (K : Keeps rs s t)
@@ -62,7 +62,7 @@ theorem Bx.keep {s t : State} (h : Bx L s B Z len N) {rs : List Reg} (K : Keeps 
     exact h.slots.half
 
 theorem rv_ge (w : Nat) (x : Ref) : 160 ≤ rv w x := by
-  simp only [rv, VG.Impl.Rsa.X86.InvBatch.offset]; omega
+  simp only [rv, VG.Impl.Rsa.X86.InvBatchRt.offset]; omega
 
 /-! ## Selections and copies -/
 

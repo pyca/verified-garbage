@@ -76,7 +76,7 @@ open VG.Proof.Weierstrass.X86.Inv (wordClob)
     show 4 * (kw len + 2) = _; omega
   have ra (j : Nat) : VG.Proof.Rsa.X86.InvBatchRt.rv (kw len) (VG.Impl.Rsa.X86.InvBatchRt.a j) =
       arr (kw len) j := by
-    show VG.Impl.Rsa.X86.InvBatch.offset (kw len) j + 0 * (2 * kw len) + 0 = _
+    show VG.Impl.Rsa.X86.InvBatchRt.offset (kw len) j + 0 * (2 * kw len) + 0 = _
     rw [VG.Proof.Rsa.X86.InvBatchRt.offset_eq]; simp
   -- A byte in one of the ranges is in a word or an array of the frame.
   have words : ∀ k < 22, 16 + 4 * k ∈ invSlots ++ rtSlots := by decide
@@ -127,7 +127,7 @@ open VG.Proof.Weierstrass.X86.Inv (wordClob)
   let n := VG.Proof.Rsa.X86.InvBatchRt.nw len
   have ra (j : Nat) : VG.Proof.Rsa.X86.InvBatchRt.rv (kw len) (VG.Impl.Rsa.X86.InvBatchRt.a j) =
       arr (kw len) j := by
-    show VG.Impl.Rsa.X86.InvBatch.offset (kw len) j + 0 * (2 * kw len) + 0 = _
+    show VG.Impl.Rsa.X86.InvBatchRt.offset (kw len) j + 0 * (2 * kw len) + 0 = _
     rw [VG.Proof.Rsa.X86.InvBatchRt.offset_eq]; simp
   have pc : inverseM P < 2 ^ (32 * n) := odd_modulus_bound (by omega) (prime_bound h.gate.pBound pb)
   have qc : Q < 2 ^ (32 * n) := prime_bound h.gate.qBound qb

@@ -46,7 +46,7 @@ theorem slotList_ok (hroom : 16 ≤ N) (l : List Nat) (hl : l.Nodup) (hc : ∀ j
     ∀ {s : State}, RtWs L s B Z len N →
     (∀ u, RtWs L u B Z len N → Keeps [.eax, .edx] s u →
       (∀ j ∈ l, w32 u.mem B (slotBase + 4 * cached.idxOf j) =
-        (B.toNat + VG.Impl.Rsa.X86.InvBatch.offset (kw len) j) % 2 ^ 32) →
+        (B.toNat + VG.Impl.Rsa.X86.InvBatchRt.offset (kw len) j) % 2 ^ 32) →
       Unch B (slotWords l) s.mem u.mem → WP isa (.block is) u Q) →
     WP isa (.block (l.flatMap (fun j => arrPtr L .eax j .edx ++
       [.store (sc (slotBase + 4 * cached.idxOf j)) .eax]) ++ is)) s Q := by
@@ -82,7 +82,7 @@ theorem slotList_ok (hroom : 16 ≤ N) (l : List Nat) (hl : l.Nodup) (hc : ∀ j
     have O₂ : Outside B (slotBase + 4 * cached.idxOf j) 4 s.mem s₂.mem := by
       rw [U₂.mem, m₁]; exact writeW32_outside _ _ _ (by omega)
     have W₂ : w32 s₂.mem B (slotBase + 4 * cached.idxOf j) =
-        (B.toNat + VG.Impl.Rsa.X86.InvBatch.offset (kw len) j) % 2 ^ 32 := by
+        (B.toNat + VG.Impl.Rsa.X86.InvBatchRt.offset (kw len) j) % 2 ^ 32 := by
       rw [U₂.mem, w32_write_self, offset_eq]; exact p₁
     have K₂ : Keeps [.eax, .edx] s s₂ := K₁.trans (U₂.keeps _)
     have h₂ : RtWs L s₂ B Z len N := h.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by omega))

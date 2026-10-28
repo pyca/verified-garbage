@@ -7,7 +7,7 @@ import Mathlib.Algebra.Order.Ring.Abs
 
 /-! # The batches of the inverse at a run-time width
 
-`loop_ok`: `3 (n + 1)` counted batches from the start state (`InvBatch.loop_ok`).
+`loop_ok`: `3 (n + 1)` counted batches from the start state.
 -/
 
 @[expose] public section

@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The virtual modulus at a run-time width
 
-`virtualize_ok`: `[2]` replaced by 3 if it is 1 (`InvBatch.virtualize_ok`), its words scanned by a
+`virtualize_ok`: `[2]` replaced by 3 if it is 1, its words scanned by a
 loop.
 -/
 

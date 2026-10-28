@@ -150,14 +150,14 @@ theorem relMaskAtNot {x : Ref} (hL : L.ws = 14) (hG : Stable [.eax, .ebx, .ecx, 
 
 theorem relEvenMask (hL : L.ws = 14) (hG : Stable [.ecx] G) {hc : VG.Taint.Hint VG.X86.Taint.T}
     (h : (VG.Taint.check sseTaint τS (.block (VG.Impl.Rsa.X86.GcdBatch.evenMask
-      (VG.Impl.Rsa.X86.InvBatch.offset 0 0))) hc).isSome = true) :
+      (VG.Impl.Rsa.X86.InvBatchRt.offset 0 0))) hc).isSome = true) :
     RelCT isa (Both L B Z len N args sp C fun g => G g ∧ True)
-      (.block (VG.Impl.Rsa.X86.GcdBatch.evenMask (VG.Impl.Rsa.X86.InvBatch.offset 0 0)))
+      (.block (VG.Impl.Rsa.X86.GcdBatch.evenMask (VG.Impl.Rsa.X86.InvBatchRt.offset 0 0)))
       (Both L B Z len N args sp C fun g => G g ∧ Mask g) :=
   relOp (ws := []) hL (by decide) hG (fun _ h => nomatch h)
     (fun s hb _ => WP.mono (VG.Proof.Rsa.X86.GcdBatch.evenMask_ok hb.ws.ws.workspace
-      (src := VG.Impl.Rsa.X86.InvBatch.offset 0 0) (by
-        have := hb.fits16; simp only [VG.Impl.Rsa.X86.InvBatch.offset]; omega)) fun t ⟨c, K, m⟩ =>
+      (src := VG.Impl.Rsa.X86.InvBatchRt.offset 0 0) (by
+        have := hb.fits16; simp only [VG.Impl.Rsa.X86.InvBatchRt.offset]; omega)) fun t ⟨c, K, m⟩ =>
       ⟨hb.keep K (by decide) (by decide) (o := 160) (c := 0) (by rw [m]; exact Outside.refl _ _ _ _) (Nat.le_refl _)
         (by have := hb.fits16; omega), K, by rw [m]; exact Unch.refl _ _ _, mask_ite c⟩) h
 

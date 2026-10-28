@@ -13,8 +13,7 @@ import VerifiedGarbage.Proof.Divstep.Batch
 /-! # A batch at a run-time width
 
 `start_ok` and `words_ok`: the low words, the identity matrix and thirty word divsteps in the
-header's window (`GcdBatch.start_ok`, `words_ok`); `batch_ok`: then the update
-(`InvBatch.batch_ok`).
+header's window; `countedBatch_ok`: then the update, and the batch count down by one.
 -/
 
 @[expose] public section
@@ -164,7 +163,7 @@ theorem StateAt.keep {s t : State} {p iv : Nat} {st : Divstep.W32.IState} (hs : 
 /-- What a counted batch writes. -/
 def countedWrites (len : Nat) : List (Nat × Nat) := (100, 4) :: (win, 28) :: updateWrites len
 
-/-- A counted batch (`InvBatch.countedBatch_ok`). -/
+/-- A counted batch. -/
 theorem countedBatch_ok {s : State} (h : Bx L s B Z len N) (he : nw len % 2 = 0) {p iv cap j : Nat}
     {st : Divstep.W32.IState} (hst : StateAt len B p iv st s) (hp : 0 < p) (hinv : (p * iv + 1) % 2 ^ 32 = 0)
     (hd : |st.d| + 64 < 2 ^ 30) (odd : st.f % 2 = 1)

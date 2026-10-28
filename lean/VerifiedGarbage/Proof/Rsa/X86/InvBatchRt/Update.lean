@@ -6,8 +6,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # A batch's update at a run-time width
 
-`fourRows_ok`: both value rows and both coefficient rows (`InvBatch.fourRows_ok`), then
-`update_ok`: the rows copied into the next state (`InvBatch.update_ok`).
+`fourRows_ok`: both value rows and both coefficient rows, then
+`update_ok`: the rows copied into the next state.
 -/
 
 @[expose] public section
@@ -37,7 +37,7 @@ theorem rowWrites_cover {W : List (Nat × Nat)} {m m' : Mem}
     · exact ⟨(rv (kw len) (a 11), 4 * (8 * nw len + 8)), by simp [rowWrites], h.1, h.2⟩
     · exact ⟨(signSlot, 4), by simp [rowWrites], h.1, h.2⟩
 
-/-- The four matrix rows, `InvBatch.fourRows_ok`. -/
+/-- The four matrix rows. -/
 theorem fourRows_ok {s : State} (h : Bx L s B Z len N) (he : nw len % 2 = 0) {p iv cap : Nat}
     {T : Divstep.MSt} {st : Divstep.W32.IState} (hr : RowInput len B p iv T st s)
     (hp : 0 < p) (hinv : (p * iv + 1) % 2 ^ 32 = 0)
@@ -130,7 +130,7 @@ theorem fourRows_ok {s : State} (h : Bx L s B Z len N) (he : nw len % 2 = 0) {p 
 /-- What an update writes: the rows' arrays and the state's. -/
 def updateWrites (len : Nat) : List (Nat × Nat) := rowWrites len ++ [(rv (kw len) (a 4), 4 * (8 * nw len + 8))]
 
-/-- A batch's update (`InvBatch.update_ok`). -/
+/-- A batch's update. -/
 theorem update_ok {s : State} (h : Bx L s B Z len N) (he : nw len % 2 = 0) {p iv cap : Nat}
     {T : Divstep.MSt} {st : Divstep.W32.IState} (hr : RowInput len B p iv T st s)
     (hp : 0 < p) (hinv : (p * iv + 1) % 2 ^ 32 = 0)

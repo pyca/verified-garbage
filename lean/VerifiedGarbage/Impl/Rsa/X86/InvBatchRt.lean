@@ -1,21 +1,19 @@
 module
 
-public import VerifiedGarbage.Impl.Rsa.X86.InvBatch
+public import VerifiedGarbage.Impl.Rsa.X86.GcdBatch
 public import VerifiedGarbage.Impl.Rsa.X86.KeyRt
+public import VerifiedGarbage.Impl.Mont.X86.Inverse
 
 /-! # The batched RSA CRT inversion at a width read at run time (i686)
 
-`InvBatch.body w n`'s computation without a copy per width: the same arrays
-(`InvBatch.offset w j`, `KeyRt`'s), steps and order, with every operation on
-the arrays a loop whose pointers and count come from the modulus's length
-(`Lay.len`), `w` its 32-bit words and `n = w / 2` the primes'. The 30
-low-word divsteps and the matrix they build run in a window of eight header
-words at `win` instead of array 3, so that their code and the coefficients'
-addresses are those of `InvBatch` at a fixed offset; the reduction keeps its
-sign word in the header word `signSlot` across its product row.
+The inverse of the CRT's coefficient by batches of 30 divsteps on `w`-word numbers (`Divstep.W32`),
+in `KeyRt`'s arrays (`offset w j`), with every operation on them a loop whose pointers and count come
+from the modulus's length (`Lay.len`), `w` its 32-bit words and `n = w / 2` the primes'. The 30
+low-word divsteps and the matrix they build run in a window of eight header words at `win`; the
+reduction keeps its sign word in the header word `signSlot` across its product row.
 
-Each loop counts a register down by bytes. `edi`, which some loops move, is
-set back from the working space's argument (`Lay.ws`) after them.
+Each loop counts a register down by bytes. `edi`, which some loops move, is set back from the
+working space's argument (`Lay.ws`) after them.
 -/
 
 @[expose] public section
@@ -23,6 +21,9 @@ namespace VG.Impl.Rsa.X86.InvBatchRt
 open VG VG.X86 VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass.X86.Inv
 open VG.Impl.Rsa.X86.KeyRt
 open VG.Impl.Rsa.X86.Keys (seqs)
+
+/-- Array `j`'s offset in the working space, for `w`-word numbers. -/
+def offset (w j : Nat) : Nat := 160 + j * (4 * w + 8)
 
 /-- The divstep window: delta, low `f` and `g`, the matrix `u v q r`, and `-p⁻¹ mod 2³²`. -/
 def win : Nat := 16
@@ -170,7 +171,7 @@ def shr30 (dst src : Ref) : Prog isa :=
 /-- `[x] = 0`, one word. -/
 def zeroWord (x : Ref) : List Instr := ptr L .ebx x .edx ++ [.mov .eax (.imm 0), .store (at_ .ebx 0) .eax]
 
-/-! ## The reduction, `InvBatch.reduce` -/
+/-! ## The reduction -/
 
 /-- The modulus `[2]`, the temporary `[12]`. -/
 def mo : Ref := { arr := 2 }
@@ -188,7 +189,7 @@ def redTail (acc : Ref) : List Instr :=
   ptr L .ebx { acc with half := 1, byte := 4 } .edx ++
     [.mov .eax (.mem (at_ .ebx 0)), .alu .add .eax (.mem (sc signSlot)), .store (at_ .ebx 0) .eax]
 
-/-- `InvBatch.redSum`: the sign mask of `[acc + 4 n]` into `esi`, `[acc + 4 (n + 1)]` zeroed, the
+/-- `redSum`: the sign mask of `[acc + 4 n]` into `esi`, `[acc + 4 (n + 1)]` zeroed, the
 digit `q = [acc] · iv` into `ecx`, `[acc] += q [mo]`, and the sign word added at the top. -/
 def redSum (acc : Ref) : Prog isa :=
   .seq (.block (redHead L acc)) (.seq (mulRow L false acc mo (nBytes .esi 0)) (.block (redTail L acc)))
@@ -228,7 +229,7 @@ def reduce (out : Ref) : Prog isa :=
 
 def a (j : Nat) : Ref := { arr := j }
 
-/-- `InvBatch.virtualize` of `[2]`: one more than `2` if it is 1. -/
+/-- `[2]` replaced by 3 where it is 1, an odd modulus the batches can run on. -/
 def virtualize : Prog isa :=
   .seq (.block (ptr L .ebp (a 2) .edx ++ [.mov .eax (.mem (at_ .ebp 0)), .alu .xor .eax (.imm 1),
     .mov .ebx (.reg .ebp), .alu .add .ebx (.imm 4)] ++ nBytesLess .esi)) <|
@@ -250,7 +251,7 @@ def init : Prog isa := seqs [
   copy L (a 4) (a 2) (nBytes .edi 0), .block (zeroWord L { arr := 4, half := 1 }),
   copy L (a 5) (a 0) (nBytes .edi 0), .block (zeroWord L { arr := 5, half := 1 }),
   zeros L (a 12) (nBytes .ecx 1),
-  .block (GcdBatch.evenMask (InvBatch.offset 0 0)), selIn L (a 12) (a 2) (nBytes .edi 0),
+  .block (GcdBatch.evenMask (offset 0 0)), selIn L (a 12) (a 2) (nBytes .edi 0),
   chain L .adc (a 5) (a 5) (a 12) (nBytes .edx 1),
   .block [.mov .eax (.imm 1), .store (sc win) .eax],
   zeros L (a 6) (nBytes .ecx 1), zeros L (a 7) (nBytes .ecx 1),

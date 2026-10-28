@@ -11,8 +11,8 @@ import Mathlib.Algebra.Order.Ring.Abs
 
 /-! # The matrix rows of a batch at a run-time width
 
-`fgRow_ok`: a row of the full-width values, `[a j] = (u f + v g) / 2 ^ 30` (`InvBatch.fgRow_ok`);
-`abRow_ok`: a row of the coefficients, `[a j] = mred p iv (u a + v b)` (`InvBatch.abRow_ok`).
+`fgRow_ok`: a row of the full-width values, `[a j] = (u f + v g) / 2 ^ 30`;
+`abRow_ok`: a row of the coefficients, `[a j] = mred p iv (u a + v b)`.
 -/
 
 @[expose] public section
@@ -40,7 +40,7 @@ theorem rv_half1' (len j : Nat) : rv (kw len) { arr := j, half := 1 } = rv (kw l
 theorem Bx.fits16 {s : State} (h : Bx L s B Z len N) : 160 + 16 * (8 * nw len + 8) ≤ Z := by
   have := h.fits
   have ke := kw_eq len
-  simp only [VG.Impl.Rsa.X86.InvBatch.offset] at this
+  simp only [VG.Impl.Rsa.X86.InvBatchRt.offset] at this
   omega
 
 /-- A matrix row of the full-width values: `[a j] = (u f + v g) / 2 ^ 30`, `n + 1` words. -/

@@ -15,7 +15,7 @@ import Mathlib.Algebra.Order.Ring.Abs
 /-! # The batched inverse at a run-time width
 
 `body_ok`: `[1] = gcd p x` and `[3]` the inverse of `x` modulo `p` where it exists, `w` words each,
-for the virtual modulus `p` of `[8]` and `x` at `[0]` (`InvBatch.body_ok_proof`).
+for the virtual modulus `p` of `[8]` and `x` at `[0]`.
 -/
 
 @[expose] public section

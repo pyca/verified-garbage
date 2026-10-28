@@ -129,7 +129,7 @@ theorem agreeS {s t : State} {args : Nat → BitVec 32} {sp : BitVec 32} (hL : L
     (h : Rel L B Z len N args sp s t) : VG.X86.Taint.Agree τS (view s B Z) (view t B Z) := by
   have hn := h.bs.nowrap
   have hf := h.bs.fits
-  simp only [VG.Impl.Rsa.X86.InvBatch.offset] at hf
+  simp only [VG.Impl.Rsa.X86.InvBatchRt.offset] at hf
   have wf : ∀ {u : State}, Bx L u B Z len N → Public args B Z sp u → VG.X86.Taint.Wf τS (view u B Z) :=
     fun hu pu => wfS hL hu.ws (by omega) pu
   refine ⟨⟨?_, fun h => nomatch h⟩, fun _ => rfl, wf h.bs h.ps, wf h.bt h.pt,

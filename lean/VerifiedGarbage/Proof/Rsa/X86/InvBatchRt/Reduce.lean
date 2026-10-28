@@ -10,8 +10,8 @@ import VerifiedGarbage.Proof.Weierstrass.X86.InvRead
 
 /-! # The reduction of a coefficient row at a run-time width
 
-`reduce_ok`: `InvBatch.reduceLoaded_ok`'s statement, `[out] = mred p iv t` for the signed `t`
-at `[11]`, with the inverse word `iv` at the header's `win + 28`.
+`reduce_ok`: `[out] = mred p iv t` for the signed `t` at `[11]`, with the inverse word `iv` at the
+header's `win + 28`.
 -/
 
 @[expose] public section
@@ -25,10 +25,10 @@ open VG.Proof.Weierstrass.X86.Inv (wordClob)
 variable {L : Lay} {B : Addr} {Z len N : Nat}
 
 theorem rv_arr (w j b : Nat) : rv w { arr := j, byte := b } = 160 + j * (4 * w + 8) + b := by
-  simp only [rv, VG.Impl.Rsa.X86.InvBatch.offset]; omega
+  simp only [rv, VG.Impl.Rsa.X86.InvBatchRt.offset]; omega
 
 /-- `reduce (a j)`: `[a j] = mred p iv t` for the signed `t` at `[11]` (`n + 1` words), the
-modulus `p` at `[2]` and its inverse `iv` at `win + 28` (`InvBatch.reduceLoaded_ok`). -/
+modulus `p` at `[2]` and its inverse `iv` at `win + 28`. -/
 theorem reduce_ok {s : State} (h : Bx L s B Z len N) {j : Nat} (hj : 13 ≤ j) (hj' : j < 16)
     {p : Nat} {t : Int} (hp : 0 < p) (hm : val32 s.mem B (rv (kw len) mo) (nw len) = p)
     (hinv : (p * w32 s.mem B (win + 28) + 1) % 2 ^ 32 = 0) (ht : |t| ≤ 2 ^ 31 * p)
@@ -45,7 +45,7 @@ theorem reduce_ok {s : State} (h : Bx L s B Z len N) {j : Nat} (hj : 13 ≤ j) (
   have ke := kw_eq len
   have e48 : signSlot = 48 := rfl
   have e16 : win = 16 := rfl
-  simp only [VG.Impl.Rsa.X86.InvBatch.offset] at hf
+  simp only [VG.Impl.Rsa.X86.InvBatchRt.offset] at hf
   have r11 : rv (kw len) (a 11) = 160 + 11 * (8 * nw len + 8) := by
     have := rv_arr (kw len) 11 0; simp only [a]; omega
   have r11' : rv (kw len) { arr := 11, byte := 4 } = 160 + 11 * (8 * nw len + 8) + 4 := by

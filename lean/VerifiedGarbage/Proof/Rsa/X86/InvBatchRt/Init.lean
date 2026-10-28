@@ -15,8 +15,8 @@ import VerifiedGarbage.Proof.Divstep.Alg32Def
 /-! # The inverse's initial state at a run-time width
 
 `operands_ok`: the virtual modulus `p` into `[2]` and the start values `f = p`,
-`g = oddInput p x` (`InvBatch.operands_ok`); `init_ok`: then the coefficients, `delta`, the inverse
-word and the batch count (`InvBatch.init_ok`).
+`g = oddInput p x`; `init_ok`: then the coefficients, `delta`, the inverse
+word and the batch count.
 -/
 
 @[expose] public section
@@ -53,7 +53,7 @@ theorem operands_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) {m x
       .seq (VG.Impl.Rsa.X86.InvBatchRt.copy L (a 5) (a 0) (nBytes .edi 0)) <|
       .seq (.block (zeroWord L { arr := 5, half := 1 })) <|
       .seq (VG.Impl.Rsa.X86.InvBatchRt.zeros L (a 12) (nBytes .ecx 1)) <|
-      .seq (.block (VG.Impl.Rsa.X86.GcdBatch.evenMask (VG.Impl.Rsa.X86.InvBatch.offset 0 0))) <|
+      .seq (.block (VG.Impl.Rsa.X86.GcdBatch.evenMask (VG.Impl.Rsa.X86.InvBatchRt.offset 0 0))) <|
       .seq (selIn L (a 12) (a 2) (nBytes .edi 0)) <|
       .seq (VG.Impl.Rsa.X86.InvBatchRt.chain L .adc (a 5) (a 5) (a 12) (nBytes .edx 1)) rest) s Q := by
   have hn := h.nowrap
@@ -101,12 +101,12 @@ theorem operands_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) {m x
   refine WP.seq (WP.mono (VG.Proof.Rsa.X86.InvBatchRt.zeros_ok H₆ (o := a 12) CS (by omega) (by omega))
     fun s₇ ⟨H₇, O₇, V₇, K₇⟩ => ?_)
   refine WP.seq (WP.mono (VG.Proof.Rsa.X86.GcdBatch.evenMask_ok H₇.ws.ws.workspace
-    (src := VG.Impl.Rsa.X86.InvBatch.offset 0 0) (by simp only [VG.Impl.Rsa.X86.InvBatch.offset]; omega))
+    (src := VG.Impl.Rsa.X86.InvBatchRt.offset 0 0) (by simp only [VG.Impl.Rsa.X86.InvBatchRt.offset]; omega))
     fun s₈ ⟨C₈, K₈, m₈⟩ => ?_)
   have H₈ : Bx L s₈ B Z len N := H₇.keep K₈ (by decide) (by decide) (o := 160) (c := 0)
     (by rw [m₈]; exact Outside.refl _ _ _ _) (Nat.le_refl _) (by omega)
-  have o00 : VG.Impl.Rsa.X86.InvBatch.offset 0 0 = rv (kw len) (a 0) := by
-    simp only [VG.Impl.Rsa.X86.InvBatch.offset]; omega
+  have o00 : VG.Impl.Rsa.X86.InvBatchRt.offset 0 0 = rv (kw len) (a 0) := by
+    simp only [VG.Impl.Rsa.X86.InvBatchRt.offset]; omega
   rw [o00, O₇.w32 (by omega) (by omega), O₆.w32 (by omega) (by omega), O₅.w32 (by omega) (by omega),
     O₄.w32 (by omega) (by omega), O₃.w32 (by omega) (by omega), O₂.w32 (by omega) (by omega),
     O₁.w32 (by omega) (by omega)] at C₈
@@ -166,7 +166,7 @@ theorem operands_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) {m x
 def initWrites (len : Nat) : List (Nat × Nat) :=
   [(win, 88), (rv (kw len) (a 2), 6 * (8 * nw len + 8)), (rv (kw len) (a 12), 8 * nw len + 8)]
 
-/-- `init` (`InvBatch.init_ok`). -/
+/-- `init`. -/
 theorem init_ok {s : State} (h : RtWs L s B Z len N) (room : 16 ≤ N) (hn2 : 2 ≤ nw len) {m x : Nat}
     (hm : val32 s.mem B (rv (kw len) (a 8)) (nw len) = m) (hx : val32 s.mem B (rv (kw len) (a 0)) (nw len) = x)
     (odd : m % 2 = 1) :

@@ -11,9 +11,9 @@ import Mathlib.Data.Int.ModEq
 
 /-! # The inverse's corrections at a run-time width
 
-`normalize_ok`: the coefficient negated modulo `p` where `f` is negative (`InvBatch.normalize_ok`);
-`doubleLoop_ok`: doubled `K` times modulo `p` (`InvBatch.doubleLoop_ok`); `finish_ok`: `|f|` and the
-coefficient into the outputs, zero-padded to `w` words (`InvBatch.finish_ok`).
+`normalize_ok`: the coefficient negated modulo `p` where `f` is negative;
+`doubleLoop_ok`: doubled `K` times modulo `p`; `finish_ok`: `|f|` and the
+coefficient into the outputs, zero-padded to `w` words.
 -/
 
 @[expose] public section
@@ -65,7 +65,7 @@ theorem correction_eq {p a n : Nat} {st : Divstep.W32.IState} (ha : a < p) (sa :
 
 /-! ## The code -/
 
-/-- `normalize`: `[6] = normal p a f` (`InvBatch.normalize_ok`). -/
+/-- `normalize`: `[6] = normal p a f`. -/
 theorem normalize_ok {s : State} (h : Bx L s B Z len N) {p a₀ : Nat} {f : Int}
     (hm : val32 s.mem B (rv (kw len) mo) (nw len) = p) (ha : val32 s.mem B (rv (kw len) (a 6)) (nw len) = a₀)
     (top : w32 s.mem B (rv (kw len) (a 6) + 4 * nw len) = 0) (small : a₀ < p)
@@ -138,7 +138,7 @@ theorem normalize_ok {s : State} (h : Bx L s B Z len N) {p a₀ : Nat} {f : Int}
       · exact hU
       · exact hA), O₄ x hA, m₃, O₂ x hU, O₁ x hU]
 
-/-- `twice`: `[6] = 2 a mod p` (`InvBatch.twice_ok`). -/
+/-- `twice`: `[6] = 2 a mod p`. -/
 theorem twice_ok {s : State} (h : Bx L s B Z len N) {p a₀ : Nat}
     (hm : val32 s.mem B (rv (kw len) mo) (nw len) = p) (ha : val32 s.mem B (rv (kw len) (a 6)) (nw len) = a₀)
     (top : w32 s.mem B (rv (kw len) (a 6) + 4 * nw len) = 0) (small : a₀ < p) :
@@ -191,7 +191,7 @@ def DoubleAt (L : Lay) (B : Addr) (Z len N p a₀ K : Nat) (s₀ : State) (k : N
   s.gpr .esi = BitVec.ofNat 32 (K - k) ∧ Keeps wordClob s₀ s ∧
   Unch B [(rv (kw len) (a 6), 4 * (nw len + 1)), (rv (kw len) (a 12), 4 * nw len)] s₀.mem s.mem
 
-/-- `K` doublings (`InvBatch.doubleLoop_ok`). -/
+/-- `K` doublings. -/
 theorem doubleLoop_ok {s : State} (h : Bx L s B Z len N) {p a₀ K : Nat}
     (hm : val32 s.mem B (rv (kw len) mo) (nw len) = p) (ha : val32 s.mem B (rv (kw len) (a 6)) (nw len) = a₀)
     (top : w32 s.mem B (rv (kw len) (a 6) + 4 * nw len) = 0) (hp : 0 < p) (small : a₀ < p)
@@ -241,7 +241,7 @@ theorem doubleLoop_ok {s : State} (h : Bx L s B Z len N) {p a₀ K : Nat}
     have nz : K - k - 1 ≠ 0 := by omega
     simp only [nz, decide_false, Option.map_some, Bool.not_false]
 
-/-- `finish`: `[1] = |f|` and `[3] = a`, `w` words each (`InvBatch.finish_ok`). -/
+/-- `finish`: `[1] = |f|` and `[3] = a`, `w` words each. -/
 theorem finish_ok {s : State} (h : Bx L s B Z len N) {a₀ : Nat} {f : Int}
     (hb : |f| < 2 ^ (32 * nw len))
     (hc : (val32 s.mem B (rv (kw len) (a 4)) (nw len) : Int) % (2 ^ (32 * nw len) : Int) =

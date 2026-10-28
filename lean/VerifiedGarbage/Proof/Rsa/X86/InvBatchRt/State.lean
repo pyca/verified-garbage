@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The state carried between batches at a run-time width
 
-`InvBatch.StateAt`, `RowInput` and `GcdBatch.MatrixAt` with the divstep window at the header's
+`StateAt`, `RowInput` and `GcdBatch.MatrixAt` with the divstep window at the header's
 `win` rather than in array 3.
 -/
 
@@ -53,7 +53,7 @@ structure RowInput (len : Nat) (B : Addr) (p iv : Nat) (T : Divstep.MSt) (st : D
   ca : (val32 s.mem B (rv (kw len) (a 6)) (nw len) : Int) = st.a
   cb : (val32 s.mem B (rv (kw len) (a 7)) (nw len) : Int) = st.b
 
-/-- The state after a batch with the matrix `T` (`InvBatch.nextState`). -/
+/-- The state after a batch with the matrix `T`. -/
 def nextState (p iv : Nat) (T : Divstep.MSt) (st : Divstep.W32.IState) : Divstep.W32.IState :=
   ⟨T.d, (T.u * st.f + T.v * st.g) / 2 ^ 30, (T.q * st.f + T.r * st.g) / 2 ^ 30,
     Divstep.W32.mred p iv (T.u * st.a + T.v * st.b), Divstep.W32.mred p iv (T.q * st.a + T.r * st.b)⟩

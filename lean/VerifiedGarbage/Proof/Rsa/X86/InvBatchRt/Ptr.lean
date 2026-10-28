@@ -22,15 +22,15 @@ open VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Rsa.X86.KeyRt
 open VG.Proof.Rsa.X86.Keys (arr)
 
 /-- A `Ref`'s offset in the working space, for arrays of `w` words. -/
-def rv (w : Nat) (x : Ref) : Nat := VG.Impl.Rsa.X86.InvBatch.offset w x.arr + x.half * (2 * w) + x.byte
+def rv (w : Nat) (x : Ref) : Nat := VG.Impl.Rsa.X86.InvBatchRt.offset w x.arr + x.half * (2 * w) + x.byte
 
-theorem offset_eq (w j : Nat) : VG.Impl.Rsa.X86.InvBatch.offset w j = arr w j := by
-  simp only [VG.Impl.Rsa.X86.InvBatch.offset, arr, VG.Proof.Rsa.X86.Keys.S, VG.Impl.Rsa.X86.Keys.hdr]
+theorem offset_eq (w j : Nat) : VG.Impl.Rsa.X86.InvBatchRt.offset w j = arr w j := by
+  simp only [VG.Impl.Rsa.X86.InvBatchRt.offset, arr, VG.Proof.Rsa.X86.Keys.S, VG.Impl.Rsa.X86.Keys.hdr]
   rw [show 4 * (w + 2) = 4 * w + 8 by omega]
 
 /-- The header words `init` fills: each cached array's address, and `2 w`. -/
 structure Slots (m : Mem) (B : Addr) (w : Nat) : Prop where
-  addr : ∀ j d, slot j = some d → w32 m B d = (B.toNat + VG.Impl.Rsa.X86.InvBatch.offset w j) % 2 ^ 32
+  addr : ∀ j d, slot j = some d → w32 m B d = (B.toNat + VG.Impl.Rsa.X86.InvBatchRt.offset w j) % 2 ^ 32
   half : w32 m B halfSlot = 2 * w
   small : 2 * w < 2 ^ 32
 
