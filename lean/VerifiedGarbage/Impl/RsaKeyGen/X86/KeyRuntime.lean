@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.Key
 
 The cdecl length arguments select the modulus, prime and exponent widths.
 Division and inversion share one set of word loops across all supported
-widths. I/O keeps the established fixed-offset adapters.
+widths. The output keeps its established fixed-offset adapters.
 The four-word correction bank is fixed.
 -/
 
@@ -302,16 +302,31 @@ def prepareLoaded : Prog isa := seqs [primes, lcmPart, dSelect]
 def deriveLoaded : Prog isa :=
   .seq prepareLoaded (.seq smallMask (.ite .ne retry keyPart))
 
-/-- Keep the established input adapters while sharing the arithmetic bank. -/
-def loadInputs (n : Nat) : Prog isa := seqs [clearArrays n,
-  VG.Impl.RsaKeyGen.X86.Key.loadPrime n 16 aPa,
-  VG.Impl.RsaKeyGen.X86.Key.loadPrime n 24 aQa,
-  VG.Impl.RsaKeyGen.X86.Key.loadExponent n]
+/-- Argument `i` of the cdecl call (`p` is 4, `q` 6, `e` 14 and its length 15). -/
+def argument (i : Nat) : MemOp := VG.Impl.Bignum.X86.PublicFn.argument (i + 4)
+
+/-- Every array cleared, and one. -/
+def clearInputs : Prog isa := .seq (clear .modulus VG.Impl.RsaKeyGen.X86.Key.nArr) (cn aOne 1)
+
+/-- The prime at argument `arg` imported into array 0 at the prime width, then widened into `out`. -/
+def loadPrime (arg out : Nat) : Prog isa := seqs [
+  .block ([.mov .esi (.mem (argument arg))] ++ ptr (arr 0) .ebx .edx ++ bytes .prime .ecx ++
+    [.alu .add .ebx (.reg .ecx), .alu .sub .ebx (.imm 4), .shift .shr .ecx 2]),
+  VG.Impl.RsaKeyGen.X86.Import.code, widen .prime (arr out) (arr 0)]
+
+/-- The exponent into its header words, then widened into its array. -/
+def loadExponent : Prog isa := seqs [
+  .block [.mov .esi (.mem (argument 14)), .mov .ecx (.mem (argument 15))],
+  VG.Impl.Bignum.X86.loadBE 1 VG.Impl.RsaKeyGen.X86.Key.kEv,
+  widen .exponent (arr aE) (.fixed VG.Impl.RsaKeyGen.X86.Key.kEv)]
+
+/-- The inputs at the run-time width. -/
+def loadInputs : Prog isa := seqs [clearInputs, loadPrime 4 aPa, loadPrime 6 aQa, loadExponent]
 
 def selectIO (part : Nat → Prog isa) : Prog isa :=
   .seq (.block [.mov .eax (.mem (sc 4)), .shift .shr .eax 4]) (dispatchIO part widths)
 
-def front : Prog isa := .seq (selectIO loadInputs)
+def front : Prog isa := .seq loadInputs
   (.seq deriveLoaded (selectIO VG.Impl.RsaKeyGen.X86.Key.writeOutputs))
 
 def body : Prog isa := .seq VG.Impl.RsaKeyGen.X86.Key.enter front

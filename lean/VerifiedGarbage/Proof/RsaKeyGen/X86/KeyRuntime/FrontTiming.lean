@@ -19,7 +19,7 @@ theorem front_trace (E : Environment) (valid : E.Valid) (sp : BitVec 32) (e p q 
     RelCT isa (RuntimeStart E sp e p q p' q') front
       (VG.X86.Taint.Agree (VG.Proof.Mont.X86.Dynamic.workspaceTaint true)) := by
   unfold front
-  exact RelCT.seq (loadInputs_front_trace E valid sp e p q p' q')
+  exact RelCT.seq (runtime_input_trace E sp e p q p' q')
     (RelCT.seq (deriveOutput_trace E sp e p q p' q' release)
       (selectIO_trace valid (fun _ _ P => P.1) (output_keepIO E) (writeOutputs_trace E)))
 
