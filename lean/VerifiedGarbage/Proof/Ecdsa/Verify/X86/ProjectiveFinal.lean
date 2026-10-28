@@ -17,7 +17,7 @@ variable {c : VG.Impl.Ecdsa.X86.Cfg}
 
 /-- The inversion-free final check has the same result as affine conversion. -/
 theorem projectiveFinal_ok (hc : CfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.p)
-    (hpn : c.C.p ≤ 2 * c.C.n) {s₀ : State} {base : Addr}
+    (hpn : c.C.p ≤ 2 * c.C.n) (hm : c.mul = none) {s₀ : State} {base : Addr}
     {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop} {s : State} (hP : Pts c s₀ base Q₁ Q₂ s)
     (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.projectiveFinal c) c.stk) :
     WP isa (Impl.Ecdsa.Verify.X86.Cfg.projectiveFinal c) s fun s' =>
@@ -61,17 +61,17 @@ theorem projectiveFinal_ok (hc : CfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.p)
     rw [flagW, flag_unch U h7 h0 hn (by decide)]
     exact hP.flag
   have wz : sv c base t W = 0 ↔ fx = Fin.ofNat c.C.p (sigR c s₀) * fz := by
-    rw [← toM_eq_zero_iff hpR wlt, wval, hP.k]
+    rw [← toM_eq_zero_iff hpR wlt, wval, hP.k hm]
     change fx - Fin.ofNat c.C.p (sigR c s₀) * fz = 0 ↔ _
     constructor <;> intro h <;> grind
   have xnz : sv c base t XN = 0 ↔ fx = (Fin.ofNat c.C.p (sigR c s₀) + Fin.ofNat c.C.p c.C.n) * fz := by
-    rw [← toM_eq_zero_iff hpR xnlt, xnval, hP.k]
+    rw [← toM_eq_zero_iff hpR xnlt, xnval, hP.k hm]
     change fx - (Fin.ofNat c.C.p (sigR c s₀) + Fin.ofNat c.C.p c.C.n) * fz = 0 ↔ _
     constructor <;> intro h <;> grind
   have z : fz ≠ 0 ↔ sv c base s RZ ≠ 0 := not_congr (toM_eq_zero_iff hpR hP.rz_lt)
   refine WP.mono (projectiveChecks_ok hc ht saved A flag) fun s' ⟨keep,esp',U',ret⟩ fr => ?_
   refine ⟨keep, by rw [esp',esp,hP.esp], fr, xo, (fx * fz ^ (c.C.p - 2)).isLt, Fin.ofNat_val_eq_self _, ?_⟩
-  simp only [v (i := RZ) (by decide) (by decide), v (i := K) (by decide) (by decide), hP.k, mn, wz, xnz] at ret
+  simp only [v (i := RZ) (by decide) (by decide), v (i := K) (by decide) (by decide), hP.k hm, mn, wz, xnz] at ret
   have iff : (A ∧ sv c base s RZ ≠ 0 ∧
       (fx = Fin.ofNat c.C.p (sigR c s₀) * fz ∨
         (sigR c s₀ < c.C.p - c.C.n ∧ fx = (Fin.ofNat c.C.p (sigR c s₀) + Fin.ofNat c.C.p c.C.n) * fz))) ↔
@@ -94,9 +94,9 @@ theorem tail_dispatch_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Ad
           (0 < sigS c s₀ ∧ sigS c s₀ < c.C.n)) ∧ sv c base s RZ ≠ 0 ∧
           Fin.ofNat c.C.n xo = Fin.ofNat c.C.n (sigR c s₀) then 1 else 0 := by
   unfold Impl.Ecdsa.Verify.X86.Cfg.tail at hsp ⊢
-  by_cases h : c.C.len = 32 ∧ c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n
+  by_cases h : c.mul.isNone ∧ c.C.len = 32 ∧ c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n
   · rw [ite_eq_left h] at hsp ⊢
-    exact projectiveFinal_ok hc hC h.2.1 h.2.2 hP hsp
+    exact projectiveFinal_ok hc hC h.2.2.1 h.2.2.2 (Option.isNone_iff_eq_none.mp h.1) hP hsp
   · rw [ite_eq_right h] at hsp ⊢
     exact vtail_ok hc hP hsp.left hsp.right
 

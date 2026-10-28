@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Ecdsa.X86.Lays
 import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
 import VerifiedGarbage.Proof.Weierstrass.X86.Bits
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+public import VerifiedGarbage.Proof.Ecdsa.X86.QMul
 
 /-!
 # ECDSA verification on x86 (32-bit): `[u]G + [v]Q`
@@ -35,20 +36,6 @@ open VG.Impl.Ecdsa.Verify.X86 (SM' EM' RM' UM VM U V UX UY UZ)
 variable {c : Cfg}
 
 theorem tbl_le (h7 : c.n < 10) : bitsAt c.n 0 + 64 * c.n ≤ size := bitsAt_le c h7 (j := 0) (by decide)
-
-/-- `[o] = [a]`, on numbered slots. -/
-theorem copySl_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) {o a : Nat}
-    (ho : o < 45) (ha : a < 45) (hoa : o ≠ a) :
-    WP isa (.block (copy (2 * c.n) (c.sl o) (c.sl a))) s fun s' =>
-      sv c base s' o = sv c base s a ∧ Keeps [.eax] s s' ∧
-      Outside base (c.sl o) (8 * c.n) s.mem s'.mem := by
-  have := sl_apart c hoa
-  have := sl_le c hc.n10 ho
-  have := sl_le c hc.n10 ha
-  refine WP.mono (copy_ok (2 * c.n) hs (by omega) (by omega) (by omega)) fun s' ⟨e, k, O⟩ => ⟨?_, k, ?_⟩
-  · show wordsVal _ _ _ _ = wordsVal _ _ _ _
-    rw [wordsVal_eq_val32, wordsVal_eq_val32, e]
-  · rw [show 8 * c.n = 4 * (2 * c.n) by omega]; exact O
 
 /-- `[o] = x`, on numbered slots. -/
 theorem setSl_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) {o x : Nat}
@@ -250,25 +237,71 @@ structure Pts (c : Cfg) (s₀ : State) (base : Addr)
   whole : Frame (s₀.wr ++ [below (s₀.gpr .esp) c.stk]) s₀.mem s.mem
   sp_lo : c.stk ≤ (s₀.gpr .esp).toNat
   rx_lt : sv c base s RX < c.C.p
-  k : sv c base s K = sigR c s₀
+  /-- `r`, which `vg_<curve>_mul`'s scalar replaces. -/
+  k : c.mul = none → sv c base s K = sigR c s₀
 
 theorem Pts.keep {s₀ : State} {base : Addr} {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop} {s : State}
     (h : Pts c s₀ base Q₁ Q₂ s) : Keep c s₀ base s :=
   ⟨h.scr, h.esp, h.rd, h.wr, h.fixed, h.whole, h.sp_lo⟩
 
-theorem points_eq (c : Cfg) : Impl.Ecdsa.Verify.X86.Cfg.points c =
-    .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) (.seq (Point.ladderP c.ladderCfg c.SP Impl.Ecdsa.Verify.X86.Args.verify.ao)
-      (.seq (.block (Impl.Ecdsa.Verify.X86.Cfg.save c)) (.seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n))
-      (.seq (Point.ladderP (Impl.Ecdh.X86.Cfg.ladderQ c) c.SP Impl.Ecdsa.Verify.X86.Args.verify.ao)
-        (Impl.Ecdsa.Verify.X86.Cfg.sum c))))) := rfl
+/-- What `scalarAt` writes: `K`'s slot (for `vg_<curve>_mul`) or the table
+of bits. -/
+abbrev scW (c : Cfg) : List (Nat × Nat) := slW c [K] ++ [(bitsAt c.n 0, 64 * c.n)]
 
-/-- The slots the two ladders and `save` write. -/
+theorem apart_scW (h7 : c.n < 10) {i : Nat} (hi : i < 45) (hK : i ≠ K) :
+    ∀ w ∈ scW c, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
+  apart_append (apart_slW (by simpa using hK)) (apart_tbl hi 0)
+
+theorem fixedOk_scW (h7 : c.n < 10) : FixedOk c (scW c) :=
+  (fixedOk_slW (by decide)).append (fixedOk_tbl 0)
+
+theorem scW_le (h7 : c.n < 10) : ∀ w ∈ scW c, w.1 + w.2 ≤ size :=
+  fun w hw => (List.mem_append.mp hw).elim (slW_le h7 (by decide) w) fun hw => by
+    rw [List.mem_singleton.mp hw]; exact tbl_le h7
+
+/-- The scalar at slot `i` to where the multiplication reads it: `K`'s slot
+for `vg_<curve>_mul`, else the table of its bits. -/
+theorem scalarAt_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) {i : Nat} (hi : i < 45)
+    (hK : i ≠ K) :
+    WP isa (Impl.Ecdsa.Verify.X86.Cfg.scalarAt c i) s fun s' => Keeps [.eax, .ebx, .edx, .esi] s s' ∧
+      Unch base (scW c) s.mem s'.mem ∧ (c.mul = none → Unch base [(bitsAt c.n 0, 64 * c.n)] s.mem s'.mem) ∧
+      (c.mul.isSome → sv c base s' K = sv c base s i) ∧
+      (c.mul = none → ∀ t < 64 * c.n, s'.mem (off base (bitsAt c.n 0 + t)) =
+        if (sv c base s i).testBit t then 1 else 0) := by
+  have h7 := hc.n10
+  unfold Impl.Ecdsa.Verify.X86.Cfg.scalarAt
+  split
+  · next C hC =>
+    refine WP.mono (copySl_ok hc hs (o := K) (a := i) (by decide) hi (Ne.symm hK)) fun s' ⟨x, k, O⟩ =>
+      ⟨k.mono (by decide), O.unch.mono fun w hw => List.mem_append_left _ (by simpa using hw),
+        fun h => (by rw [hC] at h; cases h), fun _ => x, fun h => (by rw [hC] at h; cases h)⟩
+  · next hN =>
+    refine WP.mono (bits_ok hs hc.n0 (sl_le c h7 hi) (tbl_le h7)
+      (Or.inl (by have := sl_below_bits c hi 0 0; omega_arith))) fun s' ⟨b, k, O⟩ =>
+      ⟨k, O.unch.mono fun w hw => List.mem_append_right _ hw, fun _ => O.unch,
+        fun h => (by rw [hN] at h; cases h), fun _ => b⟩
+
+theorem points_eq (c : Cfg) : Impl.Ecdsa.Verify.X86.Cfg.points c =
+    .seq (Impl.Ecdsa.Verify.X86.Cfg.scalarAt c U) (.seq (c.gen Impl.Ecdsa.Verify.X86.Args.verify.ao)
+      (.seq (.block (Impl.Ecdsa.Verify.X86.Cfg.save c)) (.seq (Impl.Ecdsa.Verify.X86.Cfg.scalarAt c V)
+      (.seq (c.qMul PX PY Impl.Ecdsa.Verify.X86.Args.verify.ao) (Impl.Ecdsa.Verify.X86.Cfg.sum c))))) := rfl
+
+/-- The slots the multiplications, `save` and the sum write. -/
 abbrev ptsW : List Nat :=
-  [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TX, TY, TZ, TMP, UX, UY, UZ]
+  [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TX, TY, TZ, TMP, UX, UY, UZ, K, ACC, PT]
+
+/-- The ladders' slots. -/
+abbrev ladL : List Nat :=
+  [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ, TMP]
+
+/-- What `points` writes but numbered slots: the table of bits and where
+`vg_<curve>_mul` keeps the callee-saved registers. -/
+abbrev ptsX (c : Cfg) : List (Nat × Nat) := [(bitsAt c.n 0, 64 * c.n), (c.sl nslots, 16)]
 
 /-- `[u]G + [v]Q`, into `R`. -/
 theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
-    (hM : Mid c s₀ base s) (hA : 3 ≤ c.n ∧ c.n ≤ 6 → Point.LadArg s base Impl.Ecdsa.Verify.X86.Args.verify.ao)
+    (hM : Mid c s₀ base s)
+    (hA : c.mul.isSome ∨ 3 ≤ c.n ∧ c.n ≤ 6 → Point.LadArg s base Impl.Ecdsa.Verify.X86.Args.verify.ao)
     {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
     (hstep₁ : Step c.ladderCfg c.C base s (sv c base s U) Q₁) (hO₁ : Q₁ (64 * c.n) 0 1 0)
     (hstep₂ : Step (Impl.Ecdh.X86.Cfg.ladderQ c) c.C base s (sv c base s V) Q₂)
@@ -283,122 +316,117 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
   have hp3 := hc.p_ge
   have F := hM.fixed
   have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
-  have tb : ∀ {i}, i < 45 → ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
-    fun hi => apart_tbl hi 0
+  have hsp' := hsp
+  rw [points_eq] at hsp'
+  have hspG : SpOk (c.gen Impl.Ecdsa.Verify.X86.Args.verify.ao) 28 :=
+    ⟨hsp'.right.left.1, Nat.le_trans hsp'.right.left.2 (Cfg.stk_le c)⟩
+  have hspQ : SpOk (c.qMul PX PY Impl.Ecdsa.Verify.X86.Args.verify.ao) 28 :=
+    ⟨hsp'.right.right.right.right.left.1, Nat.le_trans hsp'.right.right.right.right.left.2 (Cfg.stk_le c)⟩
+  have tO : ∀ {t : State}, Fixed c base s₀.gpr t.mem →
+      tmv c.C c.n base t (c.sl ZERO) = 0 ∧ tmv c.C c.n base t (c.sl ONEP) = 1 := fun {t} F' => by
+    refine ⟨?_, ?_⟩
+    · show toM _ _ (wordsVal t.mem base (c.sl ZERO) c.n) = _; rw [F'.zero, toM_zero]
+    · show toM _ _ (wordsVal t.mem base (c.sl ONEP) c.n) = _; rw [F'.onep, toM_one hpR]
   refine WP.seq (hM.keep.withSp hsp ?_)
   rw [points_eq]
-  -- The table of `u`.
-  refine WP.seq (WP.mono (bits_ok hM.scr h0 (sl_le c h7 (i := U) (by decide)) (tbl_le h7)
-    (Or.inl (by have := sl_below_bits c (i := U) (by decide) 0 0; omega_arith)))
-    fun s₁ ⟨b₁, k₁, O₁⟩ => ?_)
+  -- `u` to where the multiplication reads it.
+  refine WP.seq (WP.mono (scalarAt_ok hc hM.scr (i := U) (by decide) (by decide))
+    fun s₁ ⟨k₁, U₁, U₁', sk₁, b₁⟩ => ?_)
   have hs₁ := hM.scr.of_keeps k₁ (by decide)
-  have U₁ : Unch base [(bitsAt c.n 0, 64 * c.n)] s.mem s₁.mem := O₁.unch
-  have F₁ := F.unch h7 hn (fixedOk_tbl 0) U₁
-  have v₁ : ∀ {i}, i < 45 → sv c base s₁ i = sv c base s i := fun hi => sv_unch U₁ h7 hn hi (tb hi)
-  have tl : ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)], w.1 + w.2 ≤ size := fun w hw => by
-    rw [List.mem_singleton.mp hw]; exact tbl_le h7
-  have A₁ : 3 ≤ c.n ∧ c.n ≤ 6 → Point.LadArg s₁ base Impl.Ecdsa.Verify.X86.Args.verify.ao := fun h =>
-    (hA h).keep (k₁.1 _ (by decide)) (k₁.1 _ (by decide)) k₁.2.1 k₁.2.2
-      (frame_of_unch U₁ tl List.mem_cons_self)
+  have F₁ := F.unch h7 hn (fixedOk_scW h7) U₁
+  have v₁ : ∀ {i}, i < 45 → i ≠ K → sv c base s₁ i = sv c base s i := fun hi hK =>
+    sv_unch U₁ h7 hn hi (apart_scW h7 hi hK)
+  have A₁ : c.mul.isSome ∨ 3 ≤ c.n ∧ c.n ≤ 6 → Point.LadArg s₁ base Impl.Ecdsa.Verify.X86.Args.verify.ao :=
+    fun h => (hA h).keep (k₁.1 _ (by decide)) (k₁.1 _ (by decide)) k₁.2.1 k₁.2.2
+      (frame_of_unch U₁ (scW_le h7) List.mem_cons_self)
   -- `[u]G`.
-  have hlt₁ : ∀ x ∈ ladR c.ladderCfg, wordsVal s₁.mem base x c.MP'.n < c.C.p := by
-    intro x hx
-    have hx' : x ∈ [AP, B3P, GX, GY, ONEP, RX, RY, RZ].map c.sl := hx
-    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx'
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
-    show sv c base s₁ i < c.C.p
-    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · exact lt_of_eq_of_lt F₁.ap (hmont _)
-    · exact lt_of_eq_of_lt F₁.b3p (hmont _)
-    · exact lt_of_eq_of_lt F₁.gx (hmont _)
-    · exact lt_of_eq_of_lt F₁.gy (hmont _)
-    · exact lt_of_eq_of_lt F₁.onep (Nat.mod_lt _ (by omega_arith))
-    · rw [v₁ (by decide), hM.rx]; omega_arith
-    · rw [v₁ (by decide), hM.ry]; exact hmont _
-    · rw [v₁ (by decide), hM.rz]; omega_arith
-  have tv₁ : ∀ {i}, i < 45 → tmv c.C c.n base s₁ (c.sl i) = tmv c.C c.n base s (c.sl i) := fun hi => by
-    show toM _ _ (sv c base s₁ _) = toM _ _ (sv c base s _)
-    rw [v₁ hi]
-  have hR₁ : Q₁ c.ladderCfg.nbits (tmv c.C c.n base s₁ (c.sl RX)) (tmv c.C c.n base s₁ (c.sl RY))
+  have tv₁ : ∀ {i}, i < 45 → i ≠ K → tmv c.C c.n base s₁ (c.sl i) = tmv c.C c.n base s (c.sl i) :=
+    fun hi hK => by
+      show toM _ _ (sv c base s₁ _) = toM _ _ (sv c base s _)
+      rw [v₁ hi hK]
+  have hR₁ : Q₁ (64 * c.n) (tmv c.C c.n base s₁ (c.sl RX)) (tmv c.C c.n base s₁ (c.sl RY))
       (tmv c.C c.n base s₁ (c.sl RZ)) := by
     show Q₁ (64 * c.n) (toM _ _ (sv c base s₁ RX)) (toM _ _ (sv c base s₁ RY)) (toM _ _ (sv c base s₁ RZ))
-    rw [v₁ (by decide), v₁ (by decide), v₁ (by decide), hM.rx, hM.ry, hM.rz, toM_cmont hc, toM_zero]
+    rw [v₁ (by decide) (by decide), v₁ (by decide) (by decide), v₁ (by decide) (by decide), hM.rx, hM.ry, hM.rz,
+      toM_cmont hc, toM_zero]
     exact hO₁
-  refine WP.seq (WP.mono (Point.ladderP_ok (ladLay hc) (ladWk hc) ladPt hpR hs₁ A₁ (modP_of hc F₁.mp) hlt₁
-    (Step.congr hstep₁ (tv₁ (by decide)) (tv₁ (by decide)) (tv₁ (by decide)) (tv₁ (by decide))
-      (tv₁ (by decide))) hR₁ (fun t ht => by
-        show s₁.mem (off base (bitsAt c.n 0 + t)) = _
-        rw [b₁ t ht]))
-    fun s₂ ⟨K₂, U₂, M₂, L₂, q₂, A₂⟩ => ?_)
-  rw [Point.ladWp, ladWx_eq] at U₂
+  have hO₁' : Q₁ (64 * c.n) (tmv c.C c.n base s₁ (c.sl ZERO)) (tmv c.C c.n base s₁ (c.sl ONEP))
+      (tmv c.C c.n base s₁ (c.sl ZERO)) := by rw [(tO F₁).1, (tO F₁).2]; exact hO₁
+  refine WP.seq (WP.mono (qMul_ok hc (gx := GX) (gy := GY) (k := sv c base s U) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (ladLay hc) (ladWk hc) ladPt hspG hs₁ A₁ F₁.mp
+    (lt_of_eq_of_lt F₁.ap (hmont _)) (lt_of_eq_of_lt F₁.b3p (hmont _))
+    (lt_of_eq_of_lt F₁.onep (Nat.mod_lt _ (by omega_arith))) (lt_of_eq_of_lt F₁.zero (by omega_arith))
+    (lt_of_eq_of_lt F₁.gx (hmont _)) (lt_of_eq_of_lt F₁.gy (hmont _))
+    (by rw [v₁ (by decide) (by decide), hM.rx]; omega_arith) (by rw [v₁ (by decide) (by decide), hM.ry]; exact hmont _)
+    (by rw [v₁ (by decide) (by decide), hM.rz]; omega_arith)
+    (Step.congr hstep₁ (tv₁ (by decide) (by decide)) (tv₁ (by decide) (by decide)) (tv₁ (by decide) (by decide))
+      (tv₁ (by decide) (by decide)) (tv₁ (by decide) (by decide))) hR₁ hO₁' sk₁ b₁)
+    fun s₂ ⟨K₂, U₂, L₂, q₂, A₂⟩ => ?_)
+  rw [Point.ladWp, ladWx_at] at U₂
   have hs₂ := hs₁.of_keeps K₂ (by decide)
-  have F₂ := F₁.unch h7 hn (fixedOk_slWkP (by decide)) U₂
+  have F₂ := F₁.unch h7 hn (fixedOk_slWkG (l := ladL) (by decide)) U₂
   -- `U = [u]G`, `R = O`.
   refine WP.seq (WP.mono (save_ok hc hs₂) fun s₃ ⟨hs₃, k₃, U₃, ux₃, uy₃, uz₃, rx₃, ry₃, rz₃⟩ => ?_)
   have F₃ := F₂.unch h7 hn (fixedOk_slW (by decide)) U₃
-  have A₃ : 3 ≤ c.n ∧ c.n ≤ 6 → Point.LadArg s₃ base Impl.Ecdsa.Verify.X86.Args.verify.ao := fun h =>
-    (A₂ h).keep (k₃.1 _ (by decide)) (k₃.1 _ (by decide)) k₃.2.1 k₃.2.2
+  have A₃ : c.mul.isSome ∨ 3 ≤ c.n ∧ c.n ≤ 6 → Point.LadArg s₃ base Impl.Ecdsa.Verify.X86.Args.verify.ao :=
+    fun h => (A₂ h).keep (k₃.1 _ (by decide)) (k₃.1 _ (by decide)) k₃.2.1 k₃.2.2
       (frame_of_unch U₃ (slW_le h7 (by decide)) List.mem_cons_self)
-  -- The table of `v`.
-  have sub₂ : ∀ i ∈ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ,
-      TMP], i ∈ ptsW := by decide
+  -- `v` to where the multiplication reads it.
+  have sub₂ : ∀ i ∈ ladL, i ∈ ptsW := by decide
   have sub₃ : ∀ i ∈ saveW, i ∈ ptsW := by decide
+  have nap : ∀ {i}, i ∉ ptsW → i ∉ [ACC, PT] := fun hl h' => hl (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at h'; rcases h' with rfl | rfl <;> decide)
   have W₃ : ∀ {i}, i < 45 → i ∉ ptsW → sv c base s₃ i = sv c base s i := fun hi hl =>
     ((sv_unch U₃ h7 hn hi (apart_slW (fun h => hl (sub₃ _ h)))).trans
-      (sv_unch U₂ h7 hn hi (apart_slWkP hi (fun h => hl (sub₂ _ h))))).trans (v₁ hi)
-  refine WP.seq (WP.mono (bits_ok hs₃ h0 (sl_le c h7 (i := V) (by decide)) (tbl_le h7)
-    (Or.inl (by have := sl_below_bits c (i := V) (by decide) 0 0; omega_arith)))
-    fun s₄ ⟨b₄, k₄, O₄⟩ => ?_)
+      (sv_unch U₂ h7 hn hi (apart_slWkG hi (fun h => hl (sub₂ _ h)) (nap hl)))).trans
+      (v₁ hi (fun h => hl (by rw [h]; decide)))
+  refine WP.seq (WP.mono (scalarAt_ok hc hs₃ (i := V) (by decide) (by decide))
+    fun s₄ ⟨k₄, U₄, U₄', sk₄, b₄⟩ => ?_)
   have hs₄ := hs₃.of_keeps k₄ (by decide)
-  have U₄ : Unch base [(bitsAt c.n 0, 64 * c.n)] s₃.mem s₄.mem := O₄.unch
-  have F₄ := F₃.unch h7 hn (fixedOk_tbl 0) U₄
-  have v₄ : ∀ {i}, i < 45 → sv c base s₄ i = sv c base s₃ i := fun hi => sv_unch U₄ h7 hn hi (tb hi)
-  have A₄ : 3 ≤ c.n ∧ c.n ≤ 6 → Point.LadArg s₄ base Impl.Ecdsa.Verify.X86.Args.verify.ao := fun h =>
-    (A₃ h).keep (k₄.1 _ (by decide)) (k₄.1 _ (by decide)) k₄.2.1 k₄.2.2
-      (frame_of_unch U₄ tl List.mem_cons_self)
+  have F₄ := F₃.unch h7 hn (fixedOk_scW h7) U₄
+  have v₄ : ∀ {i}, i < 45 → i ≠ K → sv c base s₄ i = sv c base s₃ i := fun hi hK =>
+    sv_unch U₄ h7 hn hi (apart_scW h7 hi hK)
+  have A₄ : c.mul.isSome ∨ 3 ≤ c.n ∧ c.n ≤ 6 → Point.LadArg s₄ base Impl.Ecdsa.Verify.X86.Args.verify.ao :=
+    fun h => (A₃ h).keep (k₄.1 _ (by decide)) (k₄.1 _ (by decide)) k₄.2.1 k₄.2.2
+      (frame_of_unch U₄ (scW_le h7) List.mem_cons_self)
   -- `[v]Q`.
-  have hlt₄ : ∀ x ∈ ladR (Impl.Ecdh.X86.Cfg.ladderQ c), wordsVal s₄.mem base x c.MP'.n < c.C.p := by
-    intro x hx
-    have hx' : x ∈ [AP, B3P, PX, PY, ONEP, RX, RY, RZ].map c.sl := hx
-    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx'
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
-    show sv c base s₄ i < c.C.p
-    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · exact lt_of_eq_of_lt F₄.ap (hmont _)
-    · exact lt_of_eq_of_lt F₄.b3p (hmont _)
-    · rw [v₄ (by decide), W₃ (by decide) (by decide)]; exact hM.px_lt
-    · rw [v₄ (by decide), W₃ (by decide) (by decide)]; exact hM.py_lt
-    · exact lt_of_eq_of_lt F₄.onep (Nat.mod_lt _ (by omega_arith))
-    · rw [v₄ (by decide), rx₃]; omega_arith
-    · rw [v₄ (by decide), ry₃]; exact hmont _
-    · rw [v₄ (by decide), rz₃]; omega_arith
   have tv₄ : ∀ {i}, i < 45 → i ∉ ptsW → tmv c.C c.n base s₄ (c.sl i) = tmv c.C c.n base s (c.sl i) :=
     fun hi hl => by
       show toM _ _ (sv c base s₄ _) = toM _ _ (sv c base s _)
-      rw [v₄ hi, W₃ hi hl]
-  have hR₄ : Q₂ (Impl.Ecdh.X86.Cfg.ladderQ c).nbits (tmv c.C c.n base s₄ (c.sl RX))
+      rw [v₄ hi (fun h => hl (by rw [h]; decide)), W₃ hi hl]
+  have hR₄ : Q₂ (64 * c.n) (tmv c.C c.n base s₄ (c.sl RX))
       (tmv c.C c.n base s₄ (c.sl RY)) (tmv c.C c.n base s₄ (c.sl RZ)) := by
     show Q₂ (64 * c.n) (toM _ _ (sv c base s₄ RX)) (toM _ _ (sv c base s₄ RY)) (toM _ _ (sv c base s₄ RZ))
-    rw [v₄ (by decide), v₄ (by decide), v₄ (by decide), rx₃, ry₃, rz₃, toM_cmont hc, toM_zero]
+    rw [v₄ (by decide) (by decide), v₄ (by decide) (by decide), v₄ (by decide) (by decide), rx₃, ry₃, rz₃,
+      toM_cmont hc, toM_zero]
     exact hO₂
-  refine WP.seq (WP.mono (Point.ladderP_ok (ladLayQ hc) (ladWkQ hc) ladPtQ hpR hs₄ A₄ (modP_of hc F₄.mp) hlt₄
+  have hO₄ : Q₂ (64 * c.n) (tmv c.C c.n base s₄ (c.sl ZERO)) (tmv c.C c.n base s₄ (c.sl ONEP))
+      (tmv c.C c.n base s₄ (c.sl ZERO)) := by rw [(tO F₄).1, (tO F₄).2]; exact hO₂
+  have hV₃ : sv c base s₃ V = sv c base s V := W₃ (by decide) (by decide)
+  refine WP.seq (WP.mono (qMul_ok hc (gx := PX) (gy := PY) (k := sv c base s V) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (ladLayQ hc) (ladWkQ hc) ladPtQ hspQ hs₄ A₄ F₄.mp
+    (lt_of_eq_of_lt F₄.ap (hmont _)) (lt_of_eq_of_lt F₄.b3p (hmont _))
+    (lt_of_eq_of_lt F₄.onep (Nat.mod_lt _ (by omega_arith))) (lt_of_eq_of_lt F₄.zero (by omega_arith))
+    (by rw [v₄ (by decide) (by decide), W₃ (by decide) (by decide)]; exact hM.px_lt)
+    (by rw [v₄ (by decide) (by decide), W₃ (by decide) (by decide)]; exact hM.py_lt)
+    (by rw [v₄ (by decide) (by decide), rx₃]; omega_arith) (by rw [v₄ (by decide) (by decide), ry₃]; exact hmont _)
+    (by rw [v₄ (by decide) (by decide), rz₃]; omega_arith)
     (Step.congr hstep₂ (tv₄ (by decide) (by decide)) (tv₄ (by decide) (by decide))
-      (tv₄ (by decide) (by decide)) (tv₄ (by decide) (by decide)) (tv₄ (by decide) (by decide))) hR₄
-      (fun t ht => by
-        show s₄.mem (off base (bitsAt c.n 0 + t)) = _
-        rw [b₄ t ht, show wordsVal s₃.mem base (c.sl V) c.n = sv c base s V from
-          W₃ (by decide) (by decide)]))
-    fun s₅ ⟨K₅, U₅, M₅, L₅, q₅, _⟩ => ?_)
-  rw [Point.ladWp, ladWxQ_eq] at U₅
+      (tv₄ (by decide) (by decide)) (tv₄ (by decide) (by decide)) (tv₄ (by decide) (by decide))) hR₄ hO₄
+    (fun h => (sk₄ h).trans hV₃) (fun h t ht => by rw [b₄ h t ht, hV₃]))
+    fun s₅ ⟨K₅, U₅, L₅, q₅, _⟩ => ?_)
+  rw [Point.ladWp, ladWx_at] at U₅
   have hs₅ := hs₄.of_keeps K₅ (by decide)
-  have F₅ := F₄.unch h7 hn (fixedOk_slWkP (by decide)) U₅
+  have F₅ := F₄.unch h7 hn (fixedOk_slWkG (l := ladL) (by decide)) U₅
+  have M₅ := modP_of hc F₅.mp
   have v₅ : ∀ {i}, i < 45 → i ∉ ptsW → sv c base s₅ i = sv c base s₄ i := fun hi hl =>
-    sv_unch U₅ h7 hn hi (apart_slWkP hi (fun h => hl (sub₂ _ h)))
+    sv_unch U₅ h7 hn hi (apart_slWkG hi (fun h => hl (sub₂ _ h)) (nap hl))
   -- The sum.
   have u₅ : ∀ {i}, i ∈ [UX, UY, UZ] → sv c base s₅ i = sv c base s₃ i := fun {i} hi => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl <;>
-      exact (sv_unch U₅ h7 hn (by decide) (apart_slWkP (by decide) (by decide))).trans (v₄ (by decide))
+      exact (sv_unch U₅ h7 hn (by decide) (apart_slWkG (by decide) (by decide) (by decide))).trans
+        (v₄ (by decide) (by decide))
   refine WP.mono (sum_ok hc hs₅ M₅ (fun i hi => ?_)) fun s₆ ⟨hs₆, g₆, rd₆, wr₆, U₆, M₆, rz₆, t₆, rx₆⟩ f₆ => h s₆ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -413,33 +441,48 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     · exact L₅ _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
   have F₆ := F₅.unch h7 hn (fixedOk_slWk (by decide)) U₆
   have sub₆ : ∀ i ∈ sumW, i ∈ ptsW := by decide
-  have UW : Unch base ([(bitsAt c.n 0, 64 * c.n)] ++ slWkP c ptsW) s.mem s₆.mem := by
-    have hsl : ∀ {l : List Nat}, (∀ i ∈ l, i ∈ ptsW) → ∀ w ∈ slWk c l,
-        w ∈ [(bitsAt c.n 0, 64 * c.n)] ++ slWkP c ptsW := fun hl w hw => by
+  have UW : Unch base (ptsX c ++ slWkP c ptsW) s.mem s₆.mem := by
+    have hsl : ∀ {l : List Nat}, (∀ i ∈ l, i ∈ ptsW) → ∀ w ∈ slWk c l, w ∈ ptsX c ++ slWkP c ptsW :=
+      fun hl w hw => by
+        rcases List.mem_append.mp hw with hw | hw
+        · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
+          exact List.mem_append_right _ (List.mem_append_left _ (List.mem_append_left _
+            (List.mem_map_of_mem (hl i hi))))
+        · exact List.mem_append_right _ (List.mem_append_left _ (List.mem_append_right _ hw))
+    have hslW : ∀ {l : List Nat}, (∀ i ∈ l, i ∈ ptsW) → ∀ w ∈ slW c l, w ∈ ptsX c ++ slWkP c ptsW :=
+      fun hl w hw => hsl hl w (List.mem_append_left _ hw)
+    have hslP : ∀ {l : List Nat}, (∀ i ∈ l, i ∈ ptsW) → ∀ w ∈ slWkP c l, w ∈ ptsX c ++ slWkP c ptsW :=
+      fun hl w hw => by
+        rcases List.mem_append.mp hw with hw | hw
+        · exact hsl hl w hw
+        · exact List.mem_append_right _ (List.mem_append_right _ hw)
+    have hsc : ∀ w ∈ scW c, w ∈ ptsX c ++ slWkP c ptsW := fun w hw => by
       rcases List.mem_append.mp hw with hw | hw
-      · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-        exact List.mem_append_right _ (List.mem_append_left _ (List.mem_append_left _
-          (List.mem_map_of_mem (hl i hi))))
-      · exact List.mem_append_right _ (List.mem_append_left _ (List.mem_append_right _ hw))
-    have hslP : ∀ {l : List Nat}, (∀ i ∈ l, i ∈ ptsW) → ∀ w ∈ slWkP c l,
-        w ∈ [(bitsAt c.n 0, 64 * c.n)] ++ slWkP c ptsW := fun hl w hw => by
+      · exact hslW (by decide) w hw
+      · rw [List.mem_singleton.mp hw]; exact List.mem_append_left _ List.mem_cons_self
+    have hG : ∀ w ∈ slWkG c ladL, w ∈ ptsX c ++ slWkP c ptsW := fun w hw => by
       rcases List.mem_append.mp hw with hw | hw
-      · exact hsl hl w hw
-      · exact List.mem_append_right _ (List.mem_append_right _ hw)
+      · exact hslP sub₂ w hw
+      rcases List.mem_append.mp hw with hw | hw
+      · exact hslW (by decide) w hw
+      · exact List.mem_append_left _ hw
     refine (U₁.trans (U₂.trans (U₃.trans (U₄.trans (U₅.trans U₆))))).mono fun w hw => ?_
     rcases List.mem_append.mp hw with hw | hw
-    · exact List.mem_append_left _ hw
+    · exact hsc w hw
     rcases List.mem_append.mp hw with hw | hw
-    · exact hslP sub₂ w hw
+    · exact hG w hw
     rcases List.mem_append.mp hw with hw | hw
-    · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-      exact List.mem_append_right _ (List.mem_append_left _ (List.mem_append_left _
-        (List.mem_map_of_mem (sub₃ i hi))))
+    · exact hslW sub₃ w hw
     rcases List.mem_append.mp hw with hw | hw
-    · exact List.mem_append_left _ hw
+    · exact hsc w hw
     rcases List.mem_append.mp hw with hw | hw
-    · exact hslP sub₂ w hw
+    · exact hG w hw
     · exact hsl sub₆ w hw
+  have apX : ∀ {i}, i < 45 → ∀ w ∈ ptsX c, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := fun hi w hw => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+    rcases hw with rfl | rfl
+    · exact Or.inl (by have := sl_below_bits c hi 0 0; omega_arith)
+    · exact Or.inl (sl_lt c hi)
   have tu : ∀ {i j}, i ∈ [UX, UY, UZ] → j ∈ [RX, RY, RZ] → sv c base s₃ i = sv c base s₂ j →
       tmv c.C c.n base s₅ (c.sl i) = tmv c.C c.n base s₂ (c.sl j) := fun hi _ e => by
     show toM _ _ (sv c base s₅ _) = toM _ _ (sv c base s₂ _)
@@ -448,7 +491,8 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     fun {i} hi => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
       show toM _ _ (sv c base s₅ _) = toM _ _ (sv c base s _)
-      rcases hi with rfl | rfl <;> rw [v₅ (by decide) (by decide), v₄ (by decide), W₃ (by decide) (by decide)]
+      rcases hi with rfl | rfl <;>
+        rw [v₅ (by decide) (by decide), v₄ (by decide) (by decide), W₃ (by decide) (by decide)]
   have ha : tmv c.C c.n base s (c.sl AP) = Fin.ofNat c.C.p c.C.a := by
     show toM _ _ (wordsVal s.mem base (c.sl AP) c.n) = _
     rw [F.ap]; exact toM_cmont hc _
@@ -456,17 +500,14 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     show toM _ _ (wordsVal s.mem base (c.sl B3P) c.n) = _
     rw [F.b3p]; exact toM_cmont hc _
   have hFl := sl_le c h7 (i := FLAG) (by decide)
-  have apF : ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)] ++ slWkP c ptsW, c.sl FLAG + 4 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := by
+  have apF : ∀ w ∈ ptsX c ++ slWkP c ptsW, c.sl FLAG + 4 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := by
     intro w hw
-    rcases List.mem_append.mp hw with hw | hw
-    · rw [List.mem_singleton.mp hw]
-      have := sl_below_bits c (i := FLAG) (by decide) 0 0
-      exact Or.inl (by dsimp only; omega_arith)
-    · rcases (apart_slWkP (c := c) (i := FLAG) (by decide) (by decide)) w hw with h | h
-      · exact Or.inl (by omega_arith)
-      · exact Or.inr h
+    rcases (apart_append (apX (i := FLAG) (by decide))
+      (apart_slWkP (c := c) (i := FLAG) (by decide) (by decide))) w hw with h | h
+    · exact Or.inl (by omega_arith)
+    · exact Or.inr h
   have rm₆ : sv c base s₆ RM' = sv c base s RM' :=
-    sv_unch UW h7 hn (by decide) (apart_append (tb (by decide)) (apart_slWkP (by decide) (by decide)))
+    sv_unch UW h7 hn (by decide) (apart_append (apX (by decide)) (apart_slWkP (by decide) (by decide)))
   refine ⟨hs₆, by rw [wr₆, K₅.2.2, k₄.2.2, k₃.2.2, K₂.2.2, k₁.2.2, hM.wr],
     by rw [rd₆, K₅.2.1, k₄.2.1, k₃.2.1, K₂.2.1, k₁.2.1, hM.rd],
     by rw [g₆ _ (by decide), K₅.1 _ (by decide), k₄.1 _ (by decide), k₃.1 _ (by decide), K₂.1 _ (by decide),
@@ -475,12 +516,27 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     by rw [rm₆]; exact hM.rm_lt, by rw [rm₆]; exact hM.rm, rz₆,
     ⟨_, _, _, _, _, _, q₂, q₅, by
       rw [t₆, tR₅ (by decide), tR₅ (by decide), ha, hb, tu (by decide) (by decide) ux₃,
-        tu (by decide) (by decide) uy₃, tu (by decide) (by decide) uz₃]
-      rfl⟩, f₆, hM.sp_lo, rx₆, ?_⟩
-  · rw [tbl_unch UW h7 (j := 1) (by decide) ht (apart_append (tbl_apart_tbl (by decide) ht)
+        tu (by decide) (by decide) uy₃, tu (by decide) (by decide) uz₃]⟩, f₆, hM.sp_lo, rx₆, fun hN => ?_⟩
+  · have hX : ∀ w ∈ ptsX c, bitsAt c.n 1 + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n 1 + t := fun w hw => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl
+      · exact tbl_apart_tbl (j := 1) (j' := 0) (by decide) ht _ List.mem_cons_self
+      · have := save_le_wk (c := c) h7
+        have := wk_below_bits c 1
+        exact Or.inr (by dsimp only; omega_arith)
+    rw [tbl_unch UW h7 (j := 1) (by decide) ht (apart_append hX
       (tbl_apart_slWkP (by decide) (by decide) ht))]
     exact hM.t₁ t ht
-  · exact (sv_unch UW h7 hn (i := K) (by decide)
-      (apart_append (tb (by decide)) (apart_slWkP (by decide) (by decide)))).trans hM.k
+  · -- `r`, kept where the curve has no `vg_<curve>_mul`.
+    have tbK : ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)], c.sl K + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl K :=
+      apart_tbl (by decide) 0
+    show wordsVal s₆.mem base (c.sl K) c.n = _
+    rw [sv_unch U₆ h7 hn (i := K) (by decide) (apart_slWk (by decide) (by decide)),
+      sv_unch U₅ h7 hn (i := K) (by decide) (apart_slWkG (by decide) (by decide) (by decide)),
+      sv_unch (U₄' hN) h7 hn (i := K) (by decide) tbK,
+      sv_unch U₃ h7 hn (i := K) (by decide) (apart_slW (by decide)),
+      sv_unch U₂ h7 hn (i := K) (by decide) (apart_slWkG (by decide) (by decide) (by decide)),
+      sv_unch (U₁' hN) h7 hn (i := K) (by decide) tbK]
+    exact hM.k
 
 end VG.Proof.Ecdsa.Verify.X86

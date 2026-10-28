@@ -38,6 +38,55 @@ registers. -/
 abbrev genX (c : Cfg) : List (Nat × Nat) :=
   slW c [ACC, PT] ++ [(bitsAt c.n 0, 64 * c.n), (c.sl nslots, 16)]
 
+theorem apart_genX (h7 : c.n < 10) {i : Nat} (hi : i < 45) (hr : i ∉ [ACC, PT]) :
+    ∀ w ∈ genX c, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
+  refine apart_append (apart_slW hr) ?_
+  intro w hw
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+  rcases hw with rfl | rfl
+  · exact Or.inl (by have := sl_below_bits c hi 0 0; omega_arith)
+  · exact Or.inl (sl_lt c hi)
+
+theorem fixedOk_genX (h7 : c.n < 10) : FixedOk c (genX c) := by
+  refine (fixedOk_slW (l := [ACC, PT]) (by decide)).append ?_
+  intro w hw
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+  rcases hw with rfl | rfl
+  · exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_below_bits c (i := 12) (by decide) 0 0))
+  · exact Or.inr (Nat.le_of_lt_succ (Nat.lt_succ_of_le (Nat.le_trans (Nat.le_add_right _ _)
+      (sl_lt c (i := 12) (j := nslots) (by decide)))))
+
+theorem genX_le (h7 : c.n < 10) : ∀ w ∈ genX c, w.1 + w.2 ≤ size := by
+  have := sl_le c h7 (i := ACC) (by decide)
+  have := sl_le c h7 (i := PT) (by decide)
+  have := bitsAt_le c h7 (j := 0) (by decide)
+  have := save_le_wk (c := c) h7
+  have := wk_own c
+  have hsz : size = 8192 := rfl
+  intro w hw
+  simp only [List.mem_cons, List.not_mem_nil, or_false, List.mem_append, slW, List.map_cons, List.map_nil] at hw
+  rcases hw with (rfl | rfl) | rfl | rfl <;> (dsimp only; omega_arith)
+
+theorem tbl_apart_genX (h7 : c.n < 10) {j t : Nat} (hj : j ≠ 0) (ht : t < 64 * c.n) :
+    ∀ w ∈ genX c, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
+  have := sl_below_bits c (i := ACC) (by decide) j t
+  have := sl_below_bits c (i := PT) (by decide) j t
+  have := save_le_wk (c := c) h7
+  have := wk_below_bits c j
+  have := bitsAt_eq c j
+  have := bitsAt_eq c 0
+  have hj1 : 1 ≤ j := Nat.pos_of_ne_zero hj
+  have : (64 * c.n + 4) * 1 ≤ (64 * c.n + 4) * j := Nat.mul_le_mul_left _ hj1
+  intro w hw
+  simp only [List.mem_cons, List.not_mem_nil, or_false, List.mem_append, slW, List.map_cons, List.map_nil] at hw
+  rcases hw with (rfl | rfl) | rfl | rfl <;> (dsimp only; omega_arith)
+
+theorem flag_apart_genX (h0 : 0 < c.n) (h7 : c.n < 10) : ∀ w ∈ genX c, c.sl FLAG + 4 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := by
+  intro w hw
+  rcases apart_genX h7 (i := FLAG) (by decide) (by decide) w hw with h | h
+  · exact .inl (by omega_arith)
+  · exact .inr h
+
 /-- Memory that changed only in the 8 bytes below `esp` (a push and a return
 address) keeps the working space. -/
 theorem unch_of_frame8 {s : State} {base : Addr} (hs : Scr s base 8192) {m m' : Mem}
@@ -198,6 +247,19 @@ theorem mulCall_ok (hc : CfgOk c) (hsp : SpOk c.mulFn 20) {C : Spec.Weierstrass.
   · exact hA.keep (by rw [u₄.other _ (by decide), esp']) edi₄ (by rw [u₄.rd, rd']) (by rw [u₄.wr, wr'])
       (by rw [m₄, m₃]; exact F₂)
 
+/-- The call's stack: what `vg_<curve>_mul`'s own calls use, below the push
+and the return address. -/
+theorem mulFn_spOk {gx gy ao : Nat} {C : Spec.Weierstrass.Mul.Curve} (hC : c.mul = some C)
+    (h : SpOk (c.qMul gx gy ao) 28) : SpOk c.mulFn 20 := by
+  unfold Cfg.qMul at h
+  simp only [hC] at h
+  refine ⟨fun i hi => h.1 i ?_, ?_⟩
+  · simp only [Cfg.mulAt, instrs, List.mem_append, List.mem_cons]
+    simp [hi]
+  · have := h.2
+    simp only [Cfg.mulAt, stackUse, frameBytes, List.length_cons, List.length_nil] at this
+    omega
+
 /-- `R = [k]P` for the point at `gx`, `gy`, `ONEP`: the call of
 `vg_<curve>_mul` if the curve has it, from `k` at `K`'s slot, else the ladder
 inline, from the table of `k`'s bits. -/
@@ -205,7 +267,7 @@ theorem qMul_ok (hc : CfgOk c) {gx gy ao : Nat} (hgx : gx < 45) (hgy : gy < 45) 
     (hg2 : gy ≠ RX) (hg3 : gy ≠ RY)
     (hL : LadLay (ladAt c gx gy) size) (hW : LadWk (ladAt c gx gy) c.SP c.C.p size c.wk)
     (hP : 3 ≤ c.n ∧ c.n ≤ 6 → Point.LadPt (ladAt c gx gy))
-    (hsp : c.mul.isSome → SpOk c.mulFn 20)
+    (hsp : SpOk (c.qMul gx gy ao) 28)
     {s : State} {base : Addr} (hs : Scr s base size)
     (hA : c.mul.isSome ∨ 3 ≤ c.n ∧ c.n ≤ 6 → Point.LadArg s base ao)
     (hmp : sv c base s MP = c.C.p)
@@ -265,7 +327,7 @@ theorem qMul_ok (hc : CfgOk c) {gx gy ao : Nat} (hgx : gx < 45) (hgy : gy < 45) 
       rw [tv (e₂ (i := ZERO) (by decide) (by decide) (by decide)),
         tv (e₂ (i := ONEP) (by decide) (by decide) (by decide))]
       exact hO
-    refine WP.mono (mulCall_ok hc (hsp hsome) (C := C) hs₂ hA₂
+    refine WP.mono (mulCall_ok hc (mulFn_spOk hC hsp) (C := C) hs₂ hA₂
       (by rw [e₂ (by decide) (by decide) (by decide)]; exact hmp)
       (by rw [e₂ (by decide) (by decide) (by decide)]; exact hap)
       (by rw [e₂ (by decide) (by decide) (by decide)]; exact hb3)

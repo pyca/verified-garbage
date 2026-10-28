@@ -160,10 +160,12 @@ def projectiveFinal : Prog isa :=
     (.seq (Mont.mulCall c.SP (c.sl XM) (c.sl K) (c.sl XM))
       (fprog c.SP (projectiveOps c.sl)))) (.block (projectiveChecks c))
 
-/-- P-256 compares projective coordinates directly; the other curves retain
-an affine conversion until the direct path has been benchmarked for them. -/
+/-- P-256 compares projective coordinates directly (it reads `r` from `K`'s
+slot, which `vg_<curve>_mul`'s scalar replaces: so only for a curve without
+it, `Cfg.mul`); the other curves retain an affine conversion until the
+direct path has been benchmarked for them. -/
 def tail : Prog isa :=
-  if c.C.len = 32 ∧ c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n then projectiveFinal c
+  if c.mul.isNone ∧ c.C.len = 32 ∧ c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n then projectiveFinal c
   else .seq c.pPow (final c)
 
 /-- The scalar at slot `i` to where the multiplications read it: `K`'s slot,

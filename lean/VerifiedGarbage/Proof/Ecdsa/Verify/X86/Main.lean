@@ -116,8 +116,9 @@ theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hcomb : c.comb = none)
     exact peerPt_rep hC _ _ _ hM.px hM.py
   have hu : sv c (ptr s₀ 3) s₂ U < 2 ^ (64 * c.n) := wordsVal_lt _ _ _ _
   have hv : sv c (ptr s₀ 3) s₂ V < 2 ^ (64 * c.n) := wordsVal_lt _ _ _ _
-  have hA : 3 ≤ c.n ∧ c.n ≤ 6 → Point.LadArg s₂ (ptr s₀ 3) Impl.Ecdsa.Verify.X86.Args.verify.ao := fun h =>
-    hM.keep.ladArg (A := Impl.Ecdsa.Verify.X86.Args.verify) hp.setup (vArgs_disjI hp (i := 3) (by decide)) (Cfg.stk_28 hcomb h.2)
+  have hA : c.mul.isSome ∨ 3 ≤ c.n ∧ c.n ≤ 6 → Point.LadArg s₂ (ptr s₀ 3) Impl.Ecdsa.Verify.X86.Args.verify.ao :=
+    fun h => hM.keep.ladArg (A := Impl.Ecdsa.Verify.X86.Args.verify) hp.setup (vArgs_disjI hp (i := 3) (by decide))
+      (Cfg.stk_28q hcomb h)
   refine points_ok hc hM hA
     (Q₁ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (ptr s₀ 3) s₂ U >>> j) (G c.C)))
     (Q₂ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (ptr s₀ 3) s₂ V >>> j) P))
