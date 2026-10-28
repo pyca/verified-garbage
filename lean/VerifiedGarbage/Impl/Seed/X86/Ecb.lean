@@ -19,7 +19,8 @@ block (80–103); the blocks' state as four arrays of eight words, one per
 word of the block, `L0`, `L1`, `R0`, `R1` (`arrSlot`, 104–135); the tail
 buffer of eight blocks (136–167); the table of round keys, in the order the
 rounds use them (168–199); the callee-saved registers `ebx`, `esi`, `edi`
-and `ebp` (200–203); and the data pointer and the blocks left (204, 205).
+and `ebp` (200–203); and the group's data pointer and the blocks left
+(204, 205).
 
 * The callee-saved registers are saved, and the scratch buffer's address
   moves to `edi`. The round keys are copied to the table: `K1,0`, `K1,1`,
@@ -38,10 +39,21 @@ and `ebp` (200–203); and the data pointer and the blocks left (204, 205).
   takes the arrays the other way round: the loop runs two rounds, with the
   round key at `kp` (`esi`). After sixteen rounds the halves are where they
   started, `R` the output's first half.
-* The rounds use every register but `esi` and `edi`, so the data pointer
-  and the blocks left wait in their slots, stored again after each copy
-  (the analysis of constant time forgets what the buffer holds after a
-  store through another pointer than `edi`).
+* Between the groups the data pointer is in `ebx` and the blocks left in
+  `edx`. A group's blocks are copied in and out a word at a time, each of
+  the eight behind a test of the group's count (`guarded`), at fixed offsets
+  from `ebx` and `edi`, through `eax`, so `esi` and `ebp` hold the caller's
+  values through the copies; the rounds use every register but `edi`, so
+  after the copy in, `esi`, `ebp`, `ebx` and `edx` go to their slots, and
+  they come back before the copy out. On return only `ebx` and `edi` are
+  restored from their slots.
+
+The analysis of constant time forgets every slot, and the words of the
+arguments in a caller's frame, after the copy out's stores through `ebx`
+(whose offset in the data it cannot place); the copy in stores only at known
+offsets of the scratch buffer, and nothing the code needs after the copy out
+is in memory, so the caller's `esi` and `ebp` come back as public as they
+were (the modes keep their state there, `Modes.lean`).
 
 Only the pointers, `n`, and what is computed from them (the copies'
 pointers and counts, `kp`, the loop tests, and the slots holding them) are
@@ -79,9 +91,12 @@ def savedSlot : Nat := tableEnd
 def ptrSlot : Nat := savedSlot + 4
 def cntSlot : Nat := ptrSlot + 1
 
-/-- The number of slots, a whole number of 64-bit words (the artifacts
-allocate the buffer as `[u64; 103]`). -/
+/-- The number of slots, a whole number of 64-bit words. -/
 def slots : Nat := cntSlot + 1
+
+/-- The working space the blocks functions take, in slots: the 136 64-bit
+words of `Spec.Seed.blocksSig`, of which the code uses the first `slots`. -/
+def wsSlots : Nat := 272
 
 /-- The callee-saved registers, and their slots. -/
 def savedRegs : List (Reg × Nat) :=
@@ -95,6 +110,10 @@ def saveRegs (k : Nat) : List Instr :=
 /-- Restore the registers (`edi`, the base, last). -/
 def restoreRegs : List Instr :=
   [movS .ebx savedSlot, movS .esi (savedSlot + 1), movS .ebp (savedSlot + 3), movS .edi (savedSlot + 2)]
+
+/-- Restore `ebx` and `edi` (the base, last), for ECB, whose `esi` and `ebp`
+hold the caller's values already. -/
+def restoreBE : List Instr := [movS .ebx savedSlot, movS .edi (savedSlot + 2)]
 
 def addS (d : Reg) (k : Nat) : Instr := .alu .add d (.mem (slotAt sb k))
 def subS (d : Reg) (k : Nat) : Instr := .alu .sub d (.mem (slotAt sb k))
@@ -171,48 +190,74 @@ def keyTable (d : Direction) : List Instr :=
 
 /-! ## The groups -/
 
-/-- Copy `ecx` blocks from `edx` to `ebx` (through `eax`). -/
-def copyBlocks : Prog isa :=
-  .loop (.block [.mov .eax (.mem (at_ .edx 0)), .store (at_ .ebx 0) .eax, .mov .eax (.mem (at_ .edx 4)),
-      .store (at_ .ebx 4) .eax, .mov .eax (.mem (at_ .edx 8)), .store (at_ .ebx 8) .eax,
-      .mov .eax (.mem (at_ .edx 12)), .store (at_ .ebx 12) .eax, addI .edx 16, addI .ebx 16, subI .ecx 1]) .ne
+/-- Block `j` from `[sr + so + 16 j]` to `[dr + dd + 16 j]`, a word at a
+time through `eax`. -/
+def blockMove (sr dr : Reg) (so dd j : Nat) : List Instr :=
+  (List.range 4).flatMap fun w =>
+    [.mov .eax (.mem (at_ sr (so + 16 * j + 4 * w))), .store (at_ dr (dd + 16 * j + 4 * w)) .eax]
 
-/-- `ecx := min(ebp, 8)`, the blocks of this group. -/
+/-- `f j` for the blocks `j` from `j₀` on, of the `k` left, that are below
+`ecx`. -/
+def guardedFrom (f : Nat → List Instr) : Nat → Nat → Prog isa
+  | _, 0 => .block []
+  | j, k + 1 => .seq (.block [.alu .cmp .ecx (.imm (BitVec.ofNat 32 (j + 1)))])
+      (.seq (.ite .b (.block []) (.block (f j))) (guardedFrom f (j + 1) k))
+
+/-- `f j` for each block `j < ecx` of the eight. -/
+def guarded (f : Nat → List Instr) : Prog isa := guardedFrom f 0 8
+
+/-- `ecx := min(edx, 8)`, the blocks of this group. -/
 def countR : Prog isa :=
-  .seq (.block [movR .ecx .ebp, .alu .cmp .ebp (.imm 8)]) (.ite .b (.block []) (.block [movI .ecx 8]))
+  .seq (.block [movR .ecx .edx, .alu .cmp .edx (.imm 8)]) (.ite .b (.block []) (.block [movI .ecx 8]))
 
-/-- The data pointer and the blocks left from their slots to `esi` and `ebp`,
-and the blocks of this group to `ecx`. -/
-def groupCount : Prog isa := .seq (.block [movS .esi ptrSlot, movS .ebp cntSlot]) countR
+/-- The group's blocks, from `ebx`, to the tail buffer. -/
+def copyIn : Prog isa := .seq countR (guarded (blockMove .ebx .edi 0 (4 * tailSlot)))
 
-/-- `r := ` the tail buffer's address. -/
-def tailAddr (r : Reg) : List Instr := [movR r .edi, addI r (BitVec.ofNat 32 (4 * tailSlot))]
+/-- After the copy in: the caller's `esi` and `ebp`, the group's data
+pointer and the blocks left to their slots. -/
+def stash : List Instr := [st (savedSlot + 1) .esi, st (savedSlot + 3) .ebp, st ptrSlot .ebx, st cntSlot .edx]
 
-/-- The group's blocks to the tail buffer, and the data pointer and the
-blocks left back to their slots. -/
-def copyIn : Prog isa :=
-  .seq groupCount (.seq (.block ([movR .edx .esi] ++ tailAddr .ebx))
-    (.seq copyBlocks (.block [st ptrSlot .esi, st cntSlot .ebp])))
+/-- Before the copy out: all of them back. -/
+def unstash : List Instr :=
+  [movS .esi (savedSlot + 1), movS .ebp (savedSlot + 3), movS .ebx ptrSlot, movS .edx cntSlot]
 
 /-- The tail buffer back to the group's blocks. -/
-def copyOut : Prog isa := .seq groupCount (.seq (.block (tailAddr .edx ++ [movR .ebx .esi])) copyBlocks)
+def copyOut : Prog isa := .seq (.block unstash) (.seq countR (guarded (blockMove .edi .ebx (4 * tailSlot) 0)))
 
-/-- On to the next group, the data pointer and the blocks left (still in
-`esi` and `ebp`) back to their slots (Z set when none are left). -/
-def advance : Prog isa :=
-  .seq countR (.block [addI .esi 128, subR .ebp .ecx, st ptrSlot .esi, st cntSlot .ebp])
+/-- On to the next group (Z set when no blocks are left). -/
+def advance : List Instr := [addI .ebx 128, subR .edx .ecx]
 
 /-- Eight blocks, or the last one to seven. -/
-def group : Prog isa := .seq copyIn (.seq crypt8 (.seq copyOut advance))
+def group : Prog isa := .seq copyIn (.seq (.block stash) (.seq crypt8 (.seq copyOut (.block advance))))
 
 /-- The whole function: the table, then the groups. -/
 def ecb (d : Direction) : Prog isa :=
   .seq (.block (saveRegs 3 ++ keyTable d))
-    (.seq (.block [.mov .eax (.mem (argOp 1)), st ptrSlot .eax, .mov .eax (.mem (argOp 2)), st cntSlot .eax,
-        .alu .test .eax (.reg .eax)])
-      (.seq (.ite .e (.block []) (.loop group .ne)) (.block restoreRegs)))
+    (.seq (.block [.mov .ebx (.mem (argOp 1)), .mov .edx (.mem (argOp 2)), .alu .test .edx (.reg .edx)])
+      (.seq (.ite .e (.block []) (.loop group .ne)) (.block restoreBE)))
 
+/-- `vg_seed_encrypt_blocks` and `vg_seed_decrypt_blocks`. -/
 def encrypt : Prog isa := ecb .encrypt
 def decrypt : Prog isa := ecb .decrypt
+
+/-! ## Calls -/
+
+/-- A call of `vg_seed_encrypt_blocks` or `vg_seed_decrypt_blocks`. -/
+def blocksCall : Direction → Prog isa
+  | .encrypt => .call "vg_seed_encrypt_blocks" encrypt
+  | .decrypt => .call "vg_seed_decrypt_blocks" decrypt
+
+/-- `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt`, with their working
+space as the fourth argument (the frame `withStackScratchWiped` makes on the
+stack): a call of the blocks function of the direction `d` with their four
+arguments, pushed in a frame from `eax`, `ecx`, `edx` and `ebx`, the
+caller's `ebx` kept in a frame of its own (the arguments four bytes further
+up). -/
+def ecbCall (d : Direction) : Prog isa :=
+  .frame (.push [.ebx])
+    (.seq (.block [.mov .eax (.mem (argOp 1)), .mov .ecx (.mem (argOp 2)), .mov .edx (.mem (argOp 3)),
+        .mov .ebx (.mem (argOp 4))])
+      (.frame (.push [.ebx, .edx, .ecx, .eax]) (blocksCall d) (.pop .eax 4)))
+    (.pop .ebx 1)
 
 end VG.Impl.Seed.X86

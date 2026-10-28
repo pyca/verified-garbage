@@ -51,15 +51,13 @@ meta import VerifiedGarbage.Proof.Seed.X86.Crypt8
 /-!
 # SEED ECB on x86 (32-bit) meets its contracts
 
-`ecb_verified`: `ecb dir` is correct (`ecb_wp`) and constant time, by the
-taint analysis, which starts with `esp` public and knows which argument
-words are the base addresses of the data and the scratch buffer: the
-pointers, `n` and what the code computes from them are public, in registers
-or in the scratch buffer's slots, which the code stores again after each
-store through another pointer. `ecb_framed` runs it with its working space
-on the stack, zeroed on return: 844 bytes, the 824 of the scratch buffer,
-the copies of the three argument slots, the buffer's address and the return
-address of the call of the code, which uses no other stack.
+`ecb_verified`: `ecb dir`, `vg_seed_encrypt_blocks` and
+`vg_seed_decrypt_blocks` (`Spec.Seed.blocksContract`), is correct
+(`ecb_wp`) and constant time, by the taint analysis, which starts with `esp`
+public and knows which argument words are the base addresses of the data and
+the scratch buffer: the pointers, `n` and what the code computes from them
+are public, in registers or in the scratch buffer's slots, which the code
+stores again after each store through another pointer.
 -/
 
 @[expose] public section
@@ -72,14 +70,14 @@ open VG.Proof.Seed (ecbX86)
 /-- `ecbX86.pre`, by name. -/
 structure EPre (s : State) : Prop where
   rd : s.rd = [⟨(arg s 0).setWidth 64, 128⟩, ⟨argAddr s 0, 16⟩]
-  wr : s.wr = [⟨(arg s 1).setWidth 64, 16 * (arg s 2).toNat⟩, ⟨(arg s 3).setWidth 64, 4 * Impl.Seed.X86.slots⟩]
-  dDB : Region.Disjoint ⟨(arg s 1).setWidth 64, 16 * (arg s 2).toNat⟩ ⟨(arg s 3).setWidth 64, 4 * Impl.Seed.X86.slots⟩
+  wr : s.wr = [⟨(arg s 1).setWidth 64, 16 * (arg s 2).toNat⟩, ⟨(arg s 3).setWidth 64, 4 * Impl.Seed.X86.wsSlots⟩]
+  dDB : Region.Disjoint ⟨(arg s 1).setWidth 64, 16 * (arg s 2).toNat⟩ ⟨(arg s 3).setWidth 64, 4 * Impl.Seed.X86.wsSlots⟩
   aD : Region.Disjoint ⟨argAddr s 0, 16⟩ ⟨(arg s 1).setWidth 64, 16 * (arg s 2).toNat⟩
-  aB : Region.Disjoint ⟨argAddr s 0, 16⟩ ⟨(arg s 3).setWidth 64, 4 * Impl.Seed.X86.slots⟩
+  aB : Region.Disjoint ⟨argAddr s 0, 16⟩ ⟨(arg s 3).setWidth 64, 4 * Impl.Seed.X86.wsSlots⟩
   rD : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨(arg s 1).setWidth 64, 16 * (arg s 2).toNat⟩
-  rB : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨(arg s 3).setWidth 64, 4 * Impl.Seed.X86.slots⟩
+  rB : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨(arg s 3).setWidth 64, 4 * Impl.Seed.X86.wsSlots⟩
   fD : (arg s 1).toNat + 16 * (arg s 2).toNat ≤ 2 ^ 32
-  fB : (arg s 3).toNat + 4 * Impl.Seed.X86.slots ≤ 2 ^ 32
+  fB : (arg s 3).toNat + 4 * Impl.Seed.X86.wsSlots ≤ 2 ^ 32
   fSp : (s.gpr .esp).toNat + 20 ≤ 2 ^ 32
 
 theorem EPre.of {dir : Spec.Seed.Direction} {s : State} (h : (ecbX86 dir).pre s) : EPre s := by
@@ -89,7 +87,7 @@ theorem EPre.of {dir : Spec.Seed.Direction} {s : State} (h : (ecbX86 dir).pre s)
 /-- The initial taint: `esp` public, and the words holding `data` and
 `scratch` known to be the base addresses of the writable regions. -/
 def ecbTaint : VG.X86.Taint.T :=
-  { regs := .ofList [.esp], flags := false, lens := [0, 4 * Impl.Seed.X86.slots], argLen := 20,
+  { regs := .ofList [.esp], flags := false, lens := [0, 4 * Impl.Seed.X86.wsSlots], argLen := 20,
     argBases := [(8, 0), (16, 1)] }
 
 theorem ecbTaint_wf {s : State} (hp : EPre s) : VG.X86.Taint.Wf ecbTaint s := by
@@ -130,11 +128,12 @@ theorem ecbTaint_agree (dir : Spec.Seed.Direction) {s₁ s₂ : State} (h₁ : (
     exact congrArg _ (ha _ (by omega))
 
 /-- What is public at the loop of rounds: the stack pointer, the round keys'
-and the scratch buffer's pointers, the flags, and the data pointer and the
-blocks left in their slots. -/
+and the scratch buffer's pointers, the flags, and the slots of the caller's
+`esi` and `ebp` and of the group's data pointer. -/
 def roundsTaint : VG.X86.Taint.T :=
-  { regs := .ofList [.esp, .esi, .edi], flags := true, lens := [0, 4 * Impl.Seed.X86.slots],
-    bases := [(.edi, 1, 0)], slots := [(1, 4 * Impl.Seed.X86.ptrSlot, 8)], argLen := 20,
+  { regs := .ofList [.esp, .esi, .edi], flags := true, lens := [0, 4 * Impl.Seed.X86.wsSlots],
+    bases := [(.edi, 1, 0)],
+    slots := [(1, 4 * (Impl.Seed.X86.savedSlot + 1), 4), (1, 4 * (Impl.Seed.X86.savedSlot + 3), 8)], argLen := 20,
     argBases := [(8, 0), (16, 1)] }
 
 /-! The loop of rounds, which both directions run, analysed once, as a summary. -/
@@ -161,18 +160,18 @@ def wideContract (dir : Spec.Seed.Direction) : Contract isa :=
     pre := fun s =>
       let sched : Region := ⟨(arg s 0).setWidth 64, 128⟩
       let data : Region := ⟨(arg s 1).setWidth 64, 16 * (arg s 2).toNat⟩
-      let scratch : Region := ⟨(arg s 3).setWidth 64, 4 * Impl.Seed.X86.slots⟩
+      let scratch : Region := ⟨(arg s 3).setWidth 64, 4 * Impl.Seed.X86.wsSlots⟩
       let args : Region := ⟨argAddr s 0, 16⟩
       let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
       s.rd = [sched] ∧ s.wr = [data, scratch, args] ∧
       sched.Disjoint data ∧ sched.Disjoint scratch ∧ data.Disjoint scratch ∧
       args.Disjoint data ∧ args.Disjoint scratch ∧ ret.Disjoint data ∧ ret.Disjoint scratch ∧
       (arg s 0).toNat + 128 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 16 * (arg s 2).toNat ≤ 2 ^ 32 ∧
-      (arg s 3).toNat + 4 * Impl.Seed.X86.slots ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 }
+      (arg s 3).toNat + 4 * Impl.Seed.X86.wsSlots ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 }
 
 def narrowRd (s : State) : List Region := [⟨(arg s 0).setWidth 64, 128⟩, ⟨argAddr s 0, 16⟩]
 def narrowWr (s : State) : List Region :=
-  [⟨(arg s 1).setWidth 64, 16 * (arg s 2).toNat⟩, ⟨(arg s 3).setWidth 64, 4 * Impl.Seed.X86.slots⟩]
+  [⟨(arg s 1).setWidth 64, 16 * (arg s 2).toNat⟩, ⟨(arg s 3).setWidth 64, 4 * Impl.Seed.X86.wsSlots⟩]
 
 tactic_template "narrow_seed_x86_verified" : tactic => `(tactic| simp only [VG.Proof.Seed.ecbX86, VG.Proof.Seed.X86.wideContract,
                      VG.Proof.Seed.X86.narrowRd, VG.Proof.Seed.X86.narrowWr, VG.X86.arg_withRegions,
@@ -198,19 +197,19 @@ def satState : State where
   of := none
   mem a := if a = 0x8005 then 0x10 else if a = 0x8009 then 0x30 else if a = 0x8011 then 0x40 else 0
   rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x3000, 0⟩, ⟨0x4000, 824⟩, ⟨0x8004, 16⟩]
+  wr := [⟨0x3000, 0⟩, ⟨0x4000, 1088⟩, ⟨0x8004, 16⟩]
 
 theorem wide_implies (dir : Spec.Seed.Direction) :
-    (wideContract dir).Implies (Proof.Seed.ecbScratchContract X86.abi dir 103) := by
+    (wideContract dir).Implies (Spec.Seed.blocksContract X86.abi dir) := by
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
-    sig_pre [Proof.Seed.ecbScratchContract, Proof.Seed.ecbScratchSig, Spec.Seed.ecbPost, X86.abi, X86.argSlots,
-      X86.argVal, X86.argBytes, wideContract, ecbX86, Impl.Seed.X86.slots] at h
+    sig_pre [Spec.Seed.blocksContract, Spec.Seed.blocksSig, Spec.Seed.ecbPost, X86.abi, X86.argSlots,
+      X86.argVal, X86.argBytes, wideContract, ecbX86, Impl.Seed.X86.wsSlots] at h
     sig_split h
-    sig_reduce [Proof.Seed.ecbScratchContract, Proof.Seed.ecbScratchSig, Spec.Seed.ecbPost, X86.abi, X86.argSlots,
-      X86.argVal, X86.argBytes, wideContract, ecbX86, Impl.Seed.X86.slots]
-    sig_simp [Proof.Seed.ecbScratchContract, Proof.Seed.ecbScratchSig, Spec.Seed.ecbPost, X86.abi, X86.argSlots,
-      X86.argVal, X86.argBytes, wideContract, ecbX86, Impl.Seed.X86.slots] []
+    sig_reduce [Spec.Seed.blocksContract, Spec.Seed.blocksSig, Spec.Seed.ecbPost, X86.abi, X86.argSlots,
+      X86.argVal, X86.argBytes, wideContract, ecbX86, Impl.Seed.X86.wsSlots]
+    sig_simp [Spec.Seed.blocksContract, Spec.Seed.blocksSig, Spec.Seed.ecbPost, X86.abi, X86.argSlots,
+      X86.argVal, X86.argBytes, wideContract, ecbX86, Impl.Seed.X86.wsSlots] []
     sig_and_intros
     sig_close
     all_goals first
@@ -218,16 +217,16 @@ theorem wide_implies (dir : Spec.Seed.Direction) :
       | with_reducible exact Region.Disjoint.symm ‹_›
       | omega
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
-  · sig_implies_post [Proof.Seed.ecbScratchContract, Proof.Seed.ecbScratchSig, Spec.Seed.ecbPost, X86.abi,
-      X86.argSlots, X86.argVal, X86.argBytes, wideContract, ecbX86, Impl.Seed.X86.slots]
-  · sig_implies_pub [Proof.Seed.ecbScratchContract, Proof.Seed.ecbScratchSig, Spec.Seed.ecbPost, X86.abi,
-      X86.argSlots, X86.argVal, X86.argBytes, wideContract, ecbX86, Impl.Seed.X86.slots]
-  · sig_implies_sat [Proof.Seed.ecbScratchContract, Proof.Seed.ecbScratchSig, Spec.Seed.ecbPost, X86.abi,
-      X86.argSlots, X86.argVal, X86.argBytes, wideContract, ecbX86, Impl.Seed.X86.slots]
+  · sig_implies_post [Spec.Seed.blocksContract, Spec.Seed.blocksSig, Spec.Seed.ecbPost, X86.abi,
+      X86.argSlots, X86.argVal, X86.argBytes, wideContract, ecbX86, Impl.Seed.X86.wsSlots]
+  · sig_implies_pub [Spec.Seed.blocksContract, Spec.Seed.blocksSig, Spec.Seed.ecbPost, X86.abi,
+      X86.argSlots, X86.argVal, X86.argBytes, wideContract, ecbX86, Impl.Seed.X86.wsSlots]
+  · sig_implies_sat [Spec.Seed.blocksContract, Spec.Seed.blocksSig, Spec.Seed.ecbPost, X86.abi,
+      X86.argSlots, X86.argVal, X86.argBytes, wideContract, ecbX86, Impl.Seed.X86.wsSlots]
       [satState, arg, argAddr, Mem.readW, Mem.read] using satState
 
 theorem ecb_verified (dir : Spec.Seed.Direction) :
-    Verified X86.target (ecb dir) (Proof.Seed.ecbScratchContract X86.abi dir 103) := by
+    Verified X86.target (ecb dir) (Spec.Seed.blocksContract X86.abi dir) := by
   have hsat := (wide_implies dir).sat_left
   have narrowSat : ∃ s, (ecbX86 dir).pre s := by
     obtain ⟨s, hs⟩ := hsat
@@ -258,31 +257,12 @@ theorem ecb_verified (dir : Spec.Seed.Direction) :
     narrow_seed_x86_verified
     exact h
 
-/-- A state satisfying the ECB functions' precondition: the schedule at
-`0x1000` and no blocks at `0x2000`, as stack arguments at `0x8004`, which
-are writable. -/
-def ecbFrameSat : State where
-  gpr r := match r with | .esp => 0x8000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem a := if a = 0x8005 then 0x10 else if a = 0x8009 then 0x20 else 0
-  rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 0⟩, ⟨0x8004, 12⟩]
+theorem encrypt_blocks_verified :
+    Verified X86.target Impl.Seed.X86.encrypt (Spec.Seed.blocksContract X86.abi .encrypt) :=
+  ecb_verified .encrypt
 
-theorem ecbFrameSat_pre (d : Spec.Seed.Direction) : ∃ s, (Spec.Seed.ecbContract X86.abi d 844).pre s := by
-  implies_sat [Spec.Seed.ecbContract, Spec.Seed.ecbSig, Spec.Seed.ecbPost, X86.abi, X86.argSlots, X86.argVal,
-    X86.argBytes] [ecbFrameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using ecbFrameSat
-
-/-- ECB in the direction `dir`, with its working space on the stack. -/
-theorem ecb_framed (dir : Spec.Seed.Direction) :
-    Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 844 3 206 (ecb dir))
-      (Spec.Seed.ecbContract X86.abi dir 844) :=
-  X86.Verified.stackScratchWiped (sig := Spec.Seed.ecbSig) (nm := "scratch") (e := .u64)
-    (n := 103) (post := Spec.Seed.ecbPost dir X86.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 844) (ecb_verified dir) (by decide) (by cases dir <;> lit_decide)
-    (by cases dir <;> lit_decide) (by decide) (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (Proof.Seed.ecbPost_local _ _) (Proof.Seed.ecbPostOut_local _ _) (ecbFrameSat_pre _)
+theorem decrypt_blocks_verified :
+    Verified X86.target Impl.Seed.X86.decrypt (Spec.Seed.blocksContract X86.abi .decrypt) :=
+  ecb_verified .decrypt
 
 end VG.Proof.Seed.X86
