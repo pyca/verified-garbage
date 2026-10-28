@@ -89,7 +89,7 @@ theorem gPow_u1 (M : Mont) {sl : Nat} {p : UPub} {s : State} (h : UPre sl p s) :
   have fx : Frm p.B (gRanges p.w ++ [xRange p.o p.wx]) s.mem s₁.mem :=
     Frm.mono f₁' fun r hr => List.mem_append_left _ hr
   exact ⟨mx, X, hg₁, hw28, hlo, hhi, hwx2, hwx, hsl, by rw [Frm.gx_hdr fx hlo hsl hsl1 hsl2]; exact hslv,
-    WsAt.of_g hws f₁' hlo (by omega_arith), hX.of_below f₁' (fun r hr => (gRanges_le _ r hr).trans hlo) hoL, hX1⟩
+    WsAt.of_g hws f₁' hlo (by omega_arith), hX.of_below f₁' (fun r hr => Nat.le_trans (gRanges_le _ r hr) hlo) hoL, hX1⟩
 
 theorem blk_rpre {sl : Nat} {p : UPub} {s : State} (h : U1 sl p s) :
     WP isa (.block [ldh .x0 sl]) s (RPre Public.aY (xp p)) := by
@@ -260,7 +260,7 @@ theorem unit_q1 (M : Mont) {p : PhasePub} {s : State} (h : QPre p s) :
     hN.of_frm f₁ hlo hz (by omega_arith), hlt₁, hX₁, hX1, hXodd, hlq₁,
     by rw [Frm.gx_hdr f₁ hlo (by decide) (by decide) (by decide)]; exact hep,
     by rw [Frm.gx_hdr f₁ hlo (by decide) (by decide) (by decide)]; exact hel, hlen, hL1, hL2,
-    he.congrK (InScr.of_frm f₁ fun r hr => (gxRanges_le hlo r hr).trans hhi) k₁⟩
+    he.congrK (InScr.of_frm f₁ fun r hr => Nat.le_trans (gxRanges_le hlo r hr) hhi) k₁⟩
 
 theorem mm_pwPre (M : Mont) {p : PhasePub} {s : State} (h : Q1 p s) :
     WP isa (M.mm Public.aY Public.aXm Public.aY) s (PwPre sWsQ sDq sQlen (sp p)) := by
@@ -283,11 +283,11 @@ theorem mm_pwPre (M : Mont) {p : PhasePub} {s : State} (h : Q1 p s) :
   dsimp only [PwPre, sp]
   refine ⟨p.minv, mx, 1, X, 0, eb, hg₂, hw28, hlo, hhi, hwx2, hwx, by decide,
     by rw [Frm.gx_hdr f₂' hlo (by decide) (by decide) (by decide)]; exact hslv, WsAt.of_g hws f₂ hlo (by omega_arith),
-    hX.of_below f₂ (fun r hr => (gRanges_le _ r hr).trans hlo) hoL, hX1, hXodd, by simp only [Nat.mod_one],
+    hX.of_below f₂ (fun r hr => Nat.le_trans (gRanges_le _ r hr) hlo) hoL, hX1, hXodd, by simp only [Nat.mod_one],
     by rw [hY₂]; exact hyl, fun hd => absurd (Nat.le_of_dvd Nat.one_pos hd) (by omega_arith), by decide, by decide,
     by rw [Frm.gx_hdr f₂' hlo (by decide) (by decide) (by decide)]; exact hep,
     by rw [Frm.gx_hdr f₂' hlo (by decide) (by decide) (by decide)]; exact hel, hlen, hL1, hL2,
-    he.congrK (InScr.of_frm f₂' fun r hr => (gxRanges_le hlo r hr).trans hhi) k₂⟩
+    he.congrK (InScr.of_frm f₂' fun r hr => Nat.le_trans (gxRanges_le hlo r hr) hhi) k₂⟩
 
 /-- After the power: in the prime's workspace. -/
 def Q3 (p : PhasePub) (t : State) : Prop :=
