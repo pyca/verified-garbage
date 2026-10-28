@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.Arm.CompressContract
 public import VerifiedGarbage.Proof.Argon2.Arm.Words
-import VerifiedGarbage.Proof.Argon2.Arm.Rounds
+public import VerifiedGarbage.Proof.Argon2.Arm.Pass
 import VerifiedGarbage.Proof.Argon2.Permutation
 import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.SplitIfs
@@ -12,7 +12,7 @@ import Mathlib.Tactic.SplitIfs
 
 The prologue saving the caller's registers and `out` (`prologue_ok`), the
 initialization of both halves of scratch with X XOR Y (`init_ok`, one word at
-a time), the rows and columns (`Proof/Argon2/Arm/Rounds.lean`), and the
+a time), the rows and columns (`Proof/Argon2/Arm/Pass.lean`), and the
 epilogue writing the output and restoring the registers: `correct`.
 -/
 
@@ -191,28 +191,12 @@ end
 
 /-! ## The whole function -/
 
-theorem permR_sub {B : BitVec 32} : Region.Sub (permR B) ⟨State.addr B, 4096⟩ := Offset.sub_base _ (by decide)
-
-section
-variable {B : BitVec 32} (hfit : B.toNat + 4096 ≤ 2 ^ 32)
-include hfit
-
-/-- A word of `scratch` outside the permuted block is unchanged by its writes. -/
-theorem outside_perm {m m' : Mem} (hf : Frame [permR B] m m') {d : Nat} (hd : d + 4 ≤ 4096)
-    (ho : d + 4 ≤ 1024 ∨ 2048 ≤ d) : m'.readW (A B d) 32 = m.readW (A B d) 32 := by
-  refine hf.readW (r := ⟨A B d, 4⟩) (Region.contains_self _ _) ?_ (by decide)
-  simp only [List.mem_singleton, forall_eq]
-  rw [A_eq (by omega_arith)]
-  exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
-
-theorem low_perm {m m' : Mem} (hf : Frame [permR B] m m') :
-    VG.Proof.Argon2.Arm.blk m' B 0 = VG.Proof.Argon2.Arm.blk m B 0 := by
+theorem low_pass {B : BitVec 32} (hfit : B.toNat + 4096 ≤ 2 ^ 32) {m m' : Mem}
+    (hf : Frame [permR B, ctrR B] m m') : blk m' B 0 = blk m B 0 := by
   apply Vector.ext
   intro j hj
   simp only [blk, Vector.getElem_ofFn, rd64]
-  rw [outside_perm hfit hf (by omega_arith) (by omega_arith), outside_perm hfit hf (by omega_arith) (by omega_arith)]
-
-end
+  rw [outside_pass hfit hf (by omega_arith), outside_pass hfit hf (by omega_arith)]
 
 theorem words_zero {m : Mem} {B : BitVec 32} {f : Nat → BitVec 32} (h : Words m B 0 f 256) :
     blk m B 0 = ofWords f := blk_of_words fun i hi => h i hi
@@ -221,33 +205,33 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa Impl.Argon2.Arm.compress s₀ fun t =>
       (∀ r ∈ preserved, t.gpr r = s₀.gpr r) ∧ compressArm.post s₀ t := by
   have fits := hp.scr_fits
-  unfold Impl.Argon2.Arm.compress Impl.Argon2.Arm.rounds
+  unfold Impl.Argon2.Arm.compress
   refine WP.seq (prologue_ok hp fun s₁ h₁ => (init_ok hp h₁ 256 (Nat.le_refl _)).mono fun s₂ h₂ => ?_)
-  have A₂ : At (scr s₀) s₂ := ⟨by rw [h₂.regs _ (by decide) (by decide)], fun o ho => by
-    rw [h₂.wr]; exact ⟨hp.scr_wr rfl (by omega_arith), hp.scr_wr rfl (by omega_arith)⟩⟩
-  refine WP.seq (WP.seq ((rounds_ok fits rowIndex Proof.Argon2.rowIndex_injective (List.finRange 8)
-    A₂).mono fun s₃ st₃ => (rounds_ok fits colIndex Proof.Argon2.colIndex_injective
-      (List.finRange 8) (A₂.of_step st₃)).mono fun s₄ st₄ => ?_))
-  have k₄ := st₃.keep.trans st₄.keep
-  have pf : Frame [permR (scr s₀)] s₂.mem s₄.mem := st₃.frame.trans st₄.frame
-  have r3₄ : s₄.gpr .r3 = scr s₀ := by rw [k₄.r3, h₂.regs _ (by decide) (by decide)]
+  have S₂ : Scr (s₂.gpr .r3) s₂.wr := by
+    rw [h₂.regs _ (by decide) (by decide), h₂.wr]
+    exact ⟨fits, fun o ho => hp.scr_wr rfl ho⟩
+  refine WP.seq ((rounds_ok S₂).mono fun s₄ st₄ => ?_)
+  rw [h₂.regs _ (by decide) (by decide)] at st₄
+  have pf := st₄.frame
+  have r3₄ : s₄.gpr .r3 = scr s₀ := by rw [st₄.r3, h₂.regs _ (by decide) (by decide)]
   have sv₄ : Spill.Saved s₄.mem (State.addr (scr s₀)) s₀.gpr spill :=
     h₂.saved.frame spill_slots pf fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
-  unfold Impl.Argon2.Arm.epilogue
-  simp only [List.cons_append]
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
+      · exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
   have i₄ : InRegions (s₄.rd ++ s₄.wr) (A (scr s₀) outOff) 4 := by
-    rw [k₄.rd, k₄.wr, h₂.rd, h₂.wr]; exact hp.in_scr rfl (by decide)
-  refine wp_ldr (by decide) (by rw [r3₄]) i₄ fun s₅ u₅ => ?_
+    rw [st₄.rd, st₄.wr, h₂.rd, h₂.wr]; exact hp.in_scr rfl (by decide)
+  refine WP.seq (wp_ldr (by decide) (by rw [r3₄]) i₄ fun s₅ u₅ => WP.block_nil ?_)
   have e₅ : s₅.gpr .r2 = op s₀ := by
     rw [u₅.gpr]
     have := sv₄ (.r2, outOff) (by decide)
     rw [A_eq (by simp only [outOff]; omega_arith)]; exact this
   have h₅ : FinInv s₀ s₄ s₅ 0 :=
     ⟨by rw [u₅.other _ (by decide), r3₄], e₅, fun r _ _ h2 => u₅.other r h2,
-      by rw [u₅.rd, k₄.rd, h₂.rd], by rw [u₅.wr, k₄.wr, h₂.wr], by rw [u₅.sp, k₄.sp, h₂.sp],
+      by rw [u₅.rd, st₄.rd, h₂.rd], by rw [u₅.wr, st₄.wr, h₂.wr], by rw [u₅.sp, st₄.sp, h₂.sp],
       by rw [u₅.mem]; exact Frame.refl _ _, fun i hi => absurd hi (Nat.not_lt_zero _)⟩
+  unfold Impl.Argon2.Arm.epilogue
   refine WP.block_append ((finish_ok hp h₅ 256 (Nat.le_refl _)).mono fun s₆ h₆ => ?_)
   have sv₆ : Spill.Saved s₆.mem (State.addr (scr s₀)) s₀.gpr saved := fun p hpm =>
     h₆.frame.readW (r := ⟨State.addr (scr s₀) + BitVec.ofNat 64 p.2, 4⟩) (Region.contains_self _ _) (by
@@ -280,7 +264,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
           (fun i _ => by rw [Nat.zero_add]), xor_words]
       rfl
     show blockAt t.mem (State.addr (op s₀)) = _
-    rw [blockAt_eq hp.out_fits, O, low_perm fits pf, R₂, st₄.working, st₃.working, W₂, ← X]
+    rw [blockAt_eq hp.out_fits, O, low_pass fits pf, R₂, st₄.working, W₂, ← X]
     simp only [compress]
 
 end VG.Proof.Argon2.Arm

@@ -8,7 +8,10 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 # Argon2 on ARMv7: the row and column permutations
 
 As on x86 (`Proof/Argon2/X86/Rounds.lean`): P on any injectively selected
-row or column (`permuteAt_ok`), and the rows and columns (`rounds_ok`).
+row or column (`permuteAt_ok`). The code addresses the words of `index₀` at
+`r3`, which is `8e` bytes past the base `B`: it permutes those of `index`,
+`e` words on. The passes over the rows and columns are in
+`Proof/Argon2/Arm/Pass.lean`.
 -/
 
 @[expose] public section
@@ -24,25 +27,30 @@ def Holds (index : Fin 16 → Fin 128) (b : Block) (v : Vector Word 16) (m : Mem
     (B : BitVec 32) : Prop :=
   gather index (working m B) = v ∧ ∀ k : Fin 128, (∀ j, index j ≠ k) → (working m B)[k] = b[k]
 
-/-- The base and the permissions of `scratch`. -/
-def At (B : BitVec 32) (s : State) : Prop := s.gpr .r3 = B ∧ Reg64 s.wr B 2048
+/-- The base and the permissions of `scratch`, with `r3` `8e` bytes past the base. -/
+def At (B : BitVec 32) (e : Nat) (s : State) : Prop :=
+  s.gpr .r3 = B + BitVec.ofNat 32 (8 * e) ∧ Reg64 s.wr B 2048
 
-theorem At.of_step {B : BitVec 32} {s t : State} {v : Block} (h : At B s) (st : Step B s v t) : At B t :=
+theorem At.of_step {B : BitVec 32} {e : Nat} {s t : State} {v : Block} (h : At B e s)
+    (st : Step B s v t) : At B e t :=
   ⟨st.keep.r3.trans h.1, st.keep.wr ▸ h.2⟩
 
 section
 variable {B : BitVec 32} (hfit : B.toNat + 4096 ≤ 2 ^ 32)
+  (index index₀ : Fin 16 → Fin 128) (e : Nat) (hidx : ∀ k, (index k).val = (index₀ k).val + e)
 
-include hfit
+include hfit hidx
 
-/-- One GB advances the selected row or column and preserves its complement. -/
-theorem step_ok (index : Fin 16 → Fin 128) (hi : Function.Injective index) {s : State}
-    (hs : At B s) (base : Block) (v : Vector Word 16) (hv : Holds index base v s.mem B)
+/-- One GB advances the selected row or column and preserves its complement:
+the code GB on `index₀`, with `r3` `8e` bytes on, is GB on `index`. -/
+theorem step_ok (hi : Function.Injective index) {s : State}
+    (hs : At B e s) (base : Block) (v : Vector Word 16) (hv : Holds index base v s.mem B)
     (a b c d : Fin 16) (hab : a.val ≠ b.val) (hac : a.val ≠ c.val) (had : a.val ≠ d.val)
     (hbc : b.val ≠ c.val) (hbd : b.val ≠ d.val) (hcd : c.val ≠ d.val) :
-    WP isa (Impl.Argon2.Arm.gbAt (index a).val (index b).val (index c).val (index d).val) s
+    WP isa (Impl.Argon2.Arm.gbAt (index₀ a).val (index₀ b).val (index₀ c).val (index₀ d).val) s
       fun t => Holds index base (GB v a b c d) t.mem B ∧ ∃ w, Step B s w t := by
-  refine (gbAt_ok hfit hs.1 hs.2 (index a) (index b) (index c) (index d)).mono fun t st => ?_
+  refine (gbAt_ok hfit hs.1 hs.2 (index a) (index b) (index c) (index d)
+    (hidx a) (hidx b) (hidx c) (hidx d)).mono fun t st => ?_
   refine ⟨⟨?_, ?_⟩, _, st⟩
   · rw [st.working, gather_mixWords index hi, hv.1, GB_eq_mixWords v hab hac had hbc hbd hcd]
   · intro k hn
@@ -52,19 +60,19 @@ theorem step_ok (index : Fin 16 → Fin 128) (hi : Function.Injective index) {s 
     exact hv.2 k hn
 
 /-- P on any injectively selected row or column. -/
-theorem permuteAt_holds (index : Fin 16 → Fin 128) (hi : Function.Injective index) {s : State}
-    (hs : At B s) (base : Block) (v : Vector Word 16) (hv : Holds index base v s.mem B) :
-    WP isa (Impl.Argon2.Arm.permuteAt index) s fun t =>
+theorem permuteAt_holds (hi : Function.Injective index) {s : State}
+    (hs : At B e s) (base : Block) (v : Vector Word 16) (hv : Holds index base v s.mem B) :
+    WP isa (Impl.Argon2.Arm.permuteAt index₀) s fun t =>
       Holds index base (permute v) t.mem B ∧ ∃ w, Step B s w t := by
   have advance (t : State) (v' : Vector Word 16)
       (h : Holds index base v' t.mem B ∧ ∃ w, Step B s w t)
       (a b c d : Fin 16)
       (hab : a.val ≠ b.val) (hac : a.val ≠ c.val) (had : a.val ≠ d.val)
       (hbc : b.val ≠ c.val) (hbd : b.val ≠ d.val) (hcd : c.val ≠ d.val) :
-      WP isa (Impl.Argon2.Arm.gbAt (index a).val (index b).val (index c).val (index d).val)
+      WP isa (Impl.Argon2.Arm.gbAt (index₀ a).val (index₀ b).val (index₀ c).val (index₀ d).val)
         t fun u => Holds index base (GB v' a b c d) u.mem B ∧ ∃ w, Step B s w u := by
     obtain ⟨hh, w, st⟩ := h
-    refine (step_ok hfit index hi (hs.of_step st) base v' hh a b c d
+    refine (step_ok hfit index index₀ e hidx hi (hs.of_step st) base v' hh a b c d
       hab hac had hbc hbd hcd).mono ?_
     rintro u ⟨hu, w', st'⟩
     exact ⟨hu, w', st.trans st'⟩
@@ -101,32 +109,13 @@ theorem permuteAt_holds (index : Fin 16 → Fin 128) (hi : Function.Injective in
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
 
 /-- The row/column code meets the specification's gather, P, scatter definition. -/
-theorem permuteAt_ok (index : Fin 16 → Fin 128) (hi : Function.Injective index) {s : State}
-    (hs : At B s) :
-    WP isa (Impl.Argon2.Arm.permuteAt index) s
+theorem permuteAt_ok (hi : Function.Injective index) {s : State} (hs : At B e s) :
+    WP isa (Impl.Argon2.Arm.permuteAt index₀) s
       (Step B s (Spec.Argon2.permuteAt index (working s.mem B))) := by
-  refine (permuteAt_holds hfit index hi hs (working s.mem B)
+  refine (permuteAt_holds hfit index index₀ e hidx hi hs (working s.mem B)
     (gather index (working s.mem B)) ⟨rfl, fun _ _ => rfl⟩).mono ?_
   rintro t ⟨ht, w, st⟩
   exact ⟨st.keep, eq_scatter index hi _ _ _ ht.1 ht.2, st.frame⟩
-
-/-- A list of row or column permutations. -/
-theorem rounds_ok (index : Fin 8 → Fin 16 → Fin 128)
-    (hi : ∀ i, Function.Injective (index i)) (is : List (Fin 8)) {s : State} (hs : At B s) :
-    WP isa (is.foldr (fun i rest => .seq (Impl.Argon2.Arm.permuteAt (index i)) rest)
-      (.block [])) s
-      (Step B s (is.foldl (fun b i => Spec.Argon2.permuteAt (index i) b) (working s.mem B))) := by
-  induction is generalizing s with
-  | nil => exact WP.block_nil ⟨.refl s, rfl, Frame.refl _ _⟩
-  | cons i is ih =>
-    apply WP.seq
-    refine (permuteAt_ok hfit (index i) (hi i) hs).mono ?_
-    intro t st
-    refine (ih (hs.of_step st)).mono ?_
-    intro u st'
-    refine st.trans ?_
-    rw [List.foldl_cons, ← st.working]
-    exact st'
 
 end
 
