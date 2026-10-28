@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentTimingInput
-import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentGeneralTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentClass
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
@@ -11,6 +10,7 @@ import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 namespace VG.Proof.RsaKeyGen.X86.ExponentFilter
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Dsa.X86
 open VG.Impl.RsaKeyGen.X86.ExponentFilter
+open VG.Impl.RsaKeyGen.X86.ExponentRt (fast general filter)
 
 def TimingPair (workspace p : BitVec 32) (size w c d exponent : Nat) (s t : State) : Prop :=
   TimingInput workspace p size w c exponent s ∧ TimingInput workspace p size w d exponent t
@@ -79,32 +79,28 @@ theorem literal_trace {workspace p : BitVec 32} {size w c d exponent : Nat} (val
   exact raw.mono (fun _ _ H => timing_agree H) (fun _ _ _ => trivial)
 
 theorem fast_pair_trace {workspace p : BitVec 32} {size w c d exponent : Nat} :
-    RelCT isa (TimingPair workspace p size w c d exponent) (fast w) (fun _ _ => True) := by
-  intro s t tr ur u z H E G
-  exact fast_trace_bounded (g := fastGeometry workspace p w)
-    (by change 0 < w; have := H.1.input.width; omega) (by change w ≤ 128; have := H.1.input.widthBound; omega) H.1.fastFit rfl
-    _ _ _ _ _ _ ⟨H.1.fastEntry, H.2.fastEntry⟩ E G
+    RelCT isa (TimingPair workspace p size w c d exponent) fast (fun _ _ => True) :=
+  ExponentRt.fast_trace.mono (fun _ _ H => ⟨H.1.framed, H.2.framed⟩) (fun _ _ _ => trivial)
 
-theorem general_pair_trace {workspace p : BitVec 32} {size w c d exponent : Nat} (positive : 0 < exponent) :
-    RelCT isa (TimingPair workspace p size w c d exponent) (general w) (fun _ _ => True) := by
-  intro s t tr ur u z H E G
-  exact ⟨(general_trace H.1.modValid (candidate := c - 1) (other := d - 1) rfl rfl rfl positive positive
-    _ _ _ _ _ _ ⟨H.1.modInput, H.2.modInput⟩ E G).1, trivial⟩
+theorem general_pair_trace {workspace p : BitVec 32} {size w c d exponent : Nat} (odd : exponent % 2 = 1) :
+    RelCT isa (TimingPair workspace p size w c d exponent) general (fun _ _ => True) :=
+  (ExponentRt.general_trace (c := c) (d := d) odd).mono (fun _ _ H => ⟨H.1.general odd, H.2.general odd⟩)
+    (fun _ _ _ => trivial)
 
-theorem nontrivial_trace {workspace p : BitVec 32} {size w c d exponent : Nat} (positive : 0 < exponent) :
+theorem nontrivial_trace {workspace p : BitVec 32} {size w c d exponent : Nat} (odd : exponent % 2 = 1) :
     RelCT isa (TimingPair workspace p size w c d exponent)
-      (.seq (.block (equal 65537)) (.ite .e (fast w) (general w))) (fun _ _ => True) :=
-  RelCT.seq (equal_trace (by decide)) (choice (fun _ => fast_pair_trace) (fun _ => general_pair_trace positive))
+      (.seq (.block (equal 65537)) (.ite .e fast general)) (fun _ _ => True) :=
+  RelCT.seq (equal_trace (by decide)) (choice (fun _ => fast_pair_trace) (fun _ => general_pair_trace odd))
 
 theorem odd_trace {workspace p : BitVec 32} {size w c d exponent : Nat} (odd : exponent % 2 = 1) :
     RelCT isa (TimingPair workspace p size w c d exponent)
       (.seq (.block (equal 1)) (.ite .e (.block [.mov .eax (.imm 1)])
-        (.seq (.block (equal 65537)) (.ite .e (fast w) (general w))))) (fun _ _ => True) :=
-  RelCT.seq (equal_trace (by decide)) (choice (fun _ => literal_trace 1) (fun _ => nontrivial_trace (by omega)))
+        (.seq (.block (equal 65537)) (.ite .e fast general)))) (fun _ _ => True) :=
+  RelCT.seq (equal_trace (by decide)) (choice (fun _ => literal_trace 1) (fun _ => nontrivial_trace odd))
 
 theorem code_trace {workspace p : BitVec 32} {size w c d exponent : Nat} :
-    RelCT isa (TimingPair workspace p size w c d exponent) (code w) (fun _ _ => True) := by
-  unfold code
+    RelCT isa (TimingPair workspace p size w c d exponent) filter (fun _ _ => True) := by
+  unfold filter
   refine RelCT.seq parity_trace (choice (fun _ => literal_trace 0) ?_)
   intro odd
   have notEven : ¬ exponent % 2 = 0 := of_decide_eq_false odd

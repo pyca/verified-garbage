@@ -16,15 +16,7 @@ open VG VG.X86
 
 def stack (d : Nat) : MemOp := ⟨.esp, d⟩
 
-def pointerInit (n src : Nat) : List Instr :=
-  [.mov .eax (.reg .edi), .alu .add .eax (.imm (BitVec.ofNat 32 (src + 4 * (n - 1)))),
-    .store (stack 0) .eax]
-
-def countInit (n : Nat) : List Instr := [.mov .eax (.imm (BitVec.ofNat 32 n)), .store (stack 4) .eax]
-
 def zeroRemainder : List Instr := [.mov .ecx (.imm 0), .mov .ebx (.imm 0)]
-
-def init (n src : Nat) : List Instr := pointerInit n src ++ countInit n ++ zeroRemainder
 
 def loadWord : List Instr := [.mov .eax (.mem (stack 0)), .mov .esi (.mem ⟨.eax, 0⟩)]
 
@@ -38,8 +30,5 @@ def advance : List Instr := previousWord ++ countDown
 
 def arrayStep (exponent : Nat) : Prog isa :=
   .seq (.block loadWord) (.seq (.block (word exponent)) (.block advance))
-
-def array (n src exponent : Nat) : Prog isa :=
-  .seq (.block (init n src)) (.loop (arrayStep exponent) .ne)
 
 end VG.Impl.RsaKeyGen.X86.Mod64

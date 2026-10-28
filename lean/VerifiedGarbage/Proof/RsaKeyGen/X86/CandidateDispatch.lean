@@ -1,56 +1,49 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateSizedResult
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDrawn
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.Candidate
+import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Proof.Framework.X86.Wp
 
-/-! # Public width dispatch selects the verified candidate implementation -/
+/-! # Public width dispatch runs the code for the width in `eax` -/
 
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.Candidate
-open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont.X86
 
-theorem dispatch_ok {mont round : Prog isa} {montName roundName : String}
-    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
-    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
-    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
-    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
-    {E : Environment} (v : E.Valid) {eBytes pBytes entropy : List Byte} {s : State}
-    (I : Input E eBytes pBytes entropy s)
-    (zeros : Spec.Rsa.bytesAt s.mem (E.out.setWidth 64) E.length = List.replicate E.length 0)
-    (enough : E.length ≤ E.randLength) (width : s.gpr .eax = BitVec.ofNat 32 E.width)
-    (widths : List Nat) (member : E.width ∈ widths) (bounded : ∀ w ∈ widths, w < 2 ^ 32) :
-    WP isa (VG.Impl.RsaKeyGen.X86.Candidate.dispatch montName mont roundName round widths) s fun t =>
-      FilteredOutputs E (Spec.Rsa.os2ip eBytes) (Spec.RsaKeyGen.otherPrime pBytes) entropy t ∧
-      MutableFrame E s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
+theorem _root_.VG.X86.Wp.Fupd.trans {s a b : State} (A : Fupd s a) (B : Fupd a b) : Fupd s b :=
+  ⟨B.gpr.trans A.gpr, B.mem.trans A.mem, B.rd.trans A.rd, B.wr.trans A.wr, B.syms.trans A.syms⟩
+
+theorem _root_.VG.X86.Wp.Fupd.refl (s : State) : Fupd s s := ⟨rfl, rfl, rfl, rfl, rfl⟩
+
+theorem width_comparison {a b : Nat} (aBound : a < 2 ^ 32) (bBound : b < 2 ^ 32) :
+    (BitVec.ofNat 32 a - BitVec.ofNat 32 b == 0#32) = decide (a = b) := by
+  apply Bool.eq_iff_iff.mpr
+  simp only [beq_iff_eq, decide_eq_true_eq]
+  rw [BitVec.sub_eq_iff_eq_add, BitVec.zero_add, ← BitVec.toNat_inj]
+  simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt aBound, Nat.mod_eq_of_lt bBound]
+
+/-- The dispatch over `widths` runs `part w` for the width `w` in `eax`, from
+a state that differs from the entry's only in its flags. -/
+theorem dispatch_ok {part : Nat → Prog isa} {w : Nat} {s : State} {Q : State → Prop}
+    (width : s.gpr .eax = BitVec.ofNat 32 w) (wBound : w < 2 ^ 32)
+    (widths : List Nat) (member : w ∈ widths) (bounded : ∀ x ∈ widths, x < 2 ^ 32)
+    (H : ∀ a, Fupd s a → WP isa (part w) a Q) :
+    WP isa (VG.Impl.RsaKeyGen.X86.Candidate.dispatch part widths) s Q := by
   induction widths generalizing s with
   | nil => cases member
-  | cons w rest ih =>
+  | cons x rest ih =>
     unfold VG.Impl.RsaKeyGen.X86.Candidate.dispatch
     refine WP.seq (wp_cmpS rfl fun a A Z => WP.block_nil ?_)
-    have Ia := I.keepMem v A.mem (A.keeps []) (by decide) (by decide) A.syms
-    have za : Spec.Rsa.bytesAt a.mem (E.out.setWidth 64) E.length = List.replicate E.length 0 := by rw [A.mem]; exact zeros
-    have condition : isa.eval .e a = some (decide (E.width = w)) := by
+    have condition : isa.eval .e a = some (decide (w = x)) := by
       change a.zf = _
       rw [Z, width]
-      congr 1
-      apply Bool.eq_iff_iff.mpr
-      simp only [beq_iff_eq, decide_eq_true_eq]
-      rw [BitVec.sub_eq_iff_eq_add]
-      change (BitVec.ofNat 32 E.width = 0#32 + BitVec.ofNat 32 w) ↔ E.width = w
-      rw [BitVec.zero_add, ← BitVec.toNat_inj]
-      simp only [BitVec.toNat_ofNat]
-      rw [Nat.mod_eq_of_lt (bounded w List.mem_cons_self), Nat.mod_eq_of_lt (by have := v.width_bounds.2; omega)]
-    by_cases same : E.width = w
+      exact congrArg some (width_comparison wBound (bounded x List.mem_cons_self))
+    by_cases same : w = x
     · refine WP.ite true (by rw [condition, decide_eq_true same]) (fun _ => ?_) (fun bad => nomatch bad)
       rw [← same]
-      refine WP.mono (sized_result_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack v Ia za enough)
-        fun t ⟨output, F, K⟩ => ?_
-      rw [A.mem] at F
-      exact ⟨output, F, (A.keeps WitnessStep.clob).trans K⟩
+      exact H a A
     · refine WP.ite false (by rw [condition, decide_eq_false same]) (fun bad => nomatch bad) (fun _ => ?_)
-      refine WP.mono (ih Ia za (by rw [A.gpr]; exact width) (List.mem_cons.mp member |>.resolve_left same)
-        (fun j mem => bounded j (List.mem_cons_of_mem _ mem))) fun t ⟨output, F, K⟩ => ?_
-      rw [A.mem] at F
-      exact ⟨output, F, (A.keeps WitnessStep.clob).trans K⟩
+      exact ih (by rw [A.gpr]; exact width) (List.mem_cons.mp member |>.resolve_left same)
+        (fun j mem => bounded j (List.mem_cons_of_mem _ mem)) (fun b B => H b (A.trans B))
 
 end VG.Proof.RsaKeyGen.X86.Candidate

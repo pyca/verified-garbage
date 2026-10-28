@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Candidate
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateNoSpLoop
-import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64FramedTiming
+import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Array
+import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateNoSpPrepare
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateNoSpWords
 public import VerifiedGarbage.Impl.Bignum.X86.PublicContext
@@ -16,56 +17,50 @@ namespace VG.Proof.RsaKeyGen.X86.CandidateNoSp
 open VG VG.X86 VG.Impl.RsaKeyGen.X86
 open VG.Impl.Bignum.X86.PublicContext
 
-theorem filterGeneral (w : Nat) : NoSp (ExponentFilter.general w) := by
+theorem general : NoSp ExponentRt.general := by
   apply NoSp.of_all
-  simp only [ExponentFilter.general, Code.allInstrs,
-    checked (VG.Proof.RsaKeyGen.X86.Mod64.array_noSp (2 * w) (slot w 5) 128)]
+  simp only [ExponentRt.general, Code.allInstrs, checked VG.Proof.RsaKeyGen.X86.ExponentRt.array_noSp]
   rfl
 
-theorem filter (w : Nat) : NoSp (ExponentFilter.code w) := by
+theorem exponentRt : NoSp ExponentRt.code := by
   apply NoSp.of_all
-  simp only [ExponentFilter.code, Code.allInstrs, checked (filterGeneral w)]
+  simp only [ExponentRt.code, ExponentRt.filter, Code.allInstrs, checked general]
   rfl
-
-theorem candidateExponent (w : Nat) : NoSp (CandidateExponent.code w) := by
-  unfold CandidateExponent.code
-  exact sequence (NoSp.of_all (by rfl)) (sequence (NoSp.of_all (by rfl)) (filter w))
 
 theorem prepareAndTest {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round)
     (w : Nat) (montName roundName : String) : NoSp (Candidate.prepareAndTest w montName mont roundName round) :=
   sequence (test Hm Hr w montName roundName) (NoSp.of_all (by rfl))
 
-theorem exponentCheck {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round)
-    (w : Nat) (montName roundName : String) : NoSp (Candidate.exponentCheck w montName mont roundName round) := by
-  apply NoSp.of_all
-  simp only [Candidate.exponentCheck, Code.allInstrs, checked (candidateExponent w),
-    checked (prepareAndTest Hm Hr w montName roundName)]
-  rfl
-
-theorem sieveCheck {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round)
-    (w : Nat) (montName roundName : String) : NoSp (Candidate.sieveCheck w montName mont roundName round) := by
-  apply NoSp.of_all
-  simp only [Candidate.sieveCheck, Code.allInstrs, checked (exponentCheck Hm Hr w montName roundName)]
-  rfl
-
-theorem sized {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round)
-    (w : Nat) (montName roundName : String) : NoSp (Candidate.sized w montName mont roundName round) := by
-  apply NoSp.of_all
-  simp only [Candidate.sized, Code.allInstrs, checked (sieveCheck Hm Hr w montName roundName)]
-  rfl
-
-theorem dispatch {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round)
-    (montName roundName : String) (widths : List Nat) : NoSp (Candidate.dispatch montName mont roundName round widths) := by
+theorem dispatch {part : Nat → Prog isa} (H : ∀ w, NoSp (part w)) (widths : List Nat) :
+    NoSp (Candidate.dispatch part widths) := by
   induction widths with
   | nil => exact NoSp.of_all (by rfl)
   | cons w rest ih =>
     apply NoSp.of_all
-    simp only [Candidate.dispatch, Code.allInstrs, checked (sized Hm Hr w montName roundName), checked ih]
+    simp only [Candidate.dispatch, Code.allInstrs, checked (H w), checked ih]
     rfl
 
+theorem tested {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round) (montName roundName : String) :
+    NoSp (Candidate.tested montName mont roundName round) :=
+  sequence (NoSp.of_all (by rfl)) (dispatch (fun w => prepareAndTest Hm Hr w montName roundName) Candidate.widths)
+
+theorem exponentCheck {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round)
+    (montName roundName : String) : NoSp (Candidate.exponentCheck montName mont roundName round) := by
+  apply NoSp.of_all
+  simp only [Candidate.exponentCheck, Code.allInstrs, checked exponentRt, checked (tested Hm Hr montName roundName)]
+  rfl
+
+theorem front (w : Nat) : NoSp (Candidate.front w) := by
+  apply NoSp.of_all
+  simp only [Candidate.front, Code.allInstrs]
+  rfl
+
 theorem available {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round)
-    (montName roundName : String) : NoSp (Candidate.available montName mont roundName round) :=
-  sequence (NoSp.of_all (by rfl)) (dispatch Hm Hr montName roundName Candidate.widths)
+    (montName roundName : String) : NoSp (Candidate.available montName mont roundName round) := by
+  apply NoSp.of_all
+  simp only [Candidate.available, Code.allInstrs, checked (dispatch front Candidate.widths),
+    checked (exponentCheck Hm Hr montName roundName)]
+  rfl
 
 theorem body {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round)
     (montName roundName : String) : NoSp (Candidate.body montName mont roundName round) := by

@@ -36,7 +36,7 @@ theorem close_trace {E : Environment} (v : E.Valid) {eBytes pBytes qBytes rBytes
 
 theorem exponent_trace {E : Environment} (v : E.Valid) {eBytes pBytes qBytes rBytes sBytes : List Byte} :
     RelCT isa (DrawnPair E eBytes pBytes qBytes rBytes sBytes)
-      (VG.Impl.RsaKeyGen.X86.CandidateExponent.code E.width) (fun _ _ => True) :=
+      VG.Impl.RsaKeyGen.X86.ExponentRt.code (fun _ _ => True) :=
   CandidateExponent.code_trace.mono (fun _ _ P => ⟨P.left.exponentInitial v, P.right.exponentInitial v⟩) (fun _ _ _ => trivial)
 
 theorem Drawn.sieveEntry {E : Environment} (v : E.Valid) {eBytes pBytes entropy : List Byte} {s : State}

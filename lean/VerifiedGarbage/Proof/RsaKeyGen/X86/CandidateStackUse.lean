@@ -73,7 +73,7 @@ theorem test {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse 
     (w : Nat) (montName roundName : String) : stackUse (CandidateTest.code w montName mont roundName round) ≤ 136 :=
   testOf Hm Hr _ w montName roundName
 
-theorem candidateExponent (w : Nat) : stackUse (CandidateExponent.code w) = 20 := rfl
+theorem exponentRt : stackUse ExponentRt.code = 20 := rfl
 
 theorem prepareAndTest {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (w : Nat) (montName roundName : String) : stackUse (Candidate.prepareAndTest w montName mont roundName round) ≤ 136 := by
@@ -81,47 +81,55 @@ theorem prepareAndTest {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr :
   change max (stackUse (CandidateTest.code w montName mont roundName round)) 0 ≤ 136
   omega
 
-theorem exponentCheck {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
-    (w : Nat) (montName roundName : String) : stackUse (Candidate.exponentCheck w montName mont roundName round) ≤ 136 := by
-  have bound := prepareAndTest Hm Hr w montName roundName
-  change max (stackUse (CandidateExponent.code w)) (max 0 (max 0 (stackUse (Candidate.prepareAndTest w montName mont roundName round)))) ≤ 136
-  rw [candidateExponent]
-  omega
-
-theorem sieveCheck {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
-    (w : Nat) (montName roundName : String) : stackUse (Candidate.sieveCheck w montName mont roundName round) ≤ 136 := by
-  have bound := exponentCheck Hm Hr w montName roundName
-  have sieve : stackUse (CandidateSieve.code w) = 24 := rfl
-  change max (stackUse (CandidateSieve.code w)) (max 0 (max 0 (stackUse (Candidate.exponentCheck w montName mont roundName round)))) ≤ 136
-  rw [sieve]
-  omega
-
-theorem sized {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
-    (w : Nat) (montName roundName : String) : stackUse (Candidate.sized w montName mont roundName round) ≤ 136 := by
-  have bound := sieveCheck Hm Hr w montName roundName
-  change max 0 (max 0 (max 0 (max 0 (stackUse (Candidate.sieveCheck w montName mont roundName round))))) ≤ 136
-  omega
-
-theorem dispatch {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
-    (montName roundName : String) (widths : List Nat) : stackUse (Candidate.dispatch montName mont roundName round widths) ≤ 136 := by
+theorem dispatch {part : Nat → Prog isa} {bound : Nat} (H : ∀ w, stackUse (part w) ≤ bound) (widths : List Nat) :
+    stackUse (Candidate.dispatch part widths) ≤ bound := by
   induction widths with
   | nil => exact Nat.zero_le _
   | cons w rest ih =>
-    have bound := sized Hm Hr w montName roundName
-    change max 0 (max (stackUse (Candidate.sized w montName mont roundName round))
-      (stackUse (Candidate.dispatch montName mont roundName round rest))) ≤ 136
+    have bound := H w
+    change max 0 (max (stackUse (part w)) (stackUse (Candidate.dispatch part rest))) ≤ _
     omega
+
+theorem exponentCheck {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
+    (montName roundName : String) : stackUse (Candidate.exponentCheck montName mont roundName round) ≤ 136 := by
+  have bound := dispatch (fun w => prepareAndTest Hm Hr w montName roundName) Candidate.widths
+  unfold Candidate.exponentCheck Candidate.tested
+  generalize Candidate.dispatch (fun w => Candidate.prepareAndTest w montName mont roundName round)
+    Candidate.widths = d at bound ⊢
+  change max (stackUse ExponentRt.code) (max 0 (max 0 (max 0 (stackUse d)))) ≤ 136
+  rw [exponentRt]
+  omega
+
+theorem front (w : Nat) : stackUse (Candidate.front w) ≤ 24 := by
+  have sieve : stackUse (CandidateSieve.code w) = 24 := rfl
+  change max 0 (max 0 (max 0 (max 0 (max (stackUse (CandidateSieve.code w)) 0)))) ≤ 24
+  rw [sieve]
+  omega
+
+theorem available {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
+    (montName roundName : String) : stackUse (Candidate.available montName mont roundName round) ≤ 136 := by
+  have bound := dispatch front Candidate.widths
+  have exponent := exponentCheck Hm Hr montName roundName
+  unfold Candidate.available
+  generalize Candidate.dispatch Candidate.front Candidate.widths = d at bound ⊢
+  generalize Candidate.exponentCheck montName mont roundName round = e at exponent ⊢
+  change max 0 (max (stackUse d) (max 0 (max (stackUse e) 0))) ≤ 136
+  omega
 
 theorem body {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (montName roundName : String) : stackUse (Candidate.body montName mont roundName round) ≤ 136 := by
-  have bound := dispatch Hm Hr montName roundName Candidate.widths
-  change max 0 (max 0 (max 0 (max 0 (max 0 (stackUse (Candidate.dispatch montName mont roundName round Candidate.widths)))))) ≤ 136
+  have bound := available Hm Hr montName roundName
+  unfold Candidate.body
+  generalize Candidate.available montName mont roundName round = a at bound ⊢
+  change max 0 (max 0 (max 0 (max 0 (max 0 (stackUse a))))) ≤ 136
   omega
 
 theorem code {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (montName roundName : String) : stackUse (Candidate.code montName mont roundName round) ≤ 152 := by
   have bound := body Hm Hr montName roundName
-  change max (stackUse (Candidate.body montName mont roundName round)) 0 + 16 ≤ 152
+  unfold Candidate.code
+  generalize Candidate.body montName mont roundName round = b at bound ⊢
+  change max (stackUse b) 0 + 16 ≤ 152
   omega
 
 end VG.Proof.RsaKeyGen.X86.CandidateStackUse
