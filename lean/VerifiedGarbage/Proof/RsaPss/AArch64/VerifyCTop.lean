@@ -120,23 +120,13 @@ theorem chk_ok {G : Spec.Mgf1.Hash} (e : ChkImpl G) {K : Nat} {s t : State} (hp 
       rw [hpost, ht.x0, ht.x1, ht.x2, ht.x3, hx4, hdg, he, hb, ← ht.res hc, bytesAt_drop,
         show (s.gpr .x1).toNat - loS s = elS s by omega] }
 
-section
-variable {G : Spec.Mgf1.Hash} (c : PdChecked) (e : ChkImpl G) {K : Nat} (hcK : c.stack ≤ K) (heK : e.stack ≤ K)
-
-include hcK heK in
-/-- After the check of the modulus' first byte: the public operation, the
-check of the encoding, and the AND. -/
-theorem main_ok {s u : State} (hp : PreV G.len K s) (hu : AtChk s u) (h0 : s.mem (s.gpr .x0) ≠ 0) :
-    WP isa (seqs [.block (emBitsB ++ pubArgsC), .call c.name c.code, .block chkArgs, .call e.name e.code,
-      .block [.logic .and .x .x0 .x0 .x26]]) u fun t => Mid s t ∧
-      (Cons s → (t.gpr .x0).setWidth 32 = if verifyOut G s then 1 else 0) := by
+/-- `emBits`, `emLen` and `lo`, and the public operation's arguments. -/
+theorem pubArgsC_ok {D K : Nat} {s u : State} (hp : PreV D K s) (hu : AtChk s u) (h0 : s.mem (s.gpr .x0) ≠ 0) :
+    WP isa (.block (emBitsB ++ pubArgsC)) u (AtCall s (ebS s) (elS s) (loS s)) := by
   have hk1 := hp.k1; have hk2 := hp.k2
-  obtain ⟨-, -, -, hlo⟩ := eb_bounds hk1 hk2 h0
   have hx := (s.mem (s.gpr .x0)).isLt
   have h0' : (s.mem (s.gpr .x0)).toNat ≠ 0 := fun h => h0 (BitVec.eq_of_toNat_eq (by rw [h]; rfl))
   have hx10 : u.gpr .x10 = BitVec.ofNat 64 (s.mem (s.gpr .x0)).toNat := by rw [hu.x10, setWidth_byte]
-  unfold seqs seqs seqs seqs
-  refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (emBitsB_ok (by omega) hk2 hx h0' hx10 (by rw [hu.x23, BitVec.ofNat_toNat, BitVec.setWidth_eq]))
     fun u₁ ⟨O₁, x24, x25, x26⟩ => ?_
@@ -152,7 +142,22 @@ theorem main_ok {s u : State} (hp : PreV G.len K s) (hu : AtChk s u) (h0 : s.mem
     v := fun r hr => (O₁.vcs r hr).trans (hu.v r hr)
     mem := by rw [O₁.mem]; exact hu.mem
     fr := by rw [O₁.mem]; exact hu.fr }
-  refine WP.mono (pubArgs_ok hpc) fun t ht => ?_
+  exact pubArgs_ok hpc
+
+section
+variable {G : Spec.Mgf1.Hash} (c : PdChecked) (e : ChkImpl G) {K : Nat} (hcK : c.stack ≤ K) (heK : e.stack ≤ K)
+
+include hcK heK in
+/-- After the check of the modulus' first byte: the public operation, the
+check of the encoding, and the AND. -/
+theorem main_ok {s u : State} (hp : PreV G.len K s) (hu : AtChk s u) (h0 : s.mem (s.gpr .x0) ≠ 0) :
+    WP isa (seqs [.block (emBitsB ++ pubArgsC), .call c.name c.code, .block chkArgs, .call e.name e.code,
+      .block [.logic .and .x .x0 .x0 .x26]]) u fun t => Mid s t ∧
+      (Cons s → (t.gpr .x0).setWidth 32 = if verifyOut G s then 1 else 0) := by
+  have hk1 := hp.k1; have hk2 := hp.k2
+  obtain ⟨-, -, -, hlo⟩ := eb_bounds hk1 hk2 h0
+  unfold seqs seqs seqs seqs
+  refine WP.seq (WP.mono (pubArgsC_ok hp hu h0) fun t ht => ?_)
   refine WP.seq (WP.mono (call_ok c hp hcK ht) fun t₂ ht₂ => ?_)
   refine WP.seq (WP.mono (chkArgs_ok hp h0 ht₂) fun t₃ ht₃ => ?_)
   refine WP.seq (WP.mono (chk_ok e hp heK h0 ht₃) fun t₄ ht₄ => ?_)
