@@ -25,6 +25,25 @@ final `ret` from the printer). The functions of each target are collected
 in `src/asm/<target>/`, one file per `module`, compiled only under the
 target's `cfg`.
 
+Artifacts of a module can render to the same function but for its name
+(and documentation and constants): the same `cfg` attribute, calling
+convention, signature and body, calls and tables included (`sameKey`), as
+when a generic caller's instances for two variants of an interface call
+none of what tells the variants apart. Only the one with the shortest name
+is then emitted as a function, and each other as another name of it
+(`alias`), keeping its own documentation, saying so, and its own constants:
+
+```rust
+#[allow(unused_imports)]
+pub(crate) use self::<the function's name> as <name>;
+```
+
+Calling it runs that function, whose text is the text the artifact's own
+function would have: the same machine code, which its proof verified
+against its own contract. Only artifacts of the same module are
+compared, so that every file is a function of its own artifacts alone
+(which `EmitOne.lean` relies on).
+
 A call (`Code.call name body`) is a call instruction whose operand is the
 symbol of the Rust function `name` (a `sym` operand). The model runs `body`
 for it, so `files` checks that `name` is an artifact of the same target
@@ -433,6 +452,28 @@ def funcOptions : String → List String × List String
   | "riscv64" => ([".option push", ".option arch, +m"], [".option pop"])
   | _ => ([], [])
 
+/-- The `cfg` attribute of `a`'s function and constants (`cfgGate` of
+`Printer.featureCfg` of its features). -/
+def gateOf (a : Artifact) : String := cfgGate (a.features.filterMap a.target.printer.featureCfg)
+
+/-- The text of `a`'s function after its name, given `a`'s printed code
+`lines`: its signature and its body, the `naked_asm!` of its code
+(`function`). -/
+def codeOf (a : Artifact) (lines : List Line) (moduleOf : String → String) : String :=
+  let P := a.target.printer
+  let (start, stop) := funcOptions a.target.name
+  let body := start.map .text ++ (a.features.flatMap P.enableFeature).map .text ++ lines ++
+    (a.features.flatMap P.disableFeature).map .text ++ P.funcAlign.map .text ++ stop.map .text
+  let callees := dedup (body.filterMap fun | .call n => some n | _ => none)
+  let syms := dedup (body.filterMap fun | .sym _ _ n => some n | _ => none)
+  s!"{a.sig.rust} " ++ "{\n" ++
+  "    core::arch::naked_asm!(\n" ++
+  template a.target.printer.call body ++
+  String.join (callees.map fun n => s!"        {n} = sym super::{moduleOf n}::{n},\n") ++
+  String.join (syms.map fun n => s!"        {n} = sym super::consts::{n},\n") ++
+  "    )\n" ++
+  "}\n"
+
 /-- One artifact as a Rust naked function; `moduleOf` gives the module of
 each function it calls. The printer's `funcAlign` comes after the return
 (`Printer.function`) and any directives that follow it, and only the
@@ -444,25 +485,42 @@ where
   /-- `function a`, given `a`'s printed code `lines`
   (`a.target.printer.function a.code`). -/
   functionOf (a : Artifact) (lines : List Line) (moduleOf : String → String) : String :=
-  let P := a.target.printer
-  let (start, stop) := funcOptions a.target.name
-  let body := start.map .text ++ (a.features.flatMap P.enableFeature).map .text ++ lines ++
-    (a.features.flatMap P.disableFeature).map .text ++ P.funcAlign.map .text ++ stop.map .text
-  let callees := dedup (body.filterMap fun | .call n => some n | _ => none)
-  let syms := dedup (body.filterMap fun | .sym _ _ n => some n | _ => none)
-  let gate := cfgGate (a.features.filterMap P.featureCfg)
+  withCode a (codeOf a lines moduleOf)
+  /-- `function a`, given the text of its function after its name, `code`
+  (`codeOf`). -/
+  withCode (a : Artifact) (code : String) : String :=
+  let gate := gateOf a
   featuresConst a.name gate a.features ++
   writtenConsts a.name gate a.written ++
   docComment "" (fullDoc a) ++
   gate ++
   "#[unsafe(naked)]\n" ++
-  s!"pub(crate) unsafe extern \"{a.target.rustAbi}\" fn {a.name}{a.sig.rust} " ++ "{\n" ++
-  "    core::arch::naked_asm!(\n" ++
-  template a.target.printer.call body ++
-  String.join (callees.map fun n => s!"        {n} = sym super::{moduleOf n}::{n},\n") ++
-  String.join (syms.map fun n => s!"        {n} = sym super::consts::{n},\n") ++
-  "    )\n" ++
-  "}\n"
+  s!"pub(crate) unsafe extern \"{a.target.rustAbi}\" fn {a.name}" ++ code
+
+/-- What makes two functions of a module the same function: their `cfg`
+attribute, calling convention, signature and body (`gateOf`, `codeOf`),
+everything of `function`'s text but the name, the documentation and the
+constants. -/
+def sameKey (a : Artifact) (code : String) : String :=
+  gateOf a ++ "\n" ++ a.target.rustAbi ++ "\n" ++ code
+
+/-- `a`'s function as another name of the function `canon` of the same
+module, whose text but for its name, documentation and constants is the
+text `a`'s would have (`sameKey`): a `use` of it as `a`'s name, under `a`'s
+`cfg` attribute, with `a`'s documentation (saying so) and constants. -/
+def alias (a : Artifact) (canon : String) : String :=
+  let gate := gateOf a
+  let note := s!"The machine code of this function is that of `{canon}`, which is emitted once \
+    and named both ways: the two are the same function."
+  let doc := fullDoc a
+  let doc := if (doc.splitOn "\n\n# Safety\n\n").length > 1 then insertNotes doc [note]
+    else doc ++ "\n\n" ++ note
+  featuresConst a.name gate a.features ++
+  writtenConsts a.name gate a.written ++
+  docComment "" doc ++
+  gate ++
+  "#[allow(unused_imports)]\n" ++
+  s!"pub(crate) use self::{canon} as {a.name};\n"
 
 /-- The tables of constants of `a`: those its contract gives it
 (`Artifact.consts`) and those its instructions carry (`Printer.codeTables`,
@@ -519,6 +577,25 @@ structure Prepared where
   tables_eq : tables = tablesOf art
 
 def Prepared.of (a : Artifact) : Prepared := ⟨a, _, _, rfl, rfl⟩
+
+/-- The text of the functions of a module, the artifacts of `ps` in order:
+each as `function` writes it, but for those with the same `sameKey`, of
+which only the one with the shortest name (the first of them, if several
+are as short) is, and each other the `alias` of it. -/
+def moduleText (moduleOf : Artifact → String → String) (ps : List Prepared) : String :=
+  let items := ps.map fun p =>
+    let code := codeOf p.art p.lines (moduleOf p.art)
+    let key := sameKey p.art code
+    (p.art, code, hash key, key)
+  -- The function each key's artifacts are emitted as.
+  let canon (h : UInt64) (key : String) : String :=
+    (items.filter fun (_, _, h', k) => h' == h && k == key).foldl (init := none)
+      (fun best (a, _) => match best with
+        | some b => if a.name.length < b.length then some a.name else some b
+        | none => some a.name) |>.getD ""
+  String.join (items.map fun (a, code, h, key) =>
+    let c := canon h key
+    "\n" ++ if c == a.name then function.withCode a code else alias a c)
 
 /-- `p`'s artifact declares exactly the CPU features its code requires
 (`featureCheck`). -/
@@ -768,8 +845,7 @@ def render (ps : List Prepared) (moduleOf : Artifact → String → String) : Li
       (s!"{t}/{m}.rs",
         header ++ s!"//! Verified `{m}` functions for `{t}`.\n" ++
         "#![allow(dead_code)]\n" ++
-        String.join ((arts.filter (·.art.module == m)).map fun p =>
-          "\n" ++ function.functionOf p.art p.lines (moduleOf p.art)))).map Task.get)
+        moduleText moduleOf (arts.filter (·.art.module == m)))).map Task.get)
   -- Each target's files on a task of their own.
   ("mod.rs", root) :: ((targets.map fun t => Task.spawn fun _ => perTarget t).map Task.get).flatten
 
