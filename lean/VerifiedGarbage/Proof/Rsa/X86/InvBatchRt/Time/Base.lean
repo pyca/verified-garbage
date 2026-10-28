@@ -66,10 +66,13 @@ theorem callArg_view {s : State} {i : Nat} {v : BitVec 32}
   exact ⟨⟨⟨r, by simp only [view, State.withRegions_rd, State.withRegions_wr]; exact List.mem_append_left _ hr, hc⟩,
     h.stack.apart⟩, h.value⟩
 
-theorem Bx.view {s : State} (h : Bx L s B Z len N) : Bx L (view s B Z) B Z len N := by
-  obtain ⟨⟨⟨⟨edi, _, nw, stk⟩, fits, wpos, wle⟩, lenArg, wsArg, lenLe, layLen⟩, slots, room⟩ := h
-  exact ⟨⟨⟨⟨edi, List.mem_singleton_self _, nw, stk⟩, fits, wpos, wle⟩,
-    lenArg.imp fun _ ⟨l, e, c⟩ => ⟨l, e, callArg_view c⟩, callArg_view wsArg, lenLe, layLen⟩, slots, room⟩
+theorem RtWs.view {s : State} (h : RtWs L s B Z len N) : RtWs L (view s B Z) B Z len N := by
+  obtain ⟨⟨⟨edi, _, nw, stk⟩, fits, wpos, wle⟩, lenArg, wsArg, lenLe, layLen⟩ := h
+  exact ⟨⟨⟨edi, List.mem_singleton_self _, nw, stk⟩, fits, wpos, wle⟩,
+    lenArg.imp fun _ ⟨l, e, c⟩ => ⟨l, e, callArg_view c⟩, callArg_view wsArg, lenLe, layLen⟩
+
+theorem Bx.view {s : State} (h : Bx L s B Z len N) : Bx L (view s B Z) B Z len N :=
+  ⟨RtWs.view h.ws, h.slots, h.room⟩
 
 /-- Both runs hold the same slot words: the arrays' addresses and the half count. -/
 theorem slot_words {s t : State} (hs : Bx L s B Z len N) (ht : Bx L t B Z len N) :
@@ -88,42 +91,47 @@ structure Rel (L : Lay) (B : Addr) (Z len N : Nat) (args : Nat → BitVec 32) (s
   ps : Public args B Z sp s
   pt : Public args B Z sp t
 
+/-- The view is well formed for the analysis: `edi` and the 15th argument the working space. -/
+theorem wfS {u : State} {args : Nat → BitVec 32} {sp : BitVec 32} (hL : L.ws = 14) (hu : RtWs L u B Z len N)
+    (hz : 160 ≤ Z) (pu : Public args B Z sp u) : VG.X86.Taint.Wf τS (view u B Z) := by
+  have hn := hu.ws.workspace.nowrap
+  refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨List.Forall₂.cons (show 160 ≤ Z by omega) List.Forall₂.nil,
+    List.pairwise_singleton _ _, fun r hr => by
+      cases hr with
+      | head => exact hn
+      | tail _ h => cases h⟩, ?_, ?_,
+    fun _ => ⟨pu.argsOk.1, fun r hr => by
+      simp only [view, State.withRegions_wr, List.mem_singleton] at hr; subst r
+      exact pu.argsOk.2 _ hu.ws.workspace.wr⟩, ?_⟩
+  · intro p hp
+    simp only [τS, List.mem_singleton] at hp
+    subst p
+    show addr (u.gpr .edi) 0 = B
+    simpa only [addr, BitVec.add_zero] using hu.ws.workspace.edi
+  · intro p hp; cases hp
+  · intro p hp
+    simp only [τS, List.mem_singleton] at hp
+    subst p
+    refine ⟨by decide, ?_⟩
+    have v := hu.wsArg.value
+    rw [hL] at v
+    show addr (u.mem.readW (addr (u.gpr .esp) 60) 32) 0 = B
+    change u.mem.readW (addr (u.gpr .esp) (4 + 4 * 14)) 32 = _ at v
+    rw [show (4 + 4 * 14 : Nat) = 60 from rfl] at v
+    rw [v]
+    simp only [addr, BitVec.add_zero]
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+    have := B.isLt
+    rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+
 theorem agreeS {s t : State} {args : Nat → BitVec 32} {sp : BitVec 32} (hL : L.ws = 14)
     (h : Rel L B Z len N args sp s t) : VG.X86.Taint.Agree τS (view s B Z) (view t B Z) := by
   have hn := h.bs.nowrap
   have hf := h.bs.fits
   simp only [VG.Impl.Rsa.X86.InvBatch.offset] at hf
-  have wf : ∀ {u : State}, Bx L u B Z len N → Public args B Z sp u → VG.X86.Taint.Wf τS (view u B Z) := by
-    intro u hu pu
-    refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨List.Forall₂.cons (show 160 ≤ Z by omega) List.Forall₂.nil,
-      List.pairwise_singleton _ _, fun r hr => by
-        cases hr with
-        | head => exact hn
-        | tail _ h => cases h⟩, ?_, ?_,
-      fun _ => ⟨pu.argsOk.1, fun r hr => by
-        simp only [view, State.withRegions_wr, List.mem_singleton] at hr; subst r
-        exact pu.argsOk.2 _ hu.ws.ws.workspace.wr⟩, ?_⟩
-    · intro p hp
-      simp only [τS, List.mem_singleton] at hp
-      subst p
-      show addr (u.gpr .edi) 0 = B
-      simpa only [addr, BitVec.add_zero] using hu.ws.ws.workspace.edi
-    · intro p hp; cases hp
-    · intro p hp
-      simp only [τS, List.mem_singleton] at hp
-      subst p
-      refine ⟨by decide, ?_⟩
-      have v := hu.ws.wsArg.value
-      rw [hL] at v
-      show addr (u.mem.readW (addr (u.gpr .esp) 60) 32) 0 = B
-      change u.mem.readW (addr (u.gpr .esp) (4 + 4 * 14)) 32 = _ at v
-      rw [show (4 + 4 * 14 : Nat) = 60 from rfl] at v
-      rw [v]
-      simp only [addr, BitVec.add_zero]
-      apply BitVec.eq_of_toNat_eq
-      rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-      have := B.isLt
-      rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+  have wf : ∀ {u : State}, Bx L u B Z len N → Public args B Z sp u → VG.X86.Taint.Wf τS (view u B Z) :=
+    fun hu pu => wfS hL hu.ws (by omega) pu
   refine ⟨⟨?_, fun h => nomatch h⟩, fun _ => rfl, wf h.bs h.ps, wf h.bt h.pt,
     VG.X86.Taint.slotsOk_of_list rfl (by decide), ?_, fun _ => h.ps.stack.trans h.pt.stack.symm, ?_⟩
   · intro r hr
@@ -197,6 +205,60 @@ theorem leafU {args : Nat → BitVec 32} {sp : BitVec 32} {E : (Reg → BitVec 3
   have R := leaf (P := fun s t => Pre L B Z len N args sp E s ∧ Pre L B Z len N args sp E t) τS
     (fun _ _ ⟨ps, pt⟩ => agreeS hL ⟨ps.1, pt.1, ps.2.1, pt.2.1⟩)
     (fun _ _ ⟨ps, pt⟩ => ⟨ps.1.ws.ws.workspace.wr, pt.1.ws.ws.workspace.wr⟩)
+    (fun _ _ ⟨ps, pt⟩ => ⟨ex _ ps, ex _ pt⟩) h
+  exact (RelCT.wp R (fun s t ⟨ps, pt⟩ => ⟨hf s ps, hf t pt⟩)).mono (fun _ _ h => h)
+    (fun _ _ ⟨_, a, b⟩ => ⟨a, b⟩)
+
+/-! ## Before the slots -/
+
+/-- `τS` before the slots are written. -/
+def τ0 : VG.X86.Taint.T :=
+  { regs := .ofList [.edi, .esp], flags := false, lens := [160], bases := [(.edi, 0, 0)],
+    argLen := 68, argBases := [(60, 0)] }
+
+/-- The runs' start: the working space before its slots, and the call's public data. -/
+def Pre0 (L : Lay) (B : Addr) (Z len N : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (s : State) : Prop :=
+  RtWs L s B Z len N ∧ 16 ≤ N ∧ Public args B Z sp s
+
+theorem agree0 {s t : State} {args : Nat → BitVec 32} {sp : BitVec 32} (hL : L.ws = 14)
+    (hs : Pre0 L B Z len N args sp s) (ht : Pre0 L B Z len N args sp t) :
+    VG.X86.Taint.Agree τ0 (view s B Z) (view t B Z) := by
+  have hf : VG.Impl.Rsa.X86.Keys.hdr + N * VG.Proof.Rsa.X86.Keys.S (kw len) ≤ Z := hs.1.ws.fits
+  rw [show VG.Impl.Rsa.X86.Keys.hdr = 160 from rfl] at hf
+  have wf : ∀ {u : State}, Pre0 L B Z len N args sp u → VG.X86.Taint.Wf τ0 (view u B Z) := fun hu =>
+    let w := wfS hL hu.1 (by omega) hu.2.2
+    ⟨w.lens, w.bases, w.wbases, w.args, w.argBases, w.stk, w.frames, w.room⟩
+  refine ⟨⟨?_, fun h => nomatch h⟩, fun _ => rfl, wf hs, wf ht, VG.X86.Taint.slotsOk_empty,
+    VG.X86.Taint.slotsAgree_empty, fun _ => hs.2.2.stack.trans ht.2.2.stack.symm, ?_⟩
+  · intro r hr
+    simp only [τ0, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact BitVec.eq_of_toNat_eq (hs.1.ws.workspace.edi_toNat.trans ht.1.ws.workspace.edi_toNat.symm)
+    · exact hs.2.2.stack.trans ht.2.2.stack.symm
+  · intro k h4 hk
+    simp only [τ0] at hk
+    change s.mem (VG.X86.Taint.argByte s (VG.X86.Taint.depth τ0.stk + k)) =
+      t.mem (VG.X86.Taint.argByte t (VG.X86.Taint.depth τ0.stk + k))
+    rw [show VG.X86.Taint.depth τ0.stk = 0 from rfl, Nat.zero_add,
+      VG.X86.Taint.argByte_eq hs.2.2.argsOk.1 h4 hk, VG.X86.Taint.argByte_eq ht.2.2.argsOk.1 h4 hk,
+      Mem.readW_byte s.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte t.mem _ (Nat.mod_lt _ (by decide))]
+    exact congrArg _ ((hs.2.2.arguments _ (by omega)).value.trans (ht.2.2.arguments _ (by omega)).value.symm)
+
+theorem Pre0.view {args : Nat → BitVec 32} {sp : BitVec 32} {s : State} (h : Pre0 L B Z len N args sp s) :
+    Pre0 L B Z len N args sp (view s B Z) :=
+  ⟨RtWs.view h.1, h.2.1, Public.view h.2.2 h.1.ws.workspace.wr⟩
+
+/-- `leafU` from `Pre0`, checked from `τ0`. -/
+theorem leaf0 {args : Nat → BitVec 32} {sp : BitVec 32} {Q : State → Prop} {c : Prog isa} (hL : L.ws = 14)
+    (hf : ∀ s, Pre0 L B Z len N args sp s → WP isa c s Q) {hc : VG.Taint.Hint VG.X86.Taint.T}
+    (h : (VG.Taint.check sseTaint τ0 c hc).isSome = true) :
+    RelCT isa (fun s t => Pre0 L B Z len N args sp s ∧ Pre0 L B Z len N args sp t) c (fun s t => Q s ∧ Q t) := by
+  have ex : ∀ s, Pre0 L B Z len N args sp s → ∃ tr z, Exec isa c (view s B Z) tr z := fun s ps =>
+    let ⟨tr, z, e, _⟩ := hf _ ps.view
+    ⟨tr, z, e⟩
+  have R := leaf (P := fun s t => Pre0 L B Z len N args sp s ∧ Pre0 L B Z len N args sp t) τ0
+    (fun _ _ ⟨ps, pt⟩ => agree0 hL ps pt)
+    (fun _ _ ⟨ps, pt⟩ => ⟨ps.1.ws.workspace.wr, pt.1.ws.workspace.wr⟩)
     (fun _ _ ⟨ps, pt⟩ => ⟨ex _ ps, ex _ pt⟩) h
   exact (RelCT.wp R (fun s t ⟨ps, pt⟩ => ⟨hf s ps, hf t pt⟩)).mono (fun _ _ h => h)
     (fun _ _ ⟨_, a, b⟩ => ⟨a, b⟩)
