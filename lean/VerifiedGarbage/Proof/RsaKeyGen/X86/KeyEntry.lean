@@ -21,6 +21,7 @@ structure Entry (base : Addr) (size : Nat) (p : BitVec 32) (inputs : Nat → Bit
   fit : p.toNat + 92 ≤ 2 ^ 32
   separate : (argsRegion p).Disjoint ⟨base, size⟩
   read : ∀ i < 18, readSrc s (.mem (arg i)) = some (inputs i)
+  deep : DeepStk p base size
 
 theorem enter_ok {base : Addr} {size : Nat} {p : BitVec 32} {inputs : Nat → BitVec 32} {s : State}
     (E : Entry base size p inputs s) :
@@ -38,7 +39,7 @@ theorem enter_ok {base : Addr} {size : Nat} {p : BitVec 32} {inputs : Nat → Bi
     · rw [A.other .esp (by decide), E.sp]
       exact E.stack
   have C : Context base size p inputs a := by
-    refine ⟨Sa, E.header, (A.other .esp (by decide)).trans E.sp, E.fit, E.separate, ?_⟩
+    refine ⟨Sa, E.header, (A.other .esp (by decide)).trans E.sp, E.fit, E.separate, ?_, E.deep⟩
     intro i index
     have address : a.ea (arg i) = s.ea (arg i) := by
       change addr (a.gpr .esp) _ = addr (s.gpr .esp) _

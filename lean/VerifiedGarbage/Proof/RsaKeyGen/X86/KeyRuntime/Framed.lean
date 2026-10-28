@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyCallSizes
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyCallGeometry
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyCallArgs
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyCallValid
@@ -24,7 +25,67 @@ namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Impl.Mont.X86
 open VG.Proof.RsaKeyGen.X86.Key (contract call_layout entry_input call_valid callSp bodyClob
-  BodyOutcome callEnvironment saved_read return_read)
+  BodyOutcome callEnvironment writes_reserved writes_return)
+
+/-- The registers the frame saves lie above the stack a call of the inverse uses. -/
+theorem saved_below {s : State} (h : contract.pre s) :
+    (⟨(callSp s).setWidth 64, 20⟩ : Region).Disjoint (below (callSp s) 52) := by
+  have A := call_layout h
+  have low : 52 ≤ (callSp s).toNat := by rw [A.privateNat]; have := A.low; omega
+  unfold below
+  rw [Taint.sub_setWidth low]
+  exact Offset.base_disjoint_below _ (by decide)
+
+/-- `Key.saved_read`, when the body also writes the stack a call uses. -/
+theorem saved_read {s t : State} (h : contract.pre s)
+    (F : Frame ((callEnvironment s).outputs.writes ++ [below (callSp s) 52]) (Compact.entered s).mem t.mem)
+    {i : Nat} (hi : i < 4) :
+    t.mem.readW (addr (callSp s) (4 * i)) 32 =
+      s.gpr (Compact.savedRegisters[3 - i]'(by change 3 - i < 4; omega)) := by
+  have A := call_layout h
+  have fit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega
+  have pFit : (callSp s).toNat + 16 ≤ 2 ^ 32 := by
+    rw [A.privateNat]
+    have := (s.gpr .esp).isLt
+    omega
+  have same := F.readW (r := (⟨(callSp s).setWidth 64, 16⟩ : Region))
+    (a := addr (callSp s) (4 * i)) (w := 32)
+    (by rw [addr_eq (by omega)]; exact Offset.contains_base _ (by omega) (by omega))
+    (fun r hr => by
+      rcases List.mem_append.mp hr with hr | hr
+      · exact ((writes_reserved h r hr).sub_right A.savedSub).symm
+      · obtain rfl := List.mem_singleton.mp hr
+        exact (saved_below h).sub_left (Region.sub_prefix (by decide))) (by decide)
+  have word := pushed_word (rs := Compact.savedRegisters) (s := s) (by decide) fit hi
+  change (Compact.entered s).mem.readW (addr ((Compact.entered s).gpr .esp) (4 * i)) 32 = _ at word
+  rw [Compact.entered, pushed_esp] at word
+  exact same.trans word
+
+/-- `Key.return_read`, when the body also writes the stack a call uses. -/
+theorem return_read {s t : State} (h : contract.pre s)
+    (F : Frame ((callEnvironment s).outputs.writes ++ [below (callSp s) 52]) (Compact.entered s).mem t.mem) :
+    t.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by
+  have A := call_layout h
+  have fit : 16 ≤ (s.gpr .esp).toNat := by have := A.low; omega
+  have ret : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Sub ⟨(callSp s).setWidth 64, 20⟩ := by
+    have e : (s.gpr .esp).setWidth 64 = (callSp s).setWidth 64 + BitVec.ofNat 64 16 := by
+      unfold callSp
+      rw [Taint.sub_setWidth fit, BitVec.sub_add_cancel]
+    rw [e]
+    exact Offset.sub_base _ (by decide)
+  have same := F.readW (w := 32) (Region.contains_self ((s.gpr .esp).setWidth 64) 4)
+    (fun r hr => by
+      rcases List.mem_append.mp hr with hr | hr
+      · exact writes_return h r hr
+      · obtain rfl := List.mem_singleton.mp hr
+        exact (saved_below h).sub_left ret) (by decide)
+  have pushed := pushed_frame (rs := Compact.savedRegisters) (s := s) (by decide) fit
+  have separate : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint (below (s.gpr .esp) 16) := by
+    unfold below
+    rw [Taint.sub_setWidth fit]
+    exact Offset.base_disjoint_below _ (by decide)
+  exact same.trans (pushed.readW (w := 32) (Region.contains_self _ _)
+    (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact separate) (by decide))
 
 theorem framed_ok {s : State} (h : contract.pre s) :
     WP isa VG.Impl.RsaKeyGen.X86.KeyRuntime.code s fun t =>

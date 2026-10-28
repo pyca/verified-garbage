@@ -10,12 +10,15 @@ namespace VG.Proof.RsaKeyGen.X86.Key
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
 open VG.Impl.RsaKeyGen.X86.Key
 
-theorem KeyReady.part {s t : State} {B : Addr} {Z n e p q : Nat}
-    (h : Ws s B Z n 32) (lower : 16 ≤ n) (upper : n ≤ 256)
+/-- `KeyReady.part`, from what the key part leaves of the factors, `d` and `e`. -/
+theorem KeyReady.part_of {s t : State} {B : Addr} {n e p q : Nat}
+    (lower : 16 ≤ n) (upper : n ≤ 256)
     (boundP : p < 2 ^ (16 * n)) (boundQ : q < 2 ^ (16 * n))
     (R : KeyReady B n e p q s.mem)
     (notSmall : ¬(slot s.mem B kOk = 1 ∧ num s.mem B n aD ≤ 2 ^ (16 * n)))
-    (F : Outs B (stageRanges n keyPartArrays) s.mem t.mem) (K : KeyPartResult B n s.mem t) :
+    (keptP : num t.mem B n aPa = num s.mem B n aPa) (keptQ : num t.mem B n aQa = num s.mem B n aQa)
+    (keptD : num t.mem B n aD = num s.mem B n aD) (keptE : val32 t.mem B kEv 2 = val32 s.mem B kEv 2)
+    (K : KeyPartResult B n s.mem t) :
     CoreOutcome B n e p q t.mem := by
   have boundE : e < 2 ^ 64 := by rw [← R.exponent]; exact val32_lt _ _ _ _
   have congruence := K.qiCongruence
@@ -54,13 +57,10 @@ theorem KeyReady.part {s t : State} {B : Addr} {Z n e p q : Nat}
         (Nat.le_trans (Nat.min_le_left p q) (Nat.le_max_left p q)) inverse (by omega)
       have Pm : max p q - 1 ≠ 0 := by omega
       have Qm : min p q - 1 ≠ 0 := by omega
-      have pFinal : num t.mem B n aPa = max p q :=
-        (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)) F).trans R.pValue
-      have qFinal : num t.mem B n aQa = min p q :=
-        (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)) F).trans R.qValue
-      have dFinal : num t.mem B n aD = num s.mem B n aD :=
-        stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)) F
-      have eFinal : val32 t.mem B kEv 2 = e := (stage_preserves_e F).trans R.exponent
+      have pFinal : num t.mem B n aPa = max p q := keptP.trans R.pValue
+      have qFinal : num t.mem B n aQa = min p q := keptQ.trans R.qValue
+      have dFinal : num t.mem B n aD = num s.mem B n aD := keptD
+      have eFinal : val32 t.mem B kEv 2 = e := keptE.trans R.exponent
       have dp := K.dp
       have dq := K.dq
       rw [R.pm, crtDivisor, ite_eq_right Pm] at dp
@@ -70,5 +70,17 @@ theorem KeyReady.part {s t : State} {B : Addr} {Z n e p q : Nat}
     · rw [ite_eq_right shape]
       have rejected : slot t.mem B kOk = 0 := by rw [M, ite_eq_right shape]
       exact ⟨K.status.trans rejected, rejected⟩
+
+theorem KeyReady.part {s t : State} {B : Addr} {Z n e p q : Nat}
+    (h : Ws s B Z n 32) (lower : 16 ≤ n) (upper : n ≤ 256)
+    (boundP : p < 2 ^ (16 * n)) (boundQ : q < 2 ^ (16 * n))
+    (R : KeyReady B n e p q s.mem)
+    (notSmall : ¬(slot s.mem B kOk = 1 ∧ num s.mem B n aD ≤ 2 ^ (16 * n)))
+    (F : Outs B (stageRanges n keyPartArrays) s.mem t.mem) (K : KeyPartResult B n s.mem t) :
+    CoreOutcome B n e p q t.mem :=
+  KeyReady.part_of lower upper boundP boundQ R notSmall
+    (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)) F)
+    (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)) F)
+    (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)) F) (stage_preserves_e F) K
 
 end VG.Proof.RsaKeyGen.X86.Key

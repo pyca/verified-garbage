@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Rsa.X86.KeyRt
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyWorkspace
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Key
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.Inverse
 
 /-! # Shared runtime-width arithmetic for RSA key generation
 
@@ -121,8 +122,24 @@ def inverseLoad (w : Width) (src modulus : Loc) : Prog isa := seqs [
 def inverseSetup (w : Width) (src modulus : Loc) : Prog isa :=
   .seq (inverseLoad w src modulus) (inverseBank w)
 
+/-- The arguments of `vg_rsa_keygen_inverse` at the width of `w`: `eax` its length argument,
+`ecx` the `35 + 15 ⌈len / 8⌉` words its header and fifteen numbers take. -/
+def inverseArgs (w : Width) : List Instr :=
+  [.mov .eax (.mem (VG.Impl.Rsa.X86.KeyRt.argOp w.lay.len)), .mov .ecx (.reg .eax),
+    .alu .add .ecx (.imm 7), .shift .shr .ecx 3, .mov .edx (.reg .ecx), .alu .add .ecx (.reg .ecx),
+    .alu .add .ecx (.reg .ecx), .alu .add .ecx (.reg .ecx), .alu .add .ecx (.reg .ecx),
+    .alu .sub .ecx (.reg .edx), .alu .add .ecx (.imm 35)]
+
+/-- The call, with `edi` the working space. -/
+def inverseCall : Prog isa :=
+  .frame (.push [.eax, .ecx, .edi]) (.call "vg_rsa_keygen_inverse" VG.Impl.RsaKeyGen.X86.Inverse.code)
+    (.pop .eax 3)
+
+/-- `vg_rsa_keygen_inverse` on the working space at the width of `w`. -/
+def callInverse (w : Width) : Prog isa := .seq (.block (inverseArgs w)) inverseCall
+
 def inverseFrom (w : Width) (src modulus : Loc) : Prog isa :=
-  .seq (inverseSetup w src modulus) (VG.Impl.Rsa.X86.KeyRt.inverse w.lay)
+  .seq (inverseSetup w src modulus) (callInverse w)
 
 def gcdIsOne (w : Width) : Prog isa :=
   .seq (small w aT2 1) (VG.Impl.Rsa.X86.KeyRt.eqS w.lay kFlag 1 aT2 aT1)

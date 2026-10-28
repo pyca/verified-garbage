@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.CorePair
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyImportedPair
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyWritePortTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Derive
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InputStage
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DeriveTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutputReady
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
@@ -43,7 +44,7 @@ theorem deriveOutput_ok {E : Environment} {s : State} {e p q : Nat} (h : Input E
   refine WP.mono (deriveLoaded_ok H widths.2.2.1 widths.2.2.2.1 widths.2.2.2.2.1 widths.1 widths.2.1
     C.pBound C.qBound C.zero C.one (C.loaded.trans C.exponent.symm))
     fun t ⟨ht, O, result, K⟩ => ?_
-  exact ⟨h.afterStage ht.old K O, core_mask_bit result, K⟩
+  exact ⟨input_afterStage h H ht.old K O, core_mask_bit result, K⟩
 
 theorem deriveOutput_trace (E : Environment) (sp : BitVec 32) (e p q p' q' : Nat)
     (release : (Spec.RsaKeyGen.keyFromPrimes (32 * E.n) e p q = .inr ()) ↔

@@ -9,6 +9,8 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGcdFrame
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StackRange
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseKeeps
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDivisionLoad
 
 /-! # The native RSA LCM agrees with the shared integer algorithm
@@ -37,7 +39,7 @@ theorem lcmPart_ok {s : State} {B : Addr} {Z n k : Nat}
     (product : num s.mem B n aPhi = num s.mem B n aPm * num s.mem B n aQm)
     (one : num s.mem B n aOne = 1) :
     WP isa lcmPart s fun t =>
-      Ws t B Z n 32 ∧ Outs B (lcmRanges n k) s.mem t.mem ∧
+      Ws t B Z n 32 ∧ OutsS B (s.gpr .esp) (lcmRanges n k) s.mem t.mem ∧
       num t.mem B n aL = Nat.lcm (num s.mem B n aPm) (num s.mem B n aQm) ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
   let P := num s.mem B n aPm
@@ -67,8 +69,8 @@ theorem lcmPart_ok {s : State} {B : Addr} {Z n k : Nat}
     (by rw [U, V]; exact arithmetic.1) oneU) fun v ⟨hv, Ov, denominator, Kv⟩ => ?_)
   rw [U, V] at denominator
   have phiV : num v.mem B n aPhi = T.2.2 := by
-    rw [gcdPart_preserves_num small (by decide) (by decide) (by decide) (by decide)
-      (h.fit64 (by decide)) Ov, F]
+    rw [hu.read_num (by decide) Ov (gcdPart_preserves_num small (by decide) (by decide) (by decide) (by decide)
+      (h.fit64 (by decide))), F]
   have denPositive : 0 < num v.mem B n aDen := by
     rw [denominator]
     split
@@ -82,10 +84,12 @@ theorem lcmPart_ok {s : State} {B : Addr} {Z n k : Nat}
   refine ⟨ht, ?_, quotient.trans arithmetic.2.symm, Ku.trans (Kv.trans Kt)⟩
   have first : Outs B (lcmRanges n k) s.mem u.mem :=
     VG.Proof.Mont.Outs.mono Ou (fun r hr => List.mem_append_left _ hr)
-  have middle : Outs B (lcmRanges n k) u.mem v.mem :=
-    Ov.mono (fun r hr => List.mem_append_right _ (List.mem_append_left _ hr))
+  have spU : u.gpr .esp = s.gpr .esp := Ku.1 .esp (by decide)
+  have middle : OutsS B (s.gpr .esp) (lcmRanges n k) u.mem v.mem := by
+    rw [← spU]
+    exact Ov.mono (fun r hr => List.mem_append_right _ (List.mem_append_left _ hr))
   have last : Outs B (lcmRanges n k) v.mem t.mem :=
     Ot.mono (fun r hr => List.mem_append_right _ (List.mem_append_right _ hr))
-  exact (first.trans middle).trans last
+  exact ((OutsS.of_outs first).trans middle).trans (OutsS.of_outs last)
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

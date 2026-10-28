@@ -13,6 +13,8 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseLoad
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StackRange
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseCall
 import Mathlib.Data.Nat.Init
 import Mathlib.Logic.Function.Basic
 import Mathlib.Order.Defs.Prop
@@ -33,23 +35,20 @@ open VG.Impl.RsaKeyGen.X86.KeyRuntime
 open VG.Proof.RsaKeyGen.X86.Key (InverseLayout inverseRanges inverse_frame_clear
   inverse_frame_slots inverse_frame)
 
-theorem inverseFrom_ok {s : State} {B : Addr} {Z n N : Nat} {w : Width} {src mo : Loc}
+/-- The setup leaves the inverse's input, modulus and accumulators in place. -/
+theorem inverseSetup_ok {s : State} {B : Addr} {Z n N : Nat} {w : Width} {src mo : Loc}
     (h : Ws s B Z n N) (bound : 15 ≤ N) (hw : w ≠ .correction)
     (L : InverseLayout Z (w.words n) (src.offset n) (mo.offset n))
     (odd : val32 s.mem B (mo.offset n) (w.words n) % 2 = 1)
     (large : 1 < val32 s.mem B (mo.offset n) (w.words n)) :
-    WP isa (inverseFrom w src mo) s fun t =>
-      Ws t B Z n N ∧ Outs B (inverseRanges (w.words n) invSlots) s.mem t.mem ∧
-      num t.mem B (w.words n) 1 = Nat.gcd (val32 s.mem B (src.offset n) (w.words n))
-        (val32 s.mem B (mo.offset n) (w.words n)) ∧
-      (val32 s.mem B (mo.offset n) (w.words n) : Int) ∣
-        (num t.mem B (w.words n) 3 : Int) * val32 s.mem B (src.offset n) (w.words n) -
-          num t.mem B (w.words n) 1 ∧
-      num t.mem B (w.words n) 3 < val32 s.mem B (mo.offset n) (w.words n) ∧
-      Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
-  unfold inverseFrom inverseSetup
-  refine WP.seq (WP.seq (WP.mono (inverseLoad_ok h bound hw L)
-    fun u ⟨hu, Ou, input, modulus, zero, Ku⟩ => ?_))
+    WP isa (inverseSetup w src mo) s fun v =>
+      InvReady B Z n N w v ∧ Outs B (inverseRanges (w.words n) invSlots) s.mem v.mem ∧
+      num v.mem B (w.words n) 0 = val32 s.mem B (src.offset n) (w.words n) ∧
+      num v.mem B (w.words n) aM = val32 s.mem B (mo.offset n) (w.words n) ∧
+      Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s v := by
+  unfold inverseSetup
+  refine WP.seq (WP.mono (inverseLoad_ok h bound hw L)
+    fun u ⟨hu, Ou, input, modulus, zero, Ku⟩ => ?_)
   have Hu := shrinkRt (hu.runtime hw) bound
   have bankProof := inverseBank_ok Hu
     (by simpa only [kw_words h.width] using input)
@@ -58,34 +57,42 @@ theorem inverseFrom_ok {s : State} {B : Addr} {Z n N : Nat} {w : Width} {src mo 
     (by simpa only [kw_words h.width] using zero 2 (by decide) (by decide) (by decide))
     (by simpa only [kw_words h.width] using zero 3 (by decide) (by decide) (by decide))
   rw [kw_words h.width] at bankProof
-  refine WP.mono bankProof fun v ⟨Hv, Ov, ready, Kv⟩ => ?_
+  refine WP.mono bankProof fun v ⟨_, Ov, ready, Kv⟩ => ?_
   have hv : Ws v B Z n N := hu.afterBank hw Kv Ov
     (by
       intro j hj
       have small := (by decide : ∀ j ∈ ([1, 2, aNM] : List Nat), j < 15) j hj
       omega)
     (by simp)
-  have inputV : num v.mem B (w.words n) 0 = val32 s.mem B (src.offset n) (w.words n) :=
-    congrArg Prod.fst ready.initial
-  have inverseProof := VG.Proof.Rsa.X86.KeyRt.inverse_ok Hv (by decide)
-  rw [kw_words h.width] at inverseProof
-  refine WP.mono inverseProof fun t ⟨_, Ot, Kt, computed⟩ => ?_
-  have negative : num v.mem B (w.words n) aNM + num v.mem B (w.words n) aM =
-      2 ^ (32 * w.words n) := by
-    rw [ready.modulus]; exact ready.negated
-  have bankV : bank v.mem B (w.words n) 0 =
-      (num v.mem B (w.words n) 0, num v.mem B (w.words n) aM, 1, 0) := by
-    rw [inputV, ready.modulus]; exact ready.initial
-  have result := computed negative ready.zero (by rw [ready.modulus]; exact odd)
-    (by rw [ready.modulus]; exact large) bankV
-  rw [inputV, ready.modulus] at result
-  have ht : Ws t B Z n N := hv.afterBank hw Kt Ot (by
-    intro j hj
-    have small := (by decide : ∀ j ∈ invArrs, j < 15) j hj
-    omega) (by decide)
-  refine ⟨ht, ?_, result.1, result.2.1, result.2.2,
-    (Ku.mono (by decide)).trans ((Kv.mono (by decide)).trans Kt)⟩
-  exact ((inverse_frame_clear invSlots Ou).trans
-    (inverse_frame_slots (by decide) Ov)).trans (inverse_frame (by decide) Ot)
+  have bankV := ready.initial
+  simp only [bank, Prod.mk.injEq] at bankV
+  refine ⟨⟨hv, bound, hw, by rw [ready.modulus]; exact odd, by rw [ready.modulus]; exact large,
+      bankV.2.1.trans ready.modulus.symm, bankV.2.2.1, bankV.2.2.2,
+      by rw [ready.modulus]; exact ready.negated, ready.zero⟩,
+    (inverse_frame_clear invSlots Ou).trans (inverse_frame_slots (by decide) Ov), bankV.1, ready.modulus,
+    (Ku.mono (by decide)).trans (Kv.mono (by decide))⟩
+
+theorem inverseFrom_ok {s : State} {B : Addr} {Z n N : Nat} {w : Width} {src mo : Loc}
+    (h : Ws s B Z n N) (bound : 15 ≤ N) (hw : w ≠ .correction)
+    (L : InverseLayout Z (w.words n) (src.offset n) (mo.offset n))
+    (odd : val32 s.mem B (mo.offset n) (w.words n) % 2 = 1)
+    (large : 1 < val32 s.mem B (mo.offset n) (w.words n)) :
+    WP isa (inverseFrom w src mo) s fun t =>
+      Ws t B Z n N ∧ OutsS B (s.gpr .esp) (inverseRanges (w.words n) invSlots) s.mem t.mem ∧
+      num t.mem B (w.words n) 1 = Nat.gcd (val32 s.mem B (src.offset n) (w.words n))
+        (val32 s.mem B (mo.offset n) (w.words n)) ∧
+      (val32 s.mem B (mo.offset n) (w.words n) : Int) ∣
+        (num t.mem B (w.words n) 3 : Int) * val32 s.mem B (src.offset n) (w.words n) -
+          num t.mem B (w.words n) 1 ∧
+      num t.mem B (w.words n) 3 < val32 s.mem B (mo.offset n) (w.words n) ∧
+      Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
+  unfold inverseFrom
+  refine WP.seq (WP.mono (inverseSetup_ok h bound hw L odd large) fun v ⟨R, Ov, input, modulus, Kv⟩ => ?_)
+  refine WP.mono (callInverse_ok R) fun t ⟨ht, Ot, gcd, bezout, lt, Kt, _⟩ => ?_
+  rw [input, modulus] at gcd bezout
+  rw [modulus] at lt
+  have spV : v.gpr .esp = s.gpr .esp := Kv.1 .esp (by decide)
+  rw [spV] at Ot
+  exact ⟨ht, (OutsS.of_outs Ov).trans Ot, gcd, bezout, lt, Kv.trans (Kt.mono (by decide))⟩
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

@@ -1,6 +1,8 @@
 module
 
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Inverse
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseKeeps
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StackRange
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExponentFrame
 public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DivisionFrame
@@ -24,13 +26,13 @@ open VG.Impl.Rsa.X86.Keys hiding slot
 open VG.Impl.RsaKeyGen.X86.Key (aE aL aDen aU aV aD kEv kOk kFlag)
 open VG.Impl.RsaKeyGen.X86.KeyRuntime hiding arr
 open VG.Proof.RsaKeyGen.X86.Key (exponentRanges exponentTemps exponent_keep_frame
-  exponent_temps_inverse inverse_array_layout inverse_preserves_slot)
+  exponent_temps_inverse inverse_array_layout)
 
 theorem dEven_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32)
     (even : val32 s.mem B kEv 2 % 2 = 0)
     (loaded : num s.mem B n aE = val32 s.mem B kEv 2) :
     WP isa dEven s fun t =>
-      Ws t B Z n 32 ∧ Outs B (exponentRanges n) s.mem t.mem ∧ slot t.mem B kOk ≤ 1 ∧
+      Ws t B Z n 32 ∧ OutsS B (s.gpr .esp) (exponentRanges n) s.mem t.mem ∧ slot t.mem B kOk ≤ 1 ∧
       Spec.Rsa.inverse (val32 s.mem B kEv 2) (num s.mem B n aL) =
         (if slot t.mem B kOk = 0 then none else some (num t.mem B n aD)) ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
@@ -84,9 +86,13 @@ theorem dEven_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32)
   rw [Mw] at boundX
   rw [gcd] at congruence
   have maskA : slot a.mem B kOk = (if valid then 1 else 0) :=
-    (inverse_preserves_slot (by decide) Oa).trans maskW
-  have frameA : Outs B (exponentRanges n) w.mem a.mem :=
-    (exponent_temps_inverse (Nat.le_refl n) Oa).mono (fun r hr => List.mem_append_left _ hr)
+    (hw.inverse_slot (by decide) Oa).trans maskW
+  have spW : w.gpr .esp = s.gpr .esp := by
+    rw [Kw.1 .esp (by decide), Kv.1 .esp (by decide), Ku.1 .esp (by decide)]
+  have frameA : OutsS B (s.gpr .esp) (exponentRanges n) w.mem a.mem := by
+    rw [← spW]
+    exact OutsS.lift (fun _ _ O => (exponent_temps_inverse (Nat.le_refl n) O).mono
+      (fun r hr => List.mem_append_left _ hr)) Oa
   refine WP.seq (WP.mono (gcdIsOne_ok (w := .modulus) ha (by decide) (by decide)) fun b ⟨hb, Ob, flagB, Kb⟩ => ?_)
   simp only [Width.words] at Ob
   change slot b.mem B kFlag = (if num a.mem B n 1 = 1 then 1 else 0) at flagB
@@ -109,7 +115,8 @@ theorem dEven_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32)
       (if (if valid then 1 else 0) = 1 ∧ (if Nat.gcd (e % M) M = 1 then 1 else 0) = 1 then 1 else 0) :=
     (Ot.slot (by decide) (by simp)).trans maskC
   have frameT := exponent_keep_frame (by decide) (by simp) Ot
-  refine ⟨ht, (((((frameU.trans frameV).trans frameW).trans frameA).trans frameB).trans frameC).trans frameT,
+  refine ⟨ht, (((((OutsS.of_outs ((frameU.trans frameV).trans frameW)).trans frameA).trans
+      (OutsS.of_outs frameB)).trans (OutsS.of_outs frameC)).trans (OutsS.of_outs frameT)),
     ?_, ?_, (Ku.mono (by decide)).trans ((Kv.mono (by decide)).trans
       (Kw.trans (Ka.trans ((Kb.mono (by decide)).trans ((Kc.mono (by decide)).trans (Kt.mono (by decide)))))))⟩
   · rw [maskT]

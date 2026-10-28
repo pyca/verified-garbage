@@ -3,6 +3,8 @@ module
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
 
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Inverse
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseKeeps
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StackRange
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyStageFrame
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyQinv
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.OddModulus
@@ -22,14 +24,14 @@ open VG.Impl.Rsa.X86.Keys hiding slot
 open VG.Impl.RsaKeyGen.X86.Key (aPa aQa aDen aQi kOk kFlag)
 open VG.Impl.RsaKeyGen.X86.KeyRuntime hiding arr
 open VG.Proof.RsaKeyGen.X86.Key (safePrime qinvArrays stageRanges stage_keep stage_inverse stage_outside
-  inverse_workspace inverse_array_layout inverse_end_le inverse_preserves_slot InverseLayout)
+  inverse_workspace inverse_array_layout inverse_end_le InverseLayout)
 
 theorem qinvPart_ok {s : State} {B : Addr} {Z n k : Nat}
     (h : Ws s B Z n 32) (width : n = 2 * k) (positive : 0 < k)
     (boundP : num s.mem B n aPa < 2 ^ (32 * k)) (boundQ : num s.mem B n aQa < 2 ^ (32 * k))
     (bit : slot s.mem B kOk ≤ 1) :
     WP isa qinvPart s fun t =>
-      Ws t B Z n 32 ∧ Outs B (stageRanges n qinvArrays) s.mem t.mem ∧
+      Ws t B Z n 32 ∧ OutsS B (s.gpr .esp) (stageRanges n qinvArrays) s.mem t.mem ∧
       slot t.mem B kOk = (if slot s.mem B kOk = 1 ∧
         Nat.gcd (num s.mem B n aQa) (safePrime (num s.mem B n aPa)) = 1 then 1 else 0) ∧
       num t.mem B n aQi < safePrime (num s.mem B n aPa) ∧
@@ -86,7 +88,7 @@ theorem qinvPart_ok {s : State} {B : Addr} {Z n k : Nat}
   rw [lowM] at boundX
   rw [gcd] at congruence
   have maskV : slot v.mem B kOk = slot s.mem B kOk :=
-    (inverse_preserves_slot (by decide) Ov).trans maskU
+    (hu.inverse_slot (by decide) Ov).trans maskU
   refine WP.seq (WP.mono (gcdIsOne_ok (w := .prime) hv (by decide) (by decide))
     fun w ⟨hw, Ow, flag, Kw⟩ => ?_)
   simp only [Width.words, half] at Ow
@@ -131,7 +133,10 @@ theorem qinvPart_ok {s : State} {B : Addr} {Z n k : Nat}
     Ot.w32 (Nat.le_trans (by decide : kOk + 4 ≤ hdr) (Nat.le_add_right ..) |> Or.inl) (by decide)
   have frameU : Outs B (stageRanges n qinvArrays) s.mem u.mem :=
     stage_keep (Nat.le_refl n) (by simp only [eq_self, true_and]; decide) (by decide) Ou
-  have frameV : Outs B (stageRanges n qinvArrays) u.mem v.mem := stage_inverse small Ov
+  have spU : u.gpr .esp = s.gpr .esp := Ku.1 .esp (by decide)
+  have frameV : OutsS B (s.gpr .esp) (stageRanges n qinvArrays) u.mem v.mem := by
+    rw [← spU]
+    exact OutsS.lift (fun _ _ => stage_inverse small) Ov
   have frameW : Outs B (stageRanges n qinvArrays) v.mem w.mem :=
     stage_keep small (by
       intro j hj
@@ -140,7 +145,8 @@ theorem qinvPart_ok {s : State} {B : Addr} {Z n k : Nat}
       exact H j hj) (by decide) Ow
   have frameA : Outs B (stageRanges n qinvArrays) w.mem a.mem :=
     stage_keep (Nat.le_refl n) (by simp) (by decide) Oa
-  refine ⟨ht, (((frameU.trans frameV).trans frameW).trans frameA).trans (stage_outside (by decide) Ot),
+  refine ⟨ht, ((((OutsS.of_outs frameU).trans frameV).trans (OutsS.of_outs frameW)).trans
+      (OutsS.of_outs frameA)).trans (OutsS.of_outs (stage_outside (by decide) Ot)),
     ?_, ?_, ?_, (Ku.mono (by decide)).trans (Kv.trans ((Kw.mono (by decide)).trans
       ((Ka.mono (by decide)).trans (Kt.mono (by decide)))))⟩
   · rw [maskT, maskA]

@@ -16,7 +16,7 @@ def callExponent (s : State) : Region := ⟨(arg s 14).setWidth 64, (arg s 15).t
 def callArguments (s : State) : Region := ⟨argAddr s 0, 72⟩
 
 structure CallLayout (s : State) : Prop where
-  low : 36 ≤ (s.gpr .esp).toNat
+  low : 68 ≤ (s.gpr .esp).toNat
   argsFit : (s.gpr .esp).toNat + 76 ≤ 2 ^ 32
   outputFit : ∀ i < 7, (arg s (2 * i)).toNat + (arg s (2 * i + 1)).toNat ≤ 2 ^ 32
   workspaceFit : (arg s 16).toNat + 8 * (arg s 17).toNat ≤ 2 ^ 32
