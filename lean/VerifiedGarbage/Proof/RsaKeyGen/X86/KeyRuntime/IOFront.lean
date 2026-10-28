@@ -4,8 +4,12 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.LoadInputs
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExport
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.WriteOutputs
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.WriteOutputs
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Frame
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyArgContext
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEnvironment
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutcome
 
 /-! # Small verified I/O adapters surround the shared arithmetic core -/
 
