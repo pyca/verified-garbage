@@ -404,19 +404,21 @@ structure LadPost (c : Cfg) (base : Addr) (Q : Nat → Fe c.C → Fe c.C → Fe 
   gpr : ∀ r, r ∉ powClob → s'.gpr r = s.gpr r
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
-  unch : Unch base (slWkP c [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5,
+  unch : Unch base (slWkG c [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5,
     TX, TY, TZ, TMP] ++ pwW c) s.mem s'.mem
   q : Q 0 (tmv c.C c.n base s' (c.sl RX)) (tmv c.C c.n base s' (c.sl RY)) (tmv c.C c.n base s' (c.sl RZ))
   acc_lt : sv c base s' ACC < c.C.p
   acc : toM c.C.p (2 ^ (64 * c.n)) (sv c base s' ACC) = tmv c.C c.n base s' (c.sl RZ) ^ (c.C.p - 2)
   rz_lt : sv c base s' RZ < c.C.p
 
-/-- The ladder, from `R = O`, then `Z^(p-2)`, for any invariant `Q` that an
-iteration keeps and that `Q (64 n)` accepts `O`. -/
+/-- `[k]P` (`qMul`), from `R = O`, then `Z^(p-2)`, for any invariant `Q`
+that an iteration keeps and that `Q (64 n)` accepts `O`. -/
 theorem ladPow_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (K : Keep c s₀ base s)
-    (hA : 3 ≤ c.n ∧ c.n ≤ 6 → Point.LadArg s base Impl.Ecdh.X86.Args.ecdh.ao)
-    (hsp₁ : SpOk (Point.ladderP (Impl.Ecdh.X86.Cfg.ladderQ c) c.SP Impl.Ecdh.X86.Args.ecdh.ao) c.stk) (hsp₂ : SpOk c.pPow c.stk) {k : Nat} {Q : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
+    (hA : c.mul.isSome ∨ 3 ≤ c.n ∧ c.n ≤ 6 → Point.LadArg s base Impl.Ecdh.X86.Args.ecdh.ao)
+    (hsp₁ : SpOk (c.qMul PX PY Impl.Ecdh.X86.Args.ecdh.ao) c.stk) (hsp₂ : SpOk c.pPow c.stk) {k : Nat}
+    {Q : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
     (hstep : Step (Impl.Ecdh.X86.Cfg.ladderQ c) c.C base s k Q) (hO : Q (64 * c.n) 0 1 0)
+    (hk : sv c base s Impl.Ecdsa.X86.K = k)
     (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
     (hrx : sv c base s RX = 0) (hry : sv c base s RY = c.mont 1) (hrz : sv c base s RZ = 0)
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
@@ -424,8 +426,7 @@ theorem ladPow_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (K : K
     {rest : Prog isa} {R : State → Prop}
     (h : ∀ s', LadPost c base Q s s' → Frame (s₀.wr ++ [below (s₀.gpr .esp) c.stk]) s₀.mem s'.mem →
       WP isa rest s' R) :
-    WP isa (.seq (Point.ladderP (Impl.Ecdh.X86.Cfg.ladderQ c) c.SP Impl.Ecdh.X86.Args.ecdh.ao)
-      (.seq c.pPow rest)) s R := by
+    WP isa (.seq (c.qMul PX PY Impl.Ecdh.X86.Args.ecdh.ao) (.seq c.pPow rest)) s R := by
   have hs := K.scr
   have F := K.fixed
   have h0 := hc.n0
@@ -454,12 +455,24 @@ theorem ladPow_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (K : K
     show Q _ (toM _ _ (sv c base s RX)) (toM _ _ (sv c base s RY)) (toM _ _ (sv c base s RZ))
     rw [hrx, hry, hrz, toM_cmont hc, toM_zero]
     exact hO
-  refine WP.seq (K.withSp hsp₁ (WP.mono (Point.ladderP_ok (L := Impl.Ecdh.X86.Cfg.ladderQ c) (k := k)
-    (ladLayQ hc) (ladWkQ hc) ladPtQ hpR hs hA (modP_of hc F.mp) hlt hstep hR ht₀)
-    fun s₅ ⟨K₅, U₅, M₅, L₅, R₅, _⟩ f₅ => ?_))
-  rw [Point.ladWp, ladWxQ_eq] at U₅
+  have hO' : Q (64 * c.n) (tmv c.C c.n base s (c.sl ZERO)) (tmv c.C c.n base s (c.sl ONEP))
+      (tmv c.C c.n base s (c.sl ZERO)) := by
+    show Q _ (toM _ _ (sv c base s ZERO)) (toM _ _ (sv c base s ONEP)) (toM _ _ (sv c base s ZERO))
+    rw [show sv c base s ZERO = 0 from F.zero, show sv c base s ONEP = _ from F.onep, toM_zero, toM_one hpR]
+    exact hO
+  refine WP.seq (K.withSp hsp₁ (WP.mono (qMul_ok hc (gx := PX) (gy := PY) (k := k) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (ladLayQ hc) (ladWkQ hc) ladPtQ
+    ⟨hsp₁.1, Nat.le_trans hsp₁.2 (Cfg.stk_le c)⟩ hs hA F.mp
+    (lt_of_eq_of_lt F.ap (hmont _)) (lt_of_eq_of_lt F.b3p (hmont _))
+    (lt_of_eq_of_lt F.onep (Nat.mod_lt _ (by omega_arith))) (lt_of_eq_of_lt F.zero (by omega_arith))
+    hpx hpy (lt_of_eq_of_lt hrx (by omega_arith)) (lt_of_eq_of_lt hry (hmont _)) (lt_of_eq_of_lt hrz (by omega_arith))
+    hstep hR hO' (fun _ => hk) (fun _ => ht₀))
+    fun s₅ ⟨K₅, U₅, L₅, R₅, _⟩ f₅ => ?_))
+  rw [Point.ladWp, ladWx_at] at U₅
   have hs₅ := hs.of_keeps K₅ (by decide)
-  have F₅ := F.unch h7 hn (fixedOk_slWkP (by decide)) U₅
+  have F₅ := F.unch h7 hn (fixedOk_slWkG (l := [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2,
+    T3, T4, T5, TX, TY, TZ, TMP]) (by decide)) U₅
+  have M₅ := modP_of hc F₅.mp
   have k₅ : Keep c s₀ base s₅ := ⟨hs₅, by rw [K₅.1 _ (by decide), K.esp], by rw [K₅.2.1, K.rd],
     by rw [K₅.2.2, K.wr], F₅, f₅, K.sp_lo⟩
   have rz₅ : wordsVal s₅.mem base (c.sl RZ) c.n < c.C.p :=
@@ -467,7 +480,7 @@ theorem ladPow_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (K : K
   refine WP.seq (k₅.withSp hsp₂ (WP.mono (pPow_ok hc hs₅ M₅ rz₅
     F₅.onep (fun t ht => by
       show s₅.mem (off base (bitsAt c.n 1 + t)) = _
-      rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_slWkP (by decide) (by decide) ht)]
+      rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_slWkG (by decide) (by decide) (by decide) ht)]
       exact ht₁ t ht)
     (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega_arith)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ f₆ => h s₆ ?_ f₆))
   have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₆ i = sv c base s₅ i := fun hi h₁ =>

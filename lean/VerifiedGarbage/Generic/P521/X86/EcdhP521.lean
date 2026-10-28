@@ -84,13 +84,13 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := 
       functions of `p521_mont`) with a final conditional subtraction. The \
       peer's key is checked without branches (its first byte, both coordinates below `p`, and \
       the curve's equation), and the ladder multiplies the peer's point if it is valid, else \
-      `G`, so it always runs on a point of the curve. `[d]P` is a double-and-add ladder over all \
+      `G`, so it always runs on a point of the curve. `[d]P` is a call of `vg_p521_mul`, a double-and-add ladder over all \
       576 bits of the nine words of `d`, with the complete addition formulas of Renes, Costello \
       and Batina and a masked selection for each bit; `Z⁻¹` is Fermat's, by square-and-always-multiply. The \
       result (or zeros) is selected by a mask of the checks, `d` in `[1, n-1]` and `Z ≠ 0`, so \
       the time depends only on the pointers."]
     code := Impl.Ecdh.X86.exchangeP521
-    stack := 20
+    stack := 28
     verified := Proof.Ecdh.X86.P521.ecdh_verified h.law }]
 
 end VG.Generic.P521.X86.EcdhP521

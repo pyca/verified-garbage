@@ -129,14 +129,14 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := 
       functions of `p521_mont`) with a final conditional subtraction; the \
       66-byte encodings are read and written a 32-bit word at a time, the top word's two bytes \
       from the first four or a byte at a time, and the hash's integer is shifted right by its \
-      last 7 bits. `[k]G` is a double-and-add ladder over all 576 bits of the nine words of \
+      last 7 bits. `[k]G` is a call of `vg_p521_mul`, a double-and-add ladder over all 576 bits of the nine words of \
       `k`, with the complete addition formulas of Renes, Costello and Batina for every \
       addition and doubling and a masked selection for each bit; the inversions modulo `p` and \
       `n` are Fermat's, by square-and-always-multiply over the bits of `p - 2` and `n - 2`. \
       The signature (or zeros) is selected by a mask, so the time depends only on the \
       pointers."]
     code := Impl.Ecdsa.X86.signP521
-    stack := 20
+    stack := 28
     verified := Proof.Ecdsa.X86.P521.sign_verified h.law },
   Spec.Ecdsa.P521.verifyApi.artifact X86.target {
     notes := ["The function is `vg_ecdsa_p521_sign`'s setup, \
@@ -149,14 +149,14 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := 
       key is checked without branches (its first byte, both coordinates below `p`, and the \
       curve's equation), and the second ladder multiplies the key's point if it is valid, else \
       `G`, so it always runs on a point of the curve. `s⁻¹` modulo `n` and `Z⁻¹` are Fermat's, \
-      by square-and-always-multiply; `[u]G` and `[v]Q` are double-and-add ladders over all 576 \
+      by square-and-always-multiply; `[u]G` and `[v]Q` are calls of `vg_p521_mul`, double-and-add ladders over all 576 \
       bits of the nine words of `u` and `v`, with the complete addition formulas of Renes, \
       Costello and Batina, which also add the two. The result is the conjunction of the checks \
       (the key, `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `x ≡ r` \
       modulo `n`) as a mask, so the time depends only on the pointers, although the contract \
       would let every input affect it."]
     code := Impl.Ecdsa.Verify.X86.verifyP521
-    stack := 20
+    stack := 28
     verified := Proof.Ecdsa.Verify.X86.P521.verify_verified h.law }]
 
 end VG.Generic.P521.X86.EcdsaP521

@@ -16,8 +16,12 @@ def p384 : Cfg where
   C := Spec.P384.curve
   SP := Spec.Weierstrass.Mont.p384p
   SN := Spec.Weierstrass.Mont.p384n
+  mul := some Spec.Weierstrass.Mul.p384
 
 /-- `vg_ecdsa_p384_sign`. -/
 def signP384 : Prog isa := p384.sign
+
+/-- `vg_p384_mul`. -/
+def mulP384 : Prog isa := p384.mulFn
 
 end VG.Impl.Ecdsa.X86

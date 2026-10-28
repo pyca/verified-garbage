@@ -350,6 +350,9 @@ pub(crate) mod p192_point;
 pub(crate) mod p224_mont;
 
 #[rustfmt::skip]
+pub(crate) mod p224_mul;
+
+#[rustfmt::skip]
 pub(crate) mod p224_point;
 
 #[rustfmt::skip]
@@ -359,10 +362,16 @@ pub(crate) mod p256_mont;
 pub(crate) mod p384_mont;
 
 #[rustfmt::skip]
+pub(crate) mod p384_mul;
+
+#[rustfmt::skip]
 pub(crate) mod p384_point;
 
 #[rustfmt::skip]
 pub(crate) mod p521_mont;
+
+#[rustfmt::skip]
+pub(crate) mod p521_mul;
 
 #[rustfmt::skip]
 pub(crate) mod pbkdf2_md5;

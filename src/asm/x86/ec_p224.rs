@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
 ///
-/// The function is `vg_ecdsa_p224_sign`'s code up to the inversion of `Z`, with `d` as both the key and the secret number: it saves the callee-saved registers `ebx`, `esi`, `edi` and `ebp` in `scratch`; field elements are eight 32-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_p224_mul_mod_p` and the other functions of `p224_mont`) with a final conditional subtraction; `[d]G` is a double-and-add ladder over all 256 bits of `d`, with the complete addition formulas of Renes, Costello and Batina for every addition and doubling (calls of `vg_p224_point_double` and `vg_p224_point_add`) and a masked selection for each bit; and `Z⁻¹` is Fermat's, by square-and-always-multiply over the bits of `p - 2`. The result (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers.
+/// The function is `vg_ecdsa_p224_sign`'s code up to the inversion of `Z`, with `d` as both the key and the secret number: it saves the callee-saved registers `ebx`, `esi`, `edi` and `ebp` in `scratch`; field elements are eight 32-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_p224_mul_mod_p` and the other functions of `p224_mont`) with a final conditional subtraction; `[d]G` is a call of `vg_p224_mul`, a double-and-add ladder over all 256 bits of `d`, with the complete addition formulas of Renes, Costello and Batina for every addition and doubling and a masked selection for each bit; and `Z⁻¹` is Fermat's, by square-and-always-multiply over the bits of `p - 2`. The result (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -490,343 +490,41 @@ mov BYTE PTR [ebx+4623], dl
 test esi, esi
 jne 22b
 mov eax, DWORD PTR [edi+320]
-mov DWORD PTR [edi+3424], eax
-mov eax, DWORD PTR [edi+324]
-mov DWORD PTR [edi+3428], eax
-mov eax, DWORD PTR [edi+328]
-mov DWORD PTR [edi+3432], eax
-mov eax, DWORD PTR [edi+332]
-mov DWORD PTR [edi+3436], eax
-mov eax, DWORD PTR [edi+336]
-mov DWORD PTR [edi+3440], eax
-mov eax, DWORD PTR [edi+340]
-mov DWORD PTR [edi+3444], eax
-mov eax, DWORD PTR [edi+344]
-mov DWORD PTR [edi+3448], eax
-mov eax, DWORD PTR [edi+348]
-mov DWORD PTR [edi+3452], eax
-mov eax, DWORD PTR [edi+352]
-mov DWORD PTR [edi+3456], eax
-mov eax, DWORD PTR [edi+356]
-mov DWORD PTR [edi+3460], eax
-mov eax, DWORD PTR [edi+360]
-mov DWORD PTR [edi+3464], eax
-mov eax, DWORD PTR [edi+364]
-mov DWORD PTR [edi+3468], eax
-mov eax, DWORD PTR [edi+368]
-mov DWORD PTR [edi+3472], eax
-mov eax, DWORD PTR [edi+372]
-mov DWORD PTR [edi+3476], eax
-mov eax, DWORD PTR [edi+376]
-mov DWORD PTR [edi+3480], eax
-mov eax, DWORD PTR [edi+380]
-mov DWORD PTR [edi+3484], eax
-mov eax, DWORD PTR [edi+224]
-mov DWORD PTR [edi+3488], eax
-mov eax, DWORD PTR [edi+228]
-mov DWORD PTR [edi+3492], eax
-mov eax, DWORD PTR [edi+232]
-mov DWORD PTR [edi+3496], eax
-mov eax, DWORD PTR [edi+236]
-mov DWORD PTR [edi+3500], eax
-mov eax, DWORD PTR [edi+240]
-mov DWORD PTR [edi+3504], eax
-mov eax, DWORD PTR [edi+244]
-mov DWORD PTR [edi+3508], eax
-mov eax, DWORD PTR [edi+248]
-mov DWORD PTR [edi+3512], eax
-mov eax, DWORD PTR [edi+252]
-mov DWORD PTR [edi+3516], eax
-mov eax, DWORD PTR [edi+256]
-mov DWORD PTR [edi+3520], eax
-mov eax, DWORD PTR [edi+260]
-mov DWORD PTR [edi+3524], eax
-mov eax, DWORD PTR [edi+264]
-mov DWORD PTR [edi+3528], eax
-mov eax, DWORD PTR [edi+268]
-mov DWORD PTR [edi+3532], eax
-mov eax, DWORD PTR [edi+272]
-mov DWORD PTR [edi+3536], eax
-mov eax, DWORD PTR [edi+276]
-mov DWORD PTR [edi+3540], eax
-mov eax, DWORD PTR [edi+280]
-mov DWORD PTR [edi+3544], eax
-mov eax, DWORD PTR [edi+284]
-mov DWORD PTR [edi+3548], eax
-mov eax, DWORD PTR [edi+288]
-mov DWORD PTR [edi+3552], eax
-mov eax, DWORD PTR [edi+292]
-mov DWORD PTR [edi+3556], eax
-mov eax, DWORD PTR [edi+296]
-mov DWORD PTR [edi+3560], eax
-mov eax, DWORD PTR [edi+300]
-mov DWORD PTR [edi+3564], eax
-mov eax, DWORD PTR [edi+304]
-mov DWORD PTR [edi+3568], eax
-mov eax, DWORD PTR [edi+308]
-mov DWORD PTR [edi+3572], eax
-mov eax, DWORD PTR [edi+312]
-mov DWORD PTR [edi+3576], eax
-mov eax, DWORD PTR [edi+316]
-mov DWORD PTR [edi+3580], eax
-mov esi, 256
-23:
-sub esi, 1
-mov eax, DWORD PTR [edi+512]
-mov DWORD PTR [edi+3328], eax
-mov eax, DWORD PTR [edi+516]
-mov DWORD PTR [edi+3332], eax
-mov eax, DWORD PTR [edi+520]
-mov DWORD PTR [edi+3336], eax
-mov eax, DWORD PTR [edi+524]
-mov DWORD PTR [edi+3340], eax
-mov eax, DWORD PTR [edi+528]
-mov DWORD PTR [edi+3344], eax
-mov eax, DWORD PTR [edi+532]
-mov DWORD PTR [edi+3348], eax
-mov eax, DWORD PTR [edi+536]
-mov DWORD PTR [edi+3352], eax
-mov eax, DWORD PTR [edi+540]
-mov DWORD PTR [edi+3356], eax
-mov eax, DWORD PTR [edi+544]
-mov DWORD PTR [edi+3360], eax
-mov eax, DWORD PTR [edi+548]
-mov DWORD PTR [edi+3364], eax
-mov eax, DWORD PTR [edi+552]
-mov DWORD PTR [edi+3368], eax
-mov eax, DWORD PTR [edi+556]
-mov DWORD PTR [edi+3372], eax
-mov eax, DWORD PTR [edi+560]
-mov DWORD PTR [edi+3376], eax
-mov eax, DWORD PTR [edi+564]
-mov DWORD PTR [edi+3380], eax
-mov eax, DWORD PTR [edi+568]
-mov DWORD PTR [edi+3384], eax
-mov eax, DWORD PTR [edi+572]
-mov DWORD PTR [edi+3388], eax
-mov eax, DWORD PTR [edi+576]
-mov DWORD PTR [edi+3392], eax
-mov eax, DWORD PTR [edi+580]
-mov DWORD PTR [edi+3396], eax
-mov eax, DWORD PTR [edi+584]
-mov DWORD PTR [edi+3400], eax
-mov eax, DWORD PTR [edi+588]
-mov DWORD PTR [edi+3404], eax
-mov eax, DWORD PTR [edi+592]
-mov DWORD PTR [edi+3408], eax
-mov eax, DWORD PTR [edi+596]
-mov DWORD PTR [edi+3412], eax
-mov eax, DWORD PTR [edi+600]
-mov DWORD PTR [edi+3416], eax
-mov eax, DWORD PTR [edi+604]
-mov DWORD PTR [edi+3420], eax
-push edi
-call {vg_p224_point_double}
-pop eax
-mov edi, DWORD PTR [esp+12]
-mov eax, DWORD PTR [edi+3232]
-mov DWORD PTR [edi+3328], eax
-mov eax, DWORD PTR [edi+3236]
-mov DWORD PTR [edi+3332], eax
-mov eax, DWORD PTR [edi+3240]
-mov DWORD PTR [edi+3336], eax
-mov eax, DWORD PTR [edi+3244]
-mov DWORD PTR [edi+3340], eax
-mov eax, DWORD PTR [edi+3248]
-mov DWORD PTR [edi+3344], eax
-mov eax, DWORD PTR [edi+3252]
-mov DWORD PTR [edi+3348], eax
-mov eax, DWORD PTR [edi+3256]
-mov DWORD PTR [edi+3352], eax
-mov eax, DWORD PTR [edi+3260]
-mov DWORD PTR [edi+3356], eax
-mov eax, DWORD PTR [edi+3264]
-mov DWORD PTR [edi+3360], eax
-mov eax, DWORD PTR [edi+3268]
-mov DWORD PTR [edi+3364], eax
-mov eax, DWORD PTR [edi+3272]
-mov DWORD PTR [edi+3368], eax
-mov eax, DWORD PTR [edi+3276]
-mov DWORD PTR [edi+3372], eax
-mov eax, DWORD PTR [edi+3280]
-mov DWORD PTR [edi+3376], eax
-mov eax, DWORD PTR [edi+3284]
-mov DWORD PTR [edi+3380], eax
-mov eax, DWORD PTR [edi+3288]
-mov DWORD PTR [edi+3384], eax
-mov eax, DWORD PTR [edi+3292]
-mov DWORD PTR [edi+3388], eax
-mov eax, DWORD PTR [edi+3296]
-mov DWORD PTR [edi+3392], eax
-mov eax, DWORD PTR [edi+3300]
-mov DWORD PTR [edi+3396], eax
-mov eax, DWORD PTR [edi+3304]
-mov DWORD PTR [edi+3400], eax
-mov eax, DWORD PTR [edi+3308]
-mov DWORD PTR [edi+3404], eax
-mov eax, DWORD PTR [edi+3312]
-mov DWORD PTR [edi+3408], eax
-mov eax, DWORD PTR [edi+3316]
-mov DWORD PTR [edi+3412], eax
-mov eax, DWORD PTR [edi+3320]
-mov DWORD PTR [edi+3416], eax
-mov eax, DWORD PTR [edi+3324]
-mov DWORD PTR [edi+3420], eax
-push edi
-call {vg_p224_point_add}
-pop eax
-mov edi, DWORD PTR [esp+12]
-mov eax, edi
-add eax, esi
-movzx eax, BYTE PTR [eax+4096]
-mov ecx, 0
-sub ecx, eax
-mov eax, DWORD PTR [edi+3328]
-mov edx, DWORD PTR [edi+3232]
-xor edx, eax
-and edx, ecx
-xor eax, edx
 mov DWORD PTR [edi+512], eax
-mov eax, DWORD PTR [edi+3332]
-mov edx, DWORD PTR [edi+3236]
-xor edx, eax
-and edx, ecx
-xor eax, edx
+mov eax, DWORD PTR [edi+324]
 mov DWORD PTR [edi+516], eax
-mov eax, DWORD PTR [edi+3336]
-mov edx, DWORD PTR [edi+3240]
-xor edx, eax
-and edx, ecx
-xor eax, edx
+mov eax, DWORD PTR [edi+328]
 mov DWORD PTR [edi+520], eax
-mov eax, DWORD PTR [edi+3340]
-mov edx, DWORD PTR [edi+3244]
-xor edx, eax
-and edx, ecx
-xor eax, edx
+mov eax, DWORD PTR [edi+332]
 mov DWORD PTR [edi+524], eax
-mov eax, DWORD PTR [edi+3344]
-mov edx, DWORD PTR [edi+3248]
-xor edx, eax
-and edx, ecx
-xor eax, edx
+mov eax, DWORD PTR [edi+336]
 mov DWORD PTR [edi+528], eax
-mov eax, DWORD PTR [edi+3348]
-mov edx, DWORD PTR [edi+3252]
-xor edx, eax
-and edx, ecx
-xor eax, edx
+mov eax, DWORD PTR [edi+340]
 mov DWORD PTR [edi+532], eax
-mov eax, DWORD PTR [edi+3352]
-mov edx, DWORD PTR [edi+3256]
-xor edx, eax
-and edx, ecx
-xor eax, edx
+mov eax, DWORD PTR [edi+344]
 mov DWORD PTR [edi+536], eax
-mov eax, DWORD PTR [edi+3356]
-mov edx, DWORD PTR [edi+3260]
-xor edx, eax
-and edx, ecx
-xor eax, edx
+mov eax, DWORD PTR [edi+348]
 mov DWORD PTR [edi+540], eax
-mov eax, DWORD PTR [edi+3360]
-mov edx, DWORD PTR [edi+3264]
-xor edx, eax
-and edx, ecx
-xor eax, edx
+mov eax, DWORD PTR [edi+352]
 mov DWORD PTR [edi+544], eax
-mov eax, DWORD PTR [edi+3364]
-mov edx, DWORD PTR [edi+3268]
-xor edx, eax
-and edx, ecx
-xor eax, edx
+mov eax, DWORD PTR [edi+356]
 mov DWORD PTR [edi+548], eax
-mov eax, DWORD PTR [edi+3368]
-mov edx, DWORD PTR [edi+3272]
-xor edx, eax
-and edx, ecx
-xor eax, edx
+mov eax, DWORD PTR [edi+360]
 mov DWORD PTR [edi+552], eax
-mov eax, DWORD PTR [edi+3372]
-mov edx, DWORD PTR [edi+3276]
-xor edx, eax
-and edx, ecx
-xor eax, edx
+mov eax, DWORD PTR [edi+364]
 mov DWORD PTR [edi+556], eax
-mov eax, DWORD PTR [edi+3376]
-mov edx, DWORD PTR [edi+3280]
-xor edx, eax
-and edx, ecx
-xor eax, edx
+mov eax, DWORD PTR [edi+368]
 mov DWORD PTR [edi+560], eax
-mov eax, DWORD PTR [edi+3380]
-mov edx, DWORD PTR [edi+3284]
-xor edx, eax
-and edx, ecx
-xor eax, edx
+mov eax, DWORD PTR [edi+372]
 mov DWORD PTR [edi+564], eax
-mov eax, DWORD PTR [edi+3384]
-mov edx, DWORD PTR [edi+3288]
-xor edx, eax
-and edx, ecx
-xor eax, edx
+mov eax, DWORD PTR [edi+376]
 mov DWORD PTR [edi+568], eax
-mov eax, DWORD PTR [edi+3388]
-mov edx, DWORD PTR [edi+3292]
-xor edx, eax
-and edx, ecx
-xor eax, edx
+mov eax, DWORD PTR [edi+380]
 mov DWORD PTR [edi+572], eax
-mov eax, DWORD PTR [edi+3392]
-mov edx, DWORD PTR [edi+3296]
-xor edx, eax
-and edx, ecx
-xor eax, edx
-mov DWORD PTR [edi+576], eax
-mov eax, DWORD PTR [edi+3396]
-mov edx, DWORD PTR [edi+3300]
-xor edx, eax
-and edx, ecx
-xor eax, edx
-mov DWORD PTR [edi+580], eax
-mov eax, DWORD PTR [edi+3400]
-mov edx, DWORD PTR [edi+3304]
-xor edx, eax
-and edx, ecx
-xor eax, edx
-mov DWORD PTR [edi+584], eax
-mov eax, DWORD PTR [edi+3404]
-mov edx, DWORD PTR [edi+3308]
-xor edx, eax
-and edx, ecx
-xor eax, edx
-mov DWORD PTR [edi+588], eax
-mov eax, DWORD PTR [edi+3408]
-mov edx, DWORD PTR [edi+3312]
-xor edx, eax
-and edx, ecx
-xor eax, edx
-mov DWORD PTR [edi+592], eax
-mov eax, DWORD PTR [edi+3412]
-mov edx, DWORD PTR [edi+3316]
-xor edx, eax
-and edx, ecx
-xor eax, edx
-mov DWORD PTR [edi+596], eax
-mov eax, DWORD PTR [edi+3416]
-mov edx, DWORD PTR [edi+3320]
-xor edx, eax
-and edx, ecx
-xor eax, edx
-mov DWORD PTR [edi+600], eax
-mov eax, DWORD PTR [edi+3420]
-mov edx, DWORD PTR [edi+3324]
-xor edx, eax
-and edx, ecx
-xor eax, edx
-mov DWORD PTR [edi+604], eax
-test esi, esi
-jne 23b
+push edi
+call {vg_p224_mul}
+pop eax
+mov edi, DWORD PTR [esp+12]
 mov eax, DWORD PTR [edi+224]
 mov DWORD PTR [edi+992], eax
 mov eax, DWORD PTR [edi+228]
@@ -844,7 +542,7 @@ mov DWORD PTR [edi+1016], eax
 mov eax, DWORD PTR [edi+252]
 mov DWORD PTR [edi+1020], eax
 mov esi, 256
-24:
+23:
 sub esi, 1
 mov eax, 992
 mov ecx, 992
@@ -924,7 +622,7 @@ and edx, ecx
 xor eax, edx
 mov DWORD PTR [edi+1020], eax
 test esi, esi
-jne 24b
+jne 23b
 mov eax, 992
 mov ecx, 512
 mov edx, 1152
@@ -1090,8 +788,7 @@ mov ebp, DWORD PTR [edx+12]
 mov edi, DWORD PTR [edx+8]
 ret
 .p2align 6",
-        vg_p224_point_double = sym super::p224_point::vg_p224_point_double,
-        vg_p224_point_add = sym super::p224_point::vg_p224_point_add,
+        vg_p224_mul = sym super::p224_mul::vg_p224_mul,
         vg_p224_mul_mod_p = sym super::p224_mont::vg_p224_mul_mod_p,
     )
 }

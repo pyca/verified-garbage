@@ -79,9 +79,10 @@ abbrev _root_.VG.Impl.Ecdsa.X86.Cfg.wk (c : Cfg) : Nat := Mont.own c.n
 calls' 20 (the arguments and the return address; a fixed-base comb's
 four-byte frame, which reads the table's address, holds no call), or 28
 where the ladder calls the point functions (coordinates of at most 6
-words, without a comb): their argument and return address, and their own
-calls' 20. -/
-abbrev _root_.VG.Impl.Ecdsa.X86.Cfg.stk (c : Cfg) : Nat := if c.comb.isNone ∧ c.n ≤ 6 then 28 else 20
+words, without a comb), or the code calls `vg_<curve>_mul` (`Cfg.mul`):
+their argument and return address, and their own calls' 20. -/
+abbrev _root_.VG.Impl.Ecdsa.X86.Cfg.stk (c : Cfg) : Nat :=
+  if c.comb.isNone ∧ (c.n ≤ 6 ∨ c.mul.isSome) then 28 else 20
 
 theorem Cfg.stk_ge (c : Cfg) : 20 ≤ c.stk := by
   unfold Cfg.stk; split <;> omega_arith
@@ -89,9 +90,13 @@ theorem Cfg.stk_ge (c : Cfg) : 20 ≤ c.stk := by
 theorem Cfg.stk_le (c : Cfg) : c.stk ≤ 28 := by
   unfold Cfg.stk; split <;> omega_arith
 
-theorem Cfg.stk_28 {c : Cfg} (hc : c.comb = none) (h6 : c.n ≤ 6) : 28 ≤ c.stk := by
-  have h : c.comb.isNone ∧ c.n ≤ 6 := ⟨by rw [hc]; rfl, h6⟩
-  unfold Cfg.stk; simp only [h, and_self, ↓reduceIte, Nat.le_refl]
+theorem Cfg.stk_28 {c : Cfg} (hc : c.comb = none) (h6 : c.n ≤ 6 ∨ c.mul.isSome) : 28 ≤ c.stk := by
+  have h : c.comb.isNone ∧ (c.n ≤ 6 ∨ c.mul.isSome) := ⟨by rw [hc]; rfl, h6⟩
+  unfold Cfg.stk; rw [ite_eq_left h]
+
+/-- The stack of `qMul`'s calls. -/
+theorem Cfg.stk_28q {c : Cfg} (hc : c.comb = none) (h : c.mul.isSome ∨ 3 ≤ c.n ∧ c.n ≤ 6) : 28 ≤ c.stk :=
+  Cfg.stk_28 hc (h.elim .inr fun h => .inl h.2)
 
 /-- Finds `c.n < 10` among the hypotheses, or in `CfgOk c`. -/
 tactic_template "n10" : tactic => `(tactic| first | with_reducible assumption | exact CfgOk.n10 (by with_reducible assumption))

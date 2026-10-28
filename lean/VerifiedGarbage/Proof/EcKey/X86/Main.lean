@@ -295,12 +295,12 @@ theorem PkKeep.ret {s₀ s' : State} {extra : List Region} (hp : PkPre c s₀ ex
 theorem publicKey_eq' (c : Cfg) : Impl.EcKey.X86.Cfg.publicKey c =
     .seq (.seq (.block (c.setupWith Args.publicKey)) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
       (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
-      (.seq (Point.ladderP c.ladderCfg c.SP Args.publicKey.ao) (.seq c.pPow (.block [])))))))
+      (.seq (c.gen Args.publicKey.ao) (.seq c.pPow (.block [])))))))
       (Impl.EcKey.X86.Cfg.middle c) := rfl
 
 /-- The stack the parts of `publicKey` use. -/
 structure PkSp (c : Cfg) : Prop where
-  ladder : SpOk (Point.ladderP c.ladderCfg c.SP Args.publicKey.ao) c.stk
+  ladder : SpOk (c.gen Args.publicKey.ao) c.stk
   pPow : SpOk c.pPow c.stk
   ops : SpOk (pkOps c) c.stk
 

@@ -160,17 +160,27 @@ def projectiveFinal : Prog isa :=
     (.seq (Mont.mulCall c.SP (c.sl XM) (c.sl K) (c.sl XM))
       (fprog c.SP (projectiveOps c.sl)))) (.block (projectiveChecks c))
 
-/-- P-256 compares projective coordinates directly; the other curves retain
-an affine conversion until the direct path has been benchmarked for them. -/
+/-- P-256 compares projective coordinates directly (it reads `r` from `K`'s
+slot, which `vg_<curve>_mul`'s scalar replaces: so only for a curve without
+it, `Cfg.mul`); the other curves retain an affine conversion until the
+direct path has been benchmarked for them. -/
 def tail : Prog isa :=
-  if c.C.len = 32 ∧ c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n then projectiveFinal c
+  if c.mul.isNone ∧ c.C.len = 32 ∧ c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n then projectiveFinal c
   else .seq c.pPow (final c)
 
-/-- `[u]G + [v]Q`, into `R`, from the tables of bits of `u` and `v`. -/
+/-- The scalar at slot `i` to where the multiplications read it: `K`'s slot,
+for `vg_<curve>_mul` (`Cfg.mul`; `r`, there, is not read again), else the
+table of its bits. -/
+def scalarAt (i : Nat) : Prog isa :=
+  match c.mul with
+  | some _ => .block (copy (2 * c.n) (c.sl K) (c.sl i))
+  | none => bits (c.sl i) (bitsAt c.n 0) (8 * c.n)
+
+/-- `[u]G + [v]Q`, into `R`. -/
 def points : Prog isa :=
-  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (Point.ladderP c.ladderCfg c.SP Args.verify.ao) <|
-  .seq (.block (save c)) <| .seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n)) <|
-  .seq (Point.ladderP (Impl.Ecdh.X86.Cfg.ladderQ c) c.SP Args.verify.ao) (sum c)
+  .seq (scalarAt c U) <| .seq (c.gen Args.verify.ao) <|
+  .seq (.block (save c)) <| .seq (scalarAt c V) <|
+  .seq (c.qMul Impl.Ecdh.X86.PX Impl.Ecdh.X86.PY Args.verify.ao) (sum c)
 
 /-- Shared variable-base window layout. -/
 def windowQ : WinCfg := Impl.Ecdh.X86.Cfg.windowCfg c

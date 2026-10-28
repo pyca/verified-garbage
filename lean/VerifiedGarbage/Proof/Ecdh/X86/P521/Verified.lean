@@ -68,7 +68,7 @@ theorem post_of {s s' : State} (h : EPost p521 s s') : ecdhX86.post s s' := by
         ((arg s 2).setWidth 64) from rfl, hq]
   rcases q with _ | z <;> exact id
 
-/-- No instruction writes `esp`, and the calls use 20 bytes of stack. -/
+/-- No instruction writes `esp`, and the calls use 28 bytes of stack. -/
 theorem ecdh_sp : SpOk exchangeP521 p521.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.P521.curve) (s : State) (hs : ecdhX86.pre s) :
@@ -89,7 +89,7 @@ holding `out` and `scratch` known to be the base addresses of the writable
 regions. -/
 def τ₀ : VG.X86.Taint.T :=
   { regs := .ofList [.esp], flags := false, lens := [66, 8192], argLen := 20, argBases := [(4, 0), (16, 1)],
-    room := 20 }
+    room := 28 }
 
 theorem wf₀ {s : State} (hp : EPre p521 s) : VG.X86.Taint.Wf τ₀ s := by
   have hsc := hp.sc_fit; have ho := hp.out_fit; have hs := hp.sp_fit
@@ -143,7 +143,7 @@ analysing its body again in full; the summary analyses it once. -/
 def τMul : VG.X86.Taint.T :=
   { regs := ⟨215⟩, flags := false, lens := [16, 66, 8192], bases := [(.edi, 2, 0), (.esp, 0, 4)],
     slots := [(0, 12, 4), (0, 8, 4), (0, 4, 4), (0, 0, 4)], wbases := [(0, 0, 2)], argLen := 20,
-    argBases := [(4, 1), (16, 2)], stk := [none, some 16], room := 20 }
+    argBases := [(4, 1), (16, 2)], stk := [none, some 16], room := 28 }
 
 taint_summary mulSum : taint τMul (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p521p.k Spec.Weierstrass.Mont.p521p.m)
 
@@ -162,13 +162,13 @@ def ecdhWide : Contract isa :=
     let scratch : Region := ⟨(arg s 3).setWidth 64, 8192⟩
     let args : Region := ⟨argAddr s 0, 16⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 20, 20⟩
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 28, 28⟩
     s.rd = [d, peer] ∧ s.wr = [out, scratch, args] ∧ out.Disjoint scratch ∧ out.Disjoint d ∧
       out.Disjoint peer ∧ d.Disjoint scratch ∧ peer.Disjoint scratch ∧
       args.Disjoint out ∧ args.Disjoint scratch ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧
       (arg s 0).toNat + 66 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 66 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 133 ≤ 2 ^ 32 ∧
       (arg s 3).toNat + 8192 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
-      20 ≤ (s.gpr .esp).toNat ∧ stack.Disjoint out ∧ stack.Disjoint scratch }
+      28 ≤ (s.gpr .esp).toNat ∧ stack.Disjoint out ∧ stack.Disjoint scratch }
 
 def ecdhRd (s : State) : List Region :=
   [⟨(arg s 1).setWidth 64, 66⟩, ⟨(arg s 2).setWidth 64, 133⟩, ⟨argAddr s 0, 16⟩]
@@ -198,7 +198,7 @@ def satState : State where
   wr := [⟨0x1000, 66⟩, ⟨0x8000, 8192⟩, ⟨0x20004, 16⟩]
 
 theorem ecdhWide_implies :
-    ecdhWide.Implies (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst X86.abi 20) := by
+    ecdhWide.Implies (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst X86.abi 28) := by
   have a0 : arg satState 0 = 0x1000 := by decide
   have a1 : arg satState 1 = 0x2000 := by decide
   have a2 : arg satState 2 = 0x3000 := by decide
@@ -210,7 +210,7 @@ theorem ecdhWide_implies :
     ecdhX86, ex] [a0, a1, a2, a3, e, esp] using satState
 
 theorem ecdh_verified (hL : Weierstrass.Law Spec.P521.curve) :
-    Verified X86.target exchangeP521 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst X86.abi 20) := by
+    Verified X86.target exchangeP521 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst X86.abi 28) := by
   have hsat := ecdhWide_implies.sat_left
   have satLocal : ∃ s, ecdhX86.pre s := hsat.elim fun s h => ⟨_, ecdhWide_pre s h⟩
   have verifiedLocal : Verified X86.target exchangeP521 ecdhX86 :=
