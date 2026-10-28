@@ -16,6 +16,7 @@ structure EntryInput (E : Environment) (p : BitVec 32) (s : State) : Prop where
   arguments : KeyArgs.Entry E.base E.size p E.argument s
   outWrite : ∀ i < 7, InRegions s.wr (E.outputRegion i).base (E.outputRegion i).len
   exponentRead : InRegions (s.rd ++ s.wr) E.exponentRegion.base E.exponentRegion.len
+  argsOutput : ∀ i < 7, (KeyArgs.argsRegion p).Disjoint (E.outputRegion i)
 
 def bodyClob : List Reg := [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi]
 

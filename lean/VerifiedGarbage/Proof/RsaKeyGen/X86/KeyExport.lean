@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyFields
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutputContext
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyWritePort
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyWriteOutputs
@@ -25,10 +26,15 @@ def WrittenCore (g : OutputGeometry) (e p q : Nat) (t : State) : Prop :=
   | .inl (.error _) => (t.gpr .eax).toNat = 0 ∧
       ∀ i, i < 7 → Spec.Rsa.bytesAt t.mem (g.region i).base (g.region i).len = List.replicate (g.length i) 0
 
-theorem writeCore_ok {g : OutputGeometry} {s : State} {e p q : Nat} (h : OutputInput g s)
+/-- Any code that writes the masked outputs and returns the status writes the specified key. -/
+theorem writeCore_of {g : OutputGeometry} {c : Prog isa} {s : State} {e p q : Nat} {R : State → Prop}
+    (run : ∀ accept, slot s.mem g.base kOk = (if accept then 1 else 0) → WP isa c s fun t =>
+      R t ∧ (t.gpr .eax).toNat = slot s.mem g.base kStatus ∧
+      (∀ i, i < 7 → Spec.Rsa.bytesAt t.mem (g.region i).base (g.region i).len = portResult g s.mem accept i) ∧
+      Frame g.writes s.mem t.mem ∧ Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t)
     (result : CoreOutcome g.base g.n e p q s.mem) :
-    WP isa (writeOutputs g.n) s fun t =>
-      Ws t g.base g.size g.n 32 ∧ WrittenCore g e p q t ∧ Frame g.writes s.mem t.mem ∧
+    WP isa c s fun t =>
+      R t ∧ WrittenCore g e p q t ∧ Frame g.writes s.mem t.mem ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
   unfold CoreOutcome at result
   cases code : Spec.RsaKeyGen.keyFromPrimes (32 * g.n) e p q with
@@ -36,7 +42,7 @@ theorem writeCore_ok {g : OutputGeometry} {s : State} {e p q : Nat} (h : OutputI
     cases u
     rw [code] at result
     obtain ⟨status, mask⟩ := result
-    refine WP.mono (writeOutputs_ok h false mask) fun t ⟨ht, ret, values, F, K⟩ => ?_
+    refine WP.mono (run false mask) fun t ⟨ht, ret, values, F, K⟩ => ?_
     refine ⟨ht, ?_, F, K⟩
     unfold WrittenCore
     rw [code]
@@ -48,7 +54,7 @@ theorem writeCore_ok {g : OutputGeometry} {s : State} {e p q : Nat} (h : OutputI
     | error failure =>
       rw [code] at result
       obtain ⟨status, mask⟩ := result
-      refine WP.mono (writeOutputs_ok h false mask) fun t ⟨ht, ret, values, F, K⟩ => ?_
+      refine WP.mono (run false mask) fun t ⟨ht, ret, values, F, K⟩ => ?_
       refine ⟨ht, ?_, F, K⟩
       unfold WrittenCore
       rw [code]
@@ -58,7 +64,7 @@ theorem writeCore_ok {g : OutputGeometry} {s : State} {e p q : Nat} (h : OutputI
     | ok key =>
       rw [code] at result
       obtain ⟨status, mask, assembled⟩ := result
-      refine WP.mono (writeOutputs_ok h true mask) fun t ⟨ht, ret, values, F, K⟩ => ?_
+      refine WP.mono (run true mask) fun t ⟨ht, ret, values, F, K⟩ => ?_
       refine ⟨ht, ?_, F, K⟩
       unfold WrittenCore
       rw [code]
@@ -70,5 +76,12 @@ theorem writeCore_ok {g : OutputGeometry} {s : State} {e p q : Nat} (h : OutputI
       rw [VG.Proof.RsaKeyGen.i2osp_mod] at value
       rw [assembled_field _ _ _ hi, assembled] at value
       exact value
+
+theorem writeCore_ok {g : OutputGeometry} {s : State} {e p q : Nat} (h : OutputInput g s)
+    (result : CoreOutcome g.base g.n e p q s.mem) :
+    WP isa (writeOutputs g.n) s fun t =>
+      Ws t g.base g.size g.n 32 ∧ WrittenCore g e p q t ∧ Frame g.writes s.mem t.mem ∧
+      Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t :=
+  writeCore_of (fun accept mask => writeOutputs_ok h accept mask) result
 
 end VG.Proof.RsaKeyGen.X86.Key

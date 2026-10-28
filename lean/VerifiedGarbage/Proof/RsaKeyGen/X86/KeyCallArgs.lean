@@ -94,7 +94,7 @@ theorem entry_input {s : State} (h : contract.pre s) :
     EntryInput (callEnvironment s) (callSp s) (Compact.entered s) := by
   have A := call_layout h
   have Z := call_sizes h
-  refine ⟨entry_arguments h, ?_, ?_⟩
+  refine ⟨entry_arguments h, ?_, ?_, ?_⟩
   · intro i hi
     rw [Z.outputRegion hi]
     exact ⟨callOutput s i, List.mem_cons_of_mem _ (A.outputMember hi), Region.contains_self _ _⟩
@@ -102,5 +102,8 @@ theorem entry_input {s : State} (h : contract.pre s) :
     change callExponent s ∈ s.rd
     rw [A.rd]
     exact List.mem_singleton_self _
+  · intro i hi
+    rw [call_args_region, Z.outputRegion hi]
+    exact (call_separation h).argsOutput i hi
 
 end VG.Proof.RsaKeyGen.X86.Key

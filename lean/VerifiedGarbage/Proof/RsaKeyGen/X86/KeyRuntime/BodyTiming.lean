@@ -33,7 +33,7 @@ theorem body_trace (E : Environment) (valid : E.Valid) (sp : BitVec 32) (e p q p
       (VG.X86.Taint.Agree (τr [.esp])) := by
   intro s t tr ur u v P A C
   have raw := RelCT.seq (enterInput_trace E valid sp e p q p' q')
-    (front_trace E valid sp e p q p' q' release)
+    (front_trace E sp e p q p' q' P.left.argsOutput release)
   refine ⟨(raw _ _ _ _ _ _ P A C).1, agree_regs ?_⟩
   intro r hr
   obtain rfl := List.mem_singleton.mp hr

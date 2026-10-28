@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.Key
 
 The cdecl length arguments select the modulus, prime and exponent widths.
 Division and inversion share one set of word loops across all supported
-widths. The output keeps its established fixed-offset adapters.
+widths, and so do the input and output.
 The four-word correction bank is fixed.
 -/
 
@@ -136,12 +136,6 @@ def oddFlag (input : Nat) : List Instr :=
 /-- Select a valid odd inverse modulus, recording whether the input qualified. -/
 def oddModulus (input out : Nat) : Prog isa := seqs [
   cn aT1 3, sub aT2 input aT1, .block (oddFlag input), sel out aT1 input kFlag]
-
-/-- Small width-specific I/O adapters surround one runtime arithmetic core. -/
-def dispatchIO (part : Nat → Prog isa) : List Nat → Prog isa
-  | [] => .block [.mov .eax (.imm 0)]
-  | w :: rest => .seq (.block [.alu .cmp .eax (.imm (BitVec.ofNat 32 w))])
-      (.ite .e (part (4 * w)) (dispatchIO part rest))
 
 /-- The header word holding a product row's multiplier. -/
 def multSlot : Nat := 128
@@ -323,11 +317,30 @@ def loadExponent : Prog isa := seqs [
 /-- The inputs at the run-time width. -/
 def loadInputs : Prog isa := seqs [clearInputs, loadPrime 4 aPa, loadPrime 6 aQa, loadExponent]
 
-def selectIO (part : Nat → Prog isa) : Prog isa :=
-  .seq (.block [.mov .eax (.mem (sc 4)), .shift .shr .eax 4]) (dispatchIO part widths)
+/-- Array `j` zeroed unless the key was accepted, then `ebx` and `ecx` the pointer and length
+at arguments `pointer` and `length`, and `esi` the array's last byte to store. -/
+def arraySetup (j pointer length : Nat) : Prog isa :=
+  .seq (sel j aZero j VG.Impl.RsaKeyGen.X86.Key.kOk)
+    (.block ([.mov .ebx (.mem (argument pointer)), .mov .ecx (.mem (argument length))] ++
+      ptr (arr j) .esi .edx ++ [.alu .add .esi (.reg .ecx), .alu .sub .esi (.imm 1)]))
 
-def front : Prog isa := .seq loadInputs
-  (.seq deriveLoaded (selectIO VG.Impl.RsaKeyGen.X86.Key.writeOutputs))
+/-- Array `j`, or zero unless the key was accepted, stored big-endian through the pointer and
+length at arguments `pointer` and `length`. -/
+def writeArray (j pointer length : Nat) : Prog isa :=
+  .seq (arraySetup j pointer length) VG.Impl.Bignum.X86.reverseBytes
+
+def writePort (i : Nat) : Prog isa :=
+  writeArray (VG.Impl.RsaKeyGen.X86.Key.outputIndex i) (2 * i) (2 * i + 1)
+
+def writePorts : Nat → Nat → Prog isa
+  | _, 0 => .block []
+  | i, count + 1 => .seq (writePort i) (writePorts (i + 1) count)
+
+/-- The zero array rebuilt, the seven outputs, and the status. -/
+def writeOutputs : Prog isa := seqs [zero .modulus (arr aZero), writePorts 0 7,
+  .block [.mov .eax (.mem (sc VG.Impl.RsaKeyGen.X86.Key.kStatus))]]
+
+def front : Prog isa := .seq loadInputs (.seq deriveLoaded writeOutputs)
 
 def body : Prog isa := .seq VG.Impl.RsaKeyGen.X86.Key.enter front
 

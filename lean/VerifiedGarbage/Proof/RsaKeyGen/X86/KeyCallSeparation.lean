@@ -17,6 +17,7 @@ structure CallSeparation (s : State) : Prop where
   exponentScratch : (callExponent s).Disjoint (callWorkspace s)
   exponentOutput : ∀ i < 7, (callExponent s).Disjoint (callOutput s i)
   argsWorkspace : (callArguments s).Disjoint (callWorkspace s)
+  argsOutput : ∀ i < 7, (callArguments s).Disjoint (callOutput s i)
   stackOutput : ∀ i < 7, (callOutput s i).Disjoint (reservedRegion s)
   stackWorkspace : (callWorkspace s).Disjoint (reservedRegion s)
   stackExponent : (callExponent s).Disjoint (reservedRegion s)
@@ -41,6 +42,9 @@ theorem call_separation {s : State} (h : contract.pre s) : CallSeparation s := b
     interval_cases i
     all_goals first | with_reducible assumption | exact Region.Disjoint.symm (by with_reducible assumption)
   · first | with_reducible assumption | exact Region.Disjoint.symm (by with_reducible assumption)
+  · intro i hi
+    interval_cases i
+    all_goals first | with_reducible assumption | exact Region.Disjoint.symm (by with_reducible assumption)
   · intro i hi
     interval_cases i
     all_goals first | with_reducible assumption | exact Region.Disjoint.symm (by with_reducible assumption)

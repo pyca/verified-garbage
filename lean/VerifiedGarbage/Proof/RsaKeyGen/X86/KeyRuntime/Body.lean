@@ -47,7 +47,7 @@ theorem body_ok {E : Environment} {p : BitVec 32} {s : State} (v : E.Valid) (I :
       Frame E.outputs.writes s.mem t.mem ∧ Keeps bodyClob s t := by
   unfold VG.Impl.RsaKeyGen.X86.KeyRuntime.body
   refine WP.seq (WP.mono (enter_input_ok v I) fun a ⟨Ia, Ha, F, K, Ca⟩ => ?_)
-  refine WP.mono (front_ok Ia Ha Ca) fun t ⟨ht, result, Ft, Kt⟩ => ?_
+  refine WP.mono (front_ok Ia Ha Ca I.argsOutput) fun t ⟨ht, result, Ft, Kt⟩ => ?_
   unfold BodyOutcome at result
   rw [Ia.exponent_preserved F, Ia.output_preserved (by decide : 2 < 7) F,
     Ia.output_preserved (by decide : 3 < 7) F] at result
