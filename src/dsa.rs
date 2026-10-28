@@ -285,7 +285,14 @@ impl PrivateKey {
         })
     }
 
-    fn sign_with_rng(
+    /// [`sign`](Self::sign), with its nonces drawn from `random` instead of
+    /// the operating system.
+    ///
+    /// Not part of the API: it lets benchmarks compare implementations on
+    /// identical work, from fixed tapes. The signature is secure only if
+    /// `random` supplies uniformly random bytes, never reused.
+    #[doc(hidden)]
+    pub fn sign_with_rng(
         &self,
         digest: &[u8],
         mut random: impl FnMut(&mut [u8]) -> Result<(), Error>,

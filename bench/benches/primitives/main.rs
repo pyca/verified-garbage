@@ -195,6 +195,23 @@ impl std::ops::DerefMut for InPlace {
     }
 }
 
+/// A fixed stream of bytes (xorshift64 from `seed`), which benchmarks give
+/// verified-garbage in place of the operating system's random bytes: every
+/// iteration, and the base and head of a comparison, then do the same work,
+/// so the timing compares implementations rather than what the random draws
+/// happened to need. Make a new tape in each iteration.
+pub(crate) fn fixed_tape(seed: u64) -> impl FnMut(&mut [u8]) {
+    let mut x = 0x9E37_79B9_7F4A_7C15 ^ seed;
+    move |buf| {
+        for b in buf {
+            x ^= x << 13;
+            x ^= x >> 7;
+            x ^= x << 17;
+            *b = x as u8;
+        }
+    }
+}
+
 const VG: &str = "verified-garbage";
 const OPENSSL: &str = "openssl";
 const AWS_LC: &str = "aws-lc-rs";
