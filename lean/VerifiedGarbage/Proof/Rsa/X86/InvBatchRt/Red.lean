@@ -42,6 +42,18 @@ theorem Bx.keepLow {s t : State} (h : Bx L s B Z len N) {rs : List Reg} (K : Kee
   · rw [O.w32 (.inr (by omega)) (by omega)]
     exact h.slots.half
 
+/-- Writes to the header above the slots keep the context. -/
+theorem Bx.keepHigh {s t : State} (h : Bx L s B Z len N) {rs : List Reg} (K : Keeps rs s t)
+    (edi : .edi ∉ rs) (esp : .esp ∉ rs) {o c : Nat} (O : Outside B o c s.mem t.mem)
+    (ho : halfSlot + 4 ≤ o) (hc : o + c ≤ Z) : Bx L t B Z len N := by
+  have nw := h.nowrap
+  refine ⟨h.ws.keep K edi esp (O.mono (Nat.zero_le _) (by omega)), ⟨fun j d hd => ?_, ?_, h.slots.small⟩, h.room⟩
+  · have := slot_le hd
+    rw [O.w32 (.inl (by omega)) (by omega)]
+    exact h.slots.addr j d hd
+  · rw [O.w32 (.inl (by omega)) (by omega)]
+    exact h.slots.half
+
 theorem rv_half (w : Nat) (x : Ref) (hx : x.half = 0) (d : Nat) :
     rv w { x with half := 1, byte := x.byte + d } = rv w x + 2 * w + d := by
   simp only [rv, hx]; omega
