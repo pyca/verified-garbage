@@ -49,12 +49,13 @@ structure Ref where
 variable (L : Lay)
 
 /-- `r` at a `Ref`, through `t`: the array's address from its header word if it is cached, else
-`KeyRt.arrPtr`; then `4 n` bytes `half` times, then `byte`. -/
+`KeyRt.arrPtr`; then `4 n` bytes `half` times (read into `t` first: an addition from memory would make
+`r` secret to the constant-time analysis), then `byte`. -/
 def ptr (r : Reg) (x : Ref) (t : Reg) : List Instr :=
   (match slot x.arr with
     | some d => [.mov r (.mem (sc d))]
     | none => arrPtr L r x.arr t) ++
-    List.replicate x.half (.alu .add r (.mem (sc halfSlot))) ++
+    (if x.half = 0 then [] else .mov t (.mem (sc halfSlot)) :: List.replicate x.half (.alu .add r (.reg t))) ++
     (if x.byte = 0 then [] else [.alu .add r (.imm (BitVec.ofNat 32 x.byte))])
 
 /-- `r = 4 (n + e)`, the bytes of `n + e` words. -/

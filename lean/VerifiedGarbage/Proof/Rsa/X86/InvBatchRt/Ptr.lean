@@ -47,26 +47,25 @@ theorem slot_le {j d : Nat} (h : slot j = some d) : slotBase ≤ d ∧ d + 4 ≤
 
 variable {L : Lay} {B : Addr} {Z len N w : Nat} {is : List Instr} {s : State} {Q : State → Prop}
 
-/-- `r += c`, `j` times, for the word `c` at `halfSlot`. -/
-theorem addsHalf_ok {r : Reg} {c : Nat} (hr : r ≠ .edi) (hrs : r ≠ .esp) (hz : halfSlot + 4 ≤ Z) (j : Nat) :
-    ∀ {s : State}, Scr s B Z → s.mem.readW (off B halfSlot) 32 = BitVec.ofNat 32 c →
-    (∀ u, Keeps [r] s u → u.mem = s.mem → u.gpr r = s.gpr r + BitVec.ofNat 32 (j * c) →
+/-- `r += t`, `j` times. -/
+theorem addsReg_ok {r t : Reg} (hrt : r ≠ t) (j : Nat) :
+    ∀ {s : State}, (∀ u, Keeps [r] s u → u.mem = s.mem → u.gpr r = s.gpr r + BitVec.ofNat 32 (j * (s.gpr t).toNat) →
       WP isa (.block is) u Q) →
-    WP isa (.block (List.replicate j (.alu .add r (.mem (sc halfSlot))) ++ is)) s Q := by
+    WP isa (.block (List.replicate j (.alu .add r (.reg t)) ++ is)) s Q := by
   induction j with
-  | zero => intro s _ _ k; exact k s (Keeps.refl _ _) rfl (by simp)
+  | zero => intro s k; exact k s (Keeps.refl _ _) rfl (by simp)
   | succ j ih =>
-    intro s hs hc k
+    intro s k
     rw [List.replicate_succ, List.cons_append]
-    refine wp_addS (readSrc_sc hs hz) fun s₁ U₁ _ => ?_
-    refine ih (hs.of_keeps U₁.keeps (by simpa using Ne.symm hr) (by simpa using Ne.symm hrs))
-      (by rw [U₁.mem]; exact hc) fun u K m e => k u (U₁.keeps.trans K) (m.trans U₁.mem) ?_
-    rw [e, U₁.gpr, hc, BitVec.add_assoc]
+    refine wp_addS rfl fun s₁ U₁ _ => ?_
+    have et : s₁.gpr t = s.gpr t := U₁.other _ (Ne.symm hrt)
+    refine ih fun u K m e => k u (U₁.keeps.trans K) (m.trans U₁.mem) ?_
+    rw [e, U₁.gpr, et, BitVec.add_assoc]
     congr 1
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
     rw [Nat.succ_mul]
-    generalize j * c = J
+    generalize j * (s.gpr t).toNat = J
     omega
 
 /-- `ptr r x t`: `r` at `x` (`r` may be `edi` only for a `Ref` with no `n`-word steps). -/
@@ -100,18 +99,24 @@ theorem ptr_ok {r t : Reg} {x : Ref} (h : RtWs L s B Z len N) (hsl : Slots s.mem
   -- The `n`-word steps.
   have half : ∀ {is' : List Instr} {Q' : State → Prop}, (∀ u, Keeps [r, t] s u → u.mem = s.mem →
       PtrAt u B r (arr (kw len) x.arr + x.half * (2 * kw len)) → WP isa (.block is') u Q') →
-      WP isa (.block (List.replicate x.half (.alu .add r (.mem (sc halfSlot))) ++ is')) v Q' := by
+      WP isa (.block ((if x.half = 0 then [] else .mov t (.mem (sc halfSlot)) ::
+        List.replicate x.half (.alu .add r (.reg t))) ++ is')) v Q' := by
     intro is' Q' k'
     by_cases h0 : x.half = 0
-    · rw [h0, List.replicate_zero, List.nil_append]
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true h0), List.nil_append]
       exact k' v V mv (by rw [h0, Nat.zero_mul, Nat.add_zero]; exact pv)
-    · have hr : r ≠ .edi := fun e => h0 (hre e)
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false h0), List.cons_append]
       have hsv : Scr v B Z := hs.of_keeps V
-        (by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact fun e => e.elim (fun e => hr e.symm) (fun e => hte e.symm))
+        (by simp only [List.mem_cons, List.not_mem_nil, or_false]
+            exact fun e => e.elim (fun e => (fun e' => h0 (hre e')) e.symm) (fun e => hte e.symm))
         (by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact fun e => e.elim (fun e => hrs e.symm) (fun e => hts e.symm))
-      refine addsHalf_ok hr hrs hz x.half hsv (by rw [mv]; exact hsl.halfW) fun u U mu eu =>
-        k' u (V.trans (U.mono (by simp))) (mu.trans mv) ?_
-      rw [PtrAt, eu, BitVec.toNat_add, pv, BitVec.toNat_ofNat]
+      refine wp_movS (readSrc_sc hsv hz) fun v₁ V₁ _ => ?_
+      have tv : (v₁.gpr t).toNat = 2 * kw len := by
+        rw [V₁.gpr, mv, hsl.halfW, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hsl.small]
+      have pv₁ : PtrAt v₁ B r (arr (kw len) x.arr) := by rw [PtrAt, V₁.other _ hrt]; exact pv
+      refine addsReg_ok hrt x.half fun u U mu eu =>
+        k' u (V.trans ((V₁.keeps.mono (by simp)).trans (U.mono (by simp)))) (by rw [mu, V₁.mem, mv]) ?_
+      rw [PtrAt, eu, BitVec.toNat_add, pv₁, BitVec.toNat_ofNat, tv]
       generalize x.half * (2 * kw len) = H
       omega
   refine half fun u U mu pu => ?_
