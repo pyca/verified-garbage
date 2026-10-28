@@ -145,7 +145,7 @@ theorem Run.flags {set : Bool} {s₀ t u : State} {W : Addr} {x y N j p : Nat}
 abbrev rowBody (set : Bool) : Prog isa :=
   let mac := if set then macSet else macWord
   .seq (.block [.alu .cmp .esi (.imm 16)])
-    (.seq (.ite .ae (.block (mac 0 ++ mac 4 ++ mac 8 ++ mac 12 ++ advance 16)) (.block (mac 0 ++ advance 4)))
+    (.seq (.ite .ae (.block (mac 0 ++ (mac 4 ++ (mac 8 ++ (mac 12 ++ advance 16))))) (.block (mac 0 ++ advance 4)))
       (.block [.alu .cmp .esi (.imm 0)]))
 
 theorem rowLoop_ok {set : Bool} {s : State} {W : Addr} {Z x y N : Nat} (hw : Ws s W Z) (hN : 0 < N)
@@ -200,7 +200,6 @@ theorem rowLoop_ok {set : Bool} {s : State} {W : Addr} {Z x y N : Nat} (hw : Ws 
     have ik : i + 4 ≤ N := by
       have ge : ¬4 * (N - i) < 16 := by simpa using yes
       omega
-    simp only [List.append_assoc]
     refine run_mac hw hxz hyz sep R' (by omega) (by omega) fun u₁ R₁ => ?_
     refine run_mac hw hxz hyz sep R₁ (by omega) (by omega) fun u₂ R₂ => ?_
     refine run_mac hw hxz hyz sep R₂ (by omega) (by omega) fun u₃ R₃ => ?_
@@ -305,5 +304,39 @@ theorem tailAdd_ok {s₀ t : State} {W : Addr} {Z x y N : Nat} (hw : Ws s₀ W Z
       simp only [hc, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
   rw [words, Nat.mul_add (2 ^ (32 * N)), Nat.mul_add (2 ^ (32 * N)), Nat.mul_add (2 ^ (32 * N))]
   omega
+
+/-- The first row's tail: the carry `ebx` and zero into the two words at `ebp = y + 4 N`. -/
+theorem tailSet_ok {s₀ t : State} {W : Addr} {Z x y N : Nat} (hw : Ws s₀ W Z)
+    (hyz : y + 4 * (N + 2) ≤ Z) (R : Run true s₀ W x y N N N t)
+    (k : ∀ u, Keeps [.eax] t u → Outside W y (4 * (N + 2)) s₀.mem u.mem →
+      val32 u.mem W y (N + 2) = (s₀.gpr .ecx).toNat * val32 s₀.mem W x N → WP isa (.block is) u Q) :
+    WP isa (.block ([.store (at_ .ebp 0) .ebx, .mov .eax (.imm 0), .store (at_ .ebp 4) .eax] ++ is)) t Q := by
+  have hn := hw.nowrap
+  have ht := hw.of_keeps R.keep
+  simp only [List.cons_append, List.nil_append]
+  refine wp_storeS (by simpa using ea_ptr ht R.py (d := 0) (by omega)) (ws_write ht (by omega)) fun s₁ m₁ => ?_
+  refine wp_movS rfl fun s₂ u₂ _ => ?_
+  have K₂ : Keeps [.eax] t s₂ := (m₁.keeps _).trans u₂.keeps
+  have py₂ : PtrAt s₂ W .ebp (y + 4 * N) := by rw [PtrAt, K₂.1 _ (by decide)]; exact R.py
+  have hw₂ := ht.of_keeps K₂
+  refine wp_storeS (by simpa using ea_ptr hw₂ py₂ (d := 4) (by omega)) (ws_write hw₂ (by omega)) fun u m₃ => ?_
+  have K : Keeps [.eax] t u := K₂.trans (m₃.keeps _)
+  have m₂ : s₂.mem = t.mem.writeW (off W (y + 4 * N)) (t.gpr .ebx) := by rw [u₂.mem, m₁.mem]
+  rw [m₂, u₂.gpr] at m₃
+  have W₀ := writeW32_outside t.mem W (d := y + 4 * N) (t.gpr .ebx) (by omega)
+  have W₁ := writeW32_outside (t.mem.writeW (off W (y + 4 * N)) (t.gpr .ebx)) W (d := y + 4 * N + 4) 0 (by omega)
+  rw [← m₃.mem] at W₁
+  have O2 : Outside W (y + 4 * N) 8 t.mem u.mem :=
+    (W₀.mono (Nat.le_refl _) (by omega)).trans (W₁.mono (by omega) (by omega))
+  refine k u K ((R.frame.mono (Nat.le_refl _) (by omega)).trans (O2.mono (by omega) (by omega))) ?_
+  have pre : val32 u.mem W y N = val32 t.mem W y N := O2.val32 (.inl (by omega)) (by omega)
+  have wN : w32 u.mem W (y + 4 * N) = (t.gpr .ebx).toNat := by
+    rw [W₁.w32 (.inl (by omega)) (by omega), w32_write_self]
+  have wN1 : w32 u.mem W (y + 4 * N + 4) = 0 := by rw [m₃.mem, w32_write_self]; rfl
+  rw [val32_append]
+  simp only [val32, Nat.mul_zero, Nat.add_zero]
+  rw [pre, wN, wN1, Nat.mul_zero, Nat.add_zero]
+  have V := R.value
+  simpa only [ite_true, Nat.zero_add] using V
 
 end VG.Proof.Rsa.X86.InvBatchRt
