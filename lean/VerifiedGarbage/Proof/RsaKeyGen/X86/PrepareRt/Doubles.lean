@@ -23,28 +23,39 @@ open VG.Impl.RsaKeyGen.X86.PrepareRt
 open VG.Proof.RsaKeyGen.X86.Sieve (StackContext)
 open VG.Proof.RsaKeyGen.X86.PreparedR2 (Ready phaseRanges phase_header phase_candidate)
 
-/-- The frame's words are beyond every range a doubling writes. -/
-theorem far_of_apart {g : Geometry} (v : g.Valid) {q : BitVec 32}
-    (apart : (⟨g.W, g.L⟩ : Region).Disjoint ⟨q.setWidth 64, 20⟩) :
-    ∀ i < 4, ∀ r ∈ doubleRanges g, ofs g.W (off (q.setWidth 64) 0 + BitVec.ofNat 64 i) < r.1 ∨
-      r.1 + r.2 ≤ ofs g.W (off (q.setWidth 64) 0 + BitVec.ofNat 64 i) := by
-  intro i hi r mem
-  right
-  obtain ⟨fit6, -, -, -⟩ := WitnessRt.fits v
-  have a26 : g.array 2 + 4 * g.words + 4 ≤ g.array 6 := by
-    unfold Geometry.array Geometry.words Spec.Rsa.Mont.arrAt Spec.Rsa.Mont.hdrBytes; omega
-  have fit : r.1 + r.2 ≤ g.L := by
-    simp only [doubleRanges, List.mem_cons, List.not_mem_nil, or_false] at mem
-    rcases mem with rfl | rfl <;> dsimp only <;> omega
+/-- The frame's words are beyond every range of the workspace. -/
+theorem stack_far {g : Geometry} {q : BitVec 32}
+    (apart : (⟨g.W, g.L⟩ : Region).Disjoint ⟨q.setWidth 64, 20⟩) {o n : Nat} (fit : o + n ≤ g.L)
+    {i : Nat} (hi : i < 20) : o + n ≤ ofs g.W (off (q.setWidth 64) 0 + BitVec.ofNat 64 i) := by
   have inside : (⟨q.setWidth 64, 20⟩ : Region).Contains (off (q.setWidth 64) 0 + BitVec.ofNat 64 i) 1 := by
-    simp only [Region.Contains, off, BitVec.add_zero,
-      VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+    simp only [Region.Contains, off, BitVec.add_zero, VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
     omega
   have outside : ¬ (⟨g.W, g.L⟩ : Region).Contains (off (q.setWidth 64) 0 + BitVec.ofNat 64 i) 1 :=
     fun h => apart _ h inside
   simp only [Region.Contains] at outside
   simp only [ofs]
   omega
+
+/-- The frame's first word is unchanged by writes to a range of the workspace. -/
+theorem stack_read {g : Geometry} {q : BitVec 32}
+    (apart : (⟨g.W, g.L⟩ : Region).Disjoint ⟨q.setWidth 64, 20⟩) {o n : Nat} (fit : o + n ≤ g.L)
+    {m m' : Mem} (O : Outside g.W o n m m') :
+    m'.readW (off (q.setWidth 64) 0) 32 = m.readW (off (q.setWidth 64) 0) 32 :=
+  Mem.readW_congr fun _ hj => O _ (Or.inr (stack_far apart fit (by omega)))
+
+/-- The frame's words are beyond every range a doubling writes. -/
+theorem far_of_apart {g : Geometry} (v : g.Valid) {q : BitVec 32}
+    (apart : (⟨g.W, g.L⟩ : Region).Disjoint ⟨q.setWidth 64, 20⟩) :
+    ∀ i < 4, ∀ r ∈ doubleRanges g, ofs g.W (off (q.setWidth 64) 0 + BitVec.ofNat 64 i) < r.1 ∨
+      r.1 + r.2 ≤ ofs g.W (off (q.setWidth 64) 0 + BitVec.ofNat 64 i) := by
+  intro i hi r mem
+  obtain ⟨fit6, -, -, -⟩ := WitnessRt.fits v
+  have a26 : g.array 2 + 4 * g.words + 4 ≤ g.array 6 := by
+    unfold Geometry.array Geometry.words Spec.Rsa.Mont.arrAt Spec.Rsa.Mont.hdrBytes; omega
+  have fit : r.1 + r.2 ≤ g.L := by
+    simp only [doubleRanges, List.mem_cons, List.not_mem_nil, or_false] at mem
+    rcases mem with rfl | rfl <;> dsimp only <;> omega
+  exact Or.inr (stack_far apart fit (by omega))
 
 /-- A context kept through memory that changed only in ranges past the header. -/
 theorem Context.keepWork {g : Geometry} (v : g.Valid) {s t : State} (C : Context g s)
@@ -61,16 +72,25 @@ theorem Context.keepWork {g : Geometry} (v : g.Valid) {s t : State} (C : Context
   · intro j index
     rw [read (by omega)]; exact C.pointers j index
 
+/-- The prepared state kept through writes to workspace ranges past the candidate and to the caller's stack. -/
+theorem _root_.VG.Proof.RsaKeyGen.X86.PreparedR2.Ready.keepWorkOf {g : Geometry} (v : g.Valid)
+    {c capacity : Nat} {p : BitVec 32} {s t : State} (S : Ready g c capacity p s)
+    {rs : List Reg} (K : Keeps rs s t) (sp : .esp ∉ rs) (base : .edi ∉ rs)
+    {ranges : List (Nat × Nat)} (W : WorkspaceFrame g ranges s.mem t.mem)
+    (header : ∀ r ∈ ranges, 256 ≤ r.1) (candidate : ∀ r ∈ ranges, g.array 0 + 4 * g.words ≤ r.1)
+    (F : Frame ([⟨g.W, g.L⟩] ++ [below p 80]) s.mem t.mem) : Ready g c capacity p t :=
+  ⟨Context.keepWork v S.context K base W header,
+    S.modulus.keep v W (fun r mem => Or.inl (by have := header r mem; omega))
+      (fun r mem => Or.inl (candidate r mem)),
+    S.caller.keepFrame K sp F, S.scratch.of_keeps K base sp⟩
+
 /-- The prepared state kept through writes to the phase's ranges and the caller's stack. -/
 theorem _root_.VG.Proof.RsaKeyGen.X86.PreparedR2.Ready.keepWork {g : Geometry} (v : g.Valid)
     {c capacity : Nat} {p : BitVec 32} {s t : State} (S : Ready g c capacity p s)
     {rs : List Reg} (K : Keeps rs s t) (sp : .esp ∉ rs) (base : .edi ∉ rs)
     (W : WorkspaceFrame g (phaseRanges g) s.mem t.mem)
     (F : Frame ([⟨g.W, g.L⟩] ++ [below p 80]) s.mem t.mem) : Ready g c capacity p t :=
-  ⟨Context.keepWork v S.context K base W fun _ mem => phase_header g mem,
-    S.modulus.keep v W (fun r mem => Or.inl (by have := phase_header g mem; omega))
-      (fun r mem => Or.inl (phase_candidate g mem)),
-    S.caller.keepFrame K sp F, S.scratch.of_keeps K base sp⟩
+  S.keepWorkOf v K sp base W (fun _ mem => phase_header g mem) (fun _ mem => phase_candidate g mem) F
 
 /-- What a doubling writes is among the phase's ranges. -/
 theorem doubleRanges_cover {g : Geometry} {m m' : Mem} (W : WorkspaceFrame g (doubleRanges g) m m') :
