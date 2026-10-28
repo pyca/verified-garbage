@@ -160,7 +160,7 @@ structure Prologue (r : Reg) (s s' : State) : Prop where
   sp : s'.sp = s.sp
 
 theorem prologue_ok {r : Reg} {s : State} (hal : (s.gpr r).toNat % 8 = 0)
-    (hscr : ∃ n, 8 * scratchSlots ≤ n ∧ (⟨s.gpr r, n⟩ : Region) ∈ s.wr) :
+    (hscr : InRegions s.wr (s.gpr r) (8 * scratchSlots)) :
     WP isa (.block (prologue r)) s (Prologue r s) := by
   rw [prologue, WP.block_append_iff (M := isa), WP.block_append_iff (M := isa),
     WP.block_append_iff (M := isa)]

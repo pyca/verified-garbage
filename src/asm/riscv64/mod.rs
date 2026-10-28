@@ -149,6 +149,15 @@ pub(crate) mod rc4;
 pub(crate) mod seed;
 
 #[rustfmt::skip]
+pub(crate) mod seed_cbc;
+
+#[rustfmt::skip]
+pub(crate) mod seed_cfb;
+
+#[rustfmt::skip]
+pub(crate) mod seed_ofb;
+
+#[rustfmt::skip]
 pub(crate) mod sha1;
 
 #[rustfmt::skip]

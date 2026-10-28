@@ -78,7 +78,7 @@ theorem expandKey_ok {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s)
   rw [expandKey_eq_code]
   apply WP.seq
   rw [WP.block_append_iff (M := isa), WP.block_append_iff (M := isa)]
-  refine WP.mono (prologue_ok h.scrAl ⟨_, Nat.le_refl _, h.scratch⟩) fun s₁ P => ?_
+  refine WP.mono (prologue_ok h.scrAl ⟨_, h.scratch, Region.contains_self _ _⟩) fun s₁ P => ?_
   -- the key
   have G₁ : ∀ r, r ≠ sb → r ≠ kb → r ≠ .t0 → r ≠ .t1 → s₁.gpr r = s.gpr r := P.regs
   have a0₁ : s₁.gpr .a0 = s.gpr .a0 := G₁ _ (by decide) (by decide) (by decide) (by decide)
