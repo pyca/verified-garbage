@@ -85,7 +85,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
       `vg_p256_mul_mod_p` and the other functions of `p256_mont`) with a final \
       conditional subtraction. The peer's key is checked without branches (its first byte, both \
       coordinates below `p`, and the curve's equation), and the ladder multiplies the peer's \
-      point if it is valid, else `G`, so it always runs on a point of the curve. `[d]P` is a \
+      point if it is valid, else `G`, so it always runs on a point of the curve. `[d]P` is a call of `vg_p256_mul`, a \
       double-and-add ladder over all 256 bits of `d`, with the complete addition formulas of \
       Renes, Costello and Batina (calls of `vg_p256_point_double` and \
       `vg_p256_point_add`) and a masked selection for each bit; `Z⁻¹` is Fermat's, by \

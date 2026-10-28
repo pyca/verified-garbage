@@ -70,6 +70,9 @@ structure CfgOk (c : Cfg) : Prop where
   sh : c.sh < 32
   fp : FnOk c.MP' c.wk c.SP c.C.p
   fn : FnOk c.MN' c.wk c.SN c.C.n
+  /-- `vg_<curve>_mul`'s code, if the curve has the function, has no frame
+  (which its calls need). -/
+  mulNf : ∀ C, c.mul = some C → c.mulFn.noFrames = true
 
 section
 variable (c : Cfg) (s : State)

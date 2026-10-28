@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Weierstrass.BytesLen
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Stages
+public import VerifiedGarbage.Proof.Ecdsa.Arm.MulFn
 import VerifiedGarbage.Proof.Weierstrass.Arm.Rep
 public import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
 public import VerifiedGarbage.Proof.Weierstrass.Law
@@ -75,21 +76,6 @@ theorem flag_le (h0 : 0 < c.n) (h7 : c.n < 10) : ∀ w ∈ [(c.sl FLAG, 4)], w.1
 For coordinates of at most 6 words, the ladder calls the point functions
 (`ladderP_ok`), which also write their slots and own working space (`ptW`),
 above every numbered slot and below the tables. -/
-
-theorem sl_below_pt (h6 : c.n ≤ 6) {i : Nat} (hi : i < 45) :
-    c.sl i + 8 * c.n ≤ Spec.Weierstrass.Point.oAt c.n := by
-  have := sl_lt c hi
-  rw [sl_eq c 45] at this
-  simp only [Spec.Weierstrass.Point.oAt, Spec.Weierstrass.Point.pAt, Spec.Weierstrass.Point.qAt,
-    Spec.Weierstrass.Point.aAt, Spec.Weierstrass.Point.b3At, Spec.Weierstrass.Point.ownAt,
-    Spec.Weierstrass.Point.elemBytes, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]
-  omega_arith
-
-theorem oAt_le (c : Cfg) : Spec.Weierstrass.Point.oAt c.n ≤ 4096 := by
-  simp only [Spec.Weierstrass.Point.oAt, Spec.Weierstrass.Point.pAt, Spec.Weierstrass.Point.qAt,
-    Spec.Weierstrass.Point.aAt, Spec.Weierstrass.Point.b3At, Spec.Weierstrass.Point.ownAt,
-    Spec.Weierstrass.Point.elemBytes, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]
-  omega_arith
 
 /-- The ladder's slots are below the point functions'. -/
 theorem ladPt (h6 : c.n ≤ 6) : VG.Proof.Weierstrass.Arm.Point.LadPt c.ladderCfg where
@@ -176,7 +162,7 @@ structure St₂ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : 
 
 /-- The generator multiplication result needed by all later ECDSA stages. -/
 def GeneratorPost (c : Cfg) (base : Addr) (k : Nat) (s t : State) : Prop :=
-  Rest powClob s t ∧ Unch base (VG.Proof.Weierstrass.Arm.Point.ladWp c.ladderCfg c.wk) s.mem t.mem ∧
+  Rest powClob s t ∧ Unch base (VG.Proof.Weierstrass.Arm.Point.ladWp c.ladderCfg c.wk ++ genX c) s.mem t.mem ∧
   ModOkW c.MP' size c.C.p t.mem base ∧
   (∀ x ∈ [c.sl RX,c.sl RY,c.sl RZ],wordsVal t.mem base x c.n<c.C.p) ∧
   Rep c.C (tmv c.C c.n base t (c.sl RX)) (tmv c.C c.n base t (c.sl RY))
@@ -234,7 +220,7 @@ theorem generator_ladder_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base :
       (fun t ht => hS.t₀ t (Nat.lt_of_lt_of_le ht (scalarBits_le hc))) henc)
     fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_
   rw [Nat.shiftRight_zero] at R₅
-  exact ⟨K₅,U₅,M₅,L₅,R₅⟩
+  exact ⟨K₅, U₅.mono fun w hw => List.mem_append_left _ hw, M₅, L₅, R₅⟩
 
 /-- The common inversion and state preservation after any verified generator routine. -/
 theorem stage₂With (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : St₁ c A s₀ base s)
@@ -254,34 +240,45 @@ theorem stage₂With (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS
   rw [VG.Proof.Weierstrass.Arm.Point.ladWp, ladWx_eq] at U₅
   have hs₅ := hS.scr.of_rest K₅ (by decide)
   have hf₅ := hS.far.of_rest K₅
-  have F₅ := F.unch h7 hn (fixedOk_slWkP h7 (by decide)) U₅
+  have F₅ := F.unch h7 hn ((fixedOk_slWkP h7 (by decide)).append (fixedOk_genX h7)) U₅
   refine WP.seq (WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc) (powWkP hc) hc.fp hpR
     (bitsAt_lt hc (j := 1) (by decide)) hs₅ hf₅ M₅
     (L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))) F₅.onep
     (fun t ht => by
       show s₅.mem (off base (bitsAt c.n 1 + t)) = _
-      rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_slWkP h7 (by decide))]
+      rw [tbl_unch U₅ h7 (j := 1) (by decide) ht
+        (apart_append (tbl_apart_slWkP h7 (by decide)) (tbl_apart_genX h7 (by decide) ht))]
       exact hS.t₁ t ht)
     (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega_arith) henc) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
   rw [powWxP_eq] at U₆
   have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] →
       i ∉ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ, TMP] →
       sv c base s₆ i = sv c base s i := fun hi h₁ h₂ =>
-    (sv_unch U₆ h7 hn hi (apart_slWk h7 hi h₁)).trans (sv_unch U₅ h7 hn hi (apart_slWkP h7 hi h₂))
+    (sv_unch U₆ h7 hn hi (apart_slWk h7 hi h₁)).trans (sv_unch U₅ h7 hn hi
+      (apart_append (apart_slWkP h7 hi h₂) (apart_genX h7 hi fun h => h₁ (by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at h ⊢; omega))))
   have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₆ i = sv c base s₅ i := fun hi h₁ =>
     sv_unch U₆ h7 hn hi (apart_slWk h7 hi h₁)
   have K₅₆ : Rest work s s₆ := (K₅.mono powClob_work).trans (K₆.mono powClob_work)
   refine ⟨⟨hs₅.of_rest K₆ (by decide), hf₅.of_rest K₆, hS.rest.trans (K₅₆.mono (by simp)), by rw [K₅₆.gpr _ (by decide), hS.lr],
     F₅.unch h7 hn (fixedOk_slWk h7 (by decide)) U₆,
-    whole_of (whole_of hS.whole U₅ (slWkP_le h7 (by decide))) U₆ (slWk_le h7 (by decide))⟩,
+    whole_of (whole_of' hS.whole U₅ fun w hw => (List.mem_append.mp hw).elim
+      (fun h => by have := slWkP_le h7 (by decide) w h; dsimp only [size] at this; omega) (genX_le h7 w))
+      U₆ (slWk_le h7 (by decide))⟩,
     by rw [e₆ (by decide) (by decide) (by decide), hS.k],
     by rw [e₆ (by decide) (by decide) (by decide), hS.d],
     by rw [e₆ (by decide) (by decide) (by decide), hS.e],
-    by rw [flagW, flag_unch U₆ h7 h0 hn (by decide), flag_unchP U₅ h7 h0 hn (by decide), ← flagW, hS.flag],
+    by rw [flagW, flag_unch U₆ h7 h0 hn (by decide), Unch.readW32 U₅ (fun w hw => by
+        rcases apart_append (apart_slWkP (c := c) h7 (i := FLAG) (by decide) (by decide))
+          (apart_genX (c := c) h7 (i := FLAG) (by decide) (by decide)) w hw with h | h
+        · exact Or.inl (by have := sl_le c h7 (i := FLAG) (by decide); omega_arith)
+        · exact Or.inr h) (by have := sl_le c h7 (i := FLAG) (by decide); omega_arith),
+      ← flagW, hS.flag],
     ?_, ?_, lt₆, ?_, ?_⟩
   · intro t ht
     rw [tbl_unch U₆ h7 (j := 2) (by decide) ht (tbl_apart_slWk h7 (by decide)),
-      tbl_unch U₅ h7 (j := 2) (by decide) ht (tbl_apart_slWkP h7 (by decide))]
+      tbl_unch U₅ h7 (j := 2) (by decide) ht
+        (apart_append (tbl_apart_slWkP h7 (by decide)) (tbl_apart_genX h7 (by decide) ht))]
     exact hS.t₂ t ht
   · show Rep c.C (toM _ _ (sv c base s₆ RX)) (toM _ _ (sv c base s₆ RY)) (toM _ _ (sv c base s₆ RZ)) _
     rw [r₆ (i := RX) (by decide) (by decide), r₆ (i := RY) (by decide) (by decide),
@@ -470,11 +467,6 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List Regi
     refine ⟨by rw [ret, hd]; rfl, ?_⟩
     rw [bytes, hd]; rfl
 
-theorem sign_eq (c : Cfg) : c.sign = .seq (.block c.setup) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
-    (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
-    (.seq (VG.Impl.Weierstrass.Arm.Point.ladderP c.ladderCfg c.SP) (.seq (pow c.powP c.SP) (.seq c.middle
-      (.seq (pow c.powN c.SN) c.scalar))))))) := rfl
-
 /-- The shared signing pipeline with an interchangeable generator multiplication. -/
 theorem signWith_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List Region}
     (hp : Pre c s₀ extra) {generator : Prog isa}
@@ -487,12 +479,38 @@ theorem signWith_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List R
     stage₂With hc S (hMul s S sy) fun _ S₂ => stage₃ hc S₂ fun _ S₃ => stage₄ hc hC hp rfl S₃
   simpa only [Cfg.signWith,Cfg.setup,WP.seq_iff (M := isa),WP.block_nil_iff (M := isa)] using run
 
+/-- `gen`: `R = [k]G`, by the call or the ladder. -/
+theorem generator_gen_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s : State}
+    (hS : St₁ c A s₀ base s) : WP isa c.gen s (GeneratorPost c base (kv c A s₀) s) := by
+  have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
+  have hp3 := hc.p_ge
+  have F := hS.fixed
+  have hkl : kv c A s₀ < 2 ^ (8 * c.C.len) :=
+    Nat.lt_of_le_of_lt (Nat.shiftRight_le _ _) (ofBytes_bytesAt_lt _ _ _)
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
+  have hG : Rep c.C (tmv c.C c.n base s (c.sl GX)) (tmv c.C c.n base s (c.sl GY))
+      (tmv c.C c.n base s (c.sl ONEP)) (G c.C) := by
+    show Rep c.C (toM _ _ (wordsVal s.mem base (c.sl GX) c.n)) (toM _ _ (wordsVal s.mem base (c.sl GY) c.n))
+      (toM _ _ (wordsVal s.mem base (c.sl ONEP) c.n)) (G c.C)
+    rw [F.gx, F.gy, F.onep, toM_cmont hc, toM_cmont hc, toM_one hpR]
+    exact rep_affine' hC _ _
+  have hstep := step_rep (L := pLadder c GX GY) (k := kv c A s₀) hC hc.onG (by
+      show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl AP) c.n) = _
+      rw [F.ap]; exact toM_cmont hc _)
+    (by
+      show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl B3P) c.n) = _
+      rw [F.b3p]; exact toM_cmont hc _) hG
+  refine WP.mono (qMul_ok hc hS.scr hS.far F (px := GX) (py := GY) (by decide)
+    (lt_of_eq_of_lt F.gx (hmont _)) (lt_of_eq_of_lt F.gy (hmont _)) hS.rx hS.ry hS.rz hstep
+    (by rw [shiftRight_eq_zero hkl, mul_zero_pt]; exact rep_infinity' hC) (fun _ => hS.k)
+    (fun _ t ht => hS.t₀ t ht)) fun t ⟨K, U, M, L, R⟩ => ?_
+  rw [Nat.shiftRight_zero] at R
+  exact ⟨K, U, M, L, R⟩
+
 /-- `vg_ecdsa_<curve>_sign` computes the specification's signature, restores
 the callee-saved registers and changes only the working space and `out`. -/
 theorem sign_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) :
-    WP isa c.sign s₀ fun s' => SignKeep c s₀ s' ∧ SignPost c s₀ s' := by
-  rw [sign_eq]
-  exact stage₁ hc hp.setup fun _ S₁ => stage₂ hc hC S₁ fun _ S₂ => stage₃ hc S₂ fun _ S₃ =>
-    stage₄ hc hC hp rfl S₃
+    WP isa c.sign s₀ fun s' => SignKeep c s₀ s' ∧ SignPost c s₀ s' :=
+  signWith_ok hc hC hp fun _ S _ => generator_gen_ok hc hC S
 
 end VG.Proof.Ecdsa.Arm

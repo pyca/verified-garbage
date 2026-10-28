@@ -231,12 +231,6 @@ structure PkKeep (c : Cfg) (s₀ s' : State) : Prop where
   sp : s'.sp = s₀.sp
   frame : ∃ m : Mem, Unch (ptr s₀ .r2) [(0, 8192)] s₀.mem m ∧ Outside (ptr s₀ .r0) 0 (1 + 2 * c.C.len) m s'.mem
 
-theorem publicKey_eq' (c : Cfg) : Impl.EcKey.Arm.Cfg.publicKey c =
-    .seq (.seq (.block (c.setupWith Args.publicKey)) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
-      (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
-      (.seq (VG.Impl.Weierstrass.Arm.Point.ladderP c.ladderCfg c.SP) (.seq (pow c.powP c.SP) (.block [])))))))
-      (Impl.EcKey.Arm.Cfg.middle c) := rfl
-
 /-- `vg_ec_<curve>_public_key` computes the specification's public key and
 restores the callee-saved registers. -/
 theorem publicKeyWith_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List Region}
@@ -284,9 +278,9 @@ theorem publicKeyWith_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : L
     rw [ite_eq_right_of_eq_false _ _ (eq_false hd)]
     exact ⟨by rw [rax, hok]; rfl, by rw [bytes, hok]; rfl⟩
 
-/-- The generic-ladder public-key implementation is an instance of the shared pipeline. -/
+/-- The public key with `gen` is an instance of the shared pipeline. -/
 theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : PkPre c s₀) :
     WP isa (Impl.EcKey.Arm.Cfg.publicKey c) s₀ fun s' => PkKeep c s₀ s' ∧ PkPost c s₀ s' :=
-  publicKeyWith_ok hc hC hp (fun _ S _ => generator_ladder_ok hc hC S)
+  publicKeyWith_ok hc hC hp (fun _ S _ => generator_gen_ok hc hC S)
 
 end VG.Proof.EcKey.Arm

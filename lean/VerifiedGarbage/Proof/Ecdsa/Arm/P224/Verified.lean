@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Ecdsa.Arm.P224.MulLit
 import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 public import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Contract
 import VerifiedGarbage.Proof.P224.Point
@@ -13,6 +14,7 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Lit
 public import VerifiedGarbage.Impl.Ecdsa.P224.Arm
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P224.MulLit
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Contract
 meta import VerifiedGarbage.Proof.P224.Point
@@ -82,6 +84,7 @@ theorem p224_ok : CfgOk p224 where
   sh := by rw [p224_sh]; decide
   fp := ⟨rfl, rfl, Mont.p224p_ok, rfl⟩
   fn := ⟨rfl, rfl, Mont.p224n_ok, rfl⟩
+  mulNf := fun _ _ => Impl.Ecdsa.Arm.mulP224_noFrames
 
 theorem pre_of {s : State} (h : signArm.pre s) : Pre p224 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h

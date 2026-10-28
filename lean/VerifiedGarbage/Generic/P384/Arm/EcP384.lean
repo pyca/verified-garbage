@@ -77,7 +77,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := 
       `lr` (in `r10` during the calls); field elements are twelve packed 32-bit words in Montgomery form, multiplied by \
       word-by-word Montgomery multiplication (CIOS, with four half-word `mul` products per word product and the accumulator in \
       `scratch`, in calls of `vg_p384_mul_mod_p` and the other functions of `p384_mont`) \
-      with a final conditional subtraction; `[d]G` is a double-and-add ladder over \
+      with a final conditional subtraction; `[d]G` is a call of `vg_p384_mul`, a double-and-add ladder over \
       all 384 bits of `d`, with the complete addition formulas of Renes, Costello and Batina for \
       every addition and doubling (calls of `vg_p384_point_double` and \
       `vg_p384_point_add`) and a masked selection for each bit; and `Z⁻¹` is Fermat's, \

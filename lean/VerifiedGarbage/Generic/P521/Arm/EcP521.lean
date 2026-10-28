@@ -77,7 +77,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := 
       `lr` (in `r10` during the calls); field elements are eighteen packed 32-bit words in Montgomery form, multiplied by \
       packed-word Montgomery multiplication (CIOS, with `mul` and the accumulator in \
       `scratch`, in calls of `vg_p521_mul_mod_p` and the other functions of `p521_mont`) \
-      with a final conditional subtraction; `[d]G` is a double-and-add ladder over \
+      with a final conditional subtraction; `[d]G` is a call of `vg_p521_mul`, a double-and-add ladder over \
       all 528 bits of the 66-byte encoding of `d`, with the complete addition formulas of Renes, \
       Costello and Batina for every addition and doubling and a masked selection for each bit; \
       and `Z⁻¹` is Fermat's, by square-and-always-multiply over the bits of `p - 2`. The result \

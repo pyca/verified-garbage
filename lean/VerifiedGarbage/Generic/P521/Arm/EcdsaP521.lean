@@ -86,7 +86,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := 
       `vg_p521_mul_mod_p` and the other functions of `p521_mont`) with a final \
       conditional subtraction; the 66-byte encodings are read and written a 32-bit word at a \
       time, the top word's two bytes from the first four or a byte at a time, and the hash's \
-      integer is shifted right by its last 7 bits. `[k]G` is a double-and-add ladder over all \
+      integer is shifted right by its last 7 bits. `[k]G` is a call of `vg_p521_mul`, a double-and-add ladder over all \
       528 bits of the 66-byte encoding of `k`, with the complete addition formulas of Renes, Costello \
       and Batina for every addition and doubling and a masked selection for each bit; the \
       inversions modulo `p` and `n` are Fermat's, by square-and-always-multiply over the bits of \
@@ -105,7 +105,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := 
       key is checked without branches (its first byte, both coordinates below `p`, and the \
       curve's equation), and the second ladder multiplies the key's point if it is valid, else \
       `G`, so it always runs on a point of the curve. `s⁻¹` modulo `n` and `Z⁻¹` are Fermat's, \
-      by square-and-always-multiply; `[u]G` and `[v]Q` are double-and-add ladders over all 528 \
+      by square-and-always-multiply; `[u]G` and `[v]Q` are calls of `vg_p521_mul`, double-and-add ladders over all 528 \
       bits of `u` and `v` (their 66-byte width), with the complete addition formulas of Renes, \
       Costello and Batina, which also add the two. The result is the \
       conjunction of the checks (the key, `r` and `s` in `[1, n-1]`, the sum not the point at \
