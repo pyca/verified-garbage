@@ -21,7 +21,7 @@ public import VerifiedGarbage.Spec.Ofb
 `cbcEncryptChained_verified`, `ofb_verified`, … : the modes of
 `Proof/Modes/PPC64LE/` over SEED's core (`Mode.dirCoreSpec`), with the
 working space as the fifth argument (`modeContract`), meet the contracts
-with a scratch buffer of 138 words (`Proof.Seed.cbcEncChainedScratchContract`,
+with a scratch buffer of 144 words (`Proof.Seed.cbcEncChainedScratchContract`,
 `fbScratchContract`).
 -/
 
@@ -31,7 +31,7 @@ namespace VG.Proof.Seed.PPC64LE.Modes
 
 open VG VG.PPC64LE VG.Impl.Seed.PPC64LE VG.Impl.Modes
 open VG.Proof.Modes.PPC64LE (SeqPre ivR scrRegion S)
-open VG.Proof.Seed.PPC64LE (modePub)
+open VG.Proof.Seed.PPC64LE (modePub modeContract)
 open VG.Proof.Seed.PPC64LE.Mode (dirCoreSpec KeyArgs)
 
 /-- SEED under the schedule at `r3`, and its inverse. -/
@@ -60,31 +60,15 @@ def cfbDecPost (s s' : State) : Prop :=
   dataAt s'.mem s = Spec.Cfb.decrypt (ciph s) (ivAt s.mem s) (dataAt s.mem s) ∧
     ivAt s'.mem s = Spec.Cbc.next (ivAt s.mem s) (dataAt s.mem s)
 
-/-- A mode's function on PPC64LE with its working space as the fifth
-argument, and the postcondition `post`. -/
-def modeContract (post : State → State → Prop) : Contract isa where
-  pre s :=
-    let key : Region := ⟨s.gpr .r3, 128⟩
-    let iv : Region := ⟨s.gpr .r4, 16⟩
-    let data : Region := ⟨s.gpr .r5, 16 * (s.gpr .r6).toNat⟩
-    let scratch : Region := ⟨s.gpr .r7, 8 * 138⟩
-    s.rd = [key] ∧ s.wr = [iv, data, scratch] ∧
-      key.Disjoint iv ∧ key.Disjoint data ∧ key.Disjoint scratch ∧ iv.Disjoint data ∧
-      iv.Disjoint scratch ∧ data.Disjoint scratch ∧
-      (s.gpr .r4).toNat + 16 ≤ 2 ^ 64 ∧ (s.gpr .r5).toNat + 16 * (s.gpr .r6).toNat ≤ 2 ^ 64 ∧
-      (s.gpr .r7).toNat + 8 * 138 ≤ 2 ^ 64
-  post := post
-  pub := modePub
-
 /-- `modeContract`'s precondition gives the modes'. -/
 theorem seqPre_of {post : State → State → Prop} {M : Mode} (d : Spec.Seed.Direction)
     (hstep : M.step = 16) {s : State} (h : (modeContract post).pre s) :
     SeqPre (dirCore d) M s := by
   obtain ⟨hrd, hwr, -, -, -, dVD, dVS, dDS, fV, fD, fS⟩ := h
   have e16 : 4 * (dirCore d).bw = 16 := rfl
-  have eS : scrRegion (dirCore d) (S s) = ⟨s.gpr .r7, 8 * 138⟩ := rfl
+  have eS : scrRegion (dirCore d) (S s) = ⟨s.gpr .r7, 8 * 144⟩ := rfl
   have eV : ivR s (dirCore d) = ⟨s.gpr .r4, 16⟩ := rfl
-  refine ⟨⟨by rw [hwr]; simp [dirCore, bufSlot, scratchSlots], fS⟩, by rw [eV, hwr]; simp, fun _ => by rw [eV, hwr]; simp,
+  refine ⟨⟨by rw [hwr]; simp [dirCore, bufSlot], fS⟩, by rw [eV, hwr]; simp, fun _ => by rw [eV, hwr]; simp,
     by rw [e16]; exact fV, by rw [hwr, hstep]; simp, by rw [hstep]; exact fD, by rw [hstep, eS]; exact dDS,
     by rw [eV, eS]; exact dVS, fun _ => by rw [eV, hstep]; exact dVD, ⟨by omega, by rw [e16]; omega⟩,
     (dirCoreSpec d).layout⟩
@@ -154,7 +138,7 @@ def modeSat : State where
   sp := 0x8000
   mem _ := 0
   rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩, ⟨0x4000, 1104⟩]
+  wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩, ⟨0x4000, 1152⟩]
 
 theorem modePub_iff (s₁ s₂ : State) : modePub s₁ s₂ ↔
     s₁.sp = s₂.sp ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
@@ -162,34 +146,34 @@ theorem modePub_iff (s₁ s₂ : State) : modePub s₁ s₂ ↔
   simp [modePub]
 
 theorem cbcEncryptChained_verified :
-    Verified target cbcEncryptChained (Proof.Seed.cbcEncChainedScratchContract abi 138) := by
-  refine Verified.of_correct cbcEncryptChained_correct (cbcEncryptChained_constantTime _) ?_
+    Verified target cbcEncryptChained (Proof.Seed.cbcEncChainedScratchContract abi 144) := by
+  refine Verified.of_correct cbcEncryptChained_correct cbcEncryptChained_constantTime ?_
   sig_implies [Proof.Seed.cbcEncChainedScratchContract, Proof.Seed.cbcChainedScratchSig,
     Spec.Seed.cbcChainedSig, Proof.Seed.cbcEncChainedPost, abi, argRegs, modeContract, cbcEncPost,
     modePub_iff] [modeSat] using modeSat
 
 theorem cbcDecryptChained_verified :
-    Verified target cbcDecryptChained (Proof.Seed.cbcDecChainedScratchContract abi 138) := by
-  refine Verified.of_correct cbcDecryptChained_correct (cbcDecryptChained_constantTime _) ?_
+    Verified target cbcDecryptChained (Proof.Seed.cbcDecChainedScratchContract abi 144) := by
+  refine Verified.of_correct cbcDecryptChained_correct cbcDecryptChained_constantTime ?_
   sig_implies [Proof.Seed.cbcDecChainedScratchContract, Proof.Seed.cbcChainedScratchSig,
     Spec.Seed.cbcChainedSig, Proof.Seed.cbcDecChainedPost, abi, argRegs, modeContract, cbcDecPost,
     modePub_iff] [modeSat] using modeSat
 
 theorem ofb_verified :
-    Verified target ofb (Proof.Seed.fbScratchContract abi 138 Proof.Seed.ofbPost) := by
-  refine Verified.of_correct ofb_correct (ofb_constantTime _) ?_
+    Verified target ofb (Proof.Seed.fbScratchContract abi 144 Proof.Seed.ofbPost) := by
+  refine Verified.of_correct ofb_correct ofb_constantTime ?_
   sig_implies [Proof.Seed.fbScratchContract, Proof.Seed.fbScratchSig, Spec.Seed.ofbSig,
     Proof.Seed.ofbPost, abi, argRegs, modeContract, ofbPost, modePub_iff] [modeSat] using modeSat
 
 theorem cfbEncrypt_verified :
-    Verified target cfbEncrypt (Proof.Seed.fbScratchContract abi 138 Proof.Seed.cfbEncPost) := by
-  refine Verified.of_correct cfbEncrypt_correct (cfbEncrypt_constantTime _) ?_
+    Verified target cfbEncrypt (Proof.Seed.fbScratchContract abi 144 Proof.Seed.cfbEncPost) := by
+  refine Verified.of_correct cfbEncrypt_correct cfbEncrypt_constantTime ?_
   sig_implies [Proof.Seed.fbScratchContract, Proof.Seed.fbScratchSig, Spec.Seed.ofbSig,
     Proof.Seed.cfbEncPost, abi, argRegs, modeContract, cfbEncPost, modePub_iff] [modeSat] using modeSat
 
 theorem cfbDecrypt_verified :
-    Verified target cfbDecrypt (Proof.Seed.fbScratchContract abi 138 Proof.Seed.cfbDecPost) := by
-  refine Verified.of_correct cfbDecrypt_correct (cfbDecrypt_constantTime _) ?_
+    Verified target cfbDecrypt (Proof.Seed.fbScratchContract abi 144 Proof.Seed.cfbDecPost) := by
+  refine Verified.of_correct cfbDecrypt_correct cfbDecrypt_constantTime ?_
   sig_implies [Proof.Seed.fbScratchContract, Proof.Seed.fbScratchSig, Spec.Seed.ofbSig,
     Proof.Seed.cfbDecPost, abi, argRegs, modeContract, cfbDecPost, modePub_iff] [modeSat] using modeSat
 

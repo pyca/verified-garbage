@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Seed.PPC64LE.Copy
 public import VerifiedGarbage.Proof.Seed.PPC64LE.Rounds
+import VerifiedGarbage.Proof.Seed.PPC64LE.Setup
 import VerifiedGarbage.Proof.Seed.Memory
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
@@ -128,10 +129,11 @@ structure BatchPost (d : Spec.Seed.Direction) (s s' : State) : Prop where
   rsi : s'.gpr .r4 = s.gpr .r4 + BitVec.ofNat 64 (16 * min (s.gpr .r5).toNat 16)
   rdx : s'.gpr .r5 = s.gpr .r5 - BitVec.ofNat 64 (min (s.gpr .r5).toNat 16)
   regs : ∀ r ∈ [Reg.r3, .r8], s'.gpr r = s.gpr r
+  saved : ∀ p ∈ Impl.Seed.PPC64LE.savedRegs, s'.gpr p.1 = s.gpr p.1
   sp : s'.sp = s.sp
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
-  frame : Frame [workR s, ⟨s.gpr .r4, 16 * min (s.gpr .r5).toNat 16⟩] s.mem s'.mem
+  frame : Frame [scratchR s, ⟨s.gpr .r4, 16 * min (s.gpr .r5).toNat 16⟩] s.mem s'.mem
 
 theorem arraysR_sub_scratch (s : State) : Region.Sub (arraysR s) (scratchR s) := by
   show Region.Sub ⟨s.gpr .r8 + BitVec.ofNat 64 (8 * 48), 8 * 64⟩ ⟨s.gpr .r8, 8 * scratchSlots⟩
@@ -140,6 +142,109 @@ theorem arraysR_sub_scratch (s : State) : Region.Sub (arraysR s) (scratchR s) :=
 theorem arraysR_sub_work (s : State) : Region.Sub (arraysR s) (workR s) := by
   show Region.Sub ⟨s.gpr .r8 + BitVec.ofNat 64 (8 * 48), 8 * 64⟩ ⟨s.gpr .r8, 8 * 112⟩
   exact Offset.sub_base _ (by omega)
+
+/-! ## The rounds, between the registers saved and restored -/
+
+/-- The saved registers' slots, 112 to 129. -/
+def savedR (s : State) : Region := ⟨s.gpr .r8 + BitVec.ofNat 64 (8 * 112), 8 * 18⟩
+
+/-- Stores to the saved registers' slots change nothing else. -/
+theorem stores_frame (l : List (Nat × Reg)) (hl : ∀ p ∈ l, 112 ≤ p.1 ∧ p.1 < scratchSlots) {s s' : State}
+    (h : Room s) (e : runBlock isa (l.map fun p => stS p.1 p.2) s = some s') :
+    Frame [savedR s] s.mem s'.mem := by
+  induction l generalizing s with
+  | nil =>
+    rw [List.map_nil, runBlock_nil] at e
+    cases e; exact Frame.refl _ _
+  | cons p l ih =>
+    have hp := hl p List.mem_cons_self
+    rw [List.map_cons, runBlock_cons, exec_st h hp.2 p.2, runStep_some] at e
+    have f := ih (fun q hq => hl q (List.mem_cons_of_mem _ hq)) (s := setMem s (stMem s p.1 (s.gpr p.2))) h e
+    have hs : scratchSlots = 130 := rfl
+    have f₀ : Frame [savedR s] s.mem (stMem s p.1 (s.gpr p.2)) :=
+      (Frame.refl _ _).writeW List.mem_cons_self _
+        (show (savedR s).Contains (s.gpr .r8 + BitVec.ofNat 64 (8 * p.1)) (64 / 8) from
+          Offset.contains _ (by omega) (by omega) (by omega))
+    exact f₀.trans f
+
+theorem saveRegs_eq : Impl.Seed.PPC64LE.saveRegs = (Impl.Seed.PPC64LE.savedRegs.map fun p => (p.2, p.1)).map
+    (fun p => stS p.1 p.2) := rfl
+
+theorem restore_eq : restore = Impl.Seed.PPC64LE.savedRegs.map (fun p => ldS p.1 p.2) := rfl
+
+theorem savedRegs_ok : ∀ p ∈ Impl.Seed.PPC64LE.savedRegs, p.2 < scratchSlots ∧ p.1 ≠ .r8 ∧ 112 ≤ p.2 := by
+  decide
+
+/-- The registers saved, the rounds, and the registers restored: the rounds'
+effect on the lanes, and the saved registers as they were. -/
+theorem rounds_saved_ok (d : Spec.Seed.Direction) {s : State} (h : Room s) (hk : KeysOk d s (s.gpr .r3)) :
+    WP isa (roundsSaved d) s (fun s' =>
+      (∀ b < 16, quad s' b = roundsN (keysAt d s.mem (s.gpr .r3)) 16 (quad s b)) ∧
+      Room s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
+      (∀ r ∈ [Reg.r2, .r3, .r4, .r5, .r6, .r8], s'.gpr r = s.gpr r) ∧
+      (∀ p ∈ Impl.Seed.PPC64LE.savedRegs, s'.gpr p.1 = s.gpr p.1) ∧
+      Frame [scratchR s] s.mem s'.mem) := by
+  have hs : scratchSlots = 130 := rfl
+  obtain ⟨s₁, e₁, g₁, rd₁, wr₁, sp₁, f₁, set₁, -⟩ := stores_ok h
+    (Impl.Seed.PPC64LE.savedRegs.map fun p => (p.2, p.1)) (by decide) (by decide)
+  have fs₁ : Frame [savedR s] s.mem s₁.mem := stores_frame _ (by decide) h e₁
+  refine WP.seq (WP.of_runBlock ⟨s₁, by rw [saveRegs_eq]; exact e₁, ?_⟩)
+  have r8₁ : s₁.gpr .r8 = s.gpr .r8 := by rw [g₁]
+  have room₁ : Room s₁ := room_congr h r8₁ wr₁
+  have scr₁ : scratchR s₁ = scratchR s := by simp only [scratchR, r8₁]
+  have keys₁ : KeysOk d s₁ (s₁.gpr .r3) := by
+    rw [g₁]
+    intro j hj
+    obtain ⟨a, b, c⟩ := hk j hj
+    exact ⟨by rw [rd₁, wr₁]; exact a, by rw [rd₁, wr₁]; exact b, by rw [scr₁]; exact c⟩
+  have hkeys : ∀ j < 16, keysAt d s₁.mem (s₁.gpr .r3) j = keysAt d s.mem (s.gpr .r3) j := by
+    intro j hj
+    rw [g₁]
+    obtain ⟨-, -, hdis⟩ := hk j hj
+    have hd : ∀ r ∈ [scratchR s], Region.Disjoint ⟨kp d (s.gpr .r3) j, 8⟩ r := by
+      intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact hdis
+    simp only [keysAt]
+    congr 1
+    · exact f₁.readW (contains_prefix (by decide)) hd (by decide)
+    · rw [show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl]
+      exact f₁.readW (Offset.contains_base _ (d := 4) (n := 4) (k := 8) (by omega) (by omega)) hd (by decide)
+  have lv₁ : ∀ w < 4, ∀ b < 16, lv s₁ (arrSlot w) b = lv s (arrSlot w) b := by
+    intro w hw b hb
+    simp only [lv, laneA, r8₁]
+    refine fs₁.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+    simp only [List.mem_singleton] at hr; subst hr
+    exact Offset.disjoint _ (Or.inl (by simp only [arrSlot]; omega)) (by simp only [arrSlot]; omega) (by omega)
+  have quad₁ : ∀ b < 16, quad s₁ b = quad s b := fun b hb => by
+    simp only [quad, lv₁ 0 (by decide) b hb, lv₁ 1 (by decide) b hb, lv₁ 2 (by decide) b hb,
+      lv₁ 3 (by decide) b hb]
+  refine WP.seq (WP.mono (rounds_ok d room₁ keys₁) fun s₂ ⟨q₂, room₂, rd₂, wr₂, sp₂, g₂, f₂⟩ => ?_)
+  have r8₂ : s₂.gpr .r8 = s.gpr .r8 := (g₂ _ (by simp)).trans r8₁
+  obtain ⟨s', run', m', sp', set', keep', rd', wr'⟩ := loads_ok room₂ Impl.Seed.PPC64LE.savedRegs
+    (fun q hq => ⟨(savedRegs_ok q hq).1, (savedRegs_ok q hq).2.1⟩) (by decide)
+  refine WP.of_runBlock ⟨s', by rw [restore_eq]; exact run', ?_⟩
+  have notSaved : ∀ r ∈ [Reg.r2, .r3, .r4, .r5, .r6, .r8], ∀ p ∈ Impl.Seed.PPC64LE.savedRegs, p.1 ≠ r := by
+    decide
+  have r8' : s'.gpr .r8 = s.gpr .r8 := (keep' _ (notSaved .r8 (by simp))).trans r8₂
+  refine ⟨fun b hb => ?_, room_congr room₂ (r8'.trans r8₂.symm) wr', by rw [rd', rd₂, rd₁],
+    by rw [wr', wr₂, wr₁], by rw [sp', sp₂, sp₁], fun r hr => ?_, fun p hp => ?_, ?_⟩
+  · rw [show quad s' b = quad s₂ b by simp only [quad, lv, laneA, m', r8', r8₂], q₂ b hb,
+      roundsN_congr 16 _ hkeys, quad₁ b hb]
+  · rw [keep' r (notSaved r hr), g₂ r hr, g₁]
+  · have hp' := savedRegs_ok p hp
+    rw [set' p hp, ← set₁ (p.2, p.1) (List.mem_map_of_mem hp)]
+    show s₂.mem.readW (StraightK.wordAddr (s₂.gpr .r8) p.2) 64 =
+      s₁.mem.readW (StraightK.wordAddr (s₁.gpr .r8) p.2) 64
+    rw [r8₂, ← r8₁]
+    refine f₂.readW (r := ⟨StraightK.wordAddr (s₁.gpr .r8) p.2, 8⟩) (Region.contains_self _ _) ?_ (by decide)
+    intro r hr
+    simp only [List.mem_singleton] at hr; subst hr
+    simp only [workR]
+    exact Offset.disjoint_base _ (by omega) (by omega)
+  · rw [m']
+    refine f₁.trans (f₂.sub fun r hr => ?_)
+    simp only [List.mem_singleton] at hr; subst hr
+    refine ⟨scratchR s, List.mem_cons_self, ?_⟩
+    simp only [workR, scratchR, r8₁]; exact Region.sub_prefix (by omega)
 
 theorem batch_ok (d : Spec.Seed.Direction) {s : State} (h : BatchPre d s) :
     WP isa (batch d) s (BatchPost d s) := by
@@ -214,7 +319,7 @@ theorem batch_ok (d : Spec.Seed.Direction) {s : State} (h : BatchPre d s) :
     rw [i₃.lanes w hw b hb, m₂, m₁]
   -- the rounds
   apply WP.seq
-  refine WP.mono (rounds_ok d room₃ keys₃) fun s₄ ⟨q₄, room₄, rd₄, wr₄, sp₄, g₄, f₄⟩ => ?_
+  refine WP.mono (rounds_saved_ok d room₃ keys₃) fun s₄ ⟨q₄, room₄, rd₄, wr₄, sp₄, g₄, sv₄, f₄⟩ => ?_
   have G₄ : ∀ r ∈ [Reg.r3, .r4, .r5, .r8], s₄.gpr r = s.gpr r := by
     intro r hr
     rw [g₄ r (by simp only [List.mem_cons, List.mem_nil_iff, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl <;> simp)]
@@ -286,22 +391,28 @@ theorem batch_ok (d : Spec.Seed.Direction) {s : State} (h : BatchPre d s) :
   -- the memory
   have f₇ : Frame [⟨p, 16 * k⟩] s₄.mem s₇.mem := by
     have := i₇.frame; rw [m₆, m₅] at this; exact this
-  have frame : Frame [workR s, ⟨p, 16 * k⟩] s.mem s'.mem := by
+  have frame : Frame [scratchR s, ⟨p, 16 * k⟩] s.mem s'.mem := by
     rw [mem']
-    have a : Frame [workR s, ⟨p, 16 * k⟩] s.mem s₃.mem :=
+    have a : Frame [scratchR s, ⟨p, 16 * k⟩] s.mem s₃.mem :=
       (f₃.sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact ⟨workR s, List.mem_cons_self, arraysR_sub_work s⟩)
-    have b : Frame [workR s, ⟨p, 16 * k⟩] s₃.mem s₄.mem :=
+        exact ⟨scratchR s, List.mem_cons_self, arraysR_sub_scratch s⟩)
+    have b : Frame [scratchR s, ⟨p, 16 * k⟩] s₃.mem s₄.mem :=
       f₄.mono fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        simp only [workR, r8₃]; exact List.mem_cons_self
-    have c : Frame [workR s, ⟨p, 16 * k⟩] s₄.mem s₇.mem :=
+        simp only [scratchR, r8₃]; exact List.mem_cons_self
+    have c : Frame [scratchR s, ⟨p, 16 * k⟩] s₄.mem s₇.mem :=
       f₇.mono fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact List.mem_cons_of_mem _ List.mem_cons_self
     exact (a.trans b).trans c
-  refine ⟨fun b hb => ?_, ?_, ?_, G', ?_, by simp only [s', s₉, rd_write, rd₈, i₇.rd, rd₆],
+  have saved' : ∀ q ∈ Impl.Seed.PPC64LE.savedRegs, s'.gpr q.1 = s.gpr q.1 := by
+    intro q hq
+    have hne : ∀ q ∈ Impl.Seed.PPC64LE.savedRegs, q.1 ≠ .r4 ∧ q.1 ≠ .r5 ∧ q.1 ≠ .r6 ∧ q.1 ≠ .r7 ∧
+        q.1 ≠ .r9 ∧ q.1 ≠ .r10 := by decide
+    obtain ⟨h4, h5, h6, h7, h9, h10⟩ := hne q hq
+    rw [g' _ h4 h5, g₈ _ h10, G₇ _ h9 h7 h10 h6, sv₄ q hq, i₃.regs _ h9 h7 h10 h6, G₂ _ h10 h6 h7]
+  refine ⟨fun b hb => ?_, ?_, ?_, G', saved', ?_, by simp only [s', s₉, rd_write, rd₈, i₇.rd, rd₆],
     by simp only [s', s₉, wr_write, wr₈, i₇.wr, wr₆], frame⟩
   · rw [crypt_eq, ← hq₄ b hb, ← quad₆ b, mem']
     refine blockAt_of_bytes fun i hi => ?_

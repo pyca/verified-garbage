@@ -35,6 +35,13 @@ callee-saved registers `r14`–`r31`, which `g16` uses.
   and the rounds left (`r7`) stay in registers that `g16` does not write.
   Every address and branch depends only on them, the scratch base and the
   copy loops' cursors and counter (`r6`, `r7`, `r10`).
+* Each batch saves `r14`–`r31` after its copy in and restores them before
+  its copy out, so that between the two the code stores only at known
+  offsets of the scratch buffer. The copy loops store through pointers
+  they advance, after which the analysis of constant time of a caller
+  (`VG.PPC64LE.slotTaint`) knows nothing of the scratch buffer's slots; the
+  registers restored from slots it still knows come back as public as they
+  were, which is what lets the modes call these functions.
 -/
 
 @[expose] public section
@@ -155,19 +162,20 @@ def copyOut : Prog isa :=
     (.seq (.loop (.block copyOutBody) (.nonzero .d .r10))
       (.seq batchSize (.block [movR .r4 .r6, .sub .r5 .r5 .r10]))))
 
-def batch (d : Direction) : Prog isa := .seq copyIn (.seq (rounds d) copyOut)
-
-/-! ## The function -/
-
 def saveRegs : List Instr := savedRegs.map fun (r, k) => stS k r
 def restore : List Instr := savedRegs.map fun (r, k) => ldS r k
 
-def setup (d : Direction) : List Instr :=
-  [movR sb .r6] ++ saveRegs ++ ([.addi .r3 .r3 (keyStart d)] : List Instr)
+/-- The rounds, between `r14`–`r31` saved and restored. -/
+def roundsSaved (d : Direction) : Prog isa := .seq (.block saveRegs) (.seq (rounds d) (.block restore))
+
+def batch (d : Direction) : Prog isa := .seq copyIn (.seq (roundsSaved d) copyOut)
+
+/-! ## The function -/
+
+def setup (d : Direction) : List Instr := [movR sb .r6, .addi .r3 .r3 (keyStart d)]
 
 def ecb (d : Direction) : Prog isa :=
-  .seq (.block (setup d)) (.seq (.ite (.zero .d .r5) (.block []) (.loop (batch d) (.nonzero .d .r5)))
-    (.block restore))
+  .seq (.block (setup d)) (.ite (.zero .d .r5) (.block []) (.loop (batch d) (.nonzero .d .r5)))
 
 def encrypt : Prog isa := ecb .encrypt
 def decrypt : Prog isa := ecb .decrypt
