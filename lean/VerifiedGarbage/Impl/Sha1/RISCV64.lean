@@ -18,7 +18,13 @@ misaligned accesses, with the idioms of SHA-256's RISC-V implementation
   carries and the sign extensions of the `*w` shifts, which the word shifts
   and the stores ignore.
 * A rotation left by `n` is `slliw` by `n` and `srliw` by `32 - n`,
-  combined by `or`.
+  combined by `or`, but in the rounds: each new `a` is kept doubled, as
+  `x * (2³² + 1)` (`x` in both halves of its register), from which one
+  `srli` leaves `ROTL⁵(x)` (as `a`, the next round) or `ROTL³⁰(x)` (as `b`,
+  the round after) in the low word.
+* `Kₜ` is in `KR`, loaded where it changes, and the rounds add `Wₜ` and `Kₜ`
+  before `f(b, c, d)`, so that the additions depending on the previous round
+  come last.
 * The hash value (`state`, an array of `u32`) and the blocks are argument
   buffers, whose alignment the contract does not state, so they are read
   and written a byte at a time (`Impl/Words/RISCV64.lean`); the words of a
@@ -49,6 +55,9 @@ def var (t k : Nat) : Reg := work.getD ((k + 5 - t % 5) % 5) .t0
 def T0 : Reg := .t5
 def T1 : Reg := .t6
 def T2 : Reg := .a4
+
+/-- `Kₜ`. -/
+def KR : Reg := .a5
 
 /-- Round `scratch` up to a multiple of 8. -/
 def align : List Instr := [.addi .a3 .a3 7, .logicImm .and .a3 .a3 (-8)]
@@ -88,23 +97,35 @@ def fcode (f : Fn) (b c d : Reg) : List Instr :=
   | .maj => -- `Maj(b, c, d)`, as `((b ∨ c) ∧ d) ∨ (b ∧ c)`
     [.logic .or T1 b c, .logic .and T1 T1 d, .logic .and T2 b c, .logic .or T1 T1 T2]
 
-/-- Round `t`, with `Wₜ` in `T0`: `T = ROTL⁵(a) + f + e + Kₜ + Wₜ` is added
-up in `e`'s register (the new `a`), as `e + Wₜ + f + Kₜ + ROTL⁵(a)`, and `b`
-becomes `ROTL³⁰(b)`. -/
+/-- The rest of round `t`, with `a` and `b` doubled: `e += ROTL⁵(a)`,
+`b := ROTL³⁰(b)` (in its low word), and the new `a`, in `e`'s register,
+doubled. -/
+def tail (a b e : Reg) : List Instr :=
+  [.shift .srl .d T1 a 27, .add e e T1, .shift .srl .d b b 2,
+    .shift .sll .d e e 32, .shift .srl .d T1 e 32, .logic .or e e T1]
+
+/-- Round `t`, with `Wₜ` in `T0` and `Kₜ` in `KR`: `T = ROTL⁵(a) + f + e + Kₜ + Wₜ`
+is added up in `e`'s register (the new `a`), as `e + Wₜ + Kₜ + f + ROTL⁵(a)`,
+and `b` becomes `ROTL³⁰(b)`. -/
 def round (t : Nat) : List Instr :=
   let a := var t 0; let b := var t 1; let c := var t 2; let d := var t 3; let e := var t 4
-  ([.add e e T0] : List Instr) ++ fcode (fn t) b c d ++ ([.add e e T1] : List Instr) ++
-  li32 T1 (K t) ++ ([.add e e T1] : List Instr) ++ rotl T1 T2 a 5 ++
-  ([.add e e T1] : List Instr) ++ rotl b T1 b 30
+  ([.add e e T0, .add e e KR] : List Instr) ++ fcode (fn t) b c d ++ ([.add e e T1] : List Instr) ++
+  tail a b e
+
+/-- `KR := Kₜ` where it changes. -/
+def kload (t : Nat) : List Instr := if t % 20 = 0 then li32 KR (K t) else []
 
 /-- Rounds `0 … n-1`. -/
 def rounds : Nat → Prog isa
   | 0 => .block []
-  | n + 1 => .seq (rounds n) (.block (schedule n ++ round n))
+  | n + 1 => .seq (rounds n) (.block (schedule n ++ kload n ++ round n))
 
 /-- Load the hash value (`80 % 5 = 0`, so the variables are in the same
-registers after the 80 rounds). -/
-def load : List Instr := (List.range 5).flatMap fun k => loadLE32 (var 0 k) T0 .a0 (4 * k)
+registers after the 80 rounds), `a` and `b` doubled. -/
+def load : List Instr :=
+  (List.range 5).flatMap (fun k => loadLE32 (var 0 k) T0 .a0 (4 * k)) ++
+  [.shift .sll .d T1 (var 0 0) 32, .logic .or (var 0 0) (var 0 0) T1,
+    .shift .sll .d T1 (var 0 1) 32, .logic .or (var 0 1) (var 0 1) T1]
 
 /-- Add word `k` of the hash value into its working variable, and store the
 result. -/

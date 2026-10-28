@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Sha1.Spec
 public import VerifiedGarbage.TCB.RISCV64.Isa
+public import VerifiedGarbage.Proof.Framework.RISCV64.Double
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
@@ -83,10 +84,6 @@ theorem var_succ (L : Lay) (t k : Nat) (hk : k < 4) : L.var (t + 1) (k + 1) = L.
 theorem var_succ_zero (L : Lay) (t : Nat) : L.var (t + 1) 0 = L.var t 4 := by
   simp only [Lay.var]; congr 1; omega
 
-/-- A word in both halves of a register, from which one shift right leaves
-it rotated left in the low word (`dbl_rot`). -/
-def dbl (x : Word) : BitVec 64 := x ++ x
-
 /-- The working variables `v` in the registers of round `t`: `a` and `b`
 doubled, and `c`, `d` and `e` in the low 32 bits. -/
 def Vars (L : Lay) (t : Nat) (s : State) (v : HashValue) : Prop :=
@@ -95,38 +92,6 @@ def Vars (L : Lay) (t : Nat) (s : State) (v : HashValue) : Prop :=
   (s.gpr (L.var t 4)).setWidth 32 = v[4]
 
 /-! ## Bit vectors -/
-
-theorem dbl_lo (x : Word) : (dbl x).setWidth 32 = x := by
-  apply BitVec.eq_of_getLsbD_eq; intro i hi
-  rw [BitVec.getLsbD_setWidth, dbl, BitVec.getLsbD_append]; simp [hi]
-
-/-- A doubled word shifted right by `m = 32 - n` is the word rotated left by `n`. -/
-theorem dbl_rot (x : Word) (n m : Nat) (hn : n < 32) (hm : m + n = 32) :
-    (dbl x >>> m).setWidth 32 = x.rotateLeft n := by
-  apply BitVec.eq_of_getLsbD_eq; intro i hi
-  rw [BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, dbl, BitVec.getLsbD_append,
-    BitVec.getLsbD_rotateLeft, Nat.mod_eq_of_lt hn]
-  by_cases h : i < n
-  · simp only [show m + i < 32 by omega, h, hi, ↓reduceIte, decide_true, Bool.true_and]; congr 1; omega
-  · simp only [show ¬ m + i < 32 by omega, h, hi, ↓reduceIte, decide_true, Bool.true_and]; congr 1; omega
-
-/-- A zero-extended word doubled by `slli` and `or`. -/
-theorem dbl_ext (x : Word) : x.setWidth 64 ||| x.setWidth 64 <<< 32 = dbl x := by
-  apply BitVec.eq_of_getLsbD_eq; intro i hi
-  rw [BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth, BitVec.getLsbD_setWidth, dbl,
-    BitVec.getLsbD_append]
-  by_cases h : i < 32
-  · simp [h, hi]
-  · simp [hi, h, BitVec.getLsbD_of_ge x i (by omega), show i - 32 < 64 by omega]
-
-/-- A register's low word doubled by `slli`, `srli` and `or`. -/
-theorem dbl_mk (v : BitVec 64) : v <<< 32 ||| v <<< 32 >>> 32 = dbl (v.setWidth 32) := by
-  apply BitVec.eq_of_getLsbD_eq; intro i hi
-  rw [BitVec.getLsbD_or, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_shiftLeft, dbl,
-    BitVec.getLsbD_append]
-  by_cases h : i < 32
-  · simp [h, show 32 + i < 64 by omega]
-  · simp [hi, h, show i - 32 < 32 by omega, show ¬ 32 + i < 64 by omega]
 
 /-- A rotation left, as `rotl` computes it in the low word. -/
 theorem rotl_lo (y : Word) {n : Nat} (hn : n < 32) :
