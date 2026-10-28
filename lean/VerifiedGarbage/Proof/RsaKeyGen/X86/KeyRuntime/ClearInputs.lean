@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Clear
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Small
 import VerifiedGarbage.Proof.RsaKeyGen.WordBounds32

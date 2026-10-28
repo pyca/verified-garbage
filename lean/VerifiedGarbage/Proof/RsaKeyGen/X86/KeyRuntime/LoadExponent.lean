@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyLoadExponent
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Widen
 import VerifiedGarbage.Proof.Bignum.X86.LoadBE
 import VerifiedGarbage.Proof.Mont.X86.Instr
