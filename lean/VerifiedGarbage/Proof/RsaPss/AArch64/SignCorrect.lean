@@ -32,7 +32,7 @@ open VG.Proof.MlKem.AArch64 (Only Keep MemTo wp_nil wp_movz eval_zero eval_nonze
 open VG.Proof.RsaPkcs1Sig.AArch64 (wp_ldrSp wp_mov fill_ok PrivChecked)
 open VG.Proof.RsaPkcs1Sig (bytesAt_writeBytes frame_writeBytes)
 open VG.Proof.Pbkdf2.Md.AArch64 (HashOK)
-open VG.Proof.RsaPss.AArch64 (off loV maskV smear_ok emLen_ok saltFits_ok)
+open VG.Proof.RsaPss.AArch64 (off loV maskV saltFits_ok)
 
 theorem oR_eq {D K : Nat} {s : State} (hp : PreS D K s) :
     (⟨s.gpr .x0, (s.gpr .x3).toNat⟩ : Region) = oR s := by

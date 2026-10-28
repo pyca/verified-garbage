@@ -6,7 +6,9 @@ public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Encode
 /-!
 # RSASSA-PSS (RFC 8017 §8.1, EMSA-PSS §9.1) on AArch64
 
-`sign` and `verifyPrecomputed`, for a Merkle–Damgård hash function `H` (an
+The pieces of `sign` and `verifyPrecomputed`, which
+`Impl/RsaPss/AArch64/Encoding.lean` puts together around `encode` and
+`checkEncoding`, for a Merkle–Damgård hash function `H` (an
 `Impl.Pbkdf2.Md.AArch64.Hash`) as both the hash function and MGF1's, as on
 x86-64 (`Impl/RsaPss/X86_64.lean`), whose design this follows: `H`'s
 compression function and streaming `init`, and the RSA operation
@@ -262,18 +264,6 @@ def clearTop : List Instr :=
 /-- `n₀` into `x10`, from `n` in `r`. -/
 def n0 (r : Reg) : List Instr := [.ldrb .x10 r 0]
 
-/-- `x11 := smear(n₀ >> 1)`. -/
-def smear : List Instr :=
-  [.lsr .x .x11 .x10 1, .lsr .x .x12 .x11 1, .logic .orr .x .x11 .x11 .x12, .lsr .x .x12 .x11 2,
-    .logic .orr .x .x11 .x11 .x12, .lsr .x .x12 .x11 4, .logic .orr .x .x11 .x11 .x12]
-
-/-- The mask `sC` and `lo` (`sLo`); `x9 := emLen = k - lo`, and `x10`
-nonzero if `emLen < hLen + 2`. -/
-def emLen : Prog isa :=
-  .seq (.ite (.zero .x .x11) (.block [movi .x11 0xFF, movi .x12 1]) (.block [movi .x12 0]))
-    (.block (st .x11 sC ++ st .x12 sLo ++
-      ([.sub .x .x9 .x23 .x12, .subImm .x .x10 .x9 (H.D + 2), .lsr .x .x10 .x10 63] : List Instr)))
-
 /-- `x9 := emLen - hLen - 2`, the longest salt, and `x10` nonzero if it is
 less than the salt's length in `x12` (any 64-bit value: its top bit is
 ORed in, since the borrow of `x9 - x12` is the comparison only below
@@ -355,26 +345,11 @@ def privArgs : List Instr :=
       .str .x .x9 .x16 88, ld .x0 sOut, mov .x1 .x23, ld .x2 sN, mov .x3 .x23, ld .x4 sE, ld .x5 sEl,
       .addImm .x .x6 .x20 oEm, mov .x7 .x23]
 
-variable (privN : String) (privC : Prog isa)
-
 /-- After the checks: `EM` at `scratch + oEm`. -/
 def signEnc : Prog isa :=
   seqs [.block dbRegs, clearY, copyDigest H, copySaltY H, .block (signLen H), ctHash H, clearEm,
     putSalt, putH H, mgfXor H, .block clearTop]
 
-/-- After the checks: the encoding, and the private-key operation. -/
-def signMain : Prog isa := seqs [signEnc H, .block privArgs, .call privN privC]
-
-/-- The checks, then `signMain`. -/
-def signBody : Prog isa :=
-  seqs [.block (signPrologue ++ n0 .x2),
-    .ite (.zero .x .x10) signFail (seqs [.block smear, emLen H,
-      .ite (.nonzero .x .x10) signFail (seqs [.block ([ld .x12 sSaltLen] ++ saltFits H),
-        .ite (.nonzero .x .x10) signFail (signMain H privN privC)])]),
-    .block restore]
-
-/-- `vg_rsa_pss_<H>_mgf1_<H>_sign`. -/
-def sign : Prog isa := .frame (.alloc frameBytes) (signBody H privN privC) (.free frameBytes)
 
 /-! ## Verifying
 
@@ -396,14 +371,6 @@ def expLen : Prog isa :=
 
 /-- 0 returned. -/
 def verifyFail : Prog isa := .block [movi .x0 0]
-
-/-- The arguments of the precomputed public operation: `EM`'s place (`k`
-bytes), `pre` (`pre_len` words), `e`, the signature (`k` bytes), and the rest
-of `scratch`. -/
-def pubArgs : List Instr :=
-  [.addSp .x16 0, movi .x9 oRsa, .add .x .x9 .x20 .x9, .str .x .x9 .x16 0, ld .x9 sScrLen,
-    .subImm .x .x9 .x9 1024, .str .x .x9 .x16 8, .addImm .x .x0 .x20 oEm, mov .x1 .x23, ld .x2 sPre,
-    ld .x3 sPreLen, ld .x4 sE, ld .x5 sEl, ld .x6 sOut, mov .x7 .x23]
 
 /-- `acc :=` the leading byte if `lo = 1`, `EM`'s last byte `⊕ 0xbc`, and the
 top bits of `maskedDB`'s first byte. -/
@@ -492,25 +459,5 @@ def select : Prog isa :=
     (seqs [clearY, copyDigest H, copyDb H, shift H, .block (verifyNb H), ctHash H, cmpH H]))
 
 end FixedSalt
-
-variable (pubN : String) (pubC : Prog isa)
-
-/-- After the public checks. -/
-def verifyMain : Prog isa :=
-  seqs [.block dbRegs, .block pubArgs, .call pubN pubC, .block acc0, mgfXor H, .block clearTop, posScan,
-    posCheck, FixedSalt.select H]
-
-/-- The checks, then `verifyMain`. -/
-def verifyBody : Prog isa :=
-  seqs [.block (verifyPrologue ++ n0 .x0),
-    .ite (.zero .x .x10) verifyFail (seqs [.block smear, emLen H,
-      .ite (.nonzero .x .x10) verifyFail (seqs [expLen, .block (saltFits H),
-        .ite (.nonzero .x .x10) verifyFail (verifyMain H pubN pubC)])]),
-    .block restore]
-
-/-- `vg_rsa_pss_<H>_mgf1_<H>_verify_precomputed`, calling a precomputed
-public operation (`pubN`, `pubC`). -/
-def verifyPrecomputed : Prog isa :=
-  .frame (.alloc frameBytes) (verifyBody H pubN pubC) (.free frameBytes)
 
 end VG.Impl.RsaPss.AArch64
