@@ -22,15 +22,23 @@ iteration runs on words: `U` lives in five registers between the steps,
 `T`, the inner and the outer hash value are words in `scratch`, and only
 the prologue and the epilogue convert `U` and `T` from and to bytes.
 
-Each compression (`cmp`) keeps the whole message schedule window in
-registers (`w`, `Wₜ` in `w[t mod 16]`), the working variables in five more
-(`vs`, renamed each round as in `Impl/Sha1/RISCV64.lean`), and `Kₜ` in `KR`.
-The inner compression's window starts with `U`'s registers (`A`) and leaves
-its result in its working variables' (`V`); the outer one's starts with
-`V` and leaves its result in `A`, which is the next step's `U`. The padding
-words are loaded into the rest of the window (`P`) by each compression.
-With one temporary (`T1`), the rounds add `ROTL⁵(a)` as its two halves,
-which do not overlap, and `Maj(b, c, d)` as `(b ∧ c) + (d ∧ (b ⊕ c))`.
+Each compression (`cmp`) keeps the message schedule window in registers
+(`w`, `Wₜ` in `w[t mod 16]`), the working variables in five more (`vs`,
+renamed each round as in `Impl/Sha1/RISCV64.lean`), and `Kₜ` in `KR`. The
+inner compression's window starts with `U`'s registers (`A`) and leaves its
+result in its working variables' (`V`); the outer one's starts with `V` and
+leaves its result in `A`, which is the next step's `U`. The padding words
+`W₅ … W₁₅` are constants, which no register holds: the rounds add them with
+`Kₜ` (nothing for the zeros), and the schedule leaves out the zeros and
+applies the others after the rotation (`ROTL¹(x ⊕ c) = ROTL¹(x) ⊕ ROTL¹(c)`,
+an `xori`), so `Wₜ` for `21 ≤ t < 32` goes into a register that held no word.
+
+RV64I has no rotation, so each new `a` is kept doubled, as `x * (2³² + 1)`
+(`x` in both halves of its register), from which one `srli` leaves
+`ROTL⁵(x)` (as `a`, the next round) or `ROTL³⁰(x)` (as `b`, the round after)
+in the low word. The rounds add `Wₜ` and `Kₜ` before `f(b, c, d)`, so that the
+additions depending on the previous round come last. With one temporary
+(`T1`), `Maj(b, c, d)` is added as `(b ∧ c) + (d ∧ (b ⊕ c))`.
 
 `scratch` is rounded up to a multiple of 8 (it has room to spare): our
 caller's `ra` and `s0`–`s11` at `[0, 104)`, the inner hash value at `104`,
@@ -116,20 +124,56 @@ def fadd (f : Fn) (b c d e : Reg) : List Instr :=
   | .parity => [.logic .xor T1 b c, .logic .xor T1 T1 d, .add e e T1]
   | .maj => [.logic .and T1 b c, .add e e T1, .logic .xor T1 b c, .logic .and T1 T1 d, .add e e T1]
 
+/-- Whether `Wⱼ` is a padding word (`5 ≤ j < 16`), a constant. -/
+def isC (j : Nat) : Bool := 5 ≤ j && j < 16
+
+/-- The padding word `Wⱼ` (`5 ≤ j < 16`): `0x80000000`, the zeros and the bit count. -/
+def cval (j : Nat) : BitVec 32 := if j = 5 then 0x80000000 else if j = 15 then 672 else 0
+
+/-- `e += Wₜ + Kₜ`, with `Kₜ` in `KR`: `W₅` with `K₅` as one constant (through
+`T1`), the bit count `W₁₅` as an immediate, and nothing for the zeros. -/
+def wk (L : Lay) (t : Nat) (e : Reg) : List Instr :=
+  if t = 5 then li32 T1 (Spec.Sha1.K 5 + 0x80000000) ++ [.add e e T1]
+  else if t = 15 then [.addi e e 672, .add e e KR]
+  else if isC t then [.add e e KR]
+  else [.add e e (L.wr t), .add e e KR]
+
+/-- The rest of round `t`, with `a` and `b` doubled: `e += ROTL⁵(a)`,
+`b := ROTL³⁰(b)` (in its low word), and the new `a`, in `e`'s register,
+doubled. -/
+def tail (a b e : Reg) : List Instr :=
+  [.shift .srl .d T1 a 27, .add e e T1, .shift .srl .d b b 2,
+    .shift .sll .d e e 32, .shift .srl .d T1 e 32, .logic .or e e T1]
+
 /-- Round `t`: `T = ROTL⁵(a) + f + e + Kₜ + Wₜ` is added up in `e`'s register
-(the new `a`), as `e + Wₜ + f + Kₜ + (a << 5) + (a >> 27)`, and `b` becomes
-`ROTL³⁰(b)`. -/
+(the new `a`), as `e + Wₜ + Kₜ + f + ROTL⁵(a)`, and `b` becomes `ROTL³⁰(b)`. -/
 def round (L : Lay) (t : Nat) : List Instr :=
   let a := L.var t 0; let b := L.var t 1; let c := L.var t 2; let d := L.var t 3; let e := L.var t 4
-  ([.add e e (L.wr t)] : List Instr) ++ fadd (fn t) b c d e ++
-  ([.add e e KR, .shift .sll .w T1 a 5, .add e e T1, .shift .srl .w T1 a 27, .add e e T1] : List Instr) ++
-  rotl b b 30
+  wk L t e ++ fadd (fn t) b c d e ++ tail a b e
 
-/-- `Wₜ = ROTL¹(Wₜ₋₁₆ ⊕ Wₜ₋₁₄ ⊕ Wₜ₋₈ ⊕ Wₜ₋₃)`, in place of `Wₜ₋₁₆` (`16 ≤ t`). -/
+/-- The words `Wₜ₋₁₆, Wₜ₋₁₄, Wₜ₋₈, Wₜ₋₃` of `Wₜ`'s schedule (`16 ≤ t`). -/
+def terms (t : Nat) : List Nat := [t - 16, t - 14, t - 8, t - 3]
+
+/-- Those of them in registers. -/
+def vterms (t : Nat) : List Nat := (terms t).filter fun j => !isC j
+
+/-- `ROTL¹` of the exclusive or of the constant ones. -/
+def cterm (t : Nat) : BitVec 32 :=
+  (((terms t).filter isC).foldl (fun c j => c ^^^ cval j) 0).rotateLeft 1
+
+/-- `d := x₀ ⊕ x₁ ⊕ …`, for at least two registers. -/
+def xors (d : Reg) : List Reg → List Instr
+  | x :: y :: rest => .logic .xor d x y :: rest.map fun r => .logic .xor d d r
+  | _ => []
+
+/-- `Wₜ = ROTL¹(Wₜ₋₁₆ ⊕ Wₜ₋₁₄ ⊕ Wₜ₋₈ ⊕ Wₜ₋₃)` in `Wₜ₋₁₆`'s register (`16 ≤ t`),
+from the words in registers, then the constants. -/
 def sched (L : Lay) (t : Nat) : List Instr :=
   let d := L.wr t
-  ([.logic .xor d d (L.wr (t + 2)), .logic .xor d d (L.wr (t + 8)), .logic .xor d d (L.wr (t + 13))] :
-    List Instr) ++ rotl d d 1
+  (match (vterms t).map L.wr with
+    | [x] => rotl d x 1
+    | rs => xors d rs ++ rotl d d 1) ++
+  (if cterm t = 0 then [] else [.logicImm .xor d d (cterm t).toNat])
 
 /-- `KR := Kₜ` where it changes. -/
 def kload (t : Nat) : List Instr := if t % 20 = 0 then li32 KR (Spec.Sha1.K t) else []
@@ -137,12 +181,11 @@ def kload (t : Nat) : List Instr := if t % 20 = 0 then li32 KR (Spec.Sha1.K t) e
 /-- Round `t`, with the schedule and the constant it needs. -/
 def step (L : Lay) (t : Nat) : List Instr := (if 16 ≤ t then sched L t else []) ++ kload t ++ round L t
 
-/-- The working variables from the hash value. -/
-def load (L : Lay) : List Instr := (List.range 5).flatMap fun k => [.load .w (L.var 0 k) B (L.hO + 4 * k)]
-
-/-- The padding words of the block. -/
-def consts (L : Lay) : List Instr :=
-  li32 (L.wr 5) 0x80000000 ++ (List.range 9).flatMap (fun i => [.li (L.wr (6 + i)) 0]) ++ [.li (L.wr 15) 672]
+/-- The working variables from the hash value, `a` and `b` doubled. -/
+def load (L : Lay) : List Instr :=
+  (List.range 5).flatMap (fun k => [.load .w (L.var 0 k) B (L.hO + 4 * k)]) ++
+  [.shift .sll .d T1 (L.var 0 0) 32, .logic .or (L.var 0 0) (L.var 0 0) T1,
+    .shift .sll .d T1 (L.var 0 1) 32, .logic .or (L.var 0 1) (L.var 0 1) T1]
 
 /-- The hash value added into the working variables. -/
 def addH (L : Lay) : List Instr :=
@@ -152,7 +195,7 @@ def addH (L : Lay) : List Instr :=
 `w[0..5)` and the padding, into `vs` (`80 % 5 = 0`, so the variables are
 in the same registers after the 80 rounds). -/
 def cmp (L : Lay) : List Instr :=
-  load L ++ consts L ++ (List.range 80).flatMap (step L) ++ addH L
+  load L ++ (List.range 80).flatMap (step L) ++ addH L
 
 /-- `T ← T ⊕ U`, with `U` in `A`. -/
 def xorT : List Instr :=

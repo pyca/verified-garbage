@@ -174,7 +174,7 @@ theorem var0_pub {k : Nat} (hk : k < 5) : ∀ r ∈ pubRegs, r ≠ var 0 k := by
 
 /-- The first `k` words of the MD buffer are loaded. -/
 structure LdI (s₁ : State) (k : Nat) (s : State) : Prop where
-  vars : ∀ j < k, (s.gpr (var 0 j)).setWidth 32 = (stateAt s₁.mem (s₁.gpr .a0))[j]!
+  vars : ∀ j < k, s.gpr (var 0 j) = ((stateAt s₁.mem (s₁.gpr .a0))[j]!).setWidth 64
   pub : ∀ r ∈ pubRegs, s.gpr r = s₁.gpr r
   mem : s.mem = s₁.mem
   rd : s.rd = s₁.rd
@@ -193,8 +193,7 @@ theorem load_step {s₀ s₁ : State} (hp : Pre s₀) (hr0 : s₁.gpr .a0 = st s
     · rw [RegUpd.gpr_write_of_ne _ _ (fun e => absurd (var0_inj (by omega) hk e) (by omega)),
         RegUpd.gpr_write_of_ne _ _ (var0_ne (by omega : j < 5)).2.1]
       exact h.vars j hj
-    · rw [RegUpd.gpr_write_self, lo32_ext, h.mem, h0, ← hr0, getElem!_pos _ j hk,
-        stateAt_get _ _ hk]
+    · rw [RegUpd.gpr_write_self, h.mem, h0, ← hr0, getElem!_pos _ j hk, stateAt_get _ _ hk]
   · rw [RegUpd.gpr_write_of_ne _ _ (var0_pub hk r hr),
       RegUpd.gpr_write_of_ne _ _ fun e => (pubRegs_ne' r hr).1 e]
     exact h.pub r hr
@@ -204,12 +203,39 @@ theorem load_ok {s₀ : State} (hp : Pre s₀) {s : State} (hr0 : s.gpr .a0 = st
     WP isa (.block load) s fun s₁ =>
       Vars 0 s₁ (stateAt s.mem (st s₀)) ∧ (∀ r ∈ pubRegs, s₁.gpr r = s.gpr r) ∧
       s₁.rd = s.rd ∧ s₁.wr = s.wr ∧ s₁.mem = s.mem := by
+  unfold load
+  rw [WP.block_append_iff]
   refine WP.mono (wp_range_flatMap (M := isa) (LdI s) (fun k s' hk h => load_step hp hr0 hrd hwr hk h)
     5 (Nat.le_refl _) s ⟨fun _ h => absurd h (by omega), fun _ _ => rfl, rfl, rfl, rfl⟩)
-    fun s₁ h => ⟨?_, h.pub, h.rd, h.wr, h.mem⟩
+    fun s₁ h => ?_
   have v := h.vars
   rw [hr0] at v
-  exact ⟨v 0 (by decide), v 1 (by decide), v 2 (by decide), v 3 (by decide), v 4 (by decide)⟩
+  have v' (k : Nat) (hk : k < 5) : s₁.gpr (var 0 k) = ((stateAt s.mem (st s₀))[k]).setWidth 64 := by
+    rw [v k hk, getElem!_pos _ k hk]
+  have n01 : var 0 0 ≠ var 0 1 := by decide
+  have t0 : var 0 0 ≠ T1 := by decide
+  have t1 : var 0 1 ≠ T1 := by decide
+  simp only [T1] at t0 t1 ⊢
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec_logic, exec_shift_d (show 32 < 64 by decide),
+    Option.some.injEq, exists_eq_left']
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_⟩, fun r hr => ?_, h.rd, h.wr, h.mem⟩
+  · simp only [RegUpd.gpr_write, t0, n01, ↓reduceIte]; rw [v' 0 (by decide), dbl_ext]
+  · simp only [RegUpd.gpr_write, t1, Ne.symm n01, ↓reduceIte]; rw [v' 1 (by decide), dbl_ext]
+  · simp only [RegUpd.gpr_write, show var 0 2 ≠ var 0 0 by decide, show var 0 2 ≠ var 0 1 by decide,
+      show var 0 2 ≠ .t6 by decide, ↓reduceIte]
+    rw [v' 2 (by decide), lo32_ext]
+  · simp only [RegUpd.gpr_write, show var 0 3 ≠ var 0 0 by decide, show var 0 3 ≠ var 0 1 by decide,
+      show var 0 3 ≠ .t6 by decide, ↓reduceIte]
+    rw [v' 3 (by decide), lo32_ext]
+  · simp only [RegUpd.gpr_write, show var 0 4 ≠ var 0 0 by decide, show var 0 4 ≠ var 0 1 by decide,
+      show var 0 4 ≠ .t6 by decide, ↓reduceIte]
+    rw [v' 4 (by decide), lo32_ext]
+  · have h0 : r ≠ var 0 0 := var0_pub (by decide) r hr
+    have h1 : r ≠ var 0 1 := var0_pub (by decide) r hr
+    have h6 : r ≠ .t6 := (pubRegs_ne' r hr).2.1
+    simp only [RegUpd.gpr_write, h0, h1, h6, ↓reduceIte]
+    exact h.pub r hr
 
 /-! ## Adding the MD buffer into the words -/
 
@@ -312,7 +338,7 @@ theorem vars_get {s : State} {V : HashValue} (h : Vars 0 s V) :
   intro j hj
   rw [getElem!_pos V j hj]
   rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 by omega) with rfl | rfl | rfl | rfl | rfl
-  exacts [h0, h1, h2, h3, h4]
+  exacts [by rw [h0, dbl_lo], by rw [h1, dbl_lo], h2, h3, h4]
 
 theorem update_ok {s₀ s₂ : State} (hp : Pre s₀) (V H : HashValue) (hv : Vars 0 s₂ V)
     (hr0 : s₂.gpr .a0 = st s₀) (hrd : s₂.rd = s₀.rd) (hwr : s₂.wr = s₀.wr)
