@@ -114,7 +114,7 @@ theorem rv_okWith (body : Prog isa) (bodyProof : BodyVerified body) (h : CIn s) 
   · have dEq : dB (mkP s) (u.withRegions u.rd (xRegs s)) =
         Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 4)) (stackArg s 5).toNat := by
       show Spec.Rsa.bytesAt u.mem _ _ = _
-      rw [umem]; exact h.bytes (R := cD s) h.Fd (Nat.le_of_lt ((BitVec.isLt _).trans_le (by decide)))
+      rw [umem]; exact h.bytes (R := cD s) h.Fd (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide)))
     simp only [popped_gpr (by decide : Reg.r0 ≠ .r12), popped_mem, memT, ret, State.withRegions_mem]
     rw [dEq] at res
     exact res

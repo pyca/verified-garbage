@@ -50,7 +50,7 @@ private theorem core_base (M : Mont) (L : VG.Proof.Bignum.AArch64.Ws) (s : State
     rw [← Nat.pow_mul,
       show 4 * (16 * L.w) = 64 * L.w by omega_arith]
     have hn : c < 2 ^ (64 * L.w) := hc.n ▸ wv_lt s.mem L.B (slot L.w aN) L.w
-    exact lt_of_le_of_lt (Nat.div_le_self _ _) (lt_of_le_of_lt (Nat.sub_le _ _) hn)
+    exact Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (Nat.lt_of_le_of_lt (Nat.sub_le _ _) hn)
   exact WP.mono (core_ok M h128 hEZ hc hE hodd (by omega_arith) hfit hX)
     fun t ⟨ht, _⟩ => ht.ws.x0
 

@@ -177,7 +177,7 @@ theorem call_ok (v : PublicImpl)
     · exact dFb x hx hc
     · exact hnx hc
     · exact (Offset.base_disjoint (stackArg s 3) (e := oRsa) (n := (stackArg s 4 - 1024#64).toNat * 8)
-        (k := oRsa) (le_refl _) (by rw [hsc]; omega_arith)) x hx hc
+        (k := oRsa) (Nat.le_refl _) (by rw [hsc]; omega_arith)) x hx hc
     · exact ((hp.dKs.sub_left sBel).symm.sub_left (Region.sub_prefix (by omega_arith))) x hx hc
   · have hE : ∀ i < 4, stackArg (t.callEntry.withRegions (callRd s) (cWr s)) i = vArg s i :=
       fun i hi => (vstackArg_call hp.toVPre hst _ _ hi).trans (hargs i hi)

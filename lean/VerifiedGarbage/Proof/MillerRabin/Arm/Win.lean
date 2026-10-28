@@ -326,7 +326,7 @@ theorem word_step {P : MP} (n : Nat) (fios : Bool := false) :
       fun σ s ⟨h, z⟩ => ⟨?_, fun h0 => ⟨by omega_arith, h0 ▸ h⟩, fun _ => ⟨by omega_arith, h⟩⟩
     show some (!s.z) = _
     rw [z]
-    by_cases h0 : n = 0 <;> simp [h0] <;> omega_arith
+    by_cases h0 : n = 0 <;> simp [h0, Nat.pos_iff_ne_zero, Nat.mul_eq_zero]
 
 /-- The words. -/
 theorem words_loop {P : MP} (fios : Bool := false) : VP (WO P (2 * P.w)) (.loop (word (fios := fios)) .ne) (WO P 0) := by

@@ -34,7 +34,7 @@ private theorem exponent_fits {s : State} {B : Addr} {Z w c bm : Nat}
   rw [← Nat.pow_mul,
     show 4 * (16 * w) = 64 * w by omega_arith]
   have hc : c < 2 ^ (64 * w) := h.n ▸ wv_lt s.mem B (slot w aN) w
-  exact lt_of_le_of_lt (Nat.div_le_self _ _) (lt_of_le_of_lt (Nat.sub_le _ _) hc)
+  exact Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (Nat.lt_of_le_of_lt (Nat.sub_le _ _) hc)
 
 theorem round_correct (M : Mont) (s : State) (h : roundContract.pre s) :
     ∃ tr t, Exec isa (round M.mm) s tr t ∧ abiPreserved s t ∧ roundContract.post s t := by

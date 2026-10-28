@@ -115,12 +115,12 @@ theorem IPre.of_frm (hl : LayOk l) {m m' : Mem} {B : Addr} {w op oq : Nat} {minv
     h.pws.of_words fun i hi => hp i (by omega_using [hi]), h.qws.of_words fun i hi => hq i (by omega_using [hi]),
     ?_, ?_, ?_, ?_, ?_, ?_, (hp _ (by decide)).trans h.pmk, (hn _ (by decide)).trans h.dp,
     (hn _ (by decide)).trans h.pl, (hn _ (by decide)).trans h.dq, (hn _ (by decide)).trans h.ql⟩
-  · rw [wv_off, hV _ (.inr (.inr (.inl ⟨rfl, le_refl _⟩))), ← wv_off]; exact h.pn
+  · rw [wv_off, hV _ (.inr (.inr (.inl ⟨rfl, Nat.le_refl _⟩))), ← wv_off]; exact h.pn
   · rw [word_off, hW _ (.inr (.inr (.inl ⟨rfl, by omega_using [hW1]⟩))), ← word_off]; exact h.pinv
-  · rw [wv_off, hV _ (.inr (.inr (.inr (.inl ⟨rfl, le_refl _⟩)))), ← wv_off]; exact h.pone
-  · rw [wv_off, hV _ (.inr (.inr (.inr (.inr (.inr (.inl ⟨rfl, le_refl _⟩)))))), ← wv_off]; exact h.qn
+  · rw [wv_off, hV _ (.inr (.inr (.inr (.inl ⟨rfl, Nat.le_refl _⟩)))), ← wv_off]; exact h.pone
+  · rw [wv_off, hV _ (.inr (.inr (.inr (.inr (.inr (.inl ⟨rfl, Nat.le_refl _⟩)))))), ← wv_off]; exact h.qn
   · rw [word_off, hW _ (.inr (.inr (.inr (.inr (.inr (.inl ⟨rfl, by omega_using [hW1]⟩)))))), ← word_off]; exact h.qinv
-  · rw [wv_off, hV _ (.inr (.inr (.inr (.inr (.inr (.inr ⟨rfl, le_refl _⟩)))))), ← wv_off]; exact h.qone
+  · rw [wv_off, hV _ (.inr (.inr (.inr (.inr (.inr (.inr ⟨rfl, Nat.le_refl _⟩)))))), ← wv_off]; exact h.qone
 
 theorem IMem.of_frm (hl : LayOk l) {m m' : Mem} {B : Addr} {w op oq a : Nat} {minv mp mq mk : BitVec 64} {P Q : Nat}
     {ep eq : Addr} {lp lq : Nat} (h : IMem l m B w op oq a minv mp mq mk P Q ep eq lp lq)
