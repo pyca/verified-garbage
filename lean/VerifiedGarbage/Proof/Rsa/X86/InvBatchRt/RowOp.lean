@@ -25,18 +25,18 @@ variable {L : Lay} {B : Addr} {Z len N : Nat}
 
 /-- `mulRow set acc src (nBytes .esi e)`: `[acc] = ecx · [src]` (`set`) or `[acc] += ecx · [src]`,
 over `n + e` words of the source and `n + e + 2` of the accumulator. -/
-theorem mulRow_ok {set : Bool} {s : State} (h : Bx L s B Z len N) {acc src : Ref} {e : Nat} (he : e ≤ 4)
+theorem mulRow_gen {set : Bool} {s : State} (h : Bx L s B Z len N) {acc src : Ref} {e : Nat} (he : e ≤ 4)
     (hsh : src.half = 0)
     (haz : rv (kw len) acc + 4 * (nw len + e + 2) ≤ Z) (hsz : rv (kw len) src + 4 * (nw len + e) ≤ Z)
     (sep : rv (kw len) src + 4 * (nw len + e) ≤ rv (kw len) acc ∨
-      rv (kw len) acc + 4 * (nw len + e + 2) ≤ rv (kw len) src)
-    (hlt : set = false → val32 s.mem B (rv (kw len) acc) (nw len + e + 2) +
-      (s.gpr .ecx).toNat * val32 s.mem B (rv (kw len) src) (nw len + e) < 2 ^ (32 * (nw len + e + 2))) :
+      rv (kw len) acc + 4 * (nw len + e + 2) ≤ rv (kw len) src) :
     WP isa (VG.Impl.Rsa.X86.InvBatchRt.mulRow L set acc src (nBytes .esi e)) s fun t =>
       Bx L t B Z len N ∧ Outside B (rv (kw len) acc) (4 * (nw len + e + 2)) s.mem t.mem ∧
+      ((set = false → val32 s.mem B (rv (kw len) acc) (nw len + e + 2) +
+        (s.gpr .ecx).toNat * val32 s.mem B (rv (kw len) src) (nw len + e) < 2 ^ (32 * (nw len + e + 2))) →
       val32 t.mem B (rv (kw len) acc) (nw len + e + 2) =
         (if set then 0 else val32 s.mem B (rv (kw len) acc) (nw len + e + 2)) +
-          (s.gpr .ecx).toNat * val32 s.mem B (rv (kw len) src) (nw len + e) ∧
+          (s.gpr .ecx).toNat * val32 s.mem B (rv (kw len) src) (nw len + e)) ∧
       Keeps [.eax, .ebx, .edx, .ebp, .esi] s t := by
   have hn := h.nowrap
   have hw := kw_bound h.ws.lenLe
@@ -68,14 +68,18 @@ theorem mulRow_ok {set : Bool} {s : State} (h : Bx L s B Z len N) {acc src : Ref
     (by rw [U.other _ (by decide), K₃.1 _ (by decide), c₂]; omega) U.gpr) fun t R => ?_)
   -- The tail, and `edi` back.
   have post : ∀ v, Keeps [.eax] t v → Outside B (rv (kw len) acc) (4 * (nw len + e + 2)) u.mem v.mem →
+      ((set = false → val32 u.mem B (rv (kw len) acc) (nw len + e + 2) +
+        (u.gpr .ecx).toNat * val32 u.mem B (rv (kw len) src) (nw len + e) < 2 ^ (32 * (nw len + e + 2))) →
       val32 v.mem B (rv (kw len) acc) (nw len + e + 2) =
         (if set then 0 else val32 u.mem B (rv (kw len) acc) (nw len + e + 2)) +
-          (u.gpr .ecx).toNat * val32 u.mem B (rv (kw len) src) (nw len + e) →
+          (u.gpr .ecx).toNat * val32 u.mem B (rv (kw len) src) (nw len + e)) →
       WP isa (.block (restoreEdi L)) v fun t =>
         Bx L t B Z len N ∧ Outside B (rv (kw len) acc) (4 * (nw len + e + 2)) s.mem t.mem ∧
+        ((set = false → val32 s.mem B (rv (kw len) acc) (nw len + e + 2) +
+          (s.gpr .ecx).toNat * val32 s.mem B (rv (kw len) src) (nw len + e) < 2 ^ (32 * (nw len + e + 2))) →
         val32 t.mem B (rv (kw len) acc) (nw len + e + 2) =
           (if set then 0 else val32 s.mem B (rv (kw len) acc) (nw len + e + 2)) +
-            (s.gpr .ecx).toNat * val32 s.mem B (rv (kw len) src) (nw len + e) ∧
+            (s.gpr .ecx).toNat * val32 s.mem B (rv (kw len) src) (nw len + e)) ∧
         Keeps [.eax, .ebx, .edx, .ebp, .esi] s t := by
     intro v Kv O V
     rw [m] at O V
@@ -91,10 +95,25 @@ theorem mulRow_ok {set : Bool} {s : State} (h : Bx L s B Z len N) {acc src : Ref
     exact ⟨h.keep K' (by decide) (by decide) (by rw [U₁.mem]; exact O) (rv_ge _ acc) haz,
       by rw [U₁.mem]; exact O, by rw [U₁.mem]; exact V, K'⟩
   cases set
-  · refine tailAdd_ok hwu haz R (by rw [m, ecx]; exact hlt rfl) fun v Kv O V => ?_
-    exact post v Kv O (by simpa only [Bool.false_eq_true, ite_false] using V)
+  · refine tailAdd_ok hwu haz R fun v Kv O V => ?_
+    exact post v Kv O fun hlt => by simpa only [Bool.false_eq_true, ite_false] using V (hlt rfl)
   · refine tailSet_ok hwu haz R fun v Kv O V => ?_
-    exact post v Kv O (by simpa only [ite_true, Nat.zero_add] using V)
+    exact post v Kv O fun _ => by simpa only [ite_true, Nat.zero_add] using V
+
+theorem mulRow_ok {set : Bool} {s : State} (h : Bx L s B Z len N) {acc src : Ref} {e : Nat} (he : e ≤ 4)
+    (hsh : src.half = 0)
+    (haz : rv (kw len) acc + 4 * (nw len + e + 2) ≤ Z) (hsz : rv (kw len) src + 4 * (nw len + e) ≤ Z)
+    (sep : rv (kw len) src + 4 * (nw len + e) ≤ rv (kw len) acc ∨
+      rv (kw len) acc + 4 * (nw len + e + 2) ≤ rv (kw len) src)
+    (hlt : set = false → val32 s.mem B (rv (kw len) acc) (nw len + e + 2) +
+      (s.gpr .ecx).toNat * val32 s.mem B (rv (kw len) src) (nw len + e) < 2 ^ (32 * (nw len + e + 2))) :
+    WP isa (VG.Impl.Rsa.X86.InvBatchRt.mulRow L set acc src (nBytes .esi e)) s fun t =>
+      Bx L t B Z len N ∧ Outside B (rv (kw len) acc) (4 * (nw len + e + 2)) s.mem t.mem ∧
+      val32 t.mem B (rv (kw len) acc) (nw len + e + 2) =
+        (if set then 0 else val32 s.mem B (rv (kw len) acc) (nw len + e + 2)) +
+          (s.gpr .ecx).toNat * val32 s.mem B (rv (kw len) src) (nw len + e) ∧
+      Keeps [.eax, .ebx, .edx, .ebp, .esi] s t :=
+  WP.mono (mulRow_gen h he hsh haz hsz sep) fun _ ⟨H, O, V, K⟩ => ⟨H, O, V hlt, K⟩
 
 /-- `rowAdd set c acc src (nBytes .esi e)`: the row with the multiplier the header word `c`. -/
 theorem rowAdd_ok {set : Bool} {s : State} (h : Bx L s B Z len N) {c : Nat} (hc : c + 4 ≤ 160)

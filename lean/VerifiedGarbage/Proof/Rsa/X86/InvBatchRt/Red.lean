@@ -83,7 +83,7 @@ theorem redSum_ok {s : State} (h : Bx L s B Z len N) {acc : Ref} (hah : acc.half
   have r2 : rv (kw len) { acc with half := 1, byte := 4 } = rv (kw len) acc + 4 * (nw len + 1) := by
     have := rv_half (kw len) acc hah 4; simp only [hab, Nat.zero_add] at this; rw [this]; omega
   unfold redSum
-  simp only [List.append_assoc]
+  simp only [redHead, redTail, List.append_assoc]
   -- The sign mask, into `esi`.
   refine WP.seq (maskAt_ok h (x := { acc with half := 1 }) (by rw [r1]; omega) fun u₁ K₁ m₁ c₁ => ?_)
   rw [r1] at c₁
@@ -377,6 +377,47 @@ theorem select3_ok {s : State} (h : Bx L s B Z len N) {o a b : Ref} {k : Bool} (
   refine ⟨h.keep K' (by decide) (by decide) (by rw [U.mem]; exact O) ro hoz, by rw [U.mem]; exact O, ?_, K'⟩
   rw [U.mem, V]
 
+/-- `borrowMask src`: `ecx` all ones where `[src + 4 n]` does not borrow the carry `c` of `ecx`'s
+mask. -/
+theorem borrowMask_ok {s : State} (h : Bx L s B Z len N) {src : Ref} (hsh : src.half = 0)
+    (hsz : rv (kw len) src + 4 * (nw len + 1) ≤ Z) {c : Bool} (hc : s.gpr .ecx = cmask c)
+    {is : List Instr} {Q : State → Prop}
+    (k : ∀ u, Bx L u B Z len N → Keeps [.eax, .ebx, .ecx, .edx] s u → u.mem = s.mem →
+      u.gpr .ecx = cmask (!decide (w32 s.mem B (rv (kw len) src + 4 * nw len) < c.toNat)) →
+      WP isa (.block is) u Q) :
+    WP isa (.block (borrowMask L src ++ is)) s Q := by
+  have hn := h.nowrap
+  have hZ := h.halfZ
+  have ke := kw_eq len
+  have rs := rv_ge (kw len) src
+  have r1 : rv (kw len) { src with half := 1 } = rv (kw len) src + 4 * nw len := by
+    rw [rv_half1 _ _ hsh]; omega
+  simp only [borrowMask, List.append_assoc]
+  refine ptr_ok h.ws h.slots hZ (r := .ebx) (t := .edx) (x := { src with half := 1 }) (by decide)
+    (by decide) (by decide) (by decide) (by intro e; cases e) (by rw [r1]; omega) fun s₂ K₂ m₂ p₂ => ?_
+  rw [r1] at p₂
+  simp only [List.cons_append, List.nil_append]
+  refine wp_movS (readSrc_ptr (h.ws.rt.of_keeps K₂) p₂ (d := 0) (by omega)) fun s₃ U₃ _ => ?_
+  have hc₃ : s₃.gpr .ecx = cmask c := by rw [U₃.other _ (by decide), K₂.1 _ (by decide)]; exact hc
+  refine VG.Proof.Bignum.X86.PublicRt.wp_carry hc₃ fun s₄ U₄ cf₄ => ?_
+  refine wp_sbbS rfl cf₄ fun s₅ U₅ cf₅ => ?_
+  refine wp_sbbS rfl cf₅ fun s₆ U₆ _ => ?_
+  refine wp_logicS (.inr rfl) rfl fun s₇ U₇ => ?_
+  refine wp_movS rfl fun s₈ U₈ _ => ?_
+  have K₈ : Keeps [.eax, .ebx, .ecx, .edx] s s₈ :=
+    ((((((K₂.mono (by decide)).trans (U₃.keeps.mono (by decide))).trans (U₄.keeps.mono (by decide))).trans
+      (U₅.keeps.mono (by decide))).trans (U₆.keeps.mono (by decide))).trans (U₇.keeps.mono (by decide))).trans
+      (U₈.keeps.mono (by decide))
+  have m₈ : s₈.mem = s.mem := by rw [U₈.mem, U₇.mem, U₆.mem, U₅.mem, U₄.mem, U₃.mem, m₂]
+  refine k s₈ (h.keep K₈ (by decide) (by decide) (by rw [m₈]; exact Outside.refl _ _ _ _) rs hsz) K₈ m₈ ?_
+  have e7 := U₇.gpr
+  simp only [reduceCtorEq, ite_false] at e7
+  rw [U₈.gpr, e7, U₆.gpr, Mont.X86.mask_val]
+  have t₃ : (s₃.gpr .eax).toNat = w32 s.mem B (rv (kw len) src + 4 * nw len) := by
+    rw [U₃.gpr, m₂, Nat.add_zero]
+  rw [U₄.other _ (by decide), t₃]
+  simp [cmask]
+
 /-- `csub src o`: `[o] = [src] mod m` for `[src] < 2 m` (`n` words and a top word), as `Mont.csub_ok`
 states it. -/
 theorem csub_ok {s : State} (h : Bx L s B Z len N) {src o : Ref} (hsh : src.half = 0) (hoh : o.half = 0)
@@ -407,38 +448,11 @@ theorem csub_ok {s : State} (h : Bx L s B Z len N) {src o : Ref} (hsh : src.half
     fun s₁ ⟨H₁, O₁, ⟨c, hc, V₁⟩, K₁⟩ => ?_)
   simp only [Nat.add_zero] at O₁ V₁
   -- The mask: all ones where the top word does not borrow.
-  rw [show ptr L .ebx { src with half := 1 } .edx ++ [.mov .eax (.mem (at_ .ebx 0)), .alu .add .ecx (.reg .ecx),
-      .alu .sbb .eax (.imm 0), .alu .sbb .eax (.reg .eax), .alu .xor .eax (.imm (-1)), .mov .ecx (.reg .eax)] =
-      ptr L .ebx { src with half := 1 } .edx ++ ([.mov .eax (.mem (at_ .ebx 0)), .alu .add .ecx (.reg .ecx),
-      .alu .sbb .eax (.imm 0), .alu .sbb .eax (.reg .eax), .alu .xor .eax (.imm (-1)), .mov .ecx (.reg .eax)] ++ [])
-      from rfl]
-  refine WP.seq (ptr_ok H₁.ws H₁.slots hZ (r := .ebx) (t := .edx) (x := { src with half := 1 }) (by decide)
-    (by decide) (by decide) (by decide) (by intro e; cases e) (by rw [r1]; omega) fun s₂ K₂ m₂ p₂ => ?_)
-  rw [r1] at p₂
-  simp only [List.cons_append, List.nil_append]
-  refine wp_movS (readSrc_ptr (H₁.ws.rt.of_keeps K₂) p₂ (d := 0) (by omega)) fun s₃ U₃ _ => ?_
-  have hc₃ : s₃.gpr .ecx = cmask c := by rw [U₃.other _ (by decide), K₂.1 _ (by decide)]; exact hc
-  refine VG.Proof.Bignum.X86.PublicRt.wp_carry hc₃ fun s₄ U₄ cf₄ => ?_
-  refine wp_sbbS rfl cf₄ fun s₅ U₅ cf₅ => ?_
-  refine wp_sbbS rfl cf₅ fun s₆ U₆ _ => ?_
-  refine wp_logicS (.inr rfl) rfl fun s₇ U₇ => ?_
-  refine wp_movS rfl fun s₈ U₈ _ => WP.block_nil ?_
-  have K₈ : Keeps [.eax, .ebx, .ecx, .edx] s₁ s₈ :=
-    ((((((K₂.mono (by decide)).trans (U₃.keeps.mono (by decide))).trans (U₄.keeps.mono (by decide))).trans
-      (U₅.keeps.mono (by decide))).trans (U₆.keeps.mono (by decide))).trans (U₇.keeps.mono (by decide))).trans
-      (U₈.keeps.mono (by decide))
-  have m₈ : s₈.mem = s₁.mem := by rw [U₈.mem, U₇.mem, U₆.mem, U₅.mem, U₄.mem, U₃.mem, m₂]
-  have H₈ : Bx L s₈ B Z len N := H₁.keep K₈ (by decide) (by decide) (by rw [m₈]; exact Outside.refl _ _ _ _) rt htz
+  rw [show borrowMask L src = borrowMask L src ++ [] from (List.append_nil _).symm]
+  refine WP.seq (borrowMask_ok H₁ hsh hsz hc fun s₈ H₈ K₈ m₈ mask => WP.block_nil ?_)
   have topw : w32 s₁.mem B (rv (kw len) src + 4 * nw len) = w32 s.mem B (rv (kw len) src + 4 * nw len) :=
     O₁.w32 (by omega) (by omega)
-  have mask : s₈.gpr .ecx = cmask (!decide (w32 s.mem B (rv (kw len) src + 4 * nw len) < c.toNat)) := by
-    have e7 := U₇.gpr
-    simp only [reduceCtorEq, ite_false] at e7
-    rw [U₈.gpr, e7, U₆.gpr, Mont.X86.mask_val]
-    have t₃ : (s₃.gpr .eax).toNat = w32 s.mem B (rv (kw len) src + 4 * nw len) := by
-      rw [U₃.gpr, m₂, ← topw, Nat.add_zero]
-    rw [U₄.other _ (by decide), t₃]
-    simp [cmask]
+  rw [topw] at mask
   -- The arithmetic.
   have T₁ : val32 s₁.mem B (rv (kw len) src) (nw len) = val32 s.mem B (rv (kw len) src) (nw len) :=
     O₁.val32 (by omega) (by omega)

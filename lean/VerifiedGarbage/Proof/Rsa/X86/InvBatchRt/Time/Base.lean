@@ -166,4 +166,39 @@ theorem leaf {P : State → State → Prop} {c : Prog isa} (τ : VG.X86.Taint.T)
   rw [← (Exec.det (lift_exec w₁ v₁) e₁).1, ← (Exec.det (lift_exec w₂ v₂) e₂).1]
   exact T.1
 
+theorem Public.view {args : Nat → BitVec 32} {sp : BitVec 32} {s : State} (h : Public args B Z sp s)
+    (hb : (⟨B, Z⟩ : Region) ∈ s.wr) : Public args B Z sp (view s B Z) := by
+  refine ⟨⟨h.argsOk.1, fun r hr => ?_⟩, h.stack, fun i hi => callArg_view (h.arguments i hi)⟩
+  cases hr with
+  | head => exact h.argsOk.2 _ hb
+  | tail _ h => cases h
+
+/-- What an operation starts from in each run: the context, the call's public data, and facts `E`
+about the registers and memory, which hold of the view too. -/
+def Pre (L : Lay) (B : Addr) (Z len N : Nat) (args : Nat → BitVec 32) (sp : BitVec 32)
+    (E : (Reg → BitVec 32) → Mem → Prop) (s : State) : Prop :=
+  Bx L s B Z len N ∧ Public args B Z sp s ∧ E s.gpr s.mem
+
+theorem Pre.view {args : Nat → BitVec 32} {sp : BitVec 32} {E : (Reg → BitVec 32) → Mem → Prop} {s : State}
+    (h : Pre L B Z len N args sp E s) : Pre L B Z len N args sp E (view s B Z) :=
+  ⟨Bx.view h.1, Public.view h.2.1 h.1.ws.ws.workspace.wr, h.2.2⟩
+
+/-- An operation that the analysis checks from `τS`, run from `Pre`: each run satisfies what the
+operation's correctness says of it. -/
+theorem leafU {args : Nat → BitVec 32} {sp : BitVec 32} {E : (Reg → BitVec 32) → Mem → Prop}
+    {Q : State → Prop} {c : Prog isa} (hL : L.ws = 14)
+    (hf : ∀ s, Pre L B Z len N args sp E s → WP isa c s Q) {hc : VG.Taint.Hint VG.X86.Taint.T}
+    (h : (VG.Taint.check sseTaint τS c hc).isSome = true) :
+    RelCT isa (fun s t => Pre L B Z len N args sp E s ∧ Pre L B Z len N args sp E t) c
+      (fun s t => Q s ∧ Q t) := by
+  have ex : ∀ s, Pre L B Z len N args sp E s → ∃ tr z, Exec isa c (view s B Z) tr z := fun s ps =>
+    let ⟨tr, z, e, _⟩ := hf _ ps.view
+    ⟨tr, z, e⟩
+  have R := leaf (P := fun s t => Pre L B Z len N args sp E s ∧ Pre L B Z len N args sp E t) τS
+    (fun _ _ ⟨ps, pt⟩ => agreeS hL ⟨ps.1, pt.1, ps.2.1, pt.2.1⟩)
+    (fun _ _ ⟨ps, pt⟩ => ⟨ps.1.ws.ws.workspace.wr, pt.1.ws.ws.workspace.wr⟩)
+    (fun _ _ ⟨ps, pt⟩ => ⟨ex _ ps, ex _ pt⟩) h
+  exact (RelCT.wp R (fun s t ⟨ps, pt⟩ => ⟨hf s ps, hf t pt⟩)).mono (fun _ _ h => h)
+    (fun _ _ ⟨_, a, b⟩ => ⟨a, b⟩)
+
 end VG.Proof.Rsa.X86.InvBatchRt.Time

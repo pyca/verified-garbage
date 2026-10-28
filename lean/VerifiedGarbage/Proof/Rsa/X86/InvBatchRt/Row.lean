@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Bignum.X86.CrtRt.SelectX
 at word `p` (`Run`), the accumulator's first `j` words and the carry `ebx` hold
 `c` times the source's first `j` words, plus (for an added row) the
 accumulator's first `j` words before. `rowLoop_ok`: the loop; the tails carry
-`ebx` into the two words after (`tailAdd_ok`) or write them (`tailSet_ok`).
+`ebx` into the two words after (`tailAdd_ok`, its sum if it fits) or write them (`tailSet_ok`).
 -/
 
 @[expose] public section
@@ -214,9 +214,9 @@ theorem rowLoop_ok {set : Bool} {s : State} {W : Addr} {Z x y N : Nat} (hw : Ws 
 /-- The added row's tail: the carry `ebx` into the two words at `ebp = y + 4 N`, when the sum fits. -/
 theorem tailAdd_ok {s₀ t : State} {W : Addr} {Z x y N : Nat} (hw : Ws s₀ W Z)
     (hyz : y + 4 * (N + 2) ≤ Z) (R : Run false s₀ W x y N N N t)
-    (hlt : val32 s₀.mem W y (N + 2) + (s₀.gpr .ecx).toNat * val32 s₀.mem W x N < 2 ^ (32 * (N + 2)))
     (k : ∀ u, Keeps [.eax] t u → Outside W y (4 * (N + 2)) s₀.mem u.mem →
-      val32 u.mem W y (N + 2) = val32 s₀.mem W y (N + 2) + (s₀.gpr .ecx).toNat * val32 s₀.mem W x N →
+      (val32 s₀.mem W y (N + 2) + (s₀.gpr .ecx).toNat * val32 s₀.mem W x N < 2 ^ (32 * (N + 2)) →
+        val32 u.mem W y (N + 2) = val32 s₀.mem W y (N + 2) + (s₀.gpr .ecx).toNat * val32 s₀.mem W x N) →
       WP isa (.block is) u Q) :
     WP isa (.block ([.mov .eax (.mem (at_ .ebp 0)), .alu .add .eax (.reg .ebx), .store (at_ .ebp 0) .eax,
       .mov .eax (.mem (at_ .ebp 4)), .alu .adc .eax (.imm 0), .store (at_ .ebp 4) .eax] ++ is)) t Q := by
@@ -252,7 +252,7 @@ theorem tailAdd_ok {s₀ t : State} {W : Addr} {Z x y N : Nat} (hw : Ws s₀ W Z
     (W₀.mono (Nat.le_refl _) (by omega)).trans (W₁.mono (by omega) (by omega))
   have O : Outside W y (4 * (N + 2)) s₀.mem u.mem :=
     (R.frame.mono (Nat.le_refl _) (by omega)).trans (O2.mono (by omega) (by omega))
-  refine k u K O ?_
+  refine k u K O fun hlt => ?_
   -- The words: the run's `N` words, then the two carried into.
   have T₀ : w32 t.mem W (y + 4 * N) = w32 s₀.mem W (y + 4 * N) := R.frame.w32 (by omega) (by omega)
   have T₁ : w32 t.mem W (y + 4 * N + 4) = w32 s₀.mem W (y + 4 * N + 4) := R.frame.w32 (by omega) (by omega)
