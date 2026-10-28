@@ -5,11 +5,11 @@ import Mathlib.Tactic.Basic
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.ModArith
 import VerifiedGarbage.Proof.Framework.PowLit
 import Mathlib.Data.Nat.Init
 import Mathlib.Order.Defs.Prop
 import Mathlib.Tactic.Conv
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -69,7 +69,7 @@ theorem dvd_of_dvd_two {m : Nat} {z : Int} (hm : m % 2 = 1) (h : (m : Int) ∣ 2
       exact_mod_cast this
     rw [← Int.mul_assoc, this]; grind
   rw [e]
-  exact Int.dvd_sub (Dvd.dvd.mul_left h _) (Int.dvd_mul_right _ _)
+  exact Int.dvd_sub (Int.dvd_mul_of_dvd_right h) (Int.dvd_mul_right _ _)
 
 /-! ## The binary extended Euclidean algorithm -/
 
@@ -146,9 +146,9 @@ theorem invStep_inv {a m : Nat} (hm : m % 2 = 1) {st : Nat × Nat × Nat × Nat}
   · rename_i hu
     split
     · rename_i hlt
-      refine ⟨hu, halfMod_lt hm (subMod_lt h₂ h₁), h₁, half_cong hm (by omega_arith) (sub_cong h₂ h₁ hlt.le c₂ c₁), c₁, ?_⟩
+      refine ⟨hu, halfMod_lt hm (subMod_lt h₂ h₁), h₁, half_cong hm (by omega_arith) (sub_cong h₂ h₁ (Nat.le_of_lt hlt) c₂ c₁), c₁, ?_⟩
       dsimp only
-      rw [gcd_half (by omega_arith) hu, gcd_sub hlt.le, Nat.gcd_comm, g]
+      rw [gcd_half (by omega_arith) hu, gcd_sub (Nat.le_of_lt hlt), Nat.gcd_comm, g]
     · rename_i hlt
       refine ⟨hv, halfMod_lt hm (subMod_lt h₁ h₂), h₂, half_cong hm (by omega_arith) (sub_cong h₁ h₂ (by omega_arith) c₁ c₂),
         c₂, ?_⟩
@@ -257,7 +257,7 @@ theorem xgcd_spec (q p : Nat) : ∀ (r : Nat) (s : Int) (r' : Nat) (s' : Int), (
             push_cast at h3; grind
           rw [this]; grind
         rw [e]
-        exact Int.dvd_sub h' (Dvd.dvd.mul_left h _)
+        exact Int.dvd_sub h' (Int.dvd_mul_of_dvd_right h)
       obtain ⟨e₁, e₂⟩ := ih _ hlt (s' - (r' / r : Nat) * s) r s hd h
       exact ⟨e₁, by rw [e₂, ← Nat.gcd_rec]⟩
 
@@ -267,8 +267,8 @@ theorem inverse_eq {q p x : Nat} (hp : 1 < p) (hx : x < p) (h : (p : Int) ∣ (x
   -- `gcd(q, p) = 1`.
   have hg : Nat.gcd q p = 1 := by
     obtain ⟨c, hc⟩ := h
-    have d1 : ((Nat.gcd q p : Nat) : Int) ∣ (x : Int) * q := Dvd.dvd.mul_left (Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_left q p)) _
-    have d2 : ((Nat.gcd q p : Nat) : Int) ∣ (p : Int) * c := Dvd.dvd.mul_right (Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_right q p)) _
+    have d1 : ((Nat.gcd q p : Nat) : Int) ∣ (x : Int) * q := Int.dvd_mul_of_dvd_right (Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_left q p))
+    have d2 : ((Nat.gcd q p : Nat) : Int) ∣ (p : Int) * c := Int.dvd_mul_of_dvd_left (Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_right q p))
     have : ((Nat.gcd q p : Nat) : Int) ∣ 1 := by
       have := Int.dvd_sub d1 d2
       rwa [show (x : Int) * q - p * c = 1 by omega_arith] at this
@@ -290,24 +290,22 @@ theorem inverse_eq {q p x : Nat} (hp : 1 < p) (hx : x < p) (h : (p : Int) ∣ (x
     have : s % p * q - 1 = (s * q - 1) - (p * (s / p)) * q := by
       have := Int.mul_ediv_add_emod s p
       grind
-    rw [this]; exact Int.dvd_sub e₁ (Dvd.dvd.mul_right (Int.dvd_mul_right _ _) _)
+    rw [this]; exact Int.dvd_sub e₁ (Int.dvd_mul_of_dvd_left (Int.dvd_mul_right _ _))
   generalize (s % (p : Int)).toNat = x₀ at c0 hx0 ⊢
   -- `x₀ = x`: `x ≡ x (x₀ q) = x₀ (x q) ≡ x₀`.
   have hxx : x₀ = x := by
     have d : (p : Int) ∣ (x₀ : Int) - x := by
       have : (x₀ : Int) - x = (x : Int) * ((x₀ : Int) * q - 1) - (x₀ : Int) * ((x : Int) * q - 1) := by grind
-      rw [this]; exact Int.dvd_sub (Dvd.dvd.mul_left c0 _) (Dvd.dvd.mul_left h _)
+      rw [this]; exact Int.dvd_sub (Int.dvd_mul_of_dvd_right c0) (Int.dvd_mul_of_dvd_right h)
     have hx₀ : x₀ < p := by have := Int.emod_lt_of_pos s hp0; omega_arith
-    have := (Nat.modEq_iff_dvd.mpr d)
-    unfold Nat.ModEq at this
+    have := ModArith.mod_eq_of_dvd_sub d
     rwa [Nat.mod_eq_of_lt hx, Nat.mod_eq_of_lt hx₀, eq_comm] at this
   subst hxx
   have hm : q * x₀ % p = 1 := by
-    have : 1 ≡ q * x₀ [MOD p] := by
-      rw [Nat.modEq_iff_dvd]
+    have : 1 % p = q * x₀ % p := by
+      refine ModArith.mod_eq_of_dvd_sub ?_
       push_cast
       rw [show (q : Int) * x₀ = x₀ * q by grind]; exact c0
-    unfold Nat.ModEq at this
     rw [← this, Nat.mod_eq_of_lt hp]
   exact ite_eq_left_iff.mpr (fun h => absurd hm h)
 
