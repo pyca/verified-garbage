@@ -13,8 +13,9 @@ namespace VG.Artifacts.CamelliaCfb.AArch64
 def note : String :=
   "Baseline AArch64: a single-block scalar Feistel core with the S-box resident in NEON registers. \
   Table loads use fixed public addresses; secret indices select bytes only within registers. \
-  The raw expanded keys and constant table are prepared once per call. Generic CFB retains \
-  the IV pointer in x19, which the core preserves."
+  The raw expanded keys and constant table are prepared once per call, by a call of \
+  `vg_camellia_prepare_encrypt_keys`, and each block is a call of `vg_camellia_encrypt_prepared`. \
+  Generic CFB retains the IV pointer in x19, which neither function writes."
 
 def artifacts : List Artifact := [
   Spec.Camellia.cfbEncryptApi.artifact AArch64.target {

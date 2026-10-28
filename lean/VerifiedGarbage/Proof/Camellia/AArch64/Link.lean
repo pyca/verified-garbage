@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.AArch64.ModeCore
-import VerifiedGarbage.Proof.Camellia.AArch64.Serial.ModeCore
-meta import VerifiedGarbage.Proof.Camellia.AArch64.Serial.ModeCore
+import VerifiedGarbage.Proof.Camellia.AArch64.Serial.CallCore
+meta import VerifiedGarbage.Proof.Camellia.AArch64.Serial.CallCore
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -17,7 +17,9 @@ public import VerifiedGarbage.Impl.Camellia.AArch64.Fb
 The core's `prepare` and `crypt` call `vg_camellia_prepare_keys`
 and `vg_camellia_crypt_prepared`, which overwrite the return address (`x30`): each
 keeps it in `v28`, which no instruction of the callees writes, and moves it
-back (`prepare_keeps_x30`, `crypt_keeps_x30`). `camellia_keeps_x30` proves that
+back (`prepare_keeps_x30`, `crypt_keeps_x30`). The serial core's calls of
+`vg_camellia_prepare_encrypt_keys` and `vg_camellia_encrypt_prepared` keep
+it in `x20` instead (`serialPrepare_keeps_x30`, `serialCrypt_keeps_x30`). `camellia_keeps_x30` proves that
 a mode's code keeps `x30`, the core's code being the only code with calls.
 -/
 
@@ -26,7 +28,7 @@ a mode's code keeps `x30`, the core's code being the only code with calls.
 namespace VG.Proof.Camellia.AArch64
 
 open VG VG.AArch64 VG.Impl.Camellia.AArch64
-open VG.Impl.Aes.AArch64 (sb)
+open VG.Impl.Aes.AArch64 (sb movR)
 open VG.Proof.Modes.AArch64 (KeepsReg runBlock_app dup_ok umov_ok extract_ofVDwords vSafe keepsV_of_vSafe)
 
 /-- The block's state from `s`, as a function. -/
@@ -70,6 +72,28 @@ theorem crypt_keeps_x30 (d : Dir) : KeepsReg .x30 (dirCore d).crypt := by
     cases hR with
     | seq hC hB => exact call_keeps_x30 (r := .x4) (by decide) (vsafe28 cryptPrepared_vsafe) hA hC hB
 
+/-- A call of code that does not write `x20`, between a block that moves
+the return address to `x20` and one that moves it back. -/
+theorem serialCall_keeps_x30 {A : List Instr} {name : String} {c : Prog isa}
+    (hA : ∀ s, ∃ s', runBlock isa A s = some s' ∧ s'.gpr .x20 = s.gpr .x30)
+    (hc : c.allInstrs (fun i => !clobbers i .x20) = true) :
+    KeepsReg .x30 (.seq (.block A) (.seq (.call name c) (.block [movR sb .x22, movR .x30 .x20]))) := by
+  intro s t s' h
+  cases h with
+  | seq hA' hR =>
+    cases hR with
+    | seq hC hB =>
+      obtain ⟨s₁, e₁, x20₁⟩ := hA s
+      rw [block_det hA' e₁] at hC
+      obtain ⟨s₃, e₃, x30₃⟩ := Serial.tail_ok _
+      rw [block_det hB e₃, x30₃, Serial.keepsReg_of_allInstrs (c := .call name c) hc (by decide) _ _ _ hC, x20₁]
+
+theorem serialPrepare_keeps_x30 : KeepsReg .x30 Serial.callCore.prepare :=
+  serialCall_keeps_x30 Serial.prepareHead_ok Serial.prepareEncrypt_keeps_x20
+
+theorem serialCrypt_keeps_x30 : KeepsReg .x30 Serial.callCore.crypt :=
+  serialCall_keeps_x30 Serial.cryptHead_ok Serial.encryptPrepared_keeps_x20
+
 /-- `WP.gprs` for `x30`, from `KeepsReg` rather than the absence of calls. -/
 theorem WP.gprs' {c : Prog isa} {s : State} {Q : State → Prop} (hk : KeepsReg .x30 c) (h : WP isa c s Q) :
     WP isa c s fun s' => Q s' ∧ ∀ r ∈ [Reg.x30], s'.gpr r = s.gpr r := by
@@ -88,8 +112,8 @@ theorem modeAbi_of {c : Prog isa} {s s' : State} {t : List Leak} (he : Exec isa 
 /-- `KeepsReg .x30` of a mode's code: its structure, down to the core's code
 and blocks that do not write `x30`. -/
 tactic_template "camellia_keeps_x30" : tactic => `(tactic| repeat (first
-  | with_reducible exact Serial.keeps_x30.1
-  | with_reducible exact Serial.keeps_x30.2
+  | with_reducible exact serialPrepare_keeps_x30
+  | with_reducible exact serialCrypt_keeps_x30
   | with_reducible exact crypt_keeps_x30 _
   | with_reducible exact prepare_keeps_x30 _
   | apply KeepsReg.seq

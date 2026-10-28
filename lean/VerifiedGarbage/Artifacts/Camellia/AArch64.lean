@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Camellia.AArch64.Verified
 public import VerifiedGarbage.Proof.Camellia.AArch64.KeyVerified
 public import VerifiedGarbage.Proof.Camellia.AArch64.PreparedVerified
+public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Verified
+public import VerifiedGarbage.Proof.Camellia.AArch64.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
 
 @[expose] public section
@@ -34,6 +36,14 @@ def artifacts : List Artifact := [
   (Spec.Camellia.Prepared.cryptApi Impl.Camellia.AArch64.layout).artifact AArch64.target {
     notes := ["Baseline AArch64: ECB's eight blocks alone, for the modes: bitsliced in general-purpose registers, each half as eight 64-bit planes, the S-boxes as Boolean circuits, with no table lookups, under the table `vg_camellia_prepare_keys` wrote."]
     code := Impl.Camellia.AArch64.cryptPrepared
-    verified := Proof.Camellia.AArch64.crypt_verified }]
+    verified := Proof.Camellia.AArch64.crypt_verified },
+  (Spec.Camellia.Prepared.prepareEncryptApi Impl.Camellia.AArch64.Serial.layout).artifact AArch64.target {
+    notes := ["Baseline AArch64: the serial core's key setup alone, for the feedback modes and CBC encryption: the S-box's 256-byte table, built from immediates, and the schedule's 272 bytes copied after it."]
+    code := Impl.Camellia.AArch64.Serial.prepareEncrypt
+    verified := Proof.Camellia.AArch64.Serial.prepare_verified },
+  (Spec.Camellia.Prepared.encryptPreparedApi Impl.Camellia.AArch64.Serial.layout).artifact AArch64.target {
+    notes := ["Baseline AArch64: one block, for the feedback modes and CBC encryption: a scalar Feistel core with the S-box loaded from the working space into NEON registers, where secret indices select bytes (`tbl`); every load is from a fixed public address."]
+    code := Impl.Camellia.AArch64.Serial.encryptPrepared
+    verified := Proof.Camellia.AArch64.Serial.crypt_verified }]
 
 end VG.Artifacts.Camellia.AArch64

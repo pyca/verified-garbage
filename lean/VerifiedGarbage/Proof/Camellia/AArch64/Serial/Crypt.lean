@@ -19,7 +19,7 @@ theorem crypt_wp {s : State} {B : Addr} {k : Nat × List (BitVec 64)}
     WP isa core.crypt s fun t => t.gpr .x5 = B ∧
       t.gpr .x23 = s.gpr .x23 ∧ t.gpr .x24 = s.gpr .x24 ∧
       Ready t.mem B k ∧ t.gpr .x1 = BitVec.ofNat 64 k.1 ∧
-      Frame [coreRegion core B] s.mem t.mem ∧
+      Frame [bufRegion core B] s.mem t.mem ∧
       Spec.Aes.bytesAt t.mem (B+BitVec.ofNat 64 768) 16 =
         Spec.Camellia.cipher (Spec.Camellia.subkeysOfWords k.1 k.2)
           (Spec.Aes.bytesAt s.mem (B+BitVec.ofNat 64 768) 16) ∧
@@ -86,9 +86,7 @@ theorem crypt_wp {s : State} {B : Addr} {k : Nat × List (BitVec 64)}
   · exact (tg _ (by decide)).trans ((cg _ (by decide)).trans (ag _ (by decide)))
   · exact (tg _ (by decide)).trans ((cg _ (by decide)).trans (ag _ (by decide)))
   · exact (tg _ (by decide)).trans cx1
-  · refine frame.sub (fun r hr => ?_)
-    simp only [List.mem_singleton] at hr; subst r
-    exact ⟨_,List.mem_cons_self,VG.Offset.sub_base B (by decide : 768+16 ≤ 3152)⟩
+  · exact frame
   · rw [cbase,ck] at to
     rw [cipher_eq_words hB ready]
     exact to

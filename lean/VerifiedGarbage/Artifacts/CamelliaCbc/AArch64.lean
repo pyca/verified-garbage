@@ -11,7 +11,7 @@ namespace VG.Artifacts.CamelliaCbc.AArch64
 
 def artifacts : List Artifact := [
   Spec.Camellia.cbcEncryptChainedApi.artifact AArch64.target {
-    notes := ["Baseline AArch64: a single-block scalar Feistel core with the 256-byte S-box resident in NEON registers. Fixed-address loads prepare the table and raw expanded keys once per call; secret indices select bytes only inside registers. Generic CBC encryption retains the IV pointer in x19 and updates the chaining value after the final block."]
+    notes := ["Baseline AArch64: a single-block scalar Feistel core with the 256-byte S-box resident in NEON registers. Fixed-address loads prepare the table and raw expanded keys once per call, by a call of `vg_camellia_prepare_encrypt_keys`, and each block is a call of `vg_camellia_encrypt_prepared`; secret indices select bytes only inside registers. Generic CBC encryption retains the IV pointer in x19, which neither function writes, and updates the chaining value after the final block."]
     code := Impl.StackScratch.AArch64.withStackScratchWiped 3344 .x5 418 Impl.Camellia.AArch64.cbcEncryptChained
     stack := 3344
     verified := Proof.Camellia.AArch64.cbcEncryptChained_framed },

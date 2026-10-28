@@ -21,7 +21,7 @@ theorem prepare_wp {s : State} {B : Addr} {rs : List Region} {k : Nat × List (B
     (hR : (⟨B,8*core.total⟩ : Region) ∈ rs) (hk : KeyArgs s rs k) :
     WP isa core.prepare s fun t => Ready t.mem B k ∧ t.gpr .x1 = BitVec.ofNat 64 k.1 ∧
       t.gpr .x5 = B ∧ t.gpr .x23 = s.gpr .x23 ∧ t.gpr .x24 = s.gpr .x24 ∧
-      Frame [coreRegion core B] s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+      Frame [⟨B,528⟩] s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   obtain ⟨p,hp,hx1,hrounds,hws,hin,hfit,hdis⟩ := hk
   have hw : InRegions s.wr B (8*396) :=
     ⟨_,hs.wr,by change (⟨B,3344⟩ : Region).Contains B 3168; simp [Region.Contains]⟩
@@ -77,8 +77,8 @@ theorem prepare_wp {s : State} {B : Addr} {rs : List Region} {k : Nat × List (B
   · exact (tg _ (by decide) (by decide) (by decide) (by decide)).trans (ag _ (by decide))
   · refine (af.sub (fun r hr => ?_)).trans (tf.sub (fun r hr => ?_))
     · simp only [List.mem_singleton] at hr; subst r
-      exact ⟨_,List.mem_cons_self,Region.sub_prefix (by decide : 256 ≤ 3152)⟩
+      exact ⟨_,List.mem_cons_self,Region.sub_prefix (by decide : 256 ≤ 528)⟩
     · simp only [List.mem_singleton] at hr; subst r
-      exact ⟨_,List.mem_cons_self,by rw [ab]; exact VG.Offset.sub_base B (by decide : 256+272 ≤ 3152)⟩
+      exact ⟨_,List.mem_cons_self,by rw [ab]; exact VG.Offset.sub_base B (by decide : 256+272 ≤ 528)⟩
 
 end VG.Proof.Camellia.AArch64.Serial
