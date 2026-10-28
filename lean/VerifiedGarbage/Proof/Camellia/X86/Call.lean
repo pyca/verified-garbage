@@ -1,12 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.X86.PreparedVerified
+import VerifiedGarbage.Proof.Camellia.X86.PreparedVerified
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86.Inline
 import VerifiedGarbage.Proof.Camellia.X86.Prologue
+public import VerifiedGarbage.Proof.Camellia.X86.PreparedBody
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Proof.Framework.X86.TaintMono
 
 /-!
 # Calls of Camellia's batches on x86 (32-bit)

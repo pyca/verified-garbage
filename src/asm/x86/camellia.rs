@@ -5500,7 +5500,7 @@ ret
 ///
 /// Contract: `VG.Spec.Camellia.ecbEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys or the data.
 ///
-/// Bitsliced on baseline IA-32: 8 blocks at a time in general-purpose registers, copied through a buffer on the stack, each half as sixteen 32-bit planes, the S-boxes as Boolean circuits.
+/// Bitsliced on baseline IA-32: 8 blocks at a time, copied through a buffer on the stack and run through the rounds by `vg_camellia_crypt_prepared` in general-purpose registers, each half as sixteen 32-bit planes, the S-boxes as Boolean circuits.
 ///
 /// # Safety
 ///
@@ -6746,7 +6746,7 @@ ret
 ///
 /// Contract: `VG.Spec.Camellia.ecbDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys or the data.
 ///
-/// Bitsliced on baseline IA-32: 8 blocks at a time in general-purpose registers, copied through a buffer on the stack, each half as sixteen 32-bit planes, the S-boxes as Boolean circuits; the subkeys bitsliced in decryption's order, then encryption's rounds.
+/// Bitsliced on baseline IA-32: 8 blocks at a time, copied through a buffer on the stack and run through the rounds by `vg_camellia_crypt_prepared` in general-purpose registers, each half as sixteen 32-bit planes, the S-boxes as Boolean circuits; the subkeys bitsliced in decryption's order, then encryption's rounds.
 ///
 /// # Safety
 ///
@@ -9686,7 +9686,7 @@ ret
 ///
 /// Contract: `VG.Spec.Camellia.Prepared.cryptContract`. Constant time: only pointers, `ws_len` and `rounds` may affect timing, not the subkeys or the blocks.
 ///
-/// Baseline IA-32: ECB's eight blocks alone, for the modes: bitsliced in general-purpose registers, through the working space, each half as sixteen 32-bit planes, the S-boxes as Boolean circuits, with no table lookups, under the table of bitsliced subkeys in the working space; the code is written out for 18 rounds and for 24.
+/// Baseline IA-32: eight blocks, for ECB and the modes, which call it: bitsliced in general-purpose registers, through the working space, each half as sixteen 32-bit planes, the S-boxes as Boolean circuits, with no table lookups, under the table of bitsliced subkeys in the working space; the code is written out for 18 rounds and for 24.
 ///
 /// # Safety
 ///
