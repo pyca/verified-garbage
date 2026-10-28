@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateArgs
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateLoad
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentRt
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.MrExponentRt
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateSieve
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateClose
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateTest
@@ -28,10 +29,6 @@ def importCandidate (w : Nat) : Prog isa := CandidateLoad.code w
 
 def closeCheck (w : Nat) : Prog isa := CandidateClose.code w
 
-def prepareAndTest (w : Nat) (montName : String) (montCode : Prog isa)
-    (roundName : String) (roundCode : Prog isa) : Prog isa :=
-  .seq (CandidateTest.code w montName montCode roundName roundCode) (CandidateFinish.mrResult w)
-
 /-- The code for the width in `eax`, from the supported `widths`. -/
 def dispatch (part : Nat → Prog isa) : List Nat → Prog isa
   | [] => CandidateFinish.none
@@ -50,8 +47,30 @@ def front (w : Nat) : Prog isa :=
     (.ite .ne (CandidateFinish.used 2) (.seq (CandidateSieve.code w) (.seq (.block [.alu .cmp .eax (.imm 0)])
       (.ite .ne (CandidateFinish.used 3) (.block [.mov .eax (.imm 4)])))))))
 
+/-- Preparation at width `w` but for the exponent: the header, R² and the constants. -/
+def prepareHead (w : Nat) (montName : String) (montCode : Prog isa) : Prog isa :=
+  .seq (PrepareHeader.code w) (.seq (PreparedR2.code w montName montCode) (Constants.code w montName montCode))
+
+def witnesses (w : Nat) (montName : String) (montCode : Prog isa) (roundName : String) (roundCode : Prog isa) :
+    Prog isa :=
+  MillerRabinLoop.code w montName montCode roundName roundCode
+
+/-- `eax := w`, from the prepared header. -/
+def preparedWidth : List Instr := [.mov .eax (.mem (sc 48))]
+
+/-- Preparation, with the exponent at the run-time width. -/
+def prepared (montName : String) (montCode : Prog isa) : Prog isa :=
+  .seq (.block width) (.seq (dispatch (fun w => prepareHead w montName montCode) widths) MrExponentRt.code)
+
+/-- Preparation, then the witnesses. -/
+def testBody (montName : String) (montCode : Prog isa) (roundName : String) (roundCode : Prog isa) : Prog isa :=
+  .seq (prepared montName montCode) (.seq (.block preparedWidth)
+    (dispatch (fun w => witnesses w montName montCode roundName roundCode) widths))
+
+/-- Miller–Rabin's result: its code is the same at every width, since
+`slot w 0` is 256. -/
 def tested (montName : String) (montCode : Prog isa) (roundName : String) (roundCode : Prog isa) : Prog isa :=
-  .seq (.block width) (dispatch (fun w => prepareAndTest w montName montCode roundName roundCode) widths)
+  .seq (CandidateFrame.code (testBody montName montCode roundName roundCode)) (CandidateFinish.mrResult 0)
 
 /-- Coprimality with `e`, at the run-time width, then Miller–Rabin. -/
 def exponentCheck (montName : String) (montCode : Prog isa)

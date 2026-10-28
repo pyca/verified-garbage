@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTimingInput
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateParameters
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTestCoreTiming
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.Candidate
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.MrExponentRt.TestTiming
+import VerifiedGarbage.Proof.RsaKeyGen.X86.WorkspaceDisjoint
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidatePrivateInput
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDrawn
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateStack
@@ -23,6 +26,23 @@ structure TestPair (E : Environment) (eBytes pBytes qBytes rBytes sBytes : List 
 theorem capacity_ok {s : State} {base : Addr} {size : Nat} (S : Scr s base size) (space : 44 ≤ size) :
     WP isa (.block [.mov .edx (.mem (sc 40))]) s fun t => Upd s t .edx (s.mem.readW (off base 40) 32) :=
   wp_movS (readSrc_sc S space) fun _ U _ => WP.block_nil U
+
+/-- The candidate's length, kept inside the private frame. -/
+theorem private_len {E : Environment} (v : E.Valid) {eBytes pBytes entropy : List Byte} {s t : State}
+    (D : Drawn E eBytes pBytes entropy s) (F : Frame [below E.p 28] s.mem t.mem) (other : List Byte) :
+    MrExponentRt.Len (E.parameters other) t := by
+  have workspaceFar : E.workspaceRegion.Disjoint (below E.p 28) :=
+    (v.stackFar E.workspaceRegion (List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)))).sub_right
+      (below_sub (by decide) v.low)
+  have W : WorkspaceFrame E.geometry [] s.mem t.mem := workspace_of_frame F D.input.scratch.nowrap
+    (by intro r mem; obtain rfl := List.mem_singleton.mp mem; exact workspaceFar)
+  change t.mem.readW (off E.geometry.W 4) 32 = BitVec.ofNat 32 (8 * E.width)
+  rw [W.read32 (d := 4) (by have H : 256 ≤ E.size := v.geometry.headerFit; change 4 + 4 ≤ E.size; omega)
+    (by intro r mem; cases mem)]
+  change s.mem.readW (off E.base (4 * 1)) 32 = _
+  rw [D.input.header 1 (by decide)]
+  change BitVec.ofNat 32 E.length = _
+  rw [v.length_eq]
 
 theorem private_pair {P : MillerRabinLoop.Parameters} {other : Nat} {entropy : List Byte} {s t : State}
     (I : CandidatePrepare.Input P s) (J : CandidatePrepare.Input (P.withSecret other entropy) t)
@@ -45,7 +65,8 @@ theorem test_trace {mont round : Prog isa} {montName roundName : String}
     (iterations : (E.parameters rBytes).iterations = (E.parameters sBytes).iterations)
     (enough : E.length ≤ E.randLength) :
     RelCT isa (TestPair E eBytes pBytes qBytes rBytes sBytes)
-      (VG.Impl.RsaKeyGen.X86.CandidateTest.code E.width montName mont roundName round) (fun _ _ => True) := by
+      (VG.Impl.RsaKeyGen.X86.CandidateFrame.code
+        (VG.Impl.RsaKeyGen.X86.Candidate.testBody montName mont roundName round)) (fun _ _ => True) := by
   intro s t tr ur u z H A B
   have space : 256 ≤ E.size := v.geometry.headerFit
   have raw : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) (.block [.mov .edx (.mem (sc 40))])
@@ -84,9 +105,12 @@ theorem test_trace {mont round : Prog isa} {montName roundName : String}
               rw [Db.input.stack] at Fb
               have Ia := private_input v Da (by rw [Ua.mem]; exact H.savedLeft) Sa Ca Fa (Ka.mono (by decide))
               have Ib := private_input v Db (by rw [Ub.mem]; exact H.savedRight) Sb Cb Fb (Kb.mono (by decide))
-              have initial := private_pair Ia Ib iterations
-              have coreTrace := (CandidateTest.core_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack
-                (v.parameters_valid rBytes H.left.input.memory.entropyLength) v.width_bounds.2
+              have initial : MrExponentRt.InputsPair (E.parameters rBytes) (candidateValue E sBytes) sBytes _ _ ∧
+                  (E.parameters rBytes).iterations = ((E.parameters rBytes).withSecret (candidateValue E sBytes) sBytes).iterations :=
+                ⟨⟨⟨Ia, private_len v Da Fa _⟩, ⟨Ib, private_len v Db Fb _⟩⟩, iterations⟩
+              have coreTrace := (MrExponentRt.body_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack
+                (v.parameters_valid rBytes H.left.input.memory.entropyLength) v.width_bounds.1 v.width_bounds.2
+                rfl rfl rfl rfl
                 (v.parameters_valid sBytes H.right.input.memory.entropyLength) (by change 8 * E.width ≤ E.randLength; rw [v.length_eq]; exact enough)
                 _ _ _ _ _ _ initial coreA coreB).1
               have storeRaw : RelCT isa (VG.X86.Taint.Agree (τr [.esp])) (.block [.store (at_ .esp 24) .edx])

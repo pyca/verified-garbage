@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.RsaKeyGen.X86.LowPairWord
 import VerifiedGarbage.Proof.RsaKeyGen.X86.LowPairFirst
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.LowPairScan
 import VerifiedGarbage.Proof.Mont.Digits64
 import VerifiedGarbage.Proof.RsaKeyGen.MrWindow
 import VerifiedGarbage.Proof.Rsa.RecoverMath
@@ -19,11 +20,12 @@ import Mathlib.Tactic.Basic
 namespace VG.Proof.RsaKeyGen.X86.LowPair
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.RsaKeyGen.X86.LowPair
 
-theorem scan_twos {s : State} {base : Addr} {size src count N : Nat} (scratch : Scr s base size)
-    (fit : src + 8 * count ≤ size) (value : val32 s.mem base src (2 * count) = N) (positive : 0 < N) :
-    WP isa (scan src count) s fun t =>
-      (t.gpr .esi ++ t.gpr .ebx).toNat = N / 2 ^ (64 * ((Spec.Rsa.splitTwos N).1 / 64)) % 2 ^ 64 ∧
-      t.mem = s.mem ∧ Keeps [.eax, .ecx, .edx, .ebx, .esi] s t := by
+/-- The first nonzero pair of `count` pairs whose value is `N > 0` is the
+64-bit word holding `N`'s lowest set bit. -/
+theorem first_twos {m : Mem} {base : Addr} {src count N : Nat}
+    (value : val32 m base src (2 * count) = N) (positive : 0 < N) :
+    ((first m base src (0#32, 0#32) 0 count).2 ++ (first m base src (0#32, 0#32) 0 count).1).toNat =
+      N / 2 ^ (64 * ((Spec.Rsa.splitTwos N).1 / 64)) % 2 ^ 64 := by
   obtain ⟨factor, odd⟩ := VG.Proof.Rsa.splitTwos_spec positive
   rw [Nat.mul_comm] at factor
   let a := (Spec.Rsa.splitTwos N).1
@@ -39,15 +41,15 @@ theorem scan_twos {s : State} {base : Addr} {size src count N : Nat} (scratch : 
       rw [← factor] at mul
       omega
   have digit {j : Nat} (index : j < count) :
-      (word s.mem base (src + 8 * j)).toNat = N / 2 ^ (64 * j) % 2 ^ 64 := by
+      (word m base (src + 8 * j)).toNat = N / 2 ^ (64 * j) % 2 ^ 64 := by
     rw [word_digit64 _ _ _ _ _ index, wordsVal_eq_val32, value]
   have below (j : Nat) (_ : 0 ≤ j) (hj : j < a / 64) :
-      pairAt s.mem base (src + 8 * j) = (0#32, 0#32) := by
+      pairAt m base (src + 8 * j) = (0#32, 0#32) := by
     apply (pairAt_zero_iff _ _ _).mpr
     apply BitVec.eq_of_toNat_eq
     rw [digit (by omega), zero j hj]
     rfl
-  have hit : pairAt s.mem base (src + 8 * (a / 64)) ≠ (0#32, 0#32) := by
+  have hit : pairAt m base (src + 8 * (a / 64)) ≠ (0#32, 0#32) := by
     intro h
     have empty := congrArg BitVec.toNat ((pairAt_zero_iff _ _ _).mp h)
     rw [digit (by omega)] at empty
@@ -56,11 +58,16 @@ theorem scan_twos {s : State} {base : Addr} {size src count N : Nat} (scratch : 
       rw [h, Nat.zero_testBit] at bit
       contradiction
     exact notZero empty
+  rw [first_hit m base src 0 count (a / 64) (by omega) (by omega) below hit, pairAt_word, digit (by omega)]
+
+theorem scan_twos {s : State} {base : Addr} {size src count N : Nat} (scratch : Scr s base size)
+    (fit : src + 8 * count ≤ size) (value : val32 s.mem base src (2 * count) = N) (positive : 0 < N) :
+    WP isa (scan src count) s fun t =>
+      (t.gpr .esi ++ t.gpr .ebx).toNat = N / 2 ^ (64 * ((Spec.Rsa.splitTwos N).1 / 64)) % 2 ^ 64 ∧
+      t.mem = s.mem ∧ Keeps [.eax, .ecx, .edx, .ebx, .esi] s t := by
   refine WP.mono (scan_ok scratch fit) fun t ⟨V, M, K⟩ => ?_
-  rw [first_hit s.mem base src 0 count (a / 64) (by omega) (by omega) below hit] at V
   have pair := congrArg (fun p : BitVec 32 × BitVec 32 => p.2 ++ p.1) V
-  dsimp only [Prod.fst, Prod.snd] at pair
-  rw [pairAt_word] at pair
-  exact ⟨by rw [pair, digit (by omega)], M, K⟩
+  dsimp only at pair
+  exact ⟨by rw [pair]; exact first_twos value positive, M, K⟩
 
 end VG.Proof.RsaKeyGen.X86.LowPair

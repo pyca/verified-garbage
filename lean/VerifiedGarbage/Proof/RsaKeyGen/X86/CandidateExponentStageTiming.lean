@@ -55,17 +55,7 @@ theorem tested_trace {mont round : Prog isa} {montName roundName : String}
       shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E sBytes) (sBytes.drop E.length))) :
     RelCT isa (TestPair E eBytes pBytes qBytes rBytes sBytes)
       (VG.Impl.RsaKeyGen.X86.Candidate.tested montName mont roundName round) (fun _ _ => True) := by
-  have bounds := v.width_bounds
-  unfold VG.Impl.RsaKeyGen.X86.Candidate.tested
-  refine RelCT.seq (width_trace v (fun _ _ P => P.left.input) (fun _ _ P => P.right.input)
-    (fun _ _ _ _ P MU MZ KU KZ SU SZ => P.keepMem v MU MZ KU KZ (by decide) (by decide) SU SZ)) ?_
-  refine dispatch_trace (by omega) (fun _ _ _ _ P U Z => P.keepFlags v U Z)
-    (prepared_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack v length enough shape) _ ?_ ?_
-  · exact List.mem_map.mpr ⟨E.width - 4, List.mem_range.mpr (by omega), by omega⟩
-  · intro w mem
-    obtain ⟨i, index, rfl⟩ := List.mem_map.mp mem
-    have bound := List.mem_range.mp index
-    omega
+  exact prepared_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack v length enough shape
 
 theorem exponent_stage_trace {mont round : Prog isa} {montName roundName : String}
     (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))

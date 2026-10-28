@@ -27,12 +27,14 @@ theorem words_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) :
   unfold Geometry.words
   omega
 
-theorem copy_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s)
+/-- `copy_ok`, with `ebp` and `ebx` past the destination and the source. -/
+theorem copy_ends {g : Geometry} (v : g.Valid) {s : State} (C : Context g s)
     (dst src : Nat) (dstIndex : dst < 28) (srcIndex : src < 28) :
     WP isa (copy dst src) s fun t =>
       val32 t.mem g.W (g.array dst) g.words = val32 s.mem g.W (g.array src) g.words ∧
       Outside g.W (g.array dst) (4 * g.words) s.mem t.mem ∧
-      Keeps [.eax, .ebx, .edx, .ebp, .esi] s t ∧ Context g t := by
+      Keeps [.eax, .ebx, .edx, .ebp, .esi] s t ∧ Context g t ∧
+      PtrAt t g.W .ebp (g.array dst + 4 * g.words) ∧ PtrAt t g.W .ebx (g.array src + 4 * g.words) := by
   unfold copy
   rw [List.append_assoc]
   refine WP.seq (WP.block_append (WP.mono (C.ptr v dst dstIndex .ebp (by decide) (by decide))
@@ -49,11 +51,19 @@ theorem copy_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s)
     rw [PtrAt, Kc.1 .ebp (by decide), Kb.1 .ebp (by decide)]; exact P
   have bx : PtrAt c g.W .ebx (g.array src) := by
     rw [PtrAt, Kc.1 .ebx (by decide)]; exact Pb
-  refine WP.mono (copyLoop_ok (C.ws.of_keeps keep) (by have := v.minWidth; unfold Geometry.words; omega)
+  refine WP.mono (copyLoop_ends (C.ws.of_keeps keep) (by have := v.minWidth; unfold Geometry.words; omega)
     (v.arrayFit dstIndex) (v.arrayFit srcIndex) (g.arraysApart dst src) bp bx Count) ?_
-  rintro t ⟨O, V, Kt⟩
+  rintro t ⟨O, V, Kt, bp', bx'⟩
   have Kall : Keeps [.eax, .ebx, .edx, .ebp, .esi] s t := (keep.mono (by decide)).trans (Kt.mono (by decide))
   rw [mem] at O V
-  exact ⟨V, O, Kall, C.keepOutside Kall (by decide) O (v.arrayHeader dst)⟩
+  exact ⟨V, O, Kall, C.keepOutside Kall (by decide) O (v.arrayHeader dst), bp', bx'⟩
+
+theorem copy_ok {g : Geometry} (v : g.Valid) {s : State} (C : Context g s)
+    (dst src : Nat) (dstIndex : dst < 28) (srcIndex : src < 28) :
+    WP isa (copy dst src) s fun t =>
+      val32 t.mem g.W (g.array dst) g.words = val32 s.mem g.W (g.array src) g.words ∧
+      Outside g.W (g.array dst) (4 * g.words) s.mem t.mem ∧
+      Keeps [.eax, .ebx, .edx, .ebp, .esi] s t ∧ Context g t :=
+  WP.mono (copy_ends v C dst src dstIndex srcIndex) fun _ ⟨V, O, K, C', _⟩ => ⟨V, O, K, C'⟩
 
 end VG.Proof.MillerRabin.X86

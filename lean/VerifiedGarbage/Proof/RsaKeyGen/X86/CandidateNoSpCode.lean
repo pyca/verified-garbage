@@ -27,10 +27,6 @@ theorem exponentRt : NoSp ExponentRt.code := by
   simp only [ExponentRt.code, ExponentRt.filter, Code.allInstrs, checked general]
   rfl
 
-theorem prepareAndTest {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round)
-    (w : Nat) (montName roundName : String) : NoSp (Candidate.prepareAndTest w montName mont roundName round) :=
-  sequence (test Hm Hr w montName roundName) (NoSp.of_all (by rfl))
-
 theorem dispatch {part : Nat → Prog isa} (H : ∀ w, NoSp (part w)) (widths : List Nat) :
     NoSp (Candidate.dispatch part widths) := by
   induction widths with
@@ -40,9 +36,26 @@ theorem dispatch {part : Nat → Prog isa} (H : ∀ w, NoSp (part w)) (widths : 
     simp only [Candidate.dispatch, Code.allInstrs, checked (H w), checked ih]
     rfl
 
+theorem mrExponent : NoSp MrExponentRt.code := NoSp.of_all (by rfl)
+
+theorem prepareHead {mont : Prog isa} (Hm : NoSp mont) (w : Nat) (montName : String) :
+    NoSp (Candidate.prepareHead w montName mont) :=
+  sequence (NoSp.of_all (by rfl)) (sequence (r2 Hm w montName) (constants Hm w montName))
+
+theorem prepared {mont : Prog isa} (Hm : NoSp mont) (montName : String) :
+    NoSp (Candidate.prepared montName mont) :=
+  sequence (NoSp.of_all (by rfl)) (sequence (dispatch (prepareHead Hm · montName) Candidate.widths) mrExponent)
+
+theorem testBody {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round) (montName roundName : String) :
+    NoSp (Candidate.testBody montName mont roundName round) :=
+  sequence (prepared Hm montName) (sequence (NoSp.of_all (by rfl))
+    (dispatch (fun w => millerRabin Hm Hr w montName roundName) Candidate.widths))
+
 theorem tested {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round) (montName roundName : String) :
-    NoSp (Candidate.tested montName mont roundName round) :=
-  sequence (NoSp.of_all (by rfl)) (dispatch (fun w => prepareAndTest Hm Hr w montName roundName) Candidate.widths)
+    NoSp (Candidate.tested montName mont roundName round) := by
+  apply NoSp.of_all
+  simp only [Candidate.tested, CandidateFrame.code, Code.allInstrs, checked (testBody Hm Hr montName roundName)]
+  rfl
 
 theorem exponentCheck {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round)
     (montName roundName : String) : NoSp (Candidate.exponentCheck montName mont roundName round) := by

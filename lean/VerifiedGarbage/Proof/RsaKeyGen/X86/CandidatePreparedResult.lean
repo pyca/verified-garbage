@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.Candidate
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFinishResult
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTestInput
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateMemory
+import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Pointer
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateLoadInput
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessStep
 
@@ -20,7 +21,15 @@ def PrimalityOutputs (E : Environment) (c : Nat) (entropy : List Byte) (s : Stat
   | some (prime, rest) => Outputs E (if prime then 1 else 3) (entropy.length - rest.length)
       (if prime then Spec.Rsa.i2osp c E.length else List.replicate E.length 0) s
 
-theorem prepared_result_ok {mont round : Prog isa} {montName roundName : String}
+/-- Miller–Rabin's result is the same code at every width. -/
+theorem mrResult_zero (w : Nat) :
+    VG.Impl.RsaKeyGen.X86.CandidateFinish.mrResult 0 = VG.Impl.RsaKeyGen.X86.CandidateFinish.mrResult w := by
+  simp only [VG.Impl.RsaKeyGen.X86.CandidateFinish.mrResult, VG.Impl.RsaKeyGen.X86.CandidateFinish.prime,
+    VG.Proof.RsaKeyGen.X86.ExponentRt.slot0_eq]
+
+/-- Preparation with the exponent at the run-time width, the witnesses, and
+the result. -/
+theorem tested_ok {mont round : Prog isa} {montName roundName : String}
     (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
     (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
     (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
@@ -29,9 +38,10 @@ theorem prepared_result_ok {mont round : Prog isa} {montName roundName : String}
     (D : Drawn E eBytes pBytes entropy s)
     (minusOne : val32 s.mem E.base (slot E.width 5) (2 * E.width) = candidateValue E entropy - 1)
     (enough : E.length ≤ E.randLength) :
-    WP isa (VG.Impl.RsaKeyGen.X86.Candidate.prepareAndTest E.width montName mont roundName round) s fun t =>
+    WP isa (VG.Impl.RsaKeyGen.X86.Candidate.tested montName mont roundName round) s fun t =>
       PrimalityOutputs E (candidateValue E entropy) entropy t ∧ MutableFrame E s.mem t.mem ∧ Keeps WitnessStep.clob s t := by
-  unfold VG.Impl.RsaKeyGen.X86.Candidate.prepareAndTest
+  unfold VG.Impl.RsaKeyGen.X86.Candidate.tested
+  rw [mrResult_zero E.width]
   refine WP.seq (WP.mono (test_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack v D minusOne enough)
     fun a ⟨value, result, W, F, K⟩ => ?_)
   have ready := D.finishReady_after_test v value W F K
