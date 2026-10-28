@@ -7,11 +7,13 @@ import VerifiedGarbage.Proof.Rsa.Arm.RvFusedCompare
 import VerifiedGarbage.Proof.Rsa.Arm.RvTaint3
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Impl.Rsa.Arm.RecoverFused
 meta import VerifiedGarbage.Proof.Rsa.Arm.RvTaint2
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import Mathlib.Tactic.SplitIfs
 
 /-! The square and root-detection half of one fused exponent bit. -/
 

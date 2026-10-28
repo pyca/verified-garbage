@@ -121,7 +121,7 @@ theorem expSetup_ok {s : State} {base : BitVec 32} {capacity w n : Nat}
   have dataC : MontData base capacity w c.mem := memC ▸ dataB
   refine WP.seq (WP.mono (exponentPowerStore_ok workspaceC readyC dataC) ?_)
   rintro t ⟨readyT, dataT, powerT, exponentT, keepT, restT⟩
-  have quotientSmall : n / 2 ^ sigma < 2 ^ (64 * w) := lt_of_le_of_lt (Nat.div_le_self _ _) small
+  have quotientSmall : n / 2 ^ sigma < 2 ^ (64 * w) := Nat.lt_of_le_of_lt (Nat.div_le_self _ _) small
   have lowB : numAt b.mem (State.addr base) w 27 = n / 2 ^ sigma := by
     rw [keyView_number_low b.mem base w 27 (readyB.baseShiftFits workspaceB) (by rw [valueB]; exact quotientSmall), valueB]
   rw [memC, lowB] at exponentT

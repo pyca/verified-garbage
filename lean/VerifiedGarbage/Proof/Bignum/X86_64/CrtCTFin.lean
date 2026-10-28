@@ -83,7 +83,7 @@ theorem finSum_ct : RelCT isa (Two FA) (seqs finishSum) fun _ _ => True := by
       fun p s h => ?_
     obtain ⟨⟨minv, hg, hZ⟩, -, -, -, -, hw⟩ := id h
     exact WP.mono (zeroAccs_ok hg hZ (show p.w < 2 ^ 30 by omega_arith)) fun t ⟨_, ho, k⟩ =>
-      h.outside ho (le_refl _) k (by decide)
+      h.outside ho (Nat.le_refl _) k (by decide)
   simp only [seqs]
   refine RelCT.seq (R := Two FC) ?_ (RelCT.seq (R := Two FA) ?_
     (two_map id (fun _ _ h => h.2.1) (rows_ct (ja := aY) (by taint_decide))))
@@ -147,7 +147,7 @@ theorem stage5_fa {p : CrtPub} {t : State} (h : Stage R5 p t) :
   dsimp only
   exact ⟨⟨minv, hr.good, hZ⟩, ⟨hr.good.scr, hr.good.rdi, hr.good.hdr.harr aAcc (by decide), hr.wsP, hr.wsQ,
       hr.pws.hdr.hw, hr.qws.hdr.hw, by rw [hr.pws.hdr.harr _ (by decide), off_off],
-      by rw [hr.qws.hdr.harr _ (by decide), off_off], by decide, le_refl _, by unfold offQ offP; omega_arith, by omega_arith⟩,
+      by rw [hr.qws.hdr.harr _ (by decide), off_off], by decide, Nat.le_refl _, by unfold offQ offP; omega_arith, by omega_arith⟩,
     by rw [hr.qws.hdr.harr _ (by decide), off_off], by omega_arith, hwq, by omega_arith⟩
 
 /-- `finishSum` leaves what the store needs. -/
