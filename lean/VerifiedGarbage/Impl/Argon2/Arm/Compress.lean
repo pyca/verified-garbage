@@ -8,10 +8,16 @@ public import VerifiedGarbage.Impl.Blake2.Arm.CompressB
 
 `vg_argon2_compress(x = r0, y = r1, out = r2, scratch = r3)`.
 
-* `r3` holds `scratch` throughout. `[0, 1024)` holds R = X XOR Y, and
+* `r3` holds `scratch`, but in the loops below. `[0, 1024)` holds R = X XOR Y, and
   `[1024, 2048)` the block P permutes (word `k` at `1024 + 8k`). The caller's
   `r4`–`r11` and our return address (`lr`) are kept in `scratch[2048, 2084)`,
   and `out` in `scratch[2084, 2088)`.
+* P runs on the rows in a loop, then on the columns in another: GB, which
+  uses every other register, addresses the words of row 0 (column 0) at `r3`,
+  and each iteration moves `r3` on to the next row (column), 128 (16) bytes
+  further, and back after the loop. The count of rows (columns) left is kept
+  in the word at `r3 + 2088`, which moves with `r3`, beyond `out`'s. So the
+  code has eight copies of GB, not 128.
 * Each 64-bit word is a pair of 32-bit words, the low one first (as in
   memory), as in BLAKE2b (`Impl/Blake2/Arm/CompressB.lean`, whose exclusive or
   and rotations this uses). GB loads its four words into `r4`–`r11`, computes
@@ -21,7 +27,8 @@ public import VerifiedGarbage.Impl.Blake2.Arm.CompressB
   high half of the product of the low halves from four products of 16-bit
   halves (`mulHi`), and its low half with one more `mul`; five temporaries
   (`r0`–`r2`, `lr` and one of `r6`, `r11`, `r12`) hold the partial products.
-* Every address is `r0`–`r3` plus a constant, and there are no branches.
+* Every address is `r0`–`r3` plus a constant, and the only branches are the
+  loops', on their counts, which are public.
 -/
 
 @[expose] public section
@@ -93,12 +100,24 @@ def permuteAt (index : Fin 16 → Fin 128) : Prog isa :=
   .seq (step 0 5 10 15) <| .seq (step 1 6 11 12) <|
   .seq (step 2 7 8 13) (step 3 4 9 14)
 
+/-- Where a pass keeps the count of rows or columns left, from `r3`. -/
+def ctrOff : Nat := 2088
+
+/-- The end of an iteration of a pass: count down the rows or columns left,
+move `r3` on by `stride` bytes, keep the count there, and compare it with 0. -/
+def next (stride : Nat) : List Instr :=
+  [.ldr .r0 .r3 ctrOff, .dp .sub .r0 .r0 (.imm 1), .dp .add .r3 .r3 (.imm (BitVec.ofNat 32 stride)),
+    .str .r0 .r3 ctrOff, .cmp .r0 (.imm 0)]
+
+/-- P on the eight rows (`index` is row 0, `stride` 128) or columns (column 0,
+16): eight times P on `index` at `r3`, moving `r3` on by `stride`, then back. -/
+def pass (index : Fin 16 → Fin 128) (stride : Nat) : Prog isa :=
+  .seq (.block [.mov .r0 (.imm 8), .str .r0 .r3 ctrOff]) <|
+  .seq (.loop (.seq (permuteAt index) (.block (next stride))) .ne)
+    (.block [.dp .sub .r3 .r3 (.imm (BitVec.ofNat 32 (8 * stride)))])
+
 /-- The rows, then the columns. -/
-def rounds : Prog isa :=
-  .seq ((List.finRange 8).foldr (fun row rest =>
-    .seq (permuteAt (Spec.Argon2.rowIndex row)) rest) (.block [])) <|
-  ((List.finRange 8).foldr (fun col rest =>
-    .seq (permuteAt (Spec.Argon2.colIndex col)) rest) (.block []))
+def rounds : Prog isa := .seq (pass (Spec.Argon2.rowIndex 0) 128) (pass (Spec.Argon2.colIndex 0) 16)
 
 /-- Where the caller's registers and `out` are kept. -/
 def saved : List (Reg × Nat) :=
@@ -123,12 +142,12 @@ def finishWord (i : Nat) : List Instr :=
   [.ldr .r4 .r3 (1024 + 4 * i), .ldr .r5 .r3 (4 * i), .dp .eor .r4 .r4 (.reg .r5),
     .str .r4 .r2 (4 * i)]
 
-/-- Load `out`, write the output, and restore the caller's registers. -/
+/-- Write the output (`out` loaded), and restore the caller's registers. -/
 def epilogue : List Instr :=
-  .ldr .r2 .r3 outOff :: (List.range 256).flatMap finishWord +++
-    saved.map (fun p => .ldr p.1 .r3 p.2)
+  (List.range 256).flatMap finishWord +++ saved.map (fun p => .ldr p.1 .r3 p.2)
 
 def compress : Prog isa :=
-  .seq (.block (prologue +++ (List.range 256).flatMap initWord)) (.seq rounds (.block epilogue))
+  .seq (.block (prologue +++ (List.range 256).flatMap initWord)) <|
+  .seq rounds (.seq (.block [.ldr .r2 .r3 outOff]) (.block epilogue))
 
 end VG.Impl.Argon2.Arm

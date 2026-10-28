@@ -15,8 +15,8 @@ import Mathlib.Tactic.SplitIfs
 `wp_gb`: GB on the words at `[r3, #a]`, …, `[r3, #d]` stores the words of
 `Proof.Argon2.mix` (`gbMem`), with the registers of `gbRegs` written. The
 permuted block in `scratch[1024, 2048)` as a vector of words (`working`), and
-`gbAt_ok`: one GB updates it as `Proof.Argon2.mixWords`, and writes nothing
-else.
+`gbAt_ok`: one GB, with `r3` moved on from the base by `8e` bytes, updates
+words `e` further on as `Proof.Argon2.mixWords`, and writes nothing else.
 -/
 
 @[expose] public section
@@ -200,18 +200,48 @@ structure Step (B : BitVec 32) (s : State) (v : Block) (t : State) : Prop where
 theorem Step.trans {B : BitVec 32} {s t u : State} {v w : Block} (h : Step B s v t) (h' : Step B t w u) :
     Step B s w u := ⟨h.keep.trans h'.keep, h'.working, h.frame.trans h'.frame⟩
 
-theorem gbAt_ok {B : BitVec 32} (hfit : B.toNat + 4096 ≤ 2 ^ 32) {s : State} (h3 : s.gpr .r3 = B)
-    (hA : Reg64 s.wr B 2048) (a b c d : Fin 128) :
-    WP isa (gbAt a.val b.val c.val d.val) s
+/-! ## GB with `r3` moved on -/
+
+theorem A_shift (b : BitVec 32) (d o : Nat) : A (b + BitVec.ofNat 32 d) o = A b (d + o) := by
+  simp only [A, BitVec.add_assoc, BitVec.ofNat_add]
+
+theorem rd64_shift (m : Mem) (b : BitVec 32) (d o : Nat) :
+    rd64 m (b + BitVec.ofNat 32 d) o = rd64 m b (d + o) := by
+  simp only [rd64, A_shift, Nat.add_assoc]
+
+theorem write64_shift (m : Mem) (b : BitVec 32) (d o : Nat) (x : BitVec 64) :
+    write64 m (b + BitVec.ofNat 32 d) o x = write64 m b (d + o) x := by
+  simp only [write64, A_shift, Nat.add_assoc]
+
+theorem gbMem_shift (m : Mem) (B : BitVec 32) (e a b c d : Nat) :
+    gbMem m (B + BitVec.ofNat 32 e) a b c d = gbMem m B (e + a) (e + b) (e + c) (e + d) := by
+  simp only [gbMem, rd64_shift, write64_shift]
+
+theorem reg64_shift {wr : List Region} {B : BitVec 32} {N N' d : Nat} (h : Reg64 wr B N)
+    (hd : d + N' ≤ N) : Reg64 wr (B + BitVec.ofNat 32 d) N' := fun o ho => by
+  rw [A_shift, A_shift, ← Nat.add_assoc]
+  exact h (d + o) (by omega)
+
+/-- GB on the words `a₀`, …, `d₀` of the permuted block at `r3`, which is
+`8e` bytes past `B`: on the words `a = a₀ + e`, …, `d` of the block at `B`. -/
+theorem gbAt_ok {B : BitVec 32} (hfit : B.toNat + 4096 ≤ 2 ^ 32) {s : State} {e : Nat}
+    (h3 : s.gpr .r3 = B + BitVec.ofNat 32 (8 * e)) (hA : Reg64 s.wr B 2048) {a₀ b₀ c₀ d₀ : Nat}
+    (a b c d : Fin 128) (ha : a.val = a₀ + e) (hb : b.val = b₀ + e) (hc : c.val = c₀ + e)
+    (hd : d.val = d₀ + e) :
+    WP isa (gbAt a₀ b₀ c₀ d₀) s
       (Step B s (Proof.Argon2.mixWords (working s.mem B) a b c d)) := by
+  have sh (x : Fin 128) (x₀ : Nat) (h : x.val = x₀ + e) : 8 * e + wOff x₀ = wOff x.val := by
+    simp only [wOff]; omega
+  have lt (x : Fin 128) (x₀ : Nat) (h : x.val = x₀ + e) : wOff x₀ + 8 ≤ 2048 - 8 * e := by
+    have := x.isLt; simp only [wOff]; omega
   unfold gbAt
   rw [← List.append_nil (gb _ _ _ _)]
-  refine wp_gb (N := 2048) (by decide) (wOff_lt a) (wOff_lt b) (wOff_lt c) (wOff_lt d) hA h3
-    fun t w => WP.block_nil ⟨⟨w.gpr, w.rd, w.wr, w.sp⟩, ?_, ?_⟩
-  · rw [w.mem, gbMem]
+  refine wp_gb (N := 2048 - 8 * e) (by omega) (lt a a₀ ha) (lt b b₀ hb) (lt c c₀ hc) (lt d d₀ hd)
+    (reg64_shift hA (by omega)) h3 fun t w => WP.block_nil ⟨⟨w.gpr, w.rd, w.wr, w.sp⟩, ?_, ?_⟩
+  · rw [w.mem, gbMem_shift, sh a a₀ ha, sh b b₀ hb, sh c c₀ hc, sh d d₀ hd, gbMem]
     simp only [working_write hfit, ← working_get]
     rfl
-  · rw [w.mem, gbMem]
+  · rw [w.mem, gbMem_shift, sh a a₀ ha, sh b b₀ hb, sh c c₀ hc, sh d d₀ hd, gbMem]
     exact frame_write hfit _ _ (frame_write hfit _ _ (frame_write hfit _ _ (frame_write hfit _ _
       (Frame.refl _ _) _ _) _ _) _ _) _ _
 

@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Argon2.Arm.Compress
+public import VerifiedGarbage.Proof.Argon2.Arm.Compress
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Argon2.Arm.CompressContract
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -24,9 +24,10 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # Argon2 compression on ARMv7: verified
 
-Constant time is the taint analysis on the literal code: the pointers are
-public, and `out`, kept in `scratch` across the rounds, is a public slot of
-it. `compress_verified'` is the proof against `compressArm`, which the
+Constant time puts together the taint analysis of each piece, from what
+both runs agree on (`RelCT`): the pointers are public; the passes over the
+rows and columns depend only on `scratch` (`rounds_ct`); and `out`, loaded
+from `scratch` after the rounds, is the same in both runs, by correctness. `compress_verified'` is the proof against `compressArm`, which the
 derivation uses for its calls; the shared contract
 `Spec.Argon2.compressContract` implies it (`compress_verified`).
 -/
@@ -36,39 +37,117 @@ derivation uses for its calls; the shared contract
 namespace VG.Proof.Argon2.Arm
 
 open VG VG.Arm VG.Spec.Argon2
+open VG.Impl.Argon2.Arm (outOff)
+open VG.Proof.Sha512.Arm (A A_eq)
+open VG.Proof.MdStream.Arm (wp_ldr)
 
-/-- The pointers are public, and they are the bases of `out` and `scratch`. -/
-def τ₀ : VG.Arm.Taint.T :=
-  { regs := .ofList [.r0, .r1, .r2, .r3], flags := false, lens := [1024, 4096],
-    bases := [(.r2, 0), (.r3, 1)] }
-
-theorem wf₀ {s : State} (hp : Pre s) : VG.Arm.Taint.Wf τ₀ s := by
-  have ho := hp.out_fits; have hsc := hp.scr_fits
-  refine ⟨fun _ => ⟨?_, ?_, ?_⟩, fun p hp' => ?_, fun h => absurd h (Nat.lt_irrefl 0),
-    fun _ h => (List.not_mem_nil h).elim⟩
-  · simp only [hp.wr, τ₀]
-    exact .cons (by simp) (.cons (by simp) .nil)
-  · simp only [hp.wr]
-    exact .cons (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hp.out_scr)
-      (.cons (fun _ h => (List.not_mem_nil h).elim) .nil)
-  · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [MdStream.Arm.addr_toNat] <;> omega
-  · simp only [τ₀, List.mem_cons, List.not_mem_nil, or_false] at hp'
-    rcases hp' with rfl | rfl <;> simp [VG.Arm.Taint.region, hp.wr]
-
-theorem agree₀ {s₁ s₂ : State} (h₁ : compressArm.pre s₁) (h₂ : compressArm.pre s₂)
-    (hpub : compressArm.pub s₁ s₂) : VG.Arm.Taint.Agree τ₀ s₁ s₂ := by
+/-- The pointers are public. -/
+theorem agree₀ {s₁ s₂ : State} (hpub : compressArm.pub s₁ s₂) :
+    VG.Arm.Taint.Agree (VG.Arm.Taint.ofRegs [.r0, .r1, .r2, .r3]) s₁ s₂ := by
   obtain ⟨p0, p1, p2, p3⟩ := hpub
-  have hp₁ := pre_of _ h₁; have hp₂ := pre_of _ h₂
-  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀ hp₁, wf₀ hp₂,
-    fun sl h => by simp [τ₀] at h, fun _ h => (List.not_mem_nil h).elim,
-    fun h => absurd h (Nat.lt_irrefl 0), fun _ h => absurd h (Nat.not_lt_zero _)⟩
-  · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
+  exact VG.Arm.Taint.agree_ofRegs fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
-  · rw [hp₁.wr, hp₂.wr]; simp only [outR, scrR, op, scr, p2, p3]
 
-theorem compress_ct : ConstantTime isa compressArm.pre compressArm.pub Impl.Argon2.Arm.compress :=
-  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hpub => agree₀ h₁ h₂ hpub) (by taint_decide)
+/-- Two runs from the precondition, with the same pointers. -/
+def P₀ (s₁ s₂ : State) : Prop := compressArm.pre s₁ ∧ compressArm.pre s₂ ∧ compressArm.pub s₁ s₂
+
+/-- After the initialization, from states related by `P₀`. -/
+def R₁ (s₁ s₂ : State) : Prop := ∃ σ₁ σ₂, P₀ σ₁ σ₂ ∧ InitInv σ₁ s₁ 256 ∧ InitInv σ₂ s₂ 256
+
+/-- What the rounds keep: `r3`, the regions, and the word holding `out`. -/
+def Kept (u t : State) : Prop :=
+  t.gpr .r3 = u.gpr .r3 ∧ t.rd = u.rd ∧ t.wr = u.wr ∧
+    t.mem.readW (A (u.gpr .r3) outOff) 32 = u.mem.readW (A (u.gpr .r3) outOff) 32
+
+/-- After the rounds. -/
+def R₂ (s₁ s₂ : State) : Prop := ∃ u₁ u₂, R₁ u₁ u₂ ∧ Kept u₁ s₁ ∧ Kept u₂ s₂
+
+/-- `out` loaded: in `r2`, with `r3` still `scratch`. -/
+def Loaded (u t : State) : Prop := t.gpr .r2 = u.mem.readW (A (u.gpr .r3) outOff) 32 ∧ t.gpr .r3 = u.gpr .r3
+
+/-- After loading `out`. -/
+def R₃ (s₁ s₂ : State) : Prop := ∃ u₁ u₂, R₂ u₁ u₂ ∧ Loaded u₁ s₁ ∧ Loaded u₂ s₂
+
+section
+variable {σ s : State} (hp : Pre σ) (h : InitInv σ s 256)
+include hp h
+
+omit hp in
+theorem InitInv.r3 : s.gpr .r3 = scr σ := h.regs _ (by decide) (by decide)
+
+theorem InitInv.scr : Scr (s.gpr .r3) s.wr := by
+  rw [h.r3, h.wr]; exact ⟨hp.scr_fits, fun o ho => hp.scr_wr rfl ho⟩
+
+theorem InitInv.out : s.mem.readW (A (s.gpr .r3) outOff) 32 = op σ := by
+  have := h.saved (.r2, outOff) (by decide)
+  rw [h.r3, A_eq (by have := hp.scr_fits; simp only [outOff]; omega)]; exact this
+
+end
+
+theorem init_all {σ : State} (hp : Pre σ) :
+    WP isa (.block (Impl.Argon2.Arm.prologue ++ (List.range 256).flatMap Impl.Argon2.Arm.initWord)) σ
+      (InitInv σ · 256) :=
+  prologue_ok hp fun _ h₁ => init_ok hp h₁ 256 (Nat.le_refl _)
+
+theorem compress_ct : ConstantTime isa compressArm.pre compressArm.pub Impl.Argon2.Arm.compress := by
+  apply RelCT.constantTime (Q := fun _ _ => True)
+  unfold Impl.Argon2.Arm.compress
+  -- The prologue and the initialization: the pointers are public.
+  have h₁ : RelCT isa P₀ (.block (Impl.Argon2.Arm.prologue ++
+      (List.range 256).flatMap Impl.Argon2.Arm.initWord)) R₁ := by
+    have ct : RelCT isa P₀ (.block (Impl.Argon2.Arm.prologue ++
+        (List.range 256).flatMap Impl.Argon2.Arm.initWord)) fun _ _ => True :=
+      RelCT.taint (A := taint) (VG.Arm.Taint.ofRegs [.r0, .r1, .r2, .r3]) (fun _ _ h => agree₀ h.2.2)
+        (by taint_decide)
+    refine (ct.wpDep (F := fun σ s => InitInv σ s 256)
+      fun s₁ s₂ h => ⟨init_all (pre_of _ h.1), init_all (pre_of _ h.2.1)⟩).mono (fun _ _ h => h) ?_
+    rintro s₁ s₂ ⟨-, h⟩
+    exact h
+  -- The rounds: `scratch` is the same in both runs.
+  have h₂ : RelCT isa R₁ Impl.Argon2.Arm.rounds R₂ := by
+    have ct : RelCT isa R₁ Impl.Argon2.Arm.rounds fun _ _ => True := by
+      refine rounds_ct.mono ?_ fun _ _ _ => trivial
+      rintro s₁ s₂ ⟨σ₁, σ₂, ⟨q₁, q₂, pub⟩, i₁, i₂⟩
+      have hp₁ := pre_of _ q₁; have hp₂ := pre_of _ q₂
+      exact ⟨by rw [i₁.r3, i₂.r3]; exact pub.2.2.2, i₁.scr hp₁, i₂.scr hp₂⟩
+    have kept {σ u : State} (hp : Pre σ) (i : InitInv σ u 256) : WP isa Impl.Argon2.Arm.rounds u (Kept u) :=
+      (rounds_ok (i.scr hp)).mono fun t ht => ⟨ht.r3, ht.rd, ht.wr,
+        outside_pass (by rw [i.r3]; exact hp.scr_fits) ht.frame (.inr ⟨by decide, by decide⟩)⟩
+    refine (ct.wpDep (F := Kept) fun s₁ s₂ h => ?_).mono (fun _ _ h => h) ?_
+    · obtain ⟨σ₁, σ₂, ⟨q₁, q₂, -⟩, i₁, i₂⟩ := h
+      exact ⟨kept (pre_of _ q₁) i₁, kept (pre_of _ q₂) i₂⟩
+    · rintro s₁ s₂ ⟨-, h⟩
+      exact h
+  -- Loading `out`: `r3` is `scratch`, in both runs.
+  have h₃ : RelCT isa R₂ (.block [.ldr .r2 .r3 outOff]) R₃ := by
+    have ct : RelCT isa R₂ (.block [.ldr .r2 .r3 outOff]) fun _ _ => True := by
+      refine RelCT.taint (A := taint) (VG.Arm.Taint.ofRegs [.r3]) (fun s₁ s₂ h => ?_) (by taint_decide)
+      obtain ⟨u₁, u₂, ⟨σ₁, σ₂, ⟨q₁, q₂, pub⟩, i₁, i₂⟩, k₁, k₂⟩ := h
+      exact VG.Arm.Taint.agree_ofRegs fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        rw [k₁.1, k₂.1, i₁.r3, i₂.r3]; exact pub.2.2.2
+    have load {σ u t : State} (hp : Pre σ) (i : InitInv σ u 256) (k : Kept u t) :
+        WP isa (.block [.ldr .r2 .r3 outOff]) t (Loaded t) :=
+      wp_ldr (by decide) rfl (by
+        rw [k.2.1, k.2.2.1, k.1, i.r3, i.rd, i.wr]; exact hp.in_scr rfl (by decide))
+        fun t' u' => WP.block_nil ⟨u'.gpr, u'.other _ (by decide)⟩
+    refine (ct.wpDep (F := Loaded) fun s₁ s₂ h => ?_).mono (fun _ _ h => h) ?_
+    · obtain ⟨u₁, u₂, ⟨σ₁, σ₂, ⟨q₁, q₂, -⟩, i₁, i₂⟩, k₁, k₂⟩ := h
+      exact ⟨load (pre_of _ q₁) i₁ k₁, load (pre_of _ q₂) i₂ k₂⟩
+    · rintro s₁ s₂ ⟨-, h⟩
+      exact h
+  -- The output and the epilogue: `out` and `scratch` are public.
+  have h₄ : RelCT isa R₃ (.block Impl.Argon2.Arm.epilogue) fun _ _ => True := by
+    refine RelCT.taint (A := taint) (VG.Arm.Taint.ofRegs [.r2, .r3]) (fun s₁ s₂ h => ?_) (by taint_decide)
+    obtain ⟨t₁, t₂, ⟨u₁, u₂, ⟨σ₁, σ₂, ⟨q₁, q₂, pub⟩, i₁, i₂⟩, k₁, k₂⟩, l₁, l₂⟩ := h
+    have hp₁ := pre_of _ q₁; have hp₂ := pre_of _ q₂
+    exact VG.Arm.Taint.agree_ofRegs fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · rw [l₁.1, l₂.1, k₁.1, k₂.1, k₁.2.2.2, k₂.2.2.2, i₁.out hp₁, i₂.out hp₂]; exact pub.2.2.1
+      · rw [l₁.2, l₂.2, k₁.1, k₂.1, i₁.r3, i₂.r3]; exact pub.2.2.2
+  exact h₁.seq (h₂.seq (h₃.seq h₄))
 
 /-- A state satisfying the precondition. -/
 def satState : State where
