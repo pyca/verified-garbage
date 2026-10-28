@@ -65,7 +65,7 @@ theorem guarded_wide {p : CrtPub} {s : State}
   rw [eval_zero,h9] at he
   have hk128 : 128 ≤ p.k := guardValue_nonzero hk64 (Option.some.inj he)
   have hwide : CrtWindowFive.offQ32 p.w p.pl + slot (wsWords p.ql) 8 + CrtWindowFive.tabBytes32 (wsWords p.ql) ≤ p.Z :=
-    (CrtWindowFive.prime_scratch32_fits hk128 h.pl2 h.ql2).trans (by have := h.zk; omega)
+    Nat.le_trans (CrtWindowFive.prime_scratch32_fits hk128 h.pl2 h.ql2) (by have := h.zk; omega)
   exact ⟨s,xb,pb,qb,dpb,dqb,qib,⟨h,hwide⟩,hv,rfl⟩
 
 theorem dispatch_ct (W : Window) (M : Mont) (S : Selector) :
