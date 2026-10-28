@@ -17,14 +17,12 @@ same `esp`, the arguments apart from what the body writes.
 -/
 
 @[expose] public section
-variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
-include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.CrtValues
 open VG VG.X86 VG.Proof.Dsa.X86
 open VG.Impl.Rsa.X86.CrtValuesRt (body sized)
 open VG.Proof.Rsa.X86.CrtValuesRt (Lengths sizedNarrow_relCT)
 
-theorem body_relCT (g : CallGeometry) (len : Lengths g) (sp : BitVec 32) (fit : sp.toNat + 68 ≤ 2 ^ 32)
+theorem body_relCT [VG.Proof.Rsa.X86.BatchLaw] (g : CallGeometry) (len : Lengths g) (sp : BitVec 32) (fit : sp.toNat + 68 ≤ 2 ^ 32)
     (apart : ∀ r ∈ g.writes, Region.Disjoint ⟨sp.setWidth 64, 68⟩ r) :
     RelCT isa (fun s t => (Pair g s t ∧ s.gpr .esp = sp) ∧ inputBytes g s.mem 0 = inputBytes g t.mem 0)
       body (fun _ _ => True) := by

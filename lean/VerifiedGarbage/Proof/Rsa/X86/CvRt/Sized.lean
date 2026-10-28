@@ -14,8 +14,6 @@ under the checks' mask, as `ArithmeticPost` states them.
 -/
 
 @[expose] public section
-variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
-include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.CrtValuesRt
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Bignum VG.Proof.Bignum.X86
@@ -41,7 +39,7 @@ def ArithmeticPost (g : CallGeometry) (m : Mem) (t : State) : Prop :=
     Spec.Rsa.bytesAt t.mem (g.buffer 4).base (g.buffer 4).len = encode g (maskOf a.P a.Q X₁ X₂ V) 2 X ∧
     t.gpr .eax = BitVec.ofNat 32 (maskOf a.P a.Q X₁ X₂ V).toNat
 
-theorem sized_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g) :
+theorem sized_ok [VG.Proof.Rsa.X86.BatchLaw] {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g) :
     WP isa sized s fun t => Inputs g t ∧ ArithmeticPost g s.mem t ∧
       Frame (bodyWrites g) s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have nw := h.ws.workspace.nowrap

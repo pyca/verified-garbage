@@ -20,14 +20,12 @@ import VerifiedGarbage.Proof.Rsa.X86.CvResult
 /-! # The complete CRT operation leaks only the contract's declared public inputs -/
 
 @[expose] public section
-variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
-include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.CrtValues
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Bignum.X86 VG.Proof.Dsa.X86
 open VG.Impl.Rsa.X86.CrtValuesRt (code)
 
-theorem operation_trace {s t : State} (a : ABI s) (b : ABI t)
+theorem operation_trace [VG.Proof.Rsa.X86.BatchLaw] {s t : State} (a : ABI s) (b : ABI t)
     (args : ∀ i < 16, arg s i = arg t i) (sp : s.gpr .esp = t.gpr .esp)
     (modulus : inputBytes (caller s) s.mem 0 = inputBytes (caller t) t.mem 0)
     {tr ur : List Leak} {sf tf : State} (es : Exec isa code s tr sf) (et : Exec isa code t ur tf) : tr = ur := by
@@ -80,7 +78,7 @@ theorem operation_trace {s t : State} (a : ABI s) (b : ABI t)
           have eq3 := (publicRestore_relCT _ _ _ _ _ _ next.workspace e3 f3).1
           rw [eq1, eq2, eq3]
 
-theorem constantTime : ConstantTime isa (Spec.Rsa.crtValuesContract abi 20).pre
+theorem constantTime [VG.Proof.Rsa.X86.BatchLaw] : ConstantTime isa (Spec.Rsa.crtValuesContract abi 20).pre
     (Spec.Rsa.crtValuesContract abi 20).pub code := by
   intro s t tr ur sf tf hs ht h es et
   have args := arguments_eq h

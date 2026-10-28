@@ -34,8 +34,6 @@ same traces (`sizedNarrow_relCT`).
 -/
 
 @[expose] public section
-variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
-include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.CrtValuesRt
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Bignum.X86 VG.Proof.Dsa.X86
@@ -47,12 +45,10 @@ open VG.Proof.Bignum.X86.PublicRt (Both relCT_narrow)
 def ArgsOk (s : State) : Prop :=
   (s.gpr .esp).toNat + 68 ≤ 2 ^ 32 ∧ ∀ r ∈ s.wr, Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 68⟩ r
 
-omit rsaBatchLaw in
 theorem τV_wf {s : State} (A : ArgsOk s) : VG.X86.Taint.Wf τV s :=
   VG.X86.Taint.Wf.entry rfl rfl ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim,
     fun _ h => (List.not_mem_nil h).elim, fun _ => A, fun _ h => (List.not_mem_nil h).elim⟩
 
-omit rsaBatchLaw in
 theorem agreeV {g : CallGeometry} {s₁ s₂ : State} (h₁ : Inputs g s₁) (h₂ : Inputs g s₂)
     (A₁ : ArgsOk s₁) (A₂ : ArgsOk s₂) (sp : s₁.gpr .esp = s₂.gpr .esp) : VG.X86.Taint.Agree τV s₁ s₂ := by
   have f₁ := A₁.1
@@ -78,7 +74,6 @@ def Ready (g : CallGeometry) (m : Mem) (sp : BitVec 32) (s : State) : Prop :=
   Inputs g s ∧ InvTiming.Public g.args g.base g.size sp s ∧
     InvInput g.args g.base g.size (g.args 7).toNat (arithmeticGeometry g m).P (arithmeticGeometry g m).Q s
 
-omit rsaBatchLaw in
 theorem before_ready {g : CallGeometry} {sp : BitVec 32} {s : State} (h : Run g sp s) (len : Lengths g) :
     WP isa beforeInverse s (Ready g s.mem sp) := by
   have nw := h.1.ws.workspace.nowrap
@@ -103,7 +98,6 @@ theorem before_ready {g : CallGeometry} {sp : BitVec 32} {s : State} (h : Run g 
   exact ⟨hb.ws,inputsGate pb s.mem,hb.u,hb.m,hb.nm,hb.zero,
     by exact Prod.ext hb.u (Prod.ext hb.v (Prod.ext hb.x₁ hb.x₂))⟩
 
-omit rsaBatchLaw in
 theorem after_inverse {g : CallGeometry} {m : Mem} {sp : BitVec 32} {s t : State}
     (h : Ready g m sp s) (post : InvPost g.base g.size (g.args 7).toNat (arithmeticGeometry g m).P (arithmeticGeometry g m).Q s t) :
     Inputs g t ∧ InvTiming.Public g.args g.base g.size sp t := by
@@ -111,7 +105,7 @@ theorem after_inverse {g : CallGeometry} {m : Mem} {sp : BitVec 32} {s t : State
   exact ⟨h.1.after post.2.2.1 (by decide) (by decide) (scratchFrame h.1 outside),
     h.2.1.keep post.2.2.1 (by decide) outside⟩
 
-theorem sized_relCT (g : CallGeometry) (len : Lengths g) (sp : BitVec 32) :
+theorem sized_relCT [VG.Proof.Rsa.X86.BatchLaw] (g : CallGeometry) (len : Lengths g) (sp : BitVec 32) :
     RelCT isa (Both (Run g sp)) sized fun _ _ => True := by
   apply split_relCT
   intro s t tr ur sf tf ⟨hs,ht⟩ es et
@@ -143,7 +137,6 @@ def SizedAt (g : CallGeometry) (sp : BitVec 32) (s : State) : Prop :=
   Inputs g s ∧ s.gpr .esp = sp ∧ sp.toNat + 68 ≤ 2 ^ 32 ∧
     ∀ r ∈ g.writes, Region.Disjoint ⟨sp.setWidth 64, 68⟩ r
 
-omit rsaBatchLaw in
 theorem narrow_inputs {g : CallGeometry} {s : State} (h : Inputs g s) :
     Inputs g (s.withRegions (s.rd ++ s.wr) g.writes) := by
   refine ⟨⟨⟨h.ws.workspace.edi, by simp [State.withRegions, CallGeometry.writes], h.ws.workspace.nowrap,
@@ -159,7 +152,6 @@ theorem narrow_inputs {g : CallGeometry} {s : State} (h : Inputs g s) :
     have cases : j.val = 0 ∨ j.val = 1 ∨ j.val = 2 := by omega
     rcases cases with e | e | e <;> simp [State.withRegions, CallGeometry.writes, e]
 
-omit rsaBatchLaw in
 theorem narrow_run {g : CallGeometry} {sp : BitVec 32} {s : State} (S : SizedAt g sp s) :
     Run g sp (s.withRegions (s.rd ++ s.wr) g.writes) := by
   obtain ⟨h, esp, fit, apart⟩ := S
@@ -167,7 +159,7 @@ theorem narrow_run {g : CallGeometry} {sp : BitVec 32} {s : State} (S : SizedAt 
   · show (s.gpr .esp).toNat + 68 ≤ _; rw [esp]; exact fit
   · show Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 68⟩ r; rw [esp]; exact apart r hr
 
-theorem sizedNarrow_relCT (g : CallGeometry) (len : Lengths g) (sp : BitVec 32) :
+theorem sizedNarrow_relCT [VG.Proof.Rsa.X86.BatchLaw] (g : CallGeometry) (len : Lengths g) (sp : BitVec 32) :
     RelCT isa (Both (SizedAt g sp)) sized fun _ _ => True := by
   refine relCT_narrow (Pn := Both (Run g sp)) (fun s => s.rd ++ s.wr)
     (fun _ => g.writes) (fun s₁ s₂ ⟨S₁, S₂⟩ => ?_) (sized_relCT g len sp)

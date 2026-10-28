@@ -1,7 +1,4 @@
 module
-import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
-
-import VerifiedGarbage.Proof.Rsa.X86.InvChoose
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 public import VerifiedGarbage.Proof.Framework.Taint
@@ -14,7 +11,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
 
 @[expose] public section
 namespace VG.Proof.Rsa.X86.InvTiming
-open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Bignum.X86 VG.Proof.Rsa.X86.CrtValuesRt
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Bignum.X86
 
  def τ : VG.X86.Taint.T := {regs:=.ofList [.edi,.esp],flags:=false,argLen:=68}
  def ArgsOk (s : State) : Prop :=

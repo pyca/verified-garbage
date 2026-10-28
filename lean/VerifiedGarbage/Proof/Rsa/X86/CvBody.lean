@@ -10,8 +10,6 @@ import VerifiedGarbage.Proof.Bignum.Octets
 /-! # Both CRT modulus-validation branches satisfy the shared result definition -/
 
 @[expose] public section
-variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
-include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.CrtValues
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Bignum VG.Proof.Bignum.X86
@@ -19,7 +17,7 @@ open VG.Impl.Rsa.X86.CrtValues (inputArgs)
 open VG.Impl.Rsa.X86.CrtValuesRt (body)
 open VG.Proof.Rsa.X86.CrtValuesRt (Lengths sized_ok)
 
-theorem body_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g) :
+theorem body_ok [VG.Proof.Rsa.X86.BatchLaw] {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g) :
     WP isa body s fun t => Inputs g t ∧ Written g s.mem t ∧
       Frame (bodyWrites g) s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   unfold body inputArgs

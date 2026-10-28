@@ -26,6 +26,8 @@ open VG.Proof.Rsa (invIter InvI)
 /-- The arrays and header words `inverse` writes. -/
 abbrev invArrs : List Nat := [0, 1, 2, 3, 4, 5, 6, 7, aT1, aT2, aT3, aT4]
 abbrev invSlots : List Nat := [sOdd, sB, sC]
+/-- The header words from 16 to 96 that the batched inverse also uses as scratch. -/
+abbrev rtSlots : List Nat := [16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96]
 
 /-- The state after `i` iterations. -/
 structure InvLoopI (s0 : State) (B : Addr) (Z w N : Nat) (i : Nat) (t : State) : Prop where
