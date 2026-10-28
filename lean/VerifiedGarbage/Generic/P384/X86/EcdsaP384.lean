@@ -127,9 +127,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := 
       words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, \
       with `mul` and the accumulator in `scratch`, in calls of `vg_p384_mul_mod_p` and the other \
       functions of `p384_mont`) with a final conditional subtraction. `[k]G` \
-      is a double-and-add ladder over all 384 bits of `k`, with the complete addition formulas \
-      of Renes, Costello and Batina for every addition and doubling (calls of `vg_p384_point_double` and \
-      `vg_p384_point_add`) and a masked selection for \
+      is a call of `vg_p384_mul`, a double-and-add ladder over all 384 bits of `k`, with the complete addition formulas \
+      of Renes, Costello and Batina for every addition and doubling and a masked selection for \
       each bit; the inversions modulo `p` and `n` are Fermat's, by square-and-always-multiply \
       over the bits of `p - 2` and `n - 2`. The signature (or zeros) is selected by a mask, so \
       the time depends only on the pointers."]
@@ -146,10 +145,9 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := 
       subtraction. The key is checked without branches (its first byte, both coordinates below \
       `p`, and the curve's equation), and the second ladder multiplies the key's point if it is \
       valid, else `G`, so it always runs on a point of the curve. `s⁻¹` modulo `n` and `Z⁻¹` are \
-      Fermat's, by square-and-always-multiply; `[u]G` and `[v]Q` are double-and-add ladders over \
+      Fermat's, by square-and-always-multiply; `[u]G` and `[v]Q` are calls of `vg_p384_mul`, double-and-add ladders over \
       all 384 bits of `u` and `v`, with the complete addition formulas of Renes, Costello and \
-      Batina (calls of `vg_p384_point_double` and \
-      `vg_p384_point_add` in the ladders), which also add the two. The result is the conjunction of the checks (the key, `r` \
+      Batina, which also add the two. The result is the conjunction of the checks (the key, `r` \
       and `s` in `[1, n-1]`, the sum not the point at infinity, and `x ≡ r` modulo `n`) as a \
       mask, so the time depends only on the pointers, although the contract would let every \
       input affect it."]

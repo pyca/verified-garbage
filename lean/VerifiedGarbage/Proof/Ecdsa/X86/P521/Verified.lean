@@ -7,8 +7,6 @@ public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
 public import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
 public import VerifiedGarbage.Spec.Ecdsa.P521
 import VerifiedGarbage.Proof.P521.Point
-import VerifiedGarbage.Proof.Ecdsa.X86.P521.MulSumP
-import VerifiedGarbage.Proof.Ecdsa.X86.P521.MulSumN
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
@@ -22,8 +20,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86.Layout
 meta import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
 meta import VerifiedGarbage.Spec.Ecdsa.P521
 meta import VerifiedGarbage.Proof.P521.Point
-meta import VerifiedGarbage.Proof.Ecdsa.X86.P521.MulSumP
-meta import VerifiedGarbage.Proof.Ecdsa.X86.P521.MulSumN
 meta import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
@@ -94,7 +90,7 @@ theorem pre_of {s : State} (h : signX86.pre s) : Pre p521 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22⟩
 
-/-- No instruction writes `esp`, and the calls use 20 bytes of stack. -/
+/-- No instruction writes `esp`, and the calls use 28 bytes of stack. -/
 theorem sign_sp : SpOk signP521 p521.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
 theorem sign_x86 (hL : Weierstrass.Law Spec.P521.curve) (s : State) (hs : signX86.pre s) :
@@ -127,7 +123,7 @@ holding `out` and `scratch` known to be the base addresses of the writable
 regions. -/
 def τ₀ : VG.X86.Taint.T :=
   { regs := .ofList [.esp], flags := false, lens := [132, 8192], argLen := 24, argBases := [(4, 0), (20, 1)],
-    room := 20 }
+    room := 28 }
 
 theorem wf₀ {s : State} (hp : Pre p521 s) : VG.X86.Taint.Wf τ₀ s := by
   have hsc := hp.sc_fit; have ho := hp.out_fit; have hs := hp.sp_fit
@@ -175,9 +171,9 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : signX86.pre s₁) (h₂ : signX86.p
     · exact congrArg _ a3
     · exact congrArg _ a4
 
-theorem sign_ct : ConstantTime isa signX86.pre signX86.pub signP521 := by
-  obtain ⟨_, hc⟩ : ∃ h, (taint.check τ₀ signP521 h).isSome = true := by native_taint_decide_sum [mulPSum, mulNSum]
-  exact VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) hc
+theorem sign_ct : ConstantTime isa signX86.pre signX86.pub signP521 :=
+  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp)
+    (by native_taint_decide_weak VG.Proof.Ecdsa.X86.P521.weak)
 
 /-- The contract with the regions the shared one gives: the arguments'
 slots writable rather than readable. -/
@@ -191,14 +187,14 @@ def signWide : Contract isa :=
     let scratch : Region := ⟨(arg s 4).setWidth 64, 8192⟩
     let args : Region := ⟨argAddr s 0, 20⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 20, 20⟩
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 28, 28⟩
     s.rd = [d, digest, k] ∧ s.wr = [out, scratch, args] ∧ out.Disjoint scratch ∧
       out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint k ∧
       d.Disjoint scratch ∧ digest.Disjoint scratch ∧ k.Disjoint scratch ∧
       args.Disjoint out ∧ args.Disjoint scratch ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧
       (arg s 0).toNat + 132 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 66 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 66 ≤ 2 ^ 32 ∧
       (arg s 3).toNat + 66 ≤ 2 ^ 32 ∧ (arg s 4).toNat + 8192 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 24 ≤ 2 ^ 32 ∧
-      20 ≤ (s.gpr .esp).toNat ∧ stack.Disjoint out ∧ stack.Disjoint scratch }
+      28 ≤ (s.gpr .esp).toNat ∧ stack.Disjoint out ∧ stack.Disjoint scratch }
 
 def signRd (s : State) : List Region :=
   [⟨(arg s 1).setWidth 64, 66⟩, ⟨(arg s 2).setWidth 64, 66⟩, ⟨(arg s 3).setWidth 64, 66⟩, ⟨argAddr s 0, 20⟩]
@@ -227,7 +223,7 @@ def satState : State where
   rd := [⟨0x2000, 66⟩, ⟨0x3000, 66⟩, ⟨0x4000, 66⟩]
   wr := [⟨0x1000, 132⟩, ⟨0x8000, 8192⟩, ⟨0x20004, 20⟩]
 
-theorem signWide_implies : signWide.Implies (Spec.Ecdsa.P521.inst.signContract X86.abi 20) := by
+theorem signWide_implies : signWide.Implies (Spec.Ecdsa.P521.inst.signContract X86.abi 28) := by
   have a0 : arg satState 0 = 0x1000 := by decide
   have a1 : arg satState 1 = 0x2000 := by decide
   have a2 : arg satState 2 = 0x3000 := by decide
@@ -240,7 +236,7 @@ theorem signWide_implies : signWide.Implies (Spec.Ecdsa.P521.inst.signContract X
     signX86, sig] [a0, a1, a2, a3, a4, e, esp] using satState
 
 theorem sign_verified (hL : Weierstrass.Law Spec.P521.curve) :
-    Verified X86.target signP521 (Spec.Ecdsa.P521.inst.signContract X86.abi 20) := by
+    Verified X86.target signP521 (Spec.Ecdsa.P521.inst.signContract X86.abi 28) := by
   have hsat := signWide_implies.sat_left
   have satLocal : ∃ s, signX86.pre s := hsat.elim fun s h => ⟨_, signWide_pre s h⟩
   have verifiedLocal : Verified X86.target signP521 signX86 :=

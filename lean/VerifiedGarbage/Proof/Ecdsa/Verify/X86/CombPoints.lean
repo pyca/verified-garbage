@@ -186,7 +186,7 @@ theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
       tbl_unch U₂ h7 (by decide) ht (tbl_apart_gW (Or.inl rfl) ht),
       tbl_unch U₁ h7 (by decide) ht (tbl_apart_tbl (by decide) ht)]
     exact hM.t₁ t ht
-  · exact (sv_unch U₆ h7 hn (i := K) (by decide) (apart_slWk (by decide) (by decide))).trans
+  · exact fun _ => (sv_unch U₆ h7 hn (i := K) (by decide) (apart_slWk (by decide) (by decide))).trans
       ((v₅ (by decide) (by decide)).trans ((v₄ (by decide)).trans
         ((W₃ (by decide) (by decide)).trans hM.k)))
 
