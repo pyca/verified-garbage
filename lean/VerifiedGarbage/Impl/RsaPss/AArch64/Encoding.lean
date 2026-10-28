@@ -121,8 +121,9 @@ def emBitsB : List Instr :=
   [.clz .x .x9 .x10, .lsl .x .x24 .x23 3, .addImm .x .x24 .x24 55, .sub .x .x24 .x24 .x9,
     .addImm .x .x25 .x24 7, .lsr .x .x25 .x25 3, .sub .x .x26 .x23 .x25]
 
-/-- Where `encode`'s working space starts in ours. -/
-def oEnc : Nat := 4096
+/-- Where `encode`'s working space starts in ours: after `EM`, which is
+`k ≤ 1024` bytes at `oEm` (an immediate of `add` is below 4096). -/
+def oEnc : Nat := oY
 
 /-- The arguments of `encode`: a zero byte at `scratch + oEm`, then `em` at
 `scratch + oEm + lo`, the digest, the salt, `emBits`, and the working space

@@ -1,23 +1,22 @@
 module
 
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignCT
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignCCt
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Mgf1.Basic
-public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hash
+public import VerifiedGarbage.Impl.RsaPss.AArch64.Encoding
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
-public import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
+public import VerifiedGarbage.Proof.RsaPss.AArch64.EncCall
 public import VerifiedGarbage.Proof.RsaPss.AArch64.SignPre
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hash
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignPre
-import VerifiedGarbage.Proof.RsaPss.AArch64.SignTop
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignCTop
 
 /-!
-# RSASSA-PSS signing on AArch64: `Verified`
+# RSASSA-PSS signing on AArch64, calling `encode`: `Verified`
 
 The shared contract (`Spec.RsaPss.signContract`, with the stack of the frame
-and the callee, `stk`) from correctness (`code_ok`), constant time
-(`code_ct`) and a state meeting the precondition (`sign_sat`, for the stack
-of `vg_rsa_private_checked`).
+and of the deeper callee, `stk K`) from correctness (`code_ok`), constant
+time (`code_ct`) and a state meeting the precondition (`sign_sat`, for the
+stack of `vg_rsa_private_checked`).
 -/
 
 @[expose] public section
@@ -25,39 +24,34 @@ of `vg_rsa_private_checked`).
 namespace VG.Proof.RsaPss.AArch64.Sgn
 
 open VG VG.AArch64 VG.Impl.RsaPss.AArch64
-open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 open VG.Proof.RsaPkcs1Sig.AArch64 (PrivChecked)
 open VG.Proof.RsaPkcs1Sig.AArch64.Sgn (stackArgs_thirteen)
-open VG.Proof.Pbkdf2.Md.AArch64 (HashOK mdHashes)
-open VG.Proof.RsaPss.AArch64 (PssChecks)
+open VG.Proof.Pbkdf2.Md.AArch64 (mdHashes)
+open VG.Proof.RsaPss.AArch64 (EncImpl)
 
 section
-variable {H : Hash} (hH : HashOK H) {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x)
-  (hGl : G.len = H.D) (hG : Proof.Mgf1.Valid G) (hc : PssChecks H.P H.D) (c : PrivChecked)
-  (hK : 16 ≤ c.stack)
+variable {G : Spec.Mgf1.Hash} (e : EncImpl G) (c : PrivChecked) {K : Nat} (heK : e.stack ≤ K) (hcK : c.stack ≤ K)
 
-include hH hGh hGl hG hK in
-theorem code_correct (s : State) (h : (Spec.RsaPss.signContract G G abi (stk c.stack)).pre s) :
-    ∃ t s', Exec isa (sign H c.name c.code) s t s' ∧ abiPreserved s s' ∧
-      (Spec.RsaPss.signContract G G abi (stk c.stack)).post s s' := by
-  have hp := preS_of G h
-  rw [hGl] at hp
-  obtain ⟨t, s', he, habi, hr⟩ := code_ok hH hGh hGl hG c hK (Nat.le_refl _) hp
+include heK hcK in
+theorem code_correct (s : State) (h : (Spec.RsaPss.signContract G G abi (stk K)).pre s) :
+    ∃ t s', Exec isa (signC e.name e.code c.name c.code) s t s' ∧ abiPreserved s s' ∧
+      (Spec.RsaPss.signContract G G abi (stk K)).post s s' := by
+  obtain ⟨t, s', he, habi, hr⟩ := code_ok e c heK hcK (preS_of G h)
   refine ⟨t, s', he, habi, ?_⟩
   sig_post [Spec.RsaPss.signContract, Spec.RsaPss.signSig, abi, argRegs, stackArgs_thirteen, List.append_eq]
   exact hr
 
-include hH hGh hGl hG hc hK in
+include heK hcK in
 theorem code_constantTime :
-    ConstantTime isa (Spec.RsaPss.signContract G G abi (stk c.stack)).pre
-      (Spec.RsaPss.signContract G G abi (stk c.stack)).pub (sign H c.name c.code) :=
-  RelCT.constantTime ((code_ct hH hGh hGl hG hc c hK (Nat.le_refl _)).mono (fun s₁ _ ⟨h₁, h₂, hp⟩ =>
-    ⟨s₁, ⟨hGl ▸ preS_of G h₁, PubS.refl s₁⟩, hGl ▸ preS_of G h₂, pubS_of G hp⟩) fun _ _ h => h)
+    ConstantTime isa (Spec.RsaPss.signContract G G abi (stk K)).pre
+      (Spec.RsaPss.signContract G G abi (stk K)).pub (signC e.name e.code c.name c.code) :=
+  RelCT.constantTime ((code_ct e c heK hcK).mono (fun s₁ _ ⟨h₁, h₂, hp⟩ =>
+    ⟨s₁, ⟨preS_of G h₁, PubS.refl s₁⟩, preS_of G h₂, pubS_of G hp⟩) fun _ _ h => h)
 
-include hH hGh hGl hG hc hK in
-theorem code_verified (hsat : ∃ s, (Spec.RsaPss.signContract G G abi (stk c.stack)).pre s) :
-    Verified AArch64.target (sign H c.name c.code) (Spec.RsaPss.signContract G G abi (stk c.stack)) :=
-  ⟨code_correct hH hGh hGl hG c hK, code_constantTime hH hGh hGl hG hc c hK, hsat⟩
+include heK hcK in
+theorem code_verified (hsat : ∃ s, (Spec.RsaPss.signContract G G abi (stk K)).pre s) :
+    Verified AArch64.target (signC e.name e.code c.name c.code) (Spec.RsaPss.signContract G G abi (stk K)) :=
+  ⟨code_correct e c heK hcK, code_constantTime e c heK hcK, hsat⟩
 
 end
 
