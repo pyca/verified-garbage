@@ -1,0 +1,13 @@
+[package]
+name = "riscv-sha1-experiment"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+verified-garbage = { path = "../.." }
+
+[profile.release]
+opt-level = 3

@@ -1,0 +1,3 @@
+src/variants.s
+target/
+Cargo.lock

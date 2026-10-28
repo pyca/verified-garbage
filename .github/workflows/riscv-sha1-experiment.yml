@@ -1,0 +1,42 @@
+name: RISC-V SHA-1 experiment
+
+# Throwaway, on the experiment branch only: times experiments/riscv-sha1's
+# variants on the riscv64 runner CI uses.
+on:
+  push:
+    branches: [experiment/riscv-sha1-bench]
+
+permissions:
+  contents: read
+
+jobs:
+  bench:
+    runs-on: ubuntu-24.04-riscv
+    container:
+      image: ghcr.io/pyca/verified-garbage-runner:riscv64
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/lean/
+            !/docs/
+            !/vectors/
+            !/src/asm/*/
+            /src/asm/riscv64/
+      - uses: ./.github/actions/runner-info
+      - name: Generate the variants
+        run: python3 experiments/riscv-sha1/gen.py experiments/riscv-sha1/src/variants.s
+      - name: Build
+        working-directory: experiments/riscv-sha1
+        run: cargo build --release
+      - name: Time (three runs)
+        working-directory: experiments/riscv-sha1
+        run: |
+          for i in 1 2 3; do
+            echo "== run $i"
+            target/release/riscv-sha1-experiment 1048576
+          done
