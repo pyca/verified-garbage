@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Camellia.X86.Prepared
+public import VerifiedGarbage.Impl.Camellia.X86.Ecb
 public import VerifiedGarbage.Impl.Modes.X86.Seq
 public import VerifiedGarbage.Impl.Modes.CbcChained
 

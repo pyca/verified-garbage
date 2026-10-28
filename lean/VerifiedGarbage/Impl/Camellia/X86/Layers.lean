@@ -25,8 +25,10 @@ left word's S-box output during a round (32–39); the planes of `D1`
 which every group is copied; the table of the bitsliced subkeys, sixteen
 planes each, in the order the rounds use them (104–647); the callee-saved
 registers `ebx`, `esi`, `edi` and `ebp` (648–651); the data pointer and the
-blocks left (652, 653); and the address of the end of the current group's
-rounds (654). The modes keep their own state after it. The
+blocks left (652, 653); the address of the end of the current group's
+rounds (654); and the callee-saved registers of
+`vg_camellia_crypt_prepared` (655–658), which ECB calls. The modes keep
+their own state after them. The
 subkey's entry is at `kp` (`esi`). The rounds write only below the tail
 buffer, the transposes only below the table.
 -/
@@ -62,22 +64,30 @@ def dSlot : Nat := savedSlot + 4
 def nSlot : Nat := dSlot + 1
 def grpSlot : Nat := nSlot + 1
 
-/-- The number of slots: the group's end's, then the modes' 16 and one
-more, a whole number of 8-byte words. -/
+/-- The number of slots: the group's end's, `vg_camellia_crypt_prepared`'s
+saved registers, and more, to a whole number of 8-byte words. -/
 def slots : Nat := grpSlot + 18
 
-/-- The callee-saved registers, and their slots. -/
-def savedRegs : List (Reg × Nat) :=
-  [(.ebx, savedSlot), (.esi, savedSlot + 1), (.edi, savedSlot + 2), (.ebp, savedSlot + 3)]
+/-- `vg_camellia_crypt_prepared`'s saved registers, after the group's end,
+so that ECB's survive its calls. -/
+def cryptSavedSlot : Nat := grpSlot + 1
+
+/-- The callee-saved registers, and their slots from `j`. -/
+def savedRegsAt (j : Nat) : List (Reg × Nat) := [(.ebx, j), (.esi, j + 1), (.edi, j + 2), (.ebp, j + 3)]
+
+def savedRegs : List (Reg × Nat) := savedRegsAt savedSlot
 
 /-- Load the scratch buffer's address (argument `k`) to `edi`, saving the
-registers there first. -/
-def saveRegs (k : Nat) : List Instr :=
-  [.mov .eax (.mem (argOp k))] ++ savedRegs.map (fun (r, j) => .store (slotAt .eax j) r) ++ [movR .edi .eax]
+registers in the slots from `j` there first. -/
+def saveRegsAt (j k : Nat) : List Instr :=
+  [.mov .eax (.mem (argOp k))] ++ (savedRegsAt j).map (fun (r, i) => .store (slotAt .eax i) r) ++ [movR .edi .eax]
 
-/-- Restore the registers (`edi`, the base, last). -/
-def restoreRegs : List Instr :=
-  [movS .ebx savedSlot, movS .esi (savedSlot + 1), movS .ebp (savedSlot + 3), movS .edi (savedSlot + 2)]
+def saveRegs (k : Nat) : List Instr := saveRegsAt savedSlot k
+
+/-- Restore the registers from the slots from `j` (`edi`, the base, last). -/
+def restoreRegsAt (j : Nat) : List Instr := [movS .ebx j, movS .esi (j + 1), movS .ebp (j + 3), movS .edi (j + 2)]
+
+def restoreRegs : List Instr := restoreRegsAt savedSlot
 
 /-! ## A round -/
 

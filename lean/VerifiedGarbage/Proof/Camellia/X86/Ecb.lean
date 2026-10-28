@@ -11,10 +11,12 @@ import VerifiedGarbage.Proof.Framework.Contract
 
 As SM4's (`Proof/Sm4/X86/Ecb.lean`) and ARMv7's
 (`Proof/Camellia/Arm/Ecb.lean`): `ecb_wp`, with the working space as the
-fifth argument (`ecbX86`), `ecb dir` saves the callee-saved registers,
+fifth argument and 16 bytes of stack below the return address for the
+frames of its calls (`ecbX86`), `ecb dir` saves the callee-saved registers,
 builds the table of subkeys for 18 or 24 rounds in the order `dir` uses
-them, keeps the data pointer and the count in their slots, transforms the
-blocks a group at a time (`dataLoop_wp`) and restores the registers.
+them (`table_wp`), keeps the data pointer and the count in their slots,
+transforms the blocks a group at a time (`dataGroups_wp`, `dataLoop_wp`) and
+restores the registers.
 -/
 
 @[expose] public section
@@ -25,12 +27,8 @@ open VG VG.X86 VG.X86.Straight VG.Impl.Camellia.X86
 open VG.Impl.Aes.X86 (sb slotAt st argOp at_)
 open VG.Proof.Camellia (DInv outF blocksAt_of_dinv ecb_eq outF_spec schedWords_getD dirPerm dirPerm_lt)
 
-/-- The specification's direction. -/
-def specDir : Dir → Spec.Camellia.Direction
-  | .encrypt => .encrypt
-  | .decrypt => .decrypt
-
-/-- ECB on x86 with its working space as the fifth argument. -/
+/-- ECB on x86 with its working space as the fifth argument, and 16 bytes of
+stack below the return address. -/
 def ecbX86 (dir : Dir) : Contract X86.isa where
   pre s :=
     let sched : Region := ⟨(arg s 0).setWidth 64, 272⟩
@@ -38,20 +36,19 @@ def ecbX86 (dir : Dir) : Contract X86.isa where
     let scratch : Region := ⟨(arg s 4).setWidth 64, 4 * slots⟩
     let args : Region := ⟨argAddr s 0, 20⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+    let stk : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 16, 16⟩
     s.rd = [sched, args] ∧ s.wr = [data, scratch] ∧
     sched.Disjoint data ∧ sched.Disjoint scratch ∧ data.Disjoint scratch ∧
     args.Disjoint data ∧ args.Disjoint scratch ∧ ret.Disjoint data ∧ ret.Disjoint scratch ∧
     (arg s 0).toNat + 272 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 16 * (arg s 3).toNat ≤ 2 ^ 32 ∧
     (arg s 4).toNat + 4 * slots ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 24 ≤ 2 ^ 32 ∧
-    ((arg s 1).toNat = 18 ∨ (arg s 1).toNat = 24)
+    ((arg s 1).toNat = 18 ∨ (arg s 1).toNat = 24) ∧
+    stk.Disjoint data ∧ stk.Disjoint scratch ∧ stk.Disjoint args ∧ 16 ≤ (s.gpr .esp).toNat
   post s s' :=
     Spec.Camellia.blocksAt s'.mem ((arg s 2).setWidth 64) (arg s 3).toNat =
       Spec.Camellia.ecb (Spec.Camellia.subkeysAt s.mem ((arg s 0).setWidth 64) (arg s 1).toNat) (specDir dir)
         (Spec.Camellia.blocksAt s.mem ((arg s 2).setWidth 64) (arg s 3).toNat)
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 5, arg s₁ i = arg s₂ i
-
-/-- The order of the subkeys in the table, for each direction. -/
-def permOf (dir : Dir) : Nat → Nat → Nat := dirPerm (specDir dir)
 
 theorem keys_wp (dir : Dir) {s₀ : State} {b sched : BitVec 32} {g : Nat} (hg : g = 3 ∨ g = 4)
     (hk : KeyPre s₀ b sched) (harg : InRegions (s₀.rd ++ s₀.wr) (s₀.ea (argOp 0)) 4)
@@ -70,6 +67,25 @@ theorem arg_contains (s : State) (hfit : (s.gpr .esp).toNat + 24 ≤ 2 ^ 32) {i 
   rw [show argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) from addr_eq (by omega_arith),
     show argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 from addr_eq (by omega_arith)]
   exact VG.Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)
+
+/-- … and within it. -/
+theorem arg_sub (s : State) (hfit : (s.gpr .esp).toNat + 24 ≤ 2 ^ 32) {i : Nat} (hi : i < 5) :
+    Region.Sub ⟨argAddr s i, 4⟩ ⟨argAddr s 0, 20⟩ := by
+  have hs := setWidth_toNat (s.gpr .esp)
+  rw [show argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 (4 + 4 * i) from addr_eq (by omega_arith),
+    show argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 from addr_eq (by omega_arith)]
+  exact VG.Offset.sub _ (by omega_arith) (by omega_arith)
+
+/-- The 16 bytes below the stack pointer, as the contract writes them. -/
+theorem below_eq {s : State} (h : 16 ≤ (s.gpr .esp).toNat) :
+    below (s.gpr .esp) 16 = ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 16, 16⟩ := by
+  show (⟨(s.gpr .esp - BitVec.ofNat 32 16).setWidth 64, 16⟩ : Region) = _
+  rw [VG.X86.Taint.sub_setWidth h]
+
+/-- … apart from the return address. -/
+theorem below_ret {s : State} (h : 16 ≤ (s.gpr .esp).toNat) :
+    Region.Disjoint (below (s.gpr .esp) 16) ⟨(s.gpr .esp).setWidth 64, 4⟩ := by
+  rw [below_eq h]; exact (VG.Offset.base_disjoint_below _ (by decide)).symm
 
 /-- `mov eax, [esp + 4 + 4 i]; mov [edi + 4 k], eax`. -/
 theorem argSlot_ok (s : State) {b : BitVec 32} {i k : Nat} (hb : s.gpr .edi = b) (hk : k < slots)
@@ -111,12 +127,25 @@ structure BodyPre (s₀ : State) (b sched D : BitVec 32) (n : Nat) (s : State) :
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-theorem body_wp (dir : Dir) {s₀ : State} (hp : (ecbX86 dir).pre s₀) {g : Nat} (hg : g = 3 ∨ g = 4)
-    (hgR : (arg s₀ 1).toNat / 6 = g) {s₁ : State}
+theorem table_wp (dir : Dir) {s₀ : State} (hp : (ecbX86 dir).pre s₀) {g : Nat} (hg : g = 3 ∨ g = 4) {s₁ : State}
     (h₁ : BodyPre s₀ (arg s₀ 4) (arg s₀ 0) (arg s₀ 2) (arg s₀ 3).toNat s₁) :
-    WP isa (body dir g) s₁ (GDone s₀ (arg s₀ 4) (arg s₀ 2) (arg s₀ 3).toNat g
+    WP isa (keys dir g) s₁ (KeysPost s₁ (arg s₀ 4) (arg s₀ 0) g (permOf dir g)) := by
+  obtain ⟨hrd, hwr, dKD, dKS, dDS, dAD, dAS, dRD, dRS, fitK, fitD, fitB, fitE, hR, -, -, -, -⟩ := hp
+  have hwS : ScrIn s₀.wr (arg s₀ 4) := .exact (by rw [hwr]; simp) fitB
+  have hrK : (⟨(arg s₀ 0).setWidth 64, 272⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp
+  have hrA : (⟨argAddr s₀ 0, 20⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp
+  exact keys_wp dir hg ⟨h₁.base, by rw [h₁.wr]; exact hwS, List.mem_append_left _ (by rw [h₁.rd]; exact hrK), fitK, dKS⟩
+    (by rw [h₁.rd, h₁.wr, ea_arg h₁.esp]; exact ⟨_, List.mem_append_left _ hrA, arg_contains s₀ fitE (i := 0) (by decide)⟩)
+    (by rw [ea_arg h₁.esp]; exact h₁.frame.readW (arg_contains s₀ fitE (i := 0) (by decide)) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact dAS) (by decide))
+
+theorem dataGroups_wp (dir : Dir) {s₀ : State} (hp : (ecbX86 dir).pre s₀) {g : Nat} (hg : g = 3 ∨ g = 4)
+    (hgR : (arg s₀ 1).toNat / 6 = g) {s₁ s₂ : State}
+    (h₁ : BodyPre s₀ (arg s₀ 4) (arg s₀ 0) (arg s₀ 2) (arg s₀ 3).toNat s₁)
+    (k₂ : KeysPost s₁ (arg s₀ 4) (arg s₀ 0) g (permOf dir g) s₂) :
+    WP isa Impl.Camellia.X86.groups s₂ (GDone s₀ (arg s₀ 4) (arg s₀ 2) (arg s₀ 3).toNat g
       fun i => (schedWords s₀.mem ((arg s₀ 0).setWidth 64) (arg s₀ 1).toNat).getD (permOf dir g i) 0) := by
-  obtain ⟨hrd, hwr, dKD, dKS, dDS, dAD, dAS, dRD, dRS, fitK, fitD, fitB, fitE, hR⟩ := hp
+  obtain ⟨hrd, hwr, dKD, dKS, dDS, dAD, dAS, dRD, dRS, fitK, fitD, fitB, fitE, hR, sD, sS, sA, s16⟩ := hp
   let sched := arg s₀ 0
   let R := (arg s₀ 1).toNat
   let D := arg s₀ 2
@@ -139,10 +168,7 @@ theorem body_wp (dir : Dir) {s₀ : State} (hp : (ecbX86 dir).pre s₀) {g : Nat
     fun k hk => slot_sub hfit' hk
   have hk₁ : KeyPre s₁ b sched :=
     ⟨h₁.base, by rw [h₁.wr]; exact hwS, List.mem_append_left _ (by rw [h₁.rd]; exact hrK), fitK, dKS⟩
-  unfold body
-  -- The table.
-  refine WP.seq (WP.mono (keys_wp dir hg hk₁ (argIn h₁.rd h₁.wr h₁.esp 0 (by decide))
-    (by rw [ea_arg h₁.esp]; exact argR h₁.frame 0 (by decide))) fun s₂ k₂ => ?_)
+  unfold Impl.Camellia.X86.groups
   have f₀₂ : Frame [⟨b.setWidth 64, 4 * slots⟩] s₀.mem s₂.mem :=
     h₁.frame.trans (k₂.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       simp only [List.mem_singleton] at hr; subst hr; exact table_sub_scr⟩)
@@ -208,7 +234,7 @@ theorem body_wp (dir : Dir) {s₀ : State} (hp : (ecbX86 dir).pre s₀) {g : Nat
   have data₃ : ∀ i < 16 * n, s₃.mem (D.setWidth 64 + BitVec.ofNat 64 i) = s₀.mem (D.setWidth 64 + BitVec.ofNat 64 i) :=
     fun i hi => f₀₃.bytes (R := ⟨D.setWidth 64, 16 * n⟩)
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dDS) (by simp only; omega_arith) hi
-  have fr₃ : Frame [⟨b.setWidth 64, 4 * slots⟩, ⟨D.setWidth 64, 16 * n⟩] s₀.mem s₃.mem :=
+  have fr₃ : Frame [⟨b.setWidth 64, 4 * slots⟩, ⟨D.setWidth 64, 16 * n⟩, below (s₀.gpr .esp) 16] s₀.mem s₃.mem :=
     f₀₃.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩
   have g₃ : ∀ r, r ≠ .eax → s₃.gpr r = s₂.gpr r := fun r hr => by
     show s₃b.gpr r = _; rw [o₃b r hr, o₃a r hr]
@@ -226,7 +252,13 @@ theorem body_wp (dir : Dir) {s₀ : State} (hp : (ecbX86 dir).pre s₀) {g : Nat
   · have hn0 : n = 0 := by simpa using h0
     exact WP.block_nil ⟨base₃, esp₃, sc₃, fun i hi => by omega_arith, fr₃, rd₃, wr₃⟩
   · have hn0 : n ≠ 0 := by simpa using h0
-    refine dataLoop_wp ⟨hwS, hwD, dDS, fitD⟩ ⟨base₃, esp₃, by rw [dp₃]; simp,
+    have hstk := below_eq (s := s₀) s16
+    refine dataLoop_wp (dir := dir) (ws := schedWords s₀.mem (sched.setWidth 64) R)
+      ⟨hwS, hwD, dDS, fitD, hR, ⟨_, List.mem_append_left _ hrA, arg_contains s₀ fitE (i := 1) (by decide)⟩,
+        by show arg s₀ 1 = _; simp, dAS.sub_left (arg_sub s₀ fitE (by decide)),
+        dAD.sub_left (arg_sub s₀ fitE (by decide)), by rw [hstk]; exact sS, by rw [hstk]; exact sD,
+        by rw [hstk]; exact sA.sub_right (arg_sub s₀ fitE (by decide)), s16⟩ hgR (fun _ => rfl)
+      ⟨base₃, esp₃, by rw [dp₃]; simp,
       by rw [np₃, Nat.mul_zero, Nat.sub_zero], by omega_arith, sc₃, fun i hi => ?_, fr₃, rd₃, wr₃⟩
     rw [data₃ i hi, ite_eq_right (by omega_arith)]
 
@@ -235,7 +267,7 @@ theorem body_wp (dir : Dir) {s₀ : State} (hp : (ecbX86 dir).pre s₀) {g : Nat
 theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbX86 dir).pre s₀) :
     WP isa (ecb dir) s₀ fun s' => abiPreserved s₀ s' ∧ (ecbX86 dir).post s₀ s' := by
   have hp' := hp
-  obtain ⟨hrd, hwr, dKD, dKS, dDS, dAD, dAS, dRD, dRS, fitK, fitD, fitB, fitE, hR⟩ := hp
+  obtain ⟨hrd, hwr, dKD, dKS, dDS, dAD, dAS, dRD, dRS, fitK, fitD, fitB, fitE, hR, sD, sS, sA, s16⟩ := hp
   let sched := arg s₀ 0
   let R := (arg s₀ 1).toNat
   let D := arg s₀ 2
@@ -266,12 +298,13 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbX86 dir).pre s₀) :
   obtain ⟨g, hgR⟩ : ∃ g, R / 6 = g := ⟨_, rfl⟩
   have hg : g = 3 ∨ g = 4 := by omega_arith
   let E : Nat → BitVec 64 := fun i => (schedWords s₀.mem (sched.setWidth 64) R).getD (permOf dir g i) 0
-  refine WP.seq (WP.mono (M := isa) (Q := GDone s₀ b D n g E)
-    (WP.ite (decide (R = 18)) ((eval_e s₂).trans hz₂) (fun h => ?_) (fun h => ?_)) fun s₅ d₅ => ?_)
+  refine WP.seq (WP.mono (M := isa) (Q := KeysPost s₂ b sched g (permOf dir g))
+    (WP.ite (decide (R = 18)) ((eval_e s₂).trans hz₂) (fun h => ?_) (fun h => ?_)) fun s₃ k₃ => ?_)
   · obtain rfl : g = 3 := by simp at h; omega_arith
-    exact body_wp dir hp' (.inl rfl) hgR hb₂
+    exact table_wp dir hp' (.inl rfl) hb₂
   · obtain rfl : g = 4 := by simp at h; omega_arith
-    exact body_wp dir hp' (.inr rfl) hgR hb₂
+    exact table_wp dir hp' (.inr rfl) hb₂
+  refine WP.seq (WP.mono (dataGroups_wp dir hp' hg hgR hb₂ k₃) fun s₅ (d₅ : GDone s₀ b D n g E s₅) => ?_)
   -- The epilogue.
   obtain ⟨s₆, e₆, rg₆, o₆, m₆, -, -⟩ := restore_ok (s₀ := s₀) (b := b) (by rw [d₅.wr]; exact hwS) d₅.base
     d₅.scr.saved
@@ -286,9 +319,10 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbX86 dir).pre s₀) :
   · rw [m₆]
     exact d₅.frame.readW (r := ⟨(s₀.gpr .esp).setWidth 64, 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
+      rcases hr with rfl | rfl | rfl
       · exact dRS
-      · exact dRD) (by decide)
+      · exact dRD
+      · exact (below_ret s16).symm) (by decide)
   · have hd₆ : DInv s₀.mem s₆.mem (D.setWidth 64) n n (outF s₀.mem (D.setWidth 64) g E) := fun i hi => by
       rw [m₆]; exact d₅.data i hi
     show Spec.Camellia.blocksAt s₆.mem (D.setWidth 64) n = _

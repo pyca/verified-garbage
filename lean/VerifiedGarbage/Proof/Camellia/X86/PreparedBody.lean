@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.X86.Ecb
+public import VerifiedGarbage.Proof.Camellia.X86.Keys
+public import VerifiedGarbage.Proof.Camellia.Common
 public import VerifiedGarbage.Impl.Camellia.X86.Prepared
 import VerifiedGarbage.Proof.Camellia.Planes32
 import VerifiedGarbage.Proof.Framework.Offset
@@ -24,6 +25,14 @@ namespace VG.Proof.Camellia.X86
 open VG VG.X86 VG.X86.Straight VG.Impl.Camellia.X86
 open VG.Impl.Camellia (keyPlane32)
 open VG.Proof.Camellia (sigma_rel)
+
+/-- The specification's direction. -/
+def specDir : Dir → Spec.Camellia.Direction
+  | .encrypt => .encrypt
+  | .decrypt => .decrypt
+
+/-- The order of the subkeys in the table, for each direction. -/
+def permOf (dir : Dir) : Nat → Nat → Nat := Proof.Camellia.dirPerm (specDir dir)
 
 /-! ## The encoding -/
 

@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.X86.Prologue
+public import VerifiedGarbage.Proof.Camellia.X86.PreparedBody
 public import VerifiedGarbage.Proof.Camellia.Common
+public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Camellia.X86.Copy
 import VerifiedGarbage.Proof.Camellia.X86.Crypt8
+import VerifiedGarbage.Proof.Camellia.X86.Call
+import VerifiedGarbage.Proof.Camellia.X86.PreparedVerified
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -11,11 +15,15 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 /-!
 # A group of blocks of Camellia ECB on x86 (32-bit)
 
-As SM4's (`Proof/Sm4/X86/Group.lean`, whose code is the same): `dataGroup_wp`, one iteration of
-the data loop, copies the group's blocks (eight, or the last one to seven)
-to the tail buffer, transforms it (`crypt8_ok`), copies the blocks back and
-steps to the next group. The data pointer and the blocks left live in their
-slots (`dSlot`, `nSlot`) between the steps, which use every other register.
+As SM4's (`Proof/Sm4/X86/Group.lean`, whose code is the same but for the
+rounds): `dataGroup_wp`, one iteration of the data loop, copies the group's
+blocks (eight, or the last one to seven) to the tail buffer, transforms it
+by a call of `vg_camellia_crypt_prepared` (`cryptCall_wp`), with the number
+of rounds in ECB's second stack argument and its frame below the stack
+pointer, copies the blocks back and steps to the next group. The data
+pointer and the blocks left live in their slots (`dSlot`, `nSlot`) between
+the steps, which the call keeps, as it keeps the table and the saved
+registers (`ScrOk.keeps`).
 -/
 
 @[expose] public section
@@ -107,19 +115,6 @@ theorem setWidth_add {D : BitVec 32} {d : Nat} (h : D.toNat + d < 2 ^ 32) :
 
 /-! ## The scratch buffer's contents -/
 
-/-- The slots `lo … hi - 1` of the scratch buffer at `b`. -/
-abbrev slotsRegion (b : BitVec 32) (lo hi : Nat) : Region :=
-  ⟨b.setWidth 64 + BitVec.ofNat 64 (4 * lo), 4 * (hi - lo)⟩
-
-/-- A slot outside a frame. -/
-theorem slot_keep {rs : List Region} {m m' : Mem} {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32)
-    {lo hi : Nat} (hhi : hi ≤ slots) (hf : Frame rs m m') (hd : ∀ r ∈ rs, (slotsRegion b lo hi).Disjoint r)
-    {k : Nat} (hk1 : lo ≤ k) (hk2 : k < hi) :
-    m'.readW (wordAddr b k) 32 = m.readW (wordAddr b k) 32 := by
-  rw [slots_eq] at hfit hhi
-  rw [slot_addr (by omega_arith)]
-  exact hf.readW (VG.Offset.contains _ (by omega_arith) (by omega_arith) (by omega_arith)) hd (by decide)
-
 /-- What the data loop keeps in the scratch buffer: the table of `8 g + 2`
 subkeys and the saved registers, in the slots from `keySlot` to `dSlot`. -/
 structure ScrOk (s₀ : State) (b : BitVec 32) (g : Nat) (E : Nat → BitVec 64) (m : Mem) : Prop where
@@ -136,6 +131,15 @@ theorem ScrOk.frame {s₀ : State} {b : BitVec 32} {g : Nat} {E : Nat → BitVec
   · rw [← h.saved i hi]
     exact slot_keep hfit (by decide) hf hd (by rw [savedSlot_eq, keySlot_eq]; omega_arith)
       (by rw [savedSlot_eq, dSlot_eq]; omega_arith)
+
+theorem ScrOk.keeps {s₀ : State} {b : BitVec 32} {g : Nat} {E : Nat → BitVec 64} {m m' : Mem}
+    (h : ScrOk s₀ b g E m) (hfit : b.toNat + 4 * slots ≤ 2 ^ 32)
+    (hk : Spec.Camellia.Prepared.Keeps (b.setWidth 64) wsWords layout.cryptScratch m m') : ScrOk s₀ b g E m' := by
+  have hg4 : 8 * g + 2 ≤ 34 := by rcases h.hg with h | h <;> omega_arith
+  refine ⟨h.hg, fun e he => (h.keys e he).congr fun j hj => ?_, fun i hi => ?_⟩
+  · exact keeps_word hfit hk (by omega_arith) (by rw [grpSlot_eq, keySlot_eq]; omega_arith)
+  · rw [← h.saved i hi]
+    exact keeps_word hfit hk (by rw [savedSlot_eq, keySlot_eq]; omega_arith) (by rw [savedSlot_eq, grpSlot_eq]; omega_arith)
 
 /-- The slots of the data pointer and the count are in the scratch buffer. -/
 theorem dn_sub {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) :
@@ -156,25 +160,30 @@ theorem dn_disj {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) :
     exact VG.Offset.disjoint _ (by (try simp only [keySlot_eq, dSlot_eq, nSlot_eq]); omega_arith)
       (by (try simp only [keySlot_eq, dSlot_eq]); omega_arith) (by (try simp only [dSlot_eq, nSlot_eq]); omega_arith)
 
-/-- What `crypt8` writes (`ctx_sub`) is apart from the table, the saved registers, and the data pointer and count. -/
-theorem ctx_disj {b : BitVec 32} (hfit : b.toNat + 4 * slots ≤ 2 ^ 32) :
-    ∀ r ∈ ctxRegions b, (slotsRegion b keySlot grpSlot).Disjoint r := fun r hr => by
-  rw [slots_eq] at hfit
-  simp only [ctxRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
-  · exact VG.Offset.disjoint_base _ (by omega_arith) (by rw [keySlot_eq, grpSlot_eq]; omega_arith)
-  · rw [slot_addr (by rw [grpSlot_eq]; omega_arith)]
-    exact VG.Offset.disjoint _ (by rw [keySlot_eq, grpSlot_eq]; omega_arith) (by rw [keySlot_eq, grpSlot_eq]; omega_arith)
-      (by rw [grpSlot_eq]; omega_arith)
-
 /-! ## The data loop -/
 
-/-- The scratch buffer at `b` and the `n` blocks at `D`. -/
-structure GPre (s₀ : State) (b D : BitVec 32) (n : Nat) : Prop where
+/-- The registers the steps keep, which the call keeps too. -/
+theorem mem_calleeSaved {r : Reg} (h1 : r ≠ .esi) (h2 : r ≠ .ebp) (h3 : r ≠ .ecx) (h4 : r ≠ .edx) (h5 : r ≠ .ebx)
+    (h6 : r ≠ .eax) : r ∈ calleeSaved := by
+  cases r <;> simp_all [calleeSaved]
+
+/-- The scratch buffer at `b`, the `n` blocks at `D`, `R` rounds in the
+second stack argument, and the 16 bytes of stack below the stack pointer
+that the call uses, apart from the others. -/
+structure GPre (s₀ : State) (b D : BitVec 32) (n R : Nat) : Prop where
   scr : ScrIn s₀.wr b
   dat : (⟨D.setWidth 64, 16 * n⟩ : Region) ∈ s₀.wr
   sep : Region.Disjoint ⟨D.setWidth 64, 16 * n⟩ ⟨b.setWidth 64, 4 * slots⟩
   fitD : D.toNat + 16 * n ≤ 2 ^ 32
+  rounds : R = 18 ∨ R = 24
+  argIn : InRegions (s₀.rd ++ s₀.wr) (argAddr s₀ 1) 4
+  argV : s₀.mem.readW (argAddr s₀ 1) 32 = BitVec.ofNat 32 R
+  argS : Region.Disjoint ⟨argAddr s₀ 1, 4⟩ ⟨b.setWidth 64, 4 * slots⟩
+  argD : Region.Disjoint ⟨argAddr s₀ 1, 4⟩ ⟨D.setWidth 64, 16 * n⟩
+  stkS : Region.Disjoint (below (s₀.gpr .esp) 16) ⟨b.setWidth 64, 4 * slots⟩
+  stkD : Region.Disjoint (below (s₀.gpr .esp) 16) ⟨D.setWidth 64, 16 * n⟩
+  stkA : Region.Disjoint (below (s₀.gpr .esp) 16) ⟨argAddr s₀ 1, 4⟩
+  esp16 : 16 ≤ (s₀.gpr .esp).toNat
 
 /-- The data loop, before group `k`. -/
 structure GInv (s₀ : State) (b D : BitVec 32) (n : Nat) (g : Nat) (E : Nat → BitVec 64) (k : Nat) (s : State) :
@@ -186,7 +195,7 @@ structure GInv (s₀ : State) (b D : BitVec 32) (n : Nat) (g : Nat) (E : Nat →
   lt : 8 * k < n
   scr : ScrOk s₀ b g E s.mem
   data : DInv s₀.mem s.mem (D.setWidth 64) n (8 * k) (outF s₀.mem (D.setWidth 64) g E)
-  frame : Frame [⟨b.setWidth 64, 4 * slots⟩, ⟨D.setWidth 64, 16 * n⟩] s₀.mem s.mem
+  frame : Frame [⟨b.setWidth 64, 4 * slots⟩, ⟨D.setWidth 64, 16 * n⟩, below (s₀.gpr .esp) 16] s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
@@ -196,13 +205,14 @@ structure GDone (s₀ : State) (b D : BitVec 32) (n : Nat) (g : Nat) (E : Nat �
   esp : s.gpr .esp = s₀.gpr .esp
   scr : ScrOk s₀ b g E s.mem
   data : DInv s₀.mem s.mem (D.setWidth 64) n n (outF s₀.mem (D.setWidth 64) g E)
-  frame : Frame [⟨b.setWidth 64, 4 * slots⟩, ⟨D.setWidth 64, 16 * n⟩] s₀.mem s.mem
+  frame : Frame [⟨b.setWidth 64, 4 * slots⟩, ⟨D.setWidth 64, 16 * n⟩, below (s₀.gpr .esp) 16] s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-theorem dataGroup_wp {s₀ : State} {b D : BitVec 32} {n : Nat} {g : Nat} {E : Nat → BitVec 64} (hp : GPre s₀ b D n)
+theorem dataGroup_wp {s₀ : State} {b D : BitVec 32} {n R : Nat} {g : Nat} {E : Nat → BitVec 64} {dir : Dir}
+    {ws : List (BitVec 64)} (hp : GPre s₀ b D n R) (hg : R / 6 = g) (hE : ∀ i, E i = ws.getD (permOf dir g i) 0)
     {k : Nat} {s : State} (hi : GInv s₀ b D n g E k s) :
-    WP isa (Impl.Camellia.X86.group g) s fun s' => (s'.zf = some true ∧ GDone s₀ b D n g E s') ∨
+    WP isa Impl.Camellia.X86.group s fun s' => (s'.zf = some true ∧ GDone s₀ b D n g E s') ∨
       (s'.zf = some false ∧ GInv s₀ b D n g E (k + 1) s') := by
   have hfit := hp.scr.fit
   have hfitD := hp.fitD
@@ -248,7 +258,6 @@ theorem dataGroup_wp {s₀ : State} {b D : BitVec 32} {n : Nat} {g : Nat} {E : N
       (by rw [keySlot_eq, grpSlot_eq]; omega_arith) (by rw [tailSlot_eq]; omega_arith)
   have dA : (slotsRegion b keySlot grpSlot).Disjoint ⟨A.setWidth 64, 16 * c⟩ :=
     ((hp.sep.sub_left subA).sub_right (VG.Offset.sub_base _ (by rw [keySlot_eq, grpSlot_eq, slots_eq]; omega_arith))).symm
-  have dTab := ctx_disj hfit'
   have subTab : (slotsRegion b keySlot dSlot).Sub (slotsRegion b keySlot grpSlot) :=
     VG.Offset.sub _ (by decide) (by decide)
   have dD : ∀ {rs : List Region}, (∀ r ∈ rs, Region.Sub r ⟨b.setWidth 64, 4 * slots⟩) →
@@ -297,22 +306,42 @@ theorem dataGroup_wp {s₀ : State} {b D : BitVec 32} {n : Nat} {g : Nat} {E : N
   have sc₄ : ScrOk s₀ b g E s₄.mem := sc₃.frame hfit' fs dsTab
   have base₄ : s₄.gpr sb = b := by rw [g₄]; exact base₃
   have wr₄' : s₄.wr = s.wr := by rw [wr₄, wr₃]
-  -- The eight blocks.
-  have hkey : CorePre s₄ g E :=
-    { scr := by rw [base₄, wr₄']; exact hwS
-      nk34 := by rcases sc₄.hg with h | h <;> omega_arith
-      keys := fun e he => by rw [base₄]; exact sc₄.keys e he
-      hg := sc₄.hg }
-  refine WP.seq (WP.mono (crypt8_ok hkey) fun s₅ ⟨c₅, b₅⟩ => ?_)
-  have base₅ : s₅.gpr .edi = b := c₅.base.trans base₄
-  have f₅ : Frame (ctxRegions b) s₄.mem s₅.mem := by
-    have := c₅.frame; rw [base₄] at this; exact this
+  -- The eight blocks, by the call.
+  have esp₄ : s₄.gpr .esp = s₀.gpr .esp := by
+    rw [g₄, g₃ _ (by decide) (by decide) (by decide) (by decide), o₁ _ (by decide) (by decide) (by decide), hi.esp]
+  have rd₄' : s₄.rd = s₀.rd := by rw [rd₄, rd₃, hi.rd]
+  have fr₄ : Frame [⟨b.setWidth 64, 4 * slots⟩, ⟨D.setWidth 64, 16 * n⟩, below (s₀.gpr .esp) 16] s₀.mem s₄.mem :=
+    hi.frame.trans ((f₃.sub fun r hr => ⟨⟨b.setWidth 64, 4 * slots⟩, List.mem_cons_self, by
+      simp only [List.mem_singleton] at hr; subst hr; exact subT⟩).trans
+      (fs.sub fun r hr => ⟨⟨b.setWidth 64, 4 * slots⟩, List.mem_cons_self, hsub r hr⟩))
+  have ha₄ : InRegions (s₄.rd ++ s₄.wr) (s₄.ea (VG.Impl.Aes.X86.argOp 1)) 4 := by
+    rw [rd₄', wr₄', hi.wr, ea_arg esp₄]; exact hp.argIn
+  have hv₄ : s₄.mem.readW (s₄.ea (VG.Impl.Aes.X86.argOp 1)) 32 = BitVec.ofNat 32 R := by
+    rw [ea_arg esp₄, fr₄.readW (Region.contains_self _ _) (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact hp.argS
+      · exact hp.argD
+      · exact hp.stkA.symm) (by decide)]
+    exact hp.argV
+  have he₄ : ∀ i < 8 * (R / 6) + 2, EntryOk s₄.mem b i (ws.getD (permOf dir (R / 6) i) 0) := fun i hi' => by
+    rw [hg] at hi' ⊢; rw [← hE]; exact sc₄.keys i hi'
+  refine WP.seq (WP.mono (cryptCall_wp base₄ (by rw [wr₄']; exact hwS) hp.rounds he₄ ha₄ hv₄
+    (by rw [esp₄]; exact hp.stkS) (by rw [esp₄]; exact hp.esp16))
+    fun s₅ ⟨bb₅, cs₅, rd₅', wr₅', f₅, k₅, bl₅⟩ => ?_)
+  have base₅ : s₅.gpr .edi = b := bb₅
+  rw [esp₄] at f₅
   have keep₅ : ∀ j, keySlot ≤ j → j < grpSlot →
       s₅.mem.readW (wordAddr b j) 32 = s₄.mem.readW (wordAddr b j) 32 :=
-    fun j h1 h2 => slot_keep hfit' (by decide) f₅ dTab h1 h2
-  have sc₅ : ScrOk s₀ b g E s₅.mem := sc₄.frame hfit' f₅ fun r hr => (dTab r hr).sub_left subTab
-  have wr₅ : s₅.wr = s.wr := by rw [c₅.wr, wr₄']
-  have rd₅ : s₅.rd = s.rd := by rw [c₅.rd, rd₄, rd₃]
+    fun j h1 h2 => keeps_word hfit' k₅ h1 h2
+  have sc₅ : ScrOk s₀ b g E s₅.mem := sc₄.keeps hfit' k₅
+  have b₅ : ∀ j < 8, blk s₅ j =
+      Spec.Camellia.encodeBlock (cryptWords g E (Spec.Camellia.decodeBlock (blk s₄ j))) := fun j hj => by
+    have hEf : (fun i => ws.getD (Proof.Camellia.dirPerm (specDir dir) g i) 0) = E := funext fun i => (hE i).symm
+    simp only [blk]
+    rw [show s₅.gpr sb = b from base₅, base₄, bl₅ j hj, blockFn_words (specDir dir) hp.rounds, hg, hEf]
+  have wr₅ : s₅.wr = s.wr := by rw [wr₅', wr₄']
+  have rd₅ : s₅.rd = s.rd := by rw [rd₅', rd₄, rd₃]
   have hwS₅ : ScrIn s₅.wr b := by rw [wr₅]; exact hwS
   -- The tail buffer back to the group's blocks.
   unfold copyOut
@@ -382,7 +411,11 @@ theorem dataGroup_wp {s₀ : State} {b D : BitVec 32} {n : Nat} {g : Nat} {E : N
         simp only [List.mem_singleton] at hr; subst hr; rw [hA]
         exact not_contains_off _ (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
       rw [f₈ _ hout,
-        f₅.bytes (R := ⟨D.setWidth 64, 16 * n⟩) (dD (ctx_sub hfit')) (by simp only; omega_arith) hin,
+        f₅.bytes (R := ⟨D.setWidth 64, 16 * n⟩) (fun r hr => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl
+          · exact hp.sep
+          · exact hp.stkD.symm) (by simp only; omega_arith) hin,
         fs.bytes (R := ⟨D.setWidth 64, 16 * n⟩) (dD hsub) (by simp only; omega_arith) hin,
         f₃.bytes (R := ⟨D.setWidth 64, 16 * n⟩) (dD fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact subT) (by simp only; omega_arith) hin,
@@ -422,22 +455,22 @@ theorem dataGroup_wp {s₀ : State} {b D : BitVec 32} {n : Nat} {g : Nat} {E : N
   have sc₁₀ : ScrOk s₀ b g E s₁₀.mem := (mem₉' ▸ sc₈).frame hfit' fa dsTab
   have g₁₀' : ∀ r, r ≠ .esi → r ≠ .ebp → r ≠ .ecx → r ≠ .edx → r ≠ .ebx → r ≠ .eax → s₁₀.gpr r = s.gpr r :=
     fun r h1 h2 h3 h4 h5 h6 => by
-      rw [g₁₀, o₁₀b r h2, o₁₀a r h1, o₉ r h3, g₈ r h4 h5 h3 h6, o₆ r h1 h2 h3, c₅.keep r
-        (by simp only [VG.Impl.Aes.X86.tmpRegs, List.mem_cons, List.not_mem_nil, or_false, not_or]
-            exact ⟨h6, h5, h3, h4, h2⟩) h1, g₄, g₃ r h4 h5 h3 h6, o₁ r h1 h2 h3]
+      rw [g₁₀, o₁₀b r h2, o₁₀a r h1, o₉ r h3, g₈ r h4 h5 h3 h6, o₆ r h1 h2 h3,
+        cs₅ r (mem_calleeSaved h1 h2 h3 h4 h5 h6), g₄, g₃ r h4 h5 h3 h6, o₁ r h1 h2 h3]
   have base₁₀ : s₁₀.gpr .edi = b := by
     rw [g₁₀' _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), hi.base]
   have esp₁₀ : s₁₀.gpr .esp = s₀.gpr .esp := by
     rw [g₁₀' _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), hi.esp]
   have rd₁₀' : s₁₀.rd = s₀.rd := by rw [rd₁₀, rd₁₀b, rd₁₀a, rd₉, rd₈, hi.rd]
   have wr₁₀' : s₁₀.wr = s₀.wr := by rw [wr₁₀, wr₁₀b', hi.wr]
-  have fr : Frame [⟨b.setWidth 64, 4 * slots⟩, ⟨D.setWidth 64, 16 * n⟩] s₀.mem s₁₀.mem := by
-    refine hi.frame.trans ((f₃.sub fun r hr => ⟨⟨b.setWidth 64, 4 * slots⟩, List.mem_cons_self, ?_⟩).trans
-      ((fs.sub fun r hr => ⟨⟨b.setWidth 64, 4 * slots⟩, List.mem_cons_self, hsub r hr⟩).trans
-      ((f₅.sub fun r hr => ⟨⟨b.setWidth 64, 4 * slots⟩, List.mem_cons_self, ctx_sub hfit' r hr⟩).trans
+  have fr : Frame [⟨b.setWidth 64, 4 * slots⟩, ⟨D.setWidth 64, 16 * n⟩, below (s₀.gpr .esp) 16] s₀.mem s₁₀.mem := by
+    refine fr₄.trans ((f₅.sub fun r hr => ?_).trans
       ((f₈.sub fun r hr => ⟨⟨D.setWidth 64, 16 * n⟩, List.mem_cons_of_mem _ List.mem_cons_self, ?_⟩).trans
-      (mem₉' ▸ fa.sub fun r hr => ⟨⟨b.setWidth 64, 4 * slots⟩, List.mem_cons_self, hsub r hr⟩)))))
-    · simp only [List.mem_singleton] at hr; subst hr; exact subT
+      (mem₉' ▸ fa.sub fun r hr => ⟨⟨b.setWidth 64, 4 * slots⟩, List.mem_cons_self, hsub r hr⟩)))
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
+      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), fun _ h => h⟩
     · simp only [List.mem_singleton] at hr; subst hr; exact subA
   by_cases hlt : v ≤ 8
   · have hn : 8 * k + c = n := by omega_arith
@@ -452,13 +485,14 @@ theorem dataGroup_wp {s₀ : State} {b D : BitVec 32} {n : Nat} {g : Nat} {E : N
     · rw [np₁₀, r₁₀b, ebp₁₀a, ecx₁₀a, VG.Offset.ofNat_sub_ofNat (by omega_arith), show v - c = n - 8 * (k + 1) by omega_arith]
 
 /-- The data loop. -/
-theorem dataLoop_wp {s₀ : State} {b D : BitVec 32} {n : Nat} {g : Nat} {E : Nat → BitVec 64} (hp : GPre s₀ b D n)
+theorem dataLoop_wp {s₀ : State} {b D : BitVec 32} {n R : Nat} {g : Nat} {E : Nat → BitVec 64} {dir : Dir}
+    {ws : List (BitVec 64)} (hp : GPre s₀ b D n R) (hg : R / 6 = g) (hE : ∀ i, E i = ws.getD (permOf dir g i) 0)
     {s : State} (hi : GInv s₀ b D n g E 0 s) :
-    WP isa (.loop (Impl.Camellia.X86.group g) .ne) s (GDone s₀ b D n g E) := by
+    WP isa (.loop Impl.Camellia.X86.group .ne) s (GDone s₀ b D n g E) := by
   refine WP.loop (M := isa) (fun m s => ∃ k, m = n - 8 * k ∧ GInv s₀ b D n g E k s) (fun m s hs => ?_) n s
     ⟨0, by omega_arith, hi⟩
   obtain ⟨k, rfl, hk⟩ := hs
-  refine WP.mono (dataGroup_wp hp hk) fun s' h => ?_
+  refine WP.mono (dataGroup_wp hp hg hE hk) fun s' h => ?_
   rcases h with ⟨z, d⟩ | ⟨z, d⟩
   · exact .inl ⟨(eval_ne s').trans (by rw [z]; rfl), d⟩
   · exact .inr ⟨(eval_ne s').trans (by rw [z]; rfl), n - 8 * (k + 1),
