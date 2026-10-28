@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.CrtKey
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtRedc
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtFix
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks

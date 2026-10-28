@@ -4,11 +4,9 @@ import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
 import VerifiedGarbage.Proof.Bignum.AArch64.Double
 import VerifiedGarbage.Proof.Bignum.AArch64.R2
 public import VerifiedGarbage.Proof.Bignum.CrtGPow
-public import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Impl.Rsa.AArch64.Crt
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 public import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
 import VerifiedGarbage.Proof.Bignum.AArch64.Rounds

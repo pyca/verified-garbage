@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExp
 public import VerifiedGarbage.Proof.Bignum.CrtWindowFrameWide
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtSetup
 import VerifiedGarbage.Proof.Bignum.CrtMath
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

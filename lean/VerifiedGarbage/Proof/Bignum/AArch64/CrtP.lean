@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtQ
 public import VerifiedGarbage.Proof.Bignum.CrtPRanges
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtSetup
 import VerifiedGarbage.Proof.Bignum.CrtMath
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtPow
@@ -453,8 +452,8 @@ theorem pPhase_gen (M : Mont) (E : Nat → Nat → List (Prog isa)) (hE : PowOk 
   have hws₃ : WsAt s₃.mem B o wx mx := hws₁.of_words fun i hi => by
     rw [hpw f₃ sg' i (by omega_using [hi]), hpw f₂ (fun r h => h) i (by omega_using [hi])]
   have hX₃ : XVals s₃ B o wx mx X :=
-    (hX₁.of_below f₂ (fun r hr => (pRanges_le w r hr).trans hlo) (by omega_using [hn, hhi'])).of_below f₃
-      (fun r hr => (pRanges_le w r (sg' r hr)).trans hlo) (by omega_using [hn, hhi'])
+    (hX₁.of_below f₂ (fun r hr => Nat.le_trans (pRanges_le w r hr) hlo) (by omega_using [hn, hhi'])).of_below f₃
+      (fun r hr => Nat.le_trans (pRanges_le w r (sg' r hr)) hlo) (by omega_using [hn, hhi'])
   have i03 : InScr B Z s.mem s₃.mem := InScr.of_frm f₀₃ fun r hr => by have := pxR_bound hlo r hr; omega_using [hhi', this]
   -- `c^dP R_p mod p`.
   refine wp_seqs_append (by simp) (by simp) ?_

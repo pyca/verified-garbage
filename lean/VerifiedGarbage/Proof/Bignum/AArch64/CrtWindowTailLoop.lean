@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPrefixInv
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLoadTail
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTailByte
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowAdvance
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLoopControl
 import VerifiedGarbage.Proof.Framework.Block

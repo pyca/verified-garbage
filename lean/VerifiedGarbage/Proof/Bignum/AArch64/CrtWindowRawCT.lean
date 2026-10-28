@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCore
 
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawSquares
 import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 

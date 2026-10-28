@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawTriangle
 
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedLoop
 import VerifiedGarbage.Proof.Bignum.CrtWindowRelation
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowOperations
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCore

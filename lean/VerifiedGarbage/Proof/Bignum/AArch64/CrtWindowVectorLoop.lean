@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorTile
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCopy
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
 

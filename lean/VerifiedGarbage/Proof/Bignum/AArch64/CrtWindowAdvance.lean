@@ -3,7 +3,6 @@ public import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPendingInv
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLoopControl
-import Mathlib.Data.Int.ModEq
 
 /-! Advancing the public byte index leaves the table and exponent unchanged. -/
 

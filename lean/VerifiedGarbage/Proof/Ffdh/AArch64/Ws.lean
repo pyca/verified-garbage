@@ -162,7 +162,7 @@ theorem wsSetup_ok {s : State} {B : Addr} {Z w : Nat} (h : Outer s B Z w) {sl le
   refine ⟨⟨h.scr.congr K.wr, h0, ⟨by rw [hm]; exact hw₃, rfl, fun j hj => by rw [hm]; exact ha₃ j hj⟩,
     by rw [hm]; exact hl₃, by rw [hb _ (by decide) (by decide)]; exact h.hw,
     fun j hj => by rw [hb _ (by unfold sArr; omega_arith) (by unfold sArr sWs sFn; omega_arith)]; exact h.harr j hj,
-    le_refl _, show slot w 8 + slot (wsWords len) 8 + tabBytes (wsWords len) ≤ Z by omega_arith⟩, by rw [hm]; exact hWs₃, f,
+    Nat.le_refl _, show slot w 8 + slot (wsWords len) 8 + tabBytes (wsWords len) ≤ Z by omega_arith⟩, by rw [hm]; exact hWs₃, f,
     K.mono (by decide)⟩
 
 /-- `-m⁻¹` into the header, and `setWord`'s operands for the number 1. -/

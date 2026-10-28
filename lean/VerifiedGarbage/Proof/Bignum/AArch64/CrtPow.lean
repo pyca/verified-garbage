@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 public import VerifiedGarbage.Proof.Bignum.CrtExp
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtSetup
 import VerifiedGarbage.Proof.Bignum.CrtMath
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

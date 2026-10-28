@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowAppliedStep
 import VerifiedGarbage.Proof.Bignum.CrtWindowFive
-import Mathlib.Data.Int.ModEq
 
 /-! The arithmetic composition of all eight windows in a five-byte group. -/
 

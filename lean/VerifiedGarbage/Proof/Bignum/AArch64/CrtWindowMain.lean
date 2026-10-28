@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
 public import VerifiedGarbage.Proof.Bignum.CrtResult
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBack
-import Mathlib.Data.Int.ModEq
 
 /-!
 # RSA with the CRT on AArch64: the computation for a valid modulus
@@ -41,7 +40,7 @@ theorem crtMain_ok (W : Window) (M : Mont) (S : Selector) {s : State} {B : Addr}
       (Mk = true ↔ Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb ∧ Spec.Rsa.os2ip pb * Spec.Rsa.os2ip qb =
         Spec.Rsa.os2ip nb ∧ Spec.Rsa.os2ip qib < Spec.Rsa.os2ip pb) := by
   have hwide : CrtWindowFive.offQ32 ((k + 7) / 8) pl + slot (wsWords ql) 8 + CrtWindowFive.tabBytes32 (wsWords ql) ≤ Z :=
-    (CrtWindowFive.prime_scratch32_fits hk h.pl2 h.ql2).trans (by have := h.zk; omega)
+    Nat.le_trans (CrtWindowFive.prime_scratch32_fits hk h.pl2 h.ql2) (by have := h.zk; omega)
   rw [crtMain_eq]
   refine wp_seqs_append (by simp [nSetup]) (by simp [VG.Impl.Rsa.AArch64.WindowFive.qPhase]) (WP.mono (front_ok M h hwide hv)
     fun t₀ ⟨minv, mp, mq, hr⟩ => WP.mono (back_ok W M S h hwide hv hr rfl) fun t ht => ⟨_, ht, ?_⟩)

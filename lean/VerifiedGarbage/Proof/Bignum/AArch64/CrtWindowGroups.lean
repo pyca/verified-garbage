@@ -3,7 +3,6 @@ public import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPrefixInv
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroupLoop
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLoopControl
 
 /-! Consume all complete five-byte groups; the count depends only on length. -/

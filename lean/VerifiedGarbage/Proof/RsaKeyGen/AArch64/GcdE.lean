@@ -204,7 +204,7 @@ theorem gcdE_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {E : Nat}
   refine WP.seq (WP.mono (copyA_ok h (o := aX) (a := aN) (by decide) (by decide) (by decide))
     fun s₁ ⟨hv₁, o₁, _, _, k₁⟩ => ?_)
   have f₁ : Frm B (gcdRanges w) s.mem s₁.mem :=
-    Frm.of_outside (o₁.mono (o' := slot w aX) (n' := 8 * (w + 2)) (le_refl _) (by omega_arith)) (by simp [gcdRanges])
+    Frm.of_outside (o₁.mono (o' := slot w aX) (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega_arith)) (by simp [gcdRanges])
   have h₁ : Ws s₁ B Z w := h.congr' f₁ (gcdRanges_mut w) k₁ (by decide)
   have hlow : (word s₁.mem B (slot w aX)).toNat % 2 = 1 := by
     have e := wv_add s₁.mem B (slot w aX) 1 (w - 1)
@@ -237,7 +237,7 @@ theorem gcdE_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {E : Nat}
   have hx13 : s₅.gpr .x13 = BitVec.ofNat 64 (Nat.gcd (c - 1) E) := by
     rw [← hg₅, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   have f : Frm B (gcdRanges w) s.mem t.mem := by
-    refine (f₁.trans (Frm.of_outside (o₂.mono (o' := slot w aX) (n' := 8 * (w + 2)) (le_refl _) (by omega_arith))
+    refine (f₁.trans (Frm.of_outside (o₂.mono (o' := slot w aX) (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega_arith))
       (by simp [gcdRanges]))).trans ?_
     rw [hm, hm₅]
     exact Frm.of_outside (writeW_outside _ _ _ (by omega_arith)) (by simp [gcdRanges])

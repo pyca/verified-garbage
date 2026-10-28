@@ -78,7 +78,6 @@ theorem topQ_ok {B : Addr} {Z : Nat} {m₀ : Mem} {ql : Nat} (hq : word m₀ B (
     t'.c = t.c) ?_ (by decide) (by decide) (by decide +kernel)) fun _ ⟨h, k⟩ => ⟨h, k.mono (by simp)⟩
   unfold topQ
   brun [h0, hl, hh sQlen (by decide), hq, BitVec.ofNat_add_ofNat, shr_ofNat (show ql + 7 < 2 ^ 64 by omega_using [hql])]
-  rfl
 
 /-- `modOne top`: the mask of `[aA] mod [aM] = 1`, when the words of `[aA]`
 from `c` up are below `[aM]`. -/

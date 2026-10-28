@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
 import VerifiedGarbage.Proof.Bignum.AArch64.R2dPubCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTMain
 public import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.Octets
 
 /-!
@@ -52,7 +51,7 @@ theorem ns1_ok {p : CrtPub} {s : State} (h : Stage R0 p s) : WP isa (seqs pcLoad
   have hn := h.scr.nowrap
   have hZ : slot ((p.k + 7) / 8) 8 ≤ p.Z := by unfold offQ at hZq; omega_arith
   have hZs : ∀ {rs : List (Nat × Nat)}, (∀ r ∈ rs, r.1 + r.2 ≤ slot ((p.k + 7) / 8) 8) → ∀ r ∈ rs, r.1 + r.2 ≤ p.Z :=
-    fun h' r hr => (h' r hr).trans hZ
+    fun h' r hr => Nat.le_trans (h' r hr) hZ
   refine WP.mono (pcLoad_ok h.scr h.x0 hZ (by omega_arith) (by omega_arith) h.hK h.hN h.n h.nl hodd)
     fun t₁ ⟨minv, hg₁, hn₁, hi₁, f₁, k₁⟩ => ?_
   have f₁' : Frm p.B (setupRanges p.w) s.mem t₁.mem := f₁.mono (by simp [pcLoadRanges, setupRanges, loadRanges])

@@ -1,12 +1,10 @@
 module
-public import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Impl.Rsa.AArch64.Crt
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 public import VerifiedGarbage.Proof.Framework.Contract
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

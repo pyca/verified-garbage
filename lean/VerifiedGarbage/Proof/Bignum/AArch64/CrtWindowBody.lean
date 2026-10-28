@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawBody
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowReset
 
 /-! Exponent-prefix semantics of a window, including its reset. -/

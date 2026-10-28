@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFix
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtP
 public import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.CrtMath
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtPow
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -199,7 +198,7 @@ theorem pPart_gen (M : Mont) (E : Nat → Nat → List (Prog isa)) (hE : PowOk M
   have hh₁ : ∀ i < 32, hFixed i = true → word t₁.mem B (8 * i) = word s.mem B (8 * i) := hr.hfix
   refine WP.mono (pPhase_gen M E hE (X := if Mk then P else 3) (c := Mk) (eb := dpb) (qib := qib)
     (oq := offQ ((k + 7) / 8) pl) (wq := wsWords ql) hr.good (by omega_arith) (by omega_arith)
-    (show slot ((k + 7) / 8) 8 ≤ offP ((k + 7) / 8) from le_refl _) (by unfold offQ offP; omega_arith) hZq hwp2 hwp
+    (show slot ((k + 7) / 8) 8 ≤ offP ((k + 7) / 8) from Nat.le_refl _) (by unfold offQ offP; omega_arith) hZq hwp2 hwp
     (by omega_arith) hwq hr.wsP hr.pws hr.wsQ hr.qws hr.nv hodd hN1 hr.xm hr.pxv hP'.1 hP'.2 hr.pmask
     (fun hm => by obtain ⟨_, hpq, _⟩ := hMk' hm; simp only [hm, ↓reduceIte]; exact ⟨Q, hpq.symm⟩)
     (by rw [hh₁ _ (by decide) (by decide)]; exact h.hDp)
@@ -210,7 +209,7 @@ theorem pPart_gen (M : Mont) (E : Nat → Nat → List (Prog isa)) (hE : PowOk M
     (by rw [h.qil]; unfold wsWords; omega_arith)
     (fun hm => by obtain ⟨_, _, hqi⟩ := hMk' hm; simp only [hm, ↓reduceIte, hQIe]; exact hqi))
     fun t₂ ⟨hg₂, hwsp₂, hxp₂, hlt₂, hh₂, f₂, k₂⟩ => ?_
-  have hlop : slot ((k + 7) / 8) 8 ≤ offP ((k + 7) / 8) := le_refl _
+  have hlop : slot ((k + 7) / 8) 8 ≤ offP ((k + 7) / 8) := Nat.le_refl _
   have hb₂ : ∀ i < 32, i ≠ Crt.sD → i ≠ Public.sCnt → word t₂.mem B (8 * i) = word t₁.mem B (8 * i) :=
     fun i hi h1 h2 => f₂.px_hdr hlop hi h1 h2
   have hqk : ∀ d, offQ ((k + 7) / 8) pl ≤ d → d + 8 ≤ 2 ^ 64 → word t₂.mem B d = word t₁.mem B d :=
@@ -295,7 +294,7 @@ theorem finPart_ok {s t₂ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp d
   have hwp := wsWords_le (len := pl) (w := (k + 7) / 8) (by omega_arith) (by omega_arith)
   have hwq := wsWords_le (len := ql) (w := (k + 7) / 8) (by omega_arith) (by omega_arith)
   have hZ : slot ((k + 7) / 8) 8 ≤ Z := by unfold offQ at hZq; omega_arith
-  have hlop : slot ((k + 7) / 8) 8 ≤ offP ((k + 7) / 8) := le_refl _
+  have hlop : slot ((k + 7) / 8) 8 ≤ offP ((k + 7) / 8) := Nat.le_refl _
   have hY8 := slot_le (w := wsWords ql) (show Public.aY < 8 by decide)
   have hN8 := slot_le (w := wsWords ql) (show Public.aN < 8 by decide)
   -- `m_q + q h`.

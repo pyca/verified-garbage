@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.CrtWindowFrameWide
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtQ
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPow
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtPow
 
 /-!

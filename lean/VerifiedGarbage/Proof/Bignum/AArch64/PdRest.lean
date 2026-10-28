@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Bignum.AArch64.WordIOStore
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.Math
-import Mathlib.Data.Int.GCD
+import VerifiedGarbage.Proof.Framework.ModArith
 public import Aesop.BuiltinRules
 import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
@@ -77,9 +77,8 @@ structure PdPre (s : State) (B : Addr) (Z k : Nat) (op ep ip : Addr) (L : Nat) (
 /-- `x` with `x R ≡ X`, for `R` invertible modulo `N > 1`. -/
 theorem exists_mont {R N : Nat} (hR : Nat.Coprime R N) (hN1 : 1 < N) (X : Nat) :
     ∃ x, X % N = x * R % N := by
-  obtain ⟨m, -, hm⟩ := Nat.exists_mul_mod_eq_one_of_coprime hR hN1
-  refine ⟨X * m, ?_⟩
-  rw [Nat.mul_assoc, Nat.mul_mod, Nat.mul_comm m R, hm, Nat.mul_one, Nat.mod_mod]
+  obtain ⟨x, -, hx⟩ := ModArith.exists_mul_mod_eq hR (by omega) X
+  exact ⟨x, hx.symm⟩
 
 /-- The input into its array. -/
 theorem pdIn_ok {s : State} {B : Addr} {Z k : Nat} {ip : Addr} {xb : List Byte} (hs : Scr s B Z)

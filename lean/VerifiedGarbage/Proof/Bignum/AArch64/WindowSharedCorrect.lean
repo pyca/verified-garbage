@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.WindowHelperContext
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedGuard
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowHelperContract
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareHelper
 
 /-! A shared window verified against its reviewed callable contract. -/

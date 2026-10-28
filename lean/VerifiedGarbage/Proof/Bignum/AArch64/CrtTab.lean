@@ -2,11 +2,9 @@ module
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
 public import VerifiedGarbage.Proof.Bignum.CrtExp
-public import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.Rsa.AArch64.Crt
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
@@ -80,7 +78,7 @@ theorem CExpCtx.of_win {t t' : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {
 
 /-- A left shift by 3: times 8. -/
 theorem shl3_ofNat {n : Nat} (h : 8 * n < 2 ^ 64) : BitVec.ofNat 64 n <<< 3 = BitVec.ofNat 64 (8 * n) := by
-  rw [shl_ofNat (by rw [Nat.mul_comm]; exact h), Nat.mul_comm]; rfl
+  rw [shl_ofNat (by rw [Nat.mul_comm]; exact h), Nat.mul_comm]
 
 /-- `sEnt` moves up an entry. -/
 theorem nextEnt_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n : Nat}

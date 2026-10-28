@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPrefixInv
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowAppliedBatch
 import VerifiedGarbage.Proof.Bignum.CrtWindowPrefix
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowAdvance
