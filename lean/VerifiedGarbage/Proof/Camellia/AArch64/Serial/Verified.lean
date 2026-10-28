@@ -1,19 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Layout
-public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Crypt
-public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Prepared
+import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Layout
+import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Crypt
+import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Prepared
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
-import VerifiedGarbage.Proof.Camellia.Common
+public import VerifiedGarbage.Proof.Camellia.Common
 import VerifiedGarbage.Proof.Camellia.CtrCipher
 import VerifiedGarbage.Proof.Camellia.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Layout
 meta import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Crypt
@@ -32,6 +31,11 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.RegSet
+public import VerifiedGarbage.Impl.Camellia.AArch64.Serial.Prepared
+public import VerifiedGarbage.Proof.Camellia.AArch64.ModeCore
+public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.State
+public import VerifiedGarbage.Spec.Camellia.Ctr
+public import VerifiedGarbage.Spec.Camellia.Prepared
 
 /-!
 # The serial core's two functions meet their contracts

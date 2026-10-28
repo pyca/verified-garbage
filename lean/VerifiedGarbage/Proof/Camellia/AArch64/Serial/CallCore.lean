@@ -1,22 +1,26 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Verified
+import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Verified
 public import VerifiedGarbage.Proof.Camellia.AArch64.ModeCore
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
-import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
+public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
 import VerifiedGarbage.Proof.Camellia.Common
-import VerifiedGarbage.Proof.Camellia.CtrCipher
 import VerifiedGarbage.Proof.Camellia.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Verified
 meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
 meta import VerifiedGarbage.Proof.Camellia.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Layout
+meta import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Layout
+public import VerifiedGarbage.Impl.Camellia.AArch64.Serial.Prepared
+public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.State
+public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Camellia.Ctr
 
 /-!
 # The serial core's calls implement the modes' core
