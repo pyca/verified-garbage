@@ -78,6 +78,8 @@ mod tests {
             crate::idea_ecb::Error::IncompleteBlock,
             crate::idea_ecb::Error::InvalidKeyLength,
             crate::rc4::Error::InvalidKeyLength,
+            crate::seed_cbc::Error::IncompleteBlock,
+            crate::seed_cbc::Error::InvalidKeyLength,
             crate::seed_ecb::Error::IncompleteBlock,
             crate::triple_des_cbc::Error::IncompleteBlock,
             crate::triple_des_cbc::Error::InvalidKeyLength,

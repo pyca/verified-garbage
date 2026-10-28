@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The arrays of 32-bit words in the scratch buffer
@@ -229,16 +230,26 @@ theorem sp_setMem (s : State) (m : Mem) : (setMem s m).sp = s.sp := rfl
 
 /-! ## Instructions on lanes -/
 
-/-- The scratch buffer is writable and 8-byte aligned: a writable region at
-`a5` holds it (and may hold more, such as the modes' slots after it). -/
+/-- The scratch buffer is writable and 8-byte aligned: a writable region
+holds it (and may hold more, such as the modes' frame around it). -/
 def Room (s : State) : Prop :=
-  (s.gpr sb).toNat % 8 = 0 ∧ ∃ n, 8 * scratchSlots ≤ n ∧ (⟨s.gpr sb, n⟩ : Region) ∈ s.wr
+  (s.gpr sb).toNat % 8 = 0 ∧ InRegions s.wr (s.gpr sb) (8 * scratchSlots)
+
+/-- What a region contains within a part of another, the other contains. -/
+theorem contains_trans {r : Region} {b a : Addr} {n m : Nat} (h₁ : (⟨b, n⟩ : Region).Contains a m)
+    (h₂ : r.Contains b n) : r.Contains a m := by
+  simp only [Region.Contains] at h₁ h₂ ⊢
+  have e : a - r.base = (a - b) + (b - r.base) := by
+    rw [Offset.sub_add_sub_cancel]
+  rw [e, BitVec.toNat_add]
+  have := Nat.mod_le ((a - b).toNat + (b - r.base).toNat) (2 ^ 64)
+  omega
 
 /-- What the scratch buffer contains is writable. -/
 theorem Room.wr {s : State} (h : Room s) {a : Addr} {m : Nat} (hc : (scratchR s).Contains a m) :
     InRegions s.wr a m := by
-  obtain ⟨_, n, hn, hm⟩ := h
-  exact ⟨_, hm, by simp only [Region.Contains, scratchR] at hc ⊢; omega⟩
+  obtain ⟨_, r, hr, hc'⟩ := h
+  exact ⟨r, hr, contains_trans hc hc'⟩
 
 theorem Room.rw {s : State} (h : Room s) {a : Addr} {m : Nat} (hc : (scratchR s).Contains a m) :
     InRegions (s.rd ++ s.wr) a m :=

@@ -293,7 +293,10 @@ theorem ecb_ok (d : Spec.Seed.Direction) {s : State} (h : EcbPre s) : WP isa (ec
   rw [ecb]
   apply WP.seq
   rw [setup, WP.block_append_iff (M := isa)]
-  refine WP.mono (prologue_ok h.scrAl h.scratch) fun s₁ P => ?_
+  have hscr : InRegions s.wr X (8 * scratchSlots) := by
+    obtain ⟨n, hn, hm⟩ := h.scratch
+    exact ⟨_, hm, contains_prefix hn⟩
+  refine WP.mono (prologue_ok h.scrAl hscr) fun s₁ P => ?_
   refine RISCV64.Steps.wp_addi (keyStart_lt d) fun s₅ u => WP.block_nil ?_
   -- the state after the setup
   have G₅ : ∀ r, r ≠ sb → r ≠ kb → r ≠ .t0 → r ≠ .t1 → r ≠ .a0 → s₅.gpr r = s.gpr r :=
