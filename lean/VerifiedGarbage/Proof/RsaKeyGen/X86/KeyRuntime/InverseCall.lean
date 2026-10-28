@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Entry
 public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Verified
-import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Correct
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Framed
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.X86.Inline

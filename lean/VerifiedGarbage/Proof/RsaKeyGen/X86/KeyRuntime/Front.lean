@@ -8,8 +8,11 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInput
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyArgContext
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StackRange
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StackRange
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InputStage
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
+public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 
 /-! # Shared arithmetic composes with the established input and output contracts -/
 

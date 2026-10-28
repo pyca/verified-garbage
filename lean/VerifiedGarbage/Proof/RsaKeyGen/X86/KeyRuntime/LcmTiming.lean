@@ -6,11 +6,9 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Twos
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.OddSecond
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.OddModulus
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyHalveStep
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseBridge
 import VerifiedGarbage.Proof.RsaKeyGen.HalveBounds
 import VerifiedGarbage.Proof.RsaKeyGen.WordBounds32
-import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 meta import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Public
 meta import VerifiedGarbage.Proof.Framework.X86.Taint

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyCallSeparation
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.DisjointBounds
+import VerifiedGarbage.Proof.RsaKeyGen.X86.DisjointBounds
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyArgContext
 import VerifiedGarbage.Proof.Framework.X86.Call
@@ -12,6 +12,7 @@ public import Init.Data.BitVec.Basic
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.TCB.Mem
 
 /-! # The shared reserved frame supplies the native arithmetic stack gap -/
 
