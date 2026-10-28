@@ -7,7 +7,8 @@ import VerifiedGarbage.Proof.Ecdsa.X86.Lays
 import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
 import VerifiedGarbage.Proof.Weierstrass.X86.Bits
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-public import VerifiedGarbage.Proof.Ecdsa.X86.QMul
+import VerifiedGarbage.Proof.Ecdsa.X86.QMul
+public import VerifiedGarbage.Proof.Ecdsa.X86.Stages
 
 /-!
 # ECDSA verification on x86 (32-bit): `[u]G + [v]Q`

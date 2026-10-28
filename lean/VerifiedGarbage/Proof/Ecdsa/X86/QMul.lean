@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Ecdsa.X86.Stages
 
 /-!
 # `[k]P` on x86 (32-bit): the call of `vg_<curve>_mul`, or the ladder inline
@@ -257,7 +258,7 @@ theorem mulFn_spOk {gx gy ao : Nat} {C : Spec.Weierstrass.Mul.Curve} (hC : c.mul
   · simp only [Cfg.mulAt, instrs, List.mem_append, List.mem_cons]
     simp [hi]
   · have := h.2
-    simp only [Cfg.mulAt, stackUse, frameBytes, List.length_cons, List.length_nil] at this
+    simp only [Cfg.mulAt, stackUse, frameBytes, List.length_cons, List.length_nil, Nat.max_le] at this
     omega
 
 /-- `R = [k]P` for the point at `gx`, `gy`, `ONEP`: the call of
