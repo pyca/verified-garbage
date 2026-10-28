@@ -1,24 +1,23 @@
 module
 
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCT
+import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCCt
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Mgf1.Basic
+public import VerifiedGarbage.Impl.RsaPss.AArch64.Encoding
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hash
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
-public import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
+public import VerifiedGarbage.Proof.RsaPss.AArch64.EncCall
 public import VerifiedGarbage.Proof.RsaPss.AArch64.SignPre
 public import VerifiedGarbage.Spec.RsaPss.Precomputed
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedCorrect
-import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyTop
+import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCTop
 
 /-!
-# RSASSA-PSS verification on AArch64: `Verified`
+# RSASSA-PSS verification on AArch64, calling `checkEncoding`: `Verified`
 
 The shared contract (`Spec.RsaPss.verifyPrecomputedContract`, with the stack
-of the frame and the callee, `stk`) from correctness (`code_ok`), constant
-time (`code_ct`) and a state meeting the precondition (`verify_sat`, for the
-stack of the precomputed public operation).
+of the frame and of the deeper callee, `stk K`) from correctness
+(`code_ok`), constant time (`code_ct`) and a state meeting the precondition
+(`verify_sat`, for the stack of `checkEncoding`).
 -/
 
 @[expose] public section
@@ -26,53 +25,39 @@ stack of the precomputed public operation).
 namespace VG.Proof.RsaPss.AArch64.Vfy
 
 open VG VG.AArch64 VG.Impl.RsaPss.AArch64
-open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 open VG.Proof.RsaPkcs1Sig.AArch64 (PdChecked)
 open VG.Proof.RsaPkcs1Sig.AArch64.Pc (stackArgs_five)
-open VG.Proof.Pbkdf2.Md.AArch64 (HashOK mdHashes)
-open VG.Proof.RsaPss.AArch64 (PssChecks)
+open VG.Proof.Pbkdf2.Md.AArch64 (mdHashes)
+open VG.Proof.RsaPss.AArch64 (ChkImpl)
 open VG.Proof.RsaPss.AArch64.Sgn (stk)
 
 section
-variable {H : Hash} (hH : HashOK H) {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x)
-  (hGl : G.len = H.D) (hG : Proof.Mgf1.Valid G) (hc : PssChecks H.P H.D) (c : PdChecked) {K : Nat}
-  (hK : 16 ≤ K) (hcK : c.stack ≤ K)
+variable {G : Spec.Mgf1.Hash} (c : PdChecked) (e : ChkImpl G) {K : Nat} (hcK : c.stack ≤ K) (heK : e.stack ≤ K)
 
-include hH hGh hGl hG hK hcK in
+include hcK heK in
 theorem code_correct (s : State) (h : (Spec.RsaPss.verifyPrecomputedContract G G abi (stk K)).pre s) :
-    ∃ t s', Exec isa (verifyPrecomputed H c.name c.code) s t s' ∧ abiPreserved s s' ∧
+    ∃ t s', Exec isa (verifyC e.name e.code c.name c.code) s t s' ∧ abiPreserved s s' ∧
       (Spec.RsaPss.verifyPrecomputedContract G G abi (stk K)).post s s' := by
-  have hp := preV_of G h
-  rw [hGl] at hp
-  obtain ⟨t, s', he, habi, hr⟩ := code_ok hH hGh hGl hG c hK hcK hp
+  obtain ⟨t, s', he, habi, hr⟩ := code_ok c e hcK heK (preV_of G h)
   refine ⟨t, s', he, habi, ?_⟩
   sig_post [Spec.RsaPss.verifyPrecomputedContract, Spec.RsaPss.verifyPrecomputedSig, abi, argRegs,
     stackArgs_five, List.append_eq]
   exact hr
 
-include hH hGh hGl hG hc hK hcK in
+include hcK heK in
 theorem code_constantTime :
     ConstantTime isa (Spec.RsaPss.verifyPrecomputedContract G G abi (stk K)).pre
-      (Spec.RsaPss.verifyPrecomputedContract G G abi (stk K)).pub (verifyPrecomputed H c.name c.code) :=
-  RelCT.constantTime ((code_ct hH hGh hGl hG hc c hK hcK).mono (fun s₁ _ ⟨h₁, h₂, hp⟩ =>
-    ⟨s₁, ⟨hGl ▸ preV_of G h₁, PubV.refl s₁⟩, hGl ▸ preV_of G h₂, pubV_of G hp⟩) fun _ _ h => h)
+      (Spec.RsaPss.verifyPrecomputedContract G G abi (stk K)).pub (verifyC e.name e.code c.name c.code) :=
+  RelCT.constantTime ((code_ct c e hcK heK).mono (fun s₁ _ ⟨h₁, h₂, hp⟩ =>
+    ⟨s₁, ⟨preV_of G h₁, PubV.refl s₁⟩, preV_of G h₂, pubV_of G hp⟩) fun _ _ h => h)
 
-include hH hGh hGl hG hc hK hcK in
+include hcK heK in
 theorem code_verified (hsat : ∃ s, (Spec.RsaPss.verifyPrecomputedContract G G abi (stk K)).pre s) :
-    Verified AArch64.target (verifyPrecomputed H c.name c.code)
+    Verified AArch64.target (verifyC e.name e.code c.name c.code)
       (Spec.RsaPss.verifyPrecomputedContract G G abi (stk K)) :=
-  ⟨code_correct hH hGh hGl hG c hK hcK, code_constantTime hH hGh hGl hG hc c hK hcK, hsat⟩
+  ⟨code_correct c e hcK heK, code_constantTime c e hcK heK, hsat⟩
 
 end
-
-/-- MGF1's hash function, as a hash function of `MdHash` takes it, is valid. -/
-theorem mgf_valid {H : Hash} {hH : HashOK H} (lk : Proof.Pbkdf2.Md.AArch64.MgfLink H hH) :
-    Proof.Mgf1.Valid lk.G := by
-  have hD := hH.sizes.D0
-  refine ⟨by rw [lk.len]; exact hD, fun x => ?_⟩
-  rw [lk.hash, hH.hash, List.length_take, MdStream.Md.hash, hH.md.digest_length, lk.len]
-  have := hH.sizes.DN
-  omega
 
 /-! ## A state meeting the precondition -/
 
@@ -91,10 +76,10 @@ def satState (G : Spec.Mgf1.Hash) : State where
   wr := [⟨0x10000, 2080 * 8⟩]
 
 /-- `verifyPrecomputedContract` is satisfiable for each of `MdHash`'s hash
-functions, with the stack of the frame and 16 bytes for the callee and the
-hash function's calls. -/
+functions, with the stack of the frame and the 352 bytes of
+`checkEncoding`'s. -/
 theorem verify_sat {G : Spec.Mgf1.Hash} (hG : G ∈ mdHashes) :
-    ∃ s, (Spec.RsaPss.verifyPrecomputedContract G G abi (stk 16)).pre s := by
+    ∃ s, (Spec.RsaPss.verifyPrecomputedContract G G abi (stk 352)).pre s := by
   simp only [mdHashes, List.mem_cons, List.not_mem_nil, or_false] at hG
   rcases hG with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · sig_implies_sat [Spec.Rsa.lenValid, Spec.Rsa.precomputedWords, Spec.RsaPss.verifyPrecomputedContract,

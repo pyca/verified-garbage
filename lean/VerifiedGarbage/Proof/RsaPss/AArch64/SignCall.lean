@@ -33,34 +33,33 @@ open VG.Proof.RsaPss.AArch64 (off)
 abbrev scr (s : State) : Addr := stackArg s 11
 
 /-- What the code writes before the call: the frame, the working space, and
-the stack below the frame the hash function's `init` uses. -/
-abbrev wrS (s : State) : List Region := [⟨fb s, frameBytes⟩, sR s, below (fb s) 16]
+the `K` bytes of stack below the frame that its calls use. -/
+abbrev wrS (K : Nat) (s : State) : List Region := [⟨fb s, frameBytes⟩, sR s, below (fb s) K]
 
-theorem wrS_disj {K : Nat} {s : State} (hK : 16 ≤ K) {R : Region} (hk : (kR K s).Disjoint R)
-    (hs : R.Disjoint (sR s)) : ∀ r ∈ wrS s, R.Disjoint r := by
+theorem wrS_disj {K : Nat} {s : State} {R : Region} (hk : (kR K s).Disjoint R)
+    (hs : R.Disjoint (sR s)) : ∀ r ∈ wrS K s, R.Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact (hk.sub_left (frame_sub0 K s)).symm
   · exact hs
-  · exact (hk.sub_left fun a h => below_sub K s a
-      (Offset.sub_below (fb s) (a := 16) (b := K) (n := 16) (m := K) hK (by omega_using [hK]) a h)).symm
+  · exact (hk.sub_left (below_sub K s)).symm
 
 /-- A stack argument, in memory changed only where the code writes. -/
-theorem arg_frameW {D K : Nat} {s : State} (hp : PreS D K s) (hK : 16 ≤ K) {m : Mem} (h : Frame (wrS s) s.mem m)
+theorem arg_frameW {D K : Nat} {s : State} (hp : PreS D K s) {m : Mem} (h : Frame (wrS K s) s.mem m)
     {j : Nat} (hj : j < 13) : m.readW (stackArgAddr s j) 64 = stackArg s j :=
   h.readW (r := aR s) (by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
-    (wrS_disj hK hp.ka hp.sa.symm) (by decide)
+    (wrS_disj hp.ka hp.sa.symm) (by decide)
 
 /-- After the encoding: `EM` holds `em`. -/
-structure Main (s : State) (em : List Byte) (t : State) : Prop where
+structure Main (K : Nat) (s : State) (em : List Byte) (t : State) : Prop where
   sp : t.sp = fb s
   rd : t.rd = s.rd
   wr : t.wr = ⟨fb s, frameBytes⟩ :: s.wr
   x20 : t.gpr .x20 = scr s
   x23 : t.gpr .x23 = s.gpr .x3
   v : ∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64
-  mem : Frame (wrS s) s.mem t.mem
+  mem : Frame (wrS K s) s.mem t.mem
   fr : Fr s t.mem
   em : Spec.Rsa.bytesAt t.mem (off (scr s) oEm) (s.gpr .x3).toNat = em
 
@@ -70,7 +69,7 @@ def argv (s : State) : List (BitVec 64) :=
     stackArg s 6, stackArg s 7, off (scr s) oRsa, stackArg s 12 - BitVec.ofNat 64 1024]
 
 /-- At the call. -/
-structure AtCall (s : State) (em : List Byte) (t : State) : Prop where
+structure AtCall (K : Nat) (s : State) (em : List Byte) (t : State) : Prop where
   sp : t.sp = fb s
   rd : t.rd = s.rd
   wr : t.wr = ⟨fb s, frameBytes⟩ :: s.wr
@@ -84,7 +83,7 @@ structure AtCall (s : State) (em : List Byte) (t : State) : Prop where
   x7 : t.gpr .x7 = s.gpr .x3
   v : ∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64
   args : ∀ i < 12, stackArg t i = (argv s).getD i 0
-  mem : Frame (wrS s) s.mem t.mem
+  mem : Frame (wrS K s) s.mem t.mem
   fr : Fr s t.mem
   em : Spec.Rsa.bytesAt t.mem (off (scr s) oEm) (s.gpr .x3).toNat = em
 
@@ -100,8 +99,8 @@ structure Copied (s v₀ : State) (n : Nat) (v : State) : Prop where
   mem : Frame [⟨fb s + BitVec.ofNat 64 16, 64⟩] v₀.mem v.mem
   args : ∀ i < n, v.mem.readW (fb s + BitVec.ofNat 64 (16 + 8 * i)) 64 = stackArg s i
 
-theorem copies_ok {D K : Nat} {s v₀ : State} (hp : PreS D K s) (hK : 16 ≤ K) (hsp : v₀.sp = fb s) (h16 : v₀.gpr .x16 = fb s)
-    (hrd : v₀.rd = s.rd) (hwr : v₀.wr = ⟨fb s, frameBytes⟩ :: s.wr) (hm : Frame (wrS s) s.mem v₀.mem) :
+theorem copies_ok {D K : Nat} {s v₀ : State} (hp : PreS D K s) (hsp : v₀.sp = fb s) (h16 : v₀.gpr .x16 = fb s)
+    (hrd : v₀.rd = s.rd) (hwr : v₀.wr = ⟨fb s, frameBytes⟩ :: s.wr) (hm : Frame (wrS K s) s.mem v₀.mem) :
     ∀ n ≤ 8, WP isa (.block ((List.range n).flatMap fun j => [arg .x9 j, .str .x .x9 .x16 (16 + 8 * j)])) v₀
       (Copied s v₀ n) := by
   intro n hn
@@ -114,12 +113,12 @@ theorem copies_ok {D K : Nat} {s v₀ : State} (hp : PreS D K s) (hK : 16 ≤ K)
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil, arg]
     have a₁ : v.sp + BitVec.ofNat 64 (frameBytes + 8 * n) = stackArgAddr s n := by
       rw [hv.sp, hsp, stackArgAddr_fb]
-    have hmv : Frame (wrS s) s.mem v.mem := hm.trans (hv.mem.sub fun r hr => by
+    have hmv : Frame (wrS K s) s.mem v.mem := hm.trans (hv.mem.sub fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact ⟨⟨fb s, frameBytes⟩, List.mem_cons_self, Offset.sub_base _ (by decide)⟩)
     refine wp_ldrSp (by unfold frameBytes; omega_using [hn]) (by
       rw [a₁, hv.rd, hrd]; exact arg_in hp (Covers.left (Covers.refl _)) (by omega_using [hn])) fun v₁ o₁ e₁ => ?_
-    rw [a₁, arg_frameW hp hK hmv (by omega_using [hn])] at e₁
+    rw [a₁, arg_frameW hp hmv (by omega_using [hn])] at e₁
     have x16 : v₁.gpr .x16 = fb s := by rw [o₁.get .x16, hv.g .x16 (by decide), h16]
     refine wp_strx (a := fb s + BitVec.ofNat 64 (16 + 8 * n)) (by omega_using [hn]) (by rw [x16])
       (by rw [o₁.wr, hv.wr, hwr]; exact in_frame _ _ (by unfold frameBytes; omega_using [hn])) fun v₂ m₂ => wp_nil ?_
@@ -142,8 +141,8 @@ theorem fr_args (s : State) : ∀ r ∈ [(⟨fb s, 96⟩ : Region)], (frA s).Dis
   rw [List.mem_singleton.mp hr]
   exact ⟨Offset.disjoint_base _ (by decide) (by decide), Offset.disjoint_base _ (by decide) (by decide)⟩
 
-theorem privArgs_ok {D K : Nat} {s t : State} (hp : PreS D K s) (hK : 16 ≤ K) {em : List Byte}
-    (hm : Main s em t) : WP isa (.block privArgs) t (AtCall s em) := by
+theorem privArgs_ok {D K : Nat} {s t : State} (hp : PreS D K s) {em : List Byte}
+    (hm : Main K s em t) : WP isa (.block privArgs) t (AtCall K s em) := by
   have hk2 := hp.k2
   unfold privArgs ld
   simp only [List.cons_append, List.nil_append]
@@ -172,7 +171,7 @@ theorem privArgs_ok {D K : Nat} {s t : State} (hp : PreS D K s) (hK : 16 ≤ K) 
     (by rw [o₄.wr, wr₃]; exact in_frame _ _ (by decide)) fun u₅ m₅ => ?_
   have frX : ∀ {m : Mem}, Frame [(⟨fb s, 96⟩ : Region)] t.mem m → Fr s m := fun h =>
     hm.fr.frame h (fun r hr => ((fr_args s) r hr).1) (fun r hr => ((fr_args s) r hr).2)
-  have wX : ∀ {m : Mem}, Frame [(⟨fb s, 96⟩ : Region)] t.mem m → Frame (wrS s) s.mem m := fun h =>
+  have wX : ∀ {m : Mem}, Frame [(⟨fb s, 96⟩ : Region)] t.mem m → Frame (wrS K s) s.mem m := fun h =>
     hm.mem.trans (h.sub fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact ⟨⟨fb s, frameBytes⟩, List.mem_cons_self, Region.sub_prefix (by decide)⟩)
@@ -184,7 +183,7 @@ theorem privArgs_ok {D K : Nat} {s t : State} (hp : PreS D K s) (hK : 16 ≤ K) 
     exact fA₃.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by decide))
   have x16₅ : u₅.gpr .x16 = fb s := by rw [m₅.gpr, o₄.get .x16, m₃.gpr, o₂.get .x16, e₁]
   rw [WP.block_append_iff]
-  refine WP.mono (copies_ok hp hK (v₀ := u₅) sp₅ x16₅ rd₅ wr₅ (wX fA₅) 8 (Nat.le_refl _)) fun v hv => ?_
+  refine WP.mono (copies_ok hp (v₀ := u₅) sp₅ x16₅ rd₅ wr₅ (wX fA₅) 8 (Nat.le_refl _)) fun v hv => ?_
   have sp₆ : v.sp = fb s := by rw [hv.sp, sp₅]
   have rd₆ : v.rd = s.rd := by rw [hv.rd, rd₅]
   have wr₆ : v.wr = ⟨fb s, frameBytes⟩ :: s.wr := by rw [hv.wr, wr₅]
@@ -321,7 +320,7 @@ theorem a96_sub (K : Nat) (s : State) : Region.Sub ⟨fb s, 96⟩ (kR K s) := by
   have := frame_sub K s (d := 0) (n := 96) (by decide); rwa [BitVec.add_zero] at this
 
 theorem privOk_of (c : PrivChecked) {D K : Nat} {s t : State} (hp : PreS D K s) (hcK : c.stack ≤ K)
-    {em : List Byte} (ha : AtCall s em t) : PrivOk c.stack t := by
+    {em : List Byte} (ha : AtCall K s em t) : PrivOk c.stack t := by
   have hk1 := hp.k1; have hk2 := hp.k2
   have hfb := fb_toNat hp
   have hkb := kb_toNat hp
@@ -462,11 +461,11 @@ structure AfterCall (s : State) (em : List Byte) (t : State) : Prop extends Mid 
   res : Spec.Rsa.writtenOutcome t.mem (s.gpr .x0) (s.gpr .x3).toNat ((t.gpr .x0).setWidth 32) (privOut s em)
 
 /-- A buffer of the caller, in memory changed only where the code writes. -/
-theorem bytes_wrS {K : Nat} {s : State} (hK : 16 ≤ K) {m : Mem} (hf : Frame (wrS s) s.mem m) {p : Addr}
+theorem bytes_wrS {K : Nat} {s : State} {m : Mem} (hf : Frame (wrS K s) s.mem m) {p : Addr}
     {len : Nat} (hk : (kR K s).Disjoint ⟨p, len⟩) (hs : (Region.Disjoint ⟨p, len⟩ (sR s))) (hl : len ≤ 2 ^ 64) :
     Spec.Rsa.bytesAt m p len = Spec.Rsa.bytesAt s.mem p len := by
   simp only [Spec.Rsa.bytesAt]
-  exact List.map_congr_left fun i hi => hf.bytes (R := ⟨p, len⟩) (wrS_disj hK hk hs) hl (List.mem_range.mp hi)
+  exact List.map_congr_left fun i hi => hf.bytes (R := ⟨p, len⟩) (wrS_disj hk hs) hl (List.mem_range.mp hi)
 
 theorem Fr.below {s : State} {m m' : Mem} (h : Fr s m) {rs : List Region} {n : Nat} (hn : n ≤ 2 ^ 20)
     (hf : Frame (rs ++ [below (fb s) n]) m m') (hA : ∀ r ∈ rs, (frA s).Disjoint r)
@@ -480,8 +479,8 @@ theorem Fr.below {s : State} {m m' : Mem} (h : Fr s m) {rs : List Region} {n : N
       · exact hB r h'
       · rw [List.mem_singleton.mp h']; exact Offset.disjoint_below _ (by omega_using [hn]))
 
-theorem call_ok (c : PrivChecked) {D K : Nat} {s t : State} (hp : PreS D K s) (hK : 16 ≤ K) (hcK : c.stack ≤ K)
-    {em : List Byte} (ha : AtCall s em t) :
+theorem call_ok (c : PrivChecked) {D K : Nat} {s t : State} (hp : PreS D K s) (hcK : c.stack ≤ K)
+    {em : List Byte} (ha : AtCall K s em t) :
     WP isa (.call c.name c.code) t (AfterCall s em) := by
   have hfb := fb_toNat hp
   have hkb := kb_toNat hp
@@ -501,13 +500,13 @@ theorem call_ok (c : PrivChecked) {D K : Nat} {s t : State} (hp : PreS D K s) (h
   rw [ha.x0, ha.x1, a10, a11, ha.sp] at hf
   have hl : ∀ {p : Addr} {len : Nat}, p.toNat + len ≤ 2 ^ 64 → len ≤ 2 ^ 64 := fun h => by omega_using [h]
   rw [ha.x0, ha.x2, ha.x3, ha.x4, ha.x5, ha.x6, a0, a1, a2, a3, a4, a6, a8, ha.em,
-    bytes_wrS hK ha.mem hp.kn hp.ns (hl hp.wn), bytes_wrS hK ha.mem hp.ke hp.es (hl hp.we),
-    bytes_wrS hK ha.mem hp.kp hp.ps (hl hp.wp), bytes_wrS hK ha.mem hp.kq hp.qs (hl hp.wq),
-    bytes_wrS hK ha.mem (len := (s.gpr .x7).toNat) (by rw [← hp.hdp]; exact hp.kdp) (by rw [← hp.hdp]; exact hp.dps)
+    bytes_wrS ha.mem hp.kn hp.ns (hl hp.wn), bytes_wrS ha.mem hp.ke hp.es (hl hp.we),
+    bytes_wrS ha.mem hp.kp hp.ps (hl hp.wp), bytes_wrS ha.mem hp.kq hp.qs (hl hp.wq),
+    bytes_wrS ha.mem (len := (s.gpr .x7).toNat) (by rw [← hp.hdp]; exact hp.kdp) (by rw [← hp.hdp]; exact hp.dps)
       (by have := hp.wdp; rw [hp.hdp] at this; omega_using []),
-    bytes_wrS hK ha.mem (len := (stackArg s 1).toNat) (by rw [← hp.hdq]; exact hp.kdq)
+    bytes_wrS ha.mem (len := (stackArg s 1).toNat) (by rw [← hp.hdq]; exact hp.kdq)
       (by rw [← hp.hdq]; exact hp.dqs) (by have := hp.wdq; rw [hp.hdq] at this; omega_using []),
-    bytes_wrS hK ha.mem (len := (s.gpr .x7).toNat) (by rw [← hp.hqi]; exact hp.kqi) (by rw [← hp.hqi]; exact hp.qis)
+    bytes_wrS ha.mem (len := (s.gpr .x7).toNat) (by rw [← hp.hqi]; exact hp.kqi) (by rw [← hp.hqi]; exact hp.qis)
       (by have := hp.wqi; rw [hp.hqi] at this; omega_using [])] at hpost
   have hO : (⟨s.gpr .x0, (s.gpr .x3).toNat⟩ : Region) = oR s := by
     show (⟨s.gpr .x0, (s.gpr .x3).toNat⟩ : Region) = ⟨s.gpr .x0, (s.gpr .x1).toNat⟩

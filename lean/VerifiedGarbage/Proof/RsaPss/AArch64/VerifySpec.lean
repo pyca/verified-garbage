@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyMain
-public import VerifiedGarbage.Proof.RsaPss.AArch64.SignChecks
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCall
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignCArgs
+public import VerifiedGarbage.Spec.RsaPss.Encoding
 import VerifiedGarbage.Proof.RsaPss.AArch64.SignSpec
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaPss.SignEncode
+import VerifiedGarbage.Proof.RsaPss.VerifyCases
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.RsaPss.Params
 
@@ -11,9 +13,10 @@ import VerifiedGarbage.Proof.RsaPss.Params
 # RSASSA-PSS verification on AArch64: the result, by cases
 
 `verifyOut G s`: what the contract asks of a call from `s`. It is `false`
-if the modulus' first byte is zero (`verifyOut_zero`) or the salt does not
-fit (`verifyOut_short`), and otherwise the checks of the encoding in RSAVP1's
-result (`verifyOut_iff`).
+if the modulus' first byte is zero (`verifyOut_zero`), and otherwise that
+RSAVP1's result, or zeros, starts with `lo` zero bytes and ends with a
+consistent encoding of `emBits = 8 (k - 1) + log₂ n₀` bits
+(`verifyOut_enc`).
 -/
 
 @[expose] public section
@@ -21,8 +24,34 @@ result (`verifyOut_iff`).
 namespace VG.Proof.RsaPss.AArch64.Vfy
 
 open VG VG.AArch64 VG.Impl.RsaPss.AArch64
-open VG.Proof.RsaPss.AArch64 (loV maskV)
-open VG.Proof.RsaPss.AArch64.Sgn (bytesAt_cons)
+open VG.Proof.RsaPss.AArch64 (ebV)
+open VG.Proof.RsaPss.AArch64.Sgn (bytesAt_cons fb)
+open VG.Proof.RsaPkcs1Sig (bytesAt_length)
+
+/-- In the frame: the slots and the callee-saved registers' values. -/
+structure Mid (s t : State) : Prop where
+  sp : t.sp = fb s
+  rd : t.rd = s.rd
+  wr : t.wr = ⟨fb s, frameBytes⟩ :: s.wr
+  v : ∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64
+  fr : Fr s t.mem
+
+/-- RSAVP1's result, or zeros. -/
+abbrev pubX (s : State) : List Byte := (pubOut s).getD (Spec.RsaPss.zeros (s.gpr .x1).toNat)
+
+/-- The salt length `verify` expects. -/
+abbrev sLenV (s : State) : Option Nat := if anyV s = 0 then some (s.gpr .x7).toNat else none
+
+/-- `emBits`, `emLen` and `lo` of a call from `s`. -/
+abbrev ebS (s : State) : Nat := ebV (s.gpr .x1).toNat (s.mem (s.gpr .x0)).toNat
+abbrev elS (s : State) : Nat := Spec.RsaPss.emLength (ebS s)
+abbrev loS (s : State) : Nat := (s.gpr .x1).toNat - elS s
+
+theorem pubX_length (s : State) : (pubX s).length = (s.gpr .x1).toNat := by
+  unfold pubX
+  cases h : pubOut s with
+  | none => simp [Spec.RsaPss.zeros]
+  | some y => rw [Option.getD_some, RsaPss.publicOpChecked_length' h, bytesAt_length]
 
 variable (G : Spec.Mgf1.Hash)
 
@@ -57,56 +86,46 @@ theorem verifyOut_zero {s : State} (hk : 1 ≤ (s.gpr .x1).toNat) (h0 : s.mem (s
   rw [bytesAt_cons _ _ hk, h0]
   exact RsaPss.verify_zero G ..
 
-theorem emLen_eq {s : State} (hk : 1 ≤ (s.gpr .x1).toNat) (h0 : s.mem (s.gpr .x0) ≠ 0) :
-    Spec.RsaPss.emLength (Spec.RsaPss.bitLength (Spec.Rsa.os2ip
-      (Spec.Rsa.bytesAt s.mem (s.gpr .x0) (s.gpr .x1).toNat)) - 1) =
-      (s.gpr .x1).toNat - loV (s.mem (s.gpr .x0)).toNat := by
-  rw [bytesAt_cons _ _ hk, RsaPss.emLength_eq _ h0, VG.Proof.RsaPkcs1Sig.bytesAt_length]
-  unfold loV
-  split <;> omega
+section
+variable {s : State} (hk1 : 64 ≤ (s.gpr .x1).toNat) (hk2 : (s.gpr .x1).toNat ≤ 1024)
+  (h0 : s.mem (s.gpr .x0) ≠ 0)
+include hk1 hk2 h0
 
-theorem verifyOut_short {s : State} (hk : 1 ≤ (s.gpr .x1).toNat) (h0 : s.mem (s.gpr .x0) ≠ 0)
-    (h : (s.gpr .x1).toNat - loV (s.mem (s.gpr .x0)).toNat < G.len + (sLenV s).getD 0 + 2) :
-    verifyOut G s = false := by
-  unfold verifyOut
-  refine RsaPss.verify_short G _ _ _ ?_
-  rw [emLen_eq hk h0, expected_eq]
-  exact h
+theorem eb_bounds : 1 ≤ ebS s ∧ ebS s ≤ Spec.RsaPss.maxEmBits ∧ loS s + elS s = (s.gpr .x1).toNat ∧ loS s ≤ 1 := by
+  have h0' : (s.mem (s.gpr .x0)).toNat ≠ 0 := fun h => h0 (BitVec.eq_of_toNat_eq (by rw [h]; rfl))
+  have hl8 := RsaPss.log2_lt8 (s.mem (s.gpr .x0))
+  unfold loS elS ebS Spec.RsaPss.emLength ebV Spec.RsaPss.maxEmBits
+  omega
 
-/-- The mask of `DB`'s top byte, `0xFF >>> z` for `z = 8 emLen - emBits`. -/
-theorem mask_z {s : State} (hk : 1 ≤ (s.gpr .x1).toNat) (h0 : s.mem (s.gpr .x0) ≠ 0) :
-    (maskV (s.mem (s.gpr .x0)).toNat).setWidth 8 = (0xFF : Byte) >>> (8 * ((s.gpr .x1).toNat -
-      loV (s.mem (s.gpr .x0)).toNat) - (Spec.RsaPss.bitLength (Spec.Rsa.os2ip
-        (Spec.Rsa.bytesAt s.mem (s.gpr .x0) (s.gpr .x1).toNat)) - 1)) := by
-  have hc := RsaPss.mask_eq (Spec.Rsa.bytesAt s.mem (s.gpr .x0 + 1) ((s.gpr .x1).toNat - 1)) h0
-  rw [← bytesAt_cons _ _ hk, emLen_eq hk h0] at hc
-  rw [hc]
-  unfold maskV
-  split
-  · rfl
-  · apply BitVec.eq_of_toNat_eq
-    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    exact Nat.mod_mod_of_dvd _ (by decide)
-
-theorem verifyOut_iff (hG : Proof.Mgf1.Valid G) {s : State} (hk : 1 ≤ (s.gpr .x1).toNat)
-    (h0 : s.mem (s.gpr .x0) ≠ 0)
-    (hfit : G.len + (sLenV s).getD 0 + 2 ≤ (s.gpr .x1).toNat - loV (s.mem (s.gpr .x0)).toNat) :
-    verifyOut G s = true ↔ (loV (s.mem (s.gpr .x0)).toNat = 1 → (pubX s).getD 0 0 = 0) ∧
-      EncOk G (Spec.Rsa.bytesAt s.mem (s.gpr .x4) G.len) ((pubX s).drop (loV (s.mem (s.gpr .x0)).toNat))
-        ((s.gpr .x1).toNat - loV (s.mem (s.gpr .x0)).toNat)
-        (8 * ((s.gpr .x1).toNat - loV (s.mem (s.gpr .x0)).toNat) - (Spec.RsaPss.bitLength (Spec.Rsa.os2ip
-          (Spec.Rsa.bytesAt s.mem (s.gpr .x0) (s.gpr .x1).toNat)) - 1)) (sLenV s) := by
-  have hel := emLen_eq hk h0
-  unfold verifyOut pubX pubOut
-  rw [expected_eq]
-  generalize hnB : Spec.Rsa.bytesAt s.mem (s.gpr .x0) (s.gpr .x1).toNat = nB at hel ⊢
-  have hnl : nB.length = (s.gpr .x1).toNat := by rw [← hnB, VG.Proof.RsaPkcs1Sig.bytesAt_length]
-  rw [bytesAt_cons _ _ hk] at hnB
-  subst hnB
-  have hlo : loV (s.mem (s.gpr .x0)).toNat ≤ 1 := by unfold loV; split <;> omega
-  rw [RsaPss.verify_bytes G hG (VG.Proof.RsaPkcs1Sig.bytesAt_length _ _ _)
-    (by rw [VG.Proof.RsaPkcs1Sig.bytesAt_length, hnl]) rfl hel (by rw [hnl]; omega) hlo hfit]
-  rw [hnl]
+omit hk2 in
+/-- `emBits`, from the modulus' length and first byte. -/
+theorem emBits_of :
+    Spec.RsaPss.bitLength (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .x0) (s.gpr .x1).toNat)) - 1 = ebS s := by
+  rw [bytesAt_cons _ _ (by omega), RsaPss.emBits_eq _ h0, bytesAt_length]
   rfl
+
+/-- Verifying: `lo` zero bytes, then a consistent encoding. -/
+theorem verifyOut_enc :
+    verifyOut G s = ((pubX s).take (loS s) == Spec.RsaPss.zeros (loS s) &&
+      Spec.RsaPss.verifyEncoding G G (Spec.Rsa.bytesAt s.mem (s.gpr .x4) G.len) ((pubX s).drop (loS s)) (ebS s)
+        (sLenV s)) := by
+  obtain ⟨hb1, -, hlok, -⟩ := eb_bounds hk1 hk2 h0
+  have hel : 1 ≤ elS s := by unfold elS Spec.RsaPss.emLength; omega
+  unfold verifyOut pubX pubOut
+  rw [expected_eq, RsaPss.verify_encode G (emBits_of hk1 h0) (by rw [bytesAt_length, bytesAt_length])
+    (by rw [bytesAt_length]; unfold elS at hlok hel; omega), bytesAt_length]
+
+end
+
+/-- `lo ≤ 1` zero bytes: none, or the first byte zero. -/
+theorem take_zeros {x : List Byte} {lo : Nat} (hlo : lo ≤ 1) (hx : 1 ≤ x.length) :
+    (x.take lo == Spec.RsaPss.zeros lo) = (lo == 0 || x.getD 0 0 == 0) := by
+  rcases (by omega : lo = 0 ∨ lo = 1) with rfl | rfl
+  · rfl
+  · obtain ⟨b, x, rfl⟩ : ∃ b y, x = b :: y := by
+      cases x with
+      | nil => simp at hx
+      | cons b y => exact ⟨b, y, rfl⟩
+    simp [Spec.RsaPss.zeros]
 
 end VG.Proof.RsaPss.AArch64.Vfy

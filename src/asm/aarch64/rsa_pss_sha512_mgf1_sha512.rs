@@ -2,11 +2,2515 @@
 //! Verified `rsa_pss_sha512_mgf1_sha512` functions for `aarch64`.
 #![allow(dead_code)]
 
+/// EMSA-PSS-ENCODE (RFC 8017 §9.1.1) with SHA-512 and MGF1 with SHA-512, of the 64-byte digest `*digest` with the salt `salt`, into `em_bits` bits: writes the `em_len` bytes of the encoding to `em` and returns 1, or returns 0 if the salt does not fit (`em_len < 66 + salt_len`), leaving `em` unspecified. The step of RSASSA-PSS signing (`vg_rsa_pss_sha512_mgf1_sha512_sign`) before the RSA primitive.
+///
+/// Contract: `VG.Spec.RsaPss.encodeContract` of `VG.Spec.Mgf1.sha512` and `VG.Spec.Mgf1.sha512`. Constant time but for the pointers and lengths: timing does not depend on the digest or the salt.
+///
+/// This implementation builds the encoding in its working space: `M'` is hashed over the blocks its length needs and `DB` is masked with MGF1, then the encoding is copied to `em`. Only the lengths decide a branch or an address.
+///
+/// # Safety
+///
+/// * `em` must be valid for reads and writes of `em_len` bytes.
+/// * `digest` must be valid for reads of 64 bytes.
+/// * `salt` must be valid for reads of `salt_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `em_bits` must be in 1..=8191.
+/// * `em_len` must be `⌈em_bits / 8⌉`.
+/// * `scratch_len` must be at least 1024; the contents of `scratch` on return are unspecified.
+/// * `em` and `scratch` must not overlap each other, `digest` or `salt` (distinct Rust objects never do).
+/// * None of `em`, `digest`, `salt` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_pss_sha512_mgf1_sha512_encode(em: *mut u8, em_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, em_bits: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"sub sp, sp, #336
+add x16, sp, #0
+str x19, [x16, #96]
+str x20, [x16, #104]
+str x21, [x16, #112]
+str x22, [x16, #120]
+str x23, [x16, #128]
+str x24, [x16, #136]
+str x25, [x16, #144]
+str x26, [x16, #152]
+str x27, [x16, #160]
+str x28, [x16, #168]
+str x30, [x16, #176]
+str x0, [x16, #216]
+str x2, [x16, #208]
+str x3, [x16, #224]
+str x4, [x16, #232]
+add x23, x1, #0
+add x20, x6, #0
+add x19, x20, #2048
+add x21, x20, #2304
+lsl x9, x23, #3
+sub x9, x9, x5
+movz x11, #0, lsl #0
+sub x12, x9, #8
+lsr x12, x12, #63
+lsl x12, x12, #0
+orr x11, x11, x12
+sub x12, x9, #7
+lsr x12, x12, #63
+lsl x12, x12, #1
+orr x11, x11, x12
+sub x12, x9, #6
+lsr x12, x12, #63
+lsl x12, x12, #2
+orr x11, x11, x12
+sub x12, x9, #5
+lsr x12, x12, #63
+lsl x12, x12, #3
+orr x11, x11, x12
+sub x12, x9, #4
+lsr x12, x12, #63
+lsl x12, x12, #4
+orr x11, x11, x12
+sub x12, x9, #3
+lsr x12, x12, #63
+lsl x12, x12, #5
+orr x11, x11, x12
+sub x12, x9, #2
+lsr x12, x12, #63
+lsl x12, x12, #6
+orr x11, x11, x12
+sub x12, x9, #1
+lsr x12, x12, #63
+lsl x12, x12, #7
+orr x11, x11, x12
+add x16, sp, #0
+str x11, [x16, #248]
+movz x12, #0, lsl #0
+add x16, sp, #0
+str x12, [x16, #256]
+add x9, x23, #0
+sub x10, x9, #66
+lsr x10, x10, #63
+cbnz x10, 20f
+ldr x12, [sp, #232]
+sub x9, x9, #66
+sub x10, x9, x12
+lsr x10, x10, #63
+lsr x13, x12, #63
+orr x10, x10, x13
+cbnz x10, 22f
+add x25, x9, #1
+ldr x9, [sp, #256]
+add x24, x20, #2560
+add x24, x24, x9
+add x10, x20, #3584
+movz x9, #0, lsl #0
+movz x12, #256, lsl #0
+24:
+str x9, [x10, #0]
+add x10, x10, #8
+sub x12, x12, #1
+cbnz x12, 24b
+ldr x11, [sp, #208]
+add x14, x20, #3592
+movz x12, #64, lsl #0
+25:
+ldrb w15, [x11, #0]
+strb w15, [x14, #0]
+add x11, x11, #1
+add x14, x14, #1
+sub x12, x12, #1
+cbnz x12, 25b
+ldr x11, [sp, #224]
+add x14, x20, #3656
+ldr x12, [sp, #232]
+cbz x12, 26f
+28:
+ldrb w15, [x11, #0]
+strb w15, [x14, #0]
+add x11, x11, #1
+add x14, x14, #1
+sub x12, x12, #1
+cbnz x12, 28b
+b 27f
+26:
+27:
+ldr x9, [sp, #232]
+add x22, x9, #72
+add x9, x22, #16
+lsr x9, x9, #7
+add x9, x9, #1
+add x16, sp, #0
+str x9, [x16, #280]
+add x0, x19, #0
+bl {vg_sha512_init}
+add x10, x20, #3584
+movz x11, #0, lsl #0
+ldr x12, [sp, #280]
+lsl x12, x12, #7
+29:
+ldrb w13, [x10, #0]
+eor x14, x11, x22
+sub x14, x14, #1
+lsr x14, x14, #63
+lsl x14, x14, #7
+orr x13, x13, x14
+strb w13, [x10, #0]
+add x10, x10, #1
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 29b
+add x19, x20, #2192
+lsr x9, x22, #61
+rev x9, x9
+str x9, [x19, #176]
+add x9, x22, x22
+add x9, x9, x9
+add x9, x9, x9
+rev x9, x9
+str x9, [x19, #184]
+add x19, x20, #2048
+add x10, x20, #3696
+movz x11, #0, lsl #0
+ldr x12, [sp, #280]
+add x15, x22, #16
+lsr x15, x15, #7
+210:
+eor x13, x11, x15
+sub x13, x13, #1
+lsr x13, x13, #63
+movz x9, #0, lsl #0
+sub x13, x9, x13
+add x14, x20, #2368
+add x16, x10, #0
+movz x17, #16, lsl #0
+211:
+ldrb w9, [x14, #0]
+and x9, x9, x13
+ldrb w8, [x16, #0]
+orr x8, x8, x9
+strb w8, [x16, #0]
+add x14, x14, #1
+add x16, x16, #1
+sub x17, x17, #1
+cbnz x17, 211b
+add x10, x10, #128
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 210b
+movz x27, #0, lsl #0
+212:
+lsl x1, x27, #7
+add x1, x1, x20
+add x1, x1, #3584
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_sha512_compress}
+add x15, x22, #16
+lsr x15, x15, #7
+eor x13, x27, x15
+sub x13, x13, #1
+lsr x13, x13, #63
+movz x9, #0, lsl #0
+sub x13, x9, x13
+add x10, x20, #2048
+add x11, x20, #2240
+movz x12, #64, lsl #0
+213:
+ldrb w14, [x10, #0]
+ldrb w15, [x11, #0]
+eor x14, x14, x15
+and x14, x14, x13
+eor x15, x15, x14
+strb w15, [x11, #0]
+add x10, x10, #1
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 213b
+add x27, x27, #1
+ldr x9, [sp, #280]
+sub x9, x9, x27
+cbnz x9, 212b
+add x19, x20, #2240
+ldr x9, [x19, #0]
+rev x9, x9
+str x9, [x21, #0]
+ldr x9, [x19, #8]
+rev x9, x9
+str x9, [x21, #8]
+ldr x9, [x19, #16]
+rev x9, x9
+str x9, [x21, #16]
+ldr x9, [x19, #24]
+rev x9, x9
+str x9, [x21, #24]
+ldr x9, [x19, #32]
+rev x9, x9
+str x9, [x21, #32]
+ldr x9, [x19, #40]
+rev x9, x9
+str x9, [x21, #40]
+ldr x9, [x19, #48]
+rev x9, x9
+str x9, [x21, #48]
+ldr x9, [x19, #56]
+rev x9, x9
+str x9, [x21, #56]
+add x19, x20, #2048
+add x14, x20, #2560
+add x13, x23, #0
+movz x15, #0, lsl #0
+214:
+strb w15, [x14, #0]
+add x14, x14, #1
+sub x13, x13, #1
+cbnz x13, 214b
+add x14, x24, x25
+ldr x12, [sp, #232]
+sub x14, x14, x12
+sub x14, x14, #1
+movz x9, #1, lsl #0
+strb w9, [x14, #0]
+add x14, x14, #1
+ldr x11, [sp, #224]
+cbz x12, 215f
+217:
+ldrb w15, [x11, #0]
+strb w15, [x14, #0]
+add x11, x11, #1
+add x14, x14, #1
+sub x12, x12, #1
+cbnz x12, 217b
+b 216f
+215:
+216:
+add x14, x24, x25
+add x11, x21, #0
+movz x12, #64, lsl #0
+218:
+ldrb w15, [x11, #0]
+strb w15, [x14, #0]
+add x11, x11, #1
+add x14, x14, #1
+sub x12, x12, #1
+cbnz x12, 218b
+add x9, x20, #2560
+add x9, x9, x23
+sub x9, x9, #1
+movz x10, #188, lsl #0
+strb w10, [x9, #0]
+movz x28, #0, lsl #0
+movz x9, #0, lsl #0
+add x16, sp, #0
+str x9, [x16, #272]
+219:
+add x10, x20, #3584
+movz x9, #0, lsl #0
+movz x12, #16, lsl #0
+220:
+str x9, [x10, #0]
+add x10, x10, #8
+sub x12, x12, #1
+cbnz x12, 220b
+add x11, x24, x25
+add x14, x20, #3584
+movz x12, #64, lsl #0
+221:
+ldrb w15, [x11, #0]
+strb w15, [x14, #0]
+add x11, x11, #1
+add x14, x14, #1
+sub x12, x12, #1
+cbnz x12, 221b
+add x10, x20, #3648
+lsr x9, x28, #24
+strb w9, [x10, #0]
+lsr x9, x28, #16
+strb w9, [x10, #1]
+lsr x9, x28, #8
+strb w9, [x10, #2]
+strb w28, [x10, #3]
+movz x22, #68, lsl #0
+movz x9, #1, lsl #0
+add x16, sp, #0
+str x9, [x16, #280]
+add x0, x19, #0
+bl {vg_sha512_init}
+add x10, x20, #3652
+ldrb w9, [x10, #0]
+movz x13, #128, lsl #0
+orr x9, x9, x13
+strb w9, [x10, #0]
+add x19, x20, #2192
+lsr x9, x22, #61
+rev x9, x9
+str x9, [x19, #176]
+add x9, x22, x22
+add x9, x9, x9
+add x9, x9, x9
+rev x9, x9
+str x9, [x19, #184]
+add x19, x20, #2048
+add x10, x20, #3696
+movz x11, #0, lsl #0
+ldr x12, [sp, #280]
+add x15, x22, #16
+lsr x15, x15, #7
+222:
+eor x13, x11, x15
+sub x13, x13, #1
+lsr x13, x13, #63
+movz x9, #0, lsl #0
+sub x13, x9, x13
+add x14, x20, #2368
+add x16, x10, #0
+movz x17, #16, lsl #0
+223:
+ldrb w9, [x14, #0]
+and x9, x9, x13
+ldrb w8, [x16, #0]
+orr x8, x8, x9
+strb w8, [x16, #0]
+add x14, x14, #1
+add x16, x16, #1
+sub x17, x17, #1
+cbnz x17, 223b
+add x10, x10, #128
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 222b
+movz x27, #0, lsl #0
+224:
+lsl x1, x27, #7
+add x1, x1, x20
+add x1, x1, #3584
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_sha512_compress}
+add x15, x22, #16
+lsr x15, x15, #7
+eor x13, x27, x15
+sub x13, x13, #1
+lsr x13, x13, #63
+movz x9, #0, lsl #0
+sub x13, x9, x13
+add x10, x20, #2048
+add x11, x20, #2240
+movz x12, #64, lsl #0
+225:
+ldrb w14, [x10, #0]
+ldrb w15, [x11, #0]
+eor x14, x14, x15
+and x14, x14, x13
+eor x15, x15, x14
+strb w15, [x11, #0]
+add x10, x10, #1
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 225b
+add x27, x27, #1
+ldr x9, [sp, #280]
+sub x9, x9, x27
+cbnz x9, 224b
+add x19, x20, #2240
+ldr x9, [x19, #0]
+rev x9, x9
+str x9, [x21, #0]
+ldr x9, [x19, #8]
+rev x9, x9
+str x9, [x21, #8]
+ldr x9, [x19, #16]
+rev x9, x9
+str x9, [x21, #16]
+ldr x9, [x19, #24]
+rev x9, x9
+str x9, [x21, #24]
+ldr x9, [x19, #32]
+rev x9, x9
+str x9, [x21, #32]
+ldr x9, [x19, #40]
+rev x9, x9
+str x9, [x21, #40]
+ldr x9, [x19, #48]
+rev x9, x9
+str x9, [x21, #48]
+ldr x9, [x19, #56]
+rev x9, x9
+str x9, [x21, #56]
+add x19, x20, #2048
+ldr x9, [sp, #272]
+add x10, x24, x9
+add x11, x21, #0
+sub x12, x25, x9
+movz x13, #64, lsl #0
+sub x14, x12, x13
+lsr x14, x14, #63
+cbz x14, 226f
+b 227f
+226:
+add x12, x13, #0
+227:
+228:
+ldrb w9, [x11, #0]
+ldrb w15, [x10, #0]
+eor x15, x15, x9
+strb w15, [x10, #0]
+add x11, x11, #1
+add x10, x10, #1
+sub x12, x12, #1
+cbnz x12, 228b
+add x28, x28, #1
+ldr x9, [sp, #272]
+add x9, x9, #64
+add x16, sp, #0
+str x9, [x16, #272]
+sub x10, x9, x25
+lsr x10, x10, #63
+cbnz x10, 219b
+ldrb w9, [x24, #0]
+ldr x10, [sp, #248]
+and x9, x9, x10
+strb w9, [x24, #0]
+add x11, x20, #2560
+ldr x14, [sp, #216]
+add x12, x23, #0
+229:
+ldrb w15, [x11, #0]
+strb w15, [x14, #0]
+add x11, x11, #1
+add x14, x14, #1
+sub x12, x12, #1
+cbnz x12, 229b
+movz x0, #1, lsl #0
+b 23f
+22:
+movz x0, #0, lsl #0
+23:
+b 21f
+20:
+movz x0, #0, lsl #0
+21:
+add x16, sp, #0
+ldr x19, [x16, #96]
+ldr x20, [x16, #104]
+ldr x21, [x16, #112]
+ldr x22, [x16, #120]
+ldr x23, [x16, #128]
+ldr x24, [x16, #136]
+ldr x25, [x16, #144]
+ldr x26, [x16, #152]
+ldr x27, [x16, #160]
+ldr x28, [x16, #168]
+ldr x30, [x16, #176]
+add sp, sp, #336
+ret
+.p2align 6",
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+    )
+}
+
+/// EMSA-PSS-VERIFY (RFC 8017 §9.1.2) with SHA-512 and MGF1 with SHA-512, with BoringSSL's step 10: whether the `em_len` bytes at `em`, an encoding of `em_bits` bits, are consistent with the 64-byte digest `*digest`, expecting a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero. Returns 1 if so and 0 otherwise. The step of RSASSA-PSS verification (`vg_rsa_pss_sha512_mgf1_sha512_verify`) after the RSA primitive.
+///
+/// Contract: `VG.Spec.RsaPss.checkEncodingContract` of `VG.Spec.Mgf1.sha512` and `VG.Spec.Mgf1.sha512`. Constant time but for the pointers and lengths: timing does not depend on the digest or the encoding.
+///
+/// This implementation copies the encoding to its working space, unmasks `DB` with MGF1 and checks every byte without branching on it: the position of `0x01` and the salt are found by a scan over all of `DB`. A specified salt length copies that many trailing bytes into `M'` and hashes only the blocks needed; an unknown salt length keeps the oblivious shift and the maximum block count. Only the lengths and the salt-length mode decide a branch or an address.
+///
+/// # Safety
+///
+/// * `digest` must be valid for reads of 64 bytes.
+/// * `em` must be valid for reads of `em_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `em_bits` must be in 1..=8191.
+/// * `em_len` must be `⌈em_bits / 8⌉`.
+/// * `scratch_len` must be at least 1024; the contents of `scratch` on return are unspecified.
+/// * `scratch` must not overlap `digest` or `em` (distinct Rust objects never do).
+/// * None of `digest`, `em` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_pss_sha512_mgf1_sha512_check_encoding(digest: *const [u8; 64], em: *const u8, em_len: usize, em_bits: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"sub sp, sp, #336
+add w5, w5, #0
+add x16, sp, #0
+str x19, [x16, #96]
+str x20, [x16, #104]
+str x21, [x16, #112]
+str x22, [x16, #120]
+str x23, [x16, #128]
+str x24, [x16, #136]
+str x25, [x16, #144]
+str x26, [x16, #152]
+str x27, [x16, #160]
+str x28, [x16, #168]
+str x30, [x16, #176]
+str x0, [x16, #208]
+str x4, [x16, #232]
+str x5, [x16, #264]
+add x23, x2, #0
+add x20, x6, #0
+add x19, x20, #2048
+add x21, x20, #2304
+lsl x9, x23, #3
+sub x9, x9, x3
+movz x11, #0, lsl #0
+sub x12, x9, #8
+lsr x12, x12, #63
+lsl x12, x12, #0
+orr x11, x11, x12
+sub x12, x9, #7
+lsr x12, x12, #63
+lsl x12, x12, #1
+orr x11, x11, x12
+sub x12, x9, #6
+lsr x12, x12, #63
+lsl x12, x12, #2
+orr x11, x11, x12
+sub x12, x9, #5
+lsr x12, x12, #63
+lsl x12, x12, #3
+orr x11, x11, x12
+sub x12, x9, #4
+lsr x12, x12, #63
+lsl x12, x12, #4
+orr x11, x11, x12
+sub x12, x9, #3
+lsr x12, x12, #63
+lsl x12, x12, #5
+orr x11, x11, x12
+sub x12, x9, #2
+lsr x12, x12, #63
+lsl x12, x12, #6
+orr x11, x11, x12
+sub x12, x9, #1
+lsr x12, x12, #63
+lsl x12, x12, #7
+orr x11, x11, x12
+add x16, sp, #0
+str x11, [x16, #248]
+movz x12, #0, lsl #0
+add x16, sp, #0
+str x12, [x16, #256]
+add x11, x1, #0
+add x14, x20, #2560
+add x12, x23, #0
+20:
+ldrb w15, [x11, #0]
+strb w15, [x14, #0]
+add x11, x11, #1
+add x14, x14, #1
+sub x12, x12, #1
+cbnz x12, 20b
+add x9, x23, #0
+sub x10, x9, #66
+lsr x10, x10, #63
+cbnz x10, 21f
+ldr x13, [sp, #264]
+cbz x13, 23f
+movz x12, #0, lsl #0
+b 24f
+23:
+ldr x12, [sp, #232]
+24:
+sub x9, x9, #66
+sub x10, x9, x12
+lsr x10, x10, #63
+lsr x13, x12, #63
+orr x10, x10, x13
+cbnz x10, 25f
+add x25, x9, #1
+ldr x9, [sp, #256]
+add x24, x20, #2560
+add x24, x24, x9
+add x10, x20, #2560
+add x9, x10, x23
+sub x9, x9, #1
+ldrb w26, [x9, #0]
+movz x9, #188, lsl #0
+eor x26, x26, x9
+ldrb w11, [x10, #0]
+ldr x12, [sp, #256]
+movz x9, #0, lsl #0
+sub x12, x9, x12
+and x11, x11, x12
+orr x26, x26, x11
+ldrb w11, [x24, #0]
+ldr x12, [sp, #248]
+movz x9, #255, lsl #0
+eor x12, x12, x9
+and x11, x11, x12
+orr x26, x26, x11
+movz x28, #0, lsl #0
+movz x9, #0, lsl #0
+add x16, sp, #0
+str x9, [x16, #272]
+27:
+add x10, x20, #3584
+movz x9, #0, lsl #0
+movz x12, #16, lsl #0
+28:
+str x9, [x10, #0]
+add x10, x10, #8
+sub x12, x12, #1
+cbnz x12, 28b
+add x11, x24, x25
+add x14, x20, #3584
+movz x12, #64, lsl #0
+29:
+ldrb w15, [x11, #0]
+strb w15, [x14, #0]
+add x11, x11, #1
+add x14, x14, #1
+sub x12, x12, #1
+cbnz x12, 29b
+add x10, x20, #3648
+lsr x9, x28, #24
+strb w9, [x10, #0]
+lsr x9, x28, #16
+strb w9, [x10, #1]
+lsr x9, x28, #8
+strb w9, [x10, #2]
+strb w28, [x10, #3]
+movz x22, #68, lsl #0
+movz x9, #1, lsl #0
+add x16, sp, #0
+str x9, [x16, #280]
+add x0, x19, #0
+bl {vg_sha512_init}
+add x10, x20, #3652
+ldrb w9, [x10, #0]
+movz x13, #128, lsl #0
+orr x9, x9, x13
+strb w9, [x10, #0]
+add x19, x20, #2192
+lsr x9, x22, #61
+rev x9, x9
+str x9, [x19, #176]
+add x9, x22, x22
+add x9, x9, x9
+add x9, x9, x9
+rev x9, x9
+str x9, [x19, #184]
+add x19, x20, #2048
+add x10, x20, #3696
+movz x11, #0, lsl #0
+ldr x12, [sp, #280]
+add x15, x22, #16
+lsr x15, x15, #7
+210:
+eor x13, x11, x15
+sub x13, x13, #1
+lsr x13, x13, #63
+movz x9, #0, lsl #0
+sub x13, x9, x13
+add x14, x20, #2368
+add x16, x10, #0
+movz x17, #16, lsl #0
+211:
+ldrb w9, [x14, #0]
+and x9, x9, x13
+ldrb w8, [x16, #0]
+orr x8, x8, x9
+strb w8, [x16, #0]
+add x14, x14, #1
+add x16, x16, #1
+sub x17, x17, #1
+cbnz x17, 211b
+add x10, x10, #128
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 210b
+movz x27, #0, lsl #0
+212:
+lsl x1, x27, #7
+add x1, x1, x20
+add x1, x1, #3584
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_sha512_compress}
+add x15, x22, #16
+lsr x15, x15, #7
+eor x13, x27, x15
+sub x13, x13, #1
+lsr x13, x13, #63
+movz x9, #0, lsl #0
+sub x13, x9, x13
+add x10, x20, #2048
+add x11, x20, #2240
+movz x12, #64, lsl #0
+213:
+ldrb w14, [x10, #0]
+ldrb w15, [x11, #0]
+eor x14, x14, x15
+and x14, x14, x13
+eor x15, x15, x14
+strb w15, [x11, #0]
+add x10, x10, #1
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 213b
+add x27, x27, #1
+ldr x9, [sp, #280]
+sub x9, x9, x27
+cbnz x9, 212b
+add x19, x20, #2240
+ldr x9, [x19, #0]
+rev x9, x9
+str x9, [x21, #0]
+ldr x9, [x19, #8]
+rev x9, x9
+str x9, [x21, #8]
+ldr x9, [x19, #16]
+rev x9, x9
+str x9, [x21, #16]
+ldr x9, [x19, #24]
+rev x9, x9
+str x9, [x21, #24]
+ldr x9, [x19, #32]
+rev x9, x9
+str x9, [x21, #32]
+ldr x9, [x19, #40]
+rev x9, x9
+str x9, [x21, #40]
+ldr x9, [x19, #48]
+rev x9, x9
+str x9, [x21, #48]
+ldr x9, [x19, #56]
+rev x9, x9
+str x9, [x21, #56]
+add x19, x20, #2048
+ldr x9, [sp, #272]
+add x10, x24, x9
+add x11, x21, #0
+sub x12, x25, x9
+movz x13, #64, lsl #0
+sub x14, x12, x13
+lsr x14, x14, #63
+cbz x14, 214f
+b 215f
+214:
+add x12, x13, #0
+215:
+216:
+ldrb w9, [x11, #0]
+ldrb w15, [x10, #0]
+eor x15, x15, x9
+strb w15, [x10, #0]
+add x11, x11, #1
+add x10, x10, #1
+sub x12, x12, #1
+cbnz x12, 216b
+add x28, x28, #1
+ldr x9, [sp, #272]
+add x9, x9, #64
+add x16, sp, #0
+str x9, [x16, #272]
+sub x10, x9, x25
+lsr x10, x10, #63
+cbnz x10, 27b
+ldrb w9, [x24, #0]
+ldr x10, [sp, #248]
+and x9, x9, x10
+strb w9, [x24, #0]
+add x10, x24, #0
+movz x11, #0, lsl #0
+add x12, x25, #0
+movz x13, #0, lsl #0
+sub x13, x13, #1
+movz x14, #0, lsl #0
+movz x15, #0, lsl #0
+217:
+ldrb w9, [x10, #0]
+sub x8, x9, #1
+lsr x8, x8, #63
+sub x16, x8, #1
+and x16, x16, x13
+and x17, x11, x16
+orr x14, x14, x17
+and x17, x9, x16
+orr x15, x15, x17
+movz x17, #0, lsl #0
+sub x17, x17, x8
+and x13, x13, x17
+add x10, x10, #1
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 217b
+movz x9, #1, lsl #0
+eor x15, x15, x9
+lsr x13, x13, #63
+orr x15, x15, x13
+orr x26, x26, x15
+add x16, sp, #0
+str x14, [x16, #304]
+sub x11, x25, x14
+sub x11, x11, #1
+ldr x9, [sp, #264]
+cbz x9, 218f
+b 219f
+218:
+ldr x12, [sp, #232]
+eor x12, x12, x11
+orr x26, x26, x12
+219:
+ldr x9, [sp, #264]
+cbz x9, 220f
+add x10, x20, #3584
+movz x9, #0, lsl #0
+movz x12, #256, lsl #0
+222:
+str x9, [x10, #0]
+add x10, x10, #8
+sub x12, x12, #1
+cbnz x12, 222b
+ldr x11, [sp, #208]
+add x14, x20, #3592
+movz x12, #64, lsl #0
+223:
+ldrb w15, [x11, #0]
+strb w15, [x14, #0]
+add x11, x11, #1
+add x14, x14, #1
+sub x12, x12, #1
+cbnz x12, 223b
+add x11, x24, #0
+add x14, x20, #3656
+add x12, x25, #0
+224:
+ldrb w15, [x11, #0]
+strb w15, [x14, #0]
+add x11, x11, #1
+add x14, x14, #1
+sub x12, x12, #1
+cbnz x12, 224b
+ldr x27, [sp, #304]
+add x27, x27, #1
+movz x28, #1, lsl #0
+movz x22, #10, lsl #0
+225:
+add x10, x20, #3656
+add x11, x10, x28
+lsr x14, x27, #1
+lsl x14, x14, #1
+sub x14, x27, x14
+movz x9, #0, lsl #0
+sub x14, x9, x14
+add x12, x25, #0
+226:
+ldrb w15, [x10, #0]
+ldrb w9, [x11, #0]
+eor x9, x9, x15
+and x9, x9, x14
+eor x15, x15, x9
+strb w15, [x10, #0]
+add x10, x10, #1
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 226b
+lsr x27, x27, #1
+add x28, x28, x28
+sub x22, x22, #1
+cbnz x22, 225b
+ldr x9, [sp, #304]
+sub x9, x25, x9
+sub x9, x9, #1
+add x22, x9, #72
+add x9, x25, #87
+lsr x9, x9, #7
+add x9, x9, #1
+add x16, sp, #0
+str x9, [x16, #280]
+add x0, x19, #0
+bl {vg_sha512_init}
+add x10, x20, #3584
+movz x11, #0, lsl #0
+ldr x12, [sp, #280]
+lsl x12, x12, #7
+227:
+ldrb w13, [x10, #0]
+eor x14, x11, x22
+sub x14, x14, #1
+lsr x14, x14, #63
+lsl x14, x14, #7
+orr x13, x13, x14
+strb w13, [x10, #0]
+add x10, x10, #1
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 227b
+add x19, x20, #2192
+lsr x9, x22, #61
+rev x9, x9
+str x9, [x19, #176]
+add x9, x22, x22
+add x9, x9, x9
+add x9, x9, x9
+rev x9, x9
+str x9, [x19, #184]
+add x19, x20, #2048
+add x10, x20, #3696
+movz x11, #0, lsl #0
+ldr x12, [sp, #280]
+add x15, x22, #16
+lsr x15, x15, #7
+228:
+eor x13, x11, x15
+sub x13, x13, #1
+lsr x13, x13, #63
+movz x9, #0, lsl #0
+sub x13, x9, x13
+add x14, x20, #2368
+add x16, x10, #0
+movz x17, #16, lsl #0
+229:
+ldrb w9, [x14, #0]
+and x9, x9, x13
+ldrb w8, [x16, #0]
+orr x8, x8, x9
+strb w8, [x16, #0]
+add x14, x14, #1
+add x16, x16, #1
+sub x17, x17, #1
+cbnz x17, 229b
+add x10, x10, #128
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 228b
+movz x27, #0, lsl #0
+230:
+lsl x1, x27, #7
+add x1, x1, x20
+add x1, x1, #3584
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_sha512_compress}
+add x15, x22, #16
+lsr x15, x15, #7
+eor x13, x27, x15
+sub x13, x13, #1
+lsr x13, x13, #63
+movz x9, #0, lsl #0
+sub x13, x9, x13
+add x10, x20, #2048
+add x11, x20, #2240
+movz x12, #64, lsl #0
+231:
+ldrb w14, [x10, #0]
+ldrb w15, [x11, #0]
+eor x14, x14, x15
+and x14, x14, x13
+eor x15, x15, x14
+strb w15, [x11, #0]
+add x10, x10, #1
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 231b
+add x27, x27, #1
+ldr x9, [sp, #280]
+sub x9, x9, x27
+cbnz x9, 230b
+add x19, x20, #2240
+ldr x9, [x19, #0]
+rev x9, x9
+str x9, [x21, #0]
+ldr x9, [x19, #8]
+rev x9, x9
+str x9, [x21, #8]
+ldr x9, [x19, #16]
+rev x9, x9
+str x9, [x21, #16]
+ldr x9, [x19, #24]
+rev x9, x9
+str x9, [x21, #24]
+ldr x9, [x19, #32]
+rev x9, x9
+str x9, [x21, #32]
+ldr x9, [x19, #40]
+rev x9, x9
+str x9, [x21, #40]
+ldr x9, [x19, #48]
+rev x9, x9
+str x9, [x21, #48]
+ldr x9, [x19, #56]
+rev x9, x9
+str x9, [x21, #56]
+add x19, x20, #2048
+add x11, x21, #0
+add x10, x24, x25
+movz x12, #64, lsl #0
+232:
+ldrb w9, [x11, #0]
+ldrb w15, [x10, #0]
+eor x9, x9, x15
+orr x26, x26, x9
+add x11, x11, #1
+add x10, x10, #1
+sub x12, x12, #1
+cbnz x12, 232b
+sub x0, x26, #1
+lsr x0, x0, #63
+b 221f
+220:
+add x10, x20, #3584
+movz x9, #0, lsl #0
+movz x12, #256, lsl #0
+233:
+str x9, [x10, #0]
+add x10, x10, #8
+sub x12, x12, #1
+cbnz x12, 233b
+ldr x11, [sp, #208]
+add x14, x20, #3592
+movz x12, #64, lsl #0
+234:
+ldrb w15, [x11, #0]
+strb w15, [x14, #0]
+add x11, x11, #1
+add x14, x14, #1
+sub x12, x12, #1
+cbnz x12, 234b
+add x11, x24, x25
+ldr x12, [sp, #232]
+sub x11, x11, x12
+add x14, x20, #3656
+cbz x12, 235f
+237:
+ldrb w15, [x11, #0]
+strb w15, [x14, #0]
+add x11, x11, #1
+add x14, x14, #1
+sub x12, x12, #1
+cbnz x12, 237b
+b 236f
+235:
+236:
+ldr x9, [sp, #232]
+add x22, x9, #72
+add x9, x22, #16
+lsr x9, x9, #7
+add x9, x9, #1
+add x16, sp, #0
+str x9, [x16, #280]
+add x0, x19, #0
+bl {vg_sha512_init}
+add x10, x20, #3584
+movz x11, #0, lsl #0
+ldr x12, [sp, #280]
+lsl x12, x12, #7
+238:
+ldrb w13, [x10, #0]
+eor x14, x11, x22
+sub x14, x14, #1
+lsr x14, x14, #63
+lsl x14, x14, #7
+orr x13, x13, x14
+strb w13, [x10, #0]
+add x10, x10, #1
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 238b
+add x19, x20, #2192
+lsr x9, x22, #61
+rev x9, x9
+str x9, [x19, #176]
+add x9, x22, x22
+add x9, x9, x9
+add x9, x9, x9
+rev x9, x9
+str x9, [x19, #184]
+add x19, x20, #2048
+add x10, x20, #3696
+movz x11, #0, lsl #0
+ldr x12, [sp, #280]
+add x15, x22, #16
+lsr x15, x15, #7
+239:
+eor x13, x11, x15
+sub x13, x13, #1
+lsr x13, x13, #63
+movz x9, #0, lsl #0
+sub x13, x9, x13
+add x14, x20, #2368
+add x16, x10, #0
+movz x17, #16, lsl #0
+240:
+ldrb w9, [x14, #0]
+and x9, x9, x13
+ldrb w8, [x16, #0]
+orr x8, x8, x9
+strb w8, [x16, #0]
+add x14, x14, #1
+add x16, x16, #1
+sub x17, x17, #1
+cbnz x17, 240b
+add x10, x10, #128
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 239b
+movz x27, #0, lsl #0
+241:
+lsl x1, x27, #7
+add x1, x1, x20
+add x1, x1, #3584
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_sha512_compress}
+add x15, x22, #16
+lsr x15, x15, #7
+eor x13, x27, x15
+sub x13, x13, #1
+lsr x13, x13, #63
+movz x9, #0, lsl #0
+sub x13, x9, x13
+add x10, x20, #2048
+add x11, x20, #2240
+movz x12, #64, lsl #0
+242:
+ldrb w14, [x10, #0]
+ldrb w15, [x11, #0]
+eor x14, x14, x15
+and x14, x14, x13
+eor x15, x15, x14
+strb w15, [x11, #0]
+add x10, x10, #1
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 242b
+add x27, x27, #1
+ldr x9, [sp, #280]
+sub x9, x9, x27
+cbnz x9, 241b
+add x19, x20, #2240
+ldr x9, [x19, #0]
+rev x9, x9
+str x9, [x21, #0]
+ldr x9, [x19, #8]
+rev x9, x9
+str x9, [x21, #8]
+ldr x9, [x19, #16]
+rev x9, x9
+str x9, [x21, #16]
+ldr x9, [x19, #24]
+rev x9, x9
+str x9, [x21, #24]
+ldr x9, [x19, #32]
+rev x9, x9
+str x9, [x21, #32]
+ldr x9, [x19, #40]
+rev x9, x9
+str x9, [x21, #40]
+ldr x9, [x19, #48]
+rev x9, x9
+str x9, [x21, #48]
+ldr x9, [x19, #56]
+rev x9, x9
+str x9, [x21, #56]
+add x19, x20, #2048
+add x11, x21, #0
+add x10, x24, x25
+movz x12, #64, lsl #0
+243:
+ldrb w9, [x11, #0]
+ldrb w15, [x10, #0]
+eor x9, x9, x15
+orr x26, x26, x9
+add x11, x11, #1
+add x10, x10, #1
+sub x12, x12, #1
+cbnz x12, 243b
+sub x0, x26, #1
+lsr x0, x0, #63
+221:
+b 26f
+25:
+movz x0, #0, lsl #0
+26:
+b 22f
+21:
+movz x0, #0, lsl #0
+22:
+add x16, sp, #0
+ldr x19, [x16, #96]
+ldr x20, [x16, #104]
+ldr x21, [x16, #112]
+ldr x22, [x16, #120]
+ldr x23, [x16, #128]
+ldr x24, [x16, #136]
+ldr x25, [x16, #144]
+ldr x26, [x16, #152]
+ldr x27, [x16, #160]
+ldr x28, [x16, #168]
+ldr x30, [x16, #176]
+add sp, sp, #336
+ret
+.p2align 6",
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+    )
+}
+
+/// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_encode_sha3` requires (`Artifact.features`).
+pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_ENCODE_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
+
+/// EMSA-PSS-ENCODE (RFC 8017 §9.1.1) with SHA-512 and MGF1 with SHA-512, of the 64-byte digest `*digest` with the salt `salt`, into `em_bits` bits: writes the `em_len` bytes of the encoding to `em` and returns 1, or returns 0 if the salt does not fit (`em_len < 66 + salt_len`), leaving `em` unspecified. The step of RSASSA-PSS signing (`vg_rsa_pss_sha512_mgf1_sha512_sign`) before the RSA primitive.
+///
+/// Contract: `VG.Spec.RsaPss.encodeContract` of `VG.Spec.Mgf1.sha512` and `VG.Spec.Mgf1.sha512`. Constant time but for the pointers and lengths: timing does not depend on the digest or the salt.
+///
+/// This implementation builds the encoding in its working space: `M'` is hashed over the blocks its length needs and `DB` is masked with MGF1, then the encoding is copied to `em`. Only the lengths decide a branch or an address.
+///
+/// # Safety
+///
+/// * `em` must be valid for reads and writes of `em_len` bytes.
+/// * `digest` must be valid for reads of 64 bytes.
+/// * `salt` must be valid for reads of `salt_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `em_bits` must be in 1..=8191.
+/// * `em_len` must be `⌈em_bits / 8⌉`.
+/// * `scratch_len` must be at least 1024; the contents of `scratch` on return are unspecified.
+/// * `em` and `scratch` must not overlap each other, `digest` or `salt` (distinct Rust objects never do).
+/// * None of `em`, `digest`, `salt` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_pss_sha512_mgf1_sha512_encode_sha3(em: *mut u8, em_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, em_bits: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r".arch_extension sha3
+sub sp, sp, #336
+add x16, sp, #0
+str x19, [x16, #96]
+str x20, [x16, #104]
+str x21, [x16, #112]
+str x22, [x16, #120]
+str x23, [x16, #128]
+str x24, [x16, #136]
+str x25, [x16, #144]
+str x26, [x16, #152]
+str x27, [x16, #160]
+str x28, [x16, #168]
+str x30, [x16, #176]
+str x0, [x16, #216]
+str x2, [x16, #208]
+str x3, [x16, #224]
+str x4, [x16, #232]
+add x23, x1, #0
+add x20, x6, #0
+add x19, x20, #2048
+add x21, x20, #2304
+lsl x9, x23, #3
+sub x9, x9, x5
+movz x11, #0, lsl #0
+sub x12, x9, #8
+lsr x12, x12, #63
+lsl x12, x12, #0
+orr x11, x11, x12
+sub x12, x9, #7
+lsr x12, x12, #63
+lsl x12, x12, #1
+orr x11, x11, x12
+sub x12, x9, #6
+lsr x12, x12, #63
+lsl x12, x12, #2
+orr x11, x11, x12
+sub x12, x9, #5
+lsr x12, x12, #63
+lsl x12, x12, #3
+orr x11, x11, x12
+sub x12, x9, #4
+lsr x12, x12, #63
+lsl x12, x12, #4
+orr x11, x11, x12
+sub x12, x9, #3
+lsr x12, x12, #63
+lsl x12, x12, #5
+orr x11, x11, x12
+sub x12, x9, #2
+lsr x12, x12, #63
+lsl x12, x12, #6
+orr x11, x11, x12
+sub x12, x9, #1
+lsr x12, x12, #63
+lsl x12, x12, #7
+orr x11, x11, x12
+add x16, sp, #0
+str x11, [x16, #248]
+movz x12, #0, lsl #0
+add x16, sp, #0
+str x12, [x16, #256]
+add x9, x23, #0
+sub x10, x9, #66
+lsr x10, x10, #63
+cbnz x10, 20f
+ldr x12, [sp, #232]
+sub x9, x9, #66
+sub x10, x9, x12
+lsr x10, x10, #63
+lsr x13, x12, #63
+orr x10, x10, x13
+cbnz x10, 22f
+add x25, x9, #1
+ldr x9, [sp, #256]
+add x24, x20, #2560
+add x24, x24, x9
+add x10, x20, #3584
+movz x9, #0, lsl #0
+movz x12, #256, lsl #0
+24:
+str x9, [x10, #0]
+add x10, x10, #8
+sub x12, x12, #1
+cbnz x12, 24b
+ldr x11, [sp, #208]
+add x14, x20, #3592
+movz x12, #64, lsl #0
+25:
+ldrb w15, [x11, #0]
+strb w15, [x14, #0]
+add x11, x11, #1
+add x14, x14, #1
+sub x12, x12, #1
+cbnz x12, 25b
+ldr x11, [sp, #224]
+add x14, x20, #3656
+ldr x12, [sp, #232]
+cbz x12, 26f
+28:
+ldrb w15, [x11, #0]
+strb w15, [x14, #0]
+add x11, x11, #1
+add x14, x14, #1
+sub x12, x12, #1
+cbnz x12, 28b
+b 27f
+26:
+27:
+ldr x9, [sp, #232]
+add x22, x9, #72
+add x9, x22, #16
+lsr x9, x9, #7
+add x9, x9, #1
+add x16, sp, #0
+str x9, [x16, #280]
+add x0, x19, #0
+bl {vg_sha512_init}
+add x10, x20, #3584
+movz x11, #0, lsl #0
+ldr x12, [sp, #280]
+lsl x12, x12, #7
+29:
+ldrb w13, [x10, #0]
+eor x14, x11, x22
+sub x14, x14, #1
+lsr x14, x14, #63
+lsl x14, x14, #7
+orr x13, x13, x14
+strb w13, [x10, #0]
+add x10, x10, #1
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 29b
+add x19, x20, #2192
+lsr x9, x22, #61
+rev x9, x9
+str x9, [x19, #176]
+add x9, x22, x22
+add x9, x9, x9
+add x9, x9, x9
+rev x9, x9
+str x9, [x19, #184]
+add x19, x20, #2048
+add x10, x20, #3696
+movz x11, #0, lsl #0
+ldr x12, [sp, #280]
+add x15, x22, #16
+lsr x15, x15, #7
+210:
+eor x13, x11, x15
+sub x13, x13, #1
+lsr x13, x13, #63
+movz x9, #0, lsl #0
+sub x13, x9, x13
+add x14, x20, #2368
+add x16, x10, #0
+movz x17, #16, lsl #0
+211:
+ldrb w9, [x14, #0]
+and x9, x9, x13
+ldrb w8, [x16, #0]
+orr x8, x8, x9
+strb w8, [x16, #0]
+add x14, x14, #1
+add x16, x16, #1
+sub x17, x17, #1
+cbnz x17, 211b
+add x10, x10, #128
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 210b
+movz x27, #0, lsl #0
+212:
+lsl x1, x27, #7
+add x1, x1, x20
+add x1, x1, #3584
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_sha512_compress_sha3}
+add x15, x22, #16
+lsr x15, x15, #7
+eor x13, x27, x15
+sub x13, x13, #1
+lsr x13, x13, #63
+movz x9, #0, lsl #0
+sub x13, x9, x13
+add x10, x20, #2048
+add x11, x20, #2240
+movz x12, #64, lsl #0
+213:
+ldrb w14, [x10, #0]
+ldrb w15, [x11, #0]
+eor x14, x14, x15
+and x14, x14, x13
+eor x15, x15, x14
+strb w15, [x11, #0]
+add x10, x10, #1
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 213b
+add x27, x27, #1
+ldr x9, [sp, #280]
+sub x9, x9, x27
+cbnz x9, 212b
+add x19, x20, #2240
+ldr x9, [x19, #0]
+rev x9, x9
+str x9, [x21, #0]
+ldr x9, [x19, #8]
+rev x9, x9
+str x9, [x21, #8]
+ldr x9, [x19, #16]
+rev x9, x9
+str x9, [x21, #16]
+ldr x9, [x19, #24]
+rev x9, x9
+str x9, [x21, #24]
+ldr x9, [x19, #32]
+rev x9, x9
+str x9, [x21, #32]
+ldr x9, [x19, #40]
+rev x9, x9
+str x9, [x21, #40]
+ldr x9, [x19, #48]
+rev x9, x9
+str x9, [x21, #48]
+ldr x9, [x19, #56]
+rev x9, x9
+str x9, [x21, #56]
+add x19, x20, #2048
+add x14, x20, #2560
+add x13, x23, #0
+movz x15, #0, lsl #0
+214:
+strb w15, [x14, #0]
+add x14, x14, #1
+sub x13, x13, #1
+cbnz x13, 214b
+add x14, x24, x25
+ldr x12, [sp, #232]
+sub x14, x14, x12
+sub x14, x14, #1
+movz x9, #1, lsl #0
+strb w9, [x14, #0]
+add x14, x14, #1
+ldr x11, [sp, #224]
+cbz x12, 215f
+217:
+ldrb w15, [x11, #0]
+strb w15, [x14, #0]
+add x11, x11, #1
+add x14, x14, #1
+sub x12, x12, #1
+cbnz x12, 217b
+b 216f
+215:
+216:
+add x14, x24, x25
+add x11, x21, #0
+movz x12, #64, lsl #0
+218:
+ldrb w15, [x11, #0]
+strb w15, [x14, #0]
+add x11, x11, #1
+add x14, x14, #1
+sub x12, x12, #1
+cbnz x12, 218b
+add x9, x20, #2560
+add x9, x9, x23
+sub x9, x9, #1
+movz x10, #188, lsl #0
+strb w10, [x9, #0]
+movz x28, #0, lsl #0
+movz x9, #0, lsl #0
+add x16, sp, #0
+str x9, [x16, #272]
+219:
+add x10, x20, #3584
+movz x9, #0, lsl #0
+movz x12, #16, lsl #0
+220:
+str x9, [x10, #0]
+add x10, x10, #8
+sub x12, x12, #1
+cbnz x12, 220b
+add x11, x24, x25
+add x14, x20, #3584
+movz x12, #64, lsl #0
+221:
+ldrb w15, [x11, #0]
+strb w15, [x14, #0]
+add x11, x11, #1
+add x14, x14, #1
+sub x12, x12, #1
+cbnz x12, 221b
+add x10, x20, #3648
+lsr x9, x28, #24
+strb w9, [x10, #0]
+lsr x9, x28, #16
+strb w9, [x10, #1]
+lsr x9, x28, #8
+strb w9, [x10, #2]
+strb w28, [x10, #3]
+movz x22, #68, lsl #0
+movz x9, #1, lsl #0
+add x16, sp, #0
+str x9, [x16, #280]
+add x0, x19, #0
+bl {vg_sha512_init}
+add x10, x20, #3652
+ldrb w9, [x10, #0]
+movz x13, #128, lsl #0
+orr x9, x9, x13
+strb w9, [x10, #0]
+add x19, x20, #2192
+lsr x9, x22, #61
+rev x9, x9
+str x9, [x19, #176]
+add x9, x22, x22
+add x9, x9, x9
+add x9, x9, x9
+rev x9, x9
+str x9, [x19, #184]
+add x19, x20, #2048
+add x10, x20, #3696
+movz x11, #0, lsl #0
+ldr x12, [sp, #280]
+add x15, x22, #16
+lsr x15, x15, #7
+222:
+eor x13, x11, x15
+sub x13, x13, #1
+lsr x13, x13, #63
+movz x9, #0, lsl #0
+sub x13, x9, x13
+add x14, x20, #2368
+add x16, x10, #0
+movz x17, #16, lsl #0
+223:
+ldrb w9, [x14, #0]
+and x9, x9, x13
+ldrb w8, [x16, #0]
+orr x8, x8, x9
+strb w8, [x16, #0]
+add x14, x14, #1
+add x16, x16, #1
+sub x17, x17, #1
+cbnz x17, 223b
+add x10, x10, #128
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 222b
+movz x27, #0, lsl #0
+224:
+lsl x1, x27, #7
+add x1, x1, x20
+add x1, x1, #3584
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_sha512_compress_sha3}
+add x15, x22, #16
+lsr x15, x15, #7
+eor x13, x27, x15
+sub x13, x13, #1
+lsr x13, x13, #63
+movz x9, #0, lsl #0
+sub x13, x9, x13
+add x10, x20, #2048
+add x11, x20, #2240
+movz x12, #64, lsl #0
+225:
+ldrb w14, [x10, #0]
+ldrb w15, [x11, #0]
+eor x14, x14, x15
+and x14, x14, x13
+eor x15, x15, x14
+strb w15, [x11, #0]
+add x10, x10, #1
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 225b
+add x27, x27, #1
+ldr x9, [sp, #280]
+sub x9, x9, x27
+cbnz x9, 224b
+add x19, x20, #2240
+ldr x9, [x19, #0]
+rev x9, x9
+str x9, [x21, #0]
+ldr x9, [x19, #8]
+rev x9, x9
+str x9, [x21, #8]
+ldr x9, [x19, #16]
+rev x9, x9
+str x9, [x21, #16]
+ldr x9, [x19, #24]
+rev x9, x9
+str x9, [x21, #24]
+ldr x9, [x19, #32]
+rev x9, x9
+str x9, [x21, #32]
+ldr x9, [x19, #40]
+rev x9, x9
+str x9, [x21, #40]
+ldr x9, [x19, #48]
+rev x9, x9
+str x9, [x21, #48]
+ldr x9, [x19, #56]
+rev x9, x9
+str x9, [x21, #56]
+add x19, x20, #2048
+ldr x9, [sp, #272]
+add x10, x24, x9
+add x11, x21, #0
+sub x12, x25, x9
+movz x13, #64, lsl #0
+sub x14, x12, x13
+lsr x14, x14, #63
+cbz x14, 226f
+b 227f
+226:
+add x12, x13, #0
+227:
+228:
+ldrb w9, [x11, #0]
+ldrb w15, [x10, #0]
+eor x15, x15, x9
+strb w15, [x10, #0]
+add x11, x11, #1
+add x10, x10, #1
+sub x12, x12, #1
+cbnz x12, 228b
+add x28, x28, #1
+ldr x9, [sp, #272]
+add x9, x9, #64
+add x16, sp, #0
+str x9, [x16, #272]
+sub x10, x9, x25
+lsr x10, x10, #63
+cbnz x10, 219b
+ldrb w9, [x24, #0]
+ldr x10, [sp, #248]
+and x9, x9, x10
+strb w9, [x24, #0]
+add x11, x20, #2560
+ldr x14, [sp, #216]
+add x12, x23, #0
+229:
+ldrb w15, [x11, #0]
+strb w15, [x14, #0]
+add x11, x11, #1
+add x14, x14, #1
+sub x12, x12, #1
+cbnz x12, 229b
+movz x0, #1, lsl #0
+b 23f
+22:
+movz x0, #0, lsl #0
+23:
+b 21f
+20:
+movz x0, #0, lsl #0
+21:
+add x16, sp, #0
+ldr x19, [x16, #96]
+ldr x20, [x16, #104]
+ldr x21, [x16, #112]
+ldr x22, [x16, #120]
+ldr x23, [x16, #128]
+ldr x24, [x16, #136]
+ldr x25, [x16, #144]
+ldr x26, [x16, #152]
+ldr x27, [x16, #160]
+ldr x28, [x16, #168]
+ldr x30, [x16, #176]
+add sp, sp, #336
+ret
+.arch_extension nosha3
+.p2align 6",
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
+    )
+}
+
+/// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_check_encoding_sha3` requires (`Artifact.features`).
+pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_CHECK_ENCODING_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
+
+/// EMSA-PSS-VERIFY (RFC 8017 §9.1.2) with SHA-512 and MGF1 with SHA-512, with BoringSSL's step 10: whether the `em_len` bytes at `em`, an encoding of `em_bits` bits, are consistent with the 64-byte digest `*digest`, expecting a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero. Returns 1 if so and 0 otherwise. The step of RSASSA-PSS verification (`vg_rsa_pss_sha512_mgf1_sha512_verify`) after the RSA primitive.
+///
+/// Contract: `VG.Spec.RsaPss.checkEncodingContract` of `VG.Spec.Mgf1.sha512` and `VG.Spec.Mgf1.sha512`. Constant time but for the pointers and lengths: timing does not depend on the digest or the encoding.
+///
+/// This implementation copies the encoding to its working space, unmasks `DB` with MGF1 and checks every byte without branching on it: the position of `0x01` and the salt are found by a scan over all of `DB`. A specified salt length copies that many trailing bytes into `M'` and hashes only the blocks needed; an unknown salt length keeps the oblivious shift and the maximum block count. Only the lengths and the salt-length mode decide a branch or an address.
+///
+/// # Safety
+///
+/// * `digest` must be valid for reads of 64 bytes.
+/// * `em` must be valid for reads of `em_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `em_bits` must be in 1..=8191.
+/// * `em_len` must be `⌈em_bits / 8⌉`.
+/// * `scratch_len` must be at least 1024; the contents of `scratch` on return are unspecified.
+/// * `scratch` must not overlap `digest` or `em` (distinct Rust objects never do).
+/// * None of `digest`, `em` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_pss_sha512_mgf1_sha512_check_encoding_sha3(digest: *const [u8; 64], em: *const u8, em_len: usize, em_bits: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r".arch_extension sha3
+sub sp, sp, #336
+add w5, w5, #0
+add x16, sp, #0
+str x19, [x16, #96]
+str x20, [x16, #104]
+str x21, [x16, #112]
+str x22, [x16, #120]
+str x23, [x16, #128]
+str x24, [x16, #136]
+str x25, [x16, #144]
+str x26, [x16, #152]
+str x27, [x16, #160]
+str x28, [x16, #168]
+str x30, [x16, #176]
+str x0, [x16, #208]
+str x4, [x16, #232]
+str x5, [x16, #264]
+add x23, x2, #0
+add x20, x6, #0
+add x19, x20, #2048
+add x21, x20, #2304
+lsl x9, x23, #3
+sub x9, x9, x3
+movz x11, #0, lsl #0
+sub x12, x9, #8
+lsr x12, x12, #63
+lsl x12, x12, #0
+orr x11, x11, x12
+sub x12, x9, #7
+lsr x12, x12, #63
+lsl x12, x12, #1
+orr x11, x11, x12
+sub x12, x9, #6
+lsr x12, x12, #63
+lsl x12, x12, #2
+orr x11, x11, x12
+sub x12, x9, #5
+lsr x12, x12, #63
+lsl x12, x12, #3
+orr x11, x11, x12
+sub x12, x9, #4
+lsr x12, x12, #63
+lsl x12, x12, #4
+orr x11, x11, x12
+sub x12, x9, #3
+lsr x12, x12, #63
+lsl x12, x12, #5
+orr x11, x11, x12
+sub x12, x9, #2
+lsr x12, x12, #63
+lsl x12, x12, #6
+orr x11, x11, x12
+sub x12, x9, #1
+lsr x12, x12, #63
+lsl x12, x12, #7
+orr x11, x11, x12
+add x16, sp, #0
+str x11, [x16, #248]
+movz x12, #0, lsl #0
+add x16, sp, #0
+str x12, [x16, #256]
+add x11, x1, #0
+add x14, x20, #2560
+add x12, x23, #0
+20:
+ldrb w15, [x11, #0]
+strb w15, [x14, #0]
+add x11, x11, #1
+add x14, x14, #1
+sub x12, x12, #1
+cbnz x12, 20b
+add x9, x23, #0
+sub x10, x9, #66
+lsr x10, x10, #63
+cbnz x10, 21f
+ldr x13, [sp, #264]
+cbz x13, 23f
+movz x12, #0, lsl #0
+b 24f
+23:
+ldr x12, [sp, #232]
+24:
+sub x9, x9, #66
+sub x10, x9, x12
+lsr x10, x10, #63
+lsr x13, x12, #63
+orr x10, x10, x13
+cbnz x10, 25f
+add x25, x9, #1
+ldr x9, [sp, #256]
+add x24, x20, #2560
+add x24, x24, x9
+add x10, x20, #2560
+add x9, x10, x23
+sub x9, x9, #1
+ldrb w26, [x9, #0]
+movz x9, #188, lsl #0
+eor x26, x26, x9
+ldrb w11, [x10, #0]
+ldr x12, [sp, #256]
+movz x9, #0, lsl #0
+sub x12, x9, x12
+and x11, x11, x12
+orr x26, x26, x11
+ldrb w11, [x24, #0]
+ldr x12, [sp, #248]
+movz x9, #255, lsl #0
+eor x12, x12, x9
+and x11, x11, x12
+orr x26, x26, x11
+movz x28, #0, lsl #0
+movz x9, #0, lsl #0
+add x16, sp, #0
+str x9, [x16, #272]
+27:
+add x10, x20, #3584
+movz x9, #0, lsl #0
+movz x12, #16, lsl #0
+28:
+str x9, [x10, #0]
+add x10, x10, #8
+sub x12, x12, #1
+cbnz x12, 28b
+add x11, x24, x25
+add x14, x20, #3584
+movz x12, #64, lsl #0
+29:
+ldrb w15, [x11, #0]
+strb w15, [x14, #0]
+add x11, x11, #1
+add x14, x14, #1
+sub x12, x12, #1
+cbnz x12, 29b
+add x10, x20, #3648
+lsr x9, x28, #24
+strb w9, [x10, #0]
+lsr x9, x28, #16
+strb w9, [x10, #1]
+lsr x9, x28, #8
+strb w9, [x10, #2]
+strb w28, [x10, #3]
+movz x22, #68, lsl #0
+movz x9, #1, lsl #0
+add x16, sp, #0
+str x9, [x16, #280]
+add x0, x19, #0
+bl {vg_sha512_init}
+add x10, x20, #3652
+ldrb w9, [x10, #0]
+movz x13, #128, lsl #0
+orr x9, x9, x13
+strb w9, [x10, #0]
+add x19, x20, #2192
+lsr x9, x22, #61
+rev x9, x9
+str x9, [x19, #176]
+add x9, x22, x22
+add x9, x9, x9
+add x9, x9, x9
+rev x9, x9
+str x9, [x19, #184]
+add x19, x20, #2048
+add x10, x20, #3696
+movz x11, #0, lsl #0
+ldr x12, [sp, #280]
+add x15, x22, #16
+lsr x15, x15, #7
+210:
+eor x13, x11, x15
+sub x13, x13, #1
+lsr x13, x13, #63
+movz x9, #0, lsl #0
+sub x13, x9, x13
+add x14, x20, #2368
+add x16, x10, #0
+movz x17, #16, lsl #0
+211:
+ldrb w9, [x14, #0]
+and x9, x9, x13
+ldrb w8, [x16, #0]
+orr x8, x8, x9
+strb w8, [x16, #0]
+add x14, x14, #1
+add x16, x16, #1
+sub x17, x17, #1
+cbnz x17, 211b
+add x10, x10, #128
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 210b
+movz x27, #0, lsl #0
+212:
+lsl x1, x27, #7
+add x1, x1, x20
+add x1, x1, #3584
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_sha512_compress_sha3}
+add x15, x22, #16
+lsr x15, x15, #7
+eor x13, x27, x15
+sub x13, x13, #1
+lsr x13, x13, #63
+movz x9, #0, lsl #0
+sub x13, x9, x13
+add x10, x20, #2048
+add x11, x20, #2240
+movz x12, #64, lsl #0
+213:
+ldrb w14, [x10, #0]
+ldrb w15, [x11, #0]
+eor x14, x14, x15
+and x14, x14, x13
+eor x15, x15, x14
+strb w15, [x11, #0]
+add x10, x10, #1
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 213b
+add x27, x27, #1
+ldr x9, [sp, #280]
+sub x9, x9, x27
+cbnz x9, 212b
+add x19, x20, #2240
+ldr x9, [x19, #0]
+rev x9, x9
+str x9, [x21, #0]
+ldr x9, [x19, #8]
+rev x9, x9
+str x9, [x21, #8]
+ldr x9, [x19, #16]
+rev x9, x9
+str x9, [x21, #16]
+ldr x9, [x19, #24]
+rev x9, x9
+str x9, [x21, #24]
+ldr x9, [x19, #32]
+rev x9, x9
+str x9, [x21, #32]
+ldr x9, [x19, #40]
+rev x9, x9
+str x9, [x21, #40]
+ldr x9, [x19, #48]
+rev x9, x9
+str x9, [x21, #48]
+ldr x9, [x19, #56]
+rev x9, x9
+str x9, [x21, #56]
+add x19, x20, #2048
+ldr x9, [sp, #272]
+add x10, x24, x9
+add x11, x21, #0
+sub x12, x25, x9
+movz x13, #64, lsl #0
+sub x14, x12, x13
+lsr x14, x14, #63
+cbz x14, 214f
+b 215f
+214:
+add x12, x13, #0
+215:
+216:
+ldrb w9, [x11, #0]
+ldrb w15, [x10, #0]
+eor x15, x15, x9
+strb w15, [x10, #0]
+add x11, x11, #1
+add x10, x10, #1
+sub x12, x12, #1
+cbnz x12, 216b
+add x28, x28, #1
+ldr x9, [sp, #272]
+add x9, x9, #64
+add x16, sp, #0
+str x9, [x16, #272]
+sub x10, x9, x25
+lsr x10, x10, #63
+cbnz x10, 27b
+ldrb w9, [x24, #0]
+ldr x10, [sp, #248]
+and x9, x9, x10
+strb w9, [x24, #0]
+add x10, x24, #0
+movz x11, #0, lsl #0
+add x12, x25, #0
+movz x13, #0, lsl #0
+sub x13, x13, #1
+movz x14, #0, lsl #0
+movz x15, #0, lsl #0
+217:
+ldrb w9, [x10, #0]
+sub x8, x9, #1
+lsr x8, x8, #63
+sub x16, x8, #1
+and x16, x16, x13
+and x17, x11, x16
+orr x14, x14, x17
+and x17, x9, x16
+orr x15, x15, x17
+movz x17, #0, lsl #0
+sub x17, x17, x8
+and x13, x13, x17
+add x10, x10, #1
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 217b
+movz x9, #1, lsl #0
+eor x15, x15, x9
+lsr x13, x13, #63
+orr x15, x15, x13
+orr x26, x26, x15
+add x16, sp, #0
+str x14, [x16, #304]
+sub x11, x25, x14
+sub x11, x11, #1
+ldr x9, [sp, #264]
+cbz x9, 218f
+b 219f
+218:
+ldr x12, [sp, #232]
+eor x12, x12, x11
+orr x26, x26, x12
+219:
+ldr x9, [sp, #264]
+cbz x9, 220f
+add x10, x20, #3584
+movz x9, #0, lsl #0
+movz x12, #256, lsl #0
+222:
+str x9, [x10, #0]
+add x10, x10, #8
+sub x12, x12, #1
+cbnz x12, 222b
+ldr x11, [sp, #208]
+add x14, x20, #3592
+movz x12, #64, lsl #0
+223:
+ldrb w15, [x11, #0]
+strb w15, [x14, #0]
+add x11, x11, #1
+add x14, x14, #1
+sub x12, x12, #1
+cbnz x12, 223b
+add x11, x24, #0
+add x14, x20, #3656
+add x12, x25, #0
+224:
+ldrb w15, [x11, #0]
+strb w15, [x14, #0]
+add x11, x11, #1
+add x14, x14, #1
+sub x12, x12, #1
+cbnz x12, 224b
+ldr x27, [sp, #304]
+add x27, x27, #1
+movz x28, #1, lsl #0
+movz x22, #10, lsl #0
+225:
+add x10, x20, #3656
+add x11, x10, x28
+lsr x14, x27, #1
+lsl x14, x14, #1
+sub x14, x27, x14
+movz x9, #0, lsl #0
+sub x14, x9, x14
+add x12, x25, #0
+226:
+ldrb w15, [x10, #0]
+ldrb w9, [x11, #0]
+eor x9, x9, x15
+and x9, x9, x14
+eor x15, x15, x9
+strb w15, [x10, #0]
+add x10, x10, #1
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 226b
+lsr x27, x27, #1
+add x28, x28, x28
+sub x22, x22, #1
+cbnz x22, 225b
+ldr x9, [sp, #304]
+sub x9, x25, x9
+sub x9, x9, #1
+add x22, x9, #72
+add x9, x25, #87
+lsr x9, x9, #7
+add x9, x9, #1
+add x16, sp, #0
+str x9, [x16, #280]
+add x0, x19, #0
+bl {vg_sha512_init}
+add x10, x20, #3584
+movz x11, #0, lsl #0
+ldr x12, [sp, #280]
+lsl x12, x12, #7
+227:
+ldrb w13, [x10, #0]
+eor x14, x11, x22
+sub x14, x14, #1
+lsr x14, x14, #63
+lsl x14, x14, #7
+orr x13, x13, x14
+strb w13, [x10, #0]
+add x10, x10, #1
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 227b
+add x19, x20, #2192
+lsr x9, x22, #61
+rev x9, x9
+str x9, [x19, #176]
+add x9, x22, x22
+add x9, x9, x9
+add x9, x9, x9
+rev x9, x9
+str x9, [x19, #184]
+add x19, x20, #2048
+add x10, x20, #3696
+movz x11, #0, lsl #0
+ldr x12, [sp, #280]
+add x15, x22, #16
+lsr x15, x15, #7
+228:
+eor x13, x11, x15
+sub x13, x13, #1
+lsr x13, x13, #63
+movz x9, #0, lsl #0
+sub x13, x9, x13
+add x14, x20, #2368
+add x16, x10, #0
+movz x17, #16, lsl #0
+229:
+ldrb w9, [x14, #0]
+and x9, x9, x13
+ldrb w8, [x16, #0]
+orr x8, x8, x9
+strb w8, [x16, #0]
+add x14, x14, #1
+add x16, x16, #1
+sub x17, x17, #1
+cbnz x17, 229b
+add x10, x10, #128
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 228b
+movz x27, #0, lsl #0
+230:
+lsl x1, x27, #7
+add x1, x1, x20
+add x1, x1, #3584
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_sha512_compress_sha3}
+add x15, x22, #16
+lsr x15, x15, #7
+eor x13, x27, x15
+sub x13, x13, #1
+lsr x13, x13, #63
+movz x9, #0, lsl #0
+sub x13, x9, x13
+add x10, x20, #2048
+add x11, x20, #2240
+movz x12, #64, lsl #0
+231:
+ldrb w14, [x10, #0]
+ldrb w15, [x11, #0]
+eor x14, x14, x15
+and x14, x14, x13
+eor x15, x15, x14
+strb w15, [x11, #0]
+add x10, x10, #1
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 231b
+add x27, x27, #1
+ldr x9, [sp, #280]
+sub x9, x9, x27
+cbnz x9, 230b
+add x19, x20, #2240
+ldr x9, [x19, #0]
+rev x9, x9
+str x9, [x21, #0]
+ldr x9, [x19, #8]
+rev x9, x9
+str x9, [x21, #8]
+ldr x9, [x19, #16]
+rev x9, x9
+str x9, [x21, #16]
+ldr x9, [x19, #24]
+rev x9, x9
+str x9, [x21, #24]
+ldr x9, [x19, #32]
+rev x9, x9
+str x9, [x21, #32]
+ldr x9, [x19, #40]
+rev x9, x9
+str x9, [x21, #40]
+ldr x9, [x19, #48]
+rev x9, x9
+str x9, [x21, #48]
+ldr x9, [x19, #56]
+rev x9, x9
+str x9, [x21, #56]
+add x19, x20, #2048
+add x11, x21, #0
+add x10, x24, x25
+movz x12, #64, lsl #0
+232:
+ldrb w9, [x11, #0]
+ldrb w15, [x10, #0]
+eor x9, x9, x15
+orr x26, x26, x9
+add x11, x11, #1
+add x10, x10, #1
+sub x12, x12, #1
+cbnz x12, 232b
+sub x0, x26, #1
+lsr x0, x0, #63
+b 221f
+220:
+add x10, x20, #3584
+movz x9, #0, lsl #0
+movz x12, #256, lsl #0
+233:
+str x9, [x10, #0]
+add x10, x10, #8
+sub x12, x12, #1
+cbnz x12, 233b
+ldr x11, [sp, #208]
+add x14, x20, #3592
+movz x12, #64, lsl #0
+234:
+ldrb w15, [x11, #0]
+strb w15, [x14, #0]
+add x11, x11, #1
+add x14, x14, #1
+sub x12, x12, #1
+cbnz x12, 234b
+add x11, x24, x25
+ldr x12, [sp, #232]
+sub x11, x11, x12
+add x14, x20, #3656
+cbz x12, 235f
+237:
+ldrb w15, [x11, #0]
+strb w15, [x14, #0]
+add x11, x11, #1
+add x14, x14, #1
+sub x12, x12, #1
+cbnz x12, 237b
+b 236f
+235:
+236:
+ldr x9, [sp, #232]
+add x22, x9, #72
+add x9, x22, #16
+lsr x9, x9, #7
+add x9, x9, #1
+add x16, sp, #0
+str x9, [x16, #280]
+add x0, x19, #0
+bl {vg_sha512_init}
+add x10, x20, #3584
+movz x11, #0, lsl #0
+ldr x12, [sp, #280]
+lsl x12, x12, #7
+238:
+ldrb w13, [x10, #0]
+eor x14, x11, x22
+sub x14, x14, #1
+lsr x14, x14, #63
+lsl x14, x14, #7
+orr x13, x13, x14
+strb w13, [x10, #0]
+add x10, x10, #1
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 238b
+add x19, x20, #2192
+lsr x9, x22, #61
+rev x9, x9
+str x9, [x19, #176]
+add x9, x22, x22
+add x9, x9, x9
+add x9, x9, x9
+rev x9, x9
+str x9, [x19, #184]
+add x19, x20, #2048
+add x10, x20, #3696
+movz x11, #0, lsl #0
+ldr x12, [sp, #280]
+add x15, x22, #16
+lsr x15, x15, #7
+239:
+eor x13, x11, x15
+sub x13, x13, #1
+lsr x13, x13, #63
+movz x9, #0, lsl #0
+sub x13, x9, x13
+add x14, x20, #2368
+add x16, x10, #0
+movz x17, #16, lsl #0
+240:
+ldrb w9, [x14, #0]
+and x9, x9, x13
+ldrb w8, [x16, #0]
+orr x8, x8, x9
+strb w8, [x16, #0]
+add x14, x14, #1
+add x16, x16, #1
+sub x17, x17, #1
+cbnz x17, 240b
+add x10, x10, #128
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 239b
+movz x27, #0, lsl #0
+241:
+lsl x1, x27, #7
+add x1, x1, x20
+add x1, x1, #3584
+add x0, x19, #0
+movz x2, #1, lsl #0
+add x3, x20, #0
+bl {vg_sha512_compress_sha3}
+add x15, x22, #16
+lsr x15, x15, #7
+eor x13, x27, x15
+sub x13, x13, #1
+lsr x13, x13, #63
+movz x9, #0, lsl #0
+sub x13, x9, x13
+add x10, x20, #2048
+add x11, x20, #2240
+movz x12, #64, lsl #0
+242:
+ldrb w14, [x10, #0]
+ldrb w15, [x11, #0]
+eor x14, x14, x15
+and x14, x14, x13
+eor x15, x15, x14
+strb w15, [x11, #0]
+add x10, x10, #1
+add x11, x11, #1
+sub x12, x12, #1
+cbnz x12, 242b
+add x27, x27, #1
+ldr x9, [sp, #280]
+sub x9, x9, x27
+cbnz x9, 241b
+add x19, x20, #2240
+ldr x9, [x19, #0]
+rev x9, x9
+str x9, [x21, #0]
+ldr x9, [x19, #8]
+rev x9, x9
+str x9, [x21, #8]
+ldr x9, [x19, #16]
+rev x9, x9
+str x9, [x21, #16]
+ldr x9, [x19, #24]
+rev x9, x9
+str x9, [x21, #24]
+ldr x9, [x19, #32]
+rev x9, x9
+str x9, [x21, #32]
+ldr x9, [x19, #40]
+rev x9, x9
+str x9, [x21, #40]
+ldr x9, [x19, #48]
+rev x9, x9
+str x9, [x21, #48]
+ldr x9, [x19, #56]
+rev x9, x9
+str x9, [x21, #56]
+add x19, x20, #2048
+add x11, x21, #0
+add x10, x24, x25
+movz x12, #64, lsl #0
+243:
+ldrb w9, [x11, #0]
+ldrb w15, [x10, #0]
+eor x9, x9, x15
+orr x26, x26, x9
+add x11, x11, #1
+add x10, x10, #1
+sub x12, x12, #1
+cbnz x12, 243b
+sub x0, x26, #1
+lsr x0, x0, #63
+221:
+b 26f
+25:
+movz x0, #0, lsl #0
+26:
+b 22f
+21:
+movz x0, #0, lsl #0
+22:
+add x16, sp, #0
+ldr x19, [x16, #96]
+ldr x20, [x16, #104]
+ldr x21, [x16, #112]
+ldr x22, [x16, #120]
+ldr x23, [x16, #128]
+ldr x24, [x16, #136]
+ldr x25, [x16, #144]
+ldr x26, [x16, #152]
+ldr x27, [x16, #160]
+ldr x28, [x16, #168]
+ldr x30, [x16, #176]
+add sp, sp, #336
+ret
+.arch_extension nosha3
+.p2align 6",
+        vg_sha512_init = sym super::sha512::vg_sha512_init,
+        vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
+    )
+}
+
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-512 and MGF1 with SHA-512, of a SHA-512 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 64-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 66`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
 /// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.sha512` and `VG.Spec.Mgf1.sha512`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
 ///
-/// This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `vg_rsa_private_checked`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
+/// This implementation calls `vg_rsa_pss_sha512_mgf1_sha512_encode` for EMSA-PSS's encoding, after a zero byte if the modulus' first byte is 1, and signs it with `vg_rsa_private_checked`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
 ///
 /// # Safety
 ///
@@ -66,409 +2570,27 @@ add x19, x20, #2048
 add x21, x20, #2304
 ldrb w10, [x2, #0]
 cbz x10, 20f
-lsr x11, x10, #1
-lsr x12, x11, #1
-orr x11, x11, x12
-lsr x12, x11, #2
-orr x11, x11, x12
-lsr x12, x11, #4
-orr x11, x11, x12
-cbz x11, 22f
-movz x12, #0, lsl #0
-b 23f
-22:
-movz x11, #255, lsl #0
-movz x12, #1, lsl #0
-23:
-add x16, sp, #0
-str x11, [x16, #248]
-add x16, sp, #0
-str x12, [x16, #256]
-sub x9, x23, x12
-sub x10, x9, #66
-lsr x10, x10, #63
-cbnz x10, 24f
-ldr x12, [sp, #232]
-sub x9, x9, #66
-sub x10, x9, x12
-lsr x10, x10, #63
-lsr x13, x12, #63
-orr x10, x10, x13
-cbnz x10, 26f
-add x25, x9, #1
-ldr x9, [sp, #256]
-add x24, x20, #2560
-add x24, x24, x9
-add x10, x20, #3584
+clz x9, x10
+lsl x24, x23, #3
+add x24, x24, #55
+sub x24, x24, x9
+add x25, x24, #7
+lsr x25, x25, #3
+sub x26, x23, x25
+add x0, x20, #2560
 movz x9, #0, lsl #0
-movz x12, #256, lsl #0
-28:
-str x9, [x10, #0]
-add x10, x10, #8
-sub x12, x12, #1
-cbnz x12, 28b
-ldr x11, [sp, #208]
-add x14, x20, #3592
-movz x12, #64, lsl #0
-29:
-ldrb w15, [x11, #0]
-strb w15, [x14, #0]
-add x11, x11, #1
-add x14, x14, #1
-sub x12, x12, #1
-cbnz x12, 29b
-ldr x11, [sp, #224]
-add x14, x20, #3656
-ldr x12, [sp, #232]
-cbz x12, 210f
-212:
-ldrb w15, [x11, #0]
-strb w15, [x14, #0]
-add x11, x11, #1
-add x14, x14, #1
-sub x12, x12, #1
-cbnz x12, 212b
-b 211f
-210:
-211:
-ldr x9, [sp, #232]
-add x22, x9, #72
-add x9, x22, #16
-lsr x9, x9, #7
-add x9, x9, #1
-add x16, sp, #0
-str x9, [x16, #280]
-add x0, x19, #0
-bl {vg_sha512_init}
-add x10, x20, #3584
-movz x11, #0, lsl #0
-ldr x12, [sp, #280]
-lsl x12, x12, #7
-213:
-ldrb w13, [x10, #0]
-eor x14, x11, x22
-sub x14, x14, #1
-lsr x14, x14, #63
-lsl x14, x14, #7
-orr x13, x13, x14
-strb w13, [x10, #0]
-add x10, x10, #1
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 213b
-add x19, x20, #2192
-lsr x9, x22, #61
-rev x9, x9
-str x9, [x19, #176]
-add x9, x22, x22
-add x9, x9, x9
-add x9, x9, x9
-rev x9, x9
-str x9, [x19, #184]
-add x19, x20, #2048
-add x10, x20, #3696
-movz x11, #0, lsl #0
-ldr x12, [sp, #280]
-add x15, x22, #16
-lsr x15, x15, #7
-214:
-eor x13, x11, x15
-sub x13, x13, #1
-lsr x13, x13, #63
-movz x9, #0, lsl #0
-sub x13, x9, x13
-add x14, x20, #2368
-add x16, x10, #0
-movz x17, #16, lsl #0
-215:
-ldrb w9, [x14, #0]
-and x9, x9, x13
-ldrb w8, [x16, #0]
-orr x8, x8, x9
-strb w8, [x16, #0]
-add x14, x14, #1
-add x16, x16, #1
-sub x17, x17, #1
-cbnz x17, 215b
-add x10, x10, #128
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 214b
-movz x27, #0, lsl #0
-216:
-lsl x1, x27, #7
-add x1, x1, x20
-add x1, x1, #3584
-add x0, x19, #0
-movz x2, #1, lsl #0
-add x3, x20, #0
-bl {vg_sha512_compress}
-add x15, x22, #16
-lsr x15, x15, #7
-eor x13, x27, x15
-sub x13, x13, #1
-lsr x13, x13, #63
-movz x9, #0, lsl #0
-sub x13, x9, x13
-add x10, x20, #2048
-add x11, x20, #2240
-movz x12, #64, lsl #0
-217:
-ldrb w14, [x10, #0]
-ldrb w15, [x11, #0]
-eor x14, x14, x15
-and x14, x14, x13
-eor x15, x15, x14
-strb w15, [x11, #0]
-add x10, x10, #1
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 217b
-add x27, x27, #1
-ldr x9, [sp, #280]
-sub x9, x9, x27
-cbnz x9, 216b
-add x19, x20, #2240
-ldr x9, [x19, #0]
-rev x9, x9
-str x9, [x21, #0]
-ldr x9, [x19, #8]
-rev x9, x9
-str x9, [x21, #8]
-ldr x9, [x19, #16]
-rev x9, x9
-str x9, [x21, #16]
-ldr x9, [x19, #24]
-rev x9, x9
-str x9, [x21, #24]
-ldr x9, [x19, #32]
-rev x9, x9
-str x9, [x21, #32]
-ldr x9, [x19, #40]
-rev x9, x9
-str x9, [x21, #40]
-ldr x9, [x19, #48]
-rev x9, x9
-str x9, [x21, #48]
-ldr x9, [x19, #56]
-rev x9, x9
-str x9, [x21, #56]
-add x19, x20, #2048
-add x14, x20, #2560
-add x13, x23, #0
-movz x15, #0, lsl #0
-218:
-strb w15, [x14, #0]
-add x14, x14, #1
-sub x13, x13, #1
-cbnz x13, 218b
-add x14, x24, x25
-ldr x12, [sp, #232]
-sub x14, x14, x12
-sub x14, x14, #1
-movz x9, #1, lsl #0
-strb w9, [x14, #0]
-add x14, x14, #1
-ldr x11, [sp, #224]
-cbz x12, 219f
-221:
-ldrb w15, [x11, #0]
-strb w15, [x14, #0]
-add x11, x11, #1
-add x14, x14, #1
-sub x12, x12, #1
-cbnz x12, 221b
-b 220f
-219:
-220:
-add x14, x24, x25
-add x11, x21, #0
-movz x12, #64, lsl #0
-222:
-ldrb w15, [x11, #0]
-strb w15, [x14, #0]
-add x11, x11, #1
-add x14, x14, #1
-sub x12, x12, #1
-cbnz x12, 222b
-add x9, x20, #2560
-add x9, x9, x23
-sub x9, x9, #1
-movz x10, #188, lsl #0
-strb w10, [x9, #0]
-movz x28, #0, lsl #0
-movz x9, #0, lsl #0
-add x16, sp, #0
-str x9, [x16, #272]
-223:
-add x10, x20, #3584
-movz x9, #0, lsl #0
-movz x12, #16, lsl #0
-224:
-str x9, [x10, #0]
-add x10, x10, #8
-sub x12, x12, #1
-cbnz x12, 224b
-add x11, x24, x25
-add x14, x20, #3584
-movz x12, #64, lsl #0
-225:
-ldrb w15, [x11, #0]
-strb w15, [x14, #0]
-add x11, x11, #1
-add x14, x14, #1
-sub x12, x12, #1
-cbnz x12, 225b
-add x10, x20, #3648
-lsr x9, x28, #24
-strb w9, [x10, #0]
-lsr x9, x28, #16
-strb w9, [x10, #1]
-lsr x9, x28, #8
-strb w9, [x10, #2]
-strb w28, [x10, #3]
-movz x22, #68, lsl #0
-movz x9, #1, lsl #0
-add x16, sp, #0
-str x9, [x16, #280]
-add x0, x19, #0
-bl {vg_sha512_init}
-add x10, x20, #3652
-ldrb w9, [x10, #0]
-movz x13, #128, lsl #0
-orr x9, x9, x13
-strb w9, [x10, #0]
-add x19, x20, #2192
-lsr x9, x22, #61
-rev x9, x9
-str x9, [x19, #176]
-add x9, x22, x22
-add x9, x9, x9
-add x9, x9, x9
-rev x9, x9
-str x9, [x19, #184]
-add x19, x20, #2048
-add x10, x20, #3696
-movz x11, #0, lsl #0
-ldr x12, [sp, #280]
-add x15, x22, #16
-lsr x15, x15, #7
-226:
-eor x13, x11, x15
-sub x13, x13, #1
-lsr x13, x13, #63
-movz x9, #0, lsl #0
-sub x13, x9, x13
-add x14, x20, #2368
-add x16, x10, #0
-movz x17, #16, lsl #0
-227:
-ldrb w9, [x14, #0]
-and x9, x9, x13
-ldrb w8, [x16, #0]
-orr x8, x8, x9
-strb w8, [x16, #0]
-add x14, x14, #1
-add x16, x16, #1
-sub x17, x17, #1
-cbnz x17, 227b
-add x10, x10, #128
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 226b
-movz x27, #0, lsl #0
-228:
-lsl x1, x27, #7
-add x1, x1, x20
-add x1, x1, #3584
-add x0, x19, #0
-movz x2, #1, lsl #0
-add x3, x20, #0
-bl {vg_sha512_compress}
-add x15, x22, #16
-lsr x15, x15, #7
-eor x13, x27, x15
-sub x13, x13, #1
-lsr x13, x13, #63
-movz x9, #0, lsl #0
-sub x13, x9, x13
-add x10, x20, #2048
-add x11, x20, #2240
-movz x12, #64, lsl #0
-229:
-ldrb w14, [x10, #0]
-ldrb w15, [x11, #0]
-eor x14, x14, x15
-and x14, x14, x13
-eor x15, x15, x14
-strb w15, [x11, #0]
-add x10, x10, #1
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 229b
-add x27, x27, #1
-ldr x9, [sp, #280]
-sub x9, x9, x27
-cbnz x9, 228b
-add x19, x20, #2240
-ldr x9, [x19, #0]
-rev x9, x9
-str x9, [x21, #0]
-ldr x9, [x19, #8]
-rev x9, x9
-str x9, [x21, #8]
-ldr x9, [x19, #16]
-rev x9, x9
-str x9, [x21, #16]
-ldr x9, [x19, #24]
-rev x9, x9
-str x9, [x21, #24]
-ldr x9, [x19, #32]
-rev x9, x9
-str x9, [x21, #32]
-ldr x9, [x19, #40]
-rev x9, x9
-str x9, [x21, #40]
-ldr x9, [x19, #48]
-rev x9, x9
-str x9, [x21, #48]
-ldr x9, [x19, #56]
-rev x9, x9
-str x9, [x21, #56]
-add x19, x20, #2048
-ldr x9, [sp, #272]
-add x10, x24, x9
-add x11, x21, #0
-sub x12, x25, x9
-movz x13, #64, lsl #0
-sub x14, x12, x13
-lsr x14, x14, #63
-cbz x14, 230f
-b 231f
-230:
-add x12, x13, #0
-231:
-232:
-ldrb w9, [x11, #0]
-ldrb w15, [x10, #0]
-eor x15, x15, x9
-strb w15, [x10, #0]
-add x11, x11, #1
-add x10, x10, #1
-sub x12, x12, #1
-cbnz x12, 232b
-add x28, x28, #1
-ldr x9, [sp, #272]
-add x9, x9, #64
-add x16, sp, #0
-str x9, [x16, #272]
-sub x10, x9, x25
-lsr x10, x10, #63
-cbnz x10, 223b
-ldrb w9, [x24, #0]
-ldr x10, [sp, #248]
-and x9, x9, x10
-strb w9, [x24, #0]
+strb w9, [x0, #0]
+add x0, x0, x26
+add x1, x25, #0
+ldr x2, [sp, #208]
+ldr x3, [sp, #224]
+ldr x4, [sp, #232]
+add x5, x24, #0
+add x6, x20, #3584
+ldr x7, [sp, #240]
+sub x7, x7, #448
+bl {vg_rsa_pss_sha512_mgf1_sha512_encode}
+cbz w0, 22f
 add x16, sp, #0
 ldr x9, [sp, #288]
 str x9, [x16, #0]
@@ -505,40 +2627,28 @@ ldr x5, [sp, #200]
 add x6, x20, #2560
 add x7, x23, #0
 bl {vg_rsa_private_checked}
-b 27f
-26:
+b 23f
+22:
 ldr x14, [sp, #216]
 add x13, x23, #0
 movz x15, #0, lsl #0
-233:
-strb w15, [x14, #0]
-add x14, x14, #1
-sub x13, x13, #1
-cbnz x13, 233b
-movz x0, #0, lsl #0
-27:
-b 25f
 24:
-ldr x14, [sp, #216]
-add x13, x23, #0
-movz x15, #0, lsl #0
-234:
 strb w15, [x14, #0]
 add x14, x14, #1
 sub x13, x13, #1
-cbnz x13, 234b
+cbnz x13, 24b
 movz x0, #0, lsl #0
-25:
+23:
 b 21f
 20:
 ldr x14, [sp, #216]
 add x13, x23, #0
 movz x15, #0, lsl #0
-235:
+25:
 strb w15, [x14, #0]
 add x14, x14, #1
 sub x13, x13, #1
-cbnz x13, 235b
+cbnz x13, 25b
 movz x0, #0, lsl #0
 21:
 add x16, sp, #0
@@ -556,8 +2666,7 @@ ldr x30, [x16, #176]
 add sp, sp, #336
 ret
 .p2align 6",
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+        vg_rsa_pss_sha512_mgf1_sha512_encode = sym super::rsa_pss_sha512_mgf1_sha512::vg_rsa_pss_sha512_mgf1_sha512_encode,
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
     )
 }
@@ -569,7 +2678,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_SHA3_FEATURES: crate:
 ///
 /// Contract: `VG.Spec.RsaPss.signContract` of `VG.Spec.Mgf1.sha512` and `VG.Spec.Mgf1.sha512`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key, the digest or the salt.
 ///
-/// This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `vg_rsa_private_checked`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
+/// This implementation calls `vg_rsa_pss_sha512_mgf1_sha512_encode_sha3` for EMSA-PSS's encoding, after a zero byte if the modulus' first byte is 1, and signs it with `vg_rsa_private_checked`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch or an address.
 ///
 /// # Safety
 ///
@@ -631,409 +2740,27 @@ add x19, x20, #2048
 add x21, x20, #2304
 ldrb w10, [x2, #0]
 cbz x10, 20f
-lsr x11, x10, #1
-lsr x12, x11, #1
-orr x11, x11, x12
-lsr x12, x11, #2
-orr x11, x11, x12
-lsr x12, x11, #4
-orr x11, x11, x12
-cbz x11, 22f
-movz x12, #0, lsl #0
-b 23f
-22:
-movz x11, #255, lsl #0
-movz x12, #1, lsl #0
-23:
-add x16, sp, #0
-str x11, [x16, #248]
-add x16, sp, #0
-str x12, [x16, #256]
-sub x9, x23, x12
-sub x10, x9, #66
-lsr x10, x10, #63
-cbnz x10, 24f
-ldr x12, [sp, #232]
-sub x9, x9, #66
-sub x10, x9, x12
-lsr x10, x10, #63
-lsr x13, x12, #63
-orr x10, x10, x13
-cbnz x10, 26f
-add x25, x9, #1
-ldr x9, [sp, #256]
-add x24, x20, #2560
-add x24, x24, x9
-add x10, x20, #3584
+clz x9, x10
+lsl x24, x23, #3
+add x24, x24, #55
+sub x24, x24, x9
+add x25, x24, #7
+lsr x25, x25, #3
+sub x26, x23, x25
+add x0, x20, #2560
 movz x9, #0, lsl #0
-movz x12, #256, lsl #0
-28:
-str x9, [x10, #0]
-add x10, x10, #8
-sub x12, x12, #1
-cbnz x12, 28b
-ldr x11, [sp, #208]
-add x14, x20, #3592
-movz x12, #64, lsl #0
-29:
-ldrb w15, [x11, #0]
-strb w15, [x14, #0]
-add x11, x11, #1
-add x14, x14, #1
-sub x12, x12, #1
-cbnz x12, 29b
-ldr x11, [sp, #224]
-add x14, x20, #3656
-ldr x12, [sp, #232]
-cbz x12, 210f
-212:
-ldrb w15, [x11, #0]
-strb w15, [x14, #0]
-add x11, x11, #1
-add x14, x14, #1
-sub x12, x12, #1
-cbnz x12, 212b
-b 211f
-210:
-211:
-ldr x9, [sp, #232]
-add x22, x9, #72
-add x9, x22, #16
-lsr x9, x9, #7
-add x9, x9, #1
-add x16, sp, #0
-str x9, [x16, #280]
-add x0, x19, #0
-bl {vg_sha512_init}
-add x10, x20, #3584
-movz x11, #0, lsl #0
-ldr x12, [sp, #280]
-lsl x12, x12, #7
-213:
-ldrb w13, [x10, #0]
-eor x14, x11, x22
-sub x14, x14, #1
-lsr x14, x14, #63
-lsl x14, x14, #7
-orr x13, x13, x14
-strb w13, [x10, #0]
-add x10, x10, #1
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 213b
-add x19, x20, #2192
-lsr x9, x22, #61
-rev x9, x9
-str x9, [x19, #176]
-add x9, x22, x22
-add x9, x9, x9
-add x9, x9, x9
-rev x9, x9
-str x9, [x19, #184]
-add x19, x20, #2048
-add x10, x20, #3696
-movz x11, #0, lsl #0
-ldr x12, [sp, #280]
-add x15, x22, #16
-lsr x15, x15, #7
-214:
-eor x13, x11, x15
-sub x13, x13, #1
-lsr x13, x13, #63
-movz x9, #0, lsl #0
-sub x13, x9, x13
-add x14, x20, #2368
-add x16, x10, #0
-movz x17, #16, lsl #0
-215:
-ldrb w9, [x14, #0]
-and x9, x9, x13
-ldrb w8, [x16, #0]
-orr x8, x8, x9
-strb w8, [x16, #0]
-add x14, x14, #1
-add x16, x16, #1
-sub x17, x17, #1
-cbnz x17, 215b
-add x10, x10, #128
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 214b
-movz x27, #0, lsl #0
-216:
-lsl x1, x27, #7
-add x1, x1, x20
-add x1, x1, #3584
-add x0, x19, #0
-movz x2, #1, lsl #0
-add x3, x20, #0
-bl {vg_sha512_compress_sha3}
-add x15, x22, #16
-lsr x15, x15, #7
-eor x13, x27, x15
-sub x13, x13, #1
-lsr x13, x13, #63
-movz x9, #0, lsl #0
-sub x13, x9, x13
-add x10, x20, #2048
-add x11, x20, #2240
-movz x12, #64, lsl #0
-217:
-ldrb w14, [x10, #0]
-ldrb w15, [x11, #0]
-eor x14, x14, x15
-and x14, x14, x13
-eor x15, x15, x14
-strb w15, [x11, #0]
-add x10, x10, #1
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 217b
-add x27, x27, #1
-ldr x9, [sp, #280]
-sub x9, x9, x27
-cbnz x9, 216b
-add x19, x20, #2240
-ldr x9, [x19, #0]
-rev x9, x9
-str x9, [x21, #0]
-ldr x9, [x19, #8]
-rev x9, x9
-str x9, [x21, #8]
-ldr x9, [x19, #16]
-rev x9, x9
-str x9, [x21, #16]
-ldr x9, [x19, #24]
-rev x9, x9
-str x9, [x21, #24]
-ldr x9, [x19, #32]
-rev x9, x9
-str x9, [x21, #32]
-ldr x9, [x19, #40]
-rev x9, x9
-str x9, [x21, #40]
-ldr x9, [x19, #48]
-rev x9, x9
-str x9, [x21, #48]
-ldr x9, [x19, #56]
-rev x9, x9
-str x9, [x21, #56]
-add x19, x20, #2048
-add x14, x20, #2560
-add x13, x23, #0
-movz x15, #0, lsl #0
-218:
-strb w15, [x14, #0]
-add x14, x14, #1
-sub x13, x13, #1
-cbnz x13, 218b
-add x14, x24, x25
-ldr x12, [sp, #232]
-sub x14, x14, x12
-sub x14, x14, #1
-movz x9, #1, lsl #0
-strb w9, [x14, #0]
-add x14, x14, #1
-ldr x11, [sp, #224]
-cbz x12, 219f
-221:
-ldrb w15, [x11, #0]
-strb w15, [x14, #0]
-add x11, x11, #1
-add x14, x14, #1
-sub x12, x12, #1
-cbnz x12, 221b
-b 220f
-219:
-220:
-add x14, x24, x25
-add x11, x21, #0
-movz x12, #64, lsl #0
-222:
-ldrb w15, [x11, #0]
-strb w15, [x14, #0]
-add x11, x11, #1
-add x14, x14, #1
-sub x12, x12, #1
-cbnz x12, 222b
-add x9, x20, #2560
-add x9, x9, x23
-sub x9, x9, #1
-movz x10, #188, lsl #0
-strb w10, [x9, #0]
-movz x28, #0, lsl #0
-movz x9, #0, lsl #0
-add x16, sp, #0
-str x9, [x16, #272]
-223:
-add x10, x20, #3584
-movz x9, #0, lsl #0
-movz x12, #16, lsl #0
-224:
-str x9, [x10, #0]
-add x10, x10, #8
-sub x12, x12, #1
-cbnz x12, 224b
-add x11, x24, x25
-add x14, x20, #3584
-movz x12, #64, lsl #0
-225:
-ldrb w15, [x11, #0]
-strb w15, [x14, #0]
-add x11, x11, #1
-add x14, x14, #1
-sub x12, x12, #1
-cbnz x12, 225b
-add x10, x20, #3648
-lsr x9, x28, #24
-strb w9, [x10, #0]
-lsr x9, x28, #16
-strb w9, [x10, #1]
-lsr x9, x28, #8
-strb w9, [x10, #2]
-strb w28, [x10, #3]
-movz x22, #68, lsl #0
-movz x9, #1, lsl #0
-add x16, sp, #0
-str x9, [x16, #280]
-add x0, x19, #0
-bl {vg_sha512_init}
-add x10, x20, #3652
-ldrb w9, [x10, #0]
-movz x13, #128, lsl #0
-orr x9, x9, x13
-strb w9, [x10, #0]
-add x19, x20, #2192
-lsr x9, x22, #61
-rev x9, x9
-str x9, [x19, #176]
-add x9, x22, x22
-add x9, x9, x9
-add x9, x9, x9
-rev x9, x9
-str x9, [x19, #184]
-add x19, x20, #2048
-add x10, x20, #3696
-movz x11, #0, lsl #0
-ldr x12, [sp, #280]
-add x15, x22, #16
-lsr x15, x15, #7
-226:
-eor x13, x11, x15
-sub x13, x13, #1
-lsr x13, x13, #63
-movz x9, #0, lsl #0
-sub x13, x9, x13
-add x14, x20, #2368
-add x16, x10, #0
-movz x17, #16, lsl #0
-227:
-ldrb w9, [x14, #0]
-and x9, x9, x13
-ldrb w8, [x16, #0]
-orr x8, x8, x9
-strb w8, [x16, #0]
-add x14, x14, #1
-add x16, x16, #1
-sub x17, x17, #1
-cbnz x17, 227b
-add x10, x10, #128
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 226b
-movz x27, #0, lsl #0
-228:
-lsl x1, x27, #7
-add x1, x1, x20
-add x1, x1, #3584
-add x0, x19, #0
-movz x2, #1, lsl #0
-add x3, x20, #0
-bl {vg_sha512_compress_sha3}
-add x15, x22, #16
-lsr x15, x15, #7
-eor x13, x27, x15
-sub x13, x13, #1
-lsr x13, x13, #63
-movz x9, #0, lsl #0
-sub x13, x9, x13
-add x10, x20, #2048
-add x11, x20, #2240
-movz x12, #64, lsl #0
-229:
-ldrb w14, [x10, #0]
-ldrb w15, [x11, #0]
-eor x14, x14, x15
-and x14, x14, x13
-eor x15, x15, x14
-strb w15, [x11, #0]
-add x10, x10, #1
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 229b
-add x27, x27, #1
-ldr x9, [sp, #280]
-sub x9, x9, x27
-cbnz x9, 228b
-add x19, x20, #2240
-ldr x9, [x19, #0]
-rev x9, x9
-str x9, [x21, #0]
-ldr x9, [x19, #8]
-rev x9, x9
-str x9, [x21, #8]
-ldr x9, [x19, #16]
-rev x9, x9
-str x9, [x21, #16]
-ldr x9, [x19, #24]
-rev x9, x9
-str x9, [x21, #24]
-ldr x9, [x19, #32]
-rev x9, x9
-str x9, [x21, #32]
-ldr x9, [x19, #40]
-rev x9, x9
-str x9, [x21, #40]
-ldr x9, [x19, #48]
-rev x9, x9
-str x9, [x21, #48]
-ldr x9, [x19, #56]
-rev x9, x9
-str x9, [x21, #56]
-add x19, x20, #2048
-ldr x9, [sp, #272]
-add x10, x24, x9
-add x11, x21, #0
-sub x12, x25, x9
-movz x13, #64, lsl #0
-sub x14, x12, x13
-lsr x14, x14, #63
-cbz x14, 230f
-b 231f
-230:
-add x12, x13, #0
-231:
-232:
-ldrb w9, [x11, #0]
-ldrb w15, [x10, #0]
-eor x15, x15, x9
-strb w15, [x10, #0]
-add x11, x11, #1
-add x10, x10, #1
-sub x12, x12, #1
-cbnz x12, 232b
-add x28, x28, #1
-ldr x9, [sp, #272]
-add x9, x9, #64
-add x16, sp, #0
-str x9, [x16, #272]
-sub x10, x9, x25
-lsr x10, x10, #63
-cbnz x10, 223b
-ldrb w9, [x24, #0]
-ldr x10, [sp, #248]
-and x9, x9, x10
-strb w9, [x24, #0]
+strb w9, [x0, #0]
+add x0, x0, x26
+add x1, x25, #0
+ldr x2, [sp, #208]
+ldr x3, [sp, #224]
+ldr x4, [sp, #232]
+add x5, x24, #0
+add x6, x20, #3584
+ldr x7, [sp, #240]
+sub x7, x7, #448
+bl {vg_rsa_pss_sha512_mgf1_sha512_encode_sha3}
+cbz w0, 22f
 add x16, sp, #0
 ldr x9, [sp, #288]
 str x9, [x16, #0]
@@ -1070,40 +2797,28 @@ ldr x5, [sp, #200]
 add x6, x20, #2560
 add x7, x23, #0
 bl {vg_rsa_private_checked}
-b 27f
-26:
+b 23f
+22:
 ldr x14, [sp, #216]
 add x13, x23, #0
 movz x15, #0, lsl #0
-233:
-strb w15, [x14, #0]
-add x14, x14, #1
-sub x13, x13, #1
-cbnz x13, 233b
-movz x0, #0, lsl #0
-27:
-b 25f
 24:
-ldr x14, [sp, #216]
-add x13, x23, #0
-movz x15, #0, lsl #0
-234:
 strb w15, [x14, #0]
 add x14, x14, #1
 sub x13, x13, #1
-cbnz x13, 234b
+cbnz x13, 24b
 movz x0, #0, lsl #0
-25:
+23:
 b 21f
 20:
 ldr x14, [sp, #216]
 add x13, x23, #0
 movz x15, #0, lsl #0
-235:
+25:
 strb w15, [x14, #0]
 add x14, x14, #1
 sub x13, x13, #1
-cbnz x13, 235b
+cbnz x13, 25b
 movz x0, #0, lsl #0
 21:
 add x16, sp, #0
@@ -1122,8 +2837,7 @@ add sp, sp, #336
 ret
 .arch_extension nosha3
 .p2align 6",
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
+        vg_rsa_pss_sha512_mgf1_sha512_encode_sha3 = sym super::rsa_pss_sha512_mgf1_sha512::vg_rsa_pss_sha512_mgf1_sha512_encode_sha3,
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
     )
 }
@@ -1136,7 +2850,7 @@ ret
 ///
 /// Contract: `VG.Spec.RsaPss.verifyPrecomputedContract`.
 ///
-/// This implementation calls `vg_rsa_public_precomputed_checked` with the cached public-key values, then checks EMSA-PSS in its working space without branching on the encoding: `maskedDB` is unmasked with MGF1 and its delimiter and salt length checked. A specified salt length copies that many trailing bytes into `M'` and hashes only the blocks needed; an unknown salt length retains the oblivious shift and maximum block count. Only public lengths, salt-length mode and key data decide a branch or an address.
+/// This implementation calls `vg_rsa_public_precomputed_checked` with the cached public-key values, then `vg_rsa_pss_sha512_mgf1_sha512_check_encoding` on the last `emLen` bytes of its output, and checks that the bytes before them are zero.
 ///
 /// # Safety
 ///
@@ -1154,7 +2868,7 @@ ret
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the 688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -1192,45 +2906,13 @@ add x19, x20, #2048
 add x21, x20, #2304
 ldrb w10, [x0, #0]
 cbz x10, 20f
-lsr x11, x10, #1
-lsr x12, x11, #1
-orr x11, x11, x12
-lsr x12, x11, #2
-orr x11, x11, x12
-lsr x12, x11, #4
-orr x11, x11, x12
-cbz x11, 22f
-movz x12, #0, lsl #0
-b 23f
-22:
-movz x11, #255, lsl #0
-movz x12, #1, lsl #0
-23:
-add x16, sp, #0
-str x11, [x16, #248]
-add x16, sp, #0
-str x12, [x16, #256]
-sub x9, x23, x12
-sub x10, x9, #66
-lsr x10, x10, #63
-cbnz x10, 24f
-ldr x13, [sp, #264]
-cbz x13, 26f
-movz x12, #0, lsl #0
-b 27f
-26:
-ldr x12, [sp, #232]
-27:
-sub x9, x9, #66
-sub x10, x9, x12
-lsr x10, x10, #63
-lsr x13, x12, #63
-orr x10, x10, x13
-cbnz x10, 28f
-add x25, x9, #1
-ldr x9, [sp, #256]
-add x24, x20, #2560
-add x24, x24, x9
+clz x9, x10
+lsl x24, x23, #3
+add x24, x24, #55
+sub x24, x24, x9
+add x25, x24, #7
+lsr x25, x25, #3
+sub x26, x23, x25
 add x16, sp, #0
 movz x9, #8192, lsl #0
 add x9, x20, x9
@@ -1238,7 +2920,7 @@ str x9, [x16, #0]
 ldr x9, [sp, #240]
 sub x9, x9, #1024
 str x9, [x16, #8]
-add x0, x20, #2560
+add x0, x20, #0
 add x1, x23, #0
 ldr x2, [sp, #312]
 ldr x3, [sp, #320]
@@ -1247,616 +2929,26 @@ ldr x5, [sp, #200]
 ldr x6, [sp, #216]
 add x7, x23, #0
 bl {vg_rsa_public_precomputed_checked}
-add x10, x20, #2560
-add x9, x10, x23
-sub x9, x9, #1
-ldrb w26, [x9, #0]
-movz x9, #188, lsl #0
-eor x26, x26, x9
-ldrb w11, [x10, #0]
-ldr x12, [sp, #256]
-movz x9, #0, lsl #0
-sub x12, x9, x12
-and x11, x11, x12
-orr x26, x26, x11
-ldrb w11, [x24, #0]
-ldr x12, [sp, #248]
-movz x9, #255, lsl #0
-eor x12, x12, x9
-and x11, x11, x12
-orr x26, x26, x11
-movz x28, #0, lsl #0
-movz x9, #0, lsl #0
-add x16, sp, #0
-str x9, [x16, #272]
-210:
-add x10, x20, #3584
-movz x9, #0, lsl #0
-movz x12, #16, lsl #0
-211:
-str x9, [x10, #0]
-add x10, x10, #8
-sub x12, x12, #1
-cbnz x12, 211b
-add x11, x24, x25
-add x14, x20, #3584
-movz x12, #64, lsl #0
-212:
-ldrb w15, [x11, #0]
-strb w15, [x14, #0]
-add x11, x11, #1
-add x14, x14, #1
-sub x12, x12, #1
-cbnz x12, 212b
-add x10, x20, #3648
-lsr x9, x28, #24
-strb w9, [x10, #0]
-lsr x9, x28, #16
-strb w9, [x10, #1]
-lsr x9, x28, #8
-strb w9, [x10, #2]
-strb w28, [x10, #3]
-movz x22, #68, lsl #0
-movz x9, #1, lsl #0
-add x16, sp, #0
-str x9, [x16, #280]
-add x0, x19, #0
-bl {vg_sha512_init}
-add x10, x20, #3652
-ldrb w9, [x10, #0]
-movz x13, #128, lsl #0
-orr x9, x9, x13
-strb w9, [x10, #0]
-add x19, x20, #2192
-lsr x9, x22, #61
-rev x9, x9
-str x9, [x19, #176]
-add x9, x22, x22
-add x9, x9, x9
-add x9, x9, x9
-rev x9, x9
-str x9, [x19, #184]
-add x19, x20, #2048
-add x10, x20, #3696
-movz x11, #0, lsl #0
-ldr x12, [sp, #280]
-add x15, x22, #16
-lsr x15, x15, #7
-213:
-eor x13, x11, x15
-sub x13, x13, #1
-lsr x13, x13, #63
-movz x9, #0, lsl #0
-sub x13, x9, x13
-add x14, x20, #2368
-add x16, x10, #0
-movz x17, #16, lsl #0
-214:
-ldrb w9, [x14, #0]
-and x9, x9, x13
-ldrb w8, [x16, #0]
-orr x8, x8, x9
-strb w8, [x16, #0]
-add x14, x14, #1
-add x16, x16, #1
-sub x17, x17, #1
-cbnz x17, 214b
-add x10, x10, #128
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 213b
-movz x27, #0, lsl #0
-215:
-lsl x1, x27, #7
-add x1, x1, x20
-add x1, x1, #3584
-add x0, x19, #0
-movz x2, #1, lsl #0
-add x3, x20, #0
-bl {vg_sha512_compress}
-add x15, x22, #16
-lsr x15, x15, #7
-eor x13, x27, x15
-sub x13, x13, #1
-lsr x13, x13, #63
-movz x9, #0, lsl #0
-sub x13, x9, x13
-add x10, x20, #2048
-add x11, x20, #2240
-movz x12, #64, lsl #0
-216:
-ldrb w14, [x10, #0]
-ldrb w15, [x11, #0]
-eor x14, x14, x15
-and x14, x14, x13
-eor x15, x15, x14
-strb w15, [x11, #0]
-add x10, x10, #1
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 216b
-add x27, x27, #1
-ldr x9, [sp, #280]
-sub x9, x9, x27
-cbnz x9, 215b
-add x19, x20, #2240
-ldr x9, [x19, #0]
-rev x9, x9
-str x9, [x21, #0]
-ldr x9, [x19, #8]
-rev x9, x9
-str x9, [x21, #8]
-ldr x9, [x19, #16]
-rev x9, x9
-str x9, [x21, #16]
-ldr x9, [x19, #24]
-rev x9, x9
-str x9, [x21, #24]
-ldr x9, [x19, #32]
-rev x9, x9
-str x9, [x21, #32]
-ldr x9, [x19, #40]
-rev x9, x9
-str x9, [x21, #40]
-ldr x9, [x19, #48]
-rev x9, x9
-str x9, [x21, #48]
-ldr x9, [x19, #56]
-rev x9, x9
-str x9, [x21, #56]
-add x19, x20, #2048
-ldr x9, [sp, #272]
-add x10, x24, x9
-add x11, x21, #0
-sub x12, x25, x9
-movz x13, #64, lsl #0
-sub x14, x12, x13
-lsr x14, x14, #63
-cbz x14, 217f
-b 218f
-217:
-add x12, x13, #0
-218:
-219:
-ldrb w9, [x11, #0]
-ldrb w15, [x10, #0]
-eor x15, x15, x9
-strb w15, [x10, #0]
-add x11, x11, #1
-add x10, x10, #1
-sub x12, x12, #1
-cbnz x12, 219b
-add x28, x28, #1
-ldr x9, [sp, #272]
-add x9, x9, #64
-add x16, sp, #0
-str x9, [x16, #272]
-sub x10, x9, x25
-lsr x10, x10, #63
-cbnz x10, 210b
-ldrb w9, [x24, #0]
-ldr x10, [sp, #248]
+add x1, x20, x26
+ldrb w9, [x20, #0]
+movz x10, #0, lsl #0
+sub x10, x10, x26
 and x9, x9, x10
-strb w9, [x24, #0]
-add x10, x24, #0
-movz x11, #0, lsl #0
-add x12, x25, #0
-movz x13, #0, lsl #0
-sub x13, x13, #1
-movz x14, #0, lsl #0
-movz x15, #0, lsl #0
-220:
-ldrb w9, [x10, #0]
-sub x8, x9, #1
-lsr x8, x8, #63
-sub x16, x8, #1
-and x16, x16, x13
-and x17, x11, x16
-orr x14, x14, x17
-and x17, x9, x16
-orr x15, x15, x17
-movz x17, #0, lsl #0
-sub x17, x17, x8
-and x13, x13, x17
-add x10, x10, #1
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 220b
-movz x9, #1, lsl #0
-eor x15, x15, x9
-lsr x13, x13, #63
-orr x15, x15, x13
-orr x26, x26, x15
-add x16, sp, #0
-str x14, [x16, #304]
-sub x11, x25, x14
-sub x11, x11, #1
-ldr x9, [sp, #264]
-cbz x9, 221f
-b 222f
-221:
-ldr x12, [sp, #232]
-eor x12, x12, x11
-orr x26, x26, x12
-222:
-ldr x9, [sp, #264]
-cbz x9, 223f
-add x10, x20, #3584
-movz x9, #0, lsl #0
-movz x12, #256, lsl #0
-225:
-str x9, [x10, #0]
-add x10, x10, #8
-sub x12, x12, #1
-cbnz x12, 225b
-ldr x11, [sp, #208]
-add x14, x20, #3592
-movz x12, #64, lsl #0
-226:
-ldrb w15, [x11, #0]
-strb w15, [x14, #0]
-add x11, x11, #1
-add x14, x14, #1
-sub x12, x12, #1
-cbnz x12, 226b
-add x11, x24, #0
-add x14, x20, #3656
-add x12, x25, #0
-227:
-ldrb w15, [x11, #0]
-strb w15, [x14, #0]
-add x11, x11, #1
-add x14, x14, #1
-sub x12, x12, #1
-cbnz x12, 227b
-ldr x27, [sp, #304]
-add x27, x27, #1
-movz x28, #1, lsl #0
-movz x22, #10, lsl #0
-228:
-add x10, x20, #3656
-add x11, x10, x28
-lsr x14, x27, #1
-lsl x14, x14, #1
-sub x14, x27, x14
-movz x9, #0, lsl #0
-sub x14, x9, x14
-add x12, x25, #0
-229:
-ldrb w15, [x10, #0]
-ldrb w9, [x11, #0]
-eor x9, x9, x15
-and x9, x9, x14
-eor x15, x15, x9
-strb w15, [x10, #0]
-add x10, x10, #1
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 229b
-lsr x27, x27, #1
-add x28, x28, x28
-sub x22, x22, #1
-cbnz x22, 228b
-ldr x9, [sp, #304]
-sub x9, x25, x9
-sub x9, x9, #1
-add x22, x9, #72
-add x9, x25, #87
-lsr x9, x9, #7
-add x9, x9, #1
-add x16, sp, #0
-str x9, [x16, #280]
-add x0, x19, #0
-bl {vg_sha512_init}
-add x10, x20, #3584
-movz x11, #0, lsl #0
-ldr x12, [sp, #280]
-lsl x12, x12, #7
-230:
-ldrb w13, [x10, #0]
-eor x14, x11, x22
-sub x14, x14, #1
-lsr x14, x14, #63
-lsl x14, x14, #7
-orr x13, x13, x14
-strb w13, [x10, #0]
-add x10, x10, #1
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 230b
-add x19, x20, #2192
-lsr x9, x22, #61
-rev x9, x9
-str x9, [x19, #176]
-add x9, x22, x22
-add x9, x9, x9
-add x9, x9, x9
-rev x9, x9
-str x9, [x19, #184]
-add x19, x20, #2048
-add x10, x20, #3696
-movz x11, #0, lsl #0
-ldr x12, [sp, #280]
-add x15, x22, #16
-lsr x15, x15, #7
-231:
-eor x13, x11, x15
-sub x13, x13, #1
-lsr x13, x13, #63
-movz x9, #0, lsl #0
-sub x13, x9, x13
-add x14, x20, #2368
-add x16, x10, #0
-movz x17, #16, lsl #0
-232:
-ldrb w9, [x14, #0]
-and x9, x9, x13
-ldrb w8, [x16, #0]
-orr x8, x8, x9
-strb w8, [x16, #0]
-add x14, x14, #1
-add x16, x16, #1
-sub x17, x17, #1
-cbnz x17, 232b
-add x10, x10, #128
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 231b
-movz x27, #0, lsl #0
-233:
-lsl x1, x27, #7
-add x1, x1, x20
-add x1, x1, #3584
-add x0, x19, #0
-movz x2, #1, lsl #0
-add x3, x20, #0
-bl {vg_sha512_compress}
-add x15, x22, #16
-lsr x15, x15, #7
-eor x13, x27, x15
-sub x13, x13, #1
-lsr x13, x13, #63
-movz x9, #0, lsl #0
-sub x13, x9, x13
-add x10, x20, #2048
-add x11, x20, #2240
-movz x12, #64, lsl #0
-234:
-ldrb w14, [x10, #0]
-ldrb w15, [x11, #0]
-eor x14, x14, x15
-and x14, x14, x13
-eor x15, x15, x14
-strb w15, [x11, #0]
-add x10, x10, #1
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 234b
-add x27, x27, #1
-ldr x9, [sp, #280]
-sub x9, x9, x27
-cbnz x9, 233b
-add x19, x20, #2240
-ldr x9, [x19, #0]
-rev x9, x9
-str x9, [x21, #0]
-ldr x9, [x19, #8]
-rev x9, x9
-str x9, [x21, #8]
-ldr x9, [x19, #16]
-rev x9, x9
-str x9, [x21, #16]
-ldr x9, [x19, #24]
-rev x9, x9
-str x9, [x21, #24]
-ldr x9, [x19, #32]
-rev x9, x9
-str x9, [x21, #32]
-ldr x9, [x19, #40]
-rev x9, x9
-str x9, [x21, #40]
-ldr x9, [x19, #48]
-rev x9, x9
-str x9, [x21, #48]
-ldr x9, [x19, #56]
-rev x9, x9
-str x9, [x21, #56]
-add x19, x20, #2048
-add x11, x21, #0
-add x10, x24, x25
-movz x12, #64, lsl #0
-235:
-ldrb w9, [x11, #0]
-ldrb w15, [x10, #0]
-eor x9, x9, x15
-orr x26, x26, x9
-add x11, x11, #1
-add x10, x10, #1
-sub x12, x12, #1
-cbnz x12, 235b
-sub x0, x26, #1
-lsr x0, x0, #63
-b 224f
-223:
-add x10, x20, #3584
-movz x9, #0, lsl #0
-movz x12, #256, lsl #0
-236:
-str x9, [x10, #0]
-add x10, x10, #8
-sub x12, x12, #1
-cbnz x12, 236b
-ldr x11, [sp, #208]
-add x14, x20, #3592
-movz x12, #64, lsl #0
-237:
-ldrb w15, [x11, #0]
-strb w15, [x14, #0]
-add x11, x11, #1
-add x14, x14, #1
-sub x12, x12, #1
-cbnz x12, 237b
-add x11, x24, x25
-ldr x12, [sp, #232]
-sub x11, x11, x12
-add x14, x20, #3656
-cbz x12, 238f
-240:
-ldrb w15, [x11, #0]
-strb w15, [x14, #0]
-add x11, x11, #1
-add x14, x14, #1
-sub x12, x12, #1
-cbnz x12, 240b
-b 239f
-238:
-239:
-ldr x9, [sp, #232]
-add x22, x9, #72
-add x9, x22, #16
-lsr x9, x9, #7
-add x9, x9, #1
-add x16, sp, #0
-str x9, [x16, #280]
-add x0, x19, #0
-bl {vg_sha512_init}
-add x10, x20, #3584
-movz x11, #0, lsl #0
-ldr x12, [sp, #280]
-lsl x12, x12, #7
-241:
-ldrb w13, [x10, #0]
-eor x14, x11, x22
-sub x14, x14, #1
-lsr x14, x14, #63
-lsl x14, x14, #7
-orr x13, x13, x14
-strb w13, [x10, #0]
-add x10, x10, #1
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 241b
-add x19, x20, #2192
-lsr x9, x22, #61
-rev x9, x9
-str x9, [x19, #176]
-add x9, x22, x22
-add x9, x9, x9
-add x9, x9, x9
-rev x9, x9
-str x9, [x19, #184]
-add x19, x20, #2048
-add x10, x20, #3696
-movz x11, #0, lsl #0
-ldr x12, [sp, #280]
-add x15, x22, #16
-lsr x15, x15, #7
-242:
-eor x13, x11, x15
-sub x13, x13, #1
-lsr x13, x13, #63
-movz x9, #0, lsl #0
-sub x13, x9, x13
-add x14, x20, #2368
-add x16, x10, #0
-movz x17, #16, lsl #0
-243:
-ldrb w9, [x14, #0]
-and x9, x9, x13
-ldrb w8, [x16, #0]
-orr x8, x8, x9
-strb w8, [x16, #0]
-add x14, x14, #1
-add x16, x16, #1
-sub x17, x17, #1
-cbnz x17, 243b
-add x10, x10, #128
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 242b
-movz x27, #0, lsl #0
-244:
-lsl x1, x27, #7
-add x1, x1, x20
-add x1, x1, #3584
-add x0, x19, #0
-movz x2, #1, lsl #0
-add x3, x20, #0
-bl {vg_sha512_compress}
-add x15, x22, #16
-lsr x15, x15, #7
-eor x13, x27, x15
-sub x13, x13, #1
-lsr x13, x13, #63
-movz x9, #0, lsl #0
-sub x13, x9, x13
-add x10, x20, #2048
-add x11, x20, #2240
-movz x12, #64, lsl #0
-245:
-ldrb w14, [x10, #0]
-ldrb w15, [x11, #0]
-eor x14, x14, x15
-and x14, x14, x13
-eor x15, x15, x14
-strb w15, [x11, #0]
-add x10, x10, #1
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 245b
-add x27, x27, #1
-ldr x9, [sp, #280]
-sub x9, x9, x27
-cbnz x9, 244b
-add x19, x20, #2240
-ldr x9, [x19, #0]
-rev x9, x9
-str x9, [x21, #0]
-ldr x9, [x19, #8]
-rev x9, x9
-str x9, [x21, #8]
-ldr x9, [x19, #16]
-rev x9, x9
-str x9, [x21, #16]
-ldr x9, [x19, #24]
-rev x9, x9
-str x9, [x21, #24]
-ldr x9, [x19, #32]
-rev x9, x9
-str x9, [x21, #32]
-ldr x9, [x19, #40]
-rev x9, x9
-str x9, [x21, #40]
-ldr x9, [x19, #48]
-rev x9, x9
-str x9, [x21, #48]
-ldr x9, [x19, #56]
-rev x9, x9
-str x9, [x21, #56]
-add x19, x20, #2048
-add x11, x21, #0
-add x10, x24, x25
-movz x12, #64, lsl #0
-246:
-ldrb w9, [x11, #0]
-ldrb w15, [x10, #0]
-eor x9, x9, x15
-orr x26, x26, x9
-add x11, x11, #1
-add x10, x10, #1
-sub x12, x12, #1
-cbnz x12, 246b
-sub x0, x26, #1
-lsr x0, x0, #63
-224:
-b 29f
-28:
-movz x0, #0, lsl #0
-29:
-b 25f
-24:
-movz x0, #0, lsl #0
-25:
+sub x26, x9, #1
+lsr x26, x26, #63
+ldr x0, [sp, #208]
+add x2, x25, #0
+add x3, x24, #0
+ldr x4, [sp, #232]
+ldr x5, [sp, #264]
+add x9, x23, #7
+lsr x9, x9, #3
+ldr x7, [sp, #240]
+sub x7, x7, x9
+lsl x9, x9, #3
+add x6, x20, x9
+bl {vg_rsa_pss_sha512_mgf1_sha512_check_encoding}
+and x0, x0, x26
 b 21f
 20:
 movz x0, #0, lsl #0
@@ -1877,8 +2969,7 @@ add sp, sp, #336
 ret
 .p2align 6",
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+        vg_rsa_pss_sha512_mgf1_sha512_check_encoding = sym super::rsa_pss_sha512_mgf1_sha512::vg_rsa_pss_sha512_mgf1_sha512_check_encoding,
     )
 }
 
@@ -1893,7 +2984,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_SHA3_FE
 ///
 /// Contract: `VG.Spec.RsaPss.verifyPrecomputedContract`.
 ///
-/// This implementation calls `vg_rsa_public_precomputed_checked` with the cached public-key values, then checks EMSA-PSS in its working space without branching on the encoding: `maskedDB` is unmasked with MGF1 and its delimiter and salt length checked. A specified salt length copies that many trailing bytes into `M'` and hashes only the blocks needed; an unknown salt length retains the oblivious shift and maximum block count. Only public lengths, salt-length mode and key data decide a branch or an address.
+/// This implementation calls `vg_rsa_public_precomputed_checked` with the cached public-key values, then `vg_rsa_pss_sha512_mgf1_sha512_check_encoding_sha3` on the last `emLen` bytes of its output, and checks that the bytes before them are zero.
 ///
 /// # Safety
 ///
@@ -1911,7 +3002,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_SHA3_FE
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the 688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_sha512_sha3(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
@@ -1951,45 +3042,13 @@ add x19, x20, #2048
 add x21, x20, #2304
 ldrb w10, [x0, #0]
 cbz x10, 20f
-lsr x11, x10, #1
-lsr x12, x11, #1
-orr x11, x11, x12
-lsr x12, x11, #2
-orr x11, x11, x12
-lsr x12, x11, #4
-orr x11, x11, x12
-cbz x11, 22f
-movz x12, #0, lsl #0
-b 23f
-22:
-movz x11, #255, lsl #0
-movz x12, #1, lsl #0
-23:
-add x16, sp, #0
-str x11, [x16, #248]
-add x16, sp, #0
-str x12, [x16, #256]
-sub x9, x23, x12
-sub x10, x9, #66
-lsr x10, x10, #63
-cbnz x10, 24f
-ldr x13, [sp, #264]
-cbz x13, 26f
-movz x12, #0, lsl #0
-b 27f
-26:
-ldr x12, [sp, #232]
-27:
-sub x9, x9, #66
-sub x10, x9, x12
-lsr x10, x10, #63
-lsr x13, x12, #63
-orr x10, x10, x13
-cbnz x10, 28f
-add x25, x9, #1
-ldr x9, [sp, #256]
-add x24, x20, #2560
-add x24, x24, x9
+clz x9, x10
+lsl x24, x23, #3
+add x24, x24, #55
+sub x24, x24, x9
+add x25, x24, #7
+lsr x25, x25, #3
+sub x26, x23, x25
 add x16, sp, #0
 movz x9, #8192, lsl #0
 add x9, x20, x9
@@ -1997,7 +3056,7 @@ str x9, [x16, #0]
 ldr x9, [sp, #240]
 sub x9, x9, #1024
 str x9, [x16, #8]
-add x0, x20, #2560
+add x0, x20, #0
 add x1, x23, #0
 ldr x2, [sp, #312]
 ldr x3, [sp, #320]
@@ -2006,616 +3065,26 @@ ldr x5, [sp, #200]
 ldr x6, [sp, #216]
 add x7, x23, #0
 bl {vg_rsa_public_precomputed_checked}
-add x10, x20, #2560
-add x9, x10, x23
-sub x9, x9, #1
-ldrb w26, [x9, #0]
-movz x9, #188, lsl #0
-eor x26, x26, x9
-ldrb w11, [x10, #0]
-ldr x12, [sp, #256]
-movz x9, #0, lsl #0
-sub x12, x9, x12
-and x11, x11, x12
-orr x26, x26, x11
-ldrb w11, [x24, #0]
-ldr x12, [sp, #248]
-movz x9, #255, lsl #0
-eor x12, x12, x9
-and x11, x11, x12
-orr x26, x26, x11
-movz x28, #0, lsl #0
-movz x9, #0, lsl #0
-add x16, sp, #0
-str x9, [x16, #272]
-210:
-add x10, x20, #3584
-movz x9, #0, lsl #0
-movz x12, #16, lsl #0
-211:
-str x9, [x10, #0]
-add x10, x10, #8
-sub x12, x12, #1
-cbnz x12, 211b
-add x11, x24, x25
-add x14, x20, #3584
-movz x12, #64, lsl #0
-212:
-ldrb w15, [x11, #0]
-strb w15, [x14, #0]
-add x11, x11, #1
-add x14, x14, #1
-sub x12, x12, #1
-cbnz x12, 212b
-add x10, x20, #3648
-lsr x9, x28, #24
-strb w9, [x10, #0]
-lsr x9, x28, #16
-strb w9, [x10, #1]
-lsr x9, x28, #8
-strb w9, [x10, #2]
-strb w28, [x10, #3]
-movz x22, #68, lsl #0
-movz x9, #1, lsl #0
-add x16, sp, #0
-str x9, [x16, #280]
-add x0, x19, #0
-bl {vg_sha512_init}
-add x10, x20, #3652
-ldrb w9, [x10, #0]
-movz x13, #128, lsl #0
-orr x9, x9, x13
-strb w9, [x10, #0]
-add x19, x20, #2192
-lsr x9, x22, #61
-rev x9, x9
-str x9, [x19, #176]
-add x9, x22, x22
-add x9, x9, x9
-add x9, x9, x9
-rev x9, x9
-str x9, [x19, #184]
-add x19, x20, #2048
-add x10, x20, #3696
-movz x11, #0, lsl #0
-ldr x12, [sp, #280]
-add x15, x22, #16
-lsr x15, x15, #7
-213:
-eor x13, x11, x15
-sub x13, x13, #1
-lsr x13, x13, #63
-movz x9, #0, lsl #0
-sub x13, x9, x13
-add x14, x20, #2368
-add x16, x10, #0
-movz x17, #16, lsl #0
-214:
-ldrb w9, [x14, #0]
-and x9, x9, x13
-ldrb w8, [x16, #0]
-orr x8, x8, x9
-strb w8, [x16, #0]
-add x14, x14, #1
-add x16, x16, #1
-sub x17, x17, #1
-cbnz x17, 214b
-add x10, x10, #128
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 213b
-movz x27, #0, lsl #0
-215:
-lsl x1, x27, #7
-add x1, x1, x20
-add x1, x1, #3584
-add x0, x19, #0
-movz x2, #1, lsl #0
-add x3, x20, #0
-bl {vg_sha512_compress_sha3}
-add x15, x22, #16
-lsr x15, x15, #7
-eor x13, x27, x15
-sub x13, x13, #1
-lsr x13, x13, #63
-movz x9, #0, lsl #0
-sub x13, x9, x13
-add x10, x20, #2048
-add x11, x20, #2240
-movz x12, #64, lsl #0
-216:
-ldrb w14, [x10, #0]
-ldrb w15, [x11, #0]
-eor x14, x14, x15
-and x14, x14, x13
-eor x15, x15, x14
-strb w15, [x11, #0]
-add x10, x10, #1
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 216b
-add x27, x27, #1
-ldr x9, [sp, #280]
-sub x9, x9, x27
-cbnz x9, 215b
-add x19, x20, #2240
-ldr x9, [x19, #0]
-rev x9, x9
-str x9, [x21, #0]
-ldr x9, [x19, #8]
-rev x9, x9
-str x9, [x21, #8]
-ldr x9, [x19, #16]
-rev x9, x9
-str x9, [x21, #16]
-ldr x9, [x19, #24]
-rev x9, x9
-str x9, [x21, #24]
-ldr x9, [x19, #32]
-rev x9, x9
-str x9, [x21, #32]
-ldr x9, [x19, #40]
-rev x9, x9
-str x9, [x21, #40]
-ldr x9, [x19, #48]
-rev x9, x9
-str x9, [x21, #48]
-ldr x9, [x19, #56]
-rev x9, x9
-str x9, [x21, #56]
-add x19, x20, #2048
-ldr x9, [sp, #272]
-add x10, x24, x9
-add x11, x21, #0
-sub x12, x25, x9
-movz x13, #64, lsl #0
-sub x14, x12, x13
-lsr x14, x14, #63
-cbz x14, 217f
-b 218f
-217:
-add x12, x13, #0
-218:
-219:
-ldrb w9, [x11, #0]
-ldrb w15, [x10, #0]
-eor x15, x15, x9
-strb w15, [x10, #0]
-add x11, x11, #1
-add x10, x10, #1
-sub x12, x12, #1
-cbnz x12, 219b
-add x28, x28, #1
-ldr x9, [sp, #272]
-add x9, x9, #64
-add x16, sp, #0
-str x9, [x16, #272]
-sub x10, x9, x25
-lsr x10, x10, #63
-cbnz x10, 210b
-ldrb w9, [x24, #0]
-ldr x10, [sp, #248]
+add x1, x20, x26
+ldrb w9, [x20, #0]
+movz x10, #0, lsl #0
+sub x10, x10, x26
 and x9, x9, x10
-strb w9, [x24, #0]
-add x10, x24, #0
-movz x11, #0, lsl #0
-add x12, x25, #0
-movz x13, #0, lsl #0
-sub x13, x13, #1
-movz x14, #0, lsl #0
-movz x15, #0, lsl #0
-220:
-ldrb w9, [x10, #0]
-sub x8, x9, #1
-lsr x8, x8, #63
-sub x16, x8, #1
-and x16, x16, x13
-and x17, x11, x16
-orr x14, x14, x17
-and x17, x9, x16
-orr x15, x15, x17
-movz x17, #0, lsl #0
-sub x17, x17, x8
-and x13, x13, x17
-add x10, x10, #1
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 220b
-movz x9, #1, lsl #0
-eor x15, x15, x9
-lsr x13, x13, #63
-orr x15, x15, x13
-orr x26, x26, x15
-add x16, sp, #0
-str x14, [x16, #304]
-sub x11, x25, x14
-sub x11, x11, #1
-ldr x9, [sp, #264]
-cbz x9, 221f
-b 222f
-221:
-ldr x12, [sp, #232]
-eor x12, x12, x11
-orr x26, x26, x12
-222:
-ldr x9, [sp, #264]
-cbz x9, 223f
-add x10, x20, #3584
-movz x9, #0, lsl #0
-movz x12, #256, lsl #0
-225:
-str x9, [x10, #0]
-add x10, x10, #8
-sub x12, x12, #1
-cbnz x12, 225b
-ldr x11, [sp, #208]
-add x14, x20, #3592
-movz x12, #64, lsl #0
-226:
-ldrb w15, [x11, #0]
-strb w15, [x14, #0]
-add x11, x11, #1
-add x14, x14, #1
-sub x12, x12, #1
-cbnz x12, 226b
-add x11, x24, #0
-add x14, x20, #3656
-add x12, x25, #0
-227:
-ldrb w15, [x11, #0]
-strb w15, [x14, #0]
-add x11, x11, #1
-add x14, x14, #1
-sub x12, x12, #1
-cbnz x12, 227b
-ldr x27, [sp, #304]
-add x27, x27, #1
-movz x28, #1, lsl #0
-movz x22, #10, lsl #0
-228:
-add x10, x20, #3656
-add x11, x10, x28
-lsr x14, x27, #1
-lsl x14, x14, #1
-sub x14, x27, x14
-movz x9, #0, lsl #0
-sub x14, x9, x14
-add x12, x25, #0
-229:
-ldrb w15, [x10, #0]
-ldrb w9, [x11, #0]
-eor x9, x9, x15
-and x9, x9, x14
-eor x15, x15, x9
-strb w15, [x10, #0]
-add x10, x10, #1
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 229b
-lsr x27, x27, #1
-add x28, x28, x28
-sub x22, x22, #1
-cbnz x22, 228b
-ldr x9, [sp, #304]
-sub x9, x25, x9
-sub x9, x9, #1
-add x22, x9, #72
-add x9, x25, #87
-lsr x9, x9, #7
-add x9, x9, #1
-add x16, sp, #0
-str x9, [x16, #280]
-add x0, x19, #0
-bl {vg_sha512_init}
-add x10, x20, #3584
-movz x11, #0, lsl #0
-ldr x12, [sp, #280]
-lsl x12, x12, #7
-230:
-ldrb w13, [x10, #0]
-eor x14, x11, x22
-sub x14, x14, #1
-lsr x14, x14, #63
-lsl x14, x14, #7
-orr x13, x13, x14
-strb w13, [x10, #0]
-add x10, x10, #1
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 230b
-add x19, x20, #2192
-lsr x9, x22, #61
-rev x9, x9
-str x9, [x19, #176]
-add x9, x22, x22
-add x9, x9, x9
-add x9, x9, x9
-rev x9, x9
-str x9, [x19, #184]
-add x19, x20, #2048
-add x10, x20, #3696
-movz x11, #0, lsl #0
-ldr x12, [sp, #280]
-add x15, x22, #16
-lsr x15, x15, #7
-231:
-eor x13, x11, x15
-sub x13, x13, #1
-lsr x13, x13, #63
-movz x9, #0, lsl #0
-sub x13, x9, x13
-add x14, x20, #2368
-add x16, x10, #0
-movz x17, #16, lsl #0
-232:
-ldrb w9, [x14, #0]
-and x9, x9, x13
-ldrb w8, [x16, #0]
-orr x8, x8, x9
-strb w8, [x16, #0]
-add x14, x14, #1
-add x16, x16, #1
-sub x17, x17, #1
-cbnz x17, 232b
-add x10, x10, #128
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 231b
-movz x27, #0, lsl #0
-233:
-lsl x1, x27, #7
-add x1, x1, x20
-add x1, x1, #3584
-add x0, x19, #0
-movz x2, #1, lsl #0
-add x3, x20, #0
-bl {vg_sha512_compress_sha3}
-add x15, x22, #16
-lsr x15, x15, #7
-eor x13, x27, x15
-sub x13, x13, #1
-lsr x13, x13, #63
-movz x9, #0, lsl #0
-sub x13, x9, x13
-add x10, x20, #2048
-add x11, x20, #2240
-movz x12, #64, lsl #0
-234:
-ldrb w14, [x10, #0]
-ldrb w15, [x11, #0]
-eor x14, x14, x15
-and x14, x14, x13
-eor x15, x15, x14
-strb w15, [x11, #0]
-add x10, x10, #1
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 234b
-add x27, x27, #1
-ldr x9, [sp, #280]
-sub x9, x9, x27
-cbnz x9, 233b
-add x19, x20, #2240
-ldr x9, [x19, #0]
-rev x9, x9
-str x9, [x21, #0]
-ldr x9, [x19, #8]
-rev x9, x9
-str x9, [x21, #8]
-ldr x9, [x19, #16]
-rev x9, x9
-str x9, [x21, #16]
-ldr x9, [x19, #24]
-rev x9, x9
-str x9, [x21, #24]
-ldr x9, [x19, #32]
-rev x9, x9
-str x9, [x21, #32]
-ldr x9, [x19, #40]
-rev x9, x9
-str x9, [x21, #40]
-ldr x9, [x19, #48]
-rev x9, x9
-str x9, [x21, #48]
-ldr x9, [x19, #56]
-rev x9, x9
-str x9, [x21, #56]
-add x19, x20, #2048
-add x11, x21, #0
-add x10, x24, x25
-movz x12, #64, lsl #0
-235:
-ldrb w9, [x11, #0]
-ldrb w15, [x10, #0]
-eor x9, x9, x15
-orr x26, x26, x9
-add x11, x11, #1
-add x10, x10, #1
-sub x12, x12, #1
-cbnz x12, 235b
-sub x0, x26, #1
-lsr x0, x0, #63
-b 224f
-223:
-add x10, x20, #3584
-movz x9, #0, lsl #0
-movz x12, #256, lsl #0
-236:
-str x9, [x10, #0]
-add x10, x10, #8
-sub x12, x12, #1
-cbnz x12, 236b
-ldr x11, [sp, #208]
-add x14, x20, #3592
-movz x12, #64, lsl #0
-237:
-ldrb w15, [x11, #0]
-strb w15, [x14, #0]
-add x11, x11, #1
-add x14, x14, #1
-sub x12, x12, #1
-cbnz x12, 237b
-add x11, x24, x25
-ldr x12, [sp, #232]
-sub x11, x11, x12
-add x14, x20, #3656
-cbz x12, 238f
-240:
-ldrb w15, [x11, #0]
-strb w15, [x14, #0]
-add x11, x11, #1
-add x14, x14, #1
-sub x12, x12, #1
-cbnz x12, 240b
-b 239f
-238:
-239:
-ldr x9, [sp, #232]
-add x22, x9, #72
-add x9, x22, #16
-lsr x9, x9, #7
-add x9, x9, #1
-add x16, sp, #0
-str x9, [x16, #280]
-add x0, x19, #0
-bl {vg_sha512_init}
-add x10, x20, #3584
-movz x11, #0, lsl #0
-ldr x12, [sp, #280]
-lsl x12, x12, #7
-241:
-ldrb w13, [x10, #0]
-eor x14, x11, x22
-sub x14, x14, #1
-lsr x14, x14, #63
-lsl x14, x14, #7
-orr x13, x13, x14
-strb w13, [x10, #0]
-add x10, x10, #1
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 241b
-add x19, x20, #2192
-lsr x9, x22, #61
-rev x9, x9
-str x9, [x19, #176]
-add x9, x22, x22
-add x9, x9, x9
-add x9, x9, x9
-rev x9, x9
-str x9, [x19, #184]
-add x19, x20, #2048
-add x10, x20, #3696
-movz x11, #0, lsl #0
-ldr x12, [sp, #280]
-add x15, x22, #16
-lsr x15, x15, #7
-242:
-eor x13, x11, x15
-sub x13, x13, #1
-lsr x13, x13, #63
-movz x9, #0, lsl #0
-sub x13, x9, x13
-add x14, x20, #2368
-add x16, x10, #0
-movz x17, #16, lsl #0
-243:
-ldrb w9, [x14, #0]
-and x9, x9, x13
-ldrb w8, [x16, #0]
-orr x8, x8, x9
-strb w8, [x16, #0]
-add x14, x14, #1
-add x16, x16, #1
-sub x17, x17, #1
-cbnz x17, 243b
-add x10, x10, #128
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 242b
-movz x27, #0, lsl #0
-244:
-lsl x1, x27, #7
-add x1, x1, x20
-add x1, x1, #3584
-add x0, x19, #0
-movz x2, #1, lsl #0
-add x3, x20, #0
-bl {vg_sha512_compress_sha3}
-add x15, x22, #16
-lsr x15, x15, #7
-eor x13, x27, x15
-sub x13, x13, #1
-lsr x13, x13, #63
-movz x9, #0, lsl #0
-sub x13, x9, x13
-add x10, x20, #2048
-add x11, x20, #2240
-movz x12, #64, lsl #0
-245:
-ldrb w14, [x10, #0]
-ldrb w15, [x11, #0]
-eor x14, x14, x15
-and x14, x14, x13
-eor x15, x15, x14
-strb w15, [x11, #0]
-add x10, x10, #1
-add x11, x11, #1
-sub x12, x12, #1
-cbnz x12, 245b
-add x27, x27, #1
-ldr x9, [sp, #280]
-sub x9, x9, x27
-cbnz x9, 244b
-add x19, x20, #2240
-ldr x9, [x19, #0]
-rev x9, x9
-str x9, [x21, #0]
-ldr x9, [x19, #8]
-rev x9, x9
-str x9, [x21, #8]
-ldr x9, [x19, #16]
-rev x9, x9
-str x9, [x21, #16]
-ldr x9, [x19, #24]
-rev x9, x9
-str x9, [x21, #24]
-ldr x9, [x19, #32]
-rev x9, x9
-str x9, [x21, #32]
-ldr x9, [x19, #40]
-rev x9, x9
-str x9, [x21, #40]
-ldr x9, [x19, #48]
-rev x9, x9
-str x9, [x21, #48]
-ldr x9, [x19, #56]
-rev x9, x9
-str x9, [x21, #56]
-add x19, x20, #2048
-add x11, x21, #0
-add x10, x24, x25
-movz x12, #64, lsl #0
-246:
-ldrb w9, [x11, #0]
-ldrb w15, [x10, #0]
-eor x9, x9, x15
-orr x26, x26, x9
-add x11, x11, #1
-add x10, x10, #1
-sub x12, x12, #1
-cbnz x12, 246b
-sub x0, x26, #1
-lsr x0, x0, #63
-224:
-b 29f
-28:
-movz x0, #0, lsl #0
-29:
-b 25f
-24:
-movz x0, #0, lsl #0
-25:
+sub x26, x9, #1
+lsr x26, x26, #63
+ldr x0, [sp, #208]
+add x2, x25, #0
+add x3, x24, #0
+ldr x4, [sp, #232]
+ldr x5, [sp, #264]
+add x9, x23, #7
+lsr x9, x9, #3
+ldr x7, [sp, #240]
+sub x7, x7, x9
+lsl x9, x9, #3
+add x6, x20, x9
+bl {vg_rsa_pss_sha512_mgf1_sha512_check_encoding_sha3}
+and x0, x0, x26
 b 21f
 20:
 movz x0, #0, lsl #0
@@ -2637,7 +3106,6 @@ ret
 .arch_extension nosha3
 .p2align 6",
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
-        vg_sha512_init = sym super::sha512::vg_sha512_init,
-        vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
+        vg_rsa_pss_sha512_mgf1_sha512_check_encoding_sha3 = sym super::rsa_pss_sha512_mgf1_sha512::vg_rsa_pss_sha512_mgf1_sha512_check_encoding_sha3,
     )
 }
