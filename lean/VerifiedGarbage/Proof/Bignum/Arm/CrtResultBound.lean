@@ -1,5 +1,4 @@
 module
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Bignum.CrtResult
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidateStage
 

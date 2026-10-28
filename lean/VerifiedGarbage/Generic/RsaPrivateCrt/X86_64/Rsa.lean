@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.Rsa.X86_64.PrivChecked

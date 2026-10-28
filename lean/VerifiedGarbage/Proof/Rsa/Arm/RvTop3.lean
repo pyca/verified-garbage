@@ -69,11 +69,11 @@ theorem in_x (h : CIn s) {u : State} (hsp : u.sp = s.sp - BitVec.ofNat 32 56) (h
     show (entryMem s).readW (off (State.addr (s.sp - BitVec.ofNat 32 56)) (56 + 4 * i)) 32 = _
     rw [h.argAddr hi]; exact h.argVal hi
   have nB : Spec.Rsa.bytesAt (entryMem s) (State.addr (stackArg s 0)) (stackArg s 1).toNat =
-      Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 0)) (stackArg s 1).toNat := h.bytes (R := cN s) h.Fn (Nat.le_of_lt ((BitVec.isLt _).trans_le (by decide)))
+      Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 0)) (stackArg s 1).toNat := h.bytes (R := cN s) h.Fn (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide)))
   have eB : Spec.Rsa.bytesAt (entryMem s) (State.addr (stackArg s 2)) (stackArg s 3).toNat =
-      Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 2)) (stackArg s 3).toNat := h.bytes (R := cE s) h.Fe (Nat.le_of_lt ((BitVec.isLt _).trans_le (by decide)))
+      Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 2)) (stackArg s 3).toNat := h.bytes (R := cE s) h.Fe (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide)))
   have dB' : Spec.Rsa.bytesAt (entryMem s) (State.addr (stackArg s 4)) (stackArg s 5).toNat =
-      Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 4)) (stackArg s 5).toNat := h.bytes (R := cD s) h.Fd (Nat.le_of_lt ((BitVec.isLt _).trans_le (by decide)))
+      Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 4)) (stackArg s 5).toNat := h.bytes (R := cD s) h.Fd (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide)))
   refine ⟨by simp only [State.withRegions_sp, hsp]; rfl, by show (s.sp - BitVec.ofNat 32 56).toNat + 88 ≤ 2 ^ 32; rw [spN]; omega, rfl,
     ⟨cN s, rdm _ (by simp), Region.contains_self _ _⟩, ⟨cE s, rdm _ (by simp), Region.contains_self _ _⟩,
     ⟨cD s, rdm _ (by simp), Region.contains_self _ _⟩, ⟨cA s, rdm _ (by simp), ?_⟩, hk.1, hk.2, h.el1, h.el2, h.dl1,

@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Rounds
 import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Data.Nat.GCD.Basic
 
 /-! # FFDH parameter generation on x86-64: run and account for a modulus policy -/
 

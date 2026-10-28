@@ -1,5 +1,4 @@
 module
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Rsa.X86.RvMontGeometry
 
 import VerifiedGarbage.Proof.Rsa.X86.RvMontSetup

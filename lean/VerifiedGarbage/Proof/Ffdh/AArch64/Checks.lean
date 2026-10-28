@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 public meta import VerifiedGarbage.Impl.Ffdh.AArch64.Domain
-public import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Domain
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 public import VerifiedGarbage.Proof.Framework.Contract

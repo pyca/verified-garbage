@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Contract
-import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.MillerRabin.AArch64.Round
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 

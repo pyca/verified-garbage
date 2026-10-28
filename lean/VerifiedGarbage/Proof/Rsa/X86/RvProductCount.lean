@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
-import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Rsa.X86.Recover
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Rsa.X86.KeyWs

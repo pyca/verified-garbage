@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Pow
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowHeadCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExp

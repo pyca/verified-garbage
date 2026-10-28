@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Code
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTCode
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Implies
 public import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Key
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract

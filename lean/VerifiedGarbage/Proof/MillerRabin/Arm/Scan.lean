@@ -114,7 +114,7 @@ theorem St.pscan (hT : ∀ k < 16, aT0 + k ∈ L) (hX : aX ∉ L) (hM : aM1 ∉ 
   rw [scan, WP.seq_iff]
   have t0 : aT0 ∈ L := hT 0 (by decide)
   refine WP.mono (h.copy_ok hw (by decide) (h.live_lt _ t0) (by decide)) fun s1 ⟨h1, hw1, _⟩ => ?_
-  refine WP.mono (scanFrom_ok (A := A σ) dl hT hX hM hv hE1 rfl (vl σ e) 15 1 rfl (le_refl _) s1 ?_ hw1)
+  refine WP.mono (scanFrom_ok (A := A σ) dl hT hX hM hv hE1 rfl (vl σ e) 15 1 rfl (Nat.le_refl _) s1 ?_ hw1)
     fun t ⟨ht, hwt⟩ => ⟨e, ht, hwt⟩
   rw [h.arrs aT0 t0] at h1
   have e1 : selv (A σ) (digitOf (V σ sV)) 1 = A σ aT0 := by

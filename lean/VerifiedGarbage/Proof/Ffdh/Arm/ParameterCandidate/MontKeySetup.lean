@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.MontArrays
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyReady
-import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.MontStride

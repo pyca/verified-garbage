@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
 import Mathlib.Order.Defs.PartialOrder
 import Mathlib.Tactic.Set
-import Mathlib.Data.Int.GCD
 import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
 

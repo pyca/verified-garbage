@@ -3,10 +3,8 @@ module
 public import VerifiedGarbage.TCB.Emit
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT5
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Framework.Registration
-public import Mathlib.Data.Fintype.Card
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecHash
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT5
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused

@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.PcEntryMemory
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.Arm.CrtCheckedState
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.Arm.CrtPrepareState
 import VerifiedGarbage.Proof.Bignum.Arm.CrtBegin
 import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT

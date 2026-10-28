@@ -1,5 +1,4 @@
 module
-import Mathlib.Data.Int.GCD
 import Mathlib.Tactic.Set
 import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Framework.Lit

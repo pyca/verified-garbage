@@ -1,5 +1,4 @@
 module
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValues
 import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.Contract

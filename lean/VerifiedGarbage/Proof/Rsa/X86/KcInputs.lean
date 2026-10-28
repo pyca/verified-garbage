@@ -1,5 +1,4 @@
 module
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Rsa.X86.KeyCheck
 public import VerifiedGarbage.Spec.Rsa
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs

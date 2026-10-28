@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.RsaOaep.X86_64.Stack
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecLoops
 import VerifiedGarbage.Proof.RsaOaep.X86_64.DecSpec
 import VerifiedGarbage.Proof.RsaOaep.X86_64.EncMain
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.RsaOaep.X86_64.EncEm

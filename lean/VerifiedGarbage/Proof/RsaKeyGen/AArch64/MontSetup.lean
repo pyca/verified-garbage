@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
 public import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Front

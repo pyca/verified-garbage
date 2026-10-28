@@ -16,7 +16,6 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.Store
 meta import VerifiedGarbage.Proof.Bignum.Octets
 import Mathlib.Order.Defs.PartialOrder
 meta import Mathlib.Order.Defs.PartialOrder
-import Mathlib.Data.Int.ModEq
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

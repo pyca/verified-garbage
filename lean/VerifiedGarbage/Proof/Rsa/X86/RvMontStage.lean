@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Mont.X86.Sse2.Shape
 
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Rsa.X86.RvMontFrame
 import VerifiedGarbage.Proof.Rsa.X86.RvMontArgs
 import VerifiedGarbage.Proof.Rsa.X86.RvMontClear

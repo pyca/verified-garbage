@@ -1,5 +1,4 @@
 module
-import Mathlib.Data.Int.ModEq
 import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKey
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel

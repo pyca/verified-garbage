@@ -15,7 +15,6 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import Mathlib.Order.Defs.PartialOrder
 meta import Mathlib.Order.Defs.PartialOrder
-import Mathlib.Data.Int.ModEq
 import Mathlib.Tactic.Set
 meta import Mathlib.Data.Int.ModEq
 meta import Mathlib.Tactic.Set

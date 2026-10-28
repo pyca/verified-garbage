@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyOps
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyFrame
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyReady
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
-import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
@@ -46,7 +45,7 @@ theorem montKeyArrays_ok {s : State} {base : BitVec 32} {capacity w : Nat}
       Rest opRegs s t := by
   have fits := ready.baseShiftFits workspace
   have nBound := numAt_lt s.mem (State.addr base) w 0
-  have rBound : numAt s.mem (State.addr base) w 1 < 2 ^ (64 * w) := lt_of_le_of_lt rSmall nBound
+  have rBound : numAt s.mem (State.addr base) w 1 < 2 ^ (64 * w) := Nat.lt_of_le_of_lt rSmall nBound
   simp only [VG.Impl.Ffdh.Arm.ParameterCandidate.montKeyArrays, VG.Impl.Ffdh.Arm.ParameterCandidate.seqs ]
   refine WP.seq (WP.mono (keyClrTop_ok workspace ready (j := 0) (by decide)) ?_)
   rintro s1 ⟨ready1, keep1, n1, rest1⟩

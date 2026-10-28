@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Rsa.KeyMath
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Bignum.Octets
 public import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Data.Int.ModEq
 
 /-!
 # `vg_rsa_crt_values` on AArch64: `main`

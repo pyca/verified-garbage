@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Rsa.Arm.RvBase
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Rsa.Arm.RvFin5

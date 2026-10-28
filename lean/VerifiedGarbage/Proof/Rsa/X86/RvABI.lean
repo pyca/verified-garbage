@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Contract
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Rsa.X86.RvInputs
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
 public import VerifiedGarbage.Spec.Weierstrass.Point

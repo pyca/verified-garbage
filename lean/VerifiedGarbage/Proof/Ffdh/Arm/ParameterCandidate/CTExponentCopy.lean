@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTKeyRegisters
 meta import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import Mathlib.Data.Int.ModEq
 
 /-! Copy the public modulus while retaining the bounded shift counter. -/
 

@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecMac
 
-import Mathlib.Data.Fintype.Card
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrCtx
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
 public import VerifiedGarbage.Spec.RsaKeyGen
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC

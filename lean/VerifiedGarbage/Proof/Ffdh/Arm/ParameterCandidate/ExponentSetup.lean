@@ -20,7 +20,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
 import Mathlib.Basic.IsEmpty.Defs
 import Mathlib.Data.Nat.Basic
-import Mathlib.Data.Int.ModEq
 
 /-! Complete native setup of the exponent and metadata consumed by the
 shared four-bit-window Miller–Rabin kernel. -/

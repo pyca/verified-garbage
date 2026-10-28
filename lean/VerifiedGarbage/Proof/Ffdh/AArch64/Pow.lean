@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Ffdh.AArch64.Domain
 
 import VerifiedGarbage.Proof.Ffdh.AArch64.Ws
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExp
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs

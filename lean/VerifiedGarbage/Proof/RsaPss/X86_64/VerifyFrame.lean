@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import Mathlib.Tactic.Set
-import Mathlib.Data.Int.GCD
 
 /-!
 # RSASSA-PSS verification on x86-64: the precondition by name, the frame
@@ -231,7 +230,7 @@ theorem verifyPro_ok {s : State} (hp : VPre G s) :
   · have hsl := hp.hsl
     have hk := hp.k1
     refine ⟨⟨stackArg s 3, 0, (stackArg s 4).toNat * 8, by rw [k13.2.2, hA]; simp [allocState, hp.hwr],
-      (BitVec.add_zero _).symm, by unfold oRsa; omega, hp.wS.trans' (by omega)⟩, G'.Sw⟩
+      (BitVec.add_zero _).symm, by unfold oRsa; omega, Nat.le_trans (by omega) hp.wS⟩, G'.Sw⟩
   · rw [show sScr = 8 * 21 from rfl]
     exact (R3.fr 21 (by decide)).trans (by simp [vproW, upd])
 

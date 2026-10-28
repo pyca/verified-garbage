@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Rsa.X86.RvFusedMasks
 import VerifiedGarbage.Proof.Rsa.X86.RvFusedMultiply
 import VerifiedGarbage.Proof.Rsa.X86.RvFusedScalar
 import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
+import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Rsa.X86.RvTimeFusedCheck -- shake: keep (public statements name the reducible fusedBefore/fusedAfter aliases)
 
 /-! A fused bit has one constant-time Montgomery square and public candidate arithmetic. -/

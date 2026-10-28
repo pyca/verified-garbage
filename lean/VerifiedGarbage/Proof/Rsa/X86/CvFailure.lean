@@ -39,7 +39,7 @@ theorem clear_input_ok {g : CallGeometry} {s : State} (h : Inputs g s) (i : Fin 
     arg.readSrc (by simpa only [CallGeometry.buffer, BitVec.ofNat_toNat, BitVec.setWidth_eq] using len.readSrc)
     (h.outputWrite i)) fun t ⟨v, z, o, k⟩ => ?_
   have f : Frame [g.buffer (2 * i.val)] s.mem t.mem := by
-    simpa only [CallGeometry.buffer, byteAddr, off, Nat.cast_zero, BitVec.add_zero] using outside_frame o (by omega)
+    simpa only [CallGeometry.buffer, byteAddr, off, BitVec.add_zero] using outside_frame o (by omega)
   refine ⟨h.after k (by decide) (by decide) ?_, v, z, f, k⟩
   apply f.mono
   intro r hr

@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.Encoding
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRead
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Data.Nat.GCD.Basic
 import Mathlib.Algebra.Order.Ring.Abs
 
 /-! # The batched inverse at a run-time width

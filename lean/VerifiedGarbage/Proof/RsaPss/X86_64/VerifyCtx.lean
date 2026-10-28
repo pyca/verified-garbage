@@ -9,7 +9,6 @@ import Mathlib.Tactic.Push
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 import Mathlib.Tactic.ToDual
-public import Mathlib.Data.Int.GCD
 
 /-!
 # RSASSA-PSS verification on x86-64: the contract on the registers

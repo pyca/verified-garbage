@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecHash
-import Mathlib.Data.Fintype.Card
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

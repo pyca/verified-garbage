@@ -44,7 +44,7 @@ theorem initial_ctx {s : State} (h : roundPre s) :
   have h28 : slot w 28 ≤ Z := by
     change slot w 28 ≤ 8 * (s.gpr .x1).toNat at hspace
     simpa only [Z, Nat.mul_comm] using hspace
-  have h16 : slot w 16 ≤ Z := (VG.Proof.Bignum.slot_mono w (by decide : 16 ≤ 28)).trans h28
+  have h16 : slot w 16 ≤ Z := Nat.le_trans (VG.Proof.Bignum.slot_mono w (by decide : 16 ≤ 28)) h28
   have hEZ : slot w aE + 8 * (w + 2) ≤ Z := by
     change slot w 27 + 8 * (w + 2) ≤ Z
     rw [← VG.Proof.Bignum.slot_succ w 27]

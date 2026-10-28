@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
-import Mathlib.Data.Int.ModEq
 
 /-!
 # Divsteps in batches

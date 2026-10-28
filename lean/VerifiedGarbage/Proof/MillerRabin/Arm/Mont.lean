@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Base
-import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 import VerifiedGarbage.Proof.MillerRabin.Arm.Ops

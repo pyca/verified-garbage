@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Spec.Rsa.Mont
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.MontKeySetup
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.KeyReady
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.MontOne
 import VerifiedGarbage.Proof.Ffdh.Arm.Block

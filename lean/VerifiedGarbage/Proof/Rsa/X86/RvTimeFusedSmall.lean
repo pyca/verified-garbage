@@ -12,7 +12,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvFusedSmall
 meta import VerifiedGarbage.Proof.Rsa.X86.RvFusedSmall
 import VerifiedGarbage.Proof.Rsa.X86.RvSlots
 meta import VerifiedGarbage.Proof.Rsa.X86.RvSlots
-import Mathlib.Data.Int.ModEq
 
 /-! Multiplication's loop count and dispatch depend only on the candidate index. -/
 @[expose] public section

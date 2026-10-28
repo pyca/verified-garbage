@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.Divstep.InvCorrectDef
 
 public import VerifiedGarbage.Proof.Divstep.Alg32
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Rsa.Divstep.InvBounds
 import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Tactic.Ring
