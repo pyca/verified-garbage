@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.ModeCore
+public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.CallCore
 import VerifiedGarbage.Proof.Camellia.AArch64.Link
 import VerifiedGarbage.Proof.Modes.AArch64.Fb
 import VerifiedGarbage.Proof.Modes.AArch64.CfbDec.Whole
@@ -39,7 +39,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 
 `ofb_wp`, `cfbEncrypt_wp`, `cfbDecrypt_wp`: the modes' OFB and CFB
 (`Proof.Modes.AArch64.fb_wp`) over the serial encryption core for dependent
-feedback and short decryption. Longer CFB decryption uses the independent
+feedback and short decryption, which they call (`Serial/CallCore.lean`). Longer CFB decryption uses the independent
 batch proof (`Proof.Modes.AArch64.CfbDec.batched_wp`) over the eight-block
 encryption core. Both give the specification's results (`Proof.Modes.ofb_of`, …). `ofb_verified`, …: each
 is correct and constant time, by the taint analysis with public values in
@@ -109,7 +109,7 @@ theorem fbCipher_eq (m : Mem) (p : Addr) (R : Nat) :
     fbCoreSpec.cipher (R, schedWords m p R) = Spec.Camellia.cipher (Spec.Camellia.subkeysAt m p R) :=
   rfl
 
-/-- The serial core naturally preserves the feedback modes' IV pointer. -/
+/-- The serial core's functions do not write the feedback modes' IV pointer. -/
 theorem keeps_x19 : Modes.AArch64.KeepsReg .x19 fbCore.prepare ∧ Modes.AArch64.KeepsReg .x19 fbCore.crypt :=
   Serial.keeps_x19
 
