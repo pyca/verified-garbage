@@ -21,21 +21,22 @@ public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 namespace VG.Proof.Dsa.X86_64.ProbablePrime
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
-/-- What the contract makes public: the arguments, the stack pointer, the
-candidate and the tape. -/
+/-- What the contract makes public: the arguments, the size among them, the
+stack pointer, the candidate and the tape. -/
 structure View where
   rdi : Addr
   rsi : Addr
   rdx : Addr
   rcx : Addr
   r8 : Addr
+  r9 : Addr
   rsp : Addr
   N : Nat
   rand : List Byte
 
-def view (bits : Nat) (s : State) : View :=
-  ⟨s.gpr .rdi, s.gpr .rsi, s.gpr .rdx, s.gpr .rcx, s.gpr .r8, s.gpr .rsp, candidateOf bits s,
-    Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat⟩
+def view (s : State) : View :=
+  ⟨s.gpr .rdi, s.gpr .rsi, s.gpr .rdx, s.gpr .rcx, s.gpr .r8, s.gpr .r9, s.gpr .rsp,
+    candidateOf (s.gpr .r9).toNat s, Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat⟩
 
 theorem map_toNat_inj : ∀ {l₁ l₂ : List Byte}, l₁.map (·.toNat) = l₂.map (·.toNat) → l₁ = l₂
   | [], [], _ => rfl
@@ -45,14 +46,15 @@ theorem map_toNat_inj : ∀ {l₁ l₂ : List Byte}, l₁.map (·.toNat) = l₂.
   | [], _ :: _, h => by simp at h
   | _ :: _, [], h => by simp at h
 
-theorem view_of_pub {bits : Nat} {s₁ s₂ : State} (h : (contract bits).pub s₁ s₂) :
-    view bits s₁ = view bits s₂ := by
-  sig_pub [contract, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi, argRegs] at h
-  obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8⟩ := h
+theorem view_of_pub {s₁ s₂ : State} (h : contract.pub s₁ s₂) : view s₁ = view s₂ := by
+  sig_pub [contract, Spec.Dsa.ProbablePrime.sizedContract, Spec.Dsa.ProbablePrime.sizedSig, abi,
+    argRegs] at h
+  obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9⟩ := h
+  obtain ⟨-, hl⟩ := List.cons.inj hl
   obtain ⟨hN, hr⟩ := List.cons.inj hl
   have hr' := map_toNat_inj hr
   unfold view candidateOf
-  rw [hN, hr', hsp, hdi, hsi, hdx, hcx, h8]
+  rw [hN, hr', hsp, hdi, hsi, hdx, hcx, h8, h9]
 
 /-- Big-endian octet strings of one length are equal if their values are. -/
 theorem os2ip_inj : ∀ {l₁ l₂ : List Byte}, l₁.length = l₂.length →
@@ -142,10 +144,14 @@ def bytesPublic {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bit
   length := bytesAt_length _ _ _
   value := rfl
 
+theorem PrimeABI.toNat_r9 {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bits s) :
+    (s.gpr .r9).toNat = bits := by
+  rw [A.width, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := hb.le; omega)]
+
 theorem bytesPublic_eq {bits : Nat} (hb : Supported bits) {s₁ s₂ : State} (A₁ : PrimeABI bits s₁)
-    (A₂ : PrimeABI bits s₂) (hv : view bits s₁ = view bits s₂) : bytesPublic hb A₁ = bytesPublic hb A₂ := by
-  simp only [view, View.mk.injEq] at hv
-  obtain ⟨hdi, hsi, hdx, hcx, h8, hsp, hN, hr⟩ := hv
+    (A₂ : PrimeABI bits s₂) (hv : view s₁ = view s₂) : bytesPublic hb A₁ = bytesPublic hb A₂ := by
+  simp only [view, View.mk.injEq, A₁.toNat_r9 hb, A₂.toNat_r9 hb] at hv
+  obtain ⟨hdi, hsi, hdx, hcx, h8, -, hsp, hN, hr⟩ := hv
   have hP : params hb A₁ = params hb A₂ :=
     params_ext (by simp only [params, hdi]) (by simp only [params, hdi]) hdx (by simp only [params, frameSp, hsp])
       rfl rfl hN rfl rfl rfl hr
@@ -165,14 +171,14 @@ theorem before_of_ready {bits : Nat} (hb : Supported bits) {s : State} (A : Prim
 
 /-! ## The stages, each with the public view of the arguments -/
 
-def Entered (bits : Nat) (v : View) (u : State) : Prop :=
-  ∃ s, ∃ _ : PrimeABI bits s, view bits s = v ∧ u = allocState 56 s
+def Entered (v : View) (u : State) : Prop :=
+  ∃ s, ∃ _ : Supported v.r9.toNat, ∃ _ : PrimeABI v.r9.toNat s, view s = v ∧ u = allocState 56 s
 
-def ReadyAt {bits : Nat} (hb : Supported bits) (v : View) (u : State) : Prop :=
-  ∃ s, ∃ A : PrimeABI bits s, view bits s = v ∧ Ready hb A u
+def ReadyAt (v : View) (u : State) : Prop :=
+  ∃ s, ∃ hb : Supported v.r9.toNat, ∃ A : PrimeABI v.r9.toNat s, view s = v ∧ Ready hb A u
 
-def TestedAt {bits : Nat} (hb : Supported bits) (v : View) (u : State) : Prop :=
-  ∃ s, ∃ A : PrimeABI bits s, view bits s = v ∧ Tested hb A u
+def TestedAt (v : View) (u : State) : Prop :=
+  ∃ s, ∃ hb : Supported v.r9.toNat, ∃ A : PrimeABI v.r9.toNat s, view s = v ∧ Tested hb A u
 
 /-- The workspace, the stack pointer and `used` in their registers. -/
 def Loaded (v : View) (u : State) : Prop :=
@@ -185,36 +191,28 @@ theorem post_of_exec {c : Prog isa} {s t : State} {trace : List Leak} {Q : State
   rw [heq]
   exact hq
 
-theorem setup_ct {bits : Nat} (hb : Supported bits) :
-    RelCT isa (Two (Entered bits)) (setup bits) (Two (ReadyAt hb)) := by
-  have pins : Pins (Entered bits) [.rdi, .rsp] := by
-    rintro v u₁ u₂ ⟨s₁, -, h₁, rfl⟩ ⟨s₂, -, h₂, rfl⟩ r hr
+theorem setup_ct : RelCT isa (Two Entered) setup (Two ReadyAt) := by
+  have pins : Pins Entered [.rdi, .rsp, .r9] := by
+    rintro v u₁ u₂ ⟨s₁, -, -, h₁, rfl⟩ ⟨s₂, -, -, h₂, rfl⟩ r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     have h := h₁.trans h₂.symm
     simp only [view, View.mk.injEq] at h
-    rcases hr with rfl | rfl
+    rcases hr with rfl | rfl | rfl
     · simp [allocState, State.setReg, h.1]
+    · simp [allocState, State.setReg, h.2.2.2.2.2.2.1]
     · simp [allocState, State.setReg, h.2.2.2.2.2.1]
-  refine two_post ?_ fun v u ⟨s, A, hv, hu⟩ => hu ▸ WP.mono (prep_ok hb A) fun t R => ⟨s, A, hv, R⟩
-  rcases hb with rfl | rfl | rfl | rfl | rfl <;> exact two_taint [.rdi, .rsp] pins (by taint_decide)
+  refine two_post (two_taint [.rdi, .rsp, .r9] pins (by taint_decide))
+    fun v u ⟨s, hb, A, hv, hu⟩ => hu ▸ WP.mono (prep_ok hb A) fun t R => ⟨s, hb, A, hv, R⟩
 
-theorem test_ct (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) :
-    RelCT isa (Two (ReadyAt hb)) (Impl.Dsa.X86_64.Generation.primeBytes M.mm K.run (len bits) (draw bits))
-      (Two (TestedAt hb)) := by
-  have hct : RelCT isa (Two (PrimeBytesBefore (len bits) (draw bits)))
-      (Impl.Dsa.X86_64.Generation.primeBytes M.mm K.run (len bits) (draw bits)) fun _ _ => True := by
-    rcases hb with rfl | rfl | rfl | rfl | rfl
-    · exact VG.Proof.Dsa.X86_64.Generation.primeBytes_ct M K (len 160) (draw 160) (by taint_decide) (by taint_decide)
-    · exact VG.Proof.Dsa.X86_64.Generation.primeBytes_ct M K (len 256) (draw 256) (by taint_decide) (by taint_decide)
-    · exact VG.Proof.Dsa.X86_64.Generation.primeBytes_ct M K (len 1024) (draw 1024) (by taint_decide) (by taint_decide)
-    · exact VG.Proof.Dsa.X86_64.Generation.primeBytes_ct M K (len 2048) (draw 2048) (by taint_decide) (by taint_decide)
-    · exact VG.Proof.Dsa.X86_64.Generation.primeBytes_ct M K (len 3072) (draw 3072) (by taint_decide) (by taint_decide)
-  intro u₁ u₂ t₁ t₂ u₁' u₂' ⟨v, ⟨s₁, A₁, hv₁, R₁⟩, ⟨s₂, A₂, hv₂, R₂⟩⟩ e₁ e₂
-  have hp₂ : PrimeBytesBefore (len bits) (draw bits) (bytesPublic hb A₁) u₂ := by
+theorem test_ct (M : Mont) (K : Kernel) :
+    RelCT isa (Two ReadyAt) (Impl.Dsa.X86_64.Generation.primeBytes M.mm K.run) (Two TestedAt) := by
+  rintro u₁ u₂ t₁ t₂ u₁' u₂' ⟨v, ⟨s₁, hb, A₁, hv₁, R₁⟩, ⟨s₂, _, A₂, hv₂, R₂⟩⟩ e₁ e₂
+  have hct := VG.Proof.Dsa.X86_64.Generation.primeBytes_ct M K (len v.r9.toNat) (draw v.r9.toNat)
+  have hp₂ : PrimeBytesBefore (len v.r9.toNat) (draw v.r9.toNat) (bytesPublic hb A₁) u₂ := by
     rw [bytesPublic_eq hb A₁ A₂ (hv₁.trans hv₂.symm)]; exact before_of_ready hb A₂ R₂
   exact ⟨(hct _ _ _ _ _ _ ⟨_, before_of_ready hb A₁ R₁, hp₂⟩ e₁ e₂).1, v,
-    ⟨s₁, A₁, hv₁, post_of_exec (test_ok M K hb A₁ R₁) e₁⟩,
-    ⟨s₂, A₂, hv₂, post_of_exec (test_ok M K hb A₂ R₂) e₂⟩⟩
+    ⟨s₁, hb, A₁, hv₁, post_of_exec (test_ok M K hb A₁ R₁) e₁⟩,
+    ⟨s₂, hb, A₂, hv₂, post_of_exec (test_ok M K hb A₂ R₂) e₂⟩⟩
 
 /-- The exit's loads of the workspace's word and of `used`. -/
 abbrev exitLoad : List Instr :=
@@ -229,9 +227,9 @@ theorem tested_regs {bits : Nat} {hb : Supported bits} {s u : State} {A : PrimeA
   obtain ⟨⟨_, _, inp, _⟩, _⟩ := T
   exact ⟨inp.good.rdi, inp.stack⟩
 
-theorem load_ok {bits : Nat} {hb : Supported bits} {v : View} {u : State} (h : TestedAt hb v u) :
+theorem load_ok {v : View} {u : State} (h : TestedAt v u) :
     WP isa (.block exitLoad) u (Loaded v) := by
-  obtain ⟨s, A, rfl, T⟩ := h
+  obtain ⟨s, hb, A, rfl, T⟩ := h
   obtain ⟨hdi, hsp⟩ := tested_regs T
   obtain ⟨⟨_, _, inp, _⟩, _, hu, _, _, hwr⟩ := T
   have h200 := inp.good.scr.ld (d := 200) (by change _ ≤ arithmeticBytes; decide)
@@ -244,10 +242,10 @@ theorem load_ok {bits : Nat} {hb : Supported bits} {v : View} {u : State} (h : T
     exact hu) rfl) fun t ⟨h8, hk⟩ => ?_
   exact ⟨(hk.gpr (by decide)).trans hdi, (hk.gpr (by decide)).trans hsp, h8⟩
 
-theorem finish_ct {bits : Nat} (hb : Supported bits) :
-    RelCT isa (Two (TestedAt hb)) (.seq (.block exit) (.block restoreRegisters)) fun _ _ => True := by
-  have pins : Pins (TestedAt hb) [.rdi, .rsp] := by
-    rintro v u₁ u₂ ⟨s₁, A₁, h₁, T₁⟩ ⟨s₂, A₂, h₂, T₂⟩ r hr
+theorem finish_ct :
+    RelCT isa (Two TestedAt) (.seq (.block exit) (.block restoreRegisters)) fun _ _ => True := by
+  have pins : Pins TestedAt [.rdi, .rsp] := by
+    rintro v u₁ u₂ ⟨s₁, _, A₁, h₁, T₁⟩ ⟨s₂, _, A₂, h₂, T₂⟩ r hr
     have h := h₁.trans h₂.symm
     simp only [view, View.mk.injEq] at h
     obtain ⟨d₁, p₁⟩ := tested_regs T₁
@@ -255,7 +253,7 @@ theorem finish_ct {bits : Nat} (hb : Supported bits) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · rw [d₁, d₂, h.1]
-    · rw [p₁, p₂, frameSp, frameSp, h.2.2.2.2.2.1]
+    · rw [p₁, p₂, frameSp, frameSp, h.2.2.2.2.2.2.1]
   refine RelCT.seq (R := fun (a b : State) => ∀ r ∈ [Reg.rsp], a.gpr r = b.gpr r) ?_ ?_
   · change RelCT isa _ (.block (exitLoad ++ exitStatus)) _
     refine RelCT.block_append (RelCT.seq
@@ -271,11 +269,17 @@ theorem finish_ct {bits : Nat} (hb : Supported bits) :
   · exact RelCT.mono (RelCT.taintRegs (τ := Taint.ofRegs [.rsp]) (fun x y h => Taint.agree_ofRegs h) []
       (by taint_decide)) (fun _ _ h => h) fun _ _ _ => trivial
 
-theorem code_ct (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) :
-    ConstantTime isa (contract bits).pre (contract bits).pub (code bits M.mm K.run) := by
+theorem code_ct (M : Mont) (K : Kernel) :
+    ConstantTime isa contract.pre contract.pub (code M.mm K.run) := by
   refine RelCT.constantTime (Q := fun _ _ => True) (RelCT.alloc (R := fun _ _ => True) ?_)
-  refine RelCT.mono (RelCT.seq (setup_ct hb) (RelCT.seq (test_ct M K hb) (finish_ct hb))) ?_ fun _ _ h => h
+  refine RelCT.mono (RelCT.seq setup_ct (RelCT.seq (test_ct M K) finish_ct)) ?_ fun _ _ h => h
   rintro a b ⟨s₁, s₂, ⟨h₁, h₂, hp⟩, rfl, rfl⟩
-  exact ⟨view bits s₁, ⟨s₁, primeABI_of h₁, rfl, rfl⟩, ⟨s₂, primeABI_of h₂, (view_of_pub hp).symm, rfl⟩⟩
+  have hv := view_of_pub hp
+  have h9 : s₂.gpr .r9 = s₁.gpr .r9 := by
+    simp only [view, View.mk.injEq] at hv; exact hv.2.2.2.2.2.1.symm
+  obtain ⟨hb₁, A₁⟩ := primeABI_of h₁
+  obtain ⟨-, A₂⟩ := primeABI_of h₂
+  rw [h9] at A₂
+  exact ⟨view s₁, ⟨s₁, hb₁, A₁, rfl, rfl⟩, ⟨s₂, hb₁, A₂, hv.symm, rfl⟩⟩
 
 end VG.Proof.Dsa.X86_64.ProbablePrime

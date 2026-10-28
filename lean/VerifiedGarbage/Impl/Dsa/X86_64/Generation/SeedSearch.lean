@@ -30,14 +30,14 @@ def finishDomain (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (pLen 
   .seq (pack pLen qLen) (validate (checkName := checkName) sq mul pLen qLen)
 
 def seedAttempt (G1 G256 : Stream) (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa)
-    (prime : Nat → Prog isa) (pLen qLen : Nat) : Prog isa :=
+    (prime : Prog isa) (pLen qLen : Nat) : Prog isa :=
   .seq (.seq (.block (seedArguments qLen)) (subgroup G1 G256 prime qLen))
     (onSuccess (.seq (primeSearch G1 G256 prime pLen qLen)
       (onSuccess (.seq (generatorSearch sq mul pLen)
         (onSuccess (finishDomain (checkName := checkName) sq mul pLen qLen))))))
 
 def parameterSearch (G1 G256 : Stream) (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa)
-    (prime : Nat → Prog isa) (pLen qLen : Nat) : Prog isa :=
+    (prime : Prog isa) (pLen qLen : Nat) : Prog isa :=
   tapeLoop seedTape qLen (seedAttempt (checkName := checkName) G1 G256 sq mul prime pLen qLen)
 
 end VG.Impl.Dsa.X86_64.Generation

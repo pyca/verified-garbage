@@ -26,7 +26,7 @@ theorem drawRound_ok (M : Mont) (K : Kernel) {P : PrimeParams} {mi : BitVec 64} 
     (hI : word s.mem P.B (8 * kI) = BitVec.ofNat 64 i)
     (hUni : word s.mem P.B (8 * kUni) = BitVec.ofNat 64 uni)
     (hi : i < 2 ^ 62) (huni : uni < 2 ^ 62) :
-    WP isa (Impl.Dsa.X86_64.Generation.drawRound M.mm K.run P.len P.drawBytes) s fun t =>
+    WP isa (Impl.Dsa.X86_64.Generation.drawRound M.mm K.run) s fun t =>
       let wt := Spec.RsaKeyGen.witness (P.N - 1) (Spec.Rsa.os2ip ((P.rand.drop used).take P.drawBytes))
       let f := Spec.MillerRabin.round P.N wt.1
       PrimeState P mi (used + P.drawBytes) t ∧

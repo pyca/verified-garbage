@@ -36,7 +36,7 @@ theorem lengthTest256_ok {s : State} :
     fun _ ⟨⟨hz, hm⟩, hk⟩ => ⟨hz, hm, hk⟩
 
 theorem dispatch_ok (G1 G256 : Impl.Pbkdf2.Md.X86_64.Stream) (sq : Prog isa)
-    (mul : Nat → Nat → Nat → Prog isa) (prime : Nat → Prog isa)
+    (mul : Nat → Nat → Nat → Prog isa) (prime : Prog isa)
     {p : GenerationContext} {W : Nat → BitVec 64} {s : State} {Q : State → Prop}
     (h : GenerationMemory p W s)
     (run : ∀ t, GenerationMemory p W t → t.mem = s.mem → Keep [.rax] s t →

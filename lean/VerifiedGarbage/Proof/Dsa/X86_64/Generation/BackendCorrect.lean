@@ -29,16 +29,16 @@ theorem backend_safe (v1 v256 : MdHash) (v : RoundImpl) :
     generationSafe (Impl.Dsa.X86_64.Generation.code (checkName := checkName) v1.H.stream v256.H.stream
       VG.Proof.Variants.MillerRabin.X86_64.Base.variant.inlineMont.toS.mm VG.Proof.Variants.MillerRabin.X86_64.Base.variant.inlineMont.mm (VG.Proof.Dsa.X86_64.ProbablePrime.primeTest v).run) :=
   entry_safe (checkName := checkName) (hashCode_safe v1) (hashCode_safe v256) _ _ _
-    (VG.Proof.Variants.MillerRabin.X86_64.Base.variant.inlineSafe _ _ _) VG.Proof.Variants.MillerRabin.X86_64.Base.variant.inlineSafe fun bits => (ProbablePrime.testCode_safe v bits).call _
+    (VG.Proof.Variants.MillerRabin.X86_64.Base.variant.inlineSafe _ _ _) VG.Proof.Variants.MillerRabin.X86_64.Base.variant.inlineSafe ((ProbablePrime.testCode_safe v).call _)
 
 theorem backend_depth (v1 v256 : MdHash) (v : RoundImpl) :
     (Impl.Dsa.X86_64.Generation.code (checkName := checkName) v1.H.stream v256.H.stream
       VG.Proof.Variants.MillerRabin.X86_64.Base.variant.inlineMont.toS.mm VG.Proof.Variants.MillerRabin.X86_64.Base.variant.inlineMont.mm (VG.Proof.Dsa.X86_64.ProbablePrime.primeTest v).run).x86_64Depth ≤ 536 :=
   entry_depth (checkName := checkName) (hashCode_depth v1) (hashCode_depth v256) _ _ _
-    (inlineMul_depth VG.Proof.Variants.MillerRabin.X86_64.Base.variant _ _ _) (inlineMul_depth VG.Proof.Variants.MillerRabin.X86_64.Base.variant) (fun bits => by
-      have := (ProbablePrime.primeTest v).depth bits
+    (inlineMul_depth VG.Proof.Variants.MillerRabin.X86_64.Base.variant _ _ _) (inlineMul_depth VG.Proof.Variants.MillerRabin.X86_64.Base.variant) (by
+      have := (ProbablePrime.primeTest v).depth
       have : ProbablePrime.stack = 184 := rfl
-      change ((ProbablePrime.primeTest v).code bits).x86_64Depth + 8 ≤ 192
+      change (ProbablePrime.primeTest v).code.x86_64Depth + 8 ≤ 192
       omega) (by
       have h := checkParameters_depth_bound VG.Proof.Variants.MillerRabin.X86_64.Base.variant.inlineMont.toS.mm VG.Proof.Variants.MillerRabin.X86_64.Base.variant.inlineMont.mm
         (n := 0) (by rw [VG.Proof.Bignum.X86_64.Mont.toS, VG.Proof.Variants.MillerRabin.X86_64.Base.variant.inlineDepth])

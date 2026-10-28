@@ -1,15 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.ProbablePrime
+public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.ABI
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Arguments
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 
 /-! # The probable-prime test's arguments in the arithmetic workspace's header
 
-The block writes the test's header arguments from registers: as
-`argumentWrites` of `argList`, whose frame words are the registers `rsi`,
-`r9` and `rcx`. -/
+The block writes the test's header arguments from registers, and those of
+the size from the size in `r8`: as `argumentWrites` of `argList`, whose
+frame words are the registers `rsi`, `r9` and `rcx`. -/
 
 @[expose] public section
 namespace VG.Proof.Dsa.X86_64.ProbablePrime
@@ -50,27 +51,33 @@ theorem ofNat32_setWidth {n : Nat} (h : n < 2 ^ 32) :
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   omega
 
-theorem args_ok {bits : Nat} (hb : bits ≤ 3072) {s : State} {B : Addr} (hB : Scr s B 256)
-    (hdi : s.gpr .rdi = B) :
-    WP isa (.block (args bits)) s fun t =>
-      t.mem = argumentWrites B (argWords s) s.mem (argList bits) ∧ Keep [.rax] s t := by
-  have hd := ofNat32_setWidth (n := draw bits) (by unfold draw; split <;> omega)
-  have hl := ofNat32_setWidth (n := len bits) (by unfold len; omega)
-  have hk := ofNat32_setWidth (n := checks bits) (by unfold checks; split <;> omega)
-  have hc : BitVec.signExtend 64 (BitVec.ofNat 32 (candidate bits)) = BitVec.ofNat 64 (candidate bits) := by
-    unfold candidate; split <;> decide
+/-- The arithmetic's words, from the size in `r8`, which `cmp` keeps. -/
+theorem sizeWords_ok {bits : Nat} (hb : Supported bits) {s : State} (h8 : s.gpr .r8 = BitVec.ofNat 64 bits) :
+    WP isa (.block sizeWords) s fun t => t.gpr .r12 = BitVec.ofNat 64 (words bits) ∧
+      t.gpr .r8 = s.gpr .r8 ∧ t.mem = s.mem ∧ Keep [.rax, .r12, .r8] s t := by
+  refine WP.mono (WP.keep [.rax, .r12, .r8] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 (words bits) ∧
+    t.gpr .r8 = s.gpr .r8 ∧ t.mem = s.mem) ?_ (by decide)) fun t ⟨h, hk⟩ => ⟨h.1, h.2.1, h.2.2, hk⟩
+  rcases hb with rfl | rfl | rfl | rfl | rfl <;>
+    xrun [Impl.Dsa.X86_64.ProbablePrime.sizeWords, h8, execCmov, eval]
+
+theorem args_ok {bits : Nat} (hb : Supported bits) {s : State} {B : Addr} (hB : Scr s B 256)
+    (hdi : s.gpr .rdi = B) (h8 : s.gpr .r8 = BitVec.ofNat 64 bits) :
+    WP isa (.block args) s fun t =>
+      t.mem = argumentWrites B (argWords s) s.mem (argList bits) ∧ Keep [.rax, .rdx, .r10, .r8] s t := by
   have hw : BitVec.signExtend 64 (BitVec.ofNat 32 Impl.Dsa.Generation.Layout.witness) =
       BitVec.ofNat 64 Impl.Dsa.Generation.Layout.witness := by decide
-  refine WP.mono (WP.keep [.rax] (Q := fun t =>
-      t.mem = argumentWrites B (argWords s) s.mem (argList bits)) (by
-    xrun [Impl.Dsa.X86_64.ProbablePrime.args, State.ea, Impl.Bignum.X86_64.hdr, hdi, kOut, kLen, kUsedP, kChecks, kE,
-      kRand, kRandLen, kUsed, VG.Impl.Bignum.sFn, hdrOff, Nat.reduceMul, Nat.reduceAdd, hd, hl, hk, hc, hw,
+  refine WP.mono (WP.keep [.rax, .rdx, .r10, .r8] (Q := fun t =>
+      t.mem = argumentWrites B (argWords s) s.mem (argList bits)) ?_ (by decide)) fun t ⟨hm, hk⟩ => ⟨hm, hk⟩
+  rcases hb with rfl | rfl | rfl | rfl | rfl <;>
+  · xrun [Impl.Dsa.X86_64.ProbablePrime.args, State.ea, Impl.Bignum.X86_64.hdr, hdi, h8, kOut, kLen,
+      kUsedP, kChecks, kE, kRand, kRandLen, kUsed, VG.Impl.Bignum.sFn, hdrOff, Nat.reduceMul,
+      Nat.reduceAdd, hw, execCmov, eval,
       hB.st (d := 128) (by decide), hB.st (d := 136) (by decide), hB.st (d := 144) (by decide),
       hB.st (d := 152) (by decide), hB.st (d := 160) (by decide), hB.st (d := 184) (by decide),
       hB.st (d := 192) (by decide), hB.st (d := 200) (by decide)]
     simp only [argumentWrites, argList, argumentValue, argWords, kOut, kLen, kUsedP, kChecks, kE,
       kRand, kRandLen, kUsed, VG.Impl.Bignum.sFn, Nat.reduceMul, Nat.reduceAdd,
       BitVec.add_zero, ite_true, ite_false, Nat.one_ne_zero, Nat.reduceEqDiff]
-    rfl) rfl) fun t ⟨hm, hk⟩ => ⟨hm, hk⟩
+    rfl
 
 end VG.Proof.Dsa.X86_64.ProbablePrime

@@ -32,9 +32,8 @@ def SamplePublic.round (p : SamplePublic) : RoundPublic :=
 
 theorem sampleRound_ready {len : Nat} {p : SamplePublic} {s : State}
     (h : SampleRoundBefore len p s) :
-    WP isa (Impl.Dsa.X86_64.Generation.sampleWitness len) s (BeforeRound p.round) := by
-  obtain ⟨⟨⟨mi, hs⟩, hl⟩, hsp⟩ := h
-  rw [← hl]
+    WP isa (Impl.Dsa.X86_64.Generation.sampleWitness) s (BeforeRound p.round) := by
+  obtain ⟨⟨⟨mi, hs⟩, -⟩, hsp⟩ := h
   refine WP.mono (sampleWitness_ok hs p.prime.dims p.prime.odd
     (by rw [p.length]; exact p.prime.len2)
     (by rw [p.length]; have := p.prime.lenDraw; have := p.prime.drawMax; omega)
@@ -57,14 +56,11 @@ theorem roundTail_ready (M : Mont) (K : Kernel) {p : RoundPublic} {s : State}
   exact WP.mono (round_ok M K h hd hz hr ho hn ha) fun _ ht =>
     ⟨⟨mi, ht.1.good⟩, hd.z, ht.2.1⟩
 
-theorem sampleRound_ct (M : Mont) (K : Kernel) (len : Nat)
-    {hc : VG.Taint.Hint VG.X86_64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.rdi])
-      (.block (Impl.Dsa.X86_64.Generation.forceWitness len)) hc).isSome = true) :
+theorem sampleRound_ct (M : Mont) (K : Kernel) (len : Nat) :
     RelCT isa (Two (SampleRoundBefore len))
-      (Impl.Dsa.X86_64.Generation.sampleRound M.mm K.run len) (fun _ _ => True) := by
+      (Impl.Dsa.X86_64.Generation.sampleRound M.mm K.run) (fun _ _ => True) := by
   unfold Impl.Dsa.X86_64.Generation.sampleRound
-  refine RelCT.seq (two_post (two_map id (fun _ _ h => h.1) (sampleWitness_ct len ht))
+  refine RelCT.seq (two_post (two_map id (fun _ _ h => h.1) (sampleWitness_ct len))
     (fun _ _ h => sampleRound_ready h)) ?_
   refine RelCT.seq (two_post
     (two_map SamplePublic.round (fun _ _ h => h) (witnessRound_ct M K))

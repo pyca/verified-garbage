@@ -26,21 +26,18 @@ open VG.Impl.RsaKeyGen.X86_64.Candidate
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 
 theorem forceSampleArgs_state {p : SamplePublic} {s : State} (h : SampleBefore p s) :
-    WP isa (.block [.mov .rbx (.reg .rdi), .mov .rdi (.mem (hdr kOut))]) s
-      (fun t => t.gpr .rdi = p.prime.p) := by
+    WP isa (.block [.mov .rbx (.reg .rdi), .mov .rcx (.mem (hdr kUsedP)), .mov .rdi (.mem (hdr kOut))]) s
+      (fun t => t.gpr .rdi = p.prime.p ∧ t.gpr .rcx = BitVec.ofNat 64 p.bytes.length) := by
   obtain ⟨mi, h⟩ := h
-  have hl : InRegions (s.rd ++ s.wr) (off p.prime.B (8 * kOut)) 8 :=
+  have hl : ∀ k < 32, InRegions (s.rd ++ s.wr) (off p.prime.B (8 * k)) 8 := fun k hk =>
     h.ready.good.scr.ld (by
-      have := hdr_lt_slot p.prime.w 8 (show kOut < 32 by decide)
+      have := hdr_lt_slot p.prime.w 8 hk
       have := p.prime.dims.z
       omega)
-  xrun [State.ea, hdr, hdrOff, h.ready.good.rdi, hl, h.ptr]
+  xrun [State.ea, hdr, hdrOff, h.ready.good.rdi, hl kOut (by decide), hl kUsedP (by decide), h.ptr, h.len]
 
-theorem forceStoredWitness_ct (len : Nat)
-    {hc : VG.Taint.Hint VG.X86_64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.rdi])
-      (.block (Impl.Dsa.X86_64.Generation.forceWitness len)) hc).isSome = true) : RelCT isa (Two SampleBefore)
-    (Impl.Dsa.X86_64.Generation.forceStoredWitness kOut len) (fun _ _ => True) := by
+theorem forceStoredWitness_ct : RelCT isa (Two SampleBefore)
+    (Impl.Dsa.X86_64.Generation.forceStoredWitness kOut kUsedP) (fun _ _ => True) := by
   unfold Impl.Dsa.X86_64.Generation.forceStoredWitness
   simp only [seqs]
   refine RelCT.seq (two_post (two_taint [.rdi] ?_ (by taint_decide))
@@ -51,11 +48,12 @@ theorem forceStoredWitness_ct (len : Nat)
     obtain ⟨mi, hs⟩ := hs
     obtain ⟨mi', ht⟩ := ht
     exact hs.ready.good.rdi.trans ht.ready.good.rdi.symm
-  · refine RelCT.seq (two_taint [.rdi] (by
+  · refine RelCT.seq (two_taint [.rdi, .rcx] (by
       intro p s t hs ht r hr
-      simp only [List.mem_singleton] at hr
-      subst r
-      exact hs.trans ht.symm) ht) ?_
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hs.1.trans ht.1.symm
+      · exact hs.2.trans ht.2.symm) (by taint_decide)) ?_
     exact RelCT.taint (A := taint) (Taint.ofRegs [])
       (fun _ _ _ => Taint.agree_ofRegs (by intro r hr; simp at hr)) (by taint_decide)
 
@@ -65,7 +63,7 @@ def SamplePublic.forced (p : SamplePublic) : SamplePublic :=
       (by rw [p.length]; exact p.prime.len2)).trans p.length⟩
 
 theorem forceSample_state {p : SamplePublic} {s : State} (h : SampleBefore p s) :
-    WP isa (Impl.Dsa.X86_64.Generation.forceStoredWitness kOut p.bytes.length) s
+    WP isa (Impl.Dsa.X86_64.Generation.forceStoredWitness kOut kUsedP) s
       (SampleBefore p.forced) := by
   obtain ⟨mi, h⟩ := h
   exact WP.mono (forceSample_ok h p.prime.dims

@@ -10,7 +10,7 @@ namespace VG.Impl.Dsa.X86_64.Generation
 open VG VG.X86_64
 open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
 
-def subgroup (G1 G256 : Stream) (prime : Nat → Prog isa) (len : Nat) : Prog isa :=
+def subgroup (G1 G256 : Stream) (prime : Prog isa) (len : Nat) : Prog isa :=
   .seq (qCandidate G1 G256 len) (primeCall prime (8 * len))
 
 end VG.Impl.Dsa.X86_64.Generation
