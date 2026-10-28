@@ -59,6 +59,11 @@ with the same Rust signature (`_shani`, `_avx2`, …).
   among them. A variant calling the function it is a variant of is exempt,
   as above.
 
+A function the emitter renders as another name of an identical function of
+its module (`pub(crate) use self::<f> as <name>;`, `Rust.alias` in
+`lean/VerifiedGarbage/TCB/Rust.lean`) is that function's code: it has its
+signature and callees, and a use of it is a use of that function.
+
 See "An optimized implementation reaches everything built on it" in
 CLAUDE.md.
 """
@@ -75,6 +80,8 @@ FN = re.compile(
     r"^pub\(crate\) unsafe extern \"[\w-]+\" fn (vg_\w+)\((.*?)\)(?: -> ([^{]+?))? \{\n",
     re.MULTILINE | re.DOTALL,
 )
+# Another name of a function of the same module (`Rust.alias`).
+ALIAS = re.compile(r"^pub\(crate\) use self::(vg_\w+) as (vg_\w+);$", re.MULTILINE)
 # `<operand> = sym <path>`, found from the literal ` = sym ` (a leading
 # `\w+` would be tried at every word character of the code: 30 times slower).
 SYM = re.compile(r" = sym (?:\w+::)*(vg_\w+)")
@@ -114,6 +121,22 @@ def functions(srcs):
         fns = targets.setdefault(target, {})
         for name, params, ret, body in bodies(text):
             fns[name] = ((params, (ret or "").strip()), callees(body))
+        for name, canon in aliases(text).items():
+            fns[name] = fns[canon]
+    return targets
+
+
+def aliases(text):
+    """Each other name of a function of a generated file (`Rust.alias`), by
+    the name it gives it: `{name: function}`."""
+    return {m.group(2): m.group(1) for m in ALIAS.finditer(text)}
+
+
+def all_aliases(srcs):
+    """For each target, `aliases` of its files together."""
+    targets = {}
+    for target, text in srcs:
+        targets.setdefault(target, {}).update(aliases(text))
     return targets
 
 
@@ -408,12 +431,18 @@ def production_rust(src):
         " ".join(strip_tests(toks[p])) for p in paths if p not in test_only
     )
 
-def check(targets, rust, feats=None):
+def check(targets, rust, feats=None, names=None):
+    """The errors of the generated functions `targets`, given the production
+    Rust code `rust`, the features of each function `feats` (`features`) and
+    the other names of functions `names` (`all_aliases`)."""
     errors = []
     # The identifiers of the Rust code: `name` is one exactly when
     # `\bname\b` matches it, and a set answers without scanning the code.
     words = set(re.findall(r"\w+", rust))
     for target, fns in sorted(targets.items()):
+        al = (names or {}).get(target, {})
+        # A use of another name of a function is a use of it.
+        words |= {canon for name, canon in al.items() if name in words}
         var = variants(fns)
         errors += best_callees(target, fns, var, (feats or {}).get(target, {}))
         by_base = {}
@@ -491,6 +520,7 @@ def check(targets, rust, feats=None):
                             f"(or none of {callee}'s implementations) instead"
                         )
         called = set().union(*(c for _, c in fns.values())) if fns else set()
+        called |= {canon for name, canon in al.items() if name in called}
         for name in sorted(var):
             if name not in called and name not in words:
                 errors.append(
@@ -538,7 +568,9 @@ def best_callees(target, fns, var, feats):
 
 def main():
     srcs = sources()
-    errors = check(functions(srcs), production_rust(ROOT / "src"), features(srcs))
+    errors = check(
+        functions(srcs), production_rust(ROOT / "src"), features(srcs), all_aliases(srcs)
+    )
     for e in errors:
         print(e, file=sys.stderr)
     if errors:

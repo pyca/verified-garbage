@@ -43,7 +43,9 @@ def nativeTCB : FilePath :=
 def usage : String := "usage: lake env lean --run EmitOne.lean [--check] <Alg>.<Target> …"
 
 /-- The names of the functions a generated file defines: each line declaring
-`extern "<abi>" fn <name>(`, whatever its ABI (`"C"`, `"sysv64"`, …). -/
+`extern "<abi>" fn <name>(`, whatever its ABI (`"C"`, `"sysv64"`, …), and
+each other name of one of them, `pub(crate) use self::<f> as <name>;`
+(`VG.Rust.alias`). -/
 def fnNames (text : String) : List String :=
   (text.splitOn "\n").filterMap fun line =>
     match line.splitOn "extern \"" with
@@ -51,13 +53,19 @@ def fnNames (text : String) : List String :=
       match rest.splitOn "\" fn " with
       | [_, decl] => some ((decl.splitOn "(").headD "")
       | _ => none
-    | _ => none
+    | _ =>
+      if line.startsWith "pub(crate) use self::vg_" then
+        match line.splitOn " as " with
+        | [_, name] => some ((name.splitOn ";").headD "")
+        | _ => none
+      else none
 
-/-- Whether a file declares functions that `fnNames` does not read: then it
-cannot tell which functions other registration files emit into the file,
-and must not overwrite it. -/
+/-- Whether a file declares functions, or other names of them, that `fnNames`
+does not read: then it cannot tell which functions other registration files
+emit into the file, and must not overwrite it. -/
 def unreadFns (text : String) : Bool :=
-  (fnNames text).length != ((text.splitOn "\n").filter (·.contains "fn vg_")).length
+  (fnNames text).length != ((text.splitOn "\n").filter fun l =>
+    l.contains "fn vg_" || l.contains "use self::vg_").length
 
 /-- Runs a process, inheriting its output; its exit code. -/
 def runProc (cmd : String) (args : Array String) : IO UInt32 := do

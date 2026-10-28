@@ -110,6 +110,34 @@ class Flow(unittest.TestCase):
         self.assertEqual(len(errors), 1)
         self.assertIn("the variant vg_g_s is neither called", errors[0])
 
+    def test_variant_used_through_another_name(self):
+        # `g_s` is the code of `g_t`, which the Rust code uses only by the
+        # name `g_s`.
+        calls = dict(self.BASE, vg_g_s=["vg_f_s"], vg_g_t=["vg_f_s"])
+        names = {"x": {"vg_g_s": "vg_g_t"}}
+        self.assertEqual(check_variants.check(fns(calls), "vg_g vg_g_s", names=names), [])
+        self.assertEqual(len(check_variants.check(fns(calls), "vg_g vg_g_s")), 1)
+
+
+class Aliases(unittest.TestCase):
+    TEXT = (
+        'pub(crate) unsafe extern "C" fn vg_g(out: *mut u8) {\n'
+        "    core::arch::naked_asm!(\n"
+        '        "call {vg_f}",\n'
+        "        vg_f = sym super::f::vg_f,\n"
+        "    )\n"
+        "}\n"
+        "#[allow(unused_imports)]\n"
+        "pub(crate) use self::vg_g as vg_g_s;\n"
+    )
+
+    def test_another_name_is_the_function(self):
+        targets = check_variants.functions([("x", self.TEXT)])
+        self.assertEqual(targets["x"]["vg_g_s"], targets["x"]["vg_g"])
+        self.assertEqual(targets["x"]["vg_g"][1], {"vg_f"})
+        self.assertEqual(check_variants.all_aliases([("x", self.TEXT)]),
+                         {"x": {"vg_g_s": "vg_g"}})
+
 
 
 class BestCallee(unittest.TestCase):

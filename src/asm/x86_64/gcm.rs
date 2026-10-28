@@ -3520,6 +3520,8 @@ ret
 ///
 /// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash`.
 ///
+/// The machine code of this function is that of `vg_aes_gcm_stream_init`, which is emitted once and named both ways: the two are the same function.
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -3527,145 +3529,16 @@ ret
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
 /// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_aesni(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2568]
-mov r8, rsp
-add r8, 8
-mov QWORD PTR [r8+128], rbx
-mov QWORD PTR [r8+136], rbp
-mov QWORD PTR [r8+144], r12
-mov QWORD PTR [r8+152], r13
-mov QWORD PTR [r8+160], r14
-mov QWORD PTR [r8+168], r15
-mov r15, r8
-mov r14, rcx
-mov r13, rdi
-mov r12, rsi
-mov rbp, rdx
-cmp rbp, 12
-je 20f
-mov eax, 0
-mov QWORD PTR [r14], rax
-mov QWORD PTR [r14+8], rax
-mov QWORD PTR [r15+216], rbp
-mov ebx, 0
-mov rdx, r12
-mov rcx, rbp
-shr rcx, 4
-mov rax, rbp
-and rbp, 15
-sub rax, rbp
-add r12, rax
-test rcx, rcx
-je 22f
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 0
-mov r8, r15
-add r8, 512
-call {vg_ghash}
-jmp 23f
-22:
-23:
-mov rcx, rbp
-test rcx, rcx
-je 24f
-mov eax, 0
-mov QWORD PTR [r15+96], rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r15
-add rdi, 96
-mov rsi, r12
-mov r10d, 0
-26:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 26b
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 0
-mov rdx, r15
-add rdx, 96
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash}
-jmp 25f
-24:
-25:
-mov ebx, 0
-mov rbp, QWORD PTR [r15+216]
-mov rax, rbx
-add rax, rax
-add rax, rax
-add rax, rax
-bswap rax
-mov QWORD PTR [r15+96], rax
-mov rax, rbp
-add rax, rax
-add rax, rax
-add rax, rax
-bswap rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 0
-mov rdx, r15
-add rdx, 96
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash}
-jmp 21f
-20:
-mov eax, DWORD PTR [r12]
-mov ecx, DWORD PTR [r12+4]
-mov edx, DWORD PTR [r12+8]
-mov esi, 16777216
-mov DWORD PTR [r14], eax
-mov DWORD PTR [r14+4], ecx
-mov DWORD PTR [r14+8], edx
-mov DWORD PTR [r14+12], esi
-21:
-mov eax, DWORD PTR [r14]
-mov ecx, DWORD PTR [r14+4]
-mov edx, DWORD PTR [r14+8]
-mov esi, DWORD PTR [r14+12]
-bswap esi
-add esi, 1
-bswap esi
-mov DWORD PTR [r14+48], eax
-mov DWORD PTR [r14+52], ecx
-mov DWORD PTR [r14+56], edx
-mov DWORD PTR [r14+60], esi
-mov eax, 0
-mov QWORD PTR [r14+16], rax
-mov QWORD PTR [r14+24], rax
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2568]
-ret
-.p2align 6",
-        vg_ghash = sym super::gcm::vg_ghash,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_stream_init as vg_aes_gcm_stream_init_aesni;
 
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
 ///
 /// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash`.
+///
+/// The machine code of this function is that of `vg_aes_gcm_stream_aad`, which is emitted once and named both ways: the two are the same function.
 ///
 /// # Safety
 ///
@@ -3674,119 +3547,8 @@ ret
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_aesni(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2568]
-mov r9, rsp
-add r9, 8
-mov QWORD PTR [r9+128], rbx
-mov QWORD PTR [r9+136], rbp
-mov QWORD PTR [r9+144], r12
-mov QWORD PTR [r9+152], r13
-mov QWORD PTR [r9+160], r14
-mov QWORD PTR [r9+168], r15
-mov r15, r9
-mov r14, rsi
-mov r13, rdi
-mov r12, rcx
-mov rbp, r8
-mov rbx, rdx
-and rbx, 15
-test rbp, rbp
-je 20f
-test rbx, rbx
-je 22f
-mov ecx, 16
-sub rcx, rbx
-cmp rbp, rcx
-jb 24f
-jmp 25f
-24:
-mov rcx, rbp
-25:
-mov rdi, r14
-add rdi, rbx
-add rdi, 32
-mov rsi, r12
-mov r10d, 0
-26:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 26b
-add r12, rcx
-sub rbp, rcx
-add rbx, rcx
-cmp rbx, 16
-je 27f
-jmp 28f
-27:
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 16
-mov rdx, r14
-add rdx, 32
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash}
-28:
-jmp 23f
-22:
-23:
-mov rdx, r12
-mov rcx, rbp
-shr rcx, 4
-mov rax, rbp
-and rbp, 15
-sub rax, rbp
-add r12, rax
-test rcx, rcx
-je 29f
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 16
-mov r8, r15
-add r8, 512
-call {vg_ghash}
-jmp 210f
-29:
-210:
-mov rcx, rbp
-test rcx, rcx
-je 211f
-mov rdi, r14
-add rdi, 32
-mov rsi, r12
-mov r10d, 0
-213:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 213b
-jmp 212f
-211:
-212:
-jmp 21f
-20:
-21:
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2568]
-ret
-.p2align 6",
-        vg_ghash = sym super::gcm::vg_ghash,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_stream_aad as vg_aes_gcm_stream_aad_aesni;
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_aesni` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "ssse3"]);
@@ -6339,6 +6101,8 @@ pub(crate) const VG_AES_GCM_INIT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = c
 ///
 /// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash_pclmul`.
 ///
+/// The machine code of this function is that of `vg_aes_gcm_init_aesni`, which is emitted once and named both ways: the two are the same function.
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -6347,54 +6111,8 @@ pub(crate) const VG_AES_GCM_INIT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = c
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni_pclmul(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2568]
-mov rcx, rsp
-add rcx, 8
-mov QWORD PTR [rcx+128], rbx
-mov QWORD PTR [rcx+136], rbp
-mov QWORD PTR [rcx+144], r12
-mov QWORD PTR [rcx+152], r13
-mov QWORD PTR [rcx+160], r14
-mov QWORD PTR [rcx+168], r15
-mov r15, rcx
-mov r13, rdx
-mov rbx, rsi
-shr rbx, 2
-add rbx, 6
-mov rcx, r15
-add rcx, 512
-call {vg_aes_expand_key_scratch_aesni}
-mov eax, 0
-mov QWORD PTR [r13+240], rax
-mov QWORD PTR [r13+248], rax
-mov QWORD PTR [r15+96], rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r13
-mov rsi, rbx
-mov rdx, r15
-add rdx, 96
-mov rcx, r13
-add rcx, 240
-mov r8d, 1
-mov r9, r15
-add r9, 512
-call {vg_aes_ctr32_aesni}
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2568]
-ret
-.p2align 6",
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_init_aesni as vg_aes_gcm_init_aesni_pclmul;
 
 /// The CPU features `vg_aes_gcm_seal_aesni_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3"]);
@@ -7304,6 +7022,8 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_FEATURES: crate::cpu::Featu
 ///
 /// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash_pclmul`.
 ///
+/// The machine code of this function is that of `vg_aes_gcm_stream_init_pclmul`, which is emitted once and named both ways: the two are the same function.
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -7312,139 +7032,8 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_FEATURES: crate::cpu::Featu
 /// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
 /// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_aesni_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2568]
-mov r8, rsp
-add r8, 8
-mov QWORD PTR [r8+128], rbx
-mov QWORD PTR [r8+136], rbp
-mov QWORD PTR [r8+144], r12
-mov QWORD PTR [r8+152], r13
-mov QWORD PTR [r8+160], r14
-mov QWORD PTR [r8+168], r15
-mov r15, r8
-mov r14, rcx
-mov r13, rdi
-mov r12, rsi
-mov rbp, rdx
-cmp rbp, 12
-je 20f
-mov eax, 0
-mov QWORD PTR [r14], rax
-mov QWORD PTR [r14+8], rax
-mov QWORD PTR [r15+216], rbp
-mov ebx, 0
-mov rdx, r12
-mov rcx, rbp
-shr rcx, 4
-mov rax, rbp
-and rbp, 15
-sub rax, rbp
-add r12, rax
-test rcx, rcx
-je 22f
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 0
-mov r8, r15
-add r8, 512
-call {vg_ghash_pclmul}
-jmp 23f
-22:
-23:
-mov rcx, rbp
-test rcx, rcx
-je 24f
-mov eax, 0
-mov QWORD PTR [r15+96], rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r15
-add rdi, 96
-mov rsi, r12
-mov r10d, 0
-26:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 26b
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 0
-mov rdx, r15
-add rdx, 96
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_pclmul}
-jmp 25f
-24:
-25:
-mov ebx, 0
-mov rbp, QWORD PTR [r15+216]
-mov rax, rbx
-add rax, rax
-add rax, rax
-add rax, rax
-bswap rax
-mov QWORD PTR [r15+96], rax
-mov rax, rbp
-add rax, rax
-add rax, rax
-add rax, rax
-bswap rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 0
-mov rdx, r15
-add rdx, 96
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_pclmul}
-jmp 21f
-20:
-mov eax, DWORD PTR [r12]
-mov ecx, DWORD PTR [r12+4]
-mov edx, DWORD PTR [r12+8]
-mov esi, 16777216
-mov DWORD PTR [r14], eax
-mov DWORD PTR [r14+4], ecx
-mov DWORD PTR [r14+8], edx
-mov DWORD PTR [r14+12], esi
-21:
-mov eax, DWORD PTR [r14]
-mov ecx, DWORD PTR [r14+4]
-mov edx, DWORD PTR [r14+8]
-mov esi, DWORD PTR [r14+12]
-bswap esi
-add esi, 1
-bswap esi
-mov DWORD PTR [r14+48], eax
-mov DWORD PTR [r14+52], ecx
-mov DWORD PTR [r14+56], edx
-mov DWORD PTR [r14+60], esi
-mov eax, 0
-mov QWORD PTR [r14+16], rax
-mov QWORD PTR [r14+24], rax
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2568]
-ret
-.p2align 6",
-        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_stream_init_pclmul as vg_aes_gcm_stream_init_aesni_pclmul;
 
 /// The CPU features `vg_aes_gcm_stream_aad_aesni_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
@@ -7455,6 +7044,8 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_FEATURES: crate::cpu::Featur
 ///
 /// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash_pclmul`.
 ///
+/// The machine code of this function is that of `vg_aes_gcm_stream_aad_pclmul`, which is emitted once and named both ways: the two are the same function.
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -7463,119 +7054,8 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_FEATURES: crate::cpu::Featur
 /// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_aesni_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2568]
-mov r9, rsp
-add r9, 8
-mov QWORD PTR [r9+128], rbx
-mov QWORD PTR [r9+136], rbp
-mov QWORD PTR [r9+144], r12
-mov QWORD PTR [r9+152], r13
-mov QWORD PTR [r9+160], r14
-mov QWORD PTR [r9+168], r15
-mov r15, r9
-mov r14, rsi
-mov r13, rdi
-mov r12, rcx
-mov rbp, r8
-mov rbx, rdx
-and rbx, 15
-test rbp, rbp
-je 20f
-test rbx, rbx
-je 22f
-mov ecx, 16
-sub rcx, rbx
-cmp rbp, rcx
-jb 24f
-jmp 25f
-24:
-mov rcx, rbp
-25:
-mov rdi, r14
-add rdi, rbx
-add rdi, 32
-mov rsi, r12
-mov r10d, 0
-26:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 26b
-add r12, rcx
-sub rbp, rcx
-add rbx, rcx
-cmp rbx, 16
-je 27f
-jmp 28f
-27:
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 16
-mov rdx, r14
-add rdx, 32
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_pclmul}
-28:
-jmp 23f
-22:
-23:
-mov rdx, r12
-mov rcx, rbp
-shr rcx, 4
-mov rax, rbp
-and rbp, 15
-sub rax, rbp
-add r12, rax
-test rcx, rcx
-je 29f
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 16
-mov r8, r15
-add r8, 512
-call {vg_ghash_pclmul}
-jmp 210f
-29:
-210:
-mov rcx, rbp
-test rcx, rcx
-je 211f
-mov rdi, r14
-add rdi, 32
-mov rsi, r12
-mov r10d, 0
-213:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 213b
-jmp 212f
-211:
-212:
-jmp 21f
-20:
-21:
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2568]
-ret
-.p2align 6",
-        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_stream_aad_pclmul as vg_aes_gcm_stream_aad_aesni_pclmul;
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_aesni_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3"]);
@@ -15412,6 +14892,8 @@ pub(crate) const VG_AES_GCM_INIT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features
 ///
 /// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash_pclmul`.
 ///
+/// The machine code of this function is that of `vg_aes_gcm_init_aesni`, which is emitted once and named both ways: the two are the same function.
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -15420,54 +14902,8 @@ pub(crate) const VG_AES_GCM_INIT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni_pclmul_avx(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2568]
-mov rcx, rsp
-add rcx, 8
-mov QWORD PTR [rcx+128], rbx
-mov QWORD PTR [rcx+136], rbp
-mov QWORD PTR [rcx+144], r12
-mov QWORD PTR [rcx+152], r13
-mov QWORD PTR [rcx+160], r14
-mov QWORD PTR [rcx+168], r15
-mov r15, rcx
-mov r13, rdx
-mov rbx, rsi
-shr rbx, 2
-add rbx, 6
-mov rcx, r15
-add rcx, 512
-call {vg_aes_expand_key_scratch_aesni}
-mov eax, 0
-mov QWORD PTR [r13+240], rax
-mov QWORD PTR [r13+248], rax
-mov QWORD PTR [r15+96], rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r13
-mov rsi, rbx
-mov rdx, r15
-add rdx, 96
-mov rcx, r13
-add rcx, 240
-mov r8d, 1
-mov r9, r15
-add r9, 512
-call {vg_aes_ctr32_aesni}
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2568]
-ret
-.p2align 6",
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_init_aesni as vg_aes_gcm_init_aesni_pclmul_avx;
 
 /// The CPU features `vg_aes_gcm_seal_aesni_pclmul_avx` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_SEAL_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3", "avx"]);
@@ -16551,6 +15987,8 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::F
 ///
 /// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash_pclmul`.
 ///
+/// The machine code of this function is that of `vg_aes_gcm_stream_init_pclmul`, which is emitted once and named both ways: the two are the same function.
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -16559,139 +15997,8 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::F
 /// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
 /// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_aesni_pclmul_avx(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2568]
-mov r8, rsp
-add r8, 8
-mov QWORD PTR [r8+128], rbx
-mov QWORD PTR [r8+136], rbp
-mov QWORD PTR [r8+144], r12
-mov QWORD PTR [r8+152], r13
-mov QWORD PTR [r8+160], r14
-mov QWORD PTR [r8+168], r15
-mov r15, r8
-mov r14, rcx
-mov r13, rdi
-mov r12, rsi
-mov rbp, rdx
-cmp rbp, 12
-je 20f
-mov eax, 0
-mov QWORD PTR [r14], rax
-mov QWORD PTR [r14+8], rax
-mov QWORD PTR [r15+216], rbp
-mov ebx, 0
-mov rdx, r12
-mov rcx, rbp
-shr rcx, 4
-mov rax, rbp
-and rbp, 15
-sub rax, rbp
-add r12, rax
-test rcx, rcx
-je 22f
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 0
-mov r8, r15
-add r8, 512
-call {vg_ghash_pclmul}
-jmp 23f
-22:
-23:
-mov rcx, rbp
-test rcx, rcx
-je 24f
-mov eax, 0
-mov QWORD PTR [r15+96], rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r15
-add rdi, 96
-mov rsi, r12
-mov r10d, 0
-26:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 26b
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 0
-mov rdx, r15
-add rdx, 96
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_pclmul}
-jmp 25f
-24:
-25:
-mov ebx, 0
-mov rbp, QWORD PTR [r15+216]
-mov rax, rbx
-add rax, rax
-add rax, rax
-add rax, rax
-bswap rax
-mov QWORD PTR [r15+96], rax
-mov rax, rbp
-add rax, rax
-add rax, rax
-add rax, rax
-bswap rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 0
-mov rdx, r15
-add rdx, 96
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_pclmul}
-jmp 21f
-20:
-mov eax, DWORD PTR [r12]
-mov ecx, DWORD PTR [r12+4]
-mov edx, DWORD PTR [r12+8]
-mov esi, 16777216
-mov DWORD PTR [r14], eax
-mov DWORD PTR [r14+4], ecx
-mov DWORD PTR [r14+8], edx
-mov DWORD PTR [r14+12], esi
-21:
-mov eax, DWORD PTR [r14]
-mov ecx, DWORD PTR [r14+4]
-mov edx, DWORD PTR [r14+8]
-mov esi, DWORD PTR [r14+12]
-bswap esi
-add esi, 1
-bswap esi
-mov DWORD PTR [r14+48], eax
-mov DWORD PTR [r14+52], ecx
-mov DWORD PTR [r14+56], edx
-mov DWORD PTR [r14+60], esi
-mov eax, 0
-mov QWORD PTR [r14+16], rax
-mov QWORD PTR [r14+24], rax
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2568]
-ret
-.p2align 6",
-        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_stream_init_pclmul as vg_aes_gcm_stream_init_aesni_pclmul_avx;
 
 /// The CPU features `vg_aes_gcm_stream_aad_aesni_pclmul_avx` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
@@ -16702,6 +16009,8 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Fe
 ///
 /// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash_pclmul`.
 ///
+/// The machine code of this function is that of `vg_aes_gcm_stream_aad_pclmul`, which is emitted once and named both ways: the two are the same function.
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -16710,119 +16019,8 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Fe
 /// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_aesni_pclmul_avx(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2568]
-mov r9, rsp
-add r9, 8
-mov QWORD PTR [r9+128], rbx
-mov QWORD PTR [r9+136], rbp
-mov QWORD PTR [r9+144], r12
-mov QWORD PTR [r9+152], r13
-mov QWORD PTR [r9+160], r14
-mov QWORD PTR [r9+168], r15
-mov r15, r9
-mov r14, rsi
-mov r13, rdi
-mov r12, rcx
-mov rbp, r8
-mov rbx, rdx
-and rbx, 15
-test rbp, rbp
-je 20f
-test rbx, rbx
-je 22f
-mov ecx, 16
-sub rcx, rbx
-cmp rbp, rcx
-jb 24f
-jmp 25f
-24:
-mov rcx, rbp
-25:
-mov rdi, r14
-add rdi, rbx
-add rdi, 32
-mov rsi, r12
-mov r10d, 0
-26:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 26b
-add r12, rcx
-sub rbp, rcx
-add rbx, rcx
-cmp rbx, 16
-je 27f
-jmp 28f
-27:
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 16
-mov rdx, r14
-add rdx, 32
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_pclmul}
-28:
-jmp 23f
-22:
-23:
-mov rdx, r12
-mov rcx, rbp
-shr rcx, 4
-mov rax, rbp
-and rbp, 15
-sub rax, rbp
-add r12, rax
-test rcx, rcx
-je 29f
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 16
-mov r8, r15
-add r8, 512
-call {vg_ghash_pclmul}
-jmp 210f
-29:
-210:
-mov rcx, rbp
-test rcx, rcx
-je 211f
-mov rdi, r14
-add rdi, 32
-mov rsi, r12
-mov r10d, 0
-213:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 213b
-jmp 212f
-211:
-212:
-jmp 21f
-20:
-21:
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2568]
-ret
-.p2align 6",
-        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_stream_aad_pclmul as vg_aes_gcm_stream_aad_aesni_pclmul_avx;
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_aesni_pclmul_avx` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3", "avx"]);
@@ -17665,6 +16863,8 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_AVX_FEATURES: crate::cpu:
 ///
 /// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash_pclmul`.
 ///
+/// The machine code of this function is that of `vg_aes_gcm_stream_finish_aesni_pclmul`, which is emitted once and named both ways: the two are the same function.
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -17675,121 +16875,8 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_AVX_FEATURES: crate::cpu:
 /// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2576]
-mov rax, rsp
-add rax, 16
-mov QWORD PTR [rsp+8], rax
-mov rax, QWORD PTR [rsp+8]
-mov QWORD PTR [rax+128], rbx
-mov QWORD PTR [rax+136], rbp
-mov QWORD PTR [rax+144], r12
-mov QWORD PTR [rax+152], r13
-mov QWORD PTR [rax+160], r14
-mov QWORD PTR [rax+168], r15
-mov r15, rax
-mov r14, rdx
-mov r13, rdi
-mov QWORD PTR [r15+176], rsi
-mov QWORD PTR [r15+184], rcx
-mov QWORD PTR [r15+192], r8
-mov QWORD PTR [r15+200], r9
-mov rbx, QWORD PTR [r15+192]
-mov rax, QWORD PTR [r15+184]
-test rbx, rbx
-je 20f
-jmp 21f
-20:
-mov rbx, rax
-21:
-and rbx, 15
-test rbx, rbx
-je 22f
-mov eax, 0
-mov QWORD PTR [r15+96], rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r15
-add rdi, 96
-mov rsi, r14
-add rsi, 32
-mov rcx, rbx
-mov r10d, 0
-24:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 24b
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 16
-mov rdx, r15
-add rdx, 96
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_pclmul}
-jmp 23f
-22:
-23:
-mov rbx, QWORD PTR [r15+184]
-mov rbp, QWORD PTR [r15+192]
-mov rax, rbx
-add rax, rax
-add rax, rax
-add rax, rax
-bswap rax
-mov QWORD PTR [r15+96], rax
-mov rax, rbp
-add rax, rax
-add rax, rax
-add rax, rax
-bswap rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 16
-mov rdx, r15
-add rdx, 96
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_pclmul}
-mov rax, QWORD PTR [r14+16]
-mov QWORD PTR [r15], rax
-mov rax, QWORD PTR [r14+24]
-mov QWORD PTR [r15+8], rax
-mov rdi, r13
-mov rsi, QWORD PTR [r15+176]
-mov rdx, r14
-mov rcx, r15
-add rcx, 0
-mov r8d, 1
-mov r9, r15
-add r9, 512
-call {vg_aes_ctr32_aesni}
-mov rdi, QWORD PTR [r15+200]
-mov rax, QWORD PTR [r15]
-mov rdx, QWORD PTR [r15+8]
-mov QWORD PTR [rdi], rax
-mov QWORD PTR [rdi+8], rdx
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2576]
-ret
-.p2align 6",
-        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_stream_finish_aesni_pclmul as vg_aes_gcm_stream_finish_aesni_pclmul_avx;
 
 /// The CPU features `vg_aes_gcm_stream_verify_aesni_pclmul_avx` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3"]);
@@ -17799,6 +16886,8 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_AVX_FEATURES: crate::cpu:
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
 /// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash_pclmul`.
+///
+/// The machine code of this function is that of `vg_aes_gcm_stream_verify_aesni_pclmul`, which is emitted once and named both ways: the two are the same function.
 ///
 /// # Safety
 ///
@@ -17810,193 +16899,8 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_AVX_FEATURES: crate::cpu:
 /// * `state` must not overlap `ctx`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2584]
-mov rax, QWORD PTR [rsp+2592]
-mov QWORD PTR [rsp+8], rax
-mov rax, rsp
-add rax, 24
-mov QWORD PTR [rsp+16], rax
-mov rax, QWORD PTR [rsp+16]
-mov QWORD PTR [rax+128], rbx
-mov QWORD PTR [rax+136], rbp
-mov QWORD PTR [rax+144], r12
-mov QWORD PTR [rax+152], r13
-mov QWORD PTR [rax+160], r14
-mov QWORD PTR [rax+168], r15
-mov r15, rax
-mov r14, rdx
-mov r13, rdi
-mov QWORD PTR [r15+176], rsi
-mov QWORD PTR [r15+184], rcx
-mov QWORD PTR [r15+192], r8
-mov rbx, QWORD PTR [rsp+8]
-mov QWORD PTR [r15+224], rbx
-mov rsi, r9
-mov ecx, 0
-cmp rbx, 4
-jb 20f
-cmp rbx, 17
-jb 22f
-jmp 23f
-22:
-mov ecx, 1
-23:
-jmp 21f
-20:
-21:
-test rcx, rcx
-je 24f
-mov eax, 0
-mov QWORD PTR [r15+256], rax
-mov QWORD PTR [r15+264], rax
-mov rdi, r15
-add rdi, 256
-mov rcx, rbx
-cmp rcx, 16
-je 26f
-mov r10d, 0
-28:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 28b
-jmp 27f
-26:
-mov rax, QWORD PTR [rsi]
-mov r10, QWORD PTR [rsi+8]
-mov QWORD PTR [rdi], rax
-mov QWORD PTR [rdi+8], r10
-27:
-mov rbx, QWORD PTR [r15+192]
-mov rax, QWORD PTR [r15+184]
-test rbx, rbx
-je 29f
-jmp 210f
-29:
-mov rbx, rax
-210:
-and rbx, 15
-test rbx, rbx
-je 211f
-mov eax, 0
-mov QWORD PTR [r15+96], rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r15
-add rdi, 96
-mov rsi, r14
-add rsi, 32
-mov rcx, rbx
-mov r10d, 0
-213:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 213b
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 16
-mov rdx, r15
-add rdx, 96
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_pclmul}
-jmp 212f
-211:
-212:
-mov rbx, QWORD PTR [r15+184]
-mov rbp, QWORD PTR [r15+192]
-mov rax, rbx
-add rax, rax
-add rax, rax
-add rax, rax
-bswap rax
-mov QWORD PTR [r15+96], rax
-mov rax, rbp
-add rax, rax
-add rax, rax
-add rax, rax
-bswap rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 16
-mov rdx, r15
-add rdx, 96
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_pclmul}
-mov rax, QWORD PTR [r14+16]
-mov QWORD PTR [r15], rax
-mov rax, QWORD PTR [r14+24]
-mov QWORD PTR [r15+8], rax
-mov rdi, r13
-mov rsi, QWORD PTR [r15+176]
-mov rdx, r14
-mov rcx, r15
-add rcx, 0
-mov r8d, 1
-mov r9, r15
-add r9, 512
-call {vg_aes_ctr32_aesni}
-mov rbx, QWORD PTR [r15+224]
-mov eax, 0
-mov QWORD PTR [r15+240], rax
-mov QWORD PTR [r15+248], rax
-mov rdi, r15
-add rdi, 240
-mov rsi, r15
-add rsi, 0
-mov rcx, rbx
-cmp rcx, 16
-je 214f
-mov r10d, 0
-216:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 216b
-jmp 215f
-214:
-mov rax, QWORD PTR [rsi]
-mov r10, QWORD PTR [rsi+8]
-mov QWORD PTR [rdi], rax
-mov QWORD PTR [rdi+8], r10
-215:
-mov rax, QWORD PTR [r15+240]
-xor rax, QWORD PTR [r15+256]
-mov rdx, QWORD PTR [r15+248]
-xor rdx, QWORD PTR [r15+264]
-or rax, rdx
-cmp rax, 1
-mov eax, 0
-adc eax, 0
-jmp 25f
-24:
-mov eax, 0
-25:
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2584]
-ret
-.p2align 6",
-        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_stream_verify_aesni_pclmul as vg_aes_gcm_stream_verify_aesni_pclmul_avx;
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_aesni_pclmul_avx` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3", "avx"]);
@@ -39963,6 +38867,8 @@ pub(crate) const VG_AES_GCM_INIT_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = 
 ///
 /// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash_vpclmul`.
 ///
+/// The machine code of this function is that of `vg_aes_gcm_init_aesni`, which is emitted once and named both ways: the two are the same function.
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -39971,54 +38877,8 @@ pub(crate) const VG_AES_GCM_INIT_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = 
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni_vpclmul(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2568]
-mov rcx, rsp
-add rcx, 8
-mov QWORD PTR [rcx+128], rbx
-mov QWORD PTR [rcx+136], rbp
-mov QWORD PTR [rcx+144], r12
-mov QWORD PTR [rcx+152], r13
-mov QWORD PTR [rcx+160], r14
-mov QWORD PTR [rcx+168], r15
-mov r15, rcx
-mov r13, rdx
-mov rbx, rsi
-shr rbx, 2
-add rbx, 6
-mov rcx, r15
-add rcx, 512
-call {vg_aes_expand_key_scratch_aesni}
-mov eax, 0
-mov QWORD PTR [r13+240], rax
-mov QWORD PTR [r13+248], rax
-mov QWORD PTR [r15+96], rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r13
-mov rsi, rbx
-mov rdx, r15
-add rdx, 96
-mov rcx, r13
-add rcx, 240
-mov r8d, 1
-mov r9, r15
-add r9, 512
-call {vg_aes_ctr32_aesni}
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2568]
-ret
-.p2align 6",
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_init_aesni as vg_aes_gcm_init_aesni_vpclmul;
 
 /// The CPU features `vg_aes_gcm_seal_aesni_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_SEAL_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
@@ -40928,6 +39788,8 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_AESNI_VPCLMUL_FEATURES: crate::cpu::Feat
 ///
 /// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash_vpclmul`.
 ///
+/// The machine code of this function is that of `vg_aes_gcm_stream_init_vpclmul`, which is emitted once and named both ways: the two are the same function.
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -40936,139 +39798,8 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_AESNI_VPCLMUL_FEATURES: crate::cpu::Feat
 /// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
 /// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_aesni_vpclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2568]
-mov r8, rsp
-add r8, 8
-mov QWORD PTR [r8+128], rbx
-mov QWORD PTR [r8+136], rbp
-mov QWORD PTR [r8+144], r12
-mov QWORD PTR [r8+152], r13
-mov QWORD PTR [r8+160], r14
-mov QWORD PTR [r8+168], r15
-mov r15, r8
-mov r14, rcx
-mov r13, rdi
-mov r12, rsi
-mov rbp, rdx
-cmp rbp, 12
-je 20f
-mov eax, 0
-mov QWORD PTR [r14], rax
-mov QWORD PTR [r14+8], rax
-mov QWORD PTR [r15+216], rbp
-mov ebx, 0
-mov rdx, r12
-mov rcx, rbp
-shr rcx, 4
-mov rax, rbp
-and rbp, 15
-sub rax, rbp
-add r12, rax
-test rcx, rcx
-je 22f
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 0
-mov r8, r15
-add r8, 512
-call {vg_ghash_vpclmul}
-jmp 23f
-22:
-23:
-mov rcx, rbp
-test rcx, rcx
-je 24f
-mov eax, 0
-mov QWORD PTR [r15+96], rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r15
-add rdi, 96
-mov rsi, r12
-mov r10d, 0
-26:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 26b
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 0
-mov rdx, r15
-add rdx, 96
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_vpclmul}
-jmp 25f
-24:
-25:
-mov ebx, 0
-mov rbp, QWORD PTR [r15+216]
-mov rax, rbx
-add rax, rax
-add rax, rax
-add rax, rax
-bswap rax
-mov QWORD PTR [r15+96], rax
-mov rax, rbp
-add rax, rax
-add rax, rax
-add rax, rax
-bswap rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 0
-mov rdx, r15
-add rdx, 96
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_vpclmul}
-jmp 21f
-20:
-mov eax, DWORD PTR [r12]
-mov ecx, DWORD PTR [r12+4]
-mov edx, DWORD PTR [r12+8]
-mov esi, 16777216
-mov DWORD PTR [r14], eax
-mov DWORD PTR [r14+4], ecx
-mov DWORD PTR [r14+8], edx
-mov DWORD PTR [r14+12], esi
-21:
-mov eax, DWORD PTR [r14]
-mov ecx, DWORD PTR [r14+4]
-mov edx, DWORD PTR [r14+8]
-mov esi, DWORD PTR [r14+12]
-bswap esi
-add esi, 1
-bswap esi
-mov DWORD PTR [r14+48], eax
-mov DWORD PTR [r14+52], ecx
-mov DWORD PTR [r14+56], edx
-mov DWORD PTR [r14+60], esi
-mov eax, 0
-mov QWORD PTR [r14+16], rax
-mov QWORD PTR [r14+24], rax
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2568]
-ret
-.p2align 6",
-        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_stream_init_vpclmul as vg_aes_gcm_stream_init_aesni_vpclmul;
 
 /// The CPU features `vg_aes_gcm_stream_aad_aesni_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_AAD_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
@@ -41079,6 +39810,8 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_AESNI_VPCLMUL_FEATURES: crate::cpu::Featu
 ///
 /// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash_vpclmul`.
 ///
+/// The machine code of this function is that of `vg_aes_gcm_stream_aad_vpclmul`, which is emitted once and named both ways: the two are the same function.
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -41087,119 +39820,8 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_AESNI_VPCLMUL_FEATURES: crate::cpu::Featu
 /// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_aesni_vpclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2568]
-mov r9, rsp
-add r9, 8
-mov QWORD PTR [r9+128], rbx
-mov QWORD PTR [r9+136], rbp
-mov QWORD PTR [r9+144], r12
-mov QWORD PTR [r9+152], r13
-mov QWORD PTR [r9+160], r14
-mov QWORD PTR [r9+168], r15
-mov r15, r9
-mov r14, rsi
-mov r13, rdi
-mov r12, rcx
-mov rbp, r8
-mov rbx, rdx
-and rbx, 15
-test rbp, rbp
-je 20f
-test rbx, rbx
-je 22f
-mov ecx, 16
-sub rcx, rbx
-cmp rbp, rcx
-jb 24f
-jmp 25f
-24:
-mov rcx, rbp
-25:
-mov rdi, r14
-add rdi, rbx
-add rdi, 32
-mov rsi, r12
-mov r10d, 0
-26:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 26b
-add r12, rcx
-sub rbp, rcx
-add rbx, rcx
-cmp rbx, 16
-je 27f
-jmp 28f
-27:
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 16
-mov rdx, r14
-add rdx, 32
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_vpclmul}
-28:
-jmp 23f
-22:
-23:
-mov rdx, r12
-mov rcx, rbp
-shr rcx, 4
-mov rax, rbp
-and rbp, 15
-sub rax, rbp
-add r12, rax
-test rcx, rcx
-je 29f
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 16
-mov r8, r15
-add r8, 512
-call {vg_ghash_vpclmul}
-jmp 210f
-29:
-210:
-mov rcx, rbp
-test rcx, rcx
-je 211f
-mov rdi, r14
-add rdi, 32
-mov rsi, r12
-mov r10d, 0
-213:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 213b
-jmp 212f
-211:
-212:
-jmp 21f
-20:
-21:
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2568]
-ret
-.p2align 6",
-        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_stream_aad_vpclmul as vg_aes_gcm_stream_aad_aesni_vpclmul;
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_aesni_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
@@ -43749,6 +42371,8 @@ ret
 ///
 /// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and hashes with `vg_ghash_pclmul`.
 ///
+/// The machine code of this function is that of `vg_aes_gcm_init`, which is emitted once and named both ways: the two are the same function.
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -43756,54 +42380,8 @@ ret
 /// * `key_len` must be 16, 24 or 32.
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_pclmul(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2568]
-mov rcx, rsp
-add rcx, 8
-mov QWORD PTR [rcx+128], rbx
-mov QWORD PTR [rcx+136], rbp
-mov QWORD PTR [rcx+144], r12
-mov QWORD PTR [rcx+152], r13
-mov QWORD PTR [rcx+160], r14
-mov QWORD PTR [rcx+168], r15
-mov r15, rcx
-mov r13, rdx
-mov rbx, rsi
-shr rbx, 2
-add rbx, 6
-mov rcx, r15
-add rcx, 512
-call {vg_aes_expand_key_scratch}
-mov eax, 0
-mov QWORD PTR [r13+240], rax
-mov QWORD PTR [r13+248], rax
-mov QWORD PTR [r15+96], rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r13
-mov rsi, rbx
-mov rdx, r15
-add rdx, 96
-mov rcx, r13
-add rcx, 240
-mov r8d, 1
-mov r9, r15
-add r9, 512
-call {vg_aes_ctr32}
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2568]
-ret
-.p2align 6",
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_init as vg_aes_gcm_init_pclmul;
 
 /// The CPU features `vg_aes_gcm_seal_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_SEAL_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
@@ -52228,6 +50806,8 @@ ret
 ///
 /// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash`.
 ///
+/// The machine code of this function is that of `vg_aes_gcm_stream_init`, which is emitted once and named both ways: the two are the same function.
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -52235,145 +50815,16 @@ ret
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
 /// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_vaes(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2568]
-mov r8, rsp
-add r8, 8
-mov QWORD PTR [r8+128], rbx
-mov QWORD PTR [r8+136], rbp
-mov QWORD PTR [r8+144], r12
-mov QWORD PTR [r8+152], r13
-mov QWORD PTR [r8+160], r14
-mov QWORD PTR [r8+168], r15
-mov r15, r8
-mov r14, rcx
-mov r13, rdi
-mov r12, rsi
-mov rbp, rdx
-cmp rbp, 12
-je 20f
-mov eax, 0
-mov QWORD PTR [r14], rax
-mov QWORD PTR [r14+8], rax
-mov QWORD PTR [r15+216], rbp
-mov ebx, 0
-mov rdx, r12
-mov rcx, rbp
-shr rcx, 4
-mov rax, rbp
-and rbp, 15
-sub rax, rbp
-add r12, rax
-test rcx, rcx
-je 22f
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 0
-mov r8, r15
-add r8, 512
-call {vg_ghash}
-jmp 23f
-22:
-23:
-mov rcx, rbp
-test rcx, rcx
-je 24f
-mov eax, 0
-mov QWORD PTR [r15+96], rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r15
-add rdi, 96
-mov rsi, r12
-mov r10d, 0
-26:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 26b
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 0
-mov rdx, r15
-add rdx, 96
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash}
-jmp 25f
-24:
-25:
-mov ebx, 0
-mov rbp, QWORD PTR [r15+216]
-mov rax, rbx
-add rax, rax
-add rax, rax
-add rax, rax
-bswap rax
-mov QWORD PTR [r15+96], rax
-mov rax, rbp
-add rax, rax
-add rax, rax
-add rax, rax
-bswap rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 0
-mov rdx, r15
-add rdx, 96
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash}
-jmp 21f
-20:
-mov eax, DWORD PTR [r12]
-mov ecx, DWORD PTR [r12+4]
-mov edx, DWORD PTR [r12+8]
-mov esi, 16777216
-mov DWORD PTR [r14], eax
-mov DWORD PTR [r14+4], ecx
-mov DWORD PTR [r14+8], edx
-mov DWORD PTR [r14+12], esi
-21:
-mov eax, DWORD PTR [r14]
-mov ecx, DWORD PTR [r14+4]
-mov edx, DWORD PTR [r14+8]
-mov esi, DWORD PTR [r14+12]
-bswap esi
-add esi, 1
-bswap esi
-mov DWORD PTR [r14+48], eax
-mov DWORD PTR [r14+52], ecx
-mov DWORD PTR [r14+56], edx
-mov DWORD PTR [r14+60], esi
-mov eax, 0
-mov QWORD PTR [r14+16], rax
-mov QWORD PTR [r14+24], rax
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2568]
-ret
-.p2align 6",
-        vg_ghash = sym super::gcm::vg_ghash,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_stream_init as vg_aes_gcm_stream_init_vaes;
 
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
 ///
 /// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash`.
+///
+/// The machine code of this function is that of `vg_aes_gcm_stream_aad`, which is emitted once and named both ways: the two are the same function.
 ///
 /// # Safety
 ///
@@ -52382,119 +50833,8 @@ ret
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_vaes(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2568]
-mov r9, rsp
-add r9, 8
-mov QWORD PTR [r9+128], rbx
-mov QWORD PTR [r9+136], rbp
-mov QWORD PTR [r9+144], r12
-mov QWORD PTR [r9+152], r13
-mov QWORD PTR [r9+160], r14
-mov QWORD PTR [r9+168], r15
-mov r15, r9
-mov r14, rsi
-mov r13, rdi
-mov r12, rcx
-mov rbp, r8
-mov rbx, rdx
-and rbx, 15
-test rbp, rbp
-je 20f
-test rbx, rbx
-je 22f
-mov ecx, 16
-sub rcx, rbx
-cmp rbp, rcx
-jb 24f
-jmp 25f
-24:
-mov rcx, rbp
-25:
-mov rdi, r14
-add rdi, rbx
-add rdi, 32
-mov rsi, r12
-mov r10d, 0
-26:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 26b
-add r12, rcx
-sub rbp, rcx
-add rbx, rcx
-cmp rbx, 16
-je 27f
-jmp 28f
-27:
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 16
-mov rdx, r14
-add rdx, 32
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash}
-28:
-jmp 23f
-22:
-23:
-mov rdx, r12
-mov rcx, rbp
-shr rcx, 4
-mov rax, rbp
-and rbp, 15
-sub rax, rbp
-add r12, rax
-test rcx, rcx
-je 29f
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 16
-mov r8, r15
-add r8, 512
-call {vg_ghash}
-jmp 210f
-29:
-210:
-mov rcx, rbp
-test rcx, rcx
-je 211f
-mov rdi, r14
-add rdi, 32
-mov rsi, r12
-mov r10d, 0
-213:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 213b
-jmp 212f
-211:
-212:
-jmp 21f
-20:
-21:
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2568]
-ret
-.p2align 6",
-        vg_ghash = sym super::gcm::vg_ghash,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_stream_aad as vg_aes_gcm_stream_aad_vaes;
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_vaes` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "ssse3", "vaes"]);
@@ -55047,6 +53387,8 @@ pub(crate) const VG_AES_GCM_INIT_VAES_PCLMUL_FEATURES: crate::cpu::Features = cr
 ///
 /// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash_pclmul`.
 ///
+/// The machine code of this function is that of `vg_aes_gcm_init_vaes`, which is emitted once and named both ways: the two are the same function.
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -55055,54 +53397,8 @@ pub(crate) const VG_AES_GCM_INIT_VAES_PCLMUL_FEATURES: crate::cpu::Features = cr
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `ssse3`, `vaes` and `aes` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes_pclmul(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2568]
-mov rcx, rsp
-add rcx, 8
-mov QWORD PTR [rcx+128], rbx
-mov QWORD PTR [rcx+136], rbp
-mov QWORD PTR [rcx+144], r12
-mov QWORD PTR [rcx+152], r13
-mov QWORD PTR [rcx+160], r14
-mov QWORD PTR [rcx+168], r15
-mov r15, rcx
-mov r13, rdx
-mov rbx, rsi
-shr rbx, 2
-add rbx, 6
-mov rcx, r15
-add rcx, 512
-call {vg_aes_expand_key_scratch_aesni}
-mov eax, 0
-mov QWORD PTR [r13+240], rax
-mov QWORD PTR [r13+248], rax
-mov QWORD PTR [r15+96], rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r13
-mov rsi, rbx
-mov rdx, r15
-add rdx, 96
-mov rcx, r13
-add rcx, 240
-mov r8d, 1
-mov r9, r15
-add r9, 512
-call {vg_aes_ctr32_vaes}
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2568]
-ret
-.p2align 6",
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_init_vaes as vg_aes_gcm_init_vaes_pclmul;
 
 /// The CPU features `vg_aes_gcm_seal_vaes_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_SEAL_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "vaes", "pclmulqdq", "ssse3"]);
@@ -56012,6 +54308,8 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_VAES_PCLMUL_FEATURES: crate::cpu::Featur
 ///
 /// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash_pclmul`.
 ///
+/// The machine code of this function is that of `vg_aes_gcm_stream_init_pclmul`, which is emitted once and named both ways: the two are the same function.
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -56020,139 +54318,8 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_VAES_PCLMUL_FEATURES: crate::cpu::Featur
 /// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
 /// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_vaes_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2568]
-mov r8, rsp
-add r8, 8
-mov QWORD PTR [r8+128], rbx
-mov QWORD PTR [r8+136], rbp
-mov QWORD PTR [r8+144], r12
-mov QWORD PTR [r8+152], r13
-mov QWORD PTR [r8+160], r14
-mov QWORD PTR [r8+168], r15
-mov r15, r8
-mov r14, rcx
-mov r13, rdi
-mov r12, rsi
-mov rbp, rdx
-cmp rbp, 12
-je 20f
-mov eax, 0
-mov QWORD PTR [r14], rax
-mov QWORD PTR [r14+8], rax
-mov QWORD PTR [r15+216], rbp
-mov ebx, 0
-mov rdx, r12
-mov rcx, rbp
-shr rcx, 4
-mov rax, rbp
-and rbp, 15
-sub rax, rbp
-add r12, rax
-test rcx, rcx
-je 22f
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 0
-mov r8, r15
-add r8, 512
-call {vg_ghash_pclmul}
-jmp 23f
-22:
-23:
-mov rcx, rbp
-test rcx, rcx
-je 24f
-mov eax, 0
-mov QWORD PTR [r15+96], rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r15
-add rdi, 96
-mov rsi, r12
-mov r10d, 0
-26:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 26b
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 0
-mov rdx, r15
-add rdx, 96
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_pclmul}
-jmp 25f
-24:
-25:
-mov ebx, 0
-mov rbp, QWORD PTR [r15+216]
-mov rax, rbx
-add rax, rax
-add rax, rax
-add rax, rax
-bswap rax
-mov QWORD PTR [r15+96], rax
-mov rax, rbp
-add rax, rax
-add rax, rax
-add rax, rax
-bswap rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 0
-mov rdx, r15
-add rdx, 96
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_pclmul}
-jmp 21f
-20:
-mov eax, DWORD PTR [r12]
-mov ecx, DWORD PTR [r12+4]
-mov edx, DWORD PTR [r12+8]
-mov esi, 16777216
-mov DWORD PTR [r14], eax
-mov DWORD PTR [r14+4], ecx
-mov DWORD PTR [r14+8], edx
-mov DWORD PTR [r14+12], esi
-21:
-mov eax, DWORD PTR [r14]
-mov ecx, DWORD PTR [r14+4]
-mov edx, DWORD PTR [r14+8]
-mov esi, DWORD PTR [r14+12]
-bswap esi
-add esi, 1
-bswap esi
-mov DWORD PTR [r14+48], eax
-mov DWORD PTR [r14+52], ecx
-mov DWORD PTR [r14+56], edx
-mov DWORD PTR [r14+60], esi
-mov eax, 0
-mov QWORD PTR [r14+16], rax
-mov QWORD PTR [r14+24], rax
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2568]
-ret
-.p2align 6",
-        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_stream_init_pclmul as vg_aes_gcm_stream_init_vaes_pclmul;
 
 /// The CPU features `vg_aes_gcm_stream_aad_vaes_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_AAD_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
@@ -56163,6 +54330,8 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_VAES_PCLMUL_FEATURES: crate::cpu::Feature
 ///
 /// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash_pclmul`.
 ///
+/// The machine code of this function is that of `vg_aes_gcm_stream_aad_pclmul`, which is emitted once and named both ways: the two are the same function.
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -56171,119 +54340,8 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_VAES_PCLMUL_FEATURES: crate::cpu::Feature
 /// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_vaes_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2568]
-mov r9, rsp
-add r9, 8
-mov QWORD PTR [r9+128], rbx
-mov QWORD PTR [r9+136], rbp
-mov QWORD PTR [r9+144], r12
-mov QWORD PTR [r9+152], r13
-mov QWORD PTR [r9+160], r14
-mov QWORD PTR [r9+168], r15
-mov r15, r9
-mov r14, rsi
-mov r13, rdi
-mov r12, rcx
-mov rbp, r8
-mov rbx, rdx
-and rbx, 15
-test rbp, rbp
-je 20f
-test rbx, rbx
-je 22f
-mov ecx, 16
-sub rcx, rbx
-cmp rbp, rcx
-jb 24f
-jmp 25f
-24:
-mov rcx, rbp
-25:
-mov rdi, r14
-add rdi, rbx
-add rdi, 32
-mov rsi, r12
-mov r10d, 0
-26:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 26b
-add r12, rcx
-sub rbp, rcx
-add rbx, rcx
-cmp rbx, 16
-je 27f
-jmp 28f
-27:
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 16
-mov rdx, r14
-add rdx, 32
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_pclmul}
-28:
-jmp 23f
-22:
-23:
-mov rdx, r12
-mov rcx, rbp
-shr rcx, 4
-mov rax, rbp
-and rbp, 15
-sub rax, rbp
-add r12, rax
-test rcx, rcx
-je 29f
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 16
-mov r8, r15
-add r8, 512
-call {vg_ghash_pclmul}
-jmp 210f
-29:
-210:
-mov rcx, rbp
-test rcx, rcx
-je 211f
-mov rdi, r14
-add rdi, 32
-mov rsi, r12
-mov r10d, 0
-213:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 213b
-jmp 212f
-211:
-212:
-jmp 21f
-20:
-21:
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2568]
-ret
-.p2align 6",
-        vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_stream_aad_pclmul as vg_aes_gcm_stream_aad_vaes_pclmul;
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_vaes_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "vaes", "pclmulqdq", "ssse3"]);
@@ -60330,6 +58388,8 @@ pub(crate) const VG_AES_GCM_INIT_VAES_VPCLMUL_FEATURES: crate::cpu::Features = c
 ///
 /// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash_vpclmul`.
 ///
+/// The machine code of this function is that of `vg_aes_gcm_init_vaes`, which is emitted once and named both ways: the two are the same function.
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -60338,54 +58398,8 @@ pub(crate) const VG_AES_GCM_INIT_VAES_VPCLMUL_FEATURES: crate::cpu::Features = c
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `ssse3`, `vaes` and `aes` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes_vpclmul(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2568]
-mov rcx, rsp
-add rcx, 8
-mov QWORD PTR [rcx+128], rbx
-mov QWORD PTR [rcx+136], rbp
-mov QWORD PTR [rcx+144], r12
-mov QWORD PTR [rcx+152], r13
-mov QWORD PTR [rcx+160], r14
-mov QWORD PTR [rcx+168], r15
-mov r15, rcx
-mov r13, rdx
-mov rbx, rsi
-shr rbx, 2
-add rbx, 6
-mov rcx, r15
-add rcx, 512
-call {vg_aes_expand_key_scratch_aesni}
-mov eax, 0
-mov QWORD PTR [r13+240], rax
-mov QWORD PTR [r13+248], rax
-mov QWORD PTR [r15+96], rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r13
-mov rsi, rbx
-mov rdx, r15
-add rdx, 96
-mov rcx, r13
-add rcx, 240
-mov r8d, 1
-mov r9, r15
-add r9, 512
-call {vg_aes_ctr32_vaes}
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2568]
-ret
-.p2align 6",
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_init_vaes as vg_aes_gcm_init_vaes_vpclmul;
 
 /// The CPU features `vg_aes_gcm_seal_vaes_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_SEAL_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
@@ -61295,6 +59309,8 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_FEATURES: crate::cpu::Featu
 ///
 /// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash_vpclmul`.
 ///
+/// The machine code of this function is that of `vg_aes_gcm_stream_init_vpclmul`, which is emitted once and named both ways: the two are the same function.
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -61303,139 +59319,8 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_FEATURES: crate::cpu::Featu
 /// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
 /// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_vaes_vpclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2568]
-mov r8, rsp
-add r8, 8
-mov QWORD PTR [r8+128], rbx
-mov QWORD PTR [r8+136], rbp
-mov QWORD PTR [r8+144], r12
-mov QWORD PTR [r8+152], r13
-mov QWORD PTR [r8+160], r14
-mov QWORD PTR [r8+168], r15
-mov r15, r8
-mov r14, rcx
-mov r13, rdi
-mov r12, rsi
-mov rbp, rdx
-cmp rbp, 12
-je 20f
-mov eax, 0
-mov QWORD PTR [r14], rax
-mov QWORD PTR [r14+8], rax
-mov QWORD PTR [r15+216], rbp
-mov ebx, 0
-mov rdx, r12
-mov rcx, rbp
-shr rcx, 4
-mov rax, rbp
-and rbp, 15
-sub rax, rbp
-add r12, rax
-test rcx, rcx
-je 22f
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 0
-mov r8, r15
-add r8, 512
-call {vg_ghash_vpclmul}
-jmp 23f
-22:
-23:
-mov rcx, rbp
-test rcx, rcx
-je 24f
-mov eax, 0
-mov QWORD PTR [r15+96], rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r15
-add rdi, 96
-mov rsi, r12
-mov r10d, 0
-26:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 26b
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 0
-mov rdx, r15
-add rdx, 96
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_vpclmul}
-jmp 25f
-24:
-25:
-mov ebx, 0
-mov rbp, QWORD PTR [r15+216]
-mov rax, rbx
-add rax, rax
-add rax, rax
-add rax, rax
-bswap rax
-mov QWORD PTR [r15+96], rax
-mov rax, rbp
-add rax, rax
-add rax, rax
-add rax, rax
-bswap rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 0
-mov rdx, r15
-add rdx, 96
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_vpclmul}
-jmp 21f
-20:
-mov eax, DWORD PTR [r12]
-mov ecx, DWORD PTR [r12+4]
-mov edx, DWORD PTR [r12+8]
-mov esi, 16777216
-mov DWORD PTR [r14], eax
-mov DWORD PTR [r14+4], ecx
-mov DWORD PTR [r14+8], edx
-mov DWORD PTR [r14+12], esi
-21:
-mov eax, DWORD PTR [r14]
-mov ecx, DWORD PTR [r14+4]
-mov edx, DWORD PTR [r14+8]
-mov esi, DWORD PTR [r14+12]
-bswap esi
-add esi, 1
-bswap esi
-mov DWORD PTR [r14+48], eax
-mov DWORD PTR [r14+52], ecx
-mov DWORD PTR [r14+56], edx
-mov DWORD PTR [r14+60], esi
-mov eax, 0
-mov QWORD PTR [r14+16], rax
-mov QWORD PTR [r14+24], rax
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2568]
-ret
-.p2align 6",
-        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_stream_init_vpclmul as vg_aes_gcm_stream_init_vaes_vpclmul;
 
 /// The CPU features `vg_aes_gcm_stream_aad_vaes_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
@@ -61446,6 +59331,8 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_FEATURES: crate::cpu::Featur
 ///
 /// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash_vpclmul`.
 ///
+/// The machine code of this function is that of `vg_aes_gcm_stream_aad_vpclmul`, which is emitted once and named both ways: the two are the same function.
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -61454,119 +59341,8 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_FEATURES: crate::cpu::Featur
 /// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_vaes_vpclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2568]
-mov r9, rsp
-add r9, 8
-mov QWORD PTR [r9+128], rbx
-mov QWORD PTR [r9+136], rbp
-mov QWORD PTR [r9+144], r12
-mov QWORD PTR [r9+152], r13
-mov QWORD PTR [r9+160], r14
-mov QWORD PTR [r9+168], r15
-mov r15, r9
-mov r14, rsi
-mov r13, rdi
-mov r12, rcx
-mov rbp, r8
-mov rbx, rdx
-and rbx, 15
-test rbp, rbp
-je 20f
-test rbx, rbx
-je 22f
-mov ecx, 16
-sub rcx, rbx
-cmp rbp, rcx
-jb 24f
-jmp 25f
-24:
-mov rcx, rbp
-25:
-mov rdi, r14
-add rdi, rbx
-add rdi, 32
-mov rsi, r12
-mov r10d, 0
-26:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 26b
-add r12, rcx
-sub rbp, rcx
-add rbx, rcx
-cmp rbx, 16
-je 27f
-jmp 28f
-27:
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 16
-mov rdx, r14
-add rdx, 32
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_vpclmul}
-28:
-jmp 23f
-22:
-23:
-mov rdx, r12
-mov rcx, rbp
-shr rcx, 4
-mov rax, rbp
-and rbp, 15
-sub rax, rbp
-add r12, rax
-test rcx, rcx
-je 29f
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 16
-mov r8, r15
-add r8, 512
-call {vg_ghash_vpclmul}
-jmp 210f
-29:
-210:
-mov rcx, rbp
-test rcx, rcx
-je 211f
-mov rdi, r14
-add rdi, 32
-mov rsi, r12
-mov r10d, 0
-213:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 213b
-jmp 212f
-211:
-212:
-jmp 21f
-20:
-21:
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2568]
-ret
-.p2align 6",
-        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_stream_aad_vpclmul as vg_aes_gcm_stream_aad_vaes_vpclmul;
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_vaes_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
@@ -80428,6 +78204,8 @@ pub(crate) const VG_AES_GCM_INIT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Featu
 ///
 /// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash_vpclmul`.
 ///
+/// The machine code of this function is that of `vg_aes_gcm_init_vaes`, which is emitted once and named both ways: the two are the same function.
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -80436,54 +78214,8 @@ pub(crate) const VG_AES_GCM_INIT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Featu
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `ssse3`, `vaes` and `aes` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes_vpclmul_avx512(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2568]
-mov rcx, rsp
-add rcx, 8
-mov QWORD PTR [rcx+128], rbx
-mov QWORD PTR [rcx+136], rbp
-mov QWORD PTR [rcx+144], r12
-mov QWORD PTR [rcx+152], r13
-mov QWORD PTR [rcx+160], r14
-mov QWORD PTR [rcx+168], r15
-mov r15, rcx
-mov r13, rdx
-mov rbx, rsi
-shr rbx, 2
-add rbx, 6
-mov rcx, r15
-add rcx, 512
-call {vg_aes_expand_key_scratch_aesni}
-mov eax, 0
-mov QWORD PTR [r13+240], rax
-mov QWORD PTR [r13+248], rax
-mov QWORD PTR [r15+96], rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r13
-mov rsi, rbx
-mov rdx, r15
-add rdx, 96
-mov rcx, r13
-add rcx, 240
-mov r8d, 1
-mov r9, r15
-add r9, 512
-call {vg_aes_ctr32_vaes}
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2568]
-ret
-.p2align 6",
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_init_vaes as vg_aes_gcm_init_vaes_vpclmul_avx512;
 
 /// The CPU features `vg_aes_gcm_seal_vaes_vpclmul_avx512` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq", "avx512f", "avx512bw"]);
@@ -82818,6 +80550,8 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu
 ///
 /// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash_vpclmul`.
 ///
+/// The machine code of this function is that of `vg_aes_gcm_stream_init_vpclmul`, which is emitted once and named both ways: the two are the same function.
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -82826,139 +80560,8 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu
 /// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
 /// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_vaes_vpclmul_avx512(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2568]
-mov r8, rsp
-add r8, 8
-mov QWORD PTR [r8+128], rbx
-mov QWORD PTR [r8+136], rbp
-mov QWORD PTR [r8+144], r12
-mov QWORD PTR [r8+152], r13
-mov QWORD PTR [r8+160], r14
-mov QWORD PTR [r8+168], r15
-mov r15, r8
-mov r14, rcx
-mov r13, rdi
-mov r12, rsi
-mov rbp, rdx
-cmp rbp, 12
-je 20f
-mov eax, 0
-mov QWORD PTR [r14], rax
-mov QWORD PTR [r14+8], rax
-mov QWORD PTR [r15+216], rbp
-mov ebx, 0
-mov rdx, r12
-mov rcx, rbp
-shr rcx, 4
-mov rax, rbp
-and rbp, 15
-sub rax, rbp
-add r12, rax
-test rcx, rcx
-je 22f
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 0
-mov r8, r15
-add r8, 512
-call {vg_ghash_vpclmul}
-jmp 23f
-22:
-23:
-mov rcx, rbp
-test rcx, rcx
-je 24f
-mov eax, 0
-mov QWORD PTR [r15+96], rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r15
-add rdi, 96
-mov rsi, r12
-mov r10d, 0
-26:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 26b
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 0
-mov rdx, r15
-add rdx, 96
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_vpclmul}
-jmp 25f
-24:
-25:
-mov ebx, 0
-mov rbp, QWORD PTR [r15+216]
-mov rax, rbx
-add rax, rax
-add rax, rax
-add rax, rax
-bswap rax
-mov QWORD PTR [r15+96], rax
-mov rax, rbp
-add rax, rax
-add rax, rax
-add rax, rax
-bswap rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 0
-mov rdx, r15
-add rdx, 96
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_vpclmul}
-jmp 21f
-20:
-mov eax, DWORD PTR [r12]
-mov ecx, DWORD PTR [r12+4]
-mov edx, DWORD PTR [r12+8]
-mov esi, 16777216
-mov DWORD PTR [r14], eax
-mov DWORD PTR [r14+4], ecx
-mov DWORD PTR [r14+8], edx
-mov DWORD PTR [r14+12], esi
-21:
-mov eax, DWORD PTR [r14]
-mov ecx, DWORD PTR [r14+4]
-mov edx, DWORD PTR [r14+8]
-mov esi, DWORD PTR [r14+12]
-bswap esi
-add esi, 1
-bswap esi
-mov DWORD PTR [r14+48], eax
-mov DWORD PTR [r14+52], ecx
-mov DWORD PTR [r14+56], edx
-mov DWORD PTR [r14+60], esi
-mov eax, 0
-mov QWORD PTR [r14+16], rax
-mov QWORD PTR [r14+24], rax
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2568]
-ret
-.p2align 6",
-        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_stream_init_vpclmul as vg_aes_gcm_stream_init_vaes_vpclmul_avx512;
 
 /// The CPU features `vg_aes_gcm_stream_aad_vaes_vpclmul_avx512` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
@@ -82969,6 +80572,8 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu:
 ///
 /// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash_vpclmul`.
 ///
+/// The machine code of this function is that of `vg_aes_gcm_stream_aad_vpclmul`, which is emitted once and named both ways: the two are the same function.
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -82977,119 +80582,8 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu:
 /// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_vaes_vpclmul_avx512(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2568]
-mov r9, rsp
-add r9, 8
-mov QWORD PTR [r9+128], rbx
-mov QWORD PTR [r9+136], rbp
-mov QWORD PTR [r9+144], r12
-mov QWORD PTR [r9+152], r13
-mov QWORD PTR [r9+160], r14
-mov QWORD PTR [r9+168], r15
-mov r15, r9
-mov r14, rsi
-mov r13, rdi
-mov r12, rcx
-mov rbp, r8
-mov rbx, rdx
-and rbx, 15
-test rbp, rbp
-je 20f
-test rbx, rbx
-je 22f
-mov ecx, 16
-sub rcx, rbx
-cmp rbp, rcx
-jb 24f
-jmp 25f
-24:
-mov rcx, rbp
-25:
-mov rdi, r14
-add rdi, rbx
-add rdi, 32
-mov rsi, r12
-mov r10d, 0
-26:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 26b
-add r12, rcx
-sub rbp, rcx
-add rbx, rcx
-cmp rbx, 16
-je 27f
-jmp 28f
-27:
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 16
-mov rdx, r14
-add rdx, 32
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_vpclmul}
-28:
-jmp 23f
-22:
-23:
-mov rdx, r12
-mov rcx, rbp
-shr rcx, 4
-mov rax, rbp
-and rbp, 15
-sub rax, rbp
-add r12, rax
-test rcx, rcx
-je 29f
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 16
-mov r8, r15
-add r8, 512
-call {vg_ghash_vpclmul}
-jmp 210f
-29:
-210:
-mov rcx, rbp
-test rcx, rcx
-je 211f
-mov rdi, r14
-add rdi, 32
-mov rsi, r12
-mov r10d, 0
-213:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 213b
-jmp 212f
-211:
-212:
-jmp 21f
-20:
-21:
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2568]
-ret
-.p2align 6",
-        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_stream_aad_vpclmul as vg_aes_gcm_stream_aad_vaes_vpclmul_avx512;
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq", "avx512f", "avx512bw"]);
@@ -83932,6 +81426,8 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_AVX512_FEATURES: crate::c
 ///
 /// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash_vpclmul`.
 ///
+/// The machine code of this function is that of `vg_aes_gcm_stream_finish_vaes_vpclmul`, which is emitted once and named both ways: the two are the same function.
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -83942,121 +81438,8 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_AVX512_FEATURES: crate::c
 /// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2576]
-mov rax, rsp
-add rax, 16
-mov QWORD PTR [rsp+8], rax
-mov rax, QWORD PTR [rsp+8]
-mov QWORD PTR [rax+128], rbx
-mov QWORD PTR [rax+136], rbp
-mov QWORD PTR [rax+144], r12
-mov QWORD PTR [rax+152], r13
-mov QWORD PTR [rax+160], r14
-mov QWORD PTR [rax+168], r15
-mov r15, rax
-mov r14, rdx
-mov r13, rdi
-mov QWORD PTR [r15+176], rsi
-mov QWORD PTR [r15+184], rcx
-mov QWORD PTR [r15+192], r8
-mov QWORD PTR [r15+200], r9
-mov rbx, QWORD PTR [r15+192]
-mov rax, QWORD PTR [r15+184]
-test rbx, rbx
-je 20f
-jmp 21f
-20:
-mov rbx, rax
-21:
-and rbx, 15
-test rbx, rbx
-je 22f
-mov eax, 0
-mov QWORD PTR [r15+96], rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r15
-add rdi, 96
-mov rsi, r14
-add rsi, 32
-mov rcx, rbx
-mov r10d, 0
-24:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 24b
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 16
-mov rdx, r15
-add rdx, 96
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_vpclmul}
-jmp 23f
-22:
-23:
-mov rbx, QWORD PTR [r15+184]
-mov rbp, QWORD PTR [r15+192]
-mov rax, rbx
-add rax, rax
-add rax, rax
-add rax, rax
-bswap rax
-mov QWORD PTR [r15+96], rax
-mov rax, rbp
-add rax, rax
-add rax, rax
-add rax, rax
-bswap rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 16
-mov rdx, r15
-add rdx, 96
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_vpclmul}
-mov rax, QWORD PTR [r14+16]
-mov QWORD PTR [r15], rax
-mov rax, QWORD PTR [r14+24]
-mov QWORD PTR [r15+8], rax
-mov rdi, r13
-mov rsi, QWORD PTR [r15+176]
-mov rdx, r14
-mov rcx, r15
-add rcx, 0
-mov r8d, 1
-mov r9, r15
-add r9, 512
-call {vg_aes_ctr32_vaes}
-mov rdi, QWORD PTR [r15+200]
-mov rax, QWORD PTR [r15]
-mov rdx, QWORD PTR [r15+8]
-mov QWORD PTR [rdi], rax
-mov QWORD PTR [rdi+8], rdx
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2576]
-ret
-.p2align 6",
-        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_stream_finish_vaes_vpclmul as vg_aes_gcm_stream_finish_vaes_vpclmul_avx512;
 
 /// The CPU features `vg_aes_gcm_stream_verify_vaes_vpclmul_avx512` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
@@ -84066,6 +81449,8 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_AVX512_FEATURES: crate::c
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
 /// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and hashes with `vg_ghash_vpclmul`.
+///
+/// The machine code of this function is that of `vg_aes_gcm_stream_verify_vaes_vpclmul`, which is emitted once and named both ways: the two are the same function.
 ///
 /// # Safety
 ///
@@ -84077,193 +81462,8 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_AVX512_FEATURES: crate::c
 /// * `state` must not overlap `ctx`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2584]
-mov rax, QWORD PTR [rsp+2592]
-mov QWORD PTR [rsp+8], rax
-mov rax, rsp
-add rax, 24
-mov QWORD PTR [rsp+16], rax
-mov rax, QWORD PTR [rsp+16]
-mov QWORD PTR [rax+128], rbx
-mov QWORD PTR [rax+136], rbp
-mov QWORD PTR [rax+144], r12
-mov QWORD PTR [rax+152], r13
-mov QWORD PTR [rax+160], r14
-mov QWORD PTR [rax+168], r15
-mov r15, rax
-mov r14, rdx
-mov r13, rdi
-mov QWORD PTR [r15+176], rsi
-mov QWORD PTR [r15+184], rcx
-mov QWORD PTR [r15+192], r8
-mov rbx, QWORD PTR [rsp+8]
-mov QWORD PTR [r15+224], rbx
-mov rsi, r9
-mov ecx, 0
-cmp rbx, 4
-jb 20f
-cmp rbx, 17
-jb 22f
-jmp 23f
-22:
-mov ecx, 1
-23:
-jmp 21f
-20:
-21:
-test rcx, rcx
-je 24f
-mov eax, 0
-mov QWORD PTR [r15+256], rax
-mov QWORD PTR [r15+264], rax
-mov rdi, r15
-add rdi, 256
-mov rcx, rbx
-cmp rcx, 16
-je 26f
-mov r10d, 0
-28:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 28b
-jmp 27f
-26:
-mov rax, QWORD PTR [rsi]
-mov r10, QWORD PTR [rsi+8]
-mov QWORD PTR [rdi], rax
-mov QWORD PTR [rdi+8], r10
-27:
-mov rbx, QWORD PTR [r15+192]
-mov rax, QWORD PTR [r15+184]
-test rbx, rbx
-je 29f
-jmp 210f
-29:
-mov rbx, rax
-210:
-and rbx, 15
-test rbx, rbx
-je 211f
-mov eax, 0
-mov QWORD PTR [r15+96], rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r15
-add rdi, 96
-mov rsi, r14
-add rsi, 32
-mov rcx, rbx
-mov r10d, 0
-213:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 213b
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 16
-mov rdx, r15
-add rdx, 96
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_vpclmul}
-jmp 212f
-211:
-212:
-mov rbx, QWORD PTR [r15+184]
-mov rbp, QWORD PTR [r15+192]
-mov rax, rbx
-add rax, rax
-add rax, rax
-add rax, rax
-bswap rax
-mov QWORD PTR [r15+96], rax
-mov rax, rbp
-add rax, rax
-add rax, rax
-add rax, rax
-bswap rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r13
-add rdi, 240
-mov rsi, r14
-add rsi, 16
-mov rdx, r15
-add rdx, 96
-mov ecx, 1
-mov r8, r15
-add r8, 512
-call {vg_ghash_vpclmul}
-mov rax, QWORD PTR [r14+16]
-mov QWORD PTR [r15], rax
-mov rax, QWORD PTR [r14+24]
-mov QWORD PTR [r15+8], rax
-mov rdi, r13
-mov rsi, QWORD PTR [r15+176]
-mov rdx, r14
-mov rcx, r15
-add rcx, 0
-mov r8d, 1
-mov r9, r15
-add r9, 512
-call {vg_aes_ctr32_vaes}
-mov rbx, QWORD PTR [r15+224]
-mov eax, 0
-mov QWORD PTR [r15+240], rax
-mov QWORD PTR [r15+248], rax
-mov rdi, r15
-add rdi, 240
-mov rsi, r15
-add rsi, 0
-mov rcx, rbx
-cmp rcx, 16
-je 214f
-mov r10d, 0
-216:
-movzx eax, BYTE PTR [rsi+r10*1]
-mov BYTE PTR [rdi+r10*1], al
-add r10, 1
-cmp r10, rcx
-jne 216b
-jmp 215f
-214:
-mov rax, QWORD PTR [rsi]
-mov r10, QWORD PTR [rsi+8]
-mov QWORD PTR [rdi], rax
-mov QWORD PTR [rdi+8], r10
-215:
-mov rax, QWORD PTR [r15+240]
-xor rax, QWORD PTR [r15+256]
-mov rdx, QWORD PTR [r15+248]
-xor rdx, QWORD PTR [r15+264]
-or rax, rdx
-cmp rax, 1
-mov eax, 0
-adc eax, 0
-jmp 25f
-24:
-mov eax, 0
-25:
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2584]
-ret
-.p2align 6",
-        vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_stream_verify_vaes_vpclmul as vg_aes_gcm_stream_verify_vaes_vpclmul_avx512;
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul_avx512` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq", "avx512f", "avx512bw"]);
@@ -100751,6 +97951,8 @@ ret
 ///
 /// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and hashes with `vg_ghash_vpclmul`.
 ///
+/// The machine code of this function is that of `vg_aes_gcm_init`, which is emitted once and named both ways: the two are the same function.
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -100758,54 +97960,8 @@ ret
 /// * `key_len` must be 16, 24 or 32.
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vpclmul(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
-    core::arch::naked_asm!(
-        r"lea rsp, [rsp-2568]
-mov rcx, rsp
-add rcx, 8
-mov QWORD PTR [rcx+128], rbx
-mov QWORD PTR [rcx+136], rbp
-mov QWORD PTR [rcx+144], r12
-mov QWORD PTR [rcx+152], r13
-mov QWORD PTR [rcx+160], r14
-mov QWORD PTR [rcx+168], r15
-mov r15, rcx
-mov r13, rdx
-mov rbx, rsi
-shr rbx, 2
-add rbx, 6
-mov rcx, r15
-add rcx, 512
-call {vg_aes_expand_key_scratch}
-mov eax, 0
-mov QWORD PTR [r13+240], rax
-mov QWORD PTR [r13+248], rax
-mov QWORD PTR [r15+96], rax
-mov QWORD PTR [r15+104], rax
-mov rdi, r13
-mov rsi, rbx
-mov rdx, r15
-add rdx, 96
-mov rcx, r13
-add rcx, 240
-mov r8d, 1
-mov r9, r15
-add r9, 512
-call {vg_aes_ctr32}
-mov rbx, QWORD PTR [r15+128]
-mov rbp, QWORD PTR [r15+136]
-mov r12, QWORD PTR [r15+144]
-mov r13, QWORD PTR [r15+152]
-mov r14, QWORD PTR [r15+160]
-mov r15, QWORD PTR [r15+168]
-lea rsp, [rsp+2568]
-ret
-.p2align 6",
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
-    )
-}
+#[allow(unused_imports)]
+pub(crate) use self::vg_aes_gcm_init as vg_aes_gcm_init_vpclmul;
 
 /// The CPU features `vg_aes_gcm_seal_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_SEAL_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
