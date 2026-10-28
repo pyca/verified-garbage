@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyScratchFrame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInput
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyArgContext
 
 /-! # Shared arithmetic composes with the established input and output contracts -/
 
@@ -17,12 +18,13 @@ open VG.Impl.RsaKeyGen.X86.KeyRuntime
 open VG.Proof.RsaKeyGen.X86.Key (Environment Input BodyOutcome stage_scratch_frame
   deriveArrays prepareArrays keyPartArrays)
 
-theorem front_ok {E : Environment} {s : State} (h : Input E s) (H : Ws s E.base E.size E.n 32) :
+theorem front_ok {E : Environment} {p : BitVec 32} {s : State} (h : Input E s) (H : Ws s E.base E.size E.n 32)
+    (C : VG.Proof.RsaKeyGen.X86.KeyArgs.Context E.base E.size p E.argument s) :
     WP isa front s fun t => VG.Proof.Rsa.X86.Keys.Ws t E.base E.size E.n 32 ∧ BodyOutcome E s.mem t ∧
       Frame E.outputs.writes s.mem t.mem ∧ Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
   have widths := h.valid.widths
   unfold front
-  refine WP.seq (WP.mono (loadInputs_front h H) fun u ⟨L, Hu, Fu, Ku⟩ => ?_)
+  refine WP.seq (WP.mono (loadInputs_front h H C) fun u ⟨L, Hu, Fu, Ku⟩ => ?_)
   refine WP.seq (WP.mono (deriveLoaded_ok Hu widths.2.2.1 widths.2.2.2.1 widths.2.2.2.2.1
     widths.1 widths.2.1 L.pBound L.qBound L.zero L.one L.loaded)
     fun v ⟨Hv, Ov, result, Kv⟩ => ?_)
