@@ -42,12 +42,13 @@ open VG.Spec.Rsa (recoverPrimes)
   · simp only [List.mem_cons,List.not_mem_nil,or_false] at hd
     rcases hd with rfl|rfl <;> rfl
 
- theorem fusedRest_ok {g : CallGeometry} {s0 s : State} (inputs : Inputs g s0) (len : Lengths g)
+ omit rsaBatchLaw in
+ theorem fusedRest_ok {g : CallGeometry} {s0 s : State} (inputs : Inputs g s0)
     (h : KS g.toGeo s0 (fun _ => inputValue g s0.mem 0) [aN]
       (fun _ => 2*(product g s0.mem/2)) [wM] (fun _ => 0) [] s)
     (go : GoOn (product g s0.mem)) (bound : inputValue g s0.mem 0<2^(64*g.n))
     (odd : inputValue g s0.mem 0%2=1) (large : 101<inputValue g s0.mem 0) :
-    WP isa VG.Impl.Rsa.X86.RecoverRt.fusedRest s (RestResult g s0) := by
+    WP isa VG.Impl.Rsa.X86.RecoverRt.fusedRest s (FinIn g s0) := by
   obtain ⟨ae,ad⟩ := inputArguments inputs
   obtain ⟨count,limit⟩ := inputs.countBounds
   obtain ⟨evenValue,positive,even,fit⟩ := exponent_facts go
@@ -56,20 +57,19 @@ open VG.Spec.Rsa (recoverPrimes)
   refine WP.seq (WP.mono (fusedPrepare_ok h evenValue) fun u1 h1 => ?_)
   refine WP.seq (WP.mono (mont_ok h1 rfl bound odd (by omega)) fun u2 ⟨h2,mr⟩ => ?_)
   obtain ⟨I,tracked,inverse⟩ := h2.trackInverse mr (by decide)
-  refine WP.seq (WP.mono (fusedLoop_ok
+  refine (WP.mono (fusedLoop_ok
     (by simp [AM,upd,mBase,aNg,aO,mXm,mR2])
     (by simp [AM,upd,aN,aNg,aO,mXm,mR2,mBase,aOne,aZ])
     (by simp [AM,upd,aZ,aNg,aO,mXm,mR2,mBase,aOne]) bound
     (by simpa only [upd_self] using inverse) odd (by omega)
     (by simp [AM,upd,aO,aNg]) (by simp [AM,upd]) ae ad positive even fit count limit
     inputs.countWide tracked (by rfl)) fun u3 ⟨j,st,_,hs,zl,zpos,found⟩ => ?_)
-  refine WP.mono (fin_ok inputs len hs
-    (by simp [AM,upd,mBase,aNg,aO,mXm,mR2])
-    (by simp [AM,upd,aN,aNg,aO,mXm,mR2,mBase,aOne,aZ]) bound
-    (by simpa [VJ,upd,sInv,sCand,sCnt] using inverse) odd (by omega)
-    (by simp [AM,upd,aZ,aNg,aO,mXm,mR2,mBase,aOne])
-    (by simp [AM,upd,aOne,aNg,aO,mXm,mR2,mBase]) zl) fun t finished => ?_
-  refine ⟨st.1,st.2.2,j+1,finished,zl,zpos,?_⟩
+  refine ⟨_,_,_,_,_,j+1,st,hs,
+    (by simp [AM,upd,mBase,aNg,aO,mXm,mR2]),
+    (by simp [AM,upd,aN,aNg,aO,mXm,mR2,mBase,aOne,aZ]),
+    (by simpa [VJ,upd,sInv,sCand,sCnt] using inverse),
+    (by simp [AM,upd,aZ,aNg,aO,mXm,mR2,mBase,aOne]),
+    (by simp [AM,upd,aOne,aNg,aO,mXm,mR2,mBase]),zl,zpos,?_⟩
   rw [VG.Proof.Rsa.recoverPrimes_go go]
   simpa only [exponent,product,Spec.Rsa.recoverTries] using found
 

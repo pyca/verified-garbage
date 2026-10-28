@@ -34,11 +34,12 @@ theorem selectedRest_ok {g : CallGeometry} {s0 s : State} (inputs : Inputs g s0)
     WP isa VG.Impl.Rsa.X86.RecoverRt.selectedRest s (RestResult g s0) := by
   unfold VG.Impl.Rsa.X86.RecoverRt.selectedRest
   refine WP.seq (WP.mono (recoveryChoice_ok h) fun u ⟨hu,cu⟩ => ?_)
+  refine WP.seq (WP.mono (Q := FinIn g s0) ?_ fun t F => finIn_ok inputs len bound odd large F)
   rw [WP.iteCold_iff]
   refine WP.ite (decide ((g.args 5).toNat<256)) (by exact cu) ?_ ?_
   · intro _
-    exact rest_ok inputs len hu go bound odd large
+    exact rest_ok inputs hu go bound odd large
   · intro _
-    exact fusedRest_ok inputs len hu go bound odd large
+    exact fusedRest_ok inputs hu go bound odd large
 
 end VG.Proof.Rsa.X86.Recover
