@@ -359,7 +359,7 @@ theorem csub_ok {s : State} (h : Bx L s B Z len N) {src o : Ref} (hsh : src.half
     WP isa (VG.Impl.Rsa.X86.InvBatchRt.csub L src o) s fun u =>
       Bx L u B Z len N ∧ Unch B [(rv (kw len) tmp, 4 * nw len), (rv (kw len) o, 4 * nw len)] s.mem u.mem ∧
       val32 u.mem B (rv (kw len) o) (nw len) = val32 s.mem B (rv (kw len) src) (nw len + 1) % m ∧
-      Keeps wordClob s u := by
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u := by
   have hn := h.nowrap
   have hZ := h.halfZ
   have ke := kw_eq len
