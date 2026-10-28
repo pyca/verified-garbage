@@ -52,5 +52,6 @@ theorem p192_ok : CfgOk p192 where
   fn := Weierstrass.PPC64LE.Mont.p192n_ok
   fnk := rfl
   fnm := rfl
+  mulNf := fun _ h => nomatch h
 
 end VG.Proof.Ecdsa.PPC64LE

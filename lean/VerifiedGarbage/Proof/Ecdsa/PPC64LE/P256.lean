@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Layout
 public import VerifiedGarbage.Impl.Ecdsa.P256.PPC64LE
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P256.MulLit
 import VerifiedGarbage.Proof.P256.Point
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.MontModuli
 
@@ -51,5 +52,6 @@ theorem p256_ok : CfgOk p256 where
   fn := Weierstrass.PPC64LE.Mont.p256n_ok
   fnk := rfl
   fnm := rfl
+  mulNf := fun _ _ => Impl.Ecdsa.PPC64LE.mulP256_noFrames
 
 end VG.Proof.Ecdsa.PPC64LE

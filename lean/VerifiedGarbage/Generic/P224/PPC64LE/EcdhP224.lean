@@ -29,7 +29,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P224.curve) : List Artifact := 
       functions of `p224_mont`) with a final conditional subtraction. The peer's key is checked \
       without branches (its first byte, both coordinates below `p`, and the curve's equation), \
       and the ladder multiplies the peer's point if it is valid, else `G`, so it always runs on a \
-      point of the curve. `[d]P` is a double-and-add ladder over all 224 bits of `d`, with the \
+      point of the curve. `[d]P` is a call of `vg_p224_mul`, a double-and-add ladder over all 224 bits of `d`, with the \
       complete addition formulas of Renes, Costello and Batina (calls of `vg_p224_point_double` \
       and `vg_p224_point_add`) and a masked selection for each bit; `Z⁻¹` is Fermat's, by \
       square-and-always-multiply. The result (or zeros) is selected by a mask of the checks, \

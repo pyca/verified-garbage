@@ -127,11 +127,19 @@ def final : Prog isa :=
     subCall c.SN (c.sl W) (c.sl XN) (c.sl RM'),
     .block (c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.PPC64LE.Cfg.checkZero c (c.sl W) ++ finish c)]
 
-/-- `[u]G + [v]Q`, into `R`, from the tables of bits of `u` and `v`. -/
+/-- The scalar at slot `i` to where the multiplications read it: `K`'s slot,
+for `vg_<curve>_mul` (`Cfg.mul`; `r`, there, is not read again), else the
+table of its bits. -/
+def scalarAt (i : Nat) : Prog isa :=
+  match c.mul with
+  | some _ => .block (copy c.n (c.sl K) (c.sl i))
+  | none => bits (c.sl i) (bitsAt c.n 0) (8 * c.n)
+
+/-- `[u]G + [v]Q`, into `R`. -/
 def points : Prog isa :=
-  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (Point.ladderP c.ladderCfg c.SP) <|
-  .seq (.block (save c)) <| .seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n)) <|
-  .seq (Point.ladderP (Impl.Ecdh.PPC64LE.Cfg.ladderQ c) c.SP) (sum c)
+  .seq (scalarAt c U) <| .seq c.gen <|
+  .seq (.block (save c)) <| .seq (scalarAt c V) <|
+  .seq (c.qMul Impl.Ecdh.PPC64LE.PX Impl.Ecdh.PPC64LE.PY) (sum c)
 
 /-- Everything after the checks of the key. -/
 def back : Prog isa :=

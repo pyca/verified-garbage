@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.PPC64LE.LadderP
 public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Spec.Ecdsa
+public import VerifiedGarbage.Spec.Weierstrass.Mul
 
 /-!
 # ECDSA signing on PPC64LE
@@ -128,6 +129,10 @@ structure Cfg where
   C : Spec.Weierstrass.Curve
   SP : Spec.Weierstrass.Mont.Modulus
   SN : Spec.Weierstrass.Mont.Modulus
+  /-- The curve whose `vg_<curve>_mul` (`Spec/Weierstrass/Mul.lean`) computes
+  `[k]Q` (`mulFn`), which the signature, the public key, ECDH and
+  verification call (`gen`, `qMul`), if any; else they run the ladder inline. -/
+  mul : Option Spec.Weierstrass.Mul.Curve
 
 namespace Cfg
 
@@ -277,8 +282,60 @@ def signWith (generator : Prog isa) : Prog isa :=
   .seq c.middle <|
   .seq (pow c.powN c.SN) c.scalar
 
-/-- Signing with the generic variable-base ladder. -/
-def sign : Prog isa := c.signWith (Point.ladderP c.ladderCfg c.SP)
+/-! ## `vg_<curve>_mul`
+
+`[k]Q` (`Spec/Weierstrass/Mul.lean`) as a function, which the signature,
+the public key, ECDH and verification call: the ladder of `ladderP`, its
+point at `ACC`, `PT`, `ONEP` (a copy of `Q`, which the contract has in
+`R`'s first two slots), over the bits of `k` at `K`'s slot. It keeps `r31`
+and `lr` past the numbered slots (slot 45's place, the start of the
+contract's tail, below the point functions' slots and the field
+arithmetic's own working space), and writes no other callee-saved register,
+so a caller's `out` in `r14` stays known to be public through the call; it
+returns with `r3` the working space. -/
+
+/-- The ladder of `vg_<curve>_mul`: the signature's, from the point at `ACC`,
+`PT`, `ONEP`. -/
+def mulLadder : LadderCfg := { c.ladderCfg with G := c.pt ACC PT ONEP }
+
+/-- Where `vg_<curve>_mul` keeps `r31` and `lr`: past the numbered slots. -/
+def mulAt31 : Nat := c.sl nslots
+def mulAtLr : Nat := c.sl nslots + 8
+
+/-- `vg_<curve>_mul`'s body: the table of `k`'s bits, `Q` (in `R`'s first
+two slots) copied to `ACC` and `PT`, `R = O = (0 : 1 : 0)` (from zero and
+one), then `R = [k]Q` by the ladder. -/
+def mulBody : Prog isa :=
+  .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
+  .seq (.block (copy c.n (c.sl ACC) (c.sl RX) ++ copy c.n (c.sl PT) (c.sl RY) ++
+    copy c.n (c.sl RX) (c.sl ZERO) ++ copy c.n (c.sl RY) (c.sl ONEP) ++ copy c.n (c.sl RZ) (c.sl ZERO)))
+    (Point.ladderP c.mulLadder c.SP)
+
+/-- `vg_<curve>_mul`: `r31` and `lr` kept around the body, through `r0`. -/
+def mulFn : Prog isa :=
+  .seq (.block [.store .d .r31 wb c.mulAt31, .mflr .r0, .store .d .r0 wb c.mulAtLr]) <|
+  .seq c.mulBody (.block [.load .d .r0 wb c.mulAtLr, .mtlr .r0, .load .d .r31 wb c.mulAt31])
+
+/-- A call of `vg_<curve>_mul` (`C`'s) on the point at `px`, `py`: the point
+copied to `R`'s first two slots, then the call, on the working space in
+`r3`. -/
+def mulAt (C : Spec.Weierstrass.Mul.Curve) (px py : Nat) : Prog isa :=
+  .seq (.block (copy c.n (c.sl RX) (c.sl px) ++ copy c.n (c.sl RY) (c.sl py)))
+    (.call C.mulApi.name c.mulFn)
+
+/-- `R = [k]P` for the point `P` at `px`, `py`, `ONEP` and the number `k` at
+`K`'s slot: a call of `vg_<curve>_mul` if the curve has it (`Cfg.mul`), else
+the ladder inline, from the table of `k`'s bits. -/
+def qMul (px py : Nat) : Prog isa :=
+  match c.mul with
+  | some C => c.mulAt C px py
+  | none => Point.ladderP { c.ladderCfg with G := c.pt px py ONEP } c.SP
+
+/-- `R = [k]G`: `qMul` from `G`. -/
+def gen : Prog isa := c.qMul GX GY
+
+/-- Signing with `gen`. -/
+def sign : Prog isa := c.signWith c.gen
 
 end Cfg
 

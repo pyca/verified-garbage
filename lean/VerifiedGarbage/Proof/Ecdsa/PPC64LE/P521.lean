@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Layout
 public import VerifiedGarbage.Impl.Ecdsa.P521.PPC64LE
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P521.MulLit
 import VerifiedGarbage.Proof.P521.Point
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.MontModuli
 
@@ -53,5 +54,6 @@ theorem p521_ok : CfgOk p521 where
   fn := Weierstrass.PPC64LE.Mont.p521n_ok
   fnk := rfl
   fnm := rfl
+  mulNf := fun _ _ => Impl.Ecdsa.PPC64LE.mulP521_noFrames
 
 end VG.Proof.Ecdsa.PPC64LE

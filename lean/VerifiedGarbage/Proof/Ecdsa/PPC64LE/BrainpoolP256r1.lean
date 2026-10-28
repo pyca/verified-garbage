@@ -52,5 +52,6 @@ theorem brainpoolp256r1_ok : CfgOk brainpoolp256r1 where
   fn := Weierstrass.PPC64LE.Mont.brainpoolp256r1n_ok
   fnk := rfl
   fnm := rfl
+  mulNf := fun _ h => nomatch h
 
 end VG.Proof.Ecdsa.PPC64LE

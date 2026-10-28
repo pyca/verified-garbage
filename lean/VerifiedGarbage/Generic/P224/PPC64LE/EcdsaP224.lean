@@ -29,7 +29,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P224.curve) : List Artifact := 
       `scratch` (in `r3` during the function), and keeps `out` in `r14`. Field elements and \
       scalars are four 64-bit words in Montgomery form, multiplied by word-by-word Montgomery \
       multiplication (CIOS, in calls of `vg_p224_mul_mod_p` and the other functions of \
-      `p224_mont`) with a final conditional subtraction. `[k]G` is a double-and-add ladder over \
+      `p224_mont`) with a final conditional subtraction. `[k]G` is a call of `vg_p224_mul`, a double-and-add ladder over \
       all 224 bits of `k`, with the complete addition formulas of Renes, Costello and Batina for \
       every addition and doubling (calls of `vg_p224_point_double` and `vg_p224_point_add`) and a \
       masked selection for each bit; the inversions modulo `p` and `n` are Fermat's, by \

@@ -52,5 +52,6 @@ theorem secp256k1_ok : CfgOk secp256k1 where
   fn := Weierstrass.PPC64LE.Mont.secp256k1n_ok
   fnk := rfl
   fnm := rfl
+  mulNf := fun _ h => nomatch h
 
 end VG.Proof.Ecdsa.PPC64LE

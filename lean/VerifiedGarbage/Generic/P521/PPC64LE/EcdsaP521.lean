@@ -29,7 +29,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := 
       `scratch` (in `r3` during the function), and keeps `out` in `r14`. Field elements and \
       scalars are nine 64-bit words in Montgomery form, multiplied by word-by-word Montgomery \
       multiplication (CIOS, in calls of `vg_p521_mul_mod_p` and the other functions of \
-      `p521_mont`) with a final conditional subtraction. `[k]G` is a double-and-add ladder over \
+      `p521_mont`) with a final conditional subtraction. `[k]G` is a call of `vg_p521_mul`, a double-and-add ladder over \
       all 528 bits of the 66-byte encoding of `k`, with the complete addition formulas of Renes, Costello and Batina for \
       every addition and doubling (inlined, as calls of the field functions: the points do not \
       fit the point functions' slots) and a masked selection for each bit; the inversions modulo `p` and `n` are Fermat's, by \
