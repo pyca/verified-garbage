@@ -149,12 +149,27 @@ fn os_random(buf: &mut [u8]) -> Result<(), Error> {
 ///
 /// RSAES-PKCS1-v1_5 is deprecated (see the [module](self) documentation).
 pub fn encrypt(key: &PublicKey, plaintext: &[u8]) -> Result<Vec<u8>, Error> {
+    encrypt_with_rng(key, plaintext, os_random)
+}
+
+/// [`encrypt`], with its padding string drawn from `random` instead of the
+/// operating system.
+///
+/// Not part of the API: it lets benchmarks compare implementations on
+/// identical work, from fixed tapes. The ciphertext is secure only if
+/// `random` supplies uniformly random bytes, never reused.
+#[doc(hidden)]
+pub fn encrypt_with_rng(
+    key: &PublicKey,
+    plaintext: &[u8],
+    random: impl FnMut(&mut [u8]) -> Result<(), Error>,
+) -> Result<Vec<u8>, Error> {
     let k = key.modulus_len();
     if plaintext.len() + 11 > k {
         return Err(Error::MessageTooLong);
     }
     let mut ps = vec![0u8; k - plaintext.len() - 3];
-    fill_nonzero(&mut ps, os_random)?;
+    fill_nonzero(&mut ps, random)?;
     let c = encrypt_with(key, plaintext, &ps);
     zeroize(&mut ps);
     Ok(c)
@@ -411,6 +426,22 @@ mod tests {
         let mut two = vec![0; 64];
         two[63] = 2;
         assert_eq!(decrypt(&private, &two), Err(Error::Fault));
+    }
+
+    /// The same padding string gives the same ciphertext, as the fixed-tape
+    /// benchmark relies on.
+    #[test]
+    fn encryption_from_a_fixed_tape_is_deterministic() {
+        let (_, public) = composite_key();
+        let encrypt = |byte| {
+            encrypt_with_rng(&public, &[7; 53], |buf| {
+                buf.fill(byte);
+                Ok(())
+            })
+            .unwrap()
+        };
+        assert_eq!(encrypt(1), encrypt(1));
+        assert_ne!(encrypt(1), encrypt(2));
     }
 
     #[test]

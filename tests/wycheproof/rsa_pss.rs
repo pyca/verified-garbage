@@ -25,7 +25,7 @@ use verified_garbage::hashes::{
     sha512_224::Sha512_224, sha512_256::Sha512_256,
 };
 use verified_garbage::rsa::{PrivateKey, PublicKey};
-use verified_garbage::rsa_pss::{Hash, SaltLength, sign, verify};
+use verified_garbage::rsa_pss::{Hash, SaltLength, sign, sign_with_rng, verify};
 
 use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
@@ -229,6 +229,18 @@ fn check_signatures(
         let a = sign(&private, &d, *h, *h, 16).unwrap();
         let b = sign(&private, &d, *h, *h, 16).unwrap();
         assert_ne!(a, b, "{name} tcId {id}");
+        // The same salt gives the same signature, as the fixed-tape
+        // benchmark relies on.
+        let fixed = || {
+            sign_with_rng(&private, &d, *h, *h, 16, |buf| {
+                buf.fill(0x5a);
+                Ok(())
+            })
+            .unwrap()
+        };
+        let a = fixed();
+        assert_eq!(a, fixed(), "{name} tcId {id}");
+        assert!(verify(&public, &a, &d, *h, *h, SaltLength::Len(16)));
     }
 }
 

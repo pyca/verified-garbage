@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateLoadInput
-public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateExponent
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateExponent
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentRt
+import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Code
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateShape
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateArrays
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateInput
@@ -18,7 +18,7 @@ open VG.Impl.Bignum.X86.PublicContext
 
 theorem exponent_ok {E : Environment} (v : E.Valid) {eBytes pBytes entropy : List Byte} {s : State}
     (D : Drawn E eBytes pBytes entropy s) :
-    WP isa (VG.Impl.RsaKeyGen.X86.CandidateExponent.code E.width) s fun t =>
+    WP isa VG.Impl.RsaKeyGen.X86.ExponentRt.code s fun t =>
       Drawn E eBytes pBytes entropy t ∧
       t.gpr .eax = BitVec.ofNat 32 (decide (Nat.gcd (candidateValue E entropy - 1) (Spec.Rsa.os2ip eBytes) = 1)).toNat ∧
       val32 t.mem E.base (slot E.width 5) (2 * E.width) = candidateValue E entropy - 1 ∧
@@ -28,15 +28,17 @@ theorem exponent_ok {E : Environment} (v : E.Valid) {eBytes pBytes entropy : Lis
   have stack : (s.gpr .esp).toNat ≤ E.base.toNat ∨ E.base.toNat + E.size + 40 ≤ (s.gpr .esp).toNat := by
     rw [D.input.stack]
     rcases v.workspaceStack with h | h <;> omega
-  refine WP.mono_syms (CandidateExponent.code_ok D.input.scratch v.width_bounds.1 v.width_bounds.2
+  have outLen : s.mem.readW (off E.base 4) 32 = BitVec.ofNat 32 (8 * E.width) := by
+    rw [D.input.header 1 (by decide), v.length_eq]; rfl
+  refine WP.mono_syms (ExponentRt.code_ok D.input.scratch v.width_bounds.1 v.width_bounds.2
     (v.slotFit (by decide : 5 < 28)) D.candidate (by have := candidate_large v entropy; omega) (candidate_odd v entropy)
     D.input.exponent_eq (D.input.exponentLength_eq v) (by have := v.exponentLength; omega) v.exponentLength.2
-    v.exponentFit D.input.memory.exponentRead (v.readWorkspace List.mem_cons_self) fit stack)
+    v.exponentFit D.input.memory.exponentRead (v.readWorkspace List.mem_cons_self) fit stack outLen)
     fun t ⟨result, value, saved, W, F, K⟩ syms => ?_
   rw [D.input.memory.exponentBytes] at result
   rw [D.input.stack] at F
   have frame : WorkFrame E s.mem t.mem := VG.X86.Frame.below_mono (wr := [E.workspaceRegion]) (a := 20) F (by decide) v.low
-  have low : ∀ r ∈ CandidateExponent.ranges E.width, 48 ≤ r.1 := by
+  have low : ∀ r ∈ ExponentRt.ranges E.width, 48 ≤ r.1 := by
     intro r mem
     rcases List.mem_append.mp mem with mem | mem
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at mem

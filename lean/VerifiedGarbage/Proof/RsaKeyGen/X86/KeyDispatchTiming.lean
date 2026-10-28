@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeySizedTiming
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateWidthTiming
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyImportedPair
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDispatch
 
 /-! # Public native key width dispatch retains all secret input snapshots -/
 

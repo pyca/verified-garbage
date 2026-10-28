@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 
 import VerifiedGarbage.Proof.Rsa.X86.RvFusedPrepared
-import VerifiedGarbage.Proof.Rsa.X86.RvTimeRest
+public import VerifiedGarbage.Proof.Rsa.X86.RvTimeRest
 import VerifiedGarbage.Proof.Rsa.X86.RvTimeFusedCheck
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateData
@@ -31,6 +31,7 @@ theorem CandidateData.fusedSearch_ok {g : Geo} {n eLen dLen : Nat} (C : Candidat
   fusedLoop_ok C.value modulus C.zero C.bound C.inverse C.odd (by have := C.large; omega)
     C.one C.neg C.ae C.ad ep even C.rb C.count C.limit C.wide h vc
 
+omit rsaBatchLaw in
 theorem fusedRest_relCT (g : CallGeometry) (pg : PubG g.toGeo) (s0 t0 : State)
     (left : Inputs g s0) (right : Inputs g t0)
     (goS : GoOn (product g s0.mem)) (goT : GoOn (product g t0.mem))
@@ -42,7 +43,7 @@ theorem fusedRest_relCT (g : CallGeometry) (pg : PubG g.toGeo) (s0 t0 : State)
     (tries : (recoverPrimes (inputValue g s0.mem 0) (inputValue g s0.mem 1) (inputValue g s0.mem 2)).2 =
       (recoverPrimes (inputValue g t0.mem 0) (inputValue g t0.mem 1) (inputValue g t0.mem 2)).2) :
     RelCT isa (fun s t => NumbersState g s0 s ∧ NumbersState g t0 t) VG.Impl.Rsa.X86.RecoverRt.fusedRest
-      (fun _ _ => True) := by
+      (FinPair g.toGeo) := by
   intro s t tr ur sf tf ⟨hs, ht⟩ es et
   cases es with
   | @seq _ _ _ u _ _ _ e1 er =>
@@ -67,20 +68,16 @@ theorem fusedRest_relCT (g : CallGeometry) (pg : PubG g.toGeo) (s0 t0 : State)
   rw [← modulus] at tries'
   have attempts : p.context.fusedTries = q.context.fusedTries :=
     p.attempts.trans (tries'.trans q.attempts.symm)
-  cases er with
-  | @seq _ _ _ a _ _ _ e3 e4 =>
-  cases fr with
-  | @seq _ _ _ b _ _ _ f3 f4 =>
   have eq3 := (fusedLoop_relCT pg p.context q.context p.modulus q.modulus p.positive q.positive p.even q.even
-    p.counter q.counter attempts _ _ _ _ _ _ ⟨p.state, q.state⟩ e3 f3).1
-  obtain ⟨j, st, _, cs, smallS, _, _⟩ := wp_result (p.context.fusedSearch_ok p.modulus p.positive p.even p.state p.counter) e3
-  obtain ⟨l, tt, _, ds, smallT, _, _⟩ := wp_result (q.context.fusedSearch_ok q.modulus q.positive q.even q.state q.counter) f3
-  have eq4 := (fin_relCT pg p.context.value q.context.value p.modulus q.modulus p.context.bound
-    (by simpa [VJ, upd, sInv, sCand, sCnt] using p.context.inverse)
-    (by simpa [VJ, upd, sInv, sCand, sCnt] using q.context.inverse)
-    p.context.odd (by have := p.context.large; omega) p.context.zero q.context.zero p.unit q.unit
-    smallS smallT _ _ _ _ _ _ ⟨cs, ds⟩ e4 f4).1
-  exact ⟨by rw [eq1, eq2, eq3, eq4], trivial⟩
+    p.counter q.counter attempts _ _ _ _ _ _ ⟨p.state, q.state⟩ er fr).1
+  obtain ⟨j, st, _, cs, smallS, _, _⟩ := wp_result (p.context.fusedSearch_ok p.modulus p.positive p.even p.state p.counter) er
+  obtain ⟨l, tt, _, ds, smallT, _, _⟩ := wp_result (q.context.fusedSearch_ok q.modulus q.positive q.even q.state q.counter) fr
+  exact ⟨by rw [eq1, eq2, eq3], _, _, _, _, _, _, _, _, _, _, _, _, _, cs, ds, p.context.value, q.context.value,
+    p.modulus, q.modulus, p.context.bound,
+    (by simpa [VJ, upd, sInv, sCand, sCnt] using p.context.inverse),
+    (by simpa [VJ, upd, sInv, sCand, sCnt] using q.context.inverse),
+    p.context.odd, (by have := p.context.large; omega), p.context.zero, q.context.zero, p.unit, q.unit,
+    smallS, smallT⟩
 
 
 end VG.Proof.Rsa.X86.Recover

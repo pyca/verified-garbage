@@ -25,14 +25,16 @@
 //! `vg_aes_ctr32_aes`. Updates longer than 32 bytes use `_aes_cbc`, whose
 //! whole-block chaining keeps the round keys and chaining value in vector
 //! registers. On x86, CPUs with AES-NI run the `_aesni` functions; SSSE3
-//! is not required. ARMv7 and PPC64LE have only the scalar implementation.
+//! is not required. ARMv7, PPC64LE and RISC-V have only the scalar
+//! implementation.
 
 #![cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "x86",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 use super::{InvalidKeyLength, InvalidMac};

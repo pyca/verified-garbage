@@ -24,7 +24,7 @@ theorem sampleWitness_ok {B p : Addr} {Z w N : Nat} {mi : BitVec 64} {bs : List 
     (h : SampleState B p Z w N mi bs s) (hd : MrDims B Z w) (hodd : N % 2 = 1)
     (hlen : 2 ≤ bs.length) (hmax : bs.length < 2 ^ 31) (hkw : (bs.length + 7) / 8 ≤ w)
     (hbits : Spec.RsaKeyGen.bitLength (N - 1) = 8 * bs.length) :
-    WP isa (Impl.Dsa.X86_64.Generation.sampleWitness bs.length) s fun t =>
+    WP isa (Impl.Dsa.X86_64.Generation.sampleWitness) s fun t =>
       ModulusReady t B Z w mi N ∧
       wv t.mem B (slot w aXm) w = (Spec.RsaKeyGen.witness (N - 1) (Spec.Rsa.os2ip bs)).1 ∧
       word t.mem B (8 * kU) = mask (Spec.RsaKeyGen.witness (N - 1) (Spec.Rsa.os2ip bs)).2 ∧

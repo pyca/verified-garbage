@@ -23,6 +23,12 @@ variable {G : Spec.Mgf1.Hash}
 def callRd (s : State) : List Region :=
   [preR s, ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r9, (s.gpr .rsi).toNat⟩, ⟨fb s, 32⟩]
 
+/-- What the public-key operation writes: its output, at the start of
+`scratch`, and its working space. -/
+def cWr (s : State) : List Region :=
+  [⟨stackArg s 3, (s.gpr .rsi).toNat⟩,
+    ⟨off (stackArg s 3) oRsa, (stackArg s 4 - BitVec.ofNat 64 1024).toNat * 8⟩]
+
 def validCache (s : State) : Prop :=
   Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat) =
     some (Spec.Rsa.wordsAt s.mem (stackArg s 5) (stackArg s 6).toNat)
@@ -43,11 +49,11 @@ theorem pre_words {s : State} {m : Mem} (hp : Pre G s) (hf : Frame (vwrR s) s.me
     · exact hp.preScr
 
 theorem call_pre {s t : State} (hp : Pre G s) (hsp : t.gpr .rsp = fb s)
-    (hargs : ∀ i < 4, word t.mem (fb s) (8 * i) = vArg s i) (hdi : t.gpr .rdi = off (stackArg s 3) oEm)
+    (hargs : ∀ i < 4, word t.mem (fb s) (8 * i) = vArg s i) (hdi : t.gpr .rdi = stackArg s 3)
     (hsi : t.gpr .rsi = s.gpr .rsi) (hdx : t.gpr .rdx = stackArg s 5) (hcx : t.gpr .rcx = stackArg s 6)
     (h8 : t.gpr .r8 = s.gpr .rdx) (h9 : t.gpr .r9 = s.gpr .rcx) :
-    pdChkContract.pre (t.callEntry.withRegions (callRd s) (vWr s)) := by
-  have hE : ∀ i < 4, stackArg (t.callEntry.withRegions (callRd s) (vWr s)) i = vArg s i :=
+    pdChkContract.pre (t.callEntry.withRegions (callRd s) (cWr s)) := by
+  have hE : ∀ i < 4, stackArg (t.callEntry.withRegions (callRd s) (cWr s)) i = vArg s i :=
     fun i hi => (vstackArg_call hp.toVPre hsp _ _ hi).trans (hargs i hi)
   simp only [pdChkContract, pdContract, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
     State.callEntry_rsp,
@@ -62,7 +68,7 @@ theorem call_pre {s t : State} (hp : Pre G s) (hsp : t.gpr .rsp = fb s)
   have hk1 := hp.k1; have hk2 := hp.k2
   have hsl := hp.hsl; have wS := hp.wS
   have h392 : frameBytes = 392 := rfl
-  have hvs : verifyStack = 400 := rfl
+  have hvs : verifyStack = 800 := rfl
   have c1 : oEm = 2560 := rfl
   have c2 : oRsa = 8192 := rfl
   have h8' := vfb_sub8 hp.toVPre
@@ -75,28 +81,28 @@ theorem call_pre {s t : State} (hp : Pre G s) (hsp : t.gpr .rsp = fb s)
   have dKsg : (vstkR s).Disjoint ⟨s.gpr .r9, (s.gpr .rsi).toNat⟩ := by rw [hsg]; exact hp.dKsg
   have wSg : (s.gpr .r9).toNat + (s.gpr .rsi).toNat ≤ 2 ^ 64 := by have := hp.wSg; have := hp.hsg; omega_arith
   -- What lies in what.
-  have sI : Region.Sub ⟨off (stackArg s 3) oEm, (s.gpr .rsi).toNat⟩ ⟨stackArg s 3, (stackArg s 4).toNat * 8⟩ :=
-    Offset.sub_base _ (by omega_arith)
+  have sI : Region.Sub ⟨stackArg s 3, (s.gpr .rsi).toNat⟩ ⟨stackArg s 3, (stackArg s 4).toNat * 8⟩ :=
+    Region.sub_prefix (by omega_arith)
   have sR : Region.Sub ⟨off (stackArg s 3) oRsa, (stackArg s 4 - 1024#64).toNat * 8⟩
       ⟨stackArg s 3, (stackArg s 4).toNat * 8⟩ := Offset.sub_base _ (by rw [hsc]; omega_arith)
   have sA : Region.Sub ⟨fb s, 32⟩ (vstkR s) := fun a h => vframe_sub s a (Region.sub_prefix (by decide) a h)
   have sRet : Region.Sub ⟨fb s - 8, 8⟩ (vstkR s) := vret_sub s
   have dRA : (⟨fb s - 8, 8⟩ : Region).Disjoint ⟨fb s, 32⟩ :=
     (Offset.base_disjoint_below (fb s) (n := 8) (k := 32) (by omega_arith)).symm
-  have dIR : (⟨off (stackArg s 3) oEm, (s.gpr .rsi).toNat⟩ : Region).Disjoint
+  have dIR : (⟨stackArg s 3, (s.gpr .rsi).toNat⟩ : Region).Disjoint
       ⟨off (stackArg s 3) oRsa, (stackArg s 4 - 1024#64).toNat * 8⟩ :=
-    Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by rw [hsc]; omega_arith)
+    Offset.base_disjoint _ (by omega_arith) (by rw [hsc]; omega_arith)
   have hsA : (⟨stackArg s 3, (stackArg s 4).toNat * 8⟩ : Region).Disjoint ⟨fb s, 32⟩ := (hp.dKs.sub_left sA).symm
   refine ⟨by omega_arith, rfl, rfl, (hp.preScr.sub_right sI).symm, (hp.des.sub_right sI).symm, (dsgs.sub_right sI).symm,
     dIR, hsA.sub_left sI,
     hp.preScr.sub_right sR, hp.des.sub_right sR, dsgs.sub_right sR, hsA.sub_left sR,
     (hp.dKs.sub_left sRet).sub_right sI, hp.preStack.symm.sub_left sRet, hp.dKe.sub_left sRet, dKsg.sub_left sRet,
     (hp.dKs.sub_left sRet).sub_right sR, dRA,
-    by rw [toNat_off (by omega_arith)]; omega_arith, hp.preWrap, hp.wE, wSg, by rw [toNat_off (by omega_arith), hsc]; omega_arith,
+    by omega_arith, hp.preWrap, hp.wE, wSg, by rw [toNat_off (by omega_arith), hsc]; omega_arith,
     ⟨hk1, hk2⟩, hp.preLen, trivial, hp.L1, hp.L2, by unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords; rw [hsc]; omega_arith⟩
 
 theorem call_covers {s t : State} (hp : Pre G s) (hrd : t.rd = s.rd) (hwr : t.wr = frR s :: s.wr) :
-    Covers (callRd s ++ vWr s) (t.rd ++ t.wr) ∧ Covers (vWr s) t.wr := by
+    Covers (callRd s ++ cWr s) (t.rd ++ t.wr) ∧ Covers (cWr s) t.wr := by
   have hk2 := hp.k2; have hsl := hp.hsl; have hk1 := hp.k1
   have c1 : oEm = 2560 := rfl
   have c2 : oRsa = 8192 := rfl
@@ -104,10 +110,10 @@ theorem call_covers {s t : State} (hp : Pre G s) (hrd : t.rd = s.rd) (hwr : t.wr
   have hfr : frR s ∈ t.wr := by rw [hwr]; exact List.mem_cons_self ..
   have hscr : (⟨stackArg s 3, (stackArg s 4).toNat * 8⟩ : Region) ∈ t.wr := by rw [hwr, hp.hwr]; simp
   have z : ∀ p : Addr, p = p + BitVec.ofNat 64 0 := fun p => (BitVec.add_zero p).symm
-  have cw : Covers (vWr s) t.wr := Covers.of_sub fun r hr => by
-    simp only [vWr, List.mem_cons, List.not_mem_nil, or_false] at hr
+  have cw : Covers (cWr s) t.wr := Covers.of_sub fun r hr => by
+    simp only [cWr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨_, hscr, oEm, rfl, by dsimp only; omega_arith⟩
+    · exact ⟨_, hscr, 0, (BitVec.add_zero _).symm, by dsimp only; omega_arith⟩
     · exact ⟨_, hscr, oRsa, rfl, by dsimp only; rw [hsc]; omega_arith⟩
   refine ⟨Covers.append_left ?_ cw.right, cw⟩
   have cr : Covers [⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩,
@@ -128,15 +134,15 @@ theorem call_covers {s t : State} (hp : Pre G s) (hrd : t.rd = s.rd) (hwr : t.wr
 theorem call_ok (v : PublicImpl)
     {s t : State} (hp : Pre G s) (hst : t.gpr .rsp = fb s) (hrd : t.rd = s.rd) (hwr : t.wr = frR s :: s.wr)
     (hM : Frame (vwrR s) s.mem t.mem)
-    (hargs : ∀ i < 4, word t.mem (fb s) (8 * i) = vArg s i) (hdi : t.gpr .rdi = off (stackArg s 3) oEm)
+    (hargs : ∀ i < 4, word t.mem (fb s) (8 * i) = vArg s i) (hdi : t.gpr .rdi = stackArg s 3)
     (hsi : t.gpr .rsi = s.gpr .rsi) (hdx : t.gpr .rdx = stackArg s 5) (hcx : t.gpr .rcx = stackArg s 6)
     (h8 : t.gpr .r8 = s.gpr .rdx) (h9 : t.gpr .r9 = s.gpr .rcx) :
     WP isa (.call v.name v.code) t fun t' => t'.rd = t.rd ∧ t'.wr = t.wr ∧
       (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧ t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 ∧
       Frame (vwrR s) s.mem t'.mem ∧
       (∀ x, ((frR s).Contains x 1 ∨ ((⟨stackArg s 3, oRsa⟩ : Region).Contains x 1 ∧
-        ¬ (⟨off (stackArg s 3) oEm, (s.gpr .rsi).toNat⟩ : Region).Contains x 1)) → t'.mem x = t.mem x) ∧
-      (validCache s → Spec.Rsa.written t'.mem (off (stackArg s 3) oEm) (s.gpr .rsi).toNat ((t'.gpr .rax).setWidth 32)
+        ¬ (⟨stackArg s 3, (s.gpr .rsi).toNat⟩ : Region).Contains x 1)) → t'.mem x = t.mem x) ∧
+      (validCache s → Spec.Rsa.written t'.mem (stackArg s 3) (s.gpr .rsi).toNat ((t'.gpr .rax).setWidth 32)
         (Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat)
           (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
           (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (s.gpr .rsi).toNat))) := by
@@ -149,22 +155,22 @@ theorem call_ok (v : PublicImpl)
   have := hp.sp1; have := hp.sp2
   have hk1 := hp.k1; have hk2 := hp.k2; have hsl := hp.hsl; have wS := hp.wS
   have h392 : frameBytes = 392 := rfl
-  have hvs : verifyStack = 400 := rfl
+  have hvs : verifyStack = 800 := rfl
   have c2 : oRsa = 8192 := rfl
   have c1 : oEm = 2560 := rfl
   have hsc := vsc_sub hp.toVPre
   rw [hst, hd] at hf
-  have sEm : Region.Sub ⟨off (stackArg s 3) oEm, (s.gpr .rsi).toNat⟩ (vscrR s) := Offset.sub_base _ (by omega_arith)
+  have sEm : Region.Sub ⟨stackArg s 3, (s.gpr .rsi).toNat⟩ (vscrR s) := Region.sub_prefix (by omega_arith)
   have sScr : Region.Sub ⟨off (stackArg s 3) oRsa, (stackArg s 4 - 1024#64).toNat * 8⟩ (vscrR s) :=
     Offset.sub_base _ (by rw [hsc]; omega_arith)
   have sBel : Region.Sub (below (fb s) (0 + 8)) (vstkR s) := vret_sub s
   refine ⟨hrd', hwr', hcs, hmx, hM.trans (hf.sub fun r hr => ?_), fun x hx => hf x fun r hr hc => ?_, ?_⟩
-  · simp only [vWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+  · simp only [cWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), sEm⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), sScr⟩
     · exact ⟨_, List.mem_cons_self .., sBel⟩
-  · simp only [vWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+  · simp only [cWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     have dFb : (frR s).Disjoint (below (fb s) (0 + 8)) := Offset.base_disjoint_below (fb s) (by omega_arith)
     rcases hx with hx | ⟨hx, hnx⟩ <;> rcases hr with rfl | rfl | rfl
     · exact (hp.dKs.sub_left (vframe_sub s)) x hx (sEm x hc)
@@ -174,7 +180,7 @@ theorem call_ok (v : PublicImpl)
     · exact (Offset.base_disjoint (stackArg s 3) (e := oRsa) (n := (stackArg s 4 - 1024#64).toNat * 8)
         (k := oRsa) (le_refl _) (by rw [hsc]; omega_arith)) x hx hc
     · exact ((hp.dKs.sub_left sBel).symm.sub_left (Region.sub_prefix (by omega_arith))) x hx hc
-  · have hE : ∀ i < 4, stackArg (t.callEntry.withRegions (callRd s) (vWr s)) i = vArg s i :=
+  · have hE : ∀ i < 4, stackArg (t.callEntry.withRegions (callRd s) (cWr s)) i = vArg s i :=
       fun i hi => (vstackArg_call hp.toVPre hst _ _ hi).trans (hargs i hi)
     have fE : Frame [below (fb s) 8] t.mem t.callEntry.mem := by
       rw [State.callEntry_mem, hst]

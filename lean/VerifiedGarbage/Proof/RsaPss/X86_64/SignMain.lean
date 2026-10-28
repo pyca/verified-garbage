@@ -214,7 +214,7 @@ theorem signEnc_ok (lk : MgfLink H hH) {u : State} {F S : Addr} (L : Lay u F S) 
     {W : Nat → BitVec 64} (R : Rep u.mem F S V W) {k lo sl : Nat} {c : Byte} {dig q : Addr}
     (hk : W 17 = BitVec.ofNat 64 k) (hlo : W 26 = BitVec.ofNat 64 lo) (hc : W 25 = BitVec.setWidth 64 c)
     (hdg : W 37 = dig) (hq : W 39 = q) (hsl : W 40 = BitVec.ofNat 64 sl)
-    (_hk1 : 64 ≤ k) (hk2 : k ≤ 1024) (hlo1 : lo ≤ 1) (hfit : H.D + sl + 2 ≤ k - lo)
+    (hk2 : k ≤ 1024) (hlo1 : lo ≤ 1) (hfit : H.D + sl + 2 ≤ k - lo)
     (hax : u.gpr .rax = BitVec.ofNat 64 (k - lo - (H.D + 2)))
     (hdR : ∀ i < H.D, InRegions (u.rd ++ u.wr) (dig + BitVec.ofNat 64 i) 1)
     (hdO : ∀ i < H.D, Outside u.wr F (dig + BitVec.ofNat 64 i))

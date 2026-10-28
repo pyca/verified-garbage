@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.RsaPss.X86_64
+public import VerifiedGarbage.Impl.RsaPss.X86_64.Encoding
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.AddrArith
@@ -9,7 +9,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
 meta import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Framework.Mem
-meta import VerifiedGarbage.Impl.RsaPss.X86_64
+meta import VerifiedGarbage.Impl.RsaPss.X86_64.Encoding
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.Mem
 
@@ -60,10 +60,11 @@ structure HashChecks (P : Params) (D : Nat) (n : Nat) : Prop where
   digestState : ∃ hc, (taint.check (pT n [21] []) (.block (digestAt (ckH P D) oSt)) hc).isSome = true
   directLen : ∃ hc, (taint.check (pT n [21] []) (directLen (ckH P D)) hc).isSome = true
   fixedPad80 : ∃ hc, (taint.check (pT n [21, 28] []) (fixedPad80 (D + 4)) hc).isSome = true
+  /-- `encode`'s and `checkEncoding`'s check of `emLen`. -/
+  fit : ∃ hc, (taint.check (pT n [17] []) (.block (fitH (ckH P D))) hc).isSome = true
 
 /-- The pieces of verification. -/
 structure VerifyChecks (P : Params) (D : Nat) : Prop where
-  emLen : ∃ hc, (taint.check (pT 1 [17] [.rax]) (.seq (.block smear) (emLen (ckH P D))) hc).isSome = true
   salt : ∃ hc, (taint.check (pT 1 [17, 26] [.rdx]) (.block ([.mov .rax (.mem (sp sK)), .mov .r8 (.mem (sp sLo)),
     .alu .sub .rax (.reg .r8)] ++ saltFits (ckH P D))) hc).isSome = true
   posCheck : ∃ hc, (taint.check (pT 1 [24, 35, 36] []) (posCheck (ckH P D)) hc).isSome = true
@@ -82,7 +83,6 @@ structure VerifyChecks (P : Params) (D : Nat) : Prop where
 
 /-- The pieces of signing. -/
 structure SignChecks (P : Params) (D : Nat) : Prop where
-  emLen : ∃ hc, (taint.check (pT 2 [17] [.rax]) (.seq (.block smear) (emLen (ckH P D))) hc).isSome = true
   salt : ∃ hc, (taint.check (pT 2 [40] [.rax]) (.block ([.mov .rdx (.mem (sp sSaltLen))] ++ saltFits (ckH P D))) hc).isSome
     = true
   copyDigest : ∃ hc, (taint.check (pT 2 [21, 37] []) (.seq clearY (copyDigest (ckH P D))) hc).isSome = true

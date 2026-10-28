@@ -51,35 +51,6 @@ theorem WP.seqs_append : ∀ {l₁ l₂ : List (Prog isa)}, l₁ ≠ [] → l₂
     have ih := @WP.seqs_append (c' :: cs) l₂ (List.cons_ne_nil _ _) h₂
     exact WP.seq (WP.mono (WP.seq_inv h) fun t ht => ih ht)
 
-/-- RSAVP1's result, `k` bytes, or zeros if it fails. -/
-def vx (s : State) : List Byte :=
-  (Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat)
-    (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
-    (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (s.gpr .rsi).toNat)).getD (Spec.RsaPss.zeros (s.gpr .rsi).toNat)
-
-/-- `Rep` across a change of `EM`'s place alone. -/
-theorem Rep.of_em {m m' : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep m F S V W)
-    (G' : Geo F S) {k : Nat} (hk : oEm + k ≤ oRsa)
-    (h : ∀ x, ((⟨F, frameBytes⟩ : Region).Contains x 1 ∨ ((⟨S, oRsa⟩ : Region).Contains x 1 ∧
-      ¬ (⟨off S oEm, k⟩ : Region).Contains x 1)) → m' x = m x) :
-    Rep m' F S (fun o => if oEm ≤ o ∧ o < oEm + k then m' (off S o) else V o) W where
-  scr o ho := by
-    have := G'.Sw
-    split
-    · rfl
-    · rename_i hn
-      rw [h _ (.inr ⟨Offset.contains_base _ (by omega_arith) (by unfold oRsa at *; omega_arith), fun hc =>
-        (Offset.disjoint S (d := o) (n := 1) (e := oEm) (k := k) (by omega_arith) (by unfold oRsa at *; omega_arith)
-          (by unfold oRsa at *; omega_arith)) (off S o)
-          (Offset.contains S (d := o) (n := 1) (e := o) (k := 1) (le_refl _) (le_refl _)
-            (by unfold oRsa at *; omega_arith)) hc⟩), R.scr o ho]
-  fr k' hk' := by
-    rw [← R.fr k' hk']
-    refine Mem.readW_congr fun i hi => h _ (.inl ?_)
-    have := G'.Fw
-    rw [off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-    exact Offset.contains_base _ (by unfold nW frameBytes at *; omega_arith) (by unfold nW frameBytes at *; omega_arith)
-
 theorem vframe_keep {s u v : State} (hp : VPre G s) (hw : u.wr = frR s :: s.wr) (hsp : u.gpr .rsp = fb s)
     (hM : Frame (vwrR s) s.mem u.mem)
     (hk : ∀ a, (∀ r ∈ u.wr, ¬ r.Contains a 1) → ¬ (below (u.gpr .rsp) 8).Contains a 1 → v.mem a = u.mem a) :
@@ -92,66 +63,6 @@ theorem vframe_keep {s u v : State} (hp : VPre G s) (hw : u.wr = frR s :: s.wr) 
     · exact hx _ (List.mem_cons_self ..) (vframe_sub s x hc)
     · exact hx _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)) hc
   · rw [hsp] at hc; exact hx _ (List.mem_cons_self ..) (vret_sub s x hc)
-
-theorem vfront_ok {pubN : String} {pubC : Prog isa}
-    (hv : ∀ s, pubContract.pre s → ∃ t s', Exec isa pubC s t s' ∧ abiPreserved s s' ∧ pubChkContract.post s s')
-    (hspC : SpSafe pubC) (hdC : pubC.x86_64Depth = 0)
-    {s u : State} (hp : VPre G s) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (L : Lay u (fb s) (stackArg s 3)) (R : Rep u.mem (fb s) (stackArg s 3) V W) (hw : u.wr = frR s :: s.wr)
-    (hrd : u.rd = s.rd) (hM : Frame (vwrR s) s.mem u.mem) {lo a : Nat}
-    (h17 : W 17 = s.gpr .rsi) (h18 : W 18 = s.gpr .rdi) (h19 : W 19 = s.gpr .rdx) (h20 : W 20 = s.gpr .rcx)
-    (h22 : W 22 = stackArg s 4) (h26 : W 26 = BitVec.ofNat 64 lo) (h38 : W 38 = s.gpr .r9)
-    (hax : u.gpr .rax = BitVec.ofNat 64 a) :
-    WP isa (seqs [.block dbSlots, .block pubArgs, .call pubN pubC]) u fun u3 =>
-      Lay u3 (fb s) (stackArg s 3) ∧ u3.wr = u.wr ∧ u3.rd = u.rd ∧
-      (∀ r ∈ [Reg.r13, .r14, .r15], u3.gpr r = u.gpr r) ∧ Frame (vwrR s) s.mem u3.mem ∧
-      ∃ V1 W1, Rep u3.mem (fb s) (stackArg s 3) V1 W1 ∧ (∀ j < nW, 4 ≤ j → j ≠ 23 → j ≠ 24 → W1 j = W j) ∧
-        W1 23 = off (stackArg s 3) (oEm + lo) ∧ W1 24 = BitVec.ofNat 64 (a + 1) ∧
-        (∀ i < (s.gpr .rsi).toNat, V1 (oEm + i) = (vx s).getD i 0) ∧
-        (∀ o, ¬ (oEm ≤ o ∧ o < oEm + (s.gpr .rsi).toNat) → V1 o = V o) := by
-  have hk1 := hp.k1; have hk2 := hp.k2
-  simp only [seqs]
-  -- `DB`'s slots.
-  refine WP.seq (WP.mono (WP.keepIn (by safe_by [dbSlots]) (by exact Nat.zero_le 8)
-    (dbSlots_ok L R h26 hax)) fun u1 ⟨⟨L1, k1, R1⟩, f1⟩ => ?_)
-  have hM1 := vframe_keep hp hw L.rsp hM f1
-  have g1 : ∀ j, j ≠ 23 → j ≠ 24 → upd (upd W 24 (BitVec.ofNat 64 (a + 1))) 23 (off (stackArg s 3) (oEm + lo)) j =
-      W j := fun j h23 h24 => by simp [upd, h23, h24]
-  -- The arguments.
-  refine WP.seq (WP.mono (WP.keepIn (by decide) (by exact Nat.zero_le 8)
-    (pubArgs_ok L1 R1 (by rw [g1 17 (by decide) (by decide), h17]) (by rw [g1 18 (by decide) (by decide), h18])
-      (by rw [g1 19 (by decide) (by decide), h19]) (by rw [g1 20 (by decide) (by decide), h20])
-      (by rw [g1 22 (by decide) (by decide), h22]) (by rw [g1 38 (by decide) (by decide), h38])))
-    fun u2 ⟨⟨k2, L2, ⟨W2, R2, hW2a, hW2b⟩, h2di, h2si, h2dx, h2cx, h2r8, h2r9⟩, f2⟩ => ?_)
-  have hw1 : u1.wr = frR s :: s.wr := k1.2.2.trans hw
-  have hw2 : u2.wr = frR s :: s.wr := k2.2.2.trans hw1
-  have hM2 := vframe_keep hp hw1 L1.rsp hM1 f2
-  -- The call.
-  refine WP.mono (pub_call hv hspC hdC hp L2.rsp ((k2.2.1.trans k1.2.1).trans hrd) hw2 hM2
-    (fun i hi => (R2.fr i (by unfold nW frameBytes; omega_arith)).trans (hW2a i hi)) h2di h2si h2dx h2cx h2r8 h2r9)
-    fun u3 ⟨rd3, wr3, cs3, _, hM3, hk3, hout3⟩ => ?_
-  have hEm : oEm + (s.gpr .rsi).toNat ≤ oRsa := by unfold oEm oRsa; omega_arith
-  have R3 := R2.of_em L2.geo hEm hk3
-  have L3 : Lay u3 (fb s) (stackArg s 3) := L2.of_rep' R2 R3 rfl (cs3 .rsp (by decide)) wr3
-  refine ⟨L3, wr3.trans (k2.2.2.trans k1.2.2), rd3.trans (k2.2.1.trans k1.2.1), fun r hr => ?_, hM3, _, _, R3,
-    fun j hj h4 h23 h24 => by rw [hW2b j hj h4, g1 j h23 h24], by rw [hW2b 23 (by decide) (by decide)]; simp [upd],
-    by rw [hW2b 24 (by decide) (by decide)]; simp [upd], fun i hi => ?_, fun o ho => ?_⟩
-  · have hr3 : r = .r13 ∨ r = .r14 ∨ r = .r15 := by simpa using hr
-    have h1 : r ∈ calleeSaved := by rcases hr3 with rfl | rfl | rfl <;> decide
-    have h2 : r ∉ [Reg.rax, .rdi, .rsi, .rdx, .rcx, .r8, .r9] := by rcases hr3 with rfl | rfl | rfl <;> decide
-    rw [cs3 r h1, k2.gpr h2, k1.gpr (by rcases hr3 with rfl | rfl | rfl <;> decide)]
-  · -- `EM`'s bytes are RSAVP1's result.
-    have hb : Spec.Rsa.bytesAt u3.mem (off (stackArg s 3) oEm) (s.gpr .rsi).toNat = vx s := by
-      unfold vx
-      cases hpo : Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat)
-        (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
-        (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (s.gpr .rsi).toNat) with
-      | none => rw [hpo] at hout3; exact hout3.2
-      | some y => rw [hpo] at hout3; exact hout3.2
-    rw [← hb, bytesAt_off]
-    simp only [ifp (show oEm ≤ oEm + i ∧ oEm + i < oEm + (s.gpr .rsi).toNat by omega_arith)]
-    rw [getD_map_range, ifp hi]
-  · simp only [ifn ho]
 
 /-! ## `DB`, its first nonzero byte, and `acc` -/
 

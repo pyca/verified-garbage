@@ -49,11 +49,12 @@ theorem selectedRest_relCT (g : CallGeometry) (pg : PubG g.toGeo) (s0 t0 : State
       (Q' := fun t => NumbersState g t0 t ∧ t.cf=some (decide ((g.args 5).toNat<256)))
       pg recoveryChoiceCheck (fun _ h => KS.stage h) (fun _ h => KS.stage h)
       (fun _ h => recoveryChoice_ok h) (fun _ h => recoveryChoice_ok h)) ?_
+  refine VG.RelCT.seq (R := FinPair g.toGeo) ?_ (finPair_relCT pg)
   apply VG.RelCT.iteCold
   refine VG.RelCT.ite (fun s t ⟨⟨_,cs⟩,⟨_,ct⟩⟩ => by change s.cf=t.cf; rw [cs,ct]) ?_ ?_
   · exact (rest_relCT g pg s0 t0 left right goS goT boundS boundT oddS oddT largeS largeT modulus tries).mono
-      (fun _ _ h => ⟨h.1.1.1,h.1.2.1⟩) (fun _ _ _ => trivial)
+      (fun _ _ h => ⟨h.1.1.1,h.1.2.1⟩) (fun _ _ h => h)
   · exact (fusedRest_relCT g pg s0 t0 left right goS goT boundS boundT oddS oddT largeS largeT modulus tries).mono
-      (fun _ _ h => ⟨h.1.1.1,h.1.2.1⟩) (fun _ _ _ => trivial)
+      (fun _ _ h => ⟨h.1.1.1,h.1.2.1⟩) (fun _ _ h => h)
 
 end VG.Proof.Rsa.X86.Recover

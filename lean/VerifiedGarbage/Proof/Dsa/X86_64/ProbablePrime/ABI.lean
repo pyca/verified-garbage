@@ -14,10 +14,27 @@ open VG VG.X86_64
 abbrev stack : Nat := 184
 
 /-- The test's contract on x86-64. -/
-abbrev contract (bits : Nat) : Contract isa :=
-  Spec.Dsa.ProbablePrime.contract (Impl.Dsa.X86_64.ProbablePrime.layout bits) abi stack
+abbrev contract : Contract isa :=
+  Spec.Dsa.ProbablePrime.sizedContract Impl.Dsa.X86_64.ProbablePrime.layout
+    Impl.Dsa.X86_64.ProbablePrime.sizes abi stack
+
+/-- The candidate widths parameter generation tests. -/
+def Supported (bits : Nat) : Prop :=
+  bits = 160 ∨ bits = 256 ∨ bits = 1024 ∨ bits = 2048 ∨ bits = 3072
+
+theorem Supported.of_mem {bits : Nat} (h : bits ∈ Impl.Dsa.X86_64.ProbablePrime.sizes) :
+    Supported bits := by
+  simpa only [Supported, Impl.Dsa.X86_64.ProbablePrime.sizes, List.mem_cons, List.not_mem_nil,
+    or_false] using h
+
+theorem Supported.mem {bits : Nat} (h : Supported bits) : bits ∈ Impl.Dsa.X86_64.ProbablePrime.sizes := by
+  rcases h with rfl | rfl | rfl | rfl | rfl <;> decide
+
+theorem Supported.le {bits : Nat} (hb : Supported bits) : 160 ≤ bits ∧ bits ≤ 3072 := by
+  rcases hb with rfl | rfl | rfl | rfl | rfl <;> decide
 
 structure PrimeABI (bits : Nat) (s : State) : Prop where
+  width : s.gpr .r9 = BitVec.ofNat 64 bits
   stackLower : stack ≤ (s.gpr .rsp).toNat
   rd : s.rd = [⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩]
   wr : s.wr = [⟨s.gpr .rdi, (s.gpr .rsi).toNat * 8⟩, ⟨s.gpr .r8, 8⟩]
@@ -38,9 +55,12 @@ structure PrimeABI (bits : Nat) (s : State) : Prop where
   bits : Spec.Dsa.bitLength
     (Spec.Dsa.ProbablePrime.candidateAt (Impl.Dsa.X86_64.ProbablePrime.layout bits) s.mem (s.gpr .rdi)) = bits
 
-theorem primeABI_of {bits : Nat} {s : State} (h : (contract bits).pre s) : PrimeABI bits s := by
-  sig_pre [contract, Spec.Dsa.ProbablePrime.contract, Spec.Dsa.ProbablePrime.sig, abi, argRegs] at h
+theorem primeABI_of {s : State} (h : contract.pre s) :
+    Supported (s.gpr .r9).toNat ∧ PrimeABI (s.gpr .r9).toNat s := by
+  sig_pre [contract, Spec.Dsa.ProbablePrime.sizedContract, Spec.Dsa.ProbablePrime.sizedSig, abi,
+    argRegs] at h
   sig_split h
-  constructor <;> with_reducible assumption
+  refine ⟨Supported.of_mem (by with_reducible assumption), ?_⟩
+  constructor <;> first | with_reducible assumption | exact (BitVec.ofNat_toNat 64 _ |>.trans (BitVec.setWidth_eq _)).symm
 
 end VG.Proof.Dsa.X86_64.ProbablePrime

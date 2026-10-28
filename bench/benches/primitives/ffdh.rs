@@ -17,7 +17,7 @@ pub const USES: &[&str] = &["ffdh", "rsa_mont", "miller_rabin"];
 pub fn bench(c: &mut Criterion) {
     #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
     use crate::AWS_LC;
-    use crate::{OPENSSL, VG};
+    use crate::{OPENSSL, VG, fixed_tape};
     use criterion::BenchmarkId;
     use openssl::{bn::BigNum, derive::Deriver, dh::Dh, pkey::PKey, pkey_ctx::PkeyCtx};
     use std::hint::black_box;
@@ -141,12 +141,19 @@ pub fn bench(c: &mut Criterion) {
         // Cold cases include the checked constructor (and ARM's eager
         // public comb setup). Keep these separate from reused-Parameters
         // generation below: one-key total cost can dominate warm gains.
+        // Here and below, verified-garbage draws its keys from a fixed tape
+        // (`generate_private_key` but for `getrandom`); OpenSSL and AWS-LC
+        // draw from their own generators.
         let mut group = c.benchmark_group("ffdh_cold_first_key");
         group.bench_function(BenchmarkId::new(VG, size / 8), |b| {
             b.iter(|| {
+                let mut tape = fixed_tape(size as u64);
                 Parameters::from_components(black_box(&p), black_box(&g), q.as_deref())
                     .unwrap()
-                    .generate_private_key()
+                    .generate_private_key_with_rng(|buf: &mut [u8]| {
+                        tape(buf);
+                        Ok::<_, ()>(())
+                    })
                     .unwrap()
             })
         });
@@ -181,7 +188,15 @@ pub fn bench(c: &mut Criterion) {
             b.iter(|| aws_lc::Dh::parameters(&p, &g, q.as_deref()).generate())
         });
         group.bench_function(BenchmarkId::new(VG, size / 8), |b| {
-            b.iter(|| black_box(&params).generate_private_key().unwrap())
+            b.iter(|| {
+                let mut tape = fixed_tape(size as u64);
+                black_box(&params)
+                    .generate_private_key_with_rng(|buf: &mut [u8]| {
+                        tape(buf);
+                        Ok::<_, ()>(())
+                    })
+                    .unwrap()
+            })
         });
         group.bench_function(BenchmarkId::new(OPENSSL, size / 8), |b| {
             let mut keygen = PkeyCtx::new(&openssl_params).unwrap();
@@ -252,6 +267,10 @@ pub fn bench(c: &mut Criterion) {
         });
         group.finish();
     }
+    // verified-garbage searches from a fixed tape (`generate` but for
+    // `getrandom`), so it tests the same candidates and witnesses in every
+    // iteration. OpenSSL cannot be given its draws, and draws from its own
+    // generator.
     for generator in [2, 5] {
         let mut group = c.benchmark_group(format!("ffdh_parameters_g{generator}"));
         for bits in [
@@ -262,41 +281,24 @@ pub fn bench(c: &mut Criterion) {
             if bits == 1024 && generator != 2 {
                 continue;
             }
-            // Safe-prime search has high variance. Both libraries use 100
-            // random 512-bit draws. The larger ARM case uses 64 to reduce
-            // search variance within the native job's time limit.
+            // OpenSSL's safe-prime search has high variance: 100 samples at
+            // 512 bits; the larger ARM case uses 64 to stay within the
+            // native job's time limit.
             group.sample_size(if bits == 512 { 100 } else { 64 });
             group.bench_function(BenchmarkId::new(VG, bits / 8), |b| {
-                b.iter(|| Parameters::generate(bits, generator).unwrap())
+                b.iter(|| {
+                    let mut tape = fixed_tape(u64::from(generator));
+                    Parameters::generate_with_rng(black_box(bits), generator, |buf: &mut [u8]| {
+                        tape(buf);
+                        Ok::<_, ()>(())
+                    })
+                    .unwrap()
+                })
             });
             group.bench_function(BenchmarkId::new(OPENSSL, bits / 8), |b| {
                 b.iter(|| Dh::generate_params(bits as u32, generator).unwrap())
             });
         }
-        group.finish();
-    }
-    // The same search from a fixed tape: every iteration, and the base and
-    // head of a comparison, test the same candidates and witnesses, so the
-    // timing compares implementations rather than how many candidates the
-    // random draws happened to need. OpenSSL cannot be given its draws.
-    for generator in [2, 5] {
-        let mut group = c.benchmark_group(format!("ffdh_parameters_fixed_g{generator}"));
-        group.sample_size(10);
-        group.bench_function(BenchmarkId::new(VG, 512 / 8), |b| {
-            b.iter(|| {
-                let mut x = 0x9E37_79B9_7F4A_7C15u64 ^ u64::from(generator);
-                Parameters::generate_with_rng(black_box(512), generator, |buf: &mut [u8]| {
-                    for byte in buf {
-                        x ^= x << 13;
-                        x ^= x >> 7;
-                        x ^= x << 17;
-                        *byte = x as u8;
-                    }
-                    Ok::<_, ()>(())
-                })
-                .unwrap()
-            })
-        });
         group.finish();
     }
 }

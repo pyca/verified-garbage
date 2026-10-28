@@ -32,7 +32,7 @@ theorem probablePrime_ok (M : Mont) (K : Kernel) {P : PrimeParams} {mi : BitVec 
     (hw : P.w ≤ 48) (hz : slot P.w aTab + 2048 ≤ P.Z) (hn : 8161 < P.N)
     (hpolicy : 1024 < Spec.Dsa.bitLength P.N ↔ 16 < P.w)
     (hchecks : P.checks = Spec.Dsa.primeChecks (Spec.Dsa.bitLength P.N)) :
-    WP isa (Impl.Dsa.X86_64.Generation.probablePrime M.mm K.run P.len P.drawBytes) s
+    WP isa (Impl.Dsa.X86_64.Generation.probablePrime M.mm K.run) s
       (PrimeEnd P s (Spec.Dsa.probablePrime P.N (P.rand.drop used))) := by
   have hspec := VG.Proof.Dsa.Generation.probablePrime_large (by omega : 3 < P.N) P.odd (P.rand.drop used)
   unfold Impl.Dsa.X86_64.Generation.probablePrime

@@ -17,7 +17,7 @@ open VG.Proof.MillerRabin.X86_64
 theorem loopRound_ok (M : Mont) (K : Kernel) {P : PrimeParams} {mi : BitVec 64} {s₀ s : State}
     {res : Option (Bool × List Byte)} {i uni used : Nat}
     (h : PrimeLoopState P mi s₀ res i uni used s) (hroom : used + P.drawBytes ≤ P.rand.length) :
-    WP isa (.seq (Impl.Dsa.X86_64.Generation.drawRound M.mm K.run P.len P.drawBytes)
+    WP isa (.seq (Impl.Dsa.X86_64.Generation.drawRound M.mm K.run)
       (.block [.mov .rax (.mem (hdr kStat)), .alu .cmp .rax (.imm 4)])) s fun t =>
         (isa.eval .e t = some false ∧ PrimeLoopEnd P mi s₀ res t) ∨
         (isa.eval .e t = some true ∧ ∃ uni', PrimeLoopState P mi s₀ res (i + 1) uni' (used + P.drawBytes) t) := by

@@ -42,11 +42,13 @@ theorem Drawn.exponentInitial {E : Environment} (v : E.Valid) {eBytes pBytes ent
   refine ⟨D.input.scratch, D.input.stack, v.width_bounds.1, v.width_bounds.2, v.slotFit (by decide), D.candidate,
     by have := candidate_large v entropy; omega, candidate_odd v entropy, D.input.exponent_eq,
     D.input.exponentLength_eq v, by have := v.exponentLength.1; omega, v.exponentLength.2, v.exponentFit,
-    D.input.memory.exponentRead, v.readWorkspace List.mem_cons_self, ?_, by have := v.low; omega, ?_⟩
+    D.input.memory.exponentRead, v.readWorkspace List.mem_cons_self, ?_, by have := v.low; omega, ?_, ?_⟩
   · rw [D.input.memory.exponentBytes]
   · change E.p.toNat ≤ E.base.toNat ∨ E.base.toNat + E.size + 40 ≤ E.p.toNat
     rcases v.workspaceStack with h | h
     · exact Or.inl h
     · exact Or.inr (by omega)
+  · change s.mem.readW (off E.base (4 * 1)) 32 = _
+    rw [D.input.header 1 (by decide), v.length_eq]; rfl
 
 end VG.Proof.RsaKeyGen.X86.Candidate

@@ -28,8 +28,8 @@ theorem primeSetup_depth (mul : Nat → Nat → Nat → Prog isa)
   all_goals first | exact hr | apply hm | exact (show 0 ≤ 128 by decide)
 
 theorem millerRabin_depth (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
-    (hm : ∀ o a b, generationDepth (mul o a b)) (hr : generationDepth round) (len draw : Nat) :
-    generationDepth (millerRabin mul round len draw) := by
+    (hm : ∀ o a b, generationDepth (mul o a b)) (hr : generationDepth round) :
+    generationDepth (millerRabin mul round) := by
   unfold generationDepth at hm hr ⊢
   simp only [millerRabin, primeIteration, drawRound, sampleRound,
     Impl.Ffdh.X86_64.ParameterCandidate.witnessRound, seqs, Code.x86_64Depth, Nat.max_le]
@@ -37,16 +37,16 @@ theorem millerRabin_depth (mul : Nat → Nat → Nat → Prog isa) (round : Prog
   all_goals first | exact hr | apply hm | exact (show 0 ≤ 128 by decide)
 
 theorem probablePrime_depth (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
-    (hm : ∀ o a b, generationDepth (mul o a b)) (hr : generationDepth round) (len draw : Nat) :
-    generationDepth (probablePrime mul round len draw) := by
+    (hm : ∀ o a b, generationDepth (mul o a b)) (hr : generationDepth round) :
+    generationDepth (probablePrime mul round) := by
   exact (show generationDepth (seqs Impl.RsaKeyGen.X86_64.Candidate.trial) by
     unfold generationDepth; decide +kernel).seq
-    (((primeSetup_depth mul hm).seq (millerRabin_depth mul round hm hr len draw)).ite
+    (((primeSetup_depth mul hm).seq (millerRabin_depth mul round hm hr)).ite
       (show generationDepth (.block [.mov32 .rax (.imm 3), .store (hdr Impl.RsaKeyGen.X86_64.Candidate.kStat) .rax]) by exact (show 0 ≤ 128 by decide)) _)
 
 theorem primeBytes_depth (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
-    (hm : ∀ o a b, generationDepth (mul o a b)) (hr : generationDepth round) (len draw : Nat) :
-    generationDepth (primeBytes mul round len draw) :=
-  (show generationDepth (loadPadded 0 20 18) by exact (show 0 ≤ 128 by decide)).seq (probablePrime_depth mul round hm hr len draw)
+    (hm : ∀ o a b, generationDepth (mul o a b)) (hr : generationDepth round) :
+    generationDepth (primeBytes mul round) :=
+  (show generationDepth (loadPadded 0 20 18) by exact (show 0 ≤ 128 by decide)).seq (probablePrime_depth mul round hm hr)
 
 end VG.Proof.Dsa.X86_64.Generation

@@ -104,7 +104,14 @@ impl PrivateKey {
         })
     }
 
-    fn generate_with_rng(
+    /// [`generate`](Self::generate), with `x` drawn from `random` instead
+    /// of the operating system.
+    ///
+    /// Not part of the API: it lets benchmarks compare implementations on
+    /// identical work, from fixed tapes. The key is secret only if `random`
+    /// supplies uniformly random bytes.
+    #[doc(hidden)]
+    pub fn generate_with_rng(
         p: &[u8],
         q: &[u8],
         g: &[u8],

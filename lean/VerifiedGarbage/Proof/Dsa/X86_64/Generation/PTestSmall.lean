@@ -19,7 +19,7 @@ open VG.Proof.Rsa.X86_64 VG.Proof.RsaOaep.X86_64
 
 theorem pTest_small_ok {s : State} {B F S pp : Addr} {Z w len value : Nat}
     {V : Nat → Byte} {W : Nat → BitVec 64}
-    (prime : Nat → Prog isa)
+    (prime : Prog isa)
     (L : Lay s F S) (R : Rep s.mem F S V W)
     (h : Ws s B Z w) (hptr : word s.mem B 160 = pp)
     (hlen : 0 < len) (hbound : value < 256 ^ len)

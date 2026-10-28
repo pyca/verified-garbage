@@ -27,24 +27,24 @@ theorem primeSetup_safe (mul : Nat → Nat → Nat → Prog isa)
   rfl
 
 theorem millerRabin_safe (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
-    (hm : ∀ o a b, generationSafe (mul o a b)) (hr : generationSafe round) (len draw : Nat) :
-    generationSafe (millerRabin mul round len draw) := by
+    (hm : ∀ o a b, generationSafe (mul o a b)) (hr : generationSafe round) :
+    generationSafe (millerRabin mul round) := by
   unfold generationSafe at hm hr ⊢
   simp only [millerRabin, primeIteration, drawRound, sampleRound,
     Impl.Ffdh.X86_64.ParameterCandidate.witnessRound, seqs, Code.allInstrs, hm, hr]
   rfl
 
 theorem probablePrime_safe (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
-    (hm : ∀ o a b, generationSafe (mul o a b)) (hr : generationSafe round) (len draw : Nat) :
-    generationSafe (probablePrime mul round len draw) := by
+    (hm : ∀ o a b, generationSafe (mul o a b)) (hr : generationSafe round) :
+    generationSafe (probablePrime mul round) := by
   exact (show generationSafe (seqs Impl.RsaKeyGen.X86_64.Candidate.trial) by
     unfold generationSafe; decide +kernel).seq
-    (((primeSetup_safe mul hm).seq (millerRabin_safe mul round hm hr len draw)).ite
+    (((primeSetup_safe mul hm).seq (millerRabin_safe mul round hm hr)).ite
       (show generationSafe (.block [.mov32 .rax (.imm 3), .store (hdr Impl.RsaKeyGen.X86_64.Candidate.kStat) .rax]) from rfl) _)
 
 theorem primeBytes_safe (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
-    (hm : ∀ o a b, generationSafe (mul o a b)) (hr : generationSafe round) (len draw : Nat) :
-    generationSafe (primeBytes mul round len draw) :=
-  (show generationSafe (loadPadded 0 20 18) from rfl).seq (probablePrime_safe mul round hm hr len draw)
+    (hm : ∀ o a b, generationSafe (mul o a b)) (hr : generationSafe round) :
+    generationSafe (primeBytes mul round) :=
+  (show generationSafe (loadPadded 0 20 18) from rfl).seq (probablePrime_safe mul round hm hr)
 
 end VG.Proof.Dsa.X86_64.Generation

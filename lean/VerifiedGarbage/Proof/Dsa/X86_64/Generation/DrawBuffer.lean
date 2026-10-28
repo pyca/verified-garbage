@@ -21,7 +21,7 @@ open VG.Proof.Ffdh.X86_64.ParameterCandidate
 
 theorem drawBuffer_ok {P : PrimeParams} {mi : BitVec 64} {used : Nat} {s : State}
     (h : PrimeState P mi used s) (hroom : used + P.drawBytes ≤ P.rand.length) :
-    WP isa (Impl.Dsa.X86_64.Generation.drawCopy P.len P.drawBytes) s fun t =>
+    WP isa (Impl.Dsa.X86_64.Generation.drawCopy) s fun t =>
       PrimeState P mi (used + P.drawBytes) t ∧
       SampleState P.B P.p P.Z P.w P.N mi (P.drawSlice used) t ∧
       WorkFrame P.B [(8 * kUsed, 8)] (primeExtras P) s.mem t.mem ∧ Keep mmRegs s t := by
@@ -33,7 +33,7 @@ theorem drawBuffer_ok {P : PrimeParams} {mi : BitVec 64} {used : Nat} {s : State
   have hout : Region.Disjoint ⟨P.B, P.Z⟩ ⟨P.p, (P.drawSlice used).length⟩ := by
     rw [hlen]; exact P.bufferSeparate
   have hd := drawCopy_ok h.ready P.dims (by rw [hlen]; exact P.len2)
-    (by rw [hlen]; exact P.lenDraw) P.drawMax h.rand h.ptr h.used hs hw hout (by simpa only [hlen, PrimeParams.drawStart] using P.slice_separate hroom)
+    (by rw [hlen]; exact P.lenDraw) P.drawMax h.rand h.ptr h.used h.draw (by rw [hlen]; exact h.len) hs hw hout (by simpa only [hlen, PrimeParams.drawStart] using P.slice_separate hroom)
   rw [hlen] at hd
   refine WP.mono hd fun t ⟨ht, hbytes, hused, hf, hk⟩ => ?_
   have hft : WorkFrame P.B [(8 * kUsed, 8)] (primeExtras P) s.mem t.mem := by

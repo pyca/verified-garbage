@@ -4,7 +4,9 @@
 //! OpenSSL implements ML-DSA from version 3.5; the runners use 3.0.
 //! Enable `openssl-mldsa` on a supported host for the comparison. The ids'
 //! sizes are the output bytes for keygen/sign and message bytes for verify.
-//! Signing is hedged (randomized) in every library, with an empty context.
+//! Signing has an empty context. verified-garbage signs deterministically
+//! (`rnd` all zeros), so that every iteration runs its rejection loop as many
+//! times; OpenSSL and aws-lc-rs sign hedged, with fresh randomness.
 
 use criterion::Criterion;
 
@@ -94,7 +96,7 @@ pub fn bench(c: &mut Criterion) {
     g.finish();
     let mut g = c.benchmark_group("mldsa44_sign");
     g.bench_function(BenchmarkId::new(VG, 2420), |b| {
-        b.iter(|| key.sign(black_box(&msg), b"").unwrap())
+        b.iter(|| key.sign_deterministic(black_box(&msg), b"").unwrap())
     });
     #[cfg(feature = "openssl-mldsa")]
     g.bench_function(BenchmarkId::new(crate::OPENSSL, 2420), |b| {

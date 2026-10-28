@@ -8,6 +8,8 @@ meta import VerifiedGarbage.Proof.Camellia.X86.FbLit
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Camellia.X86.ModeCore
+import VerifiedGarbage.Proof.Camellia.X86.CallSum
+meta import VerifiedGarbage.Proof.Camellia.X86.CallSum
 meta import VerifiedGarbage.Proof.Camellia.X86.ModeCore
 import VerifiedGarbage.Proof.Modes.X86.Modes
 meta import VerifiedGarbage.Proof.Modes.X86.Modes
@@ -118,27 +120,45 @@ def fbX86 (post : State → State → Prop) : Contract X86.isa where
     let scratch : Region := ⟨(arg s 5).setWidth 64, 8 * 341⟩
     let args : Region := ⟨argAddr s 0, 24⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+    let stk : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 16, 16⟩
     s.rd = [sched, args] ∧ s.wr = [data, iv, scratch] ∧
     sched.Disjoint scratch ∧ iv.Disjoint data ∧ iv.Disjoint scratch ∧ data.Disjoint scratch ∧
     args.Disjoint data ∧ args.Disjoint iv ∧ args.Disjoint scratch ∧
     ret.Disjoint data ∧ ret.Disjoint iv ∧ ret.Disjoint scratch ∧
     (arg s 0).toNat + 272 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 16 ≤ 2 ^ 32 ∧
     (arg s 3).toNat + 16 * (arg s 4).toNat ≤ 2 ^ 32 ∧ (arg s 5).toNat + 8 * 341 ≤ 2 ^ 32 ∧
-    (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 ∧ ((arg s 1).toNat = 18 ∨ (arg s 1).toNat = 24)
+    (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 ∧ ((arg s 1).toNat = 18 ∨ (arg s 1).toNat = 24) ∧
+    stk.Disjoint data ∧ stk.Disjoint iv ∧ stk.Disjoint scratch ∧ stk.Disjoint args ∧ 16 ≤ (s.gpr .esp).toNat
   post := post
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 6, arg s₁ i = arg s₂ i
+
+/-- The core's 16 bytes of stack, as the contracts write them. -/
+theorem stk_eq {s : State} (h : 16 ≤ (s.gpr .esp).toNat) (d : Dir) :
+    Proof.Modes.X86.stkRegion (Proof.Modes.X86.E s) (dirCore d).stack =
+      ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 16, 16⟩ := by
+  show (⟨(s.gpr .esp - BitVec.ofNat 32 16).setWidth 64, 16⟩ : Region) = _
+  rw [VG.X86.Taint.sub_setWidth h]
+
+/-- The stack below the return address is apart from it. -/
+theorem stk_ret (s : State) :
+    Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 16, 16⟩ ⟨(s.gpr .esp).setWidth 64, 4⟩ :=
+  (VG.Offset.base_disjoint_below _ (by decide)).symm
+
+/-- The modes' slots are in the scratch buffer. -/
+theorem modeSlots_sub (S : BitVec 32) (d : Dir := .encrypt) :
+    Region.Sub ⟨Proof.Modes.X86.slotA S (dirCore d).slots, 40⟩ ⟨S.setWidth 64, 8 * 341⟩ :=
+  VG.Offset.sub_base _ (by simp only [dirCore, slots_eq]; omega)
 
 /-- `fbX86`'s precondition gives the modes'. -/
 theorem seqPre_of {post : State → State → Prop} {M : Mode} (hstep : M.step = 16) {s : State}
     (h : (fbX86 post).pre s) : SeqPre (dirCore .encrypt) M s := by
-  obtain ⟨hrd, hwr, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, fK, fV, fD, fS, fE, hRn⟩ := h
+  obtain ⟨hrd, hwr, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, fK, fV, fD, fS, fE, hRn, sD, sV, sS, sA, sE⟩ := h
   have hL := (dirCoreSpec .encrypt).layout
   refine ⟨(by rw [hrd]; simp [dirCore]), fE, ⟨(by rw [hwr]; simp [dirCore, slots_eq]),
       (by simp only [dirCore, slots_eq]; omega)⟩, (by rw [hwr]; simp [dirCore]),
     (fun _ => by rw [hwr]; simp [dirCore]), (by simp only [dirCore]; omega), (by rw [hwr, hstep]; simp [dirCore]),
     (by rw [hstep]; exact fD), ?_, ?_, (fun _ => ?_), ?_, ?_, ?_, ?_,
-    (fun _ => ?_), disjoint_empty _ _, disjoint_empty _ _,
-    disjoint_empty _ _, disjoint_empty _ _, (by simp [dirCore]), (by rw [hstep]; simp [dirCore]), hL⟩
+    (fun _ => ?_), ?_, ?_, ?_, ?_, sE, (by rw [hstep]; simp [dirCore]), hL⟩
   · rw [hstep, scr_eq]; exact dDS
   · rw [scr_eq]; exact dVS
   · rw [hstep]; exact dVD
@@ -147,11 +167,15 @@ theorem seqPre_of {post : State → State → Prop} {M : Mode} (hstep : M.step =
   · rw [scr_eq]; exact dRS
   · rw [hstep]; exact dRD
   · exact dRV
+  · rw [stk_eq sE, hstep]; exact sD
+  · rw [stk_eq sE]; exact sS.sub_right (modeSlots_sub _)
+  · rw [stk_eq sE]; exact sA
+  · rw [stk_eq sE]; exact stk_ret s
 
 theorem keyArgs_of {post : State → State → Prop} {s : State} (h : (fbX86 post).pre s) :
     KeyArgs s [Modes.X86.scrR s (dirCore .encrypt)]
       ((arg s 1).toNat, schedWords s.mem ((arg s 0).setWidth 64) (arg s 1).toNat) := by
-  obtain ⟨hrd, hwr, dKS, -, -, -, dAD, dAV, dAS, -, -, -, fK, -, -, -, fE, hRn⟩ := h
+  obtain ⟨hrd, hwr, dKS, -, -, -, dAD, dAV, dAS, -, -, -, fK, -, -, -, fE, hRn, sD, sV, sS, sA, sE⟩ := h
   have inA : ∀ i < 6, InRegions (s.rd ++ s.wr) (s.ea (VG.Impl.Aes.X86.argOp i)) 4 := fun i hi =>
     ⟨⟨argAddr s 0, 24⟩, by rw [hrd]; simp, by
       rw [show s.ea (VG.Impl.Aes.X86.argOp i) = argAddr s i from rfl, argAddr_eq s (n := 6) (by omega) hi]
@@ -160,7 +184,7 @@ theorem keyArgs_of {post : State → State → Prop} {s : State} (h : (fbX86 pos
     rw [show s.ea (VG.Impl.Aes.X86.argOp i) = argAddr s i from rfl, argAddr_eq s (n := 6) (by omega) hi]
     exact VG.Offset.sub_base _ (by omega)
   refine ⟨arg s 0, inA 0 (by decide), rfl, inA 1 (by decide), ?_, hRn, rfl, by rw [hrd]; simp, fK,
-    fun r hr => ?_, fun r hr => ?_, fun r hr => ?_, fun r hr => ?_⟩
+    fun r hr => ?_, fun r hr => ?_, fun r hr => ?_, fun r hr => ?_, fun r hr => ?_, ?_⟩
   · show arg s 1 = BitVec.ofNat 32 (arg s 1).toNat
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq]; exact dKS
@@ -174,6 +198,10 @@ theorem keyArgs_of {post : State → State → Prop} {s : State} (h : (fbX86 pos
     · exact dAD.sub_left (subA 1 (by decide))
     · exact dAV.sub_left (subA 1 (by decide))
     · exact dAS.sub_left (subA 1 (by decide))
+  · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq]
+    rw [show Proof.Modes.X86.stkRegion (s.gpr .esp) 16 = _ from stk_eq sE .encrypt]; exact sS
+  · rw [show Proof.Modes.X86.stkRegion (s.gpr .esp) 16 = _ from stk_eq sE .encrypt]
+    exact sA.sub_right (subA 1 (by decide))
 
 theorem data_eq (m : Mem) (s : State) :
     Proof.Modes.chunksAt (4 * (dirCore .encrypt).bw) m ((arg s 3).setWidth 64) (arg s 4).toNat = dataAt m s := rfl
@@ -214,14 +242,14 @@ theorem cfbDecrypt_wp {s₀ : State} (hp : (fbX86 cfbDecPost).pre s₀) :
 `scratch` known to be the base addresses of the writable regions. -/
 def fbTaint : VG.X86.Taint.T :=
   { regs := .ofList [.esp], flags := false, lens := [0, 16, 8 * 341], argLen := 28,
-    argBases := [(16, 0), (12, 1), (24, 2)] }
+    argBases := [(16, 0), (12, 1), (24, 2)], room := 16 }
 
 theorem fbTaint_wf {post : State → State → Prop} {s : State} (hp : (fbX86 post).pre s) :
     VG.X86.Taint.Wf fbTaint s := by
-  obtain ⟨hrd, hwr, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, fK, fV, fD, fS, fE, hRn⟩ := hp
-  refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
+  obtain ⟨hrd, hwr, dKS, dVD, dVS, dDS, dAD, dAV, dAS, dRD, dRV, dRS, fK, fV, fD, fS, fE, hRn, sD, sV, sS, sA, sE⟩ := hp
+  refine VG.X86.Taint.Wf.entryRoom rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨by simp only [fbTaint]; omega, ?_⟩, ?_⟩
+    fun _ => ⟨by simp only [fbTaint]; omega, ?_⟩, ?_⟩ fun _ => ⟨sE, ?_⟩
   · rw [hwr]
     exact .cons (Nat.zero_le _) (.cons (Nat.le_refl _) (.cons (Nat.le_refl _) .nil))
   · simp only [hwr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
@@ -238,12 +266,17 @@ theorem fbTaint_wf {post : State → State → Prop} {s : State} (hp : (fbX86 po
     simp only [fbTaint, List.mem_cons, List.not_mem_nil, or_false] at hp'
     rcases hp' with rfl | rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
       simp [VG.X86.Taint.region, hwr, addr, arg, argAddr]
+  · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl)
+    · exact sD
+    · exact sV
+    · exact sS
 
 theorem fbTaint_agree {post : State → State → Prop} {s₁ s₂ : State} (h₁ : (fbX86 post).pre s₁)
     (h₂ : (fbX86 post).pre s₂) (hpub : (fbX86 post).pub s₁ s₂) : VG.X86.Taint.Agree fbTaint s₁ s₂ := by
   obtain ⟨hesp, ha⟩ := hpub
-  obtain ⟨-, hwr₁, -, -, -, -, -, -, -, -, -, -, -, -, -, -, fE₁, -⟩ := id h₁
-  obtain ⟨-, hwr₂, -, -, -, -, -, -, -, -, -, -, -, -, -, -, fE₂, -⟩ := id h₂
+  obtain ⟨-, hwr₁, -, -, -, -, -, -, -, -, -, -, -, -, -, -, fE₁, -, -, -, -, -, -⟩ := id h₁
+  obtain ⟨-, hwr₂, -, -, -, -, -, -, -, -, -, -, -, -, -, -, fE₂, -, -, -, -, -, -⟩ := id h₂
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, fbTaint_wf h₁, fbTaint_wf h₂,
     VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => ?_⟩
@@ -256,30 +289,18 @@ theorem fbTaint_agree {post : State → State → Prop} {s₁ s₂ : State} (h�
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
     exact congrArg _ (ha _ (by omega))
 
-/-- What is public at the core's loop of pairs of rounds (as
-`cbcPairTaint`, with the IV's region before the scratch buffer). -/
-def fbPairTaint : VG.X86.Taint.T :=
-  { regs := .ofList [.eax, .esp, .esi, .edi], flags := true, lens := [0, 16, 4 * (dirCore .encrypt).total],
-    bases := [(.edi, 2, 0)], slots := [(2, 4 * grpSlot, 4), (2, 4 * (dirCore .encrypt).dSlot, 8)],
-    argLen := 28, argBases := [(16, 0), (12, 1), (24, 2)] }
-
-/-! The loop of pairs of rounds, which the three modes run for 18 and 24
-rounds, analysed once, as a summary. -/
-
-taint_summary fbPairSum : VG.X86.taint fbPairTaint (.block pairBody)
-
 theorem ofb_ct : ConstantTime isa (fbX86 ofbPost).pre (fbX86 ofbPost).pub ofb :=
-  let ⟨_, h⟩ := (by native_taint_decide_sum [fbPairSum] :
+  let ⟨_, h⟩ := (by native_taint_decide_sum [cryptCallSum] :
     ∃ h, (VG.X86.taint.check fbTaint ofb h).isSome = true)
   VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
 theorem cfbEncrypt_ct : ConstantTime isa (fbX86 cfbEncPost).pre (fbX86 cfbEncPost).pub cfbEncrypt :=
-  let ⟨_, h⟩ := (by native_taint_decide_sum [fbPairSum] :
+  let ⟨_, h⟩ := (by native_taint_decide_sum [cryptCallSum] :
     ∃ h, (VG.X86.taint.check fbTaint cfbEncrypt h).isSome = true)
   VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
 theorem cfbDecrypt_ct : ConstantTime isa (fbX86 cfbDecPost).pre (fbX86 cfbDecPost).pub cfbDecrypt :=
-  let ⟨_, h⟩ := (by native_taint_decide_sum [fbPairSum] :
+  let ⟨_, h⟩ := (by native_taint_decide_sum [cryptCallSum] :
     ∃ h, (VG.X86.taint.check fbTaint cfbDecrypt h).isSome = true)
   VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
@@ -296,13 +317,15 @@ def wideContract (post : State → State → Prop) : Contract isa :=
       let scratch : Region := ⟨(arg s 5).setWidth 64, 8 * 341⟩
       let args : Region := ⟨argAddr s 0, 24⟩
       let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+      let stk : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 16, 16⟩
       s.rd = [sched] ∧ s.wr = [iv, data, scratch, args] ∧
       sched.Disjoint scratch ∧ iv.Disjoint data ∧ iv.Disjoint scratch ∧ data.Disjoint scratch ∧
       args.Disjoint data ∧ args.Disjoint iv ∧ args.Disjoint scratch ∧
       ret.Disjoint data ∧ ret.Disjoint iv ∧ ret.Disjoint scratch ∧
       (arg s 0).toNat + 272 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 16 ≤ 2 ^ 32 ∧
       (arg s 3).toNat + 16 * (arg s 4).toNat ≤ 2 ^ 32 ∧ (arg s 5).toNat + 8 * 341 ≤ 2 ^ 32 ∧
-      (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 ∧ ((arg s 1).toNat = 18 ∨ (arg s 1).toNat = 24) }
+      (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 ∧ ((arg s 1).toNat = 18 ∨ (arg s 1).toNat = 24) ∧
+    stk.Disjoint data ∧ stk.Disjoint iv ∧ stk.Disjoint scratch ∧ stk.Disjoint args ∧ 16 ≤ (s.gpr .esp).toNat }
 
 def narrowRd (s : State) : List Region := [⟨(arg s 0).setWidth 64, 272⟩, ⟨argAddr s 0, 24⟩]
 def narrowWr (s : State) : List Region :=
@@ -336,7 +359,7 @@ def satState : State where
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩, ⟨0x4000, 2728⟩, ⟨0x8004, 24⟩]
 
 theorem wide_implies_ofb :
-    (wideContract ofbPost).Implies (Proof.Camellia.ofbScratchContract X86.abi 341) := by
+    (wideContract ofbPost).Implies (Proof.Camellia.ofbScratchContract X86.abi 341 16) := by
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
     sig_pre [Proof.Camellia.ofbScratchContract, Proof.Camellia.ofbScratchSig, Spec.Camellia.ofbSig, Spec.Camellia.ofbPost, Spec.Camellia.ofbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, ofbPost] at h
@@ -355,7 +378,7 @@ theorem wide_implies_ofb :
       [satState, arg, argAddr, Mem.readW, Mem.read] using satState
 
 theorem wide_implies_cfbEnc :
-    (wideContract cfbEncPost).Implies (Proof.Camellia.cfbEncScratchContract X86.abi 341) := by
+    (wideContract cfbEncPost).Implies (Proof.Camellia.cfbEncScratchContract X86.abi 341 16) := by
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
     sig_pre [Proof.Camellia.cfbEncScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig, Spec.Camellia.cfbEncryptPost, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbEncPost] at h
@@ -374,7 +397,7 @@ theorem wide_implies_cfbEnc :
       [satState, arg, argAddr, Mem.readW, Mem.read] using satState
 
 theorem wide_implies_cfbDec :
-    (wideContract cfbDecPost).Implies (Proof.Camellia.cfbDecScratchContract X86.abi 341) := by
+    (wideContract cfbDecPost).Implies (Proof.Camellia.cfbDecScratchContract X86.abi 341 16) := by
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
     sig_pre [Proof.Camellia.cfbDecScratchContract, Proof.Camellia.cfbScratchSig, Spec.Camellia.cfbSig, Spec.Camellia.cfbDecryptPost, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, wideContract, fbX86, cfbDecPost] at h
@@ -408,13 +431,13 @@ def frameSat : State where
 
 theorem frameSat_ofb (post : Spec.Camellia.ofbSig.Post X86.abi.ptrBits) :
     ∃ s, (Spec.Camellia.ofbSig.contract X86.abi (pre := Spec.Camellia.ofbPre X86.abi.ptrBits) (post := post)
-      (writeArgs := true) (stack := 2756)).pre s := by
+      (writeArgs := true) (stack := 2772)).pre s := by
   implies_sat [Spec.Camellia.ofbSig, Spec.Camellia.ofbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
 
 theorem frameSat_cfb (post : Spec.Camellia.cfbSig.Post X86.abi.ptrBits) :
     ∃ s, (Spec.Camellia.cfbSig.contract X86.abi (pre := Spec.Camellia.cfbPre X86.abi.ptrBits) (post := post)
-      (writeArgs := true) (stack := 2756)).pre s := by
+      (writeArgs := true) (stack := 2772)).pre s := by
   implies_sat [Spec.Camellia.cfbSig, Spec.Camellia.cfbPre, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [frameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using frameSat
 
@@ -451,23 +474,23 @@ theorem fb_verified {post : State → State → Prop} {c : Prog isa}
     narrow_camellia_x86_fbverified
     exact h
 
-theorem ofb_verified : Verified X86.target ofb (Proof.Camellia.ofbScratchContract X86.abi 341) :=
+theorem ofb_verified : Verified X86.target ofb (Proof.Camellia.ofbScratchContract X86.abi 341 16) :=
   fb_verified (fun _ hs => ofb_wp_x86 hs) ofb_ct (fun _ _ _ _ _ _ h => h) wide_implies_ofb
 
 theorem cfbEncrypt_verified :
-    Verified X86.target cfbEncrypt (Proof.Camellia.cfbEncScratchContract X86.abi 341) :=
+    Verified X86.target cfbEncrypt (Proof.Camellia.cfbEncScratchContract X86.abi 341 16) :=
   fb_verified (fun _ hs => cfbEncrypt_wp hs) cfbEncrypt_ct (fun _ _ _ _ _ _ h => h) wide_implies_cfbEnc
 
 theorem cfbDecrypt_verified :
-    Verified X86.target cfbDecrypt (Proof.Camellia.cfbDecScratchContract X86.abi 341) :=
+    Verified X86.target cfbDecrypt (Proof.Camellia.cfbDecScratchContract X86.abi 341 16) :=
   fb_verified (fun _ hs => cfbDecrypt_wp hs) cfbDecrypt_ct (fun _ _ _ _ _ _ h => h) wide_implies_cfbDec
 
 /-- `ofb` with its working space on the stack. -/
 theorem ofb_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 ofb)
-      (Spec.Camellia.ofbContract X86.abi 2756) :=
+      (Spec.Camellia.ofbContract X86.abi 2772) :=
   X86.Verified.stackScratchWiped (sig := Spec.Camellia.ofbSig) (nm := "scratch") (e := .u64)
-    (n := 341) (pre := Spec.Camellia.ofbPre X86.abi.ptrBits) (post := Spec.Camellia.ofbPost X86.abi.ptrBits) (wa := true) (stack := 0)
+    (n := 341) (pre := Spec.Camellia.ofbPre X86.abi.ptrBits) (post := Spec.Camellia.ofbPost X86.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := 2756) ofb_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (Proof.Camellia.ofbPre_local _)
     (Proof.Camellia.ofbPost_local _) (Proof.Camellia.ofbPostOut_local _) (frameSat_ofb _)
@@ -475,9 +498,9 @@ theorem ofb_framed :
 /-- `cfbEncrypt` with its working space on the stack. -/
 theorem cfbEncrypt_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 cfbEncrypt)
-      (Spec.Camellia.cfbEncryptContract X86.abi 2756) :=
+      (Spec.Camellia.cfbEncryptContract X86.abi 2772) :=
   X86.Verified.stackScratchWiped (sig := Spec.Camellia.cfbSig) (nm := "scratch") (e := .u64)
-    (n := 341) (pre := Spec.Camellia.cfbPre X86.abi.ptrBits) (post := Spec.Camellia.cfbEncryptPost X86.abi.ptrBits) (wa := true) (stack := 0)
+    (n := 341) (pre := Spec.Camellia.cfbPre X86.abi.ptrBits) (post := Spec.Camellia.cfbEncryptPost X86.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := 2756) cfbEncrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (Proof.Camellia.cfbPre_local _)
     (Proof.Camellia.cfbEncryptPost_local _) (Proof.Camellia.cfbEncryptPostOut_local _) (frameSat_cfb _)
@@ -485,9 +508,9 @@ theorem cfbEncrypt_framed :
 /-- `cfbDecrypt` with its working space on the stack. -/
 theorem cfbDecrypt_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 cfbDecrypt)
-      (Spec.Camellia.cfbDecryptContract X86.abi 2756) :=
+      (Spec.Camellia.cfbDecryptContract X86.abi 2772) :=
   X86.Verified.stackScratchWiped (sig := Spec.Camellia.cfbSig) (nm := "scratch") (e := .u64)
-    (n := 341) (pre := Spec.Camellia.cfbPre X86.abi.ptrBits) (post := Spec.Camellia.cfbDecryptPost X86.abi.ptrBits) (wa := true) (stack := 0)
+    (n := 341) (pre := Spec.Camellia.cfbPre X86.abi.ptrBits) (post := Spec.Camellia.cfbDecryptPost X86.abi.ptrBits) (wa := true) (stack := 16)
     (bytes := 2756) cfbDecrypt_verified (by decide) (by lit_decide) (by lit_decide) (by decide)
     (Proof.Camellia.cfbPre_local _)
     (Proof.Camellia.cfbDecryptPost_local _) (Proof.Camellia.cfbDecryptPostOut_local _) (frameSat_cfb _)

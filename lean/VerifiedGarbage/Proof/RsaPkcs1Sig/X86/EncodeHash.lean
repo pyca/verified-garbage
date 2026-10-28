@@ -10,16 +10,20 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 
-/-! # Encode a digest for a selected public hash function -/
+/-! # Encode a digest once the lengths of its hash function are chosen -/
 
 @[expose] public section
 namespace VG.Proof.RsaPkcs1Sig.X86
 open VG VG.X86 VG.Proof.Mont.X86 VG.Proof.Bignum VG.Proof.Bignum.X86 VG.WriteBytes
 open VG.Impl.RsaPkcs1Sig.X86 Spec.RsaPkcs1Sig
 
-theorem encodeHash_ok {s0 s : State} {x : BitVec 32} {k : Nat} (pre : EPre s0 x k)
-    (h : Hash) (id : Hash.ofId x.toNat = some h) (same : SameF s0 s) :
-    WP isa (encodeHash h) s (EPost s0 x k) := by
+/-- `checked` once `lens h` has set the lengths of a hash function `h`
+named by the number. -/
+theorem checked_ok {s0 s1 : State} {x : BitVec 32} {k : Nat} (pre : EPre s0 x k)
+    (h : Hash) (id : Hash.ofId x.toNat = some h) (k1 : Keeps [.eax, .ebx] s0 s1)
+    (mem1 : s1.mem = s0.mem) (info : s1.gpr .ebx = BitVec.ofNat 32 (h.prefix.length + h.len))
+    (len : s1.gpr .eax = BitVec.ofNat 32 h.len) :
+    WP isa checked s1 (EPost s0 x k) := by
   let dl := (s0.gpr .ebp).toNat
   let H := Spec.Rsa.bytesAt s0.mem (byteAddr (s0.gpr .esi)) dl
   have hlen : H.length = dl := bytesAt_length _ _ _
@@ -28,10 +32,7 @@ theorem encodeHash_ok {s0 s : State} {x : BitVec 32} {k : Nat} (pre : EPre s0 x 
     intro u keep mem none
     apply refuse_ok keep mem
     simpa only [encodeId, id, Option.bind_some] using none
-  unfold encodeHash
-  refine WP.seq (WP.mono (lens_ok h s) fun s1 ⟨m1, l1, info, len⟩ => ?_)
-  have k1 : Keeps [.eax, .ebx] s0 s1 := (same.keeps _).trans l1
-  have mem1 : s1.mem = s0.mem := m1.trans same.2.1
+  unfold checked
   refine WP.seq (WP.mono (cmpLen_ok s1) fun s2 ⟨f2, zf⟩ => ?_)
   have k2 : Keeps [.eax, .ebx] s0 s2 := k1.trans (f2.keeps _)
   have mem2 : s2.mem = s0.mem := f2.2.1.trans mem1
@@ -86,5 +87,32 @@ theorem encodeHash_ok {s0 s : State} {x : BitVec 32} {k : Nat} (pre : EPre s0 x 
     refine WP.ite true (by simp [eval, zf, dlreg, len, different])
       (fun _ => hfail s2 (k2.mono (by decide)) mem2 ?_) (by simp)
     simp [Spec.RsaPkcs1Sig.encode, hlen, matchLen]
+
+/-- `checked` once `noLens` has set the lengths for a number that names no
+hash function: both checks fail but the first one, which may pass, and the
+second fails since `k ≤ 1024 < 2048 + 11`. -/
+theorem unchecked_ok {s0 s1 : State} {x : BitVec 32} {k : Nat} (pre : EPre s0 x k)
+    (id : Hash.ofId x.toNat = none) (k1 : Keeps [.eax, .ebx] s0 s1)
+    (mem1 : s1.mem = s0.mem) (info : s1.gpr .ebx = 2048) :
+    WP isa checked s1 (EPost s0 x k) := by
+  have none : encodeId x (Spec.Rsa.bytesAt s0.mem (byteAddr (s0.gpr .esi)) (s0.gpr .ebp).toNat) k =
+      none := by
+    simp only [encodeId, id, Option.bind_none]
+  unfold checked
+  refine WP.seq (WP.mono (cmpLen_ok s1) fun s2 ⟨f2, zf⟩ => ?_)
+  have k2 : Keeps [.eax, .ebx] s0 s2 := k1.trans (f2.keeps _)
+  have mem2 : s2.mem = s0.mem := f2.2.1.trans mem1
+  refine WP.ite (!(s1.gpr .ebp == s1.gpr .eax)) (by simp [eval, zf])
+    (fun _ => refuse_ok (k2.mono (by decide)) mem2 none) fun _ => ?_
+  refine WP.seq (WP.mono (cmpK_ok s2) fun s3 ⟨k3, mem3, cf⟩ => ?_)
+  have flag : s3.cf = some true := by
+    rw [cf, k2.1 .ecx (by decide), pre.length, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (by have := pre.bound; omega), f2.1, info]
+    have := pre.bound
+    simp only [show (2048 + 11 : BitVec 32).toNat = 2059 from rfl, Option.some.injEq,
+      decide_eq_true_eq]
+    omega
+  refine WP.ite true (by simp [eval, flag]) (fun _ => refuse_ok ((k2.widen k3).mono (by decide))
+    (mem3.trans mem2) none) (by simp)
 
 end VG.Proof.RsaPkcs1Sig.X86

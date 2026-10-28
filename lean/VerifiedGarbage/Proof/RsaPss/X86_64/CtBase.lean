@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Checks
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -148,5 +149,26 @@ theorem two_pub {α : Type} {Φ : α → State → Prop} {c : Prog isa} (n : Nat
     obtain ⟨X₂, p₂⟩ := hΦ a _ h₂
     have := pub_agree p₁ p₂ (hR a _ h₁) (fun p hp => hks p.1 (by rw [← hk a]; exact List.mem_map_of_mem hp))
     rwa [hk a, hr a] at this) h
+
+/-- A frame of `frameBytes` bytes, in two runs. -/
+theorem valloc {body : Prog isa} {P R : State → State → Prop}
+    (hb : RelCT isa (fun a b => ∃ s₁ s₂, P s₁ s₂ ∧ a = allocState frameBytes s₁ ∧ b = allocState frameBytes s₂)
+      body R) :
+    RelCT isa P (.frame (.alloc frameBytes) body (.free frameBytes)) fun _ _ => True := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  cases e₁ with
+  | frame p₁ b₁ q₁ =>
+    cases e₂ with
+    | frame p₂ b₂ q₂ =>
+      have a₁ : ∀ {s s' : State}, isa.push (.alloc frameBytes) s = some s' → s' = allocState frameBytes s :=
+        fun h => by
+          simp only [isa, push] at h
+          split at h
+          · cases h; rfl
+          · cases h
+      obtain rfl := a₁ p₁
+      obtain rfl := a₁ p₂
+      obtain ⟨rfl, -⟩ := hb _ _ _ _ _ _ ⟨s₁, s₂, hp, rfl, rfl⟩ b₁ b₂
+      exact ⟨rfl, trivial⟩
 
 end VG.Proof.RsaPss.X86_64

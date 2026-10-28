@@ -294,6 +294,26 @@ pub fn sign(
     mgf1_hash: Hash,
     salt_len: usize,
 ) -> Result<Vec<u8>, Error> {
+    sign_with_rng(key, digest, hash, mgf1_hash, salt_len, |buf| {
+        getrandom::fill(buf).map_err(|_| Error::Randomness)
+    })
+}
+
+/// [`sign`], with its salt drawn from `random` instead of the operating
+/// system.
+///
+/// Not part of the API: it lets benchmarks compare implementations on
+/// identical work, from fixed tapes. The signature has the security of
+/// RSASSA-PSS only if `random` supplies uniformly random bytes.
+#[doc(hidden)]
+pub fn sign_with_rng(
+    key: &PrivateKey,
+    digest: &[u8],
+    hash: Hash,
+    mgf1_hash: Hash,
+    salt_len: usize,
+    mut random: impl FnMut(&mut [u8]) -> Result<(), Error>,
+) -> Result<Vec<u8>, Error> {
     if mgf1_hash != hash {
         return Err(Error::UnsupportedMgf1Hash);
     }
@@ -304,7 +324,7 @@ pub fn sign(
         return Err(Error::SaltTooLong);
     }
     let mut salt = vec![0u8; salt_len];
-    getrandom::fill(&mut salt).map_err(|_| Error::Randomness)?;
+    random(&mut salt)?;
     let r = sign_with(key, digest, hash, &salt);
     zeroize(&mut salt);
     r

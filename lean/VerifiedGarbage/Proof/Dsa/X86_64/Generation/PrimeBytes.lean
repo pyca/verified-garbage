@@ -69,7 +69,7 @@ theorem primeBytes_ok (M : Mont) (K : Kernel) {P : PrimeParams} {mi : BitVec 64}
     (hu : used ≤ P.rand.length) (hw : P.w ≤ 48) (hz : slot P.w aTab + 2048 ≤ P.Z)
     (hn : 8161 < P.N) (hpolicy : 1024 < Spec.Dsa.bitLength P.N ↔ 16 < P.w)
     (hchecks : P.checks = Spec.Dsa.primeChecks (Spec.Dsa.bitLength P.N)) :
-    WP isa (Impl.Dsa.X86_64.Generation.primeBytes M.mm K.run P.len P.drawBytes) s fun t =>
+    WP isa (Impl.Dsa.X86_64.Generation.primeBytes M.mm K.run) s fun t =>
       let res := Spec.Dsa.probablePrime P.N (P.rand.drop used)
       ∃ mi' used', PrimeInput P mi' used' t ∧ used' ≤ P.rand.length ∧
         (res = none → word t.mem P.B (8 * kStat) = BitVec.ofNat 64 0) ∧

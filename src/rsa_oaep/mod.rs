@@ -224,26 +224,45 @@ pub fn encrypt(
     mgf1_hash: Hash,
     label: &[u8],
 ) -> Result<Vec<u8>, Error> {
+    encrypt_with_rng(key, plaintext, hash, mgf1_hash, label, os_random)
+}
+
+/// [`encrypt`], with its seed drawn from `random` instead of the operating
+/// system.
+///
+/// Not part of the API: it lets benchmarks compare implementations on
+/// identical work, from fixed tapes. The ciphertext is secure only if
+/// `random` supplies uniformly random bytes, never reused.
+#[doc(hidden)]
+pub fn encrypt_with_rng(
+    key: &PublicKey,
+    plaintext: &[u8],
+    hash: Hash,
+    mgf1_hash: Hash,
+    label: &[u8],
+    random: impl FnMut(&mut [u8]) -> Result<(), Error>,
+) -> Result<Vec<u8>, Error> {
     with_functions!(hash, mgf1_hash, |fns| encrypt_with(
-        key, plaintext, label, fns.0
+        key, plaintext, label, fns.0, random
     ))
     .unwrap_or(Err(Error::UnsupportedHash))
 }
 
 /// `f`, a `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed` that this CPU can
-/// run, with a random seed.
+/// run, with a seed from `random`.
 fn encrypt_with<const L: usize>(
     key: &PublicKey,
     plaintext: &[u8],
     label: &[u8],
     f: EncryptFn<L>,
+    mut random: impl FnMut(&mut [u8]) -> Result<(), Error>,
 ) -> Result<Vec<u8>, Error> {
     let k = key.modulus_len();
     if plaintext.len() + 2 * L + 2 > k {
         return Err(Error::MessageTooLong);
     }
     let mut seed = [0u8; L];
-    os_random(&mut seed)?;
+    random(&mut seed)?;
     let mut out = vec![0u8; k];
     let mut scratch = key.verify_scratch.take(public_scratch_words(k), true);
     let pre = key.pre(&mut scratch);
@@ -656,6 +675,27 @@ mod tests {
     fn randomness() {
         let mut seed = [0u8; 32];
         os_random(&mut seed).unwrap();
+    }
+
+    /// The same seed gives the same ciphertext, as the fixed-tape benchmark
+    /// relies on, and a failing draw fails the encryption.
+    #[test]
+    fn encryption_from_a_fixed_tape_is_deterministic() {
+        let (_, public) = composite_key();
+        let encrypt = |byte| {
+            encrypt_with_rng(&public, &[7; 22], Hash::Sha1, Hash::Sha1, b"", |buf| {
+                buf.fill(byte);
+                Ok(())
+            })
+        };
+        assert_eq!(encrypt(1), encrypt(1));
+        assert_ne!(encrypt(1), encrypt(2));
+        assert_eq!(
+            encrypt_with_rng(&public, b"", Hash::Sha1, Hash::Sha1, b"", |_| {
+                Err(Error::Randomness)
+            }),
+            Err(Error::Randomness)
+        );
     }
 
     #[test]

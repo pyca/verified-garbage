@@ -16,18 +16,19 @@ open VG.Impl.RsaPkcs1Sig.X86 Spec.RsaPkcs1Sig
 theorem encode_ok {s0 : State} {x : BitVec 32} {k : Nat} (pre : EPre s0 x k) :
     WP isa VG.Impl.RsaPkcs1Sig.X86.encode s0 (EPost s0 x k) := by
   unfold VG.Impl.RsaPkcs1Sig.X86.encode
-  refine dispatch_ok (fun _ h => encodeHash h) fail x pre.hash hashes 0 (by decide) ?_ ?_
-    s0 ⟨rfl, rfl, rfl, rfl⟩
+  refine WP.seq (dispatch_ok (fun _ h => lens h) noLens x pre.hash hashes 0 (by decide) ?_ ?_
+    s0 ⟨rfl, rfl, rfl, rfl⟩)
   · intro j hj eq s same
     have id : Hash.ofId x.toNat = some hashes[j] := by
       rw [eq, Nat.zero_add, ofId_hashes j hj]
-    exact encodeHash_ok pre hashes[j] id same
+    refine WP.mono (lens_ok hashes[j] s) fun s1 ⟨m1, l1, info, len⟩ => ?_
+    exact checked_ok pre hashes[j] id ((same.keeps _).trans l1) (m1.trans same.2.1) info len
   · intro absent s same
     have large : hashes.length ≤ x.toNat := by
       by_contra no
       have member : x.toNat < hashes.length := by omega
       exact absent _ member (by omega)
-    apply refuse_ok (same.keeps _) same.2.1
-    simp only [encodeId, ofId_ge large, Option.bind_none]
+    refine WP.mono (noLens_ok s) fun s1 ⟨m1, l1, info⟩ => ?_
+    exact unchecked_ok pre (ofId_ge large) ((same.keeps _).trans l1) (m1.trans same.2.1) info
 
 end VG.Proof.RsaPkcs1Sig.X86

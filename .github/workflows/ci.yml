@@ -401,13 +401,6 @@ jobs:
             !/src/asm/*/
             /src/asm/${{ matrix.asm || matrix.arch }}/
       - uses: ./.github/actions/runner-info
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: C2SP/wycheproof
-          path: wycheproof
-          persist-credentials: false
-          # Naming the branch saves the action's lookup of the default one.
-          ref: main
 
       - name: Install Rust
         run: rustup toolchain install ${{ matrix.rust }} --profile minimal --component llvm-tools
@@ -465,10 +458,22 @@ jobs:
       # libtest's per-test elapsed times are still unstable, including on
       # the MSRV. Enable its reporting flag without changing toolchains.
       # Hide durations that round to zero at libtest's millisecond precision.
-      - shell: bash
+      # Wycheproof's vectors, which only running the tests reads, are cloned
+      # while the tests build (a checkout step before the build took RISC-V's
+      # runners 12-15 s).
+      - name: Build and run the tests
+        shell: bash
         run: |
+          if [ "$TESTS" = true ]; then
+            git clone -q --depth 1 --branch main https://github.com/C2SP/wycheproof wycheproof &
+            clone=$!
+          fi
           source ci/rust_test_timing.sh
-          cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }} -- -Z unstable-options --report-time | sed 's/ <0\.000s>//g'
+          cargo test --locked --no-run
+          if [ "$TESTS" = true ]; then
+            wait "$clone"
+            cargo test --locked -- -Z unstable-options --report-time | sed 's/ <0\.000s>//g'
+          fi
       - name: Export coverage
         if: ${{ env.TESTS == 'true' }}
         shell: bash

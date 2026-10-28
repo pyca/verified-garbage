@@ -86,6 +86,14 @@ theorem lens_ok (h : Hash) (s : State) :
   exact ⟨T.mem.trans U.mem, (U.keeps.mono (by decide)).trans (T.keeps.mono (by decide)),
     (T.other .ebx (by decide)).trans U.gpr, T.gpr⟩
 
+theorem noLens_ok (s : State) :
+    WP isa noLens s fun t => t.mem = s.mem ∧ Keeps [.eax, .ebx] s t ∧ t.gpr .ebx = 2048 := by
+  unfold noLens
+  refine wp_movS rfl fun u U _ => ?_
+  refine wp_movS rfl fun t T _ => WP.block_nil ?_
+  exact ⟨T.mem.trans U.mem, (U.keeps.mono (by decide)).trans (T.keeps.mono (by decide)),
+    (T.other .ebx (by decide)).trans U.gpr⟩
+
 theorem W_sameF {s0 s t : State} {acc : List Byte} (h : W s0 acc s) (ht : SameF s t) : W s0 acc t := by
   refine ⟨?_, ht.2.1.trans h.mem, ?_⟩
   · exact ⟨fun r hr => by rw [ht.1]; exact h.rest.1 r hr,

@@ -19,7 +19,7 @@ open VG.Impl.Dsa.X86_64.Generation
 def PTestSmallBefore (p : CandidateWidthPublic) (s : State) : Prop :=
   CandidateWidthBefore p s ∧ p.value < 2 ^ (8 * p.len - 1)
 
-theorem pTest_small_ct (prime : Nat → Prog isa) (len : Nat) :
+theorem pTest_small_ct (prime : Prog isa) (len : Nat) :
     RelCT isa (Two PTestSmallBefore) (pTest prime len) (fun _ _ => True) := by
   unfold pTest
   have guard : RelCT isa (Two PTestSmallBefore) (.block candidateWidth)

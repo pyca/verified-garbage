@@ -56,22 +56,16 @@ theorem iterationCheck_state {len drawBytes : Nat} {p : PrimeIterationPublic} {s
 theorem iterationDraw_state (M : Mont) (K : Kernel) {len drawBytes : Nat}
     {p : PrimeIterationPublic} {s : State} (h : IterationBefore len drawBytes p s)
     (hr : p.draw.used + p.draw.prime.drawBytes ≤ p.draw.prime.rand.length) :
-    WP isa (Impl.Dsa.X86_64.Generation.drawRound M.mm K.run len drawBytes) s
+    WP isa (Impl.Dsa.X86_64.Generation.drawRound M.mm K.run) s
       (fun t => t.gpr .rdi = p.draw.prime.B) := by
   obtain ⟨mi, hs⟩ := h.1.1
   have hw := drawRound_ok M K hs hr h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2
-  rw [h.1.2.1, h.1.2.2] at hw
   exact WP.mono hw fun _ ht => ht.1.ready.good.rdi
 
-theorem primeIteration_ct (M : Mont) (K : Kernel) (len drawBytes : Nat)
-    {hc₁ hc₂ : VG.Taint.Hint VG.X86_64.Taint.T}
-    (ht₁ : (taint.check (Taint.ofRegs [.rdi])
-      (.block (Impl.Dsa.X86_64.Generation.drawCopyArgs len drawBytes)) hc₁).isSome = true)
-    (ht₂ : (taint.check (Taint.ofRegs [.rdi])
-      (.block (Impl.Dsa.X86_64.Generation.forceWitness len)) hc₂).isSome = true) :
+theorem primeIteration_ct (M : Mont) (K : Kernel) (len drawBytes : Nat) :
     RelCT isa (Two (IterationBefore len drawBytes))
       (Impl.Dsa.X86_64.Generation.primeIteration
-        (Impl.Dsa.X86_64.Generation.drawRound M.mm K.run len drawBytes)) (fun _ _ => True) := by
+        (Impl.Dsa.X86_64.Generation.drawRound M.mm K.run)) (fun _ _ => True) := by
   unfold Impl.Dsa.X86_64.Generation.primeIteration
   simp only [seqs]
   refine RelCT.seq (two_post (two_taint [.rdi] ?_ (by taint_decide))
@@ -96,7 +90,7 @@ theorem primeIteration_ct (M : Mont) (K : Kernel) (len drawBytes : Nat)
         simpa only [eval, h.1.2, Option.some.injEq, decide_eq_false_iff_not, Nat.not_lt] using h.2
       refine RelCT.seq (two_post
         (two_map PrimeIterationPublic.draw (fun p s h => ⟨h.1.1.1, room p s h⟩)
-          (drawRound_ct M K len drawBytes ht₁ ht₂))
+          (drawRound_ct M K len drawBytes))
         (fun p s h => iterationDraw_state M K h.1.1 (room p s h))) ?_
       exact two_taint [.rdi] (by
         intro p s t hs ht r hr
