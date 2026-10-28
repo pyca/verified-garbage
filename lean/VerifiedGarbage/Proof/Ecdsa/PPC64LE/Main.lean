@@ -17,6 +17,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Middle
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.LadPow
 
 /-!
 # ECDSA signatures on PPC64LE: the whole function
@@ -276,7 +277,7 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List Regi
 theorem sign_eq (c : Cfg) : c.sign = .seq (.block (c.setupWith Args.sign))
     (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
     (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
-    (.seq (Point.ladderP (ladderAt c GX GY) c.SP) (.seq (pow c.powP c.SP) (.seq c.middle
+    (.seq (c.qMul GX GY) (.seq (pow c.powP c.SP) (.seq c.middle
       (.seq (pow c.powN c.SN) c.scalar))))))) := rfl
 
 /-- `vg_ecdsa_<curve>_sign` computes the specification's signature, restores

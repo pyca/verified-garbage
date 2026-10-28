@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.LadPow
 public import VerifiedGarbage.Impl.EcKey.PPC64LE
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Spec.EcKey
@@ -230,7 +231,7 @@ structure PkKeep (c : Cfg) (s₀ s' : State) : Prop where
 theorem publicKey_eq' (c : Cfg) : Impl.EcKey.PPC64LE.Cfg.publicKey c =
     .seq (.seq (.block (c.setupWith Args.publicKey)) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
       (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
-      (.seq (Point.ladderP (ladderAt c GX GY) c.SP) (.seq (pow c.powP c.SP) (.block [])))))))
+      (.seq (c.qMul GX GY) (.seq (pow c.powP c.SP) (.block [])))))))
       (Impl.EcKey.PPC64LE.Cfg.middle c) := rfl
 
 /-- `vg_ec_<curve>_public_key` computes the specification's public key and

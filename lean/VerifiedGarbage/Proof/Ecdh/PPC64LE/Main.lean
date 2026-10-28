@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdh.PPC64LE.Validate
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.LadPow
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.LadderP
 public import VerifiedGarbage.Impl.Ecdh.PPC64LE
 public import VerifiedGarbage.Proof.Weierstrass.Law
@@ -302,7 +303,7 @@ theorem exchange_eq' (c : Cfg) : Impl.Ecdh.PPC64LE.Cfg.exchange c =
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
       (.seq (.block (Impl.Ecdh.PPC64LE.Cfg.peerAt c .r12)) (.seq (Impl.Ecdh.PPC64LE.Cfg.validate c)
-      (.seq (Point.ladderP (ladderAt c PX PY) c.SP) (.seq (pow c.powP c.SP) (Impl.Ecdh.PPC64LE.Cfg.middle c)))))))) :=
+      (.seq (c.qMul PX PY) (.seq (pow c.powP c.SP) (Impl.Ecdh.PPC64LE.Cfg.middle c)))))))) :=
   rfl
 
 /-- `vg_ecdh_<curve>` computes the specification's shared secret and restores
@@ -380,6 +381,7 @@ theorem exchange_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State
   refine ladPow_ok hc h3 hC (gx := PX) (gy := PY) (by decide) (by decide) (by decide) (by decide) K₄ (k := dk c s₀)
     (ofBytes_bytesAt_lt _ _ _) (by rw [r₄ (by simp)]; exact S₂.rx) (by rw [r₄ (by simp)]; exact S₂.ry)
     (by rw [r₄ (by simp)]; exact S₂.rz)
+    (fun _ => by rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide), S₂.k, hkv])
     (fun t ht => by rw [t₄ (j := 0) (by decide) t ht, S₂.t₀ t ht, hkv])
     (fun t ht => by rw [t₄ (j := 1) (by decide) t ht, S₂.t₁ t ht])
     (peerPt_onCurve hc _ _ _)

@@ -68,6 +68,8 @@ structure CfgOk (c : Cfg) : Prop where
   fn : ModOk c.SN.k c.SN.m
   fnk : c.SN.k = c.n
   fnm : c.SN.m = c.C.n
+  /-- `vg_<curve>_mul`, if the curve has it, has no frames, as calls need. -/
+  mulNf : ∀ C, c.mul = some C → c.mulFn.noFrames = true
 
 /-- The registers `setupWith` writes. -/
 abbrev setupClob : List Reg := [.r0, .r3, .r4, .r8, .r9, .r11, .r14]
