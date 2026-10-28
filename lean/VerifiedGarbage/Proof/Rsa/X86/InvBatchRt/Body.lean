@@ -29,8 +29,9 @@ open VG.Proof.Rsa.Divstep (oddInput)
 
 variable {L : Lay} {B : Addr} {Z len N : Nat}
 
-/-- What the inverse writes: the header from the window on, and arrays 0 to 14. -/
-def bodyWrites (len : Nat) : List (Nat × Nat) := [(win, 88), (rv (kw len) (a 0), 15 * (8 * nw len + 8))]
+/-- What the inverse writes: the header from the window on, arrays 0 to 7 and 11 to 14. -/
+def bodyWrites (len : Nat) : List (Nat × Nat) :=
+  [(win, 88), (rv (kw len) (a 0), 8 * (8 * nw len + 8)), (rv (kw len) (a 11), 4 * (8 * nw len + 8))]
 
 theorem body_ok {s : State} (h : RtWs L s B Z len N) (room : 16 ≤ N) (hn2 : 2 ≤ nw len)
     (he : nw len % 2 = 0) {m x : Nat}
@@ -130,7 +131,8 @@ theorem body_ok {s : State} (h : RtWs L s B Z len N) (room : 16 ≤ N) (hn2 : 2 
   · exact ((((K₁.trans K₂).trans K₃).trans (K₈.mono (by decide))).trans K₉).trans Kz
   · intro y hy
     have h1 := hy (win, 88) (by simp [bodyWrites])
-    have h2 := hy (rv (kw len) (a 0), 15 * (8 * nw len + 8)) (by simp [bodyWrites])
+    have h2 := hy (rv (kw len) (a 0), 8 * (8 * nw len + 8)) (by simp [bodyWrites])
+    have h3 := hy (rv (kw len) (a 11), 4 * (8 * nw len + 8)) (by simp [bodyWrites])
     rw [Uz y (by
       intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> simp only <;> omega), U₉ y (by

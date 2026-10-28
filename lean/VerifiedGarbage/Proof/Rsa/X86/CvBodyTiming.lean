@@ -17,8 +17,6 @@ same `esp`, the arguments apart from what the body writes.
 -/
 
 @[expose] public section
-variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
-include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.CrtValues
 open VG VG.X86 VG.Proof.Dsa.X86
 open VG.Impl.Rsa.X86.CrtValuesRt (body sized)

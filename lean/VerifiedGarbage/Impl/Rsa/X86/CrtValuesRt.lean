@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.X86.KeyRt
-public import VerifiedGarbage.Impl.Rsa.X86.InvBatch
+public import VerifiedGarbage.Impl.Rsa.X86.InvBatchRt
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValues
 
 /-! # CRT parameter calculation at a width read at run time (i686)
@@ -27,7 +27,7 @@ def invSetup : List (Prog isa) := [
   copy lay 0 aQ, copy lay aM aP, .block (orOne lay aM), copy lay 1 aM,
   .block (setOne lay 2 ++ setOne lay aOne), sub3 lay aNM aZero aM]
 
-def inverseChoice : Prog isa := InvBatch.dispatch (inverse lay)
+def inverseChoice : Prog isa := InvBatchRt.dispatch lay (inverse lay)
 
 def checksPrefix : List (Prog isa) := [
   eqS lay sE1 aDQ aQ aT1,eqS lay sE2 aDR aZero aT1] ++ invSetup
