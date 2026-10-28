@@ -304,7 +304,7 @@ theorem round_verified : Verified target (umaalArithmetic (Impl.MillerRabin.Arm.
 def variant : RoundImpl where
   code := umaalArithmetic (Impl.MillerRabin.Arm.code true)
   verified := round_verified
-  stack := (armStack_umaalArithmetic _).trans (by decide +kernel)
+  stack := Nat.le_trans (armStack_umaalArithmetic _) (by decide +kernel)
   suffix := "_umaal"
   features := ["umaal"]
 
