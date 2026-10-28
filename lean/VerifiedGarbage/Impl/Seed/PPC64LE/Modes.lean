@@ -7,21 +7,27 @@ public import VerifiedGarbage.Impl.Seed.PPC64LE.Ecb
 /-!
 # SEED's modes on PPC64LE
 
-`dirCore d`: ECB's batch (`Ecb.lean`), inlined, as a core for the modes
-(`Impl/Modes/PPC64LE/Seq.lean`), on one block: the block of its buffer
-(slot `bufSlot`, after ECB's 130 slots) is copied into lane 0 of the
-arrays (ECB's copy loop, once), sixteen rounds run on every lane
-(`rounds d`, the other fifteen lanes holding whatever they hold), and lane
-0 is copied back, under the schedule at `r3`, read in place, the round keys in
-the order of the direction `d`: encryption's for CBC encryption, OFB and
-CFB, decryption's for CBC decryption.
+`blockCall d`: a call of `vg_seed_encrypt_blocks` or `vg_seed_decrypt_blocks`
+(ECB's code, `Ecb.lean`, with the working space as an argument), which
+`vg_seed_ecb_{en,de}crypt` make within a frame saving the link register
+(`ecbCall d`, with their working space on the stack), and the modes' core
+makes on one block.
 
-The rounds use the callee-saved registers `r14`–`r31` and the scratch
-buffer's address in `r8` (ECB's base). The core copies the modes' base
-(`sb`, `r5`) to `r8`, saves the caller's `r14`–`r28` in ECB's slots for
-them (`savedRegs`) and restores them after the block; the modes' state
-(`r29`–`r31`) waits in `r4`–`r6`, which the rounds keep, so that it never
-passes through memory. 138 slots in all, with the modes' (`[u64; 138]`).
+`dirCore d`: the core for the modes (`Impl/Modes/PPC64LE/Seq.lean`), with
+the round keys in the order of the direction `d`: encryption's for CBC
+encryption, OFB and CFB, decryption's for CBC decryption. Its slots are the
+blocks function's working space (136, as `Spec.Seed.blocksSig` has it) and
+the buffer's block (`bufSlot`), then the modes' six: 144 in all, with the
+modes' (`[u64; 144]`).
+
+The blocks function writes every general-purpose register but `r2`, and
+restores the callee-saved ones (`r14`–`r31`, the modes' state `r29`–`r31`
+among them, which it saves around each batch's rounds, so that the analysis
+of constant time finds them as public after the call as before). It leaves
+the working space's address in `r8`, from which the core takes `sb` back,
+which the analysis then knows to point at the scratch buffer, and the key
+pointer at the first round's key. The call leaves the link register
+unknown; the modes save the return address in their slot.
 
 `cbcEncryptChained`, `cbcDecryptChained`, `ofb`, `cfbEncrypt` and
 `cfbDecrypt` (schedule = r3, iv = r4, data = r5, n = r6, scratch = r7) are
@@ -33,42 +39,39 @@ the modes over it.
 namespace VG.Impl.Seed.PPC64LE
 
 open VG.PPC64LE
-open VG.Impl.Aes.PPC64LE (movR stS ldS)
+open VG.Impl.Modes.PPC64LE (mov)
 open VG.Spec.Seed (Direction)
 
-/-- The buffer's block, after ECB's slots. -/
-def bufSlot : Nat := scratchSlots
+/-- A call of `vg_seed_encrypt_blocks` or `vg_seed_decrypt_blocks` (the ECB
+code with the working space as an argument). -/
+def blockCall : Direction → Prog isa
+  | .encrypt => .call "vg_seed_encrypt_blocks" encrypt
+  | .decrypt => .call "vg_seed_decrypt_blocks" decrypt
 
-/-- The caller's registers the core saves around a block: `r14`–`r28`. -/
-def callerRegs : List (Reg × Nat) := savedRegs.take 15
+/-- `vg_seed_ecb_encrypt` or `vg_seed_ecb_decrypt` within its frame, which
+allocates the working space at `r6`: a call of the blocks function in the
+direction `d`, the link register saved in a frame. -/
+def ecbCall (d : Direction) : Prog isa :=
+  .seq (.block [.mflr .r0]) (.seq (.frame (.push .r0) (blockCall d) (.pop .r0)) (.block [.mtlr .r0]))
 
-/-- The caller's registers saved, the bases, and the key pointer at the
-first round's key; one block to copy, from the buffer, into lane 0. -/
-def coreIn (d : Direction) : List Instr :=
-  [movR .r8 .r5] ++ callerRegs.map (fun (r, k) => stS k r) ++
-    ([.addi .r3 .r3 (keyStart d), .li .r10 1, .addi .r6 .r8 (8 * bufSlot), movR .r7 .r8] : List Instr)
+/-- The buffer's block, after the blocks function's working space. -/
+def bufSlot : Nat := 136
 
-/-- The modes' state to `r4`–`r6`, which the rounds keep. -/
-def park : List Instr := [movR .r4 .r29, movR .r5 .r30, movR .r6 .r31]
+/-- Before the call, the arguments: the schedule (in `r3` already), the
+buffer, one block, and the working space, the scratch buffer's first 136
+slots. -/
+def cryptHead : List Instr :=
+  [.addi .r4 Modes.PPC64LE.sb (8 * bufSlot), mov .r6 Modes.PPC64LE.sb, .li .r5 1]
 
-/-- The modes' state back; one block to copy out, from lane 0 to the buffer. -/
-def unpark : List Instr :=
-  [movR .r29 .r4, movR .r30 .r5, movR .r31 .r6, .li .r10 1, .addi .r6 .r8 (8 * bufSlot), movR .r7 .r8]
-
-/-- The key pointer and `sb` back, and the caller's registers restored. -/
-def coreOut (d : Direction) : List Instr :=
-  [.subi .r3 .r3 (keyStart d), movR .r5 .r8] ++ callerRegs.map (fun (r, k) => ldS r k)
-
-/-- The block: copied into lane 0, enciphered, and copied back. -/
-def coreCrypt (d : Direction) : Prog isa :=
-  .seq (.block (coreIn d)) (.seq (.loop (.block copyInBody) (.nonzero .d .r10)) (.seq (.block park)
-    (.seq (rounds d) (.seq (.block unpark) (.seq (.loop (.block copyOutBody) (.nonzero .d .r10))
-      (.block (coreOut d)))))))
+/-- After the call, `sb` from `r8`, where the blocks function leaves the
+working space's address, and `r3` back from the first round's key, where it
+leaves the key pointer. -/
+def cryptTail (d : Direction) : List Instr := [mov Modes.PPC64LE.sb .r8, .subi .r3 .r3 (keyStart d)]
 
 /-- SEED's core for the modes, in the direction `d`. -/
 def dirCore (d : Direction) : Modes.PPC64LE.Core where
   prepare := .block []
-  crypt := coreCrypt d
+  crypt := .seq (.block cryptHead) (.seq (blockCall d) (.block (cryptTail d)))
   slots := bufSlot + 2
   total := bufSlot + 8
   buf := bufSlot

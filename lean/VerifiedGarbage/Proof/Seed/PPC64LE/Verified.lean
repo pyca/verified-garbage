@@ -33,10 +33,12 @@ public import VerifiedGarbage.TCB.Artifact
 /-!
 # The ECB functions meet their contracts, with the scratch buffer as an argument
 
-`encrypt_verified` and `decrypt_verified`: `ecb d` is correct (`ecb_ok`)
-and constant time, by the taint analysis with the pointers, `n` and the
-stack pointer public, against `Proof.Seed.ecbScratchContract` with the
-working space's 130 words (`Frame.lean` runs them in a frame).
+`encrypt_blocks_verified` and `decrypt_blocks_verified`: `ecb d` is correct
+(`ecb_ok`) and constant time, by the taint analysis with the pointers, `n`
+and the stack pointer public, against `vg_seed_{en,de}crypt_blocks`'s
+contract, whose working space has 136 words (the code uses 130).
+`ecb_correct'` adds what the modes' core needs of the call beyond the
+contract (`EcbPost`).
 -/
 
 @[expose] public section
@@ -45,12 +47,13 @@ namespace VG.Proof.Seed.PPC64LE
 
 open VG VG.PPC64LE
 
-/-- ECB with its working space at `r6`. -/
-def contract (d : Spec.Seed.Direction) : Contract isa where
+/-- ECB with `n` bytes of working space at `r6` (1040, the 130 words the code
+uses, or 1088 for the blocks functions). -/
+def contract (d : Spec.Seed.Direction) (n : Nat := 8 * Impl.Seed.PPC64LE.scratchSlots) : Contract isa where
   pre s :=
     let key : Region := ⟨s.gpr .r3, 128⟩
     let data : Region := ⟨s.gpr .r4, 16 * (s.gpr .r5).toNat⟩
-    let buf : Region := ⟨s.gpr .r6, 8 * Impl.Seed.PPC64LE.scratchSlots⟩
+    let buf : Region := ⟨s.gpr .r6, n⟩
     s.rd = [key] ∧ s.wr = [data, buf] ∧ key.Disjoint data ∧ key.Disjoint buf ∧
       data.Disjoint buf ∧ (s.gpr .r4).toNat + 16 * (s.gpr .r5).toNat ≤ 2 ^ 64
   post s s' :=
@@ -60,14 +63,17 @@ def contract (d : Spec.Seed.Direction) : Contract isa where
   pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧
     s₁.gpr .r5 = s₂.gpr .r5 ∧ s₁.gpr .r6 = s₂.gpr .r6
 
-theorem ecbPre_of {s : State} {d : Spec.Seed.Direction} (hs : (contract d).pre s) : EcbPre s := by
+theorem ecbPre_of {s : State} {d : Spec.Seed.Direction} {n : Nat} (hn : 8 * Impl.Seed.PPC64LE.scratchSlots ≤ n)
+    (hs : (contract d n).pre s) : EcbPre s := by
   obtain ⟨rd, wr, kd, kb, db, fit⟩ := hs
-  exact { scratch := ⟨_, Nat.le_refl _, by rw [wr]; exact List.mem_cons_of_mem _ List.mem_cons_self⟩
+  have sub : Region.Sub ⟨s.gpr .r6, 8 * Impl.Seed.PPC64LE.scratchSlots⟩ ⟨s.gpr .r6, n⟩ :=
+    Region.sub_prefix hn
+  exact { scratch := ⟨n, hn, by rw [wr]; exact List.mem_cons_of_mem _ List.mem_cons_self⟩
           dataIn := by rw [wr]; exact List.mem_cons_self
           keyIn := by rw [rd]; exact List.mem_cons_self
           keyData := kd
-          keyBuf := kb
-          dataBuf := db
+          keyBuf := kb.sub_right sub
+          dataBuf := db.sub_right sub
           fit := by omega }
 
 /-- The registers ECB writes. -/
@@ -103,16 +109,25 @@ theorem abi_of {c : Prog isa} {s s' : State} {t : List Leak} (he : Exec isa c s 
   · exact hs (.r30, 128) (by decide)
   · exact hs (.r31, 129) (by decide)
 
-theorem ecb_correct (d : Spec.Seed.Direction) (s : State) (hs : (contract d).pre s) :
-    ∃ t s', Exec isa (Impl.Seed.PPC64LE.ecb d) s t s' ∧ abiPreserved s s' ∧ (contract d).post s s' := by
-  have hn : (Impl.Seed.PPC64LE.ecb d).noCalls = true := by cases d <;> lit_decide
-  obtain ⟨t, s', he, hp, hk⟩ := WP.keep ecbWrites (ecb_ok d (ecbPre_of hs)) (by cases d <;> lit_decide) hn
-  exact ⟨t, s', he, abi_of he hp.saved (hk.gpr (by decide)) (Exec.lr he hn (by cases d <;> lit_decide)),
-    ecb_blocks _ _ _ _ _ _ hp.done⟩
+/-- ECB, with what its proof (`ecb_ok`) gives beyond the contract. -/
+theorem ecb_correct' (d : Spec.Seed.Direction) {n : Nat} (hn : 8 * Impl.Seed.PPC64LE.scratchSlots ≤ n)
+    (s : State) (hs : (contract d n).pre s) :
+    ∃ t s', Exec isa (Impl.Seed.PPC64LE.ecb d) s t s' ∧ abiPreserved s s' ∧ (contract d n).post s s' ∧
+      EcbPost d s s' := by
+  have hc : (Impl.Seed.PPC64LE.ecb d).noCalls = true := by cases d <;> lit_decide
+  obtain ⟨t, s', he, hp, hk⟩ := WP.keep ecbWrites (ecb_ok d (ecbPre_of hn hs)) (by cases d <;> lit_decide) hc
+  exact ⟨t, s', he, abi_of he hp.saved (hk.gpr (by decide)) (Exec.lr he hc (by cases d <;> lit_decide)),
+    ecb_blocks _ _ _ _ _ _ hp.done, hp⟩
 
-theorem ecb_ct (d : Spec.Seed.Direction) :
-    ConstantTime isa (contract d).pre (contract d).pub (Impl.Seed.PPC64LE.ecb d) := by
-  have hag : ∀ s₁ s₂, (contract d).pre s₁ → (contract d).pre s₂ → (contract d).pub s₁ s₂ →
+theorem ecb_correct (d : Spec.Seed.Direction) {n : Nat} (hn : 8 * Impl.Seed.PPC64LE.scratchSlots ≤ n)
+    (s : State) (hs : (contract d n).pre s) :
+    ∃ t s', Exec isa (Impl.Seed.PPC64LE.ecb d) s t s' ∧ abiPreserved s s' ∧ (contract d n).post s s' := by
+  obtain ⟨t, s', he, ha, hp, -⟩ := ecb_correct' d hn s hs
+  exact ⟨t, s', he, ha, hp⟩
+
+theorem ecb_ct (d : Spec.Seed.Direction) (n : Nat) :
+    ConstantTime isa (contract d n).pre (contract d n).pub (Impl.Seed.PPC64LE.ecb d) := by
+  have hag : ∀ s₁ s₂, (contract d n).pre s₁ → (contract d n).pre s₂ → (contract d n).pub s₁ s₂ →
       taint.Agree (Taint.ofRegs [.r3, .r4, .r5, .r6]) s₁ s₂ := by
     intro s₁ s₂ _ _ hp
     obtain ⟨hsp, h3, h4, h5, h6⟩ := hp
@@ -130,13 +145,20 @@ def satState : State where
   sp := 0x8000
   mem _ := 0
   rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 0⟩, ⟨0x3000, 8 * 130⟩]
+  wr := [⟨0x2000, 0⟩, ⟨0x3000, 1088⟩]
 
-theorem ecb_verified (d : Spec.Seed.Direction) : Verified target (Impl.Seed.PPC64LE.ecb d)
-    (Proof.Seed.ecbScratchContract abi d 130) := by
-  refine Verified.of_correct (ecb_correct d) (ecb_ct d) ?_
-  cases d <;>
-  sig_implies [Proof.Seed.ecbScratchContract, Proof.Seed.ecbScratchSig, Spec.Seed.ecbPost, abi, argRegs,
-    contract, Impl.Seed.PPC64LE.scratchSlots] [satState] using satState
+/-- ECB against `vg_seed_encrypt_blocks`'s contract: its working space is 136
+words, of which the code uses the first 130. -/
+theorem encrypt_blocks_verified : Verified target Impl.Seed.PPC64LE.encrypt
+    (Spec.Seed.blocksContract abi .encrypt) := by
+  refine Verified.of_correct (ecb_correct .encrypt (n := 1088) (by decide)) (ecb_ct .encrypt 1088) ?_
+  sig_implies [Spec.Seed.blocksContract, Spec.Seed.blocksSig, Spec.Seed.ecbPost, abi, argRegs,
+    contract] [satState] using satState
+
+theorem decrypt_blocks_verified : Verified target Impl.Seed.PPC64LE.decrypt
+    (Spec.Seed.blocksContract abi .decrypt) := by
+  refine Verified.of_correct (ecb_correct .decrypt (n := 1088) (by decide)) (ecb_ct .decrypt 1088) ?_
+  sig_implies [Spec.Seed.blocksContract, Spec.Seed.blocksSig, Spec.Seed.ecbPost, abi, argRegs,
+    contract] [satState] using satState
 
 end VG.Proof.Seed.PPC64LE
