@@ -31,6 +31,11 @@ theorem rv_a (len j : Nat) : rv (kw len) (a j) = 160 + j * (8 * nw len + 8) := b
   rw [show 4 * kw len + 8 = 8 * nw len + 8 by omega] at this
   simp only [a]; omega
 
+theorem rv_half1' (len j : Nat) : rv (kw len) { arr := j, half := 1 } = rv (kw len) (a j) + 4 * nw len := by
+  have := rv_half1 (kw len) (a j) rfl
+  have ke := kw_eq len
+  simp only [a] at this ⊢; omega
+
 /-- The arrays fit: `[16]` begins inside the working space. -/
 theorem Bx.fits16 {s : State} (h : Bx L s B Z len N) : 160 + 16 * (8 * nw len + 8) ≤ Z := by
   have := h.fits
