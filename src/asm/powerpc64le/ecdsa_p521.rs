@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.signContract`. Constant time: only the pointers may affect timing, not the key, the hash or `k`.
 ///
-/// The function saves `r14`, `r31` and `lr` in `scratch` (in `r3` during the function), and keeps `out` in `r14`. Field elements and scalars are nine 64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, in calls of `vg_p521_mul_mod_p` and the other functions of `p521_mont`) with a final conditional subtraction. `[k]G` is a double-and-add ladder over all 528 bits of the 66-byte encoding of `k`, with the complete addition formulas of Renes, Costello and Batina for every addition and doubling (inlined, as calls of the field functions: the points do not fit the point functions' slots) and a masked selection for each bit; the inversions modulo `p` and `n` are Fermat's, by square-and-always-multiply over the bits of `p - 2` and `n - 2`. The signature (or zeros) is selected by a mask, so the time depends only on the pointers.
+/// The function saves `r14`, `r31` and `lr` in `scratch` (in `r3` during the function), and keeps `out` in `r14`. Field elements and scalars are nine 64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, in calls of `vg_p521_mul_mod_p` and the other functions of `p521_mont`) with a final conditional subtraction. `[k]G` is a call of `vg_p521_mul`, a double-and-add ladder over all 528 bits of the 66-byte encoding of `k`, with the complete addition formulas of Renes, Costello and Batina for every addition and doubling (inlined, as calls of the field functions: the points do not fit the point functions' slots) and a masked selection for each bit; the inversions modulo `p` and `n` are Fermat's, by square-and-always-multiply over the bits of `p - 2` and `n - 2`. The signature (or zeros) is selected by a mask, so the time depends only on the pointers.
 ///
 /// # Safety
 ///
@@ -1129,497 +1129,43 @@ and %r6, %r6, %r7
 stb %r6, 5255(%r5)
 cmpldi %cr0, %r31, 0
 bne %cr0, 22b
-li %r31, 528
-23:
-addi %r31, %r31, -1
-li %r4, 1720
-li %r5, 1072
-li %r6, 1072
-bl {vg_p521_mul_mod_p}
-li %r4, 1792
-li %r5, 1144
-li %r6, 1144
-bl {vg_p521_mul_mod_p}
-li %r4, 1864
-li %r5, 1216
-li %r6, 1216
-bl {vg_p521_mul_mod_p}
-li %r4, 1936
-li %r5, 1072
-li %r6, 1144
-bl {vg_p521_add_mod_p}
-li %r4, 2008
-li %r5, 1072
-li %r6, 1144
-bl {vg_p521_add_mod_p}
-li %r4, 1936
-li %r5, 1936
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 2008
-li %r5, 1720
-li %r6, 1792
-bl {vg_p521_add_mod_p}
-li %r4, 1936
-li %r5, 1936
-li %r6, 2008
-bl {vg_p521_sub_mod_p}
-li %r4, 2008
-li %r5, 1072
-li %r6, 1216
-bl {vg_p521_add_mod_p}
-li %r4, 2080
-li %r5, 1072
-li %r6, 1216
-bl {vg_p521_add_mod_p}
-li %r4, 2008
-li %r5, 2008
-li %r6, 2080
-bl {vg_p521_mul_mod_p}
-li %r4, 2080
-li %r5, 1720
-li %r6, 1864
-bl {vg_p521_add_mod_p}
-li %r4, 2008
-li %r5, 2008
-li %r6, 2080
-bl {vg_p521_sub_mod_p}
-li %r4, 2080
-li %r5, 1144
-li %r6, 1216
-bl {vg_p521_add_mod_p}
-li %r4, 1288
-li %r5, 1144
-li %r6, 1216
-bl {vg_p521_add_mod_p}
-li %r4, 2080
-li %r5, 2080
-li %r6, 1288
-bl {vg_p521_mul_mod_p}
-li %r4, 1288
-li %r5, 1792
-li %r6, 1864
-bl {vg_p521_add_mod_p}
-li %r4, 2080
-li %r5, 2080
-li %r6, 1288
-bl {vg_p521_sub_mod_p}
-li %r4, 1432
-li %r5, 496
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 1288
-li %r5, 568
-li %r6, 1864
-bl {vg_p521_mul_mod_p}
-li %r4, 1432
-li %r5, 1288
-li %r6, 1432
-bl {vg_p521_add_mod_p}
-li %r4, 1288
-li %r5, 1792
-li %r6, 1432
-bl {vg_p521_sub_mod_p}
-li %r4, 1432
-li %r5, 1792
-li %r6, 1432
-bl {vg_p521_add_mod_p}
-li %r4, 1360
-li %r5, 1288
-li %r6, 1432
-bl {vg_p521_mul_mod_p}
-li %r4, 1792
-li %r5, 1720
-li %r6, 1720
-bl {vg_p521_add_mod_p}
-li %r4, 1792
-li %r5, 1792
-li %r6, 1720
-bl {vg_p521_add_mod_p}
-li %r4, 1864
-li %r5, 496
-li %r6, 1864
-bl {vg_p521_mul_mod_p}
-li %r4, 2008
-li %r5, 568
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 1792
-li %r5, 1792
-li %r6, 1864
-bl {vg_p521_add_mod_p}
-li %r4, 1864
-li %r5, 1720
-li %r6, 1864
-bl {vg_p521_sub_mod_p}
-li %r4, 1864
-li %r5, 496
-li %r6, 1864
-bl {vg_p521_mul_mod_p}
-li %r4, 2008
-li %r5, 2008
-li %r6, 1864
-bl {vg_p521_add_mod_p}
-li %r4, 1720
-li %r5, 1792
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 1360
-li %r5, 1360
-li %r6, 1720
-bl {vg_p521_add_mod_p}
-li %r4, 1720
-li %r5, 2080
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 1288
-li %r5, 1936
-li %r6, 1288
-bl {vg_p521_mul_mod_p}
-li %r4, 1288
-li %r5, 1288
-li %r6, 1720
-bl {vg_p521_sub_mod_p}
-li %r4, 1720
-li %r5, 1936
-li %r6, 1792
-bl {vg_p521_mul_mod_p}
-li %r4, 1432
-li %r5, 2080
-li %r6, 1432
-bl {vg_p521_mul_mod_p}
-li %r4, 1432
-li %r5, 1432
-li %r6, 1720
-bl {vg_p521_add_mod_p}
-li %r4, 1720
-li %r5, 1288
-li %r6, 640
-bl {vg_p521_mul_mod_p}
-li %r4, 1792
-li %r5, 1360
-li %r6, 712
-bl {vg_p521_mul_mod_p}
-li %r4, 1864
-li %r5, 1432
-li %r6, 424
-bl {vg_p521_mul_mod_p}
-li %r4, 1936
-li %r5, 1288
-li %r6, 1360
-bl {vg_p521_add_mod_p}
-li %r4, 2008
-li %r5, 640
-li %r6, 712
-bl {vg_p521_add_mod_p}
-li %r4, 1936
-li %r5, 1936
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 2008
-li %r5, 1720
-li %r6, 1792
-bl {vg_p521_add_mod_p}
-li %r4, 1936
-li %r5, 1936
-li %r6, 2008
-bl {vg_p521_sub_mod_p}
-li %r4, 2008
-li %r5, 1288
-li %r6, 1432
-bl {vg_p521_add_mod_p}
-li %r4, 2080
-li %r5, 640
-li %r6, 424
-bl {vg_p521_add_mod_p}
-li %r4, 2008
-li %r5, 2008
-li %r6, 2080
-bl {vg_p521_mul_mod_p}
-li %r4, 2080
-li %r5, 1720
-li %r6, 1864
-bl {vg_p521_add_mod_p}
-li %r4, 2008
-li %r5, 2008
-li %r6, 2080
-bl {vg_p521_sub_mod_p}
-li %r4, 2080
-li %r5, 1360
-li %r6, 1432
-bl {vg_p521_add_mod_p}
-li %r4, 1504
-li %r5, 712
-li %r6, 424
-bl {vg_p521_add_mod_p}
-li %r4, 2080
-li %r5, 2080
-li %r6, 1504
-bl {vg_p521_mul_mod_p}
-li %r4, 1504
-li %r5, 1792
-li %r6, 1864
-bl {vg_p521_add_mod_p}
-li %r4, 2080
-li %r5, 2080
-li %r6, 1504
-bl {vg_p521_sub_mod_p}
-li %r4, 1648
-li %r5, 496
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 1504
-li %r5, 568
-li %r6, 1864
-bl {vg_p521_mul_mod_p}
-li %r4, 1648
-li %r5, 1504
-li %r6, 1648
-bl {vg_p521_add_mod_p}
-li %r4, 1504
-li %r5, 1792
-li %r6, 1648
-bl {vg_p521_sub_mod_p}
-li %r4, 1648
-li %r5, 1792
-li %r6, 1648
-bl {vg_p521_add_mod_p}
-li %r4, 1576
-li %r5, 1504
-li %r6, 1648
-bl {vg_p521_mul_mod_p}
-li %r4, 1792
-li %r5, 1720
-li %r6, 1720
-bl {vg_p521_add_mod_p}
-li %r4, 1792
-li %r5, 1792
-li %r6, 1720
-bl {vg_p521_add_mod_p}
-li %r4, 1864
-li %r5, 496
-li %r6, 1864
-bl {vg_p521_mul_mod_p}
-li %r4, 2008
-li %r5, 568
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 1792
-li %r5, 1792
-li %r6, 1864
-bl {vg_p521_add_mod_p}
-li %r4, 1864
-li %r5, 1720
-li %r6, 1864
-bl {vg_p521_sub_mod_p}
-li %r4, 1864
-li %r5, 496
-li %r6, 1864
-bl {vg_p521_mul_mod_p}
-li %r4, 2008
-li %r5, 2008
-li %r6, 1864
-bl {vg_p521_add_mod_p}
-li %r4, 1720
-li %r5, 1792
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 1576
-li %r5, 1576
-li %r6, 1720
-bl {vg_p521_add_mod_p}
-li %r4, 1720
-li %r5, 2080
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 1504
-li %r5, 1936
-li %r6, 1504
-bl {vg_p521_mul_mod_p}
-li %r4, 1504
-li %r5, 1504
-li %r6, 1720
-bl {vg_p521_sub_mod_p}
-li %r4, 1720
-li %r5, 1936
-li %r6, 1792
-bl {vg_p521_mul_mod_p}
-li %r4, 1648
-li %r5, 2080
-li %r6, 1648
-bl {vg_p521_mul_mod_p}
-li %r4, 1648
-li %r5, 1648
-li %r6, 1720
-bl {vg_p521_add_mod_p}
-add %r4, %r3, %r31
-lbz %r4, 4096(%r4)
-li %r5, 0
-subf %r10, %r4, %r5
-ld %r4, 1288(%r3)
-ld %r5, 1504(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 640(%r3)
 std %r4, 1072(%r3)
-ld %r4, 1296(%r3)
-ld %r5, 1512(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 648(%r3)
 std %r4, 1080(%r3)
-ld %r4, 1304(%r3)
-ld %r5, 1520(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 656(%r3)
 std %r4, 1088(%r3)
-ld %r4, 1312(%r3)
-ld %r5, 1528(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 664(%r3)
 std %r4, 1096(%r3)
-ld %r4, 1320(%r3)
-ld %r5, 1536(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 672(%r3)
 std %r4, 1104(%r3)
-ld %r4, 1328(%r3)
-ld %r5, 1544(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 680(%r3)
 std %r4, 1112(%r3)
-ld %r4, 1336(%r3)
-ld %r5, 1552(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 688(%r3)
 std %r4, 1120(%r3)
-ld %r4, 1344(%r3)
-ld %r5, 1560(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 696(%r3)
 std %r4, 1128(%r3)
-ld %r4, 1352(%r3)
-ld %r5, 1568(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 704(%r3)
 std %r4, 1136(%r3)
-ld %r4, 1360(%r3)
-ld %r5, 1576(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 712(%r3)
 std %r4, 1144(%r3)
-ld %r4, 1368(%r3)
-ld %r5, 1584(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 720(%r3)
 std %r4, 1152(%r3)
-ld %r4, 1376(%r3)
-ld %r5, 1592(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 728(%r3)
 std %r4, 1160(%r3)
-ld %r4, 1384(%r3)
-ld %r5, 1600(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 736(%r3)
 std %r4, 1168(%r3)
-ld %r4, 1392(%r3)
-ld %r5, 1608(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 744(%r3)
 std %r4, 1176(%r3)
-ld %r4, 1400(%r3)
-ld %r5, 1616(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 752(%r3)
 std %r4, 1184(%r3)
-ld %r4, 1408(%r3)
-ld %r5, 1624(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 760(%r3)
 std %r4, 1192(%r3)
-ld %r4, 1416(%r3)
-ld %r5, 1632(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 768(%r3)
 std %r4, 1200(%r3)
-ld %r4, 1424(%r3)
-ld %r5, 1640(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 776(%r3)
 std %r4, 1208(%r3)
-ld %r4, 1432(%r3)
-ld %r5, 1648(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1216(%r3)
-ld %r4, 1440(%r3)
-ld %r5, 1656(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1224(%r3)
-ld %r4, 1448(%r3)
-ld %r5, 1664(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1232(%r3)
-ld %r4, 1456(%r3)
-ld %r5, 1672(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1240(%r3)
-ld %r4, 1464(%r3)
-ld %r5, 1680(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1248(%r3)
-ld %r4, 1472(%r3)
-ld %r5, 1688(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1256(%r3)
-ld %r4, 1480(%r3)
-ld %r5, 1696(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1264(%r3)
-ld %r4, 1488(%r3)
-ld %r5, 1704(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1272(%r3)
-ld %r4, 1496(%r3)
-ld %r5, 1712(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1280(%r3)
-cmpldi %cr0, %r31, 0
-bne %cr0, 23b
+bl {vg_p521_mul}
 ld %r4, 424(%r3)
 std %r4, 2152(%r3)
 ld %r4, 432(%r3)
@@ -1639,7 +1185,7 @@ std %r4, 2208(%r3)
 ld %r4, 488(%r3)
 std %r4, 2216(%r3)
 li %r31, 576
-24:
+23:
 addi %r31, %r31, -1
 li %r4, 2152
 li %r5, 2152
@@ -1708,7 +1254,7 @@ and %r5, %r5, %r10
 xor %r4, %r4, %r5
 std %r4, 2216(%r3)
 cmpldi %cr0, %r31, 0
-bne %cr0, 24b
+bne %cr0, 23b
 li %r4, 2512
 li %r5, 1072
 li %r6, 2152
@@ -2052,7 +1598,7 @@ std %r4, 2208(%r3)
 ld %r4, 920(%r3)
 std %r4, 2216(%r3)
 li %r31, 576
-25:
+24:
 addi %r31, %r31, -1
 li %r4, 2152
 li %r5, 2152
@@ -2121,7 +1667,7 @@ and %r5, %r5, %r10
 xor %r4, %r4, %r5
 std %r4, 2216(%r3)
 cmpldi %cr0, %r31, 0
-bne %cr0, 25b
+bne %cr0, 24b
 li %r4, 2800
 li %r5, 2656
 li %r6, 784
@@ -2259,9 +1805,8 @@ ld %r14, 0(%r3)
 ld %r31, 8(%r3)
 or %r3, %r4, %r4
 blr",
+        vg_p521_mul = sym super::p521_mul::vg_p521_mul,
         vg_p521_mul_mod_p = sym super::p521_mont::vg_p521_mul_mod_p,
-        vg_p521_add_mod_p = sym super::p521_mont::vg_p521_add_mod_p,
-        vg_p521_sub_mod_p = sym super::p521_mont::vg_p521_sub_mod_p,
         vg_p521_add_mod_n = sym super::p521_mont::vg_p521_add_mod_n,
         vg_p521_mul_mod_n = sym super::p521_mont::vg_p521_mul_mod_n,
     )
@@ -4403,530 +3948,61 @@ li %r4, 2584
 li %r5, 3088
 li %r6, 352
 bl {vg_p521_mul_mod_n}
-li %r31, 72
-24:
-addi %r31, %r31, -1
-add %r4, %r3, %r31
-lbz %r4, 2512(%r4)
-rldicr %r5, %r31, 3, 60
-add %r5, %r3, %r5
-li %r7, 1
-and %r6, %r4, %r7
-stb %r6, 4096(%r5)
-rldicl %r6, %r4, 63, 1
-and %r6, %r6, %r7
-stb %r6, 4097(%r5)
-rldicl %r6, %r4, 62, 2
-and %r6, %r6, %r7
-stb %r6, 4098(%r5)
-rldicl %r6, %r4, 61, 3
-and %r6, %r6, %r7
-stb %r6, 4099(%r5)
-rldicl %r6, %r4, 60, 4
-and %r6, %r6, %r7
-stb %r6, 4100(%r5)
-rldicl %r6, %r4, 59, 5
-and %r6, %r6, %r7
-stb %r6, 4101(%r5)
-rldicl %r6, %r4, 58, 6
-and %r6, %r6, %r7
-stb %r6, 4102(%r5)
-rldicl %r6, %r4, 57, 7
-and %r6, %r6, %r7
-stb %r6, 4103(%r5)
-cmpldi %cr0, %r31, 0
-bne %cr0, 24b
-li %r31, 528
-25:
-addi %r31, %r31, -1
-li %r4, 1720
-li %r5, 1072
-li %r6, 1072
-bl {vg_p521_mul_mod_p}
-li %r4, 1792
-li %r5, 1144
-li %r6, 1144
-bl {vg_p521_mul_mod_p}
-li %r4, 1864
-li %r5, 1216
-li %r6, 1216
-bl {vg_p521_mul_mod_p}
-li %r4, 1936
-li %r5, 1072
-li %r6, 1144
-bl {vg_p521_add_mod_p}
-li %r4, 2008
-li %r5, 1072
-li %r6, 1144
-bl {vg_p521_add_mod_p}
-li %r4, 1936
-li %r5, 1936
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 2008
-li %r5, 1720
-li %r6, 1792
-bl {vg_p521_add_mod_p}
-li %r4, 1936
-li %r5, 1936
-li %r6, 2008
-bl {vg_p521_sub_mod_p}
-li %r4, 2008
-li %r5, 1072
-li %r6, 1216
-bl {vg_p521_add_mod_p}
-li %r4, 2080
-li %r5, 1072
-li %r6, 1216
-bl {vg_p521_add_mod_p}
-li %r4, 2008
-li %r5, 2008
-li %r6, 2080
-bl {vg_p521_mul_mod_p}
-li %r4, 2080
-li %r5, 1720
-li %r6, 1864
-bl {vg_p521_add_mod_p}
-li %r4, 2008
-li %r5, 2008
-li %r6, 2080
-bl {vg_p521_sub_mod_p}
-li %r4, 2080
-li %r5, 1144
-li %r6, 1216
-bl {vg_p521_add_mod_p}
-li %r4, 1288
-li %r5, 1144
-li %r6, 1216
-bl {vg_p521_add_mod_p}
-li %r4, 2080
-li %r5, 2080
-li %r6, 1288
-bl {vg_p521_mul_mod_p}
-li %r4, 1288
-li %r5, 1792
-li %r6, 1864
-bl {vg_p521_add_mod_p}
-li %r4, 2080
-li %r5, 2080
-li %r6, 1288
-bl {vg_p521_sub_mod_p}
-li %r4, 1432
-li %r5, 496
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 1288
-li %r5, 568
-li %r6, 1864
-bl {vg_p521_mul_mod_p}
-li %r4, 1432
-li %r5, 1288
-li %r6, 1432
-bl {vg_p521_add_mod_p}
-li %r4, 1288
-li %r5, 1792
-li %r6, 1432
-bl {vg_p521_sub_mod_p}
-li %r4, 1432
-li %r5, 1792
-li %r6, 1432
-bl {vg_p521_add_mod_p}
-li %r4, 1360
-li %r5, 1288
-li %r6, 1432
-bl {vg_p521_mul_mod_p}
-li %r4, 1792
-li %r5, 1720
-li %r6, 1720
-bl {vg_p521_add_mod_p}
-li %r4, 1792
-li %r5, 1792
-li %r6, 1720
-bl {vg_p521_add_mod_p}
-li %r4, 1864
-li %r5, 496
-li %r6, 1864
-bl {vg_p521_mul_mod_p}
-li %r4, 2008
-li %r5, 568
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 1792
-li %r5, 1792
-li %r6, 1864
-bl {vg_p521_add_mod_p}
-li %r4, 1864
-li %r5, 1720
-li %r6, 1864
-bl {vg_p521_sub_mod_p}
-li %r4, 1864
-li %r5, 496
-li %r6, 1864
-bl {vg_p521_mul_mod_p}
-li %r4, 2008
-li %r5, 2008
-li %r6, 1864
-bl {vg_p521_add_mod_p}
-li %r4, 1720
-li %r5, 1792
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 1360
-li %r5, 1360
-li %r6, 1720
-bl {vg_p521_add_mod_p}
-li %r4, 1720
-li %r5, 2080
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 1288
-li %r5, 1936
-li %r6, 1288
-bl {vg_p521_mul_mod_p}
-li %r4, 1288
-li %r5, 1288
-li %r6, 1720
-bl {vg_p521_sub_mod_p}
-li %r4, 1720
-li %r5, 1936
-li %r6, 1792
-bl {vg_p521_mul_mod_p}
-li %r4, 1432
-li %r5, 2080
-li %r6, 1432
-bl {vg_p521_mul_mod_p}
-li %r4, 1432
-li %r5, 1432
-li %r6, 1720
-bl {vg_p521_add_mod_p}
-li %r4, 1720
-li %r5, 1288
-li %r6, 640
-bl {vg_p521_mul_mod_p}
-li %r4, 1792
-li %r5, 1360
-li %r6, 712
-bl {vg_p521_mul_mod_p}
-li %r4, 1864
-li %r5, 1432
-li %r6, 424
-bl {vg_p521_mul_mod_p}
-li %r4, 1936
-li %r5, 1288
-li %r6, 1360
-bl {vg_p521_add_mod_p}
-li %r4, 2008
-li %r5, 640
-li %r6, 712
-bl {vg_p521_add_mod_p}
-li %r4, 1936
-li %r5, 1936
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 2008
-li %r5, 1720
-li %r6, 1792
-bl {vg_p521_add_mod_p}
-li %r4, 1936
-li %r5, 1936
-li %r6, 2008
-bl {vg_p521_sub_mod_p}
-li %r4, 2008
-li %r5, 1288
-li %r6, 1432
-bl {vg_p521_add_mod_p}
-li %r4, 2080
-li %r5, 640
-li %r6, 424
-bl {vg_p521_add_mod_p}
-li %r4, 2008
-li %r5, 2008
-li %r6, 2080
-bl {vg_p521_mul_mod_p}
-li %r4, 2080
-li %r5, 1720
-li %r6, 1864
-bl {vg_p521_add_mod_p}
-li %r4, 2008
-li %r5, 2008
-li %r6, 2080
-bl {vg_p521_sub_mod_p}
-li %r4, 2080
-li %r5, 1360
-li %r6, 1432
-bl {vg_p521_add_mod_p}
-li %r4, 1504
-li %r5, 712
-li %r6, 424
-bl {vg_p521_add_mod_p}
-li %r4, 2080
-li %r5, 2080
-li %r6, 1504
-bl {vg_p521_mul_mod_p}
-li %r4, 1504
-li %r5, 1792
-li %r6, 1864
-bl {vg_p521_add_mod_p}
-li %r4, 2080
-li %r5, 2080
-li %r6, 1504
-bl {vg_p521_sub_mod_p}
-li %r4, 1648
-li %r5, 496
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 1504
-li %r5, 568
-li %r6, 1864
-bl {vg_p521_mul_mod_p}
-li %r4, 1648
-li %r5, 1504
-li %r6, 1648
-bl {vg_p521_add_mod_p}
-li %r4, 1504
-li %r5, 1792
-li %r6, 1648
-bl {vg_p521_sub_mod_p}
-li %r4, 1648
-li %r5, 1792
-li %r6, 1648
-bl {vg_p521_add_mod_p}
-li %r4, 1576
-li %r5, 1504
-li %r6, 1648
-bl {vg_p521_mul_mod_p}
-li %r4, 1792
-li %r5, 1720
-li %r6, 1720
-bl {vg_p521_add_mod_p}
-li %r4, 1792
-li %r5, 1792
-li %r6, 1720
-bl {vg_p521_add_mod_p}
-li %r4, 1864
-li %r5, 496
-li %r6, 1864
-bl {vg_p521_mul_mod_p}
-li %r4, 2008
-li %r5, 568
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 1792
-li %r5, 1792
-li %r6, 1864
-bl {vg_p521_add_mod_p}
-li %r4, 1864
-li %r5, 1720
-li %r6, 1864
-bl {vg_p521_sub_mod_p}
-li %r4, 1864
-li %r5, 496
-li %r6, 1864
-bl {vg_p521_mul_mod_p}
-li %r4, 2008
-li %r5, 2008
-li %r6, 1864
-bl {vg_p521_add_mod_p}
-li %r4, 1720
-li %r5, 1792
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 1576
-li %r5, 1576
-li %r6, 1720
-bl {vg_p521_add_mod_p}
-li %r4, 1720
-li %r5, 2080
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 1504
-li %r5, 1936
-li %r6, 1504
-bl {vg_p521_mul_mod_p}
-li %r4, 1504
-li %r5, 1504
-li %r6, 1720
-bl {vg_p521_sub_mod_p}
-li %r4, 1720
-li %r5, 1936
-li %r6, 1792
-bl {vg_p521_mul_mod_p}
-li %r4, 1648
-li %r5, 2080
-li %r6, 1648
-bl {vg_p521_mul_mod_p}
-li %r4, 1648
-li %r5, 1648
-li %r6, 1720
-bl {vg_p521_add_mod_p}
-add %r4, %r3, %r31
-lbz %r4, 4096(%r4)
-li %r5, 0
-subf %r10, %r4, %r5
-ld %r4, 1288(%r3)
-ld %r5, 1504(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 2512(%r3)
+std %r4, 2296(%r3)
+ld %r4, 2520(%r3)
+std %r4, 2304(%r3)
+ld %r4, 2528(%r3)
+std %r4, 2312(%r3)
+ld %r4, 2536(%r3)
+std %r4, 2320(%r3)
+ld %r4, 2544(%r3)
+std %r4, 2328(%r3)
+ld %r4, 2552(%r3)
+std %r4, 2336(%r3)
+ld %r4, 2560(%r3)
+std %r4, 2344(%r3)
+ld %r4, 2568(%r3)
+std %r4, 2352(%r3)
+ld %r4, 2576(%r3)
+std %r4, 2360(%r3)
+ld %r4, 640(%r3)
 std %r4, 1072(%r3)
-ld %r4, 1296(%r3)
-ld %r5, 1512(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 648(%r3)
 std %r4, 1080(%r3)
-ld %r4, 1304(%r3)
-ld %r5, 1520(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 656(%r3)
 std %r4, 1088(%r3)
-ld %r4, 1312(%r3)
-ld %r5, 1528(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 664(%r3)
 std %r4, 1096(%r3)
-ld %r4, 1320(%r3)
-ld %r5, 1536(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 672(%r3)
 std %r4, 1104(%r3)
-ld %r4, 1328(%r3)
-ld %r5, 1544(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 680(%r3)
 std %r4, 1112(%r3)
-ld %r4, 1336(%r3)
-ld %r5, 1552(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 688(%r3)
 std %r4, 1120(%r3)
-ld %r4, 1344(%r3)
-ld %r5, 1560(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 696(%r3)
 std %r4, 1128(%r3)
-ld %r4, 1352(%r3)
-ld %r5, 1568(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 704(%r3)
 std %r4, 1136(%r3)
-ld %r4, 1360(%r3)
-ld %r5, 1576(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 712(%r3)
 std %r4, 1144(%r3)
-ld %r4, 1368(%r3)
-ld %r5, 1584(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 720(%r3)
 std %r4, 1152(%r3)
-ld %r4, 1376(%r3)
-ld %r5, 1592(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 728(%r3)
 std %r4, 1160(%r3)
-ld %r4, 1384(%r3)
-ld %r5, 1600(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 736(%r3)
 std %r4, 1168(%r3)
-ld %r4, 1392(%r3)
-ld %r5, 1608(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 744(%r3)
 std %r4, 1176(%r3)
-ld %r4, 1400(%r3)
-ld %r5, 1616(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 752(%r3)
 std %r4, 1184(%r3)
-ld %r4, 1408(%r3)
-ld %r5, 1624(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 760(%r3)
 std %r4, 1192(%r3)
-ld %r4, 1416(%r3)
-ld %r5, 1632(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 768(%r3)
 std %r4, 1200(%r3)
-ld %r4, 1424(%r3)
-ld %r5, 1640(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 776(%r3)
 std %r4, 1208(%r3)
-ld %r4, 1432(%r3)
-ld %r5, 1648(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1216(%r3)
-ld %r4, 1440(%r3)
-ld %r5, 1656(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1224(%r3)
-ld %r4, 1448(%r3)
-ld %r5, 1664(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1232(%r3)
-ld %r4, 1456(%r3)
-ld %r5, 1672(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1240(%r3)
-ld %r4, 1464(%r3)
-ld %r5, 1680(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1248(%r3)
-ld %r4, 1472(%r3)
-ld %r5, 1688(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1256(%r3)
-ld %r4, 1480(%r3)
-ld %r5, 1696(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1264(%r3)
-ld %r4, 1488(%r3)
-ld %r5, 1704(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1272(%r3)
-ld %r4, 1496(%r3)
-ld %r5, 1712(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1280(%r3)
-cmpldi %cr0, %r31, 0
-bne %cr0, 25b
+bl {vg_p521_mul}
 ld %r4, 1072(%r3)
 std %r4, 3016(%r3)
 ld %r4, 1080(%r3)
@@ -5143,530 +4219,61 @@ stw %r11, 1280(%r3)
 lis %r11, 0
 ori %r11, %r11, 0
 stw %r11, 1284(%r3)
-li %r31, 72
-26:
-addi %r31, %r31, -1
-add %r4, %r3, %r31
-lbz %r4, 2584(%r4)
-rldicr %r5, %r31, 3, 60
-add %r5, %r3, %r5
-li %r7, 1
-and %r6, %r4, %r7
-stb %r6, 4096(%r5)
-rldicl %r6, %r4, 63, 1
-and %r6, %r6, %r7
-stb %r6, 4097(%r5)
-rldicl %r6, %r4, 62, 2
-and %r6, %r6, %r7
-stb %r6, 4098(%r5)
-rldicl %r6, %r4, 61, 3
-and %r6, %r6, %r7
-stb %r6, 4099(%r5)
-rldicl %r6, %r4, 60, 4
-and %r6, %r6, %r7
-stb %r6, 4100(%r5)
-rldicl %r6, %r4, 59, 5
-and %r6, %r6, %r7
-stb %r6, 4101(%r5)
-rldicl %r6, %r4, 58, 6
-and %r6, %r6, %r7
-stb %r6, 4102(%r5)
-rldicl %r6, %r4, 57, 7
-and %r6, %r6, %r7
-stb %r6, 4103(%r5)
-cmpldi %cr0, %r31, 0
-bne %cr0, 26b
-li %r31, 528
-27:
-addi %r31, %r31, -1
-li %r4, 1720
-li %r5, 1072
-li %r6, 1072
-bl {vg_p521_mul_mod_p}
-li %r4, 1792
-li %r5, 1144
-li %r6, 1144
-bl {vg_p521_mul_mod_p}
-li %r4, 1864
-li %r5, 1216
-li %r6, 1216
-bl {vg_p521_mul_mod_p}
-li %r4, 1936
-li %r5, 1072
-li %r6, 1144
-bl {vg_p521_add_mod_p}
-li %r4, 2008
-li %r5, 1072
-li %r6, 1144
-bl {vg_p521_add_mod_p}
-li %r4, 1936
-li %r5, 1936
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 2008
-li %r5, 1720
-li %r6, 1792
-bl {vg_p521_add_mod_p}
-li %r4, 1936
-li %r5, 1936
-li %r6, 2008
-bl {vg_p521_sub_mod_p}
-li %r4, 2008
-li %r5, 1072
-li %r6, 1216
-bl {vg_p521_add_mod_p}
-li %r4, 2080
-li %r5, 1072
-li %r6, 1216
-bl {vg_p521_add_mod_p}
-li %r4, 2008
-li %r5, 2008
-li %r6, 2080
-bl {vg_p521_mul_mod_p}
-li %r4, 2080
-li %r5, 1720
-li %r6, 1864
-bl {vg_p521_add_mod_p}
-li %r4, 2008
-li %r5, 2008
-li %r6, 2080
-bl {vg_p521_sub_mod_p}
-li %r4, 2080
-li %r5, 1144
-li %r6, 1216
-bl {vg_p521_add_mod_p}
-li %r4, 1288
-li %r5, 1144
-li %r6, 1216
-bl {vg_p521_add_mod_p}
-li %r4, 2080
-li %r5, 2080
-li %r6, 1288
-bl {vg_p521_mul_mod_p}
-li %r4, 1288
-li %r5, 1792
-li %r6, 1864
-bl {vg_p521_add_mod_p}
-li %r4, 2080
-li %r5, 2080
-li %r6, 1288
-bl {vg_p521_sub_mod_p}
-li %r4, 1432
-li %r5, 496
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 1288
-li %r5, 568
-li %r6, 1864
-bl {vg_p521_mul_mod_p}
-li %r4, 1432
-li %r5, 1288
-li %r6, 1432
-bl {vg_p521_add_mod_p}
-li %r4, 1288
-li %r5, 1792
-li %r6, 1432
-bl {vg_p521_sub_mod_p}
-li %r4, 1432
-li %r5, 1792
-li %r6, 1432
-bl {vg_p521_add_mod_p}
-li %r4, 1360
-li %r5, 1288
-li %r6, 1432
-bl {vg_p521_mul_mod_p}
-li %r4, 1792
-li %r5, 1720
-li %r6, 1720
-bl {vg_p521_add_mod_p}
-li %r4, 1792
-li %r5, 1792
-li %r6, 1720
-bl {vg_p521_add_mod_p}
-li %r4, 1864
-li %r5, 496
-li %r6, 1864
-bl {vg_p521_mul_mod_p}
-li %r4, 2008
-li %r5, 568
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 1792
-li %r5, 1792
-li %r6, 1864
-bl {vg_p521_add_mod_p}
-li %r4, 1864
-li %r5, 1720
-li %r6, 1864
-bl {vg_p521_sub_mod_p}
-li %r4, 1864
-li %r5, 496
-li %r6, 1864
-bl {vg_p521_mul_mod_p}
-li %r4, 2008
-li %r5, 2008
-li %r6, 1864
-bl {vg_p521_add_mod_p}
-li %r4, 1720
-li %r5, 1792
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 1360
-li %r5, 1360
-li %r6, 1720
-bl {vg_p521_add_mod_p}
-li %r4, 1720
-li %r5, 2080
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 1288
-li %r5, 1936
-li %r6, 1288
-bl {vg_p521_mul_mod_p}
-li %r4, 1288
-li %r5, 1288
-li %r6, 1720
-bl {vg_p521_sub_mod_p}
-li %r4, 1720
-li %r5, 1936
-li %r6, 1792
-bl {vg_p521_mul_mod_p}
-li %r4, 1432
-li %r5, 2080
-li %r6, 1432
-bl {vg_p521_mul_mod_p}
-li %r4, 1432
-li %r5, 1432
-li %r6, 1720
-bl {vg_p521_add_mod_p}
-li %r4, 1720
-li %r5, 1288
-li %r6, 2800
-bl {vg_p521_mul_mod_p}
-li %r4, 1792
-li %r5, 1360
-li %r6, 3160
-bl {vg_p521_mul_mod_p}
-li %r4, 1864
-li %r5, 1432
-li %r6, 424
-bl {vg_p521_mul_mod_p}
-li %r4, 1936
-li %r5, 1288
-li %r6, 1360
-bl {vg_p521_add_mod_p}
-li %r4, 2008
-li %r5, 2800
-li %r6, 3160
-bl {vg_p521_add_mod_p}
-li %r4, 1936
-li %r5, 1936
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 2008
-li %r5, 1720
-li %r6, 1792
-bl {vg_p521_add_mod_p}
-li %r4, 1936
-li %r5, 1936
-li %r6, 2008
-bl {vg_p521_sub_mod_p}
-li %r4, 2008
-li %r5, 1288
-li %r6, 1432
-bl {vg_p521_add_mod_p}
-li %r4, 2080
-li %r5, 2800
-li %r6, 424
-bl {vg_p521_add_mod_p}
-li %r4, 2008
-li %r5, 2008
-li %r6, 2080
-bl {vg_p521_mul_mod_p}
-li %r4, 2080
-li %r5, 1720
-li %r6, 1864
-bl {vg_p521_add_mod_p}
-li %r4, 2008
-li %r5, 2008
-li %r6, 2080
-bl {vg_p521_sub_mod_p}
-li %r4, 2080
-li %r5, 1360
-li %r6, 1432
-bl {vg_p521_add_mod_p}
-li %r4, 1504
-li %r5, 3160
-li %r6, 424
-bl {vg_p521_add_mod_p}
-li %r4, 2080
-li %r5, 2080
-li %r6, 1504
-bl {vg_p521_mul_mod_p}
-li %r4, 1504
-li %r5, 1792
-li %r6, 1864
-bl {vg_p521_add_mod_p}
-li %r4, 2080
-li %r5, 2080
-li %r6, 1504
-bl {vg_p521_sub_mod_p}
-li %r4, 1648
-li %r5, 496
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 1504
-li %r5, 568
-li %r6, 1864
-bl {vg_p521_mul_mod_p}
-li %r4, 1648
-li %r5, 1504
-li %r6, 1648
-bl {vg_p521_add_mod_p}
-li %r4, 1504
-li %r5, 1792
-li %r6, 1648
-bl {vg_p521_sub_mod_p}
-li %r4, 1648
-li %r5, 1792
-li %r6, 1648
-bl {vg_p521_add_mod_p}
-li %r4, 1576
-li %r5, 1504
-li %r6, 1648
-bl {vg_p521_mul_mod_p}
-li %r4, 1792
-li %r5, 1720
-li %r6, 1720
-bl {vg_p521_add_mod_p}
-li %r4, 1792
-li %r5, 1792
-li %r6, 1720
-bl {vg_p521_add_mod_p}
-li %r4, 1864
-li %r5, 496
-li %r6, 1864
-bl {vg_p521_mul_mod_p}
-li %r4, 2008
-li %r5, 568
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 1792
-li %r5, 1792
-li %r6, 1864
-bl {vg_p521_add_mod_p}
-li %r4, 1864
-li %r5, 1720
-li %r6, 1864
-bl {vg_p521_sub_mod_p}
-li %r4, 1864
-li %r5, 496
-li %r6, 1864
-bl {vg_p521_mul_mod_p}
-li %r4, 2008
-li %r5, 2008
-li %r6, 1864
-bl {vg_p521_add_mod_p}
-li %r4, 1720
-li %r5, 1792
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 1576
-li %r5, 1576
-li %r6, 1720
-bl {vg_p521_add_mod_p}
-li %r4, 1720
-li %r5, 2080
-li %r6, 2008
-bl {vg_p521_mul_mod_p}
-li %r4, 1504
-li %r5, 1936
-li %r6, 1504
-bl {vg_p521_mul_mod_p}
-li %r4, 1504
-li %r5, 1504
-li %r6, 1720
-bl {vg_p521_sub_mod_p}
-li %r4, 1720
-li %r5, 1936
-li %r6, 1792
-bl {vg_p521_mul_mod_p}
-li %r4, 1648
-li %r5, 2080
-li %r6, 1648
-bl {vg_p521_mul_mod_p}
-li %r4, 1648
-li %r5, 1648
-li %r6, 1720
-bl {vg_p521_add_mod_p}
-add %r4, %r3, %r31
-lbz %r4, 4096(%r4)
-li %r5, 0
-subf %r10, %r4, %r5
-ld %r4, 1288(%r3)
-ld %r5, 1504(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 2584(%r3)
+std %r4, 2296(%r3)
+ld %r4, 2592(%r3)
+std %r4, 2304(%r3)
+ld %r4, 2600(%r3)
+std %r4, 2312(%r3)
+ld %r4, 2608(%r3)
+std %r4, 2320(%r3)
+ld %r4, 2616(%r3)
+std %r4, 2328(%r3)
+ld %r4, 2624(%r3)
+std %r4, 2336(%r3)
+ld %r4, 2632(%r3)
+std %r4, 2344(%r3)
+ld %r4, 2640(%r3)
+std %r4, 2352(%r3)
+ld %r4, 2648(%r3)
+std %r4, 2360(%r3)
+ld %r4, 2800(%r3)
 std %r4, 1072(%r3)
-ld %r4, 1296(%r3)
-ld %r5, 1512(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 2808(%r3)
 std %r4, 1080(%r3)
-ld %r4, 1304(%r3)
-ld %r5, 1520(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 2816(%r3)
 std %r4, 1088(%r3)
-ld %r4, 1312(%r3)
-ld %r5, 1528(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 2824(%r3)
 std %r4, 1096(%r3)
-ld %r4, 1320(%r3)
-ld %r5, 1536(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 2832(%r3)
 std %r4, 1104(%r3)
-ld %r4, 1328(%r3)
-ld %r5, 1544(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 2840(%r3)
 std %r4, 1112(%r3)
-ld %r4, 1336(%r3)
-ld %r5, 1552(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 2848(%r3)
 std %r4, 1120(%r3)
-ld %r4, 1344(%r3)
-ld %r5, 1560(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 2856(%r3)
 std %r4, 1128(%r3)
-ld %r4, 1352(%r3)
-ld %r5, 1568(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 2864(%r3)
 std %r4, 1136(%r3)
-ld %r4, 1360(%r3)
-ld %r5, 1576(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 3160(%r3)
 std %r4, 1144(%r3)
-ld %r4, 1368(%r3)
-ld %r5, 1584(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 3168(%r3)
 std %r4, 1152(%r3)
-ld %r4, 1376(%r3)
-ld %r5, 1592(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 3176(%r3)
 std %r4, 1160(%r3)
-ld %r4, 1384(%r3)
-ld %r5, 1600(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 3184(%r3)
 std %r4, 1168(%r3)
-ld %r4, 1392(%r3)
-ld %r5, 1608(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 3192(%r3)
 std %r4, 1176(%r3)
-ld %r4, 1400(%r3)
-ld %r5, 1616(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 3200(%r3)
 std %r4, 1184(%r3)
-ld %r4, 1408(%r3)
-ld %r5, 1624(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 3208(%r3)
 std %r4, 1192(%r3)
-ld %r4, 1416(%r3)
-ld %r5, 1632(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 3216(%r3)
 std %r4, 1200(%r3)
-ld %r4, 1424(%r3)
-ld %r5, 1640(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 3224(%r3)
 std %r4, 1208(%r3)
-ld %r4, 1432(%r3)
-ld %r5, 1648(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1216(%r3)
-ld %r4, 1440(%r3)
-ld %r5, 1656(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1224(%r3)
-ld %r4, 1448(%r3)
-ld %r5, 1664(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1232(%r3)
-ld %r4, 1456(%r3)
-ld %r5, 1672(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1240(%r3)
-ld %r4, 1464(%r3)
-ld %r5, 1680(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1248(%r3)
-ld %r4, 1472(%r3)
-ld %r5, 1688(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1256(%r3)
-ld %r4, 1480(%r3)
-ld %r5, 1696(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1264(%r3)
-ld %r4, 1488(%r3)
-ld %r5, 1704(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1272(%r3)
-ld %r4, 1496(%r3)
-ld %r5, 1712(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 1280(%r3)
-cmpldi %cr0, %r31, 0
-bne %cr0, 27b
+bl {vg_p521_mul}
 li %r4, 1720
 li %r5, 3016
 li %r6, 1072
@@ -5900,7 +4507,7 @@ std %r4, 2208(%r3)
 ld %r4, 488(%r3)
 std %r4, 2216(%r3)
 li %r31, 576
-28:
+24:
 addi %r31, %r31, -1
 li %r4, 2152
 li %r5, 2152
@@ -5969,7 +4576,7 @@ and %r5, %r5, %r10
 xor %r4, %r4, %r5
 std %r4, 2216(%r3)
 cmpldi %cr0, %r31, 0
-bne %cr0, 28b
+bne %cr0, 24b
 li %r4, 2512
 li %r5, 1072
 li %r6, 2152
@@ -6054,6 +4661,7 @@ blr",
         vg_p521_add_mod_p = sym super::p521_mont::vg_p521_add_mod_p,
         vg_p521_sub_mod_p = sym super::p521_mont::vg_p521_sub_mod_p,
         vg_p521_mul_mod_n = sym super::p521_mont::vg_p521_mul_mod_n,
+        vg_p521_mul = sym super::p521_mul::vg_p521_mul,
         vg_p521_sub_mod_n = sym super::p521_mont::vg_p521_sub_mod_n,
     )
 }

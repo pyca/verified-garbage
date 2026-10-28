@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
 ///
-/// The function is `vg_ecdsa_p224_sign`'s setup, field arithmetic, ladder and inversion, with the peer's point in place of `G`: it saves `r14`, `r31` and `lr` in `scratch` (in `r3` during the function), keeps `out` in `r14` and `peer` in `r12`; field elements are four 64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, in calls of `vg_p224_mul_mod_p` and the other functions of `p224_mont`) with a final conditional subtraction. The peer's key is checked without branches (its first byte, both coordinates below `p`, and the curve's equation), and the ladder multiplies the peer's point if it is valid, else `G`, so it always runs on a point of the curve. `[d]P` is a double-and-add ladder over all 224 bits of `d`, with the complete addition formulas of Renes, Costello and Batina (calls of `vg_p224_point_double` and `vg_p224_point_add`) and a masked selection for each bit; `Z⁻¹` is Fermat's, by square-and-always-multiply. The result (or zeros) is selected by a mask of the checks, `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers.
+/// The function is `vg_ecdsa_p224_sign`'s setup, field arithmetic, ladder and inversion, with the peer's point in place of `G`: it saves `r14`, `r31` and `lr` in `scratch` (in `r3` during the function), keeps `out` in `r14` and `peer` in `r12`; field elements are four 64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, in calls of `vg_p224_mul_mod_p` and the other functions of `p224_mont`) with a final conditional subtraction. The peer's key is checked without branches (its first byte, both coordinates below `p`, and the curve's equation), and the ladder multiplies the peer's point if it is valid, else `G`, so it always runs on a point of the curve. `[d]P` is a call of `vg_p224_mul`, a double-and-add ladder over all 224 bits of `d`, with the complete addition formulas of Renes, Costello and Batina (calls of `vg_p224_point_double` and `vg_p224_point_add`) and a masked selection for each bit; `Z⁻¹` is Fermat's, by square-and-always-multiply. The result (or zeros) is selected by a mask of the checks, `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers.
 ///
 /// # Safety
 ///
@@ -855,176 +855,22 @@ and %r5, %r5, %r10
 xor %r4, %r4, %r5
 std %r4, 1464(%r3)
 ld %r4, 1280(%r3)
-std %r4, 3424(%r3)
-ld %r4, 1288(%r3)
-std %r4, 3432(%r3)
-ld %r4, 1296(%r3)
-std %r4, 3440(%r3)
-ld %r4, 1304(%r3)
-std %r4, 3448(%r3)
-ld %r4, 1440(%r3)
-std %r4, 3456(%r3)
-ld %r4, 1448(%r3)
-std %r4, 3464(%r3)
-ld %r4, 1456(%r3)
-std %r4, 3472(%r3)
-ld %r4, 1464(%r3)
-std %r4, 3480(%r3)
-ld %r4, 224(%r3)
-std %r4, 3488(%r3)
-ld %r4, 232(%r3)
-std %r4, 3496(%r3)
-ld %r4, 240(%r3)
-std %r4, 3504(%r3)
-ld %r4, 248(%r3)
-std %r4, 3512(%r3)
-ld %r4, 256(%r3)
-std %r4, 3520(%r3)
-ld %r4, 264(%r3)
-std %r4, 3528(%r3)
-ld %r4, 272(%r3)
-std %r4, 3536(%r3)
-ld %r4, 280(%r3)
-std %r4, 3544(%r3)
-ld %r4, 288(%r3)
-std %r4, 3552(%r3)
-ld %r4, 296(%r3)
-std %r4, 3560(%r3)
-ld %r4, 304(%r3)
-std %r4, 3568(%r3)
-ld %r4, 312(%r3)
-std %r4, 3576(%r3)
-li %r31, 224
-23:
-addi %r31, %r31, -1
-ld %r4, 512(%r3)
-std %r4, 3328(%r3)
-ld %r4, 520(%r3)
-std %r4, 3336(%r3)
-ld %r4, 528(%r3)
-std %r4, 3344(%r3)
-ld %r4, 536(%r3)
-std %r4, 3352(%r3)
-ld %r4, 544(%r3)
-std %r4, 3360(%r3)
-ld %r4, 552(%r3)
-std %r4, 3368(%r3)
-ld %r4, 560(%r3)
-std %r4, 3376(%r3)
-ld %r4, 568(%r3)
-std %r4, 3384(%r3)
-ld %r4, 576(%r3)
-std %r4, 3392(%r3)
-ld %r4, 584(%r3)
-std %r4, 3400(%r3)
-ld %r4, 592(%r3)
-std %r4, 3408(%r3)
-ld %r4, 600(%r3)
-std %r4, 3416(%r3)
-bl {vg_p224_point_double}
-ld %r4, 3232(%r3)
-std %r4, 3328(%r3)
-ld %r4, 3240(%r3)
-std %r4, 3336(%r3)
-ld %r4, 3248(%r3)
-std %r4, 3344(%r3)
-ld %r4, 3256(%r3)
-std %r4, 3352(%r3)
-ld %r4, 3264(%r3)
-std %r4, 3360(%r3)
-ld %r4, 3272(%r3)
-std %r4, 3368(%r3)
-ld %r4, 3280(%r3)
-std %r4, 3376(%r3)
-ld %r4, 3288(%r3)
-std %r4, 3384(%r3)
-ld %r4, 3296(%r3)
-std %r4, 3392(%r3)
-ld %r4, 3304(%r3)
-std %r4, 3400(%r3)
-ld %r4, 3312(%r3)
-std %r4, 3408(%r3)
-ld %r4, 3320(%r3)
-std %r4, 3416(%r3)
-bl {vg_p224_point_add}
-add %r4, %r3, %r31
-lbz %r4, 4096(%r4)
-li %r5, 0
-subf %r10, %r4, %r5
-ld %r4, 3328(%r3)
-ld %r5, 3232(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
 std %r4, 512(%r3)
-ld %r4, 3336(%r3)
-ld %r5, 3240(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 1288(%r3)
 std %r4, 520(%r3)
-ld %r4, 3344(%r3)
-ld %r5, 3248(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 1296(%r3)
 std %r4, 528(%r3)
-ld %r4, 3352(%r3)
-ld %r5, 3256(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 1304(%r3)
 std %r4, 536(%r3)
-ld %r4, 3360(%r3)
-ld %r5, 3264(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 1440(%r3)
 std %r4, 544(%r3)
-ld %r4, 3368(%r3)
-ld %r5, 3272(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 1448(%r3)
 std %r4, 552(%r3)
-ld %r4, 3376(%r3)
-ld %r5, 3280(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 1456(%r3)
 std %r4, 560(%r3)
-ld %r4, 3384(%r3)
-ld %r5, 3288(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
+ld %r4, 1464(%r3)
 std %r4, 568(%r3)
-ld %r4, 3392(%r3)
-ld %r5, 3296(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 576(%r3)
-ld %r4, 3400(%r3)
-ld %r5, 3304(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 584(%r3)
-ld %r4, 3408(%r3)
-ld %r5, 3312(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 592(%r3)
-ld %r4, 3416(%r3)
-ld %r5, 3320(%r3)
-xor %r5, %r5, %r4
-and %r5, %r5, %r10
-xor %r4, %r4, %r5
-std %r4, 600(%r3)
-cmpldi %cr0, %r31, 0
-bne %cr0, 23b
+bl {vg_p224_mul}
 ld %r4, 224(%r3)
 std %r4, 992(%r3)
 ld %r4, 232(%r3)
@@ -1034,7 +880,7 @@ std %r4, 1008(%r3)
 ld %r4, 248(%r3)
 std %r4, 1016(%r3)
 li %r31, 256
-24:
+23:
 addi %r31, %r31, -1
 li %r4, 992
 li %r5, 992
@@ -1073,7 +919,7 @@ and %r5, %r5, %r10
 xor %r4, %r4, %r5
 std %r4, 1016(%r3)
 cmpldi %cr0, %r31, 0
-bne %cr0, 24b
+bne %cr0, 23b
 li %r4, 1152
 li %r5, 512
 li %r6, 992
@@ -1202,7 +1048,6 @@ blr",
         vg_p224_mul_mod_p = sym super::p224_mont::vg_p224_mul_mod_p,
         vg_p224_add_mod_p = sym super::p224_mont::vg_p224_add_mod_p,
         vg_p224_sub_mod_p = sym super::p224_mont::vg_p224_sub_mod_p,
-        vg_p224_point_double = sym super::p224_point::vg_p224_point_double,
-        vg_p224_point_add = sym super::p224_point::vg_p224_point_add,
+        vg_p224_mul = sym super::p224_mul::vg_p224_mul,
     )
 }
