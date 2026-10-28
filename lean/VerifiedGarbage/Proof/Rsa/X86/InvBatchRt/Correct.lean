@@ -1,13 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Red
-public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Rows
+import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Rows
 public import VerifiedGarbage.Proof.Rsa.Divstep.InvCorrectDef
 import VerifiedGarbage.Proof.Rsa.Divstep.Absolute
 import VerifiedGarbage.Proof.Weierstrass.X86.Loop
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRead
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Divstep.Alg32Def
+public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Ops
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
 
 /-! # The inverse's corrections at a run-time width
 

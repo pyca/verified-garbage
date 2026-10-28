@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Ops
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
-import VerifiedGarbage.Proof.Divstep.Tc32Words
 import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 import VerifiedGarbage.Proof.Framework.Omega
@@ -74,8 +73,8 @@ def ShrInv (s₀ : State) (W : Addr) (sp dp n j : Nat) (t : State) : Prop :=
 theorem shrPairs_ok {s₀ : State} {W : Addr} {Z sp dp n : Nat} (hw : Ws s₀ W Z) (hn : 0 < n) (hev : n % 2 = 0)
     (hs : sp + 4 * (n + 1) ≤ Z) (hd : dp + 4 * (n + 1) ≤ Z) (sep : dp + 4 * (n + 1) ≤ sp ∨ sp + 4 * (n + 1) ≤ dp)
     (ps : PtrAt s₀ W .ebp sp) (pd : PtrAt s₀ W .edi dp) (cnt : (s₀.gpr .esi).toNat = 4 * n) :
-    WP isa (.loop (.block (shrWord 0 ++ shrWord 4 ++ [.alu .add .ebp (.imm 8), .alu .add .edi (.imm 8),
-      .alu .sub .esi (.imm 8)])) .ne) s₀ (ShrInv s₀ W sp dp n (n / 2)) := by
+    WP isa (.loop (.block (shrWord 0 ++ shrWord 4 ++ ([.alu .add .ebp (.imm 8), .alu .add .edi (.imm 8),
+      .alu .sub .esi (.imm 8)] : List Instr))) .ne) s₀ (ShrInv s₀ W sp dp n (n / 2)) := by
   have hn' := hw.nowrap
   refine VG.Proof.Bignum.X86.PublicRt.countLoop (N := n / 2) (by omega) _ ?_
     ⟨Keeps.refl _ _, by simpa using ps, by simpa using pd, by simpa using cnt, Outside.refl _ _ _ _,
@@ -142,9 +141,9 @@ theorem shrTop_ok {s : State} {W : Addr} {Z sp dp : Nat} (hw : Ws s W Z)
     (k : ∀ u, w32 u.mem W dp = (w32 s.mem W sp / 2 ^ 30 +
         4 * (if 2 ^ 31 ≤ w32 s.mem W sp then 2 ^ 32 - 1 else 0)) % 2 ^ 32 →
       Keeps [.eax, .ebx, .ecx] s u → Outside W dp 4 s.mem u.mem → WP isa (.block is) u Q) :
-    WP isa (.block ([.mov .eax (.mem (at_ .ebp 0)), .shift .shr .eax 31, .mov .ecx (.imm 0), .alu .sub .ecx (.reg .eax),
+    WP isa (.block (([.mov .eax (.mem (at_ .ebp 0)), .shift .shr .eax 31, .mov .ecx (.imm 0), .alu .sub .ecx (.reg .eax),
       .mov .eax (.mem (at_ .ebp 0)), .mov .ebx (.reg .ecx), .shift .shr .eax 30, .alu .add .ebx (.reg .ebx),
-      .alu .add .ebx (.reg .ebx), .alu .add .eax (.reg .ebx), .store (at_ .edi 0) .eax] ++ is)) s Q := by
+      .alu .add .ebx (.reg .ebx), .alu .add .eax (.reg .ebx), .store (at_ .edi 0) .eax] : List Instr) ++ is)) s Q := by
   have hn := hw.nowrap
   simp only [List.cons_append, List.nil_append]
   refine wp_movS (readSrc_ptr hw ps (d := 0) (by omega)) fun s₁ U₁ _ => ?_
@@ -239,29 +238,5 @@ theorem shr30_ok {s : State} (h : Bx L s B Z len N) {dst src : Ref} (hdh : dst.h
     (if 2 ^ 31 ≤ w32 s.mem B (rv (kw len) src + 4 * nw len) then 2 ^ 32 - 1 else 0) (val32_lt _ _ _ _)
   rw [show (2 : Nat) ^ 2 = 4 from rfl] at this
   rw [this]
-
-/-- `shr30` of a signed value divisible by `2 ^ 30` (`InvHalf.shrSigned_ok`). -/
-theorem shrSigned_ok {s : State} (h : Bx L s B Z len N) {dst src : Ref} (hdh : dst.half = 0)
-    (hev : nw len % 2 = 0) (hsz : rv (kw len) src + 4 * (nw len + 1) ≤ Z)
-    (hdz : rv (kw len) dst + 4 * (nw len + 1) ≤ Z)
-    (sep : rv (kw len) dst + 4 * (nw len + 1) ≤ rv (kw len) src ∨ rv (kw len) src + 4 * (nw len + 1) ≤ rv (kw len) dst)
-    {y z : Int}
-    (hy : (val32 s.mem B (rv (kw len) src) (nw len + 1) : Int) % ((2 ^ (32 * (nw len + 1)) : Nat) : Int) =
-      y % ((2 ^ (32 * (nw len + 1)) : Nat) : Int))
-    (hy1 : -((2 ^ (32 * nw len) * 2 ^ 31 : Nat) : Int) ≤ y)
-    (hy2 : y < ((2 ^ (32 * nw len) * 2 ^ 31 : Nat) : Int)) (hz : y = 2 ^ 30 * z) :
-    WP isa (shr30 L dst src) s fun u =>
-      Bx L u B Z len N ∧
-      (val32 u.mem B (rv (kw len) dst) (nw len + 1) : Int) % ((2 ^ (32 * (nw len + 1)) : Nat) : Int) =
-        z % ((2 ^ (32 * (nw len + 1)) : Nat) : Int) ∧
-      Keeps wordClob s u ∧ Outside B (rv (kw len) dst) (4 * (nw len + 1)) s.mem u.mem := by
-  refine WP.mono (shr30_ok h hdh hev hsz hdz sep) fun u ⟨Bu, V, K, O⟩ => ⟨Bu, ?_, K, O⟩
-  have Q : 2 ^ (32 * (nw len + 1)) = 2 * (2 ^ (32 * nw len) * 2 ^ 31) := by
-    rw [pow32_succ]; omega
-  simp only [sext32, Nat.add_sub_cancel, VG.Proof.Weierstrass.X86.Inv.sign32, Q] at V
-  rw [Q] at hy ⊢
-  exact Divstep.W32.shr_nat (c := 2 ^ 30) (B := 2 ^ 32) rfl rfl
-    (Nat.mul_pos (Nat.two_pow_pos _) (Nat.two_pow_pos _))
-    (by have := val32_lt s.mem B (rv (kw len) src) (nw len + 1); rw [Q] at this; exact this) hy hy1 hy2 hz V
 
 end VG.Proof.Rsa.X86.InvBatchRt

@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.RedLeaves
-public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Kinds2
-import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Linear
-import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Reduce
-import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Rows
+import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Kinds2
+import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Step
 
 /-! # The batched inverse's compound operations in both runs
 

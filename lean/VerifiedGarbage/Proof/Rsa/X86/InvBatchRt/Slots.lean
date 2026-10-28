@@ -49,7 +49,7 @@ theorem slotList_ok (hroom : 16 ≤ N) (l : List Nat) (hl : l.Nodup) (hc : ∀ j
         (B.toNat + VG.Impl.Rsa.X86.InvBatchRt.offset (kw len) j) % 2 ^ 32) →
       Unch B (slotWords l) s.mem u.mem → WP isa (.block is) u Q) →
     WP isa (.block (l.flatMap (fun j => arrPtr L .eax j .edx ++
-      [.store (sc (slotBase + 4 * cached.idxOf j)) .eax]) ++ is)) s Q := by
+      ([.store (sc (slotBase + 4 * cached.idxOf j)) .eax] : List Instr)) ++ is)) s Q := by
   induction l with
   | nil =>
     intro s h k

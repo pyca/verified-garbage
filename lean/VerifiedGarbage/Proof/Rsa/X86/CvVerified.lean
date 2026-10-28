@@ -68,7 +68,7 @@ theorem satisfiable : ∃ s, (Spec.Rsa.crtValuesContract abi 20).pre s := by
   sig_implies_sat [Spec.Rsa.crtValuesContract, Spec.Rsa.crtValuesSig, abi, argSlots, argVal, argBytes, stackBelow]
     [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, e, esp, satState, Spec.Rsa.lenValid, Spec.Rsa.scratchWords] using satState
 
-theorem verified : Verified target code (Spec.Rsa.crtValuesContract abi 20) :=
+theorem verified [VG.Proof.Rsa.X86.BatchLaw] : Verified target code (Spec.Rsa.crtValuesContract abi 20) :=
   ⟨correct, constantTime, satisfiable⟩
 
 end VG.Proof.Rsa.X86.CrtValues

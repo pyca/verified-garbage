@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRead
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Divstep.Alg32Def
+import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Red
 
 /-! # The inverse's initial state at a run-time width
 
@@ -29,9 +30,6 @@ open VG.Proof.Weierstrass.X86.Inv (wordClob)
 open VG.Proof.Rsa.Divstep (oddInput)
 
 variable {L : Lay} {B : Addr} {Z len N : Nat}
-
-/-- `1` replaced by `3`, an odd modulus the batches can run on. -/
-def virtualMod (m : Nat) : Nat := if m = 1 then 3 else m
 
 theorem virtualMod_odd {m : Nat} (odd : m % 2 = 1) : virtualMod m % 2 = 1 := by
   unfold virtualMod; split <;> omega

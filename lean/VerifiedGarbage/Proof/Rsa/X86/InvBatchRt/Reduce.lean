@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Red
 public import VerifiedGarbage.Proof.Divstep.Alg32Def
 public import Mathlib.Algebra.Order.Group.Unbundled.Abs
@@ -23,9 +24,6 @@ open VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Rsa.X86.KeyRt
 open VG.Proof.Weierstrass.X86.Inv (wordClob)
 
 variable {L : Lay} {B : Addr} {Z len N : Nat}
-
-theorem rv_arr (w j b : Nat) : rv w { arr := j, byte := b } = 160 + j * (4 * w + 8) + b := by
-  simp only [rv, VG.Impl.Rsa.X86.InvBatchRt.offset]; omega
 
 /-- `reduce (a j)`: `[a j] = mred p iv t` for the signed `t` at `[11]` (`n + 1` words), the
 modulus `p` at `[2]` and its inverse `iv` at `win + 28`. -/

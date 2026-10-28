@@ -1,7 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Linear
-public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Shr
+public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.ShrSigned
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Reduce
 import VerifiedGarbage.Proof.Divstep.Tc32Words
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRead
@@ -24,24 +25,6 @@ open VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Rsa.X86.KeyRt
 open VG.Proof.Weierstrass.X86.Inv (wordClob)
 
 variable {L : Lay} {B : Addr} {Z len N : Nat}
-
-theorem rv_a (len j : Nat) : rv (kw len) (a j) = 160 + j * (8 * nw len + 8) := by
-  have := rv_arr (kw len) j 0
-  have ke := kw_eq len
-  rw [show 4 * kw len + 8 = 8 * nw len + 8 by omega] at this
-  simp only [a]; omega
-
-theorem rv_half1' (len j : Nat) : rv (kw len) { arr := j, half := 1 } = rv (kw len) (a j) + 4 * nw len := by
-  have := rv_half1 (kw len) (a j) rfl
-  have ke := kw_eq len
-  simp only [a] at this ⊢; omega
-
-/-- The arrays fit: `[16]` begins inside the working space. -/
-theorem Bx.fits16 {s : State} (h : Bx L s B Z len N) : 160 + 16 * (8 * nw len + 8) ≤ Z := by
-  have := h.fits
-  have ke := kw_eq len
-  simp only [VG.Impl.Rsa.X86.InvBatchRt.offset] at this
-  omega
 
 /-- A matrix row of the full-width values: `[a j] = (u f + v g) / 2 ^ 30`, `n + 1` words. -/
 theorem fgRow_ok {s : State} (h : Bx L s B Z len N) (he : nw len % 2 = 0) {u v j : Nat}

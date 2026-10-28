@@ -17,7 +17,7 @@ open VG.Impl.Rsa.X86.CrtValues (inputArgs)
 open VG.Impl.Rsa.X86.CrtValuesRt (body)
 open VG.Proof.Rsa.X86.CrtValuesRt (Lengths sized_ok)
 
-theorem body_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g) :
+theorem body_ok [VG.Proof.Rsa.X86.BatchLaw] {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g) :
     WP isa body s fun t => Inputs g t ∧ Written g s.mem t ∧
       Frame (bodyWrites g) s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   unfold body inputArgs

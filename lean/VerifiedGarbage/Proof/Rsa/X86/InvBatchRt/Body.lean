@@ -29,10 +29,6 @@ open VG.Proof.Rsa.Divstep (oddInput)
 
 variable {L : Lay} {B : Addr} {Z len N : Nat}
 
-/-- What the inverse writes: the header from the window on, arrays 0 to 7 and 11 to 14. -/
-def bodyWrites (len : Nat) : List (Nat × Nat) :=
-  [(win, 88), (rv (kw len) (a 0), 8 * (8 * nw len + 8)), (rv (kw len) (a 11), 4 * (8 * nw len + 8))]
-
 theorem body_ok {s : State} (h : RtWs L s B Z len N) (room : 16 ≤ N) (hn2 : 2 ≤ nw len)
     (he : nw len % 2 = 0) {m x : Nat}
     (hm : val32 s.mem B (rv (kw len) (a 8)) (nw len) = m) (hx : val32 s.mem B (rv (kw len) (a 0)) (nw len) = x)

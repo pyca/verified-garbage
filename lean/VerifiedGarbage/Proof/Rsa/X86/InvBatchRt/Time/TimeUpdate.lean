@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Comp
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
-import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Rows
+import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Comp
 meta import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt

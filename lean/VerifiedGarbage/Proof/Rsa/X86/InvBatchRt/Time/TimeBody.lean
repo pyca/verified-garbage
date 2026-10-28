@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Comp
 meta import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Kinds2
+meta import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Kinds2
 
 /-! # The batched inverse in both runs, in `crt_values`' layout
 

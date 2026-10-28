@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.State
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRead
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
+import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Rows
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
 
 /-! # A batch's update at a run-time width
 

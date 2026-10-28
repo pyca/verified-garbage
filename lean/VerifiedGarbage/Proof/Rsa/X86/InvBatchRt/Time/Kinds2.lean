@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Kinds
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Slots
-public import VerifiedGarbage.Impl.Rsa.X86.GcdBatch
-import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Batch
+import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Start
 import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.Count
 import VerifiedGarbage.Proof.Weierstrass.X86.InvLoop
 import VerifiedGarbage.Proof.Weierstrass.X86.Loop
@@ -11,6 +10,7 @@ import VerifiedGarbage.Proof.Mont.X86.Inverse
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Weierstrass.X86.Inv
 
 /-! # The batched inverse's header operations, each in both runs
 
@@ -79,10 +79,10 @@ theorem relWinOne (hL : L.ws = 14) (hG : Stable [.eax] G) (hfit : 160 + 16 * (8 
 /-- The coefficient `1` in `[7]`. -/
 theorem relA7One (hL : L.ws = 14) (hG : Stable [.eax, .ecx, .edx] G) (hfit : 160 + 16 * (8 * nw len + 8) ≤ Z)
     {hc : VG.Taint.Hint VG.X86.Taint.T}
-    (h : (VG.Taint.check sseTaint τS (.block (ptr L .eax (a 7) .edx ++ [.mov .ecx (.imm 1), .store (at_ .eax 0) .ecx]))
+    (h : (VG.Taint.check sseTaint τS (.block (ptr L .eax (a 7) .edx ++ ([.mov .ecx (.imm 1), .store (at_ .eax 0) .ecx] : List Instr)))
       hc).isSome = true) :
     RelCT isa (Both L B Z len N args sp C fun g => G g ∧ True)
-      (.block (ptr L .eax (a 7) .edx ++ [.mov .ecx (.imm 1), .store (at_ .eax 0) .ecx]))
+      (.block (ptr L .eax (a 7) .edx ++ ([.mov .ecx (.imm 1), .store (at_ .eax 0) .ecx] : List Instr)))
       (Both L B Z len N args sp C fun g => G g ∧ True) := by
   have r7 := rv_a len 7
   refine relOp (ws := [(rv (kw len) (a 7), 4)]) hL (by decide) hG (ws1 (by omega) (by omega)) (fun s hb _ => ?_) h
@@ -103,11 +103,11 @@ theorem relA7One (hL : L.ws = 14) (hG : Stable [.eax, .ecx, .edx] G) (hfit : 160
 /-- The inverse word, from `[2]`'s low word. -/
 theorem relInverse (hL : L.ws = 14) (hG : Stable [.eax, .ebx, .ecx, .edx, .ebp] G)
     (hfit : 160 + 16 * (8 * nw len + 8) ≤ Z) {hc : VG.Taint.Hint VG.X86.Taint.T}
-    (h : (VG.Taint.check sseTaint τS (.block (ptr L .eax (a 2) .edx ++ [.mov .ebx (.mem (at_ .eax 0))] ++
-      VG.Impl.Mont.X86.Dynamic.inverse ++ [.store (sc (win + 28)) .eax])) hc).isSome = true) :
+    (h : (VG.Taint.check sseTaint τS (.block (ptr L .eax (a 2) .edx ++ ([.mov .ebx (.mem (at_ .eax 0))] : List Instr) ++
+      VG.Impl.Mont.X86.Dynamic.inverse ++ ([.store (sc (win + 28)) .eax] : List Instr))) hc).isSome = true) :
     RelCT isa (Both L B Z len N args sp C fun g => G g ∧ True)
-      (.block (ptr L .eax (a 2) .edx ++ [.mov .ebx (.mem (at_ .eax 0))] ++
-        VG.Impl.Mont.X86.Dynamic.inverse ++ [.store (sc (win + 28)) .eax]))
+      (.block (ptr L .eax (a 2) .edx ++ ([.mov .ebx (.mem (at_ .eax 0))] : List Instr) ++
+        VG.Impl.Mont.X86.Dynamic.inverse ++ ([.store (sc (win + 28)) .eax] : List Instr)))
       (Both L B Z len N args sp C fun g => G g ∧ True) := by
   have r2 := rv_a len 2
   refine relOp (ws := [(win + 28, 4)]) hL (by decide) hG (fun w hw => by

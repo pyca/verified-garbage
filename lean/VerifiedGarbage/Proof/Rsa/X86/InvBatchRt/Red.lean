@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.RowOp
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRedWord
@@ -193,9 +194,6 @@ theorem redSum_ok {s : State} (h : Bx L s B Z len N) {acc : Ref} (hah : acc.half
       (sign := if 2 ^ 31 ≤ w32 s.mem B (rv (kw len) acc + 4 * nw len) then 2 ^ 32 - 1 else 0)
       (Nat.two_pow_pos (32 * (nw len + 1))) (val32_lt t.mem B (rv (kw len) acc) (nw len + 1))
     rw [H, ← val32_succ, Nat.mul_comm (2 ^ (32 * (nw len + 1))) (2 ^ 32), ← pow32_succ, Vt]
-
-theorem rv_half1 (w : Nat) (x : Ref) (hx : x.half = 0) : rv w { x with half := 1 } = rv w x + 2 * w := by
-  simp only [rv, hx]; omega
 
 theorem toNat_adc0 (v : BitVec 32) (c : Bool) :
     (v + 0 + (BitVec.ofBool c).setWidth 32).toNat = (v.toNat + c.toNat) % 2 ^ 32 := by

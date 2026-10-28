@@ -7,12 +7,13 @@ public import VerifiedGarbage.Impl.Rsa.X86.GcdBatch
 public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import Aesop.BuiltinRules
+public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
 import Mathlib.Data.Nat.Init
 import Mathlib.Order.Defs.Prop
 import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.Basic
 import Mathlib.Tactic.ToAdditive
-/-! # Compositional arithmetic laws for the fixed RSA batch kernels
+/-! # Compositional arithmetic laws for the RSA batch kernels
 
 Callers use these laws without importing the arithmetic proof machinery.
 The registration supplies the closed, kernel-checked instance.
@@ -29,4 +30,20 @@ class BatchLaw : Prop where
         val32 z.mem base (VG.Impl.Rsa.X86.GcdBatch.offset n 1) n =
           Nat.gcd (val32 s.mem base (VG.Impl.Rsa.X86.GcdBatch.offset n 8) n) (val32 s.mem base (VG.Impl.Rsa.X86.GcdBatch.offset n 0) n) ∧
         Keeps wordClob s z ∧ Keep base n invArrs invSlots s.mem z.mem
+  inv_ok {L : VG.Impl.Rsa.X86.KeyRt.Lay} {s : State} {B : Addr} {Z len N : Nat}
+      (h : VG.Proof.Rsa.X86.KeyRt.RtWs L s B Z len N) (room : 16 ≤ N) (hn2 : 2 ≤ InvBatchRt.nw len)
+      (he : InvBatchRt.nw len % 2 = 0) {m x : Nat}
+      (hm : val32 s.mem B (InvBatchRt.rv (KeyRt.kw len) (VG.Impl.Rsa.X86.InvBatchRt.a 8)) (InvBatchRt.nw len) = m)
+      (hx : val32 s.mem B (InvBatchRt.rv (KeyRt.kw len) (VG.Impl.Rsa.X86.InvBatchRt.a 0)) (InvBatchRt.nw len) = x)
+      (odd : m % 2 = 1) :
+      WP isa (VG.Impl.Rsa.X86.InvBatchRt.body L) s fun z =>
+        InvBatchRt.Bx L z B Z len N ∧
+        val32 z.mem B (InvBatchRt.rv (KeyRt.kw len) (VG.Impl.Rsa.X86.InvBatchRt.a 1)) (KeyRt.kw len) =
+          Nat.gcd (InvBatchRt.virtualMod m) x ∧
+        (InvBatchRt.virtualMod m : Int) ∣
+          (val32 z.mem B (InvBatchRt.rv (KeyRt.kw len) (VG.Impl.Rsa.X86.InvBatchRt.a 3)) (KeyRt.kw len) : Int) * x -
+            (Nat.gcd (InvBatchRt.virtualMod m) x : Int) ∧
+        val32 z.mem B (InvBatchRt.rv (KeyRt.kw len) (VG.Impl.Rsa.X86.InvBatchRt.a 3)) (KeyRt.kw len) <
+          InvBatchRt.virtualMod m ∧
+        Keeps wordClob s z ∧ Unch B (InvBatchRt.bodyWrites len) s.mem z.mem
 end VG.Proof.Rsa.X86

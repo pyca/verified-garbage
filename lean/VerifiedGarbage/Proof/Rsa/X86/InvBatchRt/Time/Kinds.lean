@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Red
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.RowOp
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Shr
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Virtualize
-import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Linear
+import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
 import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.InitWords
 import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
 import VerifiedGarbage.Proof.Mont.X86.Instr
@@ -135,8 +135,8 @@ theorem relMaskAt {x : Ref} (hL : L.ws = 14) (hG : Stable [.eax, .ebx, .ecx, .ed
 /-- `maskAt x` and its complement. -/
 theorem relMaskAtNot {x : Ref} (hL : L.ws = 14) (hG : Stable [.eax, .ebx, .ecx, .edx] G)
     (hxz : rv (kw len) x + 4 ≤ Z) {hc : VG.Taint.Hint VG.X86.Taint.T}
-    (h : (VG.Taint.check sseTaint τS (.block (maskAt L x ++ [.alu .xor .ecx (.imm (-1))])) hc).isSome = true) :
-    RelCT isa (Both L B Z len N args sp C fun g => G g ∧ True) (.block (maskAt L x ++ [.alu .xor .ecx (.imm (-1))]))
+    (h : (VG.Taint.check sseTaint τS (.block (maskAt L x ++ ([.alu .xor .ecx (.imm (-1))] : List Instr))) hc).isSome = true) :
+    RelCT isa (Both L B Z len N args sp C fun g => G g ∧ True) (.block (maskAt L x ++ ([.alu .xor .ecx (.imm (-1))] : List Instr)))
       (Both L B Z len N args sp C fun g => G g ∧ Mask g) :=
   relOp (ws := []) hL (by decide) hG (fun _ h => nomatch h)
     (fun s hb _ => maskAt_ok hb hxz fun u K m c => wp_logicS (.inr rfl) rfl fun t U => WP.block_nil ⟨hb.keep

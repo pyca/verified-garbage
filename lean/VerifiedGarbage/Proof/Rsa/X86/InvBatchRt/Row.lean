@@ -218,8 +218,8 @@ theorem tailAdd_ok {s₀ t : State} {W : Addr} {Z x y N : Nat} (hw : Ws s₀ W Z
       (val32 s₀.mem W y (N + 2) + (s₀.gpr .ecx).toNat * val32 s₀.mem W x N < 2 ^ (32 * (N + 2)) →
         val32 u.mem W y (N + 2) = val32 s₀.mem W y (N + 2) + (s₀.gpr .ecx).toNat * val32 s₀.mem W x N) →
       WP isa (.block is) u Q) :
-    WP isa (.block ([.mov .eax (.mem (at_ .ebp 0)), .alu .add .eax (.reg .ebx), .store (at_ .ebp 0) .eax,
-      .mov .eax (.mem (at_ .ebp 4)), .alu .adc .eax (.imm 0), .store (at_ .ebp 4) .eax] ++ is)) t Q := by
+    WP isa (.block (([.mov .eax (.mem (at_ .ebp 0)), .alu .add .eax (.reg .ebx), .store (at_ .ebp 0) .eax,
+      .mov .eax (.mem (at_ .ebp 4)), .alu .adc .eax (.imm 0), .store (at_ .ebp 4) .eax] : List Instr) ++ is)) t Q := by
   have hn := hw.nowrap
   have ht := hw.of_keeps R.keep
   simp only [List.cons_append, List.nil_append]
@@ -310,7 +310,7 @@ theorem tailSet_ok {s₀ t : State} {W : Addr} {Z x y N : Nat} (hw : Ws s₀ W Z
     (hyz : y + 4 * (N + 2) ≤ Z) (R : Run true s₀ W x y N N N t)
     (k : ∀ u, Keeps [.eax] t u → Outside W y (4 * (N + 2)) s₀.mem u.mem →
       val32 u.mem W y (N + 2) = (s₀.gpr .ecx).toNat * val32 s₀.mem W x N → WP isa (.block is) u Q) :
-    WP isa (.block ([.store (at_ .ebp 0) .ebx, .mov .eax (.imm 0), .store (at_ .ebp 4) .eax] ++ is)) t Q := by
+    WP isa (.block (([.store (at_ .ebp 0) .ebx, .mov .eax (.imm 0), .store (at_ .ebp 4) .eax] : List Instr) ++ is)) t Q := by
   have hn := hw.nowrap
   have ht := hw.of_keeps R.keep
   simp only [List.cons_append, List.nil_append]

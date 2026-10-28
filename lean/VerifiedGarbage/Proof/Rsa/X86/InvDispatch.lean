@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.InvGate
 public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
 public import VerifiedGarbage.Proof.Rsa.X86.InvStep
 import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.FrameBase
-public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Body
+public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.InvLoop
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
@@ -115,7 +115,7 @@ open VG.Proof.Weierstrass.X86.Inv (wordClob)
     rw [ra, ← hS] at hc
     exact inArr _ 11 4 (fun j hj => arrs11 j hj) rfl (by omega) (by omega)
 
- theorem inverseBodyRt_ok {args : Nat → BitVec 32} {base : Addr} {size len P Q : Nat} {s : State}
+ theorem inverseBodyRt_ok [VG.Proof.Rsa.X86.BatchLaw] {args : Nat → BitVec 32} {base : Addr} {size len P Q : Nat} {s : State}
     (h : InvInput args base size len P Q s) (hn2 : 2 ≤ VG.Proof.Rsa.X86.InvBatchRt.nw len)
     (he : VG.Proof.Rsa.X86.InvBatchRt.nw len % 2 = 0)
     (pb : (args 9).toNat ≤ 4 * VG.Proof.Rsa.X86.InvBatchRt.nw len)
@@ -141,7 +141,7 @@ open VG.Proof.Weierstrass.X86.Inv (wordClob)
     rw [ra]
     have v : val32 s.mem base (arr (kw len) 0) (kw len) = Q := h.u
     rw [prefix_eq (w := kw len) (by omega) (by rw [v]; exact qc), v]
-  refine WP.mono (VG.Proof.Rsa.X86.InvBatchRt.body_ok h.ws (by decide) hn2 he mv qv (by unfold inverseM; omega))
+  refine WP.mono (VG.Proof.Rsa.X86.BatchLaw.inv_ok h.ws (by decide) hn2 he mv qv (by unfold inverseM; omega))
     fun t ⟨_, G, A, small, R, O⟩ => ?_
   have bankKeep := body_keep h.ws.ws.wpos O
   have outside := keep_outside h.ws.ws bankKeep (by decide) (by decide)

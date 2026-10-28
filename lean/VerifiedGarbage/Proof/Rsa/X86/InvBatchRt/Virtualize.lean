@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Rows
+public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.SelectX
 import VerifiedGarbage.Proof.Weierstrass.Words32

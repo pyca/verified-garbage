@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Rows
+import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Rows
 public import VerifiedGarbage.Proof.Divstep.Alg32Def
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRead
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Divstep.BatchBasic
+public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Ops
+public import VerifiedGarbage.Proof.Weierstrass.Unch
 
 /-! # The state carried between batches at a run-time width
 

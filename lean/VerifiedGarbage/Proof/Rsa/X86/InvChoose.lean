@@ -23,7 +23,7 @@ namespace VG.Proof.Rsa.X86.CrtValuesRt
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.KeyRt
 open VG.Impl.Rsa.X86.CrtValuesRt (lay)
 
- theorem inverseDispatch_ok {args : Nat → BitVec 32} {base : Addr} {size len P Q : Nat} {s : State}
+ theorem inverseDispatch_ok [VG.Proof.Rsa.X86.BatchLaw] {args : Nat → BitVec 32} {base : Addr} {size len P Q : Nat} {s : State}
     (h : InvInput args base size len P Q s) :
     WP isa (VG.Impl.Rsa.X86.InvBatchRt.dispatch lay (VG.Impl.Rsa.X86.KeyRt.inverse lay)) s
       (InvPost base size len P Q s) := by

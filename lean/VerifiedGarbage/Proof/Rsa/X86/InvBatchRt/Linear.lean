@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.RowOp
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
@@ -26,9 +27,6 @@ open VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Rsa.X86.KeyRt
 open VG.Proof.Weierstrass.X86.Inv (wordClob)
 
 variable {L : Lay} {B : Addr} {Z len N : Nat}
-
-theorem rv_byte (w : Nat) (x : Ref) (d : Nat) : rv w { x with byte := x.byte + d } = rv w x + d := by
-  simp only [rv]; omega
 
 /-- The correction: `[acc + 4] -= [src]` (`n` words) if the coefficient at `c` is negative. -/
 theorem correction_ok {s : State} (h : Bx L s B Z len N) {c : Nat} (hc : c + 4 ≤ 160)

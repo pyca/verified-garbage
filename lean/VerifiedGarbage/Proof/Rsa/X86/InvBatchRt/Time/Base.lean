@@ -5,12 +5,13 @@ public import VerifiedGarbage.Proof.Rsa.X86.InvTimeBase
 public import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.X86.Inline
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
+import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
 public import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Slots
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.TCB.X86.State
 
 /-! # Constant time of the batched inverse, one operation at a time
 

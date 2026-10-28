@@ -21,7 +21,7 @@ open VG.Proof.Bignum hiding off Outside
 open VG.Proof.Bignum.X86 VG.Impl.Bignum.X86
 open VG.Impl.Rsa.X86.CrtValuesRt (code)
 
-theorem operation_ok {s : State} (a : ABI s) :
+theorem operation_ok [VG.Proof.Rsa.X86.BatchLaw] {s : State} (a : ABI s) :
     WP isa code s fun t => Written (caller s) s.mem t ∧ abiPreserved s t := by
   have low : 16 ≤ (caller s).size := by have := a.used; omega
   have high : (caller s).size ≤ 2 ^ 64 := by have := a.scratchBound; omega
@@ -42,7 +42,7 @@ theorem operation_ok {s : State} (a : ABI s) :
   rw [restored.mem, restored.other .eax (by decide)]
   exact written
 
-theorem correct (s : State) (h : (Spec.Rsa.crtValuesContract abi 20).pre s) :
+theorem correct [VG.Proof.Rsa.X86.BatchLaw] (s : State) (h : (Spec.Rsa.crtValuesContract abi 20).pre s) :
     ∃ trace t, Exec isa code s trace t ∧ abiPreserved s t ∧
       (Spec.Rsa.crtValuesContract abi 20).post s t := by
   have a := abi_of h
