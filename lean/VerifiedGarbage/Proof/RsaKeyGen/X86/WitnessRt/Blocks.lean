@@ -15,6 +15,10 @@ namespace VG.Proof.RsaKeyGen.X86.WitnessRt
 open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.MillerRabin.X86
 open VG.Impl.RsaKeyGen.X86.WitnessRt
 
+theorem fits {g : Geometry} (v : g.Valid) :
+    g.array 6 + 4 * g.words ≤ g.L ∧ g.array 0 + 4 * g.words ≤ g.array 6 ∧ 8 ≤ g.words ∧ g.words = 2 * g.w :=
+  ⟨v.arrayFit (by decide), g.arrayBefore (by decide), by have := v.minWidth; unfold Geometry.words; omega, rfl⟩
+
 /-- One of the first eight arrays' pointers, a load that leaves `edx`. -/
 theorem ptr_short {g : Geometry} (v : g.Valid) {s : State} (C : Context g s) (j : Nat) (index : j < 8)
     (r : Reg) :

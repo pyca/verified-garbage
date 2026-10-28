@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.MrExponentRt
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.FrontRt
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessRt
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.HeaderRt
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.PrepareRt
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateTest
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateFinish
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateClear
@@ -25,25 +26,13 @@ open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Bignum.X86.PublicContext
 
 def clear : Prog isa := CandidateClear.code
 
-/-- The code for the width in `eax`, from the supported `widths`. -/
-def dispatch (part : Nat → Prog isa) : List Nat → Prog isa
-  | [] => CandidateFinish.none
-  | w :: rest => .seq (.block [.alu .cmp .eax (.imm (BitVec.ofNat 32 w))])
-      (.ite .e (part w) (dispatch part rest))
+/-- Preparation but for the header and the exponent: R² and the constants. -/
+def prepareHead (montName : String) (montCode : Prog isa) : Prog isa :=
+  .seq (PrepareRt.r2 montName montCode) (PrepareRt.constants montName montCode)
 
-def widths : List Nat := (List.range 61).map (· + 4)
-
-/-- `eax := w`, from the candidate's length in the header. -/
-def width : List Instr := [.mov .eax (.mem (sc 4)), .shift .shr .eax 3]
-
-/-- Preparation at width `w` but for the header and the exponent: R² and the constants. -/
-def prepareHead (w : Nat) (montName : String) (montCode : Prog isa) : Prog isa :=
-  .seq (PreparedR2.code w montName montCode) (Constants.code w montName montCode)
-
-/-- Preparation, with the exponent at the run-time width. -/
+/-- Preparation at the run-time width: the header, R², the constants and the exponent. -/
 def prepared (montName : String) (montCode : Prog isa) : Prog isa :=
-  .seq HeaderRt.prepare
-    (.seq (.block width) (.seq (dispatch (fun w => prepareHead w montName montCode) widths) MrExponentRt.code))
+  .seq HeaderRt.prepare (.seq (prepareHead montName montCode) MrExponentRt.code)
 
 /-- Preparation, then the witnesses. -/
 def testBody (montName : String) (montCode : Prog isa) (roundName : String) (roundCode : Prog isa) : Prog isa :=

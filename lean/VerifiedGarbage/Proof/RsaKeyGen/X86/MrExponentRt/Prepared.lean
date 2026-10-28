@@ -9,7 +9,8 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.MrExponentRt.Code
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2Frame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Constants
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PrepareMetadata
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDispatch
+import VerifiedGarbage.Proof.RsaKeyGen.X86.PrepareRt.R2
+import VerifiedGarbage.Proof.RsaKeyGen.X86.PrepareRt.Constants
 import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
 import VerifiedGarbage.Proof.Mont.X86.Instr
@@ -26,18 +27,18 @@ open VG.Proof.RsaKeyGen.X86.PreparedR2 (Ready)
 theorem head_ok {mont : Prog isa} {name : String}
     (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
-    {g : Geometry} (v : g.Valid) (bound : g.w ≤ 64) {s a : State} {c capacity : Nat} {p : BitVec 32}
+    {g : Geometry} (v : g.Valid) {s a : State} {c capacity : Nat} {p : BitVec 32}
     (length : g.L = 8 * capacity) (I : Prepare.Input g c capacity p s) (A : Ready g c capacity p a)
     (Oa : Outs g.W PrepareHeader.ranges s.mem a.mem) (Ka : Keeps PrepareHeader.clob s a)
     (strideA : word a.mem g.W 224 = BitVec.ofNat 64 (8 * (g.w + 2))) :
-    WP isa (VG.Impl.RsaKeyGen.X86.Candidate.prepareHead g.w name mont) a fun t =>
+    WP isa (VG.Impl.RsaKeyGen.X86.Candidate.prepareHead name mont) a fun t =>
       Ready g c capacity p t ∧ val32 t.mem g.W (g.array 4) g.words = 2 ^ (64 * g.w) * 2 ^ (64 * g.w) % c ∧
       val32 t.mem g.W (g.array 9) g.words = 2 ^ (64 * g.w) % c ∧
       val32 t.mem g.W (g.array 10) g.words = c - 2 ^ (64 * g.w) % c ∧
       val32 t.mem g.W (g.array 5) g.words = c - 1 ∧ word t.mem g.W 224 = BitVec.ofNat 64 (8 * (g.w + 2)) ∧
       Frame ([⟨g.W, g.L⟩] ++ [below p 80]) s.mem t.mem ∧ Keeps Prepare.clob s t ∧
       WorkspaceFrame g (PrepareHeader.ranges ++ PreparedR2.ranges g ++ Constants.ranges g) s.mem t.mem := by
-  unfold VG.Impl.RsaKeyGen.X86.Candidate.prepareHead VG.Impl.RsaKeyGen.X86.PreparedR2.code
+  unfold VG.Impl.RsaKeyGen.X86.Candidate.prepareHead
   have minusA : val32 a.mem g.W (g.array 5) g.words = c - 1 := by
     rw [Oa.val32 (fun r mem => by
       simp only [PrepareHeader.ranges, Header.ranges, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at mem
@@ -45,8 +46,7 @@ theorem head_ok {mont : Prog isa} {name : String}
       rcases mem with (rfl | rfl | rfl) | rfl <;> right <;> omega)
       (by have := I.scratch.nowrap; have := v.arrayFit (j := 5) (by decide); omega)]
     exact I.minusOne
-  refine WP.seq (WP.mono (PreparedR2.code_okAt verified noSp stack v length A bound I.odd
-    (by have := v.minWidth; omega) (by have := v.minWidth; omega) I.top)
+  refine WP.seq (WP.mono (PrepareRt.r2_ok verified noSp stack v length A I.odd I.top)
     fun b ⟨B, r2B, Fb, Kb, Wb⟩ => ?_)
   have strideB : word b.mem g.W 224 = BitVec.ofNat 64 (8 * (g.w + 2)) := by
     change b.mem.readW (off g.W 224) 64 = _
@@ -57,7 +57,7 @@ theorem head_ok {mont : Prog isa} {name : String}
         exact Or.inl (by have := v.arrayHeader 1; simp only [Geometry.array, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]; omega))]
     exact strideA
   have minusB := (PreparedR2.preserve v Wb (j := 5) (Or.inl rfl)).trans minusA
-  refine WP.mono (Constants.code_ok verified noSp stack v length B I.odd (by have := I.large; omega) r2B)
+  refine WP.mono (PrepareRt.constants_ok verified noSp stack v length B I.odd (by have := I.large; omega) r2B)
     fun d ⟨D, oneD, minusD, Wd, Fd, Kd⟩ => ?_
   have strideD : word d.mem g.W 224 = BitVec.ofNat 64 (8 * (g.w + 2)) := by
     change d.mem.readW (off g.W 224) 64 = _
@@ -79,17 +79,8 @@ theorem head_ok {mont : Prog isa} {name : String}
     (Wb.mono (fun _ mem => List.mem_append_left _ (List.mem_append_right _ mem)))).trans
     (Wd.mono (fun _ mem => List.mem_append_right _ mem))
 
-theorem width_member {w : Nat} (width : 4 ≤ w) (bound : w ≤ 64) : w ∈ VG.Impl.RsaKeyGen.X86.Candidate.widths :=
-  List.mem_map.mpr ⟨w - 4, List.mem_range.mpr (by omega), by omega⟩
-
-theorem widths_bounded : ∀ x ∈ VG.Impl.RsaKeyGen.X86.Candidate.widths, x < 2 ^ 32 := by
-  intro w mem
-  obtain ⟨i, index, rfl⟩ := List.mem_map.mp mem
-  have bound := List.mem_range.mp index
-  omega
-
-/-- Preparation at the width in the header, the exponent at the run-time
-width: what `CandidatePrepare.code_ok` gives. -/
+/-- Preparation at the run-time width, the exponent included:
+what `CandidatePrepare.code_ok` gives. -/
 theorem prepared_ok {mont : Prog isa} {name : String}
     (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)
@@ -104,35 +95,11 @@ theorem prepared_ok {mont : Prog isa} {name : String}
     have := I.prepare
     rw [seed] at this
     exact this
-  unfold VG.Impl.RsaKeyGen.X86.Candidate.prepared VG.Impl.RsaKeyGen.X86.Candidate.width
+  unfold VG.Impl.RsaKeyGen.X86.Candidate.prepared
   refine WP.seq (WP.mono (PrepareHeader.prepareRt_ok G Ip.scratch Ip.caller v.length Ip.candidate Ip.odd len)
     fun h ⟨H, Oh, Kh, strideH⟩ => ?_)
-  have lenH : h.mem.readW (off P.g.W 4) 32 = BitVec.ofNat 32 (8 * P.g.w) := by
-    have same := Oh.val32 (d := 4) (k := 1) (fun r mem => by
-      simp only [PrepareHeader.ranges, Header.ranges, List.mem_append, List.mem_cons, List.not_mem_nil,
-        or_false] at mem
-      rcases mem with (rfl | rfl | rfl) | rfl <;> left <;> decide) (by decide)
-    simp only [val32, Nat.mul_zero, Nat.add_zero] at same
-    rw [← len]
-    exact BitVec.eq_of_toNat_eq same
-  refine WP.seq (wp_movS (readSrc_sc H.scratch (d := 4) (by have := G.headerFit; omega)) fun a A _ =>
-    VG.Proof.Bignum.X86.PublicRt.wp_shr (by decide) fun b B => WP.block_nil ?_)
-  have Mb : b.mem = h.mem := B.mem.trans A.mem
-  have Kb : Keeps [.eax] h b := A.keeps.trans B.keeps
-  have eax : b.gpr .eax = BitVec.ofNat 32 P.g.w := by
-    rw [B.gpr, A.gpr, lenH]
-    apply BitVec.eq_of_toNat_eq
-    simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    omega
-  refine WP.seq (Candidate.dispatch_ok eax (by omega) _ (width_member width bound) widths_bounded fun c C => ?_)
-  have Mc : c.mem = h.mem := C.mem.trans Mb
-  have Kc : Keeps [.eax] h c := Kb.widen (C.keeps [])
-  have Hc : PreparedR2.Ready P.g P.candidate P.capacity P.p c :=
-    ⟨H.context.keepMem Kc (by decide) Mc, by rw [Mc]; exact H.modulus,
-      H.caller.keepFrame Kc (by decide) (by rw [Mc]; exact Frame.refl _ _), H.scratch.of_keeps Kc (by decide)⟩
-  refine WP.mono (head_ok verified noSp stack G bound v.length Ip Hc (by rw [Mc]; exact Oh)
-    (Kh.trans (Kc.mono (by unfold PrepareHeader.clob; decide))) (by rw [Mc]; exact strideH))
-    fun d ⟨D, r2D, oneD, minusD, savedD, strideD, Fd, Kd, Wd⟩ => ?_
+  refine WP.seq (WP.mono (head_ok verified noSp stack G v.length Ip H Oh Kh strideH)
+    fun d ⟨D, r2D, oneD, minusD, savedD, strideD, Fd, Kd, Wd⟩ => ?_)
   refine WP.mono (MrExponentRt.code_ok G D savedD Ip.odd (by have := Ip.large; omega))
     fun t ⟨T, exponentT, markerT, Wt, Ft, Kt⟩ => ?_
   have preserve {j : Nat} (index : j = 4 ∨ j = 9 ∨ j = 10) :
