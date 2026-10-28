@@ -178,4 +178,119 @@ theorem redSum_ok {s : State} (h : Bx L s B Z len N) {acc : Ref} (hah : acc.half
       (Nat.two_pow_pos (32 * (nw len + 1))) (val32_lt t.mem B (rv (kw len) acc) (nw len + 1))
     rw [H, ← val32_succ, Nat.mul_comm (2 ^ (32 * (nw len + 1))) (2 ^ 32), ← pow32_succ, Vt]
 
+theorem rv_half1 (w : Nat) (x : Ref) (hx : x.half = 0) : rv w { x with half := 1 } = rv w x + 2 * w := by
+  simp only [rv, hx]; omega
+
+theorem toNat_adc0 (v : BitVec 32) (c : Bool) :
+    (v + 0 + (BitVec.ofBool c).setWidth 32).toNat = (v.toNat + c.toNat) % 2 ^ 32 := by
+  cases c
+  · have h0 : ∀ w : BitVec 32, w + 0 = w := BitVec.add_zero
+    rw [show (BitVec.ofBool false).setWidth 32 = (0 : BitVec 32) from rfl, h0, h0]
+    simp only [Bool.toNat_false, Nat.add_zero]
+    exact (Nat.mod_eq_of_lt v.isLt).symm
+  · simp [BitVec.toNat_add]
+
+/-- `addIfNeg acc`: `[acc] += [mo]` (`n + 1` words) if `[acc + 4 n]` is negative
+(`InvShift.addIfNeg_ok`). -/
+theorem addIfNeg_ok {s : State} (h : Bx L s B Z len N) {acc : Ref} (hah : acc.half = 0)
+    (haz : rv (kw len) acc + 4 * (nw len + 1) ≤ Z) (hmz : rv (kw len) mo + 4 * nw len ≤ Z)
+    (htz : rv (kw len) tmp + 4 * (nw len + 1) ≤ Z)
+    (sta : rv (kw len) tmp + 4 * (nw len + 1) ≤ rv (kw len) acc ∨ rv (kw len) acc + 4 * (nw len + 1) ≤ rv (kw len) tmp)
+    (stm : rv (kw len) tmp + 4 * (nw len + 1) ≤ rv (kw len) mo ∨ rv (kw len) mo + 4 * nw len ≤ rv (kw len) tmp) :
+    WP isa (addIfNeg L acc) s fun u =>
+      Bx L u B Z len N ∧ Unch B [(rv (kw len) acc, 4 * (nw len + 1)), (rv (kw len) tmp, 4 * (nw len + 1))] s.mem u.mem ∧
+      Keeps wordClob s u ∧
+      val32 u.mem B (rv (kw len) acc) (nw len + 1) =
+        (val32 s.mem B (rv (kw len) acc) (nw len + 1) +
+          if 2 ^ 31 ≤ w32 s.mem B (rv (kw len) acc + 4 * nw len) then val32 s.mem B (rv (kw len) mo) (nw len) else 0) %
+          2 ^ (32 * (nw len + 1)) := by
+  have hn := h.nowrap
+  have hZ := h.halfZ
+  have ke := kw_eq len
+  have ra := rv_ge (kw len) acc
+  have rt := rv_ge (kw len) tmp
+  have r1 : rv (kw len) { acc with half := 1 } = rv (kw len) acc + 4 * nw len := by
+    rw [rv_half1 _ _ hah]; omega
+  have t1 : rv (kw len) { tmp with half := 1 } = rv (kw len) tmp + 4 * nw len := by
+    rw [rv_half1 _ _ rfl]; omega
+  unfold addIfNeg
+  -- The sum, `n` words.
+  refine WP.seq (WP.mono (chainAdd_ok h (o := tmp) (a := acc) (b := mo) (e := 0) (by decide) rfl
+    (by simpa using (by omega : rv (kw len) tmp + 4 * nw len ≤ Z)) (by simpa using (by omega : rv (kw len) acc + 4 * nw len ≤ Z))
+    (by simpa using hmz) (by simp only [Nat.add_zero]; omega) (by simp only [Nat.add_zero]; omega))
+    fun s₁ ⟨H₁, O₁, ⟨c, hc, V₁⟩, K₁⟩ => ?_)
+  simp only [Nat.add_zero] at O₁ V₁
+  -- Its top word, then the sign of `[acc + 4 n]`.
+  rw [show maskAt L { acc with half := 1 } = maskAt L { acc with half := 1 } ++ [] from (List.append_nil _).symm]
+  simp only [List.append_assoc]
+  refine WP.seq (ptr_ok H₁.ws H₁.slots hZ (r := .ebx) (t := .edx) (x := { acc with half := 1 }) (by decide)
+    (by decide) (by decide) (by decide) (by intro e; cases e) (by rw [r1]; omega) fun s₂ K₂ m₂ p₂ => ?_)
+  rw [r1] at p₂
+  have H₂ : Bx L s₂ B Z len N := H₁.keep K₂ (by decide) (by decide) (by rw [m₂]; exact Outside.refl _ _ _ _) ra haz
+  refine ptr_ok H₂.ws H₂.slots hZ (r := .ebp) (t := .edx) (x := { tmp with half := 1 }) (by decide)
+    (by decide) (by decide) (by decide) (by intro e; cases e) (by rw [t1]; omega) fun s₃ K₃ m₃ p₃ => ?_
+  rw [t1] at p₃
+  have H₃ : Bx L s₃ B Z len N := H₂.keep K₃ (by decide) (by decide) (by rw [m₃]; exact Outside.refl _ _ _ _) ra haz
+  have hw₃ := H₃.ws.rt
+  have p₂' : PtrAt s₃ B .ebx (rv (kw len) acc + 4 * nw len) := by rw [PtrAt, K₃.1 _ (by decide)]; exact p₂
+  simp only [List.cons_append]
+  refine wp_movS (readSrc_ptr hw₃ p₂' (d := 0) (by omega)) fun s₄ U₄ _ => ?_
+  have hc₄ : s₄.gpr .ecx = cmask c := by
+    rw [U₄.other _ (by decide), K₃.1 _ (by decide), K₂.1 _ (by decide)]; exact hc
+  refine VG.Proof.Bignum.X86.PublicRt.wp_carry hc₄ fun s₅ U₅ cf₅ => ?_
+  refine wp_adcS rfl cf₅ fun s₆ U₆ _ => ?_
+  have K₆ : Keeps [.eax, .ecx] s₃ s₆ :=
+    ((U₄.keeps.mono (by decide)).trans (U₅.keeps.mono (by decide))).trans (U₆.keeps.mono (by decide))
+  have hw₆ := hw₃.of_keeps K₆
+  have p₆ : PtrAt s₆ B .ebp (rv (kw len) tmp + 4 * nw len) := by rw [PtrAt, K₆.1 _ (by decide)]; exact p₃
+  have ea : s₆.ea (at_ .ebp 0) = off B (rv (kw len) tmp + 4 * nw len) := by
+    simpa using ea_ptr hw₆ p₆ (d := 0) (by omega)
+  refine wp_storeS ea (ws_write hw₆ (by omega)) fun s₇ U₇ => ?_
+  have K₇ : Keeps [.eax, .ebx, .ecx, .edx, .ebp] s₁ s₇ :=
+    ((((K₂.mono (by decide)).trans (K₃.mono (by decide))).trans (K₆.mono (by decide)))).trans (U₇.keeps _)
+  have m₆ : s₆.mem = s₁.mem := by rw [U₆.mem, U₅.mem, U₄.mem, m₃, m₂]
+  have O₇ : Outside B (rv (kw len) tmp + 4 * nw len) 4 s₁.mem s₇.mem := by
+    rw [U₇.mem, m₆]; exact writeW32_outside _ _ _ (by omega)
+  have H₇ : Bx L s₇ B Z len N := H₁.keep K₇ (by decide) (by decide) O₇ (by omega) (by omega)
+  -- `[acc]` so far.
+  have A₁ : ∀ k ≤ nw len + 1, val32 s₁.mem B (rv (kw len) acc) k = val32 s.mem B (rv (kw len) acc) k :=
+    fun k hk => O₁.val32 (by omega) (by omega)
+  have A₇ : ∀ k ≤ nw len + 1, val32 s₇.mem B (rv (kw len) acc) k = val32 s.mem B (rv (kw len) acc) k :=
+    fun k hk => by rw [O₇.val32 (by omega) (by omega), A₁ k hk]
+  have top : w32 s₇.mem B (rv (kw len) acc + 4 * nw len) = w32 s.mem B (rv (kw len) acc + 4 * nw len) := by
+    rw [O₇.w32 (by omega) (by omega), O₁.w32 (by omega) (by omega)]
+  -- `[tmp]`, `n + 1` words.
+  have T₇ : val32 s₇.mem B (rv (kw len) tmp) (nw len + 1) =
+      (val32 s.mem B (rv (kw len) acc) (nw len + 1) + val32 s.mem B (rv (kw len) mo) (nw len)) %
+        2 ^ (32 * (nw len + 1)) := by
+    have W : w32 s₇.mem B (rv (kw len) tmp + 4 * nw len) =
+        (w32 s.mem B (rv (kw len) acc + 4 * nw len) + c.toNat) % 2 ^ 32 := by
+      rw [U₇.mem, w32_write_self, U₆.gpr, toNat_adc0, U₅.other _ (by decide), U₄.gpr, m₃, m₂]
+      have a1 := O₁.w32 (d := rv (kw len) acc + 4 * nw len) (by omega) (by omega)
+      simp only [w32, Nat.add_zero] at a1 ⊢
+      rw [a1]
+    rw [val32_succ, O₇.val32 (.inl (by omega)) (by omega), W, val32_succ s.mem B (rv (kw len) acc),
+      VG.Proof.Weierstrass.X86.Inv.add_top_mod (Nat.two_pow_pos _) (val32_lt _ _ _ _),
+      Nat.mul_comm (2 ^ (32 * nw len)) (2 ^ 32), ← pow32_succ]
+    congr 1
+    omega
+  refine maskAt_ok H₇ (x := { acc with half := 1 }) (by rw [r1]; omega) fun s₈ K₈ m₈ c₈ => WP.block_nil ?_
+  rw [r1, top] at c₈
+  have H₈ : Bx L s₈ B Z len N := H₇.keep K₈ (by decide) (by decide) (by rw [m₈]; exact Outside.refl _ _ _ _) ra haz
+  refine WP.mono (selIn_ok H₈ (o := acc) (a := tmp) (e := 1)
+    (k := decide (2 ^ 31 ≤ w32 s.mem B (rv (kw len) acc + 4 * nw len))) (by rw [c₈]; split <;> simp_all [cmask])
+    (by decide) haz htz sta.symm) fun u ⟨Hu, Ou, Vu, Ku⟩ => ?_
+  refine ⟨Hu, ?_, ?_, ?_⟩
+  · intro x hx
+    have hacc := hx (rv (kw len) acc, 4 * (nw len + 1)) (by simp)
+    have htmp := hx (rv (kw len) tmp, 4 * (nw len + 1)) (by simp)
+    rw [Ou x hacc, m₈, O₇ x (by omega), O₁ x (by omega)]
+  · exact ((K₁.mono (by decide)).trans (K₇.mono (by decide))).trans
+      ((K₈.mono (by decide)).trans (Ku.mono (by decide)))
+  · rw [Vu, m₈, T₇, A₇ _ (Nat.le_refl _)]
+    by_cases hk : 2 ^ 31 ≤ w32 s.mem B (rv (kw len) acc + 4 * nw len)
+    · simp only [hk, decide_true, ite_true]
+    · simp only [hk, decide_false, Bool.false_eq_true, ite_false, Nat.add_zero]
+      exact (Nat.mod_eq_of_lt (val32_lt _ _ _ _)).symm
+
 end VG.Proof.Rsa.X86.InvBatchRt
