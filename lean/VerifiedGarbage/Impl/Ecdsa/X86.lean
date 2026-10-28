@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Weierstrass.X86.InvCfg
 public import VerifiedGarbage.Impl.Weierstrass.X86.ScalarPower
 public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Spec.Ecdsa
+public import VerifiedGarbage.Spec.Weierstrass.Mul
 public import VerifiedGarbage.Impl.Weierstrass.TCombWords
 
 /-!
@@ -149,6 +150,10 @@ structure Cfg where
   SP : Spec.Weierstrass.Mont.Modulus
   SN : Spec.Weierstrass.Mont.Modulus
   comb : Option CombData := none
+  /-- The curve whose `vg_<curve>_mul` (`Spec/Weierstrass/Mul.lean`) computes
+  `[k]Q` (`mulFn`), which the signature, the public key, ECDH and
+  verification call (`gen`, `qMul`), if any; else they run the ladder inline. -/
+  mul : Option Spec.Weierstrass.Mul.Curve := none
 
 namespace Cfg
 
@@ -361,13 +366,79 @@ def signTail : Prog isa :=
 def signWithMul (fixed : Prog isa) : Prog isa :=
   .seq c.signPrep (.seq fixed c.signTail)
 
-/-- The existing ladder path. -/
+/-! ## `vg_<curve>_mul`
+
+`[k]Q` (`Spec/Weierstrass/Mul.lean`) as a function, which the signature,
+the public key, ECDH and verification call: the inline ladder (`ladder`,
+whose field operations are calls of the Montgomery functions), its point at
+`ACC`, `PT`, `ONEP` (a copy of `Q`, which the contract has in `R`'s first
+two slots), over the bits of `k` at `K`'s slot. It saves the callee-saved
+registers past the numbered slots (slot 45's place, the start of the
+contract's tail), keeps the working space in `edi`, and uses 20 bytes of
+stack (the Montgomery functions' calls).
+
+Not `ladderP`, as on the other targets: its calls of the point functions
+load `edi` again from the argument holding the working space, and inside
+`vg_<curve>_mul` that is its caller's frame, whose word the stores of the
+table of bits (through `ebx`) leave unknown to a constant-time analysis of
+the caller. -/
+
+/-- The ladder of `vg_<curve>_mul`: the signature's, from the point at `ACC`,
+`PT`, `ONEP`. -/
+def mulLadder : LadderCfg := { c.ladderCfg with G := c.pt ACC PT ONEP }
+
+/-- Where `vg_<curve>_mul` keeps the callee-saved registers: past the
+numbered slots. -/
+def mulSaved : List (Reg × Nat) := saved.map fun (r, d) => (r, c.sl nslots + d)
+
+/-- `vg_<curve>_mul`'s body: the table of `k`'s bits, `Q` (in `R`'s first
+two slots) copied to `ACC` and `PT`, `R = O = (0 : 1 : 0)` (from zero and
+one), then `R = [k]Q` by the ladder. -/
+def mulBody : Prog isa :=
+  .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
+  .seq (.block (copy (2 * c.n) (c.sl ACC) (c.sl RX) ++ copy (2 * c.n) (c.sl PT) (c.sl RY) ++
+    copy (2 * c.n) (c.sl RX) (c.sl ZERO) ++ copy (2 * c.n) (c.sl RY) (c.sl ONEP) ++
+    copy (2 * c.n) (c.sl RZ) (c.sl ZERO)))
+    (ladder c.mulLadder c.SP)
+
+/-- The callee-saved registers restored, through `edx`, `edi` last. -/
+def mulRestore : List Instr :=
+  [.mov .edx (.reg .edi), .mov .ebx (.mem (at_ .edx (c.sl nslots))), .mov .esi (.mem (at_ .edx (c.sl nslots + 4))),
+    .mov .ebp (.mem (at_ .edx (c.sl nslots + 12))), .mov .edi (.mem (at_ .edx (c.sl nslots + 8)))]
+
+/-- `vg_<curve>_mul(ws)`: the working space from its argument to `edi`, the
+callee-saved registers kept (`mulSaved`) around the body. -/
+def mulFn : Prog isa :=
+  .seq (.block (.mov .eax (.mem (argOp 0)) :: c.mulSaved.map (fun (r, d) => .store (at_ .eax d) r) ++
+    [.mov .edi (.reg .eax)])) <|
+  .seq c.mulBody (.block c.mulRestore)
+
+/-- A call of `vg_<curve>_mul` (`C`'s) on the point at `px`, `py`: the point
+copied to `R`'s first two slots, the working space `edi` pushed as the
+argument, in a frame that `pop eax` releases, and `edi` loaded again from the
+caller's argument holding it (at `[esp + ao]`), which no store changes. -/
+def mulAt (C : Spec.Weierstrass.Mul.Curve) (px py ao : Nat) : Prog isa :=
+  .seq (.block (copy (2 * c.n) (c.sl RX) (c.sl px) ++ copy (2 * c.n) (c.sl RY) (c.sl py))) <|
+  .seq (.frame (.push [.edi]) (.call C.mulApi.name c.mulFn) (.pop .eax 1)) (.block [.mov .edi (.mem (at_ .esp ao))])
+
+/-- `R = [k]P` for the point `P` at `px`, `py`, `ONEP` and the number `k` at
+`K`'s slot: a call of `vg_<curve>_mul` if the curve has it (`Cfg.mul`), else
+the ladder of `ladderP` inline, from the table of `k`'s bits. -/
+def qMul (px py ao : Nat) : Prog isa :=
+  match c.mul with
+  | some C => c.mulAt C px py ao
+  | none => Point.ladderP { c.ladderCfg with G := c.pt px py ONEP } c.SP ao
+
+/-- `R = [k]G`: `qMul` from `G`. -/
+def gen (ao : Nat) : Prog isa := c.qMul GX GY ao
+
+/-- The signature, through `gen`. -/
 def sign : Prog isa :=
   .seq (.block c.setup) <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
-  .seq (Point.ladderP c.ladderCfg c.SP Args.sign.ao) c.signTail
+  .seq (c.gen Args.sign.ao) c.signTail
 
 /-- The table address is obtained before reading the cdecl arguments. -/
 def signComb : Prog isa := .seq c.tableAddr (c.signWithMul c.gMul)

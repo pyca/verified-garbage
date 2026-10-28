@@ -16,8 +16,12 @@ def p521 : Cfg where
   C := Spec.P521.curve
   SP := Spec.Weierstrass.Mont.p521p
   SN := Spec.Weierstrass.Mont.p521n
+  mul := some Spec.Weierstrass.Mul.p521
 
 /-- `vg_ecdsa_p521_sign`. -/
 def signP521 : Prog isa := p521.sign
+
+/-- `vg_p521_mul`. -/
+def mulP521 : Prog isa := p521.mulFn
 
 end VG.Impl.Ecdsa.X86
