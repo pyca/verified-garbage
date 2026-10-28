@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Weierstrass.PointFacts
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.PointContract
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Rep
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
 
 /-!
 # `vg_<curve>_mul` on PPC64LE: the contract

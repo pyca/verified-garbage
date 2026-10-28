@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Copy
 import VerifiedGarbage.Proof.Mont.PPC64LE.Row
 import VerifiedGarbage.Proof.Mont.PPC64LE.Step
@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Lays
+public import VerifiedGarbage.Proof.Weierstrass.Law
 
 /-!
 # `vg_<curve>_mul` on PPC64LE: correctness

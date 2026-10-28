@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Scalars
-public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.MulFn
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.MulFn
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.PointFprog
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Copy
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Keep
@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Mont.PPC64LE.Row
 import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Rep
 import VerifiedGarbage.Proof.Weierstrass.Pow
+public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
 
 /-!
 # ECDSA verification on PPC64LE: `[u]G + [v]Q`

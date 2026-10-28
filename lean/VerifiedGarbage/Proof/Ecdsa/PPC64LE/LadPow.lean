@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
-public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.MulFn
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.MulFn
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Rep
 import VerifiedGarbage.Proof.Weierstrass.BytesLen
 import VerifiedGarbage.Proof.Weierstrass.Pow
+public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Lays
+public import VerifiedGarbage.Proof.Weierstrass.Law
 
 /-!
 # ECDSA on PPC64LE: `[k]P` and `Z^(p-2)`
