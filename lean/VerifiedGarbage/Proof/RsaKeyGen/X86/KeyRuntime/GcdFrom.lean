@@ -3,6 +3,8 @@ module
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
 
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Inverse
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseKeeps
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StackRange
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGcdFrom
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Widen
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Ops
@@ -23,7 +25,7 @@ open VG.Impl.Rsa.X86.Keys hiding slot
 open VG.Impl.RsaKeyGen.X86.Key (aU aDen aOne kFlag)
 open VG.Impl.RsaKeyGen.X86.KeyRuntime hiding arr
 open VG.Proof.RsaKeyGen.X86.Key (gcdRanges inverse_workspace inverse_array_layout inverse_end_le
-  inverse_preserves_num inverse_preserves_slot InverseLayout)
+  InverseLayout)
 
 theorem gcdFrom_ok {s : State} {B : Addr} {Z n k : Nat}
     (h : Ws s B Z n 32) (width : n = 2 * k) (positive : 0 < k)
@@ -31,7 +33,7 @@ theorem gcdFrom_ok {s : State} {B : Addr} {Z n k : Nat}
     (odd : num s.mem B n aDen % 2 = 1) (large : 1 < num s.mem B n aDen)
     (one : num s.mem B n aOne = 1) (bit : slot s.mem B kFlag ≤ 1) :
     WP isa gcdFrom s fun t =>
-      Ws t B Z n 32 ∧ Outs B (gcdRanges n k) s.mem t.mem ∧
+      Ws t B Z n 32 ∧ OutsS B (s.gpr .esp) (gcdRanges n k) s.mem t.mem ∧
       num t.mem B n aDen = (if slot s.mem B kFlag = 0 then 1 else
         Nat.gcd (num s.mem B n aU) (num s.mem B n aDen)) ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
@@ -54,8 +56,8 @@ theorem gcdFrom_ok {s : State} {B : Addr} {Z n k : Nat}
   change num u.mem B k 1 = Nat.gcd (val32 s.mem B (arr n aU) k) (val32 s.mem B (arr n aDen) k) at gcd
   rw [U, M] at gcd
   have oneU : num u.mem B n aOne = 1 := by
-    rw [inverse_preserves_num small (by decide) (h.fit64 (by decide)) Ou, one]
-  have flagU : slot u.mem B kFlag = slot s.mem B kFlag := inverse_preserves_slot (by decide) Ou
+    rw [h.inverse_num small (by decide) (by decide) Ou, one]
+  have flagU : slot u.mem B kFlag = slot s.mem B kFlag := h.inverse_slot (by decide) Ou
   have sourceBound : arr k 1 + 4 * k ≤ Z := by
     have F := hk.arr_fit (j := 1) (by decide)
     unfold S at F
@@ -86,13 +88,13 @@ theorem gcdFrom_ok {s : State} {B : Addr} {Z n k : Nat}
     (by rw [flagV]; exact bit) (by decide)) fun t ⟨ht, Ot, selected, Kt⟩ => ?_
   refine ⟨ht, ?_, by rw [selected, flagV, oneV, denV],
     Ku.trans ((Kv.mono (by decide)).trans (Kt.mono (by decide)))⟩
-  have first : Outs B (gcdRanges n k) s.mem u.mem :=
+  have first : OutsS B (s.gpr .esp) (gcdRanges n k) s.mem u.mem :=
     Ou.mono (fun r hr => List.mem_append_left _ hr)
-  have middle : Outs B (gcdRanges n k) u.mem v.mem :=
-    Outs.of_outside Ov (List.mem_append_right _ (List.mem_singleton_self _))
-  have last : Outs B (gcdRanges n k) v.mem t.mem := by
+  have middle : OutsS B (s.gpr .esp) (gcdRanges n k) u.mem v.mem :=
+    OutsS.of_outs (Outs.of_outside Ov (List.mem_append_right _ (List.mem_singleton_self _)))
+  have last : OutsS B (s.gpr .esp) (gcdRanges n k) v.mem t.mem := by
     change Outs B [(arr n aDen, S n)] v.mem t.mem at Ot
-    exact Ot.mono (fun r hr => List.mem_append_right _ hr)
+    exact OutsS.of_outs (Ot.mono (fun r hr => List.mem_append_right _ hr))
   exact (first.trans middle).trans last
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

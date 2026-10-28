@@ -73,7 +73,7 @@ theorem entry_arguments {s : State} (h : contract.pre s) :
   have head : 72 ≤ (callEnvironment s).size := by
     unfold VG.Proof.Rsa.X86.Keys.arr VG.Impl.Rsa.X86.Keys.hdr at bank
     omega
-  refine ⟨⟨?_, ?_⟩, head, rfl, workspace_stack h, ?_, ?_, ?_, ?_⟩
+  refine ⟨⟨?_, ?_⟩, head, rfl, workspace_stack h, ?_, ?_, ?_, ?_, workspace_deep h⟩
   · exact List.mem_cons_of_mem _ A.workspaceMember
   · change ((arg s 16).setWidth 64).toNat + 8 * (arg s 17).toNat ≤ 2 ^ 32
     rw [VG.BitVec.toNat_setWidth_32_64]

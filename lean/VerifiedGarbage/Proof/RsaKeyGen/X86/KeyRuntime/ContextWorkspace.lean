@@ -39,7 +39,7 @@ theorem context_workspace {E : Environment} {p : BitVec 32} {s : State}
   have wsArg : CallArgument s E.base E.size 20 (BitVec.ofNat 32 E.base.toNat) := by
     rw [wsValue]
     exact context_argument C (i := 16) (by decide)
-  refine ⟨?_, ?_, ?_, width, lo, hi⟩
+  refine ⟨?_, ?_, ?_, width, ⟨lo, hi⟩, by rw [C.sp]; exact C.deep⟩
   · refine ⟨?_, ⟨2 * E.primeLength, by omega, ?_, context_argument C (i := 3) (by decide)⟩,
       wsArg, by omega, by decide⟩
     · simpa only [kw_full width] using old

@@ -4,8 +4,8 @@ import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Public
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DOddPublic
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DEvenPublic
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DOddTiming
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DEvenTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DOnePublic
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ScalarPublic
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ScalarKey
@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
 open VG.Proof.Mont.X86.Dynamic VG.Proof.Dsa.X86
-open VG.Impl.RsaKeyGen.X86.Key (kEv equalExponent parityExponent)
+open VG.Impl.RsaKeyGen.X86.Key (kEv aE equalExponent parityExponent)
 open VG.Impl.RsaKeyGen.X86.KeyRuntime
 
 structure ExponentPair (B : Addr) (Z n e : Nat) (s t : State) : Prop where
@@ -28,6 +28,8 @@ structure ExponentPair (B : Addr) (Z n e : Nat) (s t : State) : Prop where
   agree : VG.X86.Taint.Agree runtimeTaint s t
   exponentLeft : val32 s.mem B kEv 2 = e
   exponentRight : val32 t.mem B kEv 2 = e
+  loadedLeft : num s.mem B n aE = e
+  loadedRight : num t.mem B n aE = e
 
 def ExponentTest (B : Addr) (Z n e : Nat) (bit : Bool) (s t : State) : Prop :=
   ExponentPair B Z n e s t ∧ isa.eval .e s = some bit ∧ isa.eval .e t = some bit
@@ -47,7 +49,8 @@ theorem equalExponent_trace (B : Addr) (Z n e : Nat) (value : BitVec 32) :
   rw [P.exponentLeft] at flagU
   rw [P.exponentRight] at flagV
   exact ⟨trace, ⟨hu, hv, agree, by rw [Mu]; exact P.exponentLeft,
-    by rw [Mv]; exact P.exponentRight⟩, flagU, flagV⟩
+    by rw [Mv]; exact P.exponentRight, by rw [Mu]; exact P.loadedLeft, by rw [Mv]; exact P.loadedRight⟩,
+    flagU, flagV⟩
 
 theorem parityExponent_trace (B : Addr) (Z n e : Nat) :
     RelCT isa (ExponentPair B Z n e) (.block parityExponent)
@@ -60,29 +63,44 @@ theorem parityExponent_trace (B : Addr) (Z n e : Nat) :
   rw [P.exponentLeft] at flagU
   rw [P.exponentRight] at flagV
   exact ⟨trace, ⟨hu, hv, agree, by rw [Mu]; exact P.exponentLeft,
-    by rw [Mv]; exact P.exponentRight⟩, flagU, flagV⟩
+    by rw [Mv]; exact P.exponentRight, by rw [Mu]; exact P.loadedLeft, by rw [Mv]; exact P.loadedRight⟩,
+    flagU, flagV⟩
 
+/-- A public branch on the exponent, each side related when it is the one taken. -/
 theorem exponent_branch_trace {B : Addr} {Z n e : Nat} {bit : Bool} {th el : Prog isa}
-    (first : RelCT isa (ExponentPair B Z n e) th (VG.X86.Taint.Agree runtimeTaint))
-    (second : RelCT isa (ExponentPair B Z n e) el (VG.X86.Taint.Agree runtimeTaint)) :
+    (first : bit = true → RelCT isa (ExponentPair B Z n e) th (VG.X86.Taint.Agree runtimeTaint))
+    (second : bit = false → RelCT isa (ExponentPair B Z n e) el (VG.X86.Taint.Agree runtimeTaint)) :
     RelCT isa (ExponentTest B Z n e bit) (.ite .e th el) (VG.X86.Taint.Agree runtimeTaint) := by
   apply RelCT.ite (fun _ _ P => P.2.1.trans P.2.2.symm)
-  · exact first.mono (fun _ _ P => P.1.1) (fun _ _ P => P)
-  · exact second.mono (fun _ _ P => P.1.1) (fun _ _ P => P)
+  · intro s t tr ur u v P
+    have taken : bit = true := by
+      have := P.1.2.1.symm.trans P.2
+      simpa using this
+    exact first taken s t tr ur u v P.1.1
+  · intro s t tr ur u v P
+    have taken : bit = false := by
+      have := P.1.2.1.symm.trans P.2
+      simpa using this
+    exact second taken s t tr ur u v P.1.1
 
 theorem dSelect_trace (B : Addr) (Z n e : Nat) :
     RelCT isa (ExponentPair B Z n e) dSelect (VG.X86.Taint.Agree runtimeTaint) := by
-  have odd := (public_trace dOdd_public).mono
-    (fun _ _ (P : ExponentPair B Z n e _ _) => P.agree) (fun _ _ P => P)
-  have even := (public_trace dEven_public).mono
-    (fun _ _ (P : ExponentPair B Z n e _ _) => P.agree) (fun _ _ P => P)
+  have even := (dEven_trace B Z n).mono
+    (fun _ _ (P : ExponentPair B Z n e _ _) => ⟨P.left, P.right, P.agree⟩) (fun _ _ P => P)
   have one := (public_trace dOne_public).mono
     (fun _ _ (P : ExponentPair B Z n e _ _) => P.agree) (fun _ _ P => P)
   have zero := (public_trace dZero_public).mono
     (fun _ _ (P : ExponentPair B Z n e _ _) => P.agree) (fun _ _ P => P)
   unfold dSelect
-  exact RelCT.seq (equalExponent_trace B Z n e 0) (exponent_branch_trace zero
-    (RelCT.seq (equalExponent_trace B Z n e 1) (exponent_branch_trace one
-      (RelCT.seq (parityExponent_trace B Z n e) (exponent_branch_trace even odd)))))
+  refine RelCT.seq (equalExponent_trace B Z n e 0) (exponent_branch_trace (fun _ => zero) fun e0 => ?_)
+  refine RelCT.seq (equalExponent_trace B Z n e 1) (exponent_branch_trace (fun _ => one) fun e1 => ?_)
+  refine RelCT.seq (parityExponent_trace B Z n e) (exponent_branch_trace (fun _ => even) fun eo => ?_)
+  have ne0 : e ≠ 0 := by simpa using e0
+  have ne1 : e ≠ 1 := by simpa using e1
+  have odd : e % 2 = 1 := by simp at eo; omega
+  exact (dOdd_trace B Z n e (by omega) odd).mono
+    (fun _ _ (P : ExponentPair B Z n e _ _) =>
+      ⟨⟨P.left, P.exponentLeft, P.loadedLeft⟩, ⟨P.right, P.exponentRight, P.loadedRight⟩, P.agree⟩)
+    (fun _ _ P => P)
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

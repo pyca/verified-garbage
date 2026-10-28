@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaKeyGen.X86.DisjointBounds
 
 /-! # Public original arguments in a workspace-only arithmetic run -/
 

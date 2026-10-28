@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyArgContext
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Logic.Function.Basic
@@ -36,6 +37,7 @@ structure Ws (s : State) (B : Addr) (Z n N : Nat) : Prop where
   exponent : RtWs Width.exponent.lay s B Z 8 N
   width : n % 4 = 0
   size : 16 ≤ n ∧ n ≤ 256
+  deep : VG.Proof.RsaKeyGen.X86.KeyArgs.DeepStk (s.gpr .esp) B Z
 
 theorem shrinkRt {L : VG.Impl.Rsa.X86.KeyRt.Lay} {s : State} {B : Addr} {Z len N K : Nat}
     (h : RtWs L s B Z len N) (bound : K ≤ N) : RtWs L s B Z len K :=
@@ -44,7 +46,7 @@ theorem shrinkRt {L : VG.Impl.Rsa.X86.KeyRt.Lay} {s : State} {B : Addr} {Z len N
 
 theorem Ws.shrink {s : State} {B : Addr} {Z n N K : Nat} (h : Ws s B Z n N)
     (bound : K ≤ N) : Ws s B Z n K :=
-  ⟨shrinkRt h.full bound, shrinkRt h.prime bound, shrinkRt h.exponent bound, h.width, h.size⟩
+  ⟨shrinkRt h.full bound, shrinkRt h.prime bound, shrinkRt h.exponent bound, h.width, h.size, h.deep⟩
 
 theorem Ws.old {s : State} {B : Addr} {Z n N : Nat} (h : Ws s B Z n N) :
     VG.Proof.Rsa.X86.Keys.Ws s B Z n N := by
@@ -67,7 +69,7 @@ theorem Ws.keep {s t : State} {B : Addr} {Z n N : Nat} {rs : List Reg}
     (h : Ws s B Z n N) (K : Keeps rs s t) (O : Outside B 0 Z s.mem t.mem)
     (edi : .edi ∉ rs := by decide) (esp : .esp ∉ rs := by decide) : Ws t B Z n N :=
   ⟨h.full.keep K edi esp O, h.prime.keep K edi esp O,
-    h.exponent.keep K edi esp O, h.width, h.size⟩
+    h.exponent.keep K edi esp O, h.width, h.size, by rw [K.1 .esp esp]; exact h.deep⟩
 
 theorem Ws.afterKeep {s t : State} {B : Addr} {Z n N : Nat} {rs : List Reg}
     {js ds : List Nat} (h : Ws s B Z n N) (K : Keeps rs s t)

@@ -44,7 +44,7 @@ theorem enter_input_ok {E : Environment} {p : BitVec 32} {s : State} (v : E.Vali
 theorem body_ok {E : Environment} {p : BitVec 32} {s : State} (v : E.Valid) (I : EntryInput E p s) :
     WP isa VG.Impl.RsaKeyGen.X86.KeyRuntime.body s fun t =>
       VG.Proof.Rsa.X86.Keys.Ws t E.base E.size E.n 32 ∧ BodyOutcome E s.mem t ∧
-      Frame E.outputs.writes s.mem t.mem ∧ Keeps bodyClob s t := by
+      Frame (E.outputs.writes ++ [below p 52]) s.mem t.mem ∧ Keeps bodyClob s t := by
   unfold VG.Impl.RsaKeyGen.X86.KeyRuntime.body
   refine WP.seq (WP.mono (enter_input_ok v I) fun a ⟨Ia, Ha, F, K, Ca⟩ => ?_)
   refine WP.mono (front_ok Ia Ha Ca I.argsOutput) fun t ⟨ht, result, Ft, Kt⟩ => ?_
@@ -52,6 +52,9 @@ theorem body_ok {E : Environment} {p : BitVec 32} {s : State} (v : E.Valid) (I :
   rw [Ia.exponent_preserved F, Ia.output_preserved (by decide : 2 < 7) F,
     Ia.output_preserved (by decide : 3 < 7) F] at result
   refine ⟨ht, result, ?_, (K.mono (by unfold bodyClob; decide)).trans (Kt.mono (by unfold bodyClob; decide))⟩
-  exact (F.mono (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact List.mem_cons_self ..)).trans Ft
+  exact (F.mono (by
+    intro r hr
+    obtain rfl := List.mem_singleton.mp hr
+    exact List.mem_append_left _ List.mem_cons_self)).trans Ft
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime

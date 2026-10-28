@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyPartResult
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StackRange
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseKeeps
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyFinalMask
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Qinv
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Crt
@@ -27,20 +29,21 @@ theorem keyPart_ok {s : State} {B : Addr} {Z n k : Nat}
     (bit : slot s.mem B kOk ≤ 1) (loaded : num s.mem B n aE = val32 s.mem B kEv 2)
     (one : num s.mem B n aOne = 1) :
     WP isa keyPart s fun t =>
-      Ws t B Z n 32 ∧ Outs B (stageRanges n keyPartArrays) s.mem t.mem ∧
+      Ws t B Z n 32 ∧ OutsS B (s.gpr .esp) (stageRanges n keyPartArrays) s.mem t.mem ∧
       KeyPartResult B n s.mem t ∧ Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
   unfold keyPart seqs
   refine WP.seq (WP.mono (qinvPart_ok h width positive boundP boundQ bit)
     fun u ⟨hu, Ou, Mu, boundQi, congruence, Ku⟩ => ?_)
   have oneU : num u.mem B n aOne = 1 :=
-    (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)) Ou).trans one
+    (h.read_num (by decide) Ou (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)))).trans one
   have Du : num u.mem B n aD = num s.mem B n aD :=
-    stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)) Ou
+    h.read_num (by decide) Ou (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)))
   have Pmu : num u.mem B n aPm = num s.mem B n aPm :=
-    stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)) Ou
+    h.read_num (by decide) Ou (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)))
   have Qmu : num u.mem B n aQm = num s.mem B n aQm :=
-    stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)) Ou
-  have frameU : Outs B (stageRanges n keyPartArrays) s.mem u.mem := stage_mono (by decide) Ou
+    h.read_num (by decide) Ou (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)))
+  have frameU : OutsS B (s.gpr .esp) (stageRanges n keyPartArrays) s.mem u.mem :=
+    OutsS.lift (fun _ _ => stage_mono (by decide)) Ou
   refine WP.seq (WP.mono (crtPart_ok hu oneU) fun v ⟨hv, Ov, Dp, Dq, Mv, Kv⟩ => ?_)
   rw [Du, Pmu] at Dp
   rw [Du, Qmu] at Dq
@@ -48,25 +51,25 @@ theorem keyPart_ok {s : State} {B : Addr} {Z n k : Nat}
   have qiV : num v.mem B n aQi = num u.mem B n aQi :=
     stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)) Ov
   have frameV : Outs B (stageRanges n keyPartArrays) u.mem v.mem := stage_mono (by decide) Ov
-  have prefixFrame := frameU.trans frameV
+  have prefixFrame := frameU.trans (OutsS.of_outs frameV)
   have Pv : num v.mem B n aPa = num s.mem B n aPa :=
-    stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)) prefixFrame
+    h.read_num (by decide) prefixFrame (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)))
   have Qv : num v.mem B n aQa = num s.mem B n aQa :=
-    stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)) prefixFrame
+    h.read_num (by decide) prefixFrame (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)))
   refine WP.seq (WP.mono (primeProduct_ok hv width positive even (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [Pv]; exact boundP) (by rw [Qv]; exact boundQ))
     fun w ⟨hw, Ow, N, Kw⟩ => ?_)
   rw [Pv, Qv] at N
   have frameW : Outs B (stageRanges n keyPartArrays) v.mem w.mem :=
     stage_keep (Nat.le_refl n) (by simp only [eq_self, true_and]; decide) (by decide) Ow
-  have fullPrefix := prefixFrame.trans frameW
+  have fullPrefix := prefixFrame.trans (OutsS.of_outs frameW)
   have Pw : num w.mem B n aPa = num s.mem B n aPa :=
-    stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)) fullPrefix
+    h.read_num (by decide) fullPrefix (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)))
   have Qw : num w.mem B n aQa = num s.mem B n aQa :=
-    stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)) fullPrefix
-  have Ew : val32 w.mem B kEv 2 = val32 s.mem B kEv 2 := stage_preserves_e fullPrefix
+    h.read_num (by decide) fullPrefix (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)))
+  have Ew : val32 w.mem B kEv 2 = val32 s.mem B kEv 2 := h.read_val32 (by decide) fullPrefix stage_preserves_e
   have loadedW : num w.mem B n aE = val32 w.mem B kEv 2 :=
-    (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)) fullPrefix).trans (loaded.trans Ew.symm)
+    (h.read_num (by decide) fullPrefix (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)))).trans (loaded.trans Ew.symm)
   have Mw : slot w.mem B kOk = (if slot s.mem B kOk = 1 ∧
       Nat.gcd (num s.mem B n aQa) (safePrime (num s.mem B n aPa)) = 1 then 1 else 0) :=
     (Ow.slot (by decide) (by decide)).trans Mv
@@ -91,7 +94,7 @@ theorem keyPart_ok {s : State} {B : Addr} {Z n k : Nat}
   have frameT : Outs B (stageRanges n keyPartArrays) a.mem t.mem :=
     stage_keep (Nat.le_refl n) (by simp) (by decide) Ot
   have maskT : slot t.mem B kOk = slot a.mem B kOk := Ot.slot (by decide) (by decide)
-  refine ⟨ht, (fullPrefix.trans frameA).trans frameT, ⟨?_, ?_, ?_, ?_, ?_, maskT.trans Ma, ?_⟩,
+  refine ⟨ht, (fullPrefix.trans (OutsS.of_outs frameA)).trans (OutsS.of_outs frameT), ⟨?_, ?_, ?_, ?_, ?_, maskT.trans Ma, ?_⟩,
     Ku.trans (Kv.trans ((Kw.mono (by decide)).trans ((Ka.mono (by decide)).trans (Kt.mono (by decide)))))⟩
   · exact (last.num (by decide) (by decide) (h.fit64 (by decide))).trans N
   · exact (tail.num (by decide) (by decide) (h.fit64 (by decide))).trans Dp

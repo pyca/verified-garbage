@@ -9,7 +9,7 @@ import Mathlib.Tactic.IntervalCases
 namespace VG.Proof.RsaKeyGen.X86.Key
 open VG VG.X86
 
-def reservedRegion (s : State) : Region := ⟨(s.gpr .esp).setWidth 64 - 36#64, 36⟩
+def reservedRegion (s : State) : Region := ⟨(s.gpr .esp).setWidth 64 - 68#64, 68⟩
 
 structure CallSeparation (s : State) : Prop where
   outputScratch : ∀ i < 7, (callOutput s i).Disjoint (callWorkspace s)

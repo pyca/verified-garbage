@@ -33,11 +33,11 @@ theorem rtws_readonly {L : VG.Impl.Rsa.X86.KeyRt.Lay} {s : State} {B : Addr} {Z 
 
 theorem Ws.readonly {s : State} {B : Addr} {Z n N : Nat} (h : Ws s B Z n N) :
     Ws (readonly s B Z) B Z n N :=
-  ⟨rtws_readonly h.full, rtws_readonly h.prime, rtws_readonly h.exponent, h.width, h.size⟩
+  ⟨rtws_readonly h.full, rtws_readonly h.prime, rtws_readonly h.exponent, h.width, h.size, h.deep⟩
 
 theorem context_readonly {s : State} {B : Addr} {Z : Nat} {p : BitVec 32} {args : Nat → BitVec 32}
     (C : Context B Z p args s) : Context B Z p args (readonly s B Z) := by
-  refine ⟨{ C.scratch with wr := List.mem_singleton_self _ }, C.header, C.sp, C.fit, C.separate, ?_⟩
+  refine ⟨{ C.scratch with wr := List.mem_singleton_self _ }, C.header, C.sp, C.fit, C.separate, ?_, C.deep⟩
   intro i hi
   exact VG.X86.readSrc_widen readonly_read (C.read i hi)
 

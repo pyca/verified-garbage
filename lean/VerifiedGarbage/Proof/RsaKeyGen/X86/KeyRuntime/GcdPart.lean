@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.OddSecond
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.GcdFrom
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.OddModulus
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StackRange
 
 /-! # Complete native GCD stage for the RSA LCM -/
 
@@ -23,7 +24,7 @@ theorem gcdPart_ok {s : State} {B : Addr} {Z n k : Nat}
       canonV (num s.mem B n aU) (num s.mem B n aV) % 2 = 1)
     (one : num s.mem B n aOne = 1) :
     WP isa gcdPart s fun t =>
-      Ws t B Z n 32 ∧ Outs B (gcdPartRanges n k) s.mem t.mem ∧
+      Ws t B Z n 32 ∧ OutsS B (s.gpr .esp) (gcdPartRanges n k) s.mem t.mem ∧
       num t.mem B n aDen =
         (if canonV (num s.mem B n aU) (num s.mem B n aV) ≤ 1 then 1 else
           Nat.gcd (canonU (num s.mem B n aU) (num s.mem B n aV))
@@ -87,7 +88,9 @@ theorem gcdPart_ok {s : State} {B : Addr} {Z n k : Nat}
     have middle : Outs B (gcdPartRanges n k) u.mem v.mem :=
       VG.Proof.Mont.Outs.mono (Ov.mono (js' := gcdPartArrays) (by decide) (by simp))
         (fun r hr => List.mem_append_right _ hr)
-    exact (first.trans middle).trans (Ot.mono (fun r hr => List.mem_append_left _ hr))
+    have spV : v.gpr .esp = s.gpr .esp := by rw [Kv.1 .esp (by decide), Ku.1 .esp (by decide)]
+    rw [spV] at Ot
+    exact (OutsS.of_outs (first.trans middle)).trans (Ot.mono (fun r hr => List.mem_append_left _ hr))
   · change num t.mem B n aDen = if canonV A C ≤ 1 then 1 else Nat.gcd (canonU A C) (canonV A C)
     rw [computed, flag, Uv, modulus]
     by_cases H : canonV A C ≤ 1

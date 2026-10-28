@@ -17,7 +17,7 @@ theorem Context.keepFar {base : Addr} {size : Nat} {p : BitVec 32} {inputs : Nat
     (edi : .edi ∉ rs := by decide) (esp : .esp ∉ rs := by decide) :
     Context base size p inputs t := by
   have spT : t.gpr .esp = p := (K.1 .esp esp).trans C.sp
-  refine ⟨C.scratch.of_keeps K edi esp, C.header, spT, C.fit, C.separate, ?_⟩
+  refine ⟨C.scratch.of_keeps K edi esp, C.header, spT, C.fit, C.separate, ?_, C.deep⟩
   intro i index
   have eaT : t.ea (arg i) = s.ea (arg i) := by
     change addr (t.gpr .esp) _ = addr (s.gpr .esp) _
