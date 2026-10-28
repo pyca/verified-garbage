@@ -30,7 +30,7 @@ theorem primes_ok {s : State} {B : Addr} {Z n k : Nat}
       num t.mem B n aPm = max (num s.mem B n aPa) (num s.mem B n aQa) - 1 ∧
       num t.mem B n aQm = min (num s.mem B n aPa) (num s.mem B n aQa) - 1 ∧
       num t.mem B n aPhi = num t.mem B n aPm * num t.mem B n aQm ∧
-      Keeps [.eax, .ecx, .edx, .ebp, .ebx] s t := by
+      Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
   let P := max (num s.mem B n aPa) (num s.mem B n aQa)
   let Q := min (num s.mem B n aPa) (num s.mem B n aQa)
   have pBound : P < 2 ^ (32 * k) := Nat.max_lt.mpr ⟨boundP, boundQ⟩
@@ -71,7 +71,7 @@ theorem primes_ok {s : State} {B : Addr} {Z n k : Nat}
     (Ot.num (by decide) (by decide) (h.fit64 (by decide))).trans Qw
   have Pmt : num t.mem B n aPm = num w.mem B n aPm := Ot.num (by decide) (by decide) (h.fit64 (by decide))
   have Qmt : num t.mem B n aQm = num w.mem B n aQm := Ot.num (by decide) (by decide) (h.fit64 (by decide))
-  refine ⟨ht, ?_, Pt, Qt, Pmt.trans Pmw, Qmt.trans Qm, ?_, Ku.trans (Kv.trans (Kw.trans (Kt.mono (by decide))))⟩
+  refine ⟨ht, ?_, Pt, Qt, Pmt.trans Pmw, Qmt.trans Qm, ?_, (Ku.mono (by decide)).trans ((Kv.mono (by decide)).trans ((Kw.mono (by decide)).trans (Kt.mono (by decide))))⟩
   · have first : Keep B n primesArrays primesScalars s.mem u.mem := Ou.mono (by decide) (by decide)
     have second : Keep B n primesArrays primesScalars u.mem v.mem := Ov.mono (by decide) (by decide)
     have third : Keep B n primesArrays primesScalars v.mem w.mem := Ow.mono (by decide) (by decide)

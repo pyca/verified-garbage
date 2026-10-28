@@ -21,7 +21,7 @@ theorem dProduct_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) (widt
     WP isa dProduct s fun t =>
       Ws t B Z n 32 ∧ Outs B (dProductRanges n) s.mem t.mem ∧
       num t.mem B n aD = num s.mem B n aU * val32 s.mem B (arr n aDen) 2 + num s.mem B n aV ∧
-      Keeps [.eax, .ebx, .ecx, .edx, .ebp] s t := by
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have hn := h.old.workspace.nowrap
   have f0 := h.arr_fit (j := 0) (by decide)
   have f1 := h.arr_fit (j := 1) (by decide)

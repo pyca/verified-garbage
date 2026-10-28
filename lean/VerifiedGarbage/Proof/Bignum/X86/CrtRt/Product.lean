@@ -21,8 +21,61 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 open VG.Proof.Bignum.X86.PublicRt (countLoop)
 
-/-- A row: the `N` words at `ebp = W + w` `+= [W + S + multOff] ·` the `N` words at `ecx = W + bx`, the
+/-- A row: the `N` words at `ebp = W + w` `+= [W + S + mo] ·` the `N` words at `ecx = W + bx`, the
 carry out in `ebx`. -/
+theorem rowLoopAt_ok {mo : Nat} {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {S bx w N : Nat} (hN : 0 < N)
+    (hedi : PtrAt t₀ W .edi S) (hecx : PtrAt t₀ W .ecx bx) (hebp : PtrAt t₀ W .ebp w)
+    (hesi : (t₀.gpr .esi).toNat = 4 * N) (hebx : t₀.gpr .ebx = 0) (hm : S + mo + 4 ≤ L)
+    (hb : bx + 4 * N ≤ L) (ht : w + 4 * N ≤ L)
+    (hsep : bx + 4 * N ≤ w ∨ w + 4 * N ≤ bx) (hsm : S + mo + 4 ≤ w ∨ w + 4 * N ≤ S + mo) :
+    WP isa (rowLoopAt mo) t₀ fun u => Outside W w (4 * N) t₀.mem u.mem ∧
+      val32 u.mem W w N + 2 ^ (32 * N) * (u.gpr .ebx).toNat =
+        val32 t₀.mem W w N + w32 t₀.mem W (S + mo) * val32 t₀.mem W bx N ∧
+      PtrAt u W .ebp (w + 4 * N) ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] t₀ u := by
+  have hn := hw.nowrap
+  unfold rowLoopAt
+  refine WP.mono (countLoop hN (fun j t => Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] t₀ t ∧
+      PtrAt t W .ecx (bx + 4 * j) ∧ PtrAt t W .ebp (w + 4 * j) ∧ (t.gpr .esi).toNat = 4 * (N - j) ∧
+      Outside W w (4 * j) t₀.mem t.mem ∧
+      val32 t.mem W w j + 2 ^ (32 * j) * (t.gpr .ebx).toNat =
+        val32 t₀.mem W w j + w32 t₀.mem W (S + mo) * val32 t₀.mem W bx j) ?_
+    ⟨Keeps.refl _ _, by simpa using hecx, by simpa using hebp, by simpa using hesi, Outside.refl _ _ _ _,
+      by rw [hebx]; simp [val32]⟩)
+    fun u ⟨K, _, ebp, _, O, V⟩ => ⟨O, V, ebp, K⟩
+  rintro j t hj ⟨K, ecx, ebp, esi, O, V⟩
+  have ht' := hw.of_keeps K
+  have edi : PtrAt t W .edi S := by rw [PtrAt, K.1 _ (by decide)]; exact hedi
+  -- The words the step reads, kept since the start.
+  have mk : w32 t.mem W (S + mo) = w32 t₀.mem W (S + mo) :=
+    O.w32 (by omega_using [hsm, hj]) (by omega_using [hm, hn])
+  have bk : w32 t.mem W (bx + 4 * j) = w32 t₀.mem W (bx + 4 * j) :=
+    O.w32 (by omega_using [hsep, hj]) (by omega_using [hb, hj, hn])
+  have tk : w32 t.mem W (w + 4 * j) = w32 t₀.mem W (w + 4 * j) :=
+    O.w32 (.inr (Nat.le_refl _)) (by omega_using [ht, hj, hn])
+  have wfit : w + 4 * j + 4 ≤ 2 ^ 64 := by omega_using [ht, hj, hn]
+  refine WP.mono (mulStepAt_ok (mo := mo) ht' edi ecx ebp esi hj (by omega_using [hm])
+    (by omega_using [hb, hj]) (by omega_using [ht, hj]))
+    fun u ⟨mu, bu, cu, pu, su, zu, Ku⟩ => ?_
+  rw [mk, bk, tk] at mu bu
+  have Wr := writeW32_outside t.mem W (d := w + 4 * j)
+    (BitVec.ofNat 32 (w32 t₀.mem W (S + mo) * w32 t₀.mem W (bx + 4 * j) + (t.gpr .ebx).toNat +
+      w32 t₀.mem W (w + 4 * j))) wfit
+  rw [← mu] at Wr
+  refine ⟨⟨K.trans Ku, cu, pu, su, (O.mono (Nat.le_refl _) (by omega_using [])).trans
+    (Wr.mono (by omega_using []) (by omega_using [])), ?_⟩, zu⟩
+  have hlow : val32 u.mem W w j = val32 t.mem W w j :=
+    Wr.val32 (.inl (Nat.le_refl _)) (by omega_using [ht, hj, hn])
+  have htop : w32 u.mem W (w + 4 * j) = (w32 t₀.mem W (S + mo) * w32 t₀.mem W (bx + 4 * j) +
+      (t.gpr .ebx).toNat + w32 t₀.mem W (w + 4 * j)) % 2 ^ 32 := by
+    rw [mu, w32_write_self, BitVec.toNat_ofNat]
+  rw [val32_succ, val32_succ, val32_succ, hlow, htop, bu, pow32_succ]
+  generalize hxd : w32 t₀.mem W (S + mo) * w32 t₀.mem W (bx + 4 * j) + (t.gpr .ebx).toNat +
+    w32 t₀.mem W (w + 4 * j) = x at *
+  have hx := Nat.div_add_mod x (2 ^ 32)
+  generalize 2 ^ (32 * j) = P at *
+  grind
+
+/-- `rowLoopAt_ok` with the multiplier at `multOff`. -/
 theorem rowLoop_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {S bx w N : Nat} (hN : 0 < N)
     (hedi : PtrAt t₀ W .edi S) (hecx : PtrAt t₀ W .ecx bx) (hebp : PtrAt t₀ W .ebp w)
     (hesi : (t₀.gpr .esi).toNat = 4 * N) (hebx : t₀.gpr .ebx = 0) (hm : S + multOff + 4 ≤ L)
@@ -31,49 +84,8 @@ theorem rowLoop_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {S bx 
     WP isa rowLoop t₀ fun u => Outside W w (4 * N) t₀.mem u.mem ∧
       val32 u.mem W w N + 2 ^ (32 * N) * (u.gpr .ebx).toNat =
         val32 t₀.mem W w N + w32 t₀.mem W (S + multOff) * val32 t₀.mem W bx N ∧
-      PtrAt u W .ebp (w + 4 * N) ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] t₀ u := by
-  have hn := hw.nowrap
-  unfold rowLoop
-  refine WP.mono (countLoop hN (fun j t => Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] t₀ t ∧
-      PtrAt t W .ecx (bx + 4 * j) ∧ PtrAt t W .ebp (w + 4 * j) ∧ (t.gpr .esi).toNat = 4 * (N - j) ∧
-      Outside W w (4 * j) t₀.mem t.mem ∧
-      val32 t.mem W w j + 2 ^ (32 * j) * (t.gpr .ebx).toNat =
-        val32 t₀.mem W w j + w32 t₀.mem W (S + multOff) * val32 t₀.mem W bx j) ?_
-    ⟨Keeps.refl _ _, by simpa using hecx, by simpa using hebp, by simpa using hesi, Outside.refl _ _ _ _,
-      by rw [hebx]; simp [val32]⟩)
-    fun u ⟨K, _, ebp, _, O, V⟩ => ⟨O, V, ebp, K⟩
-  rintro j t hj ⟨K, ecx, ebp, esi, O, V⟩
-  have ht' := hw.of_keeps K
-  have edi : PtrAt t W .edi S := by rw [PtrAt, K.1 _ (by decide)]; exact hedi
-  -- The words the step reads, kept since the start.
-  have mk : w32 t.mem W (S + multOff) = w32 t₀.mem W (S + multOff) :=
-    O.w32 (by omega_using [hsm, hj]) (by omega_using [hm, hn])
-  have bk : w32 t.mem W (bx + 4 * j) = w32 t₀.mem W (bx + 4 * j) :=
-    O.w32 (by omega_using [hsep, hj]) (by omega_using [hb, hj, hn])
-  have tk : w32 t.mem W (w + 4 * j) = w32 t₀.mem W (w + 4 * j) :=
-    O.w32 (.inr (Nat.le_refl _)) (by omega_using [ht, hj, hn])
-  have wfit : w + 4 * j + 4 ≤ 2 ^ 64 := by omega_using [ht, hj, hn]
-  refine WP.mono (mulStepAt_ok (mo := multOff) ht' edi ecx ebp esi hj (by omega_using [hm])
-    (by omega_using [hb, hj]) (by omega_using [ht, hj]))
-    fun u ⟨mu, bu, cu, pu, su, zu, Ku⟩ => ?_
-  rw [mk, bk, tk] at mu bu
-  have Wr := writeW32_outside t.mem W (d := w + 4 * j)
-    (BitVec.ofNat 32 (w32 t₀.mem W (S + multOff) * w32 t₀.mem W (bx + 4 * j) + (t.gpr .ebx).toNat +
-      w32 t₀.mem W (w + 4 * j))) wfit
-  rw [← mu] at Wr
-  refine ⟨⟨K.trans Ku, cu, pu, su, (O.mono (Nat.le_refl _) (by omega_using [])).trans
-    (Wr.mono (by omega_using []) (by omega_using [])), ?_⟩, zu⟩
-  have hlow : val32 u.mem W w j = val32 t.mem W w j :=
-    Wr.val32 (.inl (Nat.le_refl _)) (by omega_using [ht, hj, hn])
-  have htop : w32 u.mem W (w + 4 * j) = (w32 t₀.mem W (S + multOff) * w32 t₀.mem W (bx + 4 * j) +
-      (t.gpr .ebx).toNat + w32 t₀.mem W (w + 4 * j)) % 2 ^ 32 := by
-    rw [mu, w32_write_self, BitVec.toNat_ofNat]
-  rw [val32_succ, val32_succ, val32_succ, hlow, htop, bu, pow32_succ]
-  generalize hxd : w32 t₀.mem W (S + multOff) * w32 t₀.mem W (bx + 4 * j) + (t.gpr .ebx).toNat +
-    w32 t₀.mem W (w + 4 * j) = x at *
-  have hx := Nat.div_add_mod x (2 ^ 32)
-  generalize 2 ^ (32 * j) = P at *
-  grind
+      PtrAt u W .ebp (w + 4 * N) ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] t₀ u :=
+  rowLoopAt_ok hw hN hedi hecx hebp hesi hebx hm hb ht hsep hsm
 
 section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}

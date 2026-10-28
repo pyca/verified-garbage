@@ -27,7 +27,7 @@ theorem primeProduct_ok {s : State} {B : Addr} {Z n out a b k : Nat}
     WP isa (primeProduct out a b) s fun t =>
       Ws t B Z n 32 ∧ Keep B n [out] productScalars s.mem t.mem ∧
       num t.mem B n out = num s.mem B n a * num s.mem B n b ∧
-      Keeps [.eax, .ecx, .edx, .ebp, .ebx] s t := by
+      Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
   have fo := h.arr_fit ho
   have fa := h.arr_fit ha
   have fb := h.arr_fit hb

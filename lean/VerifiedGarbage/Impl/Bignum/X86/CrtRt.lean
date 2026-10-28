@@ -151,8 +151,11 @@ def maskLoop : Prog isa :=
   .loop (.block [.mov .eax (.mem (at_ .ebp 0)), .alu .and .eax (.reg .ecx), .store (at_ .ebp 0) .eax,
     .alu .add .ebp (.imm 4), .alu .sub .edx (.imm 4)]) .ne
 
-/-- A product row: `[ebp] += [multOff] [ecx]` with the carry word in `ebx`; `esi` bytes. -/
-def rowLoop : Prog isa := .loop (.block (Rt.mulStepAt multOff)) .ne
+/-- A product row: `[ebp] += [mo] [ecx]` with the carry word in `ebx`; `esi` bytes. -/
+def rowLoopAt (mo : Nat) : Prog isa := .loop (.block (Rt.mulStepAt mo)) .ne
+
+/-- `rowLoopAt` with the multiplier at `multOff`. -/
+def rowLoop : Prog isa := rowLoopAt multOff
 
 /-! ## Numbers -/
 
