@@ -274,7 +274,22 @@ theorem chainAdd_ok {s : State} (h : Bx L s B Z len N) {o a b : Ref} {e : Nat} (
   obtain ⟨cb, C, V'⟩ := V
   exact ⟨cb, by rw [U.other _ (by decide)]; exact C, by rw [U.mem]; exact V'⟩
 
-/-- `maskAt x`: `ecx` all ones exactly when the word at `x` is negative. -/
+/-- `signOf`: `ecx` the mask of the sign of the word at `ebx`. -/
+theorem signOf_ok {s : State} {W : Addr} {Y x : Nat} (hw : Ws s W Y) (p : PtrAt s W .ebx x) (hx : x + 4 ≤ Y)
+    {is : List Instr} {Q : State → Prop}
+    (k : ∀ u, Keeps [.eax, .ecx] s u → u.mem = s.mem →
+      u.gpr .ecx = (if 2 ^ 31 ≤ w32 s.mem W x then BitVec.allOnes 32 else 0) → WP isa (.block is) u Q) :
+    WP isa (.block (signOf ++ is)) s Q := by
+  simp only [signOf, List.cons_append, List.nil_append]
+  refine wp_movS (readSrc_ptr hw p (d := 0) (by omega)) fun s₁ U₁ _ => ?_
+  refine VG.Proof.Bignum.X86.PublicRt.wp_shr (by decide) fun s₂ U₂ => ?_
+  refine wp_movS rfl fun s₃ U₃ _ => wp_subS rfl fun u U₄ _ => ?_
+  refine k u (((U₁.keeps.mono (by decide)).trans (U₂.keeps.mono (by decide))).trans
+    ((U₃.keeps.mono (by decide)).trans (U₄.keeps.mono (by decide)))) (by rw [U₄.mem, U₃.mem, U₂.mem, U₁.mem]) ?_
+  rw [U₄.gpr, U₃.gpr, U₃.other _ (by decide), U₂.gpr, U₁.gpr, Nat.add_zero]
+  exact VG.Proof.Weierstrass.X86.Inv.signMask_eq _
+
+/-- `maskAt x`: `ecx` the mask of the sign of the word at `x`. -/
 theorem maskAt_ok {s : State} (h : Bx L s B Z len N) {x : Ref} (hxz : rv (kw len) x + 4 ≤ Z)
     {is : List Instr} {Q : State → Prop}
     (k : ∀ u, Keeps [.eax, .ebx, .ecx, .edx] s u → u.mem = s.mem →
@@ -283,16 +298,11 @@ theorem maskAt_ok {s : State} (h : Bx L s B Z len N) {x : Ref} (hxz : rv (kw len
     WP isa (.block (maskAt L x ++ is)) s Q := by
   have hn := h.nowrap
   have hZ := h.halfZ
-  simp only [maskAt, List.append_assoc, List.cons_append, List.nil_append]
+  simp only [maskAt, List.append_assoc]
   refine ptr_ok h.ws h.slots hZ (by decide) (by decide) (by decide) (by decide) (by intro e; cases e)
     (by omega) fun u₁ K₁ m₁ p₁ => ?_
-  refine wp_movS (readSrc_ptr (h.ws.rt.of_keeps K₁) p₁ (d := 0) (by omega)) fun s₁ U₁ _ => ?_
-  refine VG.Proof.Bignum.X86.PublicRt.wp_shr (by decide) fun s₂ U₂ => ?_
-  refine wp_movS rfl fun s₃ U₃ _ => wp_subS rfl fun u U₄ _ => ?_
-  refine k u ((((K₁.mono (by decide)).trans (U₁.keeps.mono (by decide))).trans (U₂.keeps.mono (by decide))).trans
-    ((U₃.keeps.mono (by decide)).trans (U₄.keeps.mono (by decide)))) (by rw [U₄.mem, U₃.mem, U₂.mem, U₁.mem, m₁]) ?_
-  rw [U₄.gpr, U₃.gpr, U₃.other _ (by decide), U₂.gpr, U₁.gpr, m₁, Nat.add_zero]
-  exact VG.Proof.Weierstrass.X86.Inv.signMask_eq _
+  refine signOf_ok (h.ws.rt.of_keeps K₁) p₁ hxz fun u K₂ m₂ c₂ => k u ((K₁.mono (by decide)).trans (K₂.mono (by decide)))
+    (by rw [m₂, m₁]) (by rw [c₂, m₁])
 
 /-- `zeroWord x`: the word at `x` zeroed. -/
 theorem zeroWord_ok {s : State} (h : Bx L s B Z len N) {x : Ref} (hxz : rv (kw len) x + 4 ≤ Z)

@@ -139,18 +139,12 @@ theorem nBytes_ok {r : Reg} {e : Nat} (hs : Scr s B Z) (hsl : Slots s.mem B w) (
     (hw : 2 * w ≤ 4104) (he : e ≤ 4)
     (k : ∀ u, Keeps [r] s u → u.mem = s.mem → (u.gpr r).toNat = 2 * w + 4 * e → WP isa (.block is) u Q) :
     WP isa (.block (nBytes r e ++ is)) s Q := by
-  simp only [nBytes, List.cons_append]
-  refine wp_movS (readSrc_sc hs hz) fun u U _ => ?_
-  have ru : (u.gpr r).toNat = 2 * w := by rw [U.gpr]; exact hsl.half
-  split
-  · next h =>
-    rw [List.nil_append]
-    exact k u U.keeps U.mem (by rw [ru, h, Nat.mul_zero, Nat.add_zero])
-  · next h =>
-    rw [List.cons_append, List.nil_append]
-    refine wp_addS rfl fun z Z' _ => k z (U.keeps.trans Z'.keeps) (by rw [Z'.mem, U.mem]) ?_
-    rw [Z'.gpr, BitVec.toNat_add, ru, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 4 * e) (by omega)]
-    omega
+  simp only [nBytes, List.cons_append, List.nil_append]
+  refine wp_movS (readSrc_sc hs hz) fun u U _ => wp_addS rfl fun z Z' _ => ?_
+  refine k z (U.keeps.trans Z'.keeps) (by rw [Z'.mem, U.mem]) ?_
+  rw [Z'.gpr, BitVec.toNat_add, U.gpr, show (s.mem.readW (off B halfSlot) 32).toNat = 2 * w from hsl.half,
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 4 * e) (by omega)]
+  omega
 
 /-- `nBytesLess r`: `r = 2 w - 4`, the bytes of `n - 1` words. -/
 theorem nBytesLess_ok {r : Reg} (hs : Scr s B Z) (hsl : Slots s.mem B w) (hz : halfSlot + 4 ≤ Z)
