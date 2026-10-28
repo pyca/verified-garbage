@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.RsaKeyGen.X86.MrExponentRt.Scan
 import VerifiedGarbage.Proof.RsaKeyGen.X86.MrExponentRt.Code
+import VerifiedGarbage.Proof.RsaKeyGen.X86.TimingSeg
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveStack
 import VerifiedGarbage.Proof.RsaKeyGen.X86.FilterStack
 import VerifiedGarbage.Proof.RsaKeyGen.X86.SigMask
@@ -22,6 +23,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
 
 /-! # Miller–Rabin's exponent at the run-time width reads the same addresses in every run
 
@@ -37,25 +39,6 @@ open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG
 open VG.Proof.Dsa.X86 VG.Impl.RsaKeyGen.X86.MrExponentRt
 open VG.Proof.RsaKeyGen.X86.PreparedR2 (Ready)
 
-/-- Runs from states whose registers `rs` hold the same values `f r` leak
-the same trace (`raw`), and each run ends in `Y` by correctness. -/
-theorem seg {X Y : State → Prop} {c : Prog isa} (rs : List Reg) (f : Reg → BitVec 32)
-    (vals : ∀ s, X s → ∀ r ∈ rs, s.gpr r = f r)
-    (raw : RelCT isa (VG.X86.Taint.Agree (τr rs)) c (fun _ _ => True))
-    (run : ∀ s, X s → WP isa c s Y) :
-    RelCT isa (fun s t => X s ∧ X t) c (fun u z => Y u ∧ Y z) := by
-  intro s t tr ur u z ⟨S, T⟩ E G
-  have agree : VG.X86.Taint.Agree (τr rs) s t :=
-    agree_regs fun r mem => (vals s S r mem).trans (vals t T r mem).symm
-  exact ⟨(raw _ _ _ _ _ _ agree E G).1, wp_result (run s S) E, wp_result (run t T) G⟩
-
-/-- A trace from a relation, and each run ending in `Y`. -/
-theorem withRuns {X Y : State → Prop} {c : Prog isa} {R : State → State → Prop}
-    (raw : RelCT isa (fun s t => X s ∧ X t) c R) (run : ∀ s, X s → WP isa c s Y) :
-    RelCT isa (fun s t => X s ∧ X t) c (fun u z => Y u ∧ Y z) := by
-  intro s t tr ur u z ⟨S, T⟩ E G
-  exact ⟨(raw _ _ _ _ _ _ ⟨S, T⟩ E G).1, wp_result (run s S) E, wp_result (run t T) G⟩
-
 /-- Prepared, for some candidate. -/
 def Prepared (g : Geometry) (capacity : Nat) (p : BitVec 32) (s : State) : Prop :=
   ∃ c, Ready g c capacity p s
@@ -64,11 +47,6 @@ def Prepared (g : Geometry) (capacity : Nat) (p : BitVec 32) (s : State) : Prop 
 theorem edi_value {g : Geometry} {s : State} (C : Context g s) : s.gpr .edi = BitVec.ofNat 32 g.W.toNat := by
   apply BitVec.eq_of_toNat_eq
   rw [C.base, BitVec.toNat_ofNat, Nat.add_zero]
-
-theorem ptr_value {s : State} {W : Addr} {r : Reg} {x : Nat} (P : PtrAt s W r x) :
-    s.gpr r = BitVec.ofNat 32 (W.toNat + x) := by
-  apply BitVec.eq_of_toNat_eq
-  rw [P, BitVec.toNat_ofNat]
 
 theorem prepared_pair {g : Geometry} {capacity : Nat} {p : BitVec 32} {s t : State}
     (S : Prepared g capacity p s) (T : Prepared g capacity p t) : Pair g [.edi] s t := by

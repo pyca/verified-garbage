@@ -63,15 +63,14 @@ theorem exponentCheck {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round)
   simp only [Candidate.exponentCheck, Code.allInstrs, checked exponentRt, checked (tested Hm Hr montName roundName)]
   rfl
 
-theorem front (w : Nat) : NoSp (Candidate.front w) := by
+theorem front : NoSp VG.Impl.RsaKeyGen.X86.FrontRt.code := by
   apply NoSp.of_all
-  simp only [Candidate.front, Code.allInstrs]
   rfl
 
 theorem available {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round)
     (montName roundName : String) : NoSp (Candidate.available montName mont roundName round) := by
   apply NoSp.of_all
-  simp only [Candidate.available, Code.allInstrs, checked (dispatch front Candidate.widths),
+  simp only [Candidate.available, Code.allInstrs, checked front,
     checked (exponentCheck Hm Hr montName roundName)]
   rfl
 

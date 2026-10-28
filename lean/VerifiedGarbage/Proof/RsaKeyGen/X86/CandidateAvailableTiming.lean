@@ -3,9 +3,9 @@ module
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateExponentStageTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateScheduleContinue
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateWidthTiming
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFrontRtTiming
 
-/-! # The public byte length selects a candidate width without exposing its entropy -/
+/-! # The candidate's front and its continuation hide the entropy -/
 
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.Candidate
@@ -76,17 +76,8 @@ theorem available_trace {mont round : Prog isa} {montName roundName : String}
     (leak : SameLeak E eBytes pBytes qBytes rBytes sBytes) :
     RelCT isa (ClearedPair E eBytes pBytes qBytes rBytes sBytes)
       (VG.Impl.RsaKeyGen.X86.Candidate.available montName mont roundName round) (fun _ _ => True) := by
-  have bounds := v.width_bounds
   unfold VG.Impl.RsaKeyGen.X86.Candidate.available
-  refine RelCT.seq (width_trace v (fun _ _ P => P.left) (fun _ _ P => P.right)
-    (fun _ _ _ _ P MU MZ KU KZ SU SZ => P.keepMem v MU MZ KU KZ (by decide) (by decide) SU SZ)) (RelCT.seq ?_
-    (continue_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack v length rEnough enough leak))
-  refine dispatch_trace (by omega) (fun _ _ _ _ P U Z => P.keepFlags v U Z)
-    (sized_front_trace v length rEnough enough leak) _ ?_ ?_
-  · exact List.mem_map.mpr ⟨E.width - 4, List.mem_range.mpr (by omega), by omega⟩
-  · intro w mem
-    obtain ⟨i, index, rfl⟩ := List.mem_map.mp mem
-    have bound := List.mem_range.mp index
-    omega
+  exact RelCT.seq (front_rt_trace v length rEnough enough leak)
+    (continue_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack v length rEnough enough leak)
 
 end VG.Proof.RsaKeyGen.X86.Candidate

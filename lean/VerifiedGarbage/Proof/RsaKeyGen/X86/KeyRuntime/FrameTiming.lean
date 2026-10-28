@@ -8,6 +8,7 @@ public import VerifiedGarbage.TCB.X86.Isa
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.KeyRuntime
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEnvironment
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateParameters
 
 /-! # The outer native key frame preserves trace equivalence -/
 

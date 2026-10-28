@@ -1,11 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateArgs
-public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateLoad
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentRt
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.MrExponentRt
-public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateSieve
-public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateClose
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.FrontRt
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateTest
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateFinish
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateClear
@@ -25,10 +23,6 @@ open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Bignum.X86.PublicContext
 
 def clear : Prog isa := CandidateClear.code
 
-def importCandidate (w : Nat) : Prog isa := CandidateLoad.code w
-
-def closeCheck (w : Nat) : Prog isa := CandidateClose.code w
-
 /-- The code for the width in `eax`, from the supported `widths`. -/
 def dispatch (part : Nat → Prog isa) : List Nat → Prog isa
   | [] => CandidateFinish.none
@@ -39,13 +33,6 @@ def widths : List Nat := (List.range 61).map (· + 4)
 
 /-- `eax := w`, from the candidate's length in the header. -/
 def width : List Instr := [.mov .eax (.mem (sc 4)), .shift .shr .eax 3]
-
-/-- The candidate drawn and compared with `p`, and trial division: the result
-2 or 3 written, or `eax = 4` to go on. -/
-def front (w : Nat) : Prog isa :=
-  .seq (importCandidate w) (.seq (closeCheck w) (.seq (.block [.alu .cmp .eax (.imm 0)])
-    (.ite .ne (CandidateFinish.used 2) (.seq (CandidateSieve.code w) (.seq (.block [.alu .cmp .eax (.imm 0)])
-      (.ite .ne (CandidateFinish.used 3) (.block [.mov .eax (.imm 4)])))))))
 
 /-- Preparation at width `w` but for the exponent: the header, R² and the constants. -/
 def prepareHead (w : Nat) (montName : String) (montCode : Prog isa) : Prog isa :=
@@ -79,8 +66,8 @@ def exponentCheck (montName : String) (montCode : Prog isa)
     (.ite .e (CandidateFinish.used 3) (tested montName montCode roundName roundCode)))
 
 def available (montName : String) (montCode : Prog isa) (roundName : String) (roundCode : Prog isa) : Prog isa :=
-  .seq (.block width) (.seq (dispatch front widths) (.seq (.block [.alu .cmp .eax (.imm 4)])
-    (.ite .e (exponentCheck montName montCode roundName roundCode) (.block []))))
+  .seq FrontRt.code (.seq (.block [.alu .cmp .eax (.imm 4)])
+    (.ite .e (exponentCheck montName montCode roundName roundCode) (.block [])))
 
 def body (montName : String) (montCode : Prog isa) (roundName : String) (roundCode : Prog isa) : Prog isa :=
   .seq CandidateArgs.enter (.seq clear

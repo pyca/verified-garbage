@@ -1,13 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateSizedTiming
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFrontRtTiming
 public import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDrawn
-public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.TCB.X86.Isa
 public import VerifiedGarbage.TCB.X86.State
+public import VerifiedGarbage.TCB.Mem
 
 /-! # Public width comparisons retain the candidate's input relation -/
 
