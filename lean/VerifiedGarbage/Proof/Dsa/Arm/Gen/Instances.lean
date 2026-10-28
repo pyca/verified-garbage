@@ -31,16 +31,21 @@ open VG.Impl.Mont.Arm.Dynamic (modS baseS expS resS contextBytes)
 open VG.Impl.Dsa.Arm.ProbablePrime (keyOff keyWords)
 open VG.Impl.Rsa.Arm.Keys (ptr)
 
+/-- The probable-prime test over the round `v`, which tests q and p. -/
+def primeName (v : RoundImpl) : String :=
+  (Spec.Dsa.ProbablePrime.sizedApi Impl.Dsa.Arm.ProbablePrime.layout Impl.Dsa.Arm.ProbablePrime.sizes).name ++
+    v.suffix
+
 /-- The geometry of `(pLen, qLen)`, hashing with `G`, testing with the round `v`. -/
 def geo (pLen qLen : Nat) (G : Hash) (v : RoundImpl) : Geo where
   pLen := pLen
   qLen := qLen
   e := (8 * pLen - 8 * qLen) / 32 + 1
   G := G
-  qName := (Spec.Dsa.ProbablePrime.api (Impl.Dsa.Arm.ProbablePrime.layout (8 * qLen))).name ++ v.suffix
-  qCode := Impl.Dsa.Arm.ProbablePrime.code (8 * qLen) v.name v.code
-  pName := (Spec.Dsa.ProbablePrime.api (Impl.Dsa.Arm.ProbablePrime.layout (8 * pLen))).name ++ v.suffix
-  pCode := Impl.Dsa.Arm.ProbablePrime.code (8 * pLen) v.name v.code
+  qName := primeName v
+  qCode := Impl.Dsa.Arm.ProbablePrime.code v.name v.code
+  pName := primeName v
+  pCode := Impl.Dsa.Arm.ProbablePrime.code v.name v.code
   powName := Impl.Dsa.Arm.Pow.name (pLen / 8) ((8 * pLen - 8 * qLen) / 32 + 1)
   powCode := Impl.Dsa.Arm.Pow.body (pLen / 8) ((8 * pLen - 8 * qLen) / 32 + 1)
   powMod := modS (pLen / 8)
@@ -50,11 +55,10 @@ def geo (pLen qLen : Nat) (G : Hash) (v : RoundImpl) : Geo where
   checkName := Spec.Dsa.checkParametersApi.name
   checkCode := VG.Impl.Dsa.Arm.Generate.checkParameters
 
-theorem primeOk (v : RoundImpl) (bits : Nat) (hb : VG.Proof.Dsa.Arm.Prime.Bits bits := by decide)
-    (enc : VG.Proof.Dsa.Arm.Prime.PreEnc bits := by decide) :
-    PrimeOk bits (Impl.Dsa.Arm.ProbablePrime.code bits v.name v.code) :=
-  ⟨VG.Proof.Dsa.Arm.Prime.prime_verified v bits hb enc,
-    (VG.Proof.Dsa.Arm.Prime.code_stack bits v.name v.code).trans (by have := v.stack; omega)⟩
+theorem primeOk (v : RoundImpl) (bits : Nat) (hb : bits ∈ Impl.Dsa.Arm.ProbablePrime.sizes := by decide) :
+    PrimeOk bits (Impl.Dsa.Arm.ProbablePrime.code v.name v.code) :=
+  ⟨VG.Proof.Dsa.Arm.Prime.prime_verified v,
+    (VG.Proof.Dsa.Arm.Prime.code_stack v.name v.code).trans (by have := v.stack; omega), hb⟩
 
 theorem powOk (n e : Nat) (hn : 0 < n := by decide) (hn48 : n ≤ 48 := by decide) (he : 0 < e := by decide)
     (hen : e ≤ 2 * n := by decide) (hs : FrameStack.armStack (Impl.Dsa.Arm.Pow.body n e) ≤ 176 := by decide) :

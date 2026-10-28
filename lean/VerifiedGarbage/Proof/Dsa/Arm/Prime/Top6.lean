@@ -21,16 +21,14 @@ section
 variable {bits : Nat} {s : State}
 
 /-- A call's result. -/
-theorem prime_ok (v : RoundImpl) (hb : Bits bits) (enc : PreEnc bits) (h : CIn bits s) :
-    WP isa (Impl.Dsa.Arm.ProbablePrime.code bits v.name v.code) s fun t => abiPreserved s t ∧ CPost bits s t := by
+theorem prime_ok (v : RoundImpl) (h : CIn bits s) :
+    WP isa (Impl.Dsa.Arm.ProbablePrime.code v.name v.code) s fun t => abiPreserved s t ∧ CPost bits s t := by
+  have hb := h.sized
   have spLo := h.spLo; have spHi := h.spHi
   unfold Impl.Dsa.Arm.ProbablePrime.code
   refine WP.alloc (by decide) (by omega) ?_
   rw [WP.seq_iff]
-  have hA : InRegions (s.rd ++ s.wr) (stackArgAddr s 0) 4 :=
-    ⟨cA s, List.mem_append_left _ (by rw [h.rd]; exact List.mem_cons_of_mem _ List.mem_cons_self),
-      Region.contains_self _ _⟩
-  refine WP.mono (pre_ok enc spLo spHi hA) fun t ⟨rest, fr, vals, r1, r2⟩ => ?_
+  refine WP.mono (pre_ok hb spLo spHi h.argsIn h.arg) fun t ⟨rest, fr, vals, r1, r2⟩ => ?_
   have o : PreOut bits s t := ⟨rest, fr, vals, r1, r2⟩
   have tspN : t.sp.toNat = s.sp.toNat - 32 := by
     rw [rest.sp]; exact sub_toNat' (by omega)

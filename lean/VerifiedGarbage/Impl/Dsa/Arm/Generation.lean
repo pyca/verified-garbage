@@ -22,14 +22,14 @@ For each seed of the `seeds` tape (FIPS 186-4 A.1.1.2):
 
 1. q: the seed's hash (SHA-1 for a 160-bit q, else SHA-256: one block, by
    the compression function), its top and low bits set, tested by
-   `vg_dsa_probable_prime_{N}` with witnesses from the front of what is left
-   of `witnesses`.
+   `vg_dsa_probable_prime` of size `N` with witnesses from the front of what
+   is left of `witnesses`.
 2. p: for each of the `4 L` counters, the hashes of `seed + offset + j`
    (big-endian, `seedlen` bytes) for `j ≤ count`, assembled into `X` with its
    top bit set; `p = X − (X mod 2q) + 1`, by division of `X` by `q` in the
    key working space (the quotient's parity gives `X mod 2q`, and the
    quotient with its low bit cleared is `(p − 1) / q`); if `p` has `L` bits,
-   tested by `vg_dsa_probable_prime_{L}`.
+   tested by `vg_dsa_probable_prime` of size `L`.
 3. g: for each `h` of the `hs` tape with `1 < h < p − 1`, `g = h^((p−1)/q)
    mod p` by `vg_dsa_pow_{n}_{e}`, until `g > 1`.
 4. p||q||g checked by `vg_dsa_check_parameters`.
@@ -182,11 +182,12 @@ aligned). -/
 def callWith (name : String) (callee : Prog isa) : Prog isa :=
   .frame (.push [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11]) (.call name callee) (.pop .r4 32)
 
-/-- A probable-prime test of the candidate at `sA`, with the witnesses left
-(from `witnesses` itself when none is: an empty range within the tape): its
-result into `fRes`, and the octets it read added to `fUsed` unless it ran out. -/
-def test (pLen : Nat) (name : String) (callee : Prog isa) : Prog isa := seqs [
-  .block (scr pLen .r0 sA ++ [.movw .r1 (BitVec.ofNat 16 (wa pLen / 8))]),
+/-- A probable-prime test of the candidate of `bits` bits at `sA`, with the
+witnesses left (from `witnesses` itself when none is: an empty range within
+the tape): its result into `fRes`, and the octets it read added to `fUsed`
+unless it ran out. The size is the second stack argument, in `r5`. -/
+def test (pLen bits : Nat) (name : String) (callee : Prog isa) : Prog isa := seqs [
+  .block (scr pLen .r0 sA ++ [.movw .r1 (BitVec.ofNat 16 (wa pLen / 8)), .movw .r5 (BitVec.ofNat 16 bits)]),
   .block [ld .r4 fUsed, ld .r2 fWit, ld .r3 fWitLen],
   .block [.dp .add .r2 .r2 (.reg .r4), .dp .sub .r3 .r3 (.reg .r4), .addSp .r4 fUsedOut, .cmp .r3 (.imm 0)],
   .ite .eq (.block [ld .r2 fWit]) (.block []),
@@ -299,7 +300,7 @@ def qPart : Prog isa := seqs [
   .block (scr g.pLen .r0 sQ ++ [.ldrb .r1 .r0 0, .dp .orr .r1 .r1 (.imm 0x80), .strb .r1 .r0 0,
     .ldrb .r1 .r0 (g.qLen - 1), .dp .orr .r1 .r1 (.imm 1), .strb .r1 .r0 (g.qLen - 1)]),
   copyS g.pLen sA sQ g.qLen,
-  test g.pLen g.qName g.qCode]
+  test g.pLen (8 * g.qLen) g.qName g.qCode]
 
 /-- The hash of `seed + offset + j`, into its place in `X`. -/
 def pHash (j : Nat) : Prog isa := seqs [
@@ -323,7 +324,7 @@ def pAttempt : Prog isa := seqs [
   g.pX, pArith g.pLen g.qLen,
   .block (scr g.pLen .r0 sPBE ++ [.ldrb .r1 .r0 0, .dp .and .r1 .r1 (.imm 0x80), .cmp .r1 (.imm 0)]),
   .ite .eq (.block [])
-    (seqs [copyS g.pLen sA sPBE g.pLen, test g.pLen g.pName g.pCode,
+    (seqs [copyS g.pLen sA sPBE g.pLen, test g.pLen (8 * g.pLen) g.pName g.pCode,
       .block (cmpF fRes 0), .ite .eq (.block (stImm fP 0))
         (seqs [.block (cmpF fRes 1), .ite .eq (.block (stImm fP 1)) (.block [])])])]
 

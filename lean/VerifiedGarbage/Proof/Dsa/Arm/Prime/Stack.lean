@@ -68,8 +68,8 @@ theorem body_stack (name : String) (round : Prog isa) : armStack (body name roun
       · exact z_le (by decide)
   · exact z_le (by decide)
 
-theorem code_stack (bits : Nat) (name : String) (round : Prog isa) :
-    armStack (code bits name round) ≤ 88 + armStack round := by
+theorem code_stack (name : String) (round : Prog isa) :
+    armStack (code name round) ≤ 88 + armStack round := by
   have := body_stack name round
   simp only [code, armStack, List.length_cons, List.length_nil, Nat.zero_max, Nat.max_zero]
   omega

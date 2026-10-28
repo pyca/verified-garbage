@@ -16,9 +16,9 @@ import VerifiedGarbage.Proof.Dsa.Arm.Gen.CT
 
 /-! # DSA parameter generation on ARMv7: calling the probable-prime test
 
-`primeCall_vp`: `callWith name code`, its stack argument (the count's
-address, in `r4`) pushed, calls the test on the candidate at `sA` with the
-witnesses from `u` on: its status in `r0`, its count in the frame word
+`primeCall_vp`: `callWith name code`, its stack arguments (the count's
+address, in `r4`, and the size, in `r5`) pushed, calls the test on the
+candidate at `sA` with the witnesses from `u` on: its status in `r0`, its count in the frame word
 `fUsedOut` when the tape sufficed, and `scratch` changed only from `sA` to the
 key working space.
 -/
@@ -55,6 +55,35 @@ theorem pushed_arg0 {s : State} {r : Reg} {rs : List Reg} (h : 4 * (rs.length + 
       exact (Offset.disjoint_base _ (Nat.le_refl 4) (by
         have := VG.Proof.X25519.Arm.addr_toNat a; rw [List.length_map]; omega_arith)).symm)
     (by decide), Mem.readW_writeW_self32]
+
+/-- A push's word at `b` is its first register. -/
+theorem storeWords_head (m : Mem) (b v : BitVec 32) (vs : List (BitVec 32))
+    (h : b.toNat + 4 * (vs.length + 1) < 2 ^ 32) : (storeWords m b (v :: vs)).readW (State.addr b) 32 = v := by
+  have h4 : (b + 4).toNat = b.toNat + 4 := by
+    rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, BitVec.toNat_add, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (a := 4) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+  rw [storeWords, (FrameStack.storeWords_frame vs _ (b + 4) (by rw [h4]; omega_arith)).readW
+    (r := ⟨State.addr b, 4⟩) (Region.contains_self _ _) (fun r' hr' => by
+      simp only [List.mem_singleton] at hr'; subst hr'
+      rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, VG.Arm.addr_add (by omega_arith)]
+      exact (Offset.disjoint_base _ (Nat.le_refl 4) (by
+        have := VG.Proof.X25519.Arm.addr_toNat b; omega_arith)).symm)
+    (by decide), Mem.readW_writeW_self32]
+
+/-- A push's second word is its second register. -/
+theorem pushed_arg1 {s : State} {r r' : Reg} {rs : List Reg} (h : 4 * (rs.length + 2) ≤ s.sp.toNat) :
+    stackArg (pushed (r :: r' :: rs) s) 1 = s.gpr r' := by
+  have hs := FrameStack.sub_toNat' h
+  have := s.sp.isLt
+  show (storeWords ((s.mem).writeW (State.addr (s.sp - BitVec.ofNat 32 (4 * (rs.length + 2)))) (s.gpr r))
+    (s.sp - BitVec.ofNat 32 (4 * (rs.length + 2)) + 4) (s.gpr r' :: rs.map s.gpr)).readW
+    (State.addr (s.sp - BitVec.ofNat 32 (4 * (rs.length + 2)) + 4)) 32 = _
+  generalize s.sp - BitVec.ofNat 32 (4 * (rs.length + 2)) = a at hs ⊢
+  have ha : a.toNat + 4 * (rs.length + 2) < 2 ^ 32 := by rw [hs]; omega_arith
+  have h4 : (a + 4).toNat = a.toNat + 4 := by
+    rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, BitVec.toNat_add, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (a := 4) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
+  exact storeWords_head _ _ _ _ (by rw [h4, List.length_map]; omega_arith)
 
 section
 variable {G : GP} {σ s : State} {V : Nat → BitVec 32} {LS : List Nat}
@@ -139,10 +168,10 @@ theorem GI.testSub (h : GI G σ V LS s) :
   exact Offset.sub_below _ (by omega_arith) (by omega_arith)
 
 theorem GI.argSub (h : GI G σ V LS s) :
-    Region.Sub ⟨State.addr (G.sp - BitVec.ofNat 32 (4 * callPush.length) + BitVec.ofNat 32 (4 * 0)), 4⟩
+    Region.Sub ⟨State.addr (G.sp - BitVec.ofNat 32 (4 * callPush.length) + BitVec.ofNat 32 (4 * 0)), 8⟩
       (belowA G.sp 32) := by
   have := h.sp176
-  show Region.Sub ⟨State.addr (G.sp - BitVec.ofNat 32 32 + 0#32), 4⟩ ⟨State.addr (G.sp - BitVec.ofNat 32 32), 32⟩
+  show Region.Sub ⟨State.addr (G.sp - BitVec.ofNat 32 32 + 0#32), 8⟩ ⟨State.addr (G.sp - BitVec.ofNat 32 32), 32⟩
   rw [BitVec.add_zero]; exact fun _ h => by simp only [Region.Contains] at h ⊢; omega_arith
 
 /-- The count's 8 bytes. -/
@@ -150,15 +179,15 @@ theorem GI.usedAddr (h : GI G σ V LS s) :
     State.addr (G.sp + BitVec.ofNat 32 fUsedOut) = State.addr G.sp + BitVec.ofNat 64 fUsedOut := by
   have := h.spHi; exact addr_add (by simp only [fUsedOut, F] at *; omega_arith)
 
-/-- The test's arguments, in `r0`–`r4`. -/
-abbrev TArgs (G : GP) (L u : Nat) (s : State) : Prop :=
+/-- The test's arguments, in `r0`–`r5`. -/
+abbrev TArgs (G : GP) (L u bits : Nat) (s : State) : Prop :=
   s.gpr .r0 = G.scr + BitVec.ofNat 32 sA ∧ s.gpr .r1 = BitVec.ofNat 32 (wa L / 8) ∧
   s.gpr .r2 = G.randP u ∧ s.gpr .r3 = BitVec.ofNat 32 (G.witLen - u) ∧
-  s.gpr .r4 = G.sp + BitVec.ofNat 32 fUsedOut
+  s.gpr .r4 = G.sp + BitVec.ofNat 32 fUsedOut ∧ s.gpr .r5 = BitVec.ofNat 32 bits
 
 /-- The regions the test is given. -/
 abbrev tRd (G : GP) (u : Nat) : List Region :=
-  [G.rRand u, ⟨State.addr (G.sp - BitVec.ofNat 32 (4 * callPush.length) + BitVec.ofNat 32 (4 * 0)), 4⟩]
+  [G.rRand u, ⟨State.addr (G.sp - BitVec.ofNat 32 (4 * callPush.length) + BitVec.ofNat 32 (4 * 0)), 8⟩]
 abbrev tWr (G : GP) (L : Nat) : List Region :=
   [⟨State.addr (G.scr + BitVec.ofNat 32 sA), (BitVec.ofNat 32 (wa L / 8)).toNat * 8⟩,
     ⟨State.addr (G.sp + BitVec.ofNat 32 fUsedOut), 8⟩]
@@ -180,11 +209,17 @@ theorem tEntry_mem {G : GP} {L u : Nat} {s : State} : (tEntry G L u s).mem = (pu
 
 variable {c : Cfg}
 
-theorem SS.tEntry_arg0 (h : SS G σ c s) {L u : Nat} (regs : TArgs G L u s) :
+theorem SS.tEntry_arg0 (h : SS G σ c s) {L u bits : Nat} (regs : TArgs G L u bits s) :
     stackArg (tEntry G L u s) 0 = G.sp + BitVec.ofNat 32 fUsedOut := by
   have := h.gi.sp176
   show stackArg (pushed (.r4 :: [.r5, .r6, .r7, .r8, .r9, .r10, .r11]) s) 0 = _
-  rw [pushed_arg0 (by rw [h.gi.sp]; show 4 * (7 + 1) ≤ G.sp.toNat; omega_arith), regs.2.2.2.2]
+  rw [pushed_arg0 (by rw [h.gi.sp]; show 4 * (7 + 1) ≤ G.sp.toNat; omega_arith), regs.2.2.2.2.1]
+
+theorem SS.tEntry_arg1 (h : SS G σ c s) {L u bits : Nat} (regs : TArgs G L u bits s) :
+    stackArg (tEntry G L u s) 1 = BitVec.ofNat 32 bits := by
+  have := h.gi.sp176
+  show stackArg (pushed (.r4 :: .r5 :: [.r6, .r7, .r8, .r9, .r10, .r11]) s) 1 = _
+  rw [pushed_arg1 (by rw [h.gi.sp]; show 4 * (6 + 2) ≤ G.sp.toNat; omega_arith), regs.2.2.2.2.2]
 
 /-- The pushed words leave `scratch`. -/
 theorem SS.push_scr (h : SS G σ c s) {o n : Nat} (ho : o + n ≤ G.scrLen * 8) {k : Nat} (hk : k < n) :
@@ -197,8 +232,8 @@ theorem SS.push_scr (h : SS G σ c s) {o n : Nat} (ho : o + n ≤ G.scrLen * 8) 
   exact (h.gi.scr_below ho).sub_right h.gi.pushSub
 
 /-- The test's arguments meet its precondition. -/
-theorem SS.tEntry_pin (h : SS G σ c s) {L u bits : Nat} (hL : L = G.pLen) (regs : TArgs G L u s)
-    (hu : u ≤ G.witLen) (hsize : keyOff + 8 * keyWords bits ≤ wa L) (hb8 : bits / 8 ≤ wa L) {cb : List Byte}
+theorem SS.tEntry_pin (h : SS G σ c s) {L u bits : Nat} (hL : L = G.pLen) (regs : TArgs G L u bits s)
+    (hbits : bits ∈ Impl.Dsa.Arm.ProbablePrime.sizes) (hu : u ≤ G.witLen) (hsize : keyOff + 8 * keyWords bits ≤ wa L) (hb8 : bits / 8 ≤ wa L) {cb : List Byte}
     (hcb : Spec.Rsa.bytesAt s.mem (G.sa sA) (bits / 8) = cb)
     (hodd : Spec.Dsa.decodeBE cb % 2 = 1) (hbl : Spec.Dsa.bitLength (Spec.Dsa.decodeBE cb) = bits) :
     PIn bits (tEntry G L u s) := by
@@ -209,11 +244,12 @@ theorem SS.tEntry_pin (h : SS G σ c s) {L u bits : Nat} (hL : L = G.pLen) (regs
   have spHi := gi.spHi
   have hLv := h.lens
   have kz0 : 0 < kz G.pLen := by simp only [kz]; omega_arith
-  obtain ⟨r0, r1, r2, r3, r4⟩ := regs
+  have a1 := h.tEntry_arg1 (L := L) (u := u) regs
+  obtain ⟨r0, r1, r2, r3, r4, r5⟩ := regs
   have sp : s.sp = G.sp := gi.sp
   have esp : (tEntry G L u s).sp = G.sp - BitVec.ofNat 32 32 := by rw [tEntry_sp, sp]; rfl
   have espN : (tEntry G L u s).sp.toNat = G.sp.toNat - 32 := by rw [esp, FrameStack.sub_toNat' (by omega_arith)]
-  have a0 := h.tEntry_arg0 (L := L) ⟨r0, r1, r2, r3, r4⟩
+  have a0 := h.tEntry_arg0 (L := L) ⟨r0, r1, r2, r3, r4, r5⟩
   have e0 : (tEntry G L u s).gpr .r0 = G.scr + BitVec.ofNat 32 sA := by rw [tEntry_gpr (by decide), r0]
   have e1 : (tEntry G L u s).gpr .r1 = BitVec.ofNat 32 (wa L / 8) := by rw [tEntry_gpr (by decide), r1]
   have e2 : (tEntry G L u s).gpr .r2 = G.randP u := by rw [tEntry_gpr (by decide), r2]
@@ -230,7 +266,7 @@ theorem SS.tEntry_pin (h : SS G σ c s) {L u bits : Nat} (hL : L = G.pLen) (regs
       G.rScr := by rw [aS, wl]; exact sw G (by simp only [sK] at big; omega_arith)
   have usedF : Region.Sub ⟨State.addr (G.sp + BitVec.ofNat 32 fUsedOut), 8⟩ G.rFrame := by
     rw [gi.usedAddr]; exact Offset.sub_base _ (by simp only [fUsedOut, F]; omega_arith)
-  have argB : Region.Sub ⟨State.addr (G.sp - BitVec.ofNat 32 (4 * callPush.length) + BitVec.ofNat 32 (4 * 0)), 4⟩
+  have argB : Region.Sub ⟨State.addr (G.sp - BitVec.ofNat 32 (4 * callPush.length) + BitVec.ofNat 32 (4 * 0)), 8⟩
       G.rBelow := fun a ha => gi.pushSub a (gi.argSub a ha)
   have randW := gi.randSub hu
   have pre := gi.pre
@@ -238,7 +274,8 @@ theorem SS.tEntry_pin (h : SS G σ c s) {L u bits : Nat} (hL : L = G.pLen) (regs
   have stk : Region.Sub ⟨State.addr (tEntry G G.pLen u s).sp - 144#64, 144⟩ G.rBelow := by
     rw [esp]; exact gi.testSub
   have sv := pre.spLo
-  refine ⟨by omega_arith, by omega_arith, by rw [State.withRegions_rd, e2, e3, aA], by rw [State.withRegions_wr, e0, e1, a0],
+  refine ⟨hbits, a1, by omega_arith, by omega_arith, by rw [State.withRegions_rd, e2, e3, aA],
+    by rw [State.withRegions_wr, e0, e1, a0],
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [e0, e1, e2, e3]; exact (wC.symm.sub_left scrW).sub_right randW
   · rw [e0, e1, a0]; exact (gi.frame_scr.symm.sub_left scrW).sub_right usedF
@@ -254,7 +291,7 @@ theorem SS.tEntry_pin (h : SS G σ c s) {L u bits : Nat} (hL : L = G.pLen) (regs
     have : State.addr (G.sp - BitVec.ofNat 32 32 + BitVec.ofNat 32 (4 * 0)) = State.addr (G.sp - BitVec.ofNat 32 32) := by
       rw [Nat.mul_zero, BitVec.add_zero]
     rw [show (4 * callPush.length) = 32 from rfl, this]
-    exact (Offset.base_disjoint_below _ (n := 144) (k := 4) (by omega_arith)).symm
+    exact (Offset.base_disjoint_below _ (n := 144) (k := 8) (by omega_arith)).symm
   · rw [e0, e1, wl, h.toNat (by simp only [sK]; omega_arith)]; simp only [sK] at big; omega_arith
   · rw [e2, e3, gi.randLen]; exact gi.randFit hu
   · rw [a0, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := fUsedOut) (by decide),
@@ -296,11 +333,11 @@ theorem SS.tCovers (h : SS G σ c s) {L u : Nat} (hL : L = G.pLen) (hu : u ≤ G
   refine ⟨Covers.append_left (Covers.pair ?_ ?_) hw.right, hw⟩
   · exact Covers.left (Covers.one ⟨G.rWit, by rw [hpr, gi.pre.rd, gi.hG]; simp, gi.randIn hu⟩)
   · refine Covers.right (Covers.one ⟨belowA G.sp 32, by rw [hpw]; simp, ?_⟩)
-    show (_ - _ : Addr).toNat + 4 ≤ 32
+    show (_ - _ : Addr).toNat + 8 ≤ 32
     rw [show (4 * callPush.length) = 32 from rfl, Nat.mul_zero, BitVec.add_zero, BitVec.sub_self,
       BitVec.toNat_zero]; omega_arith
 
-theorem SS.tEntry_cand (h : SS G σ c s) {L u bits : Nat} (hL : L = G.pLen) (regs : TArgs G L u s)
+theorem SS.tEntry_cand (h : SS G σ c s) {L u bits b : Nat} (hL : L = G.pLen) (regs : TArgs G L u b s)
     (hb8 : bits / 8 ≤ wa L) {cb : List Byte} (hcb : Spec.Rsa.bytesAt s.mem (G.sa sA) (bits / 8) = cb) :
     candOf bits (tEntry G L u s) = Spec.Dsa.decodeBE cb := by
   have big := h.gi.scrBig
@@ -314,7 +351,7 @@ theorem SS.tEntry_cand (h : SS G σ c s) {L u bits : Nat} (hL : L = G.pLen) (reg
   refine congrArg _ (List.map_congr_left fun k hk => ?_)
   exact h.push_scr (o := sA) (n := bits / 8) (by simp only [sK] at big; omega_arith) (List.mem_range.mp hk)
 
-theorem SS.tEntry_rand (h : SS G σ c s) {L u : Nat} (regs : TArgs G L u s) (hu : u ≤ G.witLen) :
+theorem SS.tEntry_rand (h : SS G σ c s) {L u bits : Nat} (regs : TArgs G L u bits s) (hu : u ≤ G.witLen) :
     Spec.Rsa.bytesAt (tEntry G L u s).mem (State.addr ((tEntry G L u s).gpr .r2))
       ((tEntry G L u s).gpr .r3).toNat = G.witB.drop u := by
   have gi := h.gi
@@ -332,7 +369,7 @@ theorem SS.tEntry_rand (h : SS G σ c s) {L u : Nat} (regs : TArgs G L u s) (hu 
 
 /-- The test's call: its effects. -/
 theorem SS.primeCall_ok (h : SS G σ c s) {L u bits : Nat} {name : String} {code : Prog isa}
-    (ok : PrimeOk bits code) (hL : L = G.pLen) (regs : TArgs G L u s) (hu : u ≤ G.witLen)
+    (ok : PrimeOk bits code) (hL : L = G.pLen) (regs : TArgs G L u bits s) (hu : u ≤ G.witLen)
     (hsize : keyOff + 8 * keyWords bits ≤ wa L) (hb8 : bits / 8 ≤ wa L) {cb : List Byte}
     (hcb : Spec.Rsa.bytesAt s.mem (G.sa sA) (bits / 8) = cb)
     (hodd : Spec.Dsa.decodeBE cb % 2 = 1) (hbl : Spec.Dsa.bitLength (Spec.Dsa.decodeBE cb) = bits)
@@ -346,7 +383,7 @@ theorem SS.primeCall_ok (h : SS G σ c s) {L u bits : Nat} {name : String} {code
     WP isa (callWith name code) s Q := by
   have gi := h.gi
   have s176 := gi.sp176
-  have pin := h.tEntry_pin hL regs hu hsize hb8 hcb hodd hbl
+  have pin := h.tEntry_pin hL regs ok.sized hu hsize hb8 hcb hodd hbl
   obtain ⟨hc, hw⟩ := h.tCovers (u := u) hL hu
   have sp : s.sp = G.sp := gi.sp
   have big := gi.scrBig
@@ -356,7 +393,7 @@ theorem SS.primeCall_ok (h : SS G σ c s) {L u bits : Nat} {name : String} {code
     (by rw [pushed_sp, sp, FrameStack.sub_toNat' (by show 4 * 8 ≤ G.sp.toNat; omega_arith)]; have := ok.stack
         show armStack code ≤ G.sp.toNat - 4 * 8; omega_arith)
     fun s₂ hrd hwr hsp hf hg hpost => ?_
-  have pp := ppost_of_post hpost
+  have pp := ppost_of_post pin.bits hpost
   obtain ⟨r0, -, used⟩ := pp
   simp only [State.withRegions_gpr, State.withRegions_mem] at r0 used
   -- The test's result, in terms of the search.
@@ -404,8 +441,9 @@ theorem primeCall_ct {G : GP} {c : Cfg} {L u bits : Nat} {name : String} {code :
     (ok : PrimeOk bits code) (hL : L = G.pLen) (hu : u ≤ G.witLen)
     (hsize : keyOff + 8 * keyWords bits ≤ wa L) (hb8 : bits / 8 ≤ wa L) {cb : List Byte}
     (hodd : Spec.Dsa.decodeBE cb % 2 = 1) (hbl : Spec.Dsa.bitLength (Spec.Dsa.decodeBE cb) = bits) :
-    RelCT isa (fun s₁ s₂ => (∃ σ, SS G σ c s₁) ∧ TArgs G L u s₁ ∧ Spec.Rsa.bytesAt s₁.mem (G.sa sA) (bits / 8) = cb ∧
-        (∃ σ, SS G σ c s₂) ∧ TArgs G L u s₂ ∧ Spec.Rsa.bytesAt s₂.mem (G.sa sA) (bits / 8) = cb)
+    RelCT isa (fun s₁ s₂ => (∃ σ, SS G σ c s₁) ∧ TArgs G L u bits s₁ ∧
+        Spec.Rsa.bytesAt s₁.mem (G.sa sA) (bits / 8) = cb ∧
+        (∃ σ, SS G σ c s₂) ∧ TArgs G L u bits s₂ ∧ Spec.Rsa.bytesAt s₂.mem (G.sa sA) (bits / 8) = cb)
       (callWith name code) fun _ _ => True := by
   unfold callWith
   refine RelCT.frame (fun s₁ s₂ ⟨⟨_, h₁⟩, _, _, ⟨_, h₂⟩, _, _⟩ => by rw [h₁.gi.sp, h₂.gi.sp]) ?_
@@ -416,13 +454,14 @@ theorem primeCall_ct {G : GP} {c : Cfg} {L u bits : Nat} {name : String} {code :
   rw [push_pushed (by decide) (by rw [h₁.gi.sp]; show 4 * 8 ≤ G.sp.toNat; omega_arith), Option.some.injEq] at p₁
   rw [push_pushed (by decide) (by rw [h₂.gi.sp]; show 4 * 8 ≤ G.sp.toNat; omega_arith), Option.some.injEq] at p₂
   subst p₁ p₂
-  refine RelCT.call (P := fun x y => x = pushed callPush t₁ ∧ y = pushed callPush t₂) (k := primeK bits)
+  refine RelCT.call (P := fun x y => x = pushed callPush t₁ ∧ y = pushed callPush t₂) (k := primeK)
     ok.verified.1 ok.verified.2.1 (tRd G u) (tWr G L) (fun _ _ ⟨r₁, r₂⟩ => ?_) _ _ _ _ _ _ ⟨rfl, rfl⟩ ea eb
   subst r₁ r₂
   obtain ⟨cv₁, w₁⟩ := h₁.tCovers (u := u) hL hu
   obtain ⟨cv₂, w₂⟩ := h₂.tCovers (u := u) hL hu
-  refine ⟨pre_of_pin (h₁.tEntry_pin hL g₁ hu hsize hb8 c₁ hodd hbl),
-    pre_of_pin (h₂.tEntry_pin hL g₂ hu hsize hb8 c₂ hodd hbl), pub_of ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_, cv₁, w₁, cv₂, w₂⟩
+  have pin₁ := h₁.tEntry_pin hL g₁ ok.sized hu hsize hb8 c₁ hodd hbl
+  refine ⟨pre_of_pin pin₁, pre_of_pin (h₂.tEntry_pin hL g₂ ok.sized hu hsize hb8 c₂ hodd hbl),
+    pub_of ?_ ?_ ?_ ?_ ?_ ?_ ?_ pin₁.bits ?_ ?_, cv₁, w₁, cv₂, w₂⟩
   · show (pushed callPush t₁).sp = (pushed callPush t₂).sp
     rw [pushed_sp, pushed_sp, h₁.gi.sp, h₂.gi.sp]
   · show (tEntry G L u t₁).gpr .r0 = (tEntry G L u t₂).gpr .r0
@@ -434,6 +473,7 @@ theorem primeCall_ct {G : GP} {c : Cfg} {L u bits : Nat} {name : String} {code :
   · show (tEntry G L u t₁).gpr .r3 = (tEntry G L u t₂).gpr .r3
     rw [tEntry_gpr (by decide), tEntry_gpr (by decide), g₁.2.2.2.1, g₂.2.2.2.1]
   · rw [h₁.tEntry_arg0 g₁, h₂.tEntry_arg0 g₂]
+  · rw [h₁.tEntry_arg1 g₁, h₂.tEntry_arg1 g₂]
   · rw [h₁.tEntry_cand hL g₁ hb8 c₁, h₂.tEntry_cand hL g₂ hb8 c₂]
   · rw [h₁.tEntry_rand g₁ hu, h₂.tEntry_rand g₂ hu]
 
