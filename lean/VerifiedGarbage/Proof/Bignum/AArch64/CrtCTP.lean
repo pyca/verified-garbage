@@ -233,8 +233,8 @@ theorem o0_gen (M : Mont) (P3 : PPhasePub → State → Prop) (ho3 : O3Ok P3) {p
   have hws₃ : WsAt s₃.mem B o wx mx := hws₁.of_words fun i hi => by
     rw [hpw f₃ sg' i (by omega_arith), hpw f₂ (fun r h => h) i (by omega_arith)]
   have hX₃ : XVals s₃ B o wx mx X :=
-    (hX₁.of_below f₂ (fun r hr => (pRanges_le w r hr).trans hlo) (by omega_arith)).of_below f₃
-      (fun r hr => (pRanges_le w r (sg' r hr)).trans hlo) (by omega_arith)
+    (hX₁.of_below f₂ (fun r hr => Nat.le_trans (pRanges_le w r hr) hlo) (by omega_arith)).of_below f₃
+      (fun r hr => Nat.le_trans (pRanges_le w r (sg' r hr)) hlo) (by omega_arith)
   have i03 : InScr B Z s.mem s₃.mem := InScr.of_frm f₀₃ fun r hr => by have := pxR_bound hlo r hr; omega_arith
   have k03 := (k₁.trans k₂).trans k₃
   have hM₃ : word s₃.mem (off B o) (8 * sMaskX) = mask c := by

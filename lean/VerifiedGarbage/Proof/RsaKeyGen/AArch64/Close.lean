@@ -270,7 +270,7 @@ theorem closeCheck_ok {s : State} {B : Addr} {Z w : Nat} {pP : Addr} {pB : List 
   refine WP.mono (subA_ok h₂ (o := aAcc) (a := aN) (b := aX) (by decide) (by decide) (by decide)
     (.inr (by decide)) (by decide)) fun s₃ ⟨hv₃, o₃, h7₃, _, _, k₃⟩ => ?_
   have f₃ : Frm B (closeRanges w) s.mem s₃.mem :=
-    f₂.trans (Frm.of_outside (o₃.mono (o' := slot w aAcc) (n' := 8 * (w + 2)) (le_refl _) (by omega_using [])) (by simp [closeRanges]))
+    f₂.trans (Frm.of_outside (o₃.mono (o' := slot w aAcc) (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega_using [])) (by simp [closeRanges]))
   have h₃ : Ws s₃ B Z w := h.congr' f₃ (closeRanges_mut w) ((k₁.trans k₂).trans k₃) (by decide)
   have cN₂ : wv s₂.mem B (slot w aN) w = c := by rw [← hc, o₂.wv (by omega_using [eN, eX]) (by omega_using [hw2, eN])]
   rw [cN₂] at hv₃
@@ -286,7 +286,7 @@ theorem closeCheck_ok {s : State} {B : Addr} {Z w : Nat} {pP : Addr} {pB : List 
   refine WP.mono (subA_ok h₄ (o := aTmp) (a := aX) (b := aN) (by decide) (by decide) (by decide)
     (.inr (by decide)) (by decide)) fun s₅ ⟨hv₅, o₅, _, _, _, k₅⟩ => ?_
   have f₅ : Frm B (closeRanges w) s.mem s₅.mem :=
-    f₄.trans (Frm.of_outside (o₅.mono (o' := slot w aTmp) (n' := 8 * (w + 2)) (le_refl _) (by omega_using [])) (by simp [closeRanges]))
+    f₄.trans (Frm.of_outside (o₅.mono (o' := slot w aTmp) (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega_using [])) (by simp [closeRanges]))
   have h₅ : Ws s₅ B Z w := h.congr' f₅ (closeRanges_mut w) ((((k₁.trans k₂).trans k₃).trans k₄).trans k₅)
     (by decide)
   have cN₄ : wv s₄.mem B (slot w aN) w = c := by
@@ -305,7 +305,7 @@ theorem closeCheck_ok {s : State} {B : Addr} {Z w : Nat} {pP : Addr} {pB : List 
   rw [m₆, cA₅] at hv₇
   rw [m₆] at o₇
   have f₇ : Frm B (closeRanges w) s.mem s₇.mem :=
-    f₅.trans (Frm.of_outside (o₇.mono (o' := slot w aAcc) (n' := 8 * (w + 2)) (le_refl _) (by omega_using [])) (by simp [closeRanges]))
+    f₅.trans (Frm.of_outside (o₇.mono (o' := slot w aAcc) (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega_using [])) (by simp [closeRanges]))
   have k17 := (((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).trans k₆).trans k₇
   have h₇ : Ws s₇ B Z w := h.congr' f₇ (closeRanges_mut w) k17 (by decide)
   refine WP.seq (WP.mono (closeBound_ok h₇) fun s₈ ⟨⟨h12₈, h9₈, h13₈, m₈⟩, k₈⟩ => ?_)
