@@ -25,13 +25,9 @@ namespace VG.Proof.RsaPss.X86_64
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
-/-- The stack below the stack pointer: the frame, and the return address of
-its calls, which use no stack. -/
-def verifyStack : Nat := 392 + 8
-
-theorem stackArgs_five (s : State) :
-    List.map (stackArg s) (List.range 5) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
-      stackArg s 4] := rfl
+/-- The stack below the stack pointer: the frame, the return address of its
+calls, and the stack of `checkEncoding`, the one that uses any. -/
+def verifyStack : Nat := 392 + 8 + 400
 
 variable (G : Spec.Mgf1.Hash)
 
@@ -87,42 +83,5 @@ def verifySatState : State where
     else if a = 0x10008 then 0x40 else if a = 0x10022 then 0x02 else if a = 0x10029 then 0x08 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4600, G.len⟩, ⟨0x4000, 64⟩, ⟨0x10008, 40⟩]
   wr := [⟨0x20000, 2080 * 8⟩]
-
-/-- `verifyContract` is satisfiable for each of `MdHash`'s hash functions. -/
-theorem verify_sat (hG : G ∈ Pbkdf2.Md.X86_64.mdHashes) :
-    ∃ s, (Spec.RsaPss.verifyContract G G abi verifyStack).pre s := by
-  simp only [Pbkdf2.Md.X86_64.mdHashes, List.mem_cons, List.not_mem_nil, or_false] at hG
-  rcases hG with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · sig_implies_sat [Spec.RsaPss.verifyContract, Spec.RsaPss.verifySig, abi, argRegs, verifyK, verifyStack, stackArgs_five, List.append_eq] [verifySatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using verifySatState Spec.Mgf1.md5
-  · sig_implies_sat [Spec.RsaPss.verifyContract, Spec.RsaPss.verifySig, abi, argRegs, verifyK, verifyStack, stackArgs_five, List.append_eq] [verifySatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using verifySatState Spec.Mgf1.sha1
-  · sig_implies_sat [Spec.RsaPss.verifyContract, Spec.RsaPss.verifySig, abi, argRegs, verifyK, verifyStack, stackArgs_five, List.append_eq] [verifySatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using verifySatState Spec.Mgf1.sha224
-  · sig_implies_sat [Spec.RsaPss.verifyContract, Spec.RsaPss.verifySig, abi, argRegs, verifyK, verifyStack, stackArgs_five, List.append_eq] [verifySatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using verifySatState Spec.Mgf1.sha256
-  · sig_implies_sat [Spec.RsaPss.verifyContract, Spec.RsaPss.verifySig, abi, argRegs, verifyK, verifyStack, stackArgs_five, List.append_eq] [verifySatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using verifySatState Spec.Mgf1.sha384
-  · sig_implies_sat [Spec.RsaPss.verifyContract, Spec.RsaPss.verifySig, abi, argRegs, verifyK, verifyStack, stackArgs_five, List.append_eq] [verifySatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using verifySatState Spec.Mgf1.sha512
-  · sig_implies_sat [Spec.RsaPss.verifyContract, Spec.RsaPss.verifySig, abi, argRegs, verifyK, verifyStack, stackArgs_five, List.append_eq] [verifySatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using verifySatState Spec.Mgf1.sha512_224
-  · sig_implies_sat [Spec.RsaPss.verifyContract, Spec.RsaPss.verifySig, abi, argRegs, verifyK, verifyStack, stackArgs_five, List.append_eq] [verifySatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using verifySatState Spec.Mgf1.sha512_256
-
-theorem verify_implies (hsat : ∃ s, (Spec.RsaPss.verifyContract G G abi verifyStack).pre s) :
-    (verifyK G).Implies (Spec.RsaPss.verifyContract G G abi verifyStack) where
-  pre := by
-    intro s h
-    sig_pre [Spec.RsaPss.verifyContract, Spec.RsaPss.verifySig, abi, argRegs, verifyK, verifyStack, stackArgs_five, List.append_eq] at h
-    sig_pre [Spec.RsaPss.verifyContract, Spec.RsaPss.verifySig, abi, argRegs, verifyK, verifyStack, stackArgs_five, List.append_eq] at h
-    sig_split h
-    sig_reduce [Spec.RsaPss.verifyContract, Spec.RsaPss.verifySig, abi, argRegs, verifyK, verifyStack, stackArgs_five, List.append_eq]
-    sig_and_intros
-    sig_close
-    all_goals with_reducible assumption
-  post := by sig_implies_post [Spec.RsaPss.verifyContract, Spec.RsaPss.verifySig, abi, argRegs, verifyK, verifyStack, stackArgs_five, List.append_eq]
-  pub := by
-    rintro s₁ s₂ - - h
-    sig_pub [Spec.RsaPss.verifyContract, Spec.RsaPss.verifySig, abi, argRegs, verifyK, verifyStack, stackArgs_five, List.append_eq] at h
-    simp only [List.getD_cons_succ, List.getD_cons_zero] at h
-    obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4⟩ := h
-    obtain ⟨hn, he⟩ := leak_eq (by simp [Spec.Rsa.bytesAt, hsi]) hl
-    refine ⟨?_, a0, a1, a2, a3, a4, hn, he⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-    exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
-  sat := hsat
 
 end VG.Proof.RsaPss.X86_64

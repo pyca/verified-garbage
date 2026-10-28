@@ -1,26 +1,67 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
-public import VerifiedGarbage.Impl.RsaPss.X86_64.Precomputed
-public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
-public import VerifiedGarbage.Proof.Sha256.X86_64.Lit
-import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCorrect
+public import VerifiedGarbage.Impl.RsaPss.X86_64.Encoding
+public import VerifiedGarbage.Proof.RsaPss.X86_64.EncCtx
+public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkCtx
+public import VerifiedGarbage.Spec.RsaPss.Encoding
+public import VerifiedGarbage.Proof.RsaPss.X86_64.EncCorrect
+public import VerifiedGarbage.Proof.RsaPss.X86_64.EncCt
+public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkCorrect
+public import VerifiedGarbage.Proof.RsaPss.X86_64.ChkCt
 
 /-!
-# RSASSA-PSS verification with cached public-key values on x86-64: the stack pointer
+# EMSA-PSS's encoding and its check on x86-64, as callees
 
-That no instruction of the verification made with a hash function `v` and an
-implementation `c` of the public operation writes the stack pointer, which
-`Generic/MdHash/RsaPublicPrecomputed/X86_64/RsaPss.lean` registers.
+For each hash function `v` (a variant of `MdHash`), `encode` and
+`checkEncoding` as `Generic/MdHash/X86_64/RsaPss.lean` emits them, with the
+facts their callers, signing and verification
+(`Generic/MdHash/RsaPrivateCrt/X86_64/RsaPss.lean`,
+`Generic/MdHash/RsaPublicPrecomputed/X86_64/RsaPss.lean`), need: their
+contracts on the registers, constant time, the stack pointer and the stack
+they use (`encOf`, `chkOf`).
 -/
 
 @[expose] public section
 
-namespace VG.Proof.RsaPss.X86_64.Pc
+namespace VG.Proof.RsaPss.X86_64
 
-theorem code_spSafe (v : Proof.Pbkdf2.Md.X86_64.MdHash) (c : Proof.Rsa.X86_64.PublicImpl) :
-    (Impl.RsaPss.X86_64.Precomputed.code v.H c.name c.code).all
-      (fun i => !X86_64.isa.writesSp i) = true := by
-  exact Code.all_of_allInstrs (code_sp v.ok v.K c)
+open VG VG.X86_64
 
-end VG.Proof.RsaPss.X86_64.Pc
+/-- A function meeting `encK G`. -/
+structure EncImpl (G : Spec.Mgf1.Hash) where
+  name : String
+  code : Prog isa
+  ok : ∀ s, (encK G).pre s → ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ (encK G).post s s'
+  ct : ConstantTime isa (encK G).pre (encK G).pub code
+  spSafe : code.allInstrs (fun i => !isa.writesSp i) = true
+  depth : code.x86_64Depth ≤ encStack
+
+/-- A function meeting `chkK G`. -/
+structure ChkImpl (G : Spec.Mgf1.Hash) where
+  name : String
+  code : Prog isa
+  ok : ∀ s, (chkK G).pre s → ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ (chkK G).post s s'
+  ct : ConstantTime isa (chkK G).pre (chkK G).pub code
+  spSafe : code.allInstrs (fun i => !isa.writesSp i) = true
+  depth : code.x86_64Depth ≤ chkStack
+
+/-- `encode` made with `v`'s compression function. -/
+def encOf (v : Pbkdf2.Md.X86_64.MdHash) : EncImpl v.mgf.G where
+  name := (Spec.RsaPss.encodeApi v.mgf.G v.mgf.G).name ++ v.suffix
+  code := Impl.RsaPss.X86_64.encode v.H
+  ok := Enc.enc_correct v.ok v.K v.mgf
+  ct := Enc.enc_ct v.ok v.K v.mgf v.pss
+  spSafe := Enc.enc_spAll v.ok v.K
+  depth := Enc.enc_xd v.K
+
+/-- `checkEncoding` made with `v`'s compression function. -/
+def chkOf (v : Pbkdf2.Md.X86_64.MdHash) : ChkImpl v.mgf.G where
+  name := (Spec.RsaPss.checkEncodingApi v.mgf.G v.mgf.G).name ++ v.suffix
+  code := Impl.RsaPss.X86_64.checkEncoding v.H
+  ok := Chk.chk_correct v.ok v.K v.mgf
+  ct := Chk.chk_ct v.ok v.K v.mgf v.pss
+  spSafe := Chk.chk_spAll v.ok v.K
+  depth := Chk.chk_xd v.K
+
+end VG.Proof.RsaPss.X86_64
