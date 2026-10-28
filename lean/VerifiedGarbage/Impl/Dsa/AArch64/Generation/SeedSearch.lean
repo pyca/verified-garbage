@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Subgroup
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorCall
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorSearch
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Validate
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Pack
@@ -23,14 +24,13 @@ def onSuccess (next : Prog isa) : Prog isa :=
 def finishDomain (mul : Nat → Nat → Nat → Prog isa) (pLen qLen : Nat) : Prog isa :=
   .seq (pack pLen qLen) (validate mul pLen qLen)
 
-def seedAttempt (G1 G256 : Hash) (mul : Nat → Nat → Nat → Prog isa)
+def seedAttempt (G1 G256 : Hash) (gen : Nat → Prog isa)
     (prime : Nat → Prog isa) (pLen qLen : Nat) : Prog isa :=
   .seq (.seq (.block (seedArguments qLen)) (subgroup G1 G256 prime qLen))
-    (onSuccess (.seq (primeSearch G1 G256 prime pLen qLen)
-      (onSuccess (.seq (generatorSearch mul pLen) (onSuccess (finishDomain mul pLen qLen))))))
+    (onSuccess (.seq (primeSearch G1 G256 prime pLen qLen) (onSuccess (generatorCall gen pLen))))
 
-def parameterSearch (G1 G256 : Hash) (mul : Nat → Nat → Nat → Prog isa)
+def parameterSearch (G1 G256 : Hash) (gen : Nat → Prog isa)
     (prime : Nat → Prog isa) (pLen qLen : Nat) : Prog isa :=
-  tapeLoop seedTape qLen (seedAttempt G1 G256 mul prime pLen qLen)
+  tapeLoop seedTape qLen (seedAttempt G1 G256 gen prime pLen qLen)
 
 end VG.Impl.Dsa.AArch64.Generation

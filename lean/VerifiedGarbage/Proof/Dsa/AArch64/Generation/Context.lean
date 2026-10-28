@@ -29,6 +29,7 @@ structure GenerationContext where
   pLenSlot : saved 17 = BitVec.ofNat 64 geo.pLen
   qLenSlot : saved 18 = BitVec.ofNat 64 geo.qLen
   hashLenSlot : saved 26 = BitVec.ofNat 64 geo.qLen
+  hsChunks : hs.bytes.length % geo.pLen = 0
 
 def generationSlots : List Nat := [3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 17, 18, 26]
 

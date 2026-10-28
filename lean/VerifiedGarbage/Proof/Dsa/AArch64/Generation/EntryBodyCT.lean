@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorStage
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DispatchCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryState
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryReady
@@ -29,10 +30,10 @@ theorem entryReady_ct : RelCT isa (Two EntryBefore)
   exact WP.mono (entryReady_ok h) fun t ⟨W, ht, h16, _, _⟩ =>
     ⟨⟨W, ht, by rw [hz]; exact h16⟩, rfl, rfl⟩
 
-theorem entryCore_ct (H : GenerationHashes) (M : Mont) (T : PrimeTest) :
+theorem entryCore_ct (H : GenerationHashes) (G : GeneratorStage) (T : PrimeTest) :
     RelCT isa (Two EntryBefore)
       (.seq (.block (entryHeader ++ entryIncoming ++ entryDerived))
-        (dispatch H.sha1 H.sha256 M.mm T.run)) (fun _ _ => True) :=
-  RelCT.seq entryReady_ct (dispatch_ct H M T)
+        (dispatch H.sha1 H.sha256 G.run T.run)) (fun _ _ => True) :=
+  RelCT.seq entryReady_ct (dispatch_ct H G T)
 
 end VG.Proof.Dsa.AArch64.Generation

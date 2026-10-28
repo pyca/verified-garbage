@@ -40,12 +40,12 @@ theorem lengthTest256_ok {s : State} :
     rfl) rfl rfl rfl) fun _ ⟨⟨hz, hm⟩, hk⟩ => ⟨hz, hm, hk⟩
 
 theorem dispatch_ok (G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash)
-    (mul : Nat → Nat → Nat → Prog isa) (round : Nat → Prog isa)
+    (gen : Nat → Prog isa) (round : Nat → Prog isa)
     {p : GenerationContext} {W : Nat → BitVec 64} {s : State} {Q : State → Prop}
     (h : GenerationMemory p W s)
     (run : ∀ t, GenerationMemory p W t → t.mem = s.mem → Keep [.x3, .x4] s t →
-      WP isa (Impl.Dsa.AArch64.Generation.generate G1 G256 mul round p.geo.pLen p.geo.qLen) t Q) :
-    WP isa (Impl.Dsa.AArch64.Generation.dispatch G1 G256 mul round) s Q := by
+      WP isa (Impl.Dsa.AArch64.Generation.generate G1 G256 gen round p.geo.pLen p.geo.qLen) t Q) :
+    WP isa (Impl.Dsa.AArch64.Generation.dispatch G1 G256 gen round) s Q := by
   obtain ⟨V, R⟩ := h.rep
   have h17 := (h.slots 17 (by simp [generationSlots])).trans p.pLenSlot
   unfold Impl.Dsa.AArch64.Generation.dispatch

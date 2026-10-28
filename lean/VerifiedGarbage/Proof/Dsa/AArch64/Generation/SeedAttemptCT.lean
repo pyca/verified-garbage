@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorStage
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedCTState
 
@@ -17,10 +18,10 @@ open VG.Impl.Dsa.AArch64.Generation
 def SeedAttemptBefore (pLen qLen : Nat) (p : SeedPublic) (s : State) : Prop :=
   SeedBefore qLen p s ∧ p.context.geo.pLen = pLen
 
-theorem seedAttempt_ct (H : GenerationHashes) (M : Mont)  (T : PrimeTest)
+theorem seedAttempt_ct (H : GenerationHashes) (G : GeneratorStage)  (T : PrimeTest)
     (pLen qLen : Nat) (sizes : GenerationSizes pLen qLen) :
     RelCT isa (Two (SeedAttemptBefore pLen qLen))
-      (seedAttempt H.sha1 H.sha256 M.mm T.run pLen qLen) (fun _ _ => True) := by
+      (seedAttempt H.sha1 H.sha256 G.run T.run pLen qLen) (fun _ _ => True) := by
   have width : qLen = 20 ∨ qLen = 32 := by
     rcases sizes with h | h | h <;> simp [h.2]
   unfold seedAttempt
@@ -29,6 +30,6 @@ theorem seedAttempt_ct (H : GenerationHashes) (M : Mont)  (T : PrimeTest)
     (fun _ _ h => seedSubgroup_after H T h.1 h.2)) ?_
   apply onSuccess_ct (Φ := SeedSubgroupAfter pLen qLen) SeedPublic.context SeedPublic.subgroupStatus
     (fun _ _ h => h.1) (fun _ _ _ h hm hk => seedSubgroupAfter_congr h hm hk)
-  exact two_map SeedPublic.afterSubgroup (fun _ _ h => h.1.2 h.2) (seedPrimeFinish_ct H M T pLen qLen sizes)
+  exact two_map SeedPublic.afterSubgroup (fun _ _ h => h.1.2 h.2) (seedPrimeFinish_ct H G T pLen qLen sizes)
 
 end VG.Proof.Dsa.AArch64.Generation

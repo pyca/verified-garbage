@@ -56,6 +56,7 @@ def contextOf {s : State} (h : GenerationABI s) : GenerationContext where
   pLenSlot := by simp [abiWords, geometryOf]
   qLenSlot := by simp [abiWords, geometryOf]
   hashLenSlot := by simp [abiWords, geometryOf]
+  hsChunks := by simpa only [tapeOf, geometryOf, bytesAt_length] using h.hsLength
 
 theorem outputPlanOf {s : State} (h : GenerationABI s) : OutputPlan (contextOf h) where
   lengthSlot := by change s.gpr .x1 = BitVec.ofNat 64 (2 * (s.gpr .x2).toNat + (s.gpr .x3).toNat); rw [← h.outLength]; simp

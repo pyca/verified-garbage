@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorStage
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.NativeParametersCT
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
 
@@ -65,12 +66,12 @@ theorem dispatch_check256 :
     refine WP.mono lengthTest256_ok fun t ⟨hz, he, hk⟩ => ?_
     exact ⟨dispatchBefore_congr h he hk, hn, by simpa only [ha] using hz⟩
 
-theorem dispatch_ct (H : GenerationHashes) (M : Mont)  (T : PrimeTest)
+theorem dispatch_ct (H : GenerationHashes) (G : GeneratorStage)  (T : PrimeTest)
      :
-    RelCT isa (Two (DispatchBefore)) (dispatch H.sha1 H.sha256 M.mm T.run) (fun _ _ => True) := by
+    RelCT isa (Two (DispatchBefore)) (dispatch H.sha1 H.sha256 G.run T.run) (fun _ _ => True) := by
   unfold dispatch
   refine RelCT.seq (dispatch_check) (two_ite (fun _ _ _ hs ht => hs.2.2.trans ht.2.2.symm) ?_ ?_)
-  · apply two_map (fun p : ParameterPublic => p) ?_ (generate_ct H M T 128 20 (Or.inl ⟨rfl, rfl⟩))
+  · apply two_map (fun p : ParameterPublic => p) ?_ (generate_ct H G T 128 20 (Or.inl ⟨rfl, rfl⟩))
     intro p s h
     have hb := Option.some.inj (h.1.2.2.symm.trans h.2)
     rcases p.context.geo.lengths with ⟨hp, hq⟩ | ⟨hp, hq⟩ | ⟨hp, hq⟩
@@ -78,17 +79,17 @@ theorem dispatch_ct (H : GenerationHashes) (M : Mont)  (T : PrimeTest)
     all_goals simp [hp] at hb
   · have tail : RelCT isa (Two (DispatchLarge))
         (.seq (.block [.subImm .x .x4 .x3 256])
-          (.ite (.zero .x .x4) (generate H.sha1 H.sha256 M.mm T.run 256 32)
-            (generate H.sha1 H.sha256 M.mm T.run 384 32))) (fun _ _ => True) := by
+          (.ite (.zero .x .x4) (generate H.sha1 H.sha256 G.run T.run 256 32)
+            (generate H.sha1 H.sha256 G.run T.run 384 32))) (fun _ _ => True) := by
       refine RelCT.seq (dispatch_check256) (two_ite (fun _ _ _ hs ht => hs.2.2.trans ht.2.2.symm) ?_ ?_)
-      · apply two_map (fun p : ParameterPublic => p) ?_ (generate_ct H M T 256 32 (Or.inr (Or.inl ⟨rfl, rfl⟩)))
+      · apply two_map (fun p : ParameterPublic => p) ?_ (generate_ct H G T 256 32 (Or.inr (Or.inl ⟨rfl, rfl⟩)))
         intro p s h
         have hb := Option.some.inj (h.1.2.2.symm.trans h.2)
         rcases p.context.geo.lengths with ⟨hp, hq⟩ | ⟨hp, hq⟩ | ⟨hp, hq⟩
         · exact False.elim (h.1.2.1 hp)
         · simpa only [DispatchBefore, hp, hq] using h.1.1
         · simp [hp] at hb
-      · apply two_map (fun p : ParameterPublic => p) ?_ (generate_ct H M T 384 32 (Or.inr (Or.inr ⟨rfl, rfl⟩)))
+      · apply two_map (fun p : ParameterPublic => p) ?_ (generate_ct H G T 384 32 (Or.inr (Or.inr ⟨rfl, rfl⟩)))
         intro p s h
         have hb := Option.some.inj (h.1.2.2.symm.trans h.2)
         rcases p.context.geo.lengths with ⟨hp, hq⟩ | ⟨hp, hq⟩ | ⟨hp, hq⟩

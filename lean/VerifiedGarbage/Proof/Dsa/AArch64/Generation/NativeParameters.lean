@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorStage
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.SeedSearch
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Hashes
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ParameterInvariant
@@ -19,17 +20,17 @@ open VG.Proof.RsaOaep.AArch64 VG.Impl.RsaOaep.AArch64 VG.Impl.Dsa.Generation.Lay
 open VG.Proof.MillerRabin.AArch64
 open VG.Impl.Dsa.AArch64.Generation (seedTape)
 
-theorem nativeParameters_ok (H : GenerationHashes) (M : Mont) (T : PrimeTest)
+theorem nativeParameters_ok (H : GenerationHashes) (G : GeneratorStage) (T : PrimeTest)
     {p : GenerationContext} {W : Nat → BitVec 64} {s : State} {randUsed : Nat}
     (h : GenerationMemory p W s) (h16 : W 16 = BitVec.ofNat 64 randUsed) (hu : randUsed ≤ p.rand.bytes.length) :
-    WP isa (Impl.Dsa.AArch64.Generation.parameterSearch H.sha1 H.sha256 M.mm T.run p.geo.pLen p.geo.qLen) s
+    WP isa (Impl.Dsa.AArch64.Generation.parameterSearch H.sha1 H.sha256 G.run T.run p.geo.pLen p.geo.qLen) s
       (ParameterFinished p (p.remaining 0 randUsed) s) := by
   let I := ParameterInvariant p (p.remaining 0 randUsed) s
   let Q := ParameterFinished p (p.remaining 0 randUsed) s
   have hw : 0 < p.geo.qLen ∧ p.geo.qLen < 65536 := by
     rcases p.geo.qWidth with hh | hh <;> omega
   have driver : TapeDriver seedTape p.geo.F p.geo.hash p.geo.qLen p.seeds.bytes.length
-      (Impl.Dsa.AArch64.Generation.seedAttempt H.sha1 H.sha256 M.mm T.run p.geo.pLen p.geo.qLen) I Q :=
+      (Impl.Dsa.AArch64.Generation.seedAttempt H.sha1 H.sha256 G.run T.run p.geo.pLen p.geo.qLen) I Q :=
     { baseBound := by decide
       totalBound := by decide
       usedBound := by decide
@@ -50,7 +51,7 @@ theorem nativeParameters_ok (H : GenerationHashes) (M : Mont) (T : PrimeTest)
         exact parameter_done hi hex R Lu Ru fu ku
       step := by
         intro used u v Vt Wt hi hav _ R _ Lv Rv fv kv
-        exact parameter_body_ok H M T hi (by omega) R Lv Rv fv kv }
+        exact parameter_body_ok H G T hi (by omega) R Lv Rv fv kv }
   obtain ⟨V, R⟩ := h.rep
   unfold Impl.Dsa.AArch64.Generation.parameterSearch
   apply driver.run_ok h.layout R

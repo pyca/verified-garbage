@@ -25,12 +25,12 @@ def entryDerived : List Instr :=
     [.ldrSp .x3 40, movi .x4 offset, .add .x .x3 .x3 .x4, .strSp .x3 dst]) ++
   [movi .x3 0, .strSp .x3 128]
 
-def dispatch (G1 G256 : Hash) (mul : Nat → Nat → Nat → Prog isa)
+def dispatch (G1 G256 : Hash) (gen : Nat → Prog isa)
     (prime : Nat → Prog isa) : Prog isa :=
   .seq (.block [.ldrSp .x3 136, .subImm .x .x4 .x3 128])
-    (.ite (.zero .x .x4) (generate G1 G256 mul prime 128 20)
+    (.ite (.zero .x .x4) (generate G1 G256 gen prime 128 20)
       (.seq (.block [.subImm .x .x4 .x3 256])
-        (.ite (.zero .x .x4) (generate G1 G256 mul prime 256 32) (generate G1 G256 mul prime 384 32))))
+        (.ite (.zero .x .x4) (generate G1 G256 gen prime 256 32) (generate G1 G256 gen prime 384 32))))
 
 def abiGprs : List (Reg × Nat) :=
   [⟨.x19, 304⟩, ⟨.x20, 312⟩, ⟨.x21, 320⟩, ⟨.x22, 328⟩, ⟨.x23, 336⟩, ⟨.x24, 344⟩, ⟨.x25, 352⟩, ⟨.x26, 360⟩, ⟨.x27, 368⟩, ⟨.x28, 376⟩]
@@ -46,14 +46,14 @@ def entryRestore : List Instr :=
   (abiVectors.flatMap fun (v, d) => [.ldrSp .x9 d, .vop (.ins .d2 v 0 .x9)]) ++
     (abiGprs.map fun (r, d) => .ldrSp r d) ++ [.ldrSp .x30 296]
 
-def entryBody (G1 G256 : Hash) (mul : Nat → Nat → Nat → Prog isa)
+def entryBody (G1 G256 : Hash) (gen : Nat → Prog isa)
     (prime : Nat → Prog isa) : Prog isa :=
   .seq (.block entrySave)
     (.seq (.block (entryHeader ++ entryIncoming ++ entryDerived))
-      (.seq (dispatch G1 G256 mul prime) (.block entryRestore)))
+      (.seq (dispatch G1 G256 gen prime) (.block entryRestore)))
 
-def code (G1 G256 : Hash) (mul : Nat → Nat → Nat → Prog isa)
+def code (G1 G256 : Hash) (gen : Nat → Prog isa)
     (prime : Nat → Prog isa) : Prog isa :=
-  .frame (.alloc 448) (entryBody G1 G256 mul prime) (.free 448)
+  .frame (.alloc 448) (entryBody G1 G256 gen prime) (.free 448)
 
 end VG.Impl.Dsa.AArch64.Generation

@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorStage
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ABIContext
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryAllocated
@@ -33,9 +34,9 @@ structure EntryResult (s t : State) : Prop where
   bytes : Spec.Rsa.bytesAt t.mem (s.gpr .x0) (s.gpr .x1).toNat =
     (abiResult s).getD (List.replicate (s.gpr .x1).toNat 0)
 
-theorem entryInner_ok (H : GenerationHashes) (M : Mont) (T : PrimeTest)
+theorem entryInner_ok (H : GenerationHashes) (G : GeneratorStage) (T : PrimeTest)
     {s : State} (h : GenerationABI s) :
-    WP isa (Impl.Dsa.AArch64.Generation.entryBody H.sha1 H.sha256 M.mm T.run) (allocState 448 s) fun t =>
+    WP isa (Impl.Dsa.AArch64.Generation.entryBody H.sha1 H.sha256 G.run T.run) (allocState 448 s) fun t =>
       EntryResult s t ∧ (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧
       (∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) ∧
       t.sp = (allocState 448 s).sp ∧
@@ -55,7 +56,7 @@ theorem entryInner_ok (H : GenerationHashes) (M : Mont) (T : PrimeTest)
     simpa only [contextOf, tapeOf, geometryOf, bytesAt_length] using h.seedsLength
   have hs : (contextOf h).hs.bytes.length % (contextOf h).geo.pLen = 0 := by
     simpa only [contextOf, tapeOf, geometryOf, bytesAt_length] using h.hsLength
-  refine WP.seq (WP.mono (entryBody_ok H M T (entryInitial_link h) (outputPlanOf h) output seeds hs)
+  refine WP.seq (WP.mono (entryBody_ok H G T (entryInitial_link h) (outputPlanOf h) output seeds hs)
     fun t ⟨status, bytes, ft, sp, rd, wr⟩ => ?_)
   have outlen : 2 * (contextOf h).geo.pLen + (contextOf h).geo.qLen = (s.gpr .x1).toNat := h.outLength.symm
   rw [outlen] at bytes ft
@@ -70,13 +71,13 @@ theorem entryInner_ok (H : GenerationHashes) (M : Mont) (T : PrimeTest)
   exact ⟨⟨hv.result.trans status, hv.memory ▸ bytes⟩, hv.gprs, hv.vectors,
     hv.stack.trans sp, hv.read.trans rd, hv.write.trans wr⟩
 
-theorem entryRun_ok (H : GenerationHashes) (M : Mont) (T : PrimeTest)
+theorem entryRun_ok (H : GenerationHashes) (G : GeneratorStage) (T : PrimeTest)
     {s : State} (h : GenerationABI s) :
-    WP isa (Impl.Dsa.AArch64.Generation.code H.sha1 H.sha256 M.mm T.run) s fun t =>
+    WP isa (Impl.Dsa.AArch64.Generation.code H.sha1 H.sha256 G.run T.run) s fun t =>
       EntryResult s t ∧ abiPreserved s t ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   unfold Impl.Dsa.AArch64.Generation.code
   apply alloc_frame_ok (by decide : 0 < 448 ∧ 448 < 4096 ∧ 448 % 16 = 0) (by omega_using [h.stackLower])
-  refine WP.mono (entryInner_ok H M T h) fun t ⟨result, cs, vs, sp, rd, wr⟩ => ?_
+  refine WP.mono (entryInner_ok H G T h) fun t ⟨result, cs, vs, sp, rd, wr⟩ => ?_
   refine ⟨sp, wr, ⟨result.status, result.bytes⟩, ⟨cs, ?_, vs⟩, rd, ?_⟩
   · change t.sp + BitVec.ofNat 64 448 = s.sp
     rw [sp]
