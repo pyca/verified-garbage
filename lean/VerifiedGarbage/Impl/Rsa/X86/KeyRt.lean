@@ -34,6 +34,8 @@ structure Lay where
   len : Nat
   ws : Nat
   shape : Shape := .base
+  /-- Array pointers by doublings (`addMul`) rather than one addition per array. -/
+  doubling : Bool := false
 
 /-- Argument `i`. -/
 def argOp (i : Nat) : MemOp := at_ .esp (4 + 4 * i)
@@ -56,10 +58,19 @@ def Shape.extra : Shape → Reg → List Instr
 its argument at `L.len`, `argAt (L.len - 1) 1`, for `1 ≤ L.len`), for the shape. -/
 def bytesB (r : Reg) : List Instr := PublicRt.widthB (L.len - 1) r ++ L.shape.extra r
 
+/-- `r += j t`, from `j`'s low bit up: `t` added for each one bit, doubled for the next bit and
+halved back after it, so `t` is kept; about `2 log₂ j` instructions. `fuel` bounds the recursion
+(`j` is enough); out of fuel, `t` is added `j` times. -/
+def addMul (r t : Reg) : Nat → Nat → List Instr
+  | 0, j => List.replicate j (.alu .add r (.reg t))
+  | fuel + 1, j =>
+    (if j % 2 = 1 then [.alu .add r (.reg t)] else []) ++
+    (if j / 2 = 0 then [] else .alu .add t (.reg t) :: addMul r t fuel (j / 2) ++ [.shift .shr t 1])
+
 /-- `r = edi + hdr + j (B + 8)`, array `j`, and `t = B + 8`. -/
 def arrPtr (r : Reg) (j : Nat) (t : Reg) : List Instr :=
   bytesB L t ++ [.alu .add t (.imm 8), .mov r (.reg .edi), .alu .add r (.imm (BitVec.ofNat 32 hdr))] ++
-    List.replicate j (.alu .add r (.reg t))
+    addMul r t (if L.doubling then j else 0) j
 
 /-- `r = B`, or `B + 4` with the extra word. -/
 def count (r : Reg) (extra : Bool) : List Instr :=

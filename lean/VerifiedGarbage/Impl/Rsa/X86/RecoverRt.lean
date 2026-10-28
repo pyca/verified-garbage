@@ -32,7 +32,7 @@ open VG.Impl.Rsa.X86.Recover (sTc sCand sK sDone sOk sBit sLive sE1 sE2 sCnt sLt
   entry skipTest cntBits cntNext sqInit sqMasks sqNext candNext prodCount windowCount)
 
 /-- The modulus's length (argument 5) and the working space (argument 10), with `k` words pushed. -/
-def lay (shape : Shape) (k : Nat := 0) : Lay := { len := 5 + k, ws := 10 + k, shape }
+def lay (shape : Shape) (k : Nat := 0) : Lay := { len := 5 + k, ws := 10 + k, shape, doubling := true }
 
 /-- The numbers modulo `n`. -/
 abbrev nar : Lay := lay .narrow
