@@ -32,8 +32,7 @@ theorem encode_depth : (encode H).aarch64Depth ≤ 22 := by
     frameBytes, ctInit, compLoop, mgfHash, xorOut, nextCtr, clearBlock, copyH, counter, fixedPad80, pad80, lenField,
     lenLoop, digestOut, Impl.MdStream.AArch64.compressAt, Impl.MdStream.AArch64.compressWith, hc, select,
     Impl.RsaPkcs1Sig.AArch64.psLoop]
-  have : H.initC.aarch64Depth ≤ 1 := hi
-  omega
+  exact hi
 
 theorem chk_depth : (checkEncoding H).aarch64Depth ≤ 22 := by
   have hi := hH.stream.initDepth
@@ -43,7 +42,6 @@ theorem chk_depth : (checkEncoding H).aarch64Depth ≤ 22 := by
     copyH, counter, fixedPad80, pad80, lenField, lenLoop, digestOut, Impl.MdStream.AArch64.compressAt,
     Impl.MdStream.AArch64.compressWith, hc, select, compLoop, ctHash, ctHashWith, posScan, posCheck, FixedSalt.select,
     FixedSalt.finish, FixedSalt.copySalt, clearY, copyDigest, copyDb, shift, shiftPass, nextPass, cmpH]
-  have : H.initC.aarch64Depth ≤ 1 := hi
-  omega
+  exact hi
 
 end VG.Proof.RsaPss.AArch64

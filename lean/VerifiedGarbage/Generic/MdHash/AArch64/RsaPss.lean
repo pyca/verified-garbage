@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.Emit
+public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.Rust
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Instances
 
 /-!
