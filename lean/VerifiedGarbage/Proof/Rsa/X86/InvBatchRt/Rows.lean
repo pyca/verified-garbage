@@ -88,4 +88,62 @@ theorem fgRow_ok {s : State} (h : Bx L s B Z len N) (he : nw len % 2 = 0) {u v j
     · exact hx (rv (kw len) (a 11), 4 * (nw len + 3)) (by simp)
     · exact hx (rv (kw len) (a 12), 4 * nw len) (by simp))]
 
+/-- A matrix row of the coefficients: `[a j] = mred p iv (u x + v y)`, `n` words, for `j` 13 or 14. -/
+theorem abRow_ok {s : State} (h : Bx L s B Z len N) {u v j : Nat}
+    (hu4 : u + 4 ≤ 160) (hv4 : v + 4 ≤ 160) (hj : 13 ≤ j) (hj' : j < 15) {cu cv x y : Int} {p : Nat}
+    (hp : 0 < p) (hm : val32 s.mem B (rv (kw len) mo) (nw len) = p)
+    (hinv : (p * w32 s.mem B (win + 28) + 1) % 2 ^ 32 = 0)
+    (hu : s.mem.readW (off B u) 32 = BitVec.ofInt 32 cu) (hv : s.mem.readW (off B v) 32 = BitVec.ofInt 32 cv)
+    (huv : |cu| + |cv| ≤ 2 ^ 30)
+    (hx : (val32 s.mem B (rv (kw len) (a 6)) (nw len) : Int) = x)
+    (hy : (val32 s.mem B (rv (kw len) (a 7)) (nw len) : Int) = y) (hxb : |x| ≤ p) (hyb : |y| ≤ p) :
+    WP isa (.seq (linear L u v (a 11) (a 6) (a 7) (a 12) 0) (reduce L (a j))) s fun z =>
+      Bx L z B Z len N ∧
+      (val32 z.mem B (rv (kw len) (a j)) (nw len) : Int) =
+        Divstep.W32.mred p (w32 s.mem B (win + 28)) (cu * x + cv * y) ∧
+      Keeps wordClob s z ∧
+      Unch B [(rv (kw len) (a 11), 4 * (nw len + 2)), (rv (kw len) (a 12), 4 * (nw len + 1)), (signSlot, 4),
+        (rv (kw len) (a j), 4 * nw len)] s.mem z.mem := by
+  have hn := h.nowrap
+  have hf16 := h.fits16
+  have hpos := h.ws.kw_pos
+  have ke := kw_eq len
+  have e48 : signSlot = 48 := rfl
+  have e16 : win = 16 := rfl
+  have r2 := rv_a len 2; have r6 := rv_a len 6; have r7 := rv_a len 7; have r11 := rv_a len 11
+  have r12 := rv_a len 12
+  have rmo : rv (kw len) mo = rv (kw len) (a 2) := rfl
+  refine WP.seq (WP.mono (linear_ok h (e := 0) (tmp := a 12) hu4 hv4 (by decide) rfl rfl rfl
+    (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega))
+    fun s₁ ⟨H₁, U₁, K₁, V₁⟩ => ?_)
+  simp only [Nat.add_zero] at V₁ U₁
+  rw [hu, hv, Divstep.W32.toInt_small (le_trans (le_add_of_nonneg_right (abs_nonneg _)) huv),
+    Divstep.W32.toInt_small (le_trans (le_add_of_nonneg_left (abs_nonneg _)) huv), hx, hy] at V₁
+  have hm₁ : val32 s₁.mem B (rv (kw len) mo) (nw len) = p := by
+    rw [Outs.val32 U₁ (by
+      intro w hw
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl <;> simp only <;> omega) (by omega), hm]
+  have iv₁ : w32 s₁.mem B (win + 28) = w32 s.mem B (win + 28) :=
+    VG.Proof.Weierstrass.X86.Inv.word_unch U₁ (by
+      intro w hw
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl <;> simp only <;> omega) (by omega)
+  have bound : |cu * x + cv * y| ≤ 2 ^ 31 * p := by
+    have H := Divstep.W32.comb_le huv hxb hyb
+    have hp' : (0 : Int) ≤ p := Int.natCast_nonneg _
+    omega
+  refine WP.mono (reduce_ok H₁ hj (by omega) hp hm₁ (by rw [iv₁]; exact hinv) bound V₁)
+    fun z ⟨Hz, U₂, K₂, V₂⟩ => ⟨Hz, by rw [V₂, iv₁], (K₁.mono (by decide)).trans (K₂.mono (by decide)), ?_⟩
+  intro q hq
+  rw [U₂ q hq]
+  apply U₁ q
+  intro w hw
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+  rcases hw with rfl | rfl
+  · exact hq (rv (kw len) (a 11), 4 * (nw len + 2)) (by simp)
+  · have := hq (rv (kw len) (a 12), 4 * (nw len + 1)) (by simp)
+    simp only
+    omega
+
 end VG.Proof.Rsa.X86.InvBatchRt
