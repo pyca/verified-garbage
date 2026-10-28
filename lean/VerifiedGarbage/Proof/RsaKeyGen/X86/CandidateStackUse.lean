@@ -75,31 +75,42 @@ theorem test {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse 
 
 theorem exponentRt : stackUse ExponentRt.code = 20 := rfl
 
-theorem dispatch {part : Nat → Prog isa} {bound : Nat} (H : ∀ w, stackUse (part w) ≤ bound) (widths : List Nat) :
-    stackUse (Candidate.dispatch part widths) ≤ bound := by
-  induction widths with
-  | nil => exact Nat.zero_le _
-  | cons w rest ih =>
-    have bound := H w
-    change max 0 (max (stackUse (part w)) (stackUse (Candidate.dispatch part rest))) ≤ _
-    omega
-
 theorem mrExponent : stackUse MrExponentRt.code = 20 := rfl
 
-theorem prepareHead {mont : Prog isa} (Hm : stackUse mont ≤ 56) (w : Nat) (montName : String) :
-    stackUse (Candidate.prepareHead w montName mont) ≤ 80 := by
-  have r2bound := r2 Hm w montName
-  have constantsBound := constants Hm w montName
-  change max (stackUse (PreparedR2.code w montName mont)) (stackUse (Constants.code w montName mont)) ≤ 80
+theorem r2Rt {mont : Prog isa} (Hm : stackUse mont ≤ 56) (montName : String) :
+    stackUse (PrepareRt.r2 montName mont) ≤ 80 := by
+  have squares := six (mulY Hm montName 6)
+  have seed : stackUse PrepareRt.seed = 0 := rfl
+  have doubles : stackUse PrepareRt.doubles = 20 := rfl
+  have copy : stackUse (VG.Impl.MillerRabin.X86.copy 4 6) = 0 := rfl
+  change max (max (stackUse PrepareRt.seed) (max (stackUse PrepareRt.doubles)
+    (stackUse (VG.Impl.Rsa.X86.Keys.seqs (List.replicate 6 (VG.Impl.MillerRabin.X86.mulY montName mont 6))))))
+    (stackUse (VG.Impl.MillerRabin.X86.copy 4 6)) ≤ 80
+  omega
+
+theorem constantsRt {mont : Prog isa} (Hm : stackUse mont ≤ 56) (montName : String) :
+    stackUse (PrepareRt.constants montName mont) ≤ 80 := by
+  have product := mulY Hm montName 4
+  have one : stackUse PrepareRt.one = 0 := rfl
+  have copy : stackUse (VG.Impl.MillerRabin.X86.copy 9 6) = 0 := rfl
+  have subtract : stackUse PrepareRt.subtract = 20 := rfl
+  change max (stackUse PrepareRt.one) (max (stackUse (VG.Impl.MillerRabin.X86.mulY montName mont 4))
+    (max (stackUse (VG.Impl.MillerRabin.X86.copy 9 6)) (stackUse PrepareRt.subtract))) ≤ 80
+  omega
+
+theorem prepareHead {mont : Prog isa} (Hm : stackUse mont ≤ 56) (montName : String) :
+    stackUse (Candidate.prepareHead montName mont) ≤ 80 := by
+  have r2bound := r2Rt Hm montName
+  have constantsBound := constantsRt Hm montName
+  change max (stackUse (PrepareRt.r2 montName mont)) (stackUse (PrepareRt.constants montName mont)) ≤ 80
   omega
 
 theorem prepared {mont : Prog isa} (Hm : stackUse mont ≤ 56) (montName : String) :
     stackUse (Candidate.prepared montName mont) ≤ 80 := by
-  have bound := dispatch (fun w => prepareHead Hm w montName) Candidate.widths
-  unfold Candidate.prepared
-  generalize Candidate.dispatch (fun w => Candidate.prepareHead w montName mont) Candidate.widths = d at bound ⊢
+  have bound := prepareHead Hm montName
   have header : stackUse HeaderRt.prepare = 0 := rfl
-  change max (stackUse HeaderRt.prepare) (max 0 (max (stackUse d) (stackUse MrExponentRt.code))) ≤ 80
+  change max (stackUse HeaderRt.prepare) (max (stackUse (Candidate.prepareHead montName mont))
+    (stackUse MrExponentRt.code)) ≤ 80
   rw [mrExponent, header]
   omega
 

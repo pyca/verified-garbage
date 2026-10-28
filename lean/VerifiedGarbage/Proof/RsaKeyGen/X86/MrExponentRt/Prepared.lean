@@ -79,8 +79,8 @@ theorem head_ok {mont : Prog isa} {name : String}
     (Wb.mono (fun _ mem => List.mem_append_left _ (List.mem_append_right _ mem)))).trans
     (Wd.mono (fun _ mem => List.mem_append_right _ mem))
 
-/-- Preparation at the width in the header, the exponent at the run-time
-width: what `CandidatePrepare.code_ok` gives. -/
+/-- Preparation at the run-time width, the exponent included:
+what `CandidatePrepare.code_ok` gives. -/
 theorem prepared_ok {mont : Prog isa} {name : String}
     (verified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
     (noSp : NoSp mont) (stack : stackUse mont ≤ 56)

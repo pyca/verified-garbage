@@ -80,22 +80,4 @@ theorem compare_value_trace {P : State → State → Prop} (value immediate : Bi
   · rw [flagU, valueS]
   · rw [flagZ, valueT]
 
-theorem dispatch_trace {part : Nat → Prog isa} {P Q : State → State → Prop} {w : Nat} (wBound : w < 2 ^ 32)
-    (keep : ∀ s t u z, P s t → Fupd s u → Fupd t z → P u z) (H : RelCT isa P (part w) Q) :
-    ∀ (widths : List Nat), w ∈ widths → (∀ x ∈ widths, x < 2 ^ 32) →
-      RelCT isa (WithValue P (BitVec.ofNat 32 w)) (VG.Impl.RsaKeyGen.X86.Candidate.dispatch part widths) Q
-  | [], member, _ => nomatch member
-  | x :: rest, member, bounded => by
-    unfold VG.Impl.RsaKeyGen.X86.Candidate.dispatch
-    have compare := compare_value_trace (P := P) (BitVec.ofNat 32 w) (BitVec.ofNat 32 x) keep
-    rw [width_comparison wBound (bounded x List.mem_cons_self)] at compare
-    by_cases same : w = x
-    · rw [decide_eq_true same] at compare
-      refine RelCT.seq compare (branch_true ?_)
-      rw [← same]
-      exact H.mono (fun _ _ H => H.1) (fun _ _ q => q)
-    · rw [decide_eq_false same] at compare
-      exact RelCT.seq compare (branch_false (dispatch_trace wBound keep H rest
-        (List.mem_cons.mp member |>.resolve_left same) (fun j mem => bounded j (List.mem_cons_of_mem _ mem))))
-
 end VG.Proof.RsaKeyGen.X86.Candidate

@@ -27,25 +27,29 @@ theorem exponentRt : NoSp ExponentRt.code := by
   simp only [ExponentRt.code, ExponentRt.filter, Code.allInstrs, checked general]
   rfl
 
-theorem dispatch {part : Nat → Prog isa} (H : ∀ w, NoSp (part w)) (widths : List Nat) :
-    NoSp (Candidate.dispatch part widths) := by
-  induction widths with
-  | nil => exact NoSp.of_all (by rfl)
-  | cons w rest ih =>
-    apply NoSp.of_all
-    simp only [Candidate.dispatch, Code.allInstrs, checked (H w), checked ih]
-    rfl
-
 theorem mrExponent : NoSp MrExponentRt.code := NoSp.of_all (by rfl)
 
-theorem prepareHead {mont : Prog isa} (Hm : NoSp mont) (w : Nat) (montName : String) :
-    NoSp (Candidate.prepareHead w montName mont) :=
-  sequence (r2 Hm w montName) (constants Hm w montName)
+theorem r2Rt {mont : Prog isa} (Hm : NoSp mont) (montName : String) :
+    NoSp (PrepareRt.r2 montName mont) := by
+  unfold PrepareRt.r2
+  refine sequence (sequence (NoSp.of_all (by rfl)) (sequence (NoSp.of_all (by rfl)) ?_)) (NoSp.of_all (by rfl))
+  have H := mulY Hm montName 6
+  change NoSp (.seq _ (.seq _ (.seq _ (.seq _ (.seq _ _)))))
+  exact sequence H (sequence H (sequence H (sequence H (sequence H H))))
+
+theorem constantsRt {mont : Prog isa} (Hm : NoSp mont) (montName : String) :
+    NoSp (PrepareRt.constants montName mont) := by
+  unfold PrepareRt.constants
+  exact sequence (NoSp.of_all (by rfl))
+    (sequence (mulY Hm montName 4) (sequence (NoSp.of_all (by rfl)) (NoSp.of_all (by rfl))))
+
+theorem prepareHead {mont : Prog isa} (Hm : NoSp mont) (montName : String) :
+    NoSp (Candidate.prepareHead montName mont) :=
+  sequence (r2Rt Hm montName) (constantsRt Hm montName)
 
 theorem prepared {mont : Prog isa} (Hm : NoSp mont) (montName : String) :
     NoSp (Candidate.prepared montName mont) :=
-  sequence (NoSp.of_all (by rfl)) (sequence (NoSp.of_all (by rfl))
-    (sequence (dispatch (prepareHead Hm · montName) Candidate.widths) mrExponent))
+  sequence (NoSp.of_all (by rfl)) (sequence (prepareHead Hm montName) mrExponent)
 
 theorem witnessRound {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round) (montName roundName : String) :
     NoSp (WitnessRt.round montName mont roundName round) := by
