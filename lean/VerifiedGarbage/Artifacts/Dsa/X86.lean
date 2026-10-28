@@ -4,8 +4,11 @@ public import VerifiedGarbage.Proof.Dsa.X86.CheckingVerified
 public import VerifiedGarbage.Proof.Dsa.X86.DerivingVerified
 public import VerifiedGarbage.Spec.Dsa.RandomSign
 public import VerifiedGarbage.Proof.Dsa.X86.ShapeCall
+public import VerifiedGarbage.Proof.Dsa.X86.Comb.KeyVerified
+public import VerifiedGarbage.Proof.Dsa.X86.Comb.Registration
+public import VerifiedGarbage.Proof.Dsa.X86.Comb.PublicVerified
+public import VerifiedGarbage.Proof.Dsa.X86.Comb.PrivateVerified
 public import VerifiedGarbage.Proof.Dsa.X86.RandomSignInstance
-public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.Instance
 public import VerifiedGarbage.TCB.Registration
 import VerifiedGarbage.Proof.Framework.Registration
 
@@ -15,15 +18,28 @@ import VerifiedGarbage.Proof.Framework.Registration
 
 namespace VG.Artifacts.Dsa.X86
 
+def combPrepare (n e : Nat) (h : Proof.Dsa.X86.Comb.Supported n e) : Artifact :=
+  (Spec.Dsa.FixedBaseComb.prepareApi (Impl.Dsa.X86.Comb.layout n e)).artifact X86.target {
+    code := Impl.Dsa.X86.Comb.body true n e
+    verified := Proof.Dsa.X86.Comb.public_verified h
+    stack := 20
+    spSafe := Proof.Dsa.X86.Comb.body_spSafe h true }
+
+def combPower (n e : Nat) (h : Proof.Dsa.X86.Comb.Supported n e) : Artifact :=
+  (Spec.Dsa.FixedBaseComb.powerApi (Impl.Dsa.X86.Comb.layout n e)).artifact X86.target {
+    code := Impl.Dsa.X86.Comb.body false n e
+    verified := Proof.Dsa.X86.Comb.private_verified h
+    stack := 20
+    spSafe := Proof.Dsa.X86.Comb.body_spSafe h false }
+
 def artifacts : List Artifact := [
   Spec.Dsa.generateKeyApi.artifact X86.target {
-    notes := ["Checks the domain by a call of `vg_dsa_check_parameters`, samples the private exponent \
-      by rejection, and derives the key by a call of `vg_dsa_derive_key`. Every exit clears the \
-      sampled scalar; failure clears the output and reports exact tape consumption."]
-    code := Impl.Dsa.X86.GenerateKey.code Proof.Dsa.X86.KeyRandom.checkFn.name
-      Proof.Dsa.X86.KeyRandom.deriveFn.name Proof.Dsa.X86.KeyRandom.checkFn.code
-      Proof.Dsa.X86.KeyRandom.deriveFn.code
-    verified := Proof.Dsa.X86.KeyRandom.keyGeneration_verified
+    notes := ["Checks the domain once and retains RSA's five-tooth comb for the sampled private exponent. \
+      Public-modulus setup accelerates the subgroup check; private exponentiation uses a fixed schedule \
+      and masked selection. Every exit clears the sampled scalar; failure clears the output and reports \
+      exact tape consumption. The checker and prevalidated derivation are internal bodies."]
+    code := Impl.Dsa.X86.Comb.generateKey
+    verified := Proof.Dsa.X86.Comb.key_verified
     stack := 232 },
   Spec.Dsa.deriveKeyApi.artifact X86.target {
     notes := ["Checks the generator subgroup once and derives the public key with fixed-iteration \
@@ -63,6 +79,16 @@ def artifacts : List Artifact := [
       registers reside in `scratch`."]
     code := Impl.Dsa.X86.Entry.operation false
     verified := Proof.Dsa.X86.verifying_verified
-    stack := 108 }]
+    stack := 108 },
+  combPrepare 16 5 Proof.Dsa.X86.Comb.supported_16_5,
+  combPower 16 5 Proof.Dsa.X86.Comb.supported_16_5,
+  combPrepare 32 5 Proof.Dsa.X86.Comb.supported_32_5,
+  combPower 32 5 Proof.Dsa.X86.Comb.supported_32_5,
+  combPrepare 32 7 Proof.Dsa.X86.Comb.supported_32_7,
+  combPower 32 7 Proof.Dsa.X86.Comb.supported_32_7,
+  combPrepare 32 8 Proof.Dsa.X86.Comb.supported_32_8,
+  combPower 32 8 Proof.Dsa.X86.Comb.supported_32_8,
+  combPrepare 48 8 Proof.Dsa.X86.Comb.supported_48_8,
+  combPower 48 8 Proof.Dsa.X86.Comb.supported_48_8]
 
 end VG.Artifacts.Dsa.X86
