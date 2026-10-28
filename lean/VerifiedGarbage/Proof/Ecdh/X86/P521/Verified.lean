@@ -143,7 +143,7 @@ analysing its body again in full; the summary analyses it once. -/
 def τMul : VG.X86.Taint.T :=
   { regs := ⟨215⟩, flags := false, lens := [16, 66, 8192], bases := [(.edi, 2, 0), (.esp, 0, 4)],
     slots := [(0, 12, 4), (0, 8, 4), (0, 4, 4), (0, 0, 4)], wbases := [(0, 0, 2)], argLen := 20,
-    argBases := [(4, 1), (16, 2)], stk := [none, some 16], room := 20 }
+    argBases := [(4, 1), (16, 2)], stk := [none, some 16], room := 28 }
 
 taint_summary mulSum : taint τMul (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p521p.k Spec.Weierstrass.Mont.p521p.m)
 
