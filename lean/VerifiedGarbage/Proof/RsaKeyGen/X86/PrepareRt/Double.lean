@@ -42,6 +42,73 @@ theorem Context.restore {g : Geometry} {s t : State} (C : Context g s) (wr : t.w
   · intro j index
     rw [word (by omega)]; exact C.pointers j index
 
+/-- `ebx` at array 6, `ebp` at array 2, `edx` their octets and no carry. -/
+theorem doubleArgs_ok {g : Geometry} (v : g.Valid) {a : State} (C : Context g a) :
+    WP isa (.block doubleArgs) a fun b =>
+      PtrAt b g.W .ebx (g.array 6) ∧ PtrAt b g.W .ebp (g.array 2) ∧ (b.gpr .edx).toNat = 4 * g.words ∧
+      b.gpr .ecx = cmask false ∧ b.mem = a.mem ∧ Keeps [.ebx, .ebp, .edx, .ecx] a b := by
+  obtain ⟨-, -, -, words⟩ := WitnessRt.fits v
+  have bound := v.maxWidth
+  unfold doubleArgs
+  simp only [List.append_assoc]
+  refine WP.block_append (WP.mono (WitnessRt.ptr_short v C 6 (by decide) .ebx) fun a1 ⟨P1, M1, K1⟩ => ?_)
+  have C1 := C.keepMem K1 (by decide) M1
+  refine WP.block_append (WP.mono (WitnessRt.ptr_short v C1 2 (by decide) .ebp) fun a2 ⟨P2, M2, K2⟩ => ?_)
+  have C2 := C1.keepMem K2 (by decide) M2
+  refine WP.block_append (WP.mono (WitnessRt.draw_ok v C2) fun a3 ⟨D3, M3, K3⟩ => ?_)
+  refine wp_movS rfl fun b B _ => WP.block_nil ⟨?_, ?_, ?_, B.gpr, by rw [B.mem, M3, M2, M1],
+    (((K1.mono (by decide)).widen K2).widen K3).widen B.keeps⟩
+  · rw [PtrAt, B.other .ebx (by decide), K3.1 .ebx (by decide), K2.1 .ebx (by decide)]; exact P1
+  · rw [PtrAt, B.other .ebp (by decide), K3.1 .ebp (by decide)]; exact P2
+  · rw [B.other .edx (by decide), D3, BitVec.toNat_ofNat]; omega
+
+/-- `ebp` at the sum (array 2), `ebx` at the candidate, `edi` at array 6, `edx` their octets, no borrow. -/
+theorem reduceArgs_ok {g : Geometry} (v : g.Valid) {e : State} (C : Context g e) :
+    WP isa (.block reduceArgs) e fun f =>
+      PtrAt f g.W .ebp (g.array 2) ∧ PtrAt f g.W .ebx (g.array 0) ∧ PtrAt f g.W .edi (g.array 6) ∧
+      (f.gpr .edx).toNat = 4 * g.words ∧ f.gpr .ecx = cmask false ∧ f.mem = e.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] e f := by
+  obtain ⟨-, -, -, words⟩ := WitnessRt.fits v
+  have bound := v.maxWidth
+  unfold reduceArgs
+  simp only [List.append_assoc]
+  refine WP.block_append (WP.mono (WitnessRt.ptr_short v C 2 (by decide) .ebp) fun f1 ⟨Q1, N1, L1⟩ => ?_)
+  have Cf1 := C.keepMem L1 (by decide) N1
+  refine WP.block_append (WP.mono (WitnessRt.ptr_short v Cf1 0 (by decide) .ebx) fun f2 ⟨Q2, N2, L2⟩ => ?_)
+  have Cf2 := Cf1.keepMem L2 (by decide) N2
+  refine WP.block_append (WP.mono (WitnessRt.ptr_short v Cf2 6 (by decide) .eax) fun f3 ⟨Q3, N3, L3⟩ => ?_)
+  have Cf3 := Cf2.keepMem L3 (by decide) N3
+  refine WP.block_append (WP.mono (WitnessRt.draw_ok v Cf3) fun f4 ⟨D4, N4, L4⟩ => ?_)
+  refine wp_movS rfl fun f5 F5 _ => wp_movS rfl fun f F _ => WP.block_nil ⟨?_, ?_, ?_, ?_, F.gpr,
+    by rw [F.mem, F5.mem, N4, N3, N2, N1],
+    (((((L1.mono (by decide)).widen L2).widen L3).widen L4).widen F5.keeps).widen F.keeps⟩
+  · rw [PtrAt, F.other .ebp (by decide), F5.other .ebp (by decide), L4.1 .ebp (by decide), L3.1 .ebp (by decide),
+      L2.1 .ebp (by decide)]; exact Q1
+  · rw [PtrAt, F.other .ebx (by decide), F5.other .ebx (by decide), L4.1 .ebx (by decide), L3.1 .ebx (by decide)]
+    exact Q2
+  · rw [PtrAt, F.other .edi (by decide), F5.gpr, L4.1 .eax (by decide)]; exact Q3
+  · rw [F.other .edx (by decide), F5.other .edx (by decide), D4, BitVec.toNat_ofNat]; omega
+
+/-- `ebp` at the sum, `ebx` at array 6, `edi` their octets. -/
+theorem selectArgs_ok {g : Geometry} (v : g.Valid) {i : State} (C : Context g i) :
+    WP isa (.block selectArgs) i fun j =>
+      PtrAt j g.W .ebp (g.array 2) ∧ PtrAt j g.W .ebx (g.array 6) ∧ (j.gpr .edi).toNat = 4 * g.words ∧
+      j.mem = i.mem ∧ Keeps [.ebx, .edx, .ebp, .edi] i j := by
+  obtain ⟨-, -, -, words⟩ := WitnessRt.fits v
+  have bound := v.maxWidth
+  unfold selectArgs
+  simp only [List.append_assoc]
+  refine WP.block_append (WP.mono (WitnessRt.ptr_short v C 2 (by decide) .ebp) fun j1 ⟨R1, Mj1, J1⟩ => ?_)
+  have Cj1 := C.keepMem J1 (by decide) Mj1
+  refine WP.block_append (WP.mono (WitnessRt.ptr_short v Cj1 6 (by decide) .ebx) fun j2 ⟨R2, Mj2, J2⟩ => ?_)
+  have Cj2 := Cj1.keepMem J2 (by decide) Mj2
+  refine WP.block_append (WP.mono (WitnessRt.draw_ok v Cj2) fun j3 ⟨D5, Mj3, J3⟩ => ?_)
+  refine wp_movS rfl fun j J _ => WP.block_nil ⟨?_, ?_, ?_, by rw [J.mem, Mj3, Mj2, Mj1],
+    (((J1.mono (by decide)).widen J2).widen J3).widen J.keeps⟩
+  · rw [PtrAt, J.other .ebp (by decide), J3.1 .ebp (by decide), J2.1 .ebp (by decide)]; exact R1
+  · rw [PtrAt, J.other .ebx (by decide), J3.1 .ebx (by decide)]; exact R2
+  · rw [J.gpr, D5, BitVec.toNat_ofNat]; omega
+
 theorem sum_ok {g : Geometry} (v : g.Valid) {a : State} {T : Nat} (C : Context g a)
     (value : val32 a.mem g.W (g.array 6) g.words = T) :
     WP isa sum a fun e =>
@@ -54,24 +121,10 @@ theorem sum_ok {g : Geometry} (v : g.Valid) {a : State} {T : Nat} (C : Context g
   have nowrap := C.ws.nowrap
   have a26 : g.array 2 + 4 * g.words + 4 ≤ g.array 6 := by
     unfold Geometry.array Geometry.words Spec.Rsa.Mont.arrAt Spec.Rsa.Mont.hdrBytes; omega
-  unfold sum doubleArgs
-  simp only [List.append_assoc]
-  refine WP.seq (WP.block_append (WP.mono (WitnessRt.ptr_short v C 6 (by decide) .ebx) fun a1 ⟨P1, M1, K1⟩ => ?_))
-  have C1 := C.keepMem K1 (by decide) M1
-  refine WP.block_append (WP.mono (WitnessRt.ptr_short v C1 2 (by decide) .ebp) fun a2 ⟨P2, M2, K2⟩ => ?_)
-  have C2 := C1.keepMem K2 (by decide) M2
-  refine WP.block_append (WP.mono (WitnessRt.draw_ok v C2) fun a3 ⟨D3, M3, K3⟩ => ?_)
-  refine wp_movS rfl fun b B _ => WP.block_nil ?_
-  have Kb : Keeps [.ebx, .ebp, .edx, .ecx] a b := (((K1.mono (by decide)).widen K2).widen K3).widen B.keeps
-  have Mb : b.mem = a.mem := by rw [B.mem, M3, M2, M1]
-  have ebxB : PtrAt b g.W .ebx (g.array 6) := by
-    rw [PtrAt, B.other .ebx (by decide), K3.1 .ebx (by decide), K2.1 .ebx (by decide)]; exact P1
-  have ebpB : PtrAt b g.W .ebp (g.array 2) := by
-    rw [PtrAt, B.other .ebp (by decide), K3.1 .ebp (by decide)]; exact P2
-  have edxB : (b.gpr .edx).toNat = 4 * g.words := by
-    rw [B.other .edx (by decide), D3, BitVec.toNat_ofNat]; omega
+  unfold sum
+  refine WP.seq (WP.mono (doubleArgs_ok v C) fun b ⟨ebxB, ebpB, edxB, ecxB, Mb, Kb⟩ => ?_)
   refine WP.seq (WP.mono (VG.Proof.Bignum.X86.PublicRt.doubleLoop_ok (C.ws.of_keeps Kb) (x := g.array 6)
-    (a := g.array 2) (N := g.words) (by omega) fit6 (by omega) (Or.inl (by omega)) ebxB ebpB edxB B.gpr)
+    (a := g.array 2) (N := g.words) (by omega) fit6 (by omega) (Or.inl (by omega)) ebxB ebpB edxB ecxB)
     fun d ⟨Od, Pd, ⟨c0, ecxD, sumD⟩, Kd⟩ => ?_)
   rw [Mb, value] at sumD
   unfold carry
@@ -107,32 +160,11 @@ theorem reduce_ok {g : Geometry} (v : g.Valid) {e : State} (C : Context g e) :
   have a26 : g.array 2 + 4 * g.words + 4 ≤ g.array 6 := by
     unfold Geometry.array Geometry.words Spec.Rsa.Mont.arrAt Spec.Rsa.Mont.hdrBytes; omega
   have a02 : g.array 0 + 4 * g.words ≤ g.array 2 := g.arrayBefore (by decide)
-  unfold reduce reduceArgs
-  simp only [List.append_assoc]
-  refine WP.seq (WP.block_append (WP.mono (WitnessRt.ptr_short v C 2 (by decide) .ebp) fun f1 ⟨Q1, N1, L1⟩ => ?_))
-  have Cf1 := C.keepMem L1 (by decide) N1
-  refine WP.block_append (WP.mono (WitnessRt.ptr_short v Cf1 0 (by decide) .ebx) fun f2 ⟨Q2, N2, L2⟩ => ?_)
-  have Cf2 := Cf1.keepMem L2 (by decide) N2
-  refine WP.block_append (WP.mono (WitnessRt.ptr_short v Cf2 6 (by decide) .eax) fun f3 ⟨Q3, N3, L3⟩ => ?_)
-  have Cf3 := Cf2.keepMem L3 (by decide) N3
-  refine WP.block_append (WP.mono (WitnessRt.draw_ok v Cf3) fun f4 ⟨D4, N4, L4⟩ => ?_)
-  refine wp_movS rfl fun f5 F5 _ => wp_movS rfl fun f F _ => WP.block_nil ?_
-  have Lf : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] e f :=
-    (((((L1.mono (by decide)).widen L2).widen L3).widen L4).widen F5.keeps).widen F.keeps
-  have Mf : f.mem = e.mem := by rw [F.mem, F5.mem, N4, N3, N2, N1]
-  have ebpF : PtrAt f g.W .ebp (g.array 2) := by
-    rw [PtrAt, F.other .ebp (by decide), F5.other .ebp (by decide), L4.1 .ebp (by decide), L3.1 .ebp (by decide),
-      L2.1 .ebp (by decide)]; exact Q1
-  have ebxF : PtrAt f g.W .ebx (g.array 0) := by
-    rw [PtrAt, F.other .ebx (by decide), F5.other .ebx (by decide), L4.1 .ebx (by decide), L3.1 .ebx (by decide)]
-    exact Q2
-  have ediF : PtrAt f g.W .edi (g.array 6) := by
-    rw [PtrAt, F.other .edi (by decide), F5.gpr, L4.1 .eax (by decide)]; exact Q3
-  have edxF : (f.gpr .edx).toNat = 4 * g.words := by
-    rw [F.other .edx (by decide), F5.other .edx (by decide), D4, BitVec.toNat_ofNat]; omega
+  unfold reduce
+  refine WP.seq (WP.mono (reduceArgs_ok v C) fun f ⟨ebpF, ebxF, ediF, edxF, ecxF, Mf, Lf⟩ => ?_)
   refine WP.mono (VG.Proof.Bignum.X86.PublicRt.reduceLoop_ok (C.ws.of_keeps Lf) (a := g.array 2)
     (m := g.array 0) (d := g.array 6) (N := g.words) (by omega) (by omega) (by omega) fit6 (Or.inr (by omega))
-    (Or.inr (by omega)) ebpF ebxF ediF edxF F.gpr) fun h ⟨Oh, Ph, diff, Kh⟩ => ?_
+    (Or.inr (by omega)) ebpF ebxF ediF edxF ecxF) fun h ⟨Oh, Ph, diff, Kh⟩ => ?_
   rw [Mf] at Oh diff
   exact ⟨Oh, Ph, diff, Lf.trans Kh⟩
 
@@ -171,22 +203,8 @@ theorem select_ok {g : Geometry} (v : g.Valid) {i : State} {q : BitVec 32} {k : 
   have bound := v.maxWidth
   have a26 : g.array 2 + 4 * g.words + 4 ≤ g.array 6 := by
     unfold Geometry.array Geometry.words Spec.Rsa.Mont.arrAt Spec.Rsa.Mont.hdrBytes; omega
-  unfold select selectArgs
-  simp only [List.append_assoc]
-  refine WP.seq (WP.block_append (WP.mono (WitnessRt.ptr_short v C 2 (by decide) .ebp) fun j1 ⟨R1, Mj1, J1⟩ => ?_))
-  have Cj1 := C.keepMem J1 (by decide) Mj1
-  refine WP.block_append (WP.mono (WitnessRt.ptr_short v Cj1 6 (by decide) .ebx) fun j2 ⟨R2, Mj2, J2⟩ => ?_)
-  have Cj2 := Cj1.keepMem J2 (by decide) Mj2
-  refine WP.block_append (WP.mono (WitnessRt.draw_ok v Cj2) fun j3 ⟨D5, Mj3, J3⟩ => ?_)
-  refine wp_movS rfl fun j J _ => WP.block_nil ?_
-  have Kij : Keeps [.ebx, .edx, .ebp, .edi] i j := (((J1.mono (by decide)).widen J2).widen J3).widen J.keeps
-  have Mj : j.mem = i.mem := by rw [J.mem, Mj3, Mj2, Mj1]
-  have ebpJ : PtrAt j g.W .ebp (g.array 2) := by
-    rw [PtrAt, J.other .ebp (by decide), J3.1 .ebp (by decide), J2.1 .ebp (by decide)]; exact R1
-  have ebxJ : PtrAt j g.W .ebx (g.array 6) := by
-    rw [PtrAt, J.other .ebx (by decide), J3.1 .ebx (by decide)]; exact R2
-  have ediJ : (j.gpr .edi).toNat = 4 * g.words := by
-    rw [J.gpr, D5, BitVec.toNat_ofNat]; omega
+  unfold select
+  refine WP.seq (WP.mono (selectArgs_ok v C) fun j ⟨ebpJ, ebxJ, ediJ, Mj, Kij⟩ => ?_)
   have ecxJ : j.gpr .ecx = cmask b := by rw [Kij.1 .ecx (by decide)]; exact mask
   refine WP.seq (WP.mono (VG.Proof.Bignum.X86.PublicRt.selectLoop_ok (C.ws.of_keeps Kij) (x := g.array 2)
     (d := g.array 6) (N := g.words) b (by omega) (by omega) fit6 (Or.inr (by omega))

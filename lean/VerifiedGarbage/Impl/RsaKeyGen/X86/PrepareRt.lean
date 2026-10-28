@@ -30,10 +30,15 @@ def zeroLoop : Prog isa :=
 /-- Array 6 zeroed. -/
 def zero : Prog isa := .seq (.block zeroArgs) zeroLoop
 
+/-- `ebp` at array 6 and `edx` its octets. -/
+def topArgs : List Instr := ptr .ebp 6 ++ draw
+
+/-- `2^31` in the top word. -/
+def topStore : List Instr :=
+  [.alu .add .ebp (.reg .edx), .alu .sub .ebp (.imm 4), .mov .eax (.imm 0x80000000), .store (at_ .ebp 0) .eax]
+
 /-- Array 6's top bit set. -/
-def top : List Instr :=
-  ptr .ebp 6 ++ draw ++ [.alu .add .ebp (.reg .edx), .alu .sub .ebp (.imm 4),
-    .mov .eax (.imm 0x80000000), .store (at_ .ebp 0) .eax]
+def top : List Instr := topArgs ++ topStore
 
 /-- `2^(64 w − 1)` in array 6. -/
 def seed : Prog isa := .seq zero (.block top)
@@ -105,8 +110,11 @@ def r2 (montName : String) (montCode : Prog isa) : Prog isa :=
   .seq (.seq seed (.seq doubles (VG.Impl.Rsa.X86.Keys.seqs (List.replicate 6 (mulY montName montCode 6)))))
     (copy 4 6)
 
+/-- One in the lowest word. -/
+def oneStore : List Instr := [.mov .eax (.imm 1), .store (at_ .ebp 0) .eax]
+
 /-- One in array 6. -/
-def one : Prog isa := .seq zero (.block (ptr .ebp 6 ++ [.mov .eax (.imm 1), .store (at_ .ebp 0) .eax]))
+def one : Prog isa := .seq zero (.block (ptr .ebp 6 ++ oneStore))
 
 /-- `edi` at array 10, `ebp` at the candidate, `ebx` at array 9. -/
 def subtractArgs : List Instr :=
