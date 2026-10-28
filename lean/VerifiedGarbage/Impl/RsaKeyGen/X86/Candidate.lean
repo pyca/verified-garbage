@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateArgs
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentRt
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.MrExponentRt
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.FrontRt
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessRt
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateTest
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateFinish
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateClear
@@ -38,21 +39,13 @@ def width : List Instr := [.mov .eax (.mem (sc 4)), .shift .shr .eax 3]
 def prepareHead (w : Nat) (montName : String) (montCode : Prog isa) : Prog isa :=
   .seq (PrepareHeader.code w) (.seq (PreparedR2.code w montName montCode) (Constants.code w montName montCode))
 
-def witnesses (w : Nat) (montName : String) (montCode : Prog isa) (roundName : String) (roundCode : Prog isa) :
-    Prog isa :=
-  MillerRabinLoop.code w montName montCode roundName roundCode
-
-/-- `eax := w`, from the prepared header. -/
-def preparedWidth : List Instr := [.mov .eax (.mem (sc 48))]
-
 /-- Preparation, with the exponent at the run-time width. -/
 def prepared (montName : String) (montCode : Prog isa) : Prog isa :=
   .seq (.block width) (.seq (dispatch (fun w => prepareHead w montName montCode) widths) MrExponentRt.code)
 
 /-- Preparation, then the witnesses. -/
 def testBody (montName : String) (montCode : Prog isa) (roundName : String) (roundCode : Prog isa) : Prog isa :=
-  .seq (prepared montName montCode) (.seq (.block preparedWidth)
-    (dispatch (fun w => witnesses w montName montCode roundName roundCode) widths))
+  .seq (prepared montName montCode) (WitnessRt.code montName montCode roundName roundCode)
 
 /-- Miller–Rabin's result: its code is the same at every width, since
 `slot w 0` is 256. -/

@@ -43,13 +43,6 @@ theorem Base.vals {W : Addr} {L w : Nat} {q : BitVec 32} {s : State} (B : Base W
   · exact B.2
   · exact B.1.edi_value
 
-/-- A block with `rs` public leaks the same trace. -/
-theorem rawBlock {rs : List Reg} {code : List Instr}
-    (L : (VG.Taint.check taint (τr rs) (.block code) (.block [])).map (taint.le (τr [])) = some true) :
-    RelCT isa (VG.X86.Taint.Agree (τr rs)) (.block code) (fun _ _ => True) :=
-  (erased_relCT (σ := τr []) (.block code) (.block code) (.block []) rfl rfl rfl L).mono
-    (fun _ _ h => h) (fun _ _ _ => trivial)
-
 /-- About to import array `j` from the octets at `src`, `esi` at them. -/
 structure SourceIn (W : Addr) (L w : Nat) (q src : BitVec 32) (s : State) : Prop where
   base : Base W L w q s

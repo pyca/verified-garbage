@@ -102,15 +102,25 @@ theorem prepared {mont : Prog isa} (Hm : stackUse mont ≤ 56) (montName : Strin
   rw [mrExponent]
   omega
 
+theorem witnessRound {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
+    (montName roundName : String) : stackUse (WitnessRt.round montName mont roundName round) ≤ 108 := by
+  have product := mulY Hm montName 4
+  have drawn : stackUse WitnessRt.drawn = 0 := rfl
+  change max (stackUse WitnessRt.drawn) (max 0 (max (max (stackUse (VG.Impl.MillerRabin.X86.mulY montName mont 4)) 0)
+    (max 0 (stackUse round + 4 + 8)))) ≤ 108
+  omega
+
+theorem witnesses {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
+    (montName roundName : String) : stackUse (WitnessRt.code montName mont roundName round) ≤ 108 := by
+  have bound := witnessRound Hm Hr montName roundName
+  change max 0 (max 0 (max (max 0 (max 0 (max (stackUse (WitnessRt.round montName mont roundName round)) 0))) 0)) ≤ 108
+  omega
+
 theorem testBody {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)
     (montName roundName : String) : stackUse (Candidate.testBody montName mont roundName round) ≤ 108 := by
   have head := prepared Hm montName
-  have loop := dispatch (fun w => millerRabin Hm Hr w montName roundName) Candidate.widths
-  unfold Candidate.testBody Candidate.witnesses
-  generalize Candidate.prepared montName mont = p at head ⊢
-  generalize Candidate.dispatch (fun w => MillerRabinLoop.code w montName mont roundName round)
-    Candidate.widths = d at loop ⊢
-  change max (stackUse p) (max 0 (stackUse d)) ≤ 108
+  have loop := witnesses Hm Hr montName roundName
+  change max (stackUse (Candidate.prepared montName mont)) (stackUse (WitnessRt.code montName mont roundName round)) ≤ 108
   omega
 
 theorem tested {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)

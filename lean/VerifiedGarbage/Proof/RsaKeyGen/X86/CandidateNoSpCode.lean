@@ -46,10 +46,26 @@ theorem prepared {mont : Prog isa} (Hm : NoSp mont) (montName : String) :
     NoSp (Candidate.prepared montName mont) :=
   sequence (NoSp.of_all (by rfl)) (sequence (dispatch (prepareHead Hm · montName) Candidate.widths) mrExponent)
 
+theorem witnessRound {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round) (montName roundName : String) :
+    NoSp (WitnessRt.round montName mont roundName round) := by
+  unfold WitnessRt.round WitnessMont.code
+  exact sequence (NoSp.of_all (by rfl)) (sequence (NoSp.of_all (by rfl))
+    (sequence (sequence (mulY Hm montName 4) (NoSp.of_all (by rfl))) (roundCall Hr roundName)))
+
+theorem witnessBody {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round) (montName roundName : String) :
+    NoSp (WitnessRt.body montName mont roundName round) := by
+  unfold WitnessRt.body
+  exact sequence (NoSp.of_all (by rfl)) (sequence (witnessRound Hm Hr montName roundName) (NoSp.of_all (by rfl)))
+
+theorem witnesses {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round) (montName roundName : String) :
+    NoSp (WitnessRt.code montName mont roundName round) := by
+  apply NoSp.of_all
+  simp only [WitnessRt.code, WitnessRt.step, Code.allInstrs, checked (witnessBody Hm Hr montName roundName)]
+  rfl
+
 theorem testBody {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round) (montName roundName : String) :
     NoSp (Candidate.testBody montName mont roundName round) :=
-  sequence (prepared Hm montName) (sequence (NoSp.of_all (by rfl))
-    (dispatch (fun w => millerRabin Hm Hr w montName roundName) Candidate.widths))
+  sequence (prepared Hm montName) (witnesses Hm Hr montName roundName)
 
 theorem tested {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round) (montName roundName : String) :
     NoSp (Candidate.tested montName mont roundName round) := by

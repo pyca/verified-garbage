@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateStack
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Candidate
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidatePrepareInput
 import VerifiedGarbage.Proof.RsaKeyGen.X86.MrExponentRt.Prepared
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDispatch
+import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Loop
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFrame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateNoSpCode
 import VerifiedGarbage.Proof.RsaKeyGen.X86.FilterStack
@@ -19,17 +19,6 @@ import VerifiedGarbage.Proof.Mont.X86.Instr
 namespace VG.Proof.RsaKeyGen.X86.MrExponentRt
 open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.MillerRabin.X86
 open VG.Proof.RsaKeyGen
-
-theorem ready_keep {P : MillerRabinLoop.Parameters} {s t : State} (R : CandidatePrepare.Ready P s)
-    {rs : List Reg} (K : Keeps rs s t) (sp : .esp ∉ rs) (edi : .edi ∉ rs) (M : t.mem = s.mem) :
-    CandidatePrepare.Ready P t := by
-  have D := R.prepared
-  refine ⟨⟨⟨D.ready.context.keepMem K edi M, by rw [M]; exact D.ready.modulus,
-    D.ready.caller.keepFrame K sp (by rw [M]; exact Frame.refl _ _), D.ready.scratch.of_keeps K edi sp⟩,
-    by rw [M]; exact D.r2, by rw [M]; exact D.one, by rw [M]; exact D.minusOne, by rw [M]; exact D.exponent,
-    by rw [M]; exact D.marker, by rw [M]; exact D.stride⟩,
-    by rw [K.2.1, K.2.2]; exact R.readable, by rw [M]; exact R.entropy,
-    by rw [M]; exact R.randPtr, by rw [M]; exact R.randLength, by rw [M]; exact R.used⟩
 
 /-- Preparation and the witnesses: `CandidateTest.core_ok` with the exponent
 at the run-time width. -/
@@ -55,29 +44,13 @@ theorem body_ok {mont round : Prog isa} {montName roundName : String}
   unfold VG.Impl.RsaKeyGen.X86.Candidate.testBody
   refine WP.seq (WP.mono (prepared_ok montVerified montNoSp montStack v width bound seed
     ⟨S, readable, entropy, randPtr, randLength, used⟩ len) fun a ⟨A, Wa, Fa, Ka⟩ => ?_)
-  have C := A.prepared.ready.context
-  refine WP.seq (wp_movS (readSrc_ptr C.ws C.base (d := 48) (by have := v.geometry.headerFit; omega))
-    fun b B _ => WP.block_nil ?_)
-  have eax : b.gpr .eax = BitVec.ofNat 32 P.g.w := by
-    rw [B.gpr, Nat.zero_add]
-    apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-    exact C.width
-  refine Candidate.dispatch_ok eax (by omega) _ (width_member width bound) widths_bounded fun c Cc => ?_
-  have Kc : Keeps [.eax] a c := B.keeps.widen (Cc.keeps [])
-  have Mc : c.mem = a.mem := Cc.mem.trans B.mem
-  have R := ready_keep A Kc (by decide) (by decide) Mc
-  unfold VG.Impl.RsaKeyGen.X86.Candidate.witnesses VG.Impl.RsaKeyGen.X86.MillerRabinLoop.code
-    VG.Impl.RsaKeyGen.X86.MillerRabinLoop.codeOf
-  rw [← checks, ← bytes, ← words]
-  refine WP.mono (MillerRabinLoop.code_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack
-    v R.prepared R.readable R.entropy R.randPtr R.randLength R.used enough)
+  refine WP.mono (WitnessRt.codeRt_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack
+    v ⟨bytes, words, checks⟩ A.prepared A.readable A.entropy A.randPtr A.randLength A.used enough)
     fun t ⟨T, result, Wt, Ft, Kt⟩ => ?_
-  rw [Mc] at Wt Ft
   refine ⟨T, result, ?_, (VG.X86.Frame.below_mono Fa (by decide) v.low).trans Ft, ?_⟩
   · exact (Wa.mono (fun _ mem => List.mem_append_left _ mem)).trans
       (Wt.mono (fun _ mem => List.mem_append_right _ mem))
-  · exact (Ka.mono (by unfold Prepare.clob WitnessStep.clob; decide)).trans ((Kc.mono (by decide)).trans Kt)
+  · exact (Ka.mono (by unfold Prepare.clob WitnessStep.clob; decide)).trans Kt
 
 theorem tested_frame_ok {mont round : Prog isa} {montName roundName : String}
     (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))

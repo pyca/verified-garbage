@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveSetup
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CmpCarry
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveCandidateSlots
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.FrontRt
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
@@ -46,14 +47,6 @@ theorem candidateSlots_ok {g : Geometry} (v : g.Valid) {c : Nat} {s : State} (C 
   refine ⟨⟨C.keep v keep (by decide) (outsideStack_frame outside), ?_, ?_⟩, outside, keep⟩
   · rw [mem, stack_write_ne (by decide) (by decide) (by decide), Mem.readW_writeW_self32]
   · rw [mem, Mem.readW_writeW_self32]
-
-/-- `cmp d, src` and its borrow. -/
-theorem wp_cmpCarry {is : List Instr} {s : State} {Q : State → Prop} {d : Reg} {src : Src} {v : BitVec 32}
-    (h : readSrc s src = some v)
-    (k : ∀ t, Fupd s t → t.cf = some (decide ((s.gpr d).toNat < v.toNat)) → WP isa (.block is) t Q) :
-    WP isa (.block (.alu .cmp d src :: is)) s Q :=
-  cons (s' := arithFlags s (s.gpr d - v) (decide ((s.gpr d).toNat < v.toNat)) (subOverflow (s.gpr d) v (s.gpr d - v)))
-    (by simp only [exec, execAlu, h, Option.bind_some]) (k _ ⟨rfl, rfl, rfl, rfl, rfl⟩ rfl)
 
 /-- `tableSlots`' branch-free table length. -/
 theorem count_value (w : Nat) (bound : w ≤ 128) :

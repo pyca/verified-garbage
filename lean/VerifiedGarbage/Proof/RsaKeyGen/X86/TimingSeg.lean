@@ -37,6 +37,13 @@ theorem withRuns {X Y : State → Prop} {c : Prog isa} {R : State → State → 
   intro s t tr ur u z ⟨S, T⟩ E G
   exact ⟨(raw _ _ _ _ _ _ ⟨S, T⟩ E G).1, wp_result (run s S) E, wp_result (run t T) G⟩
 
+/-- A block with `rs` public leaks the same trace. -/
+theorem rawBlock {rs : List Reg} {code : List Instr}
+    (L : (VG.Taint.check taint (τr rs) (.block code) (.block [])).map (taint.le (τr [])) = some true) :
+    RelCT isa (VG.X86.Taint.Agree (τr rs)) (.block code) (fun _ _ => True) :=
+  (erased_relCT (σ := τr []) (.block code) (.block code) (.block []) rfl rfl rfl L).mono
+    (fun _ _ h => h) (fun _ _ _ => trivial)
+
 theorem ptr_value {s : State} {W : Addr} {r : Reg} {x : Nat} (P : PtrAt s W r x) :
     s.gpr r = BitVec.ofNat 32 (W.toNat + x) := by
   apply BitVec.eq_of_toNat_eq

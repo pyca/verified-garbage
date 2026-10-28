@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.FrontRt.Sieve
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveLoopTiming
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.RsaKeyGen.X86.FrontRt.LoadTiming
+import VerifiedGarbage.Proof.RsaKeyGen.X86.TimingSeg
 import VerifiedGarbage.Proof.Framework.X86.SymFrame
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Mont.X86.Instr

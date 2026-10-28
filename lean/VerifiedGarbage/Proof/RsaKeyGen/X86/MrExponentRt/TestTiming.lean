@@ -15,6 +15,7 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Mont.X86.Instr
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinTiming
+import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Timing
 
 /-! # Preparation with the run-time exponent, then the witnesses, leak only the iteration count -/
 
@@ -135,55 +136,6 @@ theorem preparedRun_pair {mont : Prog isa} {name : String}
   · exact U.prepared.ready.caller.sp.trans Z.prepared.ready.caller.sp.symm
   · exact (edi_value U.prepared.ready.context).trans (edi_value Z.prepared.ready.context).symm
 
-theorem initial_keeps {P : MillerRabinLoop.Parameters} {other : Nat} {entropy : Spec.RsaKeyGen.Rand}
-    {s t u z : State} (H : MillerRabinLoop.InitialPair P other entropy s t) {rs : List Reg}
-    (U : Keeps rs s u) (Z : Keeps rs t z) (sp : .esp ∉ rs) (edi : .edi ∉ rs) (Mu : u.mem = s.mem)
-    (Mz : z.mem = t.mem) : MillerRabinLoop.InitialPair P other entropy u z := by
-  obtain ⟨⟨Cs, Ct, A⟩, Is, It, iterations⟩ := H
-  have keepInitial {Q : MillerRabinLoop.Parameters} {a b : State} (I : MillerRabinLoop.Initial Q a)
-      (B : Keeps rs a b) (M : b.mem = a.mem) : MillerRabinLoop.Initial Q b := by
-    have R := ready_keep (P := Q) ⟨I.1, I.2.1, I.2.2.1, I.2.2.2.1, I.2.2.2.2.1, I.2.2.2.2.2⟩ B sp edi M
-    exact ⟨R.prepared, R.readable, R.entropy, R.randPtr, R.randLength, R.used⟩
-  refine ⟨⟨Cs.keepMem U edi Mu, Ct.keepMem Z edi Mz, agree_regs (rs := [.esp, .edi]) fun r mem => ?_⟩,
-    keepInitial Is U Mu, keepInitial It Z Mz, iterations⟩
-  have notIn : r ∉ rs := by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at mem
-    rcases mem with rfl | rfl
-    · exact sp
-    · exact edi
-  rw [U.1 r notIn, Z.1 r notIn]
-  exact A.rf.1 r (RegSet.mem_ofList.mpr mem)
-
-theorem initial_keep {P : MillerRabinLoop.Parameters} {other : Nat} {entropy : Spec.RsaKeyGen.Rand}
-    (s t u z : State) (H : MillerRabinLoop.InitialPair P other entropy s t) (U : Fupd s u) (Z : Fupd t z) :
-    MillerRabinLoop.InitialPair P other entropy u z :=
-  initial_keeps H (U.keeps []) (Z.keeps []) (by decide) (by decide) U.mem Z.mem
-
-theorem preparedWidth_trace {P : MillerRabinLoop.Parameters} (v : P.Valid) {other : Nat}
-    {entropy : Spec.RsaKeyGen.Rand} :
-    RelCT isa (MillerRabinLoop.InitialPair P other entropy) (.block VG.Impl.RsaKeyGen.X86.Candidate.preparedWidth)
-      (Candidate.WithValue (MillerRabinLoop.InitialPair P other entropy) (BitVec.ofNat 32 P.g.w)) := by
-  have raw : RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi])) (.block VG.Impl.RsaKeyGen.X86.Candidate.preparedWidth)
-      (fun _ _ => True) :=
-    (erased_relCT _ _ (.block []) rfl rfl rfl (by decide +kernel) :
-      RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi])) _ (VG.X86.Taint.Agree (τr [.esp]))).mono
-      (fun _ _ H => H) (fun _ _ _ => trivial)
-  have run {a : State} (C : Context P.g a) :
-      WP isa (.block VG.Impl.RsaKeyGen.X86.Candidate.preparedWidth) a fun b =>
-        b.gpr .eax = BitVec.ofNat 32 P.g.w ∧ b.mem = a.mem ∧ Keeps [.eax] a b := by
-    unfold VG.Impl.RsaKeyGen.X86.Candidate.preparedWidth
-    refine wp_movS (readSrc_ptr C.ws C.base (d := 48) (by have := v.geometry.headerFit; omega))
-      fun b B _ => WP.block_nil ⟨?_, B.mem, B.keeps⟩
-    have bound := v.geometry.maxWidth
-    rw [B.gpr, Nat.zero_add]
-    apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-    exact C.width
-  intro s t tr ur u z H E F
-  obtain ⟨eu, Mu, Ku⟩ := wp_result (run H.1.1) E
-  obtain ⟨ez, Mz, Kz⟩ := wp_result (run H.1.2.1) F
-  exact ⟨(raw _ _ _ _ _ _ H.1.2.2 E F).1, initial_keeps H Ku Kz (by decide) (by decide) Mu Mz, eu, ez⟩
-
 /-- Preparation and the witnesses: `CandidateTest.core_trace` with the
 exponent at the run-time width. -/
 theorem body_trace {mont round : Prog isa} {montName roundName : String}
@@ -198,15 +150,9 @@ theorem body_trace {mont round : Prog isa} {montName roundName : String}
     (enough : P.start ≤ P.randLen) :
     RelCT isa (fun s t => InputsPair P other entropy s t ∧ P.iterations = (P.withSecret other entropy).iterations)
       (VG.Impl.RsaKeyGen.X86.Candidate.testBody montName mont roundName round) (Pair P.g [.edi]) := by
-  have loop : RelCT isa (MillerRabinLoop.InitialPair P other entropy)
-      (VG.Impl.RsaKeyGen.X86.Candidate.witnesses P.g.w montName mont roundName round) (Pair P.g [.edi]) := by
-    unfold VG.Impl.RsaKeyGen.X86.Candidate.witnesses VG.Impl.RsaKeyGen.X86.MillerRabinLoop.code
-      VG.Impl.RsaKeyGen.X86.MillerRabinLoop.codeOf
-    rw [← checks, ← bytes, ← words]
-    exact MillerRabinLoop.code_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack v w enough
   unfold VG.Impl.RsaKeyGen.X86.Candidate.testBody
   exact RelCT.seq (preparedRun_pair montVerified montNoSp montStack v width bound seed w)
-    (RelCT.seq (preparedWidth_trace v) (Candidate.dispatch_trace (by omega) initial_keep loop _
-      (width_member width bound) widths_bounded))
+    (WitnessRt.codeRt_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack v
+      ⟨bytes, words, checks⟩ w enough)
 
 end VG.Proof.RsaKeyGen.X86.MrExponentRt
