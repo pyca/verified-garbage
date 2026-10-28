@@ -40,11 +40,12 @@ theorem mrExponent : NoSp MrExponentRt.code := NoSp.of_all (by rfl)
 
 theorem prepareHead {mont : Prog isa} (Hm : NoSp mont) (w : Nat) (montName : String) :
     NoSp (Candidate.prepareHead w montName mont) :=
-  sequence (NoSp.of_all (by rfl)) (sequence (r2 Hm w montName) (constants Hm w montName))
+  sequence (r2 Hm w montName) (constants Hm w montName)
 
 theorem prepared {mont : Prog isa} (Hm : NoSp mont) (montName : String) :
     NoSp (Candidate.prepared montName mont) :=
-  sequence (NoSp.of_all (by rfl)) (sequence (dispatch (prepareHead Hm · montName) Candidate.widths) mrExponent)
+  sequence (NoSp.of_all (by rfl)) (sequence (NoSp.of_all (by rfl))
+    (sequence (dispatch (prepareHead Hm · montName) Candidate.widths) mrExponent))
 
 theorem witnessRound {mont round : Prog isa} (Hm : NoSp mont) (Hr : NoSp round) (montName roundName : String) :
     NoSp (WitnessRt.round montName mont roundName round) := by

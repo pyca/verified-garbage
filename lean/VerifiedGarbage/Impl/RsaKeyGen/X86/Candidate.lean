@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentRt
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.MrExponentRt
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.FrontRt
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessRt
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.HeaderRt
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateTest
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateFinish
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.CandidateClear
@@ -35,13 +36,14 @@ def widths : List Nat := (List.range 61).map (· + 4)
 /-- `eax := w`, from the candidate's length in the header. -/
 def width : List Instr := [.mov .eax (.mem (sc 4)), .shift .shr .eax 3]
 
-/-- Preparation at width `w` but for the exponent: the header, R² and the constants. -/
+/-- Preparation at width `w` but for the header and the exponent: R² and the constants. -/
 def prepareHead (w : Nat) (montName : String) (montCode : Prog isa) : Prog isa :=
-  .seq (PrepareHeader.code w) (.seq (PreparedR2.code w montName montCode) (Constants.code w montName montCode))
+  .seq (PreparedR2.code w montName montCode) (Constants.code w montName montCode)
 
 /-- Preparation, with the exponent at the run-time width. -/
 def prepared (montName : String) (montCode : Prog isa) : Prog isa :=
-  .seq (.block width) (.seq (dispatch (fun w => prepareHead w montName montCode) widths) MrExponentRt.code)
+  .seq HeaderRt.prepare
+    (.seq (.block width) (.seq (dispatch (fun w => prepareHead w montName montCode) widths) MrExponentRt.code))
 
 /-- Preparation, then the witnesses. -/
 def testBody (montName : String) (montCode : Prog isa) (roundName : String) (roundCode : Prog isa) : Prog isa :=
