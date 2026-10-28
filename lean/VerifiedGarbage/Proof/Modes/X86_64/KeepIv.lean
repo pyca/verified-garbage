@@ -14,7 +14,8 @@ writes an `xmm` register other than `ivX` (an SSE instruction, `movdqu xmm,
 m128`) keeps `ivX` (`KeepsIv`), as the feedback modes need of a core
 (`Proof/Modes/X86_64/Fb.lean`): a core whose block code uses some of the
 other `xmm` registers, or that keeps values in them when it runs out of
-general-purpose ones.
+general-purpose ones, or across a call of a function that may write them.
+A call counts as the function's code (a call and a return keep `ivX`).
 -/
 
 @[expose] public section
@@ -70,12 +71,14 @@ theorem exec_ivSafe {i : Instr} (hi : ivSafeI i = true) {s t : State} (h : exec 
          obtain ⟨v, -, rfl⟩ := h
          exact RegUpd.xmm_setXmm_of_ne _ _ (Ne.symm hq))
 
-/-- Whether every instruction of `c` keeps `ivX`, with no calls or frames. -/
+/-- Whether every instruction of `c`, and of the functions it calls, keeps
+`ivX`, with no frames: a call and its return change only `rsp` and memory. -/
 def ivSafe : Prog isa → Bool
   | .block is => is.all ivSafeI
   | .seq a b => ivSafe a && ivSafe b
   | .ite _ a b => ivSafe a && ivSafe b
   | .loop b _ => ivSafe b
+  | .call _ b => ivSafe b
   | _ => false
 
 theorem execBlock_ivSafe : ∀ {is : List Instr}, is.all ivSafeI = true → ∀ {s s' : State} {t : List Leak},
@@ -107,7 +110,14 @@ theorem keepsIv_of_ivSafe {c : Prog isa} (hc : ivSafe c = true) : KeepsIv c := b
   | iteF _ _ ih => intro hc; simp only [ivSafe, Bool.and_eq_true] at hc; exact ih hc.2
   | loopExit _ _ ih => exact ih
   | loopNext _ _ _ ih₁ ih₂ => intro hc; exact (ih₂ hc).trans (ih₁ hc)
-  | call => intro hc; simp only [ivSafe, Bool.false_eq_true] at hc
+  | call hc₁ _ hr ih =>
+    intro hc
+    have a := ih hc
+    simp only [isa, call, Option.some.injEq] at hc₁
+    subst hc₁
+    simp only [isa, ret] at hr
+    split at hr <;> cases hr
+    exact a
   | frame => intro hc; simp only [ivSafe, Bool.false_eq_true] at hc
 
 end VG.Proof.Modes.X86_64

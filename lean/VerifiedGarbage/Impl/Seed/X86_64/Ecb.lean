@@ -6,7 +6,8 @@ public import VerifiedGarbage.Spec.Seed
 /-!
 # SEED ECB on x86-64
 
-`vg_seed_ecb_{en,de}crypt(schedule = rdi, data = rsi, n = rdx, scratch = rcx)`.
+`vg_seed_{en,de}crypt_blocks(schedule = rdi, data = rsi, n = rdx, scratch = rcx)`,
+which `vg_seed_ecb_{en,de}crypt` and the modes call (`Modes.lean`).
 
 Sixteen blocks at a time (fewer in the last batch), each round's three `G`s
 computed for all of them at once by `g16`. The scratch buffer (moved to

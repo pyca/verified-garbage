@@ -37,8 +37,8 @@ the stack pointer are public, and so is everything the code computes from
 them; the IV is secret. Encryption's analysis reads the feedback modes'
 summary of the loop of rounds (`fbRoundSum`). `cbcEncryptChained_framed`
 and `cbcDecryptChained_framed` run them with their working space on the
-stack, zeroed on return: 1512 bytes, the 188 words of the scratch buffer
-and 8 more.
+stack, zeroed on return: 1544 bytes, the 192 words of the scratch buffer
+and 8 more, above the 8 bytes the core's call uses.
 -/
 
 @[expose] public section
@@ -69,8 +69,8 @@ theorem decCipher_eq : (dirCoreSpec .decrypt).cipher = Spec.Seed.invCipher := rf
 
 theorem cbcDecryptChained_wp {s₀ : State} (hp : cbcDecX86_64.pre s₀) :
     WP isa cbcDecryptChained s₀ fun s' => gprPreserved s₀ s' ∧ cbcDecX86_64.post s₀ s' := by
-  obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, fitK, fitV, fitD, fitB⟩ := hp
-  have hwS : (⟨s₀.gpr .r8, 8 * 188⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, dTV, dTD, dTS, hst, fitK, fitV, fitD, fitB⟩ := hp
+  have hwS : (⟨s₀.gpr .r8, 8 * 192⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
   refine WP.mono (Proof.Modes.X86_64.cbcDecryptChained_wp (dirCoreSpec .decrypt) (r := modeRegs)
     ⟨by decide, by decide, by decide⟩ (by decide)
     (B := s₀.gpr .r8) (P := s₀.gpr .rsi) (D := s₀.gpr .rdx) (n := (s₀.gpr .rcx).toNat)
@@ -82,14 +82,12 @@ theorem cbcDecryptChained_wp {s₀ : State} (hp : cbcDecX86_64.pre s₀) :
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact dKS
-      · exact dKV⟩) fun s' ⟨hcs, hdata, hiv, hf, _, _⟩ => ⟨⟨hcs, ?_⟩, ?_⟩
-  · rw [VG.Proof.Modes.X86_64.stkList_eq_nil rfl, List.append_nil] at hf
-    refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact dRS
-    · exact dRD
-    · exact dRV
+      · exact dKV, hst, fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact dTS
+      · exact dTV⟩ (hstk := stkOk hwr dTV dTD dTS hst .decrypt)) fun s' ⟨hcs, hdata, hiv, hf, _, _⟩ => ⟨⟨hcs, ?_⟩, ?_⟩
+  · exact ret_frame hf dRS dRD dRV
   · rw [dirCore_bw, show 8 * 2 = 16 from rfl] at hdata hiv
     rw [decCipher_eq] at hdata
     exact ⟨hdata, hiv⟩
@@ -98,7 +96,7 @@ theorem cbcDecryptChained_ct : ConstantTime isa cbcDecX86_64.pre cbcDecX86_64.pu
   VG.Taint.constantTime (A := taint) fbTaint (fbTaint_agree blkLen_congr) (by taint_decide)
 
 theorem cbcDecryptChained_verified :
-    Verified X86_64.target cbcDecryptChained (Proof.Seed.cbcDecChainedScratchContract X86_64.abi 188) :=
+    Verified X86_64.target cbcDecryptChained (Proof.Seed.cbcDecChainedScratchContract X86_64.abi 192 8) :=
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, hg, hpost⟩ := cbcDecryptChained_wp hs
       exact ⟨t, s', he, abiPreserved_of_exec (c := cbcDecryptChained) (by lit_decide) he hg, hpost⟩)
@@ -108,11 +106,11 @@ theorem cbcDecryptChained_verified :
 
 /-- CBC decryption with its working space on the stack. -/
 theorem cbcDecryptChained_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 1512 .r8 188 cbcDecryptChained)
-      (Spec.Seed.cbcDecryptChainedContract X86_64.abi 1512) :=
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 1544 .r8 192 cbcDecryptChained)
+      (Spec.Seed.cbcDecryptChainedContract X86_64.abi 1552) :=
   X86_64.Verified.stackScratchWiped (sig := Spec.Seed.cbcChainedSig) (nm := "scratch") (e := .u64)
-    (n := 188) (post := Proof.Seed.cbcDecChainedPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 1512) cbcDecryptChained_verified (by decide) (by decide) (by decide)
+    (n := 192) (post := Proof.Seed.cbcDecChainedPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (bytes := 1544) cbcDecryptChained_verified (by decide) (by decide) (by decide)
     (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Seed.cbcDecChainedPostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
@@ -121,8 +119,8 @@ theorem cbcDecryptChained_framed :
 
 theorem cbcEncryptChained_wp {s₀ : State} (hp : cbcEncX86_64.pre s₀) :
     WP isa cbcEncryptChained s₀ fun s' => gprPreserved s₀ s' ∧ cbcEncX86_64.post s₀ s' := by
-  obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, fitK, fitV, fitD, fitB⟩ := hp
-  have hwS : (⟨s₀.gpr .r8, 8 * 188⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, dTV, dTD, dTS, hst, fitK, fitV, fitD, fitB⟩ := hp
+  have hwS : (⟨s₀.gpr .r8, 8 * 192⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
   refine WP.mono (Proof.Modes.X86_64.cbcEncryptChained_wp (dirCoreSpec .encrypt) (r := modeRegs)
     ⟨by decide, by decide, by decide⟩ (by decide)
     (B := s₀.gpr .r8) (P := s₀.gpr .rsi) (D := s₀.gpr .rdx) (n := (s₀.gpr .rcx).toNat)
@@ -134,16 +132,14 @@ theorem cbcEncryptChained_wp {s₀ : State} (hp : cbcEncX86_64.pre s₀) :
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact dKS
-      · exact dKD⟩ ⟨Modes.X86_64.keepsIv_of_scal (by lit_decide),
-      Modes.X86_64.keepsIv_of_ivSafe (by lit_decide)⟩)
+      · exact dKD, hst, fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact dTS
+      · exact dTD⟩ ⟨Modes.X86_64.keepsIv_of_scal (by lit_decide),
+      Modes.X86_64.keepsIv_of_ivSafe (by lit_decide)⟩ (hstk := stkOk hwr dTV dTD dTS hst .encrypt))
     fun s' ⟨hcs, hdata, hiv, hf, _, _⟩ => ⟨⟨hcs, ?_⟩, ?_⟩
-  · rw [VG.Proof.Modes.X86_64.stkList_eq_nil rfl, List.append_nil] at hf
-    refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact dRS
-    · exact dRD
-    · exact dRV
+  · exact ret_frame hf dRS dRD dRV
   · rw [dirCore_bw, show 8 * 2 = 16 from rfl, encCipher_eq] at hdata hiv
     exact ⟨hdata, hiv⟩
 
@@ -152,7 +148,7 @@ theorem cbcEncryptChained_ct : ConstantTime isa cbcEncX86_64.pre cbcEncX86_64.pu
   VG.Taint.constantTime (A := taintS) fbTaint (fbTaint_agree blkLen_congr) h
 
 theorem cbcEncryptChained_verified :
-    Verified X86_64.target cbcEncryptChained (Proof.Seed.cbcEncChainedScratchContract X86_64.abi 188) :=
+    Verified X86_64.target cbcEncryptChained (Proof.Seed.cbcEncChainedScratchContract X86_64.abi 192 8) :=
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, hg, hpost⟩ := cbcEncryptChained_wp hs
       exact ⟨t, s', he, abiPreserved_of_exec (c := cbcEncryptChained) (by lit_decide) he hg, hpost⟩)
@@ -162,11 +158,11 @@ theorem cbcEncryptChained_verified :
 
 /-- CBC encryption with its working space on the stack. -/
 theorem cbcEncryptChained_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 1512 .r8 188 cbcEncryptChained)
-      (Spec.Seed.cbcEncryptChainedContract X86_64.abi 1512) :=
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 1544 .r8 192 cbcEncryptChained)
+      (Spec.Seed.cbcEncryptChainedContract X86_64.abi 1552) :=
   X86_64.Verified.stackScratchWiped (sig := Spec.Seed.cbcChainedSig) (nm := "scratch") (e := .u64)
-    (n := 188) (post := Proof.Seed.cbcEncChainedPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 1512) cbcEncryptChained_verified (by decide) (by decide) (by decide)
+    (n := 192) (post := Proof.Seed.cbcEncChainedPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (bytes := 1544) cbcEncryptChained_verified (by decide) (by decide) (by decide)
     (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Seed.cbcEncChainedPostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))

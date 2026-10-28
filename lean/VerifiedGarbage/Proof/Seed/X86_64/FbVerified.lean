@@ -38,8 +38,8 @@ specification's results (`Proof.Modes.ofb_of`, …). `ofb_verified`, …: each
 is correct and constant time, by the taint analysis: the pointers, `n` and
 the stack pointer are public, and so is everything the code computes from
 them; the IV is secret. `ofb_framed`, … run them with their working space on
-the stack, zeroed on return: 1512 bytes, the 188 words of the scratch buffer
-and 8 more.
+the stack, zeroed on return: 1544 bytes, the 192 words of the scratch buffer
+and 8 more, above the 8 bytes the core's call uses.
 -/
 
 @[expose] public section
@@ -49,18 +49,21 @@ namespace VG.Proof.Seed.X86_64
 open VG VG.X86_64 VG.Impl.Seed.X86_64
 
 /-- The precondition of the feedback modes on x86-64, with the data `len`
-bytes long and the working space at `r8`. -/
+bytes long, the working space at `r8`, and the 8 bytes below `rsp`, where
+the core's call stores its return address, apart from the buffers. -/
 def fbPre (len : State → Nat) (s : State) : Prop :=
   let sched : Region := ⟨s.gpr .rdi, 128⟩
   let iv : Region := ⟨s.gpr .rsi, 16⟩
   let data : Region := ⟨s.gpr .rdx, len s⟩
-  let scratch : Region := ⟨s.gpr .r8, 8 * 188⟩
+  let scratch : Region := ⟨s.gpr .r8, 8 * 192⟩
   let ret : Region := ⟨s.gpr .rsp, 8⟩
+  let stk : Region := ⟨s.gpr .rsp - BitVec.ofNat 64 8, 8⟩
   s.rd = [sched] ∧ s.wr = [iv, data, scratch] ∧ sched.Disjoint iv ∧ sched.Disjoint data ∧
     sched.Disjoint scratch ∧ iv.Disjoint data ∧ iv.Disjoint scratch ∧ data.Disjoint scratch ∧
     ret.Disjoint iv ∧ ret.Disjoint data ∧ ret.Disjoint scratch ∧
+    stk.Disjoint iv ∧ stk.Disjoint data ∧ stk.Disjoint scratch ∧ 8 ≤ (s.gpr .rsp).toNat ∧
     (s.gpr .rdi).toNat + 128 ≤ 2 ^ 64 ∧ (s.gpr .rsi).toNat + 16 ≤ 2 ^ 64 ∧
-    (s.gpr .rdx).toNat + len s ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + 8 * 188 ≤ 2 ^ 64
+    (s.gpr .rdx).toNat + len s ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + 8 * 192 ≤ 2 ^ 64
 
 /-- The public arguments. -/
 def fbPub (s₁ s₂ : State) : Prop :=
@@ -99,6 +102,35 @@ attribute [local irreducible] Spec.Seed.cipher in
 irreducible: unifying them unfolds the spec before the core). -/
 theorem encCipher_eq : (dirCoreSpec .encrypt).cipher = Spec.Seed.cipher := rfl
 
+/-- The core's stack, below `rsp`, is apart from the buffers. -/
+theorem stkOk {s : State} {iv data scratch : Region} (hwr : s.wr = [iv, data, scratch])
+    (dTV : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 8, 8⟩ iv)
+    (dTD : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 8, 8⟩ data)
+    (dTS : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 8, 8⟩ scratch) (hst : 8 ≤ (s.gpr .rsp).toNat)
+    (d : Spec.Seed.Direction) : Proof.Modes.X86_64.StkOk (dirCore d) s :=
+  .inr ⟨hst, fun w hw => by
+    rw [hwr] at hw
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+    rcases hw with rfl | rfl | rfl
+    · exact dTV
+    · exact dTD
+    · exact dTS⟩
+
+/-- The return address is outside what the modes write: their buffers and the core's stack. -/
+theorem ret_frame {d : Spec.Seed.Direction} {s s' : State} {B D P : Addr} {n m : Nat}
+    (hf : Frame ([⟨B, n⟩, ⟨D, m⟩, ⟨P, 16⟩] ++ Proof.Modes.X86_64.stkList (dirCore d) (s.gpr .rsp)) s.mem s'.mem)
+    (dRS : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨B, n⟩) (dRD : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨D, m⟩)
+    (dRV : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨P, 16⟩) :
+    s'.mem.readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64 := by
+  rw [stkList_dirCore] at hf
+  refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+  simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact dRS
+  · exact dRD
+  · exact dRV
+  · exact Offset.base_disjoint_below _ (by decide)
+
 /-- What the modes' OFB and CFB give, for a mode `mo`: the data and the
 IV as `fbOut` and `fbIn`, keeping the callee-saved registers. -/
 theorem fb_wp' (mo : Impl.Modes.FbMode) {s₀ : State} (hp : fbPre blkLen s₀) :
@@ -106,8 +138,8 @@ theorem fb_wp' (mo : Impl.Modes.FbMode) {s₀ : State} (hp : fbPre blkLen s₀) 
       Modes.blocksOf 16 s'.mem (s₀.gpr .rdx) (s₀.gpr .rcx).toNat =
         (List.range (s₀.gpr .rcx).toNat).map (Modes.fbOut mo 16 (ciphOf s₀) s₀.mem (s₀.gpr .rdx) (ivOf s₀)) ∧
       Spec.Aes.bytesAt s'.mem (s₀.gpr .rsi) 16 = Modes.fbIn mo 16 (ciphOf s₀) s₀.mem (s₀.gpr .rdx) (ivOf s₀) (s₀.gpr .rcx).toNat := by
-  obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, fitK, fitV, fitD, fitB⟩ := hp
-  have hwS : (⟨s₀.gpr .r8, 8 * 188⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, dRV, dRD, dRS, dTV, dTD, dTS, hst, fitK, fitV, fitD, fitB⟩ := hp
+  have hwS : (⟨s₀.gpr .r8, 8 * 192⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
   refine WP.mono (Proof.Modes.X86_64.fb_wp (dirCoreSpec .encrypt) mo (r := modeRegs)
     ⟨by decide, by decide, by decide⟩ (by decide)
     (B := s₀.gpr .r8) (P := s₀.gpr .rsi) (D := s₀.gpr .rdx) (n := (s₀.gpr .rcx).toNat)
@@ -116,18 +148,13 @@ theorem fb_wp' (mo : Impl.Modes.FbMode) {s₀ : State} (hp : fbPre blkLen s₀) 
     (by rw [dirCore_bw, show 8 * 2 = 16 from rfl, hwr]; exact List.mem_cons_of_mem _ List.mem_cons_self)
     dVS dDS dVD fitD
     ⟨s₀.gpr .rdi, rfl, rfl, by rw [hrd]; simp, fitK, fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact dKS⟩ ⟨Modes.X86_64.keepsIv_of_scal (by lit_decide),
-      Modes.X86_64.keepsIv_of_ivSafe (by lit_decide)⟩)
+      simp only [List.mem_singleton] at hr; subst hr; exact dKS, hst, fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact dTS⟩ ⟨Modes.X86_64.keepsIv_of_scal (by lit_decide),
+      Modes.X86_64.keepsIv_of_ivSafe (by lit_decide)⟩ (hstk := stkOk hwr dTV dTD dTS hst .encrypt))
     fun s' ⟨hcs, hdata, hiv, hf, _, _⟩ =>
     ⟨⟨hcs, ?_⟩, by
       rw [dirCore_bw, show 8 * 2 = 16 from rfl, encCipher_eq] at hdata hiv; exact ⟨hdata, hiv⟩⟩
-  rw [VG.Proof.Modes.X86_64.stkList_eq_nil rfl, List.append_nil] at hf
-  refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact dRS
-  · exact dRD
-  · exact dRV
+  exact ret_frame hf dRS dRD dRV
 
 theorem ofb_wp {s₀ : State} (hp : ofbX86_64.pre s₀) :
     WP isa ofb s₀ fun s' => gprPreserved s₀ s' ∧ ofbX86_64.post s₀ s' :=
@@ -164,15 +191,15 @@ theorem cfbDecrypt_wp {s₀ : State} (hp : cfbDecX86_64.pre s₀) :
 
 def fbTaint : X86_64.Taint.T :=
   { regs := .ofList [.rdi, .rsi, .rdx, .rcx, .r8, .rsp], flags := false,
-    lens := [16, 0, 8 * 188], bases := [(.r8, 2, 0)] }
+    lens := [16, 0, 8 * 192], bases := [(.r8, 2, 0)] }
 
 theorem fbTaint_wf {len : State → Nat} (s : State) (hs : fbPre len s) : Taint.Wf fbTaint s := by
-  obtain ⟨_, hwr, _, _, _, dVD, dVS, dDS, _, _, _, _, fitV, fitD, fitB⟩ := hs
+  obtain ⟨_, hwr, _, _, _, dVD, dVS, dDS, _, _, _, _, _, _, _, _, fitV, fitD, fitB⟩ := hs
   refine ⟨fun _ => ?_, ?_⟩
   · rw [hwr]
     refine ⟨?_, ?_, ?_⟩
     · exact List.Forall₂.cons (by change 16 ≤ 16; omega) (List.Forall₂.cons (by change 0 ≤ len s; omega)
-        (List.Forall₂.cons (by change 8 * 188 ≤ 8 * 188; omega) List.Forall₂.nil))
+        (List.Forall₂.cons (by change 8 * 192 ≤ 8 * 192; omega) List.Forall₂.nil))
     · refine List.Pairwise.cons (fun r hr => ?_) (List.Pairwise.cons (fun r hr => ?_)
         (List.Pairwise.cons (by simp) List.Pairwise.nil))
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -185,7 +212,7 @@ theorem fbTaint_wf {len : State → Nat} (s : State) (hs : fbPre len s) : Taint.
       rcases hr with rfl | rfl | rfl
       · change 16 ≤ 2 ^ 64; omega
       · change len s ≤ 2 ^ 64; omega
-      · change 8 * 188 ≤ 2 ^ 64; omega
+      · change 8 * 192 ≤ 2 ^ 64; omega
   · intro p hp
     simp only [fbTaint, List.mem_singleton] at hp
     subst p
@@ -230,15 +257,16 @@ def fbSat : State where
   of := none
   mem _ := 0
   rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩, ⟨0x4000, 8 * 188⟩]
+  wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩, ⟨0x4000, 8 * 192⟩]
 
-/-- What is public at the core's loop of rounds: the pointers (`rsi` at the
-batch's blocks, `rdi` at the round keys, `r9` at the scratch buffer), the
-round counter, the stack pointer, the flags, and the data's address, the
-blocks left and the IV's address in `xmm13` … `xmm15`. -/
+/-- What is public at the loop of rounds of the function the core calls: the
+pointers (`rsi` at the batch's blocks, `rdi` at the round keys, `r9` at the
+scratch buffer), the round counter, the stack pointer, the flags, and the
+scratch buffer's address, the data's address, the blocks left and the IV's
+address in `xmm12` … `xmm15`. -/
 def fbRoundTaint : X86_64.Taint.T :=
-  { regs := .ofList [.rdx, .rsp, .rsi, .rdi, .r8, .r9], flags := true, lens := [16, 0, 8 * 188],
-    bases := [(.r9, 2, 0), (.rsi, 2, 8 * bufSlot)], xregs := .ofList [.xmm13, .xmm14, .xmm15] }
+  { regs := .ofList [.rdx, .rsp, .rsi, .rdi, .r8, .r9], flags := true, lens := [16, 0, 8 * 192],
+    bases := [(.r9, 2, 0), (.rsi, 2, 8 * bufSlot)], xregs := .ofList [.xmm12, .xmm13, .xmm14, .xmm15] }
 
 /-! The loop of rounds, which the three modes run, analysed once, as a summary. -/
 
@@ -249,7 +277,7 @@ theorem ofb_ct : ConstantTime isa ofbX86_64.pre ofbX86_64.pub ofb :=
   VG.Taint.constantTime (A := taintS) fbTaint (fbTaint_agree blkLen_congr) h
 
 theorem ofb_verified :
-    Verified X86_64.target ofb (Proof.Seed.fbScratchContract X86_64.abi 188 Proof.Seed.ofbPost) :=
+    Verified X86_64.target ofb (Proof.Seed.fbScratchContract X86_64.abi 192 Proof.Seed.ofbPost 8) :=
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, hg, hpost⟩ := ofb_wp hs
       exact ⟨t, s', he, abiPreserved_of_exec (c := ofb) (by lit_decide) he hg, hpost⟩)
@@ -262,7 +290,7 @@ theorem cfbEncrypt_ct : ConstantTime isa cfbEncX86_64.pre cfbEncX86_64.pub cfbEn
   VG.Taint.constantTime (A := taintS) fbTaint (fbTaint_agree blkLen_congr) h
 
 theorem cfbEncrypt_verified :
-    Verified X86_64.target cfbEncrypt (Proof.Seed.fbScratchContract X86_64.abi 188 Proof.Seed.cfbEncPost) :=
+    Verified X86_64.target cfbEncrypt (Proof.Seed.fbScratchContract X86_64.abi 192 Proof.Seed.cfbEncPost 8) :=
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, hg, hpost⟩ := cfbEncrypt_wp hs
       exact ⟨t, s', he, abiPreserved_of_exec (c := cfbEncrypt) (by lit_decide) he hg, hpost⟩)
@@ -275,7 +303,7 @@ theorem cfbDecrypt_ct : ConstantTime isa cfbDecX86_64.pre cfbDecX86_64.pub cfbDe
   VG.Taint.constantTime (A := taintS) fbTaint (fbTaint_agree blkLen_congr) h
 
 theorem cfbDecrypt_verified :
-    Verified X86_64.target cfbDecrypt (Proof.Seed.fbScratchContract X86_64.abi 188 Proof.Seed.cfbDecPost) :=
+    Verified X86_64.target cfbDecrypt (Proof.Seed.fbScratchContract X86_64.abi 192 Proof.Seed.cfbDecPost 8) :=
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, hg, hpost⟩ := cfbDecrypt_wp hs
       exact ⟨t, s', he, abiPreserved_of_exec (c := cfbDecrypt) (by lit_decide) he hg, hpost⟩)
@@ -285,33 +313,33 @@ theorem cfbDecrypt_verified :
 
 /-- OFB with its working space on the stack. -/
 theorem ofb_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 1512 .r8 188 ofb)
-      (Spec.Seed.ofbContract X86_64.abi 1512) :=
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 1544 .r8 192 ofb)
+      (Spec.Seed.ofbContract X86_64.abi 1552) :=
   X86_64.Verified.stackScratchWiped (sig := Spec.Seed.ofbSig) (nm := "scratch") (e := .u64)
-    (n := 188) (post := Proof.Seed.ofbPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 1512) ofb_verified (by decide) (by decide) (by decide)
+    (n := 192) (post := Proof.Seed.ofbPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (bytes := 1544) ofb_verified (by decide) (by decide) (by decide)
     (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Seed.ofbPostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-- CFB128 encryption with its working space on the stack. -/
 theorem cfbEncrypt_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 1512 .r8 188 cfbEncrypt)
-      (Spec.Seed.cfbEncryptContract X86_64.abi 1512) :=
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 1544 .r8 192 cfbEncrypt)
+      (Spec.Seed.cfbEncryptContract X86_64.abi 1552) :=
   X86_64.Verified.stackScratchWiped (sig := Spec.Seed.cfbSig) (nm := "scratch") (e := .u64)
-    (n := 188) (post := Proof.Seed.cfbEncPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 1512) cfbEncrypt_verified (by decide) (by decide) (by decide)
+    (n := 192) (post := Proof.Seed.cfbEncPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (bytes := 1544) cfbEncrypt_verified (by decide) (by decide) (by decide)
     (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Seed.cfbEncPostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 /-- CFB128 decryption with its working space on the stack. -/
 theorem cfbDecrypt_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 1512 .r8 188 cfbDecrypt)
-      (Spec.Seed.cfbDecryptContract X86_64.abi 1512) :=
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 1544 .r8 192 cfbDecrypt)
+      (Spec.Seed.cfbDecryptContract X86_64.abi 1552) :=
   X86_64.Verified.stackScratchWiped (sig := Spec.Seed.cfbSig) (nm := "scratch") (e := .u64)
-    (n := 188) (post := Proof.Seed.cfbDecPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 1512) cfbDecrypt_verified (by decide) (by decide) (by decide)
+    (n := 192) (post := Proof.Seed.cfbDecPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (bytes := 1544) cfbDecrypt_verified (by decide) (by decide) (by decide)
     (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Seed.cfbDecPostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
