@@ -1214,21 +1214,346 @@ ret
 ///
 /// Contract: `VG.Spec.Seed.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
 ///
-/// Baseline x86-64: sixteen blocks at a time, each `G` of a round bitsliced in general-purpose registers through the AES S-box circuit (SEED's S-boxes are affine maps of AES's), grouping the affine layer's parity-specific XOR sums before masking, with no table lookups.
+/// Baseline x86-64: calls `vg_seed_encrypt_blocks` with its working space on the stack.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the return address on the stack or the 1064 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * Neither `schedule` nor `data` may overlap the return address on the stack or the 1104 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_seed_ecb_encrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1064]
+        r"lea rsp, [rsp-1096]
 mov rcx, rsp
 add rcx, 8
-mov r9, rcx
+call {vg_seed_encrypt_blocks}
+mov r11d, 0
+mov QWORD PTR [rsp+8], r11
+mov QWORD PTR [rsp+16], r11
+mov QWORD PTR [rsp+24], r11
+mov QWORD PTR [rsp+32], r11
+mov QWORD PTR [rsp+40], r11
+mov QWORD PTR [rsp+48], r11
+mov QWORD PTR [rsp+56], r11
+mov QWORD PTR [rsp+64], r11
+mov QWORD PTR [rsp+72], r11
+mov QWORD PTR [rsp+80], r11
+mov QWORD PTR [rsp+88], r11
+mov QWORD PTR [rsp+96], r11
+mov QWORD PTR [rsp+104], r11
+mov QWORD PTR [rsp+112], r11
+mov QWORD PTR [rsp+120], r11
+mov QWORD PTR [rsp+128], r11
+mov QWORD PTR [rsp+136], r11
+mov QWORD PTR [rsp+144], r11
+mov QWORD PTR [rsp+152], r11
+mov QWORD PTR [rsp+160], r11
+mov QWORD PTR [rsp+168], r11
+mov QWORD PTR [rsp+176], r11
+mov QWORD PTR [rsp+184], r11
+mov QWORD PTR [rsp+192], r11
+mov QWORD PTR [rsp+200], r11
+mov QWORD PTR [rsp+208], r11
+mov QWORD PTR [rsp+216], r11
+mov QWORD PTR [rsp+224], r11
+mov QWORD PTR [rsp+232], r11
+mov QWORD PTR [rsp+240], r11
+mov QWORD PTR [rsp+248], r11
+mov QWORD PTR [rsp+256], r11
+mov QWORD PTR [rsp+264], r11
+mov QWORD PTR [rsp+272], r11
+mov QWORD PTR [rsp+280], r11
+mov QWORD PTR [rsp+288], r11
+mov QWORD PTR [rsp+296], r11
+mov QWORD PTR [rsp+304], r11
+mov QWORD PTR [rsp+312], r11
+mov QWORD PTR [rsp+320], r11
+mov QWORD PTR [rsp+328], r11
+mov QWORD PTR [rsp+336], r11
+mov QWORD PTR [rsp+344], r11
+mov QWORD PTR [rsp+352], r11
+mov QWORD PTR [rsp+360], r11
+mov QWORD PTR [rsp+368], r11
+mov QWORD PTR [rsp+376], r11
+mov QWORD PTR [rsp+384], r11
+mov QWORD PTR [rsp+392], r11
+mov QWORD PTR [rsp+400], r11
+mov QWORD PTR [rsp+408], r11
+mov QWORD PTR [rsp+416], r11
+mov QWORD PTR [rsp+424], r11
+mov QWORD PTR [rsp+432], r11
+mov QWORD PTR [rsp+440], r11
+mov QWORD PTR [rsp+448], r11
+mov QWORD PTR [rsp+456], r11
+mov QWORD PTR [rsp+464], r11
+mov QWORD PTR [rsp+472], r11
+mov QWORD PTR [rsp+480], r11
+mov QWORD PTR [rsp+488], r11
+mov QWORD PTR [rsp+496], r11
+mov QWORD PTR [rsp+504], r11
+mov QWORD PTR [rsp+512], r11
+mov QWORD PTR [rsp+520], r11
+mov QWORD PTR [rsp+528], r11
+mov QWORD PTR [rsp+536], r11
+mov QWORD PTR [rsp+544], r11
+mov QWORD PTR [rsp+552], r11
+mov QWORD PTR [rsp+560], r11
+mov QWORD PTR [rsp+568], r11
+mov QWORD PTR [rsp+576], r11
+mov QWORD PTR [rsp+584], r11
+mov QWORD PTR [rsp+592], r11
+mov QWORD PTR [rsp+600], r11
+mov QWORD PTR [rsp+608], r11
+mov QWORD PTR [rsp+616], r11
+mov QWORD PTR [rsp+624], r11
+mov QWORD PTR [rsp+632], r11
+mov QWORD PTR [rsp+640], r11
+mov QWORD PTR [rsp+648], r11
+mov QWORD PTR [rsp+656], r11
+mov QWORD PTR [rsp+664], r11
+mov QWORD PTR [rsp+672], r11
+mov QWORD PTR [rsp+680], r11
+mov QWORD PTR [rsp+688], r11
+mov QWORD PTR [rsp+696], r11
+mov QWORD PTR [rsp+704], r11
+mov QWORD PTR [rsp+712], r11
+mov QWORD PTR [rsp+720], r11
+mov QWORD PTR [rsp+728], r11
+mov QWORD PTR [rsp+736], r11
+mov QWORD PTR [rsp+744], r11
+mov QWORD PTR [rsp+752], r11
+mov QWORD PTR [rsp+760], r11
+mov QWORD PTR [rsp+768], r11
+mov QWORD PTR [rsp+776], r11
+mov QWORD PTR [rsp+784], r11
+mov QWORD PTR [rsp+792], r11
+mov QWORD PTR [rsp+800], r11
+mov QWORD PTR [rsp+808], r11
+mov QWORD PTR [rsp+816], r11
+mov QWORD PTR [rsp+824], r11
+mov QWORD PTR [rsp+832], r11
+mov QWORD PTR [rsp+840], r11
+mov QWORD PTR [rsp+848], r11
+mov QWORD PTR [rsp+856], r11
+mov QWORD PTR [rsp+864], r11
+mov QWORD PTR [rsp+872], r11
+mov QWORD PTR [rsp+880], r11
+mov QWORD PTR [rsp+888], r11
+mov QWORD PTR [rsp+896], r11
+mov QWORD PTR [rsp+904], r11
+mov QWORD PTR [rsp+912], r11
+mov QWORD PTR [rsp+920], r11
+mov QWORD PTR [rsp+928], r11
+mov QWORD PTR [rsp+936], r11
+mov QWORD PTR [rsp+944], r11
+mov QWORD PTR [rsp+952], r11
+mov QWORD PTR [rsp+960], r11
+mov QWORD PTR [rsp+968], r11
+mov QWORD PTR [rsp+976], r11
+mov QWORD PTR [rsp+984], r11
+mov QWORD PTR [rsp+992], r11
+mov QWORD PTR [rsp+1000], r11
+mov QWORD PTR [rsp+1008], r11
+mov QWORD PTR [rsp+1016], r11
+mov QWORD PTR [rsp+1024], r11
+mov QWORD PTR [rsp+1032], r11
+mov QWORD PTR [rsp+1040], r11
+mov QWORD PTR [rsp+1048], r11
+mov QWORD PTR [rsp+1056], r11
+mov QWORD PTR [rsp+1064], r11
+mov QWORD PTR [rsp+1072], r11
+mov QWORD PTR [rsp+1080], r11
+mov QWORD PTR [rsp+1088], r11
+lea rsp, [rsp+1096]
+ret
+.p2align 6",
+        vg_seed_encrypt_blocks = sym super::seed::vg_seed_encrypt_blocks,
+    )
+}
+
+/// SEED ECB decryption (RFC 4269 §2.4, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the schedule written by `vg_seed_expand_key`: the encryption procedure with the round keys in reverse order. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Seed.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
+///
+/// Baseline x86-64: calls `vg_seed_decrypt_blocks` with its working space on the stack.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may overlap the return address on the stack or the 1104 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_seed_ecb_decrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
+    core::arch::naked_asm!(
+        r"lea rsp, [rsp-1096]
+mov rcx, rsp
+add rcx, 8
+call {vg_seed_decrypt_blocks}
+mov r11d, 0
+mov QWORD PTR [rsp+8], r11
+mov QWORD PTR [rsp+16], r11
+mov QWORD PTR [rsp+24], r11
+mov QWORD PTR [rsp+32], r11
+mov QWORD PTR [rsp+40], r11
+mov QWORD PTR [rsp+48], r11
+mov QWORD PTR [rsp+56], r11
+mov QWORD PTR [rsp+64], r11
+mov QWORD PTR [rsp+72], r11
+mov QWORD PTR [rsp+80], r11
+mov QWORD PTR [rsp+88], r11
+mov QWORD PTR [rsp+96], r11
+mov QWORD PTR [rsp+104], r11
+mov QWORD PTR [rsp+112], r11
+mov QWORD PTR [rsp+120], r11
+mov QWORD PTR [rsp+128], r11
+mov QWORD PTR [rsp+136], r11
+mov QWORD PTR [rsp+144], r11
+mov QWORD PTR [rsp+152], r11
+mov QWORD PTR [rsp+160], r11
+mov QWORD PTR [rsp+168], r11
+mov QWORD PTR [rsp+176], r11
+mov QWORD PTR [rsp+184], r11
+mov QWORD PTR [rsp+192], r11
+mov QWORD PTR [rsp+200], r11
+mov QWORD PTR [rsp+208], r11
+mov QWORD PTR [rsp+216], r11
+mov QWORD PTR [rsp+224], r11
+mov QWORD PTR [rsp+232], r11
+mov QWORD PTR [rsp+240], r11
+mov QWORD PTR [rsp+248], r11
+mov QWORD PTR [rsp+256], r11
+mov QWORD PTR [rsp+264], r11
+mov QWORD PTR [rsp+272], r11
+mov QWORD PTR [rsp+280], r11
+mov QWORD PTR [rsp+288], r11
+mov QWORD PTR [rsp+296], r11
+mov QWORD PTR [rsp+304], r11
+mov QWORD PTR [rsp+312], r11
+mov QWORD PTR [rsp+320], r11
+mov QWORD PTR [rsp+328], r11
+mov QWORD PTR [rsp+336], r11
+mov QWORD PTR [rsp+344], r11
+mov QWORD PTR [rsp+352], r11
+mov QWORD PTR [rsp+360], r11
+mov QWORD PTR [rsp+368], r11
+mov QWORD PTR [rsp+376], r11
+mov QWORD PTR [rsp+384], r11
+mov QWORD PTR [rsp+392], r11
+mov QWORD PTR [rsp+400], r11
+mov QWORD PTR [rsp+408], r11
+mov QWORD PTR [rsp+416], r11
+mov QWORD PTR [rsp+424], r11
+mov QWORD PTR [rsp+432], r11
+mov QWORD PTR [rsp+440], r11
+mov QWORD PTR [rsp+448], r11
+mov QWORD PTR [rsp+456], r11
+mov QWORD PTR [rsp+464], r11
+mov QWORD PTR [rsp+472], r11
+mov QWORD PTR [rsp+480], r11
+mov QWORD PTR [rsp+488], r11
+mov QWORD PTR [rsp+496], r11
+mov QWORD PTR [rsp+504], r11
+mov QWORD PTR [rsp+512], r11
+mov QWORD PTR [rsp+520], r11
+mov QWORD PTR [rsp+528], r11
+mov QWORD PTR [rsp+536], r11
+mov QWORD PTR [rsp+544], r11
+mov QWORD PTR [rsp+552], r11
+mov QWORD PTR [rsp+560], r11
+mov QWORD PTR [rsp+568], r11
+mov QWORD PTR [rsp+576], r11
+mov QWORD PTR [rsp+584], r11
+mov QWORD PTR [rsp+592], r11
+mov QWORD PTR [rsp+600], r11
+mov QWORD PTR [rsp+608], r11
+mov QWORD PTR [rsp+616], r11
+mov QWORD PTR [rsp+624], r11
+mov QWORD PTR [rsp+632], r11
+mov QWORD PTR [rsp+640], r11
+mov QWORD PTR [rsp+648], r11
+mov QWORD PTR [rsp+656], r11
+mov QWORD PTR [rsp+664], r11
+mov QWORD PTR [rsp+672], r11
+mov QWORD PTR [rsp+680], r11
+mov QWORD PTR [rsp+688], r11
+mov QWORD PTR [rsp+696], r11
+mov QWORD PTR [rsp+704], r11
+mov QWORD PTR [rsp+712], r11
+mov QWORD PTR [rsp+720], r11
+mov QWORD PTR [rsp+728], r11
+mov QWORD PTR [rsp+736], r11
+mov QWORD PTR [rsp+744], r11
+mov QWORD PTR [rsp+752], r11
+mov QWORD PTR [rsp+760], r11
+mov QWORD PTR [rsp+768], r11
+mov QWORD PTR [rsp+776], r11
+mov QWORD PTR [rsp+784], r11
+mov QWORD PTR [rsp+792], r11
+mov QWORD PTR [rsp+800], r11
+mov QWORD PTR [rsp+808], r11
+mov QWORD PTR [rsp+816], r11
+mov QWORD PTR [rsp+824], r11
+mov QWORD PTR [rsp+832], r11
+mov QWORD PTR [rsp+840], r11
+mov QWORD PTR [rsp+848], r11
+mov QWORD PTR [rsp+856], r11
+mov QWORD PTR [rsp+864], r11
+mov QWORD PTR [rsp+872], r11
+mov QWORD PTR [rsp+880], r11
+mov QWORD PTR [rsp+888], r11
+mov QWORD PTR [rsp+896], r11
+mov QWORD PTR [rsp+904], r11
+mov QWORD PTR [rsp+912], r11
+mov QWORD PTR [rsp+920], r11
+mov QWORD PTR [rsp+928], r11
+mov QWORD PTR [rsp+936], r11
+mov QWORD PTR [rsp+944], r11
+mov QWORD PTR [rsp+952], r11
+mov QWORD PTR [rsp+960], r11
+mov QWORD PTR [rsp+968], r11
+mov QWORD PTR [rsp+976], r11
+mov QWORD PTR [rsp+984], r11
+mov QWORD PTR [rsp+992], r11
+mov QWORD PTR [rsp+1000], r11
+mov QWORD PTR [rsp+1008], r11
+mov QWORD PTR [rsp+1016], r11
+mov QWORD PTR [rsp+1024], r11
+mov QWORD PTR [rsp+1032], r11
+mov QWORD PTR [rsp+1040], r11
+mov QWORD PTR [rsp+1048], r11
+mov QWORD PTR [rsp+1056], r11
+mov QWORD PTR [rsp+1064], r11
+mov QWORD PTR [rsp+1072], r11
+mov QWORD PTR [rsp+1080], r11
+mov QWORD PTR [rsp+1088], r11
+lea rsp, [rsp+1096]
+ret
+.p2align 6",
+        vg_seed_decrypt_blocks = sym super::seed::vg_seed_decrypt_blocks,
+    )
+}
+
+/// SEED encryption of whole blocks (RFC 4269 §2, SP 800-38A §6.1): replaces each of the `n` 16-byte blocks at `data` with its encryption under the schedule written by `vg_seed_expand_key`, with the working space in `*scratch`. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Seed.blocksContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
+///
+/// Baseline x86-64: sixteen blocks at a time, each `G` of a round bitsliced in general-purpose registers through the AES S-box circuit (SEED's S-boxes are affine maps of AES's), grouping the affine layer's parity-specific XOR sums before masking, with no table lookups. Uses the first 1056 bytes of `scratch`.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 1088 bytes.
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_seed_encrypt_blocks(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 136]) {
+    core::arch::naked_asm!(
+        r"mov r9, rcx
 mov QWORD PTR [r9+1000], rbx
 mov QWORD PTR [r9+1008], rbp
 mov QWORD PTR [r9+1016], r12
@@ -3943,164 +4268,29 @@ mov r12, QWORD PTR [r9+1016]
 mov r13, QWORD PTR [r9+1024]
 mov r14, QWORD PTR [r9+1032]
 mov r15, QWORD PTR [r9+1040]
-mov r11d, 0
-mov QWORD PTR [rsp+8], r11
-mov QWORD PTR [rsp+16], r11
-mov QWORD PTR [rsp+24], r11
-mov QWORD PTR [rsp+32], r11
-mov QWORD PTR [rsp+40], r11
-mov QWORD PTR [rsp+48], r11
-mov QWORD PTR [rsp+56], r11
-mov QWORD PTR [rsp+64], r11
-mov QWORD PTR [rsp+72], r11
-mov QWORD PTR [rsp+80], r11
-mov QWORD PTR [rsp+88], r11
-mov QWORD PTR [rsp+96], r11
-mov QWORD PTR [rsp+104], r11
-mov QWORD PTR [rsp+112], r11
-mov QWORD PTR [rsp+120], r11
-mov QWORD PTR [rsp+128], r11
-mov QWORD PTR [rsp+136], r11
-mov QWORD PTR [rsp+144], r11
-mov QWORD PTR [rsp+152], r11
-mov QWORD PTR [rsp+160], r11
-mov QWORD PTR [rsp+168], r11
-mov QWORD PTR [rsp+176], r11
-mov QWORD PTR [rsp+184], r11
-mov QWORD PTR [rsp+192], r11
-mov QWORD PTR [rsp+200], r11
-mov QWORD PTR [rsp+208], r11
-mov QWORD PTR [rsp+216], r11
-mov QWORD PTR [rsp+224], r11
-mov QWORD PTR [rsp+232], r11
-mov QWORD PTR [rsp+240], r11
-mov QWORD PTR [rsp+248], r11
-mov QWORD PTR [rsp+256], r11
-mov QWORD PTR [rsp+264], r11
-mov QWORD PTR [rsp+272], r11
-mov QWORD PTR [rsp+280], r11
-mov QWORD PTR [rsp+288], r11
-mov QWORD PTR [rsp+296], r11
-mov QWORD PTR [rsp+304], r11
-mov QWORD PTR [rsp+312], r11
-mov QWORD PTR [rsp+320], r11
-mov QWORD PTR [rsp+328], r11
-mov QWORD PTR [rsp+336], r11
-mov QWORD PTR [rsp+344], r11
-mov QWORD PTR [rsp+352], r11
-mov QWORD PTR [rsp+360], r11
-mov QWORD PTR [rsp+368], r11
-mov QWORD PTR [rsp+376], r11
-mov QWORD PTR [rsp+384], r11
-mov QWORD PTR [rsp+392], r11
-mov QWORD PTR [rsp+400], r11
-mov QWORD PTR [rsp+408], r11
-mov QWORD PTR [rsp+416], r11
-mov QWORD PTR [rsp+424], r11
-mov QWORD PTR [rsp+432], r11
-mov QWORD PTR [rsp+440], r11
-mov QWORD PTR [rsp+448], r11
-mov QWORD PTR [rsp+456], r11
-mov QWORD PTR [rsp+464], r11
-mov QWORD PTR [rsp+472], r11
-mov QWORD PTR [rsp+480], r11
-mov QWORD PTR [rsp+488], r11
-mov QWORD PTR [rsp+496], r11
-mov QWORD PTR [rsp+504], r11
-mov QWORD PTR [rsp+512], r11
-mov QWORD PTR [rsp+520], r11
-mov QWORD PTR [rsp+528], r11
-mov QWORD PTR [rsp+536], r11
-mov QWORD PTR [rsp+544], r11
-mov QWORD PTR [rsp+552], r11
-mov QWORD PTR [rsp+560], r11
-mov QWORD PTR [rsp+568], r11
-mov QWORD PTR [rsp+576], r11
-mov QWORD PTR [rsp+584], r11
-mov QWORD PTR [rsp+592], r11
-mov QWORD PTR [rsp+600], r11
-mov QWORD PTR [rsp+608], r11
-mov QWORD PTR [rsp+616], r11
-mov QWORD PTR [rsp+624], r11
-mov QWORD PTR [rsp+632], r11
-mov QWORD PTR [rsp+640], r11
-mov QWORD PTR [rsp+648], r11
-mov QWORD PTR [rsp+656], r11
-mov QWORD PTR [rsp+664], r11
-mov QWORD PTR [rsp+672], r11
-mov QWORD PTR [rsp+680], r11
-mov QWORD PTR [rsp+688], r11
-mov QWORD PTR [rsp+696], r11
-mov QWORD PTR [rsp+704], r11
-mov QWORD PTR [rsp+712], r11
-mov QWORD PTR [rsp+720], r11
-mov QWORD PTR [rsp+728], r11
-mov QWORD PTR [rsp+736], r11
-mov QWORD PTR [rsp+744], r11
-mov QWORD PTR [rsp+752], r11
-mov QWORD PTR [rsp+760], r11
-mov QWORD PTR [rsp+768], r11
-mov QWORD PTR [rsp+776], r11
-mov QWORD PTR [rsp+784], r11
-mov QWORD PTR [rsp+792], r11
-mov QWORD PTR [rsp+800], r11
-mov QWORD PTR [rsp+808], r11
-mov QWORD PTR [rsp+816], r11
-mov QWORD PTR [rsp+824], r11
-mov QWORD PTR [rsp+832], r11
-mov QWORD PTR [rsp+840], r11
-mov QWORD PTR [rsp+848], r11
-mov QWORD PTR [rsp+856], r11
-mov QWORD PTR [rsp+864], r11
-mov QWORD PTR [rsp+872], r11
-mov QWORD PTR [rsp+880], r11
-mov QWORD PTR [rsp+888], r11
-mov QWORD PTR [rsp+896], r11
-mov QWORD PTR [rsp+904], r11
-mov QWORD PTR [rsp+912], r11
-mov QWORD PTR [rsp+920], r11
-mov QWORD PTR [rsp+928], r11
-mov QWORD PTR [rsp+936], r11
-mov QWORD PTR [rsp+944], r11
-mov QWORD PTR [rsp+952], r11
-mov QWORD PTR [rsp+960], r11
-mov QWORD PTR [rsp+968], r11
-mov QWORD PTR [rsp+976], r11
-mov QWORD PTR [rsp+984], r11
-mov QWORD PTR [rsp+992], r11
-mov QWORD PTR [rsp+1000], r11
-mov QWORD PTR [rsp+1008], r11
-mov QWORD PTR [rsp+1016], r11
-mov QWORD PTR [rsp+1024], r11
-mov QWORD PTR [rsp+1032], r11
-mov QWORD PTR [rsp+1040], r11
-mov QWORD PTR [rsp+1048], r11
-mov QWORD PTR [rsp+1056], r11
-lea rsp, [rsp+1064]
 ret
 .p2align 6",
     )
 }
 
-/// SEED ECB decryption (RFC 4269 §2.4, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the schedule written by `vg_seed_expand_key`: the encryption procedure with the round keys in reverse order. No padding is added or removed. For `n = 0`, no data is transformed.
+/// SEED decryption of whole blocks (RFC 4269 §2.4, SP 800-38A §6.1): replaces each of the `n` 16-byte blocks at `data` with its decryption under the schedule written by `vg_seed_expand_key` (the encryption procedure with the round keys in reverse order), with the working space in `*scratch`. For `n = 0`, no data is transformed.
 ///
-/// Contract: `VG.Spec.Seed.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
+/// Contract: `VG.Spec.Seed.blocksContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
 ///
-/// Baseline x86-64: sixteen blocks at a time, each `G` of a round bitsliced in general-purpose registers through the AES S-box circuit (SEED's S-boxes are affine maps of AES's), grouping the affine layer's parity-specific XOR sums before masking, with no table lookups.
+/// Baseline x86-64: sixteen blocks at a time, each `G` of a round bitsliced in general-purpose registers through the AES S-box circuit (SEED's S-boxes are affine maps of AES's), grouping the affine layer's parity-specific XOR sums before masking, with no table lookups. Uses the first 1056 bytes of `scratch`.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the return address on the stack or the 1064 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `scratch` must be valid for reads and writes of 1088 bytes.
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_seed_ecb_decrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_seed_decrypt_blocks(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 136]) {
     core::arch::naked_asm!(
-        r"lea rsp, [rsp-1064]
-mov rcx, rsp
-add rcx, 8
-mov r9, rcx
+        r"mov r9, rcx
 mov QWORD PTR [r9+1000], rbx
 mov QWORD PTR [r9+1008], rbp
 mov QWORD PTR [r9+1016], r12
@@ -6815,140 +7005,6 @@ mov r12, QWORD PTR [r9+1016]
 mov r13, QWORD PTR [r9+1024]
 mov r14, QWORD PTR [r9+1032]
 mov r15, QWORD PTR [r9+1040]
-mov r11d, 0
-mov QWORD PTR [rsp+8], r11
-mov QWORD PTR [rsp+16], r11
-mov QWORD PTR [rsp+24], r11
-mov QWORD PTR [rsp+32], r11
-mov QWORD PTR [rsp+40], r11
-mov QWORD PTR [rsp+48], r11
-mov QWORD PTR [rsp+56], r11
-mov QWORD PTR [rsp+64], r11
-mov QWORD PTR [rsp+72], r11
-mov QWORD PTR [rsp+80], r11
-mov QWORD PTR [rsp+88], r11
-mov QWORD PTR [rsp+96], r11
-mov QWORD PTR [rsp+104], r11
-mov QWORD PTR [rsp+112], r11
-mov QWORD PTR [rsp+120], r11
-mov QWORD PTR [rsp+128], r11
-mov QWORD PTR [rsp+136], r11
-mov QWORD PTR [rsp+144], r11
-mov QWORD PTR [rsp+152], r11
-mov QWORD PTR [rsp+160], r11
-mov QWORD PTR [rsp+168], r11
-mov QWORD PTR [rsp+176], r11
-mov QWORD PTR [rsp+184], r11
-mov QWORD PTR [rsp+192], r11
-mov QWORD PTR [rsp+200], r11
-mov QWORD PTR [rsp+208], r11
-mov QWORD PTR [rsp+216], r11
-mov QWORD PTR [rsp+224], r11
-mov QWORD PTR [rsp+232], r11
-mov QWORD PTR [rsp+240], r11
-mov QWORD PTR [rsp+248], r11
-mov QWORD PTR [rsp+256], r11
-mov QWORD PTR [rsp+264], r11
-mov QWORD PTR [rsp+272], r11
-mov QWORD PTR [rsp+280], r11
-mov QWORD PTR [rsp+288], r11
-mov QWORD PTR [rsp+296], r11
-mov QWORD PTR [rsp+304], r11
-mov QWORD PTR [rsp+312], r11
-mov QWORD PTR [rsp+320], r11
-mov QWORD PTR [rsp+328], r11
-mov QWORD PTR [rsp+336], r11
-mov QWORD PTR [rsp+344], r11
-mov QWORD PTR [rsp+352], r11
-mov QWORD PTR [rsp+360], r11
-mov QWORD PTR [rsp+368], r11
-mov QWORD PTR [rsp+376], r11
-mov QWORD PTR [rsp+384], r11
-mov QWORD PTR [rsp+392], r11
-mov QWORD PTR [rsp+400], r11
-mov QWORD PTR [rsp+408], r11
-mov QWORD PTR [rsp+416], r11
-mov QWORD PTR [rsp+424], r11
-mov QWORD PTR [rsp+432], r11
-mov QWORD PTR [rsp+440], r11
-mov QWORD PTR [rsp+448], r11
-mov QWORD PTR [rsp+456], r11
-mov QWORD PTR [rsp+464], r11
-mov QWORD PTR [rsp+472], r11
-mov QWORD PTR [rsp+480], r11
-mov QWORD PTR [rsp+488], r11
-mov QWORD PTR [rsp+496], r11
-mov QWORD PTR [rsp+504], r11
-mov QWORD PTR [rsp+512], r11
-mov QWORD PTR [rsp+520], r11
-mov QWORD PTR [rsp+528], r11
-mov QWORD PTR [rsp+536], r11
-mov QWORD PTR [rsp+544], r11
-mov QWORD PTR [rsp+552], r11
-mov QWORD PTR [rsp+560], r11
-mov QWORD PTR [rsp+568], r11
-mov QWORD PTR [rsp+576], r11
-mov QWORD PTR [rsp+584], r11
-mov QWORD PTR [rsp+592], r11
-mov QWORD PTR [rsp+600], r11
-mov QWORD PTR [rsp+608], r11
-mov QWORD PTR [rsp+616], r11
-mov QWORD PTR [rsp+624], r11
-mov QWORD PTR [rsp+632], r11
-mov QWORD PTR [rsp+640], r11
-mov QWORD PTR [rsp+648], r11
-mov QWORD PTR [rsp+656], r11
-mov QWORD PTR [rsp+664], r11
-mov QWORD PTR [rsp+672], r11
-mov QWORD PTR [rsp+680], r11
-mov QWORD PTR [rsp+688], r11
-mov QWORD PTR [rsp+696], r11
-mov QWORD PTR [rsp+704], r11
-mov QWORD PTR [rsp+712], r11
-mov QWORD PTR [rsp+720], r11
-mov QWORD PTR [rsp+728], r11
-mov QWORD PTR [rsp+736], r11
-mov QWORD PTR [rsp+744], r11
-mov QWORD PTR [rsp+752], r11
-mov QWORD PTR [rsp+760], r11
-mov QWORD PTR [rsp+768], r11
-mov QWORD PTR [rsp+776], r11
-mov QWORD PTR [rsp+784], r11
-mov QWORD PTR [rsp+792], r11
-mov QWORD PTR [rsp+800], r11
-mov QWORD PTR [rsp+808], r11
-mov QWORD PTR [rsp+816], r11
-mov QWORD PTR [rsp+824], r11
-mov QWORD PTR [rsp+832], r11
-mov QWORD PTR [rsp+840], r11
-mov QWORD PTR [rsp+848], r11
-mov QWORD PTR [rsp+856], r11
-mov QWORD PTR [rsp+864], r11
-mov QWORD PTR [rsp+872], r11
-mov QWORD PTR [rsp+880], r11
-mov QWORD PTR [rsp+888], r11
-mov QWORD PTR [rsp+896], r11
-mov QWORD PTR [rsp+904], r11
-mov QWORD PTR [rsp+912], r11
-mov QWORD PTR [rsp+920], r11
-mov QWORD PTR [rsp+928], r11
-mov QWORD PTR [rsp+936], r11
-mov QWORD PTR [rsp+944], r11
-mov QWORD PTR [rsp+952], r11
-mov QWORD PTR [rsp+960], r11
-mov QWORD PTR [rsp+968], r11
-mov QWORD PTR [rsp+976], r11
-mov QWORD PTR [rsp+984], r11
-mov QWORD PTR [rsp+992], r11
-mov QWORD PTR [rsp+1000], r11
-mov QWORD PTR [rsp+1008], r11
-mov QWORD PTR [rsp+1016], r11
-mov QWORD PTR [rsp+1024], r11
-mov QWORD PTR [rsp+1032], r11
-mov QWORD PTR [rsp+1040], r11
-mov QWORD PTR [rsp+1048], r11
-mov QWORD PTR [rsp+1056], r11
-lea rsp, [rsp+1064]
 ret
 .p2align 6",
     )
