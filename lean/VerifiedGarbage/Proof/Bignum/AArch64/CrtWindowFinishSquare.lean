@@ -3,7 +3,6 @@ public import VerifiedGarbage.Impl.Rsa.AArch64.WindowTail
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBuild
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCore
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
 

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtP
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowQ
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowPhases
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPow
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtPow
 import VerifiedGarbage.Proof.Bignum.CrtWindowPRanges

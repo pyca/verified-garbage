@@ -3,10 +3,8 @@ module
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
 public import VerifiedGarbage.Proof.Bignum.CrtWindowFiveLayout
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowFive
-public import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 

@@ -3,11 +3,9 @@ module
 import VerifiedGarbage.Proof.Bignum.AArch64.Bytes
 import VerifiedGarbage.Proof.Bignum.AArch64.Setup
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
-public import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Impl.Rsa.AArch64.Crt
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
 public import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.CrtRedc
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
@@ -63,7 +61,7 @@ theorem wsEnd_ok {s : State} {X : Addr} {Z wx : Nat} (hs : Scr s X Z) (h5 : s.gp
   brun [ldw, h5, hdr_enc (sArr_lt (show Public.aOne < 8 by decide)), hdr_enc (show sW < 32 by decide),
     hl _ (sArr_lt (show Public.aOne < 8 by decide)), ha, hl sW (by decide), hw, ofNat_add_ofNat,
     shl_ofNat (show (wx + 2) * 2 ^ 3 < 2 ^ 64 by omega_arith)]
-  refine ⟨?_, by rw [Nat.mul_comm]; rfl⟩
+  refine ⟨?_, by rw [Nat.mul_comm]⟩
   refine congrArg (off X) ?_
   rw [show (2 : Nat) ^ 3 = 8 from rfl]
   unfold slot Public.aOne; omega_arith

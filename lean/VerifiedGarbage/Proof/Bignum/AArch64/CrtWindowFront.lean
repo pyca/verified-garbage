@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFront
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowFive
 public import VerifiedGarbage.Proof.Bignum.CrtWindowFiveLayout
-import Mathlib.Data.Int.ModEq
 
 /-!
 # RSA with the CRT on AArch64: up to the checks

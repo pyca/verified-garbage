@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTakeBit
-import Mathlib.Data.Int.ModEq
 
 /-! Bounds and prefix arithmetic for pending window digits. -/
 

@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPendingInv
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFinishSquare
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPendingMath
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

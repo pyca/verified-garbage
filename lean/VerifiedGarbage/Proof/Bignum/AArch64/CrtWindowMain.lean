@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
 public import VerifiedGarbage.Proof.Bignum.CrtResult
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBack
-import Mathlib.Data.Int.ModEq
 
 /-!
 # RSA with the CRT on AArch64: the computation for a valid modulus

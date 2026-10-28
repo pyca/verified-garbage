@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawTriangle
 
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedStep
-import Mathlib.Data.Int.ModEq
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowShared

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunContext
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTails
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTailLoop
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroups

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.CrtGPow
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.CrtMath
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
@@ -119,7 +118,7 @@ theorem unitPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bi
   have hws₂ : WsAt s₂.mem B o wx mx := hws.of_words fun i hi => by rw [hm₂]; exact hxw₁ i (by omega_arith)
   have hc₂ : SubCtx s₂ B Z o w wx mx :=
     SubCtx.mk' (hs.congr k02.wr) (by rw [hm₂]; exact hg₁.hdr) hws₂ hdi₂ hlo (by have := tabBytes_le_wsTab wx; omega_arith)
-  have hX₂ : XVals s₂ B o wx mx X := hX.of_below (by rw [hm₂]; exact f₁) (fun r hr => (hgr r hr).trans hlo) hoL
+  have hX₂ : XVals s₂ B o wx mx X := hX.of_below (by rw [hm₂]; exact f₁) (fun r hr => Nat.le_trans (hgr r hr) hlo) hoL
   -- `A R^K ≡ G (mod X)`.
   refine wp_seqs_append (by simp [redc]) (by simp [copyArr]) ?_
   refine WP.mono (redc_ok M hc₂ hX₂ hwx2 hwx (by omega_arith) hX1 (j := Public.aY) (by decide))

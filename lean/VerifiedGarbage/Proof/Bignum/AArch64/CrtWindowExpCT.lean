@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowHeadCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunContext
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowHead
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunCT
 import VerifiedGarbage.Proof.Bignum.Math

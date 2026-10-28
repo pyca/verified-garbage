@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtBack
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtMain
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 import VerifiedGarbage.Proof.Bignum.Octets
 
@@ -157,7 +156,7 @@ theorem checksS_ct (hC : ChecksCT) : RelCT isa (Two (Stage R2)) (seqs checks) (T
   unfold ChecksPre
   dsimp only [CrtPub.w]
   refine ⟨mp, mq, _, _, _, _, hr.n.good, by omega_arith, by omega_arith,
-    show slot ((p.k + 7) / 8) 8 ≤ offP ((p.k + 7) / 8) from le_refl _, by unfold offQ offP; omega_arith, hZq, hwp2,
+    show slot ((p.k + 7) / 8) 8 ≤ offP ((p.k + 7) / 8) from Nat.le_refl _, by unfold offQ offP; omega_arith, hZq, hwp2,
     wsWords_le (by have := h.pl2; omega_arith) (by omega_arith), hwq2, wsWords_le (by have := h.ql2; omega_arith) (by omega_arith),
     hr.wsP, hr.wsQ, hr.pws, hr.qws, hr.n.nv.n, hr.n.msk, hr.pv, hr.qv, hr.qiv, hodd⟩
 
@@ -211,7 +210,7 @@ theorem pS_ct (M : Mont) (hP : PPhaseCT M) : RelCT isa (Two (Stage R4)) (seqs (p
   unfold PPre
   dsimp only [CrtPub.w]
   refine ⟨mp, mq, _, _, dpb, qib, p.mask xb pb qb qib, hr.good, by omega_arith,
-    by omega_arith, show slot ((p.k + 7) / 8) 8 ≤ offP ((p.k + 7) / 8) from le_refl _, by unfold offQ offP; omega_arith, hZq, hwp2,
+    by omega_arith, show slot ((p.k + 7) / 8) 8 ≤ offP ((p.k + 7) / 8) from Nat.le_refl _, by unfold offQ offP; omega_arith, hZq, hwp2,
     wsWords_le (by omega_arith) (by omega_arith), by unfold wsWords; omega_arith,
     wsWords_le (by omega_arith) (by omega_arith), hr.wsP, hr.pws, hr.wsQ, hr.qws, hr.nv, hodd, hN1, hr.xm,
     hr.pxv, hP'.1, hP'.2, hr.pmask, fun hm => ?_, by rw [hh _ (by decide) (by decide)]; exact h.hDp,

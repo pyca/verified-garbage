@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtTab
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
-import Mathlib.Data.Int.ModEq
 
 /-! Repeated squaring for wider CRT windows, preserving the existing
 workspace context, header slots, memory frame and register obligations. -/
