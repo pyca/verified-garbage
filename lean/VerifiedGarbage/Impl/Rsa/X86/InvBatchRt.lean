@@ -58,9 +58,10 @@ def ptr (r : Reg) (x : Ref) (t : Reg) : List Instr :=
     (if x.half = 0 then [] else .mov t (.mem (sc halfSlot)) :: List.replicate x.half (.alu .add r (.reg t))) ++
     (if x.byte = 0 then [] else [.alu .add r (.imm (BitVec.ofNat 32 x.byte))])
 
-/-- `r = 4 (n + e)`, the bytes of `n + e` words. -/
+/-- `r = 4 (n + e)`, the bytes of `n + e` words; the addition, even of 0, makes the flags (on which
+the loops that take the count branch) a function of `r` alone. -/
 def nBytes (r : Reg) (e : Nat) : List Instr :=
-  .mov r (.mem (sc halfSlot)) :: (if e = 0 then [] else [.alu .add r (.imm (BitVec.ofNat 32 (4 * e)))])
+  [.mov r (.mem (sc halfSlot)), .alu .add r (.imm (BitVec.ofNat 32 (4 * e)))]
 
 /-- `r = 4 (n - 1)`. -/
 def nBytesLess (r : Reg) : List Instr := [.mov r (.mem (sc halfSlot)), .alu .sub r (.imm 4)]
@@ -93,10 +94,13 @@ def chain (op : AluOp) (o a b : Ref) (cnt : List Instr) : Prog isa :=
   .seq (.block (ptr L .ebp a .edx ++ ptr L .ebx b .edx ++ cnt ++ ptr L .edi o .eax ++ [.mov .ecx (.imm 0)]))
     (.seq (VG.Impl.Rsa.X86.Chain.loop op) (.block (restoreEdi L)))
 
+/-- `ecx` all ones exactly when the word at `ebx` is negative as a signed word. -/
+def signOf : List Instr :=
+  [.mov .eax (.mem (at_ .ebx 0)), .shift .shr .eax 31, .mov .ecx (.imm 0), .alu .sub .ecx (.reg .eax)]
+
 /-- `ecx` all ones exactly when the word at `x` is negative as a signed word. -/
-def maskAt (x : Ref) : List Instr :=
-  ptr L .ebx x .edx ++ [.mov .eax (.mem (at_ .ebx 0)), .shift .shr .eax 31, .mov .ecx (.imm 0),
-    .alu .sub .ecx (.reg .eax)]
+def maskAt (x : Ref) : List Instr := ptr L .ebx x .edx ++ signOf
+
 
 /-- `[ebp + d] += ecx · [edi + d] + ebx`, the carry word into `ebx`: `Mont.mulStep`'s step through
 pointers. -/
@@ -183,15 +187,18 @@ def redSum (acc : Ref) : Prog isa :=
   (.block (ptr L .ebx { acc with half := 1, byte := 4 } .edx ++
     [.mov .eax (.mem (at_ .ebx 0)), .alu .add .eax (.mem (sc signSlot)), .store (at_ .ebx 0) .eax]))
 
+/-- `[tmp + 4 n] = [acc + 4 n]` plus the carry of `ecx`'s mask, and the mask of `[acc + 4 n]`'s sign
+into `ecx` (through `ebx`, still at that word: the store would make its slot secret). -/
+def negTop (acc : Ref) : List Instr :=
+  ptr L .ebx { acc with half := 1 } .edx ++ ptr L .ebp { tmp with half := 1 } .edx ++
+    [.mov .eax (.mem (at_ .ebx 0)), .alu .add .ecx (.reg .ecx), .alu .adc .eax (.imm 0), .store (at_ .ebp 0) .eax] ++
+    signOf
+
 /-- `InvMemory.addIfNeg`: `[acc] += [mo]`, `n + 1` words (`mo`'s top word zero), if `[acc + 4 n]` is
 negative: the sum into `[tmp]`, its top word `[acc + 4 n]` plus the carry, then selected into
 place by that word's sign. -/
 def addIfNeg (acc : Ref) : Prog isa :=
-  .seq (chain L .adc tmp acc mo (nBytes .edx 0)) <|
-  .seq (.block (ptr L .ebx { acc with half := 1 } .edx ++ ptr L .ebp { tmp with half := 1 } .edx ++
-    [.mov .eax (.mem (at_ .ebx 0)), .alu .add .ecx (.reg .ecx), .alu .adc .eax (.imm 0), .store (at_ .ebp 0) .eax] ++
-    maskAt L { acc with half := 1 }))
-  (selIn L acc tmp (nBytes .edi 1))
+  .seq (chain L .adc tmp acc mo (nBytes .edx 0)) (.seq (.block (negTop L acc)) (selIn L acc tmp (nBytes .edi 1)))
 
 /-- `Mont.csub` of `[src]` (`n` words and a top word 0 or 1) by `[mo]` into `[o]`: the difference
 into `[tmp]`, then selected where it did not borrow. -/

@@ -150,4 +150,20 @@ theorem agreeS {s t : State} {args : Nat → BitVec 32} {sp : BitVec 32} (hL : L
       Mem.readW_byte s.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte t.mem _ (Nat.mod_lt _ (by decide))]
     exact congrArg _ ((h.ps.arguments _ (by omega)).value.trans (h.pt.arguments _ (by omega)).value.symm)
 
+/-- An operation the taint analysis checks on the views of two runs leaks the same trace in
+both: each view runs it (by the operation's correctness), and its run is the state's, widened. -/
+theorem leaf {P : State → State → Prop} {c : Prog isa} (τ : VG.X86.Taint.T) {hc : VG.Taint.Hint VG.X86.Taint.T}
+    (hp : ∀ s t, P s t → VG.X86.Taint.Agree τ (view s B Z) (view t B Z))
+    (hw : ∀ s t, P s t → (⟨B, Z⟩ : Region) ∈ s.wr ∧ (⟨B, Z⟩ : Region) ∈ t.wr)
+    (hv : ∀ s t, P s t → (∃ tr z, Exec isa c (view s B Z) tr z) ∧ ∃ tr z, Exec isa c (view t B Z) tr z)
+    (h : (VG.Taint.check sseTaint τ c hc).isSome = true) : RelCT isa P c fun _ _ => True := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hP e₁ e₂
+  obtain ⟨⟨tr₁, z₁, v₁⟩, ⟨tr₂, z₂, v₂⟩⟩ := hv _ _ hP
+  obtain ⟨w₁, w₂⟩ := hw _ _ hP
+  have T := RelCT.taint (A := sseTaint) (P := fun a b => a = view s₁ B Z ∧ b = view s₂ B Z) τ
+    (fun _ _ ⟨e₁, e₂⟩ => e₁ ▸ e₂ ▸ hp _ _ hP) h _ _ _ _ _ _ ⟨rfl, rfl⟩ v₁ v₂
+  refine ⟨?_, trivial⟩
+  rw [← (Exec.det (lift_exec w₁ v₁) e₁).1, ← (Exec.det (lift_exec w₂ v₂) e₂).1]
+  exact T.1
+
 end VG.Proof.Rsa.X86.InvBatchRt.Time
