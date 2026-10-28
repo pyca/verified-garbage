@@ -246,4 +246,101 @@ theorem doubleLoop_ok {s : State} (h : Bx L s B Z len N) {p a₀ K : Nat}
     have nz : K - k - 1 ≠ 0 := by omega
     simp only [nz, decide_false, Option.map_some, Bool.not_false]
 
+/-- `finish`: `[1] = |f|` and `[3] = a`, `w` words each (`InvBatch.finish_ok`). -/
+theorem finish_ok {s : State} (h : Bx L s B Z len N) {a₀ : Nat} {f : Int}
+    (hb : |f| < 2 ^ (32 * nw len))
+    (hc : (val32 s.mem B (rv (kw len) (a 4)) (nw len) : Int) % (2 ^ (32 * nw len) : Int) =
+      f % (2 ^ (32 * nw len) : Int))
+    (sign : (2 ^ 31 ≤ w32 s.mem B (rv (kw len) (a 4) + 4 * nw len)) ↔ f < 0)
+    (coef : val32 s.mem B (rv (kw len) (a 6)) (nw len) = a₀) :
+    WP isa (finish L) s fun z =>
+      Bx L z B Z len N ∧ val32 z.mem B (rv (kw len) (a 1)) (kw len) = f.natAbs ∧
+      val32 z.mem B (rv (kw len) (a 3)) (kw len) = a₀ ∧ Keeps wordClob s z ∧
+      Unch B [(rv (kw len) (a 1), 4 * kw len), (rv (kw len) (a 3), 4 * kw len)] s.mem z.mem := by
+  have hn := h.nowrap
+  have hZ := h.halfZ
+  have hf16 := h.fits16
+  have hpos := h.ws.kw_pos
+  have hw := kw_bound h.ws.lenLe
+  have ke := kw_eq len
+  have r1 := rv_a len 1; have r3 := rv_a len 3; have r4 := rv_a len 4; have r6 := rv_a len 6
+  have h41 := rv_half1' len 4
+  have WS : CountSpec (wBytes .ecx) .ecx B Z (kw len) (kw len) := wBytes_spec hZ (by omega)
+  unfold finish
+  simp only [VG.Impl.Rsa.X86.Keys.seqs]
+  -- `[1] = 0`, then `-[4]`.
+  refine WP.seq (WP.mono (VG.Proof.Rsa.X86.InvBatchRt.zeros_ok h (o := a 1) WS hpos (by omega))
+    fun s₁ ⟨H₁, O₁, V₁, K₁⟩ => ?_)
+  have split1 := val32_append s₁.mem B (rv (kw len) (a 1)) (nw len) (nw len)
+  rw [show nw len + nw len = kw len by omega, V₁] at split1
+  have low0 : val32 s₁.mem B (rv (kw len) (a 1)) (nw len) = 0 := by omega
+  have tail0 : val32 s₁.mem B (rv (kw len) (a 1) + 4 * nw len) (nw len) = 0 := by
+    have pow := Nat.two_pow_pos (32 * nw len)
+    rcases Nat.eq_zero_or_pos (val32 s₁.mem B (rv (kw len) (a 1) + 4 * nw len) (nw len)) with e | e
+    · exact e
+    · have := Nat.mul_le_mul_left (2 ^ (32 * nw len)) e; omega
+  refine WP.seq (WP.mono (chainSub_ok H₁ (o := a 1) (a := a 1) (b := a 4) (e := 0) (by decide) rfl
+    (by omega) (by omega) (by omega) (.inl (Nat.le_refl _)) (by omega)) fun s₂ ⟨H₂, O₂, ⟨c, _, V₂⟩, K₂⟩ => ?_)
+  simp only [Nat.add_zero] at O₂ V₂
+  rw [low0, Nat.zero_add, O₁.val32 (by omega) (by omega)] at V₂
+  -- The selection of `[4]` where `f` is not negative.
+  refine WP.seq (maskAt_ok H₂ (x := { arr := 4, half := 1 }) (by omega) fun s₃ K₃ m₃ c₃ => ?_)
+  rw [h41, O₂.w32 (by omega) (by omega), O₁.w32 (by omega) (by omega)] at c₃
+  refine wp_logicS (.inr rfl) rfl fun s₄ U₄ => WP.block_nil ?_
+  have K₄ : Keeps [.eax, .ebx, .ecx, .edx] s₂ s₄ := K₃.trans (U₄.keeps.mono (by decide))
+  have m₄ : s₄.mem = s₂.mem := by rw [U₄.mem, m₃]
+  have H₄ : Bx L s₄ B Z len N := H₂.keep K₄ (by decide) (by decide) (o := 160) (c := 0)
+    (by rw [m₄]; exact Outside.refl _ _ _ _) (Nat.le_refl _) (by omega)
+  have mask : s₄.gpr .ecx = cmask (!decide (f < 0)) := by
+    rw [U₄.gpr, ite_eq_right (by decide), c₃]
+    simp only [cmask]
+    by_cases hf : f < 0
+    · rw [ite_eq_left (sign.mpr hf)]; simp only [hf, decide_true, Bool.not_true]; decide
+    · rw [ite_eq_right (fun e => hf (sign.mp e))]; simp only [hf, decide_false, Bool.not_false]; decide
+  refine WP.seq (WP.mono (selIn_ok H₄ (o := a 1) (a := a 4) (e := 0) mask (by decide) (by omega) (by omega)
+    (by omega)) fun s₅ ⟨H₅, O₅, V₅, K₅⟩ => ?_)
+  simp only [Nat.add_zero] at O₅ V₅
+  rw [m₄, O₂.val32 (d := rv (kw len) (a 4)) (by omega) (by omega),
+    O₁.val32 (d := rv (kw len) (a 4)) (by omega) (by omega)] at V₅
+  have abs1 : val32 s₅.mem B (rv (kw len) (a 1)) (nw len) = f.natAbs := by
+    rw [V₅]
+    have := VG.Proof.Rsa.Divstep.abs_select (Nat.two_pow_pos _) hb (val32_lt _ _ _ _) (by exact_mod_cast hc) ⟨c, V₂⟩
+    rw [← this]
+    by_cases hf : f < 0 <;> simp [hf]
+  have full1 : val32 s₅.mem B (rv (kw len) (a 1)) (kw len) = f.natAbs := by
+    have sp := val32_append s₅.mem B (rv (kw len) (a 1)) (nw len) (nw len)
+    rw [show nw len + nw len = kw len by omega, abs1, O₅.val32 (d := rv (kw len) (a 1) + 4 * nw len) (by omega)
+      (by omega), m₄, O₂.val32 (d := rv (kw len) (a 1) + 4 * nw len) (by omega) (by omega), tail0, Nat.mul_zero,
+      Nat.add_zero] at sp
+    exact sp
+  -- `[3] = [6]`, zero-padded.
+  refine WP.seq (WP.mono (VG.Proof.Rsa.X86.InvBatchRt.zeros_ok H₅ (o := a 3) WS hpos (by omega))
+    fun s₆ ⟨H₆, O₆, V₆, K₆⟩ => ?_)
+  have split6 := val32_append s₆.mem B (rv (kw len) (a 3)) (nw len) (nw len)
+  rw [show nw len + nw len = kw len by omega, V₆] at split6
+  have tail6 : val32 s₆.mem B (rv (kw len) (a 3) + 4 * nw len) (nw len) = 0 := by
+    have pow := Nat.two_pow_pos (32 * nw len)
+    rcases Nat.eq_zero_or_pos (val32 s₆.mem B (rv (kw len) (a 3) + 4 * nw len) (nw len)) with e | e
+    · exact e
+    · have := Nat.mul_le_mul_left (2 ^ (32 * nw len)) e; omega
+  refine WP.mono (copy_ok H₆ (o := a 3) (a := a 6) (e := 0) (by decide) (by omega) (by omega) (by omega))
+    fun z ⟨Hz, O₇, V₇, K₇⟩ => ?_
+  simp only [Nat.add_zero] at O₇ V₇
+  refine ⟨Hz, ?_, ?_, ?_, ?_⟩
+  · rw [O₇.val32 (d := rv (kw len) (a 1)) (by omega) (by omega),
+      O₆.val32 (d := rv (kw len) (a 1)) (by omega) (by omega), full1]
+  · have sp := val32_append z.mem B (rv (kw len) (a 3)) (nw len) (nw len)
+    rw [show nw len + nw len = kw len by omega, V₇, O₇.val32 (d := rv (kw len) (a 3) + 4 * nw len) (by omega)
+      (by omega), tail6, Nat.mul_zero, Nat.add_zero, O₆.val32 (d := rv (kw len) (a 6)) (by omega) (by omega),
+      O₅.val32 (d := rv (kw len) (a 6)) (by omega) (by omega), m₄,
+      O₂.val32 (d := rv (kw len) (a 6)) (by omega) (by omega), O₁.val32 (d := rv (kw len) (a 6)) (by omega) (by omega),
+      coef] at sp
+    exact sp
+  · exact (((((K₁.mono (by decide)).trans (K₂.mono (by decide))).trans (K₄.mono (by decide))).trans
+      (K₅.mono (by decide))).trans (K₆.mono (by decide))).trans (K₇.mono (by decide))
+  · intro x hx
+    have h1 := hx (rv (kw len) (a 1), 4 * kw len) (by simp)
+    have h3 := hx (rv (kw len) (a 3), 4 * kw len) (by simp)
+    rw [O₇ x (by omega), O₆ x h3, O₅ x (by omega), m₄, O₂ x (by omega), O₁ x h1]
+
 end VG.Proof.Rsa.X86.InvBatchRt
