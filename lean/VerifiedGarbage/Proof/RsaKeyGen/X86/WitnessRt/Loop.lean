@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Body
+import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Body
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinLoop
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinOutcome
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinState
@@ -11,6 +11,10 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinControl
 import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinPreserve
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedDataGap
 import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
+import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Blocks
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessRt
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessChecks
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessStep
 
 /-! # The blinded witness loop at the run-time width
 

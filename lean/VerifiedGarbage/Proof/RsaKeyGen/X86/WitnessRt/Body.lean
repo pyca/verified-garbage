@@ -1,13 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Round
+import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Round
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessStep
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessCount
+import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessCount
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRoundFrame
 import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessInput
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Blocks
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessRt
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.PrepareData
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessStatus
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! # A witness step at the run-time width accounts for entropy and both witness counters exactly -/
 

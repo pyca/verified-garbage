@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Load
+import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Load
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRoundTiming
-public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.RsaKeyGen.X86.TimingSeg
@@ -16,6 +15,12 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Blocks
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessRt
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.MillerRabin.X86.Context
+public import VerifiedGarbage.Proof.Mont.X86.WordOps
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportContext
 
 /-! # A witness drawn and sampled at the run-time width reads the same addresses in every run
 

@@ -7,10 +7,10 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportLoop
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportEncoding
 import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessFrame
-import VerifiedGarbage.Proof.RsaKeyGen.WitnessSample
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Mont.RegionOutside
 import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Blocks
 
 /-! # A witness drawn from the entropy into array 6 and sampled, at the run-time width -/
 

@@ -1,18 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.SampleTiming
+import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.SampleTiming
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Loop
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessStepTiming
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinTiming
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinTimingState
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.RoundTiming
+import VerifiedGarbage.Proof.RsaKeyGen.X86.RoundTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinTimingStep
 import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessCountTiming
-import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessMontTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessInput
-import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinInit
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Blocks
+import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Body
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessRt
+public import VerifiedGarbage.Proof.MillerRabin.X86.Caller
+public import VerifiedGarbage.Proof.MillerRabin.X86.TimingBase
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRoundTiming
+public import VerifiedGarbage.Spec.MillerRabin
 
 /-! # The witness loop at the run-time width reveals only its consumed entropy length
 

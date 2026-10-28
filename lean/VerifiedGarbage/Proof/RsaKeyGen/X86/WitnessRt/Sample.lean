@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Blocks
+import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessRt.Blocks
 public import VerifiedGarbage.Spec.RsaKeyGen
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
 import VerifiedGarbage.Proof.RsaKeyGen.X86.OrLoopRt
@@ -12,6 +12,10 @@ import VerifiedGarbage.Proof.RsaKeyGen.WitnessSample
 import VerifiedGarbage.Proof.Mont.LowUpdate32
 public import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessRt
+public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Proof.MillerRabin.X86.Context
+public import VerifiedGarbage.Spec.MillerRabin
 
 /-! # A witness sampled in array 6 at the run-time width
 
