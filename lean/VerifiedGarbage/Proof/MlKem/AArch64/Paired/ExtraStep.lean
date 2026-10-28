@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Context
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.NextBlock
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraBoth
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Memory
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -48,8 +49,6 @@ structure StepPostW (w16 : Bool) (A B : Spec.Sha3.State) (L M : List Zq) (p a b 
  right : Rej8.Scalar.CoeffsW w16 t.mem b M
  saveLeft : checkpointW w16 (p+1680) a L t.mem
  saveRight : checkpointW w16 (p+1696) b M t.mem
- flagLeft : (t.gpr .x22).toNat=if L.length=256 then 1 else 0
- flagRight : (t.gpr .x23).toNat=if M.length=256 then 1 else 0
  flagBoth : (t.gpr .x6).toNat=if L.length=256 ∧ M.length=256 then 1 else 0
  constants : Rej8.Constants t
 
@@ -63,7 +62,7 @@ theorem extraStep_ok {w16 : Bool} {s : State} {p a b c : Addr} {A B : Spec.Sha3.
  WP isa (Impl.MlKem.AArch64.Paired.extraStep w16) s
  (StepPostW w16 A B (sampleAfter L (Proof.Sha3.byteOf (Spec.Sha3.keccakF A)) 56)
  (sampleAfter M (Proof.Sha3.byteOf (Spec.Sha3.keccakF B)) 56) p a b c s) := by
- have grouped : WP isa (.seq nextBlock (extraBoth w16)) s
+ have grouped : WP isa (.seq nextBlock (Impl.MlKem.AArch64.Paired.extraBoth w16)) s
      (StepPostW w16 A B (sampleAfter L (Proof.Sha3.byteOf (Spec.Sha3.keccakF A)) 56)
        (sampleAfter M (Proof.Sha3.byteOf (Spec.Sha3.keccakF B)) 56) p a b c s) := by
   refine WP.seq (WP.mono_syms (nextBlock_ok hp ctx.scratch pair) fun u h hsym => ?_)
@@ -89,9 +88,16 @@ theorem extraStep_ok {w16 : Bool} {s : State} {p a b c : Addr} {A B : Spec.Sha3.
   have usb := checkpoint_frame sb precise (checkpoints (Or.inr rfl))
   have ea := cu.envW (w16 := w16) ux (N:=56) (off:=400) (by decide) (by decide) (Or.inl rfl) (fun i hi=>ra.byte hi)
   have eb := cu.envW (w16 := w16) ux (N:=56) (off:=904) (by decide) (by decide) (Or.inr rfl) (fun i hi=>rb.byte hi)
-  refine WP.mono (extraBoth_ok up cu.scratch cu.farA cu.farB cu.apart ea eb
-    (by intro mask hmask; rw [ux]; exact cu.tableScratch.sub_left (Rej8.table_sub c hmask))
-    cs hl hm ua ub usa usb) fun t ht => ?_
+  have iw {o l : Nat} (h : o+l≤2048) := Noise.inScratch cu.scratch h (by decide)
+  have ready : BothReadyW w16 L M (Proof.Sha3.byteOf (Spec.Sha3.keccakF A))
+      (Proof.Sha3.byteOf (Spec.Sha3.keccakF B)) p a b u :=
+    ⟨up,cu.scratch,cu.farA,cu.farB,cu.apart,
+      ⟨ea,hl,ua,usa,iw (o:=1680) (by decide),by rw [BitVec.add_assoc]; exact iw (o:=1688) (by decide),
+        cu.farA.symm.sub_right (Offset.sub_base p (by decide))⟩,
+      ⟨eb,hm,ub,usb,iw (o:=1696) (by decide),by rw [BitVec.add_assoc]; exact iw (o:=1704) (by decide),
+        cu.farB.symm.sub_right (Offset.sub_base p (by decide))⟩,
+      by intro mask hmask; rw [ux]; exact cu.tableScratch.sub_left (Rej8.table_sub c hmask),cs⟩
+  refine WP.mono (extraBoth_ok ready) fun t ht => ?_
   have ft : Frame (stepWrites p a b) u.mem t.mem := ht.frame.sub (by
    intro r hr
    simp only [bothWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -115,7 +121,7 @@ theorem extraStep_ok {w16 : Bool} {s : State} {p a b c : Addr} {A B : Spec.Sha3.
      all_goals exact ⟨⟨p,1712⟩,by simp,Offset.sub_base p (by decide)⟩
   refine ⟨(ku.trans ht.keep).mono (by decide),fu'.trans ft,fine,cu.frame ht.keep.rd ht.keep.wr ft,
     (ht.keep.get .x19).trans up,?_,ht.left,ht.right,ht.saveLeft,ht.saveRight,
-    ht.flagLeft,ht.flagRight,ht.flagBoth,ht.constants⟩
+    ht.flagBoth,ht.constants⟩
   exact pair_frame pu ht.frame (by
    intro r hr; simp only [bothWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
    rcases hr with rfl|rfl|rfl|rfl
