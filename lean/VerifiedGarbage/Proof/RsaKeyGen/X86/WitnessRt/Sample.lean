@@ -28,10 +28,6 @@ namespace VG.Proof.RsaKeyGen.X86.WitnessRt
 open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.MillerRabin.X86
 open VG.Impl.RsaKeyGen.X86.WitnessRt
 
-theorem fits {g : Geometry} (v : g.Valid) :
-    g.array 6 + 4 * g.words ≤ g.L ∧ g.array 0 + 4 * g.words ≤ g.array 6 ∧ 8 ≤ g.words ∧ g.words = 2 * g.w :=
-  ⟨v.arrayFit (by decide), g.arrayBefore (by decide), by have := v.minWidth; unfold Geometry.words; omega, rfl⟩
-
 theorem markAt_ok {s : State} {W : Addr} {L x n : Nat} (hw : Ws s W L) (P : PtrAt s W .ebp x)
     (positive : 0 < n) (fit : x + 4 * n ≤ L) :
     WP isa (.block markAt) s fun t =>
