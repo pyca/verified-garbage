@@ -45,6 +45,20 @@ def reject (buf out : Nat) (flag : Reg) (w16 : Bool := false) : Prog isa :=
  .seq (.block (ptrTo .x3 .x28 out ++ [.addImm .x .x2 .x19 buf,.movz .x .x4 256 0,
  .movz .x .x5 168 0,.movz .x .x9 3329 0,.movz .x .x10 15 0]))
  (.seq (rejLoop w16) (.block [mov flag .x0]))
+/-- The first three blocks' rejection of a pair's two streams, a loop over
+them: buffers at 400 and 904 (`x20`), outputs at `x28 + a` and `x28 + b`
+(`x21`, the second waiting in `x23`), cursors saved at 1680 and 1696 (`x1`),
+until `x1` reaches 1712; `x6` is 1 when both streams are complete. -/
+def rejectBoth (a b : Nat) (w16 : Bool := false) : Prog isa :=
+ seqs [.block (ptrTo .x21 .x28 a ++ ptrTo .x23 .x28 b ++
+   [.addImm .x .x20 .x19 400,.addImm .x .x1 .x19 1680,.movz .x .x22 1 0]),
+ .loop (seqs [.block [mov .x2 .x20,mov .x3 .x21,.movz .x .x4 256 0,.movz .x .x5 168 0,
+     .movz .x .x9 3329 0,.movz .x .x10 15 0],
+   rejLoop w16,
+   .block [.str .x .x3 .x1 0,.str .x .x4 .x1 8,.logic .and .x .x22 .x22 .x0,.addImm .x .x20 .x20 504,
+     mov .x21 .x23,.addImm .x .x1 .x1 16,.sub .x .x6 .x1 .x19,.subImm .x .x6 .x6 1712]])
+  (.nonzero .x .x6),
+ .block [mov .x6 .x22]]
 def fullInit (sb ss a k : Nat) : List Instr :=
  [.str .x .x22 .x19 1848,.str .x .x23 .x19 1856] ++
  (init sb ss a a k).take 1 ++ (init sb ss a a k).drop 7 ++ [.movz .x .x22 5 0]
@@ -104,10 +118,7 @@ def pair (L : KemLay) (keygen : Bool) (a : Nat) (w16 : Bool := false) : Prog isa
  let ss := if keygen then KG.SS else KEM.SS
  let off := if keygen then KG.AH else KEM.AH
  seqs [.block (init sb ss a (a+1) L.k), squeeze, .block rejConsts,
-  reject 400 (off+1024*a) .x22 w16,
-  .block [.str .x .x3 .x19 1680,.str .x .x4 .x19 1688],
-  reject 904 (off+1024*(a+1)) .x23 w16,
-  .block [.str .x .x3 .x19 1696,.str .x .x4 .x19 1704,.logic .and .x .x6 .x22 .x23],
+  rejectBoth (off+1024*a) (off+1024*(a+1)) w16,
   .ite (.zero .x .x6) (extraPair w16) (.block []),
   .block ((saved.zipIdx.reverse.map fun (r,i) => .ldr .x r .x19 (1800+8*i)))]
 def lastSample (L : KemLay) (keygen : Bool) (w16 : Bool := false) : Prog isa :=

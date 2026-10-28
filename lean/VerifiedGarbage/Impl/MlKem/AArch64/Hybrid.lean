@@ -99,10 +99,7 @@ def squeezeM (S : HSrc) (j m : Nat) : Prog isa :=
 its working space at `ss` and its entries at `off`. -/
 def pairM (sb ss off : Nat) (L : KemLay) (S : HSrc) (a j m : Nat) (w16 : Bool := false) : Prog isa :=
   seqs [.block (Paired.init sb ss a (a+1) L.k), squeezeM S j m, .block Rej8.rejConsts,
-    Paired.reject 400 (off+1024*a) .x22 w16,
-    .block [.str .x .x3 .x19 1680,.str .x .x4 .x19 1688],
-    Paired.reject 904 (off+1024*(a+1)) .x23 w16,
-    .block [.str .x .x3 .x19 1696,.str .x .x4 .x19 1704,.logic .and .x .x6 .x22 .x23],
+    Paired.rejectBoth (off+1024*a) (off+1024*(a+1)) w16,
     .ite (.zero .x .x6) (Paired.extraPair w16) (.block []),
     .block ((Paired.saved.zipIdx.reverse.map fun (r,i) => .ldr .x r .x19 (1800+8*i)))]
 

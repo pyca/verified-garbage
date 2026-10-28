@@ -276,15 +276,8 @@ theorem pairM_exec {w16 : Bool} {sb ss off : Nat} {L : KemLay} {S : Impl.MlKem.A
   obtain ⟨_,_,_,rfl,es,h⟩ := seq_parts h
   obtain ⟨_,_,_,rfl,ec,h⟩ := seq_parts h
   obtain ⟨_,_,_,rfl,ea,h⟩ := seq_parts h
-  obtain ⟨_,_,_,rfl,eca,h⟩ := seq_parts h
-  obtain ⟨_,_,_,rfl,eb,h⟩ := seq_parts h
-  obtain ⟨_,_,_,rfl,ecb,h⟩ := seq_parts h
   obtain ⟨_,_,_,rfl,ex,er⟩ := seq_parts h
-  have split := block_split (l:=[.str .x .x3 .x19 1696,.str .x .x4 .x19 1704])
-    (r:=[.logic .and .x .x6 .x22 .x23]) ecb
-  obtain ⟨_,_,_,rfl,ecbb,eand⟩ := seq_parts split
-  have ee := Exec.seq (Exec.seq ei (Exec.seq es (Exec.seq ec
-    (Exec.seq ea (Exec.seq eca (Exec.seq eb (Exec.seq ecbb eand))))))) (Exec.seq ex er)
+  have ee := Exec.seq (Exec.seq ei (Exec.seq es (Exec.seq ec ea))) (Exec.seq ex er)
   simpa only [beginMCode,initialCode,finishCode,seqs,List.append_assoc] using ee
 
 end VG.Proof.MlKem.AArch64.Hybrid

@@ -31,10 +31,8 @@ theorem pairM_iff (sb ss off : Nat) (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.
     (s : State) (Q : State → Prop) :
     WP isa (Impl.MlKem.AArch64.Hybrid.pairM sb ss off L S a j m w16) s Q ↔
     WP isa (.seq (beginMCode L S sb ss a (a+1) j m (off+1024*a) (off+1024*(a+1)) w16) (finishCode w16)) s Q := by
-  simp only [Impl.MlKem.AArch64.Hybrid.pairM, beginMCode, Paired.initialCode, finishCode, seqs,
-    show [Instr.str .x .x3 .x19 1696,.str .x .x4 .x19 1704,.logic .and .x .x6 .x22 .x23]=
-      [.str .x .x3 .x19 1696,.str .x .x4 .x19 1704]++[.logic .and .x .x6 .x22 .x23] from rfl]
-  simp only [WP.seq_iff (M := isa),WP.block_append_iff (M := isa)]
+  simp only [Impl.MlKem.AArch64.Hybrid.pairM, beginMCode, Paired.initialCode, finishCode, seqs]
+  simp only [WP.seq_iff (M := isa)]
 
 structure PairMPostW (w16 : Bool) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (A B : Spec.Sha3.State) (p a b e st : Addr) (E : List Byte) (j m : Nat)
     (s t : State) : Prop where

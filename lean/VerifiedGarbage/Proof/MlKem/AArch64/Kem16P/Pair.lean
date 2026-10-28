@@ -45,10 +45,8 @@ def beginPCode (L : KemLay) (sd bt sb ss a b N₀ m oa ob : Nat) (w16 : Bool := 
 theorem pairP_iff (sb ss off sd bt : Nat) (L : KemLay) (a N₀ m : Nat) (s : State) (Q : State → Prop) :
     WP isa (Impl.MlKem.AArch64.Kem16P.pairP sb ss off sd bt L a N₀ m) s Q ↔
     WP isa (.seq (beginPCode L sd bt sb ss a (a+1) N₀ m (off+1024*a) (off+1024*(a+1)) true) (finishCode true)) s Q := by
-  simp only [Impl.MlKem.AArch64.Kem16P.pairP, beginPCode, initialCode, finishCode, seqs,
-    show [Instr.str .x .x3 .x19 1696,.str .x .x4 .x19 1704,.logic .and .x .x6 .x22 .x23]=
-      [.str .x .x3 .x19 1696,.str .x .x4 .x19 1704]++[.logic .and .x .x6 .x22 .x23] from rfl]
-  simp only [WP.seq_iff (M := isa),WP.block_append_iff (M := isa)]
+  simp only [Impl.MlKem.AArch64.Kem16P.pairP, beginPCode, initialCode, finishCode, seqs]
+  simp only [WP.seq_iff (M := isa)]
 
 /-- A PRF pair's memory beyond `Paired.BeginInput`. -/
 structure PrfInput (p outA outB table st R B₀ : Addr) (s : State) : Prop where
@@ -174,7 +172,7 @@ theorem beginP_ok {w16 : Bool} (L : KemLay) (sd bt : Nat) {s : State}
         · exact Offset.disjoint p (by decide) (by decide) (by decide)
         · exact Offset.disjoint p (by decide) (by decide) (by decide))
       have fut : Frame (stepWrites p outA outB) u.mem t.mem := fvBig.trans ftBig
-      refine ⟨((ku.trans kv).trans ht'.keep).mono (by simp [beginRegs3,List.append_assoc]),
+      refine ⟨((ku.trans kv).trans ht'.keep).mono (by simp [beginRegs3,Paired.initialRegs,List.append_assoc]),
         ((fu.mono (by simp [startWritesP, startWrites, pairWritesP, pairWrites3, stepWrites])).trans
           (fut.mono (fun r hr => List.mem_append_left _ (List.mem_append_left _ hr)))),svt,
         ⟨ctt,(ht'.keep.get .x19).trans v19,pt,?_,?_,?_,?_⟩,ht'.both,?_⟩

@@ -48,7 +48,7 @@ def beginCode (sb ss a b k oa ob : Nat) (w16 : Bool := false) : Prog isa :=
    (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (initialCode oa ob w16)))
 
 def beginRegs : List Reg := startRegs++[.x9,.x16]++
- [.x0,.x2,.x3,.x4,.x5,.x6,.x7,.x8,.x9,.x10,.x11,.x12,.x13,.x14,.x15,.x22,.x23]
+ [.x0,.x1,.x2,.x3,.x4,.x5,.x6,.x7,.x8,.x9,.x10,.x11,.x12,.x13,.x14,.x15,.x20,.x21,.x22,.x23]
 
 structure BeginPostW (w16 : Bool) (A B : Spec.Sha3.State) (p a b c : Addr) (s t : State) : Prop where
  keep : Keep beginRegs s t
@@ -138,7 +138,7 @@ theorem begin_ok {w16 : Bool} {s : State} {p seed outA outB table : Addr} {sb ss
         · exact ctx.farB.sub_left (Offset.sub_base p (by decide))
         · exact Offset.disjoint p (by decide) (by decide) (by decide)
         · exact Offset.disjoint p (by decide) (by decide) (by decide))
-      refine ⟨((ku.trans kv).trans ht'.keep).mono (by simp [beginRegs,List.append_assoc]),
+      refine ⟨((ku.trans kv).trans ht'.keep).mono (by simp [beginRegs,initialRegs,List.append_assoc]),
         ((fu.mono (by simp [stepWrites])).trans fvBig).trans ftBig,svt,
         ⟨ctt,(ht'.keep.get .x19).trans v19,pt,?_,?_,?_,?_⟩,?_⟩
       · simpa only [accepted,v28,houtA] using ht'.first

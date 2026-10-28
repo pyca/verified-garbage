@@ -15,11 +15,8 @@ theorem pair_iff {w16 : Bool} (L : KemLay) (kg : Bool) (a : Nat) (s : State) (Q 
     WP isa (.seq (beginCode (if kg then KG.SB else KEM.SB) (if kg then KG.SS else KEM.SS)
       a (a+1) L.k ((if kg then KG.AH else KEM.AH)+1024*a)
       ((if kg then KG.AH else KEM.AH)+1024*(a+1)) w16) (finishCode w16)) s Q := by
-  simp only [Impl.MlKem.AArch64.Paired.pair,beginCode,initialCode,finishCode,seqs,
-    show [Instr.str .x .x3 .x19 1696,.str .x .x4 .x19 1704,.logic .and .x .x6 .x22 .x23]=
-      [.str .x .x3 .x19 1696,.str .x .x4 .x19 1704]++[.logic .and .x .x6 .x22 .x23] from rfl,
-    ]
-  simp only [WP.seq_iff (M := isa),WP.block_append_iff (M := isa)]
+  simp only [Impl.MlKem.AArch64.Paired.pair,beginCode,initialCode,finishCode,seqs]
+  simp only [WP.seq_iff (M := isa)]
 
 theorem pairCode_ok {w16 : Bool} {s : State} {p seed outA outB table : Addr} {sb ss a b k oa ob : Nat}
     (hss : ss<65536) (hsb : sb+32≤32768) (h8 : sb%8=0)
