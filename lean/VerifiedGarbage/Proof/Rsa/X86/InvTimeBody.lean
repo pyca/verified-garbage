@@ -11,12 +11,9 @@ import VerifiedGarbage.Proof.Rsa.X86.InvBatch.Body
 /-! # The trace of a selected fixed-width inversion kernel -/
 
 @[expose] public section
-variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
-include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.InvTiming
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.CrtValuesRt VG.Proof.Rsa.X86.KeyRt
 
- omit rsaBatchLaw in
  theorem activeModulus {args : Nat → BitVec 32} {base : Addr} {size len P Q w n : Nat} {s : State}
     (h : InvInput args base size len P Q s) (hn : 16≤n) (hw : w=2*n) (width : kw len=w)
     (pb : (args 9).toNat≤4*n) :

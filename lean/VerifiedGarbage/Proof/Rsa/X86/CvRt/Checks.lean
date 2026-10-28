@@ -29,15 +29,13 @@ inversion, its check and the mask releasing the results (`checksB_ok`), on
 -/
 
 @[expose] public section
-variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
-include rsaBatchLaw
 namespace VG.Proof.Rsa.X86.CrtValuesRt
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Impl.Rsa.X86.Keys (aM aNM aZero aT1 aT2 aT3 aT4 sOdd sB sC sT hdr seqs andS)
 open VG.Impl.Rsa.X86.KeyRt (Lay)
 open VG.Impl.Rsa.X86.CrtValues (sPodd sE1 sE2 sE3 sMask aOne aQ aP aDQ aDR aDD aDT aDR2 aDR3 aD nArr)
 open VG.Impl.Rsa.X86.CrtValuesRt
-open VG.Proof.Rsa.X86.Keys (Ws Keep arr num S slot wp_seqs_cons wp_seqs_append bank invArrs invSlots)
+open VG.Proof.Rsa.X86.Keys (Ws Keep arr num S slot wp_seqs_cons wp_seqs_append bank invArrs invSlots rtSlots)
 open VG.Proof.Rsa.X86.KeyRt
 
 /-- The values the arithmetic works on. -/
@@ -84,7 +82,6 @@ structure StI (g : Geometry) (len : Nat) (X₁ X₂ : Nat) (s : State) : Prop wh
   zero : num s.mem g.base (kw len) aZero = 0
   one : num s.mem g.base (kw len) aOne = 1
 
-omit rsaBatchLaw in
 theorem checksA_ok {g : Geometry} {len : Nat} {s : State} (h : StC g len s) :
     WP isa (seqs (checksA)) s fun t =>
       StI g len (num s.mem g.base (kw len) aDQ) (num s.mem g.base (kw len) aDR) t ∧
@@ -205,7 +202,7 @@ structure StD (g : Geometry) (len : Nat) (X₁ X₂ : Nat) (s : State) : Prop wh
 theorem checksB_ok {g : Geometry} {len : Nat} {s : State} {X₁ X₂ : Nat} (h : StI g len X₁ X₂ s) {args : Nat → BitVec 32}
     (gate : InvGate args g.base g.size g.P g.Q s) :
     WP isa (seqs (checksB)) s fun t => StD g len X₁ X₂ t ∧
-      Keep g.base (kw len) (invArrs ++ [aDQ, aDD]) (invSlots ++ [sT, sE3, sMask]) s.mem t.mem ∧
+      Keep g.base (kw len) (invArrs ++ [aDQ, aDD]) (invSlots ++ rtSlots ++ [sT, sE3, sMask]) s.mem t.mem ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
   have hw := h.ws
   have fit := fun j (hj : j < nArr) => hw.ws.fit64 (j := j) hj
@@ -223,20 +220,20 @@ theorem checksB_ok {g : Geometry} {len : Nat} {s : State} {X₁ X₂ : Nat} (h :
   have one1 : num t1.mem g.base (kw len) aOne = 1 := by
     rw [k1.num (by decide) (by decide) (fit _ (by decide)), h.one]
   rw [one1] at e2
-  have sl : ∀ d, d + 4 ≤ hdr → d % 4 = 0 → d ∉ [sT, sE3, sOdd, sB, sC] →
-      slot t2.mem g.base d = slot s.mem g.base d := fun d hd h4 hn => by
+  have sl : ∀ d, d + 4 ≤ hdr → d % 4 = 0 → 100 ≤ d → d ∉ [sT, sE3, sOdd, sB, sC] →
+      slot t2.mem g.base d = slot s.mem g.base d := fun d hd h4 h100 hn => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
     simp only [sT, sE3, sOdd, sB, sC, hdr] at hn hd
     rw [k2.slot (by simp only [hdr]; omega_arith) (by simp only [sT, sE3]; simp; omega_arith),
-      k1.slot (by simp only [hdr]; omega_arith) (by simp only [invSlots, sOdd, sB, sC]; simp; omega_arith)]
+      k1.slot (by simp only [hdr]; omega_arith) (by simp only [invSlots, rtSlots, sOdd, sB, sC]; simp; omega_arith)]
   rw [wp_seqs_cons (List.cons_ne_nil _ _), List.append_assoc]
   refine WP.block_append ?_
   refine WP.mono (andS_ok h2 (d := sMask) (a := sPodd) (b := sE1) (by decide) (by decide) (by decide)
-    (by rw [sl _ (by decide) (by decide) (by decide), h.podd]; omega_arith) (by rw [sl _ (by decide) (by decide) (by decide), h.e1]; split <;> omega_arith)
+    (by rw [sl _ (by decide) (by decide) (by decide) (by decide), h.podd]; omega_arith) (by rw [sl _ (by decide) (by decide) (by decide) (by decide), h.e1]; split <;> omega_arith)
     ) fun t3a ⟨h3a, k3a, m3a, r3a⟩ => ?_
   refine WP.block_append ?_
   refine WP.mono (andS_ok h3a (d := sMask) (a := sMask) (b := sE2) (by decide) (by decide) (by decide)
-    (by rw [m3a]; split <;> omega_arith) (by rw [k3a.slot (by decide) (by decide), sl _ (by decide) (by decide) (by decide), h.e2]; split <;> omega_arith)
+    (by rw [m3a]; split <;> omega_arith) (by rw [k3a.slot (by decide) (by decide), sl _ (by decide) (by decide) (by decide) (by decide), h.e2]; split <;> omega_arith)
     ) fun t3b ⟨h3b, k3b, m3b, r3b⟩ => ?_
   refine WP.mono (andS_ok h3b (d := sMask) (a := sMask) (b := sE3) (by decide) (by decide) (by decide)
     (by rw [m3b]; split <;> omega_arith)
@@ -251,7 +248,7 @@ theorem checksB_ok {g : Geometry} {len : Nat} {s : State} {X₁ X₂ : Nat} (h :
     fun t5 ⟨h5, k5, e5, r5, top5⟩ => ?_
   refine WP.mono (clrLow_ok h5 (by decide)) fun t ⟨h6, k6, e6, r6, top6⟩ => ?_
   -- The count, through every step.
-  have K : Keep g.base (kw len) (invArrs ++ [aDQ, aDD]) (invSlots ++ [sT, sE3, sMask]) s.mem t.mem :=
+  have K : Keep g.base (kw len) (invArrs ++ [aDQ, aDD]) (invSlots ++ rtSlots ++ [sT, sE3, sMask]) s.mem t.mem :=
     k1.mono.trans (k2.mono.trans (K3.mono.trans (k4.mono.trans (k5.mono.trans k6.mono))))
   have R : Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t :=
     (r1.mono (by decide)).trans ((r2.mono (by decide)).trans ((r3a.mono (by decide)).trans ((r3b.mono (by decide)).trans
@@ -282,8 +279,8 @@ theorem checksB_ok {g : Geometry} {len : Nat} {s : State} {X₁ X₂ : Nat} (h :
     rw [k6.slot (by decide) (by simp), k5.slot (by decide) (by simp),
       k4.slot (by decide) (by simp), m3, m3b, k3b.slot (e := sE3) (by decide) (by decide), m3a,
       k3a.slot (e := sE2) (by decide) (by decide), k3a.slot (e := sE3) (by decide) (by decide), e2,
-      sl sPodd (by decide) (by decide) (by decide), sl sE1 (by decide) (by decide) (by decide),
-      sl sE2 (by decide) (by decide) (by decide), h.podd, h.e1, h.e2]
+      sl sPodd (by decide) (by decide) (by decide) (by decide), sl sE1 (by decide) (by decide) (by decide) (by decide),
+      sl sE2 (by decide) (by decide) (by decide) (by decide), h.podd, h.e1, h.e2]
     simp only [maskOf, VG.Proof.Rsa.CrtValues.maskOf]
     by_cases a : g.P % 2 = 1 <;> by_cases b : X₁ = g.Q <;> by_cases c : X₂ = 0 <;>
       by_cases d : num t1.mem g.base (kw len) 1 = 1 <;> simp [a, b, c, d]

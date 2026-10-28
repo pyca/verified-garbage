@@ -42,8 +42,6 @@ theorem guard128_check :
     (VG.Taint.check taint τ (VG.Impl.Rsa.X86.InvBatch.guard 512 64)
       (VG.Taint.hintOf taint τ (VG.Impl.Rsa.X86.InvBatch.guard 512 64))).isSome=true := by taint_decide
 
-variable [rsaBatchLaw : VG.Proof.Rsa.X86.BatchLaw]
-include rsaBatchLaw
 
 theorem choose_relCT {args : Nat → BitVec 32} {base : Addr} {size len P Q P' Q' desired w n : Nat} {sp : BitVec 32} {fallback : Prog isa}
     (hn : 16≤n) (nl : n≤1024) (hw : w=2*n) (he : n%2=0) (small : desired<2^32) (widthChoice : kw desired=w)

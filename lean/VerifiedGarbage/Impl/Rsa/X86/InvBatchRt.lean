@@ -277,4 +277,21 @@ def body : Prog isa := seqs [
   .loop (.seq (twice L) (.block [decCounter, testCounter])) .ne,
   finish L]
 
+/-! ## The choice -/
+
+/-- A rejected guard clears CF. -/
+def reject : Prog isa := .block [.alu .cmp .eax (.reg .eax)]
+
+/-- CF set exactly for the lengths the batches take: `n_len` (argument 7) a multiple of 16 and at
+least 128, and the primes' lengths (arguments 9 and 11) at most `n_len / 2`. -/
+def guard : Prog isa :=
+  .seq (.block [.mov .eax (.mem (argOp 7)), .alu .and .eax (.imm 15)]) <|
+  .ite .e (.seq (.block [.mov .eax (.mem (argOp 7)), .alu .cmp .eax (.imm 128)]) <|
+    .ite .ae (.seq (.block [.mov .eax (.mem (argOp 7)), .shift .shr .eax 1, .alu .add .eax (.imm 1),
+        .mov .ecx (.mem (argOp 9)), .alu .cmp .ecx (.reg .eax)]) <|
+      .ite .b (.block [.mov .ecx (.mem (argOp 11)), .alu .cmp .ecx (.reg .eax)]) reject) reject) reject
+
+/-- The batches where the guard allows them, else `fallback`, each emitted once. -/
+def dispatch (fallback : Prog isa) : Prog isa := .seq guard (.ite .b (body L) fallback)
+
 end VG.Impl.Rsa.X86.InvBatchRt
