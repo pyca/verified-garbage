@@ -41,7 +41,7 @@ theorem signStart_ok {base : Addr} {size pLen qLen p q g k : Nat} {s0 : State}
     have V := R1.wide_value M (by decide) (Nat.lt_trans (Nat.mod_lt _ pp) M.valueBounds.1)
     rw [hg, hk] at V
     exact V
-  refine WP.seq (WP.mono (stageReduce_ok (LenOperand.imm _ _ _ _ _) M1 (M1.wideStream (by decide) nq) (by omega)
+  refine WP.seq (WP.mono (stageReduce_ok (LenOperand.imm _ _ _ _ _) M1 (M1.wideStream (by decide) nq) (M1.wideStack (by decide)) (by omega)
     (by decide) (M1.scalarFit (by decide))) fun s2 ⟨M2, R2⟩ => ?_)
   have E2 := R2.toStageFrame.execution (.inl ⟨by decide, M1.scalarFit (by decide)⟩)
   have E12 := E1.trans E2

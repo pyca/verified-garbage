@@ -42,7 +42,7 @@ theorem generateDomain_ok {base : Addr} {size pLen qLen p q g : Nat} {s0 : State
   have E2 := R2.toStageFrame.execution (.inl ⟨by decide, M1.wideFit (by decide)⟩)
   have T2 : operandValue s2 base (.local VG.Impl.Dsa.Layout.t) pLen = p - 1 :=
     R2.wide_value M1 (by decide) (Nat.lt_of_le_of_lt (Nat.sub_le _ _) M.valueBounds.1)
-  refine WP.seq (WP.mono (stageReduce_ok (LenOperand.imm _ _ _ _ _) M2 (M2.wideStream (by decide) nq) (by omega)
+  refine WP.seq (WP.mono (stageReduce_ok (LenOperand.imm _ _ _ _ _) M2 (M2.wideStream (by decide) nq) (M2.wideStack (by decide)) (by omega)
     (by decide) (M2.scalarFit (by decide))) fun s3 ⟨M3, R3⟩ => ?_)
   have E3 := R3.toStageFrame.execution (.inl ⟨by decide, M2.scalarFit (by decide)⟩)
   have U3 : operandValue s3 base (.local u) qLen = (p - 1) % q := by

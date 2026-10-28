@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Dsa.X86.Arithmetic
 public import VerifiedGarbage.Impl.Dsa.X86.Bytes
 public import VerifiedGarbage.Impl.Dsa.X86.Stream
 public import VerifiedGarbage.Impl.Dsa.X86.Pow
+public import VerifiedGarbage.Impl.Dsa.X86.Arith
 
 /-! # DSA arithmetic composition on x86
 
@@ -50,11 +51,10 @@ def power (len expLen : Nat) (modulus : Field) (a e : Pointer) (output : Nat) : 
   (.seq (.seq (load n len (slot n 5) a) (load n expLen (slot n 8) e))
   (.seq (Pow.call n ((expLen + 3) / 4)) (store len output)))
 
+/-- `a b mod m` by a call of the width's shared product (`Arith.mulCall`). -/
 def productMod (len : Nat) (modulus : Field) (a b : Pointer) (output : Nat) : Prog isa :=
   let n := (len + 7) / 8
-  .seq (setup len modulus)
-  (.seq (.seq (load n len (slot n 5) a) (load n len (slot n 8) b))
-  (.seq (ordinaryMul n) (store len output)))
+  .seq (loadPower n len len modulus a b) (.seq (Arith.mulCall n) (store len output))
 
 def product (len : Nat) (a b : Pointer) (output : Nat) : Prog isa :=
   productMod len .q a b output
@@ -66,12 +66,12 @@ def sum (len : Nat) (a b : Pointer) (output : Nat) : Prog isa :=
   (.seq (ordinaryAdd n) (store len output)))
 
 /-- Reduce `len` bytes (an immediate, or a saved public length) at `input`
-modulo q. -/
+modulo q, by a call of the width's shared reduction (`Arith.reduceCall`). -/
 def reduce (qLen : Nat) (len : Src) (input : Pointer) (output : Nat) : Prog isa :=
   let n := (qLen + 7) / 8
-  .seq (setup qLen .q)
-  (.seq (.block (pointer input))
-  (.seq (reduceStream n len) (store qLen output)))
+  .seq (load n qLen (slot n 0) (.input .q))
+  (.seq (.block (pointer input ++ [.mov .ebx len]))
+  (.seq (Arith.reduceCall n) (store qLen output)))
 
 /-- The digest prefix the shape check saved. -/
 def digestPrefix : Src := .mem (sc (Layout.field .digestPrefixLen))

@@ -47,6 +47,11 @@ theorem Moduli.wideStream {base : Addr} {size pLen qLen p q d n : Nat} {s : Stat
   have C := VG.Proof.Dsa.X86.Layout.context_bound hn
   exact localStream M.scr (by have := M.lengths; omega) (Nat.le_trans (M.wideFit hd) M.extent) (by omega)
 
+theorem Moduli.wideStack {base : Addr} {size pLen qLen p q d : Nat} {s : State}
+    (M : Moduli base size pLen qLen p q s) (hd : d ∈ Layout.wideValues) :
+    Region.Disjoint ⟨(pointerValue base s (.local d)).setWidth 64, pLen⟩ (callStack (s.gpr .esp)) :=
+  localStack M.scr M.room (by have := M.lengths; omega) (Nat.le_trans (M.wideFit hd) M.extent)
+
 theorem scalar_separate {a b len : Nat} (ha : a ∈ Layout.scalars) (hb : b ∈ Layout.scalars)
     (hab : a ≠ b) (hl : len ≤ 32) : a + len ≤ b ∨ b + len ≤ a := by
   simp only [Layout.scalars, List.mem_cons, List.not_mem_nil, or_false] at ha hb
