@@ -23,7 +23,7 @@ theorem correctionNumerator_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z 
     WP isa correctionNumerator s fun t =>
       Ws t B Z n 32 ∧ Outs B correctionScratch s.mem t.mem ∧
       val32 t.mem B (arr 4 0) 4 = val32 s.mem B (arr n aV) 2 * val32 s.mem B (arr n aDen) 2 + 1 ∧
-      Keeps [.eax, .ebx, .ecx, .edx, .ebp] s t := by
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have hn := h.old.workspace.nowrap
   have fr := h.arr_fit (j := aV) (by decide)
   have ft := h.arr_fit (j := aDen) (by decide)

@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.X86.Key
 
 The cdecl length arguments select the modulus, prime and exponent widths.
 Division and inversion share one set of word loops across all supported
-widths. Paired products and I/O keep the established fixed-offset adapters.
+widths. I/O keeps the established fixed-offset adapters.
 The four-word correction bank is fixed.
 -/
 
@@ -143,11 +143,31 @@ def dispatchIO (part : Nat → Prog isa) : List Nat → Prog isa
   | w :: rest => .seq (.block [.alu .cmp .eax (.imm (BitVec.ofNat 32 w))])
       (.ite .e (part (4 * w)) (dispatchIO part rest))
 
-/-- Retain the established paired product kernels with constant operand offsets. -/
+/-- The header word holding a product row's multiplier. -/
+def multSlot : Nat := 128
+
+/-- The `left + right + 2` words of `out` zeroed. -/
+def productZero (left right : Width) (out : Loc) : Prog isa :=
+  .seq (.block (ptr out .ebp .edx ++ bytes left .ecx ++ bytes right .eax ++
+    [.alu .add .ecx (.reg .eax), .alu .add .ecx (.imm 8), .mov .eax (.imm 0)])) VG.Impl.Bignum.X86.CrtRt.zeroLoop
+
+/-- Row `i` (`ebp` at word `i` of `out`): word `i` of `a` into the multiplier slot, `ecx` at `b`,
+`esi` its bytes and no carry. -/
+def productRow (right : Width) (out a b : Loc) : List Instr :=
+  ptr out .eax .edx ++ [.mov .ecx (.reg .ebp), .alu .sub .ecx (.reg .eax)] ++
+    ptr a .eax .edx ++ [.alu .add .eax (.reg .ecx), .mov .edx (.mem (at_ .eax 0)), .store (sc multSlot) .edx] ++
+    ptr b .ecx .edx ++ bytes right .esi ++ [.mov .ebx (.imm 0)]
+
+/-- The row's carry above it, `ebp` at the next row, and ZF after the last. -/
+def productNext (left right : Width) (out : Loc) : List Instr :=
+  [.store (at_ .ebp 0) .ebx] ++ bytes right .eax ++ [.alu .sub .ebp (.reg .eax), .alu .add .ebp (.imm 4)] ++
+    ptr out .eax .edx ++ bytes left .edx ++ [.alu .add .eax (.reg .edx), .alu .cmp .ebp (.reg .eax)]
+
+/-- `[out] = [a] [b]`, `left` and `right` words, one row of `b` for each word of `a`. -/
 def product (left right : Width) (out a b : Loc) : Prog isa :=
-  .seq (.block (bytes .modulus .eax ++ [.shift .shr .eax 4]))
-    (dispatchIO (fun n => VG.Impl.RsaKeyGen.X86.Product.code
-      (left.words n) (right.words n) (out.offset n) (a.offset n) (b.offset n) 128) widths)
+  .seq (productZero left right out) (.seq (.block (ptr out .ebp .edx))
+    (.loop (.seq (.block (productRow right out a b))
+      (.seq (VG.Impl.Bignum.X86.CrtRt.rowLoopAt multSlot) (.block (productNext left right out)))) .ne))
 
 def primeProduct (out a b : Nat) : Prog isa := product .prime .prime (arr out) (arr a) (arr b)
 
