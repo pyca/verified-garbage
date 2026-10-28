@@ -13,7 +13,8 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 `maskBits` stores `0xFF >>> z`, for `z = 8 emLen - emBits < 8`, to the slot
 `sC`, a bit at a time (bit `j` is set iff `z < 8 - j`: `maskAcc`), and 0 to
 `sLo` (`maskBits_ok`). `fitH` leaves `emLen` in `x9` and `x10` nonzero iff
-`emLen < hLen + 2` (`fitH_ok`).
+`emLen < hLen + 2` (`fitH_ok`); `saltFits`, with the salt's length in `x12`,
+leaves `x10` nonzero iff the salt does not fit (`saltFitsR_ok`).
 -/
 
 @[expose] public section
@@ -24,6 +25,7 @@ open VG VG.AArch64 VG.Impl.RsaPss.AArch64
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 open VG.Proof.MlKem.AArch64 (Only Keep wp_nil wp_movz wp_subImm wp_lsr wp_lsl wp_orr wp_sub)
 open VG.Proof.RsaPkcs1Sig.AArch64 (wp_mov borrow_ne)
+open VG.Proof.RsaPss.AArch64 (borrow_or)
 
 /-- The mask's bits `j < n`, from `z`. -/
 def maskAcc (z : BitVec 64) : Nat → BitVec 64
@@ -93,5 +95,20 @@ theorem fitH_ok (H : Hash) (hD : H.D + 2 < 4096) {u : State} {k : Nat} (hk : u.g
     wp_nil ⟨(o₁.trans (o₂.trans o₃)).mono, by rw [o₃.get .x9, o₂.get .x9, e₁, hk], ?_⟩
   rw [e₃, e₂, e₁, hk]
   exact borrow_ne hk2 (by omega)
+
+/-- `saltFits`, with the salt's length in `x12`. -/
+theorem saltFitsR_ok (H : Hash) (hD : H.D + 2 < 4096) {u : State} {a : Nat} (ha : H.D + 2 ≤ a) (ha' : a < 2 ^ 32)
+    (h9 : u.gpr .x9 = BitVec.ofNat 64 a) {y : BitVec 64} (h12 : u.gpr .x12 = y) :
+    WP isa (.block (saltFits H)) u fun u' => Only [.x9, .x10, .x13] u u' ∧
+      u'.gpr .x9 = BitVec.ofNat 64 (a - (H.D + 2)) ∧ (u'.gpr .x10 != 0) = decide (a - (H.D + 2) < y.toNat) := by
+  unfold saltFits
+  refine wp_subImm (by omega) fun u₂ o₂ e₂ => wp_sub fun u₃ o₃ e₃ => wp_lsr (by decide) fun u₄ o₄ e₄ =>
+    wp_lsr (by decide) fun u₅ o₅ e₅ => wp_orr fun u₆ o₆ e₆ =>
+      wp_nil ⟨(o₂.trans (o₃.trans (o₄.trans (o₅.trans o₆)))).mono, ?_, ?_⟩
+  · rw [o₆.get .x9, o₅.get .x9, o₄.get .x9, o₃.get .x9, e₂, h9, Offset.ofNat_sub_ofNat ha]
+  · have h12' : u₂.gpr .x12 = BitVec.ofNat 64 y.toNat := by rw [o₂.get .x12, h12, BitVec.ofNat_toNat,
+      BitVec.setWidth_eq]
+    rw [e₆, o₅.get .x10, e₄, e₃, e₂, h9, Offset.ofNat_sub_ofNat ha, h12', e₅, o₄.get .x12, o₃.get .x12, h12']
+    exact borrow_or (by omega) y.isLt
 
 end VG.Proof.RsaPss.AArch64
