@@ -51,7 +51,7 @@ theorem crtCall_pub {g : PrivGeometry} {bs1 bs2 : Fin 8 → List Byte} {s t : St
 theorem pcCall_pub {g : PrivGeometry} {bs1 bs2 : Fin 8 → List Byte} {s t : State}
     (hs : PrivContext g bs1 s) (ht : PrivContext g bs2 t) (argsS : Arguments g (pcArgument g) 6 s) (argsT : Arguments g (pcArgument g) 6 t)
     (nb : bs1 0 = bs2 0) :
-    (Spec.Rsa.publicPrecomputeContract abi 20).pub
+    (Spec.Rsa.publicPrecomputeContract abi 96).pub
       (s.callEntry.withRegions (pcRd g) (pcWr g)) (t.callEntry.withRegions (pcRd g) (pcWr g)) := by
   sig_pub [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argSlots, argVal, argBytes]
   have sa := fun {j} (hj : j < 6) => pcArgs_values hs argsS hj

@@ -83,8 +83,9 @@ def double : Prog isa :=
       (.block [.mov .eax (.imm 0), .alu .sub .eax (.reg .ecx), .store (at_ .ebp 0) .eax]))
 
 /-- Number 4 set to the sum minus `M`, and `ecx` all ones if the sum with its
-carry is below `M`; `edi` points into number 4, and is set back. -/
-def reduce : Prog isa :=
+carry is below `M`; `edi` points into number 4, and is set back from argument
+`ws`. -/
+def reduce (ws : Nat := 8) : Prog isa :=
   .seq (.block (slotPtr .eax 4 .edx ++ slotPtr .ebp 5 .edx ++ slotPtr .ebx 0 .edx ++
       [.mov .edi (.reg .eax), .mov .ecx (.imm 0)]))
     (.seq (.loop (.block [.mov .eax (.mem (at_ .ebp 0)), .alu .add .ecx (.reg .ecx),
@@ -92,21 +93,21 @@ def reduce : Prog isa :=
       .alu .add .ebp (.imm 4), .alu .add .ebx (.imm 4), .alu .add .edi (.imm 4),
       .alu .sub .edx (.imm 4)]) .ne)
       (.block [.mov .eax (.mem (at_ .ebp 0)), .alu .add .ecx (.reg .ecx), .alu .sbb .eax (.imm 0),
-        .alu .sbb .eax (.reg .eax), .mov .ecx (.reg .eax), .mov .edi (.mem (argAt 0 8))]))
+        .alu .sbb .eax (.reg .eax), .mov .ecx (.reg .eax), .mov .edi (.mem (argAt 0 ws))]))
 
 /-- Number `d` set to number `x` where the mask `ecx` is all ones, else kept;
 `edi` counts, and is set back. -/
-def select (x d : Nat) : Prog isa :=
+def select (x d : Nat) (ws : Nat := 8) : Prog isa :=
   .seq (.block (slotPtr .ebp x .edx ++ slotPtr .ebx d .edx ++ [.mov .edi (.reg .edx)]))
     (.seq (.loop (.block [.mov .eax (.mem (at_ .ebx 0)), .mov .edx (.mem (at_ .ebp 0)),
       .alu .xor .edx (.reg .eax), .alu .and .edx (.reg .ecx), .alu .xor .eax (.reg .edx),
       .store (at_ .ebx 0) .eax, .alu .add .ebp (.imm 4), .alu .add .ebx (.imm 4),
       .alu .sub .edi (.imm 4)]) .ne)
-      (.block [.mov .edi (.mem (argAt 0 8))]))
+      (.block [.mov .edi (.mem (argAt 0 ws))]))
 
-/-- `T = 2 T mod M`, `esi` down one. -/
-def doubleStep : Prog isa :=
-  .seq double (.seq reduce (.seq (select 5 4) (.block [.alu .sub .esi (.imm 1)])))
+/-- `T = 2 T mod M`, `esi` down one; `edi` set back from argument `ws`. -/
+def doubleStep (ws : Nat := 8) : Prog isa :=
+  .seq double (.seq (reduce ws) (.seq (select 5 4 ws) (.block [.alu .sub .esi (.imm 1)])))
 
 /-- `R² mod M` in number 4: one, doubled `16 B` (`128 W`) times. -/
 def powerTwo : Prog isa :=
@@ -119,10 +120,10 @@ def offEax (j : Nat) : List Instr :=
 
 /-- The arguments of `vg_rsa_mont_mul_at` for the numbers `o`, `a` and `b`, stored
 into the frame at `esp`: `ws` (`edi`), `ws_len`, the width, `m`, `inv`, `s`,
-`o`, `a` and `b`. Only `eax` and `edx` change. -/
-def mulArgs (o a b : Nat) : List Instr :=
+`o`, `a` and `b`, `ws_len` from argument `wl`. Only `eax` and `edx` change. -/
+def mulArgs (o a b : Nat) (wl : Nat := 9) : List Instr :=
   widthB 9 .edx ++
-    [.mov .eax (.mem (argAt 9 9)), .store (at_ .esp 4) .eax, .store (at_ .esp 0) .edi,
+    [.mov .eax (.mem (argAt 9 wl)), .store (at_ .esp 4) .eax, .store (at_ .esp 0) .edi,
       .mov .eax (.reg .edx), .shift .shr .eax 3, .store (at_ .esp 8) .eax,
       .mov .eax (.imm (BitVec.ofNat 32 numOff)), .store (at_ .esp 12) .eax,
       .mov .eax (.imm (BitVec.ofNat 32 invOff)), .store (at_ .esp 16) .eax] ++
@@ -132,8 +133,8 @@ def mulArgs (o a b : Nat) : List Instr :=
 /-- `[o] = [a] [b] R⁻¹ mod M` for the numbers `o`, `a` and `b`, by a call of
 `vg_rsa_mont_mul_at` with its arguments in a frame of 36 bytes, which keeps
 `ebx`, `esi`, `ebp` and `edi`. -/
-def mul (o a b : Nat) : Prog isa :=
-  .frame (.alloc 36) (.seq (.block (mulArgs o a b)) (.call Spec.Rsa.MontMul.mulApi.name Sse2.atBody)) (.free 36)
+def mul (o a b : Nat) (wl : Nat := 9) : Prog isa :=
+  .frame (.alloc 36) (.seq (.block (mulArgs o a b wl)) (.call Spec.Rsa.MontMul.mulApi.name Sse2.atBody)) (.free 36)
 
 /-- A round of the exponent's public schedule: the result times the base
 where its low bit is set, the exponent shifted, and the base squared only

@@ -34,7 +34,7 @@ theorem PrecomputeABI.stackArgument {s : State} (A : PrecomputeABI s) {i : Nat} 
 
 theorem PrecomputeABI.stack {s : State} (A : PrecomputeABI s) :
     StkOk (s.gpr .esp) (argumentPointer s 4) ((arg s 5).toNat * 8) := by
-  apply VG.Proof.Weierstrass.X86.stkOk_of (Nat.le_refl 20) A.stackLow
+  apply VG.Proof.Weierstrass.X86.stkOk_of (by decide : 20 ≤ 96) A.stackLow
   · have H := A.scratchBound
     simpa only [argumentPointer, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans (arg s 4).isLt (by decide : 2 ^ 32 < 2 ^ 64))] using H
   · have H : 384 ≤ (arg s 5).toNat * 8 := A.used; omega

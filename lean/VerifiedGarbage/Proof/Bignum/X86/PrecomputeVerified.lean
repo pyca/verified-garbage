@@ -21,8 +21,8 @@ import VerifiedGarbage.Proof.Bignum.Words
 namespace VG.Proof.Bignum.X86
 open VG VG.X86 VG.Impl.Bignum.X86
 
-theorem precomputeConstantTime : ConstantTime isa (Spec.Rsa.publicPrecomputeContract abi 20).pre
-    (Spec.Rsa.publicPrecomputeContract abi 20).pub PrecomputeFn.code := by
+theorem precomputeConstantTime : ConstantTime isa (Spec.Rsa.publicPrecomputeContract abi 96).pre
+    (Spec.Rsa.publicPrecomputeContract abi 96).pub PrecomputeFn.code := by
   intro s t tr ur sf tf S T H E F
   have Args := precomputeArguments H
   exact precomputeOperation_trace (precomputeABI_of S) (precomputeABI_of T) Args.2 Args.1
@@ -40,7 +40,7 @@ def precomputeSatState : State where
   rd := [⟨0x2000, 64⟩]
   wr := [⟨0x1000, 128⟩, ⟨0x8000, 1024⟩, ⟨0x20004, 24⟩]
 
-theorem precomputeSatisfiable : ∃ s, (Spec.Rsa.publicPrecomputeContract abi 20).pre s := by
+theorem precomputeSatisfiable : ∃ s, (Spec.Rsa.publicPrecomputeContract abi 96).pre s := by
   have a0 : arg precomputeSatState 0 = 4096 := by decide
   have a1 : arg precomputeSatState 1 = 16 := by decide
   have a2 : arg precomputeSatState 2 = 8192 := by decide
@@ -53,7 +53,7 @@ theorem precomputeSatisfiable : ∃ s, (Spec.Rsa.publicPrecomputeContract abi 20
     [a0, a1, a2, a3, a4, a5, e, esp, precomputeSatState, Spec.Rsa.lenValid,
       Spec.Rsa.publicScratchWords, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords] using precomputeSatState
 
-theorem precompute_verified : Verified target PrecomputeFn.code (Spec.Rsa.publicPrecomputeContract abi 20) :=
+theorem precompute_verified : Verified target PrecomputeFn.code (Spec.Rsa.publicPrecomputeContract abi 96) :=
   ⟨precomputeCorrect, precomputeConstantTime, precomputeSatisfiable⟩
 
 end VG.Proof.Bignum.X86

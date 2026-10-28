@@ -19,8 +19,8 @@ structure CrtImpl where
   noSp : NoSp code
   pcName : String
   pc : Prog isa
-  pcVerified : Verified target pc (Spec.Rsa.publicPrecomputeContract abi 20)
-  pcStack : stackUse pc ≤ 20
+  pcVerified : Verified target pc (Spec.Rsa.publicPrecomputeContract abi 96)
+  pcStack : stackUse pc ≤ 96
   pcNoSp : NoSp pc
   pdName : String
   pd : Prog isa
