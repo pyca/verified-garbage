@@ -65,11 +65,6 @@ theorem correction_eq {p a n : Nat} {st : Divstep.W32.IState} (ha : a < p) (sa :
 
 /-! ## The code -/
 
-theorem rv_half1' (len j : Nat) : rv (kw len) { arr := j, half := 1 } = rv (kw len) (a j) + 4 * nw len := by
-  have := rv_half1 (kw len) (a j) rfl
-  have ke := kw_eq len
-  simp only [a] at this ⊢; omega
-
 /-- `normalize`: `[6] = normal p a f` (`InvBatch.normalize_ok`). -/
 theorem normalize_ok {s : State} (h : Bx L s B Z len N) {p a₀ : Nat} {f : Int}
     (hm : val32 s.mem B (rv (kw len) mo) (nw len) = p) (ha : val32 s.mem B (rv (kw len) (a 6)) (nw len) = a₀)
