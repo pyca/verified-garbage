@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Camellia.X86.Layers
+public import VerifiedGarbage.Impl.Camellia.X86.Prepared
 
 /-!
 # Camellia ECB, bitsliced, on x86 (32-bit)
@@ -12,21 +12,20 @@ public import VerifiedGarbage.Impl.Camellia.X86.Layers
 
 * The callee-saved registers are saved in the scratch buffer, whose address
   moves to `edi`.
-* For 18 rounds or 24 (three groups of six rounds or four), the code that
-  follows is written out for that number of groups, so the position of the
-  postwhitening's subkeys in the table is a constant.
-* The subkeys are bitsliced into the table at slot 104, in the order the
-  rounds use them: the stored order for encryption; for decryption the
-  order RFC 3713 §2.3.3 swaps them into, `kw3, kw4`, then the subkeys
-  between `kw2` and `kw3` from the last back to the first, then `kw1,
-  kw2`. Decryption then runs the same rounds as encryption.
-* Each group of up to eight blocks is copied to the tail buffer, bitsliced
-  and whitened, run through groups of six rounds with FL and FLINV between
-  them, whitened again and stored back with its halves swapped, and copied
-  back. The rounds use every register, so the data pointer and the blocks
-  left wait in their slots, stored again after each copy (the analysis of
-  constant time forgets what the buffer holds after a store through
-  another pointer than `edi`).
+* The subkeys are bitsliced into the table at slot 104, for 18 rounds or 24
+  (three groups of six rounds or four), in the order the rounds use them:
+  the stored order for encryption; for decryption the order RFC 3713
+  §2.3.3 swaps them into, `kw3, kw4`, then the subkeys between `kw2` and
+  `kw3` from the last back to the first, then `kw1, kw2`. Decryption then
+  runs the same rounds as encryption.
+* Each group of up to eight blocks is copied to the tail buffer, run through
+  the rounds by a call of `vg_camellia_crypt_prepared` (`Prepared.lean`),
+  whose arguments are pushed in a frame (16 bytes of stack with the return
+  address; the number of rounds is its own second stack argument, the
+  scratch buffer the working space), and copied back. The data pointer and
+  the blocks left wait in their slots, stored again after each copy (the
+  analysis of constant time forgets what the buffer holds after a store
+  through another pointer than `edi`), which the call keeps.
 
 Only the pointers, `rounds`, `n`, and what is computed from them (the
 copies' pointers and counts, `kp`, the loop tests, and the slots holding
@@ -39,13 +38,7 @@ namespace VG.Impl.Camellia.X86
 
 open VG.X86 VG.Impl.Aes.X86
 
-inductive Dir | encrypt | decrypt
-  deriving DecidableEq, Repr
-
 /-! ## The subkeys -/
-
-/-- `kp := ` the address of slot `k`. -/
-def kpAt (k : Nat) : List Instr := [movR kp .edi, addI kp (BitVec.ofNat 32 (4 * k))]
 
 /-- Plane `j` of the subkey's word in slot 0, to word `w` of the entry at
 `kp`: bit `j` of each byte, masked into `ebx` and spread over its byte by
@@ -77,56 +70,6 @@ def decKeys (g : Nat) : Prog isa :=
 
 def keys (dir : Dir) (g : Nat) : Prog isa :=
   match dir with | .encrypt => encKeys g | .decrypt => decKeys g
-
-/-! ## Eight blocks, in the tail buffer -/
-
-/-- Word `w` of the eight blocks (in the tail buffer) to its planes. -/
-def toBsWord (w : Nat) : List Instr :=
-  (List.range 8).flatMap (fun b => [movS .eax (tailAt b w), st b .eax]) ++ ortho ++
-  (List.range 8).flatMap (fun j => [movS .eax j, st (stateSlot w j) .eax])
-
-/-- XOR the 32 words at `kp` into the state's planes: those of `D1` then
-`D2`, or (`swap`) of `D2` then `D1`. -/
-def whiten (swap : Bool) : List Instr :=
-  (List.range 32).flatMap fun i =>
-    let k := d1Slot + (if swap then (i + 16) % 32 else i)
-    [movS .eax k, .alu .xor .eax (.mem (slotAt kp i)), st k .eax]
-
-/-- Bitslice both halves and whiten them (`kw1` for `D1`, `kw2` for `D2`);
-`kp` is left at the first round's entry. -/
-def head : List Instr :=
-  (List.range 4).flatMap toBsWord ++ kpAt keySlot ++ whiten false ++ [addI kp 128]
-
-/-- Two rounds: `D2 ^= F(D1, k)`, `D1 ^= F(D2, k')`; Z when `kp` reaches the
-group's end (loaded from its slot: the analysis of constant time takes a
-comparison with a memory operand as secret). -/
-def pairBody : List Instr :=
-  round 0 d1Slot d2Slot ++ round 16 d2Slot d1Slot ++
-  [addI kp 128, movS .eax grpSlot, .alu .cmp .eax (.reg kp)]
-
-/-- Z when `kp` is at the postwhitening's entry, `8 g` entries into the table. -/
-def atEnd (g : Nat) : List Instr :=
-  [movR .eax kp, subR .eax .edi, .alu .cmp .eax (.imm (BitVec.ofNat 32 (4 * keySlot + 512 * g)))]
-
-/-- Six rounds, then FL and FLINV unless they were the last; Z when `kp` is
-at the postwhitening's entry. -/
-def groupBody (g : Nat) : Prog isa :=
-  .seq (.block [movR .eax kp, addI .eax 384, st grpSlot .eax])
-    (.seq (.loop (.block pairBody) .ne)
-      (.seq (.block (atEnd g)) (.seq (.ite .ne (.block flLayer) (.block [])) (.block (atEnd g)))))
-
-/-- Output word `w` of the eight blocks (to the tail buffer), from the
-planes of `D2` (words 0 and 1) or `D1` (words 2 and 3). -/
-def fromBsWord (w : Nat) : List Instr :=
-  (List.range 8).flatMap (fun j => [movS .eax (stateSlot ((w + 2) % 4) j), st j .eax]) ++ ortho ++
-  (List.range 8).flatMap (fun b => [movS .eax b, st (tailAt b w) .eax])
-
-/-- The postwhitening (`kw3` for `D2`, `kw4` for `D1`), and the halves back
-to the blocks, swapped. -/
-def tail : List Instr := whiten true ++ (List.range 4).flatMap fromBsWord
-
-/-- The eight blocks of the tail buffer, in place, for `g` groups. -/
-def crypt8 (g : Nat) : Prog isa := .seq (.block head) (.seq (.loop (groupBody g) .ne) (.block tail))
 
 /-! ## The groups -/
 
@@ -162,18 +105,17 @@ def advance : Prog isa :=
   .seq countR (.block [addI .esi 128, subR .ebp .ecx, st dSlot .esi, st nSlot .ebp])
 
 /-- Eight blocks, or the last one to seven. -/
-def group (g : Nat) : Prog isa := .seq copyIn (.seq (crypt8 g) (.seq copyOut advance))
+def group : Prog isa := .seq copyIn (.seq cryptCall (.seq copyOut advance))
 
-/-- The table and the groups, for `g` groups of six rounds. -/
-def body (dir : Dir) (g : Nat) : Prog isa :=
-  .seq (keys dir g)
-    (.seq (.block [.mov .eax (.mem (argOp 2)), st dSlot .eax, .mov .eax (.mem (argOp 3)), st nSlot .eax,
-        .alu .test .eax (.reg .eax)])
-      (.ite .e (.block []) (.loop (group g) .ne)))
+/-- The data pointer and the count to their slots, and the groups. -/
+def groups : Prog isa :=
+  .seq (.block [.mov .eax (.mem (argOp 2)), st dSlot .eax, .mov .eax (.mem (argOp 3)), st nSlot .eax,
+      .alu .test .eax (.reg .eax)])
+    (.ite .e (.block []) (.loop group .ne))
 
-/-- The whole function, for 18 rounds or 24. -/
+/-- The whole function: the table for 18 rounds or 24, and the groups. -/
 def ecb (dir : Dir) : Prog isa :=
   .seq (.block (saveRegs 4 ++ [.mov .eax (.mem (argOp 1)), .alu .cmp .eax (.imm 18)]))
-    (.seq (.ite .e (body dir 3) (body dir 4)) (.block restoreRegs))
+    (.seq (.ite .e (keys dir 3) (keys dir 4)) (.seq groups (.block restoreRegs)))
 
 end VG.Impl.Camellia.X86

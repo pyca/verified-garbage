@@ -21,6 +21,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Camellia.X86.Crypt8
+import VerifiedGarbage.Proof.Camellia.X86.Prologue
 import VerifiedGarbage.Proof.Camellia.Words
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
@@ -32,10 +33,12 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 
 `crypt_verified`: `vg_camellia_crypt_prepared` against
 `Spec.Camellia.Prepared.cryptContract` with `layout`. The function saves
-the callee-saved registers (`save_ok`), runs the eight blocks of the tail
-buffer for 18 or 24 rounds (`crypt8_ok`) under the table its working space
-holds, and restores the registers (`restore_ok`). A batch's blocks are ECB
-in the direction and under the subkeys of any words that the table encodes:
+the callee-saved registers in its slots (`saveAt_ok`), runs the eight blocks
+of the tail buffer for 18 or 24 rounds (`crypt8_ok`) under the table its
+working space holds, and restores the registers (`restoreAt_ok`): it writes
+the slots below the table, the group's end's and its saved registers'
+(`layout.cryptScratch`), and keeps every other. A batch's blocks are ECB in
+the direction and under the subkeys of any words that the table encodes:
 the run from it is the run from the words the precondition gives
 (`Exec.det`).
 -/
@@ -144,8 +147,11 @@ theorem cryptPrepared_wp {s : State} (hp : cryptX86.pre s) {w : List (BitVec 64)
     rw [h1, h2, ea_arg h3]; exact ⟨_, List.mem_append_left _ hrA, arg_contains3 s fitE hi⟩
   have hTW := words_of_holds hfit hR hH
   -- The prologue.
-  obtain ⟨s₁, e₁, b₁, g₁, sv₁, rd₁, wr₁, f₁, k₁⟩ := save_ok (k := 1) hwS (argIn rfl rfl rfl 1 (by decide))
-    (by rw [ea_arg rfl]; rfl)
+  obtain ⟨s₁, e₁, b₁, g₁, sv₁, rd₁, wr₁, f₁, k₁⟩ := saveAt_ok (j := cryptSavedSlot) (k := 1) (by decide) hwS
+    (argIn rfl rfl rfl 1 (by decide)) (by rw [ea_arg rfl]; rfl)
+  have k₁' : ∀ k, k < savedSlot → s₁.mem.readW (wordAddr (arg s 1) k) 32 = s.mem.readW (wordAddr (arg s 1) k) 32 :=
+    fun k hk => k₁ k (by rw [savedSlot_eq] at hk; rw [slots_eq]; omega)
+      (.inl (by rw [savedSlot_eq] at hk; rw [show cryptSavedSlot = 655 from rfl]; omega))
   have esp₁ : s₁.gpr .esp = s.gpr .esp := g₁ _ (by decide) (by decide)
   have argR₁ : s₁.mem.readW (argAddr s 0) 32 = arg s 0 :=
     f₁.readW (arg_contains3 s fitE (i := 0) (by decide)) (fun r hr => by
@@ -162,7 +168,7 @@ theorem cryptPrepared_wp {s : State} (hp : cryptX86.pre s) {w : List (BitVec 64)
   obtain ⟨g, hgR⟩ : ∃ g, (arg s 0).toNat / 6 = g := ⟨_, rfl⟩
   have hg : g = 3 ∨ g = 4 := by omega
   have hTW₂ : TableWordsAt (arg s 0).toNat s₂.mem (arg s 1) w (ofSpecDir d) := by
-    rw [m₂]; exact words_congr hR hTW fun k _ hk => k₁ k hk
+    rw [m₂]; exact words_congr hR hTW fun k _ hk => k₁' k hk
   have hcore : CorePre s₂ g (keyEntry w g (ofSpecDir d)) :=
     { scr := by rw [b₂, wr₂, wr₁]; exact hwS
       nk34 := by omega
@@ -182,11 +188,14 @@ theorem cryptPrepared_wp {s : State} (hp : cryptX86.pre s) {w : List (BitVec 64)
   have keep₃ : ∀ k, keySlot ≤ k → k < grpSlot →
       s₃.mem.readW (wordAddr (arg s 1) k) 32 = s₂.mem.readW (wordAddr (arg s 1) k) 32 :=
     fun k h1 h2 => slot_keep hfit (by decide) f₃ (ctx_disj hfit) h1 h2
-  have sv₃ : Saved s (arg s 1) s₃.mem := fun i hi => by
-    rw [keep₃ _ (by rw [keySlot_eq, savedSlot_eq]; omega) (by rw [grpSlot_eq, savedSlot_eq]; omega), m₂]
+  have keepHi₃ : ∀ k, grpSlot + 1 ≤ k → k < slots →
+      s₃.mem.readW (wordAddr (arg s 1) k) 32 = s₂.mem.readW (wordAddr (arg s 1) k) 32 :=
+    fun k h1 h2 => slot_keep hfit (Nat.le_refl _) f₃ (ctx_disj_hi hfit) h1 h2
+  have sv₃ : SavedAt cryptSavedSlot s (arg s 1) s₃.mem := fun i hi => by
+    rw [keepHi₃ _ (by rw [grpSlot_eq]; exact Nat.le_add_right _ _) (by rw [slots_eq]; show 655 + i < 672; omega), m₂]
     exact sv₁ i hi
   -- The epilogue.
-  obtain ⟨s₄, e₄, rg₄, o₄, m₄, -, -⟩ := restore_ok (s₀ := s) (b := arg s 1)
+  obtain ⟨s₄, e₄, rg₄, o₄, m₄, -, -⟩ := restoreAt_ok (s₀ := s) (b := arg s 1) (j := cryptSavedSlot) (by decide)
     (by rw [c₃.wr, wr₂, wr₁]; exact hwS) base₃ sv₃
   have fB : Frame [⟨(arg s 1).setWidth 64, 4 * slots⟩] s.mem s₄.mem := by
     rw [m₄]
@@ -194,7 +203,7 @@ theorem cryptPrepared_wp {s : State} (hp : cryptX86.pre s) {w : List (BitVec 64)
       ⟨_, List.mem_singleton_self _, ctxSub hfit r hr⟩)
   have tail₂ : ∀ o < 4 * savedSlot,
       s₂.mem ((arg s 1).setWidth 64 + BitVec.ofNat 64 o) = s.mem ((arg s 1).setWidth 64 + BitVec.ofNat 64 o) :=
-    fun o ho => by rw [m₂]; exact byte_keep hfit k₁ ho
+    fun o ho => by rw [m₂]; exact byte_keep hfit k₁' ho
   refine WP.of_runBlock ⟨s₄, e₄, ⟨fun r hr => ?_, ?_⟩, ?_, fun i hi hout => ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -222,14 +231,18 @@ theorem cryptPrepared_wp {s : State} (hp : cryptX86.pre s) {w : List (BitVec 64)
       exact tail₂ _ (by rw [tailSlot_eq, savedSlot_eq]; omega)
     rw [hE, hb]
   · simp only [layout, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hout
-    rw [keySlot_eq, savedSlot_eq, slots_eq] at hout
-    by_cases hlo : i < 4 * 648
-    · have hs : i < 4 * slots := by rw [slots_eq]; omega
-      rw [m₄, byte_word (m := s₃.mem) hfit hs, byte_word (m := s.mem) hfit hs,
-        keep₃ _ (by rw [keySlot_eq]; omega) (by rw [grpSlot_eq]; omega), m₂, k₁ _ (by rw [savedSlot_eq]; omega)]
+    rw [keySlot_eq, grpSlot_eq] at hout
+    by_cases hlo : i < 4 * slots
+    · rw [m₄, byte_word (m := s₃.mem) hfit hlo, byte_word (m := s.mem) hfit hlo]
+      rw [slots_eq] at hlo
+      by_cases hg : i / 4 < grpSlot
+      · rw [keep₃ _ (by rw [keySlot_eq]; omega) hg, m₂,
+          k₁ _ (by rw [slots_eq]; omega) (.inl (by rw [grpSlot_eq] at hg; show _ < 655; omega))]
+      · rw [keepHi₃ _ (by rw [grpSlot_eq] at hg ⊢; omega) (by rw [slots_eq]; omega), m₂,
+          k₁ _ (by rw [slots_eq]; omega) (.inr (by rw [grpSlot_eq] at hg; show 655 + 4 ≤ _; omega))]
     · refine fB _ fun r hr hc => ?_
       simp only [List.mem_singleton] at hr; subst hr
-      exact VG.Offset.disjoint_base _ (n := 1) (k := 4 * slots) (by rw [slots_eq]; omega)
+      exact VG.Offset.disjoint_base _ (n := 1) (k := 4 * slots) (by rw [slots_eq] at hlo ⊢; omega)
         (by omega) _ (Region.contains_self _ _) hc
 
 theorem crypt_correct (s : State) (hs : cryptX86.pre s) :

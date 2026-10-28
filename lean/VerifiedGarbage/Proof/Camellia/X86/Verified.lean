@@ -8,6 +8,7 @@ public import VerifiedGarbage.Impl.StackScratch.X86
 public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Camellia.X86.Lit
+import VerifiedGarbage.Proof.Camellia.X86.CallSum
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -19,6 +20,8 @@ meta import VerifiedGarbage.Impl.StackScratch.X86
 meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Camellia.X86.Lit
+meta import VerifiedGarbage.Proof.Camellia.X86.CallSum
+import VerifiedGarbage.Proof.Camellia.X86.CallSum
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -28,13 +31,16 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 `ecb_verified`: `ecb dir` is correct (`ecb_wp`) and constant time, by the
 taint analysis, which starts with `esp` public and knows which argument
-words are the base addresses of the data and the scratch buffer: the
+words are the base addresses of the data and the scratch buffer, and that
+the 16 bytes below the stack pointer, where the calls of
+`vg_camellia_crypt_prepared` push their frames, are apart from them: the
 pointers, `rounds`, `n` and what the code computes from them are public, in
 registers or in the scratch buffer's slots, which the code stores again
-after each store through another pointer. `ecb_framed` runs it with its
-working space on the stack, zeroed on return: 2712 bytes, the 2688 of the
-scratch buffer, the copies of the four argument slots, the buffer's address
-and the return address of the call of the code, which uses no other stack.
+after each store through another pointer. The analysis of the call is a
+summary (`ecbCallSum`). `ecb_framed` runs it with its working space on the
+stack, zeroed on return: 2712 bytes, the 2688 of the scratch buffer, the
+copies of the four argument slots, the buffer's address and the return
+address of the call of the code, below which its calls use 16 bytes more.
 -/
 
 @[expose] public section
@@ -56,22 +62,27 @@ structure EPre (s : State) : Prop where
   fD : (arg s 2).toNat + 16 * (arg s 3).toNat ≤ 2 ^ 32
   fB : (arg s 4).toNat + 4 * Impl.Camellia.X86.slots ≤ 2 ^ 32
   fSp : (s.gpr .esp).toNat + 24 ≤ 2 ^ 32
+  sD : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 16, 16⟩
+    ⟨(arg s 2).setWidth 64, 16 * (arg s 3).toNat⟩
+  sB : Region.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 16, 16⟩
+    ⟨(arg s 4).setWidth 64, 4 * Impl.Camellia.X86.slots⟩
+  s16 : 16 ≤ (s.gpr .esp).toNat
 
 theorem EPre.of {dir : Dir} {s : State} (h : (ecbX86 dir).pre s) : EPre s := by
-  obtain ⟨h1, h2, -, -, h5, h6, h7, h8, h9, -, h11, h12, h13, -⟩ := h
-  exact ⟨h1, h2, h5, h6, h7, h8, h9, h11, h12, h13⟩
+  obtain ⟨h1, h2, -, -, h5, h6, h7, h8, h9, -, h11, h12, h13, -, h15, h16, -, h18⟩ := h
+  exact ⟨h1, h2, h5, h6, h7, h8, h9, h11, h12, h13, h15, h16, h18⟩
 
 /-- The initial taint: `esp` public, and the words holding `data` and
 `scratch` known to be the base addresses of the writable regions. -/
 def ecbTaint : VG.X86.Taint.T :=
   { regs := .ofList [.esp], flags := false, lens := [0, 4 * Impl.Camellia.X86.slots], argLen := 24,
-    argBases := [(12, 0), (20, 1)] }
+    argBases := [(12, 0), (20, 1)], room := 16 }
 
 theorem ecbTaint_wf {s : State} (hp : EPre s) : VG.X86.Taint.Wf ecbTaint s := by
   have hD := hp.fD; have hB := hp.fB; have hs := hp.fSp
-  refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
+  refine VG.X86.Taint.Wf.entryRoom rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨by simp only [ecbTaint]; omega, ?_⟩, ?_⟩
+    fun _ => ⟨by simp only [ecbTaint]; omega, ?_⟩, ?_⟩ fun _ => ⟨hp.s16, ?_⟩
   · rw [hp.wr]
     exact .cons (Nat.zero_le _) (.cons (Nat.le_refl _) .nil)
   · simp only [hp.wr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
@@ -87,6 +98,10 @@ theorem ecbTaint_wf {s : State} (hp : EPre s) : VG.X86.Taint.Wf ecbTaint s := by
     simp only [ecbTaint, List.mem_cons, List.not_mem_nil, or_false] at hp'
     rcases hp' with rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
       simp [VG.X86.Taint.region, hp.wr, addr, arg, argAddr]
+  · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl)
+    · exact hp.sD
+    · exact hp.sB
 
 theorem ecbTaint_agree (dir : Dir) {s₁ s₂ : State} (h₁ : (ecbX86 dir).pre s₁) (h₂ : (ecbX86 dir).pre s₂)
     (hpub : (ecbX86 dir).pub s₁ s₂) : VG.X86.Taint.Agree ecbTaint s₁ s₂ := by
@@ -104,22 +119,10 @@ theorem ecbTaint_agree (dir : Dir) {s₁ s₂ : State} (h₁ : (ecbX86 dir).pre 
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
     exact congrArg _ (ha _ (by omega))
 
-/-- What is public at the loop of pairs of rounds: `eax`, the stack pointer,
-the round keys' and the scratch buffer's pointers, the flags, and the data
-pointer, the blocks left and the group's end in their slots. -/
-def pairTaint : VG.X86.Taint.T :=
-  { regs := .ofList [.eax, .esp, .esi, .edi], flags := true, lens := [0, 4 * Impl.Camellia.X86.slots],
-    bases := [(.edi, 1, 0)], slots := [(1, 4 * dSlot, 12)], argLen := 24, argBases := [(12, 0), (20, 1)] }
-
-/-! The loop of pairs of rounds, which both directions run for 18 and 24
-rounds, analysed once, as a summary. -/
-
-taint_summary pairSum : VG.X86.taint pairTaint (.block pairBody)
-
 theorem ecb_taint (dir : Dir) : ∃ h, (VG.X86.taint.check ecbTaint (ecb dir) h).isSome = true := by
   cases dir
-  · native_taint_decide_sum [pairSum]
-  · native_taint_decide_sum [pairSum]
+  · native_taint_decide_sum [ecbCallSum]
+  · native_taint_decide_sum [ecbCallSum]
 
 theorem ecb_ct (dir : Dir) : ConstantTime isa (ecbX86 dir).pre (ecbX86 dir).pub (ecb dir) :=
   let ⟨_, h⟩ := ecb_taint dir
@@ -142,7 +145,7 @@ def satState : State where
   wr := [⟨0x3000, 0⟩, ⟨0x4000, 2688⟩]
 
 theorem ecb_verified (dir : Dir) :
-    Verified X86.target (ecb dir) (Proof.Camellia.ecbScratchContract X86.abi (specDir dir) 336) :=
+    Verified X86.target (ecb dir) (Proof.Camellia.ecbScratchContract X86.abi (specDir dir) 336 16) :=
   Verified.of_correct (ecb_correct dir) (ecb_ct dir) (by
     cases dir <;>
     sig_implies [Proof.Camellia.ecbScratchContract, Proof.Camellia.ecbScratchSig, Spec.Camellia.ecbSig,
@@ -165,7 +168,7 @@ def ecbFrameSat : State where
   wr := [⟨0x2000, 0⟩]
 
 theorem ecbFrameSat_pre (d : Spec.Camellia.Direction) :
-    ∃ s, (Spec.Camellia.ecbContract X86.abi d 2712).pre s := by
+    ∃ s, (Spec.Camellia.ecbContract X86.abi d 2728).pre s := by
   implies_sat [Spec.Camellia.ecbContract, Spec.Camellia.ecbSig, Spec.Camellia.ecbPre, Spec.Camellia.ecbPost,
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes] [ecbFrameSat, X86.arg, X86.argAddr, Mem.readW, Mem.read]
     using ecbFrameSat
@@ -173,10 +176,10 @@ theorem ecbFrameSat_pre (d : Spec.Camellia.Direction) :
 /-- ECB in the direction `dir`, with its working space on the stack. -/
 theorem ecb_framed (dir : Dir) :
     Verified X86.target (Impl.StackScratch.X86.withStackScratchWiped 2712 4 672 (ecb dir))
-      (Spec.Camellia.ecbContract X86.abi (specDir dir) 2712) :=
+      (Spec.Camellia.ecbContract X86.abi (specDir dir) 2728) :=
   X86.Verified.stackScratchWiped (sig := Spec.Camellia.ecbSig) (nm := "scratch") (e := .u64)
     (n := 336) (pre := Spec.Camellia.ecbPre X86.abi.ptrBits)
-    (post := Spec.Camellia.ecbPost (specDir dir) X86.abi.ptrBits) (wa := false) (stack := 0)
+    (post := Spec.Camellia.ecbPost (specDir dir) X86.abi.ptrBits) (wa := false) (stack := 16)
     (bytes := 2712) (by rw [← Proof.Camellia.ecbScratchContract_eq]; exact ecb_verified dir)
     (by decide) (by cases dir <;> lit_decide) (by cases dir <;> lit_decide) (by decide)
     (Proof.Camellia.ecbPre_local _) (Proof.Camellia.ecbPost_local _ _)
