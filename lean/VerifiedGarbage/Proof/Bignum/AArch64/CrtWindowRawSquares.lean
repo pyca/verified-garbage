@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
 
 import VerifiedGarbage.Proof.Bignum.CrtWindowRelation
-import Mathlib.Data.Int.ModEq
 
 /-! Montgomery scaling for arbitrary reduced accumulators, without a table-power assumption. -/
 

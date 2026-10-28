@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtTab
 public import VerifiedGarbage.Proof.Bignum.CrtWindowTable
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowFive
-import Mathlib.Data.Int.ModEq
 
 /-! Safety and correctness of the 32-entry scalar selection fallback,
 including full-table reads and preservation of the Montgomery context. -/

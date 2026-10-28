@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.WindowCallCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedInterface
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowDispatch
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVerified
-import Mathlib.Data.Int.ModEq
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowFive

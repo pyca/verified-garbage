@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
+import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Impl.Ffdh.AArch64.KeyGeneration.Init
 meta import VerifiedGarbage.Proof.Ffdh.ControlMemory
 meta import VerifiedGarbage.Proof.Bignum.AArch64.Run
@@ -20,6 +21,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import Mathlib.Tactic.SplitIfs
 
 /-! # Native FFDH key-generation initialization on AArch64: correctness, constant time -/
 

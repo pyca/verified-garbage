@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCallees
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFront
 public import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
 public import VerifiedGarbage.Proof.Bignum.CrtResult
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtMain
 import VerifiedGarbage.Proof.Bignum.AArch64.PubFail
 import VerifiedGarbage.Proof.Bignum.AArch64.PubValid

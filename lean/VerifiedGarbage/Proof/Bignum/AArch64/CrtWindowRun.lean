@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPrefixInv
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroups
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTails
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFinish
 
 /-! Complete exponentiation through shared five-bit windows and exact tails. -/

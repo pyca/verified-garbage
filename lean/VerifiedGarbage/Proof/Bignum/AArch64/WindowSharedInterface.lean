@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTakeBit
-import Mathlib.Data.Nat.ModEq
+import VerifiedGarbage.Proof.Framework.ModArith
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowShared
@@ -23,17 +23,19 @@ theorem window_ok {s : State} {P : Addr} {w : Nat} {mi : BitVec 64}
   have fw := ft.mono (rawWindowRanges_sub w)
   refine ⟨ct,ht.of_win fw hc.scrT.nowrap,yt,?_,ft,kt,nt,bt,?_⟩
   · intro hQ
-    have he : Nat.ModEq X (wv s.mem P (slot w aY) w) (x^E * 2^(64*w)) := hyv hQ
-    have ht' : Nat.ModEq X (wv s.mem P (slot w (8+v)) w) (x^v * 2^(64*w)) := ht.val hQ v hv
-    have hm := (he.pow 32).mul ht'
+    have he : wv s.mem P (slot w aY) w % X = x^E * 2^(64*w) % X := hyv hQ
+    have ht' : wv s.mem P (slot w (8+v)) w % X = x^v * 2^(64*w) % X := ht.val hQ v hv
+    have hm : wv s.mem P (slot w aY) w ^ 32 * wv s.mem P (slot w (8+v)) w % X =
+        (x^E * 2^(64*w))^32 * (x^v * 2^(64*w)) % X := by
+      rw [Nat.mul_mod, Nat.pow_mod, he, ht', ← Nat.pow_mod, ← Nat.mul_mod]
     have hr : (x^E * 2^(64*w))^32 * (x^v * 2^(64*w)) =
         (x^(32*E+v) * 2^(64*w)) * (2^(64*w))^32 := by
       rw [Nat.mul_pow,Nat.pow_add,← Nat.pow_mul, Nat.mul_comm E 32]
       simp only [Nat.mul_assoc,Nat.mul_comm,Nat.mul_left_comm]
     rw [hr] at hm
-    exact Nat.ModEq.cancel_right_of_coprime (hR.pow_left 32).symm
-      ((show Nat.ModEq X (wv t.mem P (slot w aY) w * (2^(64*w))^32)
-        (wv s.mem P (slot w aY) w^32 * wv s.mem P (slot w (8+v)) w) from vt).trans hm)
+    exact ModArith.mod_eq_of_mul_mod_eq (hR.pow_left 32)
+      ((show wv t.mem P (slot w aY) w * (2^(64*w))^32 % X =
+        wv s.mem P (slot w aY) w^32 * wv s.mem P (slot w (8+v)) w % X from vt).trans hm)
   · intro k hk he hj hn' hb
     apply ft.word_eq _ (by have := hdr_lt_slot w 8 hk; have := hc.scrT.nowrap; omega)
     intro r hr

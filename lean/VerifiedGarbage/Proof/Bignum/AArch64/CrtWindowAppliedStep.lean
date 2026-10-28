@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTakeBit
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowDigit
-import Mathlib.Data.Int.ModEq
 
 /-! A fixed-position digit followed by its complete arithmetic window. -/
 

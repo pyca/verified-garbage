@@ -27,7 +27,6 @@ meta import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Bignum.Math
 meta import Mathlib.Logic.Relator
 import Mathlib.Logic.Relator
-import Mathlib.Data.Int.GCD
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset

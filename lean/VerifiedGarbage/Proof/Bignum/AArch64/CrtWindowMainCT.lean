@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowSetupCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBack
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowQCT
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowMain
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtMain
