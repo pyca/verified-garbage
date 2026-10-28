@@ -331,7 +331,7 @@ theorem DG.fixed {p : DPub} {xb : List Byte} {σ t : State} (h : DG p xb σ t) :
   Fixed.of_frm h.2.1 (pdAll_fixed _)
 
 theorem DG.inScr {p : DPub} {xb : List Byte} {σ t : State} (h : DG p xb σ t) : InScr p.B p.Z σ.mem t.mem :=
-  InScr.of_frm h.2.1 fun r hr => (pdAll_le _ r hr).trans h.1.z
+  InScr.of_frm h.2.1 fun r hr => Nat.le_trans (pdAll_le _ r hr) h.1.z
 
 /-- After the input's registers. -/
 def DIn (p : DPub) (s : State) : Prop :=
