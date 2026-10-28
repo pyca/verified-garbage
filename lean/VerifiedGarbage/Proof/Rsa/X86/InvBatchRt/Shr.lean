@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Ops
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
+import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
+import VerifiedGarbage.Proof.Divstep.Tc32Words
 import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 import VerifiedGarbage.Proof.Framework.Omega
@@ -234,7 +237,7 @@ theorem shr30_ok {s : State} (h : Bx L s B Z len N) {dst src : Ref} (hdh : dst.h
   have := VG.Proof.Weierstrass.X86.Inv.shr_arith32 (nw len) (val32 s.mem B (rv (kw len) src) (nw len))
     (w32 s.mem B (rv (kw len) src + 4 * nw len))
     (if 2 ^ 31 ≤ w32 s.mem B (rv (kw len) src + 4 * nw len) then 2 ^ 32 - 1 else 0) (val32_lt _ _ _ _)
-  rw [Nat.mul_assoc] at this
+  rw [show (2 : Nat) ^ 2 = 4 from rfl] at this
   rw [this]
 
 /-- `shr30` of a signed value divisible by `2 ^ 30` (`InvHalf.shrSigned_ok`). -/
