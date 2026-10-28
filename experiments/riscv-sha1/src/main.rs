@@ -17,7 +17,12 @@ unsafe extern "C" {
     fn iter_fold_order(state: *mut u32, u: *mut u32, n: u64);
     fn iter_fold_dbl(state: *mut u32, u: *mut u32, n: u64);
     fn iter_fold_order_dbl(state: *mut u32, u: *mut u32, n: u64);
+    fn c0(state: *mut [u32; 5], blocks: *const u8, n: usize, scratch: *mut [u64; 14]);
+    fn ck(state: *mut [u32; 5], blocks: *const u8, n: usize, scratch: *mut [u64; 14]);
+    fn ckd(state: *mut [u32; 5], blocks: *const u8, n: usize, scratch: *mut [u64; 14]);
 }
+
+type Cmp = unsafe extern "C" fn(*mut [u32; 5], *const u8, usize, *mut [u64; 14]);
 
 fn compress(h: &mut [u32; 5], block: &[u8; 64]) {
     let mut w = [0u32; 80];
@@ -87,6 +92,21 @@ fn main() {
     }
     println!("all variants match the verified PBKDF2");
 
+    // The compression variants against a plain one, on blocks of any bytes.
+    let cvariants: [(&str, Cmp); 3] = [("c0", c0), ("ck", ck), ("ckd", ckd)];
+    let data: Vec<u8> = (0..64 * 1024u32).map(|i| (i.wrapping_mul(2654435761) >> 13) as u8).collect();
+    let mut expect = [0x67452301u32, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0];
+    for b in data.chunks(64) {
+        compress(&mut expect, b.try_into().unwrap());
+    }
+    for (name, f) in cvariants {
+        let mut st = [0x67452301u32, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0];
+        let mut scratch = [0u64; 14];
+        unsafe { f(&mut st, data.as_ptr(), data.len() / 64, &mut scratch) };
+        assert_eq!(st, expect, "{name}");
+    }
+    println!("all compression variants match");
+
     let n: u32 = std::env::args().nth(1).map_or(1 << 20, |s| s.parse().unwrap());
     let reps = 5;
     let time = |f: &dyn Fn()| {
@@ -104,6 +124,28 @@ fn main() {
         std::hint::black_box(out);
     });
     println!("{:16} {:8.1} ns/iteration", "verified", verified * 1e9 / f64::from(n));
+    // SHA-1 over 64 KiB, `n / 512` times (as many compressions as `n` iterations make).
+    let passes = (n / 512).max(1);
+    let hashed = time(&|| {
+        for _ in 0..passes {
+            let mut h = Sha1::new();
+            h.update(&data);
+            std::hint::black_box(h.finalize());
+        }
+    });
+    let blocks = f64::from(passes) * (data.len() / 64) as f64;
+    println!("{:16} {:8.1} ns/block (Sha1, 64 KiB)", "verified-sha1", hashed * 1e9 / blocks);
+    for (name, f) in cvariants {
+        let s = time(&|| {
+            let mut st = [0x67452301u32, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0];
+            let mut scratch = [0u64; 14];
+            for _ in 0..passes {
+                unsafe { f(&mut st, data.as_ptr(), data.len() / 64, &mut scratch) };
+            }
+            std::hint::black_box(st);
+        });
+        println!("{name:16} {:8.1} ns/block  {:+6.1}%", s * 1e9 / blocks, (s / hashed - 1.0) * 100.0);
+    }
     for (name, f) in variants {
         let s = time(&|| {
             std::hint::black_box(run(f, pw, salt, n - 1));

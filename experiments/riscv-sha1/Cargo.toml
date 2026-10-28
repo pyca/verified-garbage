@@ -7,7 +7,7 @@ publish = false
 [workspace]
 
 [dependencies]
-verified-garbage = { path = "../.." }
+verified-garbage = { path = "vg" }
 
 [profile.release]
 opt-level = 3

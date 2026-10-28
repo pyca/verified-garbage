@@ -1,7 +1,9 @@
 name: RISC-V SHA-1 experiment
 
 # Throwaway, on the experiment branch only: times experiments/riscv-sha1's
-# variants on the riscv64 runner CI uses.
+# variants, and the library of `main` and of the PR branch, on the riscv64
+# runner CI uses. Everything is cross-compiled (and checked under QEMU) on
+# x86-64, so the riscv64 job only runs the binaries, on the host.
 on:
   push:
     branches: [experiment/riscv-sha1-bench]
@@ -10,15 +12,19 @@ permissions:
   contents: read
 
 jobs:
-  bench:
-    runs-on: ubuntu-24.04-riscv
-    container:
-      image: ghcr.io/pyca/verified-garbage-runner:riscv64
+  build:
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          sparse-checkout: experiments
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: main
+          path: vg-main
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /*
@@ -27,16 +33,60 @@ jobs:
             !/vectors/
             !/src/asm/*/
             /src/asm/riscv64/
-      - uses: ./.github/actions/runner-info
-      - name: Generate the variants
-        run: python3 experiments/riscv-sha1/gen.py experiments/riscv-sha1/src/variants.s
-      - name: Build
-        working-directory: experiments/riscv-sha1
-        run: cargo build --release
-      - name: Time (three runs)
-        working-directory: experiments/riscv-sha1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: riscv-sha1-pbkdf2-faster
+          path: vg-new
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/lean/
+            !/docs/
+            !/vectors/
+            !/src/asm/*/
+            /src/asm/riscv64/
+      - name: Install the cross toolchain
         run: |
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y gcc-riscv64-linux-gnu qemu-user
+          rustup target add riscv64gc-unknown-linux-gnu
+      - name: Build against each library, and check under QEMU
+        env:
+          CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_GNU_LINKER: riscv64-linux-gnu-gcc
+        run: |
+          set -eu
+          cd experiments/riscv-sha1
+          python3 gen.py src/variants.s
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          for lib in main new; do
+            ln -sfn "$GITHUB_WORKSPACE/vg-$lib" vg
+            CARGO_TARGET_DIR="target-$lib" cargo build --release --target riscv64gc-unknown-linux-gnu
+            cp "target-$lib/riscv64gc-unknown-linux-gnu/release/riscv-sha1-experiment" "$GITHUB_WORKSPACE/out/bench-$lib"
+            qemu-riscv64 -L /usr/riscv64-linux-gnu "$GITHUB_WORKSPACE/out/bench-$lib" 4096
+          done
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bench
+          path: out/
+          retention-days: 1
+
+  time:
+    needs: build
+    runs-on: ubuntu-24.04-riscv
+    timeout-minutes: 20
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: bench
+          path: out
+      - name: Time (three runs of each, alternating)
+        run: |
+          chmod +x out/bench-*
+          sed '/^$/q' /proc/cpuinfo; nproc
           for i in 1 2 3; do
-            echo "== run $i"
-            target/release/riscv-sha1-experiment 1048576
+            for lib in main new; do
+              echo "== run $i, library of $lib"
+              out/bench-$lib 1048576
+            done
           done

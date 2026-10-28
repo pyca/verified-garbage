@@ -165,6 +165,92 @@ def variant(name, fold=False, order=False, dbl=False):
     return o
 
 
+# --- vg_sha1_compress variants: (state, blocks, n, scratch), the schedule in
+# scratch, the hash value and blocks a byte at a time, as Impl/Sha1/RISCV64.
+
+def load_le32(d, tmp, n, off):
+    o = [f"lbu {d}, {off}({n})"]
+    for i, sh in ((1, 8), (2, 16), (3, 24)):
+        o += [f"lbu {tmp}, {off + i}({n})", f"slli {tmp}, {tmp}, {sh}", f"or {d}, {d}, {tmp}"]
+    return o
+
+
+def load_be32(d, tmp, n, off):
+    o = [f"lbu {d}, {off}({n})", f"slli {d}, {d}, 24"]
+    for i, sh in ((1, 16), (2, 8)):
+        o += [f"lbu {tmp}, {off + i}({n})", f"slli {tmp}, {tmp}, {sh}", f"or {d}, {d}, {tmp}"]
+    o += [f"lbu {tmp}, {off + 3}({n})", f"or {d}, {d}, {tmp}"]
+    return o
+
+
+def store_le32(v, tmp, n, off):
+    o = [f"sb {v}, {off}({n})"]
+    for i, sh in ((1, 8), (2, 16), (3, 24)):
+        o += [f"srli {tmp}, {v}, {sh}", f"sb {tmp}, {off + i}({n})"]
+    return o
+
+
+def cvariant(name, kreg=False, dbl=False):
+    work = ["t0", "t1", "t2", "t3", "t4"]
+    T0, T1, T2, KR = "t5", "t6", "a4", "a5"
+
+    def var(t, k):
+        return work[(k + 5 - t % 5) % 5]
+
+    def slot(i):
+        return 4 * (i % 16)
+
+    o = [f".globl {name}", f".type {name}, @function", f"{name}:",
+         "addi a3, a3, 7", "andi a3, a3, -8", "beqz a2, 9f", "1:"]
+    for k in range(5):
+        o += load_le32(var(0, k), T0, "a0", 4 * k)
+    if dbl:
+        for r in (var(0, 0), var(0, 1)):
+            o += [f"slli {T1}, {r}, 32", f"or {r}, {r}, {T1}"]
+    for t in range(80):
+        if t < 16:
+            o += load_be32(T0, T1, "a1", 4 * t) + [f"sw {T0}, {slot(t)}(a3)"]
+        else:
+            o += [f"lwu {T0}, {slot(t + 13)}(a3)", f"lwu {T1}, {slot(t + 8)}(a3)", f"xor {T0}, {T0}, {T1}",
+                  f"lwu {T1}, {slot(t + 2)}(a3)", f"xor {T0}, {T0}, {T1}",
+                  f"lwu {T1}, {slot(t)}(a3)", f"xor {T0}, {T0}, {T1}",
+                  f"slliw {T1}, {T0}, 1", f"srliw {T0}, {T0}, 31", f"or {T0}, {T0}, {T1}",
+                  f"sw {T0}, {slot(t)}(a3)"]
+        a, b, c, d, e = (var(t, k) for k in range(5))
+        f = fn(t)
+        if f == "ch":
+            fc = [f"xor {T1}, {c}, {d}", f"and {T1}, {T1}, {b}", f"xor {T1}, {T1}, {d}"]
+        elif f == "parity":
+            fc = [f"xor {T1}, {b}, {c}", f"xor {T1}, {T1}, {d}"]
+        else:
+            fc = [f"or {T1}, {b}, {c}", f"and {T1}, {T1}, {d}", f"and {T2}, {b}, {c}", f"or {T1}, {T1}, {T2}"]
+        if kreg:
+            if t % 20 == 0:
+                o += li(KR, K[t // 20])
+            kadd = [f"add {e}, {e}, {KR}"]
+        else:
+            kadd = li(T1, K[t // 20]) + [f"add {e}, {e}, {T1}"]
+        if dbl:
+            o += [f"add {e}, {e}, {T0}"] + kadd + fc + [f"add {e}, {e}, {T1}",
+                  f"srli {T1}, {a}, 27", f"add {e}, {e}, {T1}", f"srli {b}, {b}, 2",
+                  f"slli {e}, {e}, 32", f"srli {T1}, {e}, 32", f"or {e}, {e}, {T1}"]
+        else:
+            o += [f"add {e}, {e}, {T0}"] + fc + [f"add {e}, {e}, {T1}"] + kadd + [
+                  f"slliw {T2}, {a}, 5", f"srliw {T1}, {a}, 27", f"or {T1}, {T1}, {T2}", f"add {e}, {e}, {T1}",
+                  f"slliw {T1}, {b}, 30", f"srliw {b}, {b}, 2", f"or {b}, {b}, {T1}"]
+    for k in range(5):
+        r = var(0, k)
+        o += load_le32(T0, T1, "a0", 4 * k) + [f"add {r}, {r}, {T0}"] + store_le32(r, T0, "a0", 4 * k)
+    o += ["addi a1, a1, 64", "addi a2, a2, -1", "bnez a2, 1b", "9:", "ret", f".size {name}, .-{name}"]
+    return o
+
+
+CVARIANTS = {
+    "c0": {},
+    "ck": {"kreg": True},
+    "ckd": {"kreg": True, "dbl": True},
+}
+
 VARIANTS = {
     "v0": {},
     "fold": {"fold": True},
@@ -179,6 +265,11 @@ if __name__ == "__main__":
         body = variant(name, **kw)
         n_loop = sum(1 for l in body[body.index("1:"):body.index("9:")] if not l.endswith(":"))
         print(f"{name}: {n_loop} instructions per step", file=sys.stderr)
+        lines += body
+    for name, kw in CVARIANTS.items():
+        body = cvariant(name, **kw)
+        n_loop = sum(1 for l in body[body.index("1:"):body.index("9:")] if not l.endswith(":"))
+        print(f"{name}: {n_loop} instructions per block", file=sys.stderr)
         lines += body
     lines += [".option pop"]
     open(sys.argv[1], "w").write("\n".join(lines) + "\n")
