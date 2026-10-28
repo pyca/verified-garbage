@@ -19,7 +19,7 @@ open VG.Impl.Rsa.X86.CrtValues (sPodd sE1 sE2 sE3 sMask aOne aQ aP aDQ aDR aDD a
   entry inputArgs failure)
 
 /-- `n_len` and `scratch`. -/
-def lay : Lay := { len := 7, ws := 14 }
+def lay : Lay := { len := 7, ws := 14, doubling := true }
 
 def div (r : Nat) : Prog isa := KeyRt.div lay aDQ r aDD aDT
 

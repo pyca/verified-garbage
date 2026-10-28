@@ -18,7 +18,7 @@ open VG.Impl.Rsa.X86.KeyCheck (sF sMask aZ aOne aN aE aP aQ aDP aDQ aQI aD aM1 a
   nArr acc cnt33 inputs scratchArg qLenArg entry failure)
 
 /-- `n_len` and `scratch`. -/
-def lay (full : Bool) : Lay := { len := 1, ws := scratchArg full }
+def lay (full : Bool) : Lay := { len := 1, ws := scratchArg full, doubling := true }
 
 variable (full : Bool)
 

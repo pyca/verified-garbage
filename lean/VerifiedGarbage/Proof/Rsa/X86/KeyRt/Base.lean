@@ -146,6 +146,64 @@ theorem count_ok {r : Reg} {extra : Bool} (hl : LenSrc L s len)
     refine bytesB_ok hl hle fun t K m e => wp_addS rfl fun u U _ => k u (K.trans U.keeps) (U.mem.trans m) ?_
     rw [U.gpr, BitVec.toNat_add, e]; simp; omega
 
+/-- `addMul r t fuel j`: `r += j t`, `t` kept, for `j t` below `2^32`. -/
+theorem addMul_ok {r t : Reg} (hrt : r ≠ t) : ∀ (fuel j : Nat) {s : State} {is : List Instr}
+    {Q : State → Prop}, j * (s.gpr t).toNat < 2 ^ 32 →
+    (∀ u, Keeps [r] s u → u.mem = s.mem →
+      u.gpr r = s.gpr r + BitVec.ofNat 32 (j * (s.gpr t).toNat) → WP isa (.block is) u Q) →
+    WP isa (.block (addMul r t fuel j ++ is)) s Q
+  | 0, j, _, _, _, _, k => by simp only [addMul]; exact adds_ok hrt j k
+  | fuel + 1, j, s, is, Q, hb, k => by
+    simp only [addMul, List.append_assoc]
+    have odd : ∀ {is' : List Instr}, (∀ u, Keeps [r] s u → u.mem = s.mem →
+        u.gpr r = s.gpr r + BitVec.ofNat 32 (j % 2 * (s.gpr t).toNat) → WP isa (.block is') u Q) →
+        WP isa (.block ((if j % 2 = 1 then [.alu .add r (.reg t)] else []) ++ is')) s Q := by
+      intro is' k'
+      split
+      · next h =>
+        simp only [List.cons_append, List.nil_append]
+        exact wp_addS rfl fun u U _ => k' u U.keeps U.mem (by rw [U.gpr, h, Nat.one_mul, BitVec.ofNat_toNat, BitVec.setWidth_eq])
+      · next h =>
+        simp only [List.nil_append]
+        exact k' s (Keeps.refl _ _) rfl (by rw [show j % 2 = 0 by omega, Nat.zero_mul]; simp)
+    refine odd fun u K m e => ?_
+    have ut : u.gpr t = s.gpr t := K.1 _ (by simp [hrt.symm])
+    have split : j * (s.gpr t).toNat = j % 2 * (s.gpr t).toNat + j / 2 * (2 * (s.gpr t).toNat) := by
+      have := Nat.mod_add_div j 2
+      grind
+    split
+    · next h0 =>
+      simp only [List.nil_append]
+      refine k u K m ?_
+      rw [e, split, h0, Nat.zero_mul, Nat.add_zero]
+    · next h0 =>
+      simp only [List.cons_append, List.append_assoc, List.nil_append]
+      have h2 : 2 * (s.gpr t).toNat ≤ j * (s.gpr t).toNat := Nat.mul_le_mul_right _ (by omega)
+      refine wp_addS rfl fun v V _ => ?_
+      have vt : (v.gpr t).toNat = 2 * (s.gpr t).toNat := by
+        rw [V.gpr, BitVec.toNat_add, ut]; omega
+      have vr : v.gpr r = u.gpr r := V.other _ hrt
+      have hb' : j / 2 * (v.gpr t).toNat < 2 ^ 32 := by rw [vt]; omega
+      refine addMul_ok hrt fuel (j / 2) hb' fun w W mw ew => wp_shr (by decide) fun z Z _ => ?_
+      have wt : w.gpr t = v.gpr t := W.1 _ (by simp [hrt.symm])
+      have zt : z.gpr t = s.gpr t := by
+        rw [Z.gpr, wt]
+        apply BitVec.eq_of_toNat_eq
+        rw [BitVec.toNat_ushiftRight, vt, Nat.shiftRight_eq_div_pow]
+        omega
+      refine k z ⟨fun x hx => ?_, ?_, ?_⟩ (by rw [Z.mem, mw, V.mem, m]) ?_
+      · by_cases hxt : x = t
+        · rw [hxt, zt]
+        · have hxr : x ≠ r := fun h => hx (by simp [h])
+          rw [Z.other _ hxt, W.1 _ (by simp [hxr]), V.other _ hxt, K.1 _ (by simp [hxr])]
+      · rw [Z.keeps.2.1, W.2.1, V.keeps.2.1, K.2.1]
+      · rw [Z.keeps.2.2, W.2.2, V.keeps.2.2, K.2.2]
+      · rw [Z.other _ hrt, ew, vr, e, vt, split, BitVec.add_assoc]
+        congr 1
+        apply BitVec.eq_of_toNat_eq
+        simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
+        omega
+
 /-- `arrPtr r j t`: `r` at array `j`, `t = 4 w + 8`, for `edi` at the workspace. -/
 theorem arrPtr_ok {r t : Reg} {j : Nat} (hl : LenSrc L s len)
     (hle : len ≤ 4096) (hedi : (s.gpr .edi).toNat = B.toNat) (hrt : r ≠ t) (hte : t ≠ .edi)
@@ -156,19 +214,20 @@ theorem arrPtr_ok {r t : Reg} {j : Nat} (hl : LenSrc L s len)
   have hw := kw_bound hle
   simp only [arrPtr, List.append_assoc, List.cons_append, List.nil_append]
   refine bytesB_ok hl hle fun s₁ K₁ m₁ e₁ => wp_addS rfl fun s₂ u₂ _ => wp_movS rfl fun s₃ u₃ _ => ?_
-  refine wp_addS rfl fun s₄ u₄ _ => adds_ok hrt j fun u K m e => ?_
+  refine wp_addS rfl fun s₄ u₄ _ => ?_
   have et : (s₂.gpr t).toNat = 4 * kw len + 8 := by
     rw [u₂.gpr, BitVec.toNat_add, e₁]; simp; omega
   have et₄ : s₄.gpr t = s₂.gpr t := by rw [u₄.other _ hrt.symm, u₃.other _ hrt.symm]
   have edi₂ : s₂.gpr .edi = s.gpr .edi := by rw [u₂.other _ hte.symm, K₁.1 _ (by simp [hte.symm])]
+  have e8 : 4 * (kw len + 2) = 4 * kw len + 8 := by omega
+  have this : j * (4 * kw len + 8) < 2 ^ 32 := by
+    simp only [arr, S, VG.Impl.Rsa.X86.Keys.hdr] at hj; rw [e8] at hj; omega
+  refine addMul_ok hrt _ j (by rw [et₄, et]; exact this) fun u K m e => ?_
   refine k u (((K₁.mono (by simp)).trans (u₂.keeps.mono (by simp))).trans
       (((u₃.keeps.trans u₄.keeps).trans K).mono (by simp)))
     (by rw [m, u₄.mem, u₃.mem, u₂.mem, m₁]) ?_ (by rw [K.1 _ (by simp [hrt.symm]), et₄, et])
   rw [PtrAt, e, u₄.gpr, u₃.gpr, edi₂, et₄]
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat, et, hedi, arr, S, VG.Impl.Rsa.X86.Keys.hdr]
-  have e8 : 4 * (kw len + 2) = 4 * kw len + 8 := by omega
-  have : j * (4 * kw len + 8) < 2 ^ 32 := by
-    simp only [arr, S, VG.Impl.Rsa.X86.Keys.hdr] at hj; rw [e8] at hj; omega
   rw [Nat.mod_eq_of_lt (a := 160) (by omega), Nat.mod_eq_of_lt (a := j * (4 * kw len + 8)) this,
     Nat.mod_add_mod, e8, Nat.add_assoc]
 
