@@ -135,27 +135,12 @@ def rowAdd (set : Bool) (coefficient : Nat) (acc src : Ref) (cnt : List Instr) :
 def linearUnsigned (u v : Nat) (acc a b : Ref) (cnt : List Instr) : Prog isa :=
   .seq (rowAdd L true u acc a cnt) (rowAdd L false v acc b cnt)
 
-/-- `[ebx] = [ebp]` and the mask `ecx`, `edi` bytes: sixteen at a time with SSE2, then a word at a
-time (`KeyRt.selectLoopX`'s shape). -/
-def maskLoopX : Prog isa :=
-  .seq (.block [.mov .eax (.reg .edi), .shift .shr .eax 4, .xop (.movd .xmm7 .ecx),
-    .xop (.pshufd .xmm7 .xmm7 0)]) <|
-  .seq (.ite .ne (.loop (.block [.movdquLoad .xmm0 (at_ .ebp 0), .xop (.bin .pand .xmm0 .xmm7),
-    .movdquStore (at_ .ebx 0) .xmm0, .alu .add .ebp (.imm 16), .alu .add .ebx (.imm 16),
-    .alu .sub .eax (.imm 1)]) .ne) (.block [])) <|
-  .seq (.block [.alu .and .edi (.imm 15)])
-    (.ite .ne (.loop (.block [.mov .eax (.mem (at_ .ebp 0)), .alu .and .eax (.reg .ecx), .store (at_ .ebx 0) .eax,
-      .alu .add .ebp (.imm 4), .alu .add .ebx (.imm 4), .alu .sub .edi (.imm 4)]) .ne) (.block []))
-
-/-- `[o] = [a]` and the mask `ecx`, `cnt` bytes (`cnt` writing `edi`). -/
-def maskIn (o a : Ref) (cnt : List Instr) : Prog isa :=
-  .seq (.block (ptr L .ebp a .edx ++ ptr L .ebx o .edx ++ cnt)) (.seq maskLoopX (.block (restoreEdi L)))
-
 /-- The correction of an unsigned product for a negative coefficient at the header word `c`:
-`[acc + 4] -= [src]`, `n` words, if it is negative, through `[tmp]`. -/
+`[acc + 4] -= [src]`, `n` words, if it is negative: the difference into `[tmp]`, then selected
+into place by the coefficient's sign. -/
 def correction (c : Nat) (acc src tmp : Ref) : Prog isa :=
-  .seq (.block (maskOf c)) (.seq (maskIn L tmp src (nBytes .edi 0))
-    (chain L .sbb { acc with byte := acc.byte + 4 } { acc with byte := acc.byte + 4 } tmp (nBytes .edx 0)))
+  .seq (chain L .sbb tmp { acc with byte := acc.byte + 4 } src (nBytes .edx 0))
+    (.seq (.block (maskOf c)) (selIn L { acc with byte := acc.byte + 4 } tmp (nBytes .edi 0)))
 
 /-- `InvMemory.linear`'s signed combination, for inputs of `n + e` words, retained modulo `n + 1`
 words. -/
@@ -197,12 +182,15 @@ def redSum (acc : Ref) : Prog isa :=
   (.block (ptr L .ebx { acc with half := 1, byte := 4 } .edx ++
     [.mov .eax (.mem (at_ .ebx 0)), .alu .add .eax (.mem (sc signSlot)), .store (at_ .ebx 0) .eax]))
 
-/-- `InvMemory.addIfNeg`: `[acc] += [mo]`, `n + 1` words, if `[acc + 4 n]` is negative. -/
+/-- `InvMemory.addIfNeg`: `[acc] += [mo]`, `n + 1` words (`mo`'s top word zero), if `[acc + 4 n]` is
+negative: the sum into `[tmp]`, its top word `[acc + 4 n]` plus the carry, then selected into
+place by that word's sign. -/
 def addIfNeg (acc : Ref) : Prog isa :=
-  .seq (.block (maskAt L { acc with half := 1 })) <|
-  .seq (maskIn L tmp mo (nBytes .edi 0)) <|
-  .seq (.block (zeroWord L { tmp with half := 1 }))
-  (chain L .adc acc acc tmp (nBytes .edx 1))
+  .seq (chain L .adc tmp acc mo (nBytes .edx 0)) <|
+  .seq (.block (ptr L .ebx { acc with half := 1 } .edx ++ ptr L .ebp { tmp with half := 1 } .edx ++
+    [.mov .eax (.mem (at_ .ebx 0)), .alu .add .ecx (.reg .ecx), .alu .adc .eax (.imm 0), .store (at_ .ebp 0) .eax] ++
+    maskAt L { acc with half := 1 }))
+  (selIn L acc tmp (nBytes .edi 1))
 
 /-- `Mont.csub` of `[src]` (`n` words and a top word 0 or 1) by `[mo]` into `[o]`: the difference
 into `[tmp]`, then selected where it did not borrow. -/
