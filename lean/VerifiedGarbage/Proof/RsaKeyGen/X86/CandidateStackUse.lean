@@ -90,7 +90,7 @@ theorem prepareHead {mont : Prog isa} (Hm : stackUse mont ≤ 56) (w : Nat) (mon
     stackUse (Candidate.prepareHead w montName mont) ≤ 80 := by
   have r2bound := r2 Hm w montName
   have constantsBound := constants Hm w montName
-  change max 0 (max (stackUse (PreparedR2.code w montName mont)) (stackUse (Constants.code w montName mont))) ≤ 80
+  change max (stackUse (PreparedR2.code w montName mont)) (stackUse (Constants.code w montName mont)) ≤ 80
   omega
 
 theorem prepared {mont : Prog isa} (Hm : stackUse mont ≤ 56) (montName : String) :
@@ -98,8 +98,9 @@ theorem prepared {mont : Prog isa} (Hm : stackUse mont ≤ 56) (montName : Strin
   have bound := dispatch (fun w => prepareHead Hm w montName) Candidate.widths
   unfold Candidate.prepared
   generalize Candidate.dispatch (fun w => Candidate.prepareHead w montName mont) Candidate.widths = d at bound ⊢
-  change max 0 (max (stackUse d) (stackUse MrExponentRt.code)) ≤ 80
-  rw [mrExponent]
+  have header : stackUse HeaderRt.prepare = 0 := rfl
+  change max (stackUse HeaderRt.prepare) (max 0 (max (stackUse d) (stackUse MrExponentRt.code))) ≤ 80
+  rw [mrExponent, header]
   omega
 
 theorem witnessRound {mont round : Prog isa} (Hm : stackUse mont ≤ 56) (Hr : stackUse round ≤ 96)

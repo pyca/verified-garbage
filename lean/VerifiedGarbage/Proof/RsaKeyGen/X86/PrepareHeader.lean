@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.PrepareHeader
+public import VerifiedGarbage.Impl.RsaKeyGen.X86.HeaderRt
+import VerifiedGarbage.Proof.RsaKeyGen.X86.HeaderRt
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2State
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.HeaderFrame
@@ -21,15 +23,17 @@ open VG.Proof.RsaKeyGen.X86.PreparedR2
 def ranges : List (Nat × Nat) := Header.ranges ++ [(56, 8)]
 def clob : List Reg := [.eax, .ebx, .ecx, .edx, .ebp, .esi]
 
-theorem code_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
-    (scratch : Scr s g.W g.L) (caller : Caller g capacity p s) (length : g.L = 8 * capacity)
-    (candidate : val32 s.mem g.W (g.array 0) g.words = c) (odd : c % 2 = 1) :
-    WP isa (VG.Impl.RsaKeyGen.X86.PrepareHeader.code g.w) s fun t =>
+/-- The header written by any code that writes `Header.code`'s memory, then the inverse. -/
+theorem codeWith_ok {hdr : List Instr} {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat}
+    {p : BitVec 32} (scratch : Scr s g.W g.L) (caller : Caller g capacity p s) (length : g.L = 8 * capacity)
+    (candidate : val32 s.mem g.W (g.array 0) g.words = c) (odd : c % 2 = 1)
+    (header : WP isa (.block hdr) s fun t =>
+      t.mem = Header.headerMemory g.W (s.gpr .edi) g.w s.mem ∧ Keeps [.eax, .ecx, .edx] s t) :
+    WP isa (.seq (.block hdr) (VG.Impl.RsaKeyGen.X86.MontInverse.code (g.array 0) 56)) s fun t =>
       Ready g c capacity p t ∧ Outs g.W ranges s.mem t.mem ∧ Keeps clob s t ∧
       word t.mem g.W 224 = BitVec.ofNat 64 (8 * (g.w + 2)) := by
-  unfold VG.Impl.RsaKeyGen.X86.PrepareHeader.code
-  rw [Prepared.slot_eq]
-  refine WP.seq (WP.mono (Header.context_ok v scratch) fun a ⟨Ca, Oa, Ka, Ma⟩ => ?_)
+  refine WP.seq (WP.mono header fun a ⟨Ma, Ka⟩ => ?_)
+  obtain ⟨Ca, Oa⟩ := Header.context_of v scratch Ka (by decide) Ma
   have Sa := scratch.of_keeps Ka (by decide)
   have candidateA : val32 a.mem g.W (g.array 0) g.words = c := by
     rw [Oa.val32 (fun r mem => by
@@ -94,5 +98,31 @@ theorem code_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p :
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat, VG.Impl.Bignum.X86.PublicContext.stride]
     have := v.maxWidth
     omega
+
+theorem code_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
+    (scratch : Scr s g.W g.L) (caller : Caller g capacity p s) (length : g.L = 8 * capacity)
+    (candidate : val32 s.mem g.W (g.array 0) g.words = c) (odd : c % 2 = 1) :
+    WP isa (VG.Impl.RsaKeyGen.X86.PrepareHeader.code g.w) s fun t =>
+      Ready g c capacity p t ∧ Outs g.W ranges s.mem t.mem ∧ Keeps clob s t ∧
+      word t.mem g.W 224 = BitVec.ofNat 64 (8 * (g.w + 2)) := by
+  unfold VG.Impl.RsaKeyGen.X86.PrepareHeader.code
+  rw [Prepared.slot_eq]
+  exact codeWith_ok v scratch caller length candidate odd
+    (WP.mono (Header.code_ok scratch v.headerFit) fun _ ⟨M, K⟩ => ⟨M, K.mono (by decide)⟩)
+
+/-- `HeaderRt.prepare`: the header at the width that header byte 4 gives. -/
+theorem prepareRt_ok {g : Geometry} (v : g.Valid) {s : State} {c capacity : Nat} {p : BitVec 32}
+    (scratch : Scr s g.W g.L) (caller : Caller g capacity p s) (length : g.L = 8 * capacity)
+    (candidate : val32 s.mem g.W (g.array 0) g.words = c) (odd : c % 2 = 1)
+    (len : s.mem.readW (off g.W 4) 32 = BitVec.ofNat 32 (8 * g.w)) :
+    WP isa VG.Impl.RsaKeyGen.X86.HeaderRt.prepare s fun t =>
+      Ready g c capacity p t ∧ Outs g.W ranges s.mem t.mem ∧ Keeps clob s t ∧
+      word t.mem g.W 224 = BitVec.ofNat 64 (8 * (g.w + 2)) := by
+  have base : g.array 0 = 256 := by
+    simp [Geometry.array, Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]
+  unfold VG.Impl.RsaKeyGen.X86.HeaderRt.prepare
+  rw [← base]
+  exact codeWith_ok v scratch caller length candidate odd
+    (HeaderRt.code_ok scratch v.headerFit v.maxWidth len)
 
 end VG.Proof.RsaKeyGen.X86.PrepareHeader
