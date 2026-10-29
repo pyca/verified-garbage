@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.MlKem.Encode
 public import VerifiedGarbage.Impl.MlKem.X86.Cbd
 public import VerifiedGarbage.Proof.MlKem.X86.Leaf
 import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlKem.X86.Common
@@ -13,7 +12,6 @@ meta import VerifiedGarbage.Proof.MlKem.Encode
 meta import VerifiedGarbage.Impl.MlKem.X86.Cbd
 meta import VerifiedGarbage.Proof.MlKem.X86.Leaf
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import Mathlib.Tactic.Set
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
@@ -209,8 +207,9 @@ theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 128) {s : State}
   generalize eB : (B s₀).getD k 0 = b at hbyte
   refine wp_movzx inB (wp_movr ?_)
   rw [hbyte]
-  set s₁ := (s.setReg .ebx (b.setWidth 32)).setReg .eax ((s.setReg .ebx (b.setWidth 32)).gpr .ebx)
-    with hs₁
+  let s₁ := (s.setReg .ebx (b.setWidth 32)).setReg .eax ((s.setReg .ebx (b.setWidth 32)).gpr .ebx)
+  try rewrite [show (s.setReg .ebx (b.setWidth 32)).setReg .eax ((s.setReg .ebx (b.setWidth 32)).gpr .ebx) = s₁ from rfl] at *
+  have hs₁ : s₁ = (s.setReg .ebx (b.setWidth 32)).setReg .eax ((s.setReg .ebx (b.setWidth 32)).gpr .ebx) := rfl
   have g₁ : ∀ r, r ≠ .eax → r ≠ .ebx → s₁.gpr r = s.gpr r := fun r h1 h2 => by
     simp [hs₁, State.setReg, h1, h2]
   have bx₁ : s₁.gpr .ebx = b.setWidth 32 := by simp [hs₁, State.setReg]

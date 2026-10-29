@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Hmac.Generic.Common
 public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Sha256.X86_64.Compress
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
@@ -96,8 +95,10 @@ theorem copy_ok {src dst : Reg} (hs : src ≠ .rax ∧ src ≠ .r14) (hd : dst �
     (hsep : Region.Disjoint ⟨s.gpr src + BitVec.ofNat 64 so, n⟩ ⟨s.gpr dst + BitVec.ofNat 64 d, n⟩) :
     WP isa (copy src so dst d n) s fun t =>
       Copied s (s.gpr dst + BitVec.ofNat 64 d) (bytesAt s.mem (s.gpr src + BitVec.ofNat 64 so) n) t := by
-  set A := s.gpr src + BitVec.ofNat 64 so
-  set B := s.gpr dst + BitVec.ofNat 64 d
+  let A := s.gpr src + BitVec.ofNat 64 so
+  try rewrite [show s.gpr src + BitVec.ofNat 64 so = A from rfl] at *
+  let B := s.gpr dst + BitVec.ofNat 64 d
+  try rewrite [show s.gpr dst + BitVec.ofNat 64 d = B from rfl] at *
   refine WP.seq (wp_mov32i fun s₀ u₀ _ _ => WP.block_nil ?_)
   have i0 : CopyInv s A B 0 s₀ :=
     ⟨u₀.rd, u₀.wr, fun r _ h => u₀.other r h, by rw [u₀.gpr]; rfl,

@@ -7,8 +7,6 @@ public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
@@ -119,7 +117,7 @@ theorem ofNat_beq_zero {k : Nat} (h : k < 2 ^ 32) : (BitVec.ofNat 32 k == 0) = d
 
 theorem sub_ofNat {a b : Nat} (h : b ≤ a) :
     BitVec.ofNat 32 a - BitVec.ofNat 32 b = BitVec.ofNat 32 (a - b) := by
-  conv_lhs => rw [show a = (a - b) + b by omega_arith, BitVec.ofNat_add]
+  conv => lhs; rw [show a = (a - b) + b by omega_arith, BitVec.ofNat_add]
   rw [BitVec.add_sub_cancel]
 
 theorem sub_beq {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
@@ -600,7 +598,9 @@ theorem compressFrame_ok {name : String} {code : Prog isa} (hf : CalleeOk H code
   have fit : 4 * [cr, Reg.ecx, .eax, sr].length + 4 ≤ (s.gpr .esp).toNat := by
     rw [hesp]; simp only [List.length_cons, List.length_nil]; omega_arith
   have hrs : Reg.esp ∉ [cr, Reg.ecx, .eax, sr] := by simp [Ne.symm hsr, Ne.symm hcr]
-  set sE := (pushed [cr, Reg.ecx, .eax, sr] s).callEntry with hsE
+  let sE := (pushed [cr, Reg.ecx, .eax, sr] s).callEntry
+  try rewrite [show (pushed [cr, Reg.ecx, .eax, sr] s).callEntry = sE from rfl] at *
+  have hsE : sE = (pushed [cr, Reg.ecx, .eax, sr] s).callEntry := rfl
   have a0 : arg sE 0 = st := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [hS]
   have a1 : arg sE 1 = blk := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [heax]
   have a2 : (arg sE 2).toNat = k := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [hk]
@@ -688,7 +688,9 @@ theorem compressAt_ok {name : String} {code : Prog isa} (hf : CalleeOk H code) {
   rw [← Nat.mul_one P.B] at f₁ d₂ d₃ dB hc
   unfold compressAt compressWith
   refine WP.seq (WP.cons (s' := s.setReg .ecx 1) rfl (WP.block_nil ?_))
-  set s₁ := s.setReg .ecx 1 with hs₁
+  let s₁ := s.setReg .ecx 1
+  try rewrite [show s.setReg .ecx 1 = s₁ from rfl] at *
+  have hs₁ : s₁ = s.setReg .ecx 1 := rfl
   have g₁ : ∀ r, r ≠ .ecx → s₁.gpr r = s.gpr r := fun r h => by simp [hs₁, State.setReg, h]
   refine compressFrame_ok (k := 1) hf hsr hcr (by rw [g₁ _ (by decide), hesp])
     (by rw [g₁ _ hsr', hS]) (by rw [g₁ _ hcr', hC]) (by rw [g₁ _ (by decide), heax])

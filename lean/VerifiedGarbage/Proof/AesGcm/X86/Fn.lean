@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86.CtrCall
 import VerifiedGarbage.Proof.AesGcm.X86.Absorb
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
 import VerifiedGarbage.Proof.Aes.X86.VariantProof
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -244,7 +243,9 @@ theorem entry_gen {s : State} {w nA : Nat} (pre : List Instr) (ps : List (Nat ×
   refine WP.seq (WP.of_runBlock ⟨_, by xrun [hSP, i₀], ?_⟩)
   have hax : (s.setReg .eax (s.mem.readW (argA SP w) 32)).gpr .eax = W := by
     rw [gpr_setReg_self, ← hSP]; exact hW
-  set s₀ := s.setReg .eax (s.mem.readW (argA SP w) 32) with hs₀
+  let s₀ := s.setReg .eax (s.mem.readW (argA SP w) 32)
+  try rewrite [show s.setReg .eax (s.mem.readW (argA SP w) 32) = s₀ from rfl] at *
+  have hs₀ : s₀ = s.setReg .eax (s.mem.readW (argA SP w) 32) := rfl
   obtain ⟨s₁, run₁, bp₁, g₁, rd₁, wr₁, sv₁, f₁⟩ := save_ok s₀ hax (by rw [hs₀]; exact wW) fw
   have sp₁ : s₁.gpr .esp = SP := by rw [g₁ _ (by decide), hs₀, gpr_setReg_of_ne _ _ (by decide), hSP]
   have f₁' : Frame [⟨w64 W + BitVec.ofNat 64 128, 16⟩] s.mem s₁.mem := f₁
