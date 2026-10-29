@@ -20,7 +20,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ResidueLow
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Residue
 import VerifiedGarbage.Proof.Bignum.Arm.StackOnlyCT
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTCandidateScreenP
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTTrialBuffers
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateBuffers
 import VerifiedGarbage.Proof.Bignum.OctetsValue
@@ -51,7 +50,333 @@ import VerifiedGarbage.Proof.Ffdh.Arm.CallerRows
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import Mathlib.Data.Nat.Basic
 import Mathlib.Order.Basic
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TablePointer
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTPieces
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTPairStep
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairState
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairStep
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairMath
+import VerifiedGarbage.Proof.Framework.Arm.Inline
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SievePolicy
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTPairTrials
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairInit
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Table
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePair
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateTable
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePairMath
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateSieveMath
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTScreenedTests
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateQOdd
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTQOdd
 /-! A verified parameter candidate supplied to the native retry/refill controller. -/
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/ParameterCandidate/CTTable.lean`, which only this module imported.
+section
+
+/-! The native RSA sieve table is written at the same public scratch offsets in both runs. -/
+
+section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm VG.Proof.Bignum.Arm
+open VG.Proof.Ffdh.Arm.KeySearch (Two two_post two_taint)
+
+def TableStart (p : CandidateParams × Nat) (s : State) : Prop := CandidateContext p.1 p.2 s
+private def TablePointer (p : CandidateParams × Nat) (s : State) : Prop :=
+  s.gpr .r11 = p.1.base + BitVec.ofNat 32 (Spec.Rsa.Mont.arrAt p.1.words 34)
+
+theorem tableWrite_ct : RelCT isa (Two TableStart)
+    (.block VG.Impl.Ffdh.Arm.ParameterCandidate.tableWrite) (fun _ _ => True) := by
+  have pointer : RelCT isa (Two TableStart) (.block VG.Impl.Ffdh.Arm.ParameterCandidate.tablePointer) (Two TablePointer) :=
+    two_post ((stackOnly_ct _ (by decide)).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) (fun p s h => by
+      refine WP.mono (tablePointer_ok s p.1.base p.1.length p.1.length_bounds.2
+        (by simpa only [BitVec.add_zero] using h.saved.read (d := 0) (by decide)) (h.saved.read (by decide))
+        (by simpa only [BitVec.add_zero, candidateValues] using h.saved.saved 0 (by decide)) (h.saved.saved 12 (by decide))) ?_
+      rintro t ⟨⟨ptr, _⟩, _⟩
+      exact ptr)
+  obtain ⟨hint, checked⟩ := tableWrites_taint
+  have writes : RelCT isa (Two TablePointer) (.block (VG.Impl.Ffdh.Arm.ParameterCandidate.tableWrites 1024))
+      (fun _ _ => True) := by
+    refine two_taint [.r11] ?_ checked
+    intro p s t a b r hr
+    simp only [List.mem_singleton] at hr
+    subst r
+    exact a.trans b.symm
+  exact RelCT.block_append (pointer.seq writes)
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/ParameterCandidate/CTPairLoop.lean`, which only this module imported.
+section
+
+/-! The RSA sieve loop has a public trace, including its public rejection flags. -/
+
+section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG.Impl.Ffdh.Arm.ParameterCandidate (trialCount)
+open VG VG.Arm VG.Proof.Bignum
+open VG.Proof.Ffdh.Arm.KeySearch (Two)
+
+def PairCTState (p : PairData × Nat) (s : State) : Prop :=
+  ∃ original, PairInv original p.1.dst p.1.base p.1.bytes.length (Spec.Rsa.os2ip p.1.bytes) p.2 s
+
+private theorem PairCTState.step_start {p : PairData × Nat} {s : State}
+    (h : PairCTState p s) (more : p.2 < (trialCount p.1.bytes.length)) : PairStepStart p s := by
+  obtain ⟨original, inv⟩ := h
+  exact ⟨⟨inv.context, more, inv.cursor, bytesAt_eq_of_value rfl inv.candidate⟩, inv.bad⟩
+
+private theorem pairStep_fixed (p : PairData × Nat) (more : p.2 < (trialCount p.1.bytes.length)) :
+    RelCT isa (fun s t => PairCTState p s ∧ PairCTState p t ∧ s.sp = t.sp)
+      VG.Impl.Ffdh.Arm.ParameterCandidate.pairStep
+      (fun s t => PairCTState (p.1, (pairNext p.1.bytes.length (Spec.Rsa.os2ip p.1.bytes) p.2)) s ∧ PairCTState (p.1, (pairNext p.1.bytes.length (Spec.Rsa.os2ip p.1.bytes) p.2)) t ∧
+        s.z = decide ((pairNext p.1.bytes.length (Spec.Rsa.os2ip p.1.bytes) p.2) = (trialCount p.1.bytes.length)) ∧ t.z = decide ((pairNext p.1.bytes.length (Spec.Rsa.os2ip p.1.bytes) p.2) = (trialCount p.1.bytes.length)) ∧ s.sp = t.sp) := by
+  intro s t trS trT u v h runS runT
+  have leak := (pairStep_ct _ _ _ _ _ _ ⟨p, h.1.step_start more, h.2.1.step_start more, h.2.2⟩ runS runT).1
+  obtain ⟨originalS, invS⟩ := h.1
+  obtain ⟨originalT, invT⟩ := h.2.1
+  obtain ⟨_, u', execS, nextS, zeroS⟩ := pairStep_ok invS more
+  obtain ⟨_, v', execT, nextT, zeroT⟩ := pairStep_ok invT more
+  obtain ⟨_, rfl⟩ := Exec.det runS execS
+  obtain ⟨_, rfl⟩ := Exec.det runT execT
+  exact ⟨leak, ⟨originalS, nextS⟩, ⟨originalT, nextT⟩, zeroS, zeroT,
+    (Exec.rdwr runS).2.2.trans (h.2.2.trans (Exec.rdwr runT).2.2.symm)⟩
+
+private def PairLoopPair (remaining : Nat) (s t : State) : Prop :=
+  ∃ p : PairData × Nat, p.2 < (trialCount p.1.bytes.length) ∧ (trialCount p.1.bytes.length) - p.2 ≤ remaining ∧ PairCTState p s ∧ PairCTState p t ∧ s.sp = t.sp
+
+theorem pairLoop_ct : RelCT isa (Two fun (p : PairData) s => PairCTState (p, 0) s)
+    (.loop VG.Impl.Ffdh.Arm.ParameterCandidate.pairStep .ne) (fun _ _ => True) := by
+  have step : ∀ n, RelCT isa (PairLoopPair n) VG.Impl.Ffdh.Arm.ParameterCandidate.pairStep
+      (fun u v => isa.eval .ne u = isa.eval .ne v ∧
+        (isa.eval .ne u = some false → True) ∧
+        (isa.eval .ne u = some true → ∃ m, m < n ∧ PairLoopPair m u v)) := by
+    intro n s t trS trT u v h runS runT
+    obtain ⟨p, more, remaining, left, right, sp⟩ := h
+    have progress := pairNext_progress (value:=Spec.Rsa.os2ip p.1.bytes) more
+    obtain ⟨leak, stateU, stateV, zeroU, zeroV, spUV⟩ := pairStep_fixed p more _ _ _ _ _ _ ⟨left, right, sp⟩ runS runT
+    refine ⟨leak, ?_, by intro _; trivial, ?_⟩
+    · change some (!u.z) = some (!v.z)
+      rw [zeroU, zeroV]
+    · intro go
+      change some (!u.z) = some true at go
+      have next : (pairNext p.1.bytes.length (Spec.Rsa.os2ip p.1.bytes) p.2) < (trialCount p.1.bytes.length) := by
+        by_cases last : (pairNext p.1.bytes.length (Spec.Rsa.os2ip p.1.bytes) p.2) = (trialCount p.1.bytes.length)
+        · rw [zeroU, decide_eq_true last] at go
+          cases go
+        · omega
+      exact ⟨(trialCount p.1.bytes.length) - ((pairNext p.1.bytes.length (Spec.Rsa.os2ip p.1.bytes) p.2)), by omega, (p.1, (pairNext p.1.bytes.length (Spec.Rsa.os2ip p.1.bytes) p.2)), next, by exact Nat.le_refl _, stateU, stateV, spUV⟩
+  exact (RelCT.loop PairLoopPair step 1024).mono
+    (fun _ _ ⟨p, left, right, sp⟩ => ⟨(p, 0), trialCount_positive _, by change trialCount p.bytes.length - 0 ≤ 1024; have := trialCount_bound p.bytes.length; omega, left, right, sp⟩) (fun _ _ h => h)
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/ParameterCandidate/CTPairSieve.lean`, which only this module imported.
+section
+
+/-! Complete small-prime screening leaks only the public candidate and workspace layout. -/
+
+section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm VG.Proof.Bignum.Arm
+open VG.Proof.Ffdh.Arm.KeySearch (Two two_post)
+
+def PairPublic (p : PairData) (s : State) : Prop :=
+  SieveContext p.dst p.base p.bytes.length s ∧ Spec.Rsa.bytesAt s.mem (State.addr p.dst) p.bytes.length = p.bytes
+
+private theorem sieveInit_ct : RelCT isa (fun s t => s.sp = t.sp)
+    VG.Impl.Ffdh.Arm.ParameterCandidate.sieveInit (fun s t => s.sp = t.sp) := by
+  have tail : RelCT isa (fun s t => s.sp = t.sp) (.block VG.Impl.Ffdh.Arm.ParameterCandidate.sieveInitTail)
+      (fun s t => s.sp = t.sp) :=
+    RelCT.block_append ((stackOnly_ct VG.Impl.Ffdh.Arm.ParameterCandidate.sieveInitRegisters (by decide)).seq (save_ct .r1 64))
+  exact (stackOnly_ct VG.Impl.Ffdh.Arm.ParameterCandidate.tablePointer (by decide)).seq tail
+
+theorem pairSieve_ct : RelCT isa (Two PairPublic) VG.Impl.Ffdh.Arm.ParameterCandidate.pairSieve (fun _ _ => True) := by
+  have init : RelCT isa (Two PairPublic) VG.Impl.Ffdh.Arm.ParameterCandidate.sieveInit
+      (Two fun p s => PairCTState (p, 0) s) :=
+    two_post (sieveInit_ct.mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)) (fun p s h => by
+      refine WP.mono (pairInit_ok h.1) ?_
+      intro t inv
+      rw [h.2] at inv
+      exact ⟨s, inv⟩)
+  have finish : RelCT isa (fun s t => s.sp = t.sp) (.block VG.Impl.Ffdh.Arm.ParameterCandidate.sieveFinish)
+      (fun _ _ => True) := (stackOnly_ct _ rfl).mono (fun _ _ h => h) (fun _ _ _ => trivial)
+  exact init.seq ((relCT_keep_sp pairLoop_ct (fun _ _ ⟨_, _, _, sp⟩ => sp)).seq
+    (finish.seq (RelCT.block_nil (fun _ _ h => h))))
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/ParameterCandidate/CTCandidatePair.lean`, which only this module imported.
+section
+
+/-! Reuse the paired sieve timing proof without allocating a separate q buffer. -/
+
+section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm VG.Proof.Bignum.Arm
+open VG.Proof.Ffdh.Arm.KeySearch
+
+structure CandidatePairStart (p : CandidatePoint) (s : State) : Prop where
+  context : CandidateContext p.params p.used s
+  table : TableData p.params.base p.params.length s.mem
+  number : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr p.params.out) p.params.length) = p.params.candidate
+  oddQ : ((p.params.candidate-1)/2)%2=1
+
+structure CandidatePaired (p : CandidatePoint) (s : State) : Prop where
+  start : CandidatePairStart p s
+  zero : s.z=candidateShapes p.params
+
+theorem candidatePaired_ok (p : CandidatePoint) (s : State) (h : CandidatePairStart p s) :
+    WP isa VG.Impl.Ffdh.Arm.ParameterCandidate.pairSieve s (CandidatePaired p) := by
+  refine WP.mono (candidatePair_ok h.context h.table h.number h.oddQ) ?_
+  rintro t ⟨ctx, table, zero, bytes, _, _⟩
+  exact ⟨⟨ctx, table, by rw [bytes]; exact h.number, h.oddQ⟩, zero⟩
+
+theorem candidatePair_ct : RelCT isa (Two (CandidatePairStart))
+    VG.Impl.Ffdh.Arm.ParameterCandidate.pairSieve (Two (CandidatePaired)) := by
+  refine two_post ?_ (candidatePaired_ok)
+  intro s t trS trT u v h runS runT
+  obtain ⟨p, left, right, sp⟩ := h
+  let xs := Spec.Rsa.bytesAt s.mem (State.addr p.params.out) p.params.length
+  have length : xs.length = p.params.length := VG.Proof.Bignum.bytesAt_length _ _ _
+  have same : Spec.Rsa.bytesAt t.mem (State.addr p.params.out) p.params.length = xs :=
+    VG.Proof.Bignum.bytesAt_eq_of_value length (right.number.trans left.number.symm)
+  have leftPublic : PairPublic ⟨p.params.out, p.params.base, xs⟩ s := by
+    change SieveContext p.params.out p.params.base xs.length s ∧ _
+    rw [length]
+    exact ⟨left.context.sieve_context left.table, rfl⟩
+  have rightPublic : PairPublic ⟨p.params.out, p.params.base, xs⟩ t := by
+    change SieveContext p.params.out p.params.base xs.length t ∧ _
+    rw [length]
+    exact ⟨right.context.sieve_context right.table, same⟩
+  exact pairSieve_ct _ _ _ _ _ _ ⟨_, leftPublic, rightPublic, sp⟩ runS runT
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/ParameterCandidate/CTCandidateScreenPair.lean`, which only this module imported.
+section
+
+/-! The paired screening stage depends only on public candidate data. -/
+
+section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm VG.Proof.Bignum.Arm
+open VG.Proof.Ffdh.Arm.KeySearch
+open VG.Proof.MillerRabin.Arm (RoundImpl)
+
+structure ScreenPairStart (p : CandidateParams) (s : State) : Prop where
+  context : CandidateContext p p.length s
+  enough : p.length ≤ p.bytes.length
+  oddQ : ((p.candidate-1)/2)%2=1
+  number : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr p.out) p.length) = p.candidate
+
+private def PSieveStart (p : CandidateParams) (s : State) : Prop :=
+  CandidatePairStart ⟨p, p.length⟩ s ∧ p.length ≤ p.bytes.length
+
+private def PSieveEnd (p : CandidateParams) (s : State) : Prop :=
+  CandidatePaired ⟨p, p.length⟩ s ∧ p.length ≤ p.bytes.length
+
+private theorem pTable_ok (p : CandidateParams) (s : State) (h : ScreenPairStart p s) :
+    WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.tableWrite) s (PSieveStart p) := by
+  refine WP.mono (candidateTable_ok h.context) ?_
+  rintro t ⟨ctx, table, changed, _⟩
+  have bytes := rsa_bytes_frame (src := State.addr p.out) (k := p.length) changed (by have := p.length_bounds; omega) (by
+    intro r hr
+    rw [List.mem_singleton] at hr
+    subst r
+    exact p.outputScratch)
+  exact ⟨⟨ctx, table, by rw [bytes]; exact h.number, h.oddQ⟩, h.enough⟩
+
+theorem candidateScreenPair_ct (v : RoundImpl) : RelCT isa (Two ScreenPairStart)
+    (VG.Impl.Ffdh.Arm.ParameterCandidate.screenPair v.name v.code) (fun _ _ => True) := by
+  have table : RelCT isa (Two ScreenPairStart) (.block VG.Impl.Ffdh.Arm.ParameterCandidate.tableWrite)
+      (Two PSieveStart) :=
+    two_post (two_map (fun p => (p, p.length)) (fun _ _ h => h.context) tableWrite_ct) pTable_ok
+  have sieve : RelCT isa (Two PSieveStart) VG.Impl.Ffdh.Arm.ParameterCandidate.pairSieve (Two PSieveEnd) :=
+    two_post ((two_map (fun p => (⟨p, p.length⟩ : CandidatePoint)) (fun _ _ h => h.1)
+      (candidatePair_ct)).mono (fun _ _ h => h) (fun _ _ _ => trivial))
+      (fun _ _ h => WP.mono (candidatePaired_ok _ _ h.1) (fun _ post => ⟨post, h.2⟩))
+  have branch : RelCT isa (Two PSieveEnd)
+      (.ite .eq (VG.Impl.Ffdh.Arm.ParameterCandidate.tests v.name v.code)
+        VG.Impl.Ffdh.Arm.ParameterCandidate.finRejected) (fun _ _ => True) := by
+    refine two_ite (fun _ _ _ left right => ?_) ?_ ?_
+    · change some _ = some _
+      rw [left.1.zero, right.1.zero]
+    · exact two_map (fun p => (⟨p,p.length⟩ : CandidatePoint))
+        (fun _ _ h => ⟨h.1.1.start.context,h.1.2,h.1.1.start.oddQ⟩) (screenedTests_ct v)
+    · exact two_map (fun p => (⟨p, p.length⟩ : CandidatePoint)) (fun _ _ h => h.1.1.start.context) candidateRejected_ct
+  exact table.seq (sieve.seq (branch.seq (RelCT.block_nil (fun _ _ _ => trivial))))
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/ParameterCandidate/CTCandidateScreenP.lean`, which only this module imported.
+section
+
+/-! Reject even q before the paired RSA trial sieve and shared witness controller. -/
+
+section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm VG.Proof.Bignum.Arm
+open VG.Proof.Ffdh.Arm.KeySearch
+open VG.Proof.MillerRabin.Arm (RoundImpl)
+
+structure ScreenPStart (p : CandidateParams) (s : State) : Prop where
+  context : CandidateContext p p.length s
+  enough : p.length≤p.bytes.length
+  number : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr p.out) p.length)=p.candidate
+
+private structure QOddChecked (p : CandidateParams) (s : State) : Prop where
+  start : ScreenPStart p s
+  zero : s.z=decide (((p.candidate-1)/2)%2=1)
+
+private theorem qOdd_checked (p : CandidateParams) (s : State) (h : ScreenPStart p s) :
+    WP isa (.block VG.Impl.Ffdh.Arm.ParameterCandidate.qOdd) s (QOddChecked p) := by
+  refine WP.mono (candidateQOdd_ok h.context h.number) ?_
+  rintro t ⟨ctx,zero,memory,_⟩
+  exact ⟨⟨ctx,h.enough,by rw [memory]; exact h.number⟩,zero⟩
+
+theorem candidateScreenP_ct (v : RoundImpl) : RelCT isa (Two ScreenPStart)
+    (VG.Impl.Ffdh.Arm.ParameterCandidate.screenP v.name v.code) (fun _ _ => True) := by
+  have guard : RelCT isa (Two ScreenPStart)
+      (.block VG.Impl.Ffdh.Arm.ParameterCandidate.qOdd) (Two QOddChecked) :=
+    two_post ((two_map (fun p => (p.out,p.length)) (fun _ _ h => h.context.read_context) qOdd_ct).mono
+      (fun _ _ h => h) (fun _ _ _ => trivial)) qOdd_checked
+  have branch : RelCT isa (Two QOddChecked)
+      (.ite .eq (VG.Impl.Ffdh.Arm.ParameterCandidate.screenPair v.name v.code)
+        VG.Impl.Ffdh.Arm.ParameterCandidate.finRejected) (fun _ _ => True) := by
+    refine two_ite ?_ ?_ ?_
+    · intro p s t a b
+      change some s.z=some t.z
+      rw [a.zero,b.zero]
+    · refine two_map id ?_ (candidateScreenPair_ct v)
+      intro p s h
+      refine ⟨h.1.start.context,h.1.start.enough,?_,h.1.start.number⟩
+      apply of_decide_eq_true
+      have go : some s.z=some true := h.2
+      exact h.1.zero.symm.trans (Option.some.inj go)
+    · exact two_map (fun p => (⟨p,p.length⟩ : CandidatePoint))
+        (fun _ _ h => h.1.start.context) candidateRejected_ct
+  exact guard.seq (branch.seq (RelCT.block_nil (fun _ _ _ => trivial)))
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+end
+
+end
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/ParameterCandidate/CandidatePost.lean`, which only this module imported.
 section
