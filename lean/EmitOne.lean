@@ -35,10 +35,23 @@ runs, checks every artifact and every file.
 
 open System
 
-def nativeTCB : FilePath :=
+/-- A shared library of the trusted base, as the lakefile names it
+(`libName`; see `Emit.lean`). -/
+def sharedLib (name : String) : FilePath :=
   ".lake" / "build" / "lib" /
-    if System.Platform.isWindows then "VerifiedGarbage_NativeTCB.dll"
-    else s!"libVerifiedGarbage_NativeTCB.{if System.Platform.isOSX then "dylib" else "so"}"
+    if System.Platform.isWindows then s!"{name}.dll"
+    else s!"lib{name}.{if System.Platform.isOSX then "dylib" else "so"}"
+
+/-- The libraries of the trusted base the driver loads for the named
+registration files and groups, each named after its target last: `NativeTCB`
+(what no target owns, which the others link) first, then each of their
+targets' (`NativeTCB<Target>`), with their shared libraries' paths. -/
+def nativeTCB (names : List String) : List (String × FilePath) :=
+  let targets := names.foldl (init := ([] : List String)) fun ts n =>
+    let t := (n.splitOn ".").getLastD ""
+    if ts.contains t then ts else ts ++ [t]
+  ("NativeTCB", sharedLib "VerifiedGarbage_NativeTCB") ::
+    targets.map fun t => (s!"NativeTCB{t}", sharedLib s!"VerifiedGarbage_NativeTCB{t}")
 
 def usage : String := "usage: lake env lean --run EmitOne.lean [--check] <Alg>.<Target> …"
 
@@ -98,12 +111,15 @@ def main (args : List String) : IO UInt32 := do
       IO.eprintln s!"{n}: no registration file VerifiedGarbage/Artifacts/{n.replace "." "/"}.lean \
         and no generic group {n}"
       return 2
-  -- Build what the driver imports, and the trusted base's shared library;
-  -- reporting warnings and errors, not the profile every module records
-  -- (`lakefile.toml`), which Lake replays for each one it finds built.
+  -- Build what the driver imports, and the trusted base's shared libraries
+  -- (what no target owns, and their targets'); reporting warnings and
+  -- errors, not the profile every module records (`lakefile.toml`), which
+  -- Lake replays for each one it finds built.
   let mods := regs ++ gens.flatMap (·.2) ++ vars.flatMap (·.2)
+  let libs := nativeTCB names
   let code ← runProc "lake"
-    (#["build", "--log-level=warning", "NativeTCB:shared"] ++ (mods.map ("+" ++ ·)).toArray)
+    (#["build", "--log-level=warning"] ++ (libs.map fun (l, _) => s!"{l}:shared").toArray ++
+      (mods.map ("+" ++ ·)).toArray)
   unless code == 0 do return code
   let driver : FilePath := ".lake" / "emit" / "One.lean"
   let out : FilePath := ".lake" / "emit" / "one"
@@ -111,7 +127,8 @@ def main (args : List String) : IO UInt32 := do
   if ← out.pathExists then IO.FS.removeDirAll out
   IO.FS.writeFile driver (VG.Emit.driver regs gens vars)
   let code ← runProc (← IO.appPath).toString
-    #[s!"--load-dynlib={nativeTCB}", "--run", driver.toString, out.toString]
+    ((libs.map fun (_, f) => s!"--load-dynlib={f}").toArray ++
+      #["--run", driver.toString, out.toString])
   unless code == 0 do return code
   -- Copy or compare each generated file but `mod.rs`.
   let dest : FilePath := ".." / "src" / "asm"

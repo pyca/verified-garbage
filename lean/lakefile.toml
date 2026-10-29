@@ -2,7 +2,9 @@ name = "VerifiedGarbage"
 # Resolve the compiled libraries before the broad library glob. Otherwise
 # Lake can first assign one of these modules to VerifiedGarbage, then try to
 # load a native library (which includes that same module) while compiling it.
-defaultTargets = ["NativeSpec", "NativeForward", "NativeHintSearch", "VerifiedGarbage", "VerifiedGarbageTest"]
+defaultTargets = ["NativeTCB", "NativeTCBX86_64", "NativeTCBX86", "NativeTCBAArch64", "NativeTCBArm",
+  "NativeTCBPPC64LE", "NativeTCBRISCV64", "NativeSpec", "NativeForward", "NativeHintSearch",
+  "VerifiedGarbage", "VerifiedGarbageTest"]
 # Lake already checks several files concurrently. Limit each compiler to
 # two threads so declaration tasks do not contend across all of those files.
 #
@@ -138,14 +140,78 @@ globs = ["VerifiedGarbage.Proof.Framework.SigEval", "VerifiedGarbage.Proof.Frame
 precompileModules = true
 
 # The trusted base, which imports only Lean core: the code the emitter
-# (`Emit.lean`, which loads this library) runs to check and print every
+# (`Emit.lean`, which loads these libraries) runs to check and print every
 # artifact, an order of magnitude faster compiled than in the interpreter
 # (52 s to 7 s). `TCB.Mem` is here and not in `NativeSpec`, which imports it.
+#
+# A native module that imports a module of another precompiled library
+# depends on that library's whole shared library (`ci/lean_shards.py`'s
+# `native_reads`). So the trusted base is a library per target, and one of
+# what no target owns (`NativeTCB`, which imports none of them): editing one
+# target's ISA rebuilds that target's native modules, and not `NativeSpec`,
+# `NativeTactics` or another target's (`ci/check_lean_imports.py` checks it).
+# Each is a default target, building its shared library, which the emitter
+# loads. A new file directly in `TCB/` is listed in `NativeTCB`; a new
+# target gets a library of its own, `NativeTCB<Target>`, whose `libName`
+# (`VerifiedGarbage_NativeTCB<Target>`, the name the emitter loads) Lake
+# would otherwise mangle (`X86_64` to `X86__64`).
 [[lean_lib]]
 name = "NativeTCB"
 roots = []
-globs = ["VerifiedGarbage.TCB.+"]
+globs = ["VerifiedGarbage.TCB.Artifact", "VerifiedGarbage.TCB.Audit",
+  "VerifiedGarbage.TCB.Axioms", "VerifiedGarbage.TCB.Code", "VerifiedGarbage.TCB.Emit",
+  "VerifiedGarbage.TCB.Mem", "VerifiedGarbage.TCB.Print", "VerifiedGarbage.TCB.Registration",
+  "VerifiedGarbage.TCB.Rust", "VerifiedGarbage.TCB.Sig"]
 precompileModules = true
+defaultFacets = ["shared"]
+
+[[lean_lib]]
+name = "NativeTCBX86_64"
+libName = "VerifiedGarbage_NativeTCBX86_64"
+roots = []
+globs = ["VerifiedGarbage.TCB.X86_64.+"]
+precompileModules = true
+defaultFacets = ["shared"]
+
+[[lean_lib]]
+name = "NativeTCBX86"
+libName = "VerifiedGarbage_NativeTCBX86"
+roots = []
+globs = ["VerifiedGarbage.TCB.X86.+"]
+precompileModules = true
+defaultFacets = ["shared"]
+
+[[lean_lib]]
+name = "NativeTCBAArch64"
+libName = "VerifiedGarbage_NativeTCBAArch64"
+roots = []
+globs = ["VerifiedGarbage.TCB.AArch64.+"]
+precompileModules = true
+defaultFacets = ["shared"]
+
+[[lean_lib]]
+name = "NativeTCBArm"
+libName = "VerifiedGarbage_NativeTCBArm"
+roots = []
+globs = ["VerifiedGarbage.TCB.Arm.+"]
+precompileModules = true
+defaultFacets = ["shared"]
+
+[[lean_lib]]
+name = "NativeTCBPPC64LE"
+libName = "VerifiedGarbage_NativeTCBPPC64LE"
+roots = []
+globs = ["VerifiedGarbage.TCB.PPC64LE.+"]
+precompileModules = true
+defaultFacets = ["shared"]
+
+[[lean_lib]]
+name = "NativeTCBRISCV64"
+libName = "VerifiedGarbage_NativeTCBRISCV64"
+roots = []
+globs = ["VerifiedGarbage.TCB.RISCV64.+"]
+precompileModules = true
+defaultFacets = ["shared"]
 
 # Untrusted certificate generation runs natively; proofs check its output.
 [[lean_lib]]

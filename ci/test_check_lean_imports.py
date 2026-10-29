@@ -36,5 +36,47 @@ class TcbLemmas(unittest.TestCase):
                 "prove it under Proof/"])
 
 
+class NativeTcb(unittest.TestCase):
+    # TCB.Mem (no target's), TCB.A.Isa and TCB.B.Isa (targets A and B), a
+    # native spec importing TCB.Mem, and a proof of A.
+    TCB = {"VG.TCB.Mem": None, "VG.TCB.A.Isa": "A", "VG.TCB.B.Isa": "B"}
+    SPLIT = {"NativeTCB": frozenset({"VG.TCB.Mem"}), "NativeTCBA": frozenset({"VG.TCB.A.Isa"}),
+             "NativeTCBB": frozenset({"VG.TCB.B.Isa"}), "NativeSpec": frozenset({"VG.Spec.X"})}
+    NAMES = {"NativeTCBA": "VerifiedGarbage_NativeTCBA", "NativeTCBB": "VerifiedGarbage_NativeTCBB"}
+
+    def check(self, libraries, traces, names=NAMES):
+        return check_lean_imports.native_tcb(self.TCB, libraries, names, traces, {"A", "B"})
+
+    def test_a_library_per_target(self):
+        traces = {"VG.TCB.Mem": frozenset(), "VG.TCB.A.Isa": frozenset({"VG.TCB.Mem"}),
+                  "VG.TCB.B.Isa": frozenset({"VG.TCB.Mem"}), "VG.Spec.X": frozenset({"VG.TCB.Mem"}),
+                  "VG.Proof.A.P": frozenset({"VG.TCB.A.Isa", "VG.TCB.Mem"})}
+        self.assertEqual(self.check(self.SPLIT, traces), [])
+
+    def test_one_library(self):
+        # The spec's native trace has the whole library: every target's ISA.
+        libraries = {"NativeTCB": frozenset(self.TCB), "NativeSpec": frozenset({"VG.Spec.X"})}
+        traces = {"VG.TCB.Mem": frozenset(), "VG.TCB.A.Isa": frozenset({"VG.TCB.Mem"}),
+                  "VG.TCB.B.Isa": frozenset({"VG.TCB.Mem"}), "VG.Spec.X": frozenset(self.TCB),
+                  "VG.Proof.B.P": frozenset(self.TCB)}
+        self.assertEqual(self.check(libraries, traces), [
+            "VG.TCB.A.Isa: in NativeTCB; it belongs in NativeTCBA (lean/lakefile.toml)",
+            "VG.TCB.B.Isa: in NativeTCB; it belongs in NativeTCBB (lean/lakefile.toml)",
+            "VG.Proof.B.P: of B, rebuilt by a change to A's TCB/",
+            "VG.Spec.X: a module of NativeSpec, rebuilt by a change to A's TCB/ "
+            "(imports from TCB/ only what no target owns)",
+            "VG.Spec.X: a module of NativeSpec, rebuilt by a change to B's TCB/ "
+            "(imports from TCB/ only what no target owns)"])
+
+    def test_unlisted_and_unnamed(self):
+        libraries = dict(self.SPLIT, NativeTCB=frozenset())
+        traces = dict.fromkeys([*self.TCB, "VG.Spec.X"], frozenset())
+        self.assertEqual(self.check(libraries, traces, {"NativeTCBA": "VerifiedGarbage_NativeTCBA"}), [
+            "VG.TCB.Mem: in 0 precompiled libraries (none); list it in exactly one, NativeTCB, "
+            "in lean/lakefile.toml",
+            'NativeTCBB: give it `libName = "VerifiedGarbage_NativeTCBB"` (lean/lakefile.toml), '
+            "the shared library the emitter loads"])
+
+
 if __name__ == "__main__":
     unittest.main()

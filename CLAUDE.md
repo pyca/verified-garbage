@@ -453,7 +453,12 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   a CI shard (`ci/lean_shards.py`), which builds a proof with everything it
   imports, would check both. Put what more than one target uses in
   a target-independent module (`Proof/<Alg>/…`, `Proof/Framework/…`);
-  `ci/check_lean_imports.py` checks it.
+  `ci/check_lean_imports.py` checks it. For the same reason `TCB/` is
+  compiled as a precompiled library per target (`NativeTCB<Target>` in
+  `lean/lakefile.toml`) and one for the rest (`NativeTCB`): a native module
+  depends on the whole shared library of each library it imports from, so
+  a new target gets its own, and a new file directly in `TCB/` is listed
+  in `NativeTCB` (the same script checks both).
 * **Properties of every instruction:** prove `(instrs c).all p` with
   `rw [← Code.allInstrs_eq]; decide +kernel`, not `decide +kernel` directly.
 * **Code the kernel evaluates:** code built by functions (unrolled

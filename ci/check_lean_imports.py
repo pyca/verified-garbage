@@ -17,12 +17,23 @@ proofs. Exits non-zero on violations.
   * TCB/   holds definitions only: no `theorem` or `lemma` (CLAUDE.md), so
     that what is trusted is what is reviewed as trusted; lemmas about it go
     in Proof/.
+  * TCB/'s precompiled libraries (lakefile.toml) are one per target,
+    `NativeTCB<Target>` (its `libName` `VerifiedGarbage_NativeTCB<Target>`,
+    which the emitter loads), and `NativeTCB` for the rest, each module in
+    exactly one; and a change to a target's TCB/ rebuilds no module of
+    another target and no native module of another library
+    (ci/lean_shards.py's traces). A native module depends on the whole
+    shared library of each other library it imports from, so with one
+    library for TCB/, adding an instruction to one ISA rebuilt every
+    native spec, tactic and target.
 """
 
 import pathlib
 import re
 import sys
+import tomllib
 
+import lean_shards
 from check_registrations import THEOREM, code_only
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -62,6 +73,65 @@ def tcb_lemmas(lean: pathlib.Path) -> list[str]:
     return out
 
 
+def native_tcb(
+    tcb: dict[str, str | None],
+    libraries: dict[str, frozenset[str]],
+    lib_names: dict[str, str],
+    traces: dict[str, frozenset[str]],
+    targets: set[str],
+) -> list[str]:
+    """Problems with TCB/'s precompiled libraries: `tcb` maps each module of
+    TCB/ to its target (None for one in no target's directory), `libraries`
+    each precompiled library to its modules and `lib_names` to its `libName`,
+    and `traces` each module to what its build reads (ordinary and native)."""
+    out = []
+    for m in sorted(tcb):
+        libs = sorted(n for n, members in libraries.items() if m in members)
+        if len(libs) != 1:
+            out.append(f"{m}: in {len(libs)} precompiled libraries ({', '.join(libs) or 'none'}); "
+                       f"list it in exactly one, {native_tcb_name(tcb[m])}, in lean/lakefile.toml")
+            continue
+        if libs[0] != native_tcb_name(tcb[m]):
+            out.append(f"{m}: in {libs[0]}; it belongs in {native_tcb_name(tcb[m])} (lean/lakefile.toml)")
+    for t in sorted(targets):
+        lib = native_tcb_name(t)
+        if lib in libraries and lib_names.get(lib) != f"VerifiedGarbage_{lib}":
+            out.append(f"{lib}: give it `libName = \"VerifiedGarbage_{lib}\"` (lean/lakefile.toml), "
+                       "the shared library the emitter loads")
+    native = {m: n for n, members in libraries.items() for m in members}
+    for t in sorted(targets):
+        changed = {m for m, mt in tcb.items() if mt == t}
+        own = native_tcb_name(t)
+        for m in sorted(lean_shards.stale_of(changed, traces) - changed):
+            other = target_of(m.split("."), targets)
+            if other and other != t:
+                out.append(f"{m}: of {other}, rebuilt by a change to {t}'s TCB/")
+            elif native.get(m, own) not in (own, None) and other != t:
+                out.append(f"{m}: a module of {native[m]}, rebuilt by a change to {t}'s TCB/ "
+                           "(imports from TCB/ only what no target owns)")
+    return out
+
+
+def native_tcb_name(target: str | None) -> str:
+    """The precompiled library of TCB/'s modules of `target`."""
+    return f"NativeTCB{target or ''}"
+
+
+def check_native_tcb(targets: set[str]) -> list[str]:
+    """`native_tcb` on the project, with ci/lean_shards.py's traces."""
+    mods = lean_shards.modules()
+    modes = {}
+    imps, vis, _ = lean_shards.source_info(mods, import_modes=modes)
+    closure = lean_shards.closures(imps)
+    read = lean_shards.reads(imps, closure, vis, modes)
+    libraries = lean_shards.precompiled_libraries(closure)
+    native = lean_shards.native_reads(imps, closure, libraries, lean_shards.native_trace_modules(closure))
+    config = tomllib.loads((lean_shards.LEAN / "lakefile.toml").read_text())
+    lib_names = {lib["name"]: lib.get("libName", "") for lib in config.get("lean_lib", [])}
+    tcb = {m: target_of(m.split("."), targets) for m in mods if m.startswith("VerifiedGarbage.TCB.")}
+    return native_tcb(tcb, libraries, lib_names, {m: read[m] | native[m] for m in imps}, targets)
+
+
 def imports(f: pathlib.Path):
     """Each import of `f`, with its line number."""
     for n, line in enumerate(f.read_text().splitlines(), 1):
@@ -82,6 +152,7 @@ def main() -> int:
             other = mod.startswith("VerifiedGarbage.") and target_of(mod.split("."), targets)
             if other and other != own:
                 errors.append(f"{f.relative_to(ROOT)}:{n}: a module of {own} may not import {mod}, of {other}")
+    errors += check_native_tcb(targets)
     for d, prefixes in ALLOWED_IMPORTS.items():
         for f in sorted((LEAN / d).rglob("*.lean")):
             for n, mod in imports(f):
