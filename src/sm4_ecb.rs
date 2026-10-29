@@ -34,6 +34,9 @@ crate::error::impl_error! {
 /// An expanded SM4 key for ECB encryption and decryption.
 ///
 /// No padding is added or removed.
+// Aligned to 8 bytes so that the code, which copies the schedule into its
+// working space, can copy it a doubleword at a time on RISC-V.
+#[repr(C, align(8))]
 pub struct Sm4Ecb {
     schedule: [u8; 128],
 }
@@ -90,6 +93,45 @@ impl Sm4Ecb {
 impl Drop for Sm4Ecb {
     fn drop(&mut self) {
         zeroize(&mut self.schedule);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Eight-byte aligned storage for a schedule at an offset.
+    #[repr(align(8))]
+    struct Aligned([u8; 136]);
+
+    /// The functions take the schedule at any address: from copies at every
+    /// offset modulo 8 (on RISC-V, copied into the working space a doubleword
+    /// at a time from the aligned one and a byte at a time from the others)
+    /// they compute what they compute from the context's.
+    #[test]
+    fn unaligned_schedule() {
+        let ctx = Sm4Ecb::new(&[0x5a; 16]);
+        let input: [u8; 64] = core::array::from_fn(|i| (i * 13) as u8);
+        for encrypt in [true, false] {
+            let mut expected = input;
+            ctx.crypt(&mut expected, encrypt).unwrap();
+            for offset in 0..8 {
+                let mut storage = Aligned([0; 136]);
+                storage.0[offset..offset + 128].copy_from_slice(&ctx.schedule);
+                let mut output = input;
+                // SAFETY: the schedule's copy and the output are separate
+                // valid objects, and the output holds four whole blocks.
+                unsafe {
+                    let schedule = storage.0.as_ptr().add(offset).cast();
+                    if encrypt {
+                        vg_sm4_ecb_encrypt(schedule, output.as_mut_ptr().cast(), 4);
+                    } else {
+                        vg_sm4_ecb_decrypt(schedule, output.as_mut_ptr().cast(), 4);
+                    }
+                }
+                assert_eq!(output, expected);
+            }
+        }
     }
 }
 
