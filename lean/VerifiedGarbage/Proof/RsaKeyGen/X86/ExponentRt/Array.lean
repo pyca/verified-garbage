@@ -1,22 +1,80 @@
 module
 
-import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Pointer
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64ArrayContext
-import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64ArrayInit
-import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64ArrayLoop
-import VerifiedGarbage.Proof.RsaKeyGen.X86.FilterStack
-import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
 public import VerifiedGarbage.Impl.Bignum.X86.PublicContext
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentRt
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
 
+import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Pointer
+import VerifiedGarbage.Proof.RsaKeyGen.X86.FilterStack
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
+import VerifiedGarbage.Impl.RsaKeyGen.X86.Mod64Array
+import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64ArrayStep
 /-! # The remainder of the saved candidate minus one by `e`, at a run-time width -/
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/Mod64ArrayInit.lean`, which only this module imported.
+section
+
+/-! # The array reduction starts with remainder zero -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.Mod64
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.RsaKeyGen.X86.Mod64
+
+theorem zeroRemainder_ok (s : State) :
+    WP isa (.block zeroRemainder) s fun t =>
+      t.gpr .ecx = 0#32 ∧ t.gpr .ebx = 0#32 ∧ t.mem = s.mem ∧ Keeps [.ecx, .ebx] s t := by
+  unfold zeroRemainder
+  refine wp_movS rfl fun a A _ => wp_movS rfl fun t T _ => WP.block_nil ?_
+  exact ⟨by rw [T.other .ecx (by decide), A.gpr]; rfl, by rw [T.gpr]; rfl,
+    T.mem.trans A.mem, (A.keeps.mono (by decide)).widen T.keeps⟩
+
+end VG.Proof.RsaKeyGen.X86.Mod64
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/Mod64ArrayLoop.lean`, which only this module imported.
+section
+
+/-! # Reduce every native word while preserving the full modular prefix invariant -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.Mod64
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.RsaKeyGen.X86.Mod64
+
+theorem loop_ok {g : ArrayGeometry} (v : g.Valid) {candidate exponent : Nat} {s : State}
+    (S : ArrayState g candidate exponent 0 s) :
+    WP isa (.loop (arrayStep g.exponent) .ne) s fun t =>
+      ArrayState g candidate exponent g.n t ∧ Outside (g.sp.setWidth 64) 0 20 s.mem t.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
+  let Inv := fun q t => ∃ i, i + q = g.n ∧ 0 < q ∧ ArrayState g candidate exponent i t ∧
+    Outside (g.sp.setWidth 64) 0 20 s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t
+  refine WP.loop (M := isa) Inv ?_ g.n s ⟨0, by omega, v.positive, S, Outside.refl _ _ _ _, Keeps.refl _ _⟩
+  rintro q t ⟨i, count, positive, T, O, K⟩
+  refine WP.mono (T.step v (by omega)) fun u ⟨U, Z, Ou, Ku⟩ => ?_
+  by_cases done : i + 1 = g.n
+  · left
+    refine ⟨?_, done ▸ U, O.trans Ou, K.trans Ku⟩
+    change u.zf.map Bool.not = some false
+    rw [Z, decide_eq_true done]
+    rfl
+  · right
+    refine ⟨?_, q - 1, by omega, i + 1, by omega, by omega, U, O.trans Ou, K.trans Ku⟩
+    change u.zf.map Bool.not = some true
+    rw [Z, decide_eq_false done]
+    rfl
+
+end VG.Proof.RsaKeyGen.X86.Mod64
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.ExponentRt

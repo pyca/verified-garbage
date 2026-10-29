@@ -1,14 +1,82 @@
 module
 
-import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinTimingLoop
 public import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.MillerRabinLoop
-import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinInit
-import VerifiedGarbage.Proof.RsaKeyGen.X86.WitnessChecksTiming
-import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinTimingState
 
+import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinInit
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinTimingStep
+import VerifiedGarbage.Impl.RsaKeyGen.X86.WitnessChecks
+import VerifiedGarbage.Proof.MillerRabin.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.KernelRfl
 /-! # The complete prepared primality loop reveals only its consumed entropy length -/
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/MillerRabinTimingLoop.lean`, which only this module imported.
+section
+
+/-! # Equal specified witness counts give equal traces across the complete blinded loop -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.MillerRabinLoop
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.MillerRabin.X86 VG.Proof.RsaKeyGen
+open VG.Impl.RsaKeyGen.X86.MillerRabinLoop
+
+theorem loop_trace {mont round : Prog isa} {montName roundName : String}
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
+    {P : Parameters} (v : P.Valid) {other : Nat} {entropy : Spec.RsaKeyGen.Rand}
+    (w : (P.withSecret other entropy).Valid) (k n : Nat) :
+    RelCT isa (LoopPair P other entropy k n) (.loop (stepAt P.bytes P.words P.g.w montName mont roundName round) .e) (Pair P.g [.edi]) := by
+  let Inv : Nat → State → State → Prop := fun q s t => ∃ k n, q = n + 1 ∧ LoopPair P other entropy k n s t
+  have run : RelCT isa (Inv (n + 1)) (.loop (stepAt P.bytes P.words P.g.w montName mont roundName round) .e) (Pair P.g [.edi]) := by
+    refine RelCT.loop (M := isa) Inv ?_ (n + 1)
+    rintro q s t tr ur u z ⟨i, j, rfl, H⟩ E G
+    obtain ⟨trace, pair, Ou, Oz⟩ := step_pair montVerified montNoSp montStack roundVerified roundNoSp roundStack v w i j _ _ _ _ _ _ H E G
+    rcases Ou with ⟨Eu, zeroU, _⟩ | ⟨Eu, positiveU, U⟩ <;>
+      rcases Oz with ⟨Ez, zeroZ, _⟩ | ⟨Ez, positiveZ, Z⟩
+    · refine ⟨trace, Eu.trans Ez.symm, fun _ => pair, ?_⟩
+      intro continuing
+      rw [Eu] at continuing
+      cases continuing
+    · omega
+    · omega
+    · refine ⟨trace, Eu.trans Ez.symm, ?_, ?_⟩
+      · intro done
+        rw [Eu] at done
+        cases done
+      · intro _
+        exact ⟨j, by omega, i + 1, j - 1, by omega, pair, U, Z⟩
+  exact run.mono (fun _ _ H => ⟨k, n, rfl, H⟩) (fun _ _ H => H)
+
+end VG.Proof.RsaKeyGen.X86.MillerRabinLoop
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/WitnessChecksTiming.lean`, which only this module imported.
+section
+
+/-! # Initializing the witness policy has a width-only trace -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.WitnessChecks
+open VG VG.X86 VG.Proof.MillerRabin.X86 VG.Proof.Dsa.X86
+
+theorem codeOf_trace (checks : Nat) : RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi]))
+    (.block (VG.Impl.RsaKeyGen.X86.WitnessChecks.codeOf checks)) (VG.X86.Taint.Agree (roundTaint [.edi])) :=
+  erased_relCT _ (.block (VG.Impl.RsaKeyGen.X86.WitnessChecks.codeOf 0)) (.block []) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by kernel_rfl)
+
+theorem code_trace (w : Nat) : RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi]))
+    (.block (VG.Impl.RsaKeyGen.X86.WitnessChecks.code w)) (VG.X86.Taint.Agree (roundTaint [.edi])) :=
+  codeOf_trace _
+
+end VG.Proof.RsaKeyGen.X86.WitnessChecks
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.MillerRabinLoop

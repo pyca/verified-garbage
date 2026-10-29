@@ -2,18 +2,153 @@ module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.PrepareHeader
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.HeaderRt
-import VerifiedGarbage.Proof.RsaKeyGen.X86.HeaderRt
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedR2State
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.HeaderFrame
-import VerifiedGarbage.Proof.RsaKeyGen.X86.HeaderContext
+
+import VerifiedGarbage.Proof.RsaKeyGen.X86.HeaderRt
 import VerifiedGarbage.Proof.RsaKeyGen.X86.HeaderLayout
 import VerifiedGarbage.Proof.RsaKeyGen.X86.HeaderRead
-import VerifiedGarbage.Proof.RsaKeyGen.X86.MontInverse
 import VerifiedGarbage.Proof.RsaKeyGen.X86.LowWord
 import VerifiedGarbage.Proof.RsaKeyGen.X86.PreparedContext
-
+import VerifiedGarbage.Proof.MillerRabin.X86.Context
+import VerifiedGarbage.Proof.RsaKeyGen.X86.InverseLift
+import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Impl.RsaKeyGen.X86.InverseLift
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Impl.RsaKeyGen.X86.MontInverse
+import VerifiedGarbage.Proof.Mont.X86.Inverse
 /-! # A fresh candidate reaches the existing prepared Montgomery contract -/
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/HeaderContext.lean`, which only this module imported.
+section
+
+/-! # The public header prepares the native callable Miller–Rabin context -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.Header
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.MillerRabin.X86
+
+theorem low_word (m : Mem) (base : Addr) (d : Nat) : w32 m base d = (word m base d).toNat % 2 ^ 32 := by
+  rw [word_eq_w32, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (m.readW (off base d) 32).isLt]
+
+/-- The context and frame of any code that writes the header's memory. -/
+theorem context_of {g : Geometry} (v : g.Valid) {s t : State} (scratch : Scr s g.W g.L) {rs : List Reg}
+    (K : Keeps rs s t) (edi : .edi ∉ rs) (M : t.mem = headerMemory g.W (s.gpr .edi) g.w s.mem) :
+    Context g t ∧ Outs g.W ranges s.mem t.mem := by
+  have wBound : g.w < 2 ^ 32 := by have := v.maxWidth; omega
+  have strideBound : VG.Impl.Bignum.X86.PublicContext.stride g.w < 2 ^ 32 := by
+    have := v.maxWidth
+    unfold VG.Impl.Bignum.X86.PublicContext.stride
+    omega
+  have baseBound : g.W.toNat < 2 ^ 32 := by have := scratch.nowrap; have := v.headerFit; omega
+  refine ⟨⟨⟨K.2.2 ▸ scratch.wr, scratch.nowrap⟩, ?_, ?_, ?_, ?_⟩, M ▸ header_frame⟩
+  · rw [PtrAt, K.1 .edi edi, scratch.edi_toNat, Nat.add_zero, Nat.mod_eq_of_lt baseBound]
+  · rw [M, low_word, VG.Proof.Mont.word, header_width, zeroHigh, BitVec.toNat_setWidth_of_le (by decide),
+      BitVec.toNat_ofNat, Nat.mod_mod, Nat.mod_eq_of_lt wBound]
+  · rw [M, low_word, VG.Proof.Mont.word, header_stride, zeroHigh, BitVec.toNat_setWidth_of_le (by decide),
+      BitVec.toNat_ofNat, Nat.mod_mod, Nat.mod_eq_of_lt strideBound]
+    rfl
+  · intro j index
+    rw [M, low_word, VG.Proof.Mont.word, header_pointer index, zeroHigh, BitVec.toNat_setWidth_of_le (by decide),
+      Nat.mod_eq_of_lt (s.gpr .edi + BitVec.ofNat 32 (VG.Impl.Bignum.X86.PublicContext.slot g.w j)).isLt,
+      BitVec.toNat_add, BitVec.toNat_ofNat, scratch.edi_toNat, Prepared.slot_eq]
+    omega
+
+theorem context_ok {g : Geometry} (v : g.Valid) {s : State} (scratch : Scr s g.W g.L) :
+    WP isa (.block (VG.Impl.RsaKeyGen.X86.Header.code g.w)) s fun t =>
+      Context g t ∧ Outs g.W ranges s.mem t.mem ∧ Keeps [.eax, .edx] s t ∧
+      t.mem = headerMemory g.W (s.gpr .edi) g.w s.mem :=
+  WP.mono (code_ok scratch v.headerFit) fun _ ⟨M, K⟩ =>
+    ⟨(context_of v scratch K (by decide) M).1, (context_of v scratch K (by decide) M).2, K, M⟩
+
+end VG.Proof.RsaKeyGen.X86.Header
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/InverseSetup.lean`, which only this module imported.
+section
+
+/-! # Complete the prepared workspace's 64-bit negative inverse -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.InverseLift
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Mont.X86
+open VG.Impl.RsaKeyGen.X86.InverseLift
+
+theorem setup_ok {s : State} {base : Addr} {size mo inv : Nat}
+    (scratch : Scr s base size) (modulus : mo + 8 ≤ size) (slot : inv + 8 ≤ size)
+    (inverse : (w32 s.mem base mo * w32 s.mem base inv + 1) % 2 ^ 32 = 0) :
+    WP isa (.block (setup mo inv)) s fun t =>
+      ((w32 s.mem base mo + 2 ^ 32 * w32 s.mem base (mo + 4)) *
+        (w32 s.mem base inv + 2 ^ 32 * w32 t.mem base (inv + 4)) + 1) % 2 ^ 64 = 0 ∧
+      Outside base (inv + 4) 4 s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
+  unfold setup
+  simp only [List.cons_append, List.nil_append]
+  refine wp_movS (readSrc_sc scratch (by omega)) fun a A _ => ?_
+  have Sa := scratch.of_keeps A.keeps (by decide)
+  refine wp_movS (readSrc_sc Sa (by omega)) fun b B _ => ?_
+  have Kb : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s b := (A.keeps.mono (by decide)).widen B.keeps
+  have Sb := scratch.of_keeps Kb (by decide)
+  refine wp_movS (readSrc_sc Sb (by omega)) fun c C _ => ?_
+  have lo : c.gpr .ebx = s.mem.readW (off base mo) 32 := by
+    rw [C.other .ebx (by decide), B.other .ebx (by decide), A.gpr]
+  have hi : c.gpr .esi = s.mem.readW (off base (mo + 4)) 32 := by
+    rw [C.other .esi (by decide), B.gpr, A.mem]
+  have ix : c.gpr .ecx = s.mem.readW (off base inv) 32 := by
+    rw [C.gpr, B.mem, A.mem]
+  refine WP.block_append (WP.mono (inverse_ok c (by rw [lo, ix]; exact inverse)) fun d ⟨value, mem, Kd⟩ => ?_)
+  have K : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s d := (Kb.widen C.keeps).widen Kd
+  have Sd := scratch.of_keeps K (by decide)
+  refine wp_storeS (Sd.ea (by omega)) (Sd.write (by omega)) fun t T => WP.block_nil ?_
+  refine ⟨?_, ?_, K.widen (T.keeps [])⟩
+  · rw [T.mem, w32_write_self]
+    rw [Kd.1 .ecx (by decide), lo, hi, ix] at value
+    exact value
+  · rw [T.mem, mem, C.mem, B.mem, A.mem]
+    exact writeW32_outside _ _ _ (by have := scratch.nowrap; omega)
+
+end VG.Proof.RsaKeyGen.X86.InverseLift
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/MontInverse.lean`, which only this module imported.
+section
+
+/-! # The compact prepared kernel receives the reviewed full 64-bit inverse -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.MontInverse
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.RsaKeyGen.X86.MontInverse
+
+theorem code_ok {s : State} {base : Addr} {size modulus inverse : Nat} (scratch : Scr s base size)
+    (modFit : modulus + 8 ≤ size) (invFit : inverse + 8 ≤ size)
+    (apart : inverse + 8 ≤ modulus ∨ modulus + 8 ≤ inverse) (odd : w32 s.mem base modulus % 2 = 1) :
+    WP isa (code modulus inverse) s fun t =>
+      ((word t.mem base modulus).toNat * (word t.mem base inverse).toNat + 1) % 2 ^ 64 = 0 ∧
+      Outside base inverse 8 s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
+  refine WP.seq (WP.mono (VG.Proof.Mont.X86.Dynamic.setupInverse_ok scratch (by omega) (by omega) odd)
+    fun a ⟨inverseA, Oa, Ka⟩ => ?_)
+  have low : (w32 a.mem base modulus * w32 a.mem base inverse + 1) % 2 ^ 32 = 0 := by
+    rw [Oa.w32 (by omega) (by have := scratch.nowrap; omega)]
+    exact inverseA
+  refine WP.mono (InverseLift.setup_ok (scratch.of_keeps Ka (by decide)) modFit invFit low)
+    fun t ⟨inverseT, Ot, Kt⟩ => ?_
+  refine ⟨?_, (Oa.mono (by omega) (by omega)).trans (Ot.mono (by omega) (by omega)), ?_⟩
+  · rw [word_eq_w32, word_eq_w32,
+      Ot.w32 (d := modulus) (by omega) (by have := scratch.nowrap; omega),
+      Ot.w32 (d := modulus + 4) (by omega) (by have := scratch.nowrap; omega),
+      Ot.w32 (d := inverse) (by omega) (by have := scratch.nowrap; omega)]
+    exact inverseT
+  · exact (Ka.mono (by decide)).trans Kt
+
+end VG.Proof.RsaKeyGen.X86.MontInverse
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.PrepareHeader

@@ -1,16 +1,143 @@
 module
 
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFilterTiming
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidatePreparedTiming
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTimingBranch
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateExponentInput
-import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDrawn
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTimingInput
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.Candidate
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTestTiming
 
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFilterTiming
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateExponentInput
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDrawn
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateSchedule
+import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinTiming
+import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinOutcome
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateParameters
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateTestInput
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidatePreparedResult
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateResultTiming
+import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
+import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateLoadInput
+import VerifiedGarbage.Spec.MillerRabin
 /-! # Publicly released coprimality decisions select equally timed candidate continuations -/
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/CandidateIterationLeak.lean`, which only this module imported.
+section
+
+/-! # The released primality-result shape determines iterations and the final status -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.Candidate
+open VG VG.X86 VG.Proof.Mont VG.Proof.RsaKeyGen
+
+theorem iterations_eq {E : Environment} (v : E.Valid) {rBytes sBytes : List Byte}
+    (length : rBytes.length = sBytes.length)
+    (shape : shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E rBytes) (rBytes.drop E.length)) =
+      shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E sBytes) (sBytes.drop E.length))) :
+    (E.parameters rBytes).iterations = (E.parameters sBytes).iterations := by
+  rw [MillerRabinLoop.Parameters.iterations, MillerRabinLoop.Parameters.iterations, v.test_eq, v.test_eq]
+  change itersOf (8 * E.width) rBytes.length
+      (shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E rBytes) (rBytes.drop (8 * E.width)))) (8 * E.width) - 1 =
+    itersOf (8 * E.width) sBytes.length
+      (shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E sBytes) (sBytes.drop (8 * E.width)))) (8 * E.width) - 1
+  rw [v.length_eq, length, shape]
+
+theorem result_status_eq {E : Environment} (v : E.Valid) {rBytes sBytes : List Byte} {s t : State}
+    (left : MillerRabinLoop.Result (E.parameters rBytes) s)
+    (right : MillerRabinLoop.Result (E.parameters sBytes) t)
+    (shape : shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E rBytes) (rBytes.drop E.length)) =
+      shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E sBytes) (sBytes.drop E.length))) :
+    s.mem.readW (off E.base 168) 32 = t.mem.readW (off E.base 168) 32 := by
+  apply BitVec.eq_of_toNat_eq
+  rw [MillerRabinLoop.Result, v.test_eq] at left
+  change (match Spec.RsaKeyGen.primalityTest (candidateValue E rBytes) (rBytes.drop (8 * E.width)) with
+    | none => w32 s.mem E.base 168 = 0
+    | some (prime, rest) => w32 s.mem E.base 168 = (if prime then 1 else 3) ∧
+      w32 s.mem E.base 152 = rBytes.length - rest.length) at left
+  rw [MillerRabinLoop.Result, v.test_eq] at right
+  change (match Spec.RsaKeyGen.primalityTest (candidateValue E sBytes) (sBytes.drop (8 * E.width)) with
+    | none => w32 t.mem E.base 168 = 0
+    | some (prime, rest) => w32 t.mem E.base 168 = (if prime then 1 else 3) ∧
+      w32 t.mem E.base 152 = sBytes.length - rest.length) at right
+  rw [v.length_eq] at left right
+  cases a : Spec.RsaKeyGen.primalityTest (candidateValue E rBytes) (rBytes.drop E.length) with
+  | none =>
+    cases b : Spec.RsaKeyGen.primalityTest (candidateValue E sBytes) (sBytes.drop E.length) with
+    | none => rw [a] at left; rw [b] at right; exact left.trans right.symm
+    | some pr => simp only [a, b, shapeOf, Option.map_none, Option.map_some, reduceCtorEq] at shape
+  | some pr =>
+    obtain ⟨prime, rest⟩ := pr
+    cases b : Spec.RsaKeyGen.primalityTest (candidateValue E sBytes) (sBytes.drop E.length) with
+    | none => simp only [a, b, shapeOf, Option.map_none, Option.map_some, reduceCtorEq] at shape
+    | some other =>
+      obtain ⟨other, remaining⟩ := other
+      have equal : prime = other := by
+        simp only [a, b, shapeOf, Option.map_some, Option.some.injEq, Prod.mk.injEq] at shape
+        exact shape.1
+      rw [a] at left
+      rw [b] at right
+      exact left.1.trans (by rw [equal]; exact right.1.symm)
+
+end VG.Proof.RsaKeyGen.X86.Candidate
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/CandidatePreparedTiming.lean`, which only this module imported.
+section
+
+/-! # Complete prepared testing and export release only the declared primality shape -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.Candidate
+open VG VG.X86 VG.Proof.Mont.X86 VG.Proof.RsaKeyGen VG.Proof.MillerRabin.X86 VG.Proof.Dsa.X86
+
+theorem test_status_trace {mont round : Prog isa} {montName roundName : String}
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
+    {E : Environment} (v : E.Valid) {eBytes pBytes qBytes rBytes sBytes : List Byte}
+    (length : rBytes.length = sBytes.length) (enough : E.length ≤ E.randLength)
+    (shape : shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E rBytes) (rBytes.drop E.length)) =
+      shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E sBytes) (sBytes.drop E.length))) :
+    RelCT isa (TestPair E eBytes pBytes qBytes rBytes sBytes)
+      (VG.Impl.RsaKeyGen.X86.CandidateFrame.code
+        (VG.Impl.RsaKeyGen.X86.Candidate.testBody montName mont roundName round))
+      (StatusPair E (candidateValue E rBytes) (candidateValue E sBytes)) := by
+  intro s t tr ur u z H A B
+  have trace := (test_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack v
+    (iterations_eq v length shape) enough _ _ _ _ _ _ H A B).1
+  obtain ⟨VU, RU, WU, FU, KU⟩ := wp_result (test_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack
+    v H.left H.savedLeft enough) A
+  obtain ⟨VZ, RZ, WZ, FZ, KZ⟩ := wp_result (test_ok montVerified montNoSp montStack roundVerified roundNoSp roundStack
+    v H.right H.savedRight enough) B
+  refine ⟨trace, ⟨H.left.finishReady_after_test v VU WU FU KU, H.right.finishReady_after_test v VZ WZ FZ KZ, ?_⟩,
+    result_status_eq v RU RZ shape⟩
+  rw [KU.1 .esp (by unfold WitnessStep.clob; decide), KZ.1 .esp (by unfold WitnessStep.clob; decide),
+    H.left.input.stack, H.right.input.stack]
+
+theorem prepared_trace {mont round : Prog isa} {montName roundName : String}
+    (montVerified : Verified target mont (Spec.Rsa.Mont.mulContract abi 56))
+    (montNoSp : NoSp mont) (montStack : stackUse mont ≤ 56)
+    (roundVerified : Verified target round (Spec.MillerRabin.roundContract abi Spec.MillerRabin.compact 96))
+    (roundNoSp : NoSp round) (roundStack : stackUse round ≤ 96)
+    {E : Environment} (v : E.Valid) {eBytes pBytes qBytes rBytes sBytes : List Byte}
+    (length : rBytes.length = sBytes.length) (enough : E.length ≤ E.randLength)
+    (shape : shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E rBytes) (rBytes.drop E.length)) =
+      shapeOf (Spec.RsaKeyGen.primalityTest (candidateValue E sBytes) (sBytes.drop E.length))) :
+    RelCT isa (TestPair E eBytes pBytes qBytes rBytes sBytes)
+      (VG.Impl.RsaKeyGen.X86.Candidate.tested montName mont roundName round) (fun _ _ => True) := by
+  unfold VG.Impl.RsaKeyGen.X86.Candidate.tested
+  rw [mrResult_zero E.width]
+  exact RelCT.seq (test_status_trace montVerified montNoSp montStack roundVerified roundNoSp roundStack v length enough shape)
+    (result_trace v)
+
+end VG.Proof.RsaKeyGen.X86.Candidate
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.Candidate

@@ -1,20 +1,113 @@
 module
 
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ArgumentTaint
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.CorePair
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyImportedPair
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyWritePortTiming
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Derive
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InputStage
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.DeriveTiming
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutputReady
-import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
-import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyArgContext
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ArgumentTaint
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Derive
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InputStage
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutputReady
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRetryFlag
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.SmallMask
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.SmallPublic
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.KeyPartTiming
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ScalarPublic
 /-! # The shared arithmetic trace is unchanged by the caller's wider permissions -/
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyRuntime/RetryTiming.lean`, which only this module imported.
+section
+
+/-! # The native retry branch is public through the shared released result -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Rsa.X86.Keys
+open VG.Proof.Dsa.X86
+open VG.Impl.Rsa.X86.Keys hiding slot
+open VG.Impl.RsaKeyGen.X86.Key (aPa aQa aD aE kEv kOk)
+open VG.Impl.RsaKeyGen.X86.KeyRuntime
+open VG.Proof.RsaKeyGen.X86.Key (KeyReady)
+
+def RetryTest (B : Addr) (Z n e p q p' q' : Nat) (s t : State) : Prop :=
+  ReadyPair B Z n e p q p' q' s t ∧ isa.eval .ne s = isa.eval .ne t
+
+theorem retry_eval {B : Addr} {n : Nat} {m : Mem} {s : State}
+    (flag : s.zf = some (decide (¬(slot m B kOk = 1 ∧ num m B n aD ≤ 2 ^ (16 * n))))) :
+    isa.eval .ne s = some (decide (slot m B kOk = 1 ∧ num m B n aD ≤ 2 ^ (16 * n))) := by
+  change s.zf.map Bool.not = _
+  rw [flag]
+  by_cases small : slot m B kOk = 1 ∧ num m B n aD ≤ 2 ^ (16 * n) <;> simp [small]
+
+theorem smallMask_trace (B : Addr) (Z n e p q p' q' : Nat)
+    (release : (Spec.RsaKeyGen.keyFromPrimes (32 * n) e p q = .inr ()) ↔
+      (Spec.RsaKeyGen.keyFromPrimes (32 * n) e p' q' = .inr ())) :
+    RelCT isa (ReadyPair B Z n e p q p' q') smallMask (RetryTest B Z n e p q p' q') := by
+  intro s t tr ur u v P A C
+  obtain ⟨trace, agree⟩ := public_trace smallMask_public _ _ _ _ _ _ P.agree A C
+  obtain ⟨leftWs, leftFrame, leftFlag, _⟩ := wp_result (smallMask_ok P.left P.leftReady.bit) A
+  obtain ⟨rightWs, rightFrame, rightFlag, _⟩ := wp_result (smallMask_ok P.right P.rightReady.bit) C
+  have leftEval := retry_eval leftFlag
+  have rightEval := retry_eval rightFlag
+  refine ⟨trace, ⟨leftWs, rightWs, agree, P.leftReady.small P.left.old leftFrame,
+    P.rightReady.small P.right.old rightFrame⟩, ?_⟩
+  rw [leftEval, rightEval]
+  congr 1
+  apply Bool.eq_iff_iff.mpr
+  simp only [decide_eq_true_eq]
+  exact P.leftReady.retry_iff.trans (release.trans P.rightReady.retry_iff.symm)
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyRuntime/DeriveTiming.lean`, which only this module imported.
+section
+
+/-! # Complete native numeric key derivation is constant time modulo the released retry status -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.X86 VG.Proof.Rsa.X86.Keys
+open VG.Impl.RsaKeyGen.X86.Key (aPa aQa aD aE kEv kOk)
+open VG.Impl.RsaKeyGen.X86.KeyRuntime
+open VG.Proof.RsaKeyGen.X86.Key (KeyReady)
+
+theorem deriveLoaded_trace (B : Addr) (Z n k e p q p' q' : Nat)
+    (width : n = 2 * k) (positive : 0 < k) (even : k % 2 = 0)
+    (release : (Spec.RsaKeyGen.keyFromPrimes (32 * n) e p q = .inr ()) ↔
+      (Spec.RsaKeyGen.keyFromPrimes (32 * n) e p' q' = .inr ())) :
+    RelCT isa (fun s t => CoreStart B Z n k e p q s ∧ CoreStart B Z n k e p' q' t ∧
+      VG.X86.Taint.Agree runtimeTaint s t)
+      deriveLoaded (VG.X86.Taint.Agree runtimeTaint) := by
+  intro s t tr ur u v P E F
+  have bound₁ : max p q < 2 ^ (32 * k) := by
+    rw [← P.1.pValue, ← P.1.qValue]
+    exact Nat.max_lt.mpr ⟨P.1.pBound, P.1.qBound⟩
+  have bound₂ : max p' q' < 2 ^ (32 * k) := by
+    rw [← P.2.1.pValue, ← P.2.1.qValue]
+    exact Nat.max_lt.mpr ⟨P.2.1.pBound, P.2.1.qBound⟩
+  refine (?_ : RelCT isa (fun s t => CoreStart B Z n k e p q s ∧ CoreStart B Z n k e p' q' t ∧
+    VG.X86.Taint.Agree runtimeTaint s t) deriveLoaded (VG.X86.Taint.Agree runtimeTaint)) s t tr ur u v P E F
+  unfold deriveLoaded
+  apply RelCT.seq (prepareReady_trace B Z n k e p q p' q' width positive even)
+  apply RelCT.seq (smallMask_trace B Z n e p q p' q' release)
+  apply RelCT.ite (fun _ _ P => P.2)
+  · exact (public_trace retry_public).mono (fun _ _ P => P.1.1.agree) (fun _ _ P => P)
+  · exact (keyPart_trace B Z n k width positive).mono (fun _ _ P =>
+      ⟨⟨P.1.1.left, by rw [P.1.1.leftReady.pValue]; exact bound₁⟩,
+        ⟨P.1.1.right, by rw [P.1.1.rightReady.pValue]; exact bound₂⟩, P.1.1.agree⟩) (fun _ _ P => P)
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
