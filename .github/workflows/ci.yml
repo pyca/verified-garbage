@@ -565,10 +565,36 @@ jobs:
       # libtest's per-test elapsed times are still unstable, including on
       # the MSRV. Enable its reporting flag without changing toolchains.
       # Hide durations that round to zero at libtest's millisecond precision.
+      #
+      # On an ARM64 host without AArch32, ci/arm32-run runs the tests under
+      # qemu-arm some ten times slower: then leave out the tests that run
+      # no T32 instruction the others do not (qemu's translation log, per
+      # thread, of the whole suite and of each of these). They repeat
+      # vectors through the same verified functions; `rust`'s ARMv7 runs
+      # them in A32. Each must still be a test, or the step fails.
       - shell: bash
         run: |
           source ci/rust_test_timing.sh
-          cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }} -- -Z unstable-options --report-time | sed 's/ <0\.000s>//g'
+          skips=()
+          if [ "$TESTS" = true ] && ! /lib/ld-linux-armhf.so.3 --version > /dev/null 2>&1; then
+            listed=$(cargo test --locked --lib --test tests -- --list --format terse)
+            for t in \
+                dsa::keygen::tests::cavp_generated_keys \
+                dsa::tests::cavp_signatures_0 \
+                dsa::tests::cavp_signatures_1 \
+                dsa::tests::cavp_signatures_2 \
+                dsa::tests::cavp_signatures_3 \
+                wycheproof::dsa::signatures \
+                wycheproof::rsa::rsa_oaep_test \
+                wycheproof::rsa_oaep::rsa_oaep_test \
+                wycheproof::rsa_oaep::rsa_shared_key_leases \
+                wycheproof::rsa_pss::rsa_pss_sign_test; do
+              grep -qxF "$t: test" <<< "$listed" || { echo "::error::$t is not a test"; exit 1; }
+              skips+=(--skip "$t")
+            done
+            skips=(--exact "${skips[@]}")
+          fi
+          cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }} -- -Z unstable-options --report-time "${skips[@]}" | sed 's/ <0\.000s>//g'
       # That the tests ran T32: the symbol of Thumb code has an odd address
       # (AAELF32 §5.5.3, "Symbol Values").
       - name: Check the verified functions are Thumb code
