@@ -874,6 +874,37 @@ class Many(Project):
         self.assertEqual(self.count(22), 7)
 
 
+class Outputs(Project):
+    """`outputs`: which of the files a shard's build wrote it uploads."""
+
+    def test_only_the_shard_s_modules_and_the_first_shard_the_rest(self):
+        plan = self.lean / "plan.json"
+        plan.write_text(json.dumps({"targets": [["VerifiedGarbage.Proof"], ["VerifiedGarbage.Other"]],
+                                    "owner": {"VerifiedGarbage.Spec.A": 0, "VerifiedGarbage.Spec.B": 0,
+                                              "VerifiedGarbage.Proof": 0, "VerifiedGarbage.Other": 1}}))
+        paths = [
+            "lib/lean/VerifiedGarbage/Proof.olean",
+            "lib/lean/VerifiedGarbage/Spec/A.olean.hash",
+            "ir/VerifiedGarbage/Other.c",
+            # A module no shard builds, unpacked from the last build.
+            "lib/lean/VerifiedGarbage.olean",
+            "ir/VerifiedGarbage.c",
+            # Outputs of no module.
+            "lib/libVerifiedGarbage_NativeSpec.so",
+        ]
+
+        def outputs(shard):
+            out = io.StringIO()
+            with mock.patch("sys.stdin", io.StringIO("\n".join(paths) + "\n")), contextlib.redirect_stdout(out):
+                self.assertEqual(shards.main(["outputs", str(plan), shard]), 0)
+            return out.getvalue().split()
+
+        self.assertEqual(outputs("1"), ["lib/lean/VerifiedGarbage/Proof.olean",
+                                        "lib/lean/VerifiedGarbage/Spec/A.olean.hash",
+                                        "lib/libVerifiedGarbage_NativeSpec.so"])
+        self.assertEqual(outputs("2"), ["ir/VerifiedGarbage/Other.c"])
+
+
 class Prune(Project):
     """`prune` on the build of the small project, after a module is gone."""
 

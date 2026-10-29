@@ -205,6 +205,25 @@ jobs:
             ${{ needs.lean.outputs.build-key }}
             ${{ needs.lean.outputs.build-cache-prefix }}
           modules: ${{ runner.temp }}/lean-modules
+      # The rest of the last build, which the shard that assembles checks
+      # too, unpacked while the shard's proofs build rather than after them
+      # (a minute, on the critical path of every run with shards). At the
+      # lowest priority, so it takes only the CPU the build leaves idle (in
+      # the build's chains of imports, most of it); the shards that do not
+      # assemble leave it unfinished. It unpacks none of the shard's
+      # modules, which are all the build writes.
+      - name: Start unpacking the rest of the build, in the background
+        if: ${{ hashFiles('lean/.lake/ltar/index.json') != '' }}
+        run: |
+          (
+            # Not `-e`: a failure must still write the status, or the
+            # assembly would wait for it.
+            set +e
+            nice -n 19 ionice -c 2 -n 7 python3 ../ci/lean_cache.py restore . --except "$RUNNER_TEMP/lean-modules" \
+              > "$RUNNER_TEMP/lean-rest.log" 2>&1
+            echo $? > "$RUNNER_TEMP/lean-rest.status.tmp"
+            mv "$RUNNER_TEMP/lean-rest.status.tmp" "$RUNNER_TEMP/lean-rest.status"
+          ) < /dev/null > /dev/null 2>&1 &
       - name: Check the shard's proofs (and the axiom audit)
         env:
           SHARD: ${{ matrix.shard }}
@@ -274,11 +293,16 @@ jobs:
           pattern: lean-build-*
           merge-multiple: true
           path: ${{ runner.temp }}/lean-build
-      # The rest of the last build, which the assembly checks too, without
-      # what this shard built over it.
+      # Before the shards' outputs go over it. (Named as when it unpacked
+      # the rest itself, for ci/ci_metrics.py: what is left of it is the
+      # assembly's wait.)
       - name: Unpack the rest of the build
         if: ${{ steps.all-uploaded.outputs.all == 'true' && hashFiles('lean/.lake/ltar/index.json') != '' }}
-        run: python3 ../ci/lean_cache.py restore . --except "$RUNNER_TEMP/lean-modules"
+        timeout-minutes: 20
+        run: |
+          while [ ! -f "$RUNNER_TEMP/lean-rest.status" ]; do sleep 1; done
+          cat "$RUNNER_TEMP/lean-rest.log"
+          exit "$(cat "$RUNNER_TEMP/lean-rest.status")"
       - if: ${{ steps.all-uploaded.outputs.all == 'true' }}
         uses: ./.github/actions/lean-assemble
         with:
