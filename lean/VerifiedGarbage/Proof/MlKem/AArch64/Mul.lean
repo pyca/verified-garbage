@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Barrett
 import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.Framework.Block
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlKem.AArch64.NttCommon
@@ -17,7 +16,6 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.Barrett
 meta import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 meta import VerifiedGarbage.Proof.MlKem.Arith
 meta import VerifiedGarbage.Proof.Framework.Block
-meta import Mathlib.Tactic.Set
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
@@ -172,7 +170,9 @@ theorem vpair_ok {rest : List Instr} {s : State} {Q : State → Prop} (hc : VCon
   have γ₃ : Lanes (s₃.v .v18) Γ := by rw [h₃.get .v18, h₂.get .v18, h₁.get .v18]; exact hΓ
   have l₄ := lanes_mla l₃ r₃ γ₃
   rw [← h₄.v] at l₄
-  set R := fun e => FO e * GO e - FO e * GO e * 645083 / 2 ^ 31 * 3329 with hR
+  let R := fun e => FO e * GO e - FO e * GO e * 645083 / 2 ^ 31 * 3329
+  try rewrite [show fun e => FO e * GO e - FO e * GO e * 645083 / 2 ^ 31 * 3329 = R from rfl] at *
+  have hR : R = fun e => FO e * GO e - FO e * GO e * 645083 / 2 ^ 31 * 3329 := rfl
   have y_lt : ∀ e < 4, FE e * GE e + R e * Γ e < 2 ^ 31 := fun e he => by
     have h1 := pp (b1 e he) (b3 e he)
     have h2 : R e * Γ e ≤ (2 * 3329) * 3329 :=

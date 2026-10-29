@@ -8,8 +8,6 @@ import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Sha256.X86.Compress
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha256.Stream
-import Mathlib.Tactic.Set
-
 /-!
 # Calls of a streaming hash function on x86 (32-bit): byte loops, registers, stack
 
@@ -135,8 +133,10 @@ theorem copy_ok {src dst : Reg} (hs : src ∉ cclob) (hd : dst ∉ cclob)
     WP isa (copy src so dst d n) s fun t =>
       Copied s ((s.gpr dst).setWidth 64 + BitVec.ofNat 64 d)
         (bytesAt s.mem ((s.gpr src).setWidth 64 + BitVec.ofNat 64 so) n) t := by
-  set A := (s.gpr src).setWidth 64 + BitVec.ofNat 64 so
-  set B := (s.gpr dst).setWidth 64 + BitVec.ofNat 64 d
+  let A := (s.gpr src).setWidth 64 + BitVec.ofNat 64 so
+  try rewrite [show (s.gpr src).setWidth 64 + BitVec.ofNat 64 so = A from rfl] at *
+  let B := (s.gpr dst).setWidth 64 + BitVec.ofNat 64 d
+  try rewrite [show (s.gpr dst).setWidth 64 + BitVec.ofNat 64 d = B from rfl] at *
   refine WP.seq (wp_movi fun s₀ u₀ => WP.block_nil ?_)
   have i0 : CopyInv s A B 0 s₀ :=
     ⟨u₀.rd, u₀.wr, fun r hr => u₀.other r (nm hr .ecx), u₀.gpr,
@@ -200,8 +200,10 @@ theorem xor_ok {uo n : Nat} (hn : 0 < n) (hn' : n < 2 ^ 32) {s : State}
         .mov .eax (.reg .esi), .alu .add .eax (.reg .ecx), .movzx8 .ebx (at_ .eax 0), .alu .xor .edx (.reg .ebx),
         .store8 (at_ .eax 0) .dl, .alu .add .ecx (.imm 1), .alu .cmp .ecx (.imm (BitVec.ofNat 32 n))]) .ne)) s
       fun t => XorInv s ((s.gpr .ebp).setWidth 64 + BitVec.ofNat 64 uo) ((s.gpr .esi).setWidth 64) n t := by
-  set U := (s.gpr .ebp).setWidth 64 + BitVec.ofNat 64 uo
-  set T := (s.gpr .esi).setWidth 64
+  let U := (s.gpr .ebp).setWidth 64 + BitVec.ofNat 64 uo
+  try rewrite [show (s.gpr .ebp).setWidth 64 + BitVec.ofNat 64 uo = U from rfl] at *
+  let T := (s.gpr .esi).setWidth 64
+  try rewrite [show (s.gpr .esi).setWidth 64 = T from rfl] at *
   refine WP.seq (wp_movi fun s₀ u₀ => WP.block_nil ?_)
   have i0 : XorInv s U T 0 s₀ :=
     ⟨u₀.rd, u₀.wr, fun r hr => u₀.other r (nm hr .ecx), u₀.gpr,

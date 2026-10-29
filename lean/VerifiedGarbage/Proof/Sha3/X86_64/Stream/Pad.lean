@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Sha3.Arith
 import VerifiedGarbage.Proof.Sha3.Stream
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Permute
@@ -13,7 +12,6 @@ meta import VerifiedGarbage.Proof.Sha3.Arith
 meta import VerifiedGarbage.Proof.Sha3.Stream
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import Mathlib.Tactic.Set
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
@@ -40,10 +38,18 @@ theorem correct {s₀ : State} (hp : Proof.Sha3.padX86_64.pre s₀) :
     WP isa Impl.Sha3.X86_64.Stream.pad s₀ fun s' => gprPreserved s₀ s' ∧ Proof.Sha3.padX86_64.post s₀ s' := by
   obtain ⟨hrd, hwr, d_ss, d_rs, d_rc, d_ks, d_kc, hrate, hpos⟩ := hp
   have hr := rate_bounds hrate
-  set st := s₀.gpr .rdi with hst
-  set scr := s₀.gpr .r8 with hscr
-  set rate := (s₀.gpr .rsi).toNat with hrate'
-  set pos := (s₀.gpr .rdx).toNat with hpos'
+  let st := s₀.gpr .rdi
+  try rewrite [show s₀.gpr .rdi = st from rfl] at *
+  have hst : st = s₀.gpr .rdi := rfl
+  let scr := s₀.gpr .r8
+  try rewrite [show s₀.gpr .r8 = scr from rfl] at *
+  have hscr : scr = s₀.gpr .r8 := rfl
+  let rate := (s₀.gpr .rsi).toNat
+  try rewrite [show (s₀.gpr .rsi).toNat = rate from rfl] at *
+  have hrate' : rate = (s₀.gpr .rsi).toNat := rfl
+  let pos := (s₀.gpr .rdx).toNat
+  try rewrite [show (s₀.gpr .rdx).toNat = pos from rfl] at *
+  have hpos' : pos = (s₀.gpr .rdx).toNat := rfl
   have hin : ∀ j < 200, (⟨st, 200⟩ : Region).Contains (st + BitVec.ofNat 64 j) 1 := fun j hj =>
     Proof.Sha3.contains_offset (by omega) (by omega)
   have hw : ∀ j < 200, InRegions s₀.wr (st + BitVec.ofNat 64 j) 1 := fun j hj => by

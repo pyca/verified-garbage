@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Sha512.Arm.Lit
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Sha512.Arm.Rounds
@@ -13,7 +12,6 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Sha512.Arm.Lit
-meta import Mathlib.Tactic.Set
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
@@ -434,8 +432,12 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
   have fitS := hp.st_fits
   have fitV := hp.scr_fits
   have fitB := hp.blk_fit hi
-  set H := stateAt s.mem (State.addr (stp s₀)) with hH
-  set M := blockAt s₀.mem (State.addr (blkAddr s₀ i)) with hMdef
+  let H := stateAt s.mem (State.addr (stp s₀))
+  try rewrite [show stateAt s.mem (State.addr (stp s₀)) = H from rfl] at *
+  have hH : H = stateAt s.mem (State.addr (stp s₀)) := rfl
+  let M := blockAt s₀.mem (State.addr (blkAddr s₀ i))
+  try rewrite [show blockAt s₀.mem (State.addr (blkAddr s₀ i)) = M from rfl] at *
+  have hMdef : M = blockAt s₀.mem (State.addr (blkAddr s₀ i)) := rfl
   refine WP.seq (WP.mono (load_ok c 8 (Nat.le_refl _)) fun s₁ h₁ => ?_)
   have c₁ := c.of_eq (h₁.gpr _ (by decide)) (h₁.gpr _ (by decide)) h₁.wr
   have hB : BlkCtx (scp s₀) (blkAddr s₀ i) s₁ :=
