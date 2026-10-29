@@ -12,8 +12,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFlagValue
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejEpi
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Env
-import VerifiedGarbage.Impl.MlKem.AArch64.Cbd16
 /-! ## From `BoundedFourCore.lean` -/
 
 -- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Optimized/BoundedFourAdaptive.lean`, which only this module imported.

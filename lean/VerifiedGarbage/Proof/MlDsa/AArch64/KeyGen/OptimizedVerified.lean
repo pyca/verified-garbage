@@ -27,7 +27,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedTimingBase
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotCallTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDotValue
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDot
-import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPieceTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedNtt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
