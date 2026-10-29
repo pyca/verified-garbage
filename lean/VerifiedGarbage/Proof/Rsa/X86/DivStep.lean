@@ -1,15 +1,15 @@
 module
 
-import VerifiedGarbage.Proof.Rsa.X86.DivShiftArrays
-import VerifiedGarbage.Proof.Rsa.X86.DivCount
 public import VerifiedGarbage.Proof.Rsa.KeyMath
 public import VerifiedGarbage.Impl.Rsa.X86.Div
 public import VerifiedGarbage.Proof.Rsa.X86.DivContext
 public import VerifiedGarbage.Proof.Framework.Semantics
+
+import VerifiedGarbage.Proof.Rsa.X86.DivShiftArrays
+import VerifiedGarbage.Proof.Rsa.X86.DivCount
 import VerifiedGarbage.Proof.Rsa.X86.DivReduce
 import VerifiedGarbage.Proof.Rsa.X86.DivBit
 import VerifiedGarbage.Proof.Framework.PlainSimp
-
 /-! # Native i686 division implements the shared bit-serial step -/
 
 @[expose] public section

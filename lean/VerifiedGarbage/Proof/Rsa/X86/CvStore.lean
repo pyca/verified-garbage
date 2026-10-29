@@ -1,4 +1,5 @@
 module
+
 public import VerifiedGarbage.Proof.Rsa.X86.CvInputs
 public import VerifiedGarbage.Spec.Rsa.Contract
 
@@ -10,7 +11,6 @@ import VerifiedGarbage.Proof.Rsa.X86.KeySelect
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Framework.Offset
-
 /-! # Masked CRT output preserves the workspace header and other arrays -/
 
 @[expose] public section
