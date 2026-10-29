@@ -1,10 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.X86.CrtStackSafety
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeVerified
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Proof.Rsa.X86.PrivImpl
-import VerifiedGarbage.Proof.Rsa.X86.PrivVerified
 public import VerifiedGarbage.Proof.Rsa.X86.RtShape
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeTop
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Verified
@@ -13,7 +11,26 @@ public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.TCB.X86.Isa
 public import Mathlib.Data.Nat.Basic
 
+import VerifiedGarbage.Proof.Rsa.X86.PrivVerified
+import VerifiedGarbage.Impl.Bignum.X86.CrtFn
+import VerifiedGarbage.Proof.Framework.GetElem
 /-! # Instantiate checked private RSA with the verified baseline i686 callees -/
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/X86/CrtStackSafety.lean`, which only this module imported.
+section
+
+/-! # Instructions that keep the stack pointer, for compositional stack-pointer safety -/
+
+section
+namespace VG.Proof.Bignum.X86.Crt
+open VG VG.X86
+
+def stackSafe (i : Instr) : Bool := !isa.writesSp i
+
+end VG.Proof.Bignum.X86.Crt
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.Rsa.X86.PrivChecked
