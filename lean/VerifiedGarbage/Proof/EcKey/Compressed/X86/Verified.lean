@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.EcKey.Compressed.X86.Finish
 import VerifiedGarbage.Proof.EcKey.Compressed.Encode
 import VerifiedGarbage.Proof.Ecdh.X86.Main
 import VerifiedGarbage.Proof.Ecdsa.X86.Setup
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 -- Formerly `VerifiedGarbage/Proof/EcKey/Compressed/X86/Main.lean`, which only this module imported.
 section

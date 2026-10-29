@@ -13,7 +13,6 @@ public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Mont.X86.Words
 
 import VerifiedGarbage.Proof.Mont.X86.Square.Step
-import VerifiedGarbage.Proof.Framework.X86.Wp
 
 -- Formerly `VerifiedGarbage/Proof/Mont/X86/Square/Control.lean`, which only this module imported.
 section

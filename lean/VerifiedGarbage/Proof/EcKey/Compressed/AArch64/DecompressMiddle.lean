@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Middle
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
-import VerifiedGarbage.Proof.Ecdh.AArch64.Validate
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Peer
 /-! # Coordinate recovery and final checks preserve the parsed encoding -/

@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Mont.X86.PowerTwo
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Mont.Words32
-import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.Mont.Words
 /-! The high-bit branch and padded fallback establish the same seed. -/
 

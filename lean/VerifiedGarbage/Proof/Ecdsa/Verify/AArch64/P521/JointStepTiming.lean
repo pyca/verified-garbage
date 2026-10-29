@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedSignTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTimingB
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
 
 -- Formerly `VerifiedGarbage/Proof/Ecdsa/Verify/AArch64/P521/JointFixedLookupTiming.lean`, which only this module imported.
 section

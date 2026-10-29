@@ -15,8 +15,6 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Trace
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.MlKem.Arith
-import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Keep
 
 -- Formerly `VerifiedGarbage/Proof/MlKem/AArch64/Paired/ContinueTiming.lean`, which only this module imported.
 section

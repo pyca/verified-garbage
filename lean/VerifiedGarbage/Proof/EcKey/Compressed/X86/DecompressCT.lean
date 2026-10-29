@@ -11,8 +11,6 @@ import VerifiedGarbage.Proof.EcKey.Compressed.X86.DecompressMain
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.Pre
 import VerifiedGarbage.Proof.Framework.X86.Call
-import VerifiedGarbage.Proof.Ecdsa.X86.Setup
-import VerifiedGarbage.Proof.Ecdsa.X86.Finish
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.EcKey.Compressed.X86.Contract
 

@@ -25,7 +25,6 @@ import VerifiedGarbage.Proof.Dsa.X86.Layout
 import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyCallPublic
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyLength
-import VerifiedGarbage.Proof.Dsa.X86.RandomFinish
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyObservations
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyContractInput
 /-! # Complete i686 certificate for precomputed PKCS #1 verification -/

@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Digit
 import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Double
 import VerifiedGarbage.Proof.Mont.X86.StaticSquare.ReductionProducts
-import VerifiedGarbage.Proof.Mont.X86.StaticSquare.InputProducts
 import VerifiedGarbage.Proof.Mont.X86.Square.ColumnMath
 import VerifiedGarbage.Proof.Mont.X86.StaticSquare.CarryMath
 import VerifiedGarbage.Proof.Framework.Semantics

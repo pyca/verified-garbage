@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Mont.X86.Sse2.Body
 public import VerifiedGarbage.Proof.Mont.X86.Sse2.TimeTaint
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.Framework.Covers
+import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Framework.X86.Inline
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.Mont.X86.Sse2.Mcdt
@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Mont.X86.Sse2.Columns
+public import VerifiedGarbage.TCB.Mem
 /-! # `body params` leaks only public data
 
 Two runs from states with the same numbers (`BPair`) leak the same

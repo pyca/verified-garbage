@@ -20,7 +20,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.X448.AArch64.Iter
 import VerifiedGarbage.Proof.Ed448.WnafWide.Bits
 import Mathlib.Algebra.Group.Nat.Defs
-import VerifiedGarbage.Proof.Ed448.WnafWide.Group
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Spec
 import VerifiedGarbage.Proof.Ed448.Group.Decode
 import VerifiedGarbage.Proof.Ed448.Group.Projective

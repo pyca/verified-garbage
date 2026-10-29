@@ -11,7 +11,6 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Taint
 
 import VerifiedGarbage.Proof.Mont.X86.Square.Store
-import VerifiedGarbage.Proof.Mont.X86.Square.EndCtl
 
 -- Formerly `VerifiedGarbage/Proof/Mont/X86/Square/Snapshot.lean`, which only this module imported.
 section
