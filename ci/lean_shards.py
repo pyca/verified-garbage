@@ -66,6 +66,15 @@ exceeding the same finish-time budget.
                                         `lean/.lake/build/`, relative to it),
                                         those that are outputs of SHARD's
                                         modules
+  lean_shards.py evict PLAN SHARD BUILD  of the modules the `lake build` log on
+                                        stdin built, delete under BUILD
+                                        (`lean/.lake/build`) every output of
+                                        those outside SHARD's closure, and
+                                        print them: the rest of the last
+                                        build, unpacked while the shard built,
+                                        may have written them at the same
+                                        time, so that the assembly builds
+                                        them again
   lean_shards.py times [--observations]  the time of each module a `lake build`
                                         log on stdin built, as JSON; with
                                         --observations, keep native components
@@ -1144,6 +1153,23 @@ def main(args: list[str]) -> int:
                 m = module_of_output(path)
                 if path and p["owner"].get(m, None if m in mods else 0) == i:
                     print(path)
+        return 0
+    if len(args) == 4 and args[0] == "evict":
+        p = read_json(args[1])
+        mods = modules()
+        ours = needed(p["targets"][shard_index(p, args[2])], closures(imports(mods)))
+        built = {m.group(1).partition(":")[0] for m in BUILT.finditer(sys.stdin.read())}
+        foreign = sorted(m for m in built if m in mods and m not in ours)
+        build = pathlib.Path(args[3])
+        for f in sorted(build.rglob("*")) if foreign else []:
+            rel = f.relative_to(build).as_posix()
+            if f.is_file() and rel.split("/")[0] in ("lib", "ir") and module_of_output(rel) in foreign:
+                f.unlink()
+        for m in foreign:
+            print(m)
+        if foreign:
+            print(f"Deleted the outputs of {len(foreign)} modules built outside the shard's closure.",
+                  file=sys.stderr)
         return 0
     if args in (["times"], ["times", "--observations"]):
         observation = log_timings(sys.stdin.read())

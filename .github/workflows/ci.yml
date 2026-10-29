@@ -295,14 +295,23 @@ jobs:
           path: ${{ runner.temp }}/lean-build
       # Before the shards' outputs go over it. (Named as when it unpacked
       # the rest itself, for ci/ci_metrics.py: what is left of it is the
-      # assembly's wait.)
+      # assembly's wait.) The unpack and the build write disjoint modules
+      # only if Lake built nothing outside the shard's closure: a module it
+      # did build there may have been written by both at once, keeping one's
+      # trace with the other's outputs, which the assembly would take as
+      # built. Its outputs are deleted, so that the assembly builds it again.
       - name: Unpack the rest of the build
         if: ${{ steps.all-uploaded.outputs.all == 'true' && hashFiles('lean/.lake/ltar/index.json') != '' }}
         timeout-minutes: 20
+        env:
+          SHARD: ${{ matrix.shard }}
         run: |
           while [ ! -f "$RUNNER_TEMP/lean-rest.status" ]; do sleep 1; done
           cat "$RUNNER_TEMP/lean-rest.log"
-          exit "$(cat "$RUNNER_TEMP/lean-rest.status")"
+          if [ "$(cat "$RUNNER_TEMP/lean-rest.status")" != 0 ]; then
+            exit 1
+          fi
+          python3 ../ci/lean_shards.py evict "$RUNNER_TEMP/lean-plan.json" "$SHARD" .lake/build < "$RUNNER_TEMP/build.log"
       - if: ${{ steps.all-uploaded.outputs.all == 'true' }}
         uses: ./.github/actions/lean-assemble
         with:

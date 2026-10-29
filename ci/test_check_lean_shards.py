@@ -905,6 +905,34 @@ class Outputs(Project):
         self.assertEqual(outputs("2"), ["ir/VerifiedGarbage/Other.c"])
 
 
+class Evict(Project):
+    """`evict`: modules a shard built outside its closure, which the rest of
+    the last build may have been unpacked over at the same time."""
+
+    def test_deletes_every_output_of_those_alone(self):
+        plan = self.lean / "plan.json"
+        plan.write_text(json.dumps({"targets": [["VerifiedGarbage.Proof"]], "owner": {}}))
+        build = self.lean / ".lake" / "build"
+        kept = ["lib/lean/VerifiedGarbage/Proof.olean", "lib/lean/VerifiedGarbage/Spec/A.trace",
+                "lib/lean/VerifiedGarbage.olean", "lib/libVerifiedGarbage_NativeSpec.so"]
+        deleted = ["lib/lean/VerifiedGarbage/Other.olean", "lib/lean/VerifiedGarbage/Other.trace",
+                   "lib/lean/VerifiedGarbage/Other.olean.hash", "ir/VerifiedGarbage/Other.c"]
+        for name in kept + deleted:
+            (build / name).parent.mkdir(parents=True, exist_ok=True)
+            (build / name).write_text("")
+        log = "\n".join(["✔ [1/9] Built VerifiedGarbage.Spec.A (2.5s)",
+                         "✔ [2/9] Built VerifiedGarbage.Other (1.2s)",
+                         "✔ [3/9] Built VerifiedGarbage.Other:c.o (8.8s)",
+                         "✔ [4/9] Built NativeSpec:shared (209ms)"])
+        out = io.StringIO()
+        with mock.patch("sys.stdin", io.StringIO(log)), contextlib.redirect_stdout(out), \
+                contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(shards.main(["evict", str(plan), "1", str(build)]), 0)
+        self.assertEqual(out.getvalue().split(), ["VerifiedGarbage.Other"])
+        left = sorted(f.relative_to(build).as_posix() for f in build.rglob("*") if f.is_file())
+        self.assertEqual(left, sorted(kept))
+
+
 class Prune(Project):
     """`prune` on the build of the small project, after a module is gone."""
 
