@@ -1,6 +1,5 @@
 module
 
-public import Mathlib.Data.Nat.GCD.Basic
 
 /-!
 # A binary gcd in a fixed number of steps
@@ -29,8 +28,9 @@ theorem gcd_half {x u : Nat} (hx : x % 2 = 0) (hu : u % 2 = 1) : Nat.gcd (x / 2)
   have hc : Nat.Coprime 2 u := by
     show Nat.gcd 2 u = 1
     rw [Nat.gcd_rec, hu]; rfl
-  conv_rhs => rw [show x = 2 * (x / 2) by omega]
-  exact (Nat.Coprime.gcd_mul_left_cancel _ hc).symm
+  have h := Nat.Coprime.gcd_mul_left_cancel (x / 2) hc
+  rw [show 2 * (x / 2) = x by omega] at h
+  exact h.symm
 
 theorem gcdStep_odd {u v : Nat} (hv : v % 2 = 1) : (gcdStep u v).2 % 2 = 1 := by
   unfold gcdStep; split

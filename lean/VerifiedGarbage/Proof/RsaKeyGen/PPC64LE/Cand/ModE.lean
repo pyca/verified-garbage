@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Cand.Bits
 public import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.RsaKeyGen.CandMath
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Conv
 
 /-!
 # A candidate on PPC64LE: `(c − 1) mod e`
