@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.QBuild
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
-import VerifiedGarbage.Proof.Bignum.Octets
 import Mathlib.Algebra.Group.Nat.Defs
 /-! # Complete first phase of a seed attempt, retaining every retry input -/
 

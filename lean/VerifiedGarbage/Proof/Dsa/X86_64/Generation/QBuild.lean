@@ -21,7 +21,6 @@ import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Dsa.Encoding
-import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.TCB.X86_64.Isa
 import VerifiedGarbage.TCB.X86_64.State
 /-! # Native subgroup-candidate construction from a seed

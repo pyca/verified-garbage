@@ -21,7 +21,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 import Aesop.BuiltinRules
-import VerifiedGarbage.Proof.Rsa.KeyMath
 /-! # Enter a p attempt from the persistent frame and controller offset -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/Generation/PAttemptArgs.lean`, which only this module imported.

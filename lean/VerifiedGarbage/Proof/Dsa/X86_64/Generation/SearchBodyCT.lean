@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Dsa.Encoding
 import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateWidthCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCallCT
-import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub

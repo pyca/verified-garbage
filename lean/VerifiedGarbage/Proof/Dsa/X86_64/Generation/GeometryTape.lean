@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Impl.Dsa.Layout
-import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 /-! # Immutable entropy tapes are disjoint from every mutable generation area -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/Generation/Geometry.lean`, which only this module imported.
