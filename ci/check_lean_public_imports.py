@@ -1042,6 +1042,13 @@ def initialization_order_guards(plan: Plan, graph: Graph, library: list[str], us
         if old_opaque == new_opaque:
             continue
         reaching = [e for e in primary if mod in scopes[e.module]]
+        # Removing an import of a dependency's module (`narrow_dependencies`)
+        # reorders that dependency's own modules: that is what it does. It
+        # is held back only where it reorders the project's opaque modules.
+        if ([m for m in old_opaque if graph.project(m)] == [m for m in new_opaque if graph.project(m)]):
+            reaching = [e for e in reaching if not graph.dependency(e.dependency)]
+            if not reaching:
+                continue
         causes = [e for e in reaching if opaque & set(graph.load_order(e.dependency))] or reaching
         for e in causes:
             guarded[e.module, e.dependency] = {
@@ -1151,9 +1158,9 @@ def narrow_dependencies(plan: Plan, mods: list[str], shaken: dict, graph: Graph,
     Here shake's finding is only a hypothesis, which `fix_and_verify` keeps
     only if the module and every module importing it still build: a missing
     tactic or lemma fails the build; an attribute or instance that a proof
-    needs fails it too. A module whose shake output adds an import of the same
-    dependency (a narrower module of it) is left alone: replacing one module
-    by another is for a person to judge.
+    needs fails it too. Where shake replaces such imports by a narrower
+    module of the same dependency (e.g. three tactic modules by the one whose
+    attribute the module uses), the replacement is added in the same edit.
     """
     if not graph.dependencies:
         return
@@ -1167,7 +1174,9 @@ def narrow_dependencies(plan: Plan, mods: list[str], shaken: dict, graph: Graph,
         rem, add = next((v for f, v in shaken.items() if shake_path(f) == graph.path(mod).resolve()), ([], []))
         removed = {s.split()[-1]: s.startswith("public ") for s in rem
                    if re.fullmatch(r"(public )?import \S+", s) and graph.dependency(s.split()[-1])}
-        replaced = any(graph.dependency(s.split()[-1]) for s in add)
+        added = {s.split()[-1]: s.startswith("public ") for s in add
+                 if re.fullmatch(r"(public )?import \S+", s) and graph.dependency(s.split()[-1])}
+        proposed = False
         rel = f"lean/{graph.path(mod).relative_to(LEAN)}"
         for x, public, meta, all_ in header(text):
             if meta or all_ or not graph.dependency(x) or removed.get(x) != public:
@@ -1180,8 +1189,6 @@ def narrow_dependencies(plan: Plan, mods: list[str], shaken: dict, graph: Graph,
                 decide(mod, x, action, "deferred", "protected_importer")
             elif selected.get(mod) is not None and x not in selected[mod]:
                 decide(mod, x, action, "not_considered", "outside_selected_diff")
-            elif replaced:
-                decide(mod, x, action, "retained", "shake_adds_dependency_import")
             else:
                 n = next(n for n, s in header_lines(lines)
                          if (m := IMPORT.fullmatch(s)) and m.group(4) == x and bool(m.group(1)) == public
@@ -1190,6 +1197,13 @@ def narrow_dependencies(plan: Plan, mods: list[str], shaken: dict, graph: Graph,
                 plan.messages.append(f"{rel}:{n + 1}: `{'public ' if public else ''}import {x}`: "
                                      f"{mod} does not use this dependency's module: remove it")
                 decide(mod, x, action, "proposed", "unused_dependency_module")
+                proposed = True
+        if proposed:
+            for y, public in sorted(added.items()):
+                plan.edits.append(Edit(mod, "add_public" if public else "add", y))
+                plan.messages.append(f"{rel}: `{'public ' if public else ''}import {y}`: {mod} uses this "
+                                     "narrower module of the dependency: import it instead")
+                decide(mod, y, "add_public" if public else "add", "proposed", "narrower_dependency_module")
 
 
 def problems(*args, **kwargs) -> list[str]:

@@ -327,8 +327,9 @@ namespace VG.Proof.Md5.X86_64
   making an import private would stop passing such a module on, it names
   the `public import`s that keep doing so. With `--dependencies Mathlib`
   (both scripts) it also removes the imports of Mathlib's modules that
-  shake finds unused; `--fix` keeps each only if the module and everything
-  importing it still build. Mark an import that must stay as
+  shake finds unused, adding a narrower Mathlib module where shake names
+  one; `--fix` keeps each only if the module and everything importing it
+  still build. Mark an import that must stay as
   it is for another reason `-- shake: keep`, saying why. Shake does not see
   uses that leave nothing in the `.olean` (an `open` of a namespace, what
   `#guard`, `materialize_*` or `taint_decide` evaluate): import what those
