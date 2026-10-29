@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedFinish
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPackSecret
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedNtt
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRow

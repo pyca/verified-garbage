@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.S4Base
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop

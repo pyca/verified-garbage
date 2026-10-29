@@ -21,8 +21,6 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Sha512.X86.Lit
 import Mathlib.Tactic.Set
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # SHA-512 compression function on x86 (32-bit): the whole function

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Backend
 public import VerifiedGarbage.Proof.Bignum.AArch64.Mont
 public import VerifiedGarbage.Proof.Bignum.AArch64.MulFixedCallMont
-import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SplitIfs
 
 /-!

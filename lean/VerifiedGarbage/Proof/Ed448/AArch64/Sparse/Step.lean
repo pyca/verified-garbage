@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Ed448.AArch64.Sparse.Write
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Impl.Ed448.AArch64.Sparse.Recode
 public import VerifiedGarbage.Proof.Ed448.WnafWide.Bits
 public import VerifiedGarbage.Proof.Framework.Semantics

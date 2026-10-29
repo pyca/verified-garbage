@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Scalars
 import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
-import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Weierstrass.CombW
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
@@ -14,6 +13,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
 import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 import VerifiedGarbage.Proof.Framework.Block
+import Batteries.Logic
 
 /-!
 # ECDSA verification on AArch64: `[u]G + [v]Q`

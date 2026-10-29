@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeInvariant
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic

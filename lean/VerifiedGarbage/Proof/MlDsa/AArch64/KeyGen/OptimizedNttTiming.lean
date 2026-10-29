@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedFinish
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedTimingBase
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedNtt
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 

@@ -1,6 +1,4 @@
 module
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.AesSiv.AArch64
 public import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 public import VerifiedGarbage.Proof.Framework.Contract

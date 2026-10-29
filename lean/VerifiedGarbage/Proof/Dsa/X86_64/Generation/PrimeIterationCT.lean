@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawRoundCT
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TapeCheck
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawRound
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawCopyCT
@@ -17,7 +16,6 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawRoundCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TapeCheck
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawRound
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 

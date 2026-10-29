@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Sha512.Spec
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # SHA-512 on ARMv7: the 64-bit operations

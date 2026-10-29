@@ -17,8 +17,6 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Entry
 public import VerifiedGarbage.Proof.Gcm.Ctr
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Aes.AArch64.Group
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 public import VerifiedGarbage.Proof.Aes.KeyExp
 public import VerifiedGarbage.Proof.Framework.Contract

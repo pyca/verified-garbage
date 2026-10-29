@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillLanesBody
 public import VerifiedGarbage.Proof.Argon2.Lanes
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 /-! Termination and correctness of all remaining lanes in one slice. -/
 

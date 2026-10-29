@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Siv.Spec
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.InstancePriority
-import Mathlib.Tactic.Linter.Style
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

@@ -11,9 +11,6 @@ public import VerifiedGarbage.Proof.Ecdh.AArch64.Prefix
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Ecdh.AArch64.Lit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 meta import VerifiedGarbage.Proof.P256.EcdhJac.Lit
@@ -27,9 +24,6 @@ meta import VerifiedGarbage.Proof.Ecdh.AArch64.Prefix
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.Lit
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 

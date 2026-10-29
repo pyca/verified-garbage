@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.CachedJac
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

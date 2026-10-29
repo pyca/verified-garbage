@@ -4,8 +4,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN6
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN6
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnXVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnXVerified
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Impl.Weierstrass.Slots
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

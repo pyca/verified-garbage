@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Rel
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseD
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-DSA signing on AArch64: decoding leaks only the pointers

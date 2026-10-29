@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
 public import VerifiedGarbage.Proof.Curve448.AArch64.Copy
 public import VerifiedGarbage.Proof.Curve448.AArch64.Swap
 public import VerifiedGarbage.Impl.X448.AArch64.Fast
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Curve448.AArch64.Columns
 public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Columns
 public import VerifiedGarbage.Proof.Curve448.AArch64.Pointwise

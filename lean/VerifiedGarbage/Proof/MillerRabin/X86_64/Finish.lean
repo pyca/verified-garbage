@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Restore
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 

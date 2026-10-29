@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarBase
 public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.ScalarBase
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.PointOps
 public import VerifiedGarbage.Proof.Framework.RISCV64.Inline

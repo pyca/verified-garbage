@@ -55,8 +55,6 @@ meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Rsa.ZeroTest32
 meta import VerifiedGarbage.Proof.Sha256.Stream
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # AES-GCM on ARMv7: `vg_aes_gcm_stream_verify` is constant time

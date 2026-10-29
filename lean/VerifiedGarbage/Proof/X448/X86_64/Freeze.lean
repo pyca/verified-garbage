@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.X448.X86_64.AddSub
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

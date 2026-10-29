@@ -8,8 +8,6 @@ import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Copy
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Deterministic ECDSA on x86-64: the messages of steps d, f and h.3

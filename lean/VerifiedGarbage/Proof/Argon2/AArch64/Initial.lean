@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Argon2.AArch64.InitialStart
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Output
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Finalize
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetupSteps
 import VerifiedGarbage.Proof.Argon2.AArch64.Instructions

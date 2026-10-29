@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Blowfish.Arm.Verified
 import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
 import VerifiedGarbage.Proof.Framework.Arm.RegScratchConsts
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-!

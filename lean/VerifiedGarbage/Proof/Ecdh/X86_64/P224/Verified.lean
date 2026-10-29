@@ -11,9 +11,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Ecdh.X86_64.P224.Lit
 public import VerifiedGarbage.Impl.Ecdh.P224.X86_64
 import VerifiedGarbage.Proof.Framework.LitShare
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P224.Contract
@@ -26,9 +23,6 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P224.Lit
 meta import VerifiedGarbage.Impl.Ecdh.P224.X86_64
 meta import VerifiedGarbage.Proof.Framework.LitShare
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Lit

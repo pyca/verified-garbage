@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillSlicesBody
 public import VerifiedGarbage.Proof.Argon2.Slices
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 /-! Termination and correctness of the four-slice filling pass. -/
 

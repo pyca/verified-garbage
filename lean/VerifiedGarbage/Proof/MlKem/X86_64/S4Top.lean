@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.S4Parse
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
 
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Run
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Loop
 import VerifiedGarbage.Proof.Framework.Offset
 

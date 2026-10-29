@@ -18,7 +18,6 @@ meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-import Mathlib.Tactic.SplitIfs
 
 /-! Merged from `Proof.Ed25519.X86.PointCTBatch`. -/
 

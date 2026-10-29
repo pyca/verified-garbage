@@ -3,11 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.PcCT
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
-import Mathlib.Tactic.ToAdditive
 
 /-!
 # RSAES-PKCS1-v1_5 encryption with a precomputed public key on AArch64: the shared contract

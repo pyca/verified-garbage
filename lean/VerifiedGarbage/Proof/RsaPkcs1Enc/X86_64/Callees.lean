@@ -6,7 +6,6 @@ public import VerifiedGarbage.Impl.Rsa.X86_64.PrivChecked
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCtx
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

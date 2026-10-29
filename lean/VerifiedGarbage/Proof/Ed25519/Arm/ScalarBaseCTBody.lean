@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointMul
 public import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport

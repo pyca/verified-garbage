@@ -4,7 +4,6 @@ public import VerifiedGarbage.Spec.EcKey.P521
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Tables
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # P-521 public keys on x86-64: the contract the proof is written against

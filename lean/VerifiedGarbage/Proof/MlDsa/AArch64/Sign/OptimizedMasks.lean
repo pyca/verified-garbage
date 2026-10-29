@@ -4,8 +4,6 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedMasks
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedInitialization
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMaskVector
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.MaskPairStep
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.MlKem.Mem
 

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Modes.Ctr
 public import VerifiedGarbage.Spec.Blowfish.Cbc
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Blowfish's blocks as the modes see them

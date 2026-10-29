@@ -24,10 +24,6 @@ import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceCount
 meta import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceCount
 public import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetupPrepare
 meta import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetupPrepare
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Argon2.Dimensions
 meta import VerifiedGarbage.Proof.Argon2.Dimensions
 import VerifiedGarbage.Proof.Argon2.SegmentStart

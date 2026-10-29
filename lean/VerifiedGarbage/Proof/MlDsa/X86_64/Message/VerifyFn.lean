@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignFn
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Prims
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Instrs
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyCall
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Verified
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Correct
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inv

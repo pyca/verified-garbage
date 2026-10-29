@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.MetadataRows
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.MetadataTail
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
 
 /-! Exact serialization of the reviewed sampling width and comb row count. -/
 @[expose] public section

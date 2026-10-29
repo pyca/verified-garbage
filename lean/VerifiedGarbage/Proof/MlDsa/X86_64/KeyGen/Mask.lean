@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Call
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
 import VerifiedGarbage.Proof.MlKem.X86_64.Bytes

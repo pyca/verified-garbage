@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 public import VerifiedGarbage.Proof.Weierstrass.JacMadd
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # The mixed Jacobian addition's code on x86-64

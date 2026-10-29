@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.X86.Mmx
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # x86 SIMD: constant-time analysis

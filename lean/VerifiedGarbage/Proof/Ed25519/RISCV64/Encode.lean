@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ed25519.RISCV64.FieldVerified
 import VerifiedGarbage.Proof.Ed25519.RISCV64.SpecConv
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Base
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Freeze
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Field
 public import VerifiedGarbage.Proof.Framework.Block

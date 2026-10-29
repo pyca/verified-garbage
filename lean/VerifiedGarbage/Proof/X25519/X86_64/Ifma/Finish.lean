@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lanes
 import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part1
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.Block
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.X25519.X86_64.Env

@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalCorrect
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import Mathlib.Tactic.SplitIfs
 
 /-! ## From `MemoryOut.lean` -/
 

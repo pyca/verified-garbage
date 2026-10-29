@@ -4,8 +4,6 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedDot
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotCallTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inv
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 import VerifiedGarbage.Proof.Framework.AArch64.Syms

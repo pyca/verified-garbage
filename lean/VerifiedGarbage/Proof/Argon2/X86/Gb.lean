@@ -6,8 +6,6 @@ public import VerifiedGarbage.Proof.Argon2.Spec
 public import VerifiedGarbage.Impl.Argon2.X86.Compress
 public import VerifiedGarbage.Proof.Sha512.X86.Rounds
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
 
 @[expose] public section
 

@@ -5,9 +5,6 @@ public import VerifiedGarbage.Proof.Rsa.Arm.MulMod
 import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
 import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Basic.IsEmpty.Defs
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
@@ -106,7 +103,7 @@ theorem Stg.ltA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} 
   have hb' := borrow_iff (P := 2 ^ (32 * g.w)) v1 (val32_lt _ _ _ _) b1
   rw [h.arrs.get ha, h.arrs.get hb] at hb'
   by_cases hlt : A a < A b
-  · have : (t1.gpr .r11).toNat = 1 := by have := hb'.not.mpr (by omega); omega
+  · have : (t1.gpr .r11).toNat = 1 := by have := (not_congr hb').mpr (by omega); omega
     simp [hlt, this]
   · have : (t1.gpr .r11).toNat = 0 := hb'.mpr (by omega)
     simp [hlt, this]

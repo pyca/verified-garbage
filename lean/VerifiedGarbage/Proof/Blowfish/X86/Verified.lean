@@ -10,8 +10,6 @@ meta import VerifiedGarbage.Proof.Blowfish.X86.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Inline
 public import VerifiedGarbage.Proof.Blowfish.X86.Ecb
 meta import VerifiedGarbage.Proof.Framework.X86.Inline
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Blowfish.Blocks
 import VerifiedGarbage.Proof.Blowfish.Table
 import VerifiedGarbage.Proof.Blowfish.X86.KeyEnc

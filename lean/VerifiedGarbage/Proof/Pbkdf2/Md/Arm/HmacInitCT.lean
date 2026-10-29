@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacInit
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # HMAC's `init` over a Merkle–Damgård hash function on ARMv7: constant time

@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.EkInline16
 import VerifiedGarbage.Proof.MlKem.X86_64.Kg16Tail
 import VerifiedGarbage.Proof.MlKem.X86_64.EkFused16
 import VerifiedGarbage.Proof.MlKem.X86_64.FragC
-import Mathlib.Tactic.Conv
 
 /-!
 # ML-KEM-768 on x86-64: key generation hashing `ek` while it samples `Â`, the rows

@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.ChaCha20.Spec
 public import VerifiedGarbage.Impl.ChaCha20.PPC64LE
 import all Init.Data.Nat.Bitwise.Basic
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.PPC64LE.Isa

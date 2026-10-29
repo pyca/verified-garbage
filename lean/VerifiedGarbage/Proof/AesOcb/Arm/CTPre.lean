@@ -18,7 +18,6 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 meta import VerifiedGarbage.TCB.Arm.Isa
 import Batteries.Logic
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Mem
 import VerifiedGarbage.Proof.Cmac.Spec
@@ -31,7 +30,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Sha256.Stream
 meta import Batteries.Logic
-meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.Cmac.Frame
 meta import VerifiedGarbage.Proof.Cmac.Mem
 meta import VerifiedGarbage.Proof.Cmac.Spec

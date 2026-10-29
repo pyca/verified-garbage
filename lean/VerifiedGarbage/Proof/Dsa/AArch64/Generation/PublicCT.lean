@@ -3,10 +3,6 @@ public import VerifiedGarbage.Spec.Dsa.Generate
 
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ABI
 import VerifiedGarbage.Proof.Bignum.Octets
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Dsa.AArch64.Run

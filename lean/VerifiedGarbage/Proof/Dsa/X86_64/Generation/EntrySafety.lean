@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashSafety
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ControllerSafety
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateSafety
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateSafety
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.Slots

@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
-import Mathlib.Tactic.ToDual
 
 /-! View the same Montgomery arrays through RSA's native key-operation
 helpers. The 96-byte base adjustment aligns their 160-byte header with

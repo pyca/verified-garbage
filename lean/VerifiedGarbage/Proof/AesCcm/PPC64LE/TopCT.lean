@@ -18,7 +18,6 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Ctrs
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Seal
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Tag
-import Mathlib.Data.List.Induction
 public import VerifiedGarbage.Impl.AesCcm.PPC64LE
 public import VerifiedGarbage.Proof.Aes.SboxSpec
 public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Env

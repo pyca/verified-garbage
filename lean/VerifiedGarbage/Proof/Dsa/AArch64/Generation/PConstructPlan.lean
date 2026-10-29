@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashPlan
 public import VerifiedGarbage.Impl.Dsa.Generation.Layout
 
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.Table

@@ -15,8 +15,6 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenFinish
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DotSpec
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdSplit

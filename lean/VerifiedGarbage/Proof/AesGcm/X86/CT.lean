@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # AES-GCM on x86: constant time, piece by piece

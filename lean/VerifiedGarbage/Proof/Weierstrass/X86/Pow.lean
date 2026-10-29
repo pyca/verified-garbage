@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86.Bits
 public import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
 public import VerifiedGarbage.Impl.Weierstrass.X86
 import VerifiedGarbage.Proof.Weierstrass.Pow
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.X86.Loop
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 import VerifiedGarbage.Proof.Mont.X86.Instr

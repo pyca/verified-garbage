@@ -5,8 +5,6 @@ import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Sha256.X86.Compress
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
 
 /-!
 # HMAC on x86 (32-bit): the start of `finalize`

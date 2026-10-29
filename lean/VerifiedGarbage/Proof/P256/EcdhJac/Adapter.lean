@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.P256.EcdhJac.Multiply
 public import VerifiedGarbage.Proof.P256.EcdhJac.Lit
 public import VerifiedGarbage.Proof.Ecdh.AArch64.MulOk
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
-import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
 

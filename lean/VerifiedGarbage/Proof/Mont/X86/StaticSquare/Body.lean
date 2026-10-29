@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Front
 import VerifiedGarbage.Proof.Mont.X86.Rt.Body
 public import VerifiedGarbage.Proof.Mont.X86.Rt.RowFull
 import VerifiedGarbage.Proof.Mont.X86.Square.CrossBody
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Taint
 

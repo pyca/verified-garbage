@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfPublic
 import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfForward
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
 public import VerifiedGarbage.Proof.P256.X86_64.DoubleHalf
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfWP
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField

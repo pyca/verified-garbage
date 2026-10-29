@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
 public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightRaw
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtContext
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRows
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRows
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtLoop

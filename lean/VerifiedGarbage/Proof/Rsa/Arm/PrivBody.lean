@@ -1,7 +1,4 @@
 module
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivContext
 

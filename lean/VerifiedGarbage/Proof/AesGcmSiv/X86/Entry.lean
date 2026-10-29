@@ -8,8 +8,6 @@ import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # AES-GCM-SIV on x86: the arguments and the entry

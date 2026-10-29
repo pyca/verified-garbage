@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Call
 import VerifiedGarbage.Proof.Dsa.X86_64.Add
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 
 /-! # Exponentiation and multiplication in the DSA parent workspace -/
 

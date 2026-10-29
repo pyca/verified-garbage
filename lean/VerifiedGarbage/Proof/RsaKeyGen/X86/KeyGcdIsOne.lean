@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyConstant
 import VerifiedGarbage.Proof.Rsa.X86.KeyEq
-import Mathlib.Tactic.ToDual
 
 /-! # Recognize a unit GCD at either prime or public-exponent width -/
 

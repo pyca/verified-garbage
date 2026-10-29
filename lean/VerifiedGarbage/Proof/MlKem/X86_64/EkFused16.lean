@@ -8,8 +8,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Enc16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkScalar
 import VerifiedGarbage.Proof.MlKem.X86_64.Zero
 import all Init.Data.Nat.Bitwise.Basic
-import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
 import VerifiedGarbage.Proof.Framework.Offset

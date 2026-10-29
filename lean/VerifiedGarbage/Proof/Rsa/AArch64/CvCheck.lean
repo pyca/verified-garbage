@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Rsa.AArch64.Inv
-import Mathlib.Basic.IsEmpty.Defs
 
 /-!
 # `vg_rsa_crt_values` on AArch64: the loads and the check of `p q = n`

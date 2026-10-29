@@ -20,7 +20,6 @@ meta import VerifiedGarbage.Proof.Framework.Block
 meta import Mathlib.Tactic.Set
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem_multiply_ntts`

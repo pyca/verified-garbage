@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Dsa.X86.RandomSample
 import VerifiedGarbage.Proof.Dsa.X86.RandomPrepare
 import VerifiedGarbage.Proof.Dsa.RandomSign
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import Mathlib.Basic.Logic.Basic
 
 /-!
 # The randomized signer's body (x86)
@@ -54,7 +53,7 @@ theorem rResult_signature {s₀ : State} (A : RandomSignABI s₀) :
     (rResult s₀).status ≠ 1 → (rResult s₀).signature = none := by
   rw [rResult_loop A]
   intro h
-  have := (VG.Proof.Dsa.randomSignLoop_success _ _ _ _ _ _).not.mp h
+  have := (not_congr (VG.Proof.Dsa.randomSignLoop_success _ _ _ _ _ _)).mp h
   simpa using this
 
 theorem rResult_used_le {s₀ : State} : (rResult s₀).used ≤ (rInput s₀).rand.length :=

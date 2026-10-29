@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Call
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFive
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block

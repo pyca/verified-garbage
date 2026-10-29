@@ -7,7 +7,6 @@ public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.X448.X86.Iter
 import VerifiedGarbage.Proof.X448.X86.Bits
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!

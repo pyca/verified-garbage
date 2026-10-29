@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Argon2.AArch64.FillFinish
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillIterations
 public import VerifiedGarbage.Proof.Argon2.AArch64.FinishReady
 import VerifiedGarbage.Proof.Argon2.Serialization
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Argon2.AArch64.ReductionLoopState
 

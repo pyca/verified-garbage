@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAdd
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacDouble
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Block
+import Batteries.Logic
 
 @[expose] public section
 

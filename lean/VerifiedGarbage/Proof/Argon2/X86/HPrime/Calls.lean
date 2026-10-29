@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Blake2.X86.LitB
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
 import Mathlib.Tactic.Set
-import Mathlib.Tactic.Conv
 
 @[expose] public section
 

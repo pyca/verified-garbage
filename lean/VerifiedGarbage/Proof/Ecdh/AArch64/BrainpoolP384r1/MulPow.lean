@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP384r1.Mul
-import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 
 /-! # Peer multiplication followed by inversion -/

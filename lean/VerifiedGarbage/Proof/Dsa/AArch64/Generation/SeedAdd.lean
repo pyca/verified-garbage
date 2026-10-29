@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Spec.Dsa
 public import VerifiedGarbage.Spec.Rsa.Contract
 
-import Mathlib.Data.List.Induction
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Dsa.Generation.SeedAdd
 import VerifiedGarbage.Proof.Dsa.Encoding
@@ -16,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedByte
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.ListSnoc
 
 /-! # Wrapped addition across an entire seed -/
 
@@ -36,7 +36,7 @@ theorem seedAdd_ok (bs : List Byte) {s : State} {rp op : Addr} {carry : Nat}
       Spec.Rsa.bytesAt t.mem op bs.length =
         Spec.Dsa.encodeBE bs.length (Spec.Dsa.decodeBE bs + carry) ∧
       (∀ a, (∀ i < bs.length, a ≠ off op i) → t.mem a = s.mem a) ∧ Keep [.x0, .x3] s t := by
-  induction bs using List.reverseRecOn generalizing s carry with
+  induction bs using VG.List.reverseRecOn generalizing s carry with
   | nil =>
     refine WP.mono (WP.keep [.x0, .x3] (Q := fun t => t = s) (by brun) rfl rfl rfl) fun t ⟨rfl, hk⟩ => ?_
     exact ⟨rfl, fun _ _ => rfl, hk⟩

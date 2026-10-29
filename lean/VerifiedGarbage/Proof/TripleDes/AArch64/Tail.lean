@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.TripleDes.AArch64.Store
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Save
 public import VerifiedGarbage.Proof.TripleDes.AArch64.WordState
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.TripleDes.AArch64.Bytes
 import VerifiedGarbage.Proof.TripleDes.Word
 

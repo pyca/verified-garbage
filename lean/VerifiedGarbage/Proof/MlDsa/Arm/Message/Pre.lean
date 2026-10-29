@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.MlDsa.Arm.Message
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Layout
 import VerifiedGarbage.Proof.Framework.Sig
-import Mathlib.Tactic.Linter.Style
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset

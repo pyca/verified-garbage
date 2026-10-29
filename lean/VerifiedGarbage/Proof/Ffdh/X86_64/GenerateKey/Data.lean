@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Smear
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Data
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # FFDH key-generation attempts on x86-64: retained inputs -/

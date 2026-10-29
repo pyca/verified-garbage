@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.MlKem.X86_64.FragS
 public import VerifiedGarbage.Proof.MlKem.X86_64.Frag16Prim
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragOf
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.FragL
 import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 

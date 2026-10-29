@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.PointContract
 import VerifiedGarbage.Proof.Weierstrass.X86.MontVerified
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Complete point addition and doubling as functions, on x86 (32-bit): verified

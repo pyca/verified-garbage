@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointEntries
-import Mathlib.Tactic.Set
 
 /-! # Initializing joint table pointers -/
 

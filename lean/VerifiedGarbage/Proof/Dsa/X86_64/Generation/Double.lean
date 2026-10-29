@@ -3,9 +3,6 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Reduce
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 
 /-! # Native doubling for the divisor and generator exponent -/
 

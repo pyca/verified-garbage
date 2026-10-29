@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedInit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointInvariant
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 
 @[expose] public section

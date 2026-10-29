@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
-import Mathlib.Data.List.Induction
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 public import VerifiedGarbage.Proof.Aes.SboxSpec
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Env

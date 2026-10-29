@@ -9,9 +9,6 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
 import VerifiedGarbage.Proof.EcKey.AArch64.Verified
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothLit
 public import VerifiedGarbage.Impl.P256.Booth
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.EcKey.AArch64.Lit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 

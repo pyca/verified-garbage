@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ABI
 import VerifiedGarbage.Proof.Framework.X86_64.FrameAlloc
 
-import Mathlib.Tactic.Finiteness.Attr
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaKeyGen.Slots

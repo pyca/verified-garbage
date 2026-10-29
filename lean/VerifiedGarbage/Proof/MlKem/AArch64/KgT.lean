@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgC2
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM on AArch64: `keygen`, `t̂`

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedTimingBase
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 @[expose] public section

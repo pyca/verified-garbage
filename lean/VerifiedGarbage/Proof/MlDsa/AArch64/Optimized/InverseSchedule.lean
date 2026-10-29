@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Inverse
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBatch
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

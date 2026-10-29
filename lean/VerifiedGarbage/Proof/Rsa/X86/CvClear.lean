@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValues
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Semantics

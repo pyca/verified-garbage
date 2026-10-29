@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
-import Mathlib.Tactic.SplitIfs
 
 /-! Blocks whose memory addresses depend only on ESP, and functional facts
 retained while composing their equal-leakage proofs. -/

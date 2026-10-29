@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
 public import VerifiedGarbage.Proof.X448.AArch64.BitBody
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.X448.AArch64.Finish
 import VerifiedGarbage.Proof.Ed448.Scalar

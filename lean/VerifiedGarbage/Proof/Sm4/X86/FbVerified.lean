@@ -19,8 +19,6 @@ public import VerifiedGarbage.Impl.StackScratch.X86
 public import VerifiedGarbage.Spec.Sm4.Cfb
 public import VerifiedGarbage.Proof.Modes.X86.Seq
 meta import VerifiedGarbage.Proof.Sm4.X86.FbLit
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith

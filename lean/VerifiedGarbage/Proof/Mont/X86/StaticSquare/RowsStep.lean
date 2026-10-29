@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Mont.X86.Square.RedMath
 import VerifiedGarbage.Proof.Mont.X86.Square.RowsMath
 import VerifiedGarbage.Proof.Mont.X86.Square.FinalMath
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import Mathlib.Util.CompileInductive
 
 /-! # The polynomial invariant between fixed square columns -/
 

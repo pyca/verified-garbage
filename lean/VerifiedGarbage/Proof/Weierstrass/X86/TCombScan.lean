@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Mont.Words128
 public import VerifiedGarbage.Proof.Weierstrass.X86.TCombDigit
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # The comb from tables in memory on x86 (32-bit): the selection

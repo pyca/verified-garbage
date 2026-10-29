@@ -9,8 +9,6 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPro
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorb
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbPair
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Zero
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Offset

@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Mont.AArch64.Blocks
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Window
 public import VerifiedGarbage.Proof.Mont.AArch64.Ops
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

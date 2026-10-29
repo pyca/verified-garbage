@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentUnpack
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Util.CompileInductive
 import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section

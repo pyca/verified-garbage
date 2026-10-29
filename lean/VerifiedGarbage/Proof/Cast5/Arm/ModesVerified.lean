@@ -19,7 +19,6 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 public import VerifiedGarbage.Proof.Framework.ConstMem
 import Batteries.Logic
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Aes.Blocks
 import VerifiedGarbage.Proof.AesCtr.Ctr32
 import VerifiedGarbage.Proof.AesCtr.Spec
@@ -38,7 +37,6 @@ import VerifiedGarbage.Proof.Modes.Arm.Counter
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Spec.Ctr.Contract
 meta import Batteries.Logic
-meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.Aes.Blocks
 meta import VerifiedGarbage.Proof.AesCtr.Ctr32
 meta import VerifiedGarbage.Proof.AesCtr.Spec

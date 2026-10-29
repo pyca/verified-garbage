@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Jacobian
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 public import VerifiedGarbage.Proof.Weierstrass.Jac
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import VerifiedGarbage.Proof.Framework.Block

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-! Public digit reads recover the loaded byte and agree on the zero branch. -/

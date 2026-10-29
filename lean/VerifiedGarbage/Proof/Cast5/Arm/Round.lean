@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Cast5.Arm.Scan
 public import VerifiedGarbage.Proof.Cast5.Rotate
 public import VerifiedGarbage.Proof.Cast5.Round
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Arm.Syms
 public import VerifiedGarbage.Proof.Framework.ReadHalves
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd

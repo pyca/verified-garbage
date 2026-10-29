@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.SignCompute
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyCompute
 import VerifiedGarbage.Proof.Dsa.SizeBounds
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.Zero
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.Arithmetic

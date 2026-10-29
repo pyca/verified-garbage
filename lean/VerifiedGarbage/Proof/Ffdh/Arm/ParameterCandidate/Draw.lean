@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.WitnessMemory
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Status
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Basic.IsEmpty.Defs
 
 /-! One complete native witness draw: consume, reject or test, and update status. -/
 

@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVerified
-import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCall
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 

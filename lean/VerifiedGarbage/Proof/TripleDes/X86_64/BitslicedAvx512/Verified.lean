@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Ecb
 public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Lit
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Verified
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Lit

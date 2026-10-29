@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.AesOcb.PPC64LE.NonceBlock
 import VerifiedGarbage.Proof.Ocb.State
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Data.List.Induction
 public import VerifiedGarbage.Impl.AesOcb.PPC64LE
 public import VerifiedGarbage.Proof.Aes.SboxSpec
 public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Env

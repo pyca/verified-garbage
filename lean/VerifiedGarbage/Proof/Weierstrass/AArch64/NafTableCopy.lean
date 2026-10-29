@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Framework.Block
 

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
 public import VerifiedGarbage.Proof.Weierstrass.Window5
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSum
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowCore

@@ -7,8 +7,6 @@ import VerifiedGarbage.Proof.X448.X86.Runs
 meta import VerifiedGarbage.Proof.X448.X86.Runs
 import VerifiedGarbage.Proof.X448.X86.Lit
 meta import VerifiedGarbage.Proof.X448.X86.Lit
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.X86.Counters
 meta import VerifiedGarbage.Proof.X448.X86.Counters
 import VerifiedGarbage.Proof.X448.X86.BitStep

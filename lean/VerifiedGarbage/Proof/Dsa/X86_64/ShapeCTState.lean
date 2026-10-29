@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeFrame
 
 import VerifiedGarbage.Proof.Dsa.X86_64.ScanFieldCT
 import VerifiedGarbage.Proof.Dsa.X86_64.ScanField
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-! # Public state carried through DSA domain-shape validation -/

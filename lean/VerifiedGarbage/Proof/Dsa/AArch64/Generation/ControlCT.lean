@@ -1,7 +1,5 @@
 module
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Framework.Contract
 

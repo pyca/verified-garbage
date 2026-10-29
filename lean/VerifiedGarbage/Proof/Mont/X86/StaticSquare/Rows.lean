@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Mont.X86.StaticSquare.RowsStep
 import VerifiedGarbage.Proof.Mont.X86.Square.RowsFinal
 import VerifiedGarbage.Proof.Mont.X86.Square.FinalMath
-import Mathlib.Util.CompileInductive
 
 /-! # Iterating the statically scheduled columns to the final product -/
 

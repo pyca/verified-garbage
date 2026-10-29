@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Powers
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Gpr
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.Block
-import Mathlib.Tactic.Basic
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 

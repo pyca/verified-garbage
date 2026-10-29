@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Framework.PowLit
 
-import Mathlib.Tactic.ByContra
 
 /-! # A low-part nonzero bit reduces comparison with a power of two -/
 
@@ -16,7 +15,7 @@ theorem le_power_iff {low high power : Nat} (positive : 0 < power) (bound : low 
     change 0 + power * high ≤ power ↔ high + 0 ≤ 1
     constructor
     · intro H
-      by_contra bad
+      refine Classical.byContradiction fun bad => ?_
       have := Nat.mul_le_mul_left power (by omega : 2 ≤ high)
       omega
     · intro H
@@ -26,7 +25,7 @@ theorem le_power_iff {low high power : Nat} (positive : 0 < power) (bound : low 
     change low + power * high ≤ power ↔ high + 1 ≤ 1
     constructor
     · intro H
-      by_contra bad
+      refine Classical.byContradiction fun bad => ?_
       have := Nat.mul_le_mul_left power (by omega : 1 ≤ high)
       omega
     · intro H

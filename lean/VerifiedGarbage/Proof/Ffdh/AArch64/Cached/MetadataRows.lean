@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.BitMath
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
 
 /-! The public subtraction loop computes exactly ceil(N/5). -/
 @[expose] public section

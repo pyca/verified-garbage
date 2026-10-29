@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductInit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRawFinalLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductFirstLoop
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section

@@ -11,8 +11,6 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.DecapsJ16
 meta import VerifiedGarbage.Impl.MlKem.X86_64.DecapsJ16
 import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Nat.Bitwise.Basic
-import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 
 /-!

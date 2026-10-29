@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedInitialization
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedDecodeTiming
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

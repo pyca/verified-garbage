@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.CmacAes.PPC64LE.Subkeys
 public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Call
 public import VerifiedGarbage.Proof.CmacAes.PPC64LE.Contract
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.CmacAes.PPC64LE
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Spec.Cmac

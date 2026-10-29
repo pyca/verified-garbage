@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignPre
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Bitslice.Anf
 import VerifiedGarbage.Proof.Sha3.X86_64.Permute

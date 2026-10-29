@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.X25519.X86.Column
 
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarStep
 import VerifiedGarbage.Proof.Ed25519.Scalar
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 

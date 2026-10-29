@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Mont.X86_64.Double4
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 public import VerifiedGarbage.Impl.Mont.X86_64.Double4
-import Mathlib.Tactic.SplitIfs
 
 /-! Register-only doubling preserves the field-program invariant. -/
 

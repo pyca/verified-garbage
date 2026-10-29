@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Request
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.PolicyMemory
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Bounds
 import VerifiedGarbage.Proof.Framework.Block
-import Mathlib.Util.CompileInductive
 
 /-! Terminal and entropy-request policy updates retain the native search's live buffers. -/
 

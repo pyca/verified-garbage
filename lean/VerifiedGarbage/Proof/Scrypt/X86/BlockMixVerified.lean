@@ -6,9 +6,7 @@ public import VerifiedGarbage.Spec.Scrypt.Contract
 meta import VerifiedGarbage.Spec.Scrypt.Contract
 public import VerifiedGarbage.Proof.Scrypt.X86.BlockMix
 meta import VerifiedGarbage.Proof.Scrypt.X86.BlockMix
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
-meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Bswap
@@ -43,7 +41,6 @@ meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import VerifiedGarbage.Proof.Scrypt.Memory
 meta import VerifiedGarbage.Proof.Scrypt.Memory
 import Mathlib.Tactic.Set
-import Mathlib.Tactic.Conv
 
 @[expose] public section
 

@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.CopyBytes
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignFail
 import VerifiedGarbage.Proof.RsaPss.EncodeEq
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 import VerifiedGarbage.Proof.RsaPss.X86_64.Params
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall

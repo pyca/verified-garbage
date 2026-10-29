@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.KeyCheck
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
-import Mathlib.Tactic.ToDual
 
 /-! # A state meets the precondition: an all-ones candidate and an empty tape -/
 

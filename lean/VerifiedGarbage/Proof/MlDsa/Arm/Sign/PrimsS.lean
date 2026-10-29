@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.MlKem.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlKem.Arm.Keccak
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-DSA signing on ARMv7: calls of the samplers

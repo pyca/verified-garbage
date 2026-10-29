@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Bignum.Words
 
-import Mathlib.Tactic.Finiteness.Attr
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit

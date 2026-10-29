@@ -20,7 +20,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalar
 import VerifiedGarbage.Proof.Ffdh.Arm.SampleScalarArgs
 import VerifiedGarbage.Proof.Ffdh.Arm.SampleCut
 import VerifiedGarbage.Proof.Ffdh.Arm.ScalarLayout
-import Mathlib.Util.CompileInductive
 import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyOutputs
 import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady

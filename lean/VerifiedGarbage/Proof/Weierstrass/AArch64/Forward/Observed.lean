@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Certificate
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Run
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp

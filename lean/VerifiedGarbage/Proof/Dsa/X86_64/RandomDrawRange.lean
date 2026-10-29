@@ -6,10 +6,7 @@ public import VerifiedGarbage.Proof.Dsa.DomainShape
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomInRange
 import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 
 /-! Range-check a copied candidate against a possibly zero-padded modulus. -/
 @[expose] public section

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.SigEval
 import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Rc4.Scratch
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Offset

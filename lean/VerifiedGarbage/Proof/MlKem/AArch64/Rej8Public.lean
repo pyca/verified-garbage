@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
-import Mathlib.Tactic.SplitIfs
 
 /-! # Public stream prefixes determine the rejection loop's cursors -/
 

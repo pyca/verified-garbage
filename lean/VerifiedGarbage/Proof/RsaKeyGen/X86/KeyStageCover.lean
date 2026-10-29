@@ -1,11 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyStageFrame
-import Mathlib.Data.Nat.Init
-import Mathlib.Order.Defs.Prop
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.ToAdditive
 
 /-! # Small ranges are covered by the native stage header and array bank -/
 

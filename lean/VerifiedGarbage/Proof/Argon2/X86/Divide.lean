@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Argon2.Divide
 public import VerifiedGarbage.Impl.Argon2.X86.Divide
 public import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Fixed-time division on x86 (32-bit)

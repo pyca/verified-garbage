@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Spec.Dsa.SignVerify
 public import VerifiedGarbage.TCB.X86.Target
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.Offset

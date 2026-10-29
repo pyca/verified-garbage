@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesTwoTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesBall
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesTwo
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesFourTiming
 

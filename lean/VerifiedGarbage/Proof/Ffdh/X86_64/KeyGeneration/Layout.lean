@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Data
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Where the key-generation controller's buffers are -/

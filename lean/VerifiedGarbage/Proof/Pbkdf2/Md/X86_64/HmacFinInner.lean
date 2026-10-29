@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Common
 import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Proof.Sha256.X86_64.Compress
-import Mathlib.Tactic.Conv
 
 /-!
 # HMAC over any Merkle–Damgård hash function on x86-64: `finalize` up to the inner digest

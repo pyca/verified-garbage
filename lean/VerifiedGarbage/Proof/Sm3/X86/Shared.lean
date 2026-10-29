@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.Sm3.X86.Lit
 public import VerifiedGarbage.Proof.Sm3.Scratch
 public import VerifiedGarbage.Impl.StackScratch.X86
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86.CallWith

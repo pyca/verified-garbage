@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Sha512.Arm.Rounds
 import VerifiedGarbage.Proof.Blake2.Arm.CompressB
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Argon2.Initial
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Argon2 H′ on ARMv7: correctness

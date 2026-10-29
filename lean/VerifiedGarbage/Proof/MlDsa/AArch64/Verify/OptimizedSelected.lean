@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Final
 import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Optimized
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedState
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedHintPack
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowEnd
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowProduct
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedDot
@@ -21,7 +20,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedTimingBase
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedNttTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedNtt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSingleCall
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowState

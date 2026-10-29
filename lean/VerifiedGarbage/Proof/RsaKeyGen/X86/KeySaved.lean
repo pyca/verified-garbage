@@ -6,12 +6,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyGeometry
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyCallGeometry
-import Mathlib.Data.Nat.Init
-import Mathlib.Order.Defs.Prop
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.ToAdditive
 
 /-! # Native key writes preserve the saved cdecl registers and return address -/
 

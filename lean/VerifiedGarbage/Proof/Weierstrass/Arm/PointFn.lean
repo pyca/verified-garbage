@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.PointFprog
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 
 /-!

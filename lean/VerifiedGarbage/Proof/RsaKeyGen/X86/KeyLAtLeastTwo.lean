@@ -7,10 +7,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyBorrowMask
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyConstant
 import VerifiedGarbage.Proof.Rsa.X86.KeySub
 import VerifiedGarbage.Proof.Rsa.InverseArithmetic
-import Mathlib.Data.Nat.Init
-import Mathlib.Order.Defs.Prop
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
 
 /-! # The public-exponent inverse also needs an LCM of at least two -/
 

@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleNtt
 import VerifiedGarbage.Proof.Sha3.X86_64.X4.Bytes
 public import VerifiedGarbage.Impl.MlKem.X86_64.Sample4
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Avx

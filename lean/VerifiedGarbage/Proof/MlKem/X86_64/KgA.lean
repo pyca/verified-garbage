@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgBase
-import Mathlib.Tactic.Conv
 
 /-!
 # ML-KEM on x86-64: key generation, `G` and the matrix

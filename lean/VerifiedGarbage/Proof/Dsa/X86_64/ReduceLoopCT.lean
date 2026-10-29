@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceByteCT
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import Mathlib.Tactic.Finiteness.Attr
 
 /-! # Constant time of nonempty streaming reduction -/
 

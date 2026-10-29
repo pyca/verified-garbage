@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafState
 import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafExec
 import VerifiedGarbage.Proof.Framework.Block
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.AesSiv.Arm.S2vLoop
 meta import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
 meta import VerifiedGarbage.Proof.AesSiv.Arm.S2vLoop
 import Batteries.Logic
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.AesGcm.Arm.Env
 import VerifiedGarbage.Proof.AesGcm.Arm.Loops
 import VerifiedGarbage.Proof.AesGcm.Arm.Run
@@ -25,7 +24,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Sha256.Stream
 meta import Batteries.Logic
-meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Env
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Loops
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Run

@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SampleWidth
 public import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.Cut
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Tactic.ToDual
 
 /-! The existing constant-time byte-copy loop realizes the reviewed modular entropy cut. -/
 @[expose] public section

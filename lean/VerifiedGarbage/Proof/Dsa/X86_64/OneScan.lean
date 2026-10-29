@@ -3,11 +3,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
 import VerifiedGarbage.Proof.Dsa.Words
 import VerifiedGarbage.Proof.Dsa.X86_64.OrWords
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 
 /-! # DSA subgroup checks against the ordinary value one -/
 

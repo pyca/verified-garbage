@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedState
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedDecodeTiming
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 @[expose] public section

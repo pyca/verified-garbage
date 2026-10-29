@@ -12,9 +12,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.LitAdx
 import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWinAdx
 public import VerifiedGarbage.Impl.Ecdh.P521.X86_64
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJStep
@@ -30,9 +27,6 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P521.LitAdx
 meta import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWinAdx
 meta import VerifiedGarbage.Impl.Ecdh.P521.X86_64
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJStep

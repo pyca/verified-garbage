@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.PrivImpl
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBase
 public import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.FoldedChecked
-import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcAdd
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcColumns
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCorrect

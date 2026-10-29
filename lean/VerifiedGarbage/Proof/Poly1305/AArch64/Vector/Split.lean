@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Lanes
 public import VerifiedGarbage.Proof.Poly1305.Limbs26
 public import VerifiedGarbage.Proof.Framework.Semantics
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Lanes
 public import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem

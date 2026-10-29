@@ -5,7 +5,6 @@ public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
 import VerifiedGarbage.Proof.Dsa.X86_64.WriteSignature
 import VerifiedGarbage.Proof.Dsa.X86_64.Result
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp

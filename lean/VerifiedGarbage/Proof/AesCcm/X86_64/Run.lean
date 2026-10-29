@@ -7,8 +7,6 @@ public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 public import VerifiedGarbage.Proof.Aes.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Block
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.AesCcm.X86_64.Env
 import VerifiedGarbage.Impl.AesCcm.X86_64
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

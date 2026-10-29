@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.TCB.X86.Isa
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Taint
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Workspace header writes leave every original key argument readable -/

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.ColumnSquare
 public import VerifiedGarbage.Proof.Mont.X86.Square.RedStage
 import VerifiedGarbage.Proof.Mont.X86.Square.InputMath
-import Mathlib.Util.CompileInductive
 
 @[expose] public section
 

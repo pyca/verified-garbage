@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.X86.Linear
 public import VerifiedGarbage.Impl.Camellia.X86.ExpandKey
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Camellia's key schedule on x86 (32-bit): the transposes of one value

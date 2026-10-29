@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Dsa.X86_64.Masks
 public import VerifiedGarbage.Proof.Dsa.X86_64.Return
 public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
-import Mathlib.Tactic.Finiteness.Attr
 
 /-! # Acceptance-mask writes preserve reusable arithmetic state -/
 

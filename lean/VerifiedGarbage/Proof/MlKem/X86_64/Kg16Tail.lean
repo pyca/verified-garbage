@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.FragS16
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragS4_16
 public import VerifiedGarbage.Impl.MlKem.X86_64.Kem16
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgB
-import Mathlib.Tactic.Conv
 
 /-!
 # ML-KEM on x86-64: key generation with 16-bit polynomials, after the samples

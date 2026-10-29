@@ -7,9 +7,6 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Config
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP384r1.Lit
 public import VerifiedGarbage.Impl.Ecdh.BrainpoolP384r1.AArch64
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP384r1.Main
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP384r1.Contract
@@ -18,9 +15,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Config
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP384r1.Lit
 meta import VerifiedGarbage.Impl.Ecdh.BrainpoolP384r1.AArch64
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 
 /-!

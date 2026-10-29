@@ -10,8 +10,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed66
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMemory
 public import VerifiedGarbage.Spec.MlDsa.Poly
 public import VerifiedGarbage.Proof.MlKem.Bits
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 import VerifiedGarbage.Proof.Framework.AddrArith
 

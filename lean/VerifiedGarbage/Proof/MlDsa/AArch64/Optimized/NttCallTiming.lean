@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCall
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallee
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttVerified

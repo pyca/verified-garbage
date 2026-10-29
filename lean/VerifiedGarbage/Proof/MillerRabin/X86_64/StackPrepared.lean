@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSq
 
 import VerifiedGarbage.Proof.MillerRabin.X86_64.StackContext
 import VerifiedGarbage.Proof.Bignum.CrtExp
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 

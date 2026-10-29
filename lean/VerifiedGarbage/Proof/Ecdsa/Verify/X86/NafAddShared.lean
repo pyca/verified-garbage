@@ -5,9 +5,7 @@ import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 public import VerifiedGarbage.Impl.Ecdsa.P256.X86Comb
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86
-import Mathlib.Tactic.Finiteness.Attr
 import Aesop.BuiltinRules
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks
 import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 import VerifiedGarbage.Proof.Weierstrass.WinLay
@@ -18,9 +16,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Impl.Ecdsa.P256.X86Comb
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.X86
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.Attr.Core
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 meta import VerifiedGarbage.Proof.Weierstrass.WinLay

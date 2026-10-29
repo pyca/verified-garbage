@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Shared
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Hmac.Stream.PPC64LE
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 public import VerifiedGarbage.Proof.Hmac.Generic.Implies

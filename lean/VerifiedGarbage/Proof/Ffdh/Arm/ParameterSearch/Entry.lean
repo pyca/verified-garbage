@@ -8,7 +8,6 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Params
-import Mathlib.Util.CompileInductive
 
 /-! Exact argument snapshot made before entering the key-search loop. -/
 

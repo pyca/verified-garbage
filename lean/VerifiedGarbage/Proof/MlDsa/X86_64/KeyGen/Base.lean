@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
 public import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.Prims
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
 
 /-!

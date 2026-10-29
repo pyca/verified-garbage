@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.AttemptStatus
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -18,7 +17,6 @@ meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PAttempt
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.AttemptStatus
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import Mathlib.Tactic.Attr.Core
 meta import Aesop.BuiltinRules
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset

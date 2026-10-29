@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.PublicKey
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningKey
 import VerifiedGarbage.Proof.Dsa.X86_64.PrivateKey
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleState
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 import VerifiedGarbage.Proof.Dsa.X86_64.CallOperands

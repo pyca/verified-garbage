@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejCounts
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejTwo
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejFour
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPro
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

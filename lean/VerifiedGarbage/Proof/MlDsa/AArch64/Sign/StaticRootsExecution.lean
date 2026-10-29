@@ -2,8 +2,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsFrame
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 @[expose] public section

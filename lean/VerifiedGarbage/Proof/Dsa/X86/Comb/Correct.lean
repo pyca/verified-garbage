@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.Comb.ABI
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Lit
-import Mathlib.Tactic.ToDual
 
 /-! Functional correctness of both callable comb helpers against their merged specs. -/
 

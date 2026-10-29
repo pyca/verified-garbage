@@ -13,8 +13,6 @@ meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.InitCT
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamInit
 meta import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamAad
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE
 public import VerifiedGarbage.Proof.Aes.SboxSpec
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms

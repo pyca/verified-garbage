@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86.Piece
 public import VerifiedGarbage.Impl.MlKem.X86.Basic
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM on x86 (32-bit): calls that return a value

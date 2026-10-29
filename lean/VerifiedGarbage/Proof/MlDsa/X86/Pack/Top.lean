@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Loop
-import Mathlib.Tactic.SplitIfs
 import all Init.Data.Nat.Bitwise.Basic
 
 /-!

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
 public import VerifiedGarbage.Impl.AesXts.X86_64Unit
 public import VerifiedGarbage.Proof.AesXts.Unit
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 public import VerifiedGarbage.Proof.Aes.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Contract

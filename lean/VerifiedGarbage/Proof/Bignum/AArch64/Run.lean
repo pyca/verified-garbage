@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Impl.Bignum.AArch64.Core

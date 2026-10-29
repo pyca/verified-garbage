@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Verify.Secp256k1.AArch64
-import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Points
@@ -10,6 +9,7 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+import Batteries.Logic
 
 /-! # General complete addition for secp256k1 verification -/
 

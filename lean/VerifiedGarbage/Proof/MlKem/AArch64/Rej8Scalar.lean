@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.SampleLoop
 import VerifiedGarbage.Proof.MlKem.Arith
-import Mathlib.Tactic.SplitIfs
 
 /-! # Scalar tail without preinitializing unused output coefficients
 

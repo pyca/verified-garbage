@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Hmac.Scratch
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # HMAC's `init` and `finalize` on ARMv7, with their working space on the stack

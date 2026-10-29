@@ -20,8 +20,6 @@ meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
 
 /-!
 # ML-DSA signing on x86 (32-bit): copies and hashes

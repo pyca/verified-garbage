@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMul
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.State
-import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf

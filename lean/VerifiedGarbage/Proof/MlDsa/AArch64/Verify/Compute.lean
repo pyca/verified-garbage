@@ -1,6 +1,5 @@
 module
 
-import Mathlib.Tactic.Conv
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Arith
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp

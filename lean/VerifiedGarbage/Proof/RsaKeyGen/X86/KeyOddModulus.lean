@@ -8,10 +8,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOddFlag
 import VerifiedGarbage.Proof.Rsa.X86.KeySub
 import VerifiedGarbage.Proof.Rsa.X86.KeySelect
 import VerifiedGarbage.Proof.Rsa.InverseArithmetic
-import Mathlib.Data.Nat.Init
-import Mathlib.Order.Defs.Prop
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
 
 /-! # Select a safe native inverse modulus without revealing validity -/
 

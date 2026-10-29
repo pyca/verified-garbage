@@ -6,8 +6,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Framework.Block
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 public import VerifiedGarbage.Proof.Aes.X86_64.Lit

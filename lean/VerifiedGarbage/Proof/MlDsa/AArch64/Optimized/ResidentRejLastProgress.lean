@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejLastPair
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSegmentLayout
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejRows
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentBytes
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejStart
 import VerifiedGarbage.Proof.Framework.Offset

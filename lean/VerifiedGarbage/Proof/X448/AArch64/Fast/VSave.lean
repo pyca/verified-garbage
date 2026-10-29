@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Mem
-import Mathlib.Tactic.ToDual
 
 /-!
 # X448 on AArch64: saving `v8`–`v15`

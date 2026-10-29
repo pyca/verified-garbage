@@ -31,8 +31,6 @@ import VerifiedGarbage.Proof.Sha256.Scratch
 meta import VerifiedGarbage.Proof.Sha256.Scratch
 public import VerifiedGarbage.Proof.Framework.X86.StackScratch
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratch
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.MdStream.X86.ArgWord
 meta import VerifiedGarbage.Proof.Framework.Bswap
@@ -73,7 +71,6 @@ public import VerifiedGarbage.Impl.Sha256.X86
 meta import VerifiedGarbage.Impl.Sha256.X86
 public import VerifiedGarbage.Proof.Framework.X86.Call
 meta import VerifiedGarbage.Proof.Framework.X86.Call
-import Mathlib.Tactic.Conv
 
 /-!
 # Streaming SHA-256 on x86 (32-bit): `init`

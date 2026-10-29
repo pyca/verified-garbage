@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
 import VerifiedGarbage.Proof.MlKem.X86_64.KgTop16
 import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag16
 import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
-import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgH16Base
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
 public import VerifiedGarbage.Proof.MlKem.X86_64.EkInline16

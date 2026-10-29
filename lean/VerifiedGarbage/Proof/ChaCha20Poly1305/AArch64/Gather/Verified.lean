@@ -7,8 +7,6 @@ public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Lit
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Lit
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorVariant
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Lit
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.SealGather
 public import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Callee

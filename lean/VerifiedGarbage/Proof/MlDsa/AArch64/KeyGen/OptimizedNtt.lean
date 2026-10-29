@@ -4,8 +4,6 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedNtt
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRestState
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.LazyInv
 import VerifiedGarbage.Proof.MlDsa.DecideAt

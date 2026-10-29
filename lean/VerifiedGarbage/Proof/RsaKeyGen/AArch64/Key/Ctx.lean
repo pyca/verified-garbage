@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Basic.IsEmpty.Defs
 
 /-!
 # An RSA key from its primes on AArch64: the precondition, as the code uses it
@@ -128,7 +127,7 @@ theorem keyCtx_of {s : State} (h : keyPre s) : KCtx s := by
     · exact out_scr dqs' (contains_byte _ hi (by omega_using []))
     · exact out_scr dqis (contains_byte _ hi (by omega_using []))
   · simp only [outsL, keyIn, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-      forall_eq, List.Pairwise.nil, and_true, IsEmpty.forall_iff, implies_true]
+      forall_eq, List.Pairwise.nil, and_true, false_implies, implies_true]
     exact ⟨⟨kApart_of dnd (by omega_using [wn]) (by omega_using [wn]), kApart_of dnp (by omega_using [wn]) (by omega_using []),
         kApart_of dnq (by omega_using [wn]) (by omega_using []), kApart_of dndp (by omega_using [wn]) (by omega_using []),
         kApart_of dndq (by omega_using [wn]) (by omega_using []), kApart_of dnqi (by omega_using [wn]) (by omega_using [])⟩,

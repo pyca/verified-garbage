@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.WinLay
 public import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
 public import VerifiedGarbage.Impl.MlKem.X86_64.EncapsH
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 
 /-!

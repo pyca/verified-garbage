@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Jacobian
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-! Public field environments recover branch agreement after loads from scratch. -/

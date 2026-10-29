@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86.Unpack
 public import VerifiedGarbage.Impl.MlKem.X86.Ntt
 public import VerifiedGarbage.Proof.MlKem.Ntt
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM on x86 (32-bit): writing a table of constants

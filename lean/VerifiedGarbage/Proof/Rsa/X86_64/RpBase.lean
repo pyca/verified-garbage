@@ -1,9 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Impl.Bignum.Layout
 import VerifiedGarbage.Impl.Rsa.X86_64.Keys
 import VerifiedGarbage.Impl.Rsa.X86_64.Recover

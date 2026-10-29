@@ -12,7 +12,6 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Taint
-import Mathlib.Data.List.Induction
 
 /-! ## Counter -/
 

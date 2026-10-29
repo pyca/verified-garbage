@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryBankField
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSliceComposition
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankField
 
 /-! ## From `ProductMemoryValues.lean` -/

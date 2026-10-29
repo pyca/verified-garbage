@@ -3,9 +3,6 @@ public import VerifiedGarbage.Impl.Dsa.Generation.Layout
 public import VerifiedGarbage.Proof.Dsa.X86_64.Call
 
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 
 /-! # Global memory footprint of the reused generator exponentiation -/
 

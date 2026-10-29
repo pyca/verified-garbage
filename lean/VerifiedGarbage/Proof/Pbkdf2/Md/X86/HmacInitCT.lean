@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacInit
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # HMAC over a Merkle–Damgård hash function on x86 (32-bit): `init`, constant time

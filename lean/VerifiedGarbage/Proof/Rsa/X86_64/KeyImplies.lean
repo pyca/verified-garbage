@@ -4,9 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCode
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
 import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
 public import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 

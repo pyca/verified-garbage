@@ -20,12 +20,10 @@ public import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
 public import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 public import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
 meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Md5.X86.Lit
 import VerifiedGarbage.Proof.Sha256.StateMem
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Sha512.X86.Lit
-meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Md5.X86.Lit
 meta import VerifiedGarbage.Proof.Sha256.StateMem

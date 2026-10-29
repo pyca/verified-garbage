@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Constant time of calls, by relating two runs (AArch64)

@@ -1,12 +1,8 @@
 module
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.AesSiv.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Spec.Siv.Contract
 public import Batteries.Logic
-import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.TCB.Arm.Target

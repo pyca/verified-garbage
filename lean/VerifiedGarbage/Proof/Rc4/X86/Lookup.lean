@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Rc4.X86
 public import VerifiedGarbage.Proof.Rc4.Scan32
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Rc4.Dword

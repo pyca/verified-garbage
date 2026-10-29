@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.AesCtr.Ctr32
 public import VerifiedGarbage.Spec.Cbc.Contract
 public import VerifiedGarbage.Spec.Ctr
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Tactic.Linter.Style
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

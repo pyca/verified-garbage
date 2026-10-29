@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 public import VerifiedGarbage.Impl.Ecdh.AArch64.WithMul
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
-import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed25519.AArch64.Mem

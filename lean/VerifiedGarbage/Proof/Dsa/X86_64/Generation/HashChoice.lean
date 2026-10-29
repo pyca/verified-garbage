@@ -2,9 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
 public import VerifiedGarbage.Spec.Dsa
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.ToDual
-import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.Slots

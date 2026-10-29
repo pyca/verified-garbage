@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # x86 (32-bit): straight-line bitwise code, by evaluation

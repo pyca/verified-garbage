@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMemory
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejStart
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSqueeze
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 

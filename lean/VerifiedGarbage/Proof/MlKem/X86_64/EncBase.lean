@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Encrypt
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgA
-import Mathlib.Tactic.Conv
 
 /-!
 # ML-KEM on x86-64: K-PKE.Encrypt, its context and the matrix

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Env
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Block
 
 /-!

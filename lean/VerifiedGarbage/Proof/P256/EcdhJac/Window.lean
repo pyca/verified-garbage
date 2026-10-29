@@ -22,7 +22,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableH
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 import VerifiedGarbage.Proof.Weierstrass.WinJacPoint
-import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath

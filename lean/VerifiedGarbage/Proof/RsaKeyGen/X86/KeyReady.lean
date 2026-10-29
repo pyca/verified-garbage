@@ -2,11 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyOutcome
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
-import Mathlib.Data.Nat.Init
-import Mathlib.Order.Defs.Prop
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.ToAdditive
 
 /-! # Sorted factors and the specified inverse, ready for the retry branch -/
 

@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejLoopState
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejParse
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBytes
-import Mathlib.Tactic.SplitIfs
 
 /-! ## From `ResidentRejSetup.lean` -/
 

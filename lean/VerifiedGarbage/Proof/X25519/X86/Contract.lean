@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.X25519.X86.Basic
 public import VerifiedGarbage.Spec.X25519.Contract
 public import VerifiedGarbage.TCB.X86.Target
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # X25519 on x86 (32-bit): the contract the proof is written against

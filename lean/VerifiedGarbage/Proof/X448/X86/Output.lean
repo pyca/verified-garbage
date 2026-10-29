@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.X448.X86.Pack
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.X448.X86.Iter
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!

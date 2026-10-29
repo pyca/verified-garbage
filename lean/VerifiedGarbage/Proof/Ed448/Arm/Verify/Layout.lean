@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Layout
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

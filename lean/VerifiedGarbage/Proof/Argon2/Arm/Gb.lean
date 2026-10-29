@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Argon2.Arm.Mix
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Blake2.Arm.BlockB
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Argon2 on ARMv7: GB on the permuted block

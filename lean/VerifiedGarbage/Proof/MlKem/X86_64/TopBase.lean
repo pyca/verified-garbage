@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.MlKem.X86_64.Lay
 
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
 import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 import VerifiedGarbage.Proof.MlKem.X86_64.Bytes

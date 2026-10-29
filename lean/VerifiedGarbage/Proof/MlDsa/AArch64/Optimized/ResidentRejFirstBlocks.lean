@@ -7,8 +7,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SqBlock
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFive
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSqueezeSetup
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

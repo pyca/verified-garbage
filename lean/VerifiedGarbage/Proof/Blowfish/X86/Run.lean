@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 import VerifiedGarbage.Proof.Rc4.Dword
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.TCB.Mem
 
 /-!

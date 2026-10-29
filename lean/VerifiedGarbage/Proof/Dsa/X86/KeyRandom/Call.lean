@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.KeyRandom.CallPre
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Tactic.ToDual
 
 /-!
 # Calling the key derivation (x86)

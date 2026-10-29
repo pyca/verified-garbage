@@ -5,9 +5,7 @@ meta import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Z
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Sample
-import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Sample
-meta import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import VerifiedGarbage.Proof.MlKem.AArch64.Common

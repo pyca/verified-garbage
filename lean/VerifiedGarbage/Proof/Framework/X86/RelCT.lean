@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Constant time of calls, by relating two runs (x86, 32-bit)

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Lay
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
 import VerifiedGarbage.Proof.MlDsa.Arith.Representation

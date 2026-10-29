@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedTimingBase
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDotTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPieceTiming
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

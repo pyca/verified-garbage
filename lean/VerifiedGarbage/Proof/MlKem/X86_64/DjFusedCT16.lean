@@ -5,10 +5,8 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.DjFused16
 import VerifiedGarbage.Proof.MlKem.X86_64.EkFusedCT16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkFusedCT16
 import all Init.Data.Nat.Bitwise.Basic
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
 import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
-meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 
 /-!

@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 /-! Retain the SHAKE continuation relation discarded by the original sampler
 wrapper. This uses the existing squeeze contract without specifying an internal

@@ -5,8 +5,6 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.SHTop
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4CT
 meta import VerifiedGarbage.Proof.MlKem.X86_64.S4CT
 import all Init.Data.Nat.Bitwise.Basic
-import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Avx

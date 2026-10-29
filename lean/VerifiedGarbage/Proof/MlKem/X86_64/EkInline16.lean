@@ -7,8 +7,6 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.Encaps
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgBase
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragS4_16
 import all Init.Data.Nat.Bitwise.Basic
-import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 
 /-!

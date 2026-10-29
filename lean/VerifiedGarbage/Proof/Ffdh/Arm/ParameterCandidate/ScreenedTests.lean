@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateParams
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
-import Mathlib.Basic.IsEmpty.Defs
 
 /-! Screen p once before completing q and the remaining p witnesses. -/
 

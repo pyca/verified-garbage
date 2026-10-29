@@ -4,11 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
 import VerifiedGarbage.Proof.Bignum.X86_64.Copy
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.RsaKeyGen.Gcd
 
 /-!

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.PointMulCounter
-import Mathlib.Tactic.SplitIfs
 
 /-! Merged from `Proof.Ed25519.X86.PointMulBatch`. -/
 

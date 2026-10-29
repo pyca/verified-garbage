@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
 public import VerifiedGarbage.Spec.MlKem.Contract1024
 import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
 
 /-!

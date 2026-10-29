@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Square
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # X448 on AArch64: inversion

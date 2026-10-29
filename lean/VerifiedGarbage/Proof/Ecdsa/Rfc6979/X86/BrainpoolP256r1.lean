@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Contract
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP256r1
 import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Lit
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.X86
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -17,8 +15,6 @@ meta import VerifiedGarbage.Spec.Ecdsa.BrainpoolP256r1
 meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Lit
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.X86
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

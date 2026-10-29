@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafStep
-import Mathlib.Tactic.SplitIfs
 
 /-! The sparse recoder of a scalar of `n` words terminates at index `64 n + 1` or later and
 produces every required digit. -/

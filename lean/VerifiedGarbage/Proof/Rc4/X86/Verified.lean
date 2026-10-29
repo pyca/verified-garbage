@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Rc4.X86.ConstantTime
 public import VerifiedGarbage.Proof.Framework.X86.Inline
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Rc4.Update
 import VerifiedGarbage.Proof.Rc4.X86.Schedule
 import VerifiedGarbage.Proof.Framework.Offset

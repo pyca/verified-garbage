@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceByte
 public import VerifiedGarbage.Proof.Dsa.Arithmetic
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 
 /-! # The nonempty streaming reduction loop -/
 

@@ -10,8 +10,6 @@ public import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Deterministic ECDSA on x86-64: `h = bits2octets(digest)`

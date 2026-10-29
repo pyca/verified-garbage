@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.FieldMemory
 public import VerifiedGarbage.Proof.Ed25519.X86.Field
-import Mathlib.Tactic.SplitIfs
 
 /-! Exact extended-coordinate operations and the slots they preserve. -/
 

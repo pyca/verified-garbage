@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.Whole.Wipe
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Setup
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section

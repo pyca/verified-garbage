@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # A taint state for code reading its stack arguments (x86, 32-bit)

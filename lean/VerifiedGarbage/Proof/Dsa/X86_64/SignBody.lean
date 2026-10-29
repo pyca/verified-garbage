@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.SignBytesSpec
 public import VerifiedGarbage.Proof.Dsa.X86_64.SignRelease
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Dsa.SizeBounds
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Complete computation and signature release from initialized scratch -/

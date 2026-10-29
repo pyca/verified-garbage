@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.AArch64.Linear
 public import VerifiedGarbage.Impl.Camellia.AArch64.Ecb
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Bitslicing a subkey on AArch64, by evaluation

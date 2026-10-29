@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP256r1
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Comb.Tables
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # ECDSA over brainpoolP256r1 on AArch64: the contract the proof is written against

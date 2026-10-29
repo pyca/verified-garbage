@@ -4,10 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Product
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
 public import VerifiedGarbage.Proof.Bignum.CrtExp
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
-import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
-import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Framing the DSA child workspaces -/

@@ -22,7 +22,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeyBoundArgs
 meta import VerifiedGarbage.Proof.Ffdh.Arm.KeyBoundArgs
 import VerifiedGarbage.Proof.Ffdh.Arm.QTest
 meta import VerifiedGarbage.Proof.Ffdh.Arm.QTest
-import Mathlib.Util.CompileInductive
 
 /-! The complete bound selection, scan, and saved mask have public traces. -/
 

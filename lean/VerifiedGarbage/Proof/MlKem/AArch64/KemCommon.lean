@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Block
 
 /-!
