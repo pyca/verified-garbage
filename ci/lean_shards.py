@@ -1135,14 +1135,10 @@ def main(args: list[str]) -> int:
                 print(f"+{m}")
         else:
             # Outputs of no module (the precompiled libraries' shared
-            # libraries) are the first shard's. A module no shard builds is
-            # none's: its outputs come from the last build (unpacked while
-            # the shard built), and the assembly builds it if it must.
-            mods = modules()
+            # libraries) are the first shard's.
             for line in sys.stdin:
                 path = line.strip()
-                m = module_of_output(path)
-                if path and p["owner"].get(m, None if m in mods else 0) == i:
+                if path and p["owner"].get(module_of_output(path), 0) == i:
                     print(path)
         return 0
     if args in (["times"], ["times", "--observations"]):

@@ -32,8 +32,9 @@ alone holds the build: CI's Actions cache keeps it, and each job that
 restores it runs `restore`, which extracts `files.tar` and unpacks every
 archive, keeping them, so that the build's next `store` packs only what
 changed. A shard needs only the modules its targets import: `restore
---modules` unpacks only theirs, and `--except` the others, before the
-shard assembles the build.
+--modules` unpacks only theirs, and `--except` the others, while the
+shard builds, into a directory of their own (`--stage`), from which
+`adopt` moves them into the build once it is done.
 
 `store` and `restore` accept `--archive-dir` to keep Mathlib's Actions cache
 in `.lake/mathlib-ltar`, independently of the project's `.lake/ltar` (each
@@ -248,12 +249,14 @@ def store(lean, roots, jobs, level, tool, archive_dir=LTAR, reuse=None):
                     "--null", "-T", "-"], input="\0".join(paths).encode(), check=True)
 
 
-def restore(lean, jobs, tool, archive_dir=LTAR, modules=None, others=None):
+def restore(lean, jobs, tool, archive_dir=LTAR, modules=None, others=None, stage=None):
     """Extracts `files.tar` and unpacks the archives; with `modules` (a
     file of module names, one per line), only the archives of those of the
     project's build, and with `others` (such a file), only the archives
     `modules` left out, and not `files.tar` again: a build in between may
-    have changed its `.hash` files."""
+    have changed its `.hash` files. With `stage` (and `others`), into that
+    directory (relative to `lean`) in place of the project's build
+    directory, for `adopt`."""
     ltars = lean / archive_dir
     chosen = set((modules or others).read_text().split()) if modules or others else set()
     files = extract(lean, ltars / FILES) if (ltars / FILES).is_file() and not others else None
@@ -267,7 +270,7 @@ def restore(lean, jobs, tool, archive_dir=LTAR, modules=None, others=None):
                 continue
             if others and (m is None or m in chosen):
                 continue
-            build = build_of(rel)
+            build = stage if stage is not None else build_of(rel)
             records.append({"file": str(ltar.relative_to(lean)),
                             "base": [str(build / "lib/lean"), str(build / "ir")]})
         if records:
@@ -278,6 +281,32 @@ def restore(lean, jobs, tool, archive_dir=LTAR, modules=None, others=None):
     finally:
         finish(files)
     print(f"Unpacked {len(records)} modules", file=sys.stderr)
+
+
+def adopt(lean, stage, build=Path(".lake/build")):
+    """Moves the outputs of each module that `restore --stage` unpacked
+    into `stage` into `build` (both relative to `lean`), unless `build`
+    has any of them already, which a build since wrote: a module's outputs
+    come all from one build or all from the other, never mixed. Then
+    removes `stage`."""
+    stage, build = lean / stage, lean / build
+    outputs = {}
+    for base in ("lib/lean", "ir"):
+        for f in sorted((stage / base).rglob("*")):
+            if f.is_file():
+                rel = f.relative_to(stage / base)
+                outputs.setdefault(rel.with_name(rel.name.split(".")[0]), []).append(Path(base) / rel)
+    kept = 0
+    for files in outputs.values():
+        if any((build / f).exists() for f in files):
+            kept += 1
+            continue
+        for f in files:
+            (build / f).parent.mkdir(parents=True, exist_ok=True)
+            (stage / f).rename(build / f)
+    if stage.exists():
+        shutil.rmtree(stage)
+    print(f"Moved {len(outputs) - kept} modules into the build; kept {kept} it had built", file=sys.stderr)
 
 
 def extract(lean, files):
@@ -404,6 +433,11 @@ def main(argv=None):
                       help="a file of modules: unpack only their archives (and every package's)")
     only.add_argument("--except", dest="others", type=Path,
                       help="a file of modules: unpack only the other archives, without files.tar")
+    r.add_argument("--stage", type=Path,
+                   help="with --except, unpack into this directory (relative to lean), for `adopt`")
+    a = sub.add_parser("adopt", help="move what `restore --stage` unpacked into the build")
+    a.add_argument("lean", type=Path, help="the Lean project (lean/)")
+    a.add_argument("stage", type=Path, help="the directory `restore --stage` unpacked into, relative to it")
     u = sub.add_parser("unpack", help="extract a tar of `pack` from stdin")
     u.add_argument("lean", type=Path, help="the Lean project (lean/)")
     u.add_argument("--batch", type=int, default=256 << 20,
@@ -428,7 +462,12 @@ def main(argv=None):
     elif args.command == "store":
         store(args.lean.resolve(), args.roots, args.jobs, args.level, args.leantar, args.archive_dir)
     elif args.command == "restore":
-        restore(args.lean.resolve(), args.jobs, args.leantar, args.archive_dir, args.modules, args.others)
+        if args.stage is not None and args.others is None:
+            parser.error("--stage needs --except")
+        restore(args.lean.resolve(), args.jobs, args.leantar, args.archive_dir, args.modules, args.others,
+                args.stage)
+    elif args.command == "adopt":
+        adopt(args.lean.resolve(), args.stage)
     else:
         unpack(args.lean.resolve(), args.jobs, args.tmp, args.batch, args.leantar, sys.stdin.buffer)
 

@@ -1,5 +1,6 @@
 """Pack a fake Lean build into module archives and restore it, with a stub leantar."""
 
+import contextlib
 import io
 import json
 import os
@@ -207,6 +208,44 @@ class LeanArchiveTests(unittest.TestCase):
         expected[Path(".lake/build/lib/lean/A/B.olean")] = b"rebuilt"
         expected[Path(".lake/build/lib/lean/A/B.olean.hash")] = b"1"
         self.assertEqual(restored, expected)
+
+    def test_restore_the_others_staged_then_adopt_them(self):
+        lean_cache.store(self.lean, [Path(".lake/build")], 2, 5, str(self.stub))
+        original = {p.relative_to(self.lean): p.read_bytes()
+                    for p in (self.lean / ".lake/build").rglob("*") if p.is_file()}
+        target = self.root / "restored"
+        (target / ".lake").mkdir(parents=True)
+        (self.lean / ".lake/ltar").rename(target / ".lake/ltar")
+        chosen = self.root / "modules"
+        chosen.write_text("A.B\n")
+        lean_cache.restore(target, 2, str(self.stub), modules=chosen)
+        stage = Path(".lake/build-rest")
+        with contextlib.redirect_stderr(io.StringIO()):
+            lean_cache.main(["restore", str(target), "--leantar", str(self.stub), "--except", str(chosen),
+                             "--stage", str(stage)])
+        build = target / ".lake/build"
+        # Nothing of the others reaches the build before `adopt`.
+        self.assertFalse((build / "lib/lean/C.olean").exists())
+        self.assertTrue((target / stage / "lib/lean/C.olean").is_file())
+        # A build meanwhile rewrites A/B, and builds C, of the others, but
+        # its `.olean` alone so far: C stays as it built it.
+        (build / "lib/lean/A/B.olean").write_text("rebuilt")
+        (build / "lib/lean/C.olean").write_text("rebuilt")
+        with contextlib.redirect_stderr(io.StringIO()):
+            lean_cache.main(["adopt", str(target), str(stage)])
+        self.assertFalse((target / stage).exists())
+        restored = {p.relative_to(target): p.read_bytes() for p in build.rglob("*") if p.is_file()}
+        expected = dict(original)
+        expected[Path(".lake/build/lib/lean/A/B.olean")] = b"rebuilt"
+        for ext in (".olean.server", ".olean.private", ".ilean", ".ir.sig", ".ir", ".trace"):
+            del expected[Path(f".lake/build/lib/lean/C{ext}")]
+        del expected[Path(".lake/build/ir/C.c")]
+        expected[Path(".lake/build/lib/lean/C.olean")] = b"rebuilt"
+        self.assertEqual(restored, expected)
+
+    def test_stage_needs_except(self):
+        with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
+            lean_cache.main(["restore", str(self.lean), "--stage", "x"])
 
     def test_module_of(self):
         self.assertEqual(lean_cache.module_of(Path("build/A/B.ltar")), "A.B")

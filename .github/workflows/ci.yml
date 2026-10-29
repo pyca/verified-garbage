@@ -210,8 +210,9 @@ jobs:
       # (a minute, on the critical path of every run with shards). At the
       # lowest priority, so it takes only the CPU the build leaves idle (in
       # the build's chains of imports, most of it); the shards that do not
-      # assemble leave it unfinished. It unpacks none of the shard's
-      # modules, which are all the build writes.
+      # assemble leave it unfinished. Into a directory of its own, which
+      # the build never reads or writes: the assembly moves it into the
+      # build once the build is done.
       - name: Start unpacking the rest of the build, in the background
         if: ${{ hashFiles('lean/.lake/ltar/index.json') != '' }}
         run: |
@@ -220,7 +221,7 @@ jobs:
             # assembly would wait for it.
             set +e
             nice -n 19 ionice -c 2 -n 7 python3 ../ci/lean_cache.py restore . --except "$RUNNER_TEMP/lean-modules" \
-              > "$RUNNER_TEMP/lean-rest.log" 2>&1
+              --stage .lake/build-rest > "$RUNNER_TEMP/lean-rest.log" 2>&1
             echo $? > "$RUNNER_TEMP/lean-rest.status.tmp"
             mv "$RUNNER_TEMP/lean-rest.status.tmp" "$RUNNER_TEMP/lean-rest.status"
           ) < /dev/null > /dev/null 2>&1 &
@@ -295,14 +296,20 @@ jobs:
           path: ${{ runner.temp }}/lean-build
       # Before the shards' outputs go over it. (Named as when it unpacked
       # the rest itself, for ci/ci_metrics.py: what is left of it is the
-      # assembly's wait.)
+      # assembly's wait.) Each module moves in whole, and only if the build
+      # wrote none of its outputs (`lean_cache.py adopt`): with no module of
+      # the closure in it, normally all of them, but a module Lake built
+      # outside the closure keeps the outputs it built, never a mix.
       - name: Unpack the rest of the build
         if: ${{ steps.all-uploaded.outputs.all == 'true' && hashFiles('lean/.lake/ltar/index.json') != '' }}
         timeout-minutes: 20
         run: |
           while [ ! -f "$RUNNER_TEMP/lean-rest.status" ]; do sleep 1; done
           cat "$RUNNER_TEMP/lean-rest.log"
-          exit "$(cat "$RUNNER_TEMP/lean-rest.status")"
+          if [ "$(cat "$RUNNER_TEMP/lean-rest.status")" != 0 ]; then
+            exit 1
+          fi
+          python3 ../ci/lean_cache.py adopt . .lake/build-rest
       - if: ${{ steps.all-uploaded.outputs.all == 'true' }}
         uses: ./.github/actions/lean-assemble
         with:
