@@ -1,14 +1,132 @@
 module
 
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchEntryCT
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLoopCT
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchFinishCT
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLoop
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchSafety
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchData
-import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchStart
 
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchEntryCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchFinishCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLoop
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchStart
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCTData
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Safety
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchBranch
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLoopGuards
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchIterationCT
+import VerifiedGarbage.Proof.Framework.Omega
 /-! # Complete native parameter generation has the specified public-tape leakage -/
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/X86_64/Generation/SearchCTStep.lean`, which only this module imported.
+section
+
+/-! # Public successor states for the native parameter-search timing proof -/
+
+section
+
+namespace VG.Proof.Ffdh.X86_64.Generation
+
+open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64
+open VG.Proof.Ffdh.X86_64.ParameterCandidate VG.Impl.Ffdh.X86_64.Generation.Search
+
+def searchContinues (p : SearchPoint) : Prop := p.remaining ≠ 0 ∧
+  Spec.Ffdh.candidateStatus (searchCandidate p.inputs p.used) = 2
+
+instance (p : SearchPoint) : Decidable (searchContinues p) := inferInstanceAs
+  (Decidable (p.remaining ≠ 0 ∧ Spec.Ffdh.candidateStatus (searchCandidate p.inputs p.used) = 2))
+
+def nextSearchPoint (p : SearchPoint) : SearchPoint :=
+  { p with used := p.used + candidateUsed p.inputs p.used, remaining := p.remaining - 1 }
+
+def SearchCTStep (p : SearchPoint) (s : State) : Prop :=
+  if searchContinues p then eval .e s = some true ∧ SearchCTL (nextSearchPoint p) s
+  else eval .e s = some false
+
+theorem search_ct_step (v : RoundImpl) (p : SearchPoint) (s : State) (h : SearchCTL p s) :
+    WP isa (iteration (candidateCode v)) s (SearchCTStep p) := by
+  unfold iteration
+  change WP isa (.seq _ (.seq _ _)) s _
+  refine WP.seq (WP.mono (remaining_ready p s h) fun u hu => ?_)
+  refine WP.seq (WP.mono (branch_ready v p u hu) fun t ht => ?_)
+  by_cases hr : p.remaining = 0
+  · simp only [SearchBranchResult, hr, ite_true] at ht
+    obtain ⟨original, ht⟩ := ht
+    refine WP.mono (done_loop_guard ht) fun q ⟨hq, _⟩ => ?_
+    simp only [SearchCTStep, show ¬searchContinues p by simp [searchContinues, hr], ite_false]
+    exact hq
+  · simp only [SearchBranchResult, hr, ite_false] at ht
+    obtain ⟨original, ht⟩ := ht
+    cases hc : searchCandidate p.inputs p.used with
+    | none =>
+      simp only [SearchClassified, hc] at ht
+      refine WP.mono (done_loop_guard ht) fun q ⟨hq, _⟩ => ?_
+      simp only [SearchCTStep, show ¬searchContinues p by simp [searchContinues, hc, Spec.Ffdh.candidateStatus], ite_false]
+      exact hq
+    | some pair =>
+      obtain ⟨value, rest⟩ := pair
+      cases value with
+      | some prime =>
+        simp only [SearchClassified, hc] at ht
+        refine WP.mono (done_loop_guard ht) fun q ⟨hq, _⟩ => ?_
+        simp only [SearchCTStep, show ¬searchContinues p by simp [searchContinues, hc, Spec.Ffdh.candidateStatus], ite_false]
+        exact hq
+      | none =>
+        simp only [SearchClassified, hc] at ht
+        refine WP.mono (live_loop_guard ht.1 ht.2) fun q ⟨hq, hlive⟩ => ?_
+        simp only [SearchCTStep, show searchContinues p by simp [searchContinues, hr, hc, Spec.Ffdh.candidateStatus], ite_true]
+        exact ⟨hq, original, by simpa only [nextSearchPoint, candidateUsed, hc] using hlive⟩
+
+end VG.Proof.Ffdh.X86_64.Generation
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/X86_64/Generation/SearchLoopCT.lean`, which only this module imported.
+section
+
+/-! # Repeated native candidate retries preserve the public timing relation -/
+
+section
+
+namespace VG.Proof.Ffdh.X86_64.Generation
+
+open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.MillerRabin.X86_64
+open VG.Proof.Ffdh.X86_64.ParameterCandidate VG.Impl.Ffdh.X86_64.Generation.Search
+
+private def LoopPair (n : Nat) (s t : State) : Prop :=
+  ∃ p, n = p.remaining + 1 ∧ SearchCTL p s ∧ SearchCTL p t
+
+private theorem iteration_pair (v : RoundImpl) (n : Nat) :
+    RelCT isa (LoopPair n) (iteration (candidateCode v)) fun s t =>
+      eval .e s = eval .e t ∧ (eval .e s = some false → True) ∧
+      (eval .e s = some true → ∃ m < n, LoopPair m s t) := by
+  have hw (p : SearchPoint) (s : State) (h : n = p.remaining + 1 ∧ SearchCTL p s) :
+      WP isa (iteration (candidateCode v)) s fun t => n = p.remaining + 1 ∧ SearchCTStep p t :=
+    WP.mono (search_ct_step v p s h.2) fun _ ht => ⟨h.1, ht⟩
+  have hc := two_post ((search_iteration_ct v).mono
+    (fun _ _ ⟨p, h₁, h₂⟩ => ⟨p, h₁.2, h₂.2⟩) (fun _ _ h => h)) hw
+  refine hc.mono (fun _ _ ⟨p, hn, h₁, h₂⟩ => ⟨p, ⟨hn, h₁⟩, hn, h₂⟩) ?_
+  rintro s t ⟨p, ⟨hn, h₁⟩, _, h₂⟩
+  by_cases hb : searchContinues p
+  · simp only [SearchCTStep, hb, ite_true] at h₁ h₂
+    refine ⟨h₁.1.trans h₂.1.symm, fun _ => trivial, fun _ => ?_⟩
+    refine ⟨(nextSearchPoint p).remaining + 1, ?_, nextSearchPoint p, rfl, h₁.2, h₂.2⟩
+    dsimp only [nextSearchPoint]
+    omega_using [hn, hb.1]
+  · simp only [SearchCTStep, hb, ite_false] at h₁ h₂
+    refine ⟨h₁.trans h₂.symm, fun _ => trivial, fun ht => ?_⟩
+    rw [h₁] at ht
+    cases ht
+
+theorem search_loop_ct (v : RoundImpl) :
+    RelCT isa (Two SearchCTL) (.loop (iteration (candidateCode v)) .e) (fun _ _ => True) := by
+  intro s t tr₁ tr₂ u₁ u₂ ⟨p, hs, ht⟩ he₁ he₂
+  exact RelCT.loop (M := isa) (body := iteration (candidateCode v)) (c := .e)
+    (Q := fun _ _ => True) LoopPair (iteration_pair v) (p.remaining + 1)
+    _ _ _ _ _ _ ⟨p, rfl, hs, ht⟩ he₁ he₂
+
+end VG.Proof.Ffdh.X86_64.Generation
+end
+
+end
 
 @[expose] public section
 

@@ -1,12 +1,121 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Start
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.NativeResult
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CandidateTest
+public import VerifiedGarbage.Spec.Ffdh.Contract
+
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Basic.IsEmpty.Defs
-
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 /-! # FFDH parameter generation on x86-64: the complete callable body -/
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/X86_64/ParameterCandidate/ResultBridge.lean`, which only this module imported.
+section
+
+/-! # FFDH parameter generation on x86-64: relate the native policy to the specification -/
+
+section
+
+namespace VG.Proof.Ffdh.X86_64.ParameterCandidate
+
+open VG VG.X86_64 VG.Proof.Bignum
+open VG.Proof.Ffdh.ParameterCandidate
+
+theorem CandidateBase.candidate_result {p : CandidateP} {s : State} (h : CandidateBase p s)
+    (havail : p.k ≤ p.rand.length) :
+    Spec.Ffdh.parameterCandidate p.bits p.gen p.rand =
+      (candidateTail p (p.rand.drop p.k)).map (fun x => (if x.1 then some p.P else none, x.2)) := by
+  rw [← checkedCandidate_eq]
+  unfold checkedCandidate
+  rw [← h.len, draw_of_le havail]
+  simp only [bind, Option.bind_some]
+  change (do
+    if !(Spec.Ffdh.generationShape p.bits p.gen p.P && Spec.Ffdh.primeShape p.P && Spec.Ffdh.primeShape p.Q) then
+      return (none, p.rand.drop p.k)
+    let (pass, rest) ← checkWitnesses p.Q (Spec.Ffdh.primeChecks (Spec.RsaKeyGen.bitLength p.Q)) (p.rand.drop p.k)
+    if !pass then return (none, rest)
+    let (pass, rest) ← checkWitnesses p.P (Spec.Ffdh.primeChecks (Spec.RsaKeyGen.bitLength p.P)) rest
+    return (if pass then some p.P else none, rest)) = _
+  have hpodd : p.P % 2 = 1 :=
+    (candidate_shape (bits := p.bits) (by omega_using [h.bits1]) _).1
+  have hpbits : Spec.RsaKeyGen.bitLength p.P = p.phaseBits false := (h.phase_bitLength false hpodd).1
+  by_cases hgp : (Spec.Ffdh.generationShape p.bits p.gen p.P && Spec.Ffdh.primeShape p.P) = true
+  · by_cases hq : Spec.Ffdh.primeShape p.Q = true
+    · have hqodd : p.Q % 2 = 1 := by
+        have hh := hq
+        unfold Spec.Ffdh.primeShape at hh
+        exact beq_iff_eq.mp ((Bool.and_eq_true _ _).mp ((Bool.and_eq_true _ _).mp hh).1).2
+      have hqbits : Spec.RsaKeyGen.bitLength p.Q = p.phaseBits true := (h.phase_bitLength true hqodd).1
+      simp only [hgp, hq, Bool.and_self, Bool.not_true, Bool.false_eq_true, ite_false,
+        candidateTail, ite_true, qPolicy, hqbits, hpbits]
+      cases he : checkWitnesses p.Q (Spec.Ffdh.primeChecks (p.phaseBits true)) (p.rand.drop p.k) with
+      | none => rfl
+      | some ar =>
+        obtain ⟨pass, rest⟩ := ar
+        cases pass
+        · rfl
+        · simp only [bind, Option.bind_some, Bool.not_true, Bool.false_eq_true, ite_false]
+          cases checkWitnesses p.P (Spec.Ffdh.primeChecks (p.phaseBits false)) rest with
+          | none => rfl
+          | some ar => obtain ⟨pass, rest'⟩ := ar; cases pass <;> rfl
+    · have hqf : Spec.Ffdh.primeShape p.Q = false := Bool.eq_false_iff.mpr hq
+      simp [candidateTail, qPolicy, hgp, hqf]
+  · have hgpf : (Spec.Ffdh.generationShape p.bits p.gen p.P && Spec.Ffdh.primeShape p.P) = false :=
+      Bool.eq_false_iff.mpr hgp
+    simp [candidateTail, hgpf]
+
+end VG.Proof.Ffdh.X86_64.ParameterCandidate
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/X86_64/ParameterCandidate/NativeResult.lean`, which only this module imported.
+section
+
+/-! # FFDH parameter generation on x86-64: the public status and consumed prefix -/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86_64.ParameterCandidate
+
+open VG VG.Proof.Bignum VG.Impl.Ffdh.X86_64.ParameterCandidate
+open VG.Proof.Ffdh.ParameterCandidate
+
+def NativeResult (p : CandidateP) (used : Nat) (m : Mem) : Prop :=
+  let r := Spec.Ffdh.parameterCandidate p.bits p.gen p.rand
+  word m p.B (8 * oStatus) = BitVec.ofNat 64 (Spec.Ffdh.candidateStatus r) ∧
+    (match r with | none => True | some (_, rest) => rest = p.rand.drop used) ∧
+    (∀ n rest, r = some (some n, rest) → n = p.P)
+
+theorem CandidateBase.nativeResult {p : CandidateP} {s : VG.X86_64.State} {n : Nat} {m : Mem}
+    (h : CandidateBase p s) (havail : p.k ≤ p.rand.length)
+    (hr : TapeOutcome p p.k n (candidateTail p (p.rand.drop p.k)) m) :
+    NativeResult p (p.k + n) m := by
+  unfold NativeResult
+  rw [h.candidate_result havail]
+  cases he : candidateTail p (p.rand.drop p.k) with
+  | none => simpa [he, TapeOutcome, Spec.Ffdh.candidateStatus] using hr
+  | some ar =>
+    obtain ⟨pass, rest⟩ := ar
+    cases pass
+    · simp only [he, TapeOutcome] at hr
+      simp [Spec.Ffdh.candidateStatus, hr]
+    · simp only [he, TapeOutcome] at hr
+      simp [Spec.Ffdh.candidateStatus, hr]
+
+theorem CandidateBase.short_result {p : CandidateP} {s : VG.X86_64.State}
+    (h : CandidateBase p s) (hshort : p.rand.length < p.k) :
+    Spec.Ffdh.parameterCandidate p.bits p.gen p.rand = none := by
+  rw [← checkedCandidate_eq]
+  unfold checkedCandidate
+  rw [← h.len, draw_of_short hshort]
+  rfl
+
+end VG.Proof.Ffdh.X86_64.ParameterCandidate
+end
+
+end
 
 @[expose] public section
 
