@@ -62,6 +62,9 @@ pub(crate) mod chacha20poly1305;
 pub(crate) mod cmac_aes;
 
 #[rustfmt::skip]
+pub(crate) mod cmac_triple_des;
+
+#[rustfmt::skip]
 pub(crate) mod consts;
 
 #[rustfmt::skip]
