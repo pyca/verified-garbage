@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Sm4.RISCV64.Layers
-public import VerifiedGarbage.Impl.Words.RISCV64.Loops
+public import VerifiedGarbage.Impl.Words.RISCV64.CopyFast
 
 /-!
 # SM4 ECB, bitsliced, on RISC-V
@@ -14,9 +14,11 @@ allocates on the stack. As on PPC64LE (`Impl/Sm4/PPC64LE/Ecb.lean`):
 * The scratch buffer moves to `a5`; the callee-saved registers are saved,
   the masks set.
 * The model faults on misaligned accesses, and the contracts state no
-  alignment for the schedule or the data: the schedule is copied a byte at
-  a time to the tail buffer, which is aligned, and read there; the blocks
-  are copied a byte at a time to and from the tail buffer.
+  alignment for the schedule or the data: the schedule is copied to the
+  tail buffer, which is aligned, and read there; the blocks are copied to
+  and from the tail buffer. Each copy (`copyAny`) moves a doubleword at a
+  time when the source and destination are 8-byte aligned, and a byte at a
+  time otherwise, a choice of the pointers alone.
 * The round keys are bitsliced into the table at slot 128, in the order the
   rounds use them: `rk₀ … rk₃₁` for encryption, `rk₃₁ … rk₀` for decryption
   (§7.2). Decryption then runs the same rounds as encryption. The sixteen
@@ -39,7 +41,7 @@ namespace VG.Impl.Sm4.RISCV64
 
 open VG.RISCV64 VG.Impl.Aes.RISCV64
 open VG.Impl.Sm4 (Lin)
-open VG.Impl.Words.RISCV64 (copyLoop)
+open VG.Impl.Words.RISCV64 (copyAny)
 
 inductive Dir | encrypt | decrypt
   deriving DecidableEq, Repr
@@ -50,7 +52,7 @@ inductive Dir | encrypt | decrypt
 to that copy. -/
 def copySchedule : Prog isa :=
   .seq (.block ([movR .t1 .a0] ++ slotAddr .t2 tailSlot ++ [.li .t3 128]))
-    (.seq (copyLoop .t4 .t1 .t2 .t3) (.block (slotAddr .a0 tailSlot)))
+    (.seq (copyAny .t4 .t1 .t2 .t3) (.block (slotAddr .a0 tailSlot)))
 
 /-- `n` pairs of round keys, from the word at `a0`, to the entries at `kr`,
 which `st` moves to the next entry after each. -/
@@ -90,15 +92,16 @@ def groupCount : Prog isa :=
   .seq (.block [shrI t0 .a2 4])
     (.ite (.nonzero t0) (.block [.li .a4 16]) (.block [movR .a4 .a2]))
 
-/-- The group's blocks to the tail buffer, a byte at a time. -/
+/-- The group's blocks to the tail buffer, a doubleword at a time if the
+data is 8-byte aligned, else a byte at a time. -/
 def copyIn : Prog isa :=
   .seq groupCount
-    (.seq (.block ([movR .t1 .a1] ++ slotAddr .t2 tailSlot ++ [shlI .t3 .a4 4])) (copyLoop .t4 .t1 .t2 .t3))
+    (.seq (.block ([movR .t1 .a1] ++ slotAddr .t2 tailSlot ++ [shlI .t3 .a4 4])) (copyAny .t4 .t1 .t2 .t3))
 
 /-- The tail buffer back to the group's blocks. -/
 def copyOut : Prog isa :=
   .seq groupCount
-    (.seq (.block (slotAddr .t1 tailSlot ++ [movR .t2 .a1, shlI .t3 .a4 4])) (copyLoop .t4 .t1 .t2 .t3))
+    (.seq (.block (slotAddr .t1 tailSlot ++ [movR .t2 .a1, shlI .t3 .a4 4])) (copyAny .t4 .t1 .t2 .t3))
 
 /-- Sixteen blocks, or the last one to fifteen, and on to the next. -/
 def group : Prog isa :=

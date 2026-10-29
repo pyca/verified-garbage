@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 import VerifiedGarbage.Proof.Framework.RISCV64.MRun
 import VerifiedGarbage.Proof.Framework.RISCV64.Loops
+import VerifiedGarbage.Proof.Framework.RISCV64.CopyFast
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Sm4.RISCV64.LayersLit
@@ -428,12 +429,17 @@ theorem copySchedule_wp {s₀ : State} {b sched : Addr} (hp : SchedPre s₀ b sc
       exact VG.Offset.contains_base b (by omega_arith) (by omega_arith)
   unfold copySchedule
   refine WP.seq (WP.of_runBlock ⟨s₁, e₁, ?_⟩)
-  refine WP.seq (WP.mono (copyLoop_ok (tmp := .t4) (src := .t1) (dst := .t2) (cnt := .t3) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) s₁ (N := 128) (by decide) (by decide) t3₁
+  refine WP.seq (WP.mono (copyAny_ok (tmp := .t4) (src := .t1) (dst := .t2) (cnt := .t3) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) s₁ (N := 128) (by decide) (by decide) (by decide)
+    t3₁
     (fun i hi => by
       rw [rd₁, wr₁, t1₁, ha0]
       exact ⟨_, hp.sch, VG.Offset.contains_base _ (by omega_arith) (by have := hp.schFit; omega_arith)⟩)
     (fun i hi => by rw [wr₁, t2₁]; exact ⟨_, hp.scr, hsrc i 1 (by omega_arith)⟩)
+    (fun i hi _ => by
+      rw [rd₁, wr₁, t1₁, ha0]
+      exact ⟨_, hp.sch, VG.Offset.contains_base _ (by omega_arith) (by have := hp.schFit; omega_arith)⟩)
+    (fun i hi _ => by rw [wr₁, t2₁]; exact ⟨_, hp.scr, hsrc (8 * i) 8 (by omega_arith)⟩)
     (by
       rw [t1₁, t2₁, ha0]
       exact hp.sep.symm.sep (by simpa using hsrc 0 128 (by decide)) (Region.contains_self _ _))) fun t ⟨tc, tf, tk⟩ => ?_)

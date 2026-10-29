@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Sm4.Layout
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.RISCV64.Loops
+import VerifiedGarbage.Proof.Framework.RISCV64.CopyFast
 import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 import VerifiedGarbage.Proof.Framework.RISCV64.MRun
 import VerifiedGarbage.Proof.Framework.Interleave
@@ -22,7 +23,7 @@ import VerifiedGarbage.Proof.Sm4.RISCV64.LayersLit
 
 `dataGroup_wp`: one iteration of the data loop copies the group's blocks
 (sixteen, or the last one to fifteen) to the tail buffer, a byte at a time
-(`copyLoop_ok`), transforms it (`crypt16_wp`, which keeps the data pointer,
+(`copyAny_ok`), transforms it (`crypt16_wp`, which keeps the data pointer,
 the blocks left and the table's end in `a1`, `a2` and `a0`), copies the
 blocks back and steps to the next group. As on PPC64LE
 (`Proof/Sm4/PPC64LE/Group.lean`).
@@ -35,7 +36,7 @@ namespace VG.Proof.Sm4.RISCV64
 open VG VG.RISCV64 VG.RISCV64.Straight VG.Impl.Sm4.RISCV64
 open VG.Proof.Sm4 (DInv quads ofBlock outBlock not_contains_off blockAt_getD)
 open VG.Impl.Aes.RISCV64 (q sb t0 t1 movR ldS stS shrI shlI)
-open VG.Impl.Words.RISCV64 (copyLoop)
+open VG.Impl.Words.RISCV64 (copyAny)
 open VG.Proof.Aes.RISCV64 (sboxWrites)
 
 /-! ## Small blocks -/
@@ -172,19 +173,21 @@ structure GPre (s₀ : State) (b D : Addr) (n : Nat) : Prop where
   fitD : D.toNat + 16 * n ≤ 2 ^ 64
   al : b.toNat % 8 = 0
 
-/-- `copyLoop` of `c` blocks from `t1` to `t2`, `t3 = 16 c` bytes, set up. -/
+/-- `copyAny` of `c` blocks from `t1` to `t2`, `t3 = 16 c` bytes, set up. -/
 theorem copy_wp {s : State} {X Y : Addr} {c : Nat} (hc : 0 < c) (hc16 : c ≤ 16)
     (hx : s.gpr .t1 = X) (hy : s.gpr .t2 = Y) (hcx : s.gpr .t3 = BitVec.ofNat 64 (16 * c))
-    (hX : ∀ i < 16 * c, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 i) 1)
-    (hY : ∀ i < 16 * c, InRegions s.wr (Y + BitVec.ofNat 64 i) 1)
+    (hX : ∀ i n, i + n ≤ 16 * c → i < 16 * c → InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 i) n)
+    (hY : ∀ i n, i + n ≤ 16 * c → i < 16 * c → InRegions s.wr (Y + BitVec.ofNat 64 i) n)
     (hsep : Region.Disjoint ⟨X, 16 * c⟩ ⟨Y, 16 * c⟩) :
-    WP isa (copyLoop .t4 .t1 .t2 .t3) s fun s' =>
+    WP isa (copyAny .t4 .t1 .t2 .t3) s fun s' =>
       (∀ t < 16 * c, s'.mem (Y + BitVec.ofNat 64 t) = s.mem (X + BitVec.ofNat 64 t)) ∧
       Frame [⟨Y, 16 * c⟩] s.mem s'.mem ∧
       (∀ r, r ≠ .t1 → r ≠ .t2 → r ≠ .t3 → r ≠ .t4 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr :=
-  WP.mono (copyLoop_ok (tmp := .t4) (src := .t1) (dst := .t2) (cnt := .t3) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) s (N := 16 * c) (by omega) (by omega) hcx
-    (by rw [hx]; exact hX) (by rw [hy]; exact hY)
+  WP.mono (copyAny_ok (tmp := .t4) (src := .t1) (dst := .t2) (cnt := .t3) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) s (N := 16 * c) (by omega) (by omega) (by omega) hcx
+    (by rw [hx]; exact fun i hi => hX i 1 (by omega) hi) (by rw [hy]; exact fun i hi => hY i 1 (by omega) hi)
+    (by rw [hx]; exact fun i hi _ => hX (8 * i) 8 (by omega) (by omega))
+    (by rw [hy]; exact fun i hi _ => hY (8 * i) 8 (by omega) (by omega))
     (by rw [hx, hy]; exact hsep.symm.sep (Region.contains_self _ _) (Region.contains_self _ _)))
     fun t ⟨tc, tf, tk⟩ => ⟨by rw [← hx, ← hy]; exact tc, by rw [← hy]; exact tf,
       fun r h1 h2 h3 h4 => tk.gpr (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h4, h1, h2, h3⟩),
@@ -233,13 +236,13 @@ theorem dataGroup_wp {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4
   let T := b + BitVec.ofNat 64 (8 * tailSlot)
   have hwS : (⟨b, 8 * slots⟩ : Region) ∈ s.wr := by rw [hi.wr]; exact hp.scr
   have hwD : (⟨D, 16 * n⟩ : Region) ∈ s.wr := by rw [hi.wr]; exact hp.dat
-  have inT : ∀ t, t < 256 → InRegions s.wr (T + BitVec.ofNat 64 t) 1 := by
-    intro t ht
+  have inT : ∀ t n, t + n ≤ 256 → t < 256 → InRegions s.wr (T + BitVec.ofNat 64 t) n := by
+    intro t n ht ht'
     refine ⟨_, hwS, ?_⟩
     rw [addr_add]
     exact VG.Offset.contains_base b (by rw [slots_eq, tailSlot_eq]; omega_arith) (by rw [tailSlot_eq]; omega_arith)
-  have inA : ∀ t, t < 16 * c → InRegions s.wr (A + BitVec.ofNat 64 t) 1 := by
-    intro t ht
+  have inA : ∀ t n, t + n ≤ 16 * c → t < 16 * c → InRegions s.wr (A + BitVec.ofNat 64 t) n := by
+    intro t n ht ht'
     refine ⟨_, hwD, ?_⟩
     rw [addr_add]
     exact VG.Offset.contains_base D (by omega_arith) (by omega_arith)
@@ -264,8 +267,8 @@ theorem dataGroup_wp {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4
     (by rw [o₂ _ (by decide), o₂b _ (by decide), r₂a, o₁ _ (by decide) (by decide), hi.a1])
     (by rw [o₂ _ (by decide), r₂b, o₂a _ (by decide), o₁ _ (by decide) (by decide), hi.base])
     (by rw [r₂, o₂b _ (by decide), o₂a _ (by decide), c₁, ofNat_shl4 (by omega_arith)])
-    (fun t ht => by rw [rd₂', wr₂']; exact inRd (inA t ht))
-    (fun t ht => by rw [wr₂']; exact inT t (by omega_arith)) sepAT) fun s₃ ⟨cp₃, f₃, g₃, rd₃, wr₃⟩ => ?_
+    (fun t n ht ht' => by rw [rd₂', wr₂']; exact inRd (inA t n ht ht'))
+    (fun t n ht ht' => by rw [wr₂']; exact inT t n (by omega_arith) (by omega_arith)) sepAT) fun s₃ ⟨cp₃, f₃, g₃, rd₃, wr₃⟩ => ?_
   have f₃' : Frame [⟨T, 16 * c⟩] s.mem s₃.mem := by rw [← mem₂]; exact f₃
   have wr₃' : s₃.wr = s.wr := by rw [wr₃, wr₂']
   have rd₃' : s₃.rd = s.rd := by rw [rd₃, rd₂']
@@ -328,8 +331,8 @@ theorem dataGroup_wp {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4
     (by rw [o₈ _ (by decide), o₈b _ (by decide), r₈a, o₇ _ (by decide) (by decide), base₅])
     (by rw [o₈ _ (by decide), r₈b, o₈a _ (by decide), o₇ _ (by decide) (by decide), a1₅])
     (by rw [r₈, o₈b _ (by decide), o₈a _ (by decide), c₇, ofNat_shl4 (by omega_arith)])
-    (fun t ht => by rw [rd₈', wr₈']; exact inRd (inT t (by omega_arith)))
-    (fun t ht => by rw [wr₈']; exact inA t ht) sepAT.symm) fun s₉ ⟨cp₉, f₉, g₉, rd₉, wr₉⟩ => ?_
+    (fun t n ht ht' => by rw [rd₈', wr₈']; exact inRd (inT t n (by omega_arith) (by omega_arith)))
+    (fun t n ht ht' => by rw [wr₈']; exact inA t n ht ht') sepAT.symm) fun s₉ ⟨cp₉, f₉, g₉, rd₉, wr₉⟩ => ?_
   have g₉' : ∀ r, r ≠ .t1 → r ≠ .t2 → r ≠ .t3 → r ≠ .t4 → r ≠ .a4 → r ≠ t0 → s₉.gpr r = s₅.gpr r :=
     fun r h1 h2 h3 h4 h5 h6 => by rw [g₉ r h1 h2 h3 h4, g₈ r h1 h2 h3 h5 h6]
   have a4₉ : s₉.gpr .a4 = BitVec.ofNat 64 c := by
