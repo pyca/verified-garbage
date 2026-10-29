@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import Mathlib.Data.Nat.Prime.Defs
-import Mathlib.Data.Nat.Find
-import Mathlib.Data.Finset.Card
 
 /-!
 # Pratt certificates
@@ -95,15 +93,24 @@ theorem mod_eq_one_of_dvd {x p : Nat} (hx : 1 ≤ x) (hp : 1 < p) (h : p ∣ x -
   obtain ⟨t, ht⟩ := h
   rw [show x = p * t + 1 by omega, Nat.mul_add_mod, Nat.mod_eq_of_lt hp]
 
+/-- The least `k` with `P k`, from any `n` with `P n`. -/
+theorem exists_least {P : Nat → Prop} : ∀ n, P n → ∃ k, P k ∧ ∀ j < k, ¬ P j := by
+  intro n
+  induction n using Nat.strongRecOn with
+  | ind n ih =>
+    intro h
+    by_cases hj : ∃ j < n, P j
+    · obtain ⟨j, hj, hP⟩ := hj; exact ih j hj hP
+    · exact ⟨n, h, fun j hjn hP => hj ⟨j, hjn, hP⟩⟩
+
 /-- Lucas's theorem: if `a^(p-1) ≡ 1` and no `a^((p-1)/q)` for a prime
 `q ∣ p - 1` is, then `p` is prime. -/
 theorem lucas {p a : Nat} (hp : 2 ≤ p) (ha : a ^ (p - 1) % p = 1)
     (hq : ∀ q, q.Prime → q ∣ p - 1 → a ^ ((p - 1) / q) % p ≠ 1) : p.Prime := by
-  have hex : ∃ k, 0 < k ∧ a ^ k % p = 1 := ⟨p - 1, by omega, ha⟩
-  have hk : 0 < Nat.find hex ∧ a ^ Nat.find hex % p = 1 := Nat.find_spec hex
-  have hmin : ∀ j, 0 < j → j < Nat.find hex → a ^ j % p ≠ 1 := fun j hj hjk h =>
-    Nat.find_min hex hjk ⟨hj, h⟩
-  generalize Nat.find hex = k at hk hmin
+  -- The order `k` of `a` modulo `p`.
+  obtain ⟨k, hk, hmin⟩ : ∃ k, (0 < k ∧ a ^ k % p = 1) ∧ ∀ j, 0 < j → j < k → a ^ j % p ≠ 1 := by
+    obtain ⟨k, hk, hl⟩ := exists_least (P := fun k => 0 < k ∧ a ^ k % p = 1) (p - 1) ⟨by omega, ha⟩
+    exact ⟨k, hk, fun j hj hjk h => hl j hjk ⟨hj, h⟩⟩
   -- The order `k` divides `p - 1`.
   have hdvd : k ∣ p - 1 := by
     have e := Nat.div_add_mod (p - 1) k
@@ -141,39 +148,33 @@ theorem lucas {p a : Nat} (hp : 2 ≤ p) (ha : a ^ (p - 1) % p = 1)
     have hd' := Nat.Coprime.dvd_of_dvd_mul_right (Nat.Coprime.pow_left i hcop).symm hd
     exact hmin (j - i) (by omega) (by omega)
       (mod_eq_one_of_dvd (Nat.one_le_pow _ _ ha1) (by omega) hd')
-  -- So the units modulo `p` are all of `1, …, p - 1`, and `p` is prime.
-  let T := (Finset.range p).filter (fun r => Nat.Coprime r p)
-  have hcard : p - 1 ≤ T.card := by
-    have := Finset.card_le_card_of_injOn (s := Finset.range (p - 1)) (t := T) (fun i => a ^ i % p)
-      (fun i _ => by
-        simp only [T, Finset.coe_filter, Finset.mem_range, Set.mem_ofPred_eq]
-        refine ⟨Nat.mod_lt _ (by omega), ?_⟩
-        rw [Nat.Coprime, ← Nat.gcd_rec, Nat.gcd_comm]
-        exact Nat.Coprime.pow_left i hcop)
-      (fun i hi j hj h => by
-        simp only [Finset.coe_range, Set.mem_Iio] at hi hj
-        rcases Nat.lt_trichotomy i j with hl | rfl | hl
-        · exact absurd h (hinj i hi j hj hl)
-        · rfl
-        · exact absurd h.symm (hinj j hj i hi hl))
-    simpa using this
+  -- So the units modulo `p` are all of `1, …, p - 1`, and `p` is prime: a
+  -- divisor `m` of `p` other than `1` and `p` would leave only `p - 2` places
+  -- for the `p - 1` distinct powers.
   refine Nat.prime_def.mpr ⟨hp, fun m hm => ?_⟩
   refine Classical.byContradiction fun hne => ?_
   have hm0 : 0 < m := Nat.pos_of_dvd_of_pos hm (by omega)
   have hmp : m < p := Nat.lt_of_le_of_ne (Nat.le_of_dvd (by omega) hm) (fun h => hne (Or.inr h))
-  have hsub : T ⊂ (Finset.range p).erase 0 := by
-    refine Finset.ssubset_iff_of_subset (fun r hr => ?_) |>.mpr ⟨m, ?_, ?_⟩
-    · simp only [T, Finset.mem_filter, Finset.mem_range] at hr
-      refine Finset.mem_erase.mpr ⟨fun h0 => ?_, Finset.mem_range.mpr hr.1⟩
-      rw [h0, Nat.Coprime, Nat.gcd_zero_left] at hr; omega
-    · exact Finset.mem_erase.mpr ⟨by omega, Finset.mem_range.mpr hmp⟩
-    · simp only [T, Finset.mem_filter, Finset.mem_range, not_and]
-      intro _ hc
-      have : Nat.gcd m p = m := Nat.gcd_eq_left hm
-      rw [Nat.Coprime, this] at hc
-      exact hne (Or.inl hc)
-  have := Finset.card_lt_card hsub
-  rw [Finset.card_erase_of_mem (Finset.mem_range.mpr (by omega)), Finset.card_range] at this
+  have hmc : ¬ Nat.Coprime m p := fun hc => by
+    rw [Nat.Coprime, Nat.gcd_eq_left hm] at hc
+    exact hne (Or.inl hc)
+  have hnd : ((List.range (p - 1)).map fun i => a ^ i % p).Nodup :=
+    List.nodup_iff_pairwise_ne.mpr (List.pairwise_map.mpr (List.pairwise_lt_range.imp_of_mem
+      fun hi hj hij => hinj _ (List.mem_range.mp hi) _ (List.mem_range.mp hj) hij))
+  have hsub : ((List.range (p - 1)).map fun i => a ^ i % p) ⊆ ((List.range p).erase 0).erase m := by
+    intro x hx
+    obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx
+    have hc : Nat.Coprime (a ^ i % p) p := by
+      rw [Nat.Coprime, ← Nat.gcd_rec, Nat.gcd_comm]
+      exact Nat.Coprime.pow_left i hcop
+    refine (List.mem_erase_of_ne fun (h : a ^ i % p = m) => hmc (h ▸ hc)).mpr
+      ((List.mem_erase_of_ne fun (h : a ^ i % p = 0) => ?_).mpr (List.mem_range.mpr (Nat.mod_lt _ (by omega))))
+    rw [h, Nat.Coprime, Nat.gcd_zero_left] at hc
+    omega
+  have := List.Nodup.length_le_of_subset hnd hsub
+  rw [List.length_erase_of_mem ((List.mem_erase_of_ne (by omega)).mpr (List.mem_range.mpr hmp)),
+    List.length_erase_of_mem (List.mem_range.mpr (by omega)), List.length_range, List.length_map,
+    List.length_range] at this
   omega
 
 /-- Lucas's test, with the prime factors of `p - 1` listed (with multiplicity)
