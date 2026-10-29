@@ -1,19 +1,19 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedChecksBoundary
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopEnd
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedChecksBase
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedChecksZVector
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskCopy
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedChecks
+
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedChecksBoundary
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedChecksZVector
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopInit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedHints
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Block
 import Mathlib.Tactic.FinCases
-
 /-! ## From `CachedLoopFrame.lean` -/
 
 @[expose] public section

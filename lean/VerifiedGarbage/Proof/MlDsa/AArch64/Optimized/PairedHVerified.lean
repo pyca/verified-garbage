@@ -1,21 +1,26 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHStoredField
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecFrame
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHintSpecPre
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedMaskSemantic
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHintOrder
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintPacked
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedEntry
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckCount
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPassOutput
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckCoverage
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSatMemory
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+public import Mathlib.Algebra.Group.Nat.Defs
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedConsts
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableMemory
+public import VerifiedGarbage.Spec.MlDsa.PairedResponse
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalCheck
+public import VerifiedGarbage.Proof.MlDsa.Round.Ones
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSlot
+
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecFrame
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintPacked
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPassOutput
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckCoverage
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedMaskInvariant
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedAbi
@@ -26,12 +31,276 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecPre
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryCorrect
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 import VerifiedGarbage.Proof.Framework.Offset
-public import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Order.Basic
 import Mathlib.Data.Fintype.Fin
 import Mathlib.Tactic.FinCases
-
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZStoredField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintSpec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintField
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
+import Batteries.Data.List.Lemmas
+import Mathlib.Tactic.Conv
 /-! ## From `PairedHAllFields.lean` -/
+
+-- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Optimized/PairedHStoredField.lean`, which only this module imported.
+section
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
+open VG VG.AArch64 VG.Spec.MlDsa VG.Proof.MlDsa.Arith
+open VG.Proof.MlDsa.AArch64.Round
+open VG.Proof.MlDsa.AArch64.Optimized.Response
+
+theorem hPass_stored_field {m : Mem} {work challenge secret out aux : Addr} {u e g : Nat}
+    (hu : u<8) (he : e<4) (hg : IsG g) (i : Fin 2 × Fin 8) (c : CheckConstants)
+    (hgamma : vword c.gamma e=BitVec.ofNat 32 g)
+    (hc : (⟨challenge,1024⟩ : Region).Disjoint ⟨work,2048⟩)
+    (hs : (⟨secret,2048⟩ : Region).Disjoint ⟨work,2048⟩)
+    (ho : (⟨work,2048⟩ : Region).Disjoint ⟨out,2048⟩)
+    (ha : (⟨work,2048⟩ : Region).Disjoint ⟨aux,2048⟩)
+    (hd : (⟨aux,2048⟩ : Region).Disjoint ⟨out,2048⟩)
+    (hp : pairedProductsReduced m challenge secret)
+    (hy : ∀j<2,ResponseDecomposed m (pairPolyPtr out j) (pairPolyPtr aux j) g)
+    (flags count : BitVec 128) :
+    let d : CheckData := ⟨firstPassMem m work challenge secret 8,flags,count⟩
+    coeffAt (finalPassData true work out aux c d 8).mem
+      (pairPolyPtr out i.1.val) (4*u+32*i.2.val+e)=
+      BitVec.ofNat 32 (pairedHintPoly m challenge secret out aux g i.1.val)[4*u+32*i.2.val+e]!.toNat := by
+  dsimp only
+  have hk : 4*u+32*i.2.val+e<n := by change 4*u+32*i.2.val+e<256; omega
+  have hr := rawFinal_field hu hc hs i.1 (Inverse.positiveReduced_is hp.1)
+    (Inverse.positiveReduced_is (hp.2 i.1.val i.1.isLt)) i.2 he
+  rw [←checkAddr_coeff _ out u i he,
+    finalPass_read_written true work out aux c _ (by decide : 8≤8) hu i ho hd]
+  simp only [checkOutput,ite_true,laneVector_word _ he]
+  rw [firstPass_checkInput_read hu i ho.symm,firstPass_checkInput_read hu i ha.symm,
+    checkAddr_coeff _ _ _ _ he,checkAddr_coeff _ _ _ _ he,hgamma]
+  have hpj := hy i.1.val i.1.isLt _ hk
+  have hhigh : (coeffAt m (pairPolyPtr aux i.1.val) (4*u+32*i.2.val+e)).toInt=
+      highBits g (responseHintBase m (pairPolyPtr out i.1.val) (pairPolyPtr aux i.1.val) g (4*u+32*i.2.val+e)) := by
+    have hb := highBits_small hg (responseHintBase m (pairPolyPtr out i.1.val) (pairPolyPtr aux i.1.val) g (4*u+32*i.2.val+e))
+    have hi := BitVec.toInt_eq_toNat_cond (coeffAt m (pairPolyPtr aux i.1.val) (4*u+32*i.2.val+e))
+    omega
+  rw [hintWord_raw_field hg _ _ _ _ hr.1 hr.2.1 hpj.1 hhigh,hr.2.2,
+    getElem!_pos (pairedHintPoly m challenge secret out aux g i.1.val) (4*u+32*i.2.val+e) hk]
+  simp only [pairedHintPoly,Vector.getElem_ofFn]
+  rfl
+
+end VG.Proof.MlDsa.AArch64.Optimized.Paired
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Optimized/PairedHintSpecPre.lean`, which only this module imported.
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Impl.MlDsa.AArch64.Optimized.Paired
+
+structure HintSpecPre (s : State) : Prop where
+  rd : s.rd=[⟨s.gpr .x0,1024⟩,⟨s.gpr .x1,2048⟩,⟨s.gpr .x3,2048⟩,⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩]
+  wr : s.wr=[⟨s.gpr .x2,2048⟩,⟨s.gpr .x4,2176⟩]
+  table : PairedTable.Artifact s.mem (s.syms "VG_MLDSA_INV_PAIR")
+  tableSep : ∀r∈s.wr,(⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩:Region).Disjoint r
+  commonData : (⟨s.gpr .x0,1024⟩:Region).Disjoint ⟨s.gpr .x2,2048⟩
+  commonWork : (⟨s.gpr .x0,1024⟩:Region).Disjoint ⟨s.gpr .x4,2176⟩
+  secretData : (⟨s.gpr .x1,2048⟩:Region).Disjoint ⟨s.gpr .x2,2048⟩
+  secretWork : (⟨s.gpr .x1,2048⟩:Region).Disjoint ⟨s.gpr .x4,2176⟩
+  auxData : (⟨s.gpr .x3,2048⟩:Region).Disjoint ⟨s.gpr .x2,2048⟩
+  dataWork : (⟨s.gpr .x2,2048⟩:Region).Disjoint ⟨s.gpr .x4,2176⟩
+  auxWork : (⟨s.gpr .x3,2048⟩:Region).Disjoint ⟨s.gpr .x4,2176⟩
+  products : pairedProductsReduced s.mem (s.gpr .x0) (s.gpr .x1)
+  decomposed : ∀j<2,ResponseDecomposed s.mem (pairPolyPtr (s.gpr .x2) j) (pairPolyPtr (s.gpr .x3) j) ((s.gpr .x5).setWidth 32).toNat
+  bound : (s.gpr .x6).setWidth 32=(s.gpr .x5).setWidth 32
+  gamma : ((s.gpr .x5).setWidth 32).toNat∈gamma2s
+  tableAl : (s.syms "VG_MLDSA_INV_PAIR").toNat%64=0
+
+theorem pairedHint_pre {s : State}
+    (h : (pairedHintContract (abi.withConsts pairedConsts)).pre s) : HintSpecPre s := by
+  sig_pre [pairedHintContract,pairedHintSig,abi,argRegs,pairedConsts_eq,Abi.withConsts,
+    Abi.constRegions,Abi.constsHeld,PairedTable.expandedWords_length,stackBelow] at h
+  obtain ⟨hdrop,hheld,_,hsep,hal,htake,hwr,hcd,hcw,hsd,hsw,had,haw,hdw,_,_,_,_,_,hprod,hgamma,hbound,hdecomp⟩ := h
+  refine ⟨?_,hwr,?_,hsep,hcd,hcw,hsd,hsw,had.symm,haw,hdw,hprod,hdecomp,hbound,hgamma,hal⟩
+  · rw [←List.take_append_drop (s.rd.length-1) s.rd,htake,hdrop]
+    rfl
+  · intro i hi
+    refine (hheld i hi).trans ?_
+    rw [List.getD_eq_getElem?_getD,List.getElem?_eq_getElem (by rw [PairedTable.expandedWords_length]; exact hi),
+      Option.getD_some,getElem!_pos _ _ (by rw [PairedTable.expandedWords_length]; exact hi)]
+
+end VG.Proof.MlDsa.AArch64.Optimized.Paired
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Optimized/PairedHintOrder.lean`, which only this module imported.
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
+open VG VG.Spec.MlDsa
+
+def sumN (n : Nat) (f : Nat → Nat) : Nat := ((List.range n).map f).sum
+
+theorem sumN_succ (n : Nat) (f : Nat → Nat) : sumN (n+1) f=sumN n f+f n := by
+  simp [sumN,List.range_succ]
+
+theorem sumN_add (n : Nat) (f g : Nat → Nat) :
+    sumN n (fun i => f i+g i)=sumN n f+sumN n g := by
+  induction n with
+  | zero => rfl
+  | succ n ih => simp only [sumN_succ,ih]; omega
+
+theorem sumN_swap (m n : Nat) (f : Nat → Nat → Nat) :
+    sumN m (fun i => sumN n (f i))=sumN n (fun j => sumN m (fun i => f i j)) := by
+  induction m with
+  | zero => simp [sumN]
+  | succ m ih => simp only [sumN_succ,ih,sumN_add]
+
+theorem sumN_append (m n : Nat) (f : Nat → Nat) :
+    sumN (m+n) f=sumN m f+sumN n (fun i => f (m+i)) := by
+  induction n with
+  | zero => simp [sumN]
+  | succ n ih => rw [show m+(n+1)=(m+n)+1 by omega,sumN_succ,ih,sumN_succ]; omega
+
+theorem sumN_blocks (m n : Nat) (f : Nat → Nat) :
+    sumN m (fun i => sumN n (fun j => f (n*i+j)))=sumN (n*m) f := by
+  induction m with
+  | zero => rfl
+  | succ m ih =>
+    rw [sumN_succ,ih,Nat.mul_succ,sumN_append]
+
+theorem pairedHintSum_order (f : Nat → Nat → Nat) :
+    sumN 4 (fun e => sumN 8 (fun u => sumN 2 (fun p => sumN 8 (fun j => f p (4*u+32*j+e)))))=
+      sumN 2 (fun p => sumN 256 (f p)) := by
+  rw [sumN_swap 4 8]
+  conv_lhs => arg 2; ext u; rw [sumN_swap 4 2]
+  rw [sumN_swap 8 2]
+  apply congrArg (sumN 2)
+  funext p
+  conv_lhs => arg 2; ext u; rw [sumN_swap 4 8]
+  rw [sumN_swap 8 8]
+  have he : (fun j => sumN 8 (fun u => sumN 4 (fun e => f p (4*u+32*j+e))))=
+      (fun j => sumN 32 (fun k => f p (32*j+k))) := by
+    funext j
+    rw [←sumN_blocks 8 4 (fun k => f p (32*j+k))]
+    congr 1
+    funext u
+    congr 1
+    funext e
+    congr 1
+    omega
+  rw [he,sumN_blocks 8 32]
+
+theorem sumN_four (f : Nat → Nat) : sumN 4 f=f 0+f 1+f 2+f 3 := by
+  change f 0+(f 1+(f 2+(f 3+0)))=f 0+f 1+f 2+f 3
+  omega
+
+theorem map_finRange_nat (n : Nat) (f : Nat → Nat) :
+    (List.finRange n).map (fun i => f i.val)=(List.range n).map f := by
+  apply List.ext_getElem
+  · simp
+  · intro i hi hi
+    simp
+
+theorem allChecks_sum (f : Nat → Nat → Nat) :
+    (allChecks.map fun i => f i.1.val i.2.val).sum=sumN 2 (fun p => sumN 8 (f p)) := by
+  simp only [allChecks,List.map_flatMap,List.map_map]
+  simp only [List.flatMap, List.sum_flatten,List.map_map]
+  simp only [Function.comp_def,map_finRange_nat,sumN]
+  rw [map_finRange_nat 2 (fun p => ((List.range 8).map (f p)).sum)]
+
+theorem onesTo_sum (h : Vector Bool n) (i : Nat) :
+    VG.Proof.MlDsa.Round.onesTo h i=sumN i (fun j => h[j]!.toNat) := by
+  induction i with
+  | zero => rfl
+  | succ i ih => rw [VG.Proof.MlDsa.Round.onesTo_succ,ih,sumN_succ]
+
+theorem hintOnes_pair_sum (f : Nat → Vector Bool n) :
+    hintOnes ((List.range 2).map f)=sumN 2 (fun p => sumN 256 (fun k => (f p)[k]!.toNat)) := by
+  unfold hintOnes sumN
+  rw [List.map_map]
+  apply congrArg List.sum
+  apply List.map_congr_left
+  intro p _
+  have h := VG.Proof.MlDsa.Round.hintOnes_onesTo (f p)
+  rw [onesTo_sum] at h
+  simpa only [Function.comp_def,hintOnes,List.map_cons,List.map_nil,List.sum_cons,List.sum_nil,Nat.add_zero,n,sumN] using h
+
+end VG.Proof.MlDsa.AArch64.Optimized.Paired
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Optimized/PairedCheckCount.lean`, which only this module imported.
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
+open VG VG.AArch64
+open VG.Proof.MlDsa.AArch64.Optimized.Response
+
+/-- The hint counter adds exactly the vector emitted by this check. -/
+theorem checkStep_count (raw : BitVec 128) (out aux : Addr) (c : CheckConstants)
+    (d : CheckData) {e : Nat} (he : e<4) :
+    vword (checkStep true raw out aux c d).count e=vword d.count e+
+      vword (checkOutput true raw (d.mem.read out 16) (d.mem.read aux 16) c) e := by
+  simp only [checkStep,checkOutput,ite_true,laneVector_word _ he]
+
+def hintSum (v : Values) (out aux : Addr) (c : CheckConstants) (m : Mem) (e : Nat)
+    (js : List (Fin 2 × Fin 8)) : BitVec 32 :=
+  (js.map fun i => vword (checkOutput true ((v i.1)[i.2.val])
+    (m.read (checkAddr out i) 16) (m.read (checkAddr aux i) 16) c) e).sum
+
+/-- The count of a check sequence is the sum of its original-input outputs. -/
+theorem checkRun_count (v : Values) (out aux : Addr) (c : CheckConstants)
+    (d : CheckData) (js : List (Fin 2 × Fin 8)) (hn : js.Nodup)
+    (ha : ∀i∈js,∀j∈js,Mem.Sep (checkAddr aux i) 16 (checkAddr out j) 16)
+    {e : Nat} (he : e<4) :
+    vword (checkRun true v out aux c d js).count e=vword d.count e+hintSum v out aux c d.mem e js := by
+  induction js generalizing d with
+  | nil =>
+    simp only [checkRun,hintSum,List.map_nil,List.sum_nil]
+    exact (BitVec.add_zero _).symm
+  | cons i js ih =>
+    have hn' := List.nodup_cons.mp hn
+    rw [checkRun,ih _ hn'.2 (fun j hj k hk => ha j (List.mem_cons_of_mem _ hj) k (List.mem_cons_of_mem _ hk)),
+      checkStep_count _ _ _ _ _ he]
+    have hread (j : Fin 2 × Fin 8) (hj : j∈js) :
+        checkOutput true ((v j.1)[j.2.val])
+          ((checkStep true ((v i.1)[i.2.val]) (checkAddr out i) (checkAddr aux i) c d).mem.read (checkAddr out j) 16)
+          ((checkStep true ((v i.1)[i.2.val]) (checkAddr out i) (checkAddr aux i) c d).mem.read (checkAddr aux j) 16) c=
+        checkOutput true ((v j.1)[j.2.val]) (d.mem.read (checkAddr out j) 16) (d.mem.read (checkAddr aux j) 16) c := by
+      have ho := checkAddr_sep out (i:=j) (j:=i) (by intro h; subst i; exact hn'.1 hj)
+      simp only [checkStep]
+      rw [Mem.read_write_sep ho (by decide),Mem.read_write_sep (ha j (List.mem_cons_of_mem _ hj) i (by simp)) (by decide)]
+    have hs : hintSum v out aux c
+        (checkStep true ((v i.1)[i.2.val]) (checkAddr out i) (checkAddr aux i) c d).mem e js=
+        hintSum v out aux c d.mem e js := by
+      unfold hintSum
+      apply congrArg (fun xs : List (BitVec 32) => xs.sum)
+      apply List.map_congr_left
+      intro j hj
+      rw [hread j hj]
+    simp only [checkAddr] at hs ⊢
+    rw [hs]
+    simp only [hintSum,List.map_cons,List.sum_cons,checkAddr,BitVec.add_assoc]
+
+end VG.Proof.MlDsa.AArch64.Optimized.Paired
+end
+
+end
 
 @[expose] public section
 

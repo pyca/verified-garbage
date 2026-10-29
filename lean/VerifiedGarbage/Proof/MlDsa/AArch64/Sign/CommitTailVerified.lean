@@ -1,12 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailTiming
 public import VerifiedGarbage.Spec.MlDsa.CommitTail
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailBody
-import VerifiedGarbage.Proof.Framework.Offset
 
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailTiming
+import VerifiedGarbage.Proof.Framework.Offset
 /-! ## From `CommitTailContract.lean` -/
 
 @[expose] public section

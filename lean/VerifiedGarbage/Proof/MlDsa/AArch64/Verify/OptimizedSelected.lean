@@ -17,20 +17,16 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowEnd
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowProduct
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedDot
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedTimingBase
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedNttTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedNtt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSingleCall
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowState
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowReady
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowStart
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotCallTiming
 import VerifiedGarbage.Proof.MlDsa.DecideAt
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedPiece
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedFinish
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesRoots
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
 import VerifiedGarbage.Proof.MlDsa.Verify.Final
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Lay
@@ -47,7 +43,6 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesDepth
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallee
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyCall
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyRoots
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCorrect
@@ -65,8 +60,420 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifySat
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifyCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifySat
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifyCorrect
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MatrixMask
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedCallTwo
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp4
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesFourTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesTwo
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.OptimizedSamples
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesBall
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallResident
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Hash
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsFrame
 
--- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Verify/OptimizedRow.lean`, which only this module imported.
+-- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Verify/OptimizedNttTiming.lean`, which only this module imported.
+section
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Verify.Optimized
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Impl.MlDsa.AArch64.KeyGen VG.Impl.MlDsa.AArch64.Verify
+open VG.Impl.MlDsa.AArch64.Verify.Optimized
+open VG.Proof.MlDsa.AArch64.KeyGen VG.Proof.MlDsa.AArch64.Optimized
+open VG.Impl.MlDsa.AArch64.Call (Ptr)
+
+theorem forward_ready {p : Params} (hF : VFacts p) {S : Nat} {σ s : State}
+    (hp : vPre p S σ) {a : Ptr} (hc : VC p σ s) (roots : Sign.StaticRoots S s)
+    (hr : inB (vR p++vW p) a 1024=true) (hw : inB (vW p) a 1024=true)
+    (red : Reduced s.mem (pa s a)) : NttCallReady a s := by
+  have L := hc.lay hF hp
+  exact ⟨L.nwp hr,roots.nttTableAt (L.inW hw),red,
+    Covers.cons roots.forward.readable (L.cR hr),L.cW hw⟩
+
+theorem nttZ_tr {p : Params} (hF : VFacts p) {S i : Nat} (hi : i<p.ℓ) :
+    RelCT isa (RootPair p S (SCx p S i false 0)) (forward (zP p i))
+      (RootPair p S (SCx p S (i+1) false 0)) := by
+  refine rootPair_progress (fun σ s hp ⟨h,A,c,q,hs⟩=>
+    WP.mono (nttZ_ok hF hp hi hs) fun _ ht=>⟨h,A,c,q,ht⟩) ?_
+  unfold forward
+  apply positiveNttAt_tr (S := S) (ptr_ok (show Reg.x28∈keptRegs from by decide))
+  intro x y hh
+  obtain ⟨⟨σ,τ,hσ,hτ,pub,⟨h,A,c,q,hx⟩,⟨h',A',c',q',hy⟩⟩,et⟩ := hh
+  have H := vc_two hF hσ hτ pub hx.vc hy.vc
+  have hk:=hF.k;have hl:=hF.l;have hkl:=hF.kl;have hsc:=hF.scr
+  have hr : inB (vR p++vW p) (zP p i) 1024=true := by vlayd
+  have hw : inB (vW p) (zP p i) 1024=true := by vlayd
+  have red {σ s : State} {h A c q} (hs : SC p S σ h A c q i false 0 s) :
+      Reduced s.mem (pa s (zP p i)) := by
+    have hz:=hs.z i hi
+    simp only [Stored,decide_eq_false_iff_not.mpr (Nat.lt_irrefl i),Bool.false_eq_true,↓reduceIte] at hz
+    exact hz.1
+  exact ⟨forward_ready hF hσ hx.vc hx.roots hr hw (red hx),
+    forward_ready hF hτ hy.vc hy.roots hr hw (red hy),
+    H.same.pa (show Reg.x28∈bases from by decide),H.same.2,et.1⟩
+
+theorem nttC_tr {p : Params} (hF : VFacts p) {S : Nat} :
+    RelCT isa (RootPair p S (SCx p S p.ℓ false 0)) (forward (cP p))
+      (RootPair p S (SCx p S p.ℓ true 0)) := by
+  refine rootPair_progress (fun σ s hp ⟨h,A,c,q,hs⟩=>
+    WP.mono (nttC_ok hF hp hs) fun _ ht=>⟨h,A,c,q,ht⟩) ?_
+  unfold forward
+  apply positiveNttAt_tr (S := S) (ptr_ok (show Reg.x28∈keptRegs from by decide))
+  intro x y hh
+  obtain ⟨⟨σ,τ,hσ,hτ,pub,⟨h,A,c,q,hx⟩,⟨h',A',c',q',hy⟩⟩,et⟩ := hh
+  have H := vc_two hF hσ hτ pub hx.vc hy.vc
+  have hk:=hF.k;have hl:=hF.l;have hkl:=hF.kl;have hsc:=hF.scr
+  have hr : inB (vR p++vW p) (cP p) 1024=true := by vlayd
+  have hw : inB (vW p) (cP p) 1024=true := by vlayd
+  exact ⟨forward_ready hF hσ hx.vc hx.roots hr hw hx.c.1,
+    forward_ready hF hτ hy.vc hy.roots hr hw hy.c.1,
+    H.same.pa (show Reg.x28∈bases from by decide),H.same.2,et.1⟩
+end VG.Proof.MlDsa.AArch64.Verify.Optimized
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Verify/OptimizedRowState.lean`, which only this module imported.
+section
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Verify.Optimized
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Impl.MlDsa.AArch64.KeyGen VG.Impl.MlDsa.AArch64.Verify
+open VG.Proof.MlDsa.AArch64.Optimized VG.Proof.MlDsa.Arith.Montgomery
+
+abbrev RowData (p : Params) (σ : State) (A : Nat→Nat→Poly) (c : Poly) (r stage : Nat) (s : State) : Prop :=
+  match stage with
+  | 0 => W p σ A r s
+  | 1 => W p σ A r s ∧ PolyIs s.mem (pa s (tmP p)) (rU p σ r)
+  | 2 => W p σ A r s ∧ PosPolyIs s.mem (pa s (tmP p)) (Proof.MlDsa.Verify.t1Hat (vPk p σ) r)
+  | 3 => W p σ A r s ∧ PolyIs s.mem (pa s (tm2P p))
+      (montgomeryMultiplyNTT (ntt c) (Proof.MlDsa.Verify.t1Hat (vPk p σ) r))
+  | 4 => PolyIs s.mem (pa s (wP p)) (scale montgomeryRInv (Diff p σ A c r))
+  | _ => PolyIs s.mem (pa s (wP p)) (Proof.MlDsa.Verify.wRow p (vPk p σ) (vSig p σ) A (ntt c) r)
+
+abbrev RowI (p : Params) (S r stage : Nat) (σ s : State) : Prop :=
+  ∃h A c q,SC p S σ h A c q p.ℓ true r s ∧ RowData p σ A c r stage s
+
+end VG.Proof.MlDsa.AArch64.Verify.Optimized
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Verify/OptimizedPiece.lean`, which only this module imported.
+section
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Verify.Optimized
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Impl.MlDsa.AArch64.KeyGen VG.Impl.MlDsa.AArch64.Call
+
+structure Piece (p : Params) (S : Nat) (I J : State → State → Prop) (c : Prog isa) : Prop where
+  ok : ∀ σ s, vPre p S σ → I σ s → WP isa c s (J σ)
+  tr : RelCT isa (RootPair p S I) c fun _ _ => True
+
+section
+variable {p : Params} {S : Nat} {I J K : State → State → Prop}
+
+theorem Piece.seq {c₁ c₂ : Prog isa} (h₁ : Piece p S I J c₁) (h₂ : Piece p S J K c₂) :
+    Piece p S I K (.seq c₁ c₂) :=
+  ⟨fun σ s hp hs => WP.seq (WP.mono (h₁.ok σ s hp hs) fun s' h => h₂.ok σ s' hp h),
+    RelCT.seq (rootPair_progress h₁.ok h₁.tr) h₂.tr⟩
+
+theorem Piece.mono {c : Prog isa} {I' J' : State → State → Prop} (h : Piece p S I J c)
+    (hI : ∀ σ s, vPre p S σ → I' σ s → I σ s) (hJ : ∀ σ s, vPre p S σ → J σ s → J' σ s) :
+    Piece p S I' J' c :=
+  ⟨fun σ s hp hs => WP.mono (h.ok σ s hp (hI σ s hp hs)) fun s' h => hJ σ s' hp h,
+    RelCT.mono h.tr (fun _ _ ⟨⟨σ₁, σ₂, p₁, p₂, pub, i₁, i₂⟩,et⟩ => ⟨⟨σ₁, σ₂, p₁, p₂, pub, hI _ _ p₁ i₁, hI _ _ p₂ i₂⟩,et⟩)
+      fun _ _ h => h⟩
+
+theorem Piece.seqR {f : Nat → Prog isa} {I : Nat → State → State → Prop} :
+    ∀ (n a : Nat), (∀ k, a ≤ k → k < a + n → Piece p S (I k) (I (k + 1)) (f k)) →
+      Piece p S (I a) (I (a + n)) (seqR f a n)
+  | n, a, h =>
+    ⟨fun σ s hp hs => seqR_ok (I := fun k => I k σ) n a (fun k h₁ h₂ s hs => (h k h₁ h₂).ok σ s hp hs) s hs,
+      RelCT.mono (seqR_tr (Q := fun k => RootPair p S (I k)) n a fun k h₁ h₂ => rootPair_progress (h k h₁ h₂).ok (h k h₁ h₂).tr)
+        (fun _ _ h => h) fun _ _ _ => trivial⟩
+
+theorem Piece.ifOk {c : Prog isa} {T : State → Prop} [DecidablePred T]
+    (hx : ∀ σ s, vPre p S σ → I σ s → s.gpr .x24 = if T σ then 1 else 0)
+    (hT : ∀ σ₁ σ₂, vPre p S σ₁ → vPre p S σ₂ → vPub p S σ₁ σ₂ → (T σ₁ ↔ T σ₂))
+    (ht : Piece p S (fun σ s => I σ s ∧ T σ) J c) (he : ∀ σ s, vPre p S σ → I σ s → ¬ T σ → J σ s) :
+    Piece p S I J (ifOk c) := by
+  have ev : ∀ σ s, vPre p S σ → I σ s → isa.eval (.nonzero .x .x24) s = some (decide (T σ)) := fun σ s hp hs => by
+    rw [eval24, hx σ s hp hs]; by_cases h : T σ <;> simp [h]
+  refine ⟨fun σ s hp hs => WP.ite (decide (T σ)) (ev σ s hp hs) (fun hb => ht.ok σ s hp ⟨hs, of_decide_eq_true hb⟩)
+    fun hb => WP.block_nil (he σ s hp hs (of_decide_eq_false hb)), relIte ?_ ?_ ?_⟩
+  · rintro x y ⟨⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩,et⟩
+    rw [ev σ₁ x p₁ h₁, ev σ₂ y p₂ h₂, decide_eq_decide.mpr (hT σ₁ σ₂ p₁ p₂ pub)]
+  · refine RelCT.mono ht.tr (fun x y ⟨⟨⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩,et⟩, hc⟩ => ?_) fun _ _ h => h
+    rw [ev σ₁ x p₁ h₁] at hc
+    have t₁ : T σ₁ := of_decide_eq_true (Option.some.inj hc)
+    exact ⟨⟨σ₁, σ₂, p₁, p₂, pub, ⟨h₁, t₁⟩, h₂, (hT σ₁ σ₂ p₁ p₂ pub).mp t₁⟩,et⟩
+  · exact RelCT.block_nil fun _ _ _ => trivial
+
+end
+
+theorem Piece.of_vpiece {p : Params} {S : Nat} {I J : State→State→Prop} {c : Prog isa}
+    (h : VPiece p S I J c) : Piece p S I J c :=
+  ⟨h.ok, h.tr.mono (fun _ _ h=>h.1) (fun _ _ h=>h)⟩
+
+end VG.Proof.MlDsa.AArch64.Verify.Optimized
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Verify/OptimizedSamplesTwoTiming.lean`, which only this module imported.
+section
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Verify.OptimizedSamples
+open VG.Impl.MlDsa.AArch64.Call
+open VG VG.AArch64 VG.Impl.MlDsa.AArch64.KeyGen VG.Impl.MlDsa.AArch64.Verify
+open VG.Proof.MlDsa.AArch64.KeyGen VG.Proof.MlDsa.AArch64.KeyGen.Optimized
+open VG.Spec.MlDsa (Params)
+open VG.Spec.Sha3 (bytesAt)
+
+theorem vseeds2 {p : Params} {σ : State} {e : Nat} {s : State} (h : VS p σ e 2 s) :
+    bytesAt s.mem (pa s (sc oSA4)) 68=seedOf p σ e++seedOf p σ (e+1) := by
+  rw [show 68=34+34 from rfl,Proof.MlKem.bytesAt_add]
+  have h0 := vseed2_eq h (k := 0) (by decide)
+  have h1 := vseed2_eq h (k := 1) (by decide)
+  simp only [Spec.MlDsa.seed4,Nat.mul_zero,Nat.add_zero,Nat.mul_one,
+    VG.Proof.MlKem.AArch64.ptr_zero] at h0 h1
+  rw [h0,h1]
+
+theorem vcall2_piece {S : Nat} (hS : S<2^64) {cd : Prog isa} {nm : String}
+    (C : CalleeOk S cd (VG.Spec.MlDsa.rejNTT2Contract AArch64.abi S)) {p : Params} (hF : VFacts p)
+    {e : Nat} (he : e+2 ≤ p.k*p.ℓ) : VPiece p S (VS p · (e) 2) (VA p · (e+2))
+      (.seq (callAt nm cd (rej2Args (sc oSA4) (aP e) (sc (oR4 p)))) (.seq (.block and24) (VG.Impl.MlDsa.AArch64.Optimized.MatrixMask.code (aP (e)) 512))) := by
+  have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
+  refine ⟨fun _ _ hp h => vcall2_ok hS C hF hp he h,
+    vrel_of (Q := fun x y => VTwo p S x y ∧ bytesAt x.mem (pa x (sc oSA4)) 68 = bytesAt y.mem (pa y (sc oSA4)) 68) ?_
+      (fun _ _ _ _ hp hp' hq h h' => ⟨vc_two hF hp hp' hq h.va.vz.vc h'.va.vz.vc,by
+        rw [vseeds2 h,vseeds2 h']; simp only [seedOf,(vPub_eq hq).2.1]⟩)⟩
+  have hc : rej2Chk (vR p) (vW p) (sc oSA4) (aP (e)) (sc (oR4 p)) = true := by unfold rej2Chk; vlayd
+  have ok := fun x (L : Lay S (vR p) (vW p) x) => WP.mono (rej2At_ok hS C L (nm := nm) hc)
+    fun _ h => (⟨_,h.1⟩ : ∃ W,PostB S x _ W)
+  have tail : RelCT isa (VTwo p S) (.seq (.block and24) (VG.Impl.MlDsa.AArch64.Optimized.MatrixMask.code (aP (e)) 512)) fun _ _ => True := by
+    refine RelCT.seq (VTwo.step (fun _ _ h => h) (block_nomem_tr fun i hi _ => by
+      simp only [and24,List.mem_singleton] at hi; subst hi; rfl) ?_)
+      (taintRel [.x28] (fun _ _ h => VTwo.x28 h) (matrixMask_taint (e) (by omega) 512 (by simp)))
+    have f := fun z => WP.mono (and24_ok z) fun z' ⟨o,_⟩ =>
+      (⟨[],postB_of_keep o.keep (by decide) (by rw [o.mem]; exact Frame.refl _ _)⟩ : ∃ W,PostB S z z' W)
+    exact fun x y _ => ⟨f x,f y⟩
+  exact RelCT.seq (VTwo.step (fun _ _ h => h.1)
+    (rej2At_tr (nm := nm) C (vOk p) hc (fun _ _ h => ⟨h.1.lx,h.1.ly,h.2,h.1.same⟩))
+    (fun x y h => ⟨ok x h.1.lx,ok y h.1.ly⟩)) tail
+
+
+end VG.Proof.MlDsa.AArch64.Verify.OptimizedSamples
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Verify/OptimizedSamples.lean`, which only this module imported.
+section
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Verify.OptimizedSamples
+open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Call
+open VG.Impl.MlDsa.AArch64.KeyGen VG.Impl.MlDsa.AArch64.Verify
+open VG.Proof.MlDsa.AArch64.KeyGen
+open VG.Spec.MlDsa (Params)
+
+private theorem twoCallee {S : Nat} (hS : S<2^64) :
+    CalleeOk S VG.Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code
+      (VG.Spec.MlDsa.rejNTT2Contract abi S) :=
+  CalleeOk.of_verified hS VG.Proof.MlDsa.AArch64.Optimized.ResidentRej.two_verified
+    (Nat.zero_le _) (by
+      have hd : VG.Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code.aarch64Depth=0 := by decide +kernel
+      simp only [hd,Nat.mul_zero]; exact Nat.zero_le _)
+
+theorem tail2_vpiece {S : Nat} (hS : S<2^64) {p : Params} (hF : VFacts p)
+    (hmod : p.k*p.ℓ%4=2) :
+    VPiece p S (VA p · (4*(p.k*p.ℓ/4))) (VA p · (4*(p.k*p.ℓ/4)+2))
+      (VG.Impl.MlDsa.AArch64.Verify.OptimizedSamples.tail2 p) := by
+  unfold VG.Impl.MlDsa.AArch64.Verify.OptimizedSamples.tail2
+  refine VPiece.seq (VPiece.mono
+    (VPiece.seqR (I := fun j σ s=>VS p σ (4*(p.k*p.ℓ/4)) j s) 2 0
+      (fun j _ hj=>vslot2_piece hF (by omega) (by omega)))
+    (fun _ _ _ h=>⟨h,fun _ h=>False.elim (Nat.not_lt_zero _ h)⟩)
+    (fun _ _ _ h=>by simpa using h)) (vcall2_piece hS (twoCallee hS) hF (by omega))
+
+theorem expAll_vpiece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VFacts p) :
+    VPiece p S (VA p · 0) (VA p · (p.k*p.ℓ))
+      (VG.Impl.MlDsa.AArch64.Verify.OptimizedSamples.expAll P p) := by
+  unfold VG.Impl.MlDsa.AArch64.Verify.OptimizedSamples.expAll
+  have hB : VPiece p S (VA p · 0) (VA p · (4*(p.k*p.ℓ/4)))
+      (seqR (VG.Impl.MlDsa.AArch64.Verify.OptimizedSamples.expA4 P p) 0 (p.k*p.ℓ/4)) := by
+    simpa only [Nat.zero_add,Nat.mul_zero] using
+      (VPiece.seqR (I := fun g σ s=>VA p σ (4*g) s) (p.k*p.ℓ/4) 0
+        (fun g _ hg=>expA4_vpiece hP hF (by omega)))
+  split
+  · rename_i he
+    refine VPiece.mono (VPiece.seq hB (tail2_vpiece hP.s64 hF he))
+      (fun _ _ _ h=>h) (fun _ _ _ h=>?_)
+    have eq : 4*(p.k*p.ℓ/4)+2=p.k*p.ℓ := by omega
+    simpa only [eq] using h
+  · refine VPiece.mono (VPiece.seq hB
+      (VPiece.seqR (I := fun e σ s=>VA p σ e s) (p.k*p.ℓ%4) (4*(p.k*p.ℓ/4))
+        (fun e _ he=>expA_vpiece hP hF (by omega)))) (fun _ _ _ h=>h) (fun _ _ _ h=>?_)
+    have eq : 4*(p.k*p.ℓ/4)+p.k*p.ℓ%4=p.k*p.ℓ := by omega
+    simpa only [eq] using h
+
+theorem samples_vpiece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : VFacts p) :
+    VPiece p S (fun σ s=>Z0 p p.ℓ σ s ∧ normOk p σ p.ℓ) (VB p)
+      (VG.Impl.MlDsa.AArch64.Verify.OptimizedSamples.samples P p) := by
+  unfold VG.Impl.MlDsa.AArch64.Verify.OptimizedSamples.samples
+  exact (copyRho_vpiece hF).seq ((expAll_vpiece hP hF).seq
+    ((ballCall_vpiece hP hF).seq (ballTail_vpiece hF)))
+
+end VG.Proof.MlDsa.AArch64.Verify.OptimizedSamples
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Verify/OptimizedSamplesRoots.lean`, which only this module imported.
+section
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Verify.OptimizedSamples
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Impl.MlDsa.AArch64.KeyGen
+open VG.Proof.MlDsa.AArch64.KeyGen
+open VG.Proof.MlDsa.AArch64.Sign (StaticRoots)
+open VG.Proof.MlDsa.AArch64.Verify.Optimized (RootPair rootPair_progress)
+
+/-- A bounded phase retains the immutable transform roots without making
+any sampled coefficients or SHAKE states public. -/
+theorem rooted_piece {p : Params} {S : Nat} {I J : State→State→Prop} {c : Prog isa}
+    (h : VPiece p S I J c) (hd : 16*c.aarch64Depth≤S) (hS : S<2^64) :
+    VPiece p S (fun σ s=>I σ s ∧ StaticRoots S s) (fun σ s=>J σ s ∧ StaticRoots S s) c := by
+  refine ⟨fun σ s hp hs=>hs.2.phase hd hS (h.ok σ s hp hs.1),?_⟩
+  exact RelCT.mono h.tr
+    (fun _ _ ⟨σ,τ,hσ,hτ,pub,ix,iy⟩=>⟨σ,τ,hσ,hτ,pub,ix.1,iy.1⟩)
+    (fun _ _ _=>trivial)
+
+/-- Sampling preserves both root tables while retaining the existing exact
+success/failure and rejection-transcript semantics. -/
+theorem samples_rooted_vpiece {P : Prims} {S : Nat} (hP : PrimsOk P S)
+    {p : Params} (hF : VFacts p) :
+    VPiece p S
+      (fun σ s=>(Z0 p p.ℓ σ s ∧ normOk p σ p.ℓ) ∧ StaticRoots S s)
+      (fun σ s=>VB p σ s ∧ StaticRoots S s)
+      (Impl.MlDsa.AArch64.Verify.OptimizedSamples.samples P p) :=
+  rooted_piece (samples_vpiece hP hF) (samples_depth hP p) hP.s64
+
+/-- The paired timing relation also preserves the shared table addresses. -/
+theorem samples_rootPair {P : Prims} {S : Nat} (hP : PrimsOk P S)
+    {p : Params} (hF : VFacts p) :
+    RelCT isa
+      (RootPair p S (fun σ s=>(Z0 p p.ℓ σ s ∧ normOk p σ p.ℓ) ∧ StaticRoots S s))
+      (Impl.MlDsa.AArch64.Verify.OptimizedSamples.samples P p)
+      (RootPair p S (fun σ s=>VB p σ s ∧ StaticRoots S s)) := by
+  have h := samples_rooted_vpiece hP hF
+  exact rootPair_progress h.ok
+    (RelCT.mono h.tr (fun _ _ hp=>hp.1) (fun _ _ _=>trivial))
+
+end VG.Proof.MlDsa.AArch64.Verify.OptimizedSamples
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Message/OptimizedVerifyCall.lean`, which only this module imported.
+section
+
+section
+
+namespace VG.Proof.MlDsa.AArch64.Message.OptimizedVerify
+open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Message
+open VG.Proof.MlDsa.Message
+open VG.Spec.MlDsa
+open VG.Spec.Sha3 (bytesAt)
+open VG.Proof.MlDsa.AArch64.Sign (StaticRoots StaticTable signRootConsts)
+open Message.Optimized (rootRegions roots_reborrow)
+variable {p : Params} {s : State}
+/-- The call of the verification function on `μ`. -/
+theorem verifyCall_ok {n : String} {c : Prog isa} (hV : VerifyFn p c) (hp : p ∈ params) (h : VPre p s)
+    (h8 : (s.gpr .x4).toNat < 256) {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t : State}
+    (hc : Ctx (vlay p s) g vv m₀ t) (hr : StaticRoots 16 t) :
+    WP isa (callA n c verifyArgs) t fun s' => Fin (vlay p s) g vv s' ∧
+      (let w := fun b => verifyMu p b (bytesAt t.mem (s.gpr .x0) p.pkLen) (bytesAt t.mem (vlay p s).MU 64)
+          (bytesAt t.mem (s.gpr .x5) p.sigLen);
+        ((s'.gpr .x0).setWidth 32 = 1 ∧ ∃ b, w b = some true) ∨
+          ((s'.gpr .x0).setWidth 32 = 0 ∧ w minBounds ≠ some true)) := by
+  have hL := vlay_ok hp h h8
+  refine WP.seq (WP.mono_syms (setArgs_ok verifyArgs (by decide) t (hc.xOk hL)) fun t1 ⟨hA, o⟩ hsy => ?_)
+  have hc1 : Ctx (vlay p s) g vv m₀ t1 :=
+    hc.regs o.rd o.wr o.sp o.mem o.vcs fun r hr _ => o.gpr r (by simp only [List.map_cons, List.map_nil]; exact not_pres hr _)
+  obtain ⟨e0, e1, e2, _⟩ := verifyRegs_of hc hA
+  have hsp1 : t1.sp = s.sp := hc1.sp
+  have hd := hV.dle.1
+  have hpre := verifyK_pre hp h h8 hc ⟨hA,o⟩ hsy hr
+  have hr1 : StaticRoots 16 t1 := by
+    have pass {nm ws} (ht : StaticTable 16 nm ws t) : StaticTable 16 nm ws t1 := by
+      apply ht.frame (W := []) ?_ (by simp) o.rd o.wr o.sp hsy
+      rw [o.mem]; exact Frame.refl _ _
+    exact ⟨pass hr.forward,pass hr.inverse⟩
+  refine WP.callFV hV.ver.1 hpre ?_ ?_ (fun s' hrd hwr hsp hf hcs hvs hpost => ?_) (by omega)
+  · change Covers ((verifyRd p s++rootRegions t1)++verifyWr p s) (t1.rd++t1.wr)
+    rw [List.append_assoc]
+    apply Covers.append_left
+    · rw [hc1.rd,hc1.wr]
+      refine covers_of_within fun r hr=>?_
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+      rcases hr with rfl|rfl|rfl
+      · exact ⟨_,by simp [vlay,h.rd],within_self _⟩
+      · exact ⟨_,by simp [vlay,h.wr],mu_withinV p s⟩
+      · exact ⟨_,by simp [vlay,h.rd],within_self _⟩
+    · apply Covers.append_left
+      · exact Covers.pair hr1.forward.readable hr1.inverse.readable
+      · rw [hc1.wr]
+        refine covers_of_within fun r hr=>?_
+        simp only [List.mem_singleton] at hr
+        subst r
+        exact ⟨⟨s.gpr .x6,mScrLen p⟩,by simp [vlay,h.wr],
+          within_base _ (by rw [mScr_eq]; simp only [sScr,oE]; omega)⟩
+  · rw [hc1.wr]
+    refine covers_of_within fun r hr => ?_
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    subst hr
+    exact ⟨⟨s.gpr .x6, mScrLen p⟩, by simp [vlay, h.wr], within_base _ (by rw [mScr_eq]; simp only [sScr, oE]; omega)⟩
+  -- After the call.
+  have hsv : ∀ d, d + 8 ≤ 88 → s'.mem.readW ((vlay p s).X + BitVec.ofNat 64 904 + BitVec.ofNat 64 d) 64 =
+      t1.mem.readW ((vlay p s).X + BitVec.ofNat 64 904 + BitVec.ofNat 64 d) 64 := fun d hd' =>
+    hf.readW (Region.contains_self _ _) (fun r hr => by
+      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact sv_sScrV hp s hd'
+      · rw [hsp1]
+        exact (hL.sv_disj (r := below s.sp (16 * c.aarch64Depth)) (.inr (below_sub (by omega) (by decide))) hd'))
+      (by decide)
+  refine ⟨⟨hrd.trans hc1.rd, hwr.trans hc1.wr, hsp.trans hc1.sp, (hcs .x28 (by decide) (by decide)).trans hc1.x28,
+    fun r hr h28 h30 => (hcs r hr h30).trans (hc1.cs r hr h28 h30), fun r hr => (hvs r hr).trans (hc1.vs r hr),
+    (hsv 0 (by omega)).trans hc1.s28, (hsv 8 (by omega)).trans hc1.s30⟩, ?_⟩
+  sig_reduce [verifyContract, verifySig, AArch64.abi, AArch64.argRegs, Abi.withConsts, Sign.signRootConsts_eq, List.range, List.range.loop] at hpost
+  simp only [e0, e1, e2, o.mem] at hpost
+  exact hpost
+
+end VG.Proof.MlDsa.AArch64.Message.OptimizedVerify
+end
+
+end
+
 section
 
 section
