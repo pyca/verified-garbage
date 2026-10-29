@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64.Base
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Verified
-import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Spec.Dsa.Generate
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.BackendCorrect

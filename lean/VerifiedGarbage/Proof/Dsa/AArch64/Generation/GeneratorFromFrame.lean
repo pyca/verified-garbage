@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Run
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorStep
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs

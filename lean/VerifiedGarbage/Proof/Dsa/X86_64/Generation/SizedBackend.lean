@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.BackendVerified
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha1
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.BackendCorrect
 import VerifiedGarbage.Proof.Variants.MdHash.X86_64.Sha256
-import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Sized
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context

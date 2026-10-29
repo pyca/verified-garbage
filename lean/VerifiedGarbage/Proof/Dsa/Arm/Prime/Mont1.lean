@@ -1,5 +1,4 @@
 module
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Dsa.Arm.Prime.Vals
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace

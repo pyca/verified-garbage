@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Arithmetic
-public import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 public import VerifiedGarbage.Proof.Framework.Contract

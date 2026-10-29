@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generate
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
-public import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Dsa.AArch64.EntryFieldsFrame
 import VerifiedGarbage.Proof.Framework.Omega

@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Arguments
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ProbablePrime
-public import Mathlib.Data.Int.ModEq
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Workspace
 import VerifiedGarbage.Proof.Framework.Omega

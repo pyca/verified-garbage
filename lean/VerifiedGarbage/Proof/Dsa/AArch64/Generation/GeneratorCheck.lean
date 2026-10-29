@@ -1,5 +1,4 @@
 module
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Rsa.Ranges
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorStep

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.RoundTail
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrTail
 import VerifiedGarbage.Spec.RsaKeyGen

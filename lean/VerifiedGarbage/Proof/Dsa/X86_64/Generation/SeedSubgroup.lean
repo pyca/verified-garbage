@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTest
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Subgroup
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
-import Mathlib.Data.Int.ModEq
 
 /-! # Complete first phase of a seed attempt, retaining every retry input -/
 

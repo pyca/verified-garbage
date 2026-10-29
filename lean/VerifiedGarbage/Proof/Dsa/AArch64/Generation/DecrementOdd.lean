@@ -1,5 +1,4 @@
 module
-import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 
 import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad

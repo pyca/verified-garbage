@@ -1,5 +1,4 @@
 module
-public import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 public import VerifiedGarbage.Proof.Framework.Contract

@@ -1,10 +1,8 @@
 module
 
 import VerifiedGarbage.Proof.Dsa.AArch64.EntryScratch
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
-public import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Dsa.AArch64.EntryFieldsFrame

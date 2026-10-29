@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Reduce
-import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 public import VerifiedGarbage.Proof.Rsa.Ranges
 
