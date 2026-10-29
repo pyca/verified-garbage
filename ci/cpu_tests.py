@@ -24,6 +24,9 @@ built there too.
   cpu_tests.py emulated-rsa CPU
       of the runs on stdin, focused RSA groups for ICX/DMR; use only after
       detecting SDE on a host without AVX512_IFMA
+  cpu_tests.py emulated-arm CPU
+      of the runs on stdin, focused groups for ARMv7; use only after
+      finding that ci/arm32-run runs its tests under qemu-arm
   cpu_tests.py select BINARY LIB TESTS GROUP...
       the tests of the groups in BINARY (`lib` or `tests`), one per line,
       of the tests listed (`--list --format terse`) in the files LIB and
@@ -288,6 +291,55 @@ GROUPS = {
             "wycheproof::rsa_oaep::rsa_shared_key_leases_smoke",
         ],
     },
+    # ARMv7's baseline RSA under qemu-arm (`QEMU_ARM_GROUPS`): every unit
+    # test, and a test of each operation through the public API, without
+    # the long runs of vectors, which the `rust` job's ARMv7 runs through
+    # the same Rust code with `umaal` (and a native AArch32 host with the
+    # full group). It covers every line the full group does.
+    "rsa_qemu": {
+        "lib": ["rsa", "rsa_keygen", "rsa_oaep", "rsa_pkcs1_enc", "rsa_pkcs1_sig", "rsa_pss"],
+        "tests": [
+            "cavp::rsa",
+            "rsa_guidance::rsa_pkcs1_appendix_b",
+            "rsa_guidance::rsa_pkcs1_bad_keys",
+            "rsa_guidance::rsa_crt_truncated_factors",
+            "rsa_guidance::rsa_pkcs1_lengths",
+            "wycheproof::rsa_keygen::rsa_keygen_composites",
+            "wycheproof::rsa_oaep::rsa_oaep_every_pair",
+            "wycheproof::rsa_oaep::rsa_shared_key_leases_smoke",
+            "wycheproof::rsa_pkcs1_sig::rsa_pkcs1_sig_gen_test",
+            "wycheproof::rsa_pss::rsa_pss_test",
+            "wycheproof::rsa_pss::rsa_pss_every_hash",
+            "wycheproof::rsa_pss::rsa_pss_large_keys",
+        ],
+    },
+    # `ffdh` but for generating the published safe primes again.
+    "ffdh_qemu": {
+        "lib": [
+            "ffdh::arithmetic",
+            "ffdh::domain",
+            "ffdh::tests",
+            "ffdh::vetted_tests",
+            "ffdh::generation::tests::composite_q_at_modulus_width_boundaries",
+            "ffdh::generation::tests::exhausted_entropy_cap",
+            "ffdh::generation::tests::full_width_attempt_counter_and_request_words",
+            "ffdh::generation::tests::parameter_failure_is_bounded",
+            "ffdh::generation::tests::rejected_candidates_are_consumed",
+            "ffdh::generation::tests::tape_extension_preserves_candidate_and_reports_rng_failure",
+        ],
+        "tests": ["cavp::ffdh"],
+    },
+    # `dsa_parameters` but for generating CAVP's parameters again.
+    "dsa_parameters_qemu": {
+        "lib": [
+            "dsa::parameters::tests::backend_combinations",
+            "dsa::parameters::tests::empty_tapes_zero_output",
+            "dsa::parameters::tests::exhausted_tapes_after_prime_search_zero_output",
+            "dsa::parameters::tests::generated_parameters_with_os_randomness",
+            "dsa::parameters::tests::parameter_generation_errors",
+        ],
+        "tests": [],
+    },
     # Extra SHA-256 implementations with the same RSA arithmetic: every
     # known-answer implicit-rejection case with the two smaller keys.
     "rsa_pkcs1_hashes": {
@@ -454,6 +506,21 @@ EMULATED_RSA_GROUPS = {
 }
 
 
+# Optional groups: these are used only when ARMv7's tests run under
+# qemu-arm, on an ARM64 host without AArch32 (ci/arm32-run), some ten times
+# slower than natively. A run whose hosts all run AArch32 uses none.
+QEMU_ARM_GROUPS = {
+    "rsa": "rsa_qemu",
+    "ffdh": "ffdh_qemu",
+    "dsa_parameters": "dsa_parameters_qemu",
+}
+
+
+def qemu_arm(cpu):
+    """Whether `cpu` (a record's) is ARMv7's, which may run under qemu-arm."""
+    return cpu.split()[:2] == ["native", "arm"]
+
+
 def emulated_rsa_runs(cpu, runs):
     """Focused RSA groups for ICX/DMR; call only after host detection.
 
@@ -462,14 +529,28 @@ def emulated_rsa_runs(cpu, runs):
     """
     if cpu.split()[0] not in ("icx", "dmr"):
         return runs
+    return substitute(runs, EMULATED_RSA_GROUPS)
+
+
+def emulated_arm_runs(cpu, runs):
+    """Focused groups for ARMv7; call only after finding that its tests run
+    under qemu-arm. Preserves every feature line and its order, as
+    `emulated_rsa_runs` does."""
+    if not qemu_arm(cpu):
+        return runs
+    return substitute(runs, QEMU_ARM_GROUPS)
+
+
+def substitute(runs, groups):
+    """`runs` with each group a key of `groups` names replaced by its value."""
     lines = []
     for raw in runs.splitlines():
         features, sep, tests = raw.partition("|")
         if not sep:
             lines.append(raw)
             continue
-        groups = [EMULATED_RSA_GROUPS.get(g, g) for g in tests.split()]
-        lines.append(f"{features.strip()} | {' '.join(groups)}")
+        names = [groups.get(g, g) for g in tests.split()]
+        lines.append(f"{features.strip()} | {' '.join(names)}")
     return "\n".join(lines)
 
 
@@ -520,10 +601,13 @@ def check(records):
     """The errors of the records of every CPU."""
     used = {name for r in records for name in r["groups"]}
     # A full host's groups can use these substitutions on a host without
-    # IFMA. Check their reachability even when this run got only full hosts.
+    # IFMA (or AArch32). Check their reachability even when this run got
+    # only full hosts.
     for record in records:
         if record["cpu"].split()[0] in ("icx", "dmr"):
             used.update(EMULATED_RSA_GROUPS[g] for g in record["groups"] if g in EMULATED_RSA_GROUPS)
+        if qemu_arm(record["cpu"]):
+            used.update(QEMU_ARM_GROUPS[g] for g in record["groups"] if g in QEMU_ARM_GROUPS)
     errors = [f"group {name} is used by no CPU's runs" for name in GROUPS if name not in used]
     for name, group in GROUPS.items():
         for b in BINARIES:
@@ -565,6 +649,8 @@ def main(argv):
             print(t)
     elif argv[:1] == ["emulated-rsa"] and len(argv) == 2:
         print(emulated_rsa_runs(argv[1], sys.stdin.read()))
+    elif argv[:1] == ["emulated-arm"] and len(argv) == 2:
+        print(emulated_arm_runs(argv[1], sys.stdin.read()))
     elif argv[:1] == ["record"] and len(argv) == 5:
         tests = {"lib": parse_list(read(argv[3])), "tests": parse_list(read(argv[4]))}
         cpu = " ".join(argv[1].split())

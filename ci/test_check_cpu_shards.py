@@ -263,6 +263,24 @@ class StepTests(unittest.TestCase):
                     selector_ran = any("rsa_pss::sha256::tests::backend_features" in c for c in calls)
                     self.assertEqual(selector_ran, host_ifma or chip == "native")
 
+    @unittest.skipIf(subprocess.run(["sh", "-c", "/lib/ld-linux-armhf.so.3 --version"],
+                                    capture_output=True).returncode == 0,
+                     "this host runs ARMv7's tests natively")
+    def test_reduces_armv7_under_qemu(self):
+        lib = LIB_TESTS + ["ffdh::tests::shared_failure_and_key_wiping",
+                           "ffdh::generation::tests::published_candidates_and_tape_consumption"]
+        tests = TESTS_TESTS + ["wycheproof::rsa_pss::rsa_pss_every_hash"]
+        for chip, reduced in [("native arm ubuntu-26.04-arm", True),
+                              ("native aarch64 ubuntu-26.04-arm", False)]:
+            with self.subTest(chip=chip):
+                result, calls, _ = self.run_step("", runs="none | rsa ffdh cpu\n", chip=chip,
+                                                 lib_tests=lib, tests_tests=tests)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                expected = ["cpu", "ffdh_qemu", "rsa_qemu"] if reduced else ["cpu", "ffdh", "rsa"]
+                self.assertEqual(self.tests_record["groups"], expected)
+                slow = any("published_candidates_and_tape_consumption" in c for c in calls)
+                self.assertEqual(slow, not reduced)
+
     def test_all_runs_every_test(self):
         result, calls, _ = self.run_step("", runs="none | all\n")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

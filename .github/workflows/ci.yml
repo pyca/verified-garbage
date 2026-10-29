@@ -777,6 +777,14 @@ jobs:
             export VG_TEST_HOST_WITHOUT_IFMA=1
             RUNS=$(python3 ci/cpu_tests.py emulated-rsa "$CPU" <<< "$RUNS")
           fi
+          # On an ARM64 host without AArch32, ci/arm32-run runs ARMv7's tests
+          # under qemu-arm some ten times slower: the tests of its baseline
+          # RSA, FFDH and DSA parameter generation then leave out the long
+          # runs of vectors, keeping a test of each operation and every line
+          # the full groups cover (ci/cpu_tests.py's QEMU_ARM_GROUPS).
+          if [ "${CPU% *}" = "native arm" ] && ! /lib/ld-linux-armhf.so.3 --version > /dev/null 2>&1; then
+            RUNS=$(python3 ci/cpu_tests.py emulated-arm "$CPU" <<< "$RUNS")
+          fi
           # Substitution keeps feature lines and their order: mixed hosts
           # compute identical shard membership. Record the effective groups.
           lines=$(python3 ci/cpu_shards.py pick "$CPU" "$SHARD" "$TIMES" <<< "$RUNS")

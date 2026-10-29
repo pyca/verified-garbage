@@ -143,7 +143,9 @@ class RsaEmulationTests(unittest.TestCase):
     def test_full_hosts_may_leave_optional_emulation_groups_unused(self):
         listed = {b: [p for g in cpu_tests.GROUPS.values() for p in g[b]]
                   for b in cpu_tests.BINARIES}
-        records = [{"cpu": c["chip"], "groups": cpu_tests.runs_groups(c["runs"]), "tests": listed}
+        # As ci.yml names them: chip, arch and os.
+        records = [{"cpu": " ".join(c.get(k, "") for k in ("chip", "arch", "os")).strip(),
+                    "groups": cpu_tests.runs_groups(c["runs"]), "tests": listed}
                    for c in tomllib.loads(MATRIX.read_text())["cpu"]]
         self.assertEqual(cpu_tests.check(records), [])
 
@@ -164,6 +166,57 @@ class RsaEmulationTests(unittest.TestCase):
         }.items():
             listed = {"lib": [], "tests": paths + ["wycheproof::rsa_pss::rsa_pss_sign_test"]}
             self.assertEqual(cpu_tests.select("tests", listed, [group]), paths)
+
+
+class QemuArmTests(unittest.TestCase):
+    CPU = "native arm ubuntu-26.04-arm"
+
+    def test_only_armv7_is_reduced_and_feature_lines_are_kept(self):
+        for cpu in tomllib.loads(MATRIX.read_text())["cpu"]:
+            name = " ".join(cpu.get(k, "") for k in ("chip", "arch", "os")).strip()
+            runs = cpu["runs"]
+            reduced = cpu_tests.emulated_arm_runs(name, runs)
+            self.assertEqual([f for f, _ in parse_runs(runs)],
+                             [f for f, _ in parse_runs(reduced)])
+            if name != self.CPU:
+                self.assertEqual(reduced, runs)
+            else:
+                groups = {g for _, gs in parse_runs(reduced) for g in gs.split()}
+                self.assertFalse(groups & set(cpu_tests.QEMU_ARM_GROUPS), reduced)
+                self.assertTrue(groups & set(cpu_tests.QEMU_ARM_GROUPS.values()), reduced)
+
+    def test_reduced_groups_leave_out_the_long_runs_of_vectors(self):
+        slow = {"lib": ["dsa::parameters::tests::cavp_generated_parameters",
+                        "ffdh::generation::tests::published_candidates_and_tape_consumption"],
+                "tests": ["wycheproof::rsa_keygen::rsa_keygen_primes",
+                          "wycheproof::rsa_keys::rsa_keys_from_components",
+                          "wycheproof::rsa_oaep::rsa_oaep_test",
+                          "wycheproof::rsa_oaep::rsa_shared_key_leases",
+                          "wycheproof::rsa_pkcs1_sig::rsa_pkcs1_sign_test"]}
+        kept = {"lib": ["dsa::parameters::tests::backend_combinations",
+                        "ffdh::generation::tests::rejected_candidates_are_consumed",
+                        "ffdh::tests::partial_limb_moduli_and_short_exponents",
+                        "rsa::privatekey::tests::private_identities"],
+                "tests": ["cavp::ffdh::nist_initiator", "cavp::rsa::rsadp_component",
+                          "wycheproof::rsa_pss::rsa_pss_every_hash"]}
+        listed = {b: slow[b] + kept[b] for b in cpu_tests.BINARIES}
+        full = list(cpu_tests.QEMU_ARM_GROUPS)
+        reduced = list(cpu_tests.QEMU_ARM_GROUPS.values())
+        for b in cpu_tests.BINARIES:
+            self.assertEqual(sorted(cpu_tests.select(b, listed, full)), sorted(listed[b]))
+            self.assertEqual(sorted(cpu_tests.select(b, listed, reduced)), sorted(kept[b]))
+
+    def test_check_counts_the_reduced_groups_as_used_by_armv7(self):
+        listed = {b: [p for g in cpu_tests.GROUPS.values() for p in g[b]]
+                  for b in cpu_tests.BINARIES}
+        records = [{"cpu": " ".join(c.get(k, "") for k in ("chip", "arch", "os")).strip(),
+                    "groups": cpu_tests.runs_groups(c["runs"]), "tests": listed}
+                   for c in tomllib.loads(MATRIX.read_text())["cpu"]]
+        self.assertEqual(cpu_tests.check(records), [])
+        others = [r for r in records if r["cpu"] != self.CPU]
+        errors = cpu_tests.check(others)
+        for group in cpu_tests.QEMU_ARM_GROUPS.values():
+            self.assertIn(f"group {group} is used by no CPU's runs", errors)
 
 
 if __name__ == "__main__":
