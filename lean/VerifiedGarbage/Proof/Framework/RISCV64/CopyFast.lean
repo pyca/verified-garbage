@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Words.RISCV64.CopyFast
-public import VerifiedGarbage.Proof.Framework.RISCV64.Loops
+import VerifiedGarbage.Proof.Framework.RISCV64.Loops
 import VerifiedGarbage.Proof.Framework.RISCV64.MRun
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 
 /-!
 # Copies a doubleword at a time when the buffers allow it (RISC-V)
