@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.Interleave
 import VerifiedGarbage.Proof.Sm4.RISCV64.Keys
 import VerifiedGarbage.Proof.Sm4.Common
 import VerifiedGarbage.Proof.Sm4.Layout
-import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
