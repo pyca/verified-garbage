@@ -5602,13 +5602,27 @@ sd t0, 400(a5)
 addi t1, a0, 0
 addi t2, a5, 768
 addi t3, zero, 128
-20:
+or t4, t1, t2
+andi t4, t4, 7
+beqz t4, 20f
+22:
 lbu t4, 0(t1)
 sb t4, 0(t2)
 addi t1, t1, 1
 addi t2, t2, 1
 addi t3, t3, -1
-bnez t3, 20b
+bnez t3, 22b
+j 21f
+20:
+srli t3, t3, 3
+23:
+ld t4, 0(t1)
+sd t4, 0(t2)
+addi t1, t1, 8
+addi t2, t2, 8
+addi t3, t3, -1
+bnez t3, 23b
+21:
 addi a0, a5, 768
 addi a3, a5, 1024
 ld t1, 0(a0)
@@ -11725,25 +11739,39 @@ addi a3, a3, 64
 addi a0, a0, 8
 addi a0, a5, 2040
 addi a0, a0, 1032
-beqz a2, 21f
-23:
+beqz a2, 24f
+26:
 srli t0, a2, 4
-bnez t0, 24f
+bnez t0, 27f
 addi a4, a2, 0
-j 25f
-24:
+j 28f
+27:
 addi a4, zero, 16
-25:
+28:
 addi t1, a1, 0
 addi t2, a5, 768
 slli t3, a4, 4
-26:
+or t4, t1, t2
+andi t4, t4, 7
+beqz t4, 29f
+211:
 lbu t4, 0(t1)
 sb t4, 0(t2)
 addi t1, t1, 1
 addi t2, t2, 1
 addi t3, t3, -1
-bnez t3, 26b
+bnez t3, 211b
+j 210f
+29:
+srli t3, t3, 3
+212:
+ld t4, 0(t1)
+sd t4, 0(t2)
+addi t1, t1, 8
+addi t2, t2, 8
+addi t3, t3, -1
+bnez t3, 212b
+210:
 ld t3, 360(a5)
 ld t4, 368(a5)
 ld t5, 376(a5)
@@ -12647,7 +12675,7 @@ sd s5, 744(a5)
 sd s6, 752(a5)
 sd s7, 760(a5)
 addi a3, a5, 1024
-27:
+213:
 ld s0, 576(a5)
 ld t0, 640(a5)
 xor s0, s0, t0
@@ -14058,7 +14086,7 @@ xor t0, t0, t1
 sd t0, 760(a5)
 addi a3, a3, 256
 sub t0, a3, a0
-bnez t0, 27b
+bnez t0, 213b
 ld t3, 360(a5)
 ld t4, 368(a5)
 ld t5, 376(a5)
@@ -14962,28 +14990,42 @@ sd s6, 1000(a5)
 sd s3, 888(a5)
 sd s7, 1016(a5)
 srli t0, a2, 4
-bnez t0, 28f
+bnez t0, 214f
 addi a4, a2, 0
-j 29f
-28:
+j 215f
+214:
 addi a4, zero, 16
-29:
+215:
 addi t1, a5, 768
 addi t2, a1, 0
 slli t3, a4, 4
-210:
+or t4, t1, t2
+andi t4, t4, 7
+beqz t4, 216f
+218:
 lbu t4, 0(t1)
 sb t4, 0(t2)
 addi t1, t1, 1
 addi t2, t2, 1
 addi t3, t3, -1
-bnez t3, 210b
+bnez t3, 218b
+j 217f
+216:
+srli t3, t3, 3
+219:
+ld t4, 0(t1)
+sd t4, 0(t2)
+addi t1, t1, 8
+addi t2, t2, 8
+addi t3, t3, -1
+bnez t3, 219b
+217:
 sub a2, a2, a4
 addi a1, a1, 256
-bnez a2, 23b
-j 22f
-21:
-22:
+bnez a2, 26b
+j 25f
+24:
+25:
 addi t0, a5, 2040
 addi t0, t0, 1032
 ld s0, 0(t0)
@@ -15519,13 +15561,27 @@ sd t0, 400(a5)
 addi t1, a0, 0
 addi t2, a5, 768
 addi t3, zero, 128
-20:
+or t4, t1, t2
+andi t4, t4, 7
+beqz t4, 20f
+22:
 lbu t4, 0(t1)
 sb t4, 0(t2)
 addi t1, t1, 1
 addi t2, t2, 1
 addi t3, t3, -1
-bnez t3, 20b
+bnez t3, 22b
+j 21f
+20:
+srli t3, t3, 3
+23:
+ld t4, 0(t1)
+sd t4, 0(t2)
+addi t1, t1, 8
+addi t2, t2, 8
+addi t3, t3, -1
+bnez t3, 23b
+21:
 addi a0, a5, 768
 addi a3, a5, 2040
 addi a3, a3, 968
@@ -21643,25 +21699,39 @@ addi a3, a3, -64
 addi a0, a0, 8
 addi a0, a5, 2040
 addi a0, a0, 1032
-beqz a2, 21f
-23:
+beqz a2, 24f
+26:
 srli t0, a2, 4
-bnez t0, 24f
+bnez t0, 27f
 addi a4, a2, 0
-j 25f
-24:
+j 28f
+27:
 addi a4, zero, 16
-25:
+28:
 addi t1, a1, 0
 addi t2, a5, 768
 slli t3, a4, 4
-26:
+or t4, t1, t2
+andi t4, t4, 7
+beqz t4, 29f
+211:
 lbu t4, 0(t1)
 sb t4, 0(t2)
 addi t1, t1, 1
 addi t2, t2, 1
 addi t3, t3, -1
-bnez t3, 26b
+bnez t3, 211b
+j 210f
+29:
+srli t3, t3, 3
+212:
+ld t4, 0(t1)
+sd t4, 0(t2)
+addi t1, t1, 8
+addi t2, t2, 8
+addi t3, t3, -1
+bnez t3, 212b
+210:
 ld t3, 360(a5)
 ld t4, 368(a5)
 ld t5, 376(a5)
@@ -22565,7 +22635,7 @@ sd s5, 744(a5)
 sd s6, 752(a5)
 sd s7, 760(a5)
 addi a3, a5, 1024
-27:
+213:
 ld s0, 576(a5)
 ld t0, 640(a5)
 xor s0, s0, t0
@@ -23976,7 +24046,7 @@ xor t0, t0, t1
 sd t0, 760(a5)
 addi a3, a3, 256
 sub t0, a3, a0
-bnez t0, 27b
+bnez t0, 213b
 ld t3, 360(a5)
 ld t4, 368(a5)
 ld t5, 376(a5)
@@ -24880,28 +24950,42 @@ sd s6, 1000(a5)
 sd s3, 888(a5)
 sd s7, 1016(a5)
 srli t0, a2, 4
-bnez t0, 28f
+bnez t0, 214f
 addi a4, a2, 0
-j 29f
-28:
+j 215f
+214:
 addi a4, zero, 16
-29:
+215:
 addi t1, a5, 768
 addi t2, a1, 0
 slli t3, a4, 4
-210:
+or t4, t1, t2
+andi t4, t4, 7
+beqz t4, 216f
+218:
 lbu t4, 0(t1)
 sb t4, 0(t2)
 addi t1, t1, 1
 addi t2, t2, 1
 addi t3, t3, -1
-bnez t3, 210b
+bnez t3, 218b
+j 217f
+216:
+srli t3, t3, 3
+219:
+ld t4, 0(t1)
+sd t4, 0(t2)
+addi t1, t1, 8
+addi t2, t2, 8
+addi t3, t3, -1
+bnez t3, 219b
+217:
 sub a2, a2, a4
 addi a1, a1, 256
-bnez a2, 23b
-j 22f
-21:
-22:
+bnez a2, 26b
+j 25f
+24:
+25:
 addi t0, a5, 2040
 addi t0, t0, 1032
 ld s0, 0(t0)
@@ -25440,13 +25524,27 @@ j 21f
 addi t1, a0, 0
 addi t2, a5, 768
 addi t3, zero, 128
-22:
+or t4, t1, t2
+andi t4, t4, 7
+beqz t4, 22f
+24:
 lbu t4, 0(t1)
 sb t4, 0(t2)
 addi t1, t1, 1
 addi t2, t2, 1
 addi t3, t3, -1
-bnez t3, 22b
+bnez t3, 24b
+j 23f
+22:
+srli t3, t3, 3
+25:
+ld t4, 0(t1)
+sd t4, 0(t2)
+addi t1, t1, 8
+addi t2, t2, 8
+addi t3, t3, -1
+bnez t3, 25b
+23:
 addi a0, a5, 768
 addi a3, a5, 2040
 addi a3, a3, 968
@@ -31565,19 +31663,33 @@ addi a0, a0, 8
 addi a0, a5, 2040
 addi a0, a0, 1032
 21:
-beqz a1, 23f
-j 24f
-23:
+beqz a1, 26f
+j 27f
+26:
 addi t1, a0, 0
 addi t2, a5, 768
 addi t3, zero, 128
-25:
+or t4, t1, t2
+andi t4, t4, 7
+beqz t4, 28f
+210:
 lbu t4, 0(t1)
 sb t4, 0(t2)
 addi t1, t1, 1
 addi t2, t2, 1
 addi t3, t3, -1
-bnez t3, 25b
+bnez t3, 210b
+j 29f
+28:
+srli t3, t3, 3
+211:
+ld t4, 0(t1)
+sd t4, 0(t2)
+addi t1, t1, 8
+addi t2, t2, 8
+addi t3, t3, -1
+bnez t3, 211b
+29:
 addi a0, a5, 768
 addi a3, a5, 1024
 ld t1, 0(a0)
@@ -37694,7 +37806,7 @@ addi a3, a3, 64
 addi a0, a0, 8
 addi a0, a5, 2040
 addi a0, a0, 1032
-24:
+27:
 addi t0, a5, 2040
 addi t0, t0, 1032
 ld s0, 0(t0)
