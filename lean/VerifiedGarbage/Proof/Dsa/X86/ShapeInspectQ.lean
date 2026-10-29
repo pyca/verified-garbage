@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.Framework.X86.Wp
-import VerifiedGarbage.Impl.Dsa.X86.Bytes
 /-! # Completing public domain-size and oddness validation -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/X86/ShapeParity.lean`, which only this module imported.

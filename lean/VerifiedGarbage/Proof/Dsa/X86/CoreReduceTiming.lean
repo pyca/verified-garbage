@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.Mont.X86.ContextFrame
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.TCB.X86.Isa
 import VerifiedGarbage.TCB.X86.State
