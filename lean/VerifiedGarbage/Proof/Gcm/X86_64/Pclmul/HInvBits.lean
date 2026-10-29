@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.InstancePriority
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 
@@ -69,7 +68,7 @@ theorem mask_eq (h : BitVec 128) :
       ((0 : BitVec 64) ++ (0xffffffffffffffff : BitVec 64)) = ofDwords (-1) (-1) (-1) (-1) := by rfl
   rw [e0, e1, e2]
   simp only [dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2, dword_ofDwords_3, msb_dword3]
-  split_ifs
+  repeat' split
   · simp only [XBinOp.eval, dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2, dword_ofDwords_3,
       show (1#32 : BitVec 32) + -1 = 0 by rfl, show ofDwords 0 0 0 0 = 0 by rfl]
     rfl

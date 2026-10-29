@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.MdStream.Prefix
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Data.List.Nodup
 public import VerifiedGarbage.Impl.Sha512.PPC64LE
 
 /-!

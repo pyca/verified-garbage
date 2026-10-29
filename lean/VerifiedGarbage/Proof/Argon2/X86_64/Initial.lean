@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Merged from `Proof.Argon2.X86_64.InitialFinish`. -/
@@ -92,7 +91,7 @@ theorem finish_ok (v : Proof.Blake2.X86_64.Backend) (s : State) (h : Space s)
   refine ⟨?_, fun r hr h12 h14 => ?_, ht.rd.trans ksw.rd, ht.wr.trans ksw.wr, ?_⟩
   · have dst : w.gpr .r14 = s.gpr .rbp := dstW.trans ksu.rbp
     rw [ht.mem]
-    conv_lhs => arg 2; rw [← dst]
+    conv => lhs; arg 2; rw [← dst]
     have copied := HPrime.bytesAt_writeBytes w.mem (w.gpr .r14)
       (bytesAt w.mem (w.gpr .rbx + 768) 64) (by rw [sourceLength]; decide)
     rw [sourceLength] at copied

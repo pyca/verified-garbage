@@ -12,8 +12,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.ChaCha20.Contract
 meta import VerifiedGarbage.Spec.ChaCha20.Contract
-import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.Conv
 import all Init.Data.Nat.Bitwise.Basic
 public import VerifiedGarbage.Impl.ChaCha20.PPC64LE
 public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Contract
@@ -223,7 +221,7 @@ theorem ofNat_beq_zero {k : Nat} (h : k < 2 ^ 64) : (BitVec.ofNat 64 k == 0) = d
 
 theorem sub_ofNat {a b : Nat} (h : b ≤ a) :
     BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
-  conv_lhs => rw [show a = (a - b) + b by omega_arith, BitVec.ofNat_add]
+  conv => lhs; rw [show a = (a - b) + b by omega_arith, BitVec.ofNat_add]
   rw [BitVec.add_sub_cancel]
 
 theorem add_ofNat (p : Addr) (a b : Nat) :

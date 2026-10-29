@@ -5,7 +5,6 @@ public import VerifiedGarbage.Impl.Argon2.X86.Derive
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Blake2.Stream
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Argon2.X86.CompressLit
@@ -325,19 +324,29 @@ theorem frames_ok {Q : State → Prop} (hsp : NoSp body)
   -- The pops.
   have add4 : ∀ a : Nat, E s₀ + BitVec.ofNat 32 a + BitVec.ofNat 32 (4 * 1) =
       E s₀ + BitVec.ofNat 32 (a + 4) := fun a => by rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  set t₁ := popped .eax (List.replicate (locals / 4) Reg.eax).length t with ht₁
+  let t₁ := popped .eax (List.replicate (locals / 4) Reg.eax).length t
+  try rewrite [show popped .eax (List.replicate (locals / 4) Reg.eax).length t = t₁ from rfl] at *
+  have ht₁ : t₁ = popped .eax (List.replicate (locals / 4) Reg.eax).length t := rfl
   have sp₁ : t₁.gpr .esp = E s₀ + BitVec.ofNat 32 144 := by
     rw [ht₁, popped_esp, d.esp]; simp [locals]
-  set t₂ := popped .ebx [Reg.ebx].length t₁ with ht₂
+  let t₂ := popped .ebx [Reg.ebx].length t₁
+  try rewrite [show popped .ebx [Reg.ebx].length t₁ = t₂ from rfl] at *
+  have ht₂ : t₂ = popped .ebx [Reg.ebx].length t₁ := rfl
   have sp₂ : t₂.gpr .esp = E s₀ + BitVec.ofNat 32 148 := by
     rw [ht₂, popped_esp, sp₁]; exact add4 144
-  set t₃ := popped .esi [Reg.esi].length t₂ with ht₃
+  let t₃ := popped .esi [Reg.esi].length t₂
+  try rewrite [show popped .esi [Reg.esi].length t₂ = t₃ from rfl] at *
+  have ht₃ : t₃ = popped .esi [Reg.esi].length t₂ := rfl
   have sp₃ : t₃.gpr .esp = E s₀ + BitVec.ofNat 32 152 := by
     rw [ht₃, popped_esp, sp₂]; exact add4 148
-  set t₄ := popped .edi [Reg.edi].length t₃ with ht₄
+  let t₄ := popped .edi [Reg.edi].length t₃
+  try rewrite [show popped .edi [Reg.edi].length t₃ = t₄ from rfl] at *
+  have ht₄ : t₄ = popped .edi [Reg.edi].length t₃ := rfl
   have sp₄ : t₄.gpr .esp = E s₀ + BitVec.ofNat 32 156 := by
     rw [ht₄, popped_esp, sp₃]; exact add4 152
-  set u := popped .ebp [Reg.ebp].length t₄ with hu
+  let u := popped .ebp [Reg.ebp].length t₄
+  try rewrite [show popped .ebp [Reg.ebp].length t₄ = u from rfl] at *
+  have hu : u = popped .ebp [Reg.ebp].length t₄ := rfl
   have spu : u.gpr .esp = E0 s₀ := by
     rw [hu, popped_esp, sp₄, List.length_singleton, add4 156, E_sub hlo 160 (by decide)]; simp
   have mu : u.mem = t.mem := by simp [hu, ht₄, ht₃, ht₂, ht₁]

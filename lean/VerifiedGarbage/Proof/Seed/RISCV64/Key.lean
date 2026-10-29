@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Seed.RISCV64.Ecb
 import VerifiedGarbage.Proof.Seed.Memory
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Seed.RISCV64.Ecb
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
@@ -36,7 +35,7 @@ theorem be64_bytes (b0 b1 b2 b3 b4 b5 b6 b7 : Byte) :
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [BitVec.getLsbD_append]
-  split_ifs <;> first | rfl | omega | (congr 1; omega)
+  (repeat' split) <;> first | rfl | omega | (congr 1; omega)
 
 /-- The big-endian doubleword of a block's bytes `off … off + 7`: two of its words. -/
 theorem be64_key (m : Mem) (p : Addr) {off : Nat} (ho : off ≤ 8) :

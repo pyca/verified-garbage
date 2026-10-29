@@ -3,7 +3,6 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.Dot
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Reduce
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 
@@ -35,7 +34,8 @@ theorem finish_ok {rest : List Instr} {s : State} {Q : State → Prop}
     (hlt := fun e he => by have := bb e he; omega) (k := fun s₁ h₁ l₁ b₁ => ?_)
   have a₁ : Lanes (s₁.v .v21) A := by rw [h₁.get .v21]; exact ha
   have g₁ : Lanes (s₁.v .v18) G := by rw [h₁.get .v18]; exact hg
-  set R := fun e => B e - B e * 645083 / 2 ^ 31 * 3329
+  let R := fun e => B e - B e * 645083 / 2 ^ 31 * 3329
+  try rewrite [show fun e => B e - B e * 645083 / 2 ^ 31 * 3329 = R from rfl] at *
   have br : ∀ e < 4, R e * G e ≤ 2 * 3329 * 3329 := fun e he =>
     Nat.mul_le_mul (Nat.le_of_lt (b₁ e he).1) (Nat.le_of_lt (bg e he))
   have bylt : ∀ e < 4, A e + R e * G e < 2 ^ 31 := fun e he => by

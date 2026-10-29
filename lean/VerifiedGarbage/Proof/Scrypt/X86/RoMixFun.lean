@@ -9,9 +9,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Sha256.Stream
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
-
 @[expose] public section
 
 section
@@ -701,7 +698,7 @@ structure P1 (s₀ s : State) : Prop extends Base s₀ s where
   edx : s.gpr .edx = BitVec.ofNat 32 (2 * vl s₀)
 
 theorem dbl32 (x : BitVec 32) : x + x = BitVec.ofNat 32 (2 * x.toNat) := by
-  conv_lhs => rw [ofNat_toNat32 x]
+  conv => lhs; rw [ofNat_toNat32 x]
   rw [← BitVec.ofNat_add, Nat.two_mul]
 
 theorem prologue_ok {s₀ : State} (hp : Pre s₀) : WP isa (.block rmPrologue) s₀ (P1 s₀) := by
@@ -1138,8 +1135,12 @@ theorem mem3_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < NN s₀) {s :
         (Spec.Scrypt.roMixIndices (rr s₀) (NN s₀) (B s₀)).drop (i + 1) := by
   have lt := r_lt hp
   have hj := jOf_lt hp s.mem
-  set T := Spec.Pbkdf2.xorBytes (bytesAt s.mem (bA s₀) (128 * rr s₀))
-    (bytesAt s.mem (vAt s₀ (jOf s₀ s.mem)) (128 * rr s₀)) with hT
+  let T := Spec.Pbkdf2.xorBytes (bytesAt s.mem (bA s₀) (128 * rr s₀))
+    (bytesAt s.mem (vAt s₀ (jOf s₀ s.mem)) (128 * rr s₀))
+  try rewrite [show Spec.Pbkdf2.xorBytes (bytesAt s.mem (bA s₀) (128 * rr s₀))
+    (bytesAt s.mem (vAt s₀ (jOf s₀ s.mem)) (128 * rr s₀)) = T from rfl] at *
+  have hT : T = Spec.Pbkdf2.xorBytes (bytesAt s.mem (bA s₀) (128 * rr s₀))
+    (bytesAt s.mem (vAt s₀ (jOf s₀ s.mem)) (128 * rr s₀)) := rfl
   have hl : T.length = 128 * rr s₀ := by
     rw [hT, xorBytes_length _ _ (by simp [bytesAt_length]), bytesAt_length]
   have hself : bytesAt (writeBytes s.mem (tP s₀) T) (tP s₀) (128 * rr s₀) = T := by

@@ -8,8 +8,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Context
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
-
 /-! # Bounded fourth/fifth-block continuation and exact failure cleanup -/
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
@@ -206,7 +204,7 @@ theorem resume_ok {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s : Sta
     apply congrArg (fun x : BitVec 64 => s.gpr .x24 &&& x)
     apply BitVec.eq_of_toNat_eq
     rw [ht.flag]
-    split_ifs <;> rfl
+    (repeat' split) <;> rfl
 
 theorem ResumePostW.saved {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s₀ s u : State}
     (h : ResumePostW w16 A B p a b s u) (ctx : Context p a b c s)

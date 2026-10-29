@@ -14,8 +14,6 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Tactic.SplitIfs
-
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem VG.Proof.MlKem
@@ -306,6 +304,6 @@ theorem initial_ok {w16 : Bool} {s : State} {a b : Nat} (ha : a<65536) (hb : b<6
   refine WP.mono (Rej8.WP.constants fin cu (by rfl)) fun v ⟨⟨kv,ev⟩,cv⟩ => ?_
   refine ⟨(ku.trans kv.keep).mono,by rw [kv.mem]; exact fu,by rw [kv.mem]; exact ca,
     by rw [kv.mem]; exact cb,by rw [kv.mem]; exact sa,by rw [kv.mem]; exact sb,?_,cv⟩
-  rw [ev,u22]; unfold doneFlag; split_ifs <;> simp_all
+  rw [ev,u22]; unfold doneFlag; (repeat' split) <;> simp_all
 
 end VG.Proof.MlKem.AArch64.Paired

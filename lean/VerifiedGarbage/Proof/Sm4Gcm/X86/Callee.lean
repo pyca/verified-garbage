@@ -18,8 +18,6 @@ import VerifiedGarbage.Proof.Sm4.X86.Ctr32Verified
 import VerifiedGarbage.Proof.Sm4.X86.Ctr32Lit
 import VerifiedGarbage.Proof.Sm4.X86.KeyVerified
 import VerifiedGarbage.Proof.Sm4.X86.Lit
-import Mathlib.Tactic.Set
-
 /-!
 # SM4-GCM on x86: the calls
 
@@ -152,7 +150,8 @@ theorem callPre : CallPre ctrK ctrRegs (ctrRd K) (ctrWr (s.gpr .esp) C D n) s :=
   have eS : (below (s.gpr .esp) 1536).base + BitVec.ofNat 64 1516 - 1516#64 = (below (s.gpr .esp) 1536).base :=
     BitVec.add_sub_cancel _ _
   have eN : (s.gpr .esp - BitVec.ofNat 32 20).toNat = (s.gpr .esp).toNat - 20 := sub_toNat (by omega)
-  set B := (below (s.gpr .esp) 1536).base
+  let B := (below (s.gpr .esp) 1536).base
+  try rewrite [show (below (s.gpr .esp) 1536).base = B from rfl] at *
   have hb : below (s.gpr .esp) 1536 = ⟨B, 1536⟩ := rfl
   have sb {d k : Nat} (hd : d + k ≤ 1536) {r : Region} (hr : (below (s.gpr .esp) 1536).Disjoint r) :
       (⟨B + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
@@ -347,7 +346,8 @@ theorem callPre : CallPre keyK keyRegs (keyRd (s.gpr .esp) K) (keyWr C) s := by
   have eS : (below (s.gpr .esp) 1460).base + BitVec.ofNat 64 1448 - 1448#64 = (below (s.gpr .esp) 1460).base :=
     BitVec.add_sub_cancel _ _
   have eN : (s.gpr .esp - BitVec.ofNat 32 12).toNat = (s.gpr .esp).toNat - 12 := sub_toNat (by omega)
-  set B := (below (s.gpr .esp) 1460).base
+  let B := (below (s.gpr .esp) 1460).base
+  try rewrite [show (below (s.gpr .esp) 1460).base = B from rfl] at *
   have hb : below (s.gpr .esp) 1460 = ⟨B, 1460⟩ := rfl
   have sb {d k : Nat} (hd : d + k ≤ 1460) {r : Region} (hr : (below (s.gpr .esp) 1460).Disjoint r) :
       (⟨B + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by

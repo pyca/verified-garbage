@@ -6,9 +6,6 @@ import VerifiedGarbage.Proof.Blake2.Spec
 import VerifiedGarbage.Proof.MdStream.X86.Common
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
-
 /-!
 # Streaming BLAKE2 on x86 (32-bit): `finalize`
 
@@ -214,7 +211,7 @@ theorem bufLen_val (hP : Ok P) {s : State} {lo hi : BitVec 32} (hax : s.gpr .eax
         by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]⟩
     have e : lo = BitVec.ofNat 32 (hi ++ lo).toNat := (lo_append hi lo).symm
     rw [u₄.gpr, u₃.gpr, u₂.gpr, u₁.other _ (by decide), hax]
-    conv_lhs => rw [e]
+    conv => lhs; rw [e]
     rw [mask_ofNat hP hb]
     simp only [Proof.Blake2.bufLen, hb, ite_false]
 
@@ -245,7 +242,9 @@ theorem zeroLoop_ok {s₀ : State} {dA : BitVec 32} {k : Nat} (hk : 1 ≤ k) (hk
     rw [h.edx, MdStream.X86.addr_add_ofNat (by omega_arith), addr_eq (by omega_arith), BitVec.add_assoc,
       BitVec.ofNat_add, BitVec.add_comm (BitVec.ofNat 64 j)]
   have hout' : InRegions s.wr (addr dA (bufOff w) + BitVec.ofNat 64 j) 1 := by rw [h.wr]; exact hout j hj
-  set m₁ := s.mem.writeW (addr dA (bufOff w) + BitVec.ofNat 64 j) ((s.gpr Reg8.al.reg).setWidth 8) with hm₁
+  let m₁ := s.mem.writeW (addr dA (bufOff w) + BitVec.ofNat 64 j) ((s.gpr Reg8.al.reg).setWidth 8)
+  try rewrite [show s.mem.writeW (addr dA (bufOff w) + BitVec.ofNat 64 j) ((s.gpr Reg8.al.reg).setWidth 8) = m₁ from rfl] at *
+  have hm₁ : m₁ = s.mem.writeW (addr dA (bufOff w) + BitVec.ofNat 64 j) ((s.gpr Reg8.al.reg).setWidth 8) := rfl
   refine cons (s' := { s with mem := m₁ }) ?_ ?_
   · have e : s.ea (at_ .edx (N w)) = addr dA (bufOff w) + BitVec.ofNat 64 j := eD
     simp only [exec, State.store8, e, hout', ite_true, hm₁]
@@ -338,7 +337,7 @@ theorem pad_bytes {m m' : Mem} {st : Addr} {N r bb : Nat} (hr : r ≤ bb) (hlt :
     (hm : m' = writeBytes m (st + BitVec.ofNat 64 (N + r)) (List.replicate (bb - r) 0)) :
     bytesAt m' (st + BitVec.ofNat 64 N) bb =
       bytesAt m (st + BitVec.ofNat 64 N) r ++ List.replicate (bb - r) 0 := by
-  conv_lhs => rw [show bb = r + (bb - r) by omega_using [hr]]
+  conv => lhs; rw [show bb = r + (bb - r) by omega_using [hr]]
   rw [bytesAt_add, Offset.add_ofNat_add_ofNat]
   congr 1
   · refine bytesAt_congr fun i hi => ?_

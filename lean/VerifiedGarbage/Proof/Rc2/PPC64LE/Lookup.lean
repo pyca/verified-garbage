@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Rc2.PPC64LE.Scan
 public import VerifiedGarbage.Spec.Rc2
 import VerifiedGarbage.Proof.Rc2.Memory
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Rc2.PPC64LE.Lookup
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 
@@ -23,11 +22,11 @@ open VG VG.PPC64LE VG.Impl.Rc2.PPC64LE
 
 theorem rotSum_word (q : BitVec 64) (hq : q.toNat % 2 = 0) : rotSum q [1, 2] = 8 * (q.toNat % 8) := by
   simp only [rotSum, BitVec.getLsbD, Nat.testBit_eq_decide_div_mod_eq, decide_eq_true_eq]
-  split_ifs <;> omega
+  (repeat' split) <;> omega
 
 theorem rotSum_byte (q : BitVec 64) : rotSum q [0, 1, 2] = 8 * (q.toNat % 8) := by
   simp only [rotSum, BitVec.getLsbD, Nat.testBit_eq_decide_div_mod_eq, decide_eq_true_eq]
-  split_ifs <;> omega
+  (repeat' split) <;> omega
 
 theorem rot_word16 (x : BitVec 64) {l : Nat} (hl : l ≤ 6) :
     (x.rotateRight (8 * l)).setWidth 16 =

@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Blake2.Spec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
@@ -271,7 +270,7 @@ theorem pad_bytes {m m' : Mem} {st : Addr} {N r bb : Nat} (hr : r ≤ bb) (hlt :
     (hm : m' = writeBytes m (st + BitVec.ofNat 64 (N + r)) (List.replicate (bb - r) 0)) :
     bytesAt m' (st + BitVec.ofNat 64 N) bb =
       bytesAt m (st + BitVec.ofNat 64 N) r ++ List.replicate (bb - r) 0 := by
-  conv_lhs => rw [show bb = r + (bb - r) by omega_arith]
+  conv => lhs; rw [show bb = r + (bb - r) by omega_arith]
   rw [bytesAt_add, Offset.add_ofNat_add_ofNat]
   congr 1
   · refine bytesAt_congr fun i hi => ?_

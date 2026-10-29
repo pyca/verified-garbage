@@ -9,8 +9,6 @@ import VerifiedGarbage.Proof.Rsa.Arm.PrivMask
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Rsa.ZeroTest32
-import Mathlib.Tactic.Conv
-
 /-!
 # RSASSA-PKCS1-v1_5 recovery with a precomputed public key on ARMv7: the encoding and the comparison
 
@@ -163,7 +161,7 @@ theorem frame1 {m : Mem} {d : Nat} {v : BitVec 32} :
 
 theorem add_sub_ofNat (x : BitVec 32) {a b : Nat} (h : b ≤ a) :
     x + BitVec.ofNat 32 a - BitVec.ofNat 32 b = x + BitVec.ofNat 32 (a - b) := by
-  conv_lhs => rw [show a = (a - b) + b by omega_arith, ← BitVec.ofNat_add_ofNat, ← BitVec.add_assoc, BitVec.add_sub_cancel]
+  conv => lhs; rw [show a = (a - b) + b by omega_arith, ← BitVec.ofNat_add_ofNat, ← BitVec.add_assoc, BitVec.add_sub_cancel]
 
 /-! ## The pieces -/
 

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Prims
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.MlKem.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
@@ -267,7 +266,9 @@ theorem ballCall_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wb
   obtain ⟨e0, e1, e2, e3, _⟩ := argsIn5 hA
   have En := ent_S (S := hP.ball.S) L k hP.ball.hS (ballRd s len ++ [argR s]) (ballWr s c)
   have er : s₂.gpr .r0 = s'.gpr .r0 := hg₂ .r0 (by decide)
-  set E := (pushed [.r12, .lr] s1).callEntry.withRegions (ballRd s len ++ [argR s]) (ballWr s c) with hE
+  let E := (pushed [.r12, .lr] s1).callEntry.withRegions (ballRd s len ++ [argR s]) (ballWr s c)
+  try rewrite [show (pushed [.r12, .lr] s1).callEntry.withRegions (ballRd s len ++ [argR s]) (ballWr s c) = E from rfl] at *
+  have hE : E = (pushed [.r12, .lr] s1).callEntry.withRegions (ballRd s len ++ [argR s]) (ballWr s c) := rfl
   have g0 : E.gpr .r0 = s.gpr .r7 + BitVec.ofNat 32 oCT := by rw [hE, vS _ _ _ nl0, e0]; rfl
   have g1 : E.gpr .r1 = BitVec.ofNat 32 len := by rw [hE, vS _ _ _ nl1, e1]; rfl
   have g2 : E.gpr .r2 = BitVec.ofNat 32 tau := by rw [hE, vS _ _ _ nl2, e2]; rfl
@@ -297,8 +298,12 @@ theorem ballCall_tr {P : Prims} (hP : PrimsOk P D) {len tau : Nat} {c : Ptr} (hp
     have Ey := ent_S (S := hP.ball.S) R.ly ky hS (ballRd y len ++ [argR y]) (ballWr y c)
     obtain ⟨-, vx⟩ := stk_arg R.lx kx (by omega) (ballRd x len ++ [argR x]) (ballWr x c)
     obtain ⟨-, vy⟩ := stk_arg R.ly ky (by omega) (ballRd y len ++ [argR y]) (ballWr y c)
-    set X := (pushed [.r12, .lr] x1).callEntry.withRegions (ballRd x len ++ [argR x]) (ballWr x c) with hX
-    set Y := (pushed [.r12, .lr] y1).callEntry.withRegions (ballRd y len ++ [argR y]) (ballWr y c) with hY
+    let X := (pushed [.r12, .lr] x1).callEntry.withRegions (ballRd x len ++ [argR x]) (ballWr x c)
+    try rewrite [show (pushed [.r12, .lr] x1).callEntry.withRegions (ballRd x len ++ [argR x]) (ballWr x c) = X from rfl] at *
+    have hX : X = (pushed [.r12, .lr] x1).callEntry.withRegions (ballRd x len ++ [argR x]) (ballWr x c) := rfl
+    let Y := (pushed [.r12, .lr] y1).callEntry.withRegions (ballRd y len ++ [argR y]) (ballWr y c)
+    try rewrite [show (pushed [.r12, .lr] y1).callEntry.withRegions (ballRd y len ++ [argR y]) (ballWr y c) = Y from rfl] at *
+    have hY : Y = (pushed [.r12, .lr] y1).callEntry.withRegions (ballRd y len ++ [argR y]) (ballWr y c) := rfl
     have gx : ∀ r ∈ [Reg.r0, .r1, .r2, .r3], X.gpr r = x1.gpr r := by
       intro r hr; rw [hX, vS _ _ _ (by revert hr; decide +revert)]
     have gy : ∀ r ∈ [Reg.r0, .r1, .r2, .r3], Y.gpr r = y1.gpr r := by

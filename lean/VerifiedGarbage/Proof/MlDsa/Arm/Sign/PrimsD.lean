@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsC
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 
@@ -100,7 +99,9 @@ theorem bpAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s)
   obtain ⟨e0, e1, e2, e3, e4⟩ := argsIn5 hA
   have En := ent_S (S := hP.bitPack.S) L k hS ([pR (pa s f)] ++ [argR s]) [⟨pa s out, len⟩]
   obtain ⟨-, av⟩ := stk_arg L k (by omega_arith) ([pR (pa s f)] ++ [argR s]) [⟨pa s out, len⟩]
-  set E := (pushed [.r12, .lr] s1).callEntry.withRegions ([pR (pa s f)] ++ [argR s]) [⟨pa s out, len⟩] with hE
+  let E := (pushed [.r12, .lr] s1).callEntry.withRegions ([pR (pa s f)] ++ [argR s]) [⟨pa s out, len⟩]
+  try rewrite [show (pushed [.r12, .lr] s1).callEntry.withRegions ([pR (pa s f)] ++ [argR s]) [⟨pa s out, len⟩] = E from rfl] at *
+  have hE : E = (pushed [.r12, .lr] s1).callEntry.withRegions ([pR (pa s f)] ++ [argR s]) [⟨pa s out, len⟩] := rfl
   have g0 : E.gpr .r0 = s.gpr f.1 + BitVec.ofNat 32 f.2 := by rw [hE, vS _ _ _ nl0, e0]; rfl
   have g1 : E.gpr .r1 = BitVec.ofNat 32 a := by rw [hE, vS _ _ _ nl1, e1]; rfl
   have g2 : E.gpr .r2 = BitVec.ofNat 32 b := by rw [hE, vS _ _ _ nl2, e2]; rfl
@@ -141,8 +142,12 @@ theorem bpAt_tr {P : Prims} (hP : PrimsOk P D) {f out : Ptr} {a b len : Nat}
   obtain ⟨hy0, hy1, hy2, hy3, hy4⟩ := argsIn5 hAy
   obtain ⟨-, vx⟩ := stk_arg R.lx kx (by omega_arith) ([pR (pa x f)] ++ [argR x]) [⟨pa x out, len⟩]
   obtain ⟨-, vy⟩ := stk_arg R.ly ky (by omega_arith) ([pR (pa y f)] ++ [argR y]) [⟨pa y out, len⟩]
-  set X := (pushed [.r12, .lr] x1).callEntry.withRegions ([pR (pa x f)] ++ [argR x]) [⟨pa x out, len⟩] with hX
-  set Y := (pushed [.r12, .lr] y1).callEntry.withRegions ([pR (pa y f)] ++ [argR y]) [⟨pa y out, len⟩] with hY
+  let X := (pushed [.r12, .lr] x1).callEntry.withRegions ([pR (pa x f)] ++ [argR x]) [⟨pa x out, len⟩]
+  try rewrite [show (pushed [.r12, .lr] x1).callEntry.withRegions ([pR (pa x f)] ++ [argR x]) [⟨pa x out, len⟩] = X from rfl] at *
+  have hX : X = (pushed [.r12, .lr] x1).callEntry.withRegions ([pR (pa x f)] ++ [argR x]) [⟨pa x out, len⟩] := rfl
+  let Y := (pushed [.r12, .lr] y1).callEntry.withRegions ([pR (pa y f)] ++ [argR y]) [⟨pa y out, len⟩]
+  try rewrite [show (pushed [.r12, .lr] y1).callEntry.withRegions ([pR (pa y f)] ++ [argR y]) [⟨pa y out, len⟩] = Y from rfl] at *
+  have hY : Y = (pushed [.r12, .lr] y1).callEntry.withRegions ([pR (pa y f)] ++ [argR y]) [⟨pa y out, len⟩] := rfl
   have gx : ∀ r ∈ [Reg.r0, .r1, .r2, .r3], X.gpr r = x1.gpr r := by
     intro r hr; rw [hX, vS _ _ _ (by revert hr; decide +revert)]
   have gy : ∀ r ∈ [Reg.r0, .r1, .r2, .r3], Y.gpr r = y1.gpr r := by
@@ -201,7 +206,9 @@ theorem bupAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s
   obtain ⟨e0, e1, e2, e3, e4⟩ := argsIn5 hA
   have En := ent_S (S := hP.bitUnpack.S) L k hS ([⟨pa s v, len⟩] ++ [argR s]) [pR (pa s f)]
   obtain ⟨-, av⟩ := stk_arg L k (by omega_arith) ([⟨pa s v, len⟩] ++ [argR s]) [pR (pa s f)]
-  set E := (pushed [.r12, .lr] s1).callEntry.withRegions ([⟨pa s v, len⟩] ++ [argR s]) [pR (pa s f)] with hE
+  let E := (pushed [.r12, .lr] s1).callEntry.withRegions ([⟨pa s v, len⟩] ++ [argR s]) [pR (pa s f)]
+  try rewrite [show (pushed [.r12, .lr] s1).callEntry.withRegions ([⟨pa s v, len⟩] ++ [argR s]) [pR (pa s f)] = E from rfl] at *
+  have hE : E = (pushed [.r12, .lr] s1).callEntry.withRegions ([⟨pa s v, len⟩] ++ [argR s]) [pR (pa s f)] := rfl
   have g0 : E.gpr .r0 = s.gpr v.1 + BitVec.ofNat 32 v.2 := by rw [hE, vS _ _ _ nl0, e0]; rfl
   have g1 : E.gpr .r1 = BitVec.ofNat 32 len := by rw [hE, vS _ _ _ nl1, e1]; rfl
   have g2 : E.gpr .r2 = BitVec.ofNat 32 a := by rw [hE, vS _ _ _ nl2, e2]; rfl
@@ -240,8 +247,12 @@ theorem bupAt_tr {P : Prims} (hP : PrimsOk P D) {v f : Ptr} {a b len : Nat}
   obtain ⟨hy0, hy1, hy2, hy3, hy4⟩ := argsIn5 hAy
   obtain ⟨-, vx⟩ := stk_arg R.lx kx (by omega_arith) ([⟨pa x v, len⟩] ++ [argR x]) [pR (pa x f)]
   obtain ⟨-, vy⟩ := stk_arg R.ly ky (by omega_arith) ([⟨pa y v, len⟩] ++ [argR y]) [pR (pa y f)]
-  set X := (pushed [.r12, .lr] x1).callEntry.withRegions ([⟨pa x v, len⟩] ++ [argR x]) [pR (pa x f)] with hX
-  set Y := (pushed [.r12, .lr] y1).callEntry.withRegions ([⟨pa y v, len⟩] ++ [argR y]) [pR (pa y f)] with hY
+  let X := (pushed [.r12, .lr] x1).callEntry.withRegions ([⟨pa x v, len⟩] ++ [argR x]) [pR (pa x f)]
+  try rewrite [show (pushed [.r12, .lr] x1).callEntry.withRegions ([⟨pa x v, len⟩] ++ [argR x]) [pR (pa x f)] = X from rfl] at *
+  have hX : X = (pushed [.r12, .lr] x1).callEntry.withRegions ([⟨pa x v, len⟩] ++ [argR x]) [pR (pa x f)] := rfl
+  let Y := (pushed [.r12, .lr] y1).callEntry.withRegions ([⟨pa y v, len⟩] ++ [argR y]) [pR (pa y f)]
+  try rewrite [show (pushed [.r12, .lr] y1).callEntry.withRegions ([⟨pa y v, len⟩] ++ [argR y]) [pR (pa y f)] = Y from rfl] at *
+  have hY : Y = (pushed [.r12, .lr] y1).callEntry.withRegions ([⟨pa y v, len⟩] ++ [argR y]) [pR (pa y f)] := rfl
   have gx : ∀ r ∈ [Reg.r0, .r1, .r2, .r3], X.gpr r = x1.gpr r := by
     intro r hr; rw [hX, vS _ _ _ (by revert hr; decide +revert)]
   have gy : ∀ r ∈ [Reg.r0, .r1, .r2, .r3], Y.gpr r = y1.gpr r := by
@@ -314,8 +325,9 @@ theorem hbpAt_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s
   obtain ⟨e0, e1, e2, e3, e4⟩ := argsIn5 hA
   have En := ent_S (S := hP.hintBitPack.S) L k' hS ([⟨pa s h, 256 * k * 4⟩] ++ [argR s]) [⟨pa s y, ω + k⟩]
   obtain ⟨-, av⟩ := stk_arg L k' (by omega_arith) ([⟨pa s h, 256 * k * 4⟩] ++ [argR s]) [⟨pa s y, ω + k⟩]
-  set E := (pushed [.r12, .lr] s1).callEntry.withRegions ([⟨pa s h, 256 * k * 4⟩] ++ [argR s]) [⟨pa s y, ω + k⟩]
-    with hE
+  let E := (pushed [.r12, .lr] s1).callEntry.withRegions ([⟨pa s h, 256 * k * 4⟩] ++ [argR s]) [⟨pa s y, ω + k⟩]
+  try rewrite [show (pushed [.r12, .lr] s1).callEntry.withRegions ([⟨pa s h, 256 * k * 4⟩] ++ [argR s]) [⟨pa s y, ω + k⟩] = E from rfl] at *
+  have hE : E = (pushed [.r12, .lr] s1).callEntry.withRegions ([⟨pa s h, 256 * k * 4⟩] ++ [argR s]) [⟨pa s y, ω + k⟩] := rfl
   have g0 : E.gpr .r0 = s.gpr h.1 + BitVec.ofNat 32 h.2 := by rw [hE, vS _ _ _ nl0, e0]; rfl
   have g2 : E.gpr .r2 = BitVec.ofNat 32 ω := by rw [hE, vS _ _ _ nl2, e2]; rfl
   have g3 : E.gpr .r3 = s.gpr y.1 + BitVec.ofNat 32 y.2 := by rw [hE, vS _ _ _ nl3, e3]; rfl
@@ -361,10 +373,12 @@ theorem hbpAt_tr {P : Prims} (hP : PrimsOk P D) {h y : Ptr} {ω k : Nat} (hp : (
   have Ez := ent_S (S := hP.hintBitPack.S) R.ly kz hS ([⟨pa z h, 256 * k * 4⟩] ++ [argR z]) [⟨pa z y, ω + k⟩]
   obtain ⟨-, vx⟩ := stk_arg R.lx kx (by omega_arith) ([⟨pa x h, 256 * k * 4⟩] ++ [argR x]) [⟨pa x y, ω + k⟩]
   obtain ⟨-, vz⟩ := stk_arg R.ly kz (by omega_arith) ([⟨pa z h, 256 * k * 4⟩] ++ [argR z]) [⟨pa z y, ω + k⟩]
-  set X := (pushed [.r12, .lr] x1).callEntry.withRegions ([⟨pa x h, 256 * k * 4⟩] ++ [argR x]) [⟨pa x y, ω + k⟩]
-    with hX
-  set Z := (pushed [.r12, .lr] z1).callEntry.withRegions ([⟨pa z h, 256 * k * 4⟩] ++ [argR z]) [⟨pa z y, ω + k⟩]
-    with hZ
+  let X := (pushed [.r12, .lr] x1).callEntry.withRegions ([⟨pa x h, 256 * k * 4⟩] ++ [argR x]) [⟨pa x y, ω + k⟩]
+  try rewrite [show (pushed [.r12, .lr] x1).callEntry.withRegions ([⟨pa x h, 256 * k * 4⟩] ++ [argR x]) [⟨pa x y, ω + k⟩] = X from rfl] at *
+  have hX : X = (pushed [.r12, .lr] x1).callEntry.withRegions ([⟨pa x h, 256 * k * 4⟩] ++ [argR x]) [⟨pa x y, ω + k⟩] := rfl
+  let Z := (pushed [.r12, .lr] z1).callEntry.withRegions ([⟨pa z h, 256 * k * 4⟩] ++ [argR z]) [⟨pa z y, ω + k⟩]
+  try rewrite [show (pushed [.r12, .lr] z1).callEntry.withRegions ([⟨pa z h, 256 * k * 4⟩] ++ [argR z]) [⟨pa z y, ω + k⟩] = Z from rfl] at *
+  have hZ : Z = (pushed [.r12, .lr] z1).callEntry.withRegions ([⟨pa z h, 256 * k * 4⟩] ++ [argR z]) [⟨pa z y, ω + k⟩] := rfl
   have gx : ∀ r ∈ [Reg.r0, .r1, .r2, .r3], X.gpr r = x1.gpr r := by
     intro r hr; rw [hX, vS _ _ _ (by revert hr; decide +revert)]
   have gz : ∀ r ∈ [Reg.r0, .r1, .r2, .r3], Z.gpr r = z1.gpr r := by

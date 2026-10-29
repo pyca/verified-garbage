@@ -3,13 +3,11 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86.Common
 public import VerifiedGarbage.Proof.MlKem.X86.Leaf
 import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlKem.X86.Common
 meta import VerifiedGarbage.Proof.MlKem.X86.Leaf
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import Mathlib.Tactic.Set
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
@@ -191,7 +189,9 @@ theorem map_step {op : List Instr} {F : Nat → Nat → Nat} (hop : OpSpec op F)
   have ef : s.ea (at_ .esi 0) = coeffAddr (fA s₀) k := by
     rw [State.ea, at_, h.esi]; exact hp.ea_f k hk
   refine wp_movm (by rw [ef]; exact hp.in_f' h.wr hk) ?_
-  set s₁ := s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32) with hs₁
+  let s₁ := s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32)
+  try rewrite [show s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32) = s₁ from rfl] at *
+  have hs₁ : s₁ = s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32) := rfl
   have ha : (coeffAt s₀.mem (fA s₀) k).toNat < q := hp.f_red k hk'
   have hb : (coeffAt s₀.mem (gA s₀) k).toNat < q := hp.g_red k hk'
   have eg : s₁.ea (at_ .edi 0) = coeffAddr (gA s₀) k := by

@@ -3,8 +3,6 @@ module
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 public import VerifiedGarbage.Proof.Sha1.Spec
 public import VerifiedGarbage.Impl.Sha1.AArch64.Sha2
-import Mathlib.Tactic.SplitIfs
-
 /-! SHA-1's specification as computed by the AArch64 SHA instructions. -/
 
 @[expose] public section
@@ -50,11 +48,11 @@ theorem majority_eq (x y z : Word) : shaMajority x y z = Spec.Sha1.maj x y z := 
 theorem f_group (i j : Nat) (hj : j < 4) : f (4 * i + j) = (op i).f := by
   funext x y z
   unfold f op
-  split_ifs <;> first | omega | rfl | exact (choose_eq x y z).symm | exact (majority_eq x y z).symm
+  (repeat' split) <;> first | omega | rfl | exact (choose_eq x y z).symm | exact (majority_eq x y z).symm
 
 theorem k_group (i j : Nat) (hj : j < 4) : K (4 * i + j) = K (4 * i) := by
   unfold K
-  split_ifs <;> first | omega | rfl
+  (repeat' split) <;> first | omega | rfl
 
 theorem round_hw (M : Block) (v : HashValue) (i j : Nat) (hj : j < 4) :
     Spec.Sha1.round M v (4 * i + j) = hw (op i) v (K (4 * i)) (W M (4 * i + j)) := by
@@ -116,13 +114,13 @@ theorem rotate_xor (a b : Word) (n : Nat) :
     (a ^^^ b).rotateLeft n = a.rotateLeft n ^^^ b.rotateLeft n := by
   ext i hi
   simp only [BitVec.getElem_rotateLeft, BitVec.getElem_xor]
-  split_ifs <;> rfl
+  (repeat' split) <;> rfl
 
 theorem rotate_twice (a : Word) : (a.rotateLeft 1).rotateLeft 1 = a.rotateLeft 2 := by
   ext i hi
   simp only [BitVec.getElem_rotateLeft]
   simp (disch := omega) only [Nat.reduceMod, Nat.reduceSub]
-  split_ifs <;> first | omega | (congr 1 <;> omega)
+  (repeat' split) <;> first | omega | (congr 1 <;> omega)
 
 theorem W_ge' (M : Block) (t : Nat) :
     W M (t + 16) = (W M (t + 13) ^^^ W M (t + 8) ^^^ W M (t + 2) ^^^ W M t).rotateLeft 1 := by

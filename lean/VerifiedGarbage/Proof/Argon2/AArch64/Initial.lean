@@ -10,8 +10,6 @@ import VerifiedGarbage.Proof.Argon2.HPrime
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
-import Mathlib.Tactic.Conv
-
 /-! Merged from `Proof.Argon2.AArch64.InitialFinish`. -/
 
 @[expose] public section
@@ -100,7 +98,7 @@ theorem finish_ok (v : HPrime.Backend) (s : State) (h : Space s)
   refine ⟨?_, fun r hr h12 h14 => ?_, ht.sp.trans ksw.sp, ht.rd.trans ksw.rd, ht.wr.trans ksw.wr, ?_⟩
   · have dst : w.gpr .x22 = s.gpr .x19 := dstW.trans ksu.x19
     rw [ht.mem]
-    conv_lhs => arg 2; rw [← dst]
+    conv => lhs; arg 2; rw [← dst]
     have copied := HPrime.bytesAt_writeBytes w.mem (w.gpr .x22)
       (bytesAt w.mem (w.gpr .x24 + 768) 64) (by rw [sourceLength]; decide)
     rw [sourceLength] at copied
