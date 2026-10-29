@@ -408,10 +408,27 @@ jobs:
 
       - name: Install Rust
         run: rustup toolchain install ${{ matrix.rust }} --profile minimal --component llvm-tools
+      # A push to main builds only to save main's cache, whose key covers
+      # the toolchain, the CARGO_*/RUST_* environment and Cargo.toml and
+      # Cargo.lock, not the crate's sources. An entry is never overwritten,
+      # so when one with this key exists (most pushes change no dependency)
+      # the build would save nothing: look the key up first, without
+      # downloading or saving (the step below saves), and build only on a
+      # miss, so that the job takes its runner (RISC-V's, few and slow) for
+      # no longer than the lookup.
+      - id: cached
+        if: ${{ github.event_name == 'push' }}
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          shared-key: rust
+          prefix-key: v1-rust
+          lookup-only: true
+          save-if: false
       # The dependencies (built with opt-level 3) are most of the build.
       # Only main saves, so pull requests restore main's entries instead of
       # filling the cache quota with their own.
-      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - if: ${{ steps.cached.outputs.cache-hit != 'true' }}
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           # Not shared with `rust-cpu-features`: those jobs compute the same
           # key but build other features, so whichever saved the entry first,
@@ -466,6 +483,7 @@ jobs:
       # while the tests build (a checkout step before the build took RISC-V's
       # runners 12-15 s).
       - name: Build and run the tests
+        if: ${{ steps.cached.outputs.cache-hit != 'true' }}
         shell: bash
         run: |
           if [ "$TESTS" = true ]; then
@@ -555,7 +573,17 @@ jobs:
 
       - name: Install Rust
         run: rustup toolchain install ${{ matrix.rust }} --profile minimal --target thumbv7neon-unknown-linux-gnueabihf
-      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      # As `rust`'s: nothing to build on a push whose cache entry exists.
+      - id: cached
+        if: ${{ github.event_name == 'push' }}
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          shared-key: rust-thumb
+          prefix-key: v1-rust
+          lookup-only: true
+          save-if: false
+      - if: ${{ steps.cached.outputs.cache-hit != 'true' }}
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           shared-key: rust-thumb
           # As `rust`'s: entries saved before the lints moved held Clippy's.
@@ -565,7 +593,8 @@ jobs:
       # libtest's per-test elapsed times are still unstable, including on
       # the MSRV. Enable its reporting flag without changing toolchains.
       # Hide durations that round to zero at libtest's millisecond precision.
-      - shell: bash
+      - if: ${{ steps.cached.outputs.cache-hit != 'true' }}
+        shell: bash
         run: |
           source ci/rust_test_timing.sh
           cargo test --locked ${{ case(env.TESTS == 'true', '', '--no-run') }} -- -Z unstable-options --report-time | sed 's/ <0\.000s>//g'
@@ -617,13 +646,25 @@ jobs:
             !/docs/
       - name: Install Rust
         run: rustup toolchain install stable --profile minimal --component clippy,rustfmt --target "$(python3 ci/rust_lint.py targets "$CRATE")"
-      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      # As `rust`'s: a push to main lints the commit the merge queue linted,
+      # only for main's cache, so nothing is left to do when its entry exists.
+      - id: cached
+        if: ${{ github.event_name == 'push' }}
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          shared-key: rust-lint-${{ matrix.crate }}
+          workspaces: ${{ matrix.crate == 'library' && '. -> target' || 'bench -> target' }}
+          lookup-only: true
+          save-if: false
+      - if: ${{ steps.cached.outputs.cache-hit != 'true' }}
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           shared-key: rust-lint-${{ matrix.crate }}
           workspaces: ${{ matrix.crate == 'library' && '. -> target' || 'bench -> target' }}
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: rustc -vV
       - name: Lint
+        if: ${{ steps.cached.outputs.cache-hit != 'true' }}
         run: python3 ci/rust_lint.py run "$CRATE"
 
   # The latest CPU time of each line of `rust-cpu-features`' runs on `main`,
@@ -734,11 +775,20 @@ jobs:
           rm sde.tar.xz
       - name: Install Rust
         run: rustup toolchain install stable --profile minimal --component llvm-tools
-      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      # As `rust`'s: nothing to build on a push whose cache entry exists.
+      - id: cached
+        if: ${{ github.event_name == 'push' }}
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          shared-key: rust-cpu-features
+          lookup-only: true
+          save-if: false
+      - if: ${{ steps.cached.outputs.cache-hit != 'true' }}
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           shared-key: rust-cpu-features
           save-if: ${{ github.ref == 'refs/heads/main' }}
-      - if: ${{ env.TESTS != 'true' }}
+      - if: ${{ env.TESTS != 'true' && steps.cached.outputs.cache-hit != 'true' }}
         run: cargo test --locked --features cpu-features-env --no-run
       # Set the test runner after caching: its temporary path would otherwise
       # change the cache key, which includes CARGO_* environment variables.
