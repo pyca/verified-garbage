@@ -143,7 +143,7 @@ theorem Keep.mono {rs rs' : List Reg} {s t : State} (h : Keep rs s t) (hs : ∀ 
 theorem Keep.refl (rs : List Reg) (s : State) : Keep rs s s := ⟨fun _ _ => rfl, rfl, rfl⟩
 
 /-- Whether no instruction of `c` writes a register outside `rs`. -/
-def writesOnly (rs : List Reg) (c : Prog isa) : Bool :=
+noncomputable def writesOnly (rs : List Reg) (c : Prog isa) : Bool :=
   c.allInstrs fun i => [Reg.eax, .ecx, .edx, .ebx, .esp, .ebp, .esi, .edi].all fun r =>
     rs.contains r || !Taint.clobbers i r
 

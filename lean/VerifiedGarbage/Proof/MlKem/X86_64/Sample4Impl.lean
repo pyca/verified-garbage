@@ -76,7 +76,7 @@ structure BatchHOk16 (b : Prog isa) : Prop where
   xd : b.x86_64Depth = 0
 
 /-- The checks of every instruction of a fragment, at once. -/
-def BatchHOk16.checks (b : Prog isa) : Bool :=
+noncomputable def BatchHOk16.checks (b : Prog isa) : Bool :=
   b.noCalls && ctlOk b && b.allInstrs (fun i => !isa.writesSp i) && b.x86_64Depth == 0
 
 theorem sampleH16_checks (fast : Bool) : BatchHOk16.checks (Impl.MlKem.X86_64.Sample4.sampleH fast true) = true := by
@@ -189,7 +189,7 @@ namespace Sample4Impl
 
 /-- The checks of every instruction of an implementation's code, at once:
 the kernel builds the code once for all four. -/
-def codeChecks (c : Prog isa) : Bool :=
+noncomputable def codeChecks (c : Prog isa) : Bool :=
   c.allInstrs (fun i => !Taint.clobbers i .rsp) && decide (c.depth ≤ 3) && ctlOk c &&
     c.allInstrs (fun i => !isa.writesSp i)
 

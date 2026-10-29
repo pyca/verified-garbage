@@ -16,7 +16,7 @@ open VG VG.AArch64
 open VG.Impl.ChaCha20.AArch64.Mixed5
 open VG.Spec.ChaCha20 (innerBlock)
 
-def scalarKeepsV : Bool := (VG.Impl.ChaCha20.AArch64.doubleRound.allInstrs fun i =>
+noncomputable def scalarKeepsV : Bool := (VG.Impl.ChaCha20.AArch64.doubleRound.allInstrs fun i =>
   match vdstOf i with | none => true | _ => false)
 
 theorem scalar_round_vectors {v : CState} {s : State} (h : VG.Proof.ChaCha20.AArch64.Holds v s) :
