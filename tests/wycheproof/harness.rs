@@ -6,6 +6,13 @@
 //! [`TestFile::tests`]; loading checks that the file is internally
 //! consistent, so a test can never silently run on fewer vectors than the
 //! file contains.
+//!
+//! The harness's generic functions, which every algorithm's test
+//! instantiates, do as little as they can: the file is parsed by one copy of
+//! the code for every algorithm, keeping the algorithm-specific fields as
+//! JSON values ([`Fields`]), and only those are converted to `P` and `T`.
+//! Parsing every file straight into a `TestFile<P, T>` compiled serde's
+//! parser once per algorithm, a quarter of the test binary's code.
 
 // Each algorithm test module uses a different subset of the harness. A
 // function only some architectures' tests call is built only for those (as
@@ -19,6 +26,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
+use serde_json::Value;
 
 /// The environment variable pointing at a checkout of
 /// <https://github.com/C2SP/wycheproof>. A relative path is relative to the
@@ -213,6 +221,15 @@ pub struct TestFile<P, T> {
     pub test_groups: Vec<TestGroup<P, T>>,
 }
 
+/// Untyped fields: the algorithm-specific fields of a file as it is parsed,
+/// and for tests that only look at the file structure (the compressed
+/// points').
+pub type Fields = serde_json::Map<String, Value>;
+
+/// A test vector file as it is parsed, before its fields become `P` and `T`:
+/// the only `TestFile` deserialized directly.
+type RawFile = TestFile<Fields, Fields>;
+
 /// Bytes, written in hex in the test vector files.
 #[cfg(any(
     target_arch = "x86_64",
@@ -245,18 +262,6 @@ impl<'de> Deserialize<'de> for Hex {
     }
 }
 
-/// Untyped fields, for tests that only look at the file structure (the
-/// compressed points').
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "x86",
-    all(target_arch = "powerpc64", target_endian = "little"),
-    target_arch = "riscv64"
-))]
-pub type Fields = serde_json::Map<String, serde_json::Value>;
-
 impl<P, T> TestFile<P, T> {
     /// Every test, with its group.
     pub fn tests(&self) -> impl Iterator<Item = (&TestGroup<P, T>, &Test<T>)> {
@@ -279,8 +284,10 @@ impl<P, T> TestFile<P, T> {
         P: Sync,
         T: Sync,
     {
-        let tests: Vec<_> = self.tests().collect();
-        par_each(&tests, |&(g, t)| f(g, t));
+        let groups = &self.test_groups;
+        par_group_tests(groups.len(), &|g| groups[g].tests.len(), &|g, t| {
+            f(&groups[g], &groups[g].tests[t])
+        });
     }
 
     /// Calls `f` on every test, with its group and what `setup` made of the
@@ -304,14 +311,11 @@ impl<P, T> TestFile<P, T> {
         P: Sync,
         T: Sync,
     {
-        let made: Vec<S> = self.test_groups.iter().map(setup).collect();
-        let tests: Vec<_> = self
-            .test_groups
-            .iter()
-            .zip(&made)
-            .flat_map(|(g, s)| g.tests.iter().map(move |t| (g, s, t)))
-            .collect();
-        par_each(&tests, |&(g, s, t)| f(g, s, t));
+        let groups = &self.test_groups;
+        let made: Vec<S> = groups.iter().map(setup).collect();
+        par_group_tests(groups.len(), &|g| groups[g].tests.len(), &|g, t| {
+            f(&groups[g], &made[g], &groups[g].tests[t])
+        });
     }
 }
 
@@ -320,14 +324,54 @@ impl<P, T> TestFile<P, T> {
 /// one file's vectors keep every core busy, rather than one core while the
 /// other tests have finished. A failed check panics in its thread, which
 /// prints its message, and the test fails once every thread has stopped.
+/// For the RSA and compressed point tests.
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "powerpc64"
+))]
 pub fn par_each<I: Sync>(items: &[I], f: impl Fn(&I) + Sync) {
+    par_indices(items.len(), &|i| f(&items[i]));
+}
+
+/// Calls `f` on the index of every group (below `groups`) and of each of its
+/// `tests(group)` tests, as [`par_each`] does; not generic, as
+/// [`par_indices`].
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
+))]
+fn par_group_tests(
+    groups: usize,
+    tests: &dyn Fn(usize) -> usize,
+    f: &(dyn Fn(usize, usize) + Sync),
+) {
+    let all: Vec<(usize, usize)> = (0..groups)
+        .flat_map(|g| (0..tests(g)).map(move |t| (g, t)))
+        .collect();
+    par_indices(all.len(), &|i| f(all[i].0, all[i].1));
+}
+
+/// Calls `f` on every index below `n`, as [`par_each`] does; not generic,
+/// so that the threads' code is compiled once rather than for every caller.
+fn par_indices(n: usize, f: &(dyn Fn(usize) + Sync)) {
     let workers = std::thread::available_parallelism().map_or(1, |n| n.get());
     let next = AtomicUsize::new(0);
     std::thread::scope(|s| {
-        for _ in 0..workers.min(items.len()) {
+        for _ in 0..workers.min(n) {
             s.spawn(|| {
-                while let Some(item) = items.get(next.fetch_add(1, Ordering::Relaxed)) {
-                    f(item);
+                loop {
+                    let i = next.fetch_add(1, Ordering::Relaxed);
+                    if i >= n {
+                        break;
+                    }
+                    f(i);
                 }
             });
         }
@@ -375,7 +419,37 @@ impl Count {
 /// the number of tests matches `numberOfTests` and test ids are unique.
 /// (Not every flag is described in `notes` upstream, so that is not checked.)
 pub fn parse<P: DeserializeOwned, T: DeserializeOwned>(name: &str, json: &str) -> TestFile<P, T> {
-    let file: TestFile<P, T> = serde_json::from_str(json).unwrap_or_else(|e| panic!("{name}: {e}"));
+    let raw = parse_raw(name, json);
+    TestFile {
+        algorithm: raw.algorithm,
+        schema: raw.schema,
+        number_of_tests: raw.number_of_tests,
+        notes: raw.notes,
+        test_groups: raw
+            .test_groups
+            .into_iter()
+            .enumerate()
+            .map(|(i, g)| TestGroup {
+                params: from_fields(g.params, format_args!("{name}: test group {i}")),
+                tests: g
+                    .tests
+                    .into_iter()
+                    .map(|t| Test {
+                        case: from_fields(t.case, format_args!("{name}: tcId {}", t.tc_id)),
+                        tc_id: t.tc_id,
+                        comment: t.comment,
+                        flags: t.flags,
+                        result: t.result,
+                    })
+                    .collect(),
+            })
+            .collect(),
+    }
+}
+
+/// [`parse`], but with the algorithm-specific fields left as JSON.
+fn parse_raw(name: &str, json: &str) -> RawFile {
+    let file: RawFile = serde_json::from_str(json).unwrap_or_else(|e| panic!("{name}: {e}"));
     let mut ids = HashSet::new();
     let mut count = 0;
     for (_, t) in file.tests() {
@@ -386,13 +460,21 @@ pub fn parse<P: DeserializeOwned, T: DeserializeOwned>(name: &str, json: &str) -
     file
 }
 
+/// Converts the algorithm-specific `fields` of `what` to an `X`.
+fn from_fields<X: DeserializeOwned>(fields: Fields, what: std::fmt::Arguments) -> X {
+    X::deserialize(Value::Object(fields)).unwrap_or_else(|e| panic!("{what}: {e}"))
+}
+
 /// Load and validate the test vector file `name` (e.g. `"aes_gcm_test.json"`).
 /// Tests calling this must start with `require_vectors!()`.
 pub fn load<P: DeserializeOwned, T: DeserializeOwned>(name: &str) -> TestFile<P, T> {
+    parse(name, &read(name))
+}
+
+/// The contents of the test vector file `name`.
+fn read(name: &str) -> String {
     let path = vectors_dir()
         .expect("Wycheproof vectors not available; use require_vectors!()")
         .join(name);
-    let json = std::fs::read_to_string(&path)
-        .unwrap_or_else(|e| panic!("reading {}: {e}", path.display()));
-    parse(name, &json)
+    std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("reading {}: {e}", path.display()))
 }
