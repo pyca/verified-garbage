@@ -1,15 +1,15 @@
 module
+
 public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Spec.Dsa
+public import Aesop.BuiltinRules
 
 import VerifiedGarbage.Proof.Dsa.AArch64.WidthMask
 import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Framework.Contract
-
 /-! # Public selection of supported DSA modulus widths -/
 
 @[expose] public section

@@ -1,4 +1,5 @@
 module
+
 public import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
 public import VerifiedGarbage.Proof.Dsa.AArch64.Execution
 
@@ -9,7 +10,6 @@ import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
 import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-
 /-! # Release both signature scalars, or zero the complete output -/
 
 @[expose] public section

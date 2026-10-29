@@ -1,11 +1,11 @@
 module
+
 public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeFrame
 public import VerifiedGarbage.Proof.Dsa.DomainShape
 public import VerifiedGarbage.Proof.Dsa.AArch64.Run
 
 import VerifiedGarbage.Proof.Dsa.AArch64.ScanFieldCT
 import VerifiedGarbage.Proof.Dsa.AArch64.ScanField
-
 /-! # Public state carried through DSA domain-shape validation -/
 
 @[expose] public section

@@ -5,18 +5,189 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryAllocated
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
 public import VerifiedGarbage.Proof.Dsa.AArch64.ProbablePrime.Entry
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeInput
-import VerifiedGarbage.Proof.Dsa.AArch64.ProbablePrime.Exit
-import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CheckPrime
+
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFootprint
 import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-
+import VerifiedGarbage.Impl.Dsa.AArch64.ProbablePrime
+import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd -- shake: keep: its symbolic execution names RegUpd lemmas by path, which shake does not see
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Arguments
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ProbablePrime
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeArguments
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Workspace
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameWord
 /-! # The probable-prime test's body, between its frame's push and pop
 
 The entry stores the arguments in the generation's frame slots, the test is
 the generation's own, and the exit writes `used` and the status. -/
+
+-- Formerly `VerifiedGarbage/Proof/Dsa/AArch64/ProbablePrime/Exit.lean`, which only this module imported.
+section
+
+/-! # The probable-prime test's octets read and status, as the function returns them -/
+
+section
+namespace VG.Proof.Dsa.AArch64.ProbablePrime
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Impl.Dsa.AArch64.ProbablePrime VG.Impl.RsaKeyGen.AArch64.Candidate
+
+theorem exit_ok {u : State} {B F U used st : Addr} (hx0 : u.gpr .x0 = B) (hsp : u.sp = F)
+    (hrU : InRegions (u.rd ++ u.wr) (off B (8 * kUsed)) 8) (hrS : InRegions (u.rd ++ u.wr) (off B (8 * kStat)) 8)
+    (hrF : InRegions (u.rd ++ u.wr) (off F usedSlot) 8) (hwU : InRegions u.wr U 8)
+    (hU : word u.mem F usedSlot = U) (hused : word u.mem B (8 * kUsed) = used)
+    (hst : word u.mem B (8 * kStat) = st) (hsep : Mem.Sep (off B (8 * kStat)) 8 U 8) :
+    WP isa (.block exit) u fun t =>
+      t.mem = u.mem.writeW U used ∧ t.gpr .x0 = st - (st >>> 1) ∧ Keep [.x0, .x3, .x4] u t := by
+  have hread : (u.mem.writeW U used).readW (off B (8 * kStat)) 64 = st := by
+    rw [Mem.readW_writeW_sep hsep (by decide)]; exact hst
+  have run : WP isa (.block exit) u fun t => t.mem = u.mem.writeW U used ∧ t.gpr .x0 = st - (st >>> 1) := by
+    unfold exit usedSlot at *
+    simp only [word, off, kUsed, kStat, VG.Impl.Bignum.sFn] at hrU hrS hrF hU hused hst hread
+    rw [← hx0] at hrU hrS hused hst hread
+    rw [← hsp] at hrF hU
+    brun [State.write, exec_ldrSp (by decide : 136 % 8 = 0 ∧ 136 < 32768), hrU, hrS, hrF, hwU, hused, hread, hU, kUsed, kStat, BitVec.add_zero,
+      VG.Impl.Bignum.sFn]
+    done
+  exact WP.mono (WP.keep [.x0, .x3, .x4] run (by decide)) fun t ⟨⟨hm, hx⟩, k⟩ => ⟨hm, hx, k⟩
+
+/-- The test's 0, 1 and 3 are the function's 0, 1 and 2. -/
+theorem status_halve (b : Option Bool) :
+    let st : BitVec 64 := BitVec.ofNat 64 (match b with | none => 0 | some true => 1 | some false => 3)
+    st - (st >>> 1) = BitVec.ofNat 64 (match b with | none => 0 | some true => 1 | some false => 2) := by
+  rcases b with _ | _ | _ <;> decide
+
+end VG.Proof.Dsa.AArch64.ProbablePrime
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Dsa/AArch64/Generation/PrimeFromFrame.lean`, which only this module imported.
+section
+
+/-! # A complete native candidate test using retained generation arguments -/
+
+section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Impl.Dsa.AArch64.Generation VG.Impl.RsaKeyGen.AArch64.Candidate
+open VG.Proof.MillerRabin.AArch64 VG.Impl.Bignum.AArch64
+
+/-- Candidate setup, padded loading, trial division and the shared RSA
+Miller–Rabin loop implement the exact DSA probable-prime operation. -/
+theorem primeFromFrame_ok (M : Mont) (K : Kernel) {P : PrimeParams} {s : State} 
+    {used candidate : Nat} {W : Nat → BitVec 64} {bs : List Byte}
+    (hg : VG.Proof.Rsa.AArch64.Ws s P.B P.Z P.w) (hc : candidate < 2 ^ 16) (hk : P.checks < 2 ^ 16)
+    {F : Addr} (hsp : s.sp = F)
+    (hr : ∀ k < 34, InRegions (s.rd ++ s.wr) (off F (8 * k)) 8)
+    (hwords : ∀ k < 34, word s.mem F (8 * k) = W k)
+    (hsep : ∀ k < 34, ∀ j < 32, Mem.Sep (off F (8 * k)) 8 (off P.B (8 * j)) 8)
+    (hwp : W 5 + BitVec.ofNat 64 VG.Impl.Dsa.Generation.Layout.witness = P.p)
+    (hwr : W 14 = P.rp) (hwl : W 15 = BitVec.ofNat 64 P.rand.length)
+    (hwu : W 16 = BitVec.ofNat 64 used)
+    (htape : Src s P.B P.Z P.rp P.rand) (hout : ∀ i < P.len, InRegions s.wr (off P.p i) 1)
+    (hlen : bs.length = P.len) (hvalue : Spec.Rsa.os2ip bs = P.N)
+    (hsrc : Src s P.B P.Z (W 5 + BitVec.ofNat 64 candidate) bs)
+    (hu : used ≤ P.rand.length) (hw : P.w ≤ 48) (hz : slot P.w aTab + 2048 ≤ P.Z)
+    (hn : 8161 < P.N) (hpolicy : 1024 < Spec.Dsa.bitLength P.N ↔ 16 < P.w)
+    (hchecks : P.checks = Spec.Dsa.primeChecks (Spec.Dsa.bitLength P.N)) :
+    WP isa (primeFromFrame M.mm K.run candidate P.len P.drawBytes P.checks) s fun t =>
+      let res := Spec.Dsa.probablePrime P.N (P.rand.drop used)
+      ∃ used', PrimeInput P used' t ∧ used' ≤ P.rand.length ∧
+        (res = none → word t.mem P.B (8 * kStat) = BitVec.ofNat 64 0) ∧
+        (∀ b rest, res = some (b, rest) →
+          word t.mem P.B (8 * kStat) = BitVec.ofNat 64 (if b then 1 else 3) ∧
+          used' = P.rand.length - rest.length) ∧
+        WorkFrame P.B ((128, 128) :: (slot P.w 0, 8 * (P.w + 2)) :: primeRanges P.w)
+          (primeExtras P) s.mem t.mem ∧ Keep mmRegs s t := by
+  unfold primeFromFrame
+  refine WP.seq (WP.mono (primeArguments_ok hg hc hk hsp hr hwords hsep hwp hwr hwl hwu htape hout)
+    fun u ⟨hi, hptr, hf, ku⟩ => ?_)
+  have src : Src u P.B P.Z (W 5 + BitVec.ofNat 64 candidate) bs :=
+    hsrc.congrK (fun a ha => hf a (Or.inr (Nat.le_trans hg.h256 ha))) ku
+  refine WP.mono (primeBytes_ok M K hi hptr hlen hvalue src hu hw hz hn hpolicy hchecks)
+    fun t ⟨used', ht, hut, he, hb, ft, kt⟩ => ?_
+  have ff : Frm P.B [(128, 128)] s.mem u.mem := Frm.of_outside hf (by simp)
+  exact ⟨used', ht, hut, he, hb,
+    (ff.work.mono (by simp)).trans (ft.mono (fun _ hr => List.mem_cons_of_mem _ hr)),
+    (ku.trans kt).mono (by decide)⟩
+
+end VG.Proof.Dsa.AArch64.Generation
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Dsa/AArch64/Generation/CheckPrime.lean`, which only this module imported.
+section
+
+/-! # The native primality operation starts with arbitrary scratch contents -/
+
+section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
+open VG.Impl.Dsa.AArch64.Generation VG.Impl.RsaKeyGen.AArch64.Candidate
+open VG.Proof.MillerRabin.AArch64 VG.Impl.Bignum.AArch64
+
+theorem checkPrime_ok (M : Mont) (K : Kernel) {P : PrimeParams} {s : State}
+    {used candidate : Nat} {W : Nat → BitVec 64} {bs : List Byte}
+    (hS : Scr s P.B P.Z) (hdi : s.gpr .x0 = P.B)
+    (hc : candidate < 2 ^ 16) (hk : P.checks < 2 ^ 16) {F : Addr} (hsp : s.sp = F)
+    (hr : ∀ k < 34, InRegions (s.rd ++ s.wr) (off F (8 * k)) 8)
+    (hwords : ∀ k < 34, word s.mem F (8 * k) = W k)
+    (hsep : ∀ k < 34, ∀ j < 32, Mem.Sep (off F (8 * k)) 8 (off P.B (8 * j)) 8)
+    (hframe : ∀ k < 34, ∀ i < 8, P.Z ≤ ofs P.B (off (off F (8 * k)) i))
+    (hwp : W 5 + BitVec.ofNat 64 VG.Impl.Dsa.Generation.Layout.witness = P.p)
+    (hwr : W 14 = P.rp) (hwl : W 15 = BitVec.ofNat 64 P.rand.length)
+    (hwu : W 16 = BitVec.ofNat 64 used)
+    (htape : Src s P.B P.Z P.rp P.rand) (hout : ∀ i < P.len, InRegions s.wr (off P.p i) 1)
+    (hlen : bs.length = P.len) (hvalue : Spec.Rsa.os2ip bs = P.N)
+    (hsrc : Src s P.B P.Z (W 5 + BitVec.ofNat 64 candidate) bs)
+    (hu : used ≤ P.rand.length) (hw : P.w ≤ 48) (hz : slot P.w aTab + 2048 ≤ P.Z)
+    (hn : 8161 < P.N) (hpolicy : 1024 < Spec.Dsa.bitLength P.N ↔ 16 < P.w)
+    (hchecks : P.checks = Spec.Dsa.primeChecks (Spec.Dsa.bitLength P.N)) :
+    WP isa (checkPrime M.mm K.run P.w candidate P.len P.drawBytes P.checks) s fun t =>
+      let res := Spec.Dsa.probablePrime P.N (P.rand.drop used)
+      ∃ used', PrimeInput P used' t ∧ used' ≤ P.rand.length ∧
+        (res = none → word t.mem P.B (8 * kStat) = BitVec.ofNat 64 0) ∧
+        (∀ b rest, res = some (b, rest) →
+          word t.mem P.B (8 * kStat) = BitVec.ofNat 64 (if b then 1 else 3) ∧
+          used' = P.rand.length - rest.length) ∧
+        WorkFrame P.B (workspaceRanges ++ (128, 128) ::
+          (slot P.w 0, 8 * (P.w + 2)) :: primeRanges P.w) (primeExtras P) s.mem t.mem ∧
+        Keep mmRegs s t := by
+  unfold checkPrime
+  have hz16 : slot P.w 16 ≤ P.Z := Nat.le_trans (Nat.add_le_add_left
+    (Nat.mul_le_mul_right (8 * (P.w + 2)) (by decide : 16 ≤ 28)) 256) P.room
+  refine WP.seq (WP.mono (workspace_ok hS hdi hz16 (by have := P.w4; omega) hw)
+    fun u ⟨hg, _, hf, ku⟩ => ?_)
+  have hb : ∀ r ∈ workspaceRanges, r.1 + r.2 ≤ P.Z := by
+    have := hg.h256
+    simp only [workspaceRanges, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl) <;> simp only <;> omega
+  have hwu' : ∀ k < 34, word u.mem F (8 * k) = W k := by
+    intro k h
+    rw [frame_word_of_workspace hf hb (hframe k h), hwords k h]
+  have tape := htape.congrK (InScr.of_frm hf hb) ku
+  have src := hsrc.congrK (InScr.of_frm hf hb) ku
+  refine WP.mono (primeFromFrame_ok M K hg hc hk (ku.sp.trans hsp)
+    (fun k h => by rw [ku.rd, ku.wr]; exact hr k h) hwu' hsep hwp hwr hwl hwu tape
+    (fun i h => by rw [ku.wr]; exact hout i h) hlen hvalue src hu hw hz hn hpolicy hchecks)
+    fun t ⟨used', ht, hut, he, hs, ft, kt⟩ => ?_
+  exact ⟨used', ht, hut, he, hs,
+    (hf.work.mono (fun _ h => List.mem_append_left _ h)).trans (ft.mono (fun _ h => List.mem_append_right _ h)),
+    (ku.trans kt).mono (by decide)⟩
+
+end VG.Proof.Dsa.AArch64.Generation
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.Dsa.AArch64.ProbablePrime

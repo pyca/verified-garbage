@@ -3,10 +3,10 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleReduceCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCallCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.MinusCT
+
 import VerifiedGarbage.Proof.Dsa.AArch64.ReadyRangeCT
 import VerifiedGarbage.Proof.Dsa.AArch64.ReadyByteChecksCT
 import VerifiedGarbage.Proof.Dsa.AArch64.ReadyMinusCT
-
 /-! # Validation timing steps that preserve the complete schedule state -/
 
 @[expose] public section
