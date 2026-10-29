@@ -344,6 +344,7 @@ def reads(
     closure: dict[str, frozenset[str]],
     vis: dict[str, tuple[list[str], list[str]] | None],
     modes: dict | None = None,
+    among: frozenset[str] | None = None,
 ) -> dict[str, frozenset[str]]:
     """The modules of the project whose outputs each module's build reads
     (its trace), as Lake reads them: each module it imports, and what those
@@ -352,7 +353,12 @@ def reads(
     module. `meta import` also reads interpreter IR through private imports;
     a public meta import passes that dependency on. For ordinary imports,
     changes behind a private import can leave the importer's public outputs
-    unchanged, allowing its downstream ordinary importers to stay cached."""
+    unchanged, allowing its downstream ordinary importers to stay cached.
+
+    With `among` (and `closure` from `closures(imps, among)`), each trace
+    is intersected with it: enough to ask which modules read any of a few,
+    without building every module's whole trace."""
+    own = (lambda m: frozenset({m})) if among is None else (lambda m: frozenset({m}) & among)
     # Meta traces include interpreter IR of private transitive imports too.
     # Public meta imports pass that dependency on to ordinary importers.
     meta = {m: set(k.get("meta", [])) for m, k in (modes or {}).items()}
@@ -366,7 +372,7 @@ def reads(
                 continue
             on = imps[m] if vis.get(m) is None else vis[m][0]
             if ready:
-                passed[m] = frozenset({m}).union(*(closure[i] if i in public_meta.get(m, ()) else passed[i] for i in on))
+                passed[m] = own(m).union(*(closure[i] if i in public_meta.get(m, ()) else passed[i] for i in on))
             else:
                 stack.append((m, True))
                 stack += [(i, False) for i in on if i not in passed]
@@ -374,7 +380,7 @@ def reads(
     def all_trace(m):
         if vis.get(m) is None:
             return closure[m]
-        return frozenset({m}).union(*(
+        return own(m).union(*(
             all_trace(i) if i in vis[m][1] else closure[i] if i in meta.get(m, ()) else passed[i]
             for i in imps[m]))
 
@@ -453,8 +459,10 @@ def stale_of(changed: set[str], read: dict[str, frozenset[str]]) -> set[str]:
     return set(changed) | {m for m, r in read.items() if r & changed}
 
 
-def closures(imps: dict[str, list[str]]) -> dict[str, frozenset[str]]:
-    """Each module and everything it imports, directly or not."""
+def closures(imps: dict[str, list[str]], among: frozenset[str] | None = None) -> dict[str, frozenset[str]]:
+    """Each module and everything it imports, directly or not; with `among`,
+    only those of these."""
+    own = (lambda m: frozenset({m})) if among is None else (lambda m: frozenset({m}) & among)
     done: dict[str, frozenset[str]] = {}
     for root in imps:
         stack = [(root, False)]
@@ -463,7 +471,7 @@ def closures(imps: dict[str, list[str]]) -> dict[str, frozenset[str]]:
             if m in done:
                 continue
             if ready:
-                done[m] = frozenset({m}).union(*(done[i] for i in imps[m]))
+                done[m] = own(m).union(*(done[i] for i in imps[m]))
             else:
                 stack.append((m, True))
                 stack += [(i, False) for i in imps[m] if i not in done]

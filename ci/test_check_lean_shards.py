@@ -222,6 +222,22 @@ class MetaDependencies(unittest.TestCase):
         read = shards.reads(imps, shards.closures(imps), vis, modes)
         self.assertIn("C", read["All"])
 
+    def test_among_intersects_every_trace(self):
+        # Public, private, meta and `all` imports, and a file that is not a module.
+        imps = {"C": [], "D": [], "B": ["C", "D"], "Pub": ["B"], "Priv": ["Pub"],
+                "Meta": ["B"], "All": ["Priv"], "File": ["Priv"]}
+        vis = dict.fromkeys(imps, ([], []))
+        vis["Pub"] = (["B"], [])
+        vis["All"] = ([], ["Priv"])
+        vis["File"] = None
+        modes = {"Meta": {"meta": ["B"]}}
+        closure = shards.closures(imps)
+        read = shards.reads(imps, closure, vis, modes)
+        for among in (frozenset({"C"}), frozenset({"B", "D"}), frozenset({"Pub", "Priv"})):
+            self.assertEqual(shards.closures(imps, among), {m: c & among for m, c in closure.items()})
+            self.assertEqual(shards.reads(imps, shards.closures(imps, among), vis, modes, among),
+                             {m: r & among for m, r in read.items()})
+
 
 class NativeRequirements(Project):
     def test_scoped_targets_remain_module_targets(self):

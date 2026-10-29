@@ -117,19 +117,36 @@ def native_tcb_name(target: str | None) -> str:
     return f"NativeTCB{target or ''}"
 
 
+def full_closures(imps: dict[str, list[str]], starts: list[str]) -> dict[str, frozenset[str]]:
+    """`lean_shards.closures` of `starts` and of what they import alone."""
+    reach, stack = set(), list(starts)
+    while stack:
+        if (m := stack.pop()) not in reach:
+            reach.add(m)
+            stack += imps[m]
+    return lean_shards.closures({m: imps[m] for m in reach})
+
+
 def check_native_tcb(targets: set[str]) -> list[str]:
-    """`native_tcb` on the project, with ci/lean_shards.py's traces."""
+    """`native_tcb` on the project, with ci/lean_shards.py's traces of the
+    targets' modules of TCB/ alone (`among`), and native traces only for
+    the modules of precompiled libraries, which alone have them."""
     mods = lean_shards.modules()
     modes = {}
     imps, vis, _ = lean_shards.source_info(mods, import_modes=modes)
-    closure = lean_shards.closures(imps)
-    read = lean_shards.reads(imps, closure, vis, modes)
-    libraries = lean_shards.precompiled_libraries(closure)
-    native = lean_shards.native_reads(imps, closure, libraries, lean_shards.native_trace_modules(closure))
-    config = tomllib.loads((lean_shards.LEAN / "lakefile.toml").read_text())
-    lib_names = {lib["name"]: lib.get("libName", "") for lib in config.get("lean_lib", [])}
     tcb = {m: target_of(m.split("."), targets) for m in mods if m.startswith("VerifiedGarbage.TCB.")}
-    return native_tcb(tcb, libraries, lib_names, {m: read[m] | native[m] for m in imps}, targets)
+    among = frozenset(m for m, t in tcb.items() if t)
+    traces = lean_shards.reads(imps, lean_shards.closures(imps, among), vis, modes, among)
+    config = tomllib.loads((lean_shards.LEAN / "lakefile.toml").read_text())
+    # A library's modules, from the whole closures of its `roots` alone.
+    roots = [r for lib in config.get("lean_lib", []) for r in lib.get("roots", []) if r in imps]
+    libraries = lean_shards.precompiled_libraries(dict.fromkeys(imps, frozenset()) | full_closures(imps, roots))
+    full = full_closures(imps, [m for members in libraries.values() for m in members])
+    native = lean_shards.native_reads(imps, full, libraries, lean_shards.native_trace_modules(full))
+    for m, r in native.items():
+        traces[m] = traces[m] | (r & among)
+    lib_names = {lib["name"]: lib.get("libName", "") for lib in config.get("lean_lib", [])}
+    return native_tcb(tcb, libraries, lib_names, traces, targets)
 
 
 def imports(f: pathlib.Path):
