@@ -874,6 +874,41 @@ class Many(Project):
         self.assertEqual(self.count(22), 7)
 
 
+class Solo(Project):
+    """Shard `0`: the `lean` job's own build, when the plan has no shards."""
+
+    def main(self, *args):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(shards.main(list(args)), 0)
+        return out.getvalue().split()
+
+    def test_the_lean_job_builds_the_sinks_with_only_what_they_need(self):
+        (self.lean / "VerifiedGarbage/Spec/B.lean").write_text("-- changed\n")
+        manifest = self.lean / "manifest.json"
+        manifest.write_text(json.dumps(self.manifest))
+        plan = self.lean / "plan.json"
+        self.assertIn("solo=1", self.main("plan", str(manifest), str(plan)))
+        self.assertEqual(json.loads(plan.read_text())["targets"], [])
+        # Proof imports Spec.B; the root module imports Proof.
+        self.assertEqual(self.main("targets", str(plan), "0"), ["+VerifiedGarbage"])
+        self.assertEqual(self.main("closure", str(plan), "0"), [
+            "VerifiedGarbage", "VerifiedGarbage.Proof", "VerifiedGarbage.Spec.A", "VerifiedGarbage.Spec.B"])
+
+    def test_unchanged(self):
+        manifest = self.lean / "manifest.json"
+        manifest.write_text(json.dumps(self.manifest))
+        plan = self.lean / "plan.json"
+        self.assertIn("solo=0", self.main("plan", str(manifest), str(plan)))
+        self.assertEqual(self.main("targets", str(plan), "0"), [])
+
+    def test_no_shard_0_with_shards(self):
+        plan = self.lean / "plan.json"
+        plan.write_text(json.dumps({"targets": [["VerifiedGarbage.Proof"]], "owner": {}}))
+        with self.assertRaises(SystemExit):
+            shards.main(["targets", str(plan), "0"])
+
+
 class Prune(Project):
     """`prune` on the build of the small project, after a module is gone."""
 

@@ -53,9 +53,13 @@ exceeding the same finish-time budget.
                                         the manifest's build, which may be
                                         missing) to PLAN, and print the number
                                         of shards (`count=`) and their names
-                                        (`shards=`, a JSON list) for
-                                        $GITHUB_OUTPUT
-  lean_shards.py targets PLAN SHARD     the sinks of SHARD, as `lake build`
+                                        (`shards=`, a JSON list), and with none
+                                        the number of the sinks the `lean` job
+                                        builds itself (`solo=`, shard `0`
+                                        below), for $GITHUB_OUTPUT
+  lean_shards.py targets PLAN SHARD     the sinks of SHARD (`0`: those the
+                                        `lean` job builds itself, when the
+                                        plan has no shards), as `lake build`
                                         targets (`+Module`), one per line
   lean_shards.py closure PLAN SHARD     the modules SHARD's build needs (its
                                         sinks, what they import, and the
@@ -1063,6 +1067,11 @@ def plan(manifest: dict, diagnostics: dict | None = None) -> dict:
         "targets": [sorted(t) for t in targets],
         "owner": owner,
     }
+    # Without shards, the `lean` job builds the sinks itself ("shard" 0),
+    # with only what they need restored, and the rest of the last build
+    # unpacked meanwhile.
+    if not targets:
+        out["solo"] = rebuild_targets(stale, closure)
     # The modules whose sources differ from the last build's, whatever its
     # inputs: what `check_lean_public_imports.py` checks.
     if sources:
@@ -1075,6 +1084,16 @@ def shard_index(p: dict, name: str) -> int:
     if not 0 <= i < len(p["targets"]):
         raise SystemExit(f"no shard {name}")
     return i
+
+
+def shard_targets(p: dict, name: str) -> list[str]:
+    """The sinks of shard `name`; of `0`, those the `lean` job builds
+    itself when the plan has no shards."""
+    if name == "0":
+        if p["targets"]:
+            raise SystemExit("no shard 0: the plan has shards")
+        return p.get("solo", [])
+    return p["targets"][shard_index(p, name)]
 
 
 def module_of_output(path: str) -> str:
@@ -1121,25 +1140,29 @@ def main(args: list[str]) -> int:
         )
         print(f"count={count}")
         print(f"shards={json.dumps([str(i + 1) for i in range(count)])}")
+        print(f"solo={len(p.get('solo', []))}")
         return 0
-    if len(args) == 3 and args[0] in ("targets", "closure", "outputs"):
+    if len(args) == 3 and args[0] in ("targets", "closure"):
         p = read_json(args[1])
-        i = shard_index(p, args[2])
+        targets = shard_targets(p, args[2])
         if args[0] == "closure":
-            for m in sorted(needed(p["targets"][i], closures(imports(modules())))):
+            for m in sorted(needed(targets, closures(imports(modules())))):
                 print(m)
-        elif args[0] == "targets":
+        else:
             # `+`: the module, not the package or library of the same name
             # (`VerifiedGarbage` is all three).
-            for m in p["targets"][i]:
+            for m in targets:
                 print(f"+{m}")
-        else:
-            # Outputs of no module (the precompiled libraries' shared
-            # libraries) are the first shard's.
-            for line in sys.stdin:
-                path = line.strip()
-                if path and p["owner"].get(module_of_output(path), 0) == i:
-                    print(path)
+        return 0
+    if len(args) == 3 and args[0] == "outputs":
+        p = read_json(args[1])
+        i = shard_index(p, args[2])
+        # Outputs of no module (the precompiled libraries' shared
+        # libraries) are the first shard's.
+        for line in sys.stdin:
+            path = line.strip()
+            if path and p["owner"].get(module_of_output(path), 0) == i:
+                print(path)
         return 0
     if args in (["times"], ["times", "--observations"]):
         observation = log_timings(sys.stdin.read())

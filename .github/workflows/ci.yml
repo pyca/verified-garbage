@@ -109,13 +109,29 @@ jobs:
         id: here
         env:
           COUNT: ${{ steps.plan.outputs.count }}
+          SOLO: ${{ steps.plan.outputs.solo }}
           REUSE: ${{ steps.reuse.outputs.run-id }}
         run: |
           if [ "$COUNT" = 0 ] || [ -n "$REUSE" ]; then
             echo "build=true" >> "$GITHUB_OUTPUT"
+            if [ -z "$REUSE" ] && [ "${SOLO:-0}" != 0 ]; then
+              echo "sinks=true" >> "$GITHUB_OUTPUT"
+            fi
           else
             echo "$COUNT shards build the proofs."
           fi
+      # With modules to rebuild, it builds them first as a shard would (the
+      # plan's shard 0), with only what they import of the last build
+      # restored (a tenth of its modules, in CI's metrics): restoring all of
+      # it took a minute (up to two) before the build could start. The rest
+      # unpacks in the background meanwhile, for the assembly.
+      - name: List the modules the build needs
+        id: closure
+        if: ${{ steps.here.outputs.sinks == 'true' }}
+        run: |
+          python3 ci/lean_shards.py closure "$RUNNER_TEMP/lean-plan.json" 0 > "$RUNNER_TEMP/lean-modules"
+          echo "The build needs $(wc -l < "$RUNNER_TEMP/lean-modules") of the project's modules."
+          echo "modules=$RUNNER_TEMP/lean-modules" >> "$GITHUB_OUTPUT"
       - uses: ./.github/actions/lean-prepare
         id: prepare
         if: ${{ steps.here.outputs.build == 'true' }}
@@ -124,6 +140,71 @@ jobs:
           restore-keys: |
             ${{ steps.plan.outputs.build-key }}
             ${{ steps.keys.outputs.build-cache-prefix }}
+          modules: ${{ steps.closure.outputs.modules }}
+      # As in `lean-shard`: into a directory of its own, which the build
+      # never reads or writes.
+      - name: Start unpacking the rest of the build, in the background
+        if: ${{ steps.here.outputs.sinks == 'true' && hashFiles('lean/.lake/ltar/index.json') != '' }}
+        working-directory: lean
+        run: |
+          (
+            set +e
+            nice -n 19 ionice -c 2 -n 7 python3 ../ci/lean_cache.py restore . --except "$RUNNER_TEMP/lean-modules" \
+              --stage .lake/build-rest > "$RUNNER_TEMP/lean-rest.log" 2>&1
+            echo $? > "$RUNNER_TEMP/lean-rest.status.tmp"
+            mv "$RUNNER_TEMP/lean-rest.status.tmp" "$RUNNER_TEMP/lean-rest.status"
+          ) < /dev/null > /dev/null 2>&1 &
+      # Named as a shard's build, for ci/ci_metrics.py and
+      # ci/lean_shard_replay.py.
+      - name: "Check the shard's proofs (shard 0: the modules to rebuild)"
+        if: ${{ steps.here.outputs.sinks == 'true' }}
+        working-directory: lean
+        run: |
+          set -o pipefail
+          touch "$RUNNER_TEMP/before-build"
+          # Warnings and errors only, as in `lean-shard`.
+          lake build --log-level=warning $(python3 ../ci/lean_shards.py targets "$RUNNER_TEMP/lean-plan.json" 0) 2>&1 \
+            | tee "$RUNNER_TEMP/build.log"
+      # Their times, for the manifest (`lean-assemble` reads those in
+      # `lean-build`), and in the merge queue their outputs too, for the
+      # push to main to reuse (as a shard's, which it downloads with the
+      # final ones): the assembly's own are only what it builds.
+      - name: Collect the outputs of the modules to rebuild
+        if: ${{ steps.here.outputs.sinks == 'true' }}
+        working-directory: lean
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          python3 ../ci/lean_shards.py times --observations < "$RUNNER_TEMP/build.log" > "$RUNNER_TEMP/lean-times-0.json"
+          mkdir -p "$RUNNER_TEMP/lean-build"
+          cp "$RUNNER_TEMP/lean-times-0.json" "$RUNNER_TEMP/lean-build/"
+          if [ "$EVENT" = merge_group ]; then
+            cd .lake/build
+            find . -type f -newer "$RUNNER_TEMP/before-build" -printf '%P\n' \
+              | tar --zstd -cf "$RUNNER_TEMP/lean-build-0.tar.zst" -T -
+          fi
+      - uses: ./.github/actions/upload-artifact
+        if: ${{ steps.here.outputs.sinks == 'true' && github.event_name == 'merge_group' }}
+        with:
+          name: lean-build-0
+          path: |
+            ${{ runner.temp }}/lean-build-0.tar.zst
+            ${{ runner.temp }}/lean-times-0.json
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+      # As in `lean-shard` (and named as there, for ci/ci_metrics.py).
+      - name: Unpack the rest of the build
+        if: ${{ steps.here.outputs.sinks == 'true' && hashFiles('lean/.lake/ltar/index.json') != '' }}
+        timeout-minutes: 20
+        working-directory: lean
+        run: |
+          while [ ! -f "$RUNNER_TEMP/lean-rest.status" ]; do sleep 1; done
+          cat "$RUNNER_TEMP/lean-rest.log"
+          if [ "$(cat "$RUNNER_TEMP/lean-rest.status")" != 0 ]; then
+            exit 1
+          fi
+          python3 ../ci/lean_cache.py adopt . .lake/build-rest
       # On a push to main, the merge queue run's outputs of this commit: its
       # shards' and its final ones (`lean-build-final-*`, extracted last).
       # Lake rebuilds whatever doesn't match the sources.
