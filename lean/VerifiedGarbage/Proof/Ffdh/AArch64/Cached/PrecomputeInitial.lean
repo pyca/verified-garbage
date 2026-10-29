@@ -1,17 +1,131 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.MontgomeryOne
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.GeneratorBasis
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.GeneratorLoad
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.StoreLiteral
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.BuildFrame
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Basis
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.GeneratorSource
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeProductIO
+
 import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.WorkspaceState
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Omega
-
+import VerifiedGarbage.Proof.Bignum.Math
+import Mathlib.Tactic.Ring
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 /-! Initialize entries zero and one from cached R² and the checked generator. -/
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/GeneratorBasis.lean`, which only this module imported.
+section
+
+/-! Convert the validated generator into the first canonical Montgomery tooth. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+
+theorem generator_basis (M : Mont) {p : Parameters} {s : State} (h : ModState p s)
+ (generator : wv s.mem p.B (slot p.w 1) p.w=p.G) (reduced : p.G<p.P) :
+ WP isa (M.mm 5 1 4) s fun t =>
+ Basis p 1 t ∧ Arrays p.B p.w [2,3,5] s.mem t.mem ∧ Keep mmRegs s t := by
+ have r2Bound : wv s.mem p.B (slot p.w 4) p.w<p.P := by
+  rw [h.r2];exact Nat.mod_lt _ (by have := p.modulusPositive;omega)
+ refine WP.mono (crtMmN_ok M h.good p.room p.positive p.width
+  (by decide : 5<8) (by decide : 1<8) (by decide : 4<8) (by decide) (by decide)
+  (by decide) (by decide) (by decide) h.modulus h.inverse r2Bound) ?_
+ rintro t ⟨good,_,_,bound,product,frame,rest⟩
+ have mod := h.after_arrays good frame (by decide) (by decide) (by decide)
+ have r2Eq : 2^(128*p.w)=2^(64*p.w)*2^(64*p.w) := by rw [←Nat.pow_add];congr 1;omega
+ have target : wv t.mem p.B (slot p.w 5) p.w*2^(64*p.w)%p.P=
+  (p.G*2^(64*p.w))*2^(64*p.w)%p.P := by
+  rw [generator,h.r2,r2Eq,Nat.mul_mod_mod,←Nat.mul_assoc] at product
+  exact product
+ have cancel := VG.Proof.Bignum.mont_cancel p.coprime target
+ rw [Nat.mod_eq_of_lt bound] at cancel
+ refine ⟨⟨mod,bound,?_⟩,frame,rest⟩
+ simpa only [VG.Proof.Bignum.powMod_eq,Nat.pow_one,Nat.mod_eq_of_lt reduced] using cancel
+
+end VG.Proof.Ffdh.AArch64.Cached
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/GeneratorLoad.lean`, which only this module imported.
+section
+
+/-! Load g, immediately after p in the validated domain encoding. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Impl.Ffdh.AArch64.Cached
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+
+theorem generatorLoad_ok {s : State} {p : Parameters} {dom : Addr} {bs : List Byte}
+ (good : Good s p.B p.Z p.w p.mi) (source : GeneratorSource p (dom+BitVec.ofNat 64 p.k) bs s)
+ (words : p.w=(p.k+7)/8) (positive : 0<p.k) (size : p.k<2^31)
+ (domain : word s.mem p.B (8*sDom)=dom) (length : word s.mem p.B (8*sLen)=BitVec.ofNat 64 p.k) :
+ WP isa (.seq (.block [ldh .x1 sDom,ldh .x2 sLen,.add .x .x1 .x1 .x2]) (load 1)) s fun t =>
+ Good t p.B p.Z p.w p.mi ∧ wv t.mem p.B (slot p.w 1) p.w=p.G ∧
+ Arrays p.B p.w [1] s.mem t.mem ∧ Keep mmRegs s t := by
+ rw [WP.seq_iff]
+ refine WP.mono (WP.keep [.x1,.x2] (Q:=fun u =>u.gpr .x1=dom+BitVec.ofNat 64 p.k ∧
+  u.gpr .x2=BitVec.ofNat 64 p.k ∧ u.mem=s.mem) ?_ rfl rfl rfl) ?_
+ · brun [good.x0,hdr_enc (show sDom<32 by decide),hdr_enc (show sLen<32 by decide),
+    header_read good p.room (show sDom<32 by decide),header_read good p.room (show sLen<32 by decide),domain,length]
+ · rintro u ⟨⟨ptr,count,mem⟩,rest⟩
+   have goodU : Good u p.B p.Z p.w p.mi :=
+    ⟨good.scr.congr rest.wr,(rest.gpr .x0 (by decide)).trans good.x0,mem ▸ good.hdr⟩
+   have src := source.after_inscr (fun x _ => by rw [mem]) rest
+   refine WP.mono (loadArray_ok goodU p.room words positive size (by decide : 1<8) src.source src.length ptr count) ?_
+   rintro t ⟨goodT,value,frame,keep⟩
+   rw [mem] at frame
+   exact ⟨goodT,value.trans source.value,frame,(rest.trans keep).mono (by simp [mmRegs])⟩
+
+end VG.Proof.Ffdh.AArch64.Cached
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/StoreLiteral.lean`, which only this module imported.
+section
+
+/-! Store initial comb entries at fixed public indices. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Impl.Ffdh.AArch64.Cached
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+
+theorem storeLiteral_ok {s : State} {p : Parameters} {a d : Nat}
+ (good : Good s p.B p.Z p.w p.mi) (space : ContextSpace p s)
+ (context : word s.mem p.B (8*sCtx)=p.ctx) (array : a<8) (inside : d<32) :
+ WP isa (.seq (.block [movi .x3 d]) (storeEntry a)) s fun t =>
+ Good t p.B p.Z p.w p.mi ∧ wv t.mem p.ctx (entryOffset p.w d) p.w=wv s.mem p.B (slot p.w a) p.w ∧
+ Outside p.ctx (entryOffset p.w d) (8*p.w) s.mem t.mem ∧
+ (∀ x,ofs p.B x<p.Z→t.mem x=s.mem x) ∧ Keep mmRegs s t := by
+ rw [WP.seq_iff]
+ refine WP.mono (WP.keep [.x3] (Q:=fun u =>u.gpr .x3=BitVec.ofNat 64 d ∧ u.mem=s.mem) ?_ rfl rfl rfl) ?_
+ · brun [movi_nat (show d<2^16 by omega)]
+ · rintro u ⟨⟨indexU,memU⟩,restU⟩
+   have goodU : Good u p.B p.Z p.w p.mi :=
+    ⟨good.scr.congr restU.wr,(restU.gpr .x0 (by decide)).trans good.x0,memU ▸ good.hdr⟩
+   refine WP.mono (storeEntry_ok goodU p.room (by have := p.positive;omega) p.width array
+    (memU ▸ context) indexU (entry_fit p inside)
+    (fun i hi => (space.after restU).entry_write inside hi)
+    (fun i hi => space.entry_outside inside hi)) ?_
+   rintro t ⟨goodT,value,frame,unchanged,restT⟩
+   rw [memU] at value frame unchanged
+   exact ⟨goodT,value,frame,unchanged,(restU.trans restT).mono (by simp [mmRegs])⟩
+
+end VG.Proof.Ffdh.AArch64.Cached
+end
+
+end
+
 @[expose] public section
 namespace VG.Proof.Ffdh.AArch64.Cached
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
