@@ -4,13 +4,28 @@
 //! OpenSSL implements ML-DSA from version 3.5; the runners use 3.0.
 //! Enable `openssl-mldsa` on a supported host for the comparison. The ids'
 //! sizes are the output bytes for keygen/sign and message bytes for verify.
-//! Signing has an empty context. verified-garbage signs deterministically
-//! (`rnd` all zeros), so that every iteration runs its rejection loop as many
-//! times; OpenSSL and aws-lc-rs sign hedged, with fresh randomness.
+//! Signing has an empty context. Each signing iteration signs the next of
+//! `MESSAGES` messages, the same for every library, since the number of
+//! times the rejection loop runs depends on the message (and, hedged, on the
+//! randomness): averaged over them, a comparison measures each library's
+//! loop rather than one message's luck. `mldsa87_sign` signs hedged, with
+//! fresh randomness, in every library; `mldsa87_sign_deterministic` is
+//! verified-garbage's deterministic signing (`rnd` all zeros), whose time
+//! for the same messages repeats exactly from run to run.
 
 use criterion::Criterion;
 
 pub const USES: &[&str] = &["mldsa87", "mldsa_common", "mldsa", "sha3"];
+
+/// How many messages signing cycles through.
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    all(target_arch = "powerpc64", target_endian = "little")
+))]
+const MESSAGES: usize = 256;
 
 #[cfg(any(
     target_arch = "x86_64",
@@ -33,6 +48,8 @@ pub fn bench(c: &mut Criterion) {
     let seed = [0x42; 32];
     let key = SigningKey87::from_seed(&seed).unwrap();
     let msg = [0x5a; 64];
+    // The messages that signing cycles through.
+    let msgs: [[u8; 64]; MESSAGES] = core::array::from_fn(|i| [i as u8; 64]);
     // Keep verification inputs identical across benchmark processes and revisions.
     let sig = key.sign_deterministic(&msg, b"").unwrap();
     let aws_lc_key = PqdsaKeyPair::from_seed(&ML_DSA_87_SIGNING, &seed).unwrap();
@@ -95,20 +112,38 @@ pub fn bench(c: &mut Criterion) {
     });
     g.finish();
     let mut g = c.benchmark_group("mldsa87_sign");
+    let mut i = 0;
     g.bench_function(BenchmarkId::new(VG, 4627), |b| {
-        b.iter(|| key.sign_deterministic(black_box(&msg), b"").unwrap())
+        b.iter(|| {
+            i = (i + 1) % MESSAGES;
+            key.sign(black_box(&msgs[i]), b"").unwrap()
+        })
     });
     #[cfg(feature = "openssl-mldsa")]
     g.bench_function(BenchmarkId::new(crate::OPENSSL, 4627), |b| {
         b.iter(|| {
+            i = (i + 1) % MESSAGES;
             openssl::sign::Signer::new_without_digest(&openssl_key)
                 .unwrap()
-                .sign_oneshot_to_vec(black_box(&msg))
+                .sign_oneshot_to_vec(black_box(&msgs[i]))
                 .unwrap()
         })
     });
     g.bench_function(BenchmarkId::new(AWS_LC, 4627), |b| {
-        b.iter(|| aws_lc_key.sign(black_box(&msg), &mut aws_lc_sig).unwrap())
+        b.iter(|| {
+            i = (i + 1) % MESSAGES;
+            aws_lc_key
+                .sign(black_box(&msgs[i]), &mut aws_lc_sig)
+                .unwrap()
+        })
+    });
+    g.finish();
+    let mut g = c.benchmark_group("mldsa87_sign_deterministic");
+    g.bench_function(BenchmarkId::new(VG, 4627), |b| {
+        b.iter(|| {
+            i = (i + 1) % MESSAGES;
+            key.sign_deterministic(black_box(&msgs[i]), b"").unwrap()
+        })
     });
     g.finish();
     let mut g = c.benchmark_group("mldsa87_verify");
