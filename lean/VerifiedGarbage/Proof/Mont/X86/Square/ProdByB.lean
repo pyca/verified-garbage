@@ -19,8 +19,7 @@ theorem mul_by_b_eq (s : State) (a : BitVec 32) :
     show Reg.ebx ≠ Reg.eax by decide, ↓reduceIte]
   congr 1
   funext r
-  repeat' split
-  all_goals simp_all
+  by_cases h₁ : r = Reg.eax <;> by_cases h₂ : r = Reg.edx <;> simp_all
 
 def prodByB : List Instr := [.mov .eax (.mem (at_ .ebp 0)), .mul .ebx] ++ VG.Impl.Mont.X86.Rt.Square.accum
 

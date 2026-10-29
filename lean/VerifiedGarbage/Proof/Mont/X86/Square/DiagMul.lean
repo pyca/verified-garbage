@@ -21,8 +21,7 @@ theorem mul_self_eq (s : State) (a : BitVec 32) :
   simp only [execMul, State.setReg, State.setFlags, show Reg.eax ≠ Reg.edx by decide, ↓reduceIte]
   congr 1
   funext r
-  repeat' split
-  all_goals simp_all
+  by_cases h₁ : r = Reg.eax <;> by_cases h₂ : r = Reg.edx <;> simp_all
 
 def diagMul : List Instr := [.mov .eax (.mem (at_ .eax 0)), .mul .eax] ++ VG.Impl.Mont.X86.Rt.Square.accum
 
