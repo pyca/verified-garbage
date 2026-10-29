@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Sha3.RISCV64.Zero
-public import VerifiedGarbage.Proof.Framework.RISCV64.Steps
+import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 public import VerifiedGarbage.Spec.Sha3
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RISCV64.Spill
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.RISCV64.Isa
 
 /-!
 # SHA-3 on RISC-V: zeroing a state
