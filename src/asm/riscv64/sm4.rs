@@ -5338,7 +5338,9 @@ sd t6, 2008(t5)
 sd t6, 2016(t5)
 sd t6, 2024(t5)
 sd t6, 2032(t5)
-addi t5, t5, 2040
+sd t6, 2040(t5)
+addi t5, t5, 1024
+addi t5, t5, 1024
 sd t6, 0(t5)
 sd t6, 8(t5)
 sd t6, 16(t5)
@@ -5479,7 +5481,6 @@ sd t6, 1088(t5)
 sd t6, 1096(t5)
 sd t6, 1104(t5)
 sd t6, 1112(t5)
-sd t6, 1120(t5)
 addi sp, sp, 1136
 addi sp, sp, 2032
 ret
@@ -15255,7 +15256,9 @@ sd t6, 2008(t5)
 sd t6, 2016(t5)
 sd t6, 2024(t5)
 sd t6, 2032(t5)
-addi t5, t5, 2040
+sd t6, 2040(t5)
+addi t5, t5, 1024
+addi t5, t5, 1024
 sd t6, 0(t5)
 sd t6, 8(t5)
 sd t6, 16(t5)
@@ -15396,7 +15399,6 @@ sd t6, 1088(t5)
 sd t6, 1096(t5)
 sd t6, 1104(t5)
 sd t6, 1112(t5)
-sd t6, 1120(t5)
 addi sp, sp, 1136
 addi sp, sp, 2032
 ret
@@ -25173,7 +25175,9 @@ sd t6, 2008(t5)
 sd t6, 2016(t5)
 sd t6, 2024(t5)
 sd t6, 2032(t5)
-addi t5, t5, 2040
+sd t6, 2040(t5)
+addi t5, t5, 1024
+addi t5, t5, 1024
 sd t6, 0(t5)
 sd t6, 8(t5)
 sd t6, 16(t5)
@@ -25314,7 +25318,6 @@ sd t6, 1088(t5)
 sd t6, 1096(t5)
 sd t6, 1104(t5)
 sd t6, 1112(t5)
-sd t6, 1120(t5)
 addi sp, sp, 1136
 addi sp, sp, 2032
 ret
