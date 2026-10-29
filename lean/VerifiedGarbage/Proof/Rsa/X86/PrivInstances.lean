@@ -12,7 +12,6 @@ public import VerifiedGarbage.TCB.X86.Isa
 public import Mathlib.Data.Nat.Basic
 
 import VerifiedGarbage.Proof.Rsa.X86.PrivVerified
-import VerifiedGarbage.Impl.Bignum.X86.CrtFn
 import VerifiedGarbage.Proof.Framework.GetElem
 /-! # Instantiate checked private RSA with the verified baseline i686 callees -/
 

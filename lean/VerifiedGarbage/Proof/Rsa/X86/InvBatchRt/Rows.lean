@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Linear
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Reduce
-public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Shr
+import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Shr
 
 import VerifiedGarbage.Proof.Divstep.Tc32Words
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRead
@@ -11,6 +11,9 @@ import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Tactic.Linarith
 import Mathlib.Algebra.Order.Ring.Abs
 import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
+public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Ops
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
 /-! # The matrix rows of a batch at a run-time width
 
 `fgRow_ok`: a row of the full-width values, `[a j] = (u f + v g) / 2 ^ 30`;
