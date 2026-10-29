@@ -220,11 +220,14 @@ def keySpread : List Instr :=
   rorK t0 t1 16 ++ [andR t0 t0 (m 2)] ++ rorK t1 t1 40 ++ [andR t1 t1 (m 3), xorR t1 t1 t0]
 
 /-- Plane `j`: bit `j` of each group of the spread word (bits `16 i`, the
-mask in `m 4`, from `oneSlot`), filled to its sixteen bits by doubling. -/
+mask in `m 4`, from `oneSlot`), filled to its sixteen bits by doubling. The
+bits wanted shift down to bit `0` of their groups, and the others are
+masked off, so a shift does what a rotation would; and no group's bits
+shift past its top, so the doubling needs no rotation either. -/
 def keyPlane (j : Nat) : List Instr :=
-  (if j = 0 then [andR (q 0) t1 (m 4)] else rorK (q j) t1 j ++ [andR (q j) (q j) (m 4)]) ++
-  rorK t0 (q j) 63 ++ [xorR (q j) (q j) t0] ++ rorK t0 (q j) 62 ++ [xorR (q j) (q j) t0] ++
-  rorK t0 (q j) 60 ++ [xorR (q j) (q j) t0] ++ rorK t0 (q j) 56 ++ [xorR (q j) (q j) t0]
+  (if j = 0 then [andR (q 0) t1 (m 4)] else [shrI (q j) t1 j, andR (q j) (q j) (m 4)]) ++
+  [shlI t0 (q j) 1, xorR (q j) (q j) t0, shlI t0 (q j) 2, xorR (q j) (q j) t0,
+   shlI t0 (q j) 4, xorR (q j) (q j) t0, shlI t0 (q j) 8, xorR (q j) (q j) t0]
 
 /-- The planes of round key `2 m + h`, from the word at `a0`, in `q 0 … q 7`. -/
 def keyLoad (h : Nat) : List Instr :=
