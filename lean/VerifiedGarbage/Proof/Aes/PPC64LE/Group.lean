@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.Aes.PPC64LE.Encrypt
-import Mathlib.Data.List.Induction
 
 /-!
 # One group of counter-mode blocks on PPC64LE

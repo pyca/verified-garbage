@@ -3,12 +3,7 @@ public import VerifiedGarbage.Impl.Ffdh.X86_64.Domain
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 
 import VerifiedGarbage.Proof.Bignum.X86_64.Valid
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
-import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-! # FFDH on x86-64: check the packed modulus -/

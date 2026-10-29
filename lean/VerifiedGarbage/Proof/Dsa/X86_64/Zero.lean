@@ -9,9 +9,6 @@ import VerifiedGarbage.Proof.Dsa.X86_64.ZeroLoop
 import VerifiedGarbage.Proof.Dsa.X86_64.ZeroMask
 import VerifiedGarbage.Proof.Dsa.X86_64.MaskContext
 import VerifiedGarbage.Proof.Dsa.X86_64.Masks
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 
 /-! # Complete byte-buffer zero and nonzero checks -/
 

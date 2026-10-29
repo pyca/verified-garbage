@@ -10,8 +10,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import Mathlib.Basic.Logic.Basic
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Taint
 

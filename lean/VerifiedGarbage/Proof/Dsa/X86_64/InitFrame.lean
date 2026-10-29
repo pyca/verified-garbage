@@ -1,9 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.CallHeader
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 
 /-! # Changes permitted while initializing one DSA child -/
 

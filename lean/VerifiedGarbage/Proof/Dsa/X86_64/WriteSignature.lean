@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Execution
 import VerifiedGarbage.Proof.Dsa.X86_64.ReleaseBytes
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Dsa.Layout
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.WriteScalar
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 import VerifiedGarbage.Proof.Bignum.X86_64.PubOut

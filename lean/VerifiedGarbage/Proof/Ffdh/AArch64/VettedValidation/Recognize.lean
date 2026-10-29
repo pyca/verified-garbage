@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyTable
-import Mathlib.Tactic.SplitIfs
 
 /-! Exact public recognition is safe for every permitted input, including invalid domains. -/
 @[expose] public section

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Pass
 import VerifiedGarbage.Proof.TripleDes.Word
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

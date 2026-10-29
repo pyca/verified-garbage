@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStep
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigit
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafCore
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop

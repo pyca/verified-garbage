@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeInvariant
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 
 /-! Invariants retained by the public five-bit Jacobian loop. -/

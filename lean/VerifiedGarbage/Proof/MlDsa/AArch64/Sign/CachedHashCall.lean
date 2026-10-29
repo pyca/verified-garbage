@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 public import VerifiedGarbage.Spec.MlDsa.CommitTail
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedCommitment
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Top
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 
 /-! ## From `CommitTailCall.lean` -/

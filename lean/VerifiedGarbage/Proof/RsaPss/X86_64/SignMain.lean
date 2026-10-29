@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
 public import VerifiedGarbage.Proof.RsaPss.EncBytes
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
 public import VerifiedGarbage.Proof.Sha256.X86_64.Lit
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
@@ -38,7 +37,6 @@ public import VerifiedGarbage.TCB.Code
 public import VerifiedGarbage.TCB.Mem
 public import VerifiedGarbage.TCB.X86_64.Isa
 public import VerifiedGarbage.TCB.X86_64.State
-import Mathlib.Tactic.Conv
 
 /-!
 # RSASSA-PSS on x86-64: the encoding

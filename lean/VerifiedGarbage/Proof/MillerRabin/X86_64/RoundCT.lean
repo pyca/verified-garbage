@@ -1,5 +1,4 @@
 module
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Round
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont

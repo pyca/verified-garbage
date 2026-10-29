@@ -11,7 +11,6 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 
 /-! Arithmetic, memory safety and constant time for candidates 2 and 3 of

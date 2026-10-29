@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtContext
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtSetup
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRows
 import VerifiedGarbage.Proof.Bignum.AArch64.WideDiagonal
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSave

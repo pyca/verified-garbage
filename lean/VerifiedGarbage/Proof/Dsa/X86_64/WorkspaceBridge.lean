@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Dsa.X86_64.WorkspaceReady
 public import VerifiedGarbage.Proof.Dsa.X86_64.WorkspacesCT
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Dsa.X86_64.Execution
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 import VerifiedGarbage.Proof.Dsa.Layout

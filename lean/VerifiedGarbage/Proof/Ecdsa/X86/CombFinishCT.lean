@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.Ecdsa.X86.CombCode
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
 import VerifiedGarbage.Proof.Weierstrass.X86.TComb
@@ -13,8 +11,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86.CombCode
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
-meta import Mathlib.Tactic.Finiteness.Attr
-meta import Mathlib.Tactic.Attr.Core
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 meta import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
 meta import VerifiedGarbage.Proof.Weierstrass.X86.TComb

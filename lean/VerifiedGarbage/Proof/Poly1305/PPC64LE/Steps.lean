@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Poly1305.Radix26
 public import VerifiedGarbage.Impl.Poly1305.PPC64LE
 import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Nat.Bitwise.Basic
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 

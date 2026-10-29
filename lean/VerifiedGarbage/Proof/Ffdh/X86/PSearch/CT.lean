@@ -10,7 +10,6 @@ meta import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Entry
 meta import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Loop
 meta import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Finish
-import Mathlib.Tactic.ToAdditive
 public import VerifiedGarbage.Impl.Ffdh.X86.ParamSearch
 public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.CTExits
 public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Classify

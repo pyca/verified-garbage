@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import Batteries.Logic
-import Mathlib.Util.CompileInductive
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 meta import VerifiedGarbage.TCB.Arm.Target

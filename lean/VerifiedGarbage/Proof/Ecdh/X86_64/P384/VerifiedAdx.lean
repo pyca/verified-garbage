@@ -12,10 +12,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleCms
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitEraseAdx
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Impl.Ecdh.P384.X86_64
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitErase
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJStep
@@ -28,10 +25,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleCms
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitEraseAdx
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
 meta import VerifiedGarbage.Impl.Ecdh.P384.X86_64
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitErase
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJStep

@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideStep
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 public import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem

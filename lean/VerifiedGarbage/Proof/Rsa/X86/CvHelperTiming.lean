@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Proof.Rsa.X86.KeyTiming
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.KernelRfl
 

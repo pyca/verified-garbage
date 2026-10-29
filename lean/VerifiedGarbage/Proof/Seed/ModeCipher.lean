@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.ModeBytes
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # SEED's cipher for the modes, on any target

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Interleave
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # AArch64: footprints bounded once for any slots

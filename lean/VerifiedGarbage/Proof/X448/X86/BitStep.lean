@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.X448.X86.Swap
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 

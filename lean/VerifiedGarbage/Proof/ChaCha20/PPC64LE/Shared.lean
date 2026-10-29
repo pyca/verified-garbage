@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
 public import VerifiedGarbage.Spec.ChaCha20.Contract
 import all Init.Data.Nat.Bitwise.Basic
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.ChaCha20.PPC64LE
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint

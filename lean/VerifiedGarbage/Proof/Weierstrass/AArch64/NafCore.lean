@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowCore
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 

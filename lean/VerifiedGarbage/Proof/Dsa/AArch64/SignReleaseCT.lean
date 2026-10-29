@@ -24,10 +24,6 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Tactic.ToAdditive
-import Mathlib.Tactic.ToDual
 
 /-! # Constant time of masked signature release and register restoration -/
 

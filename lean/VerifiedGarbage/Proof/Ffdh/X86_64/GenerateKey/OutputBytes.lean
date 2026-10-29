@@ -3,9 +3,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 public import VerifiedGarbage.Spec.Rsa.Contract
 
 import VerifiedGarbage.Proof.Bignum.Octets
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

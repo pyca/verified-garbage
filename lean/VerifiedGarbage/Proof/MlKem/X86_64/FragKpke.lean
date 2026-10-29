@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeKg
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeDec
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.FragDM
 import VerifiedGarbage.Proof.MlKem.X86_64.FragL
 import VerifiedGarbage.Proof.MlKem.PolyW

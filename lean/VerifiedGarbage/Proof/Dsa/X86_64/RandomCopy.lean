@@ -5,11 +5,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.Words
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 
 /-! # Correctness and memory framing of the random-tape copy loop -/
 

@@ -1,14 +1,9 @@
 module
 
 public import VerifiedGarbage.Spec.Rsa
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.ModArith
 import VerifiedGarbage.Proof.Framework.PowLit
-import Mathlib.Data.Nat.Init
-import Mathlib.Order.Defs.Prop
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -239,7 +234,7 @@ theorem xgcd_spec (q p : Nat) : ∀ (r : Nat) (s : Int) (r' : Nat) (s' : Int), (
     (p : Int) ∣ (Spec.Rsa.xgcd r s r' s').2 * q - (Spec.Rsa.xgcd r s r' s').1 ∧
       (Spec.Rsa.xgcd r s r' s').1 = Nat.gcd r r' := by
   intro r
-  induction r using Nat.strong_induction_on with
+  induction r using Nat.strongRecOn with
   | _ r ih =>
     intro s r' s' h h'
     rw [Spec.Rsa.xgcd]

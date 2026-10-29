@@ -6,11 +6,7 @@ import VerifiedGarbage.Proof.Rsa.Arm.RvOps
 import VerifiedGarbage.Proof.Rsa.Arm.KeyEq
 import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
 import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
-import Mathlib.Basic.IsEmpty.Defs
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Rsa.KeyMath

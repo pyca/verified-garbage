@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailPadding
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMemory
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

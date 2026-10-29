@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import Mathlib.Util.CompileInductive
 
 /-! Native controller accesses include both halves of the packed attempt counter. -/
 

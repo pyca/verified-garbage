@@ -5,9 +5,6 @@ public import VerifiedGarbage.Proof.Rsa.Arm.MulMod
 import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
 import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Basic.IsEmpty.Defs
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

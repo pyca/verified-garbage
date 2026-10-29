@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
-import Mathlib.Tactic.SplitIfs
 
 /-! # The complete a = -3 addition on x86 (32-bit) -/
 

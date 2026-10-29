@@ -7,8 +7,6 @@ public import Lean.Meta.Tactic.Delta
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import Lean.Meta.Tactic.Delta
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 public import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof

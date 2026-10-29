@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.X448.X86.Square
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

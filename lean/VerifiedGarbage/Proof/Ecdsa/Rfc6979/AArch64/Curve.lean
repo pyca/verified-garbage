@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.AArch64
 public import VerifiedGarbage.Impl.Sha256.AArch64.Stream
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Contract
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Deterministic ECDSA on AArch64: the curve

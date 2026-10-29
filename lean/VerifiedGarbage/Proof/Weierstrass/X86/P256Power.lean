@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.PowerChain
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 
 /-! # P-256 field inversion by a fixed addition chain -/

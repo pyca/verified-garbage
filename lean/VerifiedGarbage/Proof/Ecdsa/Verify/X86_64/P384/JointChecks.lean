@@ -11,10 +11,7 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubleIn
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.VerifyLit
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
 import VerifiedGarbage.Proof.Framework.LitShare
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
@@ -27,10 +24,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLit
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubleIn
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.VerifyLit
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
 meta import VerifiedGarbage.Proof.Framework.LitShare
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 
 /-! Concrete timing checks and the doubler of P-384's baseline and ADX joint verification. -/

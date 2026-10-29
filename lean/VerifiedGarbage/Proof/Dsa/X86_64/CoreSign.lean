@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.Modulus
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.CallOperands
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.Arithmetic

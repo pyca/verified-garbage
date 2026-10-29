@@ -1,7 +1,5 @@
 module
 public import VerifiedGarbage.Spec.Rsa.Contract
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 

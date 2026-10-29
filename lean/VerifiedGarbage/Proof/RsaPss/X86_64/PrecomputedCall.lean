@@ -6,8 +6,6 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCall
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Order.Defs.PartialOrder
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 
 @[expose] public section

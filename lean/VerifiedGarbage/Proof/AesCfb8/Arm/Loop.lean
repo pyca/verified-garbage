@@ -9,8 +9,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # AES-CFB8 on ARMv7: the contracts, and the loop

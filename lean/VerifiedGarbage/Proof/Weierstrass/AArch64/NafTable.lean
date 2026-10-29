@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableStep
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableState
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTree
 

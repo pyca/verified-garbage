@@ -9,8 +9,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Mem
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Util.CompileInductive
 
 /-!
 # The products of a half

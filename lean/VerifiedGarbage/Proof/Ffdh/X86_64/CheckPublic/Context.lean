@@ -3,12 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Contract
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
-import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-! # FFDH public-key validation on x86-64: input context -/

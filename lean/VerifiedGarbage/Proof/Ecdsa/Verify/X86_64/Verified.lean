@@ -8,10 +8,7 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.VerifyErased
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
 import Batteries.Data.List.Lemmas
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Weierstrass.WinLay
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Contract
@@ -21,10 +18,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
 meta import Batteries.Data.List.Lemmas
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Weierstrass.WinLay
 

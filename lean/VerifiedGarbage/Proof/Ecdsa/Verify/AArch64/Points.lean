@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Scalars
 import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
-import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Weierstrass.CombW
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages

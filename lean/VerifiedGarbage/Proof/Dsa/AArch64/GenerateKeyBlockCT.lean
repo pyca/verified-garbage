@@ -3,7 +3,6 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.GenerateKey
 public import VerifiedGarbage.Proof.Framework.RelCT
 
 import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-import Mathlib.Tactic.Attr.Core
 import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
@@ -13,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Impl.Dsa.AArch64.GenerateKey
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-meta import Mathlib.Tactic.Attr.Core
 meta import Aesop.BuiltinRules
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Run
 meta import VerifiedGarbage.Proof.Framework.Contract

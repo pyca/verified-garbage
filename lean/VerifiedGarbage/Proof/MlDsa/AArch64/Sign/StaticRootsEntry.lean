@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Verified
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.InverseTable
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre

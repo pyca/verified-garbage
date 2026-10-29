@@ -36,7 +36,6 @@ meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 meta import VerifiedGarbage.TCB.Axioms
-import Mathlib.Tactic.SplitIfs
 
 /-! ## From `BoundedFourSmall.lean` -/
 

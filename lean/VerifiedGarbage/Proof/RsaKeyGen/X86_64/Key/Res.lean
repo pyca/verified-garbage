@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Contract
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Basic.IsEmpty.Defs
 
 /-! ## Ctx -/
 

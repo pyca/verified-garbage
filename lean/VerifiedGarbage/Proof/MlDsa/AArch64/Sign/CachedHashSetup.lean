@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentPack
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedCommitment
 

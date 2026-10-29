@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Seed.SboxLit
 import VerifiedGarbage.Proof.Framework.PPC64LE.Straight
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Seed
 

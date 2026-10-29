@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryAllocated
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ABIContext
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryState
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.Table

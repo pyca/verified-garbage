@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.Arm.CallF
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Common
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-DSA on 32-bit ARM: registers saved in frames

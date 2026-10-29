@@ -4,7 +4,6 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
-import Mathlib.Util.CompileInductive
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on AArch64: the public-key operation, as a callee

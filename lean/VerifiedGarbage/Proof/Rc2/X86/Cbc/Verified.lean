@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Rc2.X86.Cbc.Correct
 import VerifiedGarbage.Proof.Rc2.X86.Cbc.ConstantTime
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Rc2.X86.KeyLit
 public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Contract

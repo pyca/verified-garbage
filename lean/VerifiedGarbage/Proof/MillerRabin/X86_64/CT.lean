@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrRound
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 

@@ -1,5 +1,4 @@
 module
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Arguments
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
@@ -9,7 +8,6 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateArguments
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateStores
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.ToDual
 
 /-! # Candidate arithmetic and output storage from retained frame arguments -/
 

@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -21,7 +20,6 @@ meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetup
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch

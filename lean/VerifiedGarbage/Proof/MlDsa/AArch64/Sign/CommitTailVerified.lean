@@ -5,8 +5,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailTiming
 public import VerifiedGarbage.Spec.MlDsa.CommitTail
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailBody
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ## From `CommitTailContract.lean` -/

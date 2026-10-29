@@ -1,6 +1,5 @@
 module
 
-import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombPublic
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch

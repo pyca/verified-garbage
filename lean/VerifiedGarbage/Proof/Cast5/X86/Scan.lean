@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Cast5.X86.Run
 import VerifiedGarbage.Proof.Cast5.Table
 public import VerifiedGarbage.Proof.Framework.X86.SseLanes
 public import VerifiedGarbage.Proof.Framework.X86.SymFrame
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Cast5.X86
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.AddrArith

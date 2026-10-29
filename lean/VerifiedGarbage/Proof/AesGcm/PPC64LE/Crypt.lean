@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Data.List.Induction
 public import VerifiedGarbage.Proof.Aes.SboxSpec
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms

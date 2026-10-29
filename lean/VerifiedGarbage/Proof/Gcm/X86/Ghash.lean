@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Spec.Gcm.Contract
 import Mathlib.Tactic.SplitIfs
-import Mathlib.Data.List.Induction
 
 /-!
 # GHASH on x86 (32-bit): the whole function

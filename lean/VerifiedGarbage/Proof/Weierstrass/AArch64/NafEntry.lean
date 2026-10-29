@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigitRead
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowNeg

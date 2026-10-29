@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.X448.X86.Mem
 
 import VerifiedGarbage.Proof.X448.X86.Instr
 import VerifiedGarbage.Proof.Framework.Block
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 

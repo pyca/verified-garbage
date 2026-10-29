@@ -13,7 +13,6 @@ public import VerifiedGarbage.Impl.Weierstrass.X86_64.FastNaf
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafPrep
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafState
-import Mathlib.Tactic.Tauto
 
 /-! The width-nine recoder of a scalar of `n` words: its digits as sixteen-bit words. -/
 

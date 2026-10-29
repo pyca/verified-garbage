@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Aes.Blocks
 public import VerifiedGarbage.Proof.Gcm.Compose
 public import VerifiedGarbage.Proof.Framework.PowLit
-import Mathlib.Data.List.Induction
 public import VerifiedGarbage.Proof.Framework.Mem
 
 /-!

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.PointFn
 import VerifiedGarbage.Proof.Weierstrass.Arm.MontContract
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Complete point addition and doubling as functions, on 32-bit ARM: the contracts

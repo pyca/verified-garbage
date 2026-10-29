@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelArgs
-import Mathlib.Tactic.SplitIfs
 
 /-! Register-only helpers retain the filling allocation and position invariants. -/
 

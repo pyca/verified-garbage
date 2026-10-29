@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Dsa.RandomEncoding
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.Push
-import Mathlib.Tactic.Basic
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract

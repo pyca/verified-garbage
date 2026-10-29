@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyArith
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.Sse
 
 @[expose] public section

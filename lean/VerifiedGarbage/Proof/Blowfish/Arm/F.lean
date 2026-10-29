@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.Arm.Lookup
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Impl.Blowfish.Arm
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 

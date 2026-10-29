@@ -7,9 +7,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
 import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.CopyN
 meta import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToAdditive
-import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemCommon
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 

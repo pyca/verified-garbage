@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.Proof.Framework.Mem
-import Mathlib.Data.List.Induction
+import VerifiedGarbage.Proof.Framework.ListSnoc
 
 /-!
 # Blocks as bytes, and the counter blocks of `inc₃₂`
@@ -25,7 +25,7 @@ theorem beVal_append (bs : List Byte) (x : Byte) : beVal (bs ++ [x]) = 256 * beV
   simp [beVal, List.foldl_append]
 
 theorem beVal_lt (bs : List Byte) : beVal bs < 256 ^ bs.length := by
-  induction bs using List.reverseRecOn with
+  induction bs using VG.List.reverseRecOn with
   | nil => simp [beVal]
   | append_singleton bs x ih =>
     rw [beVal_append, List.length_append, List.length_singleton, Nat.pow_succ]
@@ -35,7 +35,7 @@ theorem beVal_lt (bs : List Byte) : beVal bs < 256 ^ bs.length := by
 /-- Byte `k` (from the left) of big-endian bytes. -/
 theorem beVal_digit (bs : List Byte) {k : Nat} (hk : k < bs.length) :
     beVal bs / 256 ^ (bs.length - 1 - k) % 256 = (bs.getD k 0).toNat := by
-  induction bs using List.reverseRecOn generalizing k with
+  induction bs using VG.List.reverseRecOn generalizing k with
   | nil => simp at hk
   | append_singleton bs x ih =>
     rw [beVal_append]

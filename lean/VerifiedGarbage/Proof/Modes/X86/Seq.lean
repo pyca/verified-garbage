@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Modes.X86.Step
 public import VerifiedGarbage.TCB.X86.Target
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AddrArith

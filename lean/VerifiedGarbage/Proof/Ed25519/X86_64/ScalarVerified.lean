@@ -2,13 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

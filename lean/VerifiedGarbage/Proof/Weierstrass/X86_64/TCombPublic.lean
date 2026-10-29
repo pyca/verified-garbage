@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import Mathlib.Tactic.ToDual
 
 /-! Direct table lookup when the comb scalar is public. -/
 

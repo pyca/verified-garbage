@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Order.Defs.PartialOrder
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 
 /-!

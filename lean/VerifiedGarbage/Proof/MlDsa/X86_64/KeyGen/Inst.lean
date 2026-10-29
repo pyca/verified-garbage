@@ -11,7 +11,6 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Base
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Call
-import Mathlib.Tactic.Conv
 
 /-!
 # ML-DSA key generation on x86-64, with this library's primitives

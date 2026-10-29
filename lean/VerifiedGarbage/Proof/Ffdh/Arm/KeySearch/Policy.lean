@@ -12,7 +12,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Terminal
 public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
-import Mathlib.Util.CompileInductive
 
 /-! Native 32-bit writes encode the shared four-u64 search sampling exactly. -/
 

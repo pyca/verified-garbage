@@ -19,7 +19,6 @@ meta import VerifiedGarbage.Proof.Framework.Range
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 public import Batteries.Tactic.Init
 public import Batteries.Tactic.PermuteGoals
 public import Batteries.Tactic.SeqFocus
-import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeometry

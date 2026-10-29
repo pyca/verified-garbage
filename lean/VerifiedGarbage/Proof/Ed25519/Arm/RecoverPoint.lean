@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
 public import VerifiedGarbage.Proof.Ed25519.Recover
 public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverSign
-import Mathlib.Tactic.SplitIfs
 
 /-! Merged from `Proof.Ed25519.Arm.RecoverCandidate`. -/
 

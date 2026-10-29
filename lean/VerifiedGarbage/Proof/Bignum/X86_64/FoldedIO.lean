@@ -8,8 +8,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Compare8
 import VerifiedGarbage.Proof.Bignum.X86_64.WordIOLoad
 import VerifiedGarbage.Proof.Bignum.X86_64.PcMain
 import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 
 @[expose] public section
 

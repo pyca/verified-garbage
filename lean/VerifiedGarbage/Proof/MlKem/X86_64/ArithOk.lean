@@ -14,7 +14,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.KgMul
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 public import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16
 import VerifiedGarbage.Proof.MlKem.X86_64.Lit
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
 import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
 import VerifiedGarbage.Proof.Framework.AddrArith

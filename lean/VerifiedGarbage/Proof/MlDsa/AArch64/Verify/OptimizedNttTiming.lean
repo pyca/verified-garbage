@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedNtt
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedTimingBase
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Optimized
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 

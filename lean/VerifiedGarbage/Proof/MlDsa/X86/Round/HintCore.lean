@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Round.Bits
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-DSA on x86 (32-bit): what `makeHint` and `useHint` compute per coefficient

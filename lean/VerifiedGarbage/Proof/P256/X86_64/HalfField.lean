@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.P256.X86_64.HalfMemory
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 public import VerifiedGarbage.Proof.P256.X86_64.Half
-import Mathlib.Tactic.SplitIfs
 
 /-! The modular halving block acts as division by two on Montgomery field slots. -/
 

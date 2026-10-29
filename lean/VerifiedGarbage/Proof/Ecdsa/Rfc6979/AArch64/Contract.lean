@@ -4,7 +4,6 @@ public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Impl.Ecdsa.AArch64
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Deterministic ECDSA on AArch64: the contract the proof is written against

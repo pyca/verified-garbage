@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Sha256.X86.Shared
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Streaming SHA-256 parameterized by compression on x86

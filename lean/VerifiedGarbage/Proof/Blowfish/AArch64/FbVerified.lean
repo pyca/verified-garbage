@@ -26,13 +26,11 @@ meta import VerifiedGarbage.Impl.Blowfish.AArch64.Modes
 meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Data.List.Induction
 import VerifiedGarbage.Proof.Blowfish.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import Mathlib.Data.List.Induction
 meta import VerifiedGarbage.Proof.Blowfish.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

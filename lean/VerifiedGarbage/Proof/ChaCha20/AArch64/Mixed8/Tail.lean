@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Loop
 
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Xor
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Loop
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Offset

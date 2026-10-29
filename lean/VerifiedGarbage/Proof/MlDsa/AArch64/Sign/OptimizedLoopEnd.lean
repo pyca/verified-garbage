@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksEnd
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChallenge
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseL
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopInit
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Block

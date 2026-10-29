@@ -5,12 +5,12 @@ public import VerifiedGarbage.Spec.Ffdh
 
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Ffdh.KeyScalar
-import Mathlib.Data.List.Induction
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.ListSnoc
 
 /-! # FFDH parameter candidates: the shaped big-endian encoding -/
 
@@ -105,7 +105,7 @@ private theorem or_low_sum {b : Nat} (hb : b < 256) (a : Nat) :
 
 theorem lastOne_value {bs : List Byte} (hne : bs ≠ []) :
     Spec.Rsa.os2ip (lastOne bs) = Spec.Rsa.os2ip bs ||| 1 := by
-  induction bs using List.reverseRecOn with
+  induction bs using VG.List.reverseRecOn with
   | nil => contradiction
   | append_singleton bs b _ =>
     have hbyte : ∀ b : Byte, Spec.Rsa.os2ip [b] = b.toNat := fun b => by simp [Spec.Rsa.os2ip]

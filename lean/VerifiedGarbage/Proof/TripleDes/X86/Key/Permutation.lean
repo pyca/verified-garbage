@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86.Permutation
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

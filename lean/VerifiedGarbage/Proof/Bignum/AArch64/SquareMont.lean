@@ -6,9 +6,7 @@ import VerifiedGarbage.Proof.Bignum.AArch64.SquareCorrect
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareCorrect
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareGuard
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareGuard
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
-meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Impl.Bignum.AArch64
 import VerifiedGarbage.Proof.Bignum.AArch64.Csub

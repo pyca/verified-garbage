@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Iter
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.AArch64.Counters
 
 /-!

@@ -8,7 +8,6 @@ import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.MdStream.Arm.Common
 import VerifiedGarbage.Proof.Blake2.Arm.CompressB
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Argon2 on ARMv7: the derivation's frames

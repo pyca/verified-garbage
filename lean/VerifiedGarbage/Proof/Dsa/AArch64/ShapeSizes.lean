@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeFrame
 public import VerifiedGarbage.Proof.Dsa.AArch64.WidthChoice
 public import VerifiedGarbage.Proof.Dsa.DomainShape
 import VerifiedGarbage.Proof.Framework.Block
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 

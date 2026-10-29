@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedCallTwo
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Top
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejTwo
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 

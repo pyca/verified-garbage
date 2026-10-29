@@ -6,10 +6,6 @@ import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.InstancePriority
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit

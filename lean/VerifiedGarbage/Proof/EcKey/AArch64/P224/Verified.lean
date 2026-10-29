@@ -7,9 +7,6 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import VerifiedGarbage.Proof.EcKey.AArch64.P224.Lit
 public import VerifiedGarbage.Impl.EcKey.P224.AArch64
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.EcKey.AArch64.Main
 meta import VerifiedGarbage.Proof.EcKey.AArch64.P224.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
@@ -17,9 +14,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.EcKey.AArch64.P224.Lit
 meta import VerifiedGarbage.Impl.EcKey.P224.AArch64
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
-meta import Mathlib.Tactic.Finiteness.Attr
 
 /-!
 # P-224 public keys on AArch64: `Verified`

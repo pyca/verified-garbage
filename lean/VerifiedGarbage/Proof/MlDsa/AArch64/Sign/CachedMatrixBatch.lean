@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedCallTwo
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Seed4
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixCall
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Blocks
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4

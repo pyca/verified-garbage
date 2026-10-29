@@ -14,11 +14,8 @@ import VerifiedGarbage.Proof.Framework.X86.Mmx
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Sha256.Stream
 import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
 import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.PlainSimp
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Streaming SHA-256 on x86 (32-bit): common lemmas

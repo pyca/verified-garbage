@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.Math
 public import VerifiedGarbage.Proof.Bignum.CrtFrame
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.RsaKeyGen.Gcd
 
 /-!

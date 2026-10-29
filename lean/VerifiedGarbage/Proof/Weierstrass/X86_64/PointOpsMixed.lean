@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsAdd
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedAdd
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedForward
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState

@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRowMath
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightTile
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMath
 
 @[expose] public section

@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
 import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN6
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Mont.X86_64.Ops

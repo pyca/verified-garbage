@@ -4,11 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import VerifiedGarbage.Proof.RsaKeyGen.CandMath
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
-import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # The low boundary of DSA scalar and group-element ranges -/

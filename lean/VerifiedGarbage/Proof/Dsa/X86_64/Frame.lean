@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Product
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 public import VerifiedGarbage.Proof.Bignum.CrtExp
-import Mathlib.Tactic.Set
 
 /-! # Framing the DSA child workspaces -/
 

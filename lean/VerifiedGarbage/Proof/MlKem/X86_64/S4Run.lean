@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.S4Parse
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Loop
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Tab
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.Offset

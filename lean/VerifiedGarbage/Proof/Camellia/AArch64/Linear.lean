@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Camellia.AArch64.Layers
 public import VerifiedGarbage.Proof.Camellia.Bitsliced
 public import VerifiedGarbage.Proof.Framework.AArch64.Linear
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # The linear layers of bitsliced Camellia on AArch64, by evaluation

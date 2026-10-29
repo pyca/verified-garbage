@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Mont.X86.Sse2.Columns
-import Mathlib.Util.CompileInductive
 
 /-! # `body params` leaks only public data
 

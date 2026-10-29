@@ -3,16 +3,10 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Lit
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Lit
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 
 /-!

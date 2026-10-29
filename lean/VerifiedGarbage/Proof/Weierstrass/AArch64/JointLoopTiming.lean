@@ -3,7 +3,6 @@ public import VerifiedGarbage.Impl.Weierstrass.AArch64.Joint
 public import VerifiedGarbage.Proof.Framework.RelCT
 
 import VerifiedGarbage.Proof.Ed25519.AArch64.Step
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 
 @[expose] public section

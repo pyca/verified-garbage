@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.X448.Arm.Mem
 import VerifiedGarbage.Proof.X448.Arm.BitWrite
 import VerifiedGarbage.Proof.X448.Arm.Carry
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

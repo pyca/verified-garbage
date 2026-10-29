@@ -5,9 +5,6 @@ import VerifiedGarbage.Proof.Rsa.X86.RvSlots
 import VerifiedGarbage.Proof.Rsa.X86.RvSubWrap
 import VerifiedGarbage.Proof.Rsa.X86.RvOps
 import Mathlib.Tactic.SplitIfs
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.Set
 
 /-! # Ordering the recovered factors, larger first -/
 

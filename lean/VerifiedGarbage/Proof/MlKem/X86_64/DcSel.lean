@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Decaps
 public import VerifiedGarbage.Proof.MlKem.X86_64.Lay
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.FragS
 import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
 import VerifiedGarbage.Proof.Framework.CallLay

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.MlKem.Arm.Common
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mul32
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 public import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Common
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-DSA on 32-bit ARM: the values of the arithmetic modulo `q`

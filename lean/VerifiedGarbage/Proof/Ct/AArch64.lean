@@ -20,8 +20,6 @@ public import VerifiedGarbage.Spec.Ct.Contract
 meta import VerifiedGarbage.Spec.Ct.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Bswap
 meta import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.AddrArith

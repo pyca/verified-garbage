@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP512r1.AArch64
-import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Points

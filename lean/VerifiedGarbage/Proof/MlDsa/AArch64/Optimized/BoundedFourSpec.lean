@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourShake
 public import VerifiedGarbage.Spec.MlDsa.BoundedFour
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

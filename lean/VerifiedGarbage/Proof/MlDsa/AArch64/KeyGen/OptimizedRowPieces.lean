@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedFinish
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedRow
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestRow
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRoundTiming
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 
 @[expose] public section

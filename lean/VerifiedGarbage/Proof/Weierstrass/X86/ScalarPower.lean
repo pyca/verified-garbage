@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.X86.ScalarPower
 public import VerifiedGarbage.Proof.Weierstrass.X86.PowerChain
 import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.X86.Loop
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog

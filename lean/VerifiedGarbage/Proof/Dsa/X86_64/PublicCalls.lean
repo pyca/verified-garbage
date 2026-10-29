@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCalls
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicPower
-import Mathlib.Tactic.Set
 
 /-! # Public exponentiation in the DSA parent workspace -/
 

@@ -2,11 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.RvKS
 import VerifiedGarbage.Proof.Rsa.KeyViews
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Basic.IsEmpty.Defs
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

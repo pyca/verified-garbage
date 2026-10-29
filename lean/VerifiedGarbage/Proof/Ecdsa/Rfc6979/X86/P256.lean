@@ -5,8 +5,6 @@ public import VerifiedGarbage.Spec.Ecdsa.P256
 import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
 import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
 public import VerifiedGarbage.Impl.Ecdsa.P256.X86Comb
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
 import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
 import VerifiedGarbage.Proof.Ecdsa.X86.Lit
@@ -16,8 +14,6 @@ meta import VerifiedGarbage.Spec.Ecdsa.P256
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
 meta import VerifiedGarbage.Impl.Ecdsa.P256.X86Comb
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
 meta import VerifiedGarbage.Proof.Ecdsa.X86.Lit

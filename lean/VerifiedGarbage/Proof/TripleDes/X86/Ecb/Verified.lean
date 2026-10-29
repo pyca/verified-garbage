@@ -39,7 +39,6 @@ import VerifiedGarbage.Proof.TripleDes.X86.RestoredOutput
 import VerifiedGarbage.Proof.TripleDes.X86.VerifiedBlock
 import VerifiedGarbage.Proof.TripleDes.X86.WordStore
 import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
-import Mathlib.Tactic.SplitIfs
 
 /-! ## `Call` -/
 

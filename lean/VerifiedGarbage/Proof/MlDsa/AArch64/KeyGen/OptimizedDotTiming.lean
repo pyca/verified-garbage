@@ -3,12 +3,10 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRowPieces
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedTimingBase
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotCallTiming
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDotValue
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedDot
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 import VerifiedGarbage.Proof.MlKem.Arith
-import Mathlib.Tactic.Conv
 
 @[expose] public section
 

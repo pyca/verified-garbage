@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Window
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 public import VerifiedGarbage.Proof.Weierstrass.WinLay
-import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Weierstrass.Law3
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit

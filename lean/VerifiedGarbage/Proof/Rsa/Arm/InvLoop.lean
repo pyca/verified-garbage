@@ -3,9 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.InvStep
 import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 import VerifiedGarbage.Proof.Framework.Block
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Widget.Calc
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Rsa.KeyMath
 

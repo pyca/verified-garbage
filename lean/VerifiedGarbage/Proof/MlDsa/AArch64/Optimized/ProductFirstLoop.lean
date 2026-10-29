@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductPassMemory
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MultiplyInverse
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

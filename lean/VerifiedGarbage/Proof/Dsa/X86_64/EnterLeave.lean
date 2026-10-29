@@ -2,11 +2,7 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86_64.Core
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
 
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Bignum.CrtMath

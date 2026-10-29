@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAdd
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacDouble
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero

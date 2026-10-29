@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CallParams
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Memory
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Util.CompileInductive
 
 /-! Candidate calls may overwrite word 14, but preserve the complete retry policy and live headers. -/
 

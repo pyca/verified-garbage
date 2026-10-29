@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.X25519.Arm.Mul
@@ -39,14 +38,12 @@ meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
-import Mathlib.Tactic.SplitIfs
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarMulAddEngine`. -/
 

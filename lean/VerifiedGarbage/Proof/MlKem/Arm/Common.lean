@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.MlKem.Mem
 public import VerifiedGarbage.TCB.Arm.Target
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.MlKem.Arith

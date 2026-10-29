@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 public import VerifiedGarbage.Proof.Ecdh.AArch64.MulOk
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
-import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed25519.AArch64.Mem

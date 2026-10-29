@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.MlKem.Mem
 public import Batteries.Tactic.Init
 public import Batteries.Tactic.PermuteGoals
 public import Batteries.Tactic.SeqFocus
-import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.Framework.Mem
 

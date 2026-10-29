@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
-import Mathlib.Tactic.SplitIfs
 
 /-! ## From `BoundedFourLeak.lean` -/
 

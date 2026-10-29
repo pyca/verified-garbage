@@ -8,12 +8,8 @@ import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.RsaPss.Params
 import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Tactic.ToDual
 
 /-!
 # RSASSA-PSS signing on x86-64: correctness

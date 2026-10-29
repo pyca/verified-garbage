@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Calls
 public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Pre
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
 public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
 import VerifiedGarbage.Proof.MlKem.Mem

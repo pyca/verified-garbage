@@ -4,9 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchControl
 
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchLoop
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchStatus
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -15,9 +13,7 @@ meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchControl
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchLoop
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchStatus
-meta import Mathlib.Tactic.Attr.Core
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

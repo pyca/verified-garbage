@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Lay
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-DSA key generation on AArch64: what holds throughout, and pieces

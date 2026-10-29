@@ -4,10 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchControl
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchLoop
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchStatus
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -15,10 +12,7 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchControl
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchLoop
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchStatus
-meta import Mathlib.Tactic.Finiteness.Attr
-meta import Mathlib.Tactic.Attr.Core
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

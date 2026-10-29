@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointOps
 public import VerifiedGarbage.Proof.Framework.Block
 

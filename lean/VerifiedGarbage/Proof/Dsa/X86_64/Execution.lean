@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Call
 
 import VerifiedGarbage.Proof.Dsa.X86_64.BufferFrame
 import VerifiedGarbage.Proof.Dsa.Layout
-import Mathlib.Tactic.Set
 
 /-! # Persistent state across DSA arithmetic and validation schedules -/
 

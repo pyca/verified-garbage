@@ -8,8 +8,6 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSuccess
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OnSuccess
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -25,8 +23,6 @@ meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSuccess
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OnSuccess
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import Mathlib.Tactic.Finiteness.Attr
-meta import Mathlib.Tactic.Push
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Run
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

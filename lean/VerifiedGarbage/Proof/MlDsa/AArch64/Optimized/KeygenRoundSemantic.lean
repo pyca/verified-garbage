@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundMemory
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 

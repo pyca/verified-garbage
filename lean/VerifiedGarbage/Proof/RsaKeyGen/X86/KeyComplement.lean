@@ -8,10 +8,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.WordBounds32
 import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.Rsa.InverseArithmetic
 import VerifiedGarbage.Proof.Mont.X86.WordOps
-import Mathlib.Data.Nat.Init
-import Mathlib.Order.Defs.Prop
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
 
 /-! # Form the public-exponent complement from the tiny inverse coefficient -/
 

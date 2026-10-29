@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Basic.IsEmpty.Defs
 
 /-!
 # An RSA key from its primes on AArch64: the precondition, as the code uses it

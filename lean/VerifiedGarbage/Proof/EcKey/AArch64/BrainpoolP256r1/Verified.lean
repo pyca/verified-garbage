@@ -4,18 +4,12 @@ public import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP256r1.Main
 public import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP256r1.Contract
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Config
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
 import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP256r1.Lit
-import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP256r1.Main
 meta import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP256r1.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Config
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
 meta import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP256r1.Lit
-meta import Mathlib.Tactic.Finiteness.Attr
 
 /-!
 # brainpoolP256r1 public keys on AArch64: `Verified`

@@ -5,8 +5,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopCorrect
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Correct
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChallenge
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksEnd
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

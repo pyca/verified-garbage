@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import Mathlib.Tactic.Conv
 
 /-!
 # HMAC's `init` over a Merkle–Damgård hash function: the padded keys

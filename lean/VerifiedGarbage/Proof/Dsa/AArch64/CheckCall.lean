@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.CheckFrame
 public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
 import VerifiedGarbage.Proof.Dsa.AArch64.EnterLeave
 import VerifiedGarbage.Proof.Framework.Block
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 

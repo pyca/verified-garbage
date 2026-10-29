@@ -4,9 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
 
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-! # FFDH on x86-64: workspace switches and Boolean branches -/

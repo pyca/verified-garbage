@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Idea.Arith32
 public import VerifiedGarbage.Impl.Idea.Arm
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.PlainSimp

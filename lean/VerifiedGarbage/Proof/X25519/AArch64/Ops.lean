@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.X25519.AArch64.Arith
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.X25519.AArch64
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics

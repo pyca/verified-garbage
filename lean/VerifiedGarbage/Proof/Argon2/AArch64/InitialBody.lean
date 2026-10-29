@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Argon2.AArch64.InitialBody
 public import VerifiedGarbage.Proof.Argon2.AArch64.InitFill
 public import VerifiedGarbage.Proof.Argon2.AArch64.Initial
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 

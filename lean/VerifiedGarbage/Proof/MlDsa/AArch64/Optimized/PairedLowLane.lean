@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedReduce
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowVec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFrame
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate

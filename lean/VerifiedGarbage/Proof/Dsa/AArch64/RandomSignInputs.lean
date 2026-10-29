@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.RandomState
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
 import VerifiedGarbage.Proof.Bignum.Octets
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset

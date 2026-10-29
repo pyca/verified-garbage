@@ -3,9 +3,7 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.Finiteness.Attr
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp

@@ -4,14 +4,8 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.CvCheck
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
 import VerifiedGarbage.Proof.Rsa.KeyMath
 import VerifiedGarbage.Proof.Bignum.Octets
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import Mathlib.Data.Nat.Init
-import Mathlib.Order.Defs.Prop
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
 
 /-!
 # `vg_rsa_crt_values` on x86-64: `main`

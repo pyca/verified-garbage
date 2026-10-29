@@ -4,12 +4,10 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedState
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotCallTiming
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Optimized
 public import VerifiedGarbage.Spec.MlDsa.Montgomery
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.MlKem.Arith
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

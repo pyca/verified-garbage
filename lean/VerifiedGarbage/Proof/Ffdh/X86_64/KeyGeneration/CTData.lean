@@ -1,7 +1,5 @@
 module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Data
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 import VerifiedGarbage.Proof.RsaKeyGen.Table

@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.RsaKeyGen.KeyInv
-import Mathlib.Tactic.ToAdditive
-import Mathlib.Tactic.ToDual
 
 /-! # The quotient-based private exponent with an exact small correction
 

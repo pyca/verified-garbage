@@ -20,7 +20,6 @@ meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Loop
 meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_hint_bit_pack`

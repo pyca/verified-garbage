@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentHash
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMasksTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedDecodeTiming
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackCall
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseC
 import VerifiedGarbage.Proof.Framework.AArch64.Syms

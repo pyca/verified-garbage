@@ -5,11 +5,9 @@ import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Update
 import VerifiedGarbage.Proof.Rc2.AArch64.Stream.ConstantTime
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Rc2.Scratch
-import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Lit
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

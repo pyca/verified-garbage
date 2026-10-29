@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArgumentBlocksCT
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.OmegaLit
@@ -16,8 +14,6 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArgumentBlocksCT
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import Mathlib.Tactic.Finiteness.Attr
-meta import Mathlib.Tactic.Push
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.OmegaLit

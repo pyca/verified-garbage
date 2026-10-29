@@ -5,17 +5,11 @@ public import VerifiedGarbage.Proof.EcKey.AArch64.P192.Contract
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Config
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import VerifiedGarbage.Proof.EcKey.AArch64.P192.Lit
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.EcKey.AArch64.P192.Main
 meta import VerifiedGarbage.Proof.EcKey.AArch64.P192.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Config
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.EcKey.AArch64.P192.Lit
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
-meta import Mathlib.Tactic.Finiteness.Attr
 
 /-!
 # p192 public keys on AArch64: `Verified`

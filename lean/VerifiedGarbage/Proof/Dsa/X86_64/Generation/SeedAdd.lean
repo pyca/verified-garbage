@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Spec.Dsa
 public import VerifiedGarbage.Spec.Rsa.Contract
 
-import Mathlib.Data.List.Induction
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Dsa.Generation.SeedAdd
 import VerifiedGarbage.Proof.Dsa.Encoding
@@ -16,6 +15,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.TCB.X86_64.Isa
 import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.Proof.Framework.ListSnoc
 
 /-! # Wrapped addition across an entire seed -/
 
@@ -60,7 +60,7 @@ private theorem seedAddTail_ok (bs : List Byte) {s : State} {rp op : Addr} {carr
       Spec.Rsa.bytesAt t.mem op bs.length =
         Spec.Dsa.encodeBE bs.length (Spec.Dsa.decodeBE bs + carry) ∧
       (∀ a, (∀ i < bs.length, a ≠ off op i) → t.mem a = s.mem a) ∧ Keep [.rax, .rcx, .rdx] s t := by
-  induction bs using List.reverseRecOn generalizing s carry with
+  induction bs using VG.List.reverseRecOn generalizing s carry with
   | nil =>
     refine WP.mono (WP.keep [.rax, .rcx, .rdx] (Q := fun t => t = s) (by xrun) rfl) fun t ⟨rfl, hk⟩ => ?_
     exact ⟨rfl, fun _ _ => rfl, hk⟩
@@ -121,7 +121,7 @@ private theorem seedAddUnrolled_ok (bs : List Byte) {s : State} {rp op : Addr} {
       Spec.Rsa.bytesAt t.mem op bs.length =
         Spec.Dsa.encodeBE bs.length (Spec.Dsa.decodeBE bs + carry) ∧
       (∀ a, (∀ i < bs.length, a ≠ off op i) → t.mem a = s.mem a) ∧ Keep [.rax, .rcx] s t := by
-  induction bs using List.reverseRecOn generalizing s carry with
+  induction bs using VG.List.reverseRecOn generalizing s carry with
   | nil =>
     refine WP.mono (WP.keep [.rax, .rcx] (Q := fun t => t = s) (by xrun) rfl) fun t ⟨rfl, hk⟩ => ?_
     exact ⟨rfl, fun _ _ => rfl, hk⟩

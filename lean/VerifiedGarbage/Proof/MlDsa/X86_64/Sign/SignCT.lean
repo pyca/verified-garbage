@@ -5,8 +5,6 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseOCT
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseOCT
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseACT
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseACT
-import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.BlockTr
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.BlockTr
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseKCT

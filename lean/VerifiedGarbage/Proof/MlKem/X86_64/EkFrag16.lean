@@ -10,8 +10,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.EkBase
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgA16
 meta import VerifiedGarbage.Impl.MlKem.X86_64.Encaps16
 import all Init.Data.Nat.Bitwise.Basic
-import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Proof.Framework.Offset
 

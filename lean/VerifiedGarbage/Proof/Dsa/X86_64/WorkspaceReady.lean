@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Execution
 public import VerifiedGarbage.Proof.Dsa.X86_64.Workspaces
 import VerifiedGarbage.Proof.Dsa.Layout
-import Mathlib.Tactic.Set
 
 /-! # Establishing the persistent DSA context from caller scratch -/
 

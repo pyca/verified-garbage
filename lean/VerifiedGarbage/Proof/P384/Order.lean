@@ -6,11 +6,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Order
 public import VerifiedGarbage.Proof.Weierstrass.Booth
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.P384
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 
 /-!
 # P-384: `G` has order `n`, for the comb with Booth's digits

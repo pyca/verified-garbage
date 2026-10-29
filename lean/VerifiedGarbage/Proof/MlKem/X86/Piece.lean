@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM on x86 (32-bit): pieces of code, correct and constant time

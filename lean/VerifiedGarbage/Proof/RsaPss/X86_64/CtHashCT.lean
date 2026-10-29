@@ -10,14 +10,12 @@ meta import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.X86_64.Frame
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Sha256.X86_64.Compress
-meta import Mathlib.Tactic.Set
 meta import VerifiedGarbage.Proof.Bignum.Math
 meta import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop

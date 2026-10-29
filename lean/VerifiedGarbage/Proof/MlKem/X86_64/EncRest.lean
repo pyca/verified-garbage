@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncBase
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragEM
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.KgB
 import VerifiedGarbage.Proof.MlKem.X86_64.FragDM
 import VerifiedGarbage.Proof.MlKem.X86_64.FragC

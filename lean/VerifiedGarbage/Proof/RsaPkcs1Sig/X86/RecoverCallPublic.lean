@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Weierstrass.Point
-import Mathlib.Tactic.ToDual
 
 /-! # The nested public operation observes only the shared exponent and key words -/
 

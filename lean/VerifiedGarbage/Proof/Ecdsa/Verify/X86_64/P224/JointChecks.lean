@@ -8,10 +8,7 @@ import VerifiedGarbage.Proof.P224.X86_64.JointLayout
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 public import VerifiedGarbage.Impl.P224.X86_64.Joint
 import VerifiedGarbage.Proof.Weierstrass.X86_64.P224Literals
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
 import VerifiedGarbage.Proof.Framework.LitShare
-import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
 meta import VerifiedGarbage.Proof.P224.X86_64.JointTiming
@@ -20,10 +17,7 @@ meta import VerifiedGarbage.Proof.P224.X86_64.JointLayout
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Impl.P224.X86_64.Joint
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P224Literals
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
 meta import VerifiedGarbage.Proof.Framework.LitShare
-meta import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit

@@ -3,9 +3,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorLoad
 
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Basic.IsEmpty.Defs
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 

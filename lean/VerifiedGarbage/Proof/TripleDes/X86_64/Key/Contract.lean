@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.ConstantTime
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section

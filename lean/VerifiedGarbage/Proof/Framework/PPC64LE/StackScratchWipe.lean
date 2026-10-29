@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.TCB.Artifact

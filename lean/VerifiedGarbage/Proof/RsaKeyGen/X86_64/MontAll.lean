@@ -8,7 +8,6 @@ public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
 public import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
 public import VerifiedGarbage.Proof.Bignum.CrtFrame
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Copy
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdE
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop

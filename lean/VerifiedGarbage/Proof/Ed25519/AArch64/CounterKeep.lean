@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Field
-import Mathlib.Tactic.SplitIfs
 
 /-! Field programs which also use the public loop counter x19. -/
 

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Bounds
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import Mathlib.Util.CompileInductive
 
 /-! Rejection advances the public tape and consumed count by precisely the candidate's usage. -/
 

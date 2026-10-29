@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Weierstrass.Naf5
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigitRead
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafCore
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic

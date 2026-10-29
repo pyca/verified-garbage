@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.PointFieldTiming
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Weierstrass.JacMul
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAdd

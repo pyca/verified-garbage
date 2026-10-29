@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFront
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
 
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtBack
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 
 /-!
 # RSA with the CRT on x86-64: the computation for a valid modulus

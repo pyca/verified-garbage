@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsVal
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero

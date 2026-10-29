@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Linear
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Linear blocks with words in slots, on ARMv7

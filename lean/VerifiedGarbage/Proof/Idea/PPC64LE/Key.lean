@@ -30,7 +30,6 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Idea.PPC64LE.Lit
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 

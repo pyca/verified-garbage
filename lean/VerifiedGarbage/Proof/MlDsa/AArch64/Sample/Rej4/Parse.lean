@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.ParseMem
 public import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Zero
 import VerifiedGarbage.Proof.MlDsa.Sample.Hash

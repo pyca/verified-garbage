@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedHintFinish
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLowState
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.MlKem.Arith
 

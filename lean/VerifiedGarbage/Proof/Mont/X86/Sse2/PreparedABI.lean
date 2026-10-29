@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Mont.X86.Square.FinalMath
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Mont.X86.Sse2.Body
-import Mathlib.Util.CompileInductive
 
 /-! # `vg_rsa_mont_mul`'s entry
 

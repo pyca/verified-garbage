@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
 public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.PointOps
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
 
 /-!

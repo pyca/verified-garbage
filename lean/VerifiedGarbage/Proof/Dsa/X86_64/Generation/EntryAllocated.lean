@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
@@ -14,7 +13,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
-import Mathlib.Tactic.ToDual
 
 /-! # Input buffers and stack arguments survive the saved-register prologue -/
 

@@ -5,11 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 
 import VerifiedGarbage.Proof.Rsa.Ranges
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 
 /-!
 # RSA with the CRT on x86-64: setting up the primes

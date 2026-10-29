@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.DcBase
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
 import VerifiedGarbage.Proof.MlKem.X86_64.FragC
 import VerifiedGarbage.Proof.MlKem.X86_64.FragL

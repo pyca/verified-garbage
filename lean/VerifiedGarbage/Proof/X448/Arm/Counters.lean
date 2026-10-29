@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.Arm.Isa
 
 import VerifiedGarbage.Proof.X25519.Arm.Instr
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

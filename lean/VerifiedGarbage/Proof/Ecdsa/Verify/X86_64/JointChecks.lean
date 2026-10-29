@@ -15,9 +15,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.P256Literals
 import VerifiedGarbage.Proof.Weierstrass.X86_64.P256Templates
 import VerifiedGarbage.Proof.P256.X86_64.JointLayout
 import VerifiedGarbage.Proof.Framework.LitShare
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitAdx
 import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
@@ -37,9 +34,6 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P256Literals
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P256Templates
 meta import VerifiedGarbage.Proof.P256.X86_64.JointLayout
 meta import VerifiedGarbage.Proof.Framework.LitShare
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified

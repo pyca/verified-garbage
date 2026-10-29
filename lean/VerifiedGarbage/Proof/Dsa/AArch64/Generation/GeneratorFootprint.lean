@@ -3,8 +3,6 @@ public import VerifiedGarbage.Impl.Dsa.Generation.Layout
 public import VerifiedGarbage.Proof.Dsa.AArch64.Call
 
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 

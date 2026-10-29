@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.CutSetup
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Cut
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # FFDH on x86-64: preserve domain and initialized y while sampling x -/

@@ -9,7 +9,6 @@ meta import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Crypt
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.CallArgs
 meta import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
 meta import VerifiedGarbage.Proof.AesCcm.PPC64LE.CallArgs
-import Mathlib.Data.List.Induction
 public import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
 public import VerifiedGarbage.Proof.Aes.SboxSpec
 public import VerifiedGarbage.Proof.AesCcm.PPC64LE.Env

@@ -7,7 +7,6 @@ public import VerifiedGarbage.Impl.Blowfish.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!

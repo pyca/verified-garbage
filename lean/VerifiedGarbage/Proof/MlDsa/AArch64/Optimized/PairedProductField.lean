@@ -7,15 +7,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Tactic.ToAdditive
-import Mathlib.Tactic.ToDual
 
 /-! ## From `PairedFirstSource.lean` -/
 

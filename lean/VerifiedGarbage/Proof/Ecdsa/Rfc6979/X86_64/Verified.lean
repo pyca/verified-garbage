@@ -1,5 +1,4 @@
 module
-import Mathlib.Tactic.Tauto
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Hash
 
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.CT

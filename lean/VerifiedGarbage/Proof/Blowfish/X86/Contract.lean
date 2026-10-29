@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.SigEval
 public import VerifiedGarbage.Proof.Blowfish.Scratch
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Framework.X86.Taint

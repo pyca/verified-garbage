@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 public import VerifiedGarbage.Impl.Rc4.AArch64
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # The table registers

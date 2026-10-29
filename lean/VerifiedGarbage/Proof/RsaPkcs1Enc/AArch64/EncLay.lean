@@ -3,11 +3,9 @@ module
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Encrypt
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
-import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Spec.RsaPkcs1Enc
 import VerifiedGarbage.Proof.Framework.Offset

@@ -4,9 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 
 /-! # Output clearing from the generation controller's sixteen-word header -/
 

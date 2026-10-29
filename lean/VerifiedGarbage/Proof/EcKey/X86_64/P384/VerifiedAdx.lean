@@ -7,11 +7,8 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.EcKey.X86_64.P384.LitAdx
 public import VerifiedGarbage.Impl.EcKey.P384.X86_64
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.EcKey.X86_64.P384.Contract
 public import VerifiedGarbage.Proof.EcKey.X86_64.Main
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 import VerifiedGarbage.Proof.EcKey.X86_64.P384.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
@@ -23,11 +20,8 @@ meta import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.LitAdx
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.Verified
 meta import VerifiedGarbage.Impl.EcKey.P384.X86_64
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.Contract
 meta import VerifiedGarbage.Proof.EcKey.X86_64.Main
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx

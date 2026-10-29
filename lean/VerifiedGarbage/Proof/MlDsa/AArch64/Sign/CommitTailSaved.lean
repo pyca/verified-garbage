@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailPro
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailCoreState
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section

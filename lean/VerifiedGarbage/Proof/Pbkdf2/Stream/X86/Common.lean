@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Sha256.X86.Compress
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha256.Stream
 import Mathlib.Tactic.Set
-import Mathlib.Tactic.Conv
 
 /-!
 # Calls of a streaming hash function on x86 (32-bit): byte loops, registers, stack

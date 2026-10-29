@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.PrimsOk
 public import VerifiedGarbage.Spec.MlDsa.RejNTT2
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRestTiming
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPieceTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedCorrect
 

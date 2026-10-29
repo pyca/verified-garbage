@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafPrepTiming
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86
 public import VerifiedGarbage.Impl.Ecdsa.P256.X86Comb
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 import VerifiedGarbage.Proof.Weierstrass.WinLay
@@ -13,8 +11,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86.TComb
 meta import VerifiedGarbage.Proof.Weierstrass.X86.NafPrepTiming
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.X86
 meta import VerifiedGarbage.Impl.Ecdsa.P256.X86Comb
-meta import Mathlib.Tactic.Finiteness.Attr
-meta import Mathlib.Tactic.Attr.Core
 meta import Aesop.BuiltinRules
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 meta import VerifiedGarbage.Proof.Weierstrass.WinLay

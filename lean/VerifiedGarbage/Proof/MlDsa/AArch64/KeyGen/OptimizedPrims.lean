@@ -8,8 +8,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.PrimsOk
 public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

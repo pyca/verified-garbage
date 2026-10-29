@@ -1,8 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 import VerifiedGarbage.Proof.RsaKeyGen.Table

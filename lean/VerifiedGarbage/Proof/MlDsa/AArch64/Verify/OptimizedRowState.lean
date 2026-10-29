@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowEnd
 
-import Mathlib.Tactic.Conv
 
 @[expose] public section
 

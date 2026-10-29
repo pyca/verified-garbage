@@ -3,8 +3,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.S4CT
 
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Verified
 meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Verified
-import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
 meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
 import VerifiedGarbage.Proof.MlKem.Bits

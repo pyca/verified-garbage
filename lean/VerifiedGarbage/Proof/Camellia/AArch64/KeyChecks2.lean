@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.AArch64.KeyChecks
 public import VerifiedGarbage.Impl.Camellia.AArch64.ExpandKey
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # The key schedule's evaluated facts on AArch64

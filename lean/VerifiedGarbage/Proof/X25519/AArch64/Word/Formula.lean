@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Slots
 public import VerifiedGarbage.Proof.X25519.Ladder
-import Mathlib.Tactic.SplitIfs
 
 /-! The shared field operations implement precisely the RFC 7748 ladder formulas. -/
 

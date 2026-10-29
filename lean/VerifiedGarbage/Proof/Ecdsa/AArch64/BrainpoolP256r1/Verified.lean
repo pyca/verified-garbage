@@ -7,10 +7,7 @@ public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Lit
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.AArch64
-import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Main
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Config
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Contract
@@ -18,10 +15,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.Lit
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.AArch64
-meta import Mathlib.Tactic.Finiteness.Attr
 
 /-! # brainpoolP256r1 signing on AArch64: correctness and constant time -/
 

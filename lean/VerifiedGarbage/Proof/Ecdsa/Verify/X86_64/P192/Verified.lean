@@ -11,9 +11,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P192.Lit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P192.X86_64
 import VerifiedGarbage.Proof.Framework.LitShare
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Lit
 import VerifiedGarbage.Proof.Weierstrass.WinLay
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
@@ -27,9 +24,6 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P192.Lit
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P192.X86_64
 meta import VerifiedGarbage.Proof.Framework.LitShare
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Lit
 meta import VerifiedGarbage.Proof.Weierstrass.WinLay
 import VerifiedGarbage.Proof.Framework.Lit

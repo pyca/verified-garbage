@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.P256.X86_64.DoubleHalf
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Blocks
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState

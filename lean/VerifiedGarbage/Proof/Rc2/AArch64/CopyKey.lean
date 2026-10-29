@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rc2.AArch64.KeyLoop
 public import VerifiedGarbage.Proof.Rc2.Expansion
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The key-copy loop -/

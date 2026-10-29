@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Dsa.X86.RandomSample
 import VerifiedGarbage.Proof.Dsa.X86.RandomPrepare
 import VerifiedGarbage.Proof.Dsa.RandomSign
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import Mathlib.Basic.Logic.Basic
 
 /-!
 # The randomized signer's body (x86)

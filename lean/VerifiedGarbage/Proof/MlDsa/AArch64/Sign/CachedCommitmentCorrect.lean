@@ -6,8 +6,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashFrame
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashSetup
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashNonce
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskPrefixTailTiming
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

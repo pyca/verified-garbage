@@ -1,6 +1,4 @@
 module
-import Mathlib.Tactic.Set
-import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Sig

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

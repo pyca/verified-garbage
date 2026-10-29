@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha256.Stream
-import Mathlib.Tactic.Conv
 
 /-!
 # Calls of a streaming hash function on 32-bit ARM: the byte loops

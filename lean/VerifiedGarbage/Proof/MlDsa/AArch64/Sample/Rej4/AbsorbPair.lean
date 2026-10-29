@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbArgs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SeedFrame
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Env
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Absorb
 import VerifiedGarbage.Proof.Framework.Offset

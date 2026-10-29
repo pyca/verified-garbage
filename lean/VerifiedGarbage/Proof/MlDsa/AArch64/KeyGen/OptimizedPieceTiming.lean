@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedTimingBase
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 
 @[expose] public section

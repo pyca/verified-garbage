@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductSat
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryCorrect
 public import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.X25519.X86_64.Small
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.X25519.X86_64.AddSub
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!

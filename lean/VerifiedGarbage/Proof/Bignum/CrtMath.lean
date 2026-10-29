@@ -1,7 +1,6 @@
 module
 
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.ModArith
 import VerifiedGarbage.Proof.Framework.PowLit
 

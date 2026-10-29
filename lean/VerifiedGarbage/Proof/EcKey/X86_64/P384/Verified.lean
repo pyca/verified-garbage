@@ -9,10 +9,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.EcKey.X86_64.P384.Lit
 public import VerifiedGarbage.Impl.EcKey.P384.X86_64
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
 import Batteries.Data.List.Lemmas
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 meta import VerifiedGarbage.Proof.EcKey.X86_64.Main
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.Contract
@@ -23,10 +20,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.Lit
 meta import VerifiedGarbage.Impl.EcKey.P384.X86_64
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
 meta import Batteries.Data.List.Lemmas
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Lit

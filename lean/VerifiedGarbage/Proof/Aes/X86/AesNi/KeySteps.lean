@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyArith
 import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

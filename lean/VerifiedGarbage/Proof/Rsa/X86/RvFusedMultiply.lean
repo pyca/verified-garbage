@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Cold
 public import VerifiedGarbage.Proof.Rsa.X86.RvFusedSmall
 import VerifiedGarbage.Proof.Rsa.X86.RvSlots
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Spec.Weierstrass

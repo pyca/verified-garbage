@@ -5,7 +5,6 @@ public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
 import VerifiedGarbage.Proof.Dsa.X86_64.Result
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Dsa.SizeBounds
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Verification computation, result return and ABI register restoration -/

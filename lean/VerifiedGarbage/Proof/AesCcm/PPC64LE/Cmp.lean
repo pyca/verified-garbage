@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.AesCcm.Compare
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Data.List.Induction
 public import VerifiedGarbage.Impl.Aes.Circuit
 public import VerifiedGarbage.Impl.AesCcm.PPC64LE
 public import VerifiedGarbage.Proof.Aes.SboxSpec

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-import Mathlib.Tactic.SplitIfs
 
 /-! ## From `ResponseHintSemantic.lean` -/
 

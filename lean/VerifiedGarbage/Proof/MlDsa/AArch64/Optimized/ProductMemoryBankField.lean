@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductPassMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
 public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
 
 @[expose] public section

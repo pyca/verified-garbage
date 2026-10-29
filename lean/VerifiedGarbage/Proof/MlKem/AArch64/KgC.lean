@@ -2,8 +2,6 @@ module
 
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgA
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-!

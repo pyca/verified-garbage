@@ -19,8 +19,6 @@ public import VerifiedGarbage.TCB.X86.Target
 meta import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Mont.X86.Rt.ABI
 meta import VerifiedGarbage.Proof.Mont.X86.Rt.ABI
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Taint
 public import Init.Data.BitVec.BasicAux

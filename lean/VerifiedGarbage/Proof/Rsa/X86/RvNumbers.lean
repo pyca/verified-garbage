@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Rsa.X86.RvArguments
 import VerifiedGarbage.Proof.Rsa.X86.RvSubWrap
 import VerifiedGarbage.Proof.Rsa.X86.RvSkip
 import VerifiedGarbage.Proof.Rsa.X86.RvScalarOps
-import Mathlib.Basic.IsEmpty.Defs
 
 /-! # Exact exponent product and the positive-even precondition for recovery -/
 

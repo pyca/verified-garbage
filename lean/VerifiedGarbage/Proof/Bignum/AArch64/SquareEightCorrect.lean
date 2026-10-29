@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLayout
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRaw
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareCorrect
 import VerifiedGarbage.Proof.Bignum.AArch64.FastFinish
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcRestore
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareFinish
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout

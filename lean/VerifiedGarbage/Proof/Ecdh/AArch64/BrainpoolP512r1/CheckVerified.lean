@@ -4,9 +4,6 @@ public import VerifiedGarbage.Proof.Ecdh.AArch64.CheckPoint
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Config
 import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP512r1Literals
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.AArch64
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -15,9 +12,6 @@ meta import VerifiedGarbage.Proof.Ecdh.AArch64.CheckPoint
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Config
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP512r1Literals
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.AArch64
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

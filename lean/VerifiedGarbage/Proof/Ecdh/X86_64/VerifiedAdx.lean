@@ -9,10 +9,7 @@ import VerifiedGarbage.Proof.Ecdh.X86_64.LitAdx
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Contract
 public import VerifiedGarbage.Proof.Ecdh.X86_64.WinJac
 public import VerifiedGarbage.Impl.Ecdh.P256.X86_64
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
 import VerifiedGarbage.Proof.Framework.LitShare
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Ecdh.X86_64.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
@@ -26,10 +23,7 @@ meta import VerifiedGarbage.Proof.Ecdh.X86_64.Verified
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.Contract
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.WinJac
 meta import VerifiedGarbage.Impl.Ecdh.P256.X86_64
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
 meta import VerifiedGarbage.Proof.Framework.LitShare
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified

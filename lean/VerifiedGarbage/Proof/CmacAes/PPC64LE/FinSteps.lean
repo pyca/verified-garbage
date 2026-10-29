@@ -7,8 +7,6 @@ import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.CmacAes.PPC64LE
 public import VerifiedGarbage.Proof.Aes.SboxSpec
 public import VerifiedGarbage.Proof.AesCbc.Spec

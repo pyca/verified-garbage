@@ -7,10 +7,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Proof.Bignum.Words
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 

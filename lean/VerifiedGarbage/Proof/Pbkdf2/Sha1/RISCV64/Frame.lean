@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.RISCV64.Sha1
 public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RISCV64.Align
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Pbkdf2.Sha1.RISCV64
 public import VerifiedGarbage.Proof.Pbkdf2.Sha1Words
 

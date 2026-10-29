@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackTailMath
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

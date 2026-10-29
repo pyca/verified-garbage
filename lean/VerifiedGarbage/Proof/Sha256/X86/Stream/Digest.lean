@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Sha256.Digest
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MdStream.Prefix
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate

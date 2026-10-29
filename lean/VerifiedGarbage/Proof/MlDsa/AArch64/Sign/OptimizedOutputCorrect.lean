@@ -7,8 +7,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CanonicalizeCallTimi
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseO
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedOutputPack
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Spec.TripleDes
 public import VerifiedGarbage.TCB.AArch64.Isa
 import VerifiedGarbage.Proof.Framework.InstancePriority
 public import VerifiedGarbage.Proof.Framework.PowLit
-import Mathlib.Tactic.Linter.Style
 import Batteries.Tactic.Init
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint

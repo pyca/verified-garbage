@@ -4,8 +4,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-DSA on AArch64: calls of the norm

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.P256.VerifySparse.Ops
 public import VerifiedGarbage.Proof.P256.VerifySparse.Square
-import Mathlib.Tactic.SplitIfs
 
 /-! The executable suffix replacement agrees with the proved sparse operation bodies.
 The prefix is kept symbolic so the proof does not evaluate the full instruction list. -/

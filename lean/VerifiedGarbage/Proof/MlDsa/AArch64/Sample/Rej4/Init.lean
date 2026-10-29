@@ -3,8 +3,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Base
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbPair
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbArgs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Pro
 import VerifiedGarbage.Proof.Framework.Offset

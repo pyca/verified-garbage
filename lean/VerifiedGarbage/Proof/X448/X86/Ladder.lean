@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.X448.X86.Iter
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.X448.X86.Counters
 

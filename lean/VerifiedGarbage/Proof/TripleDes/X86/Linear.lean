@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Framework.X86.Straight
 public import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
 public import VerifiedGarbage.Proof.Framework.Bitslice.Table
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

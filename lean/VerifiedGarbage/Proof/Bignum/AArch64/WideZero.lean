@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Bignum.AArch64.WideLoops
 public import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareGuard
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.AArch64.Row
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

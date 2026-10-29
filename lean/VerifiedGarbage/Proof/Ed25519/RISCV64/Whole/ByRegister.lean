@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.PublicKey
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.SignCached
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Sha512OK
 public import VerifiedGarbage.TCB.RISCV64.Target
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Whole
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.PointOps
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Common

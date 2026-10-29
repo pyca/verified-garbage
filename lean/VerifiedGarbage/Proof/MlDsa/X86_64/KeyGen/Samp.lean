@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Seeds
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Mask
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 import VerifiedGarbage.Proof.MlDsa.DecideAt

@@ -5,9 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdE
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Load
@@ -15,9 +13,7 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdE
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
-meta import Mathlib.Tactic.Attr.Core
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.RsaKeyGen.Gcd

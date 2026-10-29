@@ -4,7 +4,6 @@ public import VerifiedGarbage.Spec.Ecdsa.P224
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Tables
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # ECDSA over P-224 on x86-64: the contract the proof is written against

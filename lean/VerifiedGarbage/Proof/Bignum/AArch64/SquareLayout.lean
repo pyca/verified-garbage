@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The square reuses exactly the two existing scratch arrays. -/

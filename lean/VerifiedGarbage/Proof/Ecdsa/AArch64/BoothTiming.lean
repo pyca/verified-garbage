@@ -5,11 +5,6 @@ public import VerifiedGarbage.Proof.Ecdsa.AArch64.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothLit
 public import VerifiedGarbage.Impl.P256.Booth
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.EcKey.AArch64.Lit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
@@ -19,11 +14,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Contract
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothLit
 meta import VerifiedGarbage.Impl.P256.Booth
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
-meta import Mathlib.Tactic.Finiteness.Attr
-meta import Mathlib.Tactic.Push
-meta import Mathlib.Tactic.Attr.Core
 meta import Aesop.BuiltinRules
 meta import VerifiedGarbage.Proof.EcKey.AArch64.Lit
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot

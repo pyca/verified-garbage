@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Call
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Calls in a frame of their arguments (x86, 32-bit)

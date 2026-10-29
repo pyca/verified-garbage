@@ -2,8 +2,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecretGroup
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecretTiming
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

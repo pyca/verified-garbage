@@ -4,9 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.InvStep
 import VerifiedGarbage.Proof.Rsa.X86.DivCount
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Widget.Calc
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Rsa.KeyMath
 

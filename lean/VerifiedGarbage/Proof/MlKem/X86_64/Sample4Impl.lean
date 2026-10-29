@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.MlKem.X86_64.SHTop
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
 public import VerifiedGarbage.Proof.MlKem.X86_64.Prfs
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 public import VerifiedGarbage.Proof.Framework.Range

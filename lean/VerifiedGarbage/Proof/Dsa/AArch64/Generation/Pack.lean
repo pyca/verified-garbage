@@ -6,11 +6,7 @@ public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PackInto
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
-import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 

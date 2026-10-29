@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Rc4.AArch64.WriteJ
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 

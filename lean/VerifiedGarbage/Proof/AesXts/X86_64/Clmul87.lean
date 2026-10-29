@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesXts.Alpha16
 public import VerifiedGarbage.TCB.X86_64.Sse
-import Mathlib.Data.List.Induction
 
 /-!
 # XTS on x86-64: `clmul` by `0x87`

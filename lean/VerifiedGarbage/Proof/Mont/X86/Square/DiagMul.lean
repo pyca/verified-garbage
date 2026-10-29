@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Mont.X86.Square.DiagPtr
 public import Batteries.Tactic.Init
 public import Batteries.Tactic.PermuteGoals
 public import Batteries.Tactic.SeqFocus
-import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Mont.X86.Square.Step

@@ -2,14 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.SeedAdd
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.SeedAdd
 meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-meta import Mathlib.Tactic.Attr.Core
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

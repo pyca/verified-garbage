@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashDepth
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Subgroup
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.Slots

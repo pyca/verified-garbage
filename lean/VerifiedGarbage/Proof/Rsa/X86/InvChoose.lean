@@ -7,14 +7,6 @@ public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 public import VerifiedGarbage.Proof.Rsa.X86.InvDispatch
-import Mathlib.Data.Nat.Init
-import Mathlib.Order.Defs.Prop
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Tactic.ToAdditive
-import Mathlib.Util.CompileInductive
 
 /-! # Correct selection and fallback for the three public RSA widths -/
 

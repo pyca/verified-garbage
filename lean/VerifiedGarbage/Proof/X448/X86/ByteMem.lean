@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.X448.X86.Mem
 
 import VerifiedGarbage.Proof.X448.X86.Iter
 import VerifiedGarbage.Proof.Framework.BitByte
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!

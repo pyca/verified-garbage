@@ -4,10 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
 import VerifiedGarbage.Proof.Dsa.X86_64.ReduceCount
 import VerifiedGarbage.Proof.Dsa.X86_64.ReduceRead
 import VerifiedGarbage.Proof.Dsa.X86_64.Arithmetic
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-! # A complete byte step of DSA's streaming modular reduction -/

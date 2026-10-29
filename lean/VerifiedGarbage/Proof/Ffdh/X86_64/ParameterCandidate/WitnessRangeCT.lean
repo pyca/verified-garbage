@@ -3,18 +3,12 @@ module
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.WitnessRange
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ChecksCT
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.WitnessRange
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ChecksCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-meta import Mathlib.Tactic.Finiteness.Attr
-meta import Mathlib.Tactic.Push
-meta import Mathlib.Tactic.Attr.Core
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

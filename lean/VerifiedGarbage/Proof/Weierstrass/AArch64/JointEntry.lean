@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigitRead
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.Jac
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Joint
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 
 @[expose] public section

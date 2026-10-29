@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecLay
 public import VerifiedGarbage.Proof.Framework.RelCT
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Framework.Contract
 

@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Base
 
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.S4CT
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
 import VerifiedGarbage.Proof.MlKem.Bits

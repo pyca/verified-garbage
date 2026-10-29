@@ -46,9 +46,7 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.ReduceBlockLit
 meta import VerifiedGarbage.Proof.Argon2.AArch64.ReduceBlockLit
 public import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
-meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Argon2.AArch64.AddressCacheWord
 import VerifiedGarbage.Proof.Argon2.AArch64.BlockAddress

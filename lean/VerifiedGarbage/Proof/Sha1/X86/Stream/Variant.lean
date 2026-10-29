@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Sha1.X86.Stream.Md
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!

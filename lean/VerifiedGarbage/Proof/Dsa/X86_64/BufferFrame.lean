@@ -2,9 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.LocalCallFrame
 import VerifiedGarbage.Proof.Dsa.Layout
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 
 /-! # Preserving operands and recovering result bytes between DSA calls -/
 

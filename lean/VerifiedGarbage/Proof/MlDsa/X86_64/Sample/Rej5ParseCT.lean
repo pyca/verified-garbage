@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.S4CT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Batch
 
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4CT
-import Mathlib.Tactic.Conv
 
 @[expose] public section
 

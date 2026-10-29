@@ -9,8 +9,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.KernelRfl
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToDual
 
 /-! # DSA parameter generation on ARMv7: before the seeds
 

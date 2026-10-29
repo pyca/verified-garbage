@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Blake2.Arm.CompressB
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Argon2 H′ on ARMv7: the state of the body

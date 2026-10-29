@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.X448.X86.Contract
 public import VerifiedGarbage.Proof.X448.X86.Instr
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 

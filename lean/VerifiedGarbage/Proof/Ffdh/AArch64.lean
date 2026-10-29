@@ -9,7 +9,6 @@ public import VerifiedGarbage.Impl.Bignum.AArch64.Core
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Round
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -13,8 +11,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.Table
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
 meta import VerifiedGarbage.Impl.MillerRabin.X86_64.Round
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.Attr.Core
-meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

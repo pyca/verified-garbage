@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLayout
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.Jac
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant

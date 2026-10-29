@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Registers
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Table
-import Mathlib.Tactic.SplitIfs
 
 /-! ## From `Hoisted.lean` -/
 

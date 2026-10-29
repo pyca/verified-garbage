@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import Mathlib.Tactic.Tauto
 
 @[expose] public section
 

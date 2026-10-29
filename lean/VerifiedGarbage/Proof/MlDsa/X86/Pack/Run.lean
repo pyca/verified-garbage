@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.MlKem.X86.Common
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.MlKem.X86.Leaf

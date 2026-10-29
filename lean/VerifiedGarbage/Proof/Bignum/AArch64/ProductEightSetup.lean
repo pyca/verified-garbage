@@ -3,7 +3,6 @@ public import VerifiedGarbage.Impl.Bignum.AArch64.ProductEight
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Proof.Bignum.Layout
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareGuard
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

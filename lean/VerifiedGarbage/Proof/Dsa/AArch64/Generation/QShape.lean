@@ -9,10 +9,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopy
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Bignum.AArch64.Run
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Proof.Bignum.Words

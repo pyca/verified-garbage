@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Finish
 public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
-import Mathlib.Tactic.Finiteness.Attr
 
 /-! # Composing DSA arithmetic with result encoding and workspace return -/
 

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
-import Mathlib.Tactic.SplitIfs
 
 /-! A framed call also exposes unchanged non-result registers of its witness. -/
 

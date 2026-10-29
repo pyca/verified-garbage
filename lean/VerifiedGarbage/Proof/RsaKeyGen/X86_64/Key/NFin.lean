@@ -1,5 +1,4 @@
 module
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Pieces
 
 import VerifiedGarbage.Proof.Framework.Omega

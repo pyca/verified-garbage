@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Phase
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Chunk
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith

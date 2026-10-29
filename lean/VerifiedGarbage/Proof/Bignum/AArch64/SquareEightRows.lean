@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRows
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
 
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightTail
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRowMath
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightFinish

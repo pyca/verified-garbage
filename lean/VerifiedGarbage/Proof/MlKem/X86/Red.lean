@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86.Common
 public import VerifiedGarbage.Impl.MlKem.X86.Ntt
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM on x86 (32-bit): Barrett reduction and products

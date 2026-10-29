@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
 
 /-! A complete masked read-only table row. The only changed memory is the output row. -/
 @[expose] public section

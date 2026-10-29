@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.RestPack
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.Arith.Representation
 import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Base

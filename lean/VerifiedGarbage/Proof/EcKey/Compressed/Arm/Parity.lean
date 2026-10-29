@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.EcKey.Compressed.Arm.Decompress
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 import VerifiedGarbage.Proof.EcKey.Compressed.Parity
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.TCB.Code
 

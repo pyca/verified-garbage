@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.X25519.X86.Ops
 public import VerifiedGarbage.Proof.X25519.Ladder
 public import VerifiedGarbage.Proof.Framework.X86.Spill
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # X25519 on x86 (32-bit): the ladder

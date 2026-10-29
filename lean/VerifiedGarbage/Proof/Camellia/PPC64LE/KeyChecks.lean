@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.Linear
 public import VerifiedGarbage.Impl.Camellia.PPC64LE.Ecb
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Bitslicing a subkey on PPC64LE, by evaluation

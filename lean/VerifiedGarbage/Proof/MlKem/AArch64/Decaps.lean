@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
 
 import VerifiedGarbage.Proof.MlKem.AArch64.DecapsCmp
 import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 import VerifiedGarbage.Proof.Framework.Block
 
