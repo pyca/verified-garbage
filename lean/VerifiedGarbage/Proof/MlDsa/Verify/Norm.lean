@@ -5,7 +5,6 @@ public import VerifiedGarbage.Spec.MlDsa.Poly
 public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import Batteries.Tactic.Init
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 
@@ -140,7 +139,7 @@ theorem useHint_le₁ (h : Bool) (r : Zq) : (useHint ((q - 1) / 88) h r).toNat �
   have hR : 0 ≤ ((r.val : Nat) : Int) ∧ ((r.val : Nat) : Int) < 8380417 := ⟨by omega_arith, by omega_arith⟩
   simp only [e1, e2, e3, e4, e5]
   generalize ((r.val : Nat) : Int) = R at *
-  split_ifs <;> omega_arith
+  (repeat' split) <;> omega_arith
 
 theorem useHint_le₂ (h : Bool) (r : Zq) : (useHint ((q - 1) / 32) h r).toNat ≤ (q - 1) / (2 * ((q - 1) / 32)) - 1 := by
   have hr := r.isLt
@@ -153,7 +152,7 @@ theorem useHint_le₂ (h : Bool) (r : Zq) : (useHint ((q - 1) / 32) h r).toNat �
   have hR : 0 ≤ ((r.val : Nat) : Int) ∧ ((r.val : Nat) : Int) < 8380417 := ⟨by omega_arith, by omega_arith⟩
   simp only [e1, e2, e3, e4, e5]
   generalize ((r.val : Nat) : Int) = R at *
-  split_ifs <;> omega_arith
+  (repeat' split) <;> omega_arith
 
 /-- The coefficients of `w₁`: at most `(q - 1)/(2γ₂) - 1`. -/
 theorem useHint_le {γ₂ : Nat} (hg : γ₂ ∈ gamma2s) (h : Bool) (r : Zq) :

@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Spec.X448.Contract
 public import VerifiedGarbage.Proof.X448.Ladder
 public import VerifiedGarbage.Proof.X25519.Bytes
-import Mathlib.Tactic.SplitIfs
-
 /-!
 # X448: byte encodings
 
@@ -80,7 +78,7 @@ theorem scalar_bit {kb : List Byte} (h : kb.length = 56) {t : Nat} (ht : t < 448
     · rw [h55]
       simp (disch := omega) only [ite_true, ↓ite_eq_right]
       rw [BitVec.toNat_or, show (128 : BitVec 8).toNat = 128 from rfl, bit_or_128 _ (kb.getD 55 0).isLt _ (by omega)]
-      split_ifs <;> omega
+      (repeat' split) <;> omega
     · simp (disch := omega) only [↓ite_eq_right]
 
 

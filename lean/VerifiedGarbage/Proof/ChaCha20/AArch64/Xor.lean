@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Variant
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorContract
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -181,7 +180,7 @@ theorem ofNat_beq_zero {k : Nat} (h : k < 2 ^ 64) : (BitVec.ofNat 64 k == 0) = d
 
 theorem sub_ofNat {a b : Nat} (h : b ≤ a) :
     BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
-  conv_lhs => rw [show a = (a - b) + b by omega, BitVec.ofNat_add]
+  conv => lhs; rw [show a = (a - b) + b by omega, BitVec.ofNat_add]
   rw [BitVec.add_sub_cancel]
 
 theorem add_ofNat (p : Addr) (a b : Nat) :

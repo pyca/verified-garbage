@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRun
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
@@ -52,7 +51,7 @@ theorem finalZ_range (i e : Nat) : 0≤finalZ i e ∧ finalZ i e<8380417 := by
   have hz (j : Nat) : VG.Impl.MlDsa.AArch64.Optimized.Inverse.z j<8380417 := Nat.mod_lt _ (by decide)
   have hv : finalValue i<8380417 := by
     unfold finalValue
-    split_ifs
+    repeat' split
     · exact hz _
     · exact hz _
     · exact Nat.mod_lt _ (by decide)

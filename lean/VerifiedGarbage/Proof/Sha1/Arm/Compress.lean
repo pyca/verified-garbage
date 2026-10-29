@@ -24,8 +24,6 @@ meta import VerifiedGarbage.Proof.Sha1.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-import Mathlib.Tactic.SplitIfs
-
 /-!
 # SHA-1 compression function on ARMv7: the message schedule and the rounds
 -/
@@ -86,7 +84,7 @@ def fval : Fn → Word → Word → Word → Word
 
 theorem f_eq (t : Nat) (x y z : Word) : f t x y z = fval (fn t) x y z := by
   unfold Spec.Sha1.f fn
-  split_ifs <;> simp only [fval, ch_eq, maj_eq, Spec.Sha1.parity]
+  (repeat' split) <;> simp only [fval, ch_eq, maj_eq, Spec.Sha1.parity]
 
 theorem fcode_ok (g : Fn) (b c d : Reg) (s : State) (x y z : Word)
     (hbw : b ∈ work) (hcw : c ∈ work) (hdw : d ∈ work)
