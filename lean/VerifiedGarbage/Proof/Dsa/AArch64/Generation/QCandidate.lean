@@ -15,6 +15,7 @@ public import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import Batteries.Tactic.Trans
 
 /-! Hashing and shaping construct q while retaining the complete caller frame. -/
 @[expose] public section
@@ -96,7 +97,7 @@ theorem qCandidate_ok {G1 G256 : Impl.Pbkdf2.Md.AArch64.Hash}
     · apply k.gpr r
       simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-      all_goals first | decide | exact (h30 rfl).elim
+      all_goals decide
     · exact step.cs r hr h30
   · exact ⟨fun _ _ => rfl, fun k hk => (hwords (8 * k) (by unfold nW at hk; omega)).trans (Rv.fr k hk)⟩
 
