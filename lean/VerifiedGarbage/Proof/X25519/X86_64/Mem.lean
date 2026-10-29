@@ -136,4 +136,8 @@ theorem st4_outside (m : Mem) (base : Addr) {o : Nat} (ho : o + 32 < 2 ^ 64) (w0
   rw [write_outside _ _ _ (by omega) (by omega) ho hx, write_outside _ _ _ (by omega) (by omega) ho hx,
     write_outside _ _ _ (by omega) (by omega) ho hx, write_outside _ _ _ (by omega) (by omega) ho hx]
 
+-- CI timing test: a new public declaration, so that this module's
+-- outputs change and its importers rebuild. Do not merge.
+theorem ciTimingTest : True := trivial
+
 end VG.Proof.X25519.X86_64
