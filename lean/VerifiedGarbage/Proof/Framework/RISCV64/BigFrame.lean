@@ -14,9 +14,10 @@ Untrusted: everything here is checked by Lean. `bigFrame_wp`: the body of
 the same registers, memory, readable regions and statics' addresses, the
 stack pointer `n` bytes lower, and writable regions that add, to those of
 `s`, the frame's bytes, an access within a 16-byte aligned chunk of it at a
-time (`FrameAt.inFrame`), and its lowest 2032 bytes (or all of it) as one
-region (`FrameAt.low`). If the body keeps the permissions and the stack
-pointer, as all code does, the frame ends with those of `s`.
+time (`FrameAt.inFrame`), and a region of at least its lowest 2032 bytes
+(or all of it) (`FrameAt.low`); a frame of at most 4064 bytes is one region
+(`bigFrame_wp`). If the body keeps the permissions and the stack pointer, as
+all code does, the frame ends with those of `s`.
 -/
 
 @[expose] public section
@@ -26,14 +27,15 @@ namespace VG.RISCV64
 open VG.Impl.Words.RISCV64
 
 /-- The state `t` in which the body of a frame of `n` bytes starts, from `s`:
-its lowest `min n 2032` bytes are one writable region. -/
+a writable region from its base holds at least its lowest `min n 2032`
+bytes. -/
 structure FrameAt (n : Nat) (s t : State) : Prop where
   gpr : t.gpr = s.gpr
   mem : t.mem = s.mem
   rd : t.rd = s.rd
   sp : t.sp = s.sp - BitVec.ofNat 64 n
   wr : ∃ ws, t.wr = ws ++ s.wr
-  low : 0 < n → (⟨t.sp, min n 2032⟩ : Region) ∈ t.wr
+  low : 0 < n → ∃ L, min n 2032 ≤ L ∧ L ≤ n ∧ (⟨t.sp, L⟩ : Region) ∈ t.wr
   inFrame : ∀ o w, 0 < w → o + w ≤ n → o % 16 + w ≤ 16 →
     InRegions t.wr (t.sp + BitVec.ofNat 64 o) w
   syms : t.syms = s.syms
@@ -57,10 +59,9 @@ theorem FrameAt.alloc {n k : Nat} {s t : State} (h : FrameAt n (allocd k s) t) (
   · rcases hn' with h0 | h0
     · subst h0
       have e : s.sp - BitVec.ofNat 64 k = t.sp := by rw [hb]; simp
-      rw [Nat.zero_add, Nat.min_eq_left hk', ← e]
-      exact hmem
-    · rw [show min (n + k) 2032 = min n 2032 by omega]
-      exact lo (by omega)
+      exact ⟨k, by omega, by omega, by rw [← e]; exact hmem⟩
+    · obtain ⟨L, h1, h2, h3⟩ := lo (by omega)
+      exact ⟨L, by omega, by omega, h3⟩
   · intro o w h0 ho hc
     by_cases h1 : o + w ≤ n
     · exact f o w h0 h1 hc
@@ -93,17 +94,37 @@ theorem chunks_wp {body : Prog isa} :
       simp only [freed, allocd, List.tail_cons, BitVec.sub_add_cancel]
     rwa [e]
 
+/-- A frame of one allocation of `n` bytes, from `allocd n s`. -/
+theorem FrameAt.single {n : Nat} (s : State) (hn : 0 < n) (hsp : n ≤ s.sp.toNat) :
+    FrameAt n s (allocd n s) := by
+  have hmem : (⟨s.sp - BitVec.ofNat 64 n, n⟩ : Region) ∈ (allocd n s).wr := by simp [allocd]
+  refine ⟨rfl, rfl, rfl, rfl, ⟨[_], rfl⟩, fun _ => ⟨n, by omega, by omega, hmem⟩, fun o w h0 ho hc => ?_, rfl⟩
+  exact ⟨_, hmem, Offset.contains_base _ ho (by omega)⟩
+
 theorem bigFrame_wp {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop} (hn : n % 16 = 0)
     (hsp : n ≤ s.sp.toNat)
-    (hb : ∀ t, FrameAt n s t → WP isa body t fun s₂ => Q { s₂ with sp := s.sp, wr := s.wr }) :
+    (hb : ∀ t, FrameAt n s t → (0 < n → n ≤ 4064 → (⟨t.sp, n⟩ : Region) ∈ t.wr) →
+      WP isa body t fun s₂ => Q { s₂ with sp := s.sp, wr := s.wr }) :
     WP isa (bigFrame n body) s Q := by
+  -- Up to 2032 bytes, the region `FrameAt.low` gives is the whole frame.
+  have whole : ∀ t, FrameAt n s t → n ≤ 2032 → 0 < n → n ≤ 4064 → (⟨t.sp, n⟩ : Region) ∈ t.wr :=
+    fun t ht h2 h0 _ => by
+      obtain ⟨L, h1, h3, h4⟩ := ht.low h0
+      rwa [show L = n by omega] at h4
   have e : 2032 * (n / 2032) + n % 2032 = n := Nat.div_add_mod n 2032
   unfold bigFrame
   split
-  · rename_i h0
-    refine chunks_wp (n / 2032) s Q (by omega) fun t ht => hb t ?_
-    rwa [show 2032 * (n / 2032) = n by omega] at ht
-  · rename_i h0
+  · rename_i h1
+    refine WP.allocLe ⟨by omega, h1.2, hn⟩ hsp ?_
+    refine WP.mono (WP.rdwr (hb _ (FrameAt.single s (by omega) hsp) fun _ _ => by simp [allocd]))
+      fun s₂ ⟨h, _, hw, hs⟩ => ?_
+    rwa [freed_eq hw hs]
+  split
+  · rename_i h1 h0
+    refine chunks_wp (n / 2032) s Q (by omega) fun t ht => ?_
+    rw [show 2032 * (n / 2032) = n by omega] at ht
+    exact hb t ht fun h0' h4 => whole t ht (by omega) h0' h4
+  · rename_i h1 h0
     have hr : n % 2032 < 2032 := Nat.mod_lt _ (by decide)
     refine WP.alloc ⟨by omega, by omega, by omega⟩ (by omega) ?_
     have hsp' : 2032 * (n / 2032) ≤ (allocd (n % 2032) s).sp.toNat := by
@@ -113,7 +134,7 @@ theorem bigFrame_wp {n : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
     refine chunks_wp (n / 2032) (allocd (n % 2032) s) (fun x => Q (freed (n % 2032) x)) hsp' fun t ht => ?_
     have hf := FrameAt.alloc ht (by omega) (by omega) (by omega) (by omega) (by omega)
     rw [e] at hf
-    refine WP.mono (hb t hf) fun s₂ h => ?_
+    refine WP.mono (hb t hf fun h0' h4 => whole t hf (by omega) h0' h4) fun s₂ h => ?_
     have e : freed (n % 2032) { s₂ with sp := (allocd (n % 2032) s).sp, wr := (allocd (n % 2032) s).wr } =
         { s₂ with sp := s.sp, wr := s.wr } := by
       simp only [freed, allocd, List.tail_cons, BitVec.sub_add_cancel]

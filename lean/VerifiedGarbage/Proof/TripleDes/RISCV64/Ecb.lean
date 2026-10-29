@@ -64,10 +64,10 @@ theorem ecb_wp (d : Direction) {s : State} (h : EcbPre s) :
     have : (s.gpr .a2).toNat ≠ 0 := fun e => this (BitVec.eq_of_toNat_eq e)
     omega
   have hBnat : (Fb s c).toNat = s.sp.toNat - 944 := Proof.Modes.RISCV64.fb_toNat' (c := c) h.sp
-  refine bigFrame_wp (n := 8 * c.total) (by rw [htot]) (by rw [htot]; exact h.sp) fun t ht => ?_
-  have hS : ScrIn t (Fb s c) c.total := scrIn_of' h.al h.sp hL ht
+  refine bigFrame_wp (n := 8 * c.total) (by rw [htot]) (by rw [htot]; exact h.sp) fun t ht hw => ?_
+  have hS : ScrIn t (Fb s c) c.total := scrIn_of' h.al h.sp hL ht hw
   obtain ⟨ws, hws⟩ := ht.wr
-  have hframeR : (⟨Fb s c, 944⟩ : Region) ∈ t.wr := hS.low
+  have hframeR : (⟨Fb s c, 944⟩ : Region) ∈ t.wr := hS.whole (by rw [htot]; decide)
   have hdataR : (⟨D, 8 * n⟩ : Region) ∈ t.wr := by rw [hws, h.wr]; simp [D, n]
   have sepDF : (⟨D, 8 * n⟩ : Region).Disjoint ⟨Fb s c, 944⟩ := by rw [hB]; exact h.stackData.symm
   -- The entry.

@@ -98,29 +98,35 @@ theorem fb_toNat {s₀ : State} (hp : SeqPre c M s₀) : (Fb s₀ c).toNat = s�
 
 /-- The frame, from inside `bigFrame`, for any function in the modes' frame. -/
 theorem scrIn_of' {s₀ t : State} (hs : s₀.sp.toNat % 16 = 0) (hsp : 8 * c.total ≤ s₀.sp.toNat)
-    (hL : Layout c) (ht : FrameAt (8 * c.total) s₀ t) : ScrIn t (Fb s₀ c) c.total := by
+    (hL : Layout c) (ht : FrameAt (8 * c.total) s₀ t)
+    (hw : 0 < 8 * c.total → 8 * c.total ≤ 4064 → (⟨t.sp, 8 * c.total⟩ : Region) ∈ t.wr) :
+    ScrIn t (Fb s₀ c) c.total := by
   have hf := fb_toNat' hsp
   have he := hL.even
   have := s₀.sp.isLt
   have hg := total_ge hL
-  refine ⟨by rw [hf]; omega_arith, by rw [hf]; omega_arith, ?_, ?_⟩
-  · have e : Fb s₀ c = t.sp := ht.sp.symm
-    rw [e]; exact ht.low (by simp only [coreSlot] at hg; omega_arith)
+  have e : Fb s₀ c = t.sp := ht.sp.symm
+  refine ⟨by rw [hf]; omega_arith, by rw [hf]; omega_arith, fun o w ho => ?_,
+    fun h4 => by rw [e]; exact hw (by simp only [coreSlot] at hg; omega_arith) h4, ?_⟩
+  · obtain ⟨L, h1, h2, h3⟩ := ht.low (by simp only [coreSlot] at hg; omega_arith)
+    rw [e]
+    exact ⟨_, h3, VG.Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   · intro o w h0 ho hc
     have e : Fb s₀ c = t.sp := ht.sp.symm
     rw [e]; exact ht.inFrame o w h0 ho hc
 
 /-- The frame, from inside `bigFrame`. -/
-theorem scrIn_of {s₀ t : State} (hp : SeqPre c M s₀) (ht : FrameAt (8 * c.total) s₀ t) :
+theorem scrIn_of {s₀ t : State} (hp : SeqPre c M s₀) (ht : FrameAt (8 * c.total) s₀ t)
+    (hw : 0 < 8 * c.total → 8 * c.total ≤ 4064 → (⟨t.sp, 8 * c.total⟩ : Region) ∈ t.wr) :
     ScrIn t (Fb s₀ c) c.total :=
-  scrIn_of' hp.spAl hp.spFit hp.layout ht
+  scrIn_of' hp.spAl hp.spFit hp.layout ht hw
 
 /-- A slot of the mode, in its lowest region. -/
 theorem slot_low {s : State} {B : Addr} {k : Nat} (hS : ScrIn s B c.total) (hL : Layout c) (hk : k < coreSlot) :
     InRegions s.wr (slotA B k) 8 := by
   have := total_ge hL
   have h6 : coreSlot = 6 := rfl
-  exact ⟨_, hS.low, VG.Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
+  exact hS.low _ _ (by omega_arith)
 
 theorem slot_al {s : State} {B : Addr} {k : Nat} (hS : ScrIn s B c.total) (hk : k < c.total) :
     (slotA B k).toNat % 8 = 0 := by
@@ -167,7 +173,7 @@ theorem ivAreasOk {s₀ s : State} (hp : SeqPre c M s₀) (hS : ScrIn s (Fb s₀
   have hfit := hS.fit
   have h6 : coreSlot = 6 := rfl
   have inScr : ∀ d w, d + w ≤ min (8 * c.total) 2032 → InRegions s.wr (Fb s₀ c + BitVec.ofNat 64 d) w :=
-    fun d w h => ⟨_, hS.low, slot_contains h⟩
+    fun d w h => hS.low d w h
   refine ⟨fun l off ho => ?_, fun l off ho => ?_, fun l off w hw0 ho => ?_, fun l hl off w hw0 ho => ?_,
     fun l l' hne => ?_, fun _ => by omega_arith⟩
   · cases l
@@ -308,11 +314,12 @@ theorem saves_wp {s₀ t : State} (hL : Layout c) (hS : ScrIn t (Fb s₀ c) c.to
   · rw [u₉.rd, u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd, ht.rd]
   · rw [u₉.wr, u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
 
-theorem entry_wp {s₀ t : State} (hp : SeqPre c M s₀) (ht : FrameAt (8 * c.total) s₀ t) :
+theorem entry_wp {s₀ t : State} (hp : SeqPre c M s₀) (ht : FrameAt (8 * c.total) s₀ t)
+    (hw : 0 < 8 * c.total → 8 * c.total ≤ 4064 → (⟨t.sp, 8 * c.total⟩ : Region) ∈ t.wr) :
     WP isa (.block (Core.entry ++ c.ivIn)) t (Entered c s₀ t) := by
   have hL := hp.layout
   have hbw := bw_le hL
-  have hS := scrIn_of hp ht
+  have hS := scrIn_of hp ht hw
   have hg := total_ge hL
   have h6 : coreSlot = 6 := rfl
   rw [WP.block_append_iff]
@@ -484,11 +491,11 @@ theorem seq_changes_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} 
   have m1 : ∀ {a b : Region} {l : List Region}, b ∈ a :: b :: l := List.mem_cons_of_mem _ List.mem_cons_self
   unfold Core.seq
   refine bigFrame_wp (by simp only [Core.frameBytes]; have := hL.even; omega_arith)
-    (by simp only [Core.frameBytes]; omega_arith) fun t ht => ?_
-  have hS := scrIn_of hp ht
+    (by simp only [Core.frameBytes]; omega_arith) fun t ht hw => ?_
+  have hS := scrIn_of hp ht hw
   obtain ⟨ws, hws⟩ := ht.wr
   -- The entry and the key.
-  refine WP.seq (WP.of_syms (WP.mono (entry_wp hp ht) fun s₁ h₁ sy₁ => ?_))
+  refine WP.seq (WP.of_syms (WP.mono (entry_wp hp ht hw) fun s₁ h₁ sy₁ => ?_))
   have wr₁ : s₁.wr = ws ++ s₀.wr := by rw [h₁.wr, hws]
   refine WP.seq (WP.mono (cs.prepare_wp h₁.b (hS.congr h₁.wr) m1
     (cs.keyArgs_congr hk h₁.keep h₁.rd ⟨ws, wr₁⟩ (sy₁.trans ht.syms)

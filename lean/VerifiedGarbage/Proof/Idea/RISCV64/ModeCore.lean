@@ -93,7 +93,7 @@ theorem crypt_wp {s : State} {B : Addr} {ws : List Region} {k : Spec.Idea.Schedu
         Spec.Idea.cipher k (Spec.Aes.bytesAt s.mem (blkAddr core B j) (4 * core.bw))) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hfit : B.toNat + 8 * 8 ≤ 2 ^ 64 := hS.fit
-  have hW : (⟨B, 8 * 8⟩ : Region) ∈ s.wr := hS.low
+  have hW : (⟨B, 8 * 8⟩ : Region) ∈ s.wr := hS.whole (by decide)
   obtain ⟨⟨hk, hin, hd⟩, hkB⟩ := hR
   simp only [core]
   -- The mask.

@@ -117,7 +117,7 @@ theorem prepare_wp (d : Direction) {s : State} {B : Addr} {rs : List Region} {k 
       exact ⟨_, hin, Offset.contains_base _ (by omega) (by omega)⟩)
     (fun i hi => by
       rw [a0, awr, Offset.add_add]
-      exact ⟨_, hS.low, Offset.contains_base _ (by simp only [dirCore, keyOff]; omega) (by omega)⟩)
+      exact hS.low _ _ (by simp only [dirCore, keyOff]; omega))
     (by
       rw [a0, a2]
       have hs : Region.Sub ⟨B + BitVec.ofNat 64 keyOff, 384⟩ ⟨B, 8 * 118⟩ :=
@@ -157,7 +157,7 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {ws : List Region} {k : 
   have hal : B.toNat % 16 = 0 := hS.al
   have hbo : bufOff = 48 := rfl
   obtain ⟨hk, _⟩ := hR
-  have hlow : (⟨B, 944⟩ : Region) ∈ s.wr := hS.low
+  have hlow : (⟨B, 944⟩ : Region) ∈ s.wr := hS.whole (by cases d <;> decide)
   have hpre : BlockPre k sb bufOff s := by
     refine ⟨by decide, by decide, by rw [hB]; omega, fun o ho => ?_, by rw [hB]; exact hk,
       ⟨_, hlow, ?_⟩, ?_⟩

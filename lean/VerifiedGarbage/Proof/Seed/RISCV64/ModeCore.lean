@@ -136,7 +136,7 @@ theorem crypt_ok (d : Direction) {s : State} {B : Addr} (hB : s.gpr .s4 = B)
   let P := bufA B
   have hfit : B.toNat + 1104 ≤ 2 ^ 64 := hS.fit
   have hal : B.toNat % 16 = 0 := hS.al
-  have hW : (⟨B, 1104⟩ : Region) ∈ s.wr := hS.low
+  have hW : (⟨B, 1104⟩ : Region) ∈ s.wr := hS.whole (by decide)
   have hEk : ∀ k, E + BitVec.ofNat 64 k = B + BitVec.ofNat 64 (48 + k) := fun k => Offset.add_add _ _ _
   have hin : ∀ k n, k + n ≤ 1056 → InRegions s.wr (E + BitVec.ofNat 64 k) n := fun k n h =>
     ⟨_, hW, by rw [hEk]; exact Offset.contains_base B (by omega) (by omega)⟩
