@@ -8,7 +8,6 @@ public import VerifiedGarbage.Impl.Rsa.X86.KeyWs
 
 import VerifiedGarbage.Proof.RsaKeyGen.X86.FastR2Square
 import VerifiedGarbage.Proof.Bignum.Math
-import VerifiedGarbage.Impl.RsaKeyGen.X86.FastR2
 import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.TCB.X86.State
 /-! # Six prepared Montgomery calls complete the short R² setup -/

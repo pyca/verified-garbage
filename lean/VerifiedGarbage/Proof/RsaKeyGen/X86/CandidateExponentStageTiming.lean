@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFilterTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateExponentInput
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDrawn
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateSchedule
 import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.MillerRabinOutcome
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateParameters

@@ -24,9 +24,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateDrawn
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateArrays
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateExponentStageTiming
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateScheduleContinue
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateSieveInput
-import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFilterTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.CandidateFinishReady
 import VerifiedGarbage.Proof.RsaKeyGen.X86.FrontRt.Sieve
 import VerifiedGarbage.Proof.Framework.X86.RelCT

@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyEven
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Ops
-import VerifiedGarbage.Proof.Rsa.InverseArithmetic
 /-! # A native step of the shared LCM halving algorithm -/
 
 -- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyRuntime/Even.lean`, which only this module imported.
