@@ -226,3 +226,11 @@ name = "NativeHintSearch"
 roots = []
 globs = ["VerifiedGarbage.Proof.Framework.RegSet", "VerifiedGarbage.Proof.Framework.Slots", "VerifiedGarbage.Proof.Framework.NativeHintOps", "VerifiedGarbage.Proof.Framework.X86.NativeHintData", "VerifiedGarbage.Proof.Framework.Arm.NativeHintData"]
 precompileModules = true
+
+# Prototype: the emitter's drivers (modules) and audits (not modules), which
+# `EmitGen.lean` writes under `.lake/emit/src`.
+[[lean_lib]]
+name = "VGEmit"
+srcDir = ".lake/emit/src"
+globs = ["VGEmit.+"]
+platformIndependent = true
