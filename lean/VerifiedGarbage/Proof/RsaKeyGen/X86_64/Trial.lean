@@ -41,7 +41,7 @@ theorem redc32_ok {t : State} {s : Nat} (hax : (t.gpr .rax).toNat < 2 ^ 32) (hbp
   have hXs : (t.gpr .rax).toNat + (t.gpr .rbp).toNat < s * 2 ^ 32 := by
     have : 2 ≤ s := by omega_arith
     have : 2 * s ≤ s * 2 ^ 31 := by rw [Nat.mul_comm 2]; exact Nat.mul_le_mul_left _ (by decide)
-    have : s * 2 ^ 31 + s * 2 ^ 31 = s * 2 ^ 32 := by rw [← Nat.mul_add]; rfl
+    have : s * 2 ^ 31 + s * 2 ^ 31 = s * 2 ^ 32 := by rw [← Nat.mul_add]
     omega_arith
   obtain ⟨_, hlt, hmod⟩ := redc_math (X := (t.gpr .rax).toNat + (t.gpr .rbp).toNat) (sv := (t.gpr .r15).toNat) h15 hXs
   refine WP.mono (WP.keep [.rax, .rcx, .rdx, .rbp] (Q := fun t' =>
