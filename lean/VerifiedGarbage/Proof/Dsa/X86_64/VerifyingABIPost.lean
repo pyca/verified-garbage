@@ -1,11 +1,11 @@
 module
+
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingABI
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingReturn
 
 import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingABIPre
 import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingMain
 import VerifiedGarbage.Proof.Bignum.Octets
-
 /-! # Verification correctness and ABI preservation against the shared contract -/
 
 @[expose] public section

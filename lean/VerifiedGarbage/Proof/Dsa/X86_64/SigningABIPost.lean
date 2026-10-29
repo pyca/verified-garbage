@@ -1,11 +1,11 @@
 module
+
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningABI
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningReturn
 
 import VerifiedGarbage.Proof.Dsa.X86_64.SigningABIPre
 import VerifiedGarbage.Proof.Dsa.X86_64.SigningMain
 import VerifiedGarbage.Proof.Bignum.Octets
-
 /-! # Signing correctness and ABI preservation against the shared contract -/
 
 @[expose] public section
