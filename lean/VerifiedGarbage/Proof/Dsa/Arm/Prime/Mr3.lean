@@ -45,7 +45,7 @@ theorem xw_lt (P : CP) (σ : State) (k : Nat) : xw P σ k < 2 ^ (8 * P.len) := b
   have := VG.Proof.Rsa.lt_of_os2ip (VG.Proof.RsaKeyGen.seg (rB P σ) (wo P k) P.len)
   rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul] at this
   have hl : (VG.Proof.RsaKeyGen.seg (rB P σ) (wo P k) P.len).length ≤ P.len := by
-    simp [VG.Proof.RsaKeyGen.seg]
+    simp [VG.Proof.RsaKeyGen.seg, Nat.min_le_left]
   exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega))
 
 /-- The witness's octets. -/

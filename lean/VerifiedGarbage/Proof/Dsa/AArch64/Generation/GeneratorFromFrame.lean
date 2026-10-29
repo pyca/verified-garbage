@@ -68,8 +68,8 @@ theorem generatorFromFrame_ok {s : State} {B F S : Addr} {Z len : Nat}
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl | rfl) <;> right
       · exact Nat.le_trans hz (by omega)
-      · exact Nat.le_trans (hZ.trans' (slot_lt (by decide : 0 < 16))) (by omega)
-      · exact Nat.le_trans (hZ.trans' (slot_lt (by decide : 1 < 16))) (by omega)),
+      · exact Nat.le_trans (Nat.le_trans (slot_lt (by decide : 0 < 16)) hZ) (by omega)
+      · exact Nat.le_trans (Nat.le_trans (slot_lt (by decide : 1 < 16)) hZ) (by omega)),
       fv a (fun r hr => Or.inr (Nat.le_trans (bounds r hr) (by omega))), hm]
   have Rt := rep_of_disjoint_frame R ff
     (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact hF)
