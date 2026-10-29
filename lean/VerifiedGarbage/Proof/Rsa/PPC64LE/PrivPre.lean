@@ -109,10 +109,8 @@ theorem preP_of {s : State} (h : (Spec.Rsa.privateCheckedContract abi frameBytes
   have e : frameBytes = 3327 + 1 := rfl
   rw [e] at h
   sig_pre [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs,
-    stackArgs_twelve, List.append_eq] at h
-  simp only [Sig.pairFacts, List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false,
-    Bool.true_or, Bool.false_or, List.cons_append, List.nil_append, Sig.conj, List.append_nil] at h
-  obtain ⟨sp1, sp2, hrd, hwr, on, oe, ⟨oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa⟩,
+    stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
+  obtain ⟨sp1, sp2, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa,
     ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, ⟨k1, k2⟩, h4, h10,
     e1, e2, p1, p2, q1, q2, h5, h9, h7, hs⟩ := h
   exact ⟨sp1, by omega, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa,
@@ -126,10 +124,8 @@ theorem pre_of_preP {s : State} (h : PreP s) : (Spec.Rsa.privateCheckedContract 
   have e : frameBytes = 3327 + 1 := rfl
   rw [e]
   sig_pre [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, stackArgs_twelve,
-    List.append_eq]
-  simp only [Sig.pairFacts, List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false,
-    Bool.true_or, Bool.false_or, List.cons_append, List.nil_append, Sig.conj, List.append_nil]
-  exact ⟨sp1, by omega, hrd, hwr, on, oe, ⟨oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa⟩,
+    List.append_eq, List.range, List.range.loop]
+  exact ⟨sp1, by omega, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa,
     ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, ⟨k1, k2⟩, h4, h10,
     e1, e2, p1, p2, q1, q2, h5, h9, h7, hs⟩
 

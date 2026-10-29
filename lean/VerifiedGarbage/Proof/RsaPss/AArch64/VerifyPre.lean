@@ -72,9 +72,9 @@ theorem preV_of (G : Spec.Mgf1.Hash) {K : Nat} {s : State}
   have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega
   rw [e] at h
   sig_pre [Spec.RsaPss.verifyPrecomputedContract, Spec.RsaPss.verifyPrecomputedSig, abi, argRegs, stackArgs_five,
-    List.append_eq] at h
+    List.append_eq, List.range, List.range.loop] at h
   sig_pre [Spec.RsaPss.verifyPrecomputedContract, Spec.RsaPss.verifyPrecomputedSig, abi, argRegs, stackArgs_five,
-    List.append_eq] at h
+    List.append_eq, List.range, List.range.loop] at h
   obtain ⟨sp1, sp2, hrd, hwr, ns, es, dgs, sgs, sP, sa, kn, ke, kdg, ksg, ks, kP, ka, wn, we, wdg, wsg, ws, wP,
     ⟨k1, k2⟩, e1, e2, sgl, hs, hl⟩ := h
   rw [← e] at sp1 kn ke kdg ksg ks kP ka

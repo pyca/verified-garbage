@@ -111,9 +111,9 @@ theorem preS_of {K : Nat} {s : State}
   have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega
   rw [e] at h
   sig_pre [Spec.RsaPkcs1Sig.signContract, Spec.RsaPkcs1Sig.signSig, abi, argRegs, stackArgs_thirteen,
-    List.append_eq] at h
+    List.append_eq, List.range, List.range.loop] at h
   sig_pre [Spec.RsaPkcs1Sig.signContract, Spec.RsaPkcs1Sig.signSig, abi, argRegs, stackArgs_thirteen,
-    List.append_eq] at h
+    List.append_eq, List.range, List.range.loop] at h
   sig_split h
   rename_i sp1 sp2 hrd hwr on oe od op oq odp odq oqi os oa ns es ds ps qs dps dqs qis sa ko kn ke kd kp kq
     kdp kdq kqi ks ka wo wn we wd wp wq wdp wdq wqi ws hsplit1 ol e1 e2 p1 p2 q1 q2 hdp hqi hdq

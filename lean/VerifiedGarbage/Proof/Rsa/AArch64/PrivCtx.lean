@@ -112,23 +112,22 @@ theorem private_checked_implies : chkA.Implies (Spec.Rsa.privateCheckedContract 
   pre := by
     intro s h
     sig_pre [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, chkA, stackBytes,
-      stackArgs_twelve, List.append_eq] at h
+      stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
     sig_pre [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, chkA, stackBytes,
-      stackArgs_twelve, List.append_eq] at h
+      stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
     sig_split h
     sig_reduce [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, chkA, stackBytes,
-      stackArgs_twelve, List.append_eq]
+      stackArgs_twelve, List.append_eq, List.range, List.range.loop]
     sig_and_intros
     sig_close
     all_goals with_reducible assumption
   post := by
     sig_implies_post [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, chkA,
-      stackBytes, stackArgs_twelve, List.append_eq]
+      stackBytes, stackArgs_twelve, List.append_eq, List.range, List.range.loop]
   pub := by
     rintro s₁ s₂ - - h
     sig_pub [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, chkA, stackBytes,
-      stackArgs_twelve, List.append_eq] at h
-    simp only [List.getD_cons_succ, List.getD_cons_zero] at h
+      stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
     obtain ⟨hsp, hl, h0, h1, h2, h3, h4, h5, h6, h7, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11⟩ := h
     obtain ⟨hn, he⟩ := leak_eq (by simp [Spec.Rsa.bytesAt, h3]) hl
     refine ⟨?_, hsp, by simp only [stackArgs_twelve, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11],

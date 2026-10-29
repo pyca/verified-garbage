@@ -125,11 +125,9 @@ theorem preS_of {G : Spec.Mgf1.Hash} {s : State}
   have e : stackBytes = 3775 + 1 := rfl
   rw [e] at h
   sig_pre [Spec.RsaPss.signContract, Spec.RsaPss.signSig, abi, argRegs,
-    stackArgs_thirteen, List.append_eq] at h
-  simp only [Sig.pairFacts, List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false,
-    Bool.true_or, Bool.false_or, List.cons_append, List.nil_append, Sig.conj, List.append_nil] at h
-  obtain ⟨sp1, sp2, hrd, hwr, on, oe, ⟨op, oq, odp, odq, oqi, odg, osl, os, oa, ns, es, ps, qs, dps, dqs, qis, dgs,
-    sls, sa⟩, ko, kn, ke, kp, kq, kdp, kdq, kqi, kdg, ksl, ks, ka, wo, wn, we, wp, wq, wdp, wdq, wqi, wdg, wsl, wsc,
+    stackArgs_thirteen, List.append_eq, List.range, List.range.loop] at h
+  obtain ⟨sp1, sp2, hrd, hwr, on, oe, op, oq, odp, odq, oqi, odg, osl, os, oa, ns, es, ps, qs, dps, dqs, qis, dgs,
+    sls, sa, ko, kn, ke, kp, kq, kdp, kdq, kqi, kdg, ksl, ks, ka, wo, wn, we, wp, wq, wdp, wdq, wqi, wdg, wsl, wsc,
     ⟨k1, k2⟩, ok, e1, e2, p1, p2, q1, q2, h3, h7, h5, hs⟩ := h
   exact ⟨sp1, by omega, hrd, hwr, on, oe, op, oq, odp, odq, oqi, odg, osl, os, oa, ns, es, ps, qs, dps, dqs, qis, dgs,
     sls, sa, ko, kn, ke, kp, kq, kdp, kdq, kqi, kdg, ksl, ks, ka, wo, wn, we, wp, wq, wdp, wdq, wqi, wdg, wsl, wsc,

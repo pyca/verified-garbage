@@ -82,10 +82,8 @@ theorem preR_of {s : State} (h : (Spec.RsaPkcs1Sig.recoverPrecomputedContract ab
   have e : frameBytes = 2223 + 1 := rfl
   rw [e] at h
   sig_pre [Spec.RsaPkcs1Sig.recoverPrecomputedContract, Spec.RsaPkcs1Sig.recoverPrecomputedSig, abi, argRegs,
-    stackArgs_five, List.append_eq] at h
-  simp only [Sig.pairFacts, List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false,
-    Bool.true_or, Bool.false_or, List.cons_append, List.nil_append, Sig.conj, List.append_nil] at h
-  obtain ⟨sp1, sp2, hrd, hwr, on, ⟨oe, og, os, op, oa, ns, es, gs, sp, sa⟩, ko, kn, ke, kg, ks, kp, ka, wo, wn, we,
+    stackArgs_five, List.append_eq, List.range, List.range.loop] at h
+  obtain ⟨sp1, sp2, hrd, hwr, on, oe, og, os, op, oa, ns, es, gs, sp, sa, ko, kn, ke, kg, ks, kp, ka, wo, wn, we,
     wg, ws, wp, ⟨k1, k2⟩, e1, e2, hh, hs, hp⟩ := h
   exact ⟨sp1, by omega, hrd, hwr, on, oe, og, os, op, oa, ns, es, gs, sp, sa, ko, kn, ke, kg, ks, kp, ka, wo, wn,
     we, wg, ws, wp, k1, k2, e1, e2, hh, hs, hp⟩
