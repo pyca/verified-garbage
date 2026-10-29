@@ -11,7 +11,8 @@
     target_arch = "aarch64",
     target_arch = "arm",
     target_arch = "x86",
-    all(target_arch = "powerpc64", target_endian = "little")
+    all(target_arch = "powerpc64", target_endian = "little"),
+    target_arch = "riscv64"
 ))]
 
 use crate::arch::sm4::{vg_sm4_ecb_decrypt, vg_sm4_ecb_encrypt, vg_sm4_expand_key};
@@ -96,7 +97,8 @@ impl Drop for Sm4Ecb {
     test,
     any(
         target_arch = "arm",
-        all(target_arch = "powerpc64", target_endian = "little")
+        all(target_arch = "powerpc64", target_endian = "little"),
+        target_arch = "riscv64"
     )
 ))]
 mod prepared_tests {
@@ -108,11 +110,13 @@ mod prepared_tests {
     const WORDS: usize = 182;
     #[cfg(target_arch = "powerpc64")]
     const WORDS: usize = 402;
+    #[cfg(target_arch = "riscv64")]
+    const WORDS: usize = 396;
 
     /// The first word of the batch of sixteen blocks in the working space.
     #[cfg(target_arch = "arm")]
     const BATCH: usize = 32;
-    #[cfg(target_arch = "powerpc64")]
+    #[cfg(any(target_arch = "powerpc64", target_arch = "riscv64"))]
     const BATCH: usize = 96;
 
     #[test]
