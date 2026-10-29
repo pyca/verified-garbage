@@ -37,7 +37,7 @@ theorem Keep.mono {rs rs' : List Reg} {s s' : State} (h : Keep rs s s')
 theorem Keep.refl (rs : List Reg) (s : State) : Keep rs s s := ⟨fun _ _ => rfl, rfl, rfl⟩
 
 /-- Every instruction of the code writes only registers among `rs`. -/
-def writesOnly (rs : List Reg) (c : Prog isa) : Bool :=
+noncomputable def writesOnly (rs : List Reg) (c : Prog isa) : Bool :=
   c.allInstrs fun i => match dstOf i with
     | none => true
     | some r => rs.contains r

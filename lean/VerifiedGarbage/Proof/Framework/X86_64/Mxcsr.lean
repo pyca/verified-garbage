@@ -40,7 +40,7 @@ def restoreOp : List Instr → Option MemOp
 
 /-- Whether `.seq a b` is `mxcsrSave m`, then code that never writes `r11`,
 then `mxcsrRestore m'`. -/
-def restores (a b : Prog isa) : Bool :=
+noncomputable def restores (a b : Prog isa) : Bool :=
   match a, b with
   | .block is, .seq mid (.block js) =>
     match saveOp is, restoreOp js with
@@ -51,7 +51,7 @@ def restores (a b : Prog isa) : Bool :=
 
 /-- Whether every load of MXCSR by `c`, and by the functions it calls, is
 between `mxcsrSave` and `mxcsrRestore` (`restores`). -/
-def ctlOk : Prog isa → Bool
+noncomputable def ctlOk : Prog isa → Bool
   | .block is => KList.all is fun i => !loadsMxcsr i
   | .seq a b => restores a b || (ctlOk a && ctlOk b)
   | .ite _ t e => ctlOk t && ctlOk e
@@ -61,7 +61,7 @@ def ctlOk : Prog isa → Bool
 
 /-- A check that implies `ctlOk` and composes like `Code.allInstrs`: `c`
 itself never loads MXCSR, and the functions it calls satisfy `ctlOk`. -/
-def ctlC : Prog isa → Bool
+noncomputable def ctlC : Prog isa → Bool
   | .block is => KList.all is fun i => !loadsMxcsr i
   | .seq a b => ctlC a && ctlC b
   | .ite _ t e => ctlC t && ctlC e

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.KernelList
-import Mathlib.Util.CompileInductive
 public import Lean.Elab.Tactic.Basic
 public meta import Lean.Elab.Tactic.Basic
 public import Lean.Meta.Eval
@@ -104,11 +103,16 @@ analysis, and compiled again, at every check. -/
 
 variable {M : ISA} (A : Taint M)
 
+/-- `checkBlock`, for compiled code. -/
+def checkBlockC : A.T → List M.Instr → Option A.T
+  | τ, [] => some τ
+  | τ, i :: is => (A.step τ i).bind (checkBlockC · is)
+
 /-- The analysis of a block. The kernel evaluates this for every instruction
 checked, so it is a `List.rec`, which the kernel evaluates faster than
-structural recursion (compiled to `brecOn`); `Mathlib.Util.CompileInductive`
-compiles it for `hint`. -/
-def checkBlock (τ : A.T) (is : List M.Instr) : Option A.T :=
+structural recursion (compiled to `brecOn`). Lean's compiler does not compile
+`List.rec`: compiled code (`hint`) runs `checkBlockC`. -/
+@[implemented_by checkBlockC] def checkBlock (τ : A.T) (is : List M.Instr) : Option A.T :=
   List.rec (motive := fun _ => A.T → Option A.T) some (fun i _ ih τ => (A.step τ i).bind ih) is τ
 
 /-- The fallback interval, also used by summary and batch checks. Every hint

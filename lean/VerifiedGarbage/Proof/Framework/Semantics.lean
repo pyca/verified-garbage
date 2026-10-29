@@ -3,7 +3,6 @@ module
 public import Batteries.Tactic.Init
 public import Batteries.Tactic.PermuteGoals
 public import Batteries.Tactic.SeqFocus
-import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.Proof.Framework.GetElem
 
@@ -204,8 +203,10 @@ theorem Code.noFrames_of_noCalls {I C : Type} {c : Code I C} (h : c.noCalls = tr
 /-- `(instrs c).all p`, without building the list of instructions, which is
 much faster for the kernel to evaluate (`decide +kernel`). A block is walked
 with `List.rec`, which the kernel evaluates faster than `List.all` (compiled
-to `brecOn`). -/
-def Code.allInstrs {I C : Type} (p : I → Bool) : Code I C → Bool
+to `brecOn`). Only the kernel evaluates it, so it is not compiled (Lean's
+compiler does not compile `List.rec`): registrations' proofs mention it, and
+the emitter's audit rejects any `implemented_by` in what they reach. -/
+noncomputable def Code.allInstrs {I C : Type} (p : I → Bool) : Code I C → Bool
   | .block is => List.rec (motive := fun _ => Bool) true (fun i _ ih => p i && ih) is
   | .seq a b => a.allInstrs p && b.allInstrs p
   | .ite _ t e => t.allInstrs p && e.allInstrs p

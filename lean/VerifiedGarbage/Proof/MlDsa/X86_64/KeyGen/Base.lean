@@ -70,7 +70,7 @@ theorem WP.mx {c : Prog isa} (hc : ∀ i ∈ instrs c, loadsMxcsr i = false) {s 
   exact ⟨t, s', he, hq, by rw [MX, MX, Exec.mxcsr hc he]⟩
 
 /-- Whether no instruction of `c` loads MXCSR. -/
-def noLd (c : Prog isa) : Bool := c.allInstrs fun i => !loadsMxcsr i
+noncomputable def noLd (c : Prog isa) : Bool := c.allInstrs fun i => !loadsMxcsr i
 
 theorem noLd_spec {c : Prog isa} (h : noLd c = true) : ∀ i ∈ instrs c, loadsMxcsr i = false := by
   unfold noLd at h

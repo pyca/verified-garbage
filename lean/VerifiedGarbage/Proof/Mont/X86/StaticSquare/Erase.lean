@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
 public import VerifiedGarbage.Proof.Framework.X86.TaintErase
-import Mathlib.Util.CompileInductive
 
 /-! # Erasing the fixed square before constructing its product instructions -/
 
@@ -21,8 +20,12 @@ def inputTerm (N k i : Nat) : List Instr :=
   bif Nat.ble i k && (Nat.blt (k - i) N && Nat.blt i (k - i)) then aprod else []
 def reductionTerm (N k j : Nat) : List Instr :=
   bif Nat.blt j k && Nat.blt (k - j) N then qprod else []
-/-- A direct recursor avoids the library flat-map evaluator in the kernel. -/
-def products (f : Nat → List Instr) (xs : List Nat) : List Instr :=
+/-- `products`, for compiled code. -/
+def productsC (f : Nat → List Instr) (xs : List Nat) : List Instr := xs.flatMap f
+
+/-- A direct recursor avoids the library flat-map evaluator in the kernel; compiled
+code runs `productsC` (Lean's compiler does not compile `List.rec`). -/
+@[implemented_by productsC] noncomputable def products (f : Nat → List Instr) (xs : List Nat) : List Instr :=
   List.rec [] (fun i _ rest => KList.append (f i) rest) xs
 
 theorem products_eq (f : Nat → List Instr) (xs : List Nat) : products f xs = xs.flatMap f := by

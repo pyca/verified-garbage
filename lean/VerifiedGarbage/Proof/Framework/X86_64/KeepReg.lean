@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import Mathlib.Util.CompileInductive
 
 /-!
 # Registers kept through SSE registers
@@ -48,11 +47,15 @@ def le (a b : Abs) : Bool := (!a.ok || b.ok) && a.xs.subset b.xs
 /-- What both say. -/
 def meet (a b : Abs) : Abs := ⟨a.ok && b.ok, a.xs.inter b.xs⟩
 
+/-- `run`, for compiled code. -/
+def runC (r : Reg) (is : List Instr) (ok : Bool) (xs : Nat) : Abs := is.foldl (step r) ⟨ok, ⟨xs⟩⟩
+
 /-- `is.foldl (step r) ⟨ok, ⟨xs⟩⟩`, for the kernel: it looks at what is
 known before each instruction, so that it computes each step's value before
 the next (the fold would leave a term as deep as the block, too deep for the
-kernel in a long one). -/
-def run (r : Reg) (is : List Instr) : Bool → Nat → Abs :=
+kernel in a long one). Compiled code runs `runC` (Lean's compiler does not
+compile `List.rec`). -/
+@[implemented_by runC] noncomputable def run (r : Reg) (is : List Instr) : Bool → Nat → Abs :=
   List.rec (fun ok xs => ⟨ok, ⟨xs⟩⟩)
     (fun i _ ih ok xs =>
       let g := fun a : Abs => ih a.ok a.xs.bits

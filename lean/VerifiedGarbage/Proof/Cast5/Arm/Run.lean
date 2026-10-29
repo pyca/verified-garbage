@@ -207,7 +207,7 @@ theorem Keep.mono {rs rs' : List Reg} {s t : State} (h : Keep rs s t) (hs : ∀ 
 theorem Keep.refl (rs : List Reg) (s : State) : Keep rs s s := ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
 
 /-- Whether every instruction of `c` writes, if any register, one of `rs`. -/
-def writesOnly (rs : List Reg) (c : Prog isa) : Bool :=
+noncomputable def writesOnly (rs : List Reg) (c : Prog isa) : Bool :=
   c.allInstrs fun i => (dsts i).all rs.contains
 
 /-- A register that no instruction writes keeps its value (code without calls). -/

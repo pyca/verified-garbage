@@ -73,7 +73,7 @@ theorem Exec.gpr_callFree {c : Prog isa} {r : Reg} (hc : ∀ i ∈ instrs c, dst
       ih (fun i hi => hc i (by simp [instrs, hi])) hn, hg]
 
 /-- Every instruction of the code writes only registers among `rs`. -/
-def writesOnly (rs : List Reg) (c : Prog isa) : Bool :=
+noncomputable def writesOnly (rs : List Reg) (c : Prog isa) : Bool :=
   c.allInstrs fun i => match dstOf i with
     | none => true
     | some r => rs.contains r

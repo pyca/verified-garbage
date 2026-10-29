@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
-import Mathlib.Util.CompileInductive
 
 /-! # Recognize a unit gcd in any of the shared inverse banks -/
 

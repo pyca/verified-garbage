@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Selftest.X86_64
-public import Mathlib.Util.CompileInductive
 
 /-! # The pipeline self-test on x86-64 -/
 

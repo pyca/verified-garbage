@@ -14,7 +14,6 @@ import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.ToAdditive
-import Mathlib.Util.CompileInductive
 
 /-! # Binary GCD without inverse coefficients
 

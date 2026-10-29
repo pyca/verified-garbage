@@ -183,7 +183,7 @@ theorem wrap_gpr {body : Prog isa} (hv : body.allInstrs (fun i => !KeepReg.write
 
 /-- What the functions' checks ask of their code `wrap b`, in one pass: no
 instruction loads MXCSR, and `b` writes no vector register. -/
-def wrapOk : Prog isa → Bool
+noncomputable def wrapOk : Prog isa → Bool
   | .seq (.block sv) (.seq b (.block rs)) =>
     sv.all (fun i => !loadsMxcsr i) && rs.all (fun i => !loadsMxcsr i) &&
       b.allInstrs (fun i => !KeepReg.writesVec i && !loadsMxcsr i)

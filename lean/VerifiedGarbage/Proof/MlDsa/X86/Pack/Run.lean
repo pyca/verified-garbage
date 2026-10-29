@@ -107,7 +107,7 @@ def allRegs : List Reg := [.eax, .ecx, .edx, .ebx, .esp, .ebp, .esi, .edi]
 theorem mem_allRegs (r : Reg) : r ∈ allRegs := by cases r <;> decide
 
 /-- Whether no instruction of `c` writes a register outside `rs`. -/
-def writesOnly (rs : List Reg) (c : Prog isa) : Bool :=
+noncomputable def writesOnly (rs : List Reg) (c : Prog isa) : Bool :=
   c.allInstrs fun i => allRegs.all fun r => rs.contains r || !Taint.clobbers i r
 
 /-- A register that no instruction writes keeps its value. -/

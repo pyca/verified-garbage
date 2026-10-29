@@ -10,7 +10,6 @@ import Mathlib.Tactic.Attr.Core
 import Mathlib.Tactic.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
-import Mathlib.Util.CompileInductive
 
 /-! # The runtime division kernel is shared with RSA key checking -/
 

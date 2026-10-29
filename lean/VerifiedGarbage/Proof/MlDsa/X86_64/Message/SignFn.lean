@@ -39,7 +39,7 @@ theorem depthCompN (n : Nat) : Comp (fun c => decide (c.depth ≤ n + 1)) (fun c
     exact decide_eq_decide.mpr (by omega)
 
 /-- `NoSp` from evaluating the code. -/
-abbrev noSpB (c : Prog isa) : Bool := c.allInstrs fun i => !Taint.clobbers i .rsp
+noncomputable abbrev noSpB (c : Prog isa) : Bool := c.allInstrs fun i => !Taint.clobbers i .rsp
 
 theorem noSp_of {c : Prog isa} (h : noSpB c = true) : NoSp c := Proof.MlKem.X86_64.nosp_of h
 

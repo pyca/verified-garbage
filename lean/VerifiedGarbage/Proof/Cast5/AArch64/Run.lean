@@ -169,7 +169,7 @@ macro "crun" : tactic => `(tactic| crun [])
 /-! ## What a block keeps -/
 
 /-- Whether every instruction of `c` writes, if any register, one of `rs`. -/
-def writesOnly (rs : List Reg) (c : Prog isa) : Bool :=
+noncomputable def writesOnly (rs : List Reg) (c : Prog isa) : Bool :=
   c.allInstrs fun i => (dsts i).all rs.contains
 
 /-- A register that no instruction writes keeps its value (code without calls). -/

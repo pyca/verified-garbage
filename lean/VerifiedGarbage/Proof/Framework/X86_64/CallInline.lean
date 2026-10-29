@@ -675,8 +675,9 @@ theorem execBlock_length {l : List Instr} {s s' : State} {t : List Leak} (h : ex
 
 /-- Code whose calls can be inlined: no instruction outside a call writes
 `rsp`, there are no frames, and each function called calls none and has
-only instructions that do not touch `rsp`. -/
-def _root_.VG.Code.InlineOk : Prog isa → Bool
+only instructions that do not touch `rsp`. Only the kernel evaluates it (as
+`Code.allInstrs`). -/
+noncomputable def _root_.VG.Code.InlineOk : Prog isa → Bool
   | .block l => KList.all l fun i => !Taint.clobbers i .rsp
   | .seq a b => a.InlineOk && b.InlineOk
   | .ite _ t e => t.InlineOk && e.InlineOk

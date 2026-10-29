@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
-import Mathlib.Util.CompileInductive
 
 /-! # The inverse and persistent banks reuse the runtime RSA clear proof -/
 

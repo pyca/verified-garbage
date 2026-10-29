@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import Mathlib.Util.CompileInductive
 
 /-!
 # The ABI of the curve functions on AArch64
@@ -27,10 +26,20 @@ open VG VG.AArch64
 /-- The callee-saved registers but `x19`–`x25` and `x30`. -/
 abbrev untouched : List Reg := [.x26, .x27, .x28]
 
+/-- `topAll`, for compiled code. -/
+def topAllC (p : Instr → Bool) : Prog isa → Bool
+  | .block is => is.all p
+  | .seq a b => topAllC p a && topAllC p b
+  | .ite _ t e => topAllC p t && topAllC p e
+  | .loop b _ => topAllC p b
+  | .call _ _ => true
+  | .frame i b j => p i && topAllC p b && p j
+
 /-- Whether every instruction of `c` outside the functions it calls
 satisfies `p`. A block is walked with `List.rec`, which the kernel evaluates
-faster than `List.all` (as `Code.allInstrs`). -/
-def topAll (p : Instr → Bool) : Prog isa → Bool
+faster than `List.all` (as `Code.allInstrs`). Compiled code runs `topAllC`
+(Lean's compiler does not compile `List.rec`). -/
+@[implemented_by topAllC] noncomputable def topAll (p : Instr → Bool) : Prog isa → Bool
   | .block is => List.rec (motive := fun _ => Bool) true (fun i _ ih => p i && ih) is
   | .seq a b => topAll p a && topAll p b
   | .ite _ t e => topAll p t && topAll p e
