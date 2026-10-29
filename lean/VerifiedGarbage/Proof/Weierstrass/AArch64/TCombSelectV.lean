@@ -706,7 +706,7 @@ theorem selOneV_ok (v : Nat) {c h k : Nat} (hc : c ≤ 4) (hk : h + k ≤ c) {a 
       RegUpd.v_setV_of_ne _ _ fun e => ho (by rw [e]; simp), bit_mask]
     by_cases h0 : a = 0
     · rw [ite_t ((zero_eq_iff ha).mpr h0), ite_t h0]
-    · rw [ite_f ((zero_eq_iff ha).not.mpr h0), ite_f h0]
+    · rw [ite_f ((not_congr (zero_eq_iff ha)).mpr h0), ite_f h0]
   · exact (((VKeep.setV' _ _ (List.mem_cons_self ..)).trans (VKeep.setV' _ _ (List.mem_cons_self ..))).mono
       (fun _ h => absurd h List.not_mem_nil) fun _ h => h).trans
       (kt.mono (fun _ h => h) fun _ h => List.mem_cons_of_mem _ h)
