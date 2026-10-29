@@ -324,6 +324,14 @@ impl<P, T> TestFile<P, T> {
 /// one file's vectors keep every core busy, rather than one core while the
 /// other tests have finished. A failed check panics in its thread, which
 /// prints its message, and the test fails once every thread has stopped.
+/// For the RSA and compressed point tests.
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "powerpc64"
+))]
 pub fn par_each<I: Sync>(items: &[I], f: impl Fn(&I) + Sync) {
     par_indices(items.len(), &|i| f(&items[i]));
 }
