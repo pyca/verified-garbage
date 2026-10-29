@@ -1,9 +1,9 @@
 module
+
 public import VerifiedGarbage.Proof.Dsa.X86_64.Call
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Call2
 import VerifiedGarbage.Proof.Dsa.X86_64.Reduce
-
 /-! # Streaming reduction in the DSA parent workspace -/
 
 @[expose] public section

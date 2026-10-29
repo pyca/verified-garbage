@@ -1,10 +1,10 @@
 module
+
 public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
 public import VerifiedGarbage.Proof.Dsa.X86_64.CheckFrame
 
 import VerifiedGarbage.Proof.Dsa.X86_64.CheckCall
 import VerifiedGarbage.Proof.Dsa.X86_64.LoadRange
-
 /-! # DSA range validation through the parent calling convention -/
 
 @[expose] public section

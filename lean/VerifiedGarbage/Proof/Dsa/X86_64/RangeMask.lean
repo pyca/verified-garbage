@@ -1,6 +1,8 @@
 module
+
 public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import Aesop.BuiltinRules
 
 import VerifiedGarbage.Proof.Dsa.X86_64.RangeLow
 import VerifiedGarbage.Proof.Dsa.X86_64.RangeHead
@@ -12,9 +14,7 @@ import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Push
 import Mathlib.Tactic.Attr.Core
-public import Aesop.BuiltinRules
 import Mathlib.Tactic.ToDual
-
 /-! # Exact scalar range masks without secret-dependent branches -/
 
 @[expose] public section

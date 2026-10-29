@@ -1,25 +1,173 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Params
-public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Save
-import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Exit
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeBytes
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Entry
+public import VerifiedGarbage.Impl.Dsa.X86_64.ProbablePrime
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+
+import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Exit
 import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Args
-import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Workspace
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeFootprint
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.WorkFrame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.BitLengthBounds
-public import VerifiedGarbage.Impl.Dsa.X86_64.ProbablePrime
-public import VerifiedGarbage.Proof.Bignum.Words
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.Semantics
-
+import VerifiedGarbage.Proof.Bignum.X86_64.Words
+import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+import VerifiedGarbage.Proof.Bignum.X86_64.Setup
 /-! # The probable-prime test's body, between its frame's push and pop -/
+
+-- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/ProbablePrime/Save.lean`, which only this module imported.
+section
+
+/-! # The probable-prime test keeps the callee-saved registers in its frame -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.ProbablePrime
+open VG VG.X86_64 VG.X86_64.Spill VG.Proof.MlKem.X86_64
+open VG.Impl.Dsa.X86_64.ProbablePrime
+
+def spillSlots : List (Reg × Nat) :=
+  [(.rbx, 0), (.rbp, 8), (.r12, 16), (.r13, 24), (.r14, 32), (.r15, 40)]
+
+theorem spillSlots_fit : ∀ p ∈ spillSlots, p.2 + 8 ≤ 56 := by decide
+
+theorem save_ok {s : State} (hw : (⟨s.gpr .rsp, 56⟩ : Region) ∈ s.wr) :
+    WP isa (.block saveRegisters) s fun t =>
+      t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      Saved t.mem (s.gpr .rsp) s.gpr spillSlots ∧
+      Frame [⟨s.gpr .rsp, 48⟩] s.mem t.mem := by
+  change WP isa (.block (saveCode .rsp spillSlots)) s _
+  apply WP.mono (VG.X86_64.Spill.save_ok .rsp spillSlots s (fun p hp =>
+    ⟨_, hw, Offset.contains_base _ (spillSlots_fit p hp) (by have := spillSlots_fit p hp; omega)⟩))
+  intro t ⟨hg, hr, hw, hm⟩
+  refine ⟨hg, hr, hw, ?_, ?_⟩
+  · rw [hm]; exact saveMem_saved _ _ _ _ (by decide)
+  · rw [hm]; exact saveMem_frame_base _ _ _ _ (fun p hp => by revert p; decide) (by decide)
+
+theorem restore_ok {s : State} (g : Reg → BitVec 64)
+    (hw : (⟨s.gpr .rsp, 56⟩ : Region) ∈ s.wr)
+    (hs : Saved s.mem (s.gpr .rsp) g spillSlots) :
+    WP isa (.block restoreRegisters) s fun t =>
+      (∀ r ∈ spillSlots.map Prod.fst, t.gpr r = g r) ∧
+      (∀ r, r ∉ spillSlots.map Prod.fst → t.gpr r = s.gpr r) ∧
+      t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  change WP isa (.block (restoreCode .rsp spillSlots)) s _
+  exact VG.X86_64.Spill.restore_ok .rsp spillSlots g s (by decide) (fun p hp =>
+    ⟨_, List.mem_append_right _ hw, Offset.contains_base _ (spillSlots_fit p hp)
+      (by have := spillSlots_fit p hp; omega)⟩) hs
+
+end VG.Proof.Dsa.X86_64.ProbablePrime
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/ProbablePrime/Entry.lean`, which only this module imported.
+section
+
+/-! # The probable-prime test's entry: `used` in the frame, the size in `r8`, the arithmetic workspace in `rdi` -/
+
+section
+namespace VG.Proof.Dsa.X86_64.ProbablePrime
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+open VG.Impl.Dsa.X86_64.ProbablePrime
+
+theorem entry_ok {s : State} (hf : Scr s (s.gpr .rsp) 56) :
+    WP isa (.block entry) s fun t =>
+      t.gpr .rdi = off (s.gpr .rdi) Impl.Dsa.Generation.Layout.arithmetic ∧
+      t.gpr .rsi = s.gpr .rdi ∧ t.gpr .r9 = s.gpr .rdx ∧ t.gpr .r8 = s.gpr .r9 ∧
+      t.mem = s.mem.writeW (off (s.gpr .rsp) 48) (s.gpr .r8) ∧
+      Keep [.rdi, .rsi, .r9, .r8] s t := by
+  refine WP.mono (WP.keep [.rdi, .rsi, .r9, .r8] (Q := fun t =>
+      t.gpr .rdi = off (s.gpr .rdi) Impl.Dsa.Generation.Layout.arithmetic ∧
+      t.gpr .rsi = s.gpr .rdi ∧ t.gpr .r9 = s.gpr .rdx ∧ t.gpr .r8 = s.gpr .r9 ∧
+      t.mem = s.mem.writeW (off (s.gpr .rsp) 48) (s.gpr .r8)) (by
+    xrun [entry, sp, State.ea, BitVec.ofInt_natCast, hf.st (d := 48) (by decide)]
+    rw [show BitVec.signExtend 64 (BitVec.ofNat 32 Impl.Dsa.Generation.Layout.arithmetic) =
+      BitVec.ofNat 64 Impl.Dsa.Generation.Layout.arithmetic by decide]) rfl)
+    fun _ ⟨h, hk⟩ => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2, hk⟩
+
+end VG.Proof.Dsa.X86_64.ProbablePrime
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/ProbablePrime/Workspace.lean`, which only this module imported.
+section
+
+/-! # The probable-prime test's arithmetic workspace, of the words in `r12`
+
+As `Generation.workspace_ok`, with the words from `r12` rather than an
+immediate. -/
+
+section
+namespace VG.Proof.Dsa.X86_64.ProbablePrime
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+open VG.Proof.Rsa.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys
+
+theorem sizedWorkspace_ok {s : State} {B : Addr} {Z w : Nat}
+    (h : Scr s B Z) (hdi : s.gpr .rdi = B) (h12 : s.gpr .r12 = BitVec.ofNat 64 w) (hZ : slot w 16 ≤ Z)
+    (hw1 : 2 ≤ w) (hw2 : w < 2 ^ 24) :
+    WP isa Impl.Dsa.X86_64.ProbablePrime.sizedWorkspace s fun t =>
+      Ws t B Z w ∧ Good t B Z w 0 ∧
+      Frm B [(48, 80), (224, 8)] s.mem t.mem ∧ Keep [.rax, .rdx] s t := by
+  have hz : 256 ≤ Z := Nat.le_trans (Nat.le_add_right 256 _) hZ
+  unfold Impl.Dsa.X86_64.ProbablePrime.sizedWorkspace
+  simp only [seqs]
+  refine WP.seq (WP.mono (WP.keep [.rax] (Q := fun u =>
+      u.mem = (s.mem.writeW (off B 48) (BitVec.ofNat 64 w)).writeW (off B 56) (0#64)) (by
+    xrun [State.ea, hdr, hdrOff, sW, sMinv, hdi, h12, h.st (d := 48) (by omega), h.st (d := 56) (by omega)]
+    rfl) rfl) fun u ⟨hm, ku⟩ => ?_)
+  have hu := h.congr ku.2.2
+  have hudi := (ku.gpr (by decide)).trans hdi
+  have hu12 := (ku.gpr (by decide)).trans h12
+  refine WP.seq (WP.mono (setBases_ok hu hudi hu12 (by unfold sArr; omega))
+    fun v ⟨harr, fv, kv⟩ => ?_)
+  have hv := hu.congr kv.2.2
+  have hvdi := (kv.gpr (by decide)).trans hudi
+  have hv12 := (kv.gpr (by decide)).trans hu12
+  refine WP.mono (WP.keep [.rax] (Q := fun t =>
+      t.mem = v.mem.writeW (off B 224) (BitVec.ofNat 64 (8 * (w + 2)))) (by
+    xrun [State.ea, hdr, hdrOff, sStride, sFn, hvdi, hv12, hv.st (d := 224) (by omega)]
+    congr 1
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_shiftLeft, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftLeft_eq,
+      show (2 : BitVec 64).toNat = 2 from rfl]
+    omega) rfl) fun t ⟨htm, kt⟩ => ?_
+  have ft : Outside B 224 8 v.mem t.mem := by rw [htm]; exact writeW_outside _ _ _ (by decide)
+  have allk := (ku.trans kv).trans kt
+  have hw : word t.mem B 48 = BitVec.ofNat 64 w := by
+    rw [ft.word (Or.inl (by decide)) (by decide), fv.word (Or.inl (by decide)) (by decide), hm,
+      (writeW_outside _ B _ (d := 56) (by decide)).word (Or.inl (by decide)) (by decide), word_writeW_self]
+  have hminv : word t.mem B 56 = 0 := by
+    rw [ft.word (Or.inl (by decide)) (by decide), fv.word (Or.inl (by decide)) (by decide), hm, word_writeW_self]
+    rfl
+  have ha : ∀ j < 8, word t.mem B (8 * sArr j) = off B (slot w j) := by
+    intro j hj
+    rw [ft.word (Or.inl (by unfold sArr; omega)) (by unfold sArr; omega)]
+    exact harr j hj
+  have hs := h.congr allk.2.2
+  have ht := allk.gpr (by decide) |>.trans hdi
+  refine ⟨⟨hs, ht, hw, ?_, ha, hZ, hw1, hw2⟩, ⟨hs, ht, ⟨hw, hminv, ha⟩⟩, ?_, allk.mono (by decide)⟩
+  · rw [htm]; exact word_writeW_self _ _ _ _
+  · have fh : Outside B 48 16 s.mem u.mem := by
+      rw [hm]
+      exact ((writeW_outside _ B _ (d := 48) (by decide)).mono (by decide) (by decide)).trans
+        ((writeW_outside _ B _ (d := 56) (by decide)).mono (by decide) (by decide))
+    have fhv : Outside B 48 80 s.mem v.mem :=
+      (fh.mono (by decide) (by decide)).trans (fv.mono (by decide) (by decide))
+    exact (Frm.of_outside fhv (by simp)).trans (Frm.of_outside ft (by simp))
+
+end VG.Proof.Dsa.X86_64.ProbablePrime
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.Dsa.X86_64.ProbablePrime

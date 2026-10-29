@@ -1,10 +1,10 @@
 module
+
 public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
 public import VerifiedGarbage.Proof.Dsa.X86_64.CheckFrame
 
 import VerifiedGarbage.Proof.Dsa.X86_64.CheckCall
 import VerifiedGarbage.Proof.Dsa.X86_64.LoadOne
-
 /-! # Complete checks of DSA subgroup exponentiation results -/
 
 @[expose] public section

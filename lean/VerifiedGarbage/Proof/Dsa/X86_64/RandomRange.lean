@@ -1,13 +1,42 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomBorrow
 public import VerifiedGarbage.Proof.Dsa.RandomRange
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Impl.Dsa.X86_64.Random
-import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 public import Aesop.BuiltinRules
 
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Framework.Semantics
+import Batteries.Tactic.Init
+import Batteries.Tactic.PermuteGoals
+import Batteries.Tactic.SeqFocus
+import VerifiedGarbage.Impl.Dsa.Layout
+import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.TCB.Artifact
 /-! Correctness of the sampler's right-to-left range check. -/
+
+-- Formerly `VerifiedGarbage/Proof/Dsa/X86_64/RandomBorrow.lean`, which only this module imported.
+section
+
+/-! Byte-subtraction lemma used by the scalar range check. -/
+section
+namespace VG.Proof.Dsa.X86_64
+
+/-- For byte-sized operands (including an incoming borrow), the high bit of
+64-bit subtraction is precisely the unsigned borrow. -/
+theorem random_byte_borrow (a b : BitVec 64) (ha : a.toNat ≤ 255) (hb : b.toNat ≤ 256) :
+    ((a - b) >>> 63).toNat = if a.toNat < b.toNat then 1 else 0 := by
+  rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_sub]
+  split <;> omega
+
+open VG VG.X86_64 VG.Proof.MlKem.X86_64
+
+end VG.Proof.Dsa.X86_64
+end
+
+end
+
 @[expose] public section
 namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64

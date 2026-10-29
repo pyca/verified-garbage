@@ -1,13 +1,14 @@
 module
+
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.Slots
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorStep
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 
+import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorCheck
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrime
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.WorkspaceBase
@@ -17,7 +18,6 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Workspace
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 import Mathlib.Data.Nat.Basic
 import Mathlib.Order.Basic
-
 /-! # Complete generator range checks from the persistent frame -/
 
 @[expose] public section
