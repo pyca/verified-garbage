@@ -125,6 +125,20 @@ class Trim(unittest.TestCase):
         fix.assert_not_called()
         self.assertEqual(result["applied"], 0)
 
+    def test_the_dependencies_reach_the_analysis(self):
+        graphs = []
+
+        def analyze(mods, suggestions, graph, **kw):
+            graphs.append(graph)
+            return check.Plan()
+        with mock.patch.object(trim, "shaken", return_value={}), \
+                mock.patch.object(check, "dependency_roots", return_value=[]), \
+                mock.patch.object(check, "analyze", side_effect=analyze):
+            trim.trim(["VerifiedGarbage.A"], ["VerifiedGarbage.A"], 1, 10, self.state, dependencies=("Mathlib",))
+        self.assertEqual([g.dependencies for g in graphs], [("Mathlib",)])
+        with self.assertRaises(SystemExit):
+            trim.main(["--replay", str(self.root / "x.json"), "--dependencies", "Mathlib"])
+
     def run_rounds(self, findings, fixes):
         with mock.patch.object(trim, "shaken", return_value={}), \
                 mock.patch.object(check, "dependency_roots", return_value=[]), \

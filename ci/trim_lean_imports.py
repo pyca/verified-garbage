@@ -22,6 +22,9 @@ when a round finds nothing, or makes no change that builds.
   … --discover      also consider declaration-based hypotheses shake missed
   … --no-shake      with --discover, skip shake (still check selected builds)
   … --max-affected N  select a subset within N verification targets
+  … --dependencies PREFIX...  also remove imports of these dependencies'
+                    modules that `lake shake` finds unused (e.g. Mathlib),
+                    kept only if everything importing the module builds
   trim_lean_imports.py --replay FILE [--report FILE]  no Lake calls
 
 It never edits registrations or variants (`Artifacts/`, `Generic/`,
@@ -204,7 +207,8 @@ def module_trial_key(mod: str, plan: check.Plan, graph: check.Graph, library: li
 def trim(mods: list[str], library: list[str], rounds: int, batch: int, state: State,
          independent: bool = False, max_affected: int | None = None, skip_shake: bool = False,
          timeout: float | None = None, max_attempts: int = 3, audit: dict | None = None,
-         read_batch: int = 32, read_timeout: float | None = None, verify_batch: int = 32) -> dict[str, int]:
+         read_batch: int = 32, read_timeout: float | None = None, verify_batch: int = 32,
+         dependencies: tuple[str, ...] = ()) -> dict[str, int]:
     """Rounds of findings, fixes and builds until nothing is left to change."""
     totals = {"rounds": 0, "applied": 0, "undone": 0}
     if audit is not None:
@@ -214,7 +218,7 @@ def trim(mods: list[str], library: list[str], rounds: int, batch: int, state: St
         check.progress(f"round {r}")
         totals["rounds"] = r
         state.current.clear()
-        graph = check.Graph(check.dependency_roots())
+        graph = check.Graph(check.dependency_roots(), dependencies)
         evidence = replay.Evidence(uses, min(batch, read_batch))
         suggestions = shaken(mods, state, batch, skip=skip_shake, timeout=timeout)
         raw_suggestions = {f: (list(rem), list(add)) for f, (rem, add) in suggestions.items()}
@@ -339,6 +343,8 @@ def main(argv=None) -> int:
     parser.add_argument("--verify-attempts", type=int, default=3, help="maximum verification passes before restoring a batch (default 3)")
     parser.add_argument("--verify-batch", type=int, default=32, help="targets per baseline/verification build; stop a pass at its first failing chunk (default 32)")
     parser.add_argument("--retry-rejected", action="store_true", help="retry selected modules' unchanged failed trials without discarding raw evidence caches")
+    parser.add_argument("--dependencies", nargs="+", default=[], metavar="PREFIX",
+                        help="also remove the unused imports of these dependencies' modules (e.g. Mathlib)")
     args = parser.parse_args(argv)
     if (args.batch < 1 or args.read_batch < 1 or args.read_timeout <= 0 or args.rounds < 1
             or args.verify_attempts < 1 or args.verify_batch < 1
@@ -349,6 +355,8 @@ def main(argv=None) -> int:
         parser.error("--no-shake requires --discover and live analysis")
     if args.retry_rejected and (args.replay or args.dry_run or args.capture):
         parser.error("--retry-rejected requires live verification")
+    if args.dependencies and (args.replay or args.capture):
+        parser.error("--dependencies requires live analysis: captures do not record dependencies' modules")
     if args.replay:
         if args.capture:
             parser.error("--capture cannot be combined with --replay")
@@ -373,7 +381,7 @@ def main(argv=None) -> int:
             state.module_rejections.pop(mod, None)
         state.save()
     if args.dry_run or args.capture:
-        graph = check.Graph(check.dependency_roots())
+        graph = check.Graph(check.dependency_roots(), tuple(args.dependencies))
         graph.users = check.reverse_index(library)
         evidence = replay.Evidence(cached_uses(state, args.build_timeout, args.read_timeout), min(args.batch, args.read_batch))
         suggestions = shaken(mods, state, args.batch, skip=args.no_shake, timeout=args.build_timeout)
@@ -393,7 +401,8 @@ def main(argv=None) -> int:
     audit = {}
     try:
         totals = trim(mods, library, args.rounds, args.batch, state, bool(args.discover), args.max_affected, args.no_shake,
-                      args.build_timeout, args.verify_attempts, audit, args.read_batch, args.read_timeout, args.verify_batch)
+                      args.build_timeout, args.verify_attempts, audit, args.read_batch, args.read_timeout, args.verify_batch,
+                      tuple(args.dependencies))
     except BaseException as error:
         audit["error"] = f"{type(error).__name__}: {error}"
         raise
