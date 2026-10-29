@@ -1,13 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyPrograms
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
+public import VerifiedGarbage.Impl.Ffdh.Arm.CachedKeyGenerate
+public import VerifiedGarbage.Impl.Ffdh.Arm.CachedPrepare
+public import VerifiedGarbage.Impl.Ffdh.Arm.CachedSample
+public import VerifiedGarbage.Impl.Ffdh.Arm.CachedPower
+public import VerifiedGarbage.Impl.Ffdh.Arm.KeyGenerate
+public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
+public import VerifiedGarbage.TCB.Arm.Isa
 
 import VerifiedGarbage.Proof.Ffdh.Arm.EnvironmentPrepareLaw
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedPrepare
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.Ffdh.Arm.CachedPrepare
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedGenerationEnvironment
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyPrepareLaw
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedPrepareCT
@@ -24,7 +29,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyOutputs
 import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticExternal
-import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.TCB.Code
 import VerifiedGarbage.Proof.Ffdh.Arm.Context
 import VerifiedGarbage.Proof.Ffdh.Arm.SampleScalarCT
@@ -35,9 +39,7 @@ import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.EnvironmentSampleLaw
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedSamplePolicy
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedSampleCT
-import VerifiedGarbage.Impl.Ffdh.Arm.CachedSample
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedSampleBound
-import VerifiedGarbage.Proof.Ffdh.Arm.CachedPowerCorrect
 import VerifiedGarbage.Proof.Bignum.Arm.CombExpBackend
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedPowerMetadata
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedGenerationTable
@@ -45,12 +47,8 @@ import VerifiedGarbage.Proof.Rsa.FixedBaseComb
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomeryCT
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpSharedCT
 import VerifiedGarbage.Proof.Bignum.Arm.CombExpChooseCT
-import VerifiedGarbage.Proof.Bignum.Arm.CombExpPhaseCT
 import VerifiedGarbage.Proof.Bignum.Arm.CombExpKernelAt
 import VerifiedGarbage.Proof.Bignum.Arm.CombExpTiming
-import VerifiedGarbage.Proof.Ffdh.Arm.EnvironmentPowerLaw
-import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
-import VerifiedGarbage.Impl.Ffdh.Arm.CachedPower
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedPowerArgsCT
 import VerifiedGarbage.Proof.Ffdh.Arm.SampleEnvironment
 import VerifiedGarbage.Proof.Ffdh.Arm.SamplePowerLaw
@@ -62,7 +60,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMain
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyMemory
-import VerifiedGarbage.Impl.Ffdh.Arm.KeyGenerate
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyTailLaw
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.Mem
@@ -78,11 +75,295 @@ import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyGenerateData
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
-import VerifiedGarbage.Impl.Ffdh.Arm.CachedKeyGenerate
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyGenerateFn
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyGenerateContractCT
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyGenerateSat
+import VerifiedGarbage.Proof.Bignum.Arm.CombExpChoose
+import VerifiedGarbage.Proof.Bignum.Arm.CombExpPhase
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Impl.Bignum.Arm.CombExp
+import VerifiedGarbage.Proof.Bignum.Arm.CombExpControl
+import VerifiedGarbage.Proof.Bignum.Arm.CombExpStepCT
+import VerifiedGarbage.Proof.Bignum.Arm.CombExpLoop
+import VerifiedGarbage.Proof.Bignum.Arm.CombExpKernel
+import VerifiedGarbage.Proof.Bignum.Arm.CombExpInitial
+import VerifiedGarbage.Proof.Bignum.Arm.CombExpInitialCT
+import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyCallMemory
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyPowerAt
 /-! Cached attempts inherit every callable RSA Montgomery backend and caller transform. -/
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/CachedKeyPrograms.lean`, which only this module imported.
+section
+
+/-! Cached attempts instantiate one shared callable Montgomery backend. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.CachedKeyGenerate
+open VG VG.Arm VG.Proof.Bignum.Arm VG.Impl.Bignum.Arm
+
+def prepare : Prog isa := VG.Impl.Ffdh.Arm.CachedPrepare.code
+
+def sample : Prog isa := VG.Impl.Ffdh.Arm.CachedSample.code
+
+def tail (backend : MontBackend) : Prog isa :=
+  VG.Impl.Ffdh.Arm.KeyGenerate.tail
+    (VG.Impl.Ffdh.Arm.CachedPower.code (MontCall.op backend.name backend.mul))
+
+def code (backend : MontBackend) : Prog isa :=
+  VG.Impl.Ffdh.Arm.CachedKeyGenerate.code prepare sample (tail backend)
+
+end VG.Proof.Ffdh.Arm.CachedKeyGenerate
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/CachedPowerCorrect.lean`, which only this module imported.
+section
+
+/-! Cached exponentiation consumes the bounded sampled scalar without changing its buffers. -/
+
+section
+namespace VG.Proof.Ffdh.Arm.CachedPower
+open VG VG.Arm VG.Arm.FrameStack VG.Proof.Bignum.Arm
+open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.X25519.Arm (Rest)
+
+theorem significant_below {p : Inputs} {l : ScalarLayout p} {s : State}
+    (h : KeyCallMemory p s) :
+    Region.Disjoint ⟨State.addr l.start,l.width⟩ (belowA s.sp 48) := by
+  have fit := h.privateFits
+  have lead := l.lead_lt
+  rw [ScalarLayout.start,VG.Arm.addr_add (by omega)]
+  exact h.privateValue.sub_left (Offset.sub_base _ (by unfold ScalarLayout.width; omega))
+
+theorem correct (backend : MontBackend) (s : State) {p : Inputs} {l : ScalarLayout p}
+    {slots : List Nat} {eb : List Byte}
+    (context : SampleContext p l slots s) (cached : CachedGenerationContext p s)
+    (calls : KeyCallMemory p s) (stable : stableSlots slots=true) (h52 : 52∈slots)
+    (ready : ArithmeticReady p.base p.len p.w s)
+    (modulus : numAt s.mem (State.addr p.base) p.w 0=p.P) (odd : p.P%2=1)
+    (r2 : numAt s.mem (State.addr p.base) p.w 4=2^(128*p.w)%p.P)
+    (exponent : Octets p.base l.start p.len eb s) (size : eb.length=l.width)
+    (widthBound : bits p≤8*eb.length) (scheduleFit : 6*Spec.Rsa.FixedBaseComb.rows (bits p)<2^31)
+    (widthFit : bits p<2^31) (positive : 0<Spec.Rsa.FixedBaseComb.rows (bits p))
+    (scalarFit : Spec.Rsa.os2ip eb<2^(bits p))
+    (tableSeparate : ∀r∈CombExp.writeRegions p.base s.sp p.len,
+      Region.Disjoint ⟨State.addr (table p),32*(8*p.w)⟩ r) :
+    WP isa (VG.Impl.Ffdh.Arm.CachedPower.code (VG.Impl.Bignum.Arm.MontCall.op backend.name backend.mul)) s fun t =>
+      Context p slots t ∧ ArithmeticReady p.base p.len p.w t ∧
+      numAt t.mem (State.addr p.base) p.w 6=Spec.Rsa.powMod p.G (Spec.Rsa.os2ip eb) p.P ∧
+      numAt t.mem (State.addr p.base) p.w 0=p.P ∧
+      numAt t.mem (State.addr p.base) p.w 4=2^(128*p.w)%p.P ∧
+      numAt t.mem (State.addr p.base) p.w 7=1 ∧
+      Frame (CombExp.writeRegions p.base s.sp p.len) s.mem t.mem ∧ Rest roundClobbers s t := by
+  let K := CombExp.kernel backend p.base l.start (table p) s.sp p.len p.w p.P p.G (bits p) eb
+    widthBound (by have := l.width_bounds.2; have := p.maxLength; omega) scheduleFit widthFit scalarFit
+  have source : CombDigit.Source l.start eb s := ⟨exponent.fits,exponent.readable,exponent.byte⟩
+  have hp : CombExp.Persistent p.base l.start (table p) s.sp p.len p.w p.P p.G (bits p) eb s := by
+    refine ⟨⟨calls.stack,rfl⟩,source,cached.table,?_,tableSeparate⟩
+    intro r hr
+    simp only [CombExp.writeRegions,List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl
+    · exact exponent.separate
+    · rw [size]; exact significant_below calls
+  rw [VG.Impl.Ffdh.Arm.CachedPower.code,WP.seq_iff]
+  refine WP.mono (args_ok s context cached ready h52) ?_
+  rintro u ⟨readyU,controlsU,arraysU,frameU,restU⟩
+  have writes : Frame (CombExp.writeRegions p.base s.sp p.len) s.mem u.mem := frameU.mono (by simp [CombExp.writeRegions])
+  have hpU := K.arithmetic.stable frameU restU hp
+  have controls : CombExp.Controls p.base l.start (table p) eb.length (bits p) u := by
+    rw [size]; exact controlsU
+  refine WP.mono (CombExp.phase_ok K u readyU hpU controls
+    ((arraysU 0 (by decide)).trans modulus) odd ((arraysU 4 (by decide)).trans r2)
+    positive (by omega) scalarFit) ?_
+  rintro t ⟨rd,value,m,rr,one,_,_,frameT,restT⟩
+  have frame := writes.trans frameT
+  have rest := restU.trans restT
+  exact ⟨context.toContext.after_call calls frame rest rd.ptr (fun d hd=>(stableSlots_at stable hd).1),
+    rd,value,m,rr,one,frame,rest⟩
+
+end VG.Proof.Ffdh.Arm.CachedPower
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/CombExpLoopCT.lean`, which only this module imported.
+section
+
+/-! The public number of remaining comb rows controls every back edge. -/
+
+section
+namespace VG.Proof.Bignum.Arm.CombExp
+open VG VG.Arm
+
+structure LoopInput (base source table : BitVec 32) (len w bytes N M g x k : Nat)
+    (P : State→Prop) (s : State) : Prop where
+  power : Power base len w M g (VG.Proof.Rsa.FixedBaseComb.high N x k) s
+  persistent : P s
+  controls : Controls base source table bytes N s
+  counter : Counter base k s
+
+theorem rows_ct {base source table : BitVec 32} {len w bytes N M g x1 x2 count : Nat}
+    {P1 P2 : State→Prop} {regions1 regions2 : List Region}
+    (K1 : Kernel base source table len w bytes N M g x1 P1 regions1)
+    (K2 : Kernel base source table len w bytes N M g x2 P2 regions2) (ct : Timing K1 K2)
+    (positive : 0<count) (bound : count≤Spec.Rsa.FixedBaseComb.rows N) (fits : count<2^32) :
+    RelCT isa (fun s t => LoopInput base source table len w bytes N M g x1 count P1 s ∧
+      LoopInput base source table len w bytes N M g x2 count P2 t ∧ s.sp=t.sp)
+      (VG.Impl.Bignum.Arm.CombExp.rows K1.arithmetic.op) (fun _ _ => True) := by
+  let I := fun k s t => 0<k ∧ k≤Spec.Rsa.FixedBaseComb.rows N ∧ k<2^32 ∧
+    LoopInput base source table len w bytes N M g x1 k P1 s ∧
+    LoopInput base source table len w bytes N M g x2 k P2 t ∧ s.sp=t.sp
+  have step : ∀ k, RelCT isa (I k) (VG.Impl.Bignum.Arm.CombExp.round K1.arithmetic.op) fun u v =>
+      isa.eval .ne u=isa.eval .ne v ∧ (isa.eval .ne u=some false → True) ∧
+      (isa.eval .ne u=some true → ∃ m<k, I m u v) := by
+    intro k s t tr1 tr2 u v h e1 e2
+    obtain ⟨positiveK,boundK,fitsK,left,right,sp⟩ := h
+    have successor : k-1+1=k := by omega
+    have timing := relCT_keep_sp (round_ct K1 K2 ct (i:=k-1) (by omega)) (fun _ _ h => h.2.2)
+    have leftInput : RowInput base source table len w bytes N M g
+        (VG.Proof.Rsa.FixedBaseComb.high N x1 (k-1+1)) (k-1) P1 s := by
+      simpa only [successor] using (show RowInput base source table len w bytes N M g
+        (VG.Proof.Rsa.FixedBaseComb.high N x1 k) (k-1) P1 s from
+        ⟨left.power,left.persistent,left.controls,by simpa only [successor] using left.counter⟩)
+    have rightInput : RowInput base source table len w bytes N M g
+        (VG.Proof.Rsa.FixedBaseComb.high N x2 (k-1+1)) (k-1) P2 t := by
+      simpa only [successor] using (show RowInput base source table len w bytes N M g
+        (VG.Proof.Rsa.FixedBaseComb.high N x2 k) (k-1) P2 t from
+        ⟨right.power,right.persistent,right.controls,by simpa only [successor] using right.counter⟩)
+    obtain ⟨trace,sp'⟩ := timing s t tr1 tr2 u v ⟨leftInput,rightInput,sp⟩ e1 e2
+    have correct1 := round_ok K1 s (i:=k-1) (by omega) (by omega) leftInput.power leftInput.persistent
+      leftInput.controls leftInput.counter
+    have correct2 := round_ok K2 t (i:=k-1) (by omega) (by omega) rightInput.power rightInput.persistent
+      rightInput.controls rightInput.counter
+    rw [←ct.same] at correct2
+    obtain ⟨_,_,run1,power1,p1,controls1,counter1,zero1,_,_⟩ := correct1
+    obtain ⟨_,_,run2,power2,p2,controls2,counter2,zero2,_,_⟩ := correct2
+    obtain ⟨_,rfl⟩ := Exec.det e1 run1
+    obtain ⟨_,rfl⟩ := Exec.det e2 run2
+    refine ⟨trace,?_,fun _ => trivial,?_⟩
+    · change some (!u.z)=some (!v.z)
+      rw [zero1,zero2]
+    · intro again
+      have nonzero : k-1≠0 := by
+        intro zero
+        change some (!u.z)=some true at again
+        simp only [zero1,zero,decide_true,Bool.not_true,Option.some.injEq,Bool.false_eq_true] at again
+      exact ⟨k-1,by omega,by omega,by omega,by omega,
+        ⟨power1,p1,controls1,counter1⟩,⟨power2,p2,controls2,counter2⟩,sp'⟩
+  unfold VG.Impl.Bignum.Arm.CombExp.rows
+  exact (RelCT.loop I step count).mono
+    (fun _ _ h => ⟨positive,bound,fits,h.1,h.2.1,h.2.2⟩) (fun _ _ h => h)
+
+end VG.Proof.Bignum.Arm.CombExp
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/CombExpPhaseCT.lean`, which only this module imported.
+section
+
+/-! Cached comb exponentiation reveals the fixed public row count. -/
+
+section
+namespace VG.Proof.Bignum.Arm.CombExp
+open VG VG.Arm
+open VG.Spec.Rsa.Mont (numAt Operand)
+
+structure PhaseInput (base source table : BitVec 32) (len w bytes N M : Nat)
+    (P : State→Prop) (s : State) : Prop where
+  ready : ArithmeticReady base len w s
+  persistent : P s
+  controls : Controls base source table bytes N s
+  modulus : numAt s.mem (State.addr base) w 0=M
+  r2 : numAt s.mem (State.addr base) w 4=2^(128*w)%M
+
+private theorem initialInput_ok {base source table : BitVec 32} {len w bytes N M g x : Nat}
+    {P : State→Prop} {regions : List Region}
+    (K : Kernel base source table len w bytes N M g x P regions) (odd : M%2=1)
+    (s : State) (h : PhaseInput base source table len w bytes N M P s) :
+    WP isa (VG.Impl.Bignum.Arm.CombExp.initial K.arithmetic.op) s
+      (LoopInput base source table len w bytes N M g x (Spec.Rsa.FixedBaseComb.rows N) P) := by
+  refine WP.mono (initial_ok (g:=g) K.arithmetic s h.ready h.persistent h.controls h.modulus odd h.r2) ?_
+  rintro t ⟨power,p,controls,counter,_,_⟩
+  exact ⟨by simpa only [VG.Proof.Rsa.FixedBaseComb.high_top] using power,p,controls,counter⟩
+
+private theorem rowsInput_ok {base source table : BitVec 32} {len w bytes N M g x : Nat}
+    {P : State→Prop} {regions : List Region}
+    (K : Kernel base source table len w bytes N M g x P regions)
+    (positive : 0<Spec.Rsa.FixedBaseComb.rows N) (fits : Spec.Rsa.FixedBaseComb.rows N<2^32)
+    (s : State) (h : LoopInput base source table len w bytes N M g x (Spec.Rsa.FixedBaseComb.rows N) P s) :
+    WP isa (VG.Impl.Bignum.Arm.CombExp.rows K.arithmetic.op) s (TwoExp.OpInput base len w P 7) := by
+  refine WP.mono (rows_ok K s positive (Nat.le_refl _) fits h.power h.persistent h.controls h.counter) ?_
+  rintro t ⟨power,p,_,_,_,_⟩
+  exact ⟨power.ready,p,by rw [power.one]; exact power.ready.modulus⟩
+
+theorem phase_ct {base source table : BitVec 32} {len w bytes N M g x1 x2 : Nat}
+    {P1 P2 : State→Prop} {regions1 regions2 : List Region}
+    (K1 : Kernel base source table len w bytes N M g x1 P1 regions1)
+    (K2 : Kernel base source table len w bytes N M g x2 P2 regions2) (ct : Timing K1 K2)
+    (odd : M%2=1) (positive : 0<Spec.Rsa.FixedBaseComb.rows N) (fits : Spec.Rsa.FixedBaseComb.rows N<2^32) :
+    RelCT isa (fun s t => PhaseInput base source table len w bytes N M P1 s ∧
+      PhaseInput base source table len w bytes N M P2 t ∧ s.sp=t.sp)
+      (VG.Impl.Bignum.Arm.CombExp.phase K1.arithmetic.op) (fun _ _ => True) := by
+  unfold VG.Impl.Bignum.Arm.CombExp.phase
+  refine relCT_chain ((initial_ct K1 K2 ct).mono
+    (fun _ _ h => ⟨⟨h.1.ready,h.1.persistent⟩,⟨h.2.1.ready,h.2.1.persistent⟩,h.2.2⟩) (fun _ _ h => h))
+    (fun s h => initialInput_ok K1 odd s h)
+    (fun s h => by simpa only [ct.same] using initialInput_ok K2 odd s h) ?_
+  exact relCT_chain (rows_ct K1 K2 ct positive (Nat.le_refl _) fits)
+    (fun s h => rowsInput_ok K1 positive fits s h)
+    (fun s h => by simpa only [ct.same] using rowsInput_ok K2 positive fits s h)
+    (ct.op_ct 6 6 7
+      (by simp [Operand,Spec.Rsa.Mont.aAcc,Spec.Rsa.Mont.aTmp])
+      (by simp [Operand,Spec.Rsa.Mont.aAcc,Spec.Rsa.Mont.aTmp])
+      (by simp [Operand,Spec.Rsa.Mont.aAcc,Spec.Rsa.Mont.aTmp]))
+
+end VG.Proof.Bignum.Arm.CombExp
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/EnvironmentPowerLaw.lean`, which only this module imported.
+section
+
+/-! # The shared key-generation exponentiator's caller contract -/
+
+section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Arm.FrameStack VG.Proof.Bignum.Arm
+open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.X25519.Arm (Rest)
+
+structure EnvironmentPowerLaw (env : SampleEnvironment) (layout : (p : Inputs) → ScalarLayout p) (code : Prog isa) : Prop where
+  correct : ∀ (s : State) {p : Inputs} {slots : List Nat} {eb : List Byte},
+    SampleContext p (layout p) slots s → env.holds p s → KeyCallMemory p s → stableSlots slots = true →
+    52 ∈ slots → 56 ∈ slots → 32 ∈ slots →
+    ArithmeticReady p.base p.len p.w s →
+    numAt s.mem (State.addr p.base) p.w 0 = p.P → p.P % 2 = 1 →
+    numAt s.mem (State.addr p.base) p.w 4 = 2 ^ (128 * p.w) % p.P →
+    Octets p.base (layout p).start p.len eb s → eb.length = (layout p).width →
+    Spec.Rsa.os2ip eb < 2 ^ Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf p.k p.dom) →
+    WP isa code s fun t => Context p slots t ∧ ArithmeticReady p.base p.len p.w t ∧
+      numAt t.mem (State.addr p.base) p.w 6 = Spec.Rsa.powMod p.G (Spec.Rsa.os2ip eb) p.P ∧
+      numAt t.mem (State.addr p.base) p.w 0 = p.P ∧
+      numAt t.mem (State.addr p.base) p.w 4 = 2 ^ (128 * p.w) % p.P ∧
+      numAt t.mem (State.addr p.base) p.w 7 = 1 ∧
+      Frame [⟨State.addr p.base, 8 * p.len⟩, belowA s.sp 48] s.mem t.mem ∧ Rest roundClobbers s t
+  ct : ∀ {p : Inputs} {slots : List Nat} {eb1 eb2 : List Byte},
+    stableSlots slots = true → 52 ∈ slots → 56 ∈ slots → 32 ∈ slots →
+    eb1.length = (layout p).width → eb2.length = (layout p).width →
+    Spec.Rsa.os2ip eb1 < 2 ^ Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf p.k p.dom) →
+    Spec.Rsa.os2ip eb2 < 2 ^ Spec.Ffdh.generationScalarBits (Spec.Ffdh.domainOf p.k p.dom) → p.P % 2 = 1 →
+    RelCT isa (fun s t => ((SamplePowerInput p (layout p) slots eb1 s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧
+      ((SamplePowerInput p (layout p) slots eb2 t ∧ KeyCallMemory p t) ∧ env.holds p t) ∧ env.publicRel s t ∧ s.sp = t.sp) code (fun _ _ => True)
+
+end VG.Proof.Ffdh.Arm
+end
+
+end
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/CachedPrepareAt.lean`, which only this module imported.
 section

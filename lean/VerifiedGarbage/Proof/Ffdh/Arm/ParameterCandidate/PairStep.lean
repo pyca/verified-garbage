@@ -2,15 +2,46 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterCandidate
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairState
+
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairTrials
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveControl
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairMath
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.PairControl
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SievePolicy
-
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveContext
+import VerifiedGarbage.Proof.Ffdh.Arm.Block
+import VerifiedGarbage.Proof.X25519.Arm.Instr
 /-! One compact-table sieve iteration uses RSA's verified native reducer. -/
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/ParameterCandidate/PairControl.lean`, which only this module imported.
+section
+
+/-! Advance the shared prime cursor and bounded count once for each pair of trials. -/
+
+section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG.Impl.Ffdh.Arm.ParameterCandidate (trialCount)
+open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
+
+theorem pairAdvanceCount_ok {s : State} {count : Nat} (positive : 0 < count) (bound : count ≤ 1024)
+    (saved : s.gpr .r11 = BitVec.ofNat 32 count) :
+    WP isa (.block (VG.Impl.Ffdh.Arm.ParameterCandidate.pairAdvance ++ VG.Impl.Ffdh.Arm.ParameterCandidate.sieveCount)) s fun t =>
+      (t.gpr .r10 = s.gpr .r10 + 4 ∧ t.gpr .r11 = BitVec.ofNat 32 (count - 1) ∧
+        t.z = decide (count = 1) ∧ t.mem = s.mem) ∧ Rest [.r10, .r11] s t := by
+  have subtract : BitVec.ofNat 32 count - (1 : BitVec 32) = BitVec.ofNat 32 (count - 1) :=
+    BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) positive
+  have zero : (BitVec.ofNat 32 (count - 1) == (0 : BitVec 32)) = decide (count = 1) := by
+    rw [ofNat_beq_zero (by omega : count - 1 < 2 ^ 32)]
+    exact decide_eq_decide.mpr (by omega)
+  refine withRest_all [.r10, .r11] ?_ (by rfl) (by rfl)
+  unfold VG.Impl.Ffdh.Arm.ParameterCandidate.pairAdvance VG.Impl.Ffdh.Arm.ParameterCandidate.sieveCount
+  ffrun [List.cons_append, List.nil_append, saved, subtract, zero]
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate

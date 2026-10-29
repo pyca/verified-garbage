@@ -5,15 +5,39 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateReturn
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateScreenMath
 public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Table
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
+
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateHalve
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateTable
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateTests
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateLocalFrame
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateSieveMath
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
-
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateTestsMath
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.ScreenedTests
 /-! Reject even or small-prime-divisible q before invoking the shared native rounds. -/
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/ParameterCandidate/CandidateTests.lean`, which only this module imported.
+section
+
+/-! The native three-phase witness controller implements the reviewed screened policy. -/
+
+section
+namespace VG.Proof.Ffdh.Arm.ParameterCandidate
+open VG VG.Arm
+open VG.Proof.MillerRabin.Arm (RoundImpl)
+
+theorem candidateTests_ok (v : RoundImpl) {s : State} {p : CandidateParams} {used : Nat}
+    (h : CandidateContext p used s) (enough : p.length ≤ p.bytes.length)
+    (_number : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr p.out) p.length) = (p.candidate - 1) / 2)
+    (odd : ((p.candidate - 1) / 2) % 2 = 1) :
+    WP isa (VG.Impl.Ffdh.Arm.ParameterCandidate.tests v.name v.code) s
+      (CandidateReturn p (candidateTests p used) s) := by
+  exact screenedTests_ok v h enough odd
+
+end VG.Proof.Ffdh.Arm.ParameterCandidate
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
