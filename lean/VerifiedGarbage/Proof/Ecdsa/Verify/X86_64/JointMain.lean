@@ -1,10 +1,79 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPoints
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTail
+public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64.Joint
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointGenerator
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointFrame
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubler
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
 
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTail
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointMul
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointInput
 /-! End-to-end correctness of public Jacobian joint verification. -/
+
+-- Formerly `VerifiedGarbage/Proof/Ecdsa/Verify/X86_64/JointPoints.lean`, which only this module imported.
+section
+
+/-! The joint multiplication consumes the verifier's actual scalars and preserves its final inputs. -/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.Verify.X86_64
+open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
+open VG.Proof.Mont VG.Proof.Mont.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86_64
+open VG.Proof.Ecdsa.X86_64 Spec.Weierstrass
+open VG.Impl.Ecdh.X86_64 (PX PY BP)
+open VG.Impl.Ecdsa.Verify.X86_64 (U V)
+
+structure JointPointsPost (c : Cfg) (s₀ sM : State) (g : Reg → BitVec 64) (Q : Point c.C) (t : State) : Prop where
+  input : ProjectiveInput c s₀ (s₀.gpr .rcx) g t
+  point : InvJ c.C (tmv c.C c.n (s₀.gpr .rcx) t (c.sl RX))
+    (tmv c.C c.n (s₀.gpr .rcx) t (c.sl RY)) (tmv c.C c.n (s₀.gpr .rcx) t (c.sl RZ))
+    (add (mul (sv c (s₀.gpr .rcx) sM U) (G c.C)) (mul (sv c (s₀.gpr .rcx) sM V) Q))
+
+theorem jointPoints_ok {c : Cfg} {j : Joint.Cfg} {d : CombData} {double : Prog isa}
+    (hc : CfgOk c) (hC : Law c.C) {J : Nat} (hG : JointGTable c j d J)
+    (hK : j.K=c.winCfg PX PY BP) (ha : AM3 c.C) (hnp : c.C.n≤c.C.p)
+    (hL : JointAddLayout j size) (hInit : JointInitLayout j size)
+    (hPrep : JointPrepLayout j size (c.sl U) (c.sl V)) (hFrame : JointFrameLayout c j)
+    (hD : JointDoubler j c.C size double) (hZ : j.coZ=true → PrimeOrder c.C ∧ 17≤c.C.n)
+    {s₀ s : State} {g : Reg → BitVec 64} (hp : VPre c s₀) (h : Mid c s₀ (s₀.gpr .rcx) g s)
+    {Q : Point c.C} (hQ : onCurve c.C Q=true)
+    (hq : Rep c.C (tmv c.C c.n (s₀.gpr .rcx) s (c.sl PX))
+      (tmv c.C c.n (s₀.gpr .rcx) s (c.sl PY)) (tmv c.C c.n (s₀.gpr .rcx) s (c.sl ONEP)) Q) :
+    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointPoints c j double).inline s (JointPointsPost c s₀ s g Q) := by
+  have field := jointMid_field hc hK hnp h
+  have point := jointMid_point hc hC hK h hq
+  have zero := jointMid_zero hK h
+  have generator := jointMid_generator hc hC hG hK hp h
+  have hjn : j.K.M.n=c.n := by rw [hK]; rfl
+  have hm : UnitMod c.C.p (2^(64*j.K.M.n)) := unitMod_pow_two hc.p_odd _
+  have hone : j.K.one<c.C.p := by
+    rw [hK]
+    exact Nat.mod_lt _ (Nat.pos_of_ne_zero (NeZero.ne c.C.p))
+  have honeval : toM c.C.p (2^(64*j.K.M.n)) j.K.one=1 := by
+    rw [hK]
+    change toM c.C.p (2^(64*c.n)) (c.mont 1)=1
+    simp only [Cfg.mont,Cfg.R,Nat.one_mul]
+    exact toM_one (unitMod_pow_two hc.p_odd _)
+  have nlt : c.C.n<2^(64*j.K.M.n) := by rw [hjn]; exact hc.n_lt
+  have sv4 (i : Nat) : wordsVal s.mem (s₀.gpr .rcx) (c.sl i) j.K.M.n=sv c (s₀.gpr .rcx) s i := by
+    unfold sv
+    rw [hjn]
+  refine WP.mono (jointMul_ok hL hInit hPrep hm hC ha hD hone honeval hc.onG hQ
+    point (jointMid_affine hc hK h) zero hZ (Nat.lt_trans h.u_lt nlt) (Nat.lt_trans h.v_lt nlt) field generator (sv4 U) (sv4 V))
+    fun t ⟨ct,_,_,_,ut⟩ => ?_
+  refine ⟨jointFrame_input hc hK hFrame h ct ut,?_⟩
+  have pt := ct.point
+  rw [hK] at pt
+  exact pt
+
+end VG.Proof.Ecdsa.Verify.X86_64
+end
+
+end
 
 @[expose] public section
 

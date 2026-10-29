@@ -1,21 +1,30 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointErased
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointCorrect
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointCT
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.Contract
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointLitAdx
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointLit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86_64
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.Weierstrass.CombW
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-import Batteries.Data.List.Lemmas
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointErased
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointCT
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointLitAdx
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointLit
+import Batteries.Data.List.Lemmas
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-
+import VerifiedGarbage.Impl.P521.X86_64.Joint
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointFrame
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointChecks
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
+import VerifiedGarbage.Proof.P521.X86_64.JointLayout
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
 /-!
 # ECDSA verification over P-521 on x86-64: `Verified`
 
@@ -28,6 +37,81 @@ from (`abiPreserved`). The timing depends only on what the shared contract
 makes public: the pointers, the key, the digest and the signature
 (`jointVerify_ct`).
 -/
+
+-- Formerly `VerifiedGarbage/Proof/P521/X86_64/JointFrame.lean`, which only this module imported.
+section
+
+/-! The joint multiplication's writes are apart from the final check's fixed inputs. -/
+
+section
+
+namespace VG.Proof.P521.X86_64
+open VG VG.Impl.P521.X86_64 VG.Impl.Ecdsa.X86_64 VG.Proof.Ecdsa.Verify.X86_64
+
+theorem joint_frame_layout : JointFrameLayout p521 publicJoint := by
+  constructor
+  · unfold VG.Proof.Ecdsa.X86_64.FixedOk
+    decide +kernel
+  · decide +kernel
+  · decide +kernel
+
+theorem joint_adx_frame_layout : JointFrameLayout p521x publicJointAdx := by
+  constructor
+  · unfold VG.Proof.Ecdsa.X86_64.FixedOk
+    decide +kernel
+  · decide +kernel
+  · decide +kernel
+
+end VG.Proof.P521.X86_64
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ecdsa/Verify/X86_64/P521/JointCorrect.lean`, which only this module imported.
+section
+
+/-! Baseline and ADX joint verification over P-521 satisfy the functional specification. -/
+
+section
+
+namespace VG.Proof.Ecdsa.Verify.X86_64.P521
+open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.P521.X86_64 VG.Impl.Weierstrass.X86_64
+open VG.Proof.Ecdsa.X86_64 VG.Proof.P521.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86_64
+open VG.Proof.Ecdsa.X86_64.P521 (p521_ok p521x_ok p521_tbls p521x_tbls)
+
+section
+variable (hL : Law Spec.P521.curve)
+    (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
+    (hI : InvSounds)
+
+include hL hT hI
+
+theorem jointVerify_p521_ok {s : State} (hp : VPre p521 s) :
+    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p521 publicJoint (Joint.jacDouble publicJoint.K)).inline s
+      fun t => (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VPost p521 s t := by
+  have hc := p521_ok hI
+  refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_
+  intro a g hM Q hQ hRep
+  exact jointPoints_ok hc hL (.ofComb rfl hT (by decide) (by decide) rfl) rfl hc.am3 (by decide +kernel)
+    joint_add_layout joint_init_layout joint_prep_layout joint_frame_layout (joint_doubler hc hL)
+    (fun h => absurd h (by decide)) hp hM hQ hRep
+
+theorem jointVerify_p521_adx_ok {s : State} (hp : VPre p521x s) :
+    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p521x publicJointAdx
+      (Joint.jacDouble publicJointAdx.K)).inline s
+      fun t => (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VPost p521x s t := by
+  have hc := p521x_ok hI
+  refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_
+  intro a g hM Q hQ hRep
+  exact jointPoints_ok hc hL (.ofComb rfl hT (by decide) (by decide) rfl) rfl hc.am3 (by decide +kernel)
+    joint_adx_add_layout joint_adx_init_layout joint_adx_prep_layout joint_adx_frame_layout
+    (joint_adx_doubler hc hL) (fun h => absurd h (by decide)) hp hM hQ hRep
+
+end
+end VG.Proof.Ecdsa.Verify.X86_64.P521
+end
+
+end
 
 @[expose] public section
 

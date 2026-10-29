@@ -1,15 +1,128 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastStartTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Last
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullPrefix
+
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FinishTiming
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.BeginTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Env
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
 /-! # The odd final matrix entry has public-seed-only timing -/
+
+-- Formerly `VerifiedGarbage/Proof/MlKem/AArch64/Paired/LastPrepare.lean`, which only this module imported.
+section
+
+/-! # Shared-seed timing for the first singleton rejection pass -/
+section
+namespace VG.Proof.MlKem.AArch64.Paired
+open VG VG.AArch64 VG.Proof.MlKem
+
+structure LastPreparedW (w16 : Bool) (B : Nat→Byte) (p out table : Addr) (s t : State) : Prop where
+ keep : Keep prepareRegs s t
+ env : Rej8.EnvW w16 168 B (p+400) out t
+ constants : Rej8.Constants t
+ pointer : t.gpr .x19=p
+ tablePtr : t.gpr .x16=table
+
+theorem lastPrepare_ok {w16 : Bool} {s : State} {p seed out table : Addr} {sb ss off a k : Nat}
+    (hss : ss<65536) (hsb : sb+32≤32768) (h8 : sb%8=0) (hk : 0<k) (hk256 : k≤256)
+    (h : LastInput sb ss off p seed out table s) :
+    WP isa (prepareCode sb ss a a k) s (LastPreparedW w16 (xofByte (seedBytes s.mem seed a k)) p out table s) := by
+  refine WP.seq (WP.mono_syms (start_ok (a:=a) (b:=a) (k:=k) hss hsb h8
+    h.ptr h.seedPtr h.readable h.context.scratch h.separate)
+    fun u ⟨ku,fu,_,u19,_,_,bu,_⟩ sy => ?_)
+  have cu := h.context.frame ku.rd ku.wr (fu.mono (by simp [fullWrites]))
+  refine WP.mono_syms (Rej8.constants_ok u (by
+    rw [u19]; exact Noise.inScratch cu.scratch (by decide) (by decide)))
+    fun v ⟨kv,cv,mv,tv⟩ syv => ?_
+  have fv : Frame [⟨p+1408,8⟩] u.mem v.mem := by
+    rw [mv,u19]
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ 8)
+  have fvBig : Frame (fullWrites p out) u.mem v.mem := fv.sub (by
+    intro r hr; simp only [List.mem_singleton] at hr; subst r
+    exact ⟨⟨p,2048⟩,by simp [fullWrites],Offset.sub_base p (by decide)⟩)
+  have ctv := cu.frame kv.rd kv.wr fvBig
+  have v19 : v.gpr .x19=p := (kv.get .x19).trans u19
+  have v28 : v.gpr .x28=s.gpr .x28 := (kv.get .x28).trans (ku.get .x28)
+  have v16 : v.gpr .x16=table := by rw [tv,syv,sy,h.symbol]
+  have stream : ∀i<504,v.mem ((p+400)+BitVec.ofNat 64 i)=xofByte (seedBytes s.mem seed a k) i := by
+    intro i hi
+    have hd : ∀r∈[Region.mk (p+1408) 8],(Region.mk (p+400) 504).Disjoint r := by
+      intro r hr; simp only [List.mem_singleton] at hr; subst r
+      exact Offset.disjoint p (d := 400) (e := 1408) (n := 504) (k := 8) (by decide) (by decide) (by decide)
+    exact (fv.bytes hd (by change 504≤2^64; decide) hi).trans (bu.xof hk hk256 hi)
+  have ready : Rej8.TableReady v out :=
+    ⟨by rw [v16]; exact ctv.artifact,by rw [v16]; exact ctv.readable,by rw [v16]; exact ctv.tableOut⟩
+  have env := rejection_envW (w16 := w16) (off := 400) (N := 168) (by decide) (by decide)
+    ctv.scratch ctv.output ctv.apart stream (fun _ hm => ready.read hm)
+    (fun _ hm => ready.artifact.vector hm) (fun _ hm => ready.disjoint hm)
+  exact ⟨ku.trans kv,env,cv,v19,v16⟩
+
+end VG.Proof.MlKem.AArch64.Paired
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/MlKem/AArch64/Paired/LastStartTiming.lean`, which only this module imported.
+section
+
+section
+namespace VG.Proof.MlKem.AArch64.Paired
+open VG VG.AArch64 VG.Proof.MlKem
+
+theorem lastStart_relCT {w16 : Bool} {s u : State} {p seed out table : Addr} {sb ss off a k : Nat}
+    (hss : ss<65536) (hsb : sb+32≤32768) (h8 : sb%8=0) (hoff : off<65536)
+    (hk : 0<k) (hk256 : k≤256)
+    (ps : LastInput sb ss off p seed out table s) (pu : LastInput sb ss off p seed out table u)
+    (sp : s.sp=u.sp) (base : s.gpr .x28=u.gpr .x28)
+    (seedEq : seedBytes s.mem seed a k=seedBytes u.mem seed a k) :
+    RelCT isa (fun t v=>t=s ∧ v=u) (lastStartCode sb ss a k off w16)
+      (fun t v=>LastStartPostW w16 (xofByte (seedBytes s.mem seed a k)) p out table s t ∧
+        LastStartPostW w16 (xofByte (seedBytes u.mem seed a k)) p out table u v) := by
+  let R := fun t v : State=>LastPreparedW w16 (xofByte (seedBytes s.mem seed a k)) p out table s t ∧
+    LastPreparedW w16 (xofByte (seedBytes u.mem seed a k)) p out table u v
+  have start : RelCT isa (fun t v=>t=s ∧ v=u) (prepareCode sb ss a a k) R := by
+    intro t v tr ur t' v' h et ev
+    rcases h with ⟨ht,hv⟩; subst t; subst v
+    exact ⟨prepare_ct sb ss a a k s u tr ur t' v' trivial trivial
+      (agree_of sp (by intro r hr; rw [List.mem_singleton.mp hr]; exact base)) et ev,
+      exec_post (lastPrepare_ok hss hsb h8 hk hk256 ps) et,
+      exec_post (lastPrepare_ok hss hsb h8 hk hk256 pu) ev⟩
+  have grouped : RelCT isa (fun t v=>t=s ∧ v=u)
+      (.seq (prepareCode sb ss a a k) (Impl.MlKem.AArch64.Paired.reject 400 off .x22 w16)) (fun _ _=>True) := by
+    refine RelCT.seq start ?_
+    intro t v tr ur t' v' h et ev
+    have ht28 := h.1.keep.get .x28
+    have hv28 := h.2.keep.get .x28
+    have rr := reject_relCT (by decide) hoff (by decide : Reg.x22≠.x3 ∧ Reg.x22≠.x4)
+      (by rw [h.1.pointer,ht28,ps.outPtr]; exact h.1.env)
+      (by rw [h.2.pointer,hv28,pu.outPtr]; rw [seedEq]; exact h.2.env)
+      h.1.constants h.2.constants
+      (h.1.keep.sp.trans (sp.trans h.2.keep.sp.symm)) (h.1.pointer.trans h.2.pointer.symm)
+      (by rw [ht28,hv28,base]) (h.1.tablePtr.trans h.2.tablePtr.symm)
+      t v tr ur t' v' ⟨rfl,rfl⟩ et ev
+    exact ⟨rr.1,trivial⟩
+  have trace : RelCT isa (fun t v=>t=s ∧ v=u) (lastStartCode sb ss a k off w16) (fun _ _=>True) :=
+    RelCT.assoc (RelCT.assoc grouped)
+  intro t v tr ur t' v' h et ev
+  rcases h with ⟨ht,hv⟩; subst t; subst v
+  exact ⟨(trace s u tr ur t' v' ⟨rfl,rfl⟩ et ev).1,
+    exec_post (lastStart_ok hss hsb h8 hoff hk hk256 ps.ptr ps.seedPtr ps.outPtr ps.readable ps.separate ps.context ps.symbol) et,
+    exec_post (lastStart_ok hss hsb h8 hoff hk hk256 pu.ptr pu.seedPtr pu.outPtr pu.readable pu.separate pu.context pu.symbol) ev⟩
+
+end VG.Proof.MlKem.AArch64.Paired
+end
+
+end
+
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
 open VG VG.AArch64 VG.Proof.MlKem

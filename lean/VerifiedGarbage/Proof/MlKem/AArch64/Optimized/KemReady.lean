@@ -1,13 +1,13 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Ready
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DotSpec
-import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
 public import Init.Data.List.Basic
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem
 public import VerifiedGarbage.Proof.MlKem.KPke
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Field
 
+import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Ready
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DotSpec
+import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
 /-! # The terms of the fused dot product of `ŝ` and `û'` and their sum -/
 
 @[expose] public section
