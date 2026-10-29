@@ -183,10 +183,24 @@ def precompiled_libraries(closure):
     """The project's native libraries, in Lake's configuration order."""
     config = tomllib.loads((LEAN / "lakefile.toml").read_text())
     return {
-        lib["name"]: frozenset(m for m in closure if any(
-            matches(f"{k}:{e}", m, closure) for k in MODULE_LISTS for e in lib.get(k, [])))
+        lib["name"]: frozenset(library_members(lib, closure))
         for lib in config.get("lean_lib", []) if lib.get("precompileModules")
     }
+
+
+def library_members(lib: dict, closure: dict[str, frozenset[str]]) -> set[str]:
+    """The modules (of `closure`) a library's module lists take, as
+    `matches` says: an exact name or a root is looked up rather than matched
+    against every module, which only a glob of a prefix needs."""
+    out = set()
+    for k in MODULE_LISTS:
+        for e in lib.get(k, []):
+            if k == "roots" or not e.endswith((".*", ".+")):
+                named = closure.get(e, {e}) if k == "roots" else {e}
+                out.update(m for m in named if m in closure and matches(f"{k}:{e}", m, closure))
+            else:
+                out.update(m for m in closure if matches(f"{k}:{e}", m, closure))
+    return out
 
 
 def build_requirements(closure, libraries):
@@ -330,13 +344,19 @@ def source_info(mods, source_bytes=None, import_modes=None):
         text = data.decode("utf-8")
         if "\r" in text:
             text = text.replace("\r\n", "\n").replace("\r", "\n")
-        modes = {} if import_modes is not None else None
-        kinds = import_kinds(text, mods, modes)
-        if modes:
+        imps[m], vis[m], modes = parse_imports(text, mods)
+        if import_modes is not None and modes:
             import_modes[m] = modes
-        imps[m] = [i for _, _, i in kinds]
-        vis[m] = ([i for p, _, i in kinds if p], [i for _, a, i in kinds if a]) if is_module(text) else None
     return imps, vis, hashes
+
+
+def parse_imports(text: str, mods):
+    """A source's imports of modules of the project (of `mods`), its
+    `visibility` and its import modes (`meta`, `public_meta`), from one scan."""
+    modes = {}
+    kinds = import_kinds(text, mods, modes)
+    vis = ([i for p, _, i in kinds if p], [i for _, a, i in kinds if a]) if is_module(text) else None
+    return [i for _, _, i in kinds], vis, modes
 
 
 def reads(
@@ -344,6 +364,7 @@ def reads(
     closure: dict[str, frozenset[str]],
     vis: dict[str, tuple[list[str], list[str]] | None],
     modes: dict | None = None,
+    among: frozenset[str] | None = None,
 ) -> dict[str, frozenset[str]]:
     """The modules of the project whose outputs each module's build reads
     (its trace), as Lake reads them: each module it imports, and what those
@@ -352,7 +373,12 @@ def reads(
     module. `meta import` also reads interpreter IR through private imports;
     a public meta import passes that dependency on. For ordinary imports,
     changes behind a private import can leave the importer's public outputs
-    unchanged, allowing its downstream ordinary importers to stay cached."""
+    unchanged, allowing its downstream ordinary importers to stay cached.
+
+    With `among` (and `closure` from `closures(imps, among)`), each trace
+    is intersected with it: enough to ask which modules read any of a few,
+    without building every module's whole trace."""
+    own = (lambda m: frozenset({m})) if among is None else (lambda m: frozenset({m}) & among)
     # Meta traces include interpreter IR of private transitive imports too.
     # Public meta imports pass that dependency on to ordinary importers.
     meta = {m: set(k.get("meta", [])) for m, k in (modes or {}).items()}
@@ -366,7 +392,7 @@ def reads(
                 continue
             on = imps[m] if vis.get(m) is None else vis[m][0]
             if ready:
-                passed[m] = frozenset({m}).union(*(closure[i] if i in public_meta.get(m, ()) else passed[i] for i in on))
+                passed[m] = own(m).union(*(closure[i] if i in public_meta.get(m, ()) else passed[i] for i in on))
             else:
                 stack.append((m, True))
                 stack += [(i, False) for i in on if i not in passed]
@@ -374,7 +400,7 @@ def reads(
     def all_trace(m):
         if vis.get(m) is None:
             return closure[m]
-        return frozenset({m}).union(*(
+        return own(m).union(*(
             all_trace(i) if i in vis[m][1] else closure[i] if i in meta.get(m, ()) else passed[i]
             for i in imps[m]))
 
@@ -399,8 +425,7 @@ def native_trace_modules(closure):
     config = tomllib.loads((LEAN / "lakefile.toml").read_text())
     dependent = set(closure)
     for lib in config.get("lean_lib", []):
-        members = {m for m in closure if any(matches(f"{k}:{e}", m, closure)
-                   for k in MODULE_LISTS for e in lib.get(k, []))}
+        members = library_members(lib, closure)
         if lib.get("platformIndependent") is True:
             dependent.difference_update(members)
         else:
@@ -453,8 +478,10 @@ def stale_of(changed: set[str], read: dict[str, frozenset[str]]) -> set[str]:
     return set(changed) | {m for m, r in read.items() if r & changed}
 
 
-def closures(imps: dict[str, list[str]]) -> dict[str, frozenset[str]]:
-    """Each module and everything it imports, directly or not."""
+def closures(imps: dict[str, list[str]], among: frozenset[str] | None = None) -> dict[str, frozenset[str]]:
+    """Each module and everything it imports, directly or not; with `among`,
+    only those of these."""
+    own = (lambda m: frozenset({m})) if among is None else (lambda m: frozenset({m}) & among)
     done: dict[str, frozenset[str]] = {}
     for root in imps:
         stack = [(root, False)]
@@ -463,7 +490,7 @@ def closures(imps: dict[str, list[str]]) -> dict[str, frozenset[str]]:
             if m in done:
                 continue
             if ready:
-                done[m] = frozenset({m}).union(*(done[i] for i in imps[m]))
+                done[m] = own(m).union(*(done[i] for i in imps[m]))
             else:
                 stack.append((m, True))
                 stack += [(i, False) for i in imps[m] if i not in done]

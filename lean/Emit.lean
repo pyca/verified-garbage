@@ -24,15 +24,28 @@ checks the root module (`VG.Emit.finish`). (They are run by the
 interpreter rather than as a `lean_exe` so that CI does not have to compile
 Mathlib to native code.) The interpreter runs the trusted base, which
 does the printing and checking, as the compiled code of the `NativeTCB`
-library (`lakefile.toml`), which `lake build` builds, and so an order of
-magnitude faster.
+libraries (`lakefile.toml`: one of what no target owns, and one per target),
+which `lake build` builds, and so an order of magnitude faster.
 -/
 
-/-- The shared library of `NativeTCB`, as Lake names it. -/
-def nativeTCB : System.FilePath :=
+/-- A shared library of the trusted base, as the lakefile names it
+(`libName`): `VerifiedGarbage_NativeTCB`, followed by the target's name for
+a target's. -/
+def sharedLib (name : String) : System.FilePath :=
   ".lake" / "build" / "lib" /
-    if System.Platform.isWindows then "VerifiedGarbage_NativeTCB.dll"
-    else s!"libVerifiedGarbage_NativeTCB.{if System.Platform.isOSX then "dylib" else "so"}"
+    if System.Platform.isWindows then s!"{name}.dll"
+    else s!"lib{name}.{if System.Platform.isOSX then "dylib" else "so"}"
+
+/-- The shared libraries of `NativeTCB` and of each target's
+(`NativeTCB<Target>`, a target being a directory of `TCB/`), in the order the
+driver loads them: what no target owns first, which the others link. -/
+def nativeTCB : IO (List System.FilePath) := do
+  let dirs ← ("VerifiedGarbage" / "TCB" : System.FilePath).readDir
+  let mut targets := #[]
+  for e in dirs do
+    if ← e.path.isDir then targets := targets.push e.fileName
+  return (sharedLib "VerifiedGarbage_NativeTCB") ::
+    (targets.qsort (· < ·)).toList.map fun t => sharedLib s!"VerifiedGarbage_NativeTCB{t}"
 
 /-- How many `.olean` files the driver may load: those of this project and
 of its packages. -/
@@ -67,9 +80,11 @@ def mapCountProblem : IO (Option String) := do
     `sudo sysctl -w vm.max_map_count=262144` (see lean/README.md)"
 
 def main (args : List String) : IO UInt32 := do
-  unless ← nativeTCB.pathExists do
-    IO.eprintln s!"{nativeTCB} is missing: run `lake build` first"
-    return 1
+  let libs ← nativeTCB
+  for lib in libs do
+    unless ← lib.pathExists do
+      IO.eprintln s!"{lib} is missing: run `lake build` first"
+      return 1
   if let some problem ← mapCountProblem then
     IO.eprintln problem
     return 1
@@ -93,7 +108,8 @@ def main (args : List String) : IO UInt32 := do
       (if check then args.drop 1 else args)
     children := children.push (targets, ← IO.Process.spawn
       { cmd := lean.toString,
-        args := #[s!"--load-dynlib={nativeTCB}", "--run", driver.toString] ++ partArgs.toArray })
+        args := (libs.map fun l => s!"--load-dynlib={l}").toArray ++ #["--run", driver.toString] ++
+          partArgs.toArray })
   let mut code := 0
   for (_, child) in children do
     let c ← child.wait
