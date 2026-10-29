@@ -495,4 +495,8 @@ theorem verified {sc : Nat} (hc : Checks H) (hfit : H.stream.buf + H.stream.F �
     exact (ct hH (pre_of hH.stream sc h₁ hfit) (pre_of hH.stream sc h₂ hfit) ⟨h1, h2, h3, h4, h5, h6⟩ hc
       _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
+-- CI timing test: a new public declaration, so that this module's
+-- outputs change and its importers rebuild. Do not merge.
+theorem ciTimingTest : True := trivial
+
 end VG.Proof.Pbkdf2.Md.X86_64.HmacFin
