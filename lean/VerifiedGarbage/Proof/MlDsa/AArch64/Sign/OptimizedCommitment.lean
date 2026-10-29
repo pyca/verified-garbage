@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMasks
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedDot
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 @[expose] public section

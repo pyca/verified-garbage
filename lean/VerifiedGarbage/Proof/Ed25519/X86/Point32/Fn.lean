@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ed25519.X86.Points
 public import VerifiedGarbage.Impl.Ed25519.X86.Point32
 public import VerifiedGarbage.TCB.X86.Target
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # `vg_ed25519_r32_point_add` on x86 (32-bit): what it computes

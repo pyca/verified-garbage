@@ -30,8 +30,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_stream_encrypt` and `_decrypt` are constant time

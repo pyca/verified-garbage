@@ -16,8 +16,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Zeroize.Contract
 meta import VerifiedGarbage.Spec.Zeroize.Contract
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Bswap
 meta import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.AddrArith

@@ -6,9 +6,6 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorInvariant
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ChunkTake
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ChunkCheck
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToAdditive
-import Mathlib.Tactic.ToDual
 
 /-! # Public cursor and exact chunk state of the generator search -/
 

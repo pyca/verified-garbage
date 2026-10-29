@@ -8,8 +8,6 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdSplit
 import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 public import VerifiedGarbage.Proof.Idea.AArch64.Mul
 import VerifiedGarbage.Proof.Framework.CallLay
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Idea.Arith
 import VerifiedGarbage.Proof.Idea.Memory

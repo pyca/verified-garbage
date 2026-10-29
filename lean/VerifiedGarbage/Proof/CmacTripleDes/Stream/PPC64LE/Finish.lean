@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.CmacTripleDes.Cmac
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream
 import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Common
 public import VerifiedGarbage.Proof.Cmac.Mem
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.CmacTripleDes.Stream.PPC64LE
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem

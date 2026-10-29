@@ -4,12 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ControlMemory
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Words
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
-import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.Slots

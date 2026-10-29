@@ -9,8 +9,6 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Double
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
-import Mathlib.Tactic.SplitIfs
-
 /-!
 # PBKDF2-HMAC-SHA-1's iteration on RISC-V: a round and a step of the schedule
 
@@ -113,7 +111,7 @@ theorem maj_add (x y z : Word) : (x &&& y) + (z &&& (x ^^^ y)) = Spec.Sha1.maj x
 
 theorem f_eq (t : Nat) (x y z : Word) : f t x y z = fval (fn t) x y z := by
   unfold Spec.Sha1.f fn
-  split_ifs <;> simp only [fval, ch_eq, maj_add, Spec.Sha1.parity]
+  (repeat' split) <;> simp only [fval, ch_eq, maj_add, Spec.Sha1.parity]
 
 /-! ## A round -/
 

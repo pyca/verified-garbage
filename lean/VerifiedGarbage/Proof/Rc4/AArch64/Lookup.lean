@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Rc4.AArch64.Regs
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # A table lookup

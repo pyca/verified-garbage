@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackLoad
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Block
-import Mathlib.Tactic.SplitIfs
-
 @[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.KeygenPack
@@ -16,15 +14,15 @@ def regAt (j : Nat) : VReg := if j=0 then .v0 else if j=1 then .v1 else if j=2 t
 
 theorem regAt_small {j : Nat} : regAt j∈[VReg.v0,.v1,.v2,.v3] := by
   unfold regAt
-  split_ifs <;> simp
+  (repeat' split) <;> simp
 
 theorem regAt_reserved {j : Nat} : regAt j∉[VReg.v4,.v16,.v17] := by
   unfold regAt
-  split_ifs <;> decide
+  (repeat' split) <;> decide
 
 theorem regAt_distinct {i j : Nat} (hi : i<4) (hj : j<4) (hne : i≠j) : regAt i≠regAt j := by
   dsimp only [regAt]
-  split_ifs <;> first | decide | omega
+  (repeat' split) <;> first | decide | omega
 
 def loadCode (signed : Bool) (j : Nat) : List Instr :=
   .ldrq (regAt j) .x0 (16*j) :: (if signed then convert (regAt j) else [])

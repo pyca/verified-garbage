@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.BelowP
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckFlag
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 import VerifiedGarbage.Proof.Framework.Arm.Exec

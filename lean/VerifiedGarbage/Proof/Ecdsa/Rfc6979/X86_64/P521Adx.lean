@@ -2,9 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P521
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Lit

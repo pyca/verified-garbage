@@ -4,10 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.DomainShape
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawControl
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomMask
 
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 
 /-! The sampler state retained across rejected draws. -/
 @[expose] public section

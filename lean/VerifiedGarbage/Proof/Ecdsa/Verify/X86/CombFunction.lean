@@ -6,8 +6,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombInput
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombPrefix
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMain
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafWindowChecks
@@ -20,8 +18,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombInput
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombPrefix
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMain
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafWindowChecks

@@ -7,15 +7,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Tactic.ToAdditive
-import Mathlib.Tactic.ToDual
 
 /-! ## From `PairedFirstSource.lean` -/
 
@@ -112,7 +103,7 @@ theorem pair16_sep (base : Addr) {i j : Fin 2 × Fin 8} (hne : j≠i) :
       (base+BitVec.ofNat 64 (1024*j.1.val+16*j.2.val)) 16 := by
   have hd : j.1.val≠i.1.val ∨ j.2.val≠i.2.val := by
     by_contra h
-    simp only [not_or,not_not] at h
+    simp only [not_or,Classical.not_not] at h
     exact hne (Prod.ext (Fin.ext h.1) (Fin.ext h.2))
   exact Offset.sep base (by omega) (by omega) (by omega)
 

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.Mem
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Taint tracking over memory both runs agree on (AArch64)

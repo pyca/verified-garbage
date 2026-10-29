@@ -4,8 +4,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashCall
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentHash
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedCommitment
 public import VerifiedGarbage.Spec.MlDsa.CommitTail
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 

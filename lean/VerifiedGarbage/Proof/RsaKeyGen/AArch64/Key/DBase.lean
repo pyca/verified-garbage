@@ -8,9 +8,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.AArch64.Call
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Tactic.ToDual
 
 /-!
 # An RSA key from its primes on AArch64: the pieces of `d`

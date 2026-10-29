@@ -7,7 +7,6 @@ public import VerifiedGarbage.Spec.Blake2.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Blake2.Arm.CompressS.Block
@@ -17,14 +16,12 @@ meta import VerifiedGarbage.Spec.Blake2.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
-meta import Mathlib.Tactic.Set
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 
@@ -422,10 +419,15 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
   have fitS := hp.st_fits
   have fitV := hp.scr_fits
   have fitB := hp.blk_fit hi
-  set N := t₀ s₀ + i * 64 with hN
-  set H := Spec.Blake2.compressBlocks Spec.Blake2.s (H₀ s₀) s₀.mem (State.addr (bp s₀)) i (t₀ s₀) (fl s₀)
-    with hH
-  set M := Spec.Blake2.blockAt 32 s₀.mem (State.addr (blkAddr s₀ i)) with hM
+  let N := t₀ s₀ + i * 64
+  try rewrite [show t₀ s₀ + i * 64 = N from rfl] at *
+  have hN : N = t₀ s₀ + i * 64 := rfl
+  let H := Spec.Blake2.compressBlocks Spec.Blake2.s (H₀ s₀) s₀.mem (State.addr (bp s₀)) i (t₀ s₀) (fl s₀)
+  try rewrite [show Spec.Blake2.compressBlocks Spec.Blake2.s (H₀ s₀) s₀.mem (State.addr (bp s₀)) i (t₀ s₀) (fl s₀) = H from rfl] at *
+  have hH : H = Spec.Blake2.compressBlocks Spec.Blake2.s (H₀ s₀) s₀.mem (State.addr (bp s₀)) i (t₀ s₀) (fl s₀) := rfl
+  let M := Spec.Blake2.blockAt 32 s₀.mem (State.addr (blkAddr s₀ i))
+  try rewrite [show Spec.Blake2.blockAt 32 s₀.mem (State.addr (blkAddr s₀ i)) = M from rfl] at *
+  have hM : M = Spec.Blake2.blockAt 32 s₀.mem (State.addr (blkAddr s₀ i)) := rfl
   have hHk : ∀ k (hk : k < 8), s.mem.readW (A (stp s₀) (4 * k)) 32 = (H[k]'(by omega_arith)) := fun k hk => by
     rw [← stateAt_get fitS _ hk, hL.state]
   have wV : ∀ o, o + 4 ≤ 512 → InRegions s.wr (A (scp s₀) o) 4 := by rw [hL.wr]; exact fun o ho => hp.out_scr ho
@@ -449,7 +451,9 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
       rw [h₁.msg j hj, hp.blk_frame hL.frame hi (by omega_arith), hM, blockAt_get fitB _ hj]⟩
   refine WP.seq (WP.mono (rounds_ok rc hv 10) fun s₂ h₂ => ?_)
   -- XOR into the state.
-  set v := (List.range 10).foldl (Spec.Blake2.round Spec.Blake2.s M) (initV H N (fl s₀)) with hv'
+  let v := (List.range 10).foldl (Spec.Blake2.round Spec.Blake2.s M) (initV H N (fl s₀))
+  try rewrite [show (List.range 10).foldl (Spec.Blake2.round Spec.Blake2.s M) (initV H N (fl s₀)) = v from rfl] at *
+  have hv' : v = (List.range 10).foldl (Spec.Blake2.round Spec.Blake2.s M) (initV H N (fl s₀)) := rfl
   have hst₁ : ∀ d, (d = 80 ∨ 88 ≤ d) → d + 4 ≤ 512 →
       s₁.mem.readW (A (scp s₀) d) 32 = s.mem.readW (A (scp s₀) d) 32 := fun d h1 h2 =>
     hp.scr_frame h2 h₁.frame fun r hr => by

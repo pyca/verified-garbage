@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.X86.TCombJ
 public import VerifiedGarbage.Proof.Weierstrass.Booth
 public import VerifiedGarbage.Proof.Weierstrass.X86.TCombDigit
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.X86.Call
 

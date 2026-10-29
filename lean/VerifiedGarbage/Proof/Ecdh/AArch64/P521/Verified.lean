@@ -11,9 +11,6 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import VerifiedGarbage.Proof.Ecdh.AArch64.P521.Lit
 public import VerifiedGarbage.Impl.Ecdh.P521.AArch64
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 meta import VerifiedGarbage.Proof.Framework.AArch64.LaneCaller
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.Main
@@ -22,9 +19,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.P521.Lit
 meta import VerifiedGarbage.Impl.Ecdh.P521.AArch64
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 import Mathlib.Tactic.ToExpr
 meta import Mathlib.Tactic.ToExpr

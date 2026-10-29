@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.X25519.X86.Ops
 public import VerifiedGarbage.Proof.X25519.Chain250
 public import VerifiedGarbage.Impl.X25519.X86.Field32
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # `vg_gf25519_r32_pow250` on x86 (32-bit): the addition chain

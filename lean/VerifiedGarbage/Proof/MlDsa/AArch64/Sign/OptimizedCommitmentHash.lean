@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedCommitment
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentPack
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseC
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 

@@ -9,8 +9,6 @@ public import VerifiedGarbage.Proof.Sm4Gcm.Scratch
 public import VerifiedGarbage.Proof.Sm4Gcm.X86.Callee
 public import VerifiedGarbage.Proof.Sm4Gcm.X86.Contract
 import VerifiedGarbage.Proof.Sm4Gcm.X86.StreamEncrypt
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sm4.X86.Lit
 import VerifiedGarbage.Proof.Sm4.X86.Ctr32Lit

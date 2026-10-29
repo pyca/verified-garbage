@@ -9,8 +9,6 @@ meta import VerifiedGarbage.Proof.Mont.X86.Rt.ScalarVerified
 public import Init.Core
 public import VerifiedGarbage.Impl.Mont.X86.MulRt
 public import VerifiedGarbage.TCB.X86.Target
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Taint
 

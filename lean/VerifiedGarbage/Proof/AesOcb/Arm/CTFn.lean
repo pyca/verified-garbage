@@ -24,7 +24,6 @@ meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 meta import VerifiedGarbage.TCB.Arm.Isa
 import Batteries.Logic
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Aes.Ct32.Layers
 import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
 import VerifiedGarbage.Proof.AesGcm.Arm.Ghash1
@@ -46,7 +45,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Spec.Ocb.Contract
 meta import Batteries.Logic
-meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.Aes.Ct32.Layers
 meta import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Ghash1

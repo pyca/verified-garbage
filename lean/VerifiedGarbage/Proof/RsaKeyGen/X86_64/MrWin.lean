@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Bignum.CrtExp
 import VerifiedGarbage.Proof.Bignum.Math
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.RsaKeyGen.Gcd
 

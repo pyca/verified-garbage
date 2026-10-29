@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.P256.X86_64.DoubleHalf
 public import VerifiedGarbage.Proof.P256.X86_64.HalfField
 public import VerifiedGarbage.Proof.Weierstrass.Jac
-import Mathlib.Tactic.SplitIfs
 
 /-! The in-place halving schedule computes the usual Jacobian double. -/
 

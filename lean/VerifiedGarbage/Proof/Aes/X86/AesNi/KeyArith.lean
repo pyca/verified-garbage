@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Framework.X86.Sse
 public import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Aes.X86.AesNi
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd

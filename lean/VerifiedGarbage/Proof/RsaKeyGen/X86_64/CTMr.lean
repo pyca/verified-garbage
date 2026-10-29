@@ -2,11 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Layout
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
-import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 

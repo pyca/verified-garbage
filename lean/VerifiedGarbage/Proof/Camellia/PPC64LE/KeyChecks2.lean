@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.KeyChecks
 public import VerifiedGarbage.Impl.Camellia.PPC64LE.ExpandKey
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # The key schedule's evaluated facts on PPC64LE

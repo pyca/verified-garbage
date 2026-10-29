@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Md
 import VerifiedGarbage.Proof.Sha256.Digest
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MdStream.AArch64.Words
 import VerifiedGarbage.Proof.MdStream.Prefix
 

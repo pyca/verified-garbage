@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.Law
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Spec.X25519
 
 /-!

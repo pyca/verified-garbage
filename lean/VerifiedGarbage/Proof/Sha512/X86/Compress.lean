@@ -20,10 +20,6 @@ meta import VerifiedGarbage.Proof.Sha512.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Sha512.X86.Lit
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-
 /-!
 # SHA-512 compression function on x86 (32-bit): the whole function
 -/
@@ -705,8 +701,12 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
   have fitS := hp.st_fits
   have fitV := hp.scr_fits
   have fitB := hp.blk_fit hi
-  set H := stateAt s.mem ((st s₀).setWidth 64) with hH
-  set M := blockAt s₀.mem ((blkAddr s₀ i).setWidth 64) with hMdef
+  let H := stateAt s.mem ((st s₀).setWidth 64)
+  try rewrite [show stateAt s.mem ((st s₀).setWidth 64) = H from rfl] at *
+  have hH : H = stateAt s.mem ((st s₀).setWidth 64) := rfl
+  let M := blockAt s₀.mem ((blkAddr s₀ i).setWidth 64)
+  try rewrite [show blockAt s₀.mem ((blkAddr s₀ i).setWidth 64) = M from rfl] at *
+  have hMdef : M = blockAt s₀.mem ((blkAddr s₀ i).setWidth 64) := rfl
   have c₀ : Ctx (scr s₀) s := hp.ctx hL.esi hL.wr
   -- Load the working variables, the message and the registers.
   refine WP.seq ?_

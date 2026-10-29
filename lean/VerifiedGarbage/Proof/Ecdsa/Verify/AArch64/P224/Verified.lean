@@ -7,10 +7,7 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Lit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P224.AArch64
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
 import Batteries.Data.List.Lemmas
-import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Contract
@@ -18,10 +15,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Lit
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P224.AArch64
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
 meta import Batteries.Data.List.Lemmas
-meta import Mathlib.Tactic.Finiteness.Attr
 
 /-!
 # ECDSA verification over P-224 on AArch64: `Verified`

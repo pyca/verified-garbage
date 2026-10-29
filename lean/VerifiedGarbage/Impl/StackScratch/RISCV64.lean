@@ -14,8 +14,8 @@ entry, where no Rust object lies.
 `withStackScratchWiped bytes r words c` is the same, but zeroes the first
 `words` doublewords of the buffer after its code (`wipe`), for a function
 whose working space may hold secrets that its caller would otherwise wipe.
-A store's offset reaches 2047 bytes, so beyond 256 doublewords the wipe
-stores the first 255 from `sp` and the rest from `sp + 2040`.
+A store's offset reaches only 2047 bytes, so the wipe stores 256
+doublewords at a time, stepping its base past them between the chunks.
 -/
 
 @[expose] public section
@@ -33,15 +33,18 @@ def withStackScratch (bytes : Nat) (r : Reg) (c : Prog isa) : Prog isa :=
 def wipeStores (words : Nat) : List Instr :=
   (List.range words).map fun k => .store .d .t6 .t5 (8 * k)
 
-/-- The stores of `wipe`: from `t5` alone up to 256 doublewords, else the
-first 255 from `t5` and the rest from `t5 + 2040`. -/
-def wipeAll (words : Nat) : List Instr :=
-  if words ≤ 256 then wipeStores words
-  else wipeStores 255 ++ .addi .t5 .t5 2040 :: wipeStores (words - 255)
+/-- `wipeStores` of `words` doublewords from `t5`, 256 at a time, adding 2048
+to `t5` (in two steps, as an immediate reaches only 2047) after each 256 but
+the last; `fuel` bounds the chunks. -/
+def wipeChunks : Nat → Nat → List Instr
+  | 0, words => wipeStores words
+  | fuel + 1, words =>
+    if words ≤ 256 then wipeStores words
+    else wipeStores 256 ++ [.addi .t5 .t5 1024, .addi .t5 .t5 1024] ++ wipeChunks fuel (words - 256)
 
 /-- Zeroes the `words` doublewords of the buffer, at `sp`, through `t5`
-(their address) and `t6` (zero). -/
-def wipe (words : Nat) : List Instr := .addSp .t5 0 :: .li .t6 0 :: wipeAll words
+(their address) and `t6` (zero): for up to 256 of them, `wipeStores words`. -/
+def wipe (words : Nat) : List Instr := .addSp .t5 0 :: .li .t6 0 :: wipeChunks (words / 256) words
 
 /-- `withStackScratch`, zeroing the first `words` doublewords of the buffer
 after the code. -/

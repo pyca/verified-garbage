@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.X448.X86.Field
 import VerifiedGarbage.Proof.X448.X86.Instr
 import VerifiedGarbage.Proof.Framework.X86.Exec
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 

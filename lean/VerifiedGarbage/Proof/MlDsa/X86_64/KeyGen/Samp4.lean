@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Samp
-import Mathlib.Tactic.Conv
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Mask
 import VerifiedGarbage.Proof.MlDsa.DecideAt

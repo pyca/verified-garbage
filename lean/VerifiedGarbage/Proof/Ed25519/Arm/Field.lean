@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.Word
 public import VerifiedGarbage.Proof.X25519.Arm.Field
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Ed25519 on ARMv7: field elements in the working space

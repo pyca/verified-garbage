@@ -4,8 +4,6 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PAttempt
 
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.AttemptStatus
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.Table

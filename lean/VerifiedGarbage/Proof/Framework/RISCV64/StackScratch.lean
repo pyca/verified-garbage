@@ -11,6 +11,8 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RISCV64.Spill
+import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # A scratch buffer on the stack, wiped after use (RISC-V)
@@ -377,69 +379,79 @@ theorem wipeStores_run (R : Region) (u : State) (hR : R ∈ u.wr) (hal : (u.gpr 
       Option.map_some, addrs, List.map_cons, List.map_nil, List.append_nil, wipeTrace, List.range_succ,
       List.map_append]
 
-theorem addr_2040 (p : Addr) (k : Nat) :
-    p + BitVec.ofNat 64 2040 + BitVec.ofNat 64 (8 * k) = p + BitVec.ofNat 64 (8 * (255 + k)) := by
-  rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, show 2040 + 8 * k = 8 * (255 + k) by omega]
+theorem wipeTrace_add (p : Addr) (n w : Nat) :
+    wipeTrace p (n + w) = wipeTrace p n ++ wipeTrace (p + BitVec.ofNat 64 (8 * n)) w := by
+  rw [wipeTrace, List.range_add, List.map_append, List.map_map]
+  congr 1
+  refine List.map_congr_left fun k _ => ?_
+  simp only [Function.comp_apply]
+  rw [Offset.add_add, Nat.mul_add]
 
-/-- The trace of the stores of `wipeAll` beyond 256 doublewords: those of
-the first 255 and of the rest from `p + 2040`. -/
-theorem wipeTrace_split (p : Addr) {words : Nat} (h : 255 ≤ words) :
-    wipeTrace p 255 ++ wipeTrace (p + BitVec.ofNat 64 2040) (words - 255) = wipeTrace p words := by
-  obtain ⟨w, rfl⟩ := Nat.exists_eq_add_of_le h
-  rw [Nat.add_sub_cancel_left]
-  simp only [wipeTrace, List.range_add, List.map_append, List.map_map]
-  refine congrArg _ (List.map_congr_left fun k _ => ?_)
-  simp only [Function.comp_apply, addr_2040]
-
-/-- `wipeAll words` from `u`, with the `words` doublewords at `t5` in the
-region `R`, which `u` may write: it changes memory only in `R` and no
-register but `t5`, with a trace of the addresses alone. -/
-theorem wipeAll_run (R : Region) (u : State) (words : Nat) (hR : R ∈ u.wr) (hwb : words ≤ 510)
-    (hal : (u.gpr .t5).toNat % 8 = 0)
-    (hc : ∀ k < words, R.Contains (u.gpr .t5 + BitVec.ofNat 64 (8 * k)) 8) :
-    ∃ u', execBlock isa (wipeAll words) u = some (u', wipeTrace (u.gpr .t5) words) ∧
-      Frame [R] u.mem u'.mem ∧ (∀ q, q ≠ .t5 → u'.gpr q = u.gpr q) ∧ u'.sp = u.sp ∧
-      u'.rd = u.rd ∧ u'.wr = u.wr := by
-  unfold wipeAll
-  split
-  · rename_i hw
+/-- `wipeChunks fuel words` from `u`, with the `words` doublewords at `t5`
+in the region `R`, which `u` may write: it changes memory only in `R` and
+of the registers only `t5`, with a trace of the addresses alone. -/
+theorem wipeChunks_run (R : Region) : ∀ (fuel words : Nat) (u : State), R ∈ u.wr →
+    (u.gpr .t5).toNat % 8 = 0 → words ≤ 256 * (fuel + 1) →
+    (∀ k < words, R.Contains (u.gpr .t5 + BitVec.ofNat 64 (8 * k)) 8) →
+    ∃ u', execBlock isa (wipeChunks fuel words) u = some (u', wipeTrace (u.gpr .t5) words) ∧
+      Frame [R] u.mem u'.mem ∧ (∀ r, r ≠ .t5 → u'.gpr r = u.gpr r) ∧ u'.sp = u.sp ∧
+      u'.rd = u.rd ∧ u'.wr = u.wr
+  | 0, words, u, hR, hal, hw, hc => by
     obtain ⟨m', he, hf⟩ := wipeStores_run R u hR hal words (by omega_using [hw]) hc
-    exact ⟨_, he, hf, fun _ _ => rfl, rfl, rfl, rfl⟩
-  · rename_i hw
-    obtain ⟨m₁, he₁, hf₁⟩ := wipeStores_run R u hR hal 255 (by decide) fun k hk => hc k (by omega_using [hk, hw])
-    let u₂ : State := ({ u with mem := m₁ } : State).write .t5 (u.gpr .t5 + BitVec.ofInt 64 2040)
-    have h5 : u₂.gpr .t5 = u.gpr .t5 + BitVec.ofNat 64 2040 := by simp [u₂, State.write]
-    obtain ⟨m₂, he₂, hf₂⟩ := wipeStores_run R u₂ (by simpa [u₂, State.write] using hR)
-      (by rw [h5]; exact Spill.al8 hal (by decide)) (words - 255) (by omega_using [hwb])
-      fun k hk => by rw [h5, addr_2040]; exact hc (255 + k) (by omega_using [hk, hw])
-    refine ⟨{ u₂ with mem := m₂ }, ?_, hf₁.trans (by simpa [u₂, State.write] using hf₂),
-      fun q hq => by simp [u₂, State.write, hq], rfl, rfl, rfl⟩
-    rw [execBlock_append, he₁]
-    simp only [Option.bind_some, execBlock, isa, exec, show imm12 (2040 : Int) = true by decide, ↓reduceIte]
-    rw [show ({ u with mem := m₁ } : State).write .t5 (({ u with mem := m₁ } : State).gpr .t5 +
-      BitVec.ofInt 64 2040) = u₂ from rfl, he₂, h5]
-    simp only [Option.map_some, addrs, List.map_nil, List.nil_append]
-    rw [wipeTrace_split _ (by omega_using [hw])]
+    exact ⟨{ u with mem := m' }, he, hf, fun _ _ => rfl, rfl, rfl, rfl⟩
+  | fuel + 1, words, u, hR, hal, hw, hc => by
+    by_cases hle : words ≤ 256
+    · obtain ⟨m', he, hf⟩ := wipeStores_run R u hR hal words (by omega_using [hle]) hc
+      refine ⟨{ u with mem := m' }, ?_, hf, fun _ _ => rfl, rfl, rfl, rfl⟩
+      simp only [wipeChunks, hle, ↓reduceIte]; exact he
+    · obtain ⟨m', he, hf⟩ := wipeStores_run R u hR hal 256 (by decide) fun k hk => hc k (by omega_using [hk, hle])
+      let u₁ : State := { u with mem := m' }
+      let u₂ : State := u₁.write .t5 (u₁.gpr .t5 + BitVec.ofInt 64 1024)
+      let u₃ : State := u₂.write .t5 (u₂.gpr .t5 + BitVec.ofInt 64 1024)
+      have e₂ : execBlock isa ([.addi .t5 .t5 1024, .addi .t5 .t5 1024] : List Instr) u₁ = some (u₃, []) := by
+        simp only [execBlock, isa, exec_addi (show imm12 (1024 : Int) by decide), addrs, List.map_nil,
+          Option.map_some, List.nil_append]
+        rfl
+      have h5 : u₃.gpr .t5 = u.gpr .t5 + BitVec.ofNat 64 2048 := by
+        simp only [u₃, u₂, u₁, RegUpd.gpr_write_self]
+        rw [show BitVec.ofInt 64 1024 = BitVec.ofNat 64 1024 from rfl, Offset.add_add]
+      have ho : ∀ r, r ≠ .t5 → u₃.gpr r = u.gpr r := fun r hr => by
+        simp only [u₃, u₂, u₁, RegUpd.gpr_write_of_ne _ _ hr]
+      obtain ⟨u', e', f', o', sp', rd', wr'⟩ := wipeChunks_run R fuel (words - 256) u₃ hR
+        (by rw [h5]; exact Spill.al8 hal (by decide)) (by omega_using [hw])
+        (fun k hk => by
+          rw [h5, Offset.add_add, show 2048 + 8 * k = 8 * (256 + k) by omega]
+          exact hc (256 + k) (by omega_using [hk]))
+      refine ⟨u', ?_, (hf.trans f' : Frame [R] u.mem u'.mem), fun r hr => by rw [o' r hr, ho r hr],
+        sp', rd', wr'⟩
+      simp only [wipeChunks, hle, ↓reduceIte]
+      rw [execBlock_append, execBlock_append, he]
+      simp only [Option.bind_some]
+      rw [e₂]
+      simp only [Option.bind_some, Option.map_some, e', h5]
+      rw [show words = 256 + (words - 256) by omega_using [hle], wipeTrace_add, Nat.add_sub_cancel_left,
+        List.append_nil]
 
 /-- `wipe words` from `u`, with the `words` doublewords at `sp` in the region
 `R`, which `u` may write: it sets `t5` and `t6`, and changes memory only in
 `R`, with a trace of the addresses alone. -/
-theorem wipe_run (R : Region) (u : State) (words : Nat) (hR : R ∈ u.wr) (hwb : words ≤ 510)
+theorem wipe_run (R : Region) (u : State) (words : Nat) (hR : R ∈ u.wr)
     (hal : u.sp.toNat % 8 = 0)
     (hc : ∀ k < words, R.Contains (u.sp + BitVec.ofNat 64 (8 * k)) 8) :
     ∃ u', execBlock isa (wipe words) u = some (u', wipeTrace u.sp words) ∧
-      Frame [R] u.mem u'.mem ∧ (∀ q, q ≠ .t5 → q ≠ .t6 → u'.gpr q = u.gpr q) ∧ u'.sp = u.sp ∧
+      Frame [R] u.mem u'.mem ∧ (∀ r, r ≠ .t5 → r ≠ .t6 → u'.gpr r = u.gpr r) ∧ u'.sp = u.sp ∧
       u'.rd = u.rd ∧ u'.wr = u.wr := by
-  let u₁ := (u.write .t5 (u.sp + BitVec.ofNat 64 0)).write .t6 (BitVec.ofInt 64 0)
-  have h5 : u₁.gpr .t5 = u.sp := by simp [u₁, State.write]
-  obtain ⟨u', he, hf, hg, hsp, hrd, hwr⟩ := wipeAll_run R u₁ words (by simpa [u₁, State.write]) hwb
-    (by rw [h5]; exact hal) (by rw [h5]; exact hc)
-  refine ⟨u', ?_, by simpa [u₁, State.write] using hf, fun q h5' h6' => by
-    rw [hg q h5']; simp [u₁, State.write, h5', h6'], hsp, hrd, hwr⟩
-  simp only [wipe, execBlock, isa, exec, show (0 : Nat) < 2048 by decide, ↓reduceIte]
-  simp only [show imm12 (0 : Int) = true by decide, ↓reduceIte, addrs, List.map_nil, List.nil_append]
-  rw [show (u.write .t5 (u.sp + BitVec.ofNat 64 0)).write .t6 (BitVec.ofInt 64 0) = u₁ from rfl, he, h5]
-  rfl
+  have h5 : ((u.write .t5 (u.sp + BitVec.ofNat 64 0)).write .t6 (BitVec.ofInt 64 0)).gpr .t5 = u.sp := by
+    simp [State.write]
+  obtain ⟨u', he, hf, ho, sp', rd', wr'⟩ := wipeChunks_run R (words / 256) words
+    ((u.write .t5 (u.sp + BitVec.ofNat 64 0)).write .t6 (BitVec.ofInt 64 0))
+    (by simpa [State.write]) (by rw [h5]; exact hal) (by omega) (by rw [h5]; exact hc)
+  refine ⟨u', ?_, by simpa [State.write] using hf, fun r h5' h6 => ?_, by rw [sp']; rfl,
+    by rw [rd']; rfl, by rw [wr']; rfl⟩
+  · simp only [wipe, execBlock, isa, exec, show (0 : Nat) < 2048 by decide, ↓reduceIte]
+    simp only [show imm12 (0 : Int) = true by decide, ↓reduceIte, Option.map_some, he, h5, addrs,
+      List.map_nil, List.nil_append]
+  · rw [ho r h5']; simp [State.write, h5', h6]
 
 /-- The state after the frame's `free`, from the state `s₄` the code and the
 wipe end in (with the permissions of `narrow`) when they start in `s`. -/
@@ -512,9 +524,7 @@ scratch buffer of `n` elements `e`, with `stack` bytes of stack, is verified
 for the function without it, which allocates the buffer in a frame of
 `bytes` more bytes of stack and zeroes its first `words` doublewords after
 the code (`withStackScratchWiped`), if its postcondition reads the memory on
-return only within the function's buffers (`hpostOut`). The wipe's stores
-reach `words` doublewords from at most two bases (`hwb`, which a frame of
-at most 4080 bytes implies). -/
+return only within the function's buffers (`hpostOut`). -/
 theorem Verified.stackScratchWiped {c : Prog isa}
     (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack))
     (hk : (sig.words abi.ptrBits).length < 8)
@@ -525,7 +535,7 @@ theorem Verified.stackScratchWiped {c : Prog isa}
       Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
         Curry.apply (sig.words abi.ptrBits) post vs m m₂ r)
     (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes)).pre s)
-    (hl : Sig.noLists sig.params = true := by decide) (hwb : words ≤ 510 := by decide) :
+    (hl : Sig.noLists sig.params = true := by decide) :
     Verified target (withStackScratchWiped bytes (scratchReg sig) words c)
       (sig.contract abi pre post wa (stack + bytes)) := by
   obtain ⟨hcor, hct, -⟩ := h
@@ -558,23 +568,23 @@ theorem Verified.stackScratchWiped {c : Prog isa}
     obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrow_pre hk hb hs hl)
     have hsp₃ : s₃.sp = s.sp - BitVec.ofNat 64 bytes := ha.2.1.trans (narrow_sp s)
     have hwr₃ : s₃.wr = (narrow sig e n bytes s).wr := (Exec.rdwr he).2.1
-    obtain ⟨u', hblk, hfr, hgu, hspu, -, -⟩ := wipe_run ⟨s.sp - BitVec.ofNat 64 bytes, n * e.size⟩ s₃ words
-      (by rw [hwr₃, narrow_wr]; simp) hwb
+    obtain ⟨u', hblk, hfr, hu', hsp', -⟩ := wipe_run ⟨s.sp - BitVec.ofNat 64 bytes, n * e.size⟩ s₃ words
+      (by rw [hwr₃, narrow_wr]; simp)
       (by rw [hsp₃, toNat_sub_ofNat' hsb]; omega_using [hal, hb])
       (fun k hk' => by
         rw [hsp₃]; exact Offset.contains_base _ (by omega_using [hw, hk']) (by omega_using [hb, hw, hk']))
     have he' := Exec.seq he (Exec.block hblk)
     have ha' : abiPreserved (narrow sig e n bytes s) u' := by
-      refine ⟨fun q hq => ?_, hspu.trans ha.2.1, ?_⟩
+      refine ⟨fun q hq => ?_, hsp'.trans ha.2.1, ?_⟩
       · have h5 : q ≠ .t5 := by rintro rfl; simp [preserved] at hq
         have h6 : q ≠ .t6 := by rintro rfl; simp [preserved] at hq
-        rw [hgu q h5 h6]
+        rw [hu' q h5 h6]
         exact ha.1 q hq
-      · rw [hgu _ (by decide) (by decide)]
+      · rw [hu' _ (by decide) (by decide)]
         exact ha.2.2
     obtain ⟨hex, habi, hm, hg⟩ := withStackScratch_run hk hb (by exact hs) he' ha' hl
     refine ⟨t, s₃, _, he, hq, hfr, hsp₃, hex, habi, hm, ?_⟩
-    rw [hg, hgu _ (by decide) (by decide)]
+    rw [hg]; exact hu' _ (by decide) (by decide)
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
   · obtain ⟨t, s₃, s₄, -, hq, hfr, -, hex, ha, hm, hr0⟩ := hrun s hs
     refine ⟨_, _, hex, ha, ?_⟩

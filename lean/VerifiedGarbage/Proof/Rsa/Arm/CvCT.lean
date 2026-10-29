@@ -9,10 +9,6 @@ import VerifiedGarbage.Proof.Rsa.Arm.CvLoads
 import VerifiedGarbage.Proof.Rsa.Arm.DivCT
 import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 import VerifiedGarbage.Proof.Framework.Sig
-import Mathlib.Data.Nat.Init
-import Mathlib.Order.Defs.Prop
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
 
 /-! # `vg_rsa_crt_values` on ARMv7: constant time
 

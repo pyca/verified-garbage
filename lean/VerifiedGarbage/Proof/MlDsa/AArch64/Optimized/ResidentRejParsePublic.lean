@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejLoopState
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBytes
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

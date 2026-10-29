@@ -26,7 +26,6 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # SHA-512 with AVX2 on x86-64: the rounds of the first block

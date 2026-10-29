@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Loop
 
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.SaveGP
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Save
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Scalar
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset

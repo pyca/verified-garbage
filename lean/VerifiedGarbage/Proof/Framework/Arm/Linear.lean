@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Framework.Arm.Straight
 public import VerifiedGarbage.Proof.Framework.Bitslice.Table
 public import VerifiedGarbage.Proof.Framework.Bitslice.Diag
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # ARMv7: linear layers of bitsliced code, by evaluation

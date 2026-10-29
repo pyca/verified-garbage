@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arith.Montgomery
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowStart
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSingleCall
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords

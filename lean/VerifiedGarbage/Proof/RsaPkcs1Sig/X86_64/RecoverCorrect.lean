@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
@@ -262,7 +261,9 @@ theorem tail_ok {s t₂ t₃ : State} (hp : PreR s) (he₂ : Env s t₂) (hK₃ 
   have hk2 := hp.k2
   have ol := hp.ol
   have hF := fb_toNat hp
-  set k := (s.gpr .rcx).toNat with hkdef
+  let k := (s.gpr .rcx).toNat
+  try rewrite [show (s.gpr .rcx).toNat = k from rfl] at *
+  have hkdef : k = (s.gpr .rcx).toNat := rfl
   have dVE : (⟨valA s, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨off (fb s) oEM2, k⟩ :=
     Offset.disjoint _ (.inl (by unfold oEM1 oEM2; omega_arith)) (by unfold oEM1 frameBytes at *; omega_arith)
       (by unfold oEM2 frameBytes at *; omega_arith)
@@ -349,11 +350,17 @@ theorem afterPub_ok {s t : State} (hp : PreR s) (he : Env s t) {h : Hash}
   have hF := fb_toNat hp
   have hol : (s.gpr .rsi).toNat = h.len := by
     obtain ⟨h', hid', hl⟩ := hp.hash; rw [hid] at hid'; cases hid'; exact hl
-  set k := (s.gpr .rcx).toNat with hkdef
-  set nB := Spec.Rsa.bytesAt s.mem (s.gpr .rdx) k
-  set eB := Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat
-  set gB := Spec.Rsa.bytesAt s.mem (stackArg s 1) k
-  set x := (stackArg s 0).setWidth 32
+  let k := (s.gpr .rcx).toNat
+  try rewrite [show (s.gpr .rcx).toNat = k from rfl] at *
+  have hkdef : k = (s.gpr .rcx).toNat := rfl
+  let nB := Spec.Rsa.bytesAt s.mem (s.gpr .rdx) k
+  try rewrite [show Spec.Rsa.bytesAt s.mem (s.gpr .rdx) k = nB from rfl] at *
+  let eB := Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat
+  try rewrite [show Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat = eB from rfl] at *
+  let gB := Spec.Rsa.bytesAt s.mem (stackArg s 1) k
+  try rewrite [show Spec.Rsa.bytesAt s.mem (stackArg s 1) k = gB from rfl] at *
+  let x := (stackArg s 0).setWidth 32
+  try rewrite [show (stackArg s 0).setWidth 32 = x from rfl] at *
   have hnl : nB.length = k := bytesAt_length _ _ _
   unfold afterPub
   refine WP.seq (WP.mono (test0_ok t) fun t₁ ⟨hs₁, hz₁⟩ => ?_)

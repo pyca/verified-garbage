@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Ed448.WnafWide
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
-
 /-! Exact public recoding, including carry beyond the unreduced 456-bit input. -/
 
 @[expose] public section
@@ -17,16 +15,16 @@ private theorem pow2_eq (n:Nat) : pow2 n=2^n:=rfl
 theorem step (wide : Bool) (k : Nat) :
     (k : Int) = 2 * (next wide k : Int) + digit wide k := by
   cases wide <;> simp only [next, digit, half, radix, Bool.false_eq_true,
-    ↓reduceIte, Nat.reduceMul] <;> split_ifs <;> omega
+    ↓reduceIte, Nat.reduceMul] <;> (repeat' split) <;> omega
 
 theorem digit_bounds (wide : Bool) (k : Nat) :
     -(half wide : Int) < digit wide k ∧ digit wide k < half wide := by
   cases wide <;> simp only [digit, half, radix, Bool.false_eq_true,
-    ↓reduceIte, Nat.reduceMul] <;> split_ifs <;> omega
+    ↓reduceIte, Nat.reduceMul] <;> (repeat' split) <;> omega
 
 theorem next_bound (wide : Bool) (k : Nat) : next wide k ≤ k / 2 + half wide / 2 := by
   cases wide <;> simp only [next, half, radix, Bool.false_eq_true,
-    ↓reduceIte, Nat.reduceMul, Nat.reduceDiv] <;> split_ifs <;> omega
+    ↓reduceIte, Nat.reduceMul, Nat.reduceDiv] <;> (repeat' split) <;> omega
 
 theorem next_small : ∀ (wide : Bool), ∀ k ≤ half wide, residual wide k 8 = 0 := by
   decide +kernel

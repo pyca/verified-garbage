@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import Batteries.Tactic.Init
 public import Batteries.Tactic.PermuteGoals
 public import Batteries.Tactic.SeqFocus
-import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Impl.Dsa.Layout
 public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 public import VerifiedGarbage.Proof.Framework.GetElem

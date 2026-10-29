@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Word
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Lit
 
@@ -58,14 +57,14 @@ theorem rename_shape (regs : Vector VReg 8) (j : Fin 8) (free : VReg)
   constructor
   · intro a b he
     simp only [Vector.getElem_set] at he
-    split_ifs at he with ha hb hb
+    split at he <;> split at he <;> rename_i ha hb
     · exact Fin.ext (ha.symm.trans hb)
     · exact False.elim (hf b he.symm)
     · exact False.elim (hf a he)
     · exact hinj he
   · intro i
     simp only [Vector.getElem_set]
-    split_ifs with he
+    split <;> rename_i he
     · exact Ne.symm (hf j)
     · intro h
       have hi := congrArg Fin.val (hinj h)

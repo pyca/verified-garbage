@@ -5,8 +5,8 @@ public import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.JacMul
+import Batteries.Logic
 
 /-! The exceptional equal-point branch uses the same forwarded field compiler. -/
 

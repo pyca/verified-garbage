@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Xor
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics

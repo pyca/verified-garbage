@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.FieldMemory
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CounterMemory
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Bounds
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import Mathlib.Util.CompileInductive
 
 /-! Rejection advances the live entropy suffix and decrements the entire native retry counter. -/
 

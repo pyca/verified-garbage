@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Data
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Contract
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 
 /-! # FFDH domain validation on x86-64: input memory and sizes -/
 

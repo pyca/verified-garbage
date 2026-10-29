@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Lit

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 public import VerifiedGarbage.Proof.Weierstrass.Unch
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Memory unchanged outside a list of ranges, on x86-64

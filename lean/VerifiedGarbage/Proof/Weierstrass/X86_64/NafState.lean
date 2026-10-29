@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Ladder
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.TComb
 public import VerifiedGarbage.Proof.Weierstrass.Jac
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Framework.Block
 

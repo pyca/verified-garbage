@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Execution
 import VerifiedGarbage.Proof.Dsa.X86_64.CopyMasked
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Layout
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
 
 /-! # Copying the derived y past the signer's layout

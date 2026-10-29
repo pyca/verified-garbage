@@ -8,10 +8,6 @@ import VerifiedGarbage.Proof.Rsa.X86.DivStep
 import VerifiedGarbage.Proof.Rsa.X86.DivInit
 import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import Mathlib.Data.Nat.Init
-import Mathlib.Order.Defs.Prop
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
 
 /-! # Termination and quotient/remainder correctness of fixed-count division -/
 

@@ -2,14 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
 public import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Bignum.Amm52
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Bignum.Amm52
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 meta import VerifiedGarbage.Proof.Framework.Offset

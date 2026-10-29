@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.Arm.Linear
 public import VerifiedGarbage.Impl.Camellia.Arm.ExpandKey
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Camellia's key schedule on ARMv7: the transposes of one value

@@ -16,7 +16,6 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintSumGeneric
-import Mathlib.Tactic.SplitIfs
 
 /-! ## From `BoundedFourParseTrace.lean` -/
 

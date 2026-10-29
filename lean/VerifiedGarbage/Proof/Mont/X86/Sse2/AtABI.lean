@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Mont.X86.Rt.ABI
 import VerifiedGarbage.Proof.Mont.X86.ArgWs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Util.CompileInductive
 
 /-! # `vg_rsa_mont_mul_at`'s entry
 

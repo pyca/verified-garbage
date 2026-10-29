@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRowMath
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightColumns
 public import VerifiedGarbage.Proof.Bignum.Layout
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcColumns
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMath
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

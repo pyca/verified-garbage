@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 import VerifiedGarbage.Proof.Dsa.X86_64.EntryFields
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
@@ -17,7 +16,6 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Dsa.X86_64.EntryFields
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.ToAdditive
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 

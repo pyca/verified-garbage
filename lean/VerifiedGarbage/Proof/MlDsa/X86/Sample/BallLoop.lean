@@ -20,8 +20,6 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
 
 /-!
 # ML-DSA on x86 (32-bit): the loop of `vg_mldsa_sample_in_ball`

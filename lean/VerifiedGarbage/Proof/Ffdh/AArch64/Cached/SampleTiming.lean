@@ -12,8 +12,6 @@ meta import VerifiedGarbage.TCB.AArch64.Isa
 meta import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Generate
 meta import VerifiedGarbage.Impl.Bignum.AArch64.Core
 meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Tactic.ToDual
 
 /-! Sampling uses the public width and length for every draw, including rejected draws. -/
 @[expose] public section

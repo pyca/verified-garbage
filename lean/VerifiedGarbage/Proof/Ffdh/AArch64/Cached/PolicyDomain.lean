@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Source
 public import VerifiedGarbage.Proof.Ffdh.KeyScalar
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
 
 /-! Checked domains provide every bound-scan premise, including its nonzero leading byte. -/
 @[expose] public section

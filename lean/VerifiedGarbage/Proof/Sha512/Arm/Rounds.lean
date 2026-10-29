@@ -4,9 +4,7 @@ public import VerifiedGarbage.Proof.MdStream.Arm.Common
 public import VerifiedGarbage.Proof.Sha512.Arm.Word64
 public import VerifiedGarbage.Proof.Sha512.Spec
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # SHA-512 on ARMv7: the 64-bit operations
@@ -757,7 +755,9 @@ theorem round_ok {st scr : BitVec 32} {H : HashValue} {M : Block} {s₀ s : Stat
   have c₁ := c.of_wrote w₁ (by decide) (by decide)
   have fitV := c.fitV
   have fitS := c.fitS
-  set v := Spec.Sha512.rounds H M t with hv
+  let v := Spec.Sha512.rounds H M t
+  try rewrite [show Spec.Sha512.rounds H M t = v from rfl] at *
+  have hv : v = Spec.Sha512.rounds H M t := rfl
   have hvar : ∀ k (hk : k < 8), rd64 s₁.mem scr (vOff t k) = v[k] := fun k hk => by
     rw [w₁.mem, rd64_write64_ne _ _ (by have := wOff_lt' t; omega_using [fitV, this]) (by have := vOff_lt' t k; omega_using [fitV, this])
       (.inr (vw_sep t k t)), hI.vars k hk]

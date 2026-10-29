@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rc2.Arm.Save
 public import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section

@@ -2,10 +2,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalCheck
 
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 

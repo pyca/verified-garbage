@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Dsa.Arm.Generate
 public import VerifiedGarbage.Proof.Dsa.SameTrace
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Ws
-import Mathlib.Tactic.ToDual
 
 /-!
 # DSA domain checks and key derivation on 32-bit ARM: the traces

@@ -18,8 +18,6 @@ import VerifiedGarbage.Proof.TripleDes.X86_64.SpSafe
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.SpSafe
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Framework.AddrArith

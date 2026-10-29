@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Weierstrass.Arm.BytesLen
 import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.Spec.Ecdsa.Generic
 

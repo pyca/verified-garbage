@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
 
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 
 /-!

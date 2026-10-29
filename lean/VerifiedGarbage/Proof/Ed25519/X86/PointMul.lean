@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.PointMultiplyFrame
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.X86.PointPowersLoop
 import VerifiedGarbage.Proof.Ed25519.X86.Points
 

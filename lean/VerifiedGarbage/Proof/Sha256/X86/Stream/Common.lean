@@ -13,12 +13,7 @@ import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.X86.Mmx
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Sha256.Stream
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.PlainSimp
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Streaming SHA-256 on x86 (32-bit): common lemmas
@@ -262,7 +257,7 @@ theorem ofNat_beq_zero {k : Nat} (h : k < 2 ^ 32) : (BitVec.ofNat 32 k == 0) = d
 
 theorem sub_ofNat {a b : Nat} (h : b ≤ a) :
     BitVec.ofNat 32 a - BitVec.ofNat 32 b = BitVec.ofNat 32 (a - b) := by
-  conv_lhs => rw [show a = (a - b) + b by omega, BitVec.ofNat_add]
+  conv => lhs; rw [show a = (a - b) + b by omega, BitVec.ofNat_add]
   rw [BitVec.add_sub_cancel]
 
 theorem sub_beq {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :

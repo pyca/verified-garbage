@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragOf
 
-import Mathlib.Tactic.Conv
 
 /-!
 # ML-KEM-768 on x86-64: the calls of the polynomial primitives, in a layout

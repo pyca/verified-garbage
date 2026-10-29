@@ -3,11 +3,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 
 import VerifiedGarbage.Proof.Dsa.X86_64.ReduceCount
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 
 /-! # Fixed-length bytewise zero tests for DSA acceptance masks -/
 

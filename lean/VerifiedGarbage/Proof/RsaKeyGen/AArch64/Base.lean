@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

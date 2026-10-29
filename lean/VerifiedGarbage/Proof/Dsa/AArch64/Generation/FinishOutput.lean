@@ -5,14 +5,9 @@ import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OutputZero
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSuccess
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OnSuccess
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.Table
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Tactic.ToDual
 
 /-! # Normalize every search outcome to the public output and status convention -/
 

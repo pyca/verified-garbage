@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Execution
 import VerifiedGarbage.Proof.Dsa.Layout
-import Mathlib.Tactic.Set
 
 /-! # Selecting one of the two reusable DSA arithmetic moduli -/
 

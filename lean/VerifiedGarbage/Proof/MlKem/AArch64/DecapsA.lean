@@ -3,8 +3,6 @@ module
 import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM on AArch64: `decaps`, the first phase

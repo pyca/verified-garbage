@@ -46,8 +46,6 @@ meta import VerifiedGarbage.Proof.MlKem.X86.TopPrim
 meta import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
 meta import VerifiedGarbage.Proof.Sha512.Spec
 import Mathlib.Tactic.Set
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM on x86 (32-bit): the implicit rejection in decapsulation

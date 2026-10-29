@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.WindowSetup
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRows
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowSparsePadding
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout

@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
 public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 import VerifiedGarbage.Proof.Framework.Block
-import Mathlib.Util.CompileInductive
 
 /-! The argument frame can be filled without changing the selected domain,
 entropy-tape pointer, or register arguments. -/

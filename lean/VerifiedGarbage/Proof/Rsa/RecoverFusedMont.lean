@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.RecoverFused
 import VerifiedGarbage.Proof.Rsa.RecoverMath
 public import VerifiedGarbage.Spec.Rsa
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
 
 /-! Montgomery representation of the existing fused-recovery algorithm.
 

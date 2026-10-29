@@ -5,8 +5,6 @@ public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PAttemptArgs
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset

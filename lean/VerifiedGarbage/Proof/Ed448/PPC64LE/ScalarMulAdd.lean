@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ed448.PPC64LE.Pack
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Ed448.PPC64LE.ScalarLoop
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.TCB.PPC64LE.Target

@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
 public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
-
 /-! One carry-preserving word, sharing the existing add/subtract arithmetic lemmas. -/
 
 @[expose] public section
@@ -21,7 +19,7 @@ theorem rel_join {op : AluOp} {v a b p cin c w x y r c' : Nat}
     (h : Rel op v a b p cin c) (hw : Rel op w x y r c c') :
     Rel op (v+p*w) (a+p*x) (b+p*y) (r*p) cin c' := by
   unfold Rel at *
-  split_ifs at * with hop
+  by_cases hop : op = .adc <;> simp only [hop, ↓reduceIte] at *
   · have E := congrArg (p*·) hw
     simp only [Nat.mul_add,Nat.mul_left_comm,Nat.mul_comm] at E ⊢
     omega

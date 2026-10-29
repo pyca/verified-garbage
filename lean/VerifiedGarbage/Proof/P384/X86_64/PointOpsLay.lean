@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsFn
 public import VerifiedGarbage.Impl.P384.X86_64.Joint
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsMixed
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsVal
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # P-384's point functions on x86-64: where their slots are

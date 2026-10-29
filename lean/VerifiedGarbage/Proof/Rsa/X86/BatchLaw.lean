@@ -8,11 +8,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import Aesop.BuiltinRules
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
-import Mathlib.Data.Nat.Init
-import Mathlib.Order.Defs.Prop
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.ToAdditive
 /-! # Compositional arithmetic laws for the RSA batch kernels
 
 Callers use these laws without importing the arithmetic proof machinery.

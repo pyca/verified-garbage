@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtContext
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRowMath
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRows
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightSetup

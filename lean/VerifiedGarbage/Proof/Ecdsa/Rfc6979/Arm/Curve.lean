@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Ecdsa.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Layout
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: the curve

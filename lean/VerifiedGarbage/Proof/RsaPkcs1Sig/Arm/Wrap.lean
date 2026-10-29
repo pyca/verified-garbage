@@ -4,9 +4,6 @@ public import VerifiedGarbage.Impl.RsaPkcs1Sig.Arm.Wrap
 public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Rsa.Arm.PrivAllocCT
 import VerifiedGarbage.Proof.Framework.Block

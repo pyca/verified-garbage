@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Push
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import Mathlib.Util.CompileInductive
 
 /-! All six public ARM stack arguments survive the saved-register push and remain readable. -/
 

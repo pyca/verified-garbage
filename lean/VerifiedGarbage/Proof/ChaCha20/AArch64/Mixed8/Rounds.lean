@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.ChaCha20.AArch64.Mixed8
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Rounds
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Schedule
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

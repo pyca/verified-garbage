@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86.Common
 public import VerifiedGarbage.Proof.MlKem.Compress
 public import VerifiedGarbage.Impl.MlKem.X86.Compress
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM on x86 (32-bit): compressing and packing coefficients

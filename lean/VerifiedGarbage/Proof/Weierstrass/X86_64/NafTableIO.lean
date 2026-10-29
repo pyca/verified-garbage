@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectPass
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Mem
 
 /-! Reading and writing public Jacobian table entries, with exact memory frames. -/

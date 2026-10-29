@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontFn
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Montgomery arithmetic as functions on 32-bit ARM: the moduli

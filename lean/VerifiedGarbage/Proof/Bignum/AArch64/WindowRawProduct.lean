@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawTriangle
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRaw
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowSetup

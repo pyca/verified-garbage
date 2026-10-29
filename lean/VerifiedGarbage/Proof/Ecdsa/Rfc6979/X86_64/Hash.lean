@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Regs
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Sha256.X86_64.Lit
 public import VerifiedGarbage.Impl.MdStream.X86_64
 public import VerifiedGarbage.Proof.Framework.PowLit

@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Hmac.AnyKey
 public import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Framework.EntryBranch
 import all Init.Data.Nat.Bitwise.Basic
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.PowLit

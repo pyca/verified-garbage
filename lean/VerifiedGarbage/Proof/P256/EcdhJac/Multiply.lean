@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ecdh.AArch64.MulOk
 public import VerifiedGarbage.Proof.P256.EcdhJac.State
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
-import Mathlib.Tactic.ClearExcept
 
 @[expose] public section
 

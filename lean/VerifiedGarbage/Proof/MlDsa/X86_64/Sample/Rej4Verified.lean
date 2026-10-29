@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.Sample.Rej4
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Top
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Scalar
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Verified
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4CT
 
 /-!

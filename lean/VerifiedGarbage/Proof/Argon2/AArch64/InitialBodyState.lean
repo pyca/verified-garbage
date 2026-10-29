@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.InitialBody
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The complete body depends on the frame, allocation, and computed lane length. -/

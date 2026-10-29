@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.CallHeader
-import Mathlib.Tactic.Finiteness.Attr
 
 /-! # Memory changed by a DSA validation call -/
 

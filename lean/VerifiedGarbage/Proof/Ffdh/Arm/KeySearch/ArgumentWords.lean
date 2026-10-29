@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Arguments
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallFacts
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Util.CompileInductive
 
 /-! Reading the seven ARM stack arguments after filling the call frame. -/
 

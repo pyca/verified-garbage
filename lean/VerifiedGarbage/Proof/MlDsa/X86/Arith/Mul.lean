@@ -5,7 +5,6 @@ public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Mul
 import VerifiedGarbage.Proof.MlDsa.X86.Arith.Basic
 import VerifiedGarbage.Proof.MlKem.X86.Red
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -14,7 +13,6 @@ meta import VerifiedGarbage.Impl.MlDsa.X86.Arith.Mul
 meta import VerifiedGarbage.Proof.MlDsa.X86.Arith.Basic
 meta import VerifiedGarbage.Proof.MlKem.X86.Red
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
-meta import Mathlib.Tactic.Set
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -57,9 +55,15 @@ theorem head_spec (is : List Instr) (s : State) (P : State → Prop) {a b : Nat}
   rw [mulHead_eq]
   refine wp_movm hia (wp_movm ?_ (wp_mul ?_))
   · simpa only [State.ea, at_, State.setReg, show Reg.edi ≠ Reg.eax by decide, ite_false] using hib
-  set s₁ := (s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32)).setReg .edx
+  let s₁ := (s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32)).setReg .edx
     ((s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32)).mem.readW
-      ((s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32)).ea (at_ .edi 0)) 32) with hs₁
+      ((s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32)).ea (at_ .edi 0)) 32)
+  try rewrite [show (s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32)).setReg .edx
+    ((s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32)).mem.readW
+      ((s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32)).ea (at_ .edi 0)) 32) = s₁ from rfl] at *
+  have hs₁ : s₁ = (s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32)).setReg .edx
+    ((s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32)).mem.readW
+      ((s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32)).ea (at_ .edi 0)) 32) := rfl
   have e₁ : ((execMul .edx s₁).gpr .edx).toNat * 2 ^ 32 + ((execMul .edx s₁).gpr .eax).toNat = a * b := by
     rw [execMul_pair]
     simp only [hs₁, State.setReg, ite_true, ite_false, show Reg.eax ≠ Reg.edx by decide, State.ea, at_,
@@ -126,7 +130,9 @@ theorem mulAdd_core : CoreSpec mulAddCore true mulAddV := by
     rw [o₁.rd, o₁.wr, o₁.gpr .ebp (by decide)]; exact hic
   have hvc' : (s₁.mem.readW ((s₁.gpr .ebp + BitVec.ofNat 32 0).setWidth 64) 32).toNat = c := by
     rw [o₁.mem, o₁.gpr .ebp (by decide)]; exact hvc
-  set C := s₁.mem.readW ((s₁.gpr .ebp + BitVec.ofNat 32 0).setWidth 64) 32 with hC
+  let C := s₁.mem.readW ((s₁.gpr .ebp + BitVec.ofNat 32 0).setWidth 64) 32
+  try rewrite [show s₁.mem.readW ((s₁.gpr .ebp + BitVec.ofNat 32 0).setWidth 64) 32 = C from rfl] at *
+  have hC : C = s₁.mem.readW ((s₁.gpr .ebp + BitVec.ofNat 32 0).setWidth 64) 32 := rfl
   rw [List.cons_append]
   refine wp_cons (s' := (arithFlags s₁ (s₁.gpr .ebx + C) (2 ^ 32 ≤ (s₁.gpr .ebx).toNat + C.toNat)
     (addOverflow (s₁.gpr .ebx) C (s₁.gpr .ebx + C))).setReg .ebx (s₁.gpr .ebx + C))

@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskTiming
 public import VerifiedGarbage.Spec.MlDsa.ResidentMask
 public import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 /-! ## From `ResidentMaskContract.lean` -/
 

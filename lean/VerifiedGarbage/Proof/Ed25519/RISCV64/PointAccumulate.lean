@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Ed25519.RISCV64.PointPowers
 import VerifiedGarbage.Proof.X25519.RISCV64.Cswap
 import VerifiedGarbage.Proof.Framework.Offset
-public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.PointMul
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.PointTable
 public import VerifiedGarbage.Proof.Framework.Block

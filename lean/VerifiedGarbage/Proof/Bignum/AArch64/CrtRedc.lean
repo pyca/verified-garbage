@@ -12,10 +12,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
 
@@ -402,7 +399,7 @@ theorem redc_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVe
       by rw [hz₁, hl0]; rfl, f₁, k₁⟩) fun t hI => ?_
   have hlK : lowW w wx ((w + wx - 1) / wx) = w := by
     unfold lowW
-    have := (lt_chunks (k := (w + wx - 1) / wx) (w := w) (wx := wx) (by omega_using [hw2])).not.mp (Nat.lt_irrefl _)
+    have := (not_congr (lt_chunks (k := (w + wx - 1) / wx) (w := w) (wx := wx) (by omega_using [hw2]))).mp (Nat.lt_irrefl _)
     omega_using [this]
   have hv' := hI.val
   rw [hlK, ← Nat.pow_mul] at hv'

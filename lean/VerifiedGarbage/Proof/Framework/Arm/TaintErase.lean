@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Taint tracking for ARMv7: code without its offsets

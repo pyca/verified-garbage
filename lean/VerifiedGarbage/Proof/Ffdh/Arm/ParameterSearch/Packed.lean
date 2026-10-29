@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
 import VerifiedGarbage.Proof.Rc2.PairMem
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Util.CompileInductive
 
 /-! Preserve the complete u64 attempt budget, including the initial 2^32 value. -/
 

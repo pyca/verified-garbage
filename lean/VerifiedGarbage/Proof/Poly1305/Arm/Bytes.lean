@@ -11,7 +11,6 @@ public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.Semantics
 
 -- Formerly the module `VerifiedGarbage.Proof.Poly1305.Arm.Common`.
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Poly1305.Arm.Lit
@@ -1350,7 +1349,9 @@ theorem mac_step {h r : Nat → Nat} (hh : ∀ j < 10, h j ≤ Hb) (hr : ∀ i <
   have hs0 : s.gpr .r0 = st := by rw [hs.keeps.gpr _ (by decide), h0]
   have hsw : stR st ∈ s.wr := by rw [hs.keeps.wr]; exact hw
   have hRs : rval s.mem (State.addr st) n = r n := by rw [hs.keeps.mem]; exact hR n hn
-  set k₀ := (n + j) % 10 with hk₀
+  let k₀ := (n + j) % 10
+  try rewrite [show (n + j) % 10 = k₀ from rfl] at *
+  have hk₀ : k₀ = (n + j) % 10 := rfl
   have hk₀10 : k₀ < 10 := Nat.mod_lt _ (by decide)
   have hX := xr_ne k₀ hk₀10
   -- The core, from a state with `r1 = a` and the columns and memory of `s`.

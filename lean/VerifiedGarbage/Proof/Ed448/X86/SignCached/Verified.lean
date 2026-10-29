@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.Ed448.X86.SignCached.Layout
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
 import VerifiedGarbage.Proof.Ed448.X86.SignCached.Calls
 import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Ed448.X86.SignCached.Body
@@ -21,7 +20,6 @@ meta import VerifiedGarbage.Proof.Ed448.X86.SignCached.Layout
 meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
 meta import VerifiedGarbage.Proof.Ed448.X86.SignCached.Calls
 meta import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
-meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.Offset
 

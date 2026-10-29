@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import Mathlib.Util.CompileInductive
+import Batteries.Tactic.Alias
 
 /-! # The operations on the arrays of the working space: halving, low bits and slots -/
 

@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckDomain
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 
 /-! # FFDH domain validation on x86-64: save the arguments and ABI registers -/
 

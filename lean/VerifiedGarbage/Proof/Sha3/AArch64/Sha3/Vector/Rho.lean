@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Theta
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

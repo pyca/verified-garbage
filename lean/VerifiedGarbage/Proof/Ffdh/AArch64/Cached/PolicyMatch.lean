@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Header
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
 
 /-! Exact matches cap the width by the reviewed policy, never increase it. -/
 @[expose] public section

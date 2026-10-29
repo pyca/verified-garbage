@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Spec.Ecdsa.P521
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Tables
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # ECDSA over P-521 on AArch64: the contract the proof is written against

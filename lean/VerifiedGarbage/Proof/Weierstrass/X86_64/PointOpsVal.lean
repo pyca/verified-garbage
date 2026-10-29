@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
 public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.PointOps
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
+import Batteries.Logic
 
 /-!
 # Point operations as functions on x86-64: what their bodies compute

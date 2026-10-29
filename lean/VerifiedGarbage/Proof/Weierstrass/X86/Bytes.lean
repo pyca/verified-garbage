@@ -3,7 +3,6 @@ public import VerifiedGarbage.Impl.Mont.X86
 public import VerifiedGarbage.Proof.Framework.Bswap
 
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

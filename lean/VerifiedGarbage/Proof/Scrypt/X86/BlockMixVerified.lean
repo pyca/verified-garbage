@@ -6,9 +6,7 @@ public import VerifiedGarbage.Spec.Scrypt.Contract
 meta import VerifiedGarbage.Spec.Scrypt.Contract
 public import VerifiedGarbage.Proof.Scrypt.X86.BlockMix
 meta import VerifiedGarbage.Proof.Scrypt.X86.BlockMix
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
-meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Bswap
@@ -42,9 +40,6 @@ import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import VerifiedGarbage.Proof.Scrypt.Memory
 meta import VerifiedGarbage.Proof.Scrypt.Memory
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.Conv
-
 @[expose] public section
 
 section
@@ -253,11 +248,15 @@ theorem salsa_stack : stackUse Impl.Scrypt.X86.salsa = 0 := by decide +kernel
 
 theorem salsaSpec : SalsaSpec Impl.Scrypt.X86.salsa := by
   intro s dR d sc hdR hd hsc fd fsc hds hlo hsd hss hind hins Q hQ
-  set E := s.gpr .esp with hE
+  let E := s.gpr .esp
+  try rewrite [show s.gpr .esp = E from rfl] at *
+  have hE : E = s.gpr .esp := rfl
   have hrs : Reg.esp ∉ [Reg.eax, dR] := by simp [Ne.symm hdR]
   have fit : 4 * [Reg.eax, dR].length + 4 ≤ (s.gpr .esp).toNat := by
     simp only [List.length_cons, List.length_nil]; omega
-  set sE := (pushed [Reg.eax, dR] s).callEntry with hsE
+  let sE := (pushed [Reg.eax, dR] s).callEntry
+  try rewrite [show (pushed [Reg.eax, dR] s).callEntry = sE from rfl] at *
+  have hsE : sE = (pushed [Reg.eax, dR] s).callEntry := rfl
   have a0 : arg sE 0 = d := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [hd]
   have a1 : arg sE 1 = sc := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [hsc]
   have eA : argAddr sE 0 = (E - BitVec.ofNat 32 8).setWidth 64 := by

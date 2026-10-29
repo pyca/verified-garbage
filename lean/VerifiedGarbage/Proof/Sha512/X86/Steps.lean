@@ -4,10 +4,6 @@ public import VerifiedGarbage.Proof.Sha512.X86.Sse
 public import VerifiedGarbage.Proof.Sha512.X86.Rounds
 import VerifiedGarbage.Proof.Sha512.Spec
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-
 /-!
 # SHA-512 on x86 (32-bit) with SSE2: the rounds
 
@@ -178,7 +174,9 @@ theorem round_word (v : HashValue) (k w : Word) :
 theorem round_ok {scr : BitVec 32} {H : HashValue} {M : Block} {s₀ s : State} {u t : Nat}
     (c : Ctx scr s) (hI : RInv scr H M s₀ u t s) (ht : t < max u 16) (hu : u ≤ t + 16) :
     WP isa (.block (round t)) s (RInv scr H M s₀ u (t + 1)) := by
-  set v := Spec.Sha512.rounds H M t with hv
+  let v := Spec.Sha512.rounds H M t
+  try rewrite [show Spec.Sha512.rounds H M t = v from rfl] at *
+  have hv : v = Spec.Sha512.rounds H M t := rfl
   have hw : s.mem.readW (addr scr (wOff t)) 64 = W M t := hI.win t ht hu
   have fit := c.fit
   have vl := vOff_lt t

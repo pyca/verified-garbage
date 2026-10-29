@@ -2,11 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.DrawCopy
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
-import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Framework.AddrArith
 

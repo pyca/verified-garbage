@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Weierstrass.JacMul
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState

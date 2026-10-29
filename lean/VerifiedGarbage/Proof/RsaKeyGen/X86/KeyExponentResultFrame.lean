@@ -4,11 +4,6 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyExponentFrame
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyCorrection
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyDProduct
 import VerifiedGarbage.Proof.Rsa.WordRanges
-import Mathlib.Data.Nat.Init
-import Mathlib.Order.Defs.Prop
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.ToAdditive
 
 /-! # Result arithmetic preserves the already-computed inverse status -/
 

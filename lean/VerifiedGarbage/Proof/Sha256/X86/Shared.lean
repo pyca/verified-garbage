@@ -13,8 +13,6 @@ import VerifiedGarbage.Proof.Sha256.StateMem
 meta import VerifiedGarbage.Proof.Sha256.StateMem
 public import VerifiedGarbage.Proof.Sha256.X86.Contract
 meta import VerifiedGarbage.Proof.Sha256.X86.Contract
-import Mathlib.Tactic.Set
-meta import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.MdStream.X86.Finalize
 meta import VerifiedGarbage.Proof.MdStream.X86.Finalize
 public import VerifiedGarbage.Proof.MdStream.X86.Update
@@ -31,8 +29,6 @@ import VerifiedGarbage.Proof.Sha256.Scratch
 meta import VerifiedGarbage.Proof.Sha256.Scratch
 public import VerifiedGarbage.Proof.Framework.X86.StackScratch
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratch
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.MdStream.X86.ArgWord
 meta import VerifiedGarbage.Proof.Framework.Bswap
@@ -73,7 +69,6 @@ public import VerifiedGarbage.Impl.Sha256.X86
 meta import VerifiedGarbage.Impl.Sha256.X86
 public import VerifiedGarbage.Proof.Framework.X86.Call
 meta import VerifiedGarbage.Proof.Framework.X86.Call
-import Mathlib.Tactic.Conv
 
 /-!
 # Streaming SHA-256 on x86 (32-bit): `init`
@@ -111,7 +106,9 @@ theorem word_ok {x : BitVec 32} {k : Nat} {rest : List Instr} {s : State} {Q : S
 theorem init_correct {s₀ : State} (hp : (Proof.Sha256.initX86 iv).pre s₀) :
     WP isa (initWith iv) s₀ fun s' => abiPreserved s₀ s' ∧ (Proof.Sha256.initX86 iv).post s₀ s' := by
   obtain ⟨hrd, hwr, hargs, hret, hfit, hsp⟩ := hp
-  set st := arg s₀ 0 with hst
+  let st := arg s₀ 0
+  try rewrite [show arg s₀ 0 = st from rfl] at *
+  have hst : st = arg s₀ 0 := rfl
   have o : ∀ k, k < 8 → InRegions s₀.wr (addr st (4 * k)) 4 :=
     fun k hk => ⟨⟨st.setWidth 64, 96⟩, by simp [hwr], contains_addr (by omega) (by omega) hfit⟩
   rw [initWith_eq]

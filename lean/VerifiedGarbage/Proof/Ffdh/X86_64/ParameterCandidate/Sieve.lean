@@ -6,7 +6,6 @@ public import VerifiedGarbage.Spec.Ffdh
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Sieve
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import Mathlib.Tactic.ToDual
 
 /-! # FFDH parameter candidates on x86-64: reuse RSA's proven trial reductions -/
 

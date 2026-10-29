@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
 import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Montgomery products as functions on AArch64: the contracts

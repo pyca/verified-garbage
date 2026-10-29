@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Controller
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import Mathlib.Util.CompileInductive
 
 /-! Terminal results clear both halves of the native attempt and request words. -/
 

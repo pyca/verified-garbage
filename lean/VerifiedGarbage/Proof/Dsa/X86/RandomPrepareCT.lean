@@ -12,7 +12,6 @@ meta import VerifiedGarbage.Proof.Mont.X86.Instr
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Spec.Weierstrass
-import Mathlib.Tactic.ToDual
 
 /-!
 # Preparing leaks only public data (x86)

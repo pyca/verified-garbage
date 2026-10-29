@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

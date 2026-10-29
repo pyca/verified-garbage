@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopEnd
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopInit
 
 @[expose] public section

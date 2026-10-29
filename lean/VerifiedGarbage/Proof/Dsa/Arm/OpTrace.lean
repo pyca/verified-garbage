@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.Arm.Dispatch
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.KernelRfl
-import Mathlib.Tactic.ToDual
 
 /-!
 # DSA on 32-bit ARM: the traces of the entry, the dispatch and the exit

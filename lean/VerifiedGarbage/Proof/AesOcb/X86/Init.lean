@@ -14,9 +14,7 @@ meta import VerifiedGarbage.Proof.Ocb.State
 meta import VerifiedGarbage.Proof.AesOcb.X86.Setup
 meta import VerifiedGarbage.Proof.AesOcb.X86.Run
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.AesGcm.X86.Absorb
-meta import Mathlib.Tactic.Set
 meta import VerifiedGarbage.Proof.AesGcm.X86.Absorb
 meta import VerifiedGarbage.Proof.AesGcm.X86.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86.Callee
@@ -26,8 +24,6 @@ import VerifiedGarbage.Proof.AesGcm.X86.Loops
 meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # AES-OCB on x86: `vg_aes_ocb_init`
@@ -138,7 +134,9 @@ theorem iEntry_pc (p : BitVec 32 × (Nat → BitVec 32)) :
     refine WP.seq (WP.of_runBlock ⟨_, by grun [hSP, i₀], ?_⟩)
     have hax : (s₀.setReg .eax (s₀.mem.readW (argA SP 3) 32)).gpr .eax = arg s₀ 3 := by
       rw [gpr_setReg_self, ← hSP]; rfl
-    set t₀ := s₀.setReg .eax (s₀.mem.readW (argA SP 3) 32) with ht₀
+    let t₀ := s₀.setReg .eax (s₀.mem.readW (argA SP 3) 32)
+    try rewrite [show s₀.setReg .eax (s₀.mem.readW (argA SP 3) 32) = t₀ from rfl] at *
+    have ht₀ : t₀ = s₀.setReg .eax (s₀.mem.readW (argA SP 3) 32) := rfl
     obtain ⟨s₁, run₁, bp₁, g₁, rd₁, wr₁, sv₁, f₁⟩ := save_ok t₀ hax (by rw [ht₀]; exact wW) fw
     have sp₁ : s₁.gpr .esp = SP := by rw [g₁ _ (by decide), ht₀, gpr_setReg_of_ne _ _ (by decide), hSP]
     have hA₁ : ∀ i < 4, s₁.mem.readW (argA SP i) 32 = arg s₀ i := fun i hi => by

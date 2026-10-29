@@ -69,7 +69,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.SampleBoundLaw
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalar
 import VerifiedGarbage.Proof.Ffdh.Arm.SampleScalarArgs
 import VerifiedGarbage.Proof.Ffdh.Arm.SampleCut
-import Mathlib.Util.CompileInductive
 import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.TCB.Code
 import VerifiedGarbage.Proof.Ffdh.Arm.Context

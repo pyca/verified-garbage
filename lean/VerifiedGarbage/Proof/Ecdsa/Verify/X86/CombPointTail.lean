@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86
 public import VerifiedGarbage.Impl.Ecdsa.P256.X86Comb
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
 import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 import VerifiedGarbage.Proof.Ecdsa.X86.CombStagesCT
@@ -12,7 +11,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86.TComb
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.X86
 meta import VerifiedGarbage.Impl.Ecdsa.P256.X86Comb
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombStagesCT

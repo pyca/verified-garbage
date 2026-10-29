@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Sha3.Contract
-import Mathlib.Tactic.Conv
 
 /-!
 # The SHA-3 sponge: arithmetic and bytes, for every target
@@ -25,7 +24,7 @@ theorem ofNat_pred {k : Nat} (h : 1 ≤ k) : BitVec.ofNat 64 k - 1 = BitVec.ofNa
 
 theorem sub_ofNat {a b : Nat} (h : b ≤ a) :
     BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
-  conv_lhs => rw [show a = (a - b) + b by omega, BitVec.ofNat_add]
+  conv => lhs; rw [show a = (a - b) + b by omega, BitVec.ofNat_add]
   rw [BitVec.add_sub_cancel]
 
 theorem ofNat_beq_zero{k : Nat} (h : k < 2 ^ 64) : (BitVec.ofNat 64 k == 0) = decide (k = 0) := by

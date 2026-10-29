@@ -8,8 +8,6 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.Scrypt.Contract
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Scrypt.Memory

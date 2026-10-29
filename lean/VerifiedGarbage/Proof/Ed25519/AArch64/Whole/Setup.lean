@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Setup
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Layout
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 

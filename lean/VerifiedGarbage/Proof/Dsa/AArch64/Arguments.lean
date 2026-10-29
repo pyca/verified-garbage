@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeader
 import VerifiedGarbage.Proof.Framework.Block
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 

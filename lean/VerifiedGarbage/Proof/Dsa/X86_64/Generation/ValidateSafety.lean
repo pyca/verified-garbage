@@ -3,8 +3,6 @@ public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Validate
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CodeSafety
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PowerSafety
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.Slots

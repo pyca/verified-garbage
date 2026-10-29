@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.AArch64.Exec

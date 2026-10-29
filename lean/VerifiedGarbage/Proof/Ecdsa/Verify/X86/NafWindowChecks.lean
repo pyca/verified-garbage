@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.NafWindowTiming
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafAddShared
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks
 import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
@@ -17,8 +15,6 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86.NafWindowTiming
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafAddShared
-meta import Mathlib.Tactic.Finiteness.Attr
-meta import Mathlib.Tactic.Attr.Core
 meta import Aesop.BuiltinRules
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit

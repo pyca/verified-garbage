@@ -3,8 +3,6 @@ public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Arguments
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Arguments
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # Native setup for candidate reduction and the saved generator exponent -/

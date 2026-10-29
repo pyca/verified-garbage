@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.R2
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.Math
-import Mathlib.Basic.IsEmpty.Defs
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: a candidate

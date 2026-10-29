@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.R2
 import VerifiedGarbage.Proof.Bignum.AArch64.Setup
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import Mathlib.Order.Defs.PartialOrder
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!

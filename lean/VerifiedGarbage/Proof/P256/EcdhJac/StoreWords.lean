@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Impl.NatPairs
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp

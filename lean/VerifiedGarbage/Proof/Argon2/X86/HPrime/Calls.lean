@@ -13,9 +13,6 @@ public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Blake2.X86.LitB
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.Conv
-
 @[expose] public section
 
 section
@@ -223,7 +220,9 @@ theorem init_ok {B E : BitVec 32} {s : State} (h : Ctx B E s) {n : Nat} (hn : s.
   have esp₂ : s₂.gpr .esp = E := by rw [u₂.other _ (by decide), u₁.other _ (by decide), h.esp]
   have fit : 4 * [Reg.eax, .ecx, .edx, .ebx].length + 4 ≤ (s₂.gpr .esp).toNat := by
     rw [esp₂]; have := h.lo; simp only [List.length_cons, List.length_nil]; omega_arith
-  set sE := (pushed [Reg.eax, .ecx, .edx, .ebx] s₂).callEntry with hsE
+  let sE := (pushed [Reg.eax, .ecx, .edx, .ebx] s₂).callEntry
+  try rewrite [show (pushed [Reg.eax, .ecx, .edx, .ebx] s₂).callEntry = sE from rfl] at *
+  have hsE : sE = (pushed [Reg.eax, .ecx, .edx, .ebx] s₂).callEntry := rfl
   have a0 : arg sE 0 = B := by
     rw [hsE, callEntry_arg fit hrs (by simp)]
     simp [u₂.other _ (by decide : Reg.ebx ≠ .ecx), u₁.other _ (by decide : Reg.ebx ≠ .eax), h.ebx]
@@ -348,7 +347,9 @@ theorem update_ok {B E : BitVec 32} {s : State} (h : Ctx B E s) {D : BitVec 32} 
   have hlo := h.lo
   have fit : 4 * [Reg.eax, .edi, .esi, .edx, .ecx, .ebx].length + 4 ≤ (s₂.gpr .esp).toNat := by
     rw [esp₂]; simp only [List.length_cons, List.length_nil]; omega_arith
-  set sE := (pushed [Reg.eax, .edi, .esi, .edx, .ecx, .ebx] s₂).callEntry with hsE
+  let sE := (pushed [Reg.eax, .edi, .esi, .edx, .ecx, .ebx] s₂).callEntry
+  try rewrite [show (pushed [Reg.eax, .edi, .esi, .edx, .ecx, .ebx] s₂).callEntry = sE from rfl] at *
+  have hsE : sE = (pushed [Reg.eax, .edi, .esi, .edx, .ecx, .ebx] s₂).callEntry := rfl
   have a0 : arg sE 0 = B := by
     rw [hsE, callEntry_arg fit hrs (by simp)]; simp [o₂ .ebx (by decide), h.ebx]
   have a1 : arg sE 1 = s.gpr .ecx := by
@@ -479,7 +480,9 @@ theorem finalize_ok {B E : BitVec 32} {s : State} (h : Ctx B E s)
   have hfit := h.fits
   have fit : 4 * [Reg.eax, .esi, .edx, .ecx, .ebx].length + 4 ≤ (s₄.gpr .esp).toNat := by
     rw [esp₄]; simp only [List.length_cons, List.length_nil]; omega_arith
-  set sE := (pushed [Reg.eax, .esi, .edx, .ecx, .ebx] s₄).callEntry with hsE
+  let sE := (pushed [Reg.eax, .esi, .edx, .ecx, .ebx] s₄).callEntry
+  try rewrite [show (pushed [Reg.eax, .esi, .edx, .ecx, .ebx] s₄).callEntry = sE from rfl] at *
+  have hsE : sE = (pushed [Reg.eax, .esi, .edx, .ecx, .ebx] s₄).callEntry := rfl
   have a0 : arg sE 0 = B := by
     rw [hsE, callEntry_arg fit hrs (by simp)]; simp [o₄ .ebx (by decide) (by decide), h.ebx]
   have a1 : arg sE 1 = s.gpr .ecx := by

@@ -3,7 +3,6 @@ public import VerifiedGarbage.Impl.Ed25519.Arm.PointMul
 public import VerifiedGarbage.Proof.Ed25519.Arm.MulInput
 
 import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
-import Mathlib.Tactic.SplitIfs
 
 /-! Descending through every checkpoint proves the full scalar product. -/
 

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Core
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Sha256.AArch64.Lit
 import VerifiedGarbage.Proof.Pbkdf2.Hmac
 

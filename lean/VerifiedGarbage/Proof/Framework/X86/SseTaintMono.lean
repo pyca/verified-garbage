@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Framework.X86.TaintMono
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Summaries for the x86 SIMD taint analysis

@@ -8,9 +8,7 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Lit
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Lit
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Backends
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
-import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Backends
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Counter
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Rounds
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Scalar

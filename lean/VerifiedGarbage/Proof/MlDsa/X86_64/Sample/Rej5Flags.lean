@@ -3,7 +3,6 @@ public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt5
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Parse
 
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Top
 import VerifiedGarbage.Proof.MlDsa.Sample.Hash
 

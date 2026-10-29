@@ -3,10 +3,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchTailCT
 
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorIterationCT
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Tactic.ToAdditive
-import Mathlib.Tactic.ToDual
 
 /-! # Timing and termination of the complete generator tape search loop -/
 

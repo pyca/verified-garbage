@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Weierstrass.Arm.LadderPCall
 public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
 import VerifiedGarbage.Proof.Weierstrass.Arm.Loop

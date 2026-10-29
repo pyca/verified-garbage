@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Parse
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4SqT
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.Sample.Hash
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Sq

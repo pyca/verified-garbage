@@ -11,9 +11,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointLit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64.Joint
 public import VerifiedGarbage.Proof.Weierstrass.CombW
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.LitShare

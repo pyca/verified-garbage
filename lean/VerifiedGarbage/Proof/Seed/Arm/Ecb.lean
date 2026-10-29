@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # SEED ECB on ARMv7: the whole function

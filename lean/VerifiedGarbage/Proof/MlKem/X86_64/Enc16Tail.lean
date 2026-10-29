@@ -3,7 +3,6 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.Kem16
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragKpke
 
 import VerifiedGarbage.Proof.MlKem.X86_64.Kg16Tail
-import Mathlib.Tactic.Conv
 
 /-!
 # ML-KEM on x86-64: K-PKE.Encrypt with 16-bit polynomials, after the samples

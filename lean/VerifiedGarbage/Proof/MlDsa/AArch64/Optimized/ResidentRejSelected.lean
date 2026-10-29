@@ -6,8 +6,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Top
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Depth
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Verified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.CTTop
 

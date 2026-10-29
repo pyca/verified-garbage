@@ -1,5 +1,4 @@
 module
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKey
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgA
 public import VerifiedGarbage.Impl.MlKem.X86_64.Frag16
-import Mathlib.Tactic.Conv
 
 /-!
 # ML-KEM on x86-64: sampling a matrix of polynomials with 16-bit coefficients

@@ -3,8 +3,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Call
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Call2
 import VerifiedGarbage.Proof.Dsa.X86_64.Reduce
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 
 /-! # Streaming reduction in the DSA parent workspace -/
 

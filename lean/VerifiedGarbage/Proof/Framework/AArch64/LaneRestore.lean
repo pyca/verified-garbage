@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Registers restored from a vector lane, on AArch64

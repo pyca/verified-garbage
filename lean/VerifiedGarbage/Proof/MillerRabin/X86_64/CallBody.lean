@@ -4,10 +4,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 public import VerifiedGarbage.Spec.MillerRabin
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp

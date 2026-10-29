@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragS4
 public import VerifiedGarbage.Impl.MlKem.X86_64.Frag16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragS4
-import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.Offset

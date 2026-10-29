@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Jacobian
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Flags
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

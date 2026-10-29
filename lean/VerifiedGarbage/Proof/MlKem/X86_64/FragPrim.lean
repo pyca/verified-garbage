@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
 public import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragBase
 public import VerifiedGarbage.Proof.MlKem.X86_64.SampleNtt
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncodeAvx2
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT

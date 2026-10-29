@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointGenerator
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointInvariant
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 

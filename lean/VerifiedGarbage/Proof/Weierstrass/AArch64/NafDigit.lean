@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Weierstrass.Naf5
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigitRead
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafCore
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
@@ -57,7 +56,7 @@ theorem nafDigit_ok {K : WinCfg} {C : Curve} {base : Addr} {size k j : Nat}
     simp only [nafNegative_byte,nafMagnitude_byte] at jv
     exact WP.mono (nafAdd_ok hL hJ hAl hm hC ha hOne hP (Naf5.onCurve_point hC hP k j)
       (Naf5.add_step hC hP k j) cv iv jv) fun t ⟨kt,ct⟩ => ⟨kp.trans (kv.trans kt),ct⟩
-  · have hm0 : Naf5.magnitude k j=0 := by simpa only [ne_eq,not_not] using of_decide_eq_false hz
+  · have hm0 : Naf5.magnitude k j=0 := by simpa only [ne_eq,Classical.not_not] using of_decide_eq_false hz
     have he : Naf5.residual k j=2*Naf5.residual k (j+1) := by
       have hh := Naf5.recurrence k j
       rw [hm0] at hh

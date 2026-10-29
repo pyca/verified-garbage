@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.Sha512
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
@@ -133,7 +132,7 @@ theorem rotateRight_xor (x y : Word) (n : Nat) :
     (x ^^^ y).rotateRight n = x.rotateRight n ^^^ y.rotateRight n := by
   ext i hi
   simp only [BitVec.getElem_rotateRight, BitVec.getElem_xor]
-  split_ifs <;> rfl
+  split <;> rfl
 
 theorem ssig0_eq (x : Word) :
     ssig0 x = (x.rotateRight 7 ^^^ x).rotateRight 1 ^^^ x >>> 7 := by

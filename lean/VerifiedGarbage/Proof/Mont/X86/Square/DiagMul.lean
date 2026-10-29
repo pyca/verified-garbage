@@ -2,12 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
 public import VerifiedGarbage.Impl.Mont.X86.MulRt
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Mont.X86.Square.DiagPtr
 public import Batteries.Tactic.Init
 public import Batteries.Tactic.PermuteGoals
 public import Batteries.Tactic.SeqFocus
-import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Mont.X86.Square.Step
@@ -23,7 +21,7 @@ theorem mul_self_eq (s : State) (a : BitVec 32) :
   simp only [execMul, State.setReg, State.setFlags, show Reg.eax ≠ Reg.edx by decide, ↓reduceIte]
   congr 1
   funext r
-  split_ifs <;> simp_all
+  by_cases h₁ : r = Reg.eax <;> by_cases h₂ : r = Reg.edx <;> simp_all
 
 def diagMul : List Instr := [.mov .eax (.mem (at_ .eax 0)), .mul .eax] ++ VG.Impl.Mont.X86.Rt.Square.accum
 

@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
@@ -189,7 +188,7 @@ theorem pad_bytes {m m' : Mem} {st : Addr} {N r bb : Nat} (hr : r ≤ bb) (hlt :
     (hm : m' = writeBytes m (st + BitVec.ofNat 64 (N + r)) (List.replicate (bb - r) 0)) :
     bytesAt m' (st + BitVec.ofNat 64 N) bb =
       bytesAt m (st + BitVec.ofNat 64 N) r ++ List.replicate (bb - r) 0 := by
-  conv_lhs => rw [show bb = r + (bb - r) by omega_arith]
+  conv => lhs; rw [show bb = r + (bb - r) by omega_arith]
   rw [bytesAt_add, Offset.add_ofNat_add_ofNat]
   congr 1
   · refine bytesAt_congr fun i hi => ?_

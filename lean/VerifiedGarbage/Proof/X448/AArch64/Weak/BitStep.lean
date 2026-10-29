@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.X448.AArch64.Swap
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Impl.X448.AArch64.Weak
 

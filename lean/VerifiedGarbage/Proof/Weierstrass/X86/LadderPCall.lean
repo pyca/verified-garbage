@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86.PointFn
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 public import VerifiedGarbage.Impl.Weierstrass.X86.LadderP
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Mont.X86.Chain
 import VerifiedGarbage.Proof.Framework.Offset

@@ -10,8 +10,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TacticTemplate
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
 
 /-!
 # ML-DSA on x86 (32-bit): calls of the primitives from the top-level functions

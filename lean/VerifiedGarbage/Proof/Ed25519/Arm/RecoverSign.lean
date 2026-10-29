@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverAdjust
-import Mathlib.Tactic.SplitIfs
 
 /-! Reject negative zero and otherwise return the selected sign. -/
 

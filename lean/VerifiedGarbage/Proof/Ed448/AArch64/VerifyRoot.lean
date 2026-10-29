@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulSlots
 public import VerifiedGarbage.Proof.Ed448.Root
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Ed448 verification's equation on AArch64: the square root's power

@@ -4,8 +4,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailHashRun
 public import VerifiedGarbage.Spec.MlDsa
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailFirst
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailModel
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

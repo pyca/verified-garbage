@@ -4,10 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
 public import VerifiedGarbage.Impl.Ecdsa.P256.X86Comb
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
 import VerifiedGarbage.Proof.Weierstrass.X86.TComb
@@ -15,10 +12,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
 meta import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
 meta import VerifiedGarbage.Impl.Ecdsa.P256.X86Comb
-meta import Mathlib.Tactic.Finiteness.Attr
-meta import Mathlib.Tactic.Attr.Core
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 meta import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
 meta import VerifiedGarbage.Proof.Weierstrass.X86.TComb

@@ -19,7 +19,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBoundedCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintUnpack
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Ntt
 
 /-!

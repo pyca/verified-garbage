@@ -21,8 +21,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.AddrArith
 import Mathlib.Tactic.Set
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToDual
 
 /-! # Functional correctness of x86-64 DSA key derivation -/
 

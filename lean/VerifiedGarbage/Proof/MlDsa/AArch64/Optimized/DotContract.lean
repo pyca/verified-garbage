@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.InverseTable
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankField
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSliceComposition

@@ -2,10 +2,8 @@ module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
-import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotContract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry

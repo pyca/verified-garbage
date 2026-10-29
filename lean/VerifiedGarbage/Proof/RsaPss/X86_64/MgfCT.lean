@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.RsaPss.X86_64.MgfDirectCT
 public import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashCT
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPss.X86_64.MgfDirect
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

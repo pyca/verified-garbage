@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.X25519.Bytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ed448.RISCV64.Pack
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Ed448.RISCV64.ScalarLoop
 import VerifiedGarbage.Proof.X448.RISCV64.Pass
 public import VerifiedGarbage.TCB.RISCV64.Isa

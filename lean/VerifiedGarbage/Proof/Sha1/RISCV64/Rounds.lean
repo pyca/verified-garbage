@@ -12,8 +12,6 @@ import all Init.Data.Nat.Bitwise.Basic
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.RISCV64.Isa
 public import VerifiedGarbage.Proof.Framework.RISCV64.Double
-import Mathlib.Tactic.SplitIfs
-
 /-!
 # SHA-1 compression function on RISC-V: the message schedule and the rounds
 
@@ -86,7 +84,7 @@ def fval : Fn → Word → Word → Word → Word
 
 theorem f_eq (t : Nat) (x y z : Word) : f t x y z = fval (fn t) x y z := by
   unfold Spec.Sha1.f fn
-  split_ifs <;> simp only [fval, ch_eq, maj_eq, Spec.Sha1.parity]
+  (repeat' split) <;> simp only [fval, ch_eq, maj_eq, Spec.Sha1.parity]
 
 theorem fcode_ok (g : Fn) (b c d : Reg) (s : State) (x y z : Word)
     (hbw : b ∈ work) (hcw : c ∈ work) (hdw : d ∈ work)
@@ -204,7 +202,7 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w : Word)
 /-- `Kₜ` changes only every 20 rounds. -/
 theorem K_succ {t : Nat} (h : (t + 1) % 20 ≠ 0) : K (t + 1) = K t := by
   unfold Spec.Sha1.K
-  split_ifs <;> first | rfl | omega
+  (repeat' split) <;> first | rfl | omega
 
 /-! ## The message schedule -/
 

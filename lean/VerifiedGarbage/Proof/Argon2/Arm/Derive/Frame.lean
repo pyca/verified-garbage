@@ -4,11 +4,9 @@ public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Contract
 public import VerifiedGarbage.Impl.Argon2.Arm.Derive
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.MdStream.Arm.Common
 import VerifiedGarbage.Proof.Blake2.Arm.CompressB
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Argon2 on ARMv7: the derivation's frames
@@ -108,7 +106,9 @@ theorem frames_ok {s₀ : State} (hlo : 240 ≤ (E0 s₀).toNat) {Q : State → 
     (by rw [h1]; simp only [List.length_cons, List.length_nil]; omega_arith) (by decide) ?_
   refine WP.seq (WP.alloc (by decide) (by rw [h2]; show 144 ≤ _; omega_arith) (hb.mono fun t ⟨d, w, q⟩ => ?_))
   -- The restores.
-  set S2 := pushed savedRegs (pushed argRegs s₀) with hS2
+  let S2 := pushed savedRegs (pushed argRegs s₀)
+  try rewrite [show pushed savedRegs (pushed argRegs s₀) = S2 from rfl] at *
+  have hS2 : S2 = pushed savedRegs (pushed argRegs s₀) := rfl
   have spS2 : (freed 144 t).sp = S2.sp := by
     simp only [freed, d.sp]
     apply BitVec.eq_of_toNat_eq

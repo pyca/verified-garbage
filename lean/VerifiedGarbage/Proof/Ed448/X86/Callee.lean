@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Ed448 on x86 (32-bit): what the complete operations assume of a callee

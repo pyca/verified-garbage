@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashDepth
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashSafety
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Stack
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 import VerifiedGarbage.Proof.RsaKeyGen.Table

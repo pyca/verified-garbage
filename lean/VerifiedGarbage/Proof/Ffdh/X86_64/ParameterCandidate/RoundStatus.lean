@@ -7,10 +7,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Masks
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # FFDH parameter generation on x86-64: count accepted passing rounds -/

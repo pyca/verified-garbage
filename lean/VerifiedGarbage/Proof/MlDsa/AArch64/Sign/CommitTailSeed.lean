@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailCoreState
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed66
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailInitial
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailSqueezeRate
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Sha3.Arith

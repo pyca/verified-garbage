@@ -3,9 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyHalveStep
 import VerifiedGarbage.Proof.Rsa.X86.DivCount
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.ToDual
 
 /-! # One public iteration of the native RSA LCM halving schedule -/
 

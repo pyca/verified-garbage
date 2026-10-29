@@ -2,9 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Rsa.Arm.PrivContract
 public import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivImpl
 meta import VerifiedGarbage.Proof.Framework.Contract

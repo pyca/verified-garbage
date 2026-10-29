@@ -9,10 +9,7 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lower
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
-import Mathlib.Tactic.ToAdditive
 
 /-!
 # The scalar round with its temporary lanes in memory, run

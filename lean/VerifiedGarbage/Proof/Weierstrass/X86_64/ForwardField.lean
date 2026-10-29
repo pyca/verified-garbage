@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.Forward
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardStores
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Double4
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Blocks
-import Mathlib.Tactic.SplitIfs
 
 /-! The forwarded program preserves field values, memory frames and its output cache. -/
 

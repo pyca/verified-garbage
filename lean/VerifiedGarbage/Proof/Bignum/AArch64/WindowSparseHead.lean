@@ -1,6 +1,5 @@
 module
 
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRows
 public import VerifiedGarbage.Impl.Bignum.AArch64.WindowSparse
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightTile

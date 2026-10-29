@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CodeSafety
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorStep
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.Slots

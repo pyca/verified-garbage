@@ -6,10 +6,6 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Permute
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Permute
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
 

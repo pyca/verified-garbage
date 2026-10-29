@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Rsa.Ranges
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Copy
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdE
 import VerifiedGarbage.Proof.Bignum.Math
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.RsaKeyGen.Gcd
 

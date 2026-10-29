@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Ffdh.CombBitBytes
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
 
 /-! Exact scalar bit extraction, including the public zero padding above N. -/
 @[expose] public section

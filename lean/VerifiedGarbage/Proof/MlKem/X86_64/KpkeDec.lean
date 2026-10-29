@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.InlinePrim
 public import VerifiedGarbage.Impl.MlKem.X86_64.Kpke16
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncBase
 import VerifiedGarbage.Proof.MlKem.X86_64.DcDec
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

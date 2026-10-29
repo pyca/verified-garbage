@@ -9,10 +9,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyConstant
 import VerifiedGarbage.Proof.Rsa.X86.KeySub
 import VerifiedGarbage.Proof.Rsa.InverseArithmetic
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import Mathlib.Data.Nat.Init
-import Mathlib.Order.Defs.Prop
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
 
 /-! # Native public-exponent range checks -/
 

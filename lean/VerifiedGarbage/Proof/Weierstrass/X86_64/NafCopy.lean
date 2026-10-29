@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Mont.X86_64.Words
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 
 /-! Direct copies of public Jacobian table entries. -/

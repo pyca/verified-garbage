@@ -3,10 +3,9 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Return
 public import VerifiedGarbage.Proof.Dsa.AArch64.Operands
 import VerifiedGarbage.Proof.Dsa.Layout
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
+import Batteries.Logic
 
 /-! # Frames for DSA arithmetic call arguments -/
 

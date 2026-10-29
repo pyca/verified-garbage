@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableState
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableCopy
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTree

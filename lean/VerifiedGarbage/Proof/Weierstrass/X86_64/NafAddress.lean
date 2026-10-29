@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Mem
 
 /-! Bounds and addresses of the eight public odd-multiple table entries. -/

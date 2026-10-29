@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Joint
 public import VerifiedGarbage.Proof.Weierstrass.Joint
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Pow

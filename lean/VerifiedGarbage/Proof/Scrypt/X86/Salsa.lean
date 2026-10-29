@@ -23,9 +23,7 @@ meta import VerifiedGarbage.Proof.Scrypt.X86.SalsaRounds
 public import VerifiedGarbage.Impl.Scrypt.X86.Salsa
 meta import VerifiedGarbage.Impl.Scrypt.X86.Salsa
 import all Init.Data.Nat.Power2.Basic
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
-meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Sha256.X86.Compress
 public import VerifiedGarbage.Proof.Sha256.X86.Lit

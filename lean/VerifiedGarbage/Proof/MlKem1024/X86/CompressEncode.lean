@@ -15,9 +15,7 @@ meta import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlKem.X86.Unpack
-import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.MlKem.X86.Unpack
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.Framework.Bswap

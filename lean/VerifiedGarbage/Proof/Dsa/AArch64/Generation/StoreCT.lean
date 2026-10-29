@@ -4,10 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateStores
 import VerifiedGarbage.Proof.Rsa.AArch64.CvCTMain
 import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
-import Mathlib.Tactic.ToAdditive
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -17,10 +14,7 @@ meta import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateStores
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CvCTMain
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
-meta import Mathlib.Tactic.ToAdditive
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.Attr.Core
-meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub

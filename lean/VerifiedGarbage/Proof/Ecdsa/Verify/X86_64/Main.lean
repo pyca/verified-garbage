@@ -1,5 +1,4 @@
 module
-import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Front
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 public import VerifiedGarbage.Spec.Ecdsa.Verify

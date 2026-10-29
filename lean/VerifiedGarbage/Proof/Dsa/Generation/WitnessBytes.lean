@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Rsa.Octets
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.CutOctets
 public import VerifiedGarbage.Spec.RsaKeyGen
-import Mathlib.Data.List.Induction
 import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.Digest
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -11,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.ListSnoc
 
 /-! # RSA's blinded witness transformation on big-endian bytes
 
@@ -39,7 +39,7 @@ theorem lastOr_length {bs : List Byte} (hne : bs ≠ []) (mask : Byte) :
 
 theorem lastOr_value {bs : List Byte} (hne : bs ≠ []) (mask : Byte) :
     Spec.Rsa.os2ip (lastOr bs mask) = Spec.Rsa.os2ip bs ||| mask.toNat := by
-  induction bs using List.reverseRecOn with
+  induction bs using VG.List.reverseRecOn with
   | nil => contradiction
   | append_singleton bs b _ =>
     have hlo : b.toNat ||| mask.toNat < 2 ^ 8 := Nat.or_lt_two_pow b.isLt mask.isLt

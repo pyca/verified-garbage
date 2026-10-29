@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Ops
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rounds
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Mem
 
 /-! The row permutations and six-block schedule implement ChaCha's double round. -/

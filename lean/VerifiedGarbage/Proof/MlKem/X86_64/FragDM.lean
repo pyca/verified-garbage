@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.MlKem.X86_64.FragL
 public import VerifiedGarbage.Impl.MlKem.X86_64.Kem
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragOf
-import Mathlib.Tactic.Conv
 
 /-!
 # ML-KEM on x86-64: the call of `vg_mlkem*_decrypt_mul`

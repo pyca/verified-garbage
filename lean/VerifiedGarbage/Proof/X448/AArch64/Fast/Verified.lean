@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.X448.AArch64.Fast.Main
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Lit
 public import VerifiedGarbage.Proof.X448.AArch64.Main
 public import VerifiedGarbage.Impl.X448.AArch64.Field56
-import Mathlib.Tactic.ToAdditive
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.KernelRfl
@@ -12,7 +11,6 @@ meta import VerifiedGarbage.Proof.X448.AArch64.Fast.Main
 meta import VerifiedGarbage.Proof.X448.AArch64.Fast.Lit
 meta import VerifiedGarbage.Proof.X448.AArch64.Main
 meta import VerifiedGarbage.Impl.X448.AArch64.Field56
-meta import Mathlib.Tactic.ToAdditive
 meta import Aesop.BuiltinRules
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.KernelRfl

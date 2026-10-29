@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Mont.X86.Sse2.Time
 public import VerifiedGarbage.Proof.Mont.X86.Sse2.TimeTaint
-import Mathlib.Util.CompileInductive
 
 /-! # `vg_rsa_mont_mul` on x86 with SSE2: verified
 

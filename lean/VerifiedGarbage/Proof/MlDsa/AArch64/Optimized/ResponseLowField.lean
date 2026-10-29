@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowCall
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMath
 
 @[expose] public section

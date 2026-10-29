@@ -1,14 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RISCV64.Linear
-import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
 
 /-!
 # RISC-V: linear layers with input words and constants in slots
 
 `linear_ok` (`Linear.lean`), with input words and known constants (masks) in
 the slots of the scratch buffer as well as in registers, output words in
-slots, and slots the block keeps: as PPC64LE's (`Proof/Framework/PPC64LE/LinearG.lean`).
+slots, and slots the block keeps: as PPC64LE's
+(`Proof/Framework/PPC64LE/LinearG.lean`).
 -/
 
 @[expose] public section
@@ -66,7 +66,6 @@ theorem linG_ok {k xb : Nat} {c : Cfg} {is : List Instr} {ins : List (Reg × Nat
       have hr : r' = r := by simpa using List.find?_some hf
       subst hr
       obtain ⟨h1, h2⟩ := hin r' i (List.mem_of_find?_eq_some hf)
-      show LaneRel _ _ _ _
       rw [← h2]; exact inWord_rel W h1
     · simp only [linEnvG] at h
       split at h
@@ -89,9 +88,9 @@ theorem linG_ok {k xb : Nat} {c : Cfg} {is : List Instr} {ins : List (Reg × Nat
     p.sp, fun r hr => p.other r (by simp [hr]), p.frame, p.base, p.ext⟩
   · obtain ⟨h1, h2⟩ := outOk_spec (List.all_eq_true.mp hpost (r, g) hrg)
     cases hr : e'.reg r with
-    | none => simp only [hr, word] at h1; cases h1
+    | none => rw [hr] at h1; cases h1
     | some v =>
-      simp only [hr] at h1
+      rw [hr] at h1
       cases v with
       | v a =>
         simp only [word, Option.some.injEq] at h1
@@ -108,6 +107,6 @@ theorem linG_ok {k xb : Nat} {c : Cfg} {is : List Instr} {ins : List (Reg × Nat
     have r₁ := p.rel.slot j a hjs (he.trans ha)
     have r₀ := hrel.slot j a hjs ha
     rw [p.base] at r₁
-    exact BitVec.eq_of_getLsbD_eq fun q hq => by rw [r₁.2 q hq, r₀.2 q hq]
+    exact laneRel_fun a _ _ r₁ r₀
 
 end VG.RISCV64.Straight

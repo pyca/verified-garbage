@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.EntryCT
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

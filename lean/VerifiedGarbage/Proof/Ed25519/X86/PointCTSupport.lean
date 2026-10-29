@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Ed25519.X86.Workspace
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 

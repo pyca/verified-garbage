@@ -7,8 +7,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailPro
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailOutput
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailHash
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailSaved
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import VerifiedGarbage.Proof.Sha3.Arith

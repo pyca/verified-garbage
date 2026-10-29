@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Final
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedTimingBase
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Cmp
 import VerifiedGarbage.Proof.MlDsa.Verify.Final

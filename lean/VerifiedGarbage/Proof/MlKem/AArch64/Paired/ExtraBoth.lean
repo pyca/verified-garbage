@@ -11,8 +11,6 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Keep
 import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Segment
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Extra
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
-
 /-! # Resume both public matrix streams and combine their success flags
 
 `Paired.extraBoth` runs `extraReject` once per stream, as a loop counted by
@@ -231,6 +229,6 @@ theorem extraBoth_ok {w16 : Bool} {s : State} {p a b : Addr} {L M : List Zq} {A 
   refine WP.mono (Rej8.WP.constants fin cu (by rfl)) fun v ⟨⟨kv,ev⟩,cv⟩ => ?_
   refine ⟨(ku.trans kv.keep).mono,by rw [kv.mem]; exact fu,by rw [kv.mem]; exact ca,
     by rw [kv.mem]; exact cb,by rw [kv.mem]; exact sa,by rw [kv.mem]; exact sb,?_,cv⟩
-  rw [ev,u22]; unfold fullFlag; split_ifs <;> simp_all
+  rw [ev,u22]; unfold fullFlag; (repeat' split) <;> simp_all
 
 end VG.Proof.MlKem.AArch64.Paired

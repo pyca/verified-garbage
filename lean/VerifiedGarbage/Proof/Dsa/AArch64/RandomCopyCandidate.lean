@@ -5,9 +5,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.RandomMask
 public import VerifiedGarbage.Proof.Dsa.DomainShape
 public import VerifiedGarbage.Spec.Dsa.Random
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract

@@ -3,10 +3,8 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hash
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha256.Stream
-import Mathlib.Tactic.Conv
 
 /-!
 # Calls of a streaming hash function on 32-bit ARM: the byte loops
@@ -118,8 +116,10 @@ theorem copy_ok {src dst : Reg} (hs : src ∉ cclob) (hd : dst ∉ cclob)
     WP isa (copy src so dst d n) s fun t =>
       Copied s (State.addr (s.gpr dst) + BitVec.ofNat 64 d)
         (bytesAt s.mem (State.addr (s.gpr src) + BitVec.ofNat 64 so) n) t := by
-  set A := State.addr (s.gpr src) + BitVec.ofNat 64 so
-  set B := State.addr (s.gpr dst) + BitVec.ofNat 64 d
+  let A := State.addr (s.gpr src) + BitVec.ofNat 64 so
+  try rewrite [show State.addr (s.gpr src) + BitVec.ofNat 64 so = A from rfl] at *
+  let B := State.addr (s.gpr dst) + BitVec.ofNat 64 d
+  try rewrite [show State.addr (s.gpr dst) + BitVec.ofNat 64 d = B from rfl] at *
   refine WP.seq (wp_mov (op2_imm (by decide)) fun s₀ u₀ => VG.Proof.Pbkdf2.Stream.Arm.wp_movw fun s₁ u₁ =>
     WP.block_nil ?_)
   have i0 : CopyInv s A B n 0 s₁ :=
@@ -190,8 +190,10 @@ theorem xor_ok {uo n : Nat} (huo : uo < 4096) (hn : 0 < n) (hn' : n < 2 ^ 16) {s
         .ldrb .r1 .r2 0, .dp .eor .r1 .r1 (.reg .r12), .strb .r1 .r2 0, .dp .add .r8 .r8 (.imm 1),
         .subs .r9 .r9 (.imm 1)]) .ne)) s
       fun t => XorInv s (State.addr (s.gpr .r11) + BitVec.ofNat 64 uo) (State.addr (s.gpr .r5)) n n t := by
-  set U := State.addr (s.gpr .r11) + BitVec.ofNat 64 uo
-  set T := State.addr (s.gpr .r5)
+  let U := State.addr (s.gpr .r11) + BitVec.ofNat 64 uo
+  try rewrite [show State.addr (s.gpr .r11) + BitVec.ofNat 64 uo = U from rfl] at *
+  let T := State.addr (s.gpr .r5)
+  try rewrite [show State.addr (s.gpr .r5) = T from rfl] at *
   refine WP.seq (wp_mov (op2_imm (by decide)) fun s₀ u₀ => VG.Proof.Pbkdf2.Stream.Arm.wp_movw fun s₁ u₁ =>
     WP.block_nil ?_)
   have i0 : XorInv s U T n 0 s₁ :=

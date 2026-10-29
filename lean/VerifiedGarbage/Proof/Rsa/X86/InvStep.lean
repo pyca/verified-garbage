@@ -4,9 +4,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.InvU
 public import VerifiedGarbage.Proof.Rsa.X86.InvHalf
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
 import VerifiedGarbage.Proof.Rsa.X86.KeySelect
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Basic.IsEmpty.Defs
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.X86.Wp

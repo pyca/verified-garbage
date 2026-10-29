@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyCompareArgs
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyMatch
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
 
 /-! A cap is applied only after the complete vetted-domain match. -/
 @[expose] public section

@@ -4,17 +4,11 @@ public import VerifiedGarbage.Proof.Ecdh.AArch64.CheckPoint
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 import VerifiedGarbage.Proof.Weierstrass.AArch64.P384Literals
 public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.CheckPoint
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P384Literals
 meta import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
-meta import Mathlib.Data.Finset.Attr
-meta import Mathlib.Tactic.SetLike
-meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 
 /-!

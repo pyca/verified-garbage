@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.X448.X86.Row
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # X448 on x86 (32-bit): the multiplication loop

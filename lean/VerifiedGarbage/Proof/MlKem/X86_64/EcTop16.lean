@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
 public import VerifiedGarbage.Proof.MlKem.X86_64.Enc16
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
 
 /-!

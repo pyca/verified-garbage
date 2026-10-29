@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Loop
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Save
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset

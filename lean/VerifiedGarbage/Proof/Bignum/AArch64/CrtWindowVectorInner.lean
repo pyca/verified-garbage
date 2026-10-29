@@ -6,8 +6,6 @@ import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorRow
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Advance the full-scan row pointer and public SIMD row index. -/

@@ -6,8 +6,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
 import VerifiedGarbage.Proof.Dsa.Generation.Trial
 public import VerifiedGarbage.Spec.RsaKeyGen
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
-import Mathlib.Tactic.ToAdditive
 
 /-! # DSA uses RSA's complete native small-prime table and trial loop -/
 

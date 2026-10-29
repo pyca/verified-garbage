@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
 public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
 import VerifiedGarbage.Proof.Framework.Block
-import Mathlib.Util.CompileInductive
 
 /-! Exhaustion and entropy requests return zero outputs and exact sampling words. -/
 

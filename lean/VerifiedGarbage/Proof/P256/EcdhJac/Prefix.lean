@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.P256.EcdhJac.Frontend
 import VerifiedGarbage.Proof.P256.EcdhJac.Setup
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Prefix
-import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed25519.AArch64.Mem

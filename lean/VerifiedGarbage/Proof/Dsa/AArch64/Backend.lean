@@ -4,9 +4,7 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.Generate
 public import VerifiedGarbage.Spec.Dsa.Derive
 public import VerifiedGarbage.Spec.Dsa.Prevalidated
 public import VerifiedGarbage.Impl.Dsa.AArch64.Prevalidated
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Dsa.AArch64.Run

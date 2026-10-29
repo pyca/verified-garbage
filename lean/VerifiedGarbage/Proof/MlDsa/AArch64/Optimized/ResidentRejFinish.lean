@@ -5,8 +5,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdaptive
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTail
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejEpi
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSqueezeSetup
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejStart
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFlagValue

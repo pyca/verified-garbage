@@ -6,9 +6,9 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacDouble
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import Batteries.Logic
 
 @[expose] public section
 

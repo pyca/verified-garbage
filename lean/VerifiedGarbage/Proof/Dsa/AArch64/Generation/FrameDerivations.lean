@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameDerived
 import VerifiedGarbage.Proof.Framework.AArch64.StackStore
 import VerifiedGarbage.TCB.AArch64.Isa
-import Mathlib.Tactic.SplitIfs
 
 /-! # Derive several arena pointers from the preserved scratch base -/
 

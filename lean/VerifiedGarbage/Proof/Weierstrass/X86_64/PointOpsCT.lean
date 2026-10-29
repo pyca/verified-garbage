@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsMixed
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedTiming
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.X86_64.PointFieldTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAdd

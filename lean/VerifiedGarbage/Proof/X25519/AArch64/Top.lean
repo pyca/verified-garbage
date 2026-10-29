@@ -13,8 +13,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import Mathlib.Tactic.SplitIfs
-
 /-!
 # X25519 on AArch64: the whole function
 
@@ -106,7 +104,7 @@ theorem clampB_eq {m m₀ : Mem} {sc : Addr}
       BitVec.ofNat 8 (bit (decodeScalar25519 (bytesAt m₀ sc 32)) t) := by
   rw [scalar_bit (length_bytesAt _ _ _) ht]
   simp only [clampB]
-  split_ifs
+  repeat' split
   · rfl
   · rfl
   · have hg : (bytesAt m₀ sc 32).getD (t / 8) 0 = m₀ (sc + BitVec.ofNat 64 (t / 8)) := by

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # The x86 (32-bit) curve-25519 functions' calls: what is public before each

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Setup
 public import VerifiedGarbage.Spec.Ed448.Contract
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

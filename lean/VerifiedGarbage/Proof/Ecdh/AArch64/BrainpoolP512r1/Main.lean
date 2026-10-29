@@ -5,7 +5,6 @@ public import VerifiedGarbage.Impl.Ecdh.BrainpoolP512r1.AArch64
 import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP512r1.MulPow
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
-import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Ecdh.Exchange
 import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
 import VerifiedGarbage.Proof.Framework.Offset

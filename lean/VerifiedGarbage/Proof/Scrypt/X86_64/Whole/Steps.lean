@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Layout
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Impl.Scrypt.X86_64.Scrypt
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Scrypt.Memory
 

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverCorrect
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Framework.Offset
@@ -112,7 +111,7 @@ theorem mk_eq (d st : BitVec 64) :
       ~~~(if st.setWidth 32 = 0 then BitVec.allOnes 64 else 0)) = mk d st := by
   unfold mk
   rw [BitVec.setWidth_eq]
-  split_ifs <;> first | decide | simp_all
+  (repeat' split) <;> first | decide | simp_all
 
 /-- A word of the frame is readable and writable. -/
 theorem frame_rw {s t : State} (hwr : t.wr = ⟨fb s, frameBytes⟩ :: s.wr) {d n : Nat} (h : d + n ≤ frameBytes) :

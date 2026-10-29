@@ -8,9 +8,6 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryInitial
 import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Tactic.ToDual
 
 /-! Save the incoming link register outside the persistent generation words. -/
 @[expose] public section

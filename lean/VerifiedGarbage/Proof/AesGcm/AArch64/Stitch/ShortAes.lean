@@ -22,7 +22,6 @@ public import VerifiedGarbage.Impl.AesGcm.AArch64.Stitch
 public import VerifiedGarbage.Proof.Gcm.Compose
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Env
 public import VerifiedGarbage.Proof.Framework.Bswap
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 public import VerifiedGarbage.Proof.Aes.KeyExp
 public import VerifiedGarbage.Proof.Framework.Contract

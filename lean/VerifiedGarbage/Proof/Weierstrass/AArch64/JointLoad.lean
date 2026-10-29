@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
 import VerifiedGarbage.Proof.Mont.AArch64.Row
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section

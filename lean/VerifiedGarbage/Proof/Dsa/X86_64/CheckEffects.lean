@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Dsa.X86_64.Equal
 import VerifiedGarbage.Proof.Dsa.X86_64.Range
 import VerifiedGarbage.Proof.Dsa.X86_64.Zero
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.IsOne
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 

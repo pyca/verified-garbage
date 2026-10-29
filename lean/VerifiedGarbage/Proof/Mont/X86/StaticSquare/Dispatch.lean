@@ -7,7 +7,6 @@ public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
 import VerifiedGarbage.Proof.Mont.X86.StaticSquare.SelectSize
 public import VerifiedGarbage.Proof.Mont.X86.Rt.RowFull
 import VerifiedGarbage.Proof.Mont.X86.Rt.Body
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Taint
 

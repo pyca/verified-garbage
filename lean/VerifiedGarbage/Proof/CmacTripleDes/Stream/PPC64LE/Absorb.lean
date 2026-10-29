@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.CmacTripleDes.Stream
 import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.Cmac.Mem
 import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Common
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.CmacTripleDes.Stream.PPC64LE
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics

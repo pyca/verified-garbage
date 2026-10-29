@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.FastFinishCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtSetup
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcSave
 meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcSave

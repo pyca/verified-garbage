@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.Lay
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragK
-import Mathlib.Tactic.Conv
 
 /-!
 # ML-KEM-768 on x86-64: the calls, in a layout

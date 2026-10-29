@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.Chain.Word
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
-
 /-! A carry chain of any fixed number of words, with pointers held still. -/
 
 @[expose] public section
@@ -33,7 +31,7 @@ theorem words_ok {s : State} {base : Addr} {size a b d n : Nat} {op : AluOp} {ci
       intro _
       refine WP.block_nil ⟨Outside.refl _ _ _ _,Keeps.refl _ _,cin,cf,?_⟩
       simp only [Rel,val32,Nat.mul_zero,Nat.pow_zero,Nat.one_mul,Nat.zero_add]
-      split_ifs <;> rfl
+      split <;> trivial
     | succ k ih =>
       intro hk
       simp only [List.range_succ,List.flatMap_append,List.flatMap_cons,List.flatMap_nil,List.append_nil]

@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Ed25519.X86.PointPowers
 import VerifiedGarbage.Proof.Ed25519.X86.Points
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import Mathlib.Tactic.SplitIfs
 
 /-! Merged from `Proof.Ed25519.X86.PointMulFrame`. -/
 

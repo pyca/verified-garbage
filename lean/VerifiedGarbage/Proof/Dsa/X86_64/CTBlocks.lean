@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Framework.RelCT
 
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
-import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-! # Timing-preserving composition of adjacent DSA instruction blocks -/

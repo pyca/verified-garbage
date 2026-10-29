@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
 public import VerifiedGarbage.Proof.Ffdh.Lead
 public import VerifiedGarbage.Spec.Ffdh.Contract
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # FFDH domain validation on x86-64: retained public data -/

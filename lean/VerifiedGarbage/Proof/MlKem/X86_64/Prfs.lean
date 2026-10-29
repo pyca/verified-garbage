@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.PrfBatch
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.MlKem.X86_64.FragC
 import VerifiedGarbage.Proof.MlKem.X86_64.FragS

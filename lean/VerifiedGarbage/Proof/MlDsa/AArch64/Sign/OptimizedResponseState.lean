@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductCallTiming
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedResponse
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMasks
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseK
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 
 /-! ## From `OptimizedProduct.lean` -/

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.Md5
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
@@ -75,7 +74,7 @@ theorem rotateLeft_eq (x : Word) {n : Nat} (h₁ : 1 ≤ n) (h₂ : n ≤ 31) :
     x.rotateLeft n = x.rotateRight (32 - n) := by
   ext i hi
   simp only [BitVec.getElem_rotateLeft, BitVec.getElem_rotateRight]
-  split_ifs <;> first | omega | (congr 1; omega)
+  (repeat' split) <;> first | omega | (congr 1; omega)
 
 /-- A 32-bit load reads four bytes, low-order byte first. -/
 theorem readW_bytes (m : Mem) (a : Addr) :
@@ -85,6 +84,6 @@ theorem readW_bytes (m : Mem) (a : Addr) :
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [BitVec.getLsbD_append, BitVec.getLsbD_zero_length]
-  split_ifs <;> first | omega | rfl
+  (repeat' split) <;> first | omega | rfl
 
 end VG.Proof.Md5

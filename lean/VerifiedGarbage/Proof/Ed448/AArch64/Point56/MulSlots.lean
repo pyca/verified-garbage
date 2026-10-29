@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulCall
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Chain
 public import VerifiedGarbage.Proof.Framework.AArch64.StoreFrame
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
 public import VerifiedGarbage.Impl.X448.AArch64.Field56

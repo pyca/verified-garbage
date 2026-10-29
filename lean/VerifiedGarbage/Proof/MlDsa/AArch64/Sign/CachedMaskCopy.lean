@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedCommitment
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWritten
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMasks
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 

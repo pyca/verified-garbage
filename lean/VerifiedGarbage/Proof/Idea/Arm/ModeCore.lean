@@ -4,9 +4,7 @@ public import VerifiedGarbage.Proof.Modes.Arm.Core
 public import VerifiedGarbage.Impl.Idea.Arm.Modes
 public import VerifiedGarbage.Spec.Idea.Cbc
 import VerifiedGarbage.Proof.Idea.Arith
-import Mathlib.Tactic.ToAdditive
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Idea.Arm.Verified
 import VerifiedGarbage.Proof.Framework.Sig

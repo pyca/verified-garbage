@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Tactic.Set
 
 /-!
 # Multiword arithmetic on x86-64: words to bytes
@@ -54,7 +53,7 @@ theorem storeStep_ok {s : State} {B : Addr} {Z ed k w : Nat} {out : Addr} {c : B
           .alu .add .rdx (.imm 1), .alu .cmp .rdx (.reg .rcx)]))) t fun t' =>
       t'.zf = some (decide (p + 1 = k)) ∧ SInv s out k (if c then wv s.mem B ed w else 0) (p + 1) t' := by
   have hn := hs.nowrap
-  set Ym := if c then wv s.mem B ed w else 0 with hYm
+  generalize hYm : (if c then wv s.mem B ed w else 0) = Ym at *
   have tbx : t.gpr .rbx = off B ed := (hI.keep.gpr (by decide)).trans hbx
   have tcx : t.gpr .rcx = BitVec.ofNat 64 k := (hI.keep.gpr (by decide)).trans hcx
   have t15 : t.gpr .r15 = mask c := (hI.keep.gpr (by decide)).trans h15
@@ -88,7 +87,7 @@ theorem storeStep_ok {s : State} {B : Addr} {Z ed k w : Nat} {out : Addr} {c : B
       rw [hax, and_mask_toNat, word_of_wv _ _ _ _ hq, show 8 - p % 8 = 8 by omega_arith, VG.Proof.Bignum.pow256_8,
         show 64 * (p / 8) = 8 * p by omega_arith, show (256 : Nat) ^ p = 2 ^ (8 * p) by
           rw [show (256 : Nat) = 2 ^ 8 by rfl, ← Nat.pow_mul]]
-      simp only [hYm]
+      simp only [← hYm]
       cases c <;> simp
     · refine WP.ite false (by simp [eval, hz₁, hz]) (by simp) (fun _ => WP.block_nil ?_)
       exact ⟨by rw [(k₁.gpr (by decide) : t₁.gpr .rax = t.gpr .rax)]; exact hI.rax hz, hm₁, Keep.refl _ _⟩

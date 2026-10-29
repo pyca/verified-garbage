@@ -7,9 +7,6 @@ import VerifiedGarbage.Proof.Aes.Blocks
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Spec.Gcm.Contract
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Data.List.Induction
-
 /-!
 # GHASH on x86 (32-bit): the whole function
 
@@ -69,7 +66,7 @@ theorem xw_cat4 (a b c d : BitVec 32) :
     xw (cat4 a b c d) 0 = a ∧ xw (cat4 a b c d) 1 = b ∧ xw (cat4 a b c d) 2 = c ∧ xw (cat4 a b c d) 3 = d := by
   refine ⟨?_, ?_, ?_, ?_⟩ <;> (apply BitVec.eq_of_getLsbD_eq; intro t ht) <;>
     simp only [xw, BitVec.getLsbD_extractLsb', getLsbD_cat4, ht, decide_true, Bool.true_and] <;>
-    split_ifs <;> first | omega_arith | (congr 1; omega_arith)
+    (repeat' split) <;> first | omega_arith | (congr 1; omega_arith)
 
 theorem xw_cat4_0 (a b c d : BitVec 32) : xw (cat4 a b c d) 0 = a := (xw_cat4 a b c d).1
 theorem xw_cat4_1 (a b c d : BitVec 32) : xw (cat4 a b c d) 1 = b := (xw_cat4 a b c d).2.1

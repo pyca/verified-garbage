@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryAllocated
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryInitial
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Basic.IsEmpty.Defs
 
 /-! # ABI regions establish the public frame and arithmetic-header layouts -/
 

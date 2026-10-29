@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTry
 public import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 
 @[expose] public section

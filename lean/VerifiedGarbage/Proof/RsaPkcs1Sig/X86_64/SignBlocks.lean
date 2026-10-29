@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Encode
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.Set
-
 /-!
 # `vg_rsa_pkcs1_sign` on x86-64: the blocks around the encoding and the call
 
@@ -69,7 +67,9 @@ theorem head_ok {s : State} (hp : PreS s) :
       t.gpr .rdx = ((stackArg s 0).setWidth 32).setWidth 64 ∧ t.gpr .rsi = stackArg s 1 ∧
       t.gpr .r9 = stackArg s 2 ∧ (∀ r ∈ calleeSaved, r ≠ .rsp → t.gpr r = s.gpr r) := by
   have hF := fb_toNat hp
-  set A := allocState frameBytes s with hA
+  let A := allocState frameBytes s
+  try rewrite [show allocState frameBytes s = A from rfl] at *
+  have hA : A = allocState frameBytes s := rfl
   have hsp : A.gpr .rsp = fb s := rfl
   have hs : Scr A (fb s) frameBytes := Scr.of_mem (List.mem_cons_self ..) (by omega_arith)
   rw [WP.block_append_iff]

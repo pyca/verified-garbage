@@ -6,13 +6,11 @@ public import VerifiedGarbage.Proof.Mgf1.Basic
 import VerifiedGarbage.Proof.RsaPss.X86_64.MgfDirect
 import VerifiedGarbage.Proof.RsaPss.X86_64.BufferXor
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPss.X86_64.BufferCopy
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import Mathlib.Tactic.Set
-import Mathlib.Tactic.Conv
 
 /-!
 # RSASSA-PSS on x86-64: MGF1

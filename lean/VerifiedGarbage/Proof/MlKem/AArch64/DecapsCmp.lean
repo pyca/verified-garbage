@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM on AArch64: `decaps`, the comparison and the key

@@ -6,11 +6,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Dsa.X86_64.LastByte
 import VerifiedGarbage.Proof.Dsa.X86_64.Parity
 import VerifiedGarbage.Proof.Dsa.X86_64.Masks
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 
 /-! # Public oddness checks on the encoded DSA moduli -/
 

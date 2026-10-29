@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86.Data
 public import VerifiedGarbage.Proof.MillerRabin.Word32
-import Mathlib.Tactic.Tauto
 
 /-! # The table's fourteen products extend one power at a time -/
 

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Spec.Aes
 public import VerifiedGarbage.Proof.Framework.Bitslice.Table
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Bitsliced AES on 32-bit words: the layout and the round transformations
@@ -173,7 +172,8 @@ theorem termsXor_mc (Q : Nat → BitVec 32) (j p : Nat) : termsXor Q (mcTerms j 
       else false) ^^
      ((Q j).getLsbD (down p 1) ^^ (Q j).getLsbD (down p 2) ^^ (Q j).getLsbD (down p 3))) := by
   simp only [mcTerms, mcWords]
-  split_ifs <;> simp [termsXor]
+  repeat' split
+  all_goals simp [termsXor]
 
 theorem bs_mixColumns {Q Q' : Nat → BitVec 32} {S : Nat → State}
     (h : ∀ j < 8, ∀ p < 32, (Q' j).getLsbD p = termsXor Q (mcTerms j p)) (hr : BsRel Q S) :

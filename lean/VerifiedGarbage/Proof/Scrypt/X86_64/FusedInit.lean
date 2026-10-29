@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Scrypt.X86_64.FusedLoop
-import Mathlib.Tactic.DefEqTransformations
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Range
 

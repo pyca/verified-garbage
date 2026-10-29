@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Pieces
-import Mathlib.Tactic.Set
 
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Minv
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Halve
@@ -9,10 +8,6 @@ import VerifiedGarbage.Proof.Rsa.X86_64.Inv
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Framework.X86_64.Call
-import Mathlib.Data.Nat.Init
-import Mathlib.Order.Defs.Prop
-import Mathlib.Tactic.Attr.Core
-import Mathlib.Tactic.Basic
 
 /-! ## DBase -/
 

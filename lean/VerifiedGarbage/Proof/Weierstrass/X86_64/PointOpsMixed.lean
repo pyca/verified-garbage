@@ -3,12 +3,12 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsAdd
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedAdd
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedForward
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Block
+import Batteries.Logic
 
 /-!
 # Point operations as functions on x86-64: what the mixed addition computes

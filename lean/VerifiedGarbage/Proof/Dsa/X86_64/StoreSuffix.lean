@@ -5,9 +5,7 @@ public import VerifiedGarbage.Spec.Dsa
 public import VerifiedGarbage.Spec.Rsa.Contract
 
 import VerifiedGarbage.Proof.Dsa.X86_64.Store
-import Mathlib.Tactic.Finiteness.Attr
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 

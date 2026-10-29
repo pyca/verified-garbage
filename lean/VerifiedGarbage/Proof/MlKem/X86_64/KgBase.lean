@@ -10,9 +10,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Prfs
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Prfs
 public import VerifiedGarbage.Impl.MlKem.X86_64.KeyGen
 meta import VerifiedGarbage.Impl.MlKem.X86_64.KeyGen
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Proof.Bignum.X86_64.Words
 import VerifiedGarbage.Proof.Framework.KernelRfl

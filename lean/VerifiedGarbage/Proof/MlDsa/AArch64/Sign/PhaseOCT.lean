@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Correct
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseLCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseDCT
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
 import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 import VerifiedGarbage.Proof.MlKem.Arith

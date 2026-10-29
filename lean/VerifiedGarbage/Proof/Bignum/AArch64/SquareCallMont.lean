@@ -3,7 +3,6 @@ public import VerifiedGarbage.Impl.Bignum.AArch64.SquareCall
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareCallCT
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareCall
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMont

@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
@@ -363,7 +362,9 @@ theorem call_ok {name : String} {code : Prog isa} (hf : CalleeOk P code) {s : St
   have fit : 4 * [Reg.ebp, .eax, .edx, .ecx, .edi, .esi, .ebx].length + 4 ≤ (s.gpr .esp).toNat := by
     rw [hesp]; simp only [List.length_cons, List.length_nil]; omega_arith
   have hrs := frame_esp
-  set sE := (pushed [Reg.ebp, .eax, .edx, .ecx, .edi, .esi, .ebx] s).callEntry with hsE
+  let sE := (pushed [Reg.ebp, .eax, .edx, .ecx, .edi, .esi, .ebx] s).callEntry
+  try rewrite [show (pushed [Reg.ebp, .eax, .edx, .ecx, .edi, .esi, .ebx] s).callEntry = sE from rfl] at *
+  have hsE : sE = (pushed [Reg.ebp, .eax, .edx, .ecx, .edi, .esi, .ebx] s).callEntry := rfl
   have a0 : arg sE 0 = st := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [hS]
   have a1 : arg sE 1 = blk := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [hB]
   have a2 : (arg sE 2).toNat = k := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [hk]
@@ -482,9 +483,13 @@ theorem copyLoop_ok {src dst cnt : Reg} {tmp : Reg8} (h₁ : src ≠ dst) (h₂ 
     rw [h.wr]; exact hout j hj
   refine cons (s' := s.setReg tmp.reg ((s.mem (sA.setWidth 64 + BitVec.ofNat 64 j)).setWidth 32))
     (by simp [exec, State.load8, ea_mk, at_, eS, hin']) ?_
-  set s₁ := s.setReg tmp.reg ((s.mem (sA.setWidth 64 + BitVec.ofNat 64 j)).setWidth 32) with hs₁
+  let s₁ := s.setReg tmp.reg ((s.mem (sA.setWidth 64 + BitVec.ofNat 64 j)).setWidth 32)
+  try rewrite [show s.setReg tmp.reg ((s.mem (sA.setWidth 64 + BitVec.ofNat 64 j)).setWidth 32) = s₁ from rfl] at *
+  have hs₁ : s₁ = s.setReg tmp.reg ((s.mem (sA.setWidth 64 + BitVec.ofNat 64 j)).setWidth 32) := rfl
   have g₁ : ∀ x, x ≠ tmp.reg → s₁.gpr x = s.gpr x := fun x hx => RegUpd.gpr_setReg_of_ne _ _ hx
-  set m₂ := s₁.mem.writeW (addr dA (bufOff w) + BitVec.ofNat 64 j) ((s₁.gpr tmp.reg).setWidth 8) with hm₂
+  let m₂ := s₁.mem.writeW (addr dA (bufOff w) + BitVec.ofNat 64 j) ((s₁.gpr tmp.reg).setWidth 8)
+  try rewrite [show s₁.mem.writeW (addr dA (bufOff w) + BitVec.ofNat 64 j) ((s₁.gpr tmp.reg).setWidth 8) = m₂ from rfl] at *
+  have hm₂ : m₂ = s₁.mem.writeW (addr dA (bufOff w) + BitVec.ofNat 64 j) ((s₁.gpr tmp.reg).setWidth 8) := rfl
   refine cons (s' := { s₁ with mem := m₂ }) ?_ ?_
   · have e : s₁.ea (at_ dst (N w)) = addr dA (bufOff w) + BitVec.ofNat 64 j := by
       show addr (s₁.gpr dst) (N w) = _

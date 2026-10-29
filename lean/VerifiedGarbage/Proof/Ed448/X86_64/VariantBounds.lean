@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Ed448.X86_64.VariantLit
 public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 

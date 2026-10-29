@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Proof.MlKem.Arith
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM on AArch64: reductions modulo `q`

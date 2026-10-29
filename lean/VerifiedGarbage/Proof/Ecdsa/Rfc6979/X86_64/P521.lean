@@ -3,9 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Curve
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Lit
-import Mathlib.Data.Finset.Attr
-import Mathlib.Tactic.SetLike
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase

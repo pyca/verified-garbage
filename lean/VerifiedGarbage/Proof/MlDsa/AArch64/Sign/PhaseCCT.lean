@@ -3,8 +3,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseC
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Rel
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.MaskPairTiming
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseDCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
 

@@ -22,7 +22,6 @@ meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
 meta import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
 
 /-! Merged from `Proof.Ed25519.X86_64.PointMulCT`. -/
 

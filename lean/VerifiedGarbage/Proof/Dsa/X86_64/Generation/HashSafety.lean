@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CodeSafety
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Hash
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PHash
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
-import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaKeyGen.Slots

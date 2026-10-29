@@ -8,11 +8,9 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Taint
-import Mathlib.Data.List.Induction
 
 /-! ## Counter -/
 
@@ -167,7 +165,7 @@ theorem prepTemplate_ok {s₀ s : State} {lo : Nat} {P : Nat → Block} (hp : SP
     simpa only [Templates, Nat.lt_add_one, Nat.le_refl, ite_true] using
       (hm' ▸ refreshCounter_ok s.mem (templateAddr s₀ n) (cb s₀) (c + n) 8 ht)
   · have hk : (if i < n + 1 then 8 else 0) = (if i < n then 8 else 0) := by
-      split_ifs <;> omega_arith
+      (repeat' split) <;> omega_arith
     rw [VG.Proof.Aes.X86_64.AesNi.blockAt_frame hF (fun r hr => by
       simp only [List.mem_singleton] at hr
       subst r

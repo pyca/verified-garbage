@@ -6,7 +6,6 @@ public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import Batteries.Logic
-import Mathlib.Util.CompileInductive
 
 /-! The enlarged public-check signature remains satisfiable. -/
 

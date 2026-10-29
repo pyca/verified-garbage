@@ -2,10 +2,7 @@ module
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Round
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
-import Mathlib.Tactic.Push
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
-import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 

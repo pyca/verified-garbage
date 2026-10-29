@@ -4,7 +4,6 @@ public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Call
 public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 import VerifiedGarbage.Proof.MlDsa.DecideAt
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Base
 
 /-!

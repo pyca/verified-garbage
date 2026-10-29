@@ -8,8 +8,6 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Loop
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Run
 meta import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
-import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
 import VerifiedGarbage.Proof.MlKem.X86_64.VPack
 import VerifiedGarbage.Proof.Framework.X86_64.Syms

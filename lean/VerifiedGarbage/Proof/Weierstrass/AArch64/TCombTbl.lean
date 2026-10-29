@@ -6,7 +6,6 @@ public import VerifiedGarbage.TCB.AArch64.Isa
 
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
 import VerifiedGarbage.Proof.Framework.Mem
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Impl.Mont.AArch64

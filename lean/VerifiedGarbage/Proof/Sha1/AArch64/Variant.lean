@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Sha1.AArch64.Stream.Md
 public import VerifiedGarbage.Proof.MdStream.AArch64.OneShot
 import VerifiedGarbage.Proof.Sha1.AArch64.Stream.Init
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 

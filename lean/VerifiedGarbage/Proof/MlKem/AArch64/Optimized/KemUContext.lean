@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Table
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
-import Mathlib.Tactic.SplitIfs
 
 /-! # Readonly data and retained errors survive ciphertext rows -/
 

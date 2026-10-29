@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeInvariant
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 

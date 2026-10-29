@@ -4,9 +4,7 @@ public import VerifiedGarbage.Proof.RsaOaep.AArch64.Label
 public import VerifiedGarbage.Spec.Dsa
 
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacField
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAdd
 

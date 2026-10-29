@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.Slots
-import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
 public import VerifiedGarbage.Spec.Dsa

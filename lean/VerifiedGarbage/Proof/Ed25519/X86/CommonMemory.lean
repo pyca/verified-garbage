@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.CommonContract
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

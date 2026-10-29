@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryAllocated
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySave
 
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.RsaKeyGen.Slots

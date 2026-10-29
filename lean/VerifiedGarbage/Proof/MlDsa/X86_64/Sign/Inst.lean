@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Prims
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Verified
 import VerifiedGarbage.Proof.MlDsa.Sign.Leak
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds

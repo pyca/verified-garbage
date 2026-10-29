@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Interleave
 public import VerifiedGarbage.Impl.X448.AArch64.Fast
-import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

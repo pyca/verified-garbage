@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Matrix
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixTiming
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import Mathlib.Tactic.ToDual
 
 /-!
 # The matrix after `G`, computing PRF outputs

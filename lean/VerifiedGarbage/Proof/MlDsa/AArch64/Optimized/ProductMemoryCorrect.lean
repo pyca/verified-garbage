@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRawMemoryValues
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSliceComposition
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryField
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemoryCorrect
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankFieldRun
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect
 

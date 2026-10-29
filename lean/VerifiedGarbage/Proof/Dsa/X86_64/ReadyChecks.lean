@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Modulus
 public import VerifiedGarbage.Proof.Dsa.X86_64.CheckFrame
 public import VerifiedGarbage.Proof.Dsa.X86_64.LocalCallFrame
 import VerifiedGarbage.Proof.Dsa.Layout
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.X86_64.MaskContext
 
 /-! # Preserving both DSA arithmetic contexts across validation checks -/

@@ -1,11 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
-import Mathlib.Tactic.Finiteness.Attr
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
 
 /-! # Public loop bounds and addresses for DSA range checks -/
 

@@ -8,8 +8,6 @@ public import VerifiedGarbage.Spec.Ffdh.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Tactic.ToDual
 
 /-! The rejection bound is exactly the reviewed q-or-p−1 value for both domain encodings. -/
 @[expose] public section

@@ -18,9 +18,6 @@ meta import VerifiedGarbage.Proof.Blake2.X86.LitB
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
 meta import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.Conv
-
 /-!
 # Argon2 H′ on x86 (32-bit): the calls, in two runs
 
@@ -92,7 +89,9 @@ theorem init_pre {B E : BitVec 32} {s : State} (h : Ctx B E s) {n : Nat}
   have esp₂ : s.gpr .esp = E := h.esp
   have fit : 4 * [Reg.eax, .ecx, .edx, .ebx].length + 4 ≤ (s.gpr .esp).toNat := by
     rw [esp₂]; have := h.lo; simp only [List.length_cons, List.length_nil]; omega_arith
-  set sE := (pushed [Reg.eax, .ecx, .edx, .ebx] s).callEntry with hsE
+  let sE := (pushed [Reg.eax, .ecx, .edx, .ebx] s).callEntry
+  try rewrite [show (pushed [Reg.eax, .ecx, .edx, .ebx] s).callEntry = sE from rfl] at *
+  have hsE : sE = (pushed [Reg.eax, .ecx, .edx, .ebx] s).callEntry := rfl
   have a0 : arg sE 0 = B := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [h.ebx]
   have a1 : arg sE 1 = BitVec.ofNat 32 n := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [hn]
   have a2 : arg sE 2 = B := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [hc]
@@ -195,7 +194,9 @@ theorem update_pre {B E : BitVec 32} {s : State} (h : Ctx B E s) {D : BitVec 32}
   have hlo := h.lo
   have fit : 4 * [Reg.eax, .edi, .esi, .edx, .ecx, .ebx].length + 4 ≤ (s.gpr .esp).toNat := by
     rw [esp₂]; simp only [List.length_cons, List.length_nil]; omega_arith
-  set sE := (pushed [Reg.eax, .edi, .esi, .edx, .ecx, .ebx] s).callEntry with hsE
+  let sE := (pushed [Reg.eax, .edi, .esi, .edx, .ecx, .ebx] s).callEntry
+  try rewrite [show (pushed [Reg.eax, .edi, .esi, .edx, .ecx, .ebx] s).callEntry = sE from rfl] at *
+  have hsE : sE = (pushed [Reg.eax, .edi, .esi, .edx, .ecx, .ebx] s).callEntry := rfl
   have a0 : arg sE 0 = B := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [h.ebx]
   have a3 : arg sE 3 = D := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [hD]
   have a4 : (arg sE 4).toNat = L := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [hL]
@@ -319,7 +320,9 @@ theorem finalize_pre {B E : BitVec 32} {s : State} (h : Ctx B E s) (ha : s.gpr .
   have hfit := h.fits
   have fit : 4 * [Reg.eax, .esi, .edx, .ecx, .ebx].length + 4 ≤ (s.gpr .esp).toNat := by
     rw [esp₄]; simp only [List.length_cons, List.length_nil]; omega_arith
-  set sE := (pushed [Reg.eax, .esi, .edx, .ecx, .ebx] s).callEntry with hsE
+  let sE := (pushed [Reg.eax, .esi, .edx, .ecx, .ebx] s).callEntry
+  try rewrite [show (pushed [Reg.eax, .esi, .edx, .ecx, .ebx] s).callEntry = sE from rfl] at *
+  have hsE : sE = (pushed [Reg.eax, .esi, .edx, .ecx, .ebx] s).callEntry := rfl
   have a0 : arg sE 0 = B := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [h.ebx]
   have a3 : arg sE 3 = B + 768 := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [hi]
   have a4 : arg sE 4 = B + 192 := by rw [hsE, callEntry_arg fit hrs (by simp)]; simp [ha]

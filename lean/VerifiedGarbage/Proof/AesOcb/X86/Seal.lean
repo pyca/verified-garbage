@@ -8,10 +8,6 @@ import VerifiedGarbage.Proof.AesGcm.X86.Absorb
 import VerifiedGarbage.Proof.AesGcm.X86.Loops
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Spec.Ocb.Contract
-import Mathlib.Tactic.Set
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
-
 /-!
 # AES-OCB on x86: `vg_aes_ocb_seal` and `vg_aes_ocb_open`
 
@@ -98,7 +94,9 @@ theorem open_wp (v : BlocksImpl) {s : State} (h : openPre s) :
   have L := lay_of h₁
   unfold «open»
   refine WP.seq (WP.mono (openFront_ok v h₁ (bytesAt s.mem (w64 (prmOf s).T) (prmOf s).tl)) fun s₅ ⟨F, out⟩ => ?_)
-  set p := prmOf s with hp
+  let p := prmOf s
+  try rewrite [show prmOf s = p from rfl] at *
+  have hp : p = prmOf s := rfl
   have ht := L.tl16
   -- The received tag.
   refine WP.seq (WP.mono (recv_ok L F.env) fun s₆ ⟨m₆, g₆, rd₆, wr₆⟩ => ?_)

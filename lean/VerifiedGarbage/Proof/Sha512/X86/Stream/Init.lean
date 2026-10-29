@@ -6,9 +6,6 @@ import VerifiedGarbage.Proof.Sha512.Stream
 public import VerifiedGarbage.Impl.Sha512.X86.Stream
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha512.X86.Lit
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.Conv
-
 /-!
 # Streaming SHA-512 on x86 (32-bit): `init`
 
@@ -79,7 +76,9 @@ theorem init_all (iv : HashValue) {s₀ : State} {st : BitVec 32} (hfit : st.toN
 theorem init_correct (iv : HashValue) {s₀ : State} (hp : (Proof.Sha512.initX86 iv).pre s₀) :
     WP isa (init iv) s₀ fun s' => abiPreserved s₀ s' ∧ (Proof.Sha512.initX86 iv).post s₀ s' := by
   obtain ⟨hrd, hwr, -, hret, hfit, -⟩ := hp
-  set st := arg s₀ 0 with hst
+  let st := arg s₀ 0
+  try rewrite [show arg s₀ 0 = st from rfl] at *
+  have hst : st = arg s₀ 0 := rfl
   have hR : ⟨st.setWidth 64, 192⟩ ∈ s₀.wr := by simp [hwr]
   refine wp_movm (a := addr (s₀.gpr .esp) 4) rfl
     ⟨⟨argAddr s₀ 0, 4⟩, by simp [hrd], Region.contains_self _ _⟩ fun s₁ u₁ => ?_

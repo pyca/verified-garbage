@@ -4,8 +4,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecretCall
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecretGood
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecretSeeds
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourCallTiming
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
 

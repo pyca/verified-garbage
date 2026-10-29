@@ -7,8 +7,6 @@ public import VerifiedGarbage.Spec.MlDsa.RejNTT2
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecrets
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRest
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
 
 @[expose] public section

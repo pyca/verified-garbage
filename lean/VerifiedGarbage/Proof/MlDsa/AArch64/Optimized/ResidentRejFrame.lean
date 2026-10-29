@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

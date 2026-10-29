@@ -13,8 +13,6 @@ import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ed448.Ref
 public import Aesop.BuiltinRules
-import Mathlib.Tactic.ToDual
-import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Ed448.X86_64.PointSums
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
@@ -32,8 +30,6 @@ meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Ed448.Ref
 meta import Aesop.BuiltinRules
-meta import Mathlib.Tactic.ToDual
-meta import Mathlib.Tactic.ToAdditive
 meta import VerifiedGarbage.Proof.Ed448.X86_64.PointSums
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp

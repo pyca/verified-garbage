@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemoryCorrect
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.InverseTable
 public import VerifiedGarbage.Spec.MlDsa.Montgomery
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
 

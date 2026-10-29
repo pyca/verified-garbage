@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Ffdh.VettedPolicy
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
 
 /-! Public geometry and scalar-width bounds for every accepted domain. -/
 @[expose] public section

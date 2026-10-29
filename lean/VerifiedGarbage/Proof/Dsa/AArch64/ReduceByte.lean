@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Frame
 import VerifiedGarbage.Proof.Dsa.AArch64.ReduceCount
 import VerifiedGarbage.Proof.Dsa.AArch64.ReduceRead
 import VerifiedGarbage.Proof.Dsa.AArch64.Arithmetic
-import Mathlib.Tactic.Push
-import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Dsa.AArch64.Frame
