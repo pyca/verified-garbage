@@ -3,32 +3,35 @@ module
 public import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-!
-# Point doubling and addition for `a = -3` in a curve's working space, as functions
+# Point doubling and addition in a curve's working space, as functions
 
 **Trusted** (as every file in `Spec/`). The contracts of five functions for
-each curve of `curves` (P-224, P-256, P-384 and P-521, all with `a = -3`),
-on points kept where the x86-64 code of the curve's ECDSA, ECDH and key
-derivation keeps them, so that it can call one copy of each operation
-instead of repeating it at every use:
+each curve of `curves` (P-224, P-256, P-384 and P-521, with `a = -3`, and
+secp256k1, with `a = 0`), on points kept where the x86-64 code of the
+curve's ECDSA, ECDH and key derivation keeps them, so that it can call one
+copy of each operation instead of repeating it at every use:
 
 * `vg_<curve>_jac_double(ws)`: `P = 2P` in Jacobian coordinates
-  (`(X : Y : Z)` for `(X / Z², Y / Z³)`), by `jacDouble`, the doubling
-  dbl-2001-b of the Explicit-Formulas Database for `a = -3` with
-  `Z₃ = 2 Y Z` as a product;
+  (`(X : Y : Z)` for `(X / Z², Y / Z³)`), by the curve's doubling
+  (`Curve.dbl`): `jacDouble`, the doubling dbl-2001-b of the
+  Explicit-Formulas Database for `a = -3` with `Z₃ = 2 Y Z` as a product,
+  or, for `a = 0`, `jacDouble0`, its dbl-2009-l;
 * `vg_<curve>_jac_add_cached(ws)`: `P = P + Q` in Jacobian coordinates, for
   `Q` given with its `Z²` and `Z³` (which a table of points to add keeps),
   by `jacAddCached`: the addition add-1998-cmo-2, which fails for equal or
   opposite points and the point at infinity, with those cases decided by the
   coordinates (`Z = 0` for the point at infinity, `H = 0` for equal or
-  opposite points) and handled as the group law does;
+  opposite points) and handled as the group law does, the double of equal
+  points by the curve's doubling;
 * `vg_<curve>_jac_add_affine(ws)`: the same for `Q` with `Z = 1`, by
   `jacAddAffine`, the mixed addition, which does not multiply by `Q`'s `Z`;
-* `vg_<curve>_proj_add_affine(ws)`: `O = P + Q` in projective coordinates
+* for a curve with `a = -3` only (no code for another curve has them),
+  `vg_<curve>_proj_add_affine(ws)`: `O = P + Q` in projective coordinates
   (`(X : Y : Z)` for `(X / Z, Y / Z)`) for `Q` with `Z = 1`, by
   `rcbAddAffine`, the complete mixed addition for `a = -3` of Renes,
   Costello and Batina (*Complete addition formulas for prime order elliptic
   curves*, EUROCRYPT 2016, Algorithm 5);
-* `vg_<curve>_proj_add(ws)`: `O = P + Q` in projective coordinates, by
+  and `vg_<curve>_proj_add(ws)`: `O = P + Q` in projective coordinates, by
   `rcbAdd`, the complete addition for `a = -3` of the same paper
   (Algorithm 4), of which `rcbAddAffine` is the case `Z₂ = 1`.
 
@@ -108,6 +111,33 @@ def jacDouble (X Y Z : Fin p) : Fin p × Fin p × Fin p :=
   let Y3 := Y3 - t1
   (X3, Y3, Z3)
 
+/-- Jacobian doubling for `a = 0` (dbl-2009-l, with `Z₃ = 2 Y Z`), in the
+functions' order: `A = X²`, `B = Y²`, `C = B²`, `D = 2 ((X + B)² - A - C)`,
+`E = 3 A`, `Z₃ = 2 Y Z`, `X₃ = E² - 2 D`, `Y₃ = E (D - X₃) - 8 C`. -/
+def jacDouble0 (X Y Z : Fin p) : Fin p × Fin p × Fin p :=
+  let t0 := X * X
+  let t1 := Y * Y
+  let t2 := t1 * t1
+  let t3 := X + t1
+  let t3 := t3 * t3
+  let t3 := t3 - t0
+  let t3 := t3 - t2
+  let t3 := t3 + t3
+  let t4 := t0 + t0
+  let t4 := t4 + t0
+  let Z3 := Y * Z
+  let Z3 := Z3 + Z3
+  let X3 := t4 * t4
+  let X3 := X3 - t3
+  let X3 := X3 - t3
+  let Y3 := t3 - X3
+  let Y3 := t4 * Y3
+  let t2 := t2 + t2
+  let t2 := t2 + t2
+  let t2 := t2 + t2
+  let Y3 := Y3 - t2
+  (X3, Y3, Z3)
+
 /-- The end of the Jacobian additions, from `U₁ = X₁ Z₂²`, `S₁ = Y₁ Z₂³`,
 `H = U₂ - U₁`, `r = S₂ - S₁` (for `U₂ = X₂ Z₁²`, `S₂ = Y₂ Z₁³`) and `Z`
 (`Z₁ Z₂`, or `Z₁` for `Z₂ = 1`), in the functions' order:
@@ -127,16 +157,21 @@ def jacTail (U1 S1 H r Z : Fin p) : Fin p × Fin p × Fin p :=
   let Z3 := Z * H
   (X3, Y3, Z3)
 
-/-- `H = 0`: the points are equal, and the sum is the double, if `r = 0`
-too, else they are opposite, and the sum is the point at infinity. -/
-def jacEqual (X1 Y1 Z1 r : Fin p) : Fin p × Fin p × Fin p :=
-  if r = 0 then jacDouble X1 Y1 Z1 else infinity
+/-- `H = 0`: the points are equal, and the sum is the double by `dbl` (the
+curve's doubling), if `r = 0` too, else they are opposite, and the sum is
+the point at infinity. -/
+def jacEqual (X1 Y1 Z1 r : Fin p)
+    (dbl : Fin p → Fin p → Fin p → Fin p × Fin p × Fin p := jacDouble) :
+    Fin p × Fin p × Fin p :=
+  if r = 0 then dbl X1 Y1 Z1 else infinity
 
 /-- The Jacobian addition of `(X₁ : Y₁ : Z₁)` and `(X₂ : Y₂ : Z₂)` given with
 `ZZ₂` and `ZZZ₂` (`Z₂²` and `Z₂³`), in the functions' order: `Q` if `P` is
 the point at infinity (`Z₁ = 0`), `P` if `Q` is, else `H` and `r`, then
-`jacEqual` if `H = 0`, else `jacTail`. -/
-def jacAddCached (X1 Y1 Z1 X2 Y2 Z2 ZZ2 ZZZ2 : Fin p) : Fin p × Fin p × Fin p :=
+`jacEqual` with the doubling `dbl` if `H = 0`, else `jacTail`. -/
+def jacAddCached (X1 Y1 Z1 X2 Y2 Z2 ZZ2 ZZZ2 : Fin p)
+    (dbl : Fin p → Fin p → Fin p → Fin p × Fin p × Fin p := jacDouble) :
+    Fin p × Fin p × Fin p :=
   if Z1 = 0 then (X2, Y2, Z2) else
   if Z2 = 0 then (X1, Y1, Z1) else
   let t0 := Z1 * Z1
@@ -147,15 +182,18 @@ def jacAddCached (X1 Y1 Z1 X2 Y2 Z2 ZZ2 ZZZ2 : Fin p) : Fin p × Fin p × Fin p 
   let S2 := S2 * t0
   let H := U2 - U1
   let r := S2 - S1
-  if H = 0 then jacEqual X1 Y1 Z1 r else
+  if H = 0 then jacEqual X1 Y1 Z1 r dbl else
   let Z := Z1 * Z2
   jacTail U1 S1 H r Z
 
 /-- The mixed Jacobian addition of `(X₁ : Y₁ : Z₁)` and `(X₂ : Y₂ : Z₂)`,
 for `Z₂ = 1`, which it reads only to copy `Q` if `P` is the point at
 infinity (`Z₁ = 0`), in the functions' order: else `H` and `r` (with
-`U₁ = X₁`, `S₁ = Y₁`), then `jacEqual` if `H = 0`, else `jacTail`. -/
-def jacAddAffine (X1 Y1 Z1 X2 Y2 Z2 : Fin p) : Fin p × Fin p × Fin p :=
+`U₁ = X₁`, `S₁ = Y₁`), then `jacEqual` with the doubling `dbl` if `H = 0`,
+else `jacTail`. -/
+def jacAddAffine (X1 Y1 Z1 X2 Y2 Z2 : Fin p)
+    (dbl : Fin p → Fin p → Fin p → Fin p × Fin p × Fin p := jacDouble) :
+    Fin p × Fin p × Fin p :=
   if Z1 = 0 then (X2, Y2, Z2) else
   let t0 := Z1 * Z1
   let U2 := X2 * t0
@@ -163,7 +201,7 @@ def jacAddAffine (X1 Y1 Z1 X2 Y2 Z2 : Fin p) : Fin p × Fin p × Fin p :=
   let S2 := S2 * t0
   let H := U2 - X1
   let r := S2 - Y1
-  if H = 0 then jacEqual X1 Y1 Z1 r else
+  if H = 0 then jacEqual X1 Y1 Z1 r dbl else
   jacTail X1 Y1 H r Z1
 
 /-- The complete mixed addition for `a = -3`, Algorithm 5 of Renes, Costello
@@ -265,11 +303,16 @@ def sig : Sig where
 
 /-- A curve whose point operations are functions: its name, prime and words
 (`Point.Curve`: the functions are `vg_<curve>_<op>`, in the Rust module
-`<curve>_point_ops`), the slot of its products' temporary area, and the
-byte offset of `Q`'s `Z²`, followed by its `Z³`. -/
+`<curve>_point_ops`), the slot of its products' temporary area, the
+byte offset of `Q`'s `Z²`, followed by its `Z³`, and its Jacobian doubling,
+which the doubling and the additions of equal points compute: `jacDouble`
+for a curve with `a = -3` (the default), `jacDouble0` for one with
+`a = 0`, with `dblDoc` naming it. -/
 structure Curve extends Point.Curve where
   tmp : Nat
   cache : Nat
+  dbl : Fin p → Fin p → Fin p → Fin p × Fin p × Fin p := jacDouble
+  dblDoc : String := "for `a = -3` (dbl-2001-b, with `Z' = 2YZ`)"
 
 namespace Curve
 
@@ -356,7 +399,7 @@ def doubleContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
   sig.contract A (pre := fun ws m => C.ModOk ws m ∧ C.Below (C.pointAt m ws C.pAt))
     (post := fun ws m m' _ =>
       let P := C.pt ws m C.pAt
-      C.Result C.pAt (jacDouble P.1 P.2.1 P.2.2) ws m m')
+      C.Result C.pAt (C.dbl P.1 P.2.1 P.2.2) ws m m')
     (stack := stack)
 
 /-- `jac_add_cached`: `P = P + Q`, `Q` with its `Z²` and `Z³`; its timing
@@ -369,7 +412,7 @@ def addCachedContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
       let P := C.pt ws m C.pAt
       let Q := C.pt ws m C.qAt
       C.Result C.pAt (jacAddCached P.1 P.2.1 P.2.2 Q.1 Q.2.1 Q.2.2 (C.el ws m C.zzAt)
-        (C.el ws m C.zzzAt)) ws m m')
+        (C.el ws m C.zzzAt) C.dbl) ws m m')
     (stack := stack) (leak := some fun ws m => C.reads true ws m)
 
 /-- `jac_add_affine`: `P = P + Q`, `Q` with `Z = 1`; its timing may depend
@@ -381,7 +424,7 @@ def addAffineContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
     (post := fun ws m m' _ =>
       let P := C.pt ws m C.pAt
       let Q := C.pt ws m C.qAt
-      C.Result C.pAt (jacAddAffine P.1 P.2.1 P.2.2 Q.1 Q.2.1 Q.2.2) ws m m')
+      C.Result C.pAt (jacAddAffine P.1 P.2.1 P.2.2 Q.1 Q.2.1 Q.2.2 C.dbl) ws m m')
     (stack := stack) (leak := some fun ws m => C.reads false ws m)
 
 /-- `proj_add`: `O = P + Q`. -/
@@ -435,8 +478,8 @@ def doubleApi : Api where
   name := C.fn "jac_double"
   sig := sig
   contracts := some fun A stack => C.doubleContract A stack
-  summary := s!"The doubling `P = 2P` of a point on {C.desc} in Jacobian coordinates, for \
-    `a = -3` (dbl-2001-b, with `Z' = 2YZ`). " ++ C.common ++ " Constant time: only the pointer \
+  summary := s!"The doubling `P = 2P` of a point on {C.desc} in Jacobian coordinates, \
+    {C.dblDoc}. " ++ C.common ++ " Constant time: only the pointer \
     may affect timing."
   safety := C.safety "the coordinates of `P`"
 
@@ -485,8 +528,11 @@ def p256 : Curve := { Point.p256 with tmp := 2, cache := 5408 }
 def p384 : Curve := { Point.p384 with tmp := 83, cache := 6160 }
 def p521 : Curve :=
   { curve := "p521", p := Spec.P521.p, k := 9, desc := "P-521", tmp := 55, cache := 5968 }
+def secp256k1 : Curve :=
+  { curve := "secp256k1", p := Spec.Secp256k1.p, k := 4, desc := "secp256k1", tmp := 2,
+    cache := 5408, dbl := jacDouble0, dblDoc := "for `a = 0` (dbl-2009-l, with `Z' = 2YZ`)" }
 
 /-- Every curve. -/
-def curves : List Curve := [p224, p256, p384, p521]
+def curves : List Curve := [p224, p256, p384, p521, secp256k1]
 
 end VG.Spec.Weierstrass.PointOps
