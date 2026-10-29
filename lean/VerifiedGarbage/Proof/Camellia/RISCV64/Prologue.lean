@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.RISCV64.Round
+public import VerifiedGarbage.TCB.RISCV64.Target
 
 import VerifiedGarbage.Proof.Camellia.RISCV64.Crypt8
 import VerifiedGarbage.Proof.Camellia.RISCV64.Core
@@ -50,6 +51,9 @@ def Saved (s₀ : State) (b : Addr) (m : Mem) : Prop :=
 def savedRegion (b : Addr) : Region := ⟨b + BitVec.ofNat 64 (8 * savedSlot), 96⟩
 
 theorem sreg_ne_sb : ∀ i < 12, sreg i ≠ sb := by decide
+
+/-- The callee-saved registers are those `savedRegs` saves. -/
+theorem preserved_sreg : ∀ r ∈ preserved, ∃ i < 12, sreg i = r := by decide
 
 theorem save_ok {s : State} {b : Addr} (hw : (⟨b, 8 * slots⟩ : Region) ∈ s.wr) (hb : s.gpr sb = b)
     (hal : b.toNat % 8 = 0) :
