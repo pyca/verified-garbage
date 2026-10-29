@@ -26,6 +26,10 @@ leaves alone.
   check_lean_public_imports.py PLAN       the modules of `edited` in the plan
                                           (`lean_shards.py plan`)
   check_lean_public_imports.py -m M...    the modules M
+  … --dependencies PREFIX...              also the imports of these
+                                          dependencies' modules (e.g. Mathlib)
+                                          that shake finds unused
+                                          (`narrow_dependencies`)
   … --base REV                            only the public imports they added
                                           since REV (CI: the pull request's
                                           base), so that an edit is not held to
@@ -194,9 +198,12 @@ class Graph(VisibilityGraph):
     """The imports of the project's modules and its dependencies' (read
     lazily, from the sources Lake builds them from)."""
 
-    def __init__(self, roots: list[pathlib.Path]):
+    def __init__(self, roots: list[pathlib.Path], dependencies: tuple[str, ...] = ()):
         super().__init__()
         self.roots = roots
+        # The dependencies (by module prefix, e.g. `Mathlib`) whose imports
+        # the check may propose to remove (`narrow_dependencies`).
+        self.dependencies = tuple(dependencies)
         self.files: dict[str, pathlib.Path | None] = {}
         self.texts: dict[str, str] = {}
         self.users: dict[str, set[str]] | None = None
@@ -267,6 +274,11 @@ class Graph(VisibilityGraph):
             p = self.path(mod)
             self.project_cache[mod] = p is not None and p.is_relative_to(LEAN / LIBRARY)
         return self.project_cache[mod]
+
+    def dependency(self, mod: str) -> bool:
+        """Whether `mod` is a module of a dependency named by `dependencies`."""
+        return (not self.project(mod)
+                and any(mod == d or mod.startswith(d + ".") for d in self.dependencies))
 
     def has_implicit_init(self, mod: str) -> bool:
         if mod not in self.implicit_cache:
@@ -780,6 +792,7 @@ def analyze(mods: list[str], shaken: dict[str, tuple[list[str], list[str]]], gra
     plan = Plan(edits=list(base) + local_repairs)
     plan.edits.extend(Edit(mod, "remove", x) for mod, _, _, _, unused in found for x in unused)
     narrow_private_meta(plan, mods, shaken, graph, uses, decide, meta_plain, protected)
+    narrow_dependencies(plan, mods, shaken, graph, decide, new, plain, protected)
     meta_messages = list(plan.messages)
 
     # Compute losses against ALL demotions and additions at once. A pair of
@@ -1029,6 +1042,13 @@ def initialization_order_guards(plan: Plan, graph: Graph, library: list[str], us
         if old_opaque == new_opaque:
             continue
         reaching = [e for e in primary if mod in scopes[e.module]]
+        # Removing an import of a dependency's module (`narrow_dependencies`)
+        # reorders that dependency's own modules: that is what it does. It
+        # is held back only where it reorders the project's opaque modules.
+        if ([m for m in old_opaque if graph.project(m)] == [m for m in new_opaque if graph.project(m)]):
+            reaching = [e for e in reaching if not graph.dependency(e.dependency)]
+            if not reaching:
+                continue
         causes = [e for e in reaching if opaque & set(graph.load_order(e.dependency))] or reaching
         for e in causes:
             guarded[e.module, e.dependency] = {
@@ -1123,6 +1143,67 @@ def narrow_private_meta(plan: Plan, mods: list[str], shaken: dict, graph: Graph,
             plan.messages.append(f"{rel}:{n + 1}: `meta import {x}`: no recorded meta or source use: remove it")
             decision("proposed", "no_recorded_meta_dependency", source_index=mod in indexed,
                      lost_meta_modules=len(lost))
+
+
+def narrow_dependencies(plan: Plan, mods: list[str], shaken: dict, graph: Graph, decide,
+                        public_selected: dict | None = None, plain_selected: dict | None = None,
+                        protected: set[tuple[str, str]] | None = None) -> None:
+    """Remove the imports of a dependency's modules (`graph.dependencies`)
+    that `lake shake` finds unused.
+
+    The other passes never touch a dependency's import: they cannot see what
+    it changes for the importers (syntax, attributes, instances, simp sets).
+    So a dependency's import accumulates in files that no longer use it, and
+    with it the dependency's whole closure in every module importing them.
+    Here shake's finding is only a hypothesis, which `fix_and_verify` keeps
+    only if the module and every module importing it still build: a missing
+    tactic or lemma fails the build; an attribute or instance that a proof
+    needs fails it too. Where shake replaces such imports by a narrower
+    module of the same dependency (e.g. three tactic modules by the one whose
+    attribute the module uses), the replacement is added in the same edit.
+    """
+    if not graph.dependencies:
+        return
+    for mod in mods:
+        text = graph.text(mod)
+        if "keep-all" in module_annotations(text):
+            continue
+        lines = text.splitlines()
+        pinned = {m.group(4) for n, s in header_lines(lines)
+                  if (m := IMPORT.fullmatch(s)) and "shake: keep" in lines[n]}
+        rem, add = next((v for f, v in shaken.items() if shake_path(f) == graph.path(mod).resolve()), ([], []))
+        removed = {s.split()[-1]: s.startswith("public ") for s in rem
+                   if re.fullmatch(r"(public )?import \S+", s) and graph.dependency(s.split()[-1])}
+        added = {s.split()[-1]: s.startswith("public ") for s in add
+                 if re.fullmatch(r"(public )?import \S+", s) and graph.dependency(s.split()[-1])}
+        proposed = False
+        rel = f"lean/{graph.path(mod).relative_to(LEAN)}"
+        for x, public, meta, all_ in header(text):
+            if meta or all_ or not graph.dependency(x) or removed.get(x) != public:
+                continue
+            action = "remove_public" if public else "remove"
+            selected = (public_selected if public else plain_selected) or {}
+            if x in pinned:
+                decide(mod, x, action, "retained", "import_keep")
+            elif (mod, x) in (protected or set()):
+                decide(mod, x, action, "deferred", "protected_importer")
+            elif selected.get(mod) is not None and x not in selected[mod]:
+                decide(mod, x, action, "not_considered", "outside_selected_diff")
+            else:
+                n = next(n for n, s in header_lines(lines)
+                         if (m := IMPORT.fullmatch(s)) and m.group(4) == x and bool(m.group(1)) == public
+                         and not m.group(2) and not m.group(3))
+                plan.edits.append(Edit(mod, action, x))
+                plan.messages.append(f"{rel}:{n + 1}: `{'public ' if public else ''}import {x}`: "
+                                     f"{mod} does not use this dependency's module: remove it")
+                decide(mod, x, action, "proposed", "unused_dependency_module")
+                proposed = True
+        if proposed:
+            for y, public in sorted(added.items()):
+                plan.edits.append(Edit(mod, "add_public" if public else "add", y))
+                plan.messages.append(f"{rel}: `{'public ' if public else ''}import {y}`: {mod} uses this "
+                                     "narrower module of the dependency: import it instead")
+                decide(mod, y, "add_public" if public else "add", "proposed", "narrower_dependency_module")
 
 
 def problems(*args, **kwargs) -> list[str]:
@@ -1530,6 +1611,8 @@ def main(argv=None) -> int:
     parser.add_argument("--base", help="check only the imports added since this git revision")
     parser.add_argument("--fix", action="store_true",
                         help="apply findings and verify the affected library modules")
+    parser.add_argument("--dependencies", nargs="+", default=[], metavar="PREFIX",
+                        help="also remove the unused imports of these dependencies' modules (e.g. Mathlib)")
     parser.add_argument("--batch", type=int, default=1000, help="maximum modules per shake/build call")
     parser.add_argument("--read-batch", type=int, default=32, help="maximum roots per declaration reader")
     parser.add_argument("--read-timeout", type=float, default=120, help="seconds per declaration-reader process")
@@ -1569,7 +1652,8 @@ def main(argv=None) -> int:
     shaken = bulk.shaken(mods, state, args.batch, timeout=args.build_timeout)
     evidence = bulk.replay.Evidence(bulk.cached_uses(state, args.build_timeout, args.read_timeout),
                                     min(args.batch, args.read_batch))
-    plan = analyze(mods, shaken, Graph(dependency_roots()), new, plain, evidence, library, meta_plain=meta_plain)
+    plan = analyze(mods, shaken, Graph(dependency_roots(), args.dependencies), new, plain, evidence, library,
+                   meta_plain=meta_plain)
     state.save()
     found = plan.messages
     for p in found:

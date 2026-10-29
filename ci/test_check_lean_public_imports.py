@@ -58,6 +58,69 @@ class Check(unittest.TestCase):
     def test_never_a_dependency(self):
         self.assertEqual(self.problems("VerifiedGarbage.B", ["public import Dep.X"]), [])
 
+    def test_a_dependency_s_unused_import_when_asked(self):
+        self.write({"lean/VerifiedGarbage/D.lean": "module\n\nimport Dep.X\nimport Dep.Y -- shake: keep\n",
+                    "deps/Dep/Y.lean": "module\n", "deps/Dep/Z.lean": "module\n"})
+        self.graph = check.Graph([self.lean, self.deps], ("Dep",))
+        rem = ["public import Dep.X"]
+        f = str(self.lean / "VerifiedGarbage/B.lean")
+        plan = check.analyze(["VerifiedGarbage.B"], {f: (rem, [])}, self.graph)
+        self.assertEqual(plan.messages, ["lean/VerifiedGarbage/B.lean:4: `public import Dep.X`: "
+                                         "VerifiedGarbage.B does not use this dependency's module: remove it"])
+        self.assertEqual(plan.edits, [check.Edit("VerifiedGarbage.B", "remove_public", "Dep.X")])
+        # A plain import, but not one marked to keep.
+        [p] = self.problems("VerifiedGarbage.D", ["import Dep.X", "import Dep.Y"])
+        self.assertEqual(p, "lean/VerifiedGarbage/D.lean:3: `import Dep.X`: "
+                            "VerifiedGarbage.D does not use this dependency's module: remove it")
+        # With a base, only those the change added.
+        self.assertEqual(self.problems("VerifiedGarbage.D", ["import Dep.X"], plain={"VerifiedGarbage.D": set()}), [])
+        # A narrower module of the dependency that shake adds comes in the same edit.
+        f = str(self.lean / "VerifiedGarbage/D.lean")
+        plan = check.analyze(["VerifiedGarbage.D"], {f: (["import Dep.X"], ["import Dep.Z"])}, self.graph)
+        self.assertEqual(sorted(plan.edits), [check.Edit("VerifiedGarbage.D", "add", "Dep.Z"),
+                                              check.Edit("VerifiedGarbage.D", "remove", "Dep.X")])
+        self.assertIn("lean/VerifiedGarbage/D.lean: `import Dep.Z`: VerifiedGarbage.D uses this narrower "
+                      "module of the dependency: import it instead", plan.messages)
+        # Nothing to add when nothing is removed.
+        plan = check.analyze(["VerifiedGarbage.D"], {f: ([], ["import Dep.Z"])}, self.graph)
+        self.assertEqual(plan.edits, [])
+        # Not of another dependency, or one shake does not find unused.
+        self.graph = check.Graph([self.lean, self.deps], ("Other",))
+        self.assertEqual(self.problems("VerifiedGarbage.D", ["import Dep.X"]), [])
+        self.graph = check.Graph([self.lean, self.deps], ("Dep",))
+        self.assertEqual(self.problems("VerifiedGarbage.D", []), [])
+        # A prefix names whole components: `De` is not `Dep`.
+        self.graph = check.Graph([self.lean, self.deps], ("De",))
+        self.assertEqual(self.problems("VerifiedGarbage.D", ["import Dep.X"]), [])
+
+    def test_fix_removes_a_dependency_s_import(self):
+        self.graph = check.Graph([self.lean, self.deps], ("Dep",))
+        f = str(self.lean / "VerifiedGarbage/B.lean")
+        plan = check.analyze(["VerifiedGarbage.B"], {f: (["public import Dep.X"], [])}, self.graph)
+        with mock.patch.object(check, "ROOT", self.lean.parent):
+            done = check.fix(plan)
+        self.assertEqual(done, ["lean/VerifiedGarbage/B.lean: remove_public Dep.X"])
+        self.assertEqual((self.lean / "VerifiedGarbage/B.lean").read_text(),
+                         "module\n\npublic import VerifiedGarbage.Seal\n")
+
+    def test_a_dependency_s_removal_may_reorder_its_own_modules(self):
+        # M imports Dep.Q, then Dep.R, which imports Dep.P and Dep.Q: removing
+        # `import Dep.Q` loads Dep.P before Dep.Q, both opaque to the check.
+        self.write({"lean/VerifiedGarbage/M.lean": "module\n\nimport Dep.Q\nimport Dep.R\n",
+                    "lean/VerifiedGarbage/N.lean": "module\n\nimport VerifiedGarbage.M\n",
+                    "deps/Dep/P.lean": "module\n", "deps/Dep/Q.lean": "module\n",
+                    "deps/Dep/R.lean": "module\n\npublic import Dep.P\npublic import Dep.Q\n"})
+        f = str(self.lean / "VerifiedGarbage/M.lean")
+        library = ["VerifiedGarbage.M", "VerifiedGarbage.N"]
+        uses = lambda mods, view: {}
+        graph = check.Graph([self.lean, self.deps], ("Dep",))
+        self.assertNotEqual(graph.load_order("VerifiedGarbage.M"),
+                            check.Planned(graph, [check.Edit("VerifiedGarbage.M", "remove", "Dep.Q")])
+                            .load_order("VerifiedGarbage.M"))
+        plan = check.analyze(["VerifiedGarbage.M"], {f: (["import Dep.Q"], [])}, graph, uses=uses, library=library)
+        self.assertEqual(plan.edits, [check.Edit("VerifiedGarbage.M", "remove", "Dep.Q")])
+        self.assertEqual(plan.deferred, [])
+
     def test_meta_imports_are_not_asked_about(self):
         self.assertEqual(self.problems("VerifiedGarbage.C", ["public meta import VerifiedGarbage.B"]), [])
 
