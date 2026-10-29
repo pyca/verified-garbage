@@ -1,11 +1,11 @@
 module
+
 public import VerifiedGarbage.Impl.MlKem.AArch64.Dot
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Reduce
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
-
 /-! Reduction of three fused accumulators, before the output interleave. -/
 
 @[expose] public section

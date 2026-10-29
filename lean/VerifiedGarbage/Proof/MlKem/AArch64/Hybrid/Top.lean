@@ -1,17 +1,17 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.MatrixTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Consts
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenTiming
+public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Matrix
+
+import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.MatrixTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Start
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.EncapsTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Matrix
-
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Entry
 /-!
 # The hashing encapsulation's contract and constant time
 
@@ -19,6 +19,33 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Matrix
 the x3 calls use (rather than 16) apart from the buffers, and
 `entryContractS`: with the constant tables apart from them too.
 -/
+
+-- Formerly `VerifiedGarbage/Proof/MlKem/AArch64/Optimized/KeyGenTiming.lean`, which only this module imported.
+section
+
+/-! # Constant-time key generation under the emitted read-only table contract -/
+section
+namespace VG.Proof.MlKem.AArch64.Optimized
+open VG VG.AArch64 VG.Impl.MlKem.AArch64
+open VG.Proof.MlKem.AArch64.KeyGen
+variable {P : KemLay} {keccak : Sha3.AArch64.Permutation}
+
+theorem entry_symbols {base : Contract isa} {s u : State} (h : (entryContract base).pub s u) :
+    (s.syms "VG_MLKEM_REJ_SHUFFLE"=u.syms "VG_MLKEM_REJ_SHUFFLE") ∧
+    ∀name∈restSymbols,s.syms name=u.syms name := by
+  refine ⟨h.2 _ (by simp only [constants,List.mem_cons]; exact Or.inl rfl),?_⟩
+  intro name hn
+  simp only [restSymbols,List.mem_cons,List.not_mem_nil,or_false] at hn
+  rcases hn with rfl|rfl|rfl|rfl
+  · exact h.2 _ (by simp only [constants,List.mem_cons]; exact Or.inr (Or.inl rfl))
+  · exact h.2 _ (by simp only [constants,List.mem_cons]; exact Or.inr (Or.inr (Or.inl rfl)))
+  · exact h.2 _ (by simp only [constants,List.mem_cons]; exact Or.inr (Or.inr (Or.inr (Or.inl rfl))))
+  · exact h.2 _ (by simp only [constants,List.mem_cons]; exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))
+
+end VG.Proof.MlKem.AArch64.Optimized
+end
+
+end
 
 @[expose] public section
 

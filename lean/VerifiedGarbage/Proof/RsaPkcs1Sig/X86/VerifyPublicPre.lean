@@ -1,13 +1,136 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyCallArgs
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyContext
+
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyLocal
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStackWord
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyRegions
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
-
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyLocalArgument
+import VerifiedGarbage.Proof.Framework.Offset
 /-! # The precomputed public call is safe after the signature-length check -/
+
+-- Formerly `VerifiedGarbage/Proof/RsaPkcs1Sig/X86/VerifyArguments.lean`, which only this module imported.
+section
+
+/-! # Installing successive cdecl arguments preserves every earlier word -/
+
+@[expose] public section
+namespace VG.Proof.RsaPkcs1Sig.X86.Ver
+open VG VG.X86 VG.Proof.Bignum.X86 VG.Proof.Mont.X86
+
+def Arguments (g : Geometry) (values : Nat → BitVec 32) (n : Nat) (s : State) : Prop :=
+  ∀ j < n, s.mem.readW (byteAddr g.stack + BitVec.ofNat 64 (4 * j)) 32 = values j
+
+theorem Arguments.append {g : Geometry} {values : Nat → BitVec 32} {n : Nat} {s t : State}
+    (h : Arguments g values n s) (hn : n < 10)
+    (M : t.mem = s.mem.writeW (byteAddr g.stack + BitVec.ofNat 64 (4 * n)) (values n))
+    (F : Frame [⟨byteAddr g.stack + BitVec.ofNat 64 (4 * n), 4⟩] s.mem t.mem) :
+    Arguments g values (n + 1) t := by
+  intro j hj
+  by_cases same : j = n
+  · subst j; rw [M, Mem.readW_writeW_self32]
+  · rw [outgoing_word_preserved (by omega) hn same F]
+    exact h j (by omega)
+
+theorem slotFrame_outgoing {g : Geometry} {s t : State} {j : Nat} (hj : j < 10)
+    (F : Frame [⟨byteAddr g.stack + BitVec.ofNat 64 (4 * j), 4⟩] s.mem t.mem) :
+    Frame [⟨byteAddr g.stack, 40⟩] s.mem t.mem := F.sub (by
+  intro r hr
+  obtain rfl := List.mem_singleton.mp hr
+  exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by omega)⟩)
+
+theorem prepareArgument_ok {g : Geometry} {bs : Fin 5 → List Byte} {s : State}
+    {values : Nat → BitVec 32} {n : Nat} {code : List Instr}
+    (a : Arguments g values n s) (hn : n < 10)
+    (w : WP isa (.block code) s fun t => Context g bs t ∧
+      t.mem = s.mem.writeW (byteAddr g.stack + BitVec.ofNat 64 (4 * n)) (values n) ∧
+      Frame [⟨byteAddr g.stack + BitVec.ofNat 64 (4 * n), 4⟩] s.mem t.mem ∧ Keeps [.eax] s t) :
+    WP isa (.block code) s fun t => Context g bs t ∧ Arguments g values (n + 1) t ∧
+      Frame [⟨byteAddr g.stack, 40⟩] s.mem t.mem ∧ Keeps [.eax] s t := by
+  refine WP.mono w ?_
+  rintro t ⟨h, M, F, K⟩
+  exact ⟨h, a.append hn M F, slotFrame_outgoing hn F, K⟩
+
+end VG.Proof.RsaPkcs1Sig.X86.Ver
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaPkcs1Sig/X86/VerifyCallArgs.lean`, which only this module imported.
+section
+
+/-! # All ten arguments of precomputed public RSA verification -/
+
+@[expose] public section
+namespace VG.Proof.RsaPkcs1Sig.X86.Ver
+open VG VG.X86 VG.Proof.Bignum.X86 VG.Proof.Mont.X86
+open VG.Impl.RsaPkcs1Sig.X86.Verify
+
+def publicArgument (g : Geometry) (j : Nat) : BitVec 32 :=
+  match j with
+  | 0 => g.em1 | 1 => BitVec.ofNat 32 g.length
+  | 2 => g.sources 4 | 3 => BitVec.ofNat 32 g.preLength
+  | 4 => g.sources 1 | 5 => BitVec.ofNat 32 g.exponentLength
+  | 6 => g.sources 3 | 7 => BitVec.ofNat 32 g.length
+  | 8 => g.workspace | _ => BitVec.ofNat 32 g.scratchLength
+
+private def inputSlot (j : Nat) : Nat :=
+  match j with
+  | 1 => 1 | 2 => 11 | 3 => 12 | 4 => 2 | 5 => 3 | 6 => 7 | 7 => 1 | 8 => 9 | _ => 10
+
+theorem pubArgs_ok {g : Geometry} {bs : Fin 5 → List Byte} {s : State}
+    (h : Context g bs s) :
+    WP isa (.block pubArgs) s fun t => Context g bs t ∧ Arguments g (publicArgument g) 10 t ∧
+      Frame [⟨byteAddr g.stack, 40⟩] s.mem t.mem ∧ Keeps [.eax] s t := by
+  have first : WP isa (.block (localArgument em1Offset 0)) s fun t =>
+      Context g bs t ∧ Arguments g (publicArgument g) 1 t ∧
+      Frame [⟨byteAddr g.stack, 40⟩] s.mem t.mem ∧ Keeps [.eax] s t := by
+    apply prepareArgument_ok (bs := bs) (n := 0) (by intro j hj; omega) (by decide)
+    exact localArgument_ok s h em1Offset (by decide)
+  have next {u : State} (hu : Context g bs u) {j : Nat} (hj : 1 ≤ j) (hj' : j < 10)
+      (a : Arguments g (publicArgument g) j u) :
+      WP isa (.block (copyArgument (inputSlot j) j)) u fun t =>
+        Context g bs t ∧ Arguments g (publicArgument g) (j + 1) t ∧
+        Frame [⟨byteAddr g.stack, 40⟩] u.mem t.mem ∧ Keeps [.eax] u t := by
+    have inputBound : inputSlot j < 13 := by
+      rcases (show j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 by omega) with
+        rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+    have value : g.argument (inputSlot j) = publicArgument g j := by
+      rcases (show j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 by omega) with
+        rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+    apply prepareArgument_ok (bs := bs) a hj'
+    refine WP.mono (copyArgument_ok u hu inputBound hj') ?_
+    rintro t ⟨ht, M, F, K⟩
+    exact ⟨ht, by rw [value] at M; exact M, F, K⟩
+  have copyMany (n : Nat) (hn : n ≤ 9) {u : State} (hu : Context g bs u)
+      (a : Arguments g (publicArgument g) 1 u) :
+      WP isa (.block ((List.range n).flatMap fun j => copyArgument (inputSlot (j + 1)) (j + 1))) u
+        fun t => Context g bs t ∧ Arguments g (publicArgument g) (n + 1) t ∧
+          Frame [⟨byteAddr g.stack, 40⟩] u.mem t.mem ∧ Keeps [.eax] u t := by
+    induction n generalizing u with
+    | zero => exact WP.block_nil ⟨hu, a, Frame.refl _ _, Keeps.refl _ _⟩
+    | succ n ih =>
+      rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
+      refine WP.mono (ih (by omega) hu a) ?_
+      rintro v ⟨hv, av, F, K⟩
+      refine WP.mono (next hv (by omega) (by omega) av) ?_
+      rintro t ⟨ht, args, Ft, Kt⟩
+      exact ⟨ht, args, F.trans Ft, K.trans Kt⟩
+  have code : pubArgs = localArgument em1Offset 0 ++
+      (List.range 9).flatMap (fun j => copyArgument (inputSlot (j + 1)) (j + 1)) := rfl
+  rw [code, WP.block_append_iff]
+  refine WP.mono first ?_
+  rintro u ⟨hu, args, F, K⟩
+  refine WP.mono (copyMany 9 (by decide) hu args) ?_
+  rintro t ⟨ht, argsT, Ft, Kt⟩
+  exact ⟨ht, argsT, F.trans Ft, K.trans Kt⟩
+
+end VG.Proof.RsaPkcs1Sig.X86.Ver
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.RsaPkcs1Sig.X86.Ver

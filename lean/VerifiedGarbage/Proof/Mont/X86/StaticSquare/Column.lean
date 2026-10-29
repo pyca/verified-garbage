@@ -1,20 +1,136 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.StaticSquare.ColumnMath
 public import VerifiedGarbage.Proof.Mont.X86.StaticSquare.MemStep
-import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Input
-import VerifiedGarbage.Proof.Mont.X86.StaticSquare.CarryIn
 public import VerifiedGarbage.Proof.Mont.X86.Rt.RowFull
-import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
 public import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Accum
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Args
+public import VerifiedGarbage.Proof.Mont.ColumnSquare
+
+import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Input
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Digit
 import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Double
 import VerifiedGarbage.Proof.Mont.X86.StaticSquare.ReductionProducts
-
+import VerifiedGarbage.Proof.Mont.X86.Square.ColumnMath
+import VerifiedGarbage.Proof.Mont.X86.StaticSquare.CarryMath
+import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Mont.X86.Words
 /-! # One statically scheduled Montgomery square column -/
+
+-- Formerly `VerifiedGarbage/Proof/Mont/X86/StaticSquare/ColumnMath.lean`, which only this module imported.
+section
+
+/-! # Bounds and cancellation for a complete scalar column -/
+
+@[expose] public section
+namespace VG.Proof.Mont.X86.StaticSquare
+open VG VG.X86 VG.Proof.Mont
+
+def inputCoeff (mem : Mem) (W : Addr) (a N k : Nat) :=
+ Column.coeff (fun i => w32 mem W (a+4*i)) (fun i => w32 mem W (a+4*i)) N k
+
+def redCoeff (mem : Mem) (W : Addr) (S m N k : Nat) :=
+ Column.coeff (Column.prefixDigits (fun i => w32 mem W (S+52+4*i)) k)
+   (fun i => w32 mem W (m+4*i)) N k
+
+def pre (mem : Mem) (W : Addr) (a S m N k c : Nat) :=
+ c+inputCoeff mem W a N k+redCoeff mem W S m N k
+
+def quot (mem : Mem) (W : Addr) (a S m N k c : Nat) :=
+ if k<N then (pre mem W a S m N k c%2^32*w32 mem W (S+16))%2^32 else 0
+
+def total (mem : Mem) (W : Addr) (a S m N k c : Nat) :=
+ pre mem W a S m N k c+quot mem W a S m N k c*w32 mem W m
+
+ theorem quot_lt (mem : Mem) (W : Addr) (a S m N k c : Nat) : quot mem W a S m N k c<2^32 := by
+  unfold quot
+  split
+  · exact Nat.mod_lt _ (by decide)
+  · decide
+
+ theorem column_bounds (mem : Mem) (W : Addr) (a S m : Nat) {N k c : Nat}
+    (np : 0<N) (nl : N≤128) (cb : c≤4*N*2^32) :
+    total mem W a S m N k c<2^96 ∧ total mem W a S m N k c/2^32≤4*N*2^32 := by
+  have word (x : Nat) : w32 mem W x≤2^32-1 := by have := (mem.readW (off W x) 32).isLt; dsimp only [w32]; omega
+  have ib : inputCoeff mem W a N k≤N*(2^32-1)*(2^32-1) :=
+    Column.coeff_bound (fun i _ => word _) (fun i _ => word _)
+  have rb : redCoeff mem W S m N k≤N*(2^32-1)*(2^32-1) := by
+    apply Column.coeff_bound _ (fun i _ => word _)
+    intro i hi
+    unfold Column.prefixDigits
+    split
+    · exact word _
+    · omega
+  have qb : quot mem W a S m N k c≤2^32-1 := by have := quot_lt mem W a S m N k c; omega
+  have mul := Nat.mul_le_mul qb (word m)
+  unfold total pre
+  constructor <;> omega
+
+ theorem total_cancel (mem : Mem) (W : Addr) (a S m N k c : Nat) (small : k<N)
+    (inverse : (w32 mem W m*w32 mem W (S+16)+1)%2^32=0) :
+    total mem W a S m N k c%2^32=0 := by
+  unfold total quot
+  rw [ite_eq_left small]
+  exact Square.cancel_digit _ _ _ _ inverse
+
+ theorem pre_bounds (mem : Mem) (W : Addr) (a S m N k c : Nat)
+    (bound : total mem W a S m N k c<2^96) :
+    pre mem W a S m N k c<2^96 ∧ inputCoeff mem W a N k<2^96 := by
+  unfold total pre at bound
+  unfold pre
+  omega
+
+end VG.Proof.Mont.X86.StaticSquare
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Mont/X86/StaticSquare/CarryIn.lean`, which only this module imported.
+section
+
+/-! # The preceding column carry enters the accumulator -/
+
+section
+namespace VG.Proof.Mont.X86.StaticSquare
+open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Proof.Mont.X86 VG.Proof.Mont
+
+theorem carryIn_ok {s : State} {W : Addr} {L S : Nat}
+    (hw : Rt.Ws s W L) (ptr : Rt.PtrAt s W .edi S) (fits : S+16≤L)
+    (bound : value s+w32 s.mem W (S+8)+2^32*w32 s.mem W (S+12)<2^96) :
+    WP isa (.block VG.Impl.Mont.X86.Rt.StaticSquare.carryIn) s fun z =>
+      value z=value s+w32 s.mem W (S+8)+2^32*w32 s.mem W (S+12) ∧
+      Keeps [.esi,.ebx,.ecx] s z ∧ z.mem=s.mem := by
+  let c := decide (2^32≤(s.gpr .esi).toNat+w32 s.mem W (S+8))
+  let d := decide (2^32≤(s.gpr .ebx).toNat+w32 s.mem W (S+12)+c.toNat)
+  unfold VG.Impl.Mont.X86.Rt.StaticSquare.carryIn
+  refine wp_addS (Rt.readSrc_ptr hw ptr (by omega)) fun s₁ U₁ C₁ => ?_
+  have C : s₁.cf=some c := C₁
+  have h₁ := hw.of_keeps U₁.keeps
+  have p₁ : Rt.PtrAt s₁ W .edi S := by rw [Rt.PtrAt,U₁.other .edi (by decide)]; exact ptr
+  refine wp_adcS (Rt.readSrc_ptr h₁ p₁ (by omega)) C fun s₂ U₂ C₂ => ?_
+  have D : s₂.cf=some d := by
+    simpa only [U₁.other .ebx (by decide),U₁.mem] using C₂
+  refine wp_adcS rfl D fun z U₃ _ => WP.block_nil ?_
+  have L : (z.gpr .esi).toNat=((s.gpr .esi).toNat+w32 s.mem W (S+8))%2^32 := by
+    rw [U₃.other .esi (by decide),U₂.other .esi (by decide),U₁.gpr,BitVec.toNat_add]
+  have M : (z.gpr .ebx).toNat=((s.gpr .ebx).toNat+w32 s.mem W (S+12)+c.toNat)%2^32 := by
+    rw [U₃.other .ebx (by decide),U₂.gpr,add3_toNat,U₁.other .ebx (by decide),U₁.mem]
+  have H : (z.gpr .ecx).toNat=((s.gpr .ecx).toNat+d.toNat)%2^32 := by
+    rw [U₃.gpr,add3_toNat,U₂.other .ecx (by decide),U₁.other .ecx (by decide)]
+    rfl
+  refine ⟨?_,?_,U₃.mem.trans (U₂.mem.trans U₁.mem)⟩
+  · rw [value,L,M,H]
+    exact accum96 (s.gpr .esi).isLt (s.gpr .ebx).isLt (s.gpr .ecx).isLt
+      (s.mem.readW (off W (S+8)) 32).isLt (s.mem.readW (off W (S+12)) 32).isLt bound
+  · have K : Keeps [.esi,.ebx,.ecx] s s₁ := U₁.keeps.mono (by decide)
+    exact (K.trans (U₂.keeps.mono (by decide))).trans (U₃.keeps.mono (by decide))
+
+end VG.Proof.Mont.X86.StaticSquare
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.Mont.X86.StaticSquare

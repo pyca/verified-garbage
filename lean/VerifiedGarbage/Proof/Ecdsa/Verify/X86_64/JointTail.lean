@@ -1,14 +1,119 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointSquare
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
-import VerifiedGarbage.Proof.Ecdsa.VerifyJacobian
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFinal
 public import VerifiedGarbage.Proof.Weierstrass.Jac
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
+import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
+import VerifiedGarbage.Proof.Ecdh.Exchange
+import VerifiedGarbage.Spec.Ecdsa.Verify
+import VerifiedGarbage.Proof.Ecdsa.Verify
+import VerifiedGarbage.Proof.Weierstrass.JacAdd
 /-! The measured Jacobian denominator square and projective check satisfy verification. -/
+
+-- Formerly `VerifiedGarbage/Proof/Ecdsa/Verify/X86_64/JointSquare.lean`, which only this module imported.
+section
+
+/-! Square the Jacobian denominator before the existing projective comparison. -/
+
+section
+
+namespace VG.Proof.Ecdsa.Verify.X86_64
+open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
+open VG.Proof.Mont VG.Proof.Mont.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86_64
+open VG.Proof.Ecdsa.X86_64 Spec.Weierstrass
+
+theorem jointSquare_ok {c : Cfg} (hc : CfgOk c)
+    {s₀ s : State} {base : Addr} {g : Reg → BitVec 64} (h : ProjectiveInput c s₀ base g s) :
+    WP isa (ForwardField.programB c.MP' [.mul (c.sl RZ) (c.sl RZ) (c.sl RZ)]).inline s fun t =>
+      ProjectiveInput c s₀ base g t ∧
+      tmv c.C c.n base t (c.sl RX)=tmv c.C c.n base s (c.sl RX) ∧
+      tmv c.C c.n base t (c.sl RZ)=tmv c.C c.n base s (c.sl RZ)*tmv c.C c.n base s (c.sl RZ) := by
+  have lay : Lay c.MP' size (·∈[c.sl RX,c.sl RZ]) := lay_map hc rfl rfl rfl (l:=[RX,RZ]) (by decide)
+  have hi : Inv c.MP' base size c.C.p (·∈[c.sl RX,c.sl RZ]) [c.sl RX,c.sl RZ] (tmv c.C c.n base s) s := by
+    refine ⟨h.scr,modP_of hc h.fixed.mp,fun _ hx => hx,?_,fun _ _ => rfl⟩
+    intro x hx
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
+    rcases hx with rfl|rfl
+    · exact h.rx_lt
+    · exact h.rz_lt
+  refine WP.mono (ForwardField.programB_ok lay
+    (unitMod_pow_two hc.p_odd _) [.mul (c.sl RZ) (c.sl RZ) (c.sl RZ)] hi
+    (by intro op hop x hx; simp only [List.mem_singleton] at hop; subst op; simpa only [FOp.out,FOp.ins,List.mem_cons,List.not_mem_nil,or_false,or_self] using Or.inr hx)
+    (by simp [readsOk,FOp.ins])) fun t ⟨kt,it⟩ => ?_
+  have un := kt.unch
+  change Unch base (slW c [RZ,TMP]) s.mem t.mem at un
+  have rx : sv c base t RX=sv c base s RX :=
+    sv_unch un hc.n10 h.scr.nowrap (by decide) (apart_slW (by decide))
+  have flag : word t.mem base (c.sl FLAG)=word s.mem base (c.sl FLAG) := by
+    apply un.word
+    · intro w hw
+      have hh := apart_slW (c:=c) (i:=FLAG) (l:=[RZ,TMP]) (by decide) w hw
+      have := hc.n0
+      omega
+    · have := sl_le c hc.n10 (i:=FLAG) (by decide)
+      have := h.scr.nowrap
+      have := hc.n0
+      omega
+  have rzv := it.val (c.sl RZ) (by simp [validAfter,FOp.out])
+  have rzlt := it.lt (c.sl RZ) (by simp [validAfter,FOp.out])
+  refine ⟨⟨it.scr,h.fixed.unch hc.n10 h.scr.nowrap (fixedOk_slW (by decide)) un,
+    (sv_unch un hc.n10 h.scr.nowrap (by decide) (apart_slW (by decide))).trans h.k,
+    flag.trans h.flag,rx ▸ h.rx_lt,rzlt⟩,?_,?_⟩
+  · exact congrArg (fun x => toM c.C.p (2^(64*c.n)) x) rx
+  · simpa only [MP'_n,tmv,runOps,List.foldl_cons,List.foldl_nil,FOp.run,Function.update_self] using rzv
+
+end VG.Proof.Ecdsa.Verify.X86_64
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ecdsa/VerifyJacobian.lean`, which only this module imported.
+section
+
+/-! Verification can compare a Jacobian X against the square of its Z coordinate. -/
+
+section
+
+namespace VG.Proof.Ecdsa
+open Spec.Weierstrass Spec.EcKey Spec.Ecdsa VG.Proof.Weierstrass VG.Proof.Ecdh
+
+theorem verify_eq_jacobian {C : Curve} (hC : Law C)
+    {bs : List Byte} (hlen : bs.length=2*C.len+1) {b0 : Byte} (hb0 : bs.head?=some b0)
+    {x y : Nat} (hxv : ofBytes ((bs.drop 1).take C.len)=x) (hyv : ofBytes (bs.drop (C.len+1))=y)
+    {P : Point C} (hP : ∀ h : Valid C b0 x y,P=.affine ⟨x,h.2.1⟩ ⟨y,h.2.2.1⟩)
+    {e r s : Nat} {sig : List Byte} (hr : ofBytes (sig.take C.len)=r) (hs : ofBytes (sig.drop C.len)=s)
+    {u v : Nat} (hu : u<C.n) (hv : v<C.n)
+    (hue : Fin.ofNat C.n u=Fin.ofNat C.n e*Fin.ofNat C.n s^(C.n-2))
+    (hve : Fin.ofNat C.n v=Fin.ofNat C.n r*Fin.ofNat C.n s^(C.n-2))
+    {X Y Z : Fe C} (hR : InvJ C X Y Z (add (mul u (G C)) (mul v P)))
+    {xo : Nat} (hxo : xo<C.p) (hx : Fin.ofNat C.p xo=X*(Z*Z)^(C.p-2)) :
+    verify C bs e sig=decide (Valid C b0 x y ∧ (1≤r ∧ r<C.n) ∧ (1≤s ∧ s<C.n) ∧
+      Z*Z≠0 ∧ Fin.ofNat C.n xo=Fin.ofNat C.n r) := by
+  by_cases hz : Z=0
+  · have hinf := (hR.z_zero_iff hC).mp hz
+    have rep : Rep C 0 1 0 (add (mul u (G C)) (mul v P)) := by
+      rw [hinf]
+      exact rep_infinity' hC
+    have out := verify_eq hC hlen hb0 hxv hyv hP hr hs hu hv hue hve rep
+      (Nat.pos_of_ne_zero (NeZero.ne C.p)) (by simp only [Fin.ofNat_zero,Lean.Grind.Semiring.zero_mul])
+    simpa only [hz,Lean.Grind.Semiring.zero_mul,ne_eq,not_true_eq_false,false_and,and_false,decide_false] using out
+  · have rep : ∃ Y',Rep C X Y' (Z*Z) (add (mul u (G C)) (mul v P)) := by
+      generalize he : add (mul u (G C)) (mul v P)=Q at hR ⊢
+      cases Q with
+      | infinity => exact False.elim (hz ((hR.z_zero_iff hC).mpr rfl))
+      | affine x y => exact ⟨y*(Z*Z),hC.mul_ne_zero hz hz,(hR.affine_coords hC).1,rfl⟩
+    obtain ⟨Y',hrep⟩ := rep
+    exact verify_eq hC hlen hb0 hxv hyv hP hr hs hu hv hue hve hrep hxo hx
+
+end VG.Proof.Ecdsa
+end
+
+end
 
 @[expose] public section
 

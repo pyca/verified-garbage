@@ -1,12 +1,34 @@
 module
 
 public import VerifiedGarbage.Impl.MillerRabin.X86.Layout
-import VerifiedGarbage.Proof.Mont.X86.Instr
-public import VerifiedGarbage.Proof.MillerRabin.Index32
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
+public import Init.Data.Nat.Basic
 
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Omega
 /-! # Scaling a public prepared array stride by its five-bit constant index -/
+
+-- Formerly `VerifiedGarbage/Proof/MillerRabin/Index32.lean`, which only this module imported.
+section
+
+/-! # Five public bits multiply a prepared array stride by its index -/
+
+@[expose] public section
+namespace VG.Proof.MillerRabin
+
+def indexStep (j c bit : Nat) : Nat := 2 * c + if j / 2 ^ bit % 2 = 1 then 1 else 0
+
+def indexFold (j : Nat) (bits : List Nat) (c : Nat) : Nat := bits.foldl (indexStep j) c
+
+theorem index5_eq {j : Nat} (bound : j < 32) : indexFold j [4, 3, 2, 1, 0] 0 = j := by
+  have table : ∀ j < 32, indexFold j [4, 3, 2, 1, 0] 0 = j := by decide
+  exact table j bound
+
+end VG.Proof.MillerRabin
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.MillerRabin.X86

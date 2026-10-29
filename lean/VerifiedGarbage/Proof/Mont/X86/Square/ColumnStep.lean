@@ -3,13 +3,14 @@ module
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Args
 public import VerifiedGarbage.Impl.Mont.X86.MulRt
-import VerifiedGarbage.Proof.Mont.X86.Square.ColumnParts
 public import VerifiedGarbage.Proof.Mont.X86.Rt.RowFull
 public import VerifiedGarbage.Proof.Mont.X86.Square.ColumnMath
-import VerifiedGarbage.Proof.Mont.X86.Square.CarryIn
-import VerifiedGarbage.Proof.Mont.X86.Square.CrossGuard
 public import VerifiedGarbage.Proof.Mont.X86.Square.Packed
 public import VerifiedGarbage.Proof.Framework.Taint
+
+import VerifiedGarbage.Proof.Mont.X86.Square.ColumnParts
+import VerifiedGarbage.Proof.Mont.X86.Square.CarryIn
+import VerifiedGarbage.Proof.Mont.X86.Square.CrossGuard
 
 @[expose] public section
 

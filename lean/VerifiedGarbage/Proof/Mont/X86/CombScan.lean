@@ -1,17 +1,212 @@
 module
 
-import VerifiedGarbage.Proof.Mont.X86.MaskedLoad
-import VerifiedGarbage.Proof.Mont.X86.WindowSelect
-import VerifiedGarbage.Proof.Mont.X86.CombMasks
-import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Mont.X86.Loop
 public import VerifiedGarbage.Impl.Mont.X86.CombTable
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Impl.Mont.X86.Window
 public import VerifiedGarbage.Proof.Mont.Words32
 
+import VerifiedGarbage.Proof.Mont.X86.WindowSelect
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Mont.X86.Loop
+import Init.Data.BitVec.Basic
+import VerifiedGarbage.Proof.Mont.X86.ArgFar
 /-! Fixed-address comb selection: each iteration writes one selected table word. -/
+
+-- Formerly `VerifiedGarbage/Proof/Mont/X86/CombSelectMath.lean`, which only this module imported.
+section
+
+/-! Wordwise masked comb lookup reuses the window equality masks. -/
+
+section
+namespace VG.Proof.Mont.X86.Dynamic
+
+/-- Accumulating the fixed-address loads returns the selected word, or zero
+until its entry has been visited. No secret table index is needed. -/
+theorem masked_words_prefix (value : Nat → BitVec 32) (index count : Nat) :
+    (List.range count).foldl (fun acc j =>
+      acc ||| (value j &&& (if index = j then BitVec.allOnes 32 else 0#32))) 0#32 =
+      if index < count then value index else 0#32 := by
+  induction count with
+  | zero => simp
+  | succ count ih =>
+    rw [List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil, ih]
+    by_cases eq : index = count
+    · subst index
+      simp only [Nat.lt_irrefl, Nat.lt_succ_self, ↓reduceIte, BitVec.and_allOnes, BitVec.zero_or]
+    · have same : index < count + 1 ↔ index < count := by omega
+      simp only [eq, ↓reduceIte, BitVec.and_zero, BitVec.or_zero, same]
+
+/-- The actual subtract/shift mask used by x86 has the same lookup result
+for all 32 entries of the shared RSA comb. -/
+theorem masked_words_lookup (value : Nat → BitVec 32) {index : Nat} (hi : index < 32) :
+    (List.range 32).foldl (fun acc j =>
+      acc ||| (value j &&& (0#32 - (((BitVec.ofNat 32 index ^^^ BitVec.ofNat 32 j) - 1) >>> 31)))) 0#32 =
+      value index := by
+  have same : ∀ j ∈ List.range 32, ∀ acc : BitVec 32,
+      acc ||| (value j &&& (0#32 - (((BitVec.ofNat 32 index ^^^ BitVec.ofNat 32 j) - 1) >>> 31))) =
+      acc ||| (value j &&& (if index = j then BitVec.allOnes 32 else 0#32)) := by
+    intro j hj acc
+    exact congrArg (fun mask : BitVec 32 => acc ||| (value j &&& mask))
+      (window_mask_small index hi j (List.mem_range.mp hj))
+  have congr_fold {f g : BitVec 32 → Nat → BitVec 32} (l : List Nat)
+      (eq : ∀ j ∈ l, ∀ acc, f acc j = g acc j) : ∀ acc, l.foldl f acc = l.foldl g acc := by
+    induction l with
+    | nil => intro acc; rfl
+    | cons j l ih =>
+      intro acc
+      simp only [List.foldl_cons]
+      rw [eq j (by simp), ih (fun k hk => eq k (by simp [hk]))]
+  rw [congr_fold (List.range 32) same, masked_words_prefix, ite_eq_left hi]
+
+end VG.Proof.Mont.X86.Dynamic
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Mont/X86/MaskedLoad.lean`, which only this module imported.
+section
+
+/-! One fixed-address masked table load, shared across table widths. -/
+
+section
+namespace VG.Proof.Mont.X86.Dynamic
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont.X86
+
+theorem maskedWord_ok {s : State} {table mask : MemOp} {value maskValue : BitVec 32}
+    (ht : readSrc s (.mem table) = some value) (hm : readSrc s (.mem mask) = some maskValue)
+    (base : mask.base ≠ .eax) :
+    WP isa (.block (VG.Impl.Mont.X86.Comb.maskedWord table mask)) s fun t =>
+      t.mem = s.mem ∧ t.gpr .ebx = s.gpr .ebx ||| (value &&& maskValue) ∧
+      Keeps [.eax, .ebx] s t := by
+  unfold VG.Impl.Mont.X86.Comb.maskedWord
+  refine wp_movS ht fun u₁ U₁ _ => ?_
+  refine wp_logicS (.inl rfl) (by rw [readSrc_upd U₁ base]; exact hm) fun u₂ U₂ => ?_
+  refine wp_orS rfl fun t U₃ => WP.block_nil ⟨?_, ?_, ?_⟩
+  · exact U₃.mem.trans (U₂.mem.trans U₁.mem)
+  · rw [U₃.gpr, U₂.gpr, U₁.gpr, U₂.other .ebx (by decide), U₁.other .ebx (by decide)]
+    rfl
+  · exact ((U₁.keeps.mono (by decide)).widen U₂.keeps).widen U₃.keeps
+
+/-- Read-only instructions preserve fixed memory operands whose base registers
+are outside the accumulator pair. -/
+theorem readSrc_mask_keeps {s t : State} {m : MemOp}
+    (M : t.mem = s.mem) (K : Keeps [.eax, .ebx] s t)
+    (h : m.base ∉ [.eax, .ebx]) : readSrc t (.mem m) = readSrc s (.mem m) := by
+  show t.load32 (t.ea m) = s.load32 (s.ea m)
+  have addr : t.ea m = s.ea m := by simp only [State.ea, K.1 _ h]
+  simp only [State.load32, addr, M, K.2.1, K.2.2]
+
+/-- The emitted full scan accumulates the same fold as the masked lookup
+algebra. No memory is written and no table-dependent address is formed. -/
+theorem maskedWords_ok (js : List Nat) {s : State}
+    (table mask : Nat → MemOp) (value masks : Nat → BitVec 32)
+    (ht : ∀ j ∈ js, readSrc s (.mem (table j)) = some (value j))
+    (hm : ∀ j ∈ js, readSrc s (.mem (mask j)) = some (masks j))
+    (tb : ∀ j ∈ js, (table j).base ∉ [.eax, .ebx])
+    (mb : ∀ j ∈ js, (mask j).base ∉ [.eax, .ebx]) :
+    WP isa (.block (js.flatMap fun j => VG.Impl.Mont.X86.Comb.maskedWord (table j) (mask j))) s fun t =>
+      t.mem = s.mem ∧
+      t.gpr .ebx = js.foldl (fun acc j => acc ||| (value j &&& masks j)) (s.gpr .ebx) ∧
+      Keeps [.eax, .ebx] s t := by
+  induction js generalizing s with
+  | nil => exact WP.block_nil ⟨rfl, rfl, Keeps.refl _ _⟩
+  | cons j js ih =>
+    simp only [List.flatMap_cons]
+    refine WP.block_append (WP.mono (maskedWord_ok (ht j (by simp)) (hm j (by simp))
+      (by have := mb j (by simp); simp only [List.mem_cons, List.not_mem_nil, or_false,
+        not_or] at this; exact this.1)) fun u ⟨M, V, K⟩ => ?_)
+    refine WP.mono (ih (s := u)
+      (fun k hk => (readSrc_mask_keeps M K (tb k (by simp [hk]))).trans (ht k (by simp [hk])))
+      (fun k hk => (readSrc_mask_keeps M K (mb k (by simp [hk]))).trans (hm k (by simp [hk])))
+      (fun k hk => tb k (by simp [hk])) (fun k hk => mb k (by simp [hk]))) fun t ⟨M', V', K'⟩ => ?_
+    exact ⟨M'.trans M, by simpa only [List.foldl_cons, V] using V', K.trans K'⟩
+
+/-- A complete 32-entry instruction scan returns the indexed word. The index
+is used only in the mask values, never in an address operand. -/
+theorem maskedLookup_ok {s : State} (table mask : Nat → MemOp)
+    (value : Nat → BitVec 32) {index : Nat} (hi : index < 32)
+    (ht : ∀ j < 32, readSrc s (.mem (table j)) = some (value j))
+    (hm : ∀ j < 32, readSrc s (.mem (mask j)) =
+      some (if index = j then BitVec.allOnes 32 else 0#32))
+    (tb : ∀ j < 32, (table j).base ∉ [.eax, .ebx])
+    (mb : ∀ j < 32, (mask j).base ∉ [.eax, .ebx]) :
+    WP isa (.block (.mov .ebx (.imm 0) :: (List.range 32).flatMap fun j =>
+      VG.Impl.Mont.X86.Comb.maskedWord (table j) (mask j))) s fun t =>
+      t.mem = s.mem ∧ t.gpr .ebx = value index ∧ Keeps [.eax, .ebx] s t := by
+  refine wp_movS rfl fun u U _ => ?_
+  have K : Keeps [.eax, .ebx] s u := U.keeps.mono (by decide)
+  refine WP.mono (maskedWords_ok (List.range 32) table mask value
+    (fun j => if index = j then BitVec.allOnes 32 else 0#32)
+    (fun j hj => (readSrc_mask_keeps U.mem K (tb j (List.mem_range.mp hj))).trans
+      (ht j (List.mem_range.mp hj)))
+    (fun j hj => (readSrc_mask_keeps U.mem K (mb j (List.mem_range.mp hj))).trans
+      (hm j (List.mem_range.mp hj)))
+    (fun j hj => tb j (List.mem_range.mp hj)) (fun j hj => mb j (List.mem_range.mp hj)))
+    fun t ⟨M, V, K'⟩ => ?_
+  refine ⟨M.trans U.mem, ?_, K.trans K'⟩
+  rw [U.gpr] at V
+  change t.gpr .ebx = (List.range 32).foldl _ 0#32 at V
+  simpa only [masked_words_prefix, hi, ↓reduceIte] using V
+
+end VG.Proof.Mont.X86.Dynamic
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Mont/X86/CombMasks.lean`, which only this module imported.
+section
+
+/-! The comb's equality masks occupy a fixed, otherwise unused scratch range. -/
+
+section
+namespace VG.Proof.Mont.X86.Dynamic
+open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Proof.Mont VG.Proof.Mont.X86
+
+/-- Prepare all equality masks, preserving the table, window index and every
+byte outside the mask range. -/
+theorem combMasks_ok {s : State} {base : Addr} {size mask : Nat}
+    (hs : Scr s base size) (hmask : 8 ≤ mask) (hw : w32 s.mem base 4 < 32) :
+    ∀ k, k ≤ 32 → mask + 4*k ≤ size →
+    WP isa (.block ((List.range k).flatMap fun j =>
+      VG.Impl.Mont.X86.Dynamic.windowMask j ++ ([.store (sc (mask+4*j)) .ecx] : List Instr))) s fun t =>
+      Outside base mask (4*k) s.mem t.mem ∧
+      (∀ j < k, t.mem.readW (off base (mask+4*j)) 32 =
+        if w32 s.mem base 4 = j then BitVec.allOnes 32 else 0) ∧
+      Keeps [.eax, .ecx] s t
+  | 0, _, _ => WP.block_nil ⟨Outside.refl _ _ _ _, by omega, Keeps.refl _ _⟩
+  | k+1, hk, hz => by
+    simp only [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
+      List.append_nil]
+    refine WP.block_append (WP.mono (combMasks_ok hs hmask hw k (by omega) (by omega))
+      fun u ⟨O, V, K⟩ => ?_)
+    have hu := hs.of_keeps K (by decide)
+    have win : w32 u.mem base 4 = w32 s.mem base 4 := O.w32 (by omega) (by omega)
+    refine WP.block_append (WP.mono (windowMask_ok hu (by omega) (by rw [win]; exact hw) (by omega))
+      fun v ⟨M, C, K'⟩ => ?_)
+    have hv := hu.of_keeps K' (by decide)
+    refine wp_storeS (hv.ea (d := mask+4*k) (by omega))
+      (hv.write (d := mask+4*k) (n := 4) (by omega)) fun t W => WP.block_nil ?_
+    have nw := hs.nowrap
+    have F : Outside base (mask+4*k) 4 u.mem t.mem := by
+      rw [W.mem, M]; exact writeW32_outside _ _ _ (by omega)
+    refine ⟨(O.mono (Nat.le_refl _) (by omega)).trans (F.mono (by omega) (by omega)), ?_,
+      (K.trans K').trans (W.keeps _)⟩
+    intro j hj
+    by_cases eq : j = k
+    · subst j
+      rw [W.mem, Mem.readW_writeW_self32, C, win]
+    · have jl : j < k := by omega
+      have same := F.w32 (d := mask+4*j) (by omega) (by omega)
+      apply BitVec.eq_of_toNat_eq
+      change w32 t.mem base (mask+4*j) = _
+      rw [same]
+      exact congrArg BitVec.toNat (V j jl)
+
+end VG.Proof.Mont.X86.Dynamic
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.Mont.X86.Dynamic

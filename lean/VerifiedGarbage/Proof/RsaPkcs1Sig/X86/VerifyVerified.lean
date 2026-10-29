@@ -1,11 +1,447 @@
 module
+
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicCall
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyContract
 import VerifiedGarbage.Proof.Framework.Contract
-
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyFnInput
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyBody
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyRegions
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignRestore
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyNoSp
+import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Dsa.X86.RandomSignCorrect
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStages
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyBlocksTiming
+import VerifiedGarbage.Proof.Rsa.X86.PrivSetupTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStatus
+import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseTiming
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Dsa.X86.Layout
+import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyCallPublic
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyLength
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyObservations
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyContractInput
 /-! # Complete i686 certificate for precomputed PKCS #1 verification -/
+
+-- Formerly `VerifiedGarbage/Proof/RsaPkcs1Sig/X86/VerifyReturn.lean`, which only this module imported.
+section
+
+/-! # The wrapper preserves its caller's return address -/
+
+section
+namespace VG.Proof.RsaPkcs1Sig.X86.Ver
+open VG VG.X86 VG.Proof.Rsa.X86.PrivChecked VG.Impl.RsaPkcs1Sig.X86.Verify VG.Proof.Bignum.X86
+
+theorem popped_four_value (s : State) :
+    (popped .ebx 4 s).gpr .ebx = s.mem.readW ((s.gpr .esp + 12).setWidth 64) 32 := by
+  change s.mem.readW ((((s.gpr .esp + 4) + 4) + 4).setWidth 64) 32 = _
+  simp only [BitVec.add_assoc]
+  rfl
+
+theorem FnInput.returnWord {g : Geometry} {bs : Fin 5 → List Byte} {s t : State}
+    (h : FnInput g bs s) (frame : Frame (bodyWrites g) (entered s).mem t.mem) :
+    t.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by
+  have low : 16 ≤ (s.gpr .esp).toNat := by have := h.stackFit; unfold verifyStack at this; omega
+  have savedFrame := pushed_frame (rs := savedRegisters) (s := s) (by decide) low
+  have contains : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Contains ((s.gpr .esp).setWidth 64) (32 / 8) :=
+    Region.contains_self _ _
+  have savedSeparate : ∀ r ∈ [below (s.gpr .esp) 16],
+      (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint r := by
+    intro r hr
+    obtain rfl := List.mem_singleton.mp hr
+    unfold below
+    rw [Taint.sub_setWidth low]
+    have eq : (s.gpr .esp).setWidth 64 =
+        (s.gpr .esp).setWidth 64 - 16 + BitVec.ofNat 64 16 := (BitVec.sub_add_cancel _ _).symm
+    have sep := Offset.disjoint_base ((s.gpr .esp).setWidth 64 - 16)
+      (by decide : 16 ≤ 16) (by decide : 16 + 4 ≤ 2 ^ 64)
+    rw [← eq] at sep
+    exact sep
+  exact (frame.readW contains h.returnSeparate (by decide)).trans
+    (savedFrame.readW contains savedSeparate (by decide))
+end VG.Proof.RsaPkcs1Sig.X86.Ver
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaPkcs1Sig/X86/VerifyEntryCache.lean`, which only this module imported.
+section
+
+/-! # Saving caller registers leaves the precomputed public key unchanged -/
+
+section
+namespace VG.Proof.RsaPkcs1Sig.X86.Ver
+open VG VG.X86 VG.Proof.Bignum.X86
+
+theorem FnInput.enteredCache {g : Geometry} {bs : Fin 5 → List Byte} {s : State}
+    (h : FnInput g bs s) : Precomputed g bs (entered s) ↔ Precomputed g bs s := by
+  have low : 16 ≤ (s.gpr .esp).toNat := by have := h.stackFit; unfold verifyStack at this; omega
+  have F := pushed_frame (rs := savedRegisters) (s := s) (by decide) low
+  have saved : ((pushed savedRegisters s).gpr .esp).setWidth 64 = g.savedRegion.base := by
+    rw [h.savedSp]
+    exact h.context.valid.offsetAddr (by decide)
+  unfold below at F
+  rw [← pushed_esp] at F
+  change Frame [⟨((pushed savedRegisters s).gpr .esp).setWidth 64, 16⟩] s.mem (entered s).mem at F
+  rw [saved] at F
+  have words : Spec.Rsa.wordsAt (entered s).mem (byteAddr (g.sources 4)) g.preLength =
+      Spec.Rsa.wordsAt s.mem (byteAddr (g.sources 4)) g.preLength :=
+    VG.Proof.Rsa.wordsAt_frame F (by
+      have fit := h.context.valid.sourceFits 4
+      change (g.sources 4).toNat + 8 * g.preLength ≤ 2 ^ 32 at fit
+      omega) (by
+        intro r hr; obtain rfl := List.mem_singleton.mp hr
+        exact ((h.context.valid.stackSources 4).sub_left h.context.valid.savedSub).symm)
+  unfold Precomputed
+  rw [words]
+
+end VG.Proof.RsaPkcs1Sig.X86.Ver
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaPkcs1Sig/X86/VerifyFn.lean`, which only this module imported.
+section
+
+/-! # Callable PKCS #1 signing restores the i686 calling convention -/
+
+section
+namespace VG.Proof.RsaPkcs1Sig.X86.Ver
+open VG VG.X86 VG.Impl.RsaPkcs1Sig.X86.Verify VG.Proof.Bignum.X86 VG.Proof.Mont.X86
+open VG.Proof.Dsa.X86 (allocated freed freed_esp freed_gpr)
+
+theorem verifyFn_ok (v : PublicImpl) (s : State) {g : Geometry} {bs : Fin 5 → List Byte}
+    (h : FnInput g bs s) :
+    WP isa (code v.name v.code) s fun t => abiPreserved s t ∧
+      (Precomputed g bs s → t.gpr .eax = verifiedResult g bs) := by
+  have stackFit : 16 ≤ (s.gpr .esp).toNat := by
+    have := h.stackFit; unfold verifyStack at this; omega
+  have allocation : VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes ≤ ((pushed savedRegisters s).gpr .esp).toNat := by
+    rw [pushed_esp, show 4 * savedRegisters.length = 16 from rfl, sub_toNat stackFit]
+    have := h.stackFit
+    simp only [verifyStack, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes] at *
+    omega
+  unfold code
+  refine WP.frame (rs := savedRegisters) (by decide) (by decide) (by decide) stackFit
+    (inner_noSp v) ?_
+  refine WP.seq ?_
+  refine VG.Proof.Dsa.X86.WP.alloc (by decide) allocation (body_noSp v) ?_
+  refine WP.mono (body_ok v (s := entered s) h.context) ?_
+  rintro u ⟨_, frame, rest, result⟩
+  have spU : (freed VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes u).gpr .esp =
+      (pushed savedRegisters s).gpr .esp := by
+    rw [freed_esp, rest.1 .esp (by decide)]
+    exact BitVec.sub_add_cancel _ _
+  have wrU : (freed VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes u).wr = (pushed savedRegisters s).wr := by
+    change u.wr.tail = _
+    rw [rest.2.2]; rfl
+  have fit : ((pushed savedRegisters s).gpr .esp).toNat + 16 ≤ 2 ^ 32 := by
+    rw [pushed_esp, show 4 * savedRegisters.length = 16 from rfl, sub_toNat stackFit]
+    have := (s.gpr .esp).isLt
+    omega
+  have read (d : Nat) (hd : d + 4 ≤ 16) :
+      InRegions ((freed VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes u).rd ++
+        (freed VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes u).wr)
+        (addr ((freed VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes u).gpr .esp) d) 4 := by
+    rw [spU, wrU, pushed_wr]
+    refine ⟨below (s.gpr .esp) 16, List.mem_append_right _ (List.mem_cons_self), ?_⟩
+    change (⟨((s.gpr .esp - 16).setWidth 64), 16⟩ : Region).Contains
+      (((pushed savedRegisters s).gpr .esp + BitVec.ofNat 32 d).setWidth 64) 4
+    rw [show (s.gpr .esp - 16) = (pushed savedRegisters s).gpr .esp from (pushed_esp savedRegisters s).symm]
+    change (⟨byteAddr ((pushed savedRegisters s).gpr .esp), 16⟩ : Region).Contains
+      (byteAddr ((pushed savedRegisters s).gpr .esp + BitVec.ofNat 32 d)) 4
+    rw [byteAddr_add (by omega : ((pushed savedRegisters s).gpr .esp).toNat + d < 2 ^ 32)]
+    exact Offset.contains_base _ hd (by omega)
+  refine WP.mono (VG.Proof.RsaPkcs1Sig.X86.Sgn.restore_ok (freed VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes u)
+    (read 4 (by decide)) (read 8 (by decide)) (read 0 (by decide))) ?_
+  rintro t ⟨edi, ebp, esi, memT, restT⟩
+  have spT : t.gpr .esp = (pushed savedRegisters s).gpr .esp :=
+    (restT.1 .esp (by decide)).trans spU
+  have words (i : Nat) (hi : i < 4) := h.savedWord frame i hi
+  have mem : t.mem = u.mem := memT
+  have savedEdi : t.gpr .edi = s.gpr .edi := by
+    rw [edi, spU]; exact words 0 (by decide)
+  have savedEbp : t.gpr .ebp = s.gpr .ebp := by
+    rw [ebp, spU]; exact words 2 (by decide)
+  have savedEsi : t.gpr .esi = s.gpr .esi := by
+    rw [esi, spU]; exact words 1 (by decide)
+  refine ⟨⟨?_, ?_⟩, ?_⟩
+  · intro r hr
+    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · rw [show savedRegisters.length = 4 from rfl, popped_four_value, spT, mem]
+      exact words 3 (by decide)
+    · rw [popped_gpr _ _ _ (by decide) (by decide)]; exact savedEsi
+    · rw [popped_gpr _ _ _ (by decide) (by decide)]; exact savedEdi
+    · rw [popped_gpr _ _ _ (by decide) (by decide)]; exact savedEbp
+    · rw [popped_esp, spT, pushed_esp]; exact BitVec.sub_add_cancel _ _
+  · rw [popped_mem, mem]; exact h.returnWord frame
+  · rw [popped_gpr _ _ _ (by decide) (by decide),
+      restT.1 .eax (by decide), freed_gpr _ _ (by decide)]
+    intro pre
+    exact result (h.enteredCache.mpr pre)
+end VG.Proof.RsaPkcs1Sig.X86.Ver
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaPkcs1Sig/X86/VerifyTailTiming.lean`, which only this module imported.
+section
+
+/-! # The padding check never branches on the precomputed RSA call's status -/
+
+section
+namespace VG.Proof.RsaPkcs1Sig.X86.Ver
+open VG VG.X86 VG.X86.Wp VG.Proof.Bignum.X86 VG.Proof.Mont.X86
+open VG.Impl.RsaPkcs1Sig.X86.Verify VG.Proof.Dsa.X86
+open VG.Proof.Rsa.X86.PrivChecked (sp_agree pair_seq_ct)
+
+theorem compareReady_agree {g : Geometry} {bs : Fin 5 → List Byte} {s t : State}
+    (hs : CompareReady g bs s) (ht : CompareReady g bs t) : VG.X86.Taint.Agree compareTaint s t := by
+  apply agree_regs
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact hs.dst.trans ht.dst.symm
+  · exact hs.src.trans ht.src.symm
+  · exact hs.count.trans ht.count.symm
+
+theorem compareThenResult_relCT {g : Geometry} {bs : Fin 5 → List Byte} :
+    RelCT isa (fun s t => Context g bs s ∧ Context g bs t)
+      (.seq (.block cmpArgs) (.seq VG.Impl.RsaPkcs1Sig.X86.compare (.block result))) (fun _ _ => True) := by
+  apply pair_seq_ct (cmpArgs_relCT.mono
+    (fun _ _ h => sp_agree (h.1.sp.trans h.2.sp.symm)) (fun _ _ _ => trivial))
+    (fun _ h => cmpArgs_ready h) (fun _ h => cmpArgs_ready h)
+  apply pair_seq_ct (compare_relCT.mono (fun _ _ h => compareReady_agree h.1 h.2) (fun _ _ _ => trivial))
+    (fun _ h => compare_done h) (fun _ h => compare_done h)
+  exact result_relCT.mono (fun _ _ h => sp_agree (h.1.sp.trans h.2.sp.symm)) (fun _ _ _ => trivial)
+
+structure Compared (g : Geometry) (bs : Fin 5 → List Byte) (s : State) : Prop extends EncodeDone g bs s where
+  flag : s.zf = some (s.gpr .eax == 0)
+
+theorem compare_ready {g : Geometry} {bs : Fin 5 → List Byte} {s : State} (h : EncodeDone g bs s) :
+    WP isa (.block test0) s (Compared g bs) := by
+  unfold test0
+  refine wp_cmpS rfl fun t F Z => WP.block_nil ?_
+  refine ⟨⟨h.context.after (by rw [F.mem]; exact Frame.refl _ _) (F.keeps []) (congrFun F.gpr .esp), ?_⟩, ?_⟩
+  · simpa only [Encoded, F.gpr, F.mem] using h.encoded
+  · rw [Z, F.gpr]
+    exact congrArg some (by change (s.gpr .eax - 0#32 == 0#32) = _; rw [BitVec.sub_zero]; rfl)
+
+theorem tail_relCT {g : Geometry} {bs : Fin 5 → List Byte} :
+    RelCT isa (fun s t => EncodeDone g bs s ∧ EncodeDone g bs t) tail (fun _ _ => True) := by
+  unfold tail
+  apply pair_seq_ct (cmp_relCT.mono (fun s t h => agree_regs (by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact h.1.context.sp.trans h.2.context.sp.symm
+    · exact encoded_status h.1 h.2)) (fun _ _ _ => trivial))
+    (fun _ h => compare_ready h) (fun _ h => compare_ready h)
+  apply RelCT.ite
+  · intro s t h
+    change s.zf = t.zf
+    rw [h.1.flag, h.2.flag, encoded_status h.1.toEncodeDone h.2.toEncodeDone]
+  · exact ret0_relCT.mono
+      (fun _ _ h => sp_agree (h.1.1.context.sp.trans h.1.2.context.sp.symm)) (fun _ _ _ => trivial)
+  · exact compareThenResult_relCT.mono (fun _ _ h => ⟨h.1.1.context, h.1.2.context⟩) (fun _ _ _ => trivial)
+
+theorem encodeReady_agree {g : Geometry} {bs : Fin 5 → List Byte} {s t : State}
+    (hs : EncodeReady g bs s) (ht : EncodeReady g bs t) : VG.X86.Taint.Agree encodeTaint s t := by
+  apply agree_regs
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · exact hs.dst.trans ht.dst.symm
+  · exact hs.len.trans ht.len.symm
+  · exact hs.hash.trans ht.hash.symm
+  · exact hs.src.trans ht.src.symm
+  · exact hs.count.trans ht.count.symm
+
+theorem afterPub_relCT {g : Geometry} {bs : Fin 5 → List Byte} :
+    RelCT isa (fun s t => Context g bs s ∧ Context g bs t) afterPub (fun _ _ => True) := by
+  unfold afterPub
+  apply pair_seq_ct (save_relCT.mono
+    (fun _ _ h => sp_agree (h.1.sp.trans h.2.sp.symm)) (fun _ _ _ => trivial))
+    (fun _ h => WP.mono (save_ok h) (fun _ x => x.1))
+    (fun _ h => WP.mono (save_ok h) (fun _ x => x.1))
+  apply pair_seq_ct (encArgs_relCT.mono
+    (fun _ _ h => sp_agree (h.1.sp.trans h.2.sp.symm)) (fun _ _ _ => trivial))
+    (fun _ h => encArgs_ready h) (fun _ h => encArgs_ready h)
+  exact pair_seq_ct (encode_relCT.mono (fun _ _ h => encodeReady_agree h.1 h.2) (fun _ _ _ => trivial))
+    (fun _ h => encode_done h) (fun _ h => encode_done h) tail_relCT
+
+end VG.Proof.RsaPkcs1Sig.X86.Ver
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaPkcs1Sig/X86/VerifyBodyTiming.lean`, which only this module imported.
+section
+
+/-! # The verifier body relates even calls with inconsistent precomputed moduli -/
+
+section
+namespace VG.Proof.RsaPkcs1Sig.X86.Ver
+open VG VG.X86 VG.Impl.RsaPkcs1Sig.X86.Verify
+open VG.Proof.Rsa.X86.PrivChecked (sp_agree pair_seq_ct)
+
+theorem publicCall_relCT (v : PublicImpl) {g : Geometry} {bs : Fin 5 → List Byte}
+    (len : g.signatureLength = g.length) :
+    RelCT isa (fun s t => CallReady g bs s ∧ CallReady g bs t)
+      (.call v.name v.code) (fun _ _ => True) := by
+  apply RelCT.call v.verified.1 v.verified.2.1 (publicRd g) (publicWr g)
+  intro s t h
+  exact ⟨publicCall_pre h.1.context h.1.args len, publicCall_pre h.2.context h.2.args len,
+    publicCall_pub h.1.context h.2.context h.1.args h.2.args,
+    (publicCovers h.1.context).1, (publicCovers h.1.context).2,
+    (publicCovers h.2.context).1, (publicCovers h.2.context).2, h.1.context.sp.trans h.2.context.sp.symm⟩
+
+theorem callThenCheck_relCT (v : PublicImpl) {g : Geometry} {bs : Fin 5 → List Byte}
+    (len : g.signatureLength = g.length) :
+    RelCT isa (fun s t => Context g bs s ∧ Context g bs t)
+      (.seq (.block pubArgs) (.seq (.call v.name v.code) afterPub)) (fun _ _ => True) := by
+  apply pair_seq_ct (pubArgs_relCT.mono
+    (fun _ _ h => sp_agree (h.1.sp.trans h.2.sp.symm)) (fun _ _ _ => trivial))
+    (fun _ h => callArgs_ready h) (fun _ h => callArgs_ready h)
+  exact pair_seq_ct (publicCall_relCT v len) (fun _ h => publicCall_ready v h len)
+    (fun _ h => publicCall_ready v h len) afterPub_relCT
+
+structure LengthDone (g : Geometry) (bs : Fin 5 → List Byte) (s : State) : Prop where
+  context : Context g bs s
+  flag : s.zf = some (decide (g.signatureLength = g.length))
+
+theorem length_done {g : Geometry} {bs : Fin 5 → List Byte} {s : State} (h : Context g bs s) :
+    WP isa (.block lenCheck) s (LengthDone g bs) := by
+  refine WP.mono (lengthCheck_ok h) ?_
+  rintro t ⟨ht, _, _, flag⟩
+  exact ⟨ht, flag⟩
+
+theorem body_relCT (v : PublicImpl) {g : Geometry} {bs : Fin 5 → List Byte} :
+    RelCT isa (fun s t => Context g bs s ∧ Context g bs t) (body v.name v.code) (fun _ _ => True) := by
+  unfold body
+  apply pair_seq_ct (length_relCT.mono
+    (fun _ _ h => sp_agree (h.1.sp.trans h.2.sp.symm)) (fun _ _ _ => trivial))
+    (fun _ h => length_done h) (fun _ h => length_done h)
+  apply RelCT.ite
+  · intro s t h
+    change s.zf.map (! ·) = t.zf.map (! ·)
+    rw [h.1.flag, h.2.flag]
+  · exact ret0_relCT.mono (fun _ _ h => sp_agree (h.1.1.context.sp.trans h.1.2.context.sp.symm)) (fun _ _ _ => trivial)
+  · intro s t tr ur sf tf h E F
+    have len : g.signatureLength = g.length := by
+      have flag := h.2
+      simpa only [eval, h.1.1.flag, Option.map_some, Option.some.injEq,
+        Bool.not_eq_false', decide_eq_true_eq] using flag
+    exact callThenCheck_relCT v len s t tr ur sf tf ⟨h.1.1.context, h.1.2.context⟩ E F
+
+end VG.Proof.RsaPkcs1Sig.X86.Ver
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaPkcs1Sig/X86/VerifyFnTiming.lean`, which only this module imported.
+section
+
+/-! # Stack allocation and saved-register restoration reveal only public addresses -/
+
+section
+namespace VG.Proof.RsaPkcs1Sig.X86.Ver
+open VG VG.X86 VG.Impl.RsaPkcs1Sig.X86.Verify
+open VG.Proof.Rsa.X86.PrivChecked (sp_agree)
+open VG.Proof.Dsa.X86 (allocated)
+
+theorem allocation_state {n : Nat} {s a : State} (h : isa.push (.alloc n) s = some a) :
+    a = allocated n s := by
+  simp only [isa, push] at h
+  split at h <;> cases h
+  rfl
+
+theorem allocation_relCT (v : PublicImpl) {g : Geometry} {bs : Fin 5 → List Byte}
+    :
+    RelCT isa (fun a b => ∃ s t, FnInput g bs s ∧ FnInput g bs t ∧
+      a = pushed savedRegisters s ∧ b = pushed savedRegisters t)
+      (.frame (.alloc VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes)
+        (body v.name v.code) (.free VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes))
+      (fun a b => a.gpr .esp = b.gpr .esp) := by
+  intro a b ta tb a' b' hp ea eb'
+  obtain ⟨s, t, hs, ht, rfl, rfl⟩ := hp
+  have sp : (pushed savedRegisters s).gpr .esp = (pushed savedRegisters t).gpr .esp := by
+    rw [hs.savedSp, ht.savedSp]
+  have post : a'.gpr .esp = b'.gpr .esp := by
+    rw [Exec.gpr (allocation_noSp v) ea, Exec.gpr (allocation_noSp v) eb', sp]
+  cases ea with
+  | frame pa ba _ =>
+    cases eb' with
+    | frame pb bb _ =>
+      have ha := allocation_state pa
+      have hb := allocation_state pb
+      subst ha hb
+      have eq := (body_relCT v) _ _ _ _ _ _ ⟨hs.context, ht.context⟩ ba bb
+      refine ⟨?_, post⟩
+      rw [eq.1]
+      rfl
+
+theorem verifyFn_relCT (v : PublicImpl) {g : Geometry} {bs : Fin 5 → List Byte}
+    :
+    RelCT isa (fun s t => FnInput g bs s ∧ FnInput g bs t)
+      (code v.name v.code) (fun _ _ => True) := by
+  unfold code
+  refine RelCT.frame (R := fun _ _ => True) ?_ ?_
+  · intro s t h
+    have eq := h.1.savedSp.trans h.2.savedSp.symm
+    rw [pushed_esp, pushed_esp] at eq
+    have same := congrArg (fun x => x + BitVec.ofNat 32 (4 * savedRegisters.length)) eq
+    simpa only [BitVec.sub_add_cancel] using same
+  · refine VG.RelCT.seq ((allocation_relCT v (g := g) (bs := bs)).mono ?_ (fun _ _ h => h))
+      (restore_relCT.mono (fun _ _ h => sp_agree h) (fun _ _ _ => trivial))
+    rintro a b ⟨s, t, h, rfl, rfl⟩
+    exact ⟨s, t, h.1, h.2, rfl, rfl⟩
+end VG.Proof.RsaPkcs1Sig.X86.Ver
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaPkcs1Sig/X86/VerifyContract.lean`, which only this module imported.
+section
+
+/-! # The complete precomputed verifier satisfies its shared correctness and timing contract -/
+
+section
+namespace VG.Proof.RsaPkcs1Sig.X86.Ver
+open VG VG.X86
+
+theorem verify_contract_correct (v : PublicImpl) (s : State)
+    (h : (Spec.RsaPkcs1Sig.verifyPrecomputedContract abi verifyStack).pre s) :
+    ∃ tr t, Exec isa (VG.Impl.RsaPkcs1Sig.X86.Verify.code v.name v.code) s tr t ∧ abiPreserved s t ∧
+      (Spec.RsaPkcs1Sig.verifyPrecomputedContract abi verifyStack).post s t := by
+  obtain ⟨tr, t, run, preserved, post⟩ := verifyFn_ok v s (verify_contract_pre s h)
+  refine ⟨tr, t, run, preserved, ?_⟩
+  sig_post [Spec.RsaPkcs1Sig.verifyPrecomputedContract, Spec.RsaPkcs1Sig.verifyPrecomputedSig,
+    abi, argSlots, argVal, argBytes]
+  rw [BitVec.setWidth_append_eq_right]
+  exact post
+
+theorem verify_contract_ct (v : PublicImpl) : ConstantTime isa
+    (Spec.RsaPkcs1Sig.verifyPrecomputedContract abi verifyStack).pre
+    (Spec.RsaPkcs1Sig.verifyPrecomputedContract abi verifyStack).pub
+    (VG.Impl.RsaPkcs1Sig.X86.Verify.code v.name v.code) := by
+  intro s t tr1 tr2 u w hs ht hp e1 e2
+  have is := verify_contract_pre s hs
+  have it := verify_contract_pre t ht
+  rw [← publicGeometry hp, ← publicBytes hp] at it
+  exact (verifyFn_relCT v s t tr1 tr2 u w ⟨is, it⟩ e1 e2).1
+
+end VG.Proof.RsaPkcs1Sig.X86.Ver
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.RsaPkcs1Sig.X86.Ver

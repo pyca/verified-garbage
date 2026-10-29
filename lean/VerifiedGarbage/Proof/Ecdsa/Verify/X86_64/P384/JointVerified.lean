@@ -1,23 +1,30 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointCorrect
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointCT
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.Contract
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLit
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointErased
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.Weierstrass.CombW
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-import Batteries.Data.List.Lemmas
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointCT
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLit
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointErased
+import Batteries.Data.List.Lemmas
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointContract
-
+import VerifiedGarbage.Impl.P384.X86_64.Joint
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointFrame
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointChecks
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.P384.X86_64.JointLayout
 /-!
 # ECDSA verification over P-384 on x86-64: `Verified`
 
@@ -30,6 +37,80 @@ from (`abiPreserved`). The timing depends only on what the shared contract
 makes public: the pointers, the key, the digest and the signature
 (`jointVerify_ct`).
 -/
+
+-- Formerly `VerifiedGarbage/Proof/P384/X86_64/JointFrame.lean`, which only this module imported.
+section
+
+/-! The joint multiplication's writes are apart from the final check's fixed inputs. -/
+
+section
+
+namespace VG.Proof.P384.X86_64
+open VG VG.Impl.P384.X86_64 VG.Proof.Ecdsa.Verify.X86_64
+
+theorem joint_frame_layout : JointFrameLayout p384v publicJoint := by
+  constructor
+  · unfold VG.Proof.Ecdsa.X86_64.FixedOk
+    decide +kernel
+  · decide +kernel
+  · decide +kernel
+
+theorem joint_adx_frame_layout : JointFrameLayout p384vx publicJointAdx := by
+  constructor
+  · unfold VG.Proof.Ecdsa.X86_64.FixedOk
+    decide +kernel
+  · decide +kernel
+  · decide +kernel
+
+end VG.Proof.P384.X86_64
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ecdsa/Verify/X86_64/P384/JointCorrect.lean`, which only this module imported.
+section
+
+/-! Baseline and ADX joint verification over P-384 satisfy the functional specification. -/
+
+section
+
+namespace VG.Proof.Ecdsa.Verify.X86_64.P384
+open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.P384.X86_64 VG.Impl.Weierstrass.X86_64
+open VG.Proof.Ecdsa.X86_64 VG.Proof.P384.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86_64
+
+section
+variable (hL : Law Spec.P384.curve)
+    (hT : CombOkW Spec.P384.curve 9 1 Impl.P384.p384G9 Impl.P384.p384G9Start)
+    (hI : InvSounds) (hO : PrimeOrder Spec.P384.curve)
+
+include hL hT hI hO
+
+theorem jointVerify_p384_ok {s : State} (hp : VPre p384v s) :
+    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p384v publicJoint (jointDouble publicJoint.K)).inline s
+      fun t => (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VPost p384v s t := by
+  have hc := p384v_ok hI
+  refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_
+  intro a g hM Q hQ hRep
+  exact jointPoints_ok hc hL (.ofGTab rfl hT (by decide) (by decide) rfl) rfl hc.am3 (by decide +kernel)
+    joint_add_layout joint_init_layout joint_prep_layout joint_frame_layout (joint_doubler hc hL)
+    (fun _ => ⟨hO,by decide⟩) hp hM hQ hRep
+
+theorem jointVerify_p384_adx_ok {s : State} (hp : VPre p384vx s) :
+    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p384vx publicJointAdx
+      (jointDoubleAdx publicJointAdx.K)).inline s
+      fun t => (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VPost p384vx s t := by
+  have hc := p384vx_ok hI
+  refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_
+  intro a g hM Q hQ hRep
+  exact jointPoints_ok hc hL (.ofGTab rfl hT (by decide) (by decide) rfl) rfl hc.am3 (by decide +kernel)
+    joint_adx_add_layout joint_adx_init_layout joint_adx_prep_layout joint_adx_frame_layout
+    (joint_adx_doubler hc hL) (fun _ => ⟨hO,by decide⟩) hp hM hQ hRep
+
+end
+end VG.Proof.Ecdsa.Verify.X86_64.P384
+end
+
+end
 
 @[expose] public section
 
