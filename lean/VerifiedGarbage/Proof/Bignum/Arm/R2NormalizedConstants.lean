@@ -2,15 +2,104 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.R2Normalized
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
-import VerifiedGarbage.Proof.Bignum.Arm.R2TopBit
-import VerifiedGarbage.Proof.Bignum.Arm.TopBitMemory
+
 import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Framework.Block
-
+import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Mont.Words32
 /-! The normalized initializer sets R/2 and two without reading scratch contents. -/
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/R2TopBit.lean`, which only this module imported.
+section
+
+/-! Write the public top radix bit using the existing array header. -/
+
+section
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
+open VG.Proof.X25519.Arm (Rest wp_ldr wp_dp wp_mov wp_str op2_lsl op2_imm dpVal)
+
+theorem r2TopBit_ok (s : State) {base : BitVec 32} {size w d : Nat}
+    (ws : Workspace s base size) (fit : 100 ≤ size) (hw : 0 < w)
+    (arrayFit : d + 8 * w ≤ size) (ptr : s.gpr .r0 = base)
+    (width : s.mem.readW (off (State.addr base) 48) 32 = BitVec.ofNat 32 w)
+    (array : s.mem.readW (off (State.addr base) 96) 32 = base + BitVec.ofNat 32 d) :
+    WP isa (.block r2TopBit) s fun t =>
+      t.mem = s.mem.writeW (off (State.addr base) (d + 8 * w - 4)) (0x80000000 : BitVec 32) ∧
+      Rest [.r1, .r4, .r5] s t := by
+  have nowrap := ws.nowrap
+  unfold r2TopBit
+  refine wp_ldr (a := off (State.addr base) 96) (by decide)
+    (by rw [ptr]; exact addr_add (by omega)) (ws.read (by omega)) fun s1 u1 => ?_
+  refine wp_ldr (a := off (State.addr base) 48) (by decide)
+    (by rw [u1.other .r0 (by decide), ptr]; exact addr_add (by omega))
+    (by rw [u1.rd, u1.wr]; exact ws.read (off := 48) (by omega)) fun s2 u2 => ?_
+  refine wp_dp (op2_lsl (by decide)) fun s3 u3 => ?_
+  refine wp_dp (op2_imm (by decide)) fun s4 u4 => ?_
+  refine wp_mov (op2_imm (by decide)) fun s5 u5 => ?_
+  have address : s5.gpr .r4 = base + BitVec.ofNat 32 (d + 8 * w - 4) := by
+    rw [u5.other .r4 (by decide), u4.gpr, dpVal, u3.gpr, dpVal,
+      u2.other .r4 (by decide), u1.gpr, array, u2.gpr, u1.mem, width,
+      BitVec.shiftLeft_eq_mul_twoPow]
+    change base + BitVec.ofNat 32 d + BitVec.ofNat 32 w * BitVec.ofNat 32 8 - BitVec.ofNat 32 4 = _
+    rw [← BitVec.ofNat_mul, BitVec.add_assoc, ← BitVec.ofNat_add]
+    rw [show d + w * 8 = (d + 8 * w - 4) + 4 by omega,
+      BitVec.ofNat_add, ← BitVec.add_assoc, BitVec.add_sub_cancel]
+  refine wp_str (a := off (State.addr base) (d + 8 * w - 4)) (by decide)
+    (by rw [address, BitVec.add_zero]; exact addr_add (by omega))
+    (by rw [u5.wr, u4.wr, u3.wr, u2.wr, u1.wr]; exact ws.write (by omega)) fun t u6 => WP.block_nil ?_
+  refine ⟨?_, (u1.rest (by simp)).trans ((u2.rest (by simp)).trans ((u3.rest (by simp)).trans
+    ((u4.rest (by simp)).trans ((u5.rest (by simp)).trans (u6.rest _)))))⟩
+  rw [u6.mem, u5.gpr, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
+
+end VG.Proof.Bignum.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/TopBitMemory.lean`, which only this module imported.
+section
+
+/-! Set only the top bit of an otherwise zero packed-word array. -/
+
+section
+namespace VG.Proof.Bignum.Arm
+open VG VG.Proof.Mont
+
+theorem val32_write_top_of_zero (m : Mem) (base : Addr) {d n : Nat} (hn : 0 < n)
+    (fit : d + 4 * n < 2 ^ 64) (zero : val32 m base d n = 0) (v : BitVec 32) :
+    val32 (m.writeW (off base (d + 4 * (n - 1))) v) base d n =
+      2 ^ (32 * (n - 1)) * v.toNat := by
+  have split : n = (n - 1) + 1 := by omega
+  have low : val32 m base d (n - 1) = 0 := by
+    rw [split, val32_succ] at zero
+    omega
+  have outside := writeW32_outside m base (d := d + 4 * (n - 1)) v (by omega)
+  calc
+    _ = val32 (m.writeW (off base (d + 4 * (n - 1))) v) base d ((n - 1) + 1) := congrArg _ split
+    _ = _ := by rw [val32_succ, w32_write_self,
+    outside.val32 (d := d) (k := n - 1) (by omega) (by omega), low, Nat.zero_add]
+
+theorem val32_write_top_bit (m : Mem) (base : Addr) {d w : Nat} (hw : 0 < w)
+    (fit : d + 8 * w < 2 ^ 64) (zero : val32 m base d (2 * w) = 0) :
+    val32 (m.writeW (off base (d + 8 * w - 4)) (0x80000000 : BitVec 32)) base d (2 * w) =
+      2 ^ (64 * w - 1) := by
+  have address : d + 8 * w - 4 = d + 4 * (2 * w - 1) := by omega
+  rw [address, val32_write_top_of_zero m base (by omega) (by omega) zero]
+  change 2 ^ (32 * (2 * w - 1)) * 2 ^ 31 = _
+  rw [← Nat.pow_add]
+  congr 1
+  omega
+
+end VG.Proof.Bignum.Arm
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.Bignum.Arm

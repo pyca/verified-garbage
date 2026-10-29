@@ -1,14 +1,47 @@
 module
+
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicArithmetic
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpPhaseInput
 
-import VerifiedGarbage.Proof.Bignum.Arm.ExpPhase
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Bignum.Arm.PublicAccepted
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.Arm.SquareRedCT
-
+import VerifiedGarbage.Proof.Bignum.Arm.ExpStep
+import VerifiedGarbage.Proof.Framework.Block
 /-! # The exponentiation result fits the RSA output buffer and retains acceptance -/
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/ExpPhase.lean`, which only this module imported.
+section
+
+/-! # The ARMv7 RSA arithmetic phase implements the shared modular-exponentiation specification -/
+
+section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm
+open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.X25519.Arm (Rest)
+
+theorem expPhase_ok (s : State) {base ep : BitVec 32} {len w M x : Nat} {eb : List Byte}
+    (h : ExpPhaseInput base ep len w M x eb s) :
+    WP isa expPhase s fun t => ArithmeticReady base len w t ∧
+      numAt t.mem (State.addr base) w 6 = Spec.Rsa.powMod x (Spec.Rsa.os2ip eb) M ∧
+      Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
+  rw [expPhase, WP.seq_iff]
+  refine WP.mono (expPhase_init_ready s h) ?_
+  rintro u ⟨ready, frameU, restU⟩
+  rw [WP.seq_iff]
+  refine WP.mono (expPhase_bytes_ready u ready h.positive) ?_
+  rintro v ⟨power, frameV, restV⟩
+  refine WP.mono (exp_finish_ok v power) ?_
+  rintro t ⟨final, value, _, frameT, restT⟩
+  exact ⟨final, value, frameU.trans (frameV.trans frameT), restU.trans (restV.trans restT)⟩
+
+end VG.Proof.Bignum.Arm
+end
+
+end
 
 @[expose] public section
 

@@ -5,11 +5,9 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowReduce
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPrime
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowExp
-import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowReduceCT
+
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowEnterCT
-import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPrimeCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowInputCT
-import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowExpCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowResultCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtSavedSources
 import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowInput
@@ -21,12 +19,201 @@ import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Bignum.Layout
-
+import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
+import VerifiedGarbage.Proof.Bignum.Arm.CrtPrimePowerInput
+import VerifiedGarbage.Proof.Bignum.Arm.PrepareAcceptedPrimeCT
+import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandCT
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
+import VerifiedGarbage.Proof.Bignum.Arm.ReduceOperandCT
+import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWideCT
+import VerifiedGarbage.Proof.Bignum.Arm.ReduceOperand
+import VerifiedGarbage.Proof.Bignum.Arm.SavedOperand
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayoutCT
+import VerifiedGarbage.Proof.Bignum.Arm.ExpControlsCT
+import VerifiedGarbage.Proof.Bignum.Arm.WindowPhaseCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Bignum.Arm.SquareRedCT
 /-! # A factor's narrow private power hides the factor, exponent, input and acceptance
 
 Each stage's paired precondition holds in both runs after the previous stage;
 the stages' public data are the workspaces, the widths and the saved lengths.
 -/
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/CrtNarrowReduceCT.lean`, which only this module imported.
+section
+
+/-! # Reducing the input modulo a factor hides the factor, the input and acceptance -/
+
+section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
+open VG.Spec.Rsa.Mont (arrAt numAt Operand)
+
+/-- A prepared full-width factor workspace, with its constants, for some factor. -/
+def CrtReduceReady (base : BitVec 32) (len w : Nat) (one : Bool) (s : State) : Prop :=
+  ∃ M, ArithmeticReady base len w s ∧ numAt s.mem (State.addr base) w 0 = M ∧ M % 2 = 1 ∧
+    numAt s.mem (State.addr base) w 4 = 2 ^ (128 * w) % M ∧ (one → numAt s.mem (State.addr base) w 7 = 1)
+
+theorem crt_narrowReduce_ct {base xp ep : BitVec 32} {len w k eLen slot : Nat} {xb1 xb2 eb1 eb2 : List Byte}
+    (countFits : 128 * w < 2 ^ 32) (fit : arrAt w 3 + 32 ≤ 8 * len) :
+    RelCT isa (fun s t => CrtPrimePowerInput base xp ep len w k eLen slot xb1 eb1 s ∧
+      CrtPrimePowerInput base xp ep len w k eLen slot xb2 eb2 t ∧ s.sp = t.sp) reducePrime (fun _ _ => True) := by
+  have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op1 : Operand 1 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have size : 128 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fit; omega
+  let Prepared := fun (xb eb : List Byte) (s : State) =>
+    ∃ M, CrtPreparedPower base xp ep len w k eLen slot M xb eb s
+  have prepare : RelCT isa (fun s t => CrtPrimePowerInput base xp ep len w k eLen slot xb1 eb1 s ∧
+      CrtPrimePowerInput base xp ep len w k eLen slot xb2 eb2 t ∧ s.sp = t.sp)
+      prepareAcceptedPrime (fun _ _ => True) :=
+    (prepareAcceptedPrime_ct countFits).mono
+      (fun _ _ h => ⟨h.1.accepted, h.2.1.accepted, h.2.2⟩) (fun _ _ _ => trivial)
+  have prepareWP (s : State) {xb eb : List Byte}
+      (h : CrtPrimePowerInput base xp ep len w k eLen slot xb eb s) : WP isa prepareAcceptedPrime s (Prepared xb eb) :=
+    (crt_primePower_prepare s h countFits).mono (fun _ j => ⟨_, j.1⟩)
+  -- The input.
+  have source (s : State) {xb eb : List Byte} {M : Nat} (h : CrtPreparedPower base xp ep len w k eLen slot M xb eb s) :
+      SavedOperand base xp len k 56 12 xb s :=
+    ⟨h.sources.stack.nowrap, ⟨h.sources.stack.readable.1, h.sources.stack.readable.2.1⟩, h.sources.stack.separate,
+      by decide, by decide, h.sources.stack.input, h.sources.stack.inputCount, h.sources.input, h.sources.inputSeparate⟩
+  have load : RelCT isa (fun s t => Prepared xb1 eb1 s ∧ Prepared xb2 eb2 t ∧ s.sp = t.sp)
+      (savedOperand 1 56 12) (fun _ _ => True) := by
+    intro s t tr1 tr2 u v h e1 e2
+    obtain ⟨⟨M1, h1⟩, ⟨M2, h2⟩, sp⟩ := h
+    exact (savedOperand_ct (by decide : 1 < 8)) s t tr1 tr2 u v
+      ⟨⟨h1.ready, source s h1⟩, ⟨h2.ready, source t h2⟩, sp⟩ e1 e2
+  have loadWP (s : State) {xb eb : List Byte} (h : Prepared xb eb s) :
+      WP isa (savedOperand 1 56 12) s (CrtReduceReady base len w false) := by
+    obtain ⟨M, h⟩ := h
+    refine WP.mono (savedOperand_ok s h.ready (source s h) (by decide : 1 < 8) (by decide)
+      h.sources.inputPositive h.sources.inputFits) ?_
+    rintro t ⟨ready, _, keeps, _, _⟩
+    have fits : arrAt w 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
+    exact ⟨M, ready, (keeps_array_num keeps fits op0 (by decide)).trans h.modulus, h.odd,
+      (keeps_array_num keeps fits op4 (by decide)).trans h.r2, by simp⟩
+  -- The constant one.
+  have one : RelCT isa (fun s t => CrtReduceReady base len w false s ∧ CrtReduceReady base len w false t ∧ s.sp = t.sp)
+      (smallConst 7 1) (fun _ _ => True) := by
+    intro s t tr1 tr2 u v h e1 e2
+    obtain ⟨⟨_, h1, _⟩, ⟨_, h2, _⟩, sp⟩ := h
+    exact (smallConst_ct (base := base) (len := len) (w := w) (o := 7) 1 (by decide) (by decide) (by decide))
+      s t tr1 tr2 u v ⟨h1, h2, sp⟩ e1 e2
+  have oneWP (s : State) (h : CrtReduceReady base len w false s) :
+      WP isa (smallConst 7 1) s (CrtReduceReady base len w true) := by
+    obtain ⟨M, ready, modulus, odd, r2, _⟩ := h
+    refine WP.mono (smallConst_ok s (o := 7) 1 ready (by decide) (by decide) (by decide) (by decide)) ?_
+    rintro t ⟨readyT, oneT, _, keeps, _, _⟩
+    have fits : arrAt w 8 ≤ 8 * len := ready.width ▸ ready.layout.2.2.1
+    exact ⟨M, readyT, (keeps_array_num keeps fits op0 (by decide)).trans modulus, odd,
+      (keeps_array_num keeps fits op4 (by decide)).trans r2, fun _ => oneT⟩
+  -- The reduction.
+  have reduceReady (s : State) (h : CrtReduceReady base len w true s) : ReduceOperandReady base len w s := by
+    obtain ⟨M, ready, modulus, _, r2, one⟩ := h
+    have positive := ready.modulus
+    refine ⟨ready, ?_, ?_⟩
+    · rw [r2, modulus]; rw [modulus] at positive; exact Nat.mod_lt _ (by omega)
+    · rw [one rfl]; exact positive
+  have reduce : RelCT isa (fun s t => CrtReduceReady base len w true s ∧ CrtReduceReady base len w true t ∧ s.sp = t.sp)
+      (reduceOperand 1) (fun _ _ => True) :=
+    (reduceOperand_ct op1 (by decide) (by decide) fit).mono
+      (fun s t h => ⟨reduceReady s h.1, reduceReady t h.2.1, h.2.2⟩) (fun _ _ _ => trivial)
+  have reduceWP (s : State) (h : CrtReduceReady base len w true s) :
+      WP isa (reduceOperand 1) s (ArithmeticReady base len w) := by
+    obtain ⟨M, ready, modulus, odd, r2, one⟩ := h
+    exact (reduceOperand_ok s ready op1 (by decide) (by decide) modulus odd r2 (one rfl)).mono (fun _ j => j.1)
+  have clear : RelCT isa (fun s t => ArithmeticReady base len w s ∧ ArithmeticReady base len w t ∧ s.sp = t.sp)
+      (clearOperandBuffer (64 + 8 * 6)) (fun _ _ => True) :=
+    clearArrayWide_ct (by decide) size
+  have midWP (s : State) {xb eb : List Byte} (h : Prepared xb eb s) :
+      WP isa (.seq (savedOperand 1 56 12) (.seq (smallConst 7 1) (reduceOperand 1))) s (ArithmeticReady base len w) :=
+    WP.seq_iff.mpr ((loadWP s h).mono fun _ hu => WP.seq_iff.mpr ((oneWP _ hu).mono fun _ hz => reduceWP _ hz))
+  rw [reducePrime, reduceInput]
+  exact crt_seq_ct prepare (fun s h => prepareWP s h) (fun s h => prepareWP s h)
+    (crt_seq_ct (crt_seq_ct load (fun s h => loadWP s h) (fun s h => loadWP s h) (crt_seq_ct one oneWP oneWP reduce))
+      (fun s h => midWP s h) (fun s h => midWP s h) clear)
+
+end VG.Proof.Bignum.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/CrtNarrowPrimeCT.lean`, which only this module imported.
+section
+
+/-! # Preparing the factor in the narrow workspace hides the factor and acceptance -/
+
+section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt
+
+theorem crt_narrowPrime_ct {base pp : BitVec 32} {len v k ps : Nat} {pb1 pb2 : List Byte}
+    (countFits : 128 * v < 2 ^ 32) :
+    RelCT isa (fun s t => NarrowPrimeInput base pp len v k ps pb1 s ∧ NarrowPrimeInput base pp len v k ps pb2 t ∧
+      s.sp = t.sp) (narrowPrime ps) (fun _ _ => True) := by
+  have load : RelCT isa (fun s t => NarrowPrimeInput base pp len v k ps pb1 s ∧
+      NarrowPrimeInput base pp len v k ps pb2 t ∧ s.sp = t.sp) (savedOperand 0 ps (ps + 4)) (fun _ _ => True) :=
+    (savedOperandLayout_ct (by decide : 0 < 8)).mono
+      (fun _ _ h => ⟨⟨h.1.toLayoutFrameReady, h.1.source⟩, ⟨h.2.1.toLayoutFrameReady, h.2.1.source⟩, h.2.2⟩)
+      (fun _ _ _ => trivial)
+  have wp (s : State) {pb : List Byte} (h : NarrowPrimeInput base pp len v k ps pb s) :
+      WP isa (savedOperand 0 ps (ps + 4)) s (AcceptedPrimeInput base len v) :=
+    (crt_narrowImport_ok s h).mono fun _ j => j.1
+  rw [narrowPrime]
+  exact crt_seq_ct load (fun s h => wp s h) (fun s h => wp s h) (prepareAcceptedPrime_ct countFits)
+
+end VG.Proof.Bignum.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/CrtNarrowExpCT.lean`, which only this module imported.
+section
+
+/-! # The narrow exponentiation hides the factor, the reduced input and the exponent -/
+
+section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt
+open VG.Spec.Rsa.Mont (arrAt)
+
+theorem crt_narrowExp_ct {base ep : BitVec 32} {len v M1 M2 x1 x2 eLen es : Nat} {eb1 eb2 : List Byte}
+    (fit : arrAt v 3 + 32 ≤ 8 * len) (fits : arrAt v 16 ≤ 8 * len) (kernel : WindowKernel := baselineWindowKernel) :
+    RelCT isa (fun s t => NarrowExpInput base ep len v M1 x1 eLen es eb1 s ∧
+      NarrowExpInput base ep len v M2 x2 eLen es eb2 t ∧ s.sp = t.sp) ((narrowExpWith kernel.code) es) (fun _ _ => True) := by
+  let Loaded := fun (M x : Nat) (eb : List Byte) (s : State) =>
+    NarrowExpInput base ep len v M x eLen es eb s ∧ s.gpr .r1 = ep ∧ s.gpr .r2 = BitVec.ofNat 32 eLen
+  have args : RelCT isa (fun s t => NarrowExpInput base ep len v M1 x1 eLen es eb1 s ∧
+      NarrowExpInput base ep len v M2 x2 eLen es eb2 t ∧ s.sp = t.sp) (.block (exponentArgs es)) (fun _ _ => True) :=
+    (stackLoads_ct [(.r1, es), (.r2, es + 4)]).mono (fun _ _ h => h.2.2) (fun _ _ _ => trivial)
+  have argsWP (s : State) {M x : Nat} {eb : List Byte} (h : NarrowExpInput base ep len v M x eLen es eb s) :
+      WP isa (.block (exponentArgs es)) s (Loaded M x eb) :=
+    (crt_exponentArgs_ok s h).mono fun _ j => ⟨h.of_mem j.2.2.1 j.2.2.2, j.1, j.2.1⟩
+  have controls : RelCT isa (fun s t => Loaded M1 x1 eb1 s ∧ Loaded M2 x2 eb2 t ∧ s.sp = t.sp)
+      (.block expControls) (fun _ _ => True) :=
+    expControls_ct.mono (fun _ _ h => h.1.1.ready.ptr.trans h.2.1.1.ready.ptr.symm) (fun _ _ _ => trivial)
+  let Phase := fun (M x : Nat) (eb : List Byte) (s : State) => ExpPhaseInput base ep len v M x eb s ∧ eb.length = eLen
+  have controlsWP (s : State) {M x : Nat} {eb : List Byte} (h : Loaded M x eb s) :
+      WP isa (.block expControls) s (Phase M x eb) :=
+    (crt_narrowControls_ready s h.1 h.2.1 h.2.2).mono fun _ j => ⟨j.1, h.1.exponent.length⟩
+  have phase : RelCT isa (fun s t => Phase M1 x1 eb1 s ∧ Phase M2 x2 eb2 t ∧ s.sp = t.sp)
+      kernel.code (fun _ _ => True) := by
+    intro s t tr1 tr2 u w h e1 e2
+    exact kernel.ct fit fits h.1.1.positive (h.1.2.trans h.2.1.2.symm) s t tr1 tr2 u w
+      ⟨h.1.1, h.2.1.1, h.2.2⟩ e1 e2
+  rw [narrowExpWith]
+  exact crt_seq_ct args (fun s h => argsWP s h) (fun s h => argsWP s h)
+    (crt_seq_ct controls (fun s h => controlsWP s h) (fun s h => controlsWP s h) phase)
+
+end VG.Proof.Bignum.Arm
+end
+
+end
 
 @[expose] public section
 

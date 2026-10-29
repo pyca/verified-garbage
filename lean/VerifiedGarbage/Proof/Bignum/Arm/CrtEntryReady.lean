@@ -13,9 +13,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.PublicPush
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntryMemory
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Bignum.Arm.CrtCheckedState
 import VerifiedGarbage.Proof.Bignum.Arm.CrtPrepareState
-import VerifiedGarbage.Proof.Bignum.Arm.CrtBegin
 import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptInput
 import VerifiedGarbage.Proof.Bignum.Arm.CrtLoadPBody
@@ -28,23 +26,17 @@ import VerifiedGarbage.Proof.Bignum.Arm.SaveAcceptanceCT
 import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayout
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptanceCT
-import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectStageCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceCallCT
 import VerifiedGarbage.Impl.Bignum.Arm.CrtCheckProduct
 import VerifiedGarbage.Proof.Bignum.Arm.CrtCheckProductState
 import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulusCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtCompareProductCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtValidateProduct
-import VerifiedGarbage.Proof.Bignum.Arm.CrtFactorProductCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtValidationGeometry
 import VerifiedGarbage.Proof.Bignum.Arm.CrtLoadQStage
 import VerifiedGarbage.Proof.Bignum.Arm.CrtLoadPStage
 import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptStage
-import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientSelection
-import VerifiedGarbage.Proof.Bignum.Arm.CrtFinishSelection
-import VerifiedGarbage.Proof.Bignum.Arm.CrtResultBound
 import VerifiedGarbage.Proof.Bignum.Arm.CrtBothPowers
-import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientStage
 import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptedFactors
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.Arm.CrtPowerSelection
@@ -61,7 +53,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.SavedOperand
 import VerifiedGarbage.Proof.Bignum.Arm.MontOp
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficient
-import VerifiedGarbage.Proof.Bignum.Arm.CrtImportResidueCT
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.Arm.SquareRedCT
@@ -89,7 +80,584 @@ import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
+import VerifiedGarbage.Proof.Bignum.Arm.CrtValidateStage
+import VerifiedGarbage.Proof.Bignum.Arm.CrtPowerStage
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
+import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtPrepare
+import VerifiedGarbage.Impl.Bignum.Arm.CrtWorkspaceCall
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectWorkspace
+import VerifiedGarbage.Proof.Bignum.Layout
+import VerifiedGarbage.Proof.Bignum.Arm.CrtProductState
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Bignum.Arm.CrtHeaderCopiesCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtCopyHeaderPointer
+import VerifiedGarbage.Proof.Bignum.Arm.CrtCopyChildPointer
+import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+import VerifiedGarbage.Impl.Bignum.Arm.WideProduct
+import VerifiedGarbage.Proof.Bignum.Arm.WideProductState
+import VerifiedGarbage.Proof.Bignum.Arm.WideProductBodyCT
+import VerifiedGarbage.Proof.Bignum.Arm.WideProductBody
+import VerifiedGarbage.Proof.Bignum.Arm.CrtClearWideCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtProductStart
+import VerifiedGarbage.Proof.Bignum.Arm.CrtPoweredState
+import VerifiedGarbage.Proof.Bignum.Arm.CrtImportQResidue
+import VerifiedGarbage.Proof.Bignum.Arm.CrtOutputArgs
+import VerifiedGarbage.Proof.Bignum.Arm.ExportBufferMasked
+import VerifiedGarbage.Proof.Bignum.Arm.CrtExportGeometry
+import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombineStage
+import VerifiedGarbage.Proof.Bignum.Arm.CrtQSource
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Bignum.CrtResult
+import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientMath
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedFrame
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.CrtQSourceCT
+import VerifiedGarbage.Proof.Bignum.Arm.TransferArrayCT
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
 /-! # Establish the private RSA body and saved-register invariants from native arguments -/
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/CrtCheckedState.lean`, which only this module imported.
+section
+
+/-! # Exact validation evidence entering the two private powers -/
+
+section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
+open VG.Spec.Rsa.Mont (numAt)
+
+structure CrtCheckedState (g : CrtGeometry) (bs : Fin 7 → List Byte) (s : State) : Prop where
+  selected : CrtSelected g bs g.base s
+  p : numAt s.mem (State.addr (crtP g.base g.words)) g.words 0 = Spec.Rsa.os2ip (bs 2)
+  q : numAt s.mem (State.addr (crtQ g.base g.words)) g.words 0 = Spec.Rsa.os2ip (bs 3)
+  flag : s.mem.readW (off (State.addr s.sp) 48) 32 = (if crtAccepted bs then 1 else 0)
+
+theorem CrtCheckedState.pSelection {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte}
+    (h : CrtCheckedState g bs s) : CrtPowerSelection g bs (crtP g.base g.words) 224 1 s := by
+  refine ⟨h.selected, Or.inl ⟨rfl, rfl⟩, ?_, ?_, h.p⟩
+  · rw [h.flag]; split <;> decide
+  · rw [h.flag, h.p]
+    by_cases accepted : crtAccepted bs
+    · intro _; exact (h.selected.1.accepted_factors accepted).1
+    · simp [accepted]
+
+theorem crt_firstPower_qInput (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
+    (h : CrtCheckedState g bs s) (kernel : WindowKernel := baselineWindowKernel) :
+    WP isa ((CrtFn.powerWith kernel.code) 224 64 80) s (CrtPowerSelection g bs (crtQ g.base g.words) 228 2) := by
+  have input := h.pSelection
+  refine WP.mono ((crt_powerStage_ok (kernel := kernel)) s h.selected.1 h.selected.2 input.kind 1 3 (Or.inl ⟨rfl, rfl⟩)
+    input.bit input.valid input.prime) ?_
+  rintro t ⟨sharedT, readyT, _, flag, frame, _⟩
+  have eq := h.selected.1.workspace_eq_after_power h.selected.1.buffers.context.q (by simp [crtRegions])
+    h.selected.1.buffers.context.sepPQ.symm h.selected.1.buffers.context.sepQN frame
+  have qValue := (eq.number h.selected.1.buffers.context.arraysFit (by decide : 0 < 8)).trans h.q
+  refine ⟨⟨sharedT, readyT⟩, Or.inr ⟨rfl, rfl⟩, ?_, ?_, qValue⟩
+  · rw [flag]; exact input.bit
+  · rw [flag, h.flag, qValue]
+    by_cases accepted : crtAccepted bs
+    · intro _; exact (h.selected.1.accepted_factors accepted).2
+    · simp [accepted]
+
+end VG.Proof.Bignum.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/CrtBegin.lean`, which only this module imported.
+section
+
+/-! # Enter private CRT computation with immutable arguments and three valid layouts -/
+
+section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
+open VG.Proof.X25519.Arm (Rest)
+
+theorem crt_begin_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
+    (buffers : CrtBuffers g bs s) (stack : CrtCallStack g s)
+    (ptr : s.gpr .r0 = g.base) (count : s.gpr .r6 = BitVec.ofNat 32 g.length)
+    (saved : s.mem.readW (State.addr s.sp) 32 = g.base)
+    (modulusPtr : s.mem.readW (off (State.addr s.sp) 8) 32 = g.modulus)
+    (valid : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (bs 0)) g.length = true) :
+    WP isa CrtFn.prepare s fun t => CrtShared g bs t ∧ LayoutFrameReady g.base (workspaceWords g.words) g.words t ∧
+      Frame (crtMutable g s.sp) s.mem t.mem ∧ Rest roundClobbers s t := by
+  have mainSub : (⟨State.addr g.base, 8 * workspaceWords g.words⟩ : Region).Sub ⟨State.addr g.base, g.size⟩ :=
+    crt_region_sub_workspace buffers.workspace buffers.storageFits (by simp [crtRegions])
+  have source : SavedOperand g.base g.modulus (workspaceWords g.words) g.length 8 12 (bs 0) s :=
+    ⟨stack.nowrap, ⟨stack.read (by decide), stack.read (by decide)⟩, stack.separate.sub_right mainSub, by decide, by decide,
+      modulusPtr, stack.count, buffers.source 0, (buffers.sourceSeparate 0).sub_right mainSub⟩
+  have input : CrtPrepareInput g.base g.modulus g.size g.words g.length (bs 0) s :=
+    ⟨buffers.workspace, buffers.context, buffers.storageFits, source, stack.separate, buffers.sourceSeparate 0,
+      by simpa only [off, BitVec.add_zero] using stack.read (d := 0) (by decide),
+      stack.write (by decide), saved, ptr, count, buffers.lengthValid, rfl⟩
+  refine WP.mono (crt_prepare_ok s input) ?_
+  rintro t ⟨loaded, mainSaved, modulus, frame, rest⟩
+  have frame' : Frame (crtMutable g s.sp) s.mem t.mem := frame.mono (by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> simp [crtMutable])
+  exact ⟨⟨buffers.after_mutable frame' rest, stack.after_frame frame' rest,
+    loaded.main, loaded.p.toCrtLayoutState, loaded.q.toCrtLayoutState, modulus, valid, mainSaved⟩,
+    loaded.ready, frame', rest⟩
+
+end VG.Proof.Bignum.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/CrtSelectStageCT.lean`, which only this module imported.
+section
+
+/-! # Workspace selection preserves independent secret state in paired executions -/
+
+section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm.Crt
+
+theorem crt_selectP_stage (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
+    (h : CrtSelected g bs g.base s) : WP isa (selectChild 224) s (CrtSelected g bs (crtP g.base g.words)) :=
+  (crt_selectLinked_ready s h.1 h.1.buffers.context.p h.1.p (by simp [crtRegions])
+    (by have := h.1.buffers.context.size; omega : 224 + 4 ≤ 8 * workspaceWords g.words)
+    (by decide) h.2.ptr h.1.main.p).mono (fun _ j => ⟨j.1, j.2.1⟩)
+
+theorem crt_selectQ_stage (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
+    (h : CrtSelected g bs g.base s) : WP isa (selectChild 228) s (CrtSelected g bs (crtQ g.base g.words)) :=
+  (crt_selectLinked_ready s h.1 h.1.buffers.context.q h.1.q (by simp [crtRegions])
+    (by have := h.1.buffers.context.size; omega : 228 + 4 ≤ 8 * workspaceWords g.words)
+    (by decide) h.2.ptr h.1.main.q).mono (fun _ j => ⟨j.1, j.2.1⟩)
+
+theorem crt_select_stage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (slot : Nat) :
+    RelCT isa (fun s t => CrtSelected g bs1 g.base s ∧ CrtSelected g bs2 g.base t ∧ s.sp = t.sp)
+      (selectChild slot) (fun _ _ => True) :=
+  (crt_selectChild_ct slot).mono (fun _ _ h => ⟨h.1.2.ptr.trans h.2.1.2.ptr.symm, h.2.2⟩) (fun _ _ _ => trivial)
+
+end VG.Proof.Bignum.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/CrtProductControl.lean`, which only this module imported.
+section
+
+/-! # Updating multiplication controls preserves all public CRT buffer links -/
+
+section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Proof.Mont VG.Impl.Bignum.Arm.Crt
+open VG.Proof.X25519.Arm (Rest)
+
+theorem CrtProductInput.after_control {s t : State} {base value : BitVec 32} {size o a b cp cq w d : Nat} {coefficient : Bool}
+    (h : CrtProductInput base size o a b cp cq w s coefficient) (hd : 128 ≤ d) (hd' : d + 4 ≤ 148)
+    (mem : t.mem = s.mem.writeW (off (State.addr base) d) value) (rest : Rest [.r1] s t) :
+    CrtProductInput base size o a b cp cq w t coefficient := by
+  have fit := h.parentFit
+  have nowrap := h.workspace.nowrap
+  have pHeader := h.pHeader
+  have qHeader := h.qHeader
+  have beforeP := h.pBeforeOut
+  have beforeQ := h.qBeforeOut
+  have outFit := h.outFits
+  have outside := writeW32_outside s.mem (State.addr base) (d := d) value (by omega)
+  rw [← mem] at outside
+  have frame := outside_workspace outside (size := size) (by omega)
+  refine ⟨h.toWideProductCtx.after_frame rest frame, h.parentFit, pHeader, qHeader, beforeP, beforeQ,
+    (rest.gpr .r0 (by simp)).trans h.ptr, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [outside_read32 outside (d := 224) (by omega) (by decide)]; exact h.pLink
+  · rw [outside_read32 outside (d := 228) (by omega) (by decide)]; exact h.qLink
+  · rw [outside_read32 outside (d := cp + productOperandSlot coefficient) (by omega) (by omega)]; exact h.pArray
+  · rw [outside_read32 outside (d := cq + 64) (by omega) (by omega)]; exact h.qArray
+  · rw [outside_read32 outside (d := 232) (by omega) (by decide)]; exact h.product
+  · rw [outside_read32 outside (d := 48) (by omega) (by decide)]; exact h.count
+
+end VG.Proof.Bignum.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/CrtProductArgsCT.lean`, which only this module imported.
+section
+
+/-! # Factor-product setup hides both factors while exposing only public buffer geometry -/
+
+section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm.Crt
+
+theorem crt_productArgs_ct {base : BitVec 32} {size o a b cp cq w : Nat} {coefficient : Bool} (fit : 236 ≤ size) :
+    RelCT isa (fun s t => CrtProductInput base size o a b cp cq w s coefficient ∧ CrtProductInput base size o a b cp cq w t coefficient)
+      (productArgs coefficient) (fun _ _ => True) := by
+  let P := fun s => CrtProductInput base size o a b cp cq w s coefficient
+  have first : RelCT isa (fun s t => P s ∧ P t) (.block (copyChildPointer 224 128 (productOperandSlot coefficient))) (fun _ _ => True) := by
+    intro s t tr1 tr2 u v h e1 e2
+    exact crt_copyChildPointer_ct (base := base) (child := base + BitVec.ofNat 32 cp)
+      (size := size) (src := 224) (dst := 128) (by omega) (by decide) s t tr1 tr2 u v
+      ⟨⟨h.1.workspace, h.1.ptr, h.1.pLink⟩, ⟨h.2.workspace, h.2.ptr, h.2.pLink⟩⟩ e1 e2
+  have firstWP (s : State) (h : P s) : WP isa (.block (copyChildPointer 224 128 (productOperandSlot coefficient))) s P := by
+    have before := h.pBeforeOut
+    have outFit := h.outFits
+    refine WP.mono (crt_copyChildPointer_ok s h.workspace (by omega) (by omega) (by decide) (by decide)
+      (by cases coefficient <;> decide) (by omega) h.ptr h.pLink h.pArray) ?_
+    rintro t ⟨mem, rest⟩
+    exact h.after_control (by decide) (by decide) mem rest
+  have second : RelCT isa (fun s t => P s ∧ P t) (.block (copyChildPointer 228 132)) (fun _ _ => True) := by
+    intro s t tr1 tr2 u v h e1 e2
+    exact crt_copyChildPointer_ct (base := base) (child := base + BitVec.ofNat 32 cq)
+      (size := size) (src := 228) (dst := 132) (by omega) (by decide) s t tr1 tr2 u v
+      ⟨⟨h.1.workspace, h.1.ptr, h.1.qLink⟩, ⟨h.2.workspace, h.2.ptr, h.2.qLink⟩⟩ e1 e2
+  have secondWP (s : State) (h : P s) : WP isa (.block (copyChildPointer 228 132)) s P := by
+    have before := h.qBeforeOut
+    have outFit := h.outFits
+    refine WP.mono (crt_copyChildPointer_ok s h.workspace (by omega) (by omega) (by decide) (by decide)
+      (by decide) (by omega) h.ptr h.qLink h.qArray) ?_
+    rintro t ⟨mem, rest⟩
+    exact h.after_control (by decide) (by decide) mem rest
+  have third := (crt_copyHeaderPointer_ct 232 136).mono (P' := fun s t => P s ∧ P t)
+    (fun _ _ h => h.1.ptr.trans h.2.ptr.symm) (fun _ _ _ => trivial)
+  have thirdWP (s : State) (h : P s) : WP isa (.block (copyHeaderPointer 232 136)) s P := by
+    refine WP.mono (crt_copyHeaderPointer_ok s h.workspace (by omega) (by omega) (by decide) (by decide) h.ptr h.product) ?_
+    rintro t ⟨mem, rest⟩
+    exact h.after_control (by decide) (by decide) mem rest
+  have last := crt_productCount_ct.mono (P' := fun s t => P s ∧ P t)
+    (fun _ _ h => h.1.ptr.trans h.2.ptr.symm) (fun _ _ _ => trivial)
+  exact (pair_posts first firstWP).seq ((pair_posts second secondWP).seq ((pair_posts third thirdWP).seq last))
+
+end VG.Proof.Bignum.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/WideProductCT.lean`, which only this module imported.
+section
+
+/-! # Wide multiplication leaks no operand values -/
+
+section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm
+
+theorem wideProduct_ct {s01 s02 : State} {base : BitVec 32} {size o a b m n : Nat}
+    (ctx1 : WideProductCtx s01 base size o a b m n) (ctx2 : WideProductCtx s02 base size o a b m n) :
+    RelCT isa (fun s t => WideProductInv s01 base o a b m n 0 s ∧
+      WideProductInv s02 base o a b m n 0 t ∧ s.sp = t.sp) wideProduct (fun _ _ => True) := by
+  let I := fun k (s t : State) => ∃ i, i + k = m ∧ 0 < k ∧
+    WideProductInv s01 base o a b m n i s ∧ WideProductInv s02 base o a b m n i t ∧ s.sp = t.sp
+  have step : ∀ k, RelCT isa (I k) wideProductBody fun s t =>
+      isa.eval .ne s = isa.eval .ne t ∧ (isa.eval .ne s = some false → True) ∧
+      (isa.eval .ne s = some true → ∃ j, j < k ∧ I j s t) := by
+    intro k s t tr1 tr2 u v h e1 e2
+    obtain ⟨i, ik, hk, hs, ht, sp⟩ := h
+    have hi : i < m := by omega
+    have ct := relCT_keep_sp (wideProductBody_ct ctx1 ctx2 hi) (fun _ _ h => h.2.2)
+    obtain ⟨trace, sp'⟩ := ct s t tr1 tr2 u v ⟨hs, ht, sp⟩ e1 e2
+    obtain ⟨_, _, run1, next1, zero1⟩ := wideProductBody_ok s ctx1 hs hi
+    obtain ⟨_, _, run2, next2, zero2⟩ := wideProductBody_ok t ctx2 ht hi
+    obtain ⟨-, rfl⟩ := Exec.det e1 run1
+    obtain ⟨-, rfl⟩ := Exec.det e2 run2
+    refine ⟨trace, ?_, fun _ => trivial, ?_⟩
+    · change some (!_ ) = some (!_ )
+      rw [zero1, zero2]
+    · intro again
+      have notLast : i + 1 ≠ m := by
+        intro last
+        change some (!_ ) = some true at again
+        simp only [zero1, last, decide_true, Bool.not_true, Option.some.injEq, Bool.false_eq_true] at again
+      exact ⟨k - 1, by omega, i + 1, by omega, by omega, next1, next2, sp'⟩
+  exact (RelCT.loop I step m).mono
+    (fun _ _ h => ⟨0, by omega, ctx1.positiveA, h.1, h.2.1, h.2.2⟩) (fun _ _ h => h)
+
+end VG.Proof.Bignum.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/CrtFactorProductCT.lean`, which only this module imported.
+section
+
+/-! # Complete factor-product validation arithmetic conceals both factors -/
+
+section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
+
+theorem crt_factorProduct_ct {base : BitVec 32} {size o a b cp cq w : Nat} {coefficient : Bool} (fit : 236 ≤ size) :
+    RelCT isa (fun s t => CrtProductInput base size o a b cp cq w s coefficient ∧
+      CrtProductInput base size o a b cp cq w t coefficient ∧ s.sp = t.sp) (factorProduct coefficient) (fun _ _ => True) := by
+  let P := fun s => CrtProductInput base size o a b cp cq w s coefficient
+  let R := fun s : State => P s ∧ val32 s.mem (State.addr base) o (2 * w + 2 * w + 2) = 0
+  have clear := (crt_clearWide_ct (base := base) (dst := base + BitVec.ofNat 32 o) (size := size) (slot := 232) (w := w)
+    (by omega) (by omega) (by decide)).mono (P' := fun (s t : State) => P s ∧ P t ∧ s.sp = t.sp)
+    (fun _ _ h => ⟨⟨h.1.workspace, h.1.ptr, h.1.count, h.1.product⟩,
+      ⟨h.2.1.workspace, h.2.1.ptr, h.2.1.count, h.2.1.product⟩, h.2.2⟩) (fun _ _ _ => trivial)
+  have clearWP (s : State) (h : P s) : WP isa (clearWide 232) s R :=
+    WP.mono (crt_productClear_ready s h) (fun _ j => ⟨j.1, j.2.1⟩)
+  have first := (relCT_keep_sp clear (fun _ _ h => h.2.2)).wp
+    (fun s t h => ⟨clearWP s h.1, clearWP t h.2.1⟩)
+  have args := (crt_productArgs_ct (base := base) (o := o) (a := a) (b := b) (cp := cp) (cq := cq) (w := w) (coefficient := coefficient) fit).mono
+    (P' := fun (s t : State) => s.sp = t.sp ∧ R s ∧ R t)
+    (fun _ _ h => ⟨h.2.1.1, h.2.2.1⟩) (fun _ _ _ => trivial)
+  have argsWP (s : State) (h : R s) : WP isa (productArgs coefficient) s (CrtProductStart base size o a b w) :=
+    WP.mono (crt_productArgs_ready s h.1 h.2) (fun _ j => j.1)
+  have second := (relCT_keep_sp args (fun _ _ h => h.1)).wp
+    (fun s t h => ⟨argsWP s h.2.1, argsWP t h.2.2⟩)
+  have mul : RelCT isa (fun s t => s.sp = t.sp ∧ CrtProductStart base size o a b w s ∧
+      CrtProductStart base size o a b w t) wideProduct (fun _ _ => True) := by
+    intro s t tr1 tr2 u v h e1 e2
+    exact wideProduct_ct h.2.1.context h.2.2.context s t tr1 tr2 u v
+      ⟨h.2.1.initial, h.2.2.initial, h.1⟩ e1 e2
+  exact first.seq (second.seq mul)
+
+end VG.Proof.Bignum.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/CrtCoefficientSelection.lean`, which only this module imported.
+section
+
+/-! # Preserve coefficient preconditions through workspace selection and residue import -/
+
+section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt
+
+def CrtCoefficientSelection (g : CrtGeometry) (bs : Fin 7 → List Byte) (child : BitVec 32) (s : State) : Prop :=
+  CrtSelected g bs child s ∧ ∃ M value,
+    CrtPoweredState (crtP g.base g.words) (workspaceWords g.words) g.words M value s.mem ∧ M % 2 = 1 ∧ value < M
+
+theorem crt_selectCoefficient_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
+    (h : CrtCoefficientSelection g bs g.base s) :
+    WP isa (selectChild 224) s (CrtCoefficientSelection g bs (crtP g.base g.words)) := by
+  refine WP.mono (crt_selectLinked_ready s h.1.1 h.1.1.buffers.context.p h.1.1.p (by simp [crtRegions])
+    (by have := h.1.1.buffers.context.size; omega : 224 + 4 ≤ 8 * workspaceWords g.words)
+    (by decide) h.1.2.ptr h.1.1.main.p) ?_
+  rintro t ⟨sharedT, readyT, frame, _⟩
+  obtain ⟨M, value, powered, odd, bound⟩ := h.2
+  exact ⟨⟨sharedT, readyT⟩, M, value,
+    powered.congr (h.1.1.workspace_eq_after_base h.1.1.buffers.context.p (by simp [crtRegions]) frame), odd, bound⟩
+
+theorem crt_importCoefficient_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
+    (h : CrtCoefficientSelection g bs (crtP g.base g.words) s) :
+    WP isa (.seq (.block CrtFn.qSource) (transferArray 1 6)) s
+      (fun t => ∃ M, CrtCoefficientInput (crtP g.base g.words) g.qi (workspaceWords g.words) g.words g.pLength M (bs 6) t) := by
+  obtain ⟨M, value, powered, odd, bound⟩ := h.2
+  refine WP.mono (crt_importQResidue_ok s h.1.1 h.1.2 powered) ?_
+  rintro t ⟨sharedT, readyT, poweredT, _, _, _⟩
+  exact ⟨M, ⟨⟨poweredT.ready readyT, poweredT.modulus, odd, poweredT.r2, poweredT.one,
+    by rw [poweredT.result]; exact bound⟩,
+    sharedT.savedOperand 5 (by simp [crtRegions]), sharedT.buffers.pPositive,
+    by have := sharedT.buffers.pShort; have := (crt_width_valid sharedT.buffers.lengthValid).2.2
+       change _ ≤ 8 * Spec.Rsa.modulusWords g.length; omega⟩⟩
+
+end VG.Proof.Bignum.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/CrtFinishSelection.lean`, which only this module imported.
+section
+
+/-! # Retain the secret acceptance bit and result bound until masked export -/
+
+section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
+
+def CrtFinishSelection (g : CrtGeometry) (bs : Fin 7 → List Byte) (s : State) : Prop :=
+  CrtSelected g bs g.base s ∧ ∃ accepted : Bool,
+    s.mem.readW (off (State.addr s.sp) 48) 32 = BitVec.ofNat 32 accepted.toNat ∧
+    (accepted = true → crtReconstruction g s.mem < 2 ^ (8 * g.length))
+
+def CrtExportSelection (g : CrtGeometry) (bs : Fin 7 → List Byte) (s : State) : Prop :=
+  CrtSelected g bs g.base s ∧ ∃ accepted : Bool,
+    s.mem.readW (off (State.addr s.sp) 48) 32 = BitVec.ofNat 32 accepted.toNat ∧
+    (accepted = true → val32 s.mem (State.addr g.base) (productOffset g.words) (4 * g.words + 2) < 2 ^ (8 * g.length))
+
+theorem crt_recombineExport_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
+    (h : CrtFinishSelection g bs s) :
+    WP isa (.seq (.seq (.block CrtFn.qSource) (transferArray 1 6)) recombine) s (CrtExportSelection g bs) := by
+  refine WP.mono (crt_recombineStage_ok s h.1.1 h.1.2) ?_
+  rintro t ⟨sharedT, readyT, value, frame, rest⟩
+  obtain ⟨accepted, flag, bound⟩ := h.2
+  have stackEq : WorkspaceEq (State.addr s.sp) 112 s.mem t.mem := WorkspaceEq.of_frame (by decide) frame (by
+    intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.1.1.stack.separate)
+  exact ⟨⟨sharedT, readyT⟩, accepted,
+    by rw [rest.sp, stackEq.word (d := 48) (bits := 32) (by decide)]; exact flag,
+    by rw [value]; exact bound⟩
+
+theorem crt_exportArgs_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
+    (h : CrtExportSelection g bs s) : WP isa (.block CrtFn.outputArgs) s
+      (fun t => ∃ accepted, ExportBufferInput (crtProduct g.base g.words) g.output (4 * (4 * g.words + 2)) g.length accepted t) := by
+  refine WP.mono (crt_outputArgs_ok s h.1.1 h.1.2.ptr) ?_
+  rintro t ⟨source, output, count, mem, rest⟩
+  obtain ⟨accepted, flag, bound⟩ := h.2
+  exact ⟨accepted, (h.1.1.of_mem mem rest).export_input source output count
+    (by rw [mem, rest.sp]; exact flag) (by rw [mem]; exact bound)⟩
+
+end VG.Proof.Bignum.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/CrtResultBound.lean`, which only this module imported.
+section
+
+/-! # Accepted CRT reconstruction fits the original RSA output width -/
+
+section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm
+
+def crtPrivateValue (bs : Fin 7 → List Byte) : Nat :=
+  crtResult (Spec.Rsa.os2ip (bs 2)) (Spec.Rsa.os2ip (bs 3)) (Spec.Rsa.os2ip (bs 4))
+    (Spec.Rsa.os2ip (bs 5)) (Spec.Rsa.os2ip (bs 6)) (Spec.Rsa.os2ip (bs 1))
+
+theorem crt_result_lt {P Q dp dq qi c : Nat} (p : 0 < P) (q : 0 < Q) :
+    crtResult P Q dp dq qi c < P * Q := by
+  let a := c ^ dp % P
+  let b := c ^ dq % Q
+  let h := ((((a : Int) - b) * qi) % (P : Int)).toNat
+  have bh : b < Q := Nat.mod_lt _ q
+  have hh : h < P := by
+    rw [show h = ((a + P - b % P) % P * qi) % P from (crt_coefficient_value p).symm]
+    exact Nat.mod_lt _ p
+  have mul := Nat.mul_le_mul_left Q (by omega : h + 1 ≤ P)
+  rw [Nat.mul_add, Nat.mul_one, Nat.mul_comm Q P] at mul
+  change b + Q * h < P * Q
+  omega
+
+theorem CrtShared.result_fits {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte}
+    (h : CrtShared g bs s) (accepted : crtAccepted bs) : crtPrivateValue bs < 2 ^ (8 * g.length) := by
+  obtain ⟨p, q⟩ := h.accepted_factors accepted
+  have result := crt_result_lt (dp := Spec.Rsa.os2ip (bs 4)) (dq := Spec.Rsa.os2ip (bs 5))
+    (qi := Spec.Rsa.os2ip (bs 6)) (c := Spec.Rsa.os2ip (bs 1)) (by omega : 0 < Spec.Rsa.os2ip (bs 2))
+    (by omega : 0 < Spec.Rsa.os2ip (bs 3))
+  rw [accepted.2.2] at result
+  have size := os2ip_lt (bs 0)
+  rw [(h.buffers.source 0).length, pow256_eq] at size
+  exact Nat.lt_trans result size
+
+end VG.Proof.Bignum.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/CrtCoefficientStage.lean`, which only this module imported.
+section
+
+/-! # Complete coefficient phase with stable q residue and acceptance bit -/
+
+section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
+open VG.Spec.Rsa.Mont (numAt)
+open VG.Proof.X25519.Arm (Rest)
+
+theorem crt_coefficientStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} {P Q v1 v2 : Nat}
+    (h : CrtShared g bs s) (ready : LayoutFrameReady g.base (workspaceWords g.words) g.words s)
+    (p : CrtPoweredState (crtP g.base g.words) (workspaceWords g.words) g.words P v1 s.mem)
+    (q : CrtPoweredState (crtQ g.base g.words) (workspaceWords g.words) g.words Q v2 s.mem)
+    (odd : P % 2 = 1) (bound : v1 < P) :
+    WP isa CrtFn.coefficientPhase s fun t => CrtShared g bs t ∧
+      LayoutFrameReady g.base (workspaceWords g.words) g.words t ∧
+      numAt t.mem (State.addr (crtP g.base g.words)) g.words 0 = P ∧
+      numAt t.mem (State.addr (crtP g.base g.words)) g.words 5 =
+        ((((v1 : Int) - v2) * Spec.Rsa.os2ip (bs 6)) % (P : Int)).toNat ∧
+      CrtPoweredState (crtQ g.base g.words) (workspaceWords g.words) g.words Q v2 t.mem ∧
+      t.mem.readW (off (State.addr t.sp) 48) 32 = s.mem.readW (off (State.addr s.sp) 48) 32 ∧
+      Frame (crtLiveMutable g s.sp) s.mem t.mem ∧ Rest roundClobbers s t := by
+  rw [CrtFn.coefficientPhase, WP.seq_iff]
+  refine WP.mono (crt_selectLinked_ready s h h.buffers.context.p h.p (by simp [crtRegions])
+    (by have := h.buffers.context.size; omega : 224 + 4 ≤ 8 * workspaceWords g.words)
+    (by decide) ready.ptr h.main.p) ?_
+  rintro u ⟨sharedU, readyU, frameU, restU⟩
+  have pEqU := h.workspace_eq_after_base h.buffers.context.p (by simp [crtRegions]) frameU
+  have qEqU := h.workspace_eq_after_base h.buffers.context.q (by simp [crtRegions]) frameU
+  have pU := p.congr pEqU
+  have qU := q.congr qEqU
+  apply WP.assoc
+  rw [WP.seq_iff]
+  refine WP.mono (crt_importQResidue_ok u sharedU readyU pU) ?_
+  rintro v ⟨sharedV, readyV, pV, residue, frameV, restV⟩
+  have input : CrtCoefficientInput (crtP g.base g.words) g.qi (workspaceWords g.words) g.words g.pLength P (bs 6) v :=
+    ⟨⟨pV.ready readyV, pV.modulus, odd, pV.r2, pV.one, by rw [pV.result]; exact bound⟩,
+      sharedV.savedOperand 5 (by simp [crtRegions]), h.buffers.pPositive,
+      by have := h.buffers.pShort; have := (crt_width_valid h.buffers.lengthValid).2.2
+         change _ ≤ 8 * Spec.Rsa.modulusWords g.length; omega⟩
+  rw [WP.seq_iff]
+  refine WP.mono (crt_coefficient_ok v input) ?_
+  rintro x ⟨arithmetic, modulus, value, frameX, restX⟩
+  rw [pV.result, residue, qU.result] at value
+  have sharedX := sharedV.after_p (frameX.mono (by simp)) restX ⟨arithmetic.layout, arithmetic.width⟩
+  refine WP.mono (crt_selectMain_ready x sharedX) ?_
+  rintro t ⟨sharedT, readyT, frameT, restT⟩
+  have pEqT := sharedX.workspace_eq_after_base arithmetic.workspace (by simp [crtRegions]) frameT
+  have qEqV := sharedU.workspace_eq_after sharedU.buffers.context.q (by simp [crtRegions]) sharedU.buffers.context.sepPQ.symm (frameV.mono (by simp))
+  have qEqX := sharedV.workspace_eq_after sharedV.buffers.context.q (by simp [crtRegions]) sharedV.buffers.context.sepPQ.symm (frameX.mono (by simp))
+  have qEqT := sharedX.workspace_eq_after_base sharedX.buffers.context.q (by simp [crtRegions]) frameT
+  have flag := (acceptance_after_base_save frameT restT).trans
+    ((sharedV.acceptance_after_workspace (by simp [crtRegions]) frameX restX).trans
+      ((sharedU.acceptance_after_workspace (by simp [crtRegions]) frameV restV).trans (acceptance_after_base_save frameU restU)))
+  have frameVLive := crt_workspace_frame (child := crtP g.base g.words) sharedU.buffers.workspace sharedU.buffers.storageFits (by simp [crtRegions]) (frameV.mono (by simp))
+  have frameXLive := crt_workspace_frame (child := crtP g.base g.words) sharedV.buffers.workspace sharedV.buffers.storageFits (by simp [crtRegions]) (frameX.mono (by simp))
+  rw [restU.sp] at frameVLive
+  rw [restV.sp, restU.sp] at frameXLive
+  rw [restX.sp, restV.sp, restU.sp] at frameT
+  exact ⟨sharedT, readyT, (pEqT.number h.buffers.context.arraysFit (by decide)).trans modulus,
+    (pEqT.number h.buffers.context.arraysFit (by decide)).trans value,
+    ((qU.congr qEqV).congr qEqX).congr qEqT, flag,
+    (frameU.mono (by simp [crtLiveMutable])).trans (frameVLive.trans (frameXLive.trans (frameT.mono (by simp [crtLiveMutable])))),
+    (restU.mono (by decide)).trans (restV.trans (restX.trans (restT.mono (by decide))))⟩
+
+end VG.Proof.Bignum.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/CrtImportResidueCT.lean`, which only this module imported.
+section
+
+/-! # Copying the q residue has a trace independent of both secret residues -/
+
+section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt
+
+theorem crt_importResidue_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {child : BitVec 32}
+    (sep : Region.Disjoint ⟨State.addr (crtQ g.base g.words), 8 * workspaceWords g.words⟩
+      ⟨State.addr child, 8 * workspaceWords g.words⟩) :
+    RelCT isa (fun s t => CrtSelected g bs1 child s ∧ CrtSelected g bs2 child t ∧ s.sp = t.sp)
+      (.seq (.block CrtFn.qSource) (transferArray 1 6)) (fun _ _ => True) := by
+  have source : RelCT isa (fun s t => CrtSelected g bs1 child s ∧ CrtSelected g bs2 child t ∧ s.sp = t.sp)
+      (.block CrtFn.qSource) (fun _ _ => True) :=
+    crt_qSource_ct.mono (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ _ => trivial)
+  have wp (s : State) {bs : Fin 7 → List Byte} (h : CrtSelected g bs child s) :
+      WP isa (.block CrtFn.qSource) s
+        (TransferArrayInput child (crtQ g.base g.words) (workspaceWords g.words) (workspaceWords g.words) g.words) := by
+    refine WP.mono (crt_qSource_ok s h.1) ?_
+    rintro t ⟨ptr, mem, rest⟩
+    have sharedT := h.1.of_mem mem rest
+    exact ⟨h.2.of_mem mem rest ((rest.gpr .r0 (by simp)).trans h.2.ptr), sharedT.buffers.context.q, sharedT.q, ptr, sep⟩
+  exact crt_seq_ct source (fun s h => wp s h) (fun s h => wp s h)
+    (transferArray_ct (by decide : 1 < 8) (by decide : 6 < 8))
+
+end VG.Proof.Bignum.Arm
+end
+
+end
 
 -- Formerly `VerifiedGarbage/Proof/Bignum/Arm/CrtValidInput.lean`, which only this module imported.
 section
