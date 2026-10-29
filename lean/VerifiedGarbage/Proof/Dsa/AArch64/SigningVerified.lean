@@ -1,4 +1,5 @@
 module
+
 public import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 public import VerifiedGarbage.Proof.Dsa.AArch64.Run
@@ -7,7 +8,6 @@ public import VerifiedGarbage.Spec.Dsa.SignVerify
 
 import VerifiedGarbage.Proof.Dsa.AArch64.SigningABIPost
 import VerifiedGarbage.Proof.Dsa.AArch64.SigningAgreement
-
 /-! # DSA signing verified against the shared contract -/
 
 @[expose] public section

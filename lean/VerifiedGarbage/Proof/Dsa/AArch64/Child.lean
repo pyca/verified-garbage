@@ -1,12 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.AArch64.NewChild
-import VerifiedGarbage.Proof.Dsa.AArch64.SealChild
 public import VerifiedGarbage.Proof.Dsa.AArch64.InitFrame
 public import VerifiedGarbage.Impl.Dsa.AArch64.Workspace
+
+import VerifiedGarbage.Proof.Dsa.AArch64.NewChild
+import VerifiedGarbage.Proof.Dsa.AArch64.SealChild
 import VerifiedGarbage.Proof.Dsa.AArch64.Load
 import VerifiedGarbage.Proof.Framework.Block
-
 /-! # Complete initialization of one DSA Montgomery workspace -/
 
 @[expose] public section

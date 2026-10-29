@@ -2,13 +2,36 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryTape
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashPlan
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Memory
+
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.BufferSeparate
-
+import VerifiedGarbage.Proof.Framework.Offset
 /-! # Concrete hash-contribution buffers for each supported parameter size -/
+
+-- Formerly `VerifiedGarbage/Proof/Dsa/AArch64/Generation/BufferSeparate.lean`, which only this module imported.
+section
+
+/-! # Bytewise hash-buffer separation from region separation -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.AArch64.Generation
+open VG VG.Proof.Bignum VG.Impl.RsaOaep.AArch64
+
+theorem bufferSeparate_of_regions {F S ptr : Addr} {len : Nat} (hl : len < 2 ^ 64)
+    (hF : (⟨ptr, len⟩ : Region).Disjoint ⟨F, frameBytes⟩)
+    (hS : (⟨ptr, len⟩ : Region).Disjoint ⟨S, oRsa⟩) : HashBufferSeparate F S ptr len where
+  frame i hi j hj he := hF (off ptr i)
+    (Offset.contains_base _ (by omega) (by omega)) (by rw [he]; exact Offset.contains_base _ (by omega) (by unfold frameBytes at hj; omega))
+  scratch i hi j hj he := hS (off ptr i)
+    (Offset.contains_base _ (by omega) (by omega)) (by rw [he]; exact Offset.contains_base _ (by omega) (by unfold oRsa at hj; omega))
+
+end VG.Proof.Dsa.AArch64.Generation
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.Dsa.AArch64.Generation

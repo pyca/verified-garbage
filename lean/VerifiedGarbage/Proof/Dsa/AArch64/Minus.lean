@@ -1,10 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.AArch64.MinusCore
 public import VerifiedGarbage.Proof.Dsa.AArch64.Frame
 public import VerifiedGarbage.Proof.Dsa.AArch64.MinusHead
 public import VerifiedGarbage.Proof.Dsa.AArch64.MinusStep
 
+import VerifiedGarbage.Proof.Dsa.AArch64.MinusCore
 /-! # Modulus-minus constants in a linked DSA workspace -/
 
 @[expose] public section

@@ -1,4 +1,5 @@
 module
+
 public import VerifiedGarbage.Proof.Dsa.AArch64.LocalCallFrame
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCalls
 public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
@@ -9,7 +10,6 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Equal
 import VerifiedGarbage.Proof.Dsa.AArch64.Range
 import VerifiedGarbage.Proof.Dsa.AArch64.Zero
 import VerifiedGarbage.Proof.Dsa.AArch64.IsOne
-
 /-! # Validation effects shared by the DSA key-check schedules -/
 
 @[expose] public section

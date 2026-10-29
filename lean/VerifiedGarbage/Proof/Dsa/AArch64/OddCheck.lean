@@ -1,17 +1,56 @@
 module
+
 public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import Aesop.BuiltinRules
 
 import VerifiedGarbage.Proof.Dsa.AArch64.LastByte
-import VerifiedGarbage.Proof.Dsa.AArch64.Parity
 import VerifiedGarbage.Proof.Dsa.AArch64.Masks
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Contract
-
+import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.TCB.AArch64.Simd
 /-! # Public oddness checks on the encoded DSA moduli -/
+
+-- Formerly `VerifiedGarbage/Proof/Dsa/AArch64/Parity.lean`, which only this module imported.
+section
+
+/-! # The shared oddness mask for DSA moduli -/
+
+section
+
+namespace VG.Proof.Dsa.AArch64
+open VG VG.AArch64
+open VG.Proof.Bignum
+
+theorem word_low_bit (x : BitVec 64) : x &&& 1 = BitVec.ofNat 64 (x.toNat % 2) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_and, show (1 : BitVec 64).toNat = 1 from rfl, Nat.and_one_is_mod,
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show x.toNat % 2 < 2 ^ 64 by omega)]
+
+theorem word_odd_mask (x : BitVec 64) : 0 - (x &&& 1) = mask (decide (x.toNat % 2 = 1)) := by
+  rw [word_low_bit]
+  rcases Nat.mod_two_eq_zero_or_one x.toNat with h | h <;> rw [h] <;> decide
+
+/-- The implementation combines low bits before converting the result to a mask. -/
+theorem modulus_odd_mask (p q : Byte) :
+    0 - (p.zeroExtend 64 &&& q.zeroExtend 64 &&& 1) =
+      mask (decide (p.toNat % 2 = 1 ∧ q.toNat % 2 = 1)) := by
+  rw [word_odd_mask, BitVec.toNat_and]
+  change mask (decide (((p.setWidth 64).toNat &&& (q.setWidth 64).toNat) % 2 = 1)) = _
+  rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth,
+    Nat.mod_eq_of_lt (Nat.lt_trans p.isLt (show 2 ^ 8 < 2 ^ 64 by decide)),
+    Nat.mod_eq_of_lt (Nat.lt_trans q.isLt (show 2 ^ 8 < 2 ^ 64 by decide))]
+  exact congrArg mask (decide_eq_decide.mpr Nat.and_mod_two_eq_one)
+
+end VG.Proof.Dsa.AArch64
+end
+
+end
 
 @[expose] public section
 

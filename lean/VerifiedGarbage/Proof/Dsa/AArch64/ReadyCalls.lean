@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Modulus
+
 import VerifiedGarbage.Proof.Dsa.AArch64.CoreCalls
 import VerifiedGarbage.Proof.Dsa.AArch64.CoreReduce
 import VerifiedGarbage.Proof.Dsa.AArch64.CoreAdd
-
 /-! # Arithmetic calls preserving the complete DSA execution context -/
 
 @[expose] public section
