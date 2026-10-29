@@ -13232,3 +13232,8705 @@ ret
 .option pop",
     )
 }
+
+/// Ed448 base-point multiplication (RFC 8032 §5.2.4): writes the 57-byte encoding of `[s]B` to `*out`, for the unsigned little-endian 456-bit integer at `scalar`, without pruning. Contract: `VG.Spec.Ed448.scalarBaseContract`. Constant time: only pointers may affect timing.
+///
+/// Uses only caller-saved registers and no stack. The function expands the scalar's 456 bits into bytes, then runs two iterations of the same code for each bit from the top: RFC 8032's projective addition of `R` and a point selected with a mask, `R` itself in the first (a doubling) and the base point in the second, and the sum swapped into `R` with a mask, always in the first and when the bit is set in the second. Field elements are fourteen 32-bit limbs in `scratch` (rounded up to a multiple of 8), with `vg_x448`'s multiplication, addition and subtraction; `Z` is inverted with X448's addition chain for `p - 2`.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 57 bytes.
+/// * `scalar` must be valid for reads of 57 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes, and aligned for `u64`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
+/// * None of `out`, `scalar` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ed448_scalar_base(out: *mut [u8; 57], scalar: *const [u8; 57], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r".option push
+.option arch, +m
+addi a3, a2, 0
+addi a3, a3, 7
+andi a3, a3, -8
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 56(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 60(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 64(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 68(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 72(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 76(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 80(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 84(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 88(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 92(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 96(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 100(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 104(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 108(a3)
+lui a4, 0
+addiw a4, a4, 1
+sw a4, 0(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 4(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 8(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 12(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 16(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 20(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 24(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 28(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 32(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 36(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 40(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 44(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 48(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 52(a3)
+lui a4, 0
+addiw a4, a4, 1
+sw a4, 112(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 116(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 120(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 124(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 128(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 132(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 136(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 140(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 144(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 148(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 152(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 156(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 160(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 164(a3)
+lui a4, 815308
+addiw a4, a4, 94
+sw a4, 1520(a3)
+lui a4, 156267
+addiw a4, a4, -2005
+sw a4, 1524(a3)
+lui a4, 569353
+addiw a4, a4, 910
+sw a4, 1528(a3)
+lui a4, 275384
+addiw a4, a4, 225
+sw a4, 1532(a3)
+lui a4, 174950
+addiw a4, a4, 1297
+sw a4, 1536(a3)
+lui a4, 76514
+addiw a4, a4, -1289
+sw a4, 1540(a3)
+lui a4, 671034
+addiw a4, a4, 1124
+sw a4, 1544(a3)
+lui a4, 960222
+addiw a4, a4, 804
+sw a4, 1548(a3)
+lui a4, 291057
+addiw a4, a4, 1895
+sw a4, 1552(a3)
+lui a4, 647494
+addiw a4, a4, 1392
+sw a4, 1556(a3)
+lui a4, 142323
+addiw a4, a4, 1754
+sw a4, 1560(a3)
+lui a4, 139729
+addiw a4, a4, 1446
+sw a4, 1564(a3)
+lui a4, 442065
+addiw a4, a4, -531
+sw a4, 1568(a3)
+lui a4, 323991
+addiw a4, a4, 198
+sw a4, 1572(a3)
+lui a4, 992016
+addiw a4, a4, -1516
+sw a4, 1576(a3)
+lui a4, 622728
+addiw a4, a4, -1701
+sw a4, 1580(a3)
+lui a4, 322941
+addiw a4, a4, -1875
+sw a4, 1584(a3)
+lui a4, 1039313
+addiw a4, a4, 812
+sw a4, 1588(a3)
+lui a4, 944068
+addiw a4, a4, -1596
+sw a4, 1592(a3)
+lui a4, 240960
+addiw a4, a4, -228
+sw a4, 1596(a3)
+lui a4, 23052
+addiw a4, a4, 727
+sw a4, 1600(a3)
+lui a4, 554890
+addiw a4, a4, -994
+sw a4, 1604(a3)
+lui a4, 444986
+addiw a4, a4, -1984
+sw a4, 1608(a3)
+lui a4, 310951
+addiw a4, a4, 883
+sw a4, 1612(a3)
+lui a4, 355484
+addiw a4, a4, 1890
+sw a4, 1616(a3)
+lui a4, 558946
+addiw a4, a4, 55
+sw a4, 1620(a3)
+lui a4, 453484
+addiw a4, a4, -988
+sw a4, 1624(a3)
+lui a4, 431092
+addiw a4, a4, 1649
+sw a4, 1628(a3)
+lui a4, 0
+addiw a4, a4, 1
+sw a4, 1632(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 1636(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 1640(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 1644(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 1648(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 1652(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 1656(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 1660(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 1664(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 1668(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 1672(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 1676(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 1680(a3)
+lui a4, 0
+addiw a4, a4, 0
+sw a4, 1684(a3)
+lui a4, 1048566
+addiw a4, a4, 1878
+sw a4, 336(a3)
+lui a4, 0
+addiw a4, a4, -1
+sw a4, 340(a3)
+lui a4, 0
+addiw a4, a4, -1
+sw a4, 344(a3)
+lui a4, 0
+addiw a4, a4, -1
+sw a4, 348(a3)
+lui a4, 0
+addiw a4, a4, -1
+sw a4, 352(a3)
+lui a4, 0
+addiw a4, a4, -1
+sw a4, 356(a3)
+lui a4, 0
+addiw a4, a4, -1
+sw a4, 360(a3)
+lui a4, 0
+addiw a4, a4, -2
+sw a4, 364(a3)
+lui a4, 0
+addiw a4, a4, -1
+sw a4, 368(a3)
+lui a4, 0
+addiw a4, a4, -1
+sw a4, 372(a3)
+lui a4, 0
+addiw a4, a4, -1
+sw a4, 376(a3)
+lui a4, 0
+addiw a4, a4, -1
+sw a4, 380(a3)
+lui a4, 0
+addiw a4, a4, -1
+sw a4, 384(a3)
+lui a4, 0
+addiw a4, a4, -1
+sw a4, 388(a3)
+addi a6, a3, 0
+addi t0, zero, 57
+20:
+lbu a4, 0(a1)
+slli a5, a4, 63
+srli a5, a5, 63
+sb a5, 1064(a6)
+slli a5, a4, 62
+srli a5, a5, 63
+sb a5, 1065(a6)
+slli a5, a4, 61
+srli a5, a5, 63
+sb a5, 1066(a6)
+slli a5, a4, 60
+srli a5, a5, 63
+sb a5, 1067(a6)
+slli a5, a4, 59
+srli a5, a5, 63
+sb a5, 1068(a6)
+slli a5, a4, 58
+srli a5, a5, 63
+sb a5, 1069(a6)
+slli a5, a4, 57
+srli a5, a5, 63
+sb a5, 1070(a6)
+slli a5, a4, 56
+srli a5, a5, 63
+sb a5, 1071(a6)
+addi a1, a1, 1
+addi a6, a6, 8
+addi t0, t0, -1
+bnez t0, 20b
+addi t1, zero, 912
+21:
+addi t1, t1, -1
+slli a1, t1, 63
+srli a1, a1, 63
+addi t2, a1, 0
+addi t0, zero, 0
+sub t0, t0, a1
+lwu a2, 1520(a3)
+lwu a4, 56(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 168(a3)
+lwu a2, 1524(a3)
+lwu a4, 60(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 172(a3)
+lwu a2, 1528(a3)
+lwu a4, 64(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 176(a3)
+lwu a2, 1532(a3)
+lwu a4, 68(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 180(a3)
+lwu a2, 1536(a3)
+lwu a4, 72(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 184(a3)
+lwu a2, 1540(a3)
+lwu a4, 76(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 188(a3)
+lwu a2, 1544(a3)
+lwu a4, 80(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 192(a3)
+lwu a2, 1548(a3)
+lwu a4, 84(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 196(a3)
+lwu a2, 1552(a3)
+lwu a4, 88(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 200(a3)
+lwu a2, 1556(a3)
+lwu a4, 92(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 204(a3)
+lwu a2, 1560(a3)
+lwu a4, 96(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 208(a3)
+lwu a2, 1564(a3)
+lwu a4, 100(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 212(a3)
+lwu a2, 1568(a3)
+lwu a4, 104(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 216(a3)
+lwu a2, 1572(a3)
+lwu a4, 108(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 220(a3)
+lwu a2, 1576(a3)
+lwu a4, 0(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 224(a3)
+lwu a2, 1580(a3)
+lwu a4, 4(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 228(a3)
+lwu a2, 1584(a3)
+lwu a4, 8(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 232(a3)
+lwu a2, 1588(a3)
+lwu a4, 12(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 236(a3)
+lwu a2, 1592(a3)
+lwu a4, 16(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 240(a3)
+lwu a2, 1596(a3)
+lwu a4, 20(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 244(a3)
+lwu a2, 1600(a3)
+lwu a4, 24(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 248(a3)
+lwu a2, 1604(a3)
+lwu a4, 28(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 252(a3)
+lwu a2, 1608(a3)
+lwu a4, 32(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 256(a3)
+lwu a2, 1612(a3)
+lwu a4, 36(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 260(a3)
+lwu a2, 1616(a3)
+lwu a4, 40(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 264(a3)
+lwu a2, 1620(a3)
+lwu a4, 44(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 268(a3)
+lwu a2, 1624(a3)
+lwu a4, 48(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 272(a3)
+lwu a2, 1628(a3)
+lwu a4, 52(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 276(a3)
+lwu a2, 1632(a3)
+lwu a4, 112(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 280(a3)
+lwu a2, 1636(a3)
+lwu a4, 116(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 284(a3)
+lwu a2, 1640(a3)
+lwu a4, 120(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 288(a3)
+lwu a2, 1644(a3)
+lwu a4, 124(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 292(a3)
+lwu a2, 1648(a3)
+lwu a4, 128(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 296(a3)
+lwu a2, 1652(a3)
+lwu a4, 132(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 300(a3)
+lwu a2, 1656(a3)
+lwu a4, 136(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 304(a3)
+lwu a2, 1660(a3)
+lwu a4, 140(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 308(a3)
+lwu a2, 1664(a3)
+lwu a4, 144(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 312(a3)
+lwu a2, 1668(a3)
+lwu a4, 148(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 316(a3)
+lwu a2, 1672(a3)
+lwu a4, 152(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 320(a3)
+lwu a2, 1676(a3)
+lwu a4, 156(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 324(a3)
+lwu a2, 1680(a3)
+lwu a4, 160(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 328(a3)
+lwu a2, 1684(a3)
+lwu a4, 164(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sw a2, 332(a3)
+addi a4, zero, 0
+sw a4, 952(a3)
+sw a4, 956(a3)
+sw a4, 960(a3)
+sw a4, 964(a3)
+sw a4, 968(a3)
+sw a4, 972(a3)
+sw a4, 976(a3)
+sw a4, 980(a3)
+sw a4, 984(a3)
+sw a4, 988(a3)
+sw a4, 992(a3)
+sw a4, 996(a3)
+sw a4, 1000(a3)
+sw a4, 1004(a3)
+addi a6, a3, 0
+addi t0, zero, 14
+22:
+lwu a1, 112(a6)
+addi a5, zero, 0
+lwu a2, 280(a3)
+mul a2, a1, a2
+lwu a4, 952(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 952(a6)
+srli a5, a4, 32
+lwu a2, 284(a3)
+mul a2, a1, a2
+lwu a4, 956(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 956(a6)
+srli a5, a4, 32
+lwu a2, 288(a3)
+mul a2, a1, a2
+lwu a4, 960(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 960(a6)
+srli a5, a4, 32
+lwu a2, 292(a3)
+mul a2, a1, a2
+lwu a4, 964(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 964(a6)
+srli a5, a4, 32
+lwu a2, 296(a3)
+mul a2, a1, a2
+lwu a4, 968(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 968(a6)
+srli a5, a4, 32
+lwu a2, 300(a3)
+mul a2, a1, a2
+lwu a4, 972(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 972(a6)
+srli a5, a4, 32
+lwu a2, 304(a3)
+mul a2, a1, a2
+lwu a4, 976(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 976(a6)
+srli a5, a4, 32
+lwu a2, 308(a3)
+mul a2, a1, a2
+lwu a4, 980(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 980(a6)
+srli a5, a4, 32
+lwu a2, 312(a3)
+mul a2, a1, a2
+lwu a4, 984(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 984(a6)
+srli a5, a4, 32
+lwu a2, 316(a3)
+mul a2, a1, a2
+lwu a4, 988(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 988(a6)
+srli a5, a4, 32
+lwu a2, 320(a3)
+mul a2, a1, a2
+lwu a4, 992(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 992(a6)
+srli a5, a4, 32
+lwu a2, 324(a3)
+mul a2, a1, a2
+lwu a4, 996(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 996(a6)
+srli a5, a4, 32
+lwu a2, 328(a3)
+mul a2, a1, a2
+lwu a4, 1000(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1000(a6)
+srli a5, a4, 32
+lwu a2, 332(a3)
+mul a2, a1, a2
+lwu a4, 1004(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1004(a6)
+srli a5, a4, 32
+sw a5, 1008(a6)
+addi a6, a6, 4
+addi t0, t0, -1
+bnez t0, 22b
+addi a5, zero, 0
+lwu a4, 952(a3)
+lwu a2, 1008(a3)
+add a4, a4, a2
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 560(a3)
+srli a5, a4, 32
+lwu a4, 956(a3)
+lwu a2, 1012(a3)
+add a4, a4, a2
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 564(a3)
+srli a5, a4, 32
+lwu a4, 960(a3)
+lwu a2, 1016(a3)
+add a4, a4, a2
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 568(a3)
+srli a5, a4, 32
+lwu a4, 964(a3)
+lwu a2, 1020(a3)
+add a4, a4, a2
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 572(a3)
+srli a5, a4, 32
+lwu a4, 968(a3)
+lwu a2, 1024(a3)
+add a4, a4, a2
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 576(a3)
+srli a5, a4, 32
+lwu a4, 972(a3)
+lwu a2, 1028(a3)
+add a4, a4, a2
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 580(a3)
+srli a5, a4, 32
+lwu a4, 976(a3)
+lwu a2, 1032(a3)
+add a4, a4, a2
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 584(a3)
+srli a5, a4, 32
+lwu a4, 980(a3)
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1008(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 588(a3)
+srli a5, a4, 32
+lwu a4, 984(a3)
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1012(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 592(a3)
+srli a5, a4, 32
+lwu a4, 988(a3)
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1016(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 596(a3)
+srli a5, a4, 32
+lwu a4, 992(a3)
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1020(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 600(a3)
+srli a5, a4, 32
+lwu a4, 996(a3)
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1024(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 604(a3)
+srli a5, a4, 32
+lwu a4, 1000(a3)
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1028(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 608(a3)
+srli a5, a4, 32
+lwu a4, 1004(a3)
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1032(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 612(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 560(a3)
+add a4, a4, a5
+sw a4, 560(a3)
+srli a5, a4, 32
+lwu a4, 564(a3)
+add a4, a4, a5
+sw a4, 564(a3)
+srli a5, a4, 32
+lwu a4, 568(a3)
+add a4, a4, a5
+sw a4, 568(a3)
+srli a5, a4, 32
+lwu a4, 572(a3)
+add a4, a4, a5
+sw a4, 572(a3)
+srli a5, a4, 32
+lwu a4, 576(a3)
+add a4, a4, a5
+sw a4, 576(a3)
+srli a5, a4, 32
+lwu a4, 580(a3)
+add a4, a4, a5
+sw a4, 580(a3)
+srli a5, a4, 32
+lwu a4, 584(a3)
+add a4, a4, a5
+sw a4, 584(a3)
+srli a5, a4, 32
+lwu a4, 588(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 588(a3)
+srli a5, a4, 32
+lwu a4, 592(a3)
+add a4, a4, a5
+sw a4, 592(a3)
+srli a5, a4, 32
+lwu a4, 596(a3)
+add a4, a4, a5
+sw a4, 596(a3)
+srli a5, a4, 32
+lwu a4, 600(a3)
+add a4, a4, a5
+sw a4, 600(a3)
+srli a5, a4, 32
+lwu a4, 604(a3)
+add a4, a4, a5
+sw a4, 604(a3)
+srli a5, a4, 32
+lwu a4, 608(a3)
+add a4, a4, a5
+sw a4, 608(a3)
+srli a5, a4, 32
+lwu a4, 612(a3)
+add a4, a4, a5
+sw a4, 612(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 560(a3)
+add a4, a4, a5
+sw a4, 560(a3)
+srli a5, a4, 32
+lwu a4, 564(a3)
+add a4, a4, a5
+sw a4, 564(a3)
+srli a5, a4, 32
+lwu a4, 568(a3)
+add a4, a4, a5
+sw a4, 568(a3)
+srli a5, a4, 32
+lwu a4, 572(a3)
+add a4, a4, a5
+sw a4, 572(a3)
+srli a5, a4, 32
+lwu a4, 576(a3)
+add a4, a4, a5
+sw a4, 576(a3)
+srli a5, a4, 32
+lwu a4, 580(a3)
+add a4, a4, a5
+sw a4, 580(a3)
+srli a5, a4, 32
+lwu a4, 584(a3)
+add a4, a4, a5
+sw a4, 584(a3)
+srli a5, a4, 32
+lwu a4, 588(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 588(a3)
+srli a5, a4, 32
+lwu a4, 592(a3)
+add a4, a4, a5
+sw a4, 592(a3)
+srli a5, a4, 32
+lwu a4, 596(a3)
+add a4, a4, a5
+sw a4, 596(a3)
+srli a5, a4, 32
+lwu a4, 600(a3)
+add a4, a4, a5
+sw a4, 600(a3)
+srli a5, a4, 32
+lwu a4, 604(a3)
+add a4, a4, a5
+sw a4, 604(a3)
+srli a5, a4, 32
+lwu a4, 608(a3)
+add a4, a4, a5
+sw a4, 608(a3)
+srli a5, a4, 32
+lwu a4, 612(a3)
+add a4, a4, a5
+sw a4, 612(a3)
+srli a5, a4, 32
+addi a4, zero, 0
+sw a4, 952(a3)
+sw a4, 956(a3)
+sw a4, 960(a3)
+sw a4, 964(a3)
+sw a4, 968(a3)
+sw a4, 972(a3)
+sw a4, 976(a3)
+sw a4, 980(a3)
+sw a4, 984(a3)
+sw a4, 988(a3)
+sw a4, 992(a3)
+sw a4, 996(a3)
+sw a4, 1000(a3)
+sw a4, 1004(a3)
+addi a6, a3, 0
+addi t0, zero, 14
+23:
+lwu a1, 560(a6)
+addi a5, zero, 0
+lwu a2, 560(a3)
+mul a2, a1, a2
+lwu a4, 952(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 952(a6)
+srli a5, a4, 32
+lwu a2, 564(a3)
+mul a2, a1, a2
+lwu a4, 956(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 956(a6)
+srli a5, a4, 32
+lwu a2, 568(a3)
+mul a2, a1, a2
+lwu a4, 960(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 960(a6)
+srli a5, a4, 32
+lwu a2, 572(a3)
+mul a2, a1, a2
+lwu a4, 964(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 964(a6)
+srli a5, a4, 32
+lwu a2, 576(a3)
+mul a2, a1, a2
+lwu a4, 968(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 968(a6)
+srli a5, a4, 32
+lwu a2, 580(a3)
+mul a2, a1, a2
+lwu a4, 972(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 972(a6)
+srli a5, a4, 32
+lwu a2, 584(a3)
+mul a2, a1, a2
+lwu a4, 976(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 976(a6)
+srli a5, a4, 32
+lwu a2, 588(a3)
+mul a2, a1, a2
+lwu a4, 980(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 980(a6)
+srli a5, a4, 32
+lwu a2, 592(a3)
+mul a2, a1, a2
+lwu a4, 984(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 984(a6)
+srli a5, a4, 32
+lwu a2, 596(a3)
+mul a2, a1, a2
+lwu a4, 988(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 988(a6)
+srli a5, a4, 32
+lwu a2, 600(a3)
+mul a2, a1, a2
+lwu a4, 992(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 992(a6)
+srli a5, a4, 32
+lwu a2, 604(a3)
+mul a2, a1, a2
+lwu a4, 996(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 996(a6)
+srli a5, a4, 32
+lwu a2, 608(a3)
+mul a2, a1, a2
+lwu a4, 1000(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1000(a6)
+srli a5, a4, 32
+lwu a2, 612(a3)
+mul a2, a1, a2
+lwu a4, 1004(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1004(a6)
+srli a5, a4, 32
+sw a5, 1008(a6)
+addi a6, a6, 4
+addi t0, t0, -1
+bnez t0, 23b
+addi a5, zero, 0
+lwu a4, 952(a3)
+lwu a2, 1008(a3)
+add a4, a4, a2
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 448(a3)
+srli a5, a4, 32
+lwu a4, 956(a3)
+lwu a2, 1012(a3)
+add a4, a4, a2
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 452(a3)
+srli a5, a4, 32
+lwu a4, 960(a3)
+lwu a2, 1016(a3)
+add a4, a4, a2
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 456(a3)
+srli a5, a4, 32
+lwu a4, 964(a3)
+lwu a2, 1020(a3)
+add a4, a4, a2
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 460(a3)
+srli a5, a4, 32
+lwu a4, 968(a3)
+lwu a2, 1024(a3)
+add a4, a4, a2
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 464(a3)
+srli a5, a4, 32
+lwu a4, 972(a3)
+lwu a2, 1028(a3)
+add a4, a4, a2
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 468(a3)
+srli a5, a4, 32
+lwu a4, 976(a3)
+lwu a2, 1032(a3)
+add a4, a4, a2
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 472(a3)
+srli a5, a4, 32
+lwu a4, 980(a3)
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1008(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 476(a3)
+srli a5, a4, 32
+lwu a4, 984(a3)
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1012(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 480(a3)
+srli a5, a4, 32
+lwu a4, 988(a3)
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1016(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 484(a3)
+srli a5, a4, 32
+lwu a4, 992(a3)
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1020(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 488(a3)
+srli a5, a4, 32
+lwu a4, 996(a3)
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1024(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 492(a3)
+srli a5, a4, 32
+lwu a4, 1000(a3)
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1028(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 496(a3)
+srli a5, a4, 32
+lwu a4, 1004(a3)
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1032(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 500(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 448(a3)
+add a4, a4, a5
+sw a4, 448(a3)
+srli a5, a4, 32
+lwu a4, 452(a3)
+add a4, a4, a5
+sw a4, 452(a3)
+srli a5, a4, 32
+lwu a4, 456(a3)
+add a4, a4, a5
+sw a4, 456(a3)
+srli a5, a4, 32
+lwu a4, 460(a3)
+add a4, a4, a5
+sw a4, 460(a3)
+srli a5, a4, 32
+lwu a4, 464(a3)
+add a4, a4, a5
+sw a4, 464(a3)
+srli a5, a4, 32
+lwu a4, 468(a3)
+add a4, a4, a5
+sw a4, 468(a3)
+srli a5, a4, 32
+lwu a4, 472(a3)
+add a4, a4, a5
+sw a4, 472(a3)
+srli a5, a4, 32
+lwu a4, 476(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 476(a3)
+srli a5, a4, 32
+lwu a4, 480(a3)
+add a4, a4, a5
+sw a4, 480(a3)
+srli a5, a4, 32
+lwu a4, 484(a3)
+add a4, a4, a5
+sw a4, 484(a3)
+srli a5, a4, 32
+lwu a4, 488(a3)
+add a4, a4, a5
+sw a4, 488(a3)
+srli a5, a4, 32
+lwu a4, 492(a3)
+add a4, a4, a5
+sw a4, 492(a3)
+srli a5, a4, 32
+lwu a4, 496(a3)
+add a4, a4, a5
+sw a4, 496(a3)
+srli a5, a4, 32
+lwu a4, 500(a3)
+add a4, a4, a5
+sw a4, 500(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 448(a3)
+add a4, a4, a5
+sw a4, 448(a3)
+srli a5, a4, 32
+lwu a4, 452(a3)
+add a4, a4, a5
+sw a4, 452(a3)
+srli a5, a4, 32
+lwu a4, 456(a3)
+add a4, a4, a5
+sw a4, 456(a3)
+srli a5, a4, 32
+lwu a4, 460(a3)
+add a4, a4, a5
+sw a4, 460(a3)
+srli a5, a4, 32
+lwu a4, 464(a3)
+add a4, a4, a5
+sw a4, 464(a3)
+srli a5, a4, 32
+lwu a4, 468(a3)
+add a4, a4, a5
+sw a4, 468(a3)
+srli a5, a4, 32
+lwu a4, 472(a3)
+add a4, a4, a5
+sw a4, 472(a3)
+srli a5, a4, 32
+lwu a4, 476(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 476(a3)
+srli a5, a4, 32
+lwu a4, 480(a3)
+add a4, a4, a5
+sw a4, 480(a3)
+srli a5, a4, 32
+lwu a4, 484(a3)
+add a4, a4, a5
+sw a4, 484(a3)
+srli a5, a4, 32
+lwu a4, 488(a3)
+add a4, a4, a5
+sw a4, 488(a3)
+srli a5, a4, 32
+lwu a4, 492(a3)
+add a4, a4, a5
+sw a4, 492(a3)
+srli a5, a4, 32
+lwu a4, 496(a3)
+add a4, a4, a5
+sw a4, 496(a3)
+srli a5, a4, 32
+lwu a4, 500(a3)
+add a4, a4, a5
+sw a4, 500(a3)
+srli a5, a4, 32
+addi a4, zero, 0
+sw a4, 952(a3)
+sw a4, 956(a3)
+sw a4, 960(a3)
+sw a4, 964(a3)
+sw a4, 968(a3)
+sw a4, 972(a3)
+sw a4, 976(a3)
+sw a4, 980(a3)
+sw a4, 984(a3)
+sw a4, 988(a3)
+sw a4, 992(a3)
+sw a4, 996(a3)
+sw a4, 1000(a3)
+sw a4, 1004(a3)
+addi a6, a3, 0
+addi t0, zero, 14
+24:
+lwu a1, 56(a6)
+addi a5, zero, 0
+lwu a2, 168(a3)
+mul a2, a1, a2
+lwu a4, 952(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 952(a6)
+srli a5, a4, 32
+lwu a2, 172(a3)
+mul a2, a1, a2
+lwu a4, 956(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 956(a6)
+srli a5, a4, 32
+lwu a2, 176(a3)
+mul a2, a1, a2
+lwu a4, 960(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 960(a6)
+srli a5, a4, 32
+lwu a2, 180(a3)
+mul a2, a1, a2
+lwu a4, 964(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 964(a6)
+srli a5, a4, 32
+lwu a2, 184(a3)
+mul a2, a1, a2
+lwu a4, 968(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 968(a6)
+srli a5, a4, 32
+lwu a2, 188(a3)
+mul a2, a1, a2
+lwu a4, 972(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 972(a6)
+srli a5, a4, 32
+lwu a2, 192(a3)
+mul a2, a1, a2
+lwu a4, 976(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 976(a6)
+srli a5, a4, 32
+lwu a2, 196(a3)
+mul a2, a1, a2
+lwu a4, 980(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 980(a6)
+srli a5, a4, 32
+lwu a2, 200(a3)
+mul a2, a1, a2
+lwu a4, 984(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 984(a6)
+srli a5, a4, 32
+lwu a2, 204(a3)
+mul a2, a1, a2
+lwu a4, 988(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 988(a6)
+srli a5, a4, 32
+lwu a2, 208(a3)
+mul a2, a1, a2
+lwu a4, 992(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 992(a6)
+srli a5, a4, 32
+lwu a2, 212(a3)
+mul a2, a1, a2
+lwu a4, 996(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 996(a6)
+srli a5, a4, 32
+lwu a2, 216(a3)
+mul a2, a1, a2
+lwu a4, 1000(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1000(a6)
+srli a5, a4, 32
+lwu a2, 220(a3)
+mul a2, a1, a2
+lwu a4, 1004(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1004(a6)
+srli a5, a4, 32
+sw a5, 1008(a6)
+addi a6, a6, 4
+addi t0, t0, -1
+bnez t0, 24b
+addi a5, zero, 0
+lwu a4, 952(a3)
+lwu a2, 1008(a3)
+add a4, a4, a2
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 616(a3)
+srli a5, a4, 32
+lwu a4, 956(a3)
+lwu a2, 1012(a3)
+add a4, a4, a2
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 620(a3)
+srli a5, a4, 32
+lwu a4, 960(a3)
+lwu a2, 1016(a3)
+add a4, a4, a2
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 624(a3)
+srli a5, a4, 32
+lwu a4, 964(a3)
+lwu a2, 1020(a3)
+add a4, a4, a2
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 628(a3)
+srli a5, a4, 32
+lwu a4, 968(a3)
+lwu a2, 1024(a3)
+add a4, a4, a2
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 632(a3)
+srli a5, a4, 32
+lwu a4, 972(a3)
+lwu a2, 1028(a3)
+add a4, a4, a2
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 636(a3)
+srli a5, a4, 32
+lwu a4, 976(a3)
+lwu a2, 1032(a3)
+add a4, a4, a2
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 640(a3)
+srli a5, a4, 32
+lwu a4, 980(a3)
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1008(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 644(a3)
+srli a5, a4, 32
+lwu a4, 984(a3)
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1012(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 648(a3)
+srli a5, a4, 32
+lwu a4, 988(a3)
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1016(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 652(a3)
+srli a5, a4, 32
+lwu a4, 992(a3)
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1020(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 656(a3)
+srli a5, a4, 32
+lwu a4, 996(a3)
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1024(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 660(a3)
+srli a5, a4, 32
+lwu a4, 1000(a3)
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1028(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 664(a3)
+srli a5, a4, 32
+lwu a4, 1004(a3)
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1032(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 668(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 616(a3)
+add a4, a4, a5
+sw a4, 616(a3)
+srli a5, a4, 32
+lwu a4, 620(a3)
+add a4, a4, a5
+sw a4, 620(a3)
+srli a5, a4, 32
+lwu a4, 624(a3)
+add a4, a4, a5
+sw a4, 624(a3)
+srli a5, a4, 32
+lwu a4, 628(a3)
+add a4, a4, a5
+sw a4, 628(a3)
+srli a5, a4, 32
+lwu a4, 632(a3)
+add a4, a4, a5
+sw a4, 632(a3)
+srli a5, a4, 32
+lwu a4, 636(a3)
+add a4, a4, a5
+sw a4, 636(a3)
+srli a5, a4, 32
+lwu a4, 640(a3)
+add a4, a4, a5
+sw a4, 640(a3)
+srli a5, a4, 32
+lwu a4, 644(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 644(a3)
+srli a5, a4, 32
+lwu a4, 648(a3)
+add a4, a4, a5
+sw a4, 648(a3)
+srli a5, a4, 32
+lwu a4, 652(a3)
+add a4, a4, a5
+sw a4, 652(a3)
+srli a5, a4, 32
+lwu a4, 656(a3)
+add a4, a4, a5
+sw a4, 656(a3)
+srli a5, a4, 32
+lwu a4, 660(a3)
+add a4, a4, a5
+sw a4, 660(a3)
+srli a5, a4, 32
+lwu a4, 664(a3)
+add a4, a4, a5
+sw a4, 664(a3)
+srli a5, a4, 32
+lwu a4, 668(a3)
+add a4, a4, a5
+sw a4, 668(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 616(a3)
+add a4, a4, a5
+sw a4, 616(a3)
+srli a5, a4, 32
+lwu a4, 620(a3)
+add a4, a4, a5
+sw a4, 620(a3)
+srli a5, a4, 32
+lwu a4, 624(a3)
+add a4, a4, a5
+sw a4, 624(a3)
+srli a5, a4, 32
+lwu a4, 628(a3)
+add a4, a4, a5
+sw a4, 628(a3)
+srli a5, a4, 32
+lwu a4, 632(a3)
+add a4, a4, a5
+sw a4, 632(a3)
+srli a5, a4, 32
+lwu a4, 636(a3)
+add a4, a4, a5
+sw a4, 636(a3)
+srli a5, a4, 32
+lwu a4, 640(a3)
+add a4, a4, a5
+sw a4, 640(a3)
+srli a5, a4, 32
+lwu a4, 644(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 644(a3)
+srli a5, a4, 32
+lwu a4, 648(a3)
+add a4, a4, a5
+sw a4, 648(a3)
+srli a5, a4, 32
+lwu a4, 652(a3)
+add a4, a4, a5
+sw a4, 652(a3)
+srli a5, a4, 32
+lwu a4, 656(a3)
+add a4, a4, a5
+sw a4, 656(a3)
+srli a5, a4, 32
+lwu a4, 660(a3)
+add a4, a4, a5
+sw a4, 660(a3)
+srli a5, a4, 32
+lwu a4, 664(a3)
+add a4, a4, a5
+sw a4, 664(a3)
+srli a5, a4, 32
+lwu a4, 668(a3)
+add a4, a4, a5
+sw a4, 668(a3)
+srli a5, a4, 32
+addi a4, zero, 0
+sw a4, 952(a3)
+sw a4, 956(a3)
+sw a4, 960(a3)
+sw a4, 964(a3)
+sw a4, 968(a3)
+sw a4, 972(a3)
+sw a4, 976(a3)
+sw a4, 980(a3)
+sw a4, 984(a3)
+sw a4, 988(a3)
+sw a4, 992(a3)
+sw a4, 996(a3)
+sw a4, 1000(a3)
+sw a4, 1004(a3)
+addi a6, a3, 0
+addi t0, zero, 14
+25:
+lwu a1, 0(a6)
+addi a5, zero, 0
+lwu a2, 224(a3)
+mul a2, a1, a2
+lwu a4, 952(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 952(a6)
+srli a5, a4, 32
+lwu a2, 228(a3)
+mul a2, a1, a2
+lwu a4, 956(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 956(a6)
+srli a5, a4, 32
+lwu a2, 232(a3)
+mul a2, a1, a2
+lwu a4, 960(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 960(a6)
+srli a5, a4, 32
+lwu a2, 236(a3)
+mul a2, a1, a2
+lwu a4, 964(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 964(a6)
+srli a5, a4, 32
+lwu a2, 240(a3)
+mul a2, a1, a2
+lwu a4, 968(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 968(a6)
+srli a5, a4, 32
+lwu a2, 244(a3)
+mul a2, a1, a2
+lwu a4, 972(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 972(a6)
+srli a5, a4, 32
+lwu a2, 248(a3)
+mul a2, a1, a2
+lwu a4, 976(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 976(a6)
+srli a5, a4, 32
+lwu a2, 252(a3)
+mul a2, a1, a2
+lwu a4, 980(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 980(a6)
+srli a5, a4, 32
+lwu a2, 256(a3)
+mul a2, a1, a2
+lwu a4, 984(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 984(a6)
+srli a5, a4, 32
+lwu a2, 260(a3)
+mul a2, a1, a2
+lwu a4, 988(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 988(a6)
+srli a5, a4, 32
+lwu a2, 264(a3)
+mul a2, a1, a2
+lwu a4, 992(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 992(a6)
+srli a5, a4, 32
+lwu a2, 268(a3)
+mul a2, a1, a2
+lwu a4, 996(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 996(a6)
+srli a5, a4, 32
+lwu a2, 272(a3)
+mul a2, a1, a2
+lwu a4, 1000(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1000(a6)
+srli a5, a4, 32
+lwu a2, 276(a3)
+mul a2, a1, a2
+lwu a4, 1004(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1004(a6)
+srli a5, a4, 32
+sw a5, 1008(a6)
+addi a6, a6, 4
+addi t0, t0, -1
+bnez t0, 25b
+addi a5, zero, 0
+lwu a4, 952(a3)
+lwu a2, 1008(a3)
+add a4, a4, a2
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 672(a3)
+srli a5, a4, 32
+lwu a4, 956(a3)
+lwu a2, 1012(a3)
+add a4, a4, a2
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 676(a3)
+srli a5, a4, 32
+lwu a4, 960(a3)
+lwu a2, 1016(a3)
+add a4, a4, a2
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 680(a3)
+srli a5, a4, 32
+lwu a4, 964(a3)
+lwu a2, 1020(a3)
+add a4, a4, a2
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 684(a3)
+srli a5, a4, 32
+lwu a4, 968(a3)
+lwu a2, 1024(a3)
+add a4, a4, a2
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 688(a3)
+srli a5, a4, 32
+lwu a4, 972(a3)
+lwu a2, 1028(a3)
+add a4, a4, a2
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 692(a3)
+srli a5, a4, 32
+lwu a4, 976(a3)
+lwu a2, 1032(a3)
+add a4, a4, a2
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 696(a3)
+srli a5, a4, 32
+lwu a4, 980(a3)
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1008(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 700(a3)
+srli a5, a4, 32
+lwu a4, 984(a3)
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1012(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 704(a3)
+srli a5, a4, 32
+lwu a4, 988(a3)
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1016(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 708(a3)
+srli a5, a4, 32
+lwu a4, 992(a3)
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1020(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 712(a3)
+srli a5, a4, 32
+lwu a4, 996(a3)
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1024(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 716(a3)
+srli a5, a4, 32
+lwu a4, 1000(a3)
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1028(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 720(a3)
+srli a5, a4, 32
+lwu a4, 1004(a3)
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1032(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 724(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 672(a3)
+add a4, a4, a5
+sw a4, 672(a3)
+srli a5, a4, 32
+lwu a4, 676(a3)
+add a4, a4, a5
+sw a4, 676(a3)
+srli a5, a4, 32
+lwu a4, 680(a3)
+add a4, a4, a5
+sw a4, 680(a3)
+srli a5, a4, 32
+lwu a4, 684(a3)
+add a4, a4, a5
+sw a4, 684(a3)
+srli a5, a4, 32
+lwu a4, 688(a3)
+add a4, a4, a5
+sw a4, 688(a3)
+srli a5, a4, 32
+lwu a4, 692(a3)
+add a4, a4, a5
+sw a4, 692(a3)
+srli a5, a4, 32
+lwu a4, 696(a3)
+add a4, a4, a5
+sw a4, 696(a3)
+srli a5, a4, 32
+lwu a4, 700(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 700(a3)
+srli a5, a4, 32
+lwu a4, 704(a3)
+add a4, a4, a5
+sw a4, 704(a3)
+srli a5, a4, 32
+lwu a4, 708(a3)
+add a4, a4, a5
+sw a4, 708(a3)
+srli a5, a4, 32
+lwu a4, 712(a3)
+add a4, a4, a5
+sw a4, 712(a3)
+srli a5, a4, 32
+lwu a4, 716(a3)
+add a4, a4, a5
+sw a4, 716(a3)
+srli a5, a4, 32
+lwu a4, 720(a3)
+add a4, a4, a5
+sw a4, 720(a3)
+srli a5, a4, 32
+lwu a4, 724(a3)
+add a4, a4, a5
+sw a4, 724(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 672(a3)
+add a4, a4, a5
+sw a4, 672(a3)
+srli a5, a4, 32
+lwu a4, 676(a3)
+add a4, a4, a5
+sw a4, 676(a3)
+srli a5, a4, 32
+lwu a4, 680(a3)
+add a4, a4, a5
+sw a4, 680(a3)
+srli a5, a4, 32
+lwu a4, 684(a3)
+add a4, a4, a5
+sw a4, 684(a3)
+srli a5, a4, 32
+lwu a4, 688(a3)
+add a4, a4, a5
+sw a4, 688(a3)
+srli a5, a4, 32
+lwu a4, 692(a3)
+add a4, a4, a5
+sw a4, 692(a3)
+srli a5, a4, 32
+lwu a4, 696(a3)
+add a4, a4, a5
+sw a4, 696(a3)
+srli a5, a4, 32
+lwu a4, 700(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 700(a3)
+srli a5, a4, 32
+lwu a4, 704(a3)
+add a4, a4, a5
+sw a4, 704(a3)
+srli a5, a4, 32
+lwu a4, 708(a3)
+add a4, a4, a5
+sw a4, 708(a3)
+srli a5, a4, 32
+lwu a4, 712(a3)
+add a4, a4, a5
+sw a4, 712(a3)
+srli a5, a4, 32
+lwu a4, 716(a3)
+add a4, a4, a5
+sw a4, 716(a3)
+srli a5, a4, 32
+lwu a4, 720(a3)
+add a4, a4, a5
+sw a4, 720(a3)
+srli a5, a4, 32
+lwu a4, 724(a3)
+add a4, a4, a5
+sw a4, 724(a3)
+srli a5, a4, 32
+addi a4, zero, 0
+sw a4, 952(a3)
+sw a4, 956(a3)
+sw a4, 960(a3)
+sw a4, 964(a3)
+sw a4, 968(a3)
+sw a4, 972(a3)
+sw a4, 976(a3)
+sw a4, 980(a3)
+sw a4, 984(a3)
+sw a4, 988(a3)
+sw a4, 992(a3)
+sw a4, 996(a3)
+sw a4, 1000(a3)
+sw a4, 1004(a3)
+addi a6, a3, 0
+addi t0, zero, 14
+26:
+lwu a1, 336(a6)
+addi a5, zero, 0
+lwu a2, 616(a3)
+mul a2, a1, a2
+lwu a4, 952(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 952(a6)
+srli a5, a4, 32
+lwu a2, 620(a3)
+mul a2, a1, a2
+lwu a4, 956(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 956(a6)
+srli a5, a4, 32
+lwu a2, 624(a3)
+mul a2, a1, a2
+lwu a4, 960(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 960(a6)
+srli a5, a4, 32
+lwu a2, 628(a3)
+mul a2, a1, a2
+lwu a4, 964(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 964(a6)
+srli a5, a4, 32
+lwu a2, 632(a3)
+mul a2, a1, a2
+lwu a4, 968(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 968(a6)
+srli a5, a4, 32
+lwu a2, 636(a3)
+mul a2, a1, a2
+lwu a4, 972(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 972(a6)
+srli a5, a4, 32
+lwu a2, 640(a3)
+mul a2, a1, a2
+lwu a4, 976(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 976(a6)
+srli a5, a4, 32
+lwu a2, 644(a3)
+mul a2, a1, a2
+lwu a4, 980(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 980(a6)
+srli a5, a4, 32
+lwu a2, 648(a3)
+mul a2, a1, a2
+lwu a4, 984(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 984(a6)
+srli a5, a4, 32
+lwu a2, 652(a3)
+mul a2, a1, a2
+lwu a4, 988(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 988(a6)
+srli a5, a4, 32
+lwu a2, 656(a3)
+mul a2, a1, a2
+lwu a4, 992(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 992(a6)
+srli a5, a4, 32
+lwu a2, 660(a3)
+mul a2, a1, a2
+lwu a4, 996(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 996(a6)
+srli a5, a4, 32
+lwu a2, 664(a3)
+mul a2, a1, a2
+lwu a4, 1000(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1000(a6)
+srli a5, a4, 32
+lwu a2, 668(a3)
+mul a2, a1, a2
+lwu a4, 1004(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1004(a6)
+srli a5, a4, 32
+sw a5, 1008(a6)
+addi a6, a6, 4
+addi t0, t0, -1
+bnez t0, 26b
+addi a5, zero, 0
+lwu a4, 952(a3)
+lwu a2, 1008(a3)
+add a4, a4, a2
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 504(a3)
+srli a5, a4, 32
+lwu a4, 956(a3)
+lwu a2, 1012(a3)
+add a4, a4, a2
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 508(a3)
+srli a5, a4, 32
+lwu a4, 960(a3)
+lwu a2, 1016(a3)
+add a4, a4, a2
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 512(a3)
+srli a5, a4, 32
+lwu a4, 964(a3)
+lwu a2, 1020(a3)
+add a4, a4, a2
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 516(a3)
+srli a5, a4, 32
+lwu a4, 968(a3)
+lwu a2, 1024(a3)
+add a4, a4, a2
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 520(a3)
+srli a5, a4, 32
+lwu a4, 972(a3)
+lwu a2, 1028(a3)
+add a4, a4, a2
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 524(a3)
+srli a5, a4, 32
+lwu a4, 976(a3)
+lwu a2, 1032(a3)
+add a4, a4, a2
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 528(a3)
+srli a5, a4, 32
+lwu a4, 980(a3)
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1008(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 532(a3)
+srli a5, a4, 32
+lwu a4, 984(a3)
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1012(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 536(a3)
+srli a5, a4, 32
+lwu a4, 988(a3)
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1016(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 540(a3)
+srli a5, a4, 32
+lwu a4, 992(a3)
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1020(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 544(a3)
+srli a5, a4, 32
+lwu a4, 996(a3)
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1024(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 548(a3)
+srli a5, a4, 32
+lwu a4, 1000(a3)
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1028(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 552(a3)
+srli a5, a4, 32
+lwu a4, 1004(a3)
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1032(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 556(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 504(a3)
+add a4, a4, a5
+sw a4, 504(a3)
+srli a5, a4, 32
+lwu a4, 508(a3)
+add a4, a4, a5
+sw a4, 508(a3)
+srli a5, a4, 32
+lwu a4, 512(a3)
+add a4, a4, a5
+sw a4, 512(a3)
+srli a5, a4, 32
+lwu a4, 516(a3)
+add a4, a4, a5
+sw a4, 516(a3)
+srli a5, a4, 32
+lwu a4, 520(a3)
+add a4, a4, a5
+sw a4, 520(a3)
+srli a5, a4, 32
+lwu a4, 524(a3)
+add a4, a4, a5
+sw a4, 524(a3)
+srli a5, a4, 32
+lwu a4, 528(a3)
+add a4, a4, a5
+sw a4, 528(a3)
+srli a5, a4, 32
+lwu a4, 532(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 532(a3)
+srli a5, a4, 32
+lwu a4, 536(a3)
+add a4, a4, a5
+sw a4, 536(a3)
+srli a5, a4, 32
+lwu a4, 540(a3)
+add a4, a4, a5
+sw a4, 540(a3)
+srli a5, a4, 32
+lwu a4, 544(a3)
+add a4, a4, a5
+sw a4, 544(a3)
+srli a5, a4, 32
+lwu a4, 548(a3)
+add a4, a4, a5
+sw a4, 548(a3)
+srli a5, a4, 32
+lwu a4, 552(a3)
+add a4, a4, a5
+sw a4, 552(a3)
+srli a5, a4, 32
+lwu a4, 556(a3)
+add a4, a4, a5
+sw a4, 556(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 504(a3)
+add a4, a4, a5
+sw a4, 504(a3)
+srli a5, a4, 32
+lwu a4, 508(a3)
+add a4, a4, a5
+sw a4, 508(a3)
+srli a5, a4, 32
+lwu a4, 512(a3)
+add a4, a4, a5
+sw a4, 512(a3)
+srli a5, a4, 32
+lwu a4, 516(a3)
+add a4, a4, a5
+sw a4, 516(a3)
+srli a5, a4, 32
+lwu a4, 520(a3)
+add a4, a4, a5
+sw a4, 520(a3)
+srli a5, a4, 32
+lwu a4, 524(a3)
+add a4, a4, a5
+sw a4, 524(a3)
+srli a5, a4, 32
+lwu a4, 528(a3)
+add a4, a4, a5
+sw a4, 528(a3)
+srli a5, a4, 32
+lwu a4, 532(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 532(a3)
+srli a5, a4, 32
+lwu a4, 536(a3)
+add a4, a4, a5
+sw a4, 536(a3)
+srli a5, a4, 32
+lwu a4, 540(a3)
+add a4, a4, a5
+sw a4, 540(a3)
+srli a5, a4, 32
+lwu a4, 544(a3)
+add a4, a4, a5
+sw a4, 544(a3)
+srli a5, a4, 32
+lwu a4, 548(a3)
+add a4, a4, a5
+sw a4, 548(a3)
+srli a5, a4, 32
+lwu a4, 552(a3)
+add a4, a4, a5
+sw a4, 552(a3)
+srli a5, a4, 32
+lwu a4, 556(a3)
+add a4, a4, a5
+sw a4, 556(a3)
+srli a5, a4, 32
+addi a4, zero, 0
+sw a4, 952(a3)
+sw a4, 956(a3)
+sw a4, 960(a3)
+sw a4, 964(a3)
+sw a4, 968(a3)
+sw a4, 972(a3)
+sw a4, 976(a3)
+sw a4, 980(a3)
+sw a4, 984(a3)
+sw a4, 988(a3)
+sw a4, 992(a3)
+sw a4, 996(a3)
+sw a4, 1000(a3)
+sw a4, 1004(a3)
+addi a6, a3, 0
+addi t0, zero, 14
+27:
+lwu a1, 504(a6)
+addi a5, zero, 0
+lwu a2, 672(a3)
+mul a2, a1, a2
+lwu a4, 952(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 952(a6)
+srli a5, a4, 32
+lwu a2, 676(a3)
+mul a2, a1, a2
+lwu a4, 956(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 956(a6)
+srli a5, a4, 32
+lwu a2, 680(a3)
+mul a2, a1, a2
+lwu a4, 960(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 960(a6)
+srli a5, a4, 32
+lwu a2, 684(a3)
+mul a2, a1, a2
+lwu a4, 964(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 964(a6)
+srli a5, a4, 32
+lwu a2, 688(a3)
+mul a2, a1, a2
+lwu a4, 968(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 968(a6)
+srli a5, a4, 32
+lwu a2, 692(a3)
+mul a2, a1, a2
+lwu a4, 972(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 972(a6)
+srli a5, a4, 32
+lwu a2, 696(a3)
+mul a2, a1, a2
+lwu a4, 976(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 976(a6)
+srli a5, a4, 32
+lwu a2, 700(a3)
+mul a2, a1, a2
+lwu a4, 980(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 980(a6)
+srli a5, a4, 32
+lwu a2, 704(a3)
+mul a2, a1, a2
+lwu a4, 984(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 984(a6)
+srli a5, a4, 32
+lwu a2, 708(a3)
+mul a2, a1, a2
+lwu a4, 988(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 988(a6)
+srli a5, a4, 32
+lwu a2, 712(a3)
+mul a2, a1, a2
+lwu a4, 992(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 992(a6)
+srli a5, a4, 32
+lwu a2, 716(a3)
+mul a2, a1, a2
+lwu a4, 996(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 996(a6)
+srli a5, a4, 32
+lwu a2, 720(a3)
+mul a2, a1, a2
+lwu a4, 1000(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1000(a6)
+srli a5, a4, 32
+lwu a2, 724(a3)
+mul a2, a1, a2
+lwu a4, 1004(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1004(a6)
+srli a5, a4, 32
+sw a5, 1008(a6)
+addi a6, a6, 4
+addi t0, t0, -1
+bnez t0, 27b
+addi a5, zero, 0
+lwu a4, 952(a3)
+lwu a2, 1008(a3)
+add a4, a4, a2
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 504(a3)
+srli a5, a4, 32
+lwu a4, 956(a3)
+lwu a2, 1012(a3)
+add a4, a4, a2
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 508(a3)
+srli a5, a4, 32
+lwu a4, 960(a3)
+lwu a2, 1016(a3)
+add a4, a4, a2
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 512(a3)
+srli a5, a4, 32
+lwu a4, 964(a3)
+lwu a2, 1020(a3)
+add a4, a4, a2
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 516(a3)
+srli a5, a4, 32
+lwu a4, 968(a3)
+lwu a2, 1024(a3)
+add a4, a4, a2
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 520(a3)
+srli a5, a4, 32
+lwu a4, 972(a3)
+lwu a2, 1028(a3)
+add a4, a4, a2
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 524(a3)
+srli a5, a4, 32
+lwu a4, 976(a3)
+lwu a2, 1032(a3)
+add a4, a4, a2
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 528(a3)
+srli a5, a4, 32
+lwu a4, 980(a3)
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1008(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 532(a3)
+srli a5, a4, 32
+lwu a4, 984(a3)
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1012(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 536(a3)
+srli a5, a4, 32
+lwu a4, 988(a3)
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1016(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 540(a3)
+srli a5, a4, 32
+lwu a4, 992(a3)
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1020(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 544(a3)
+srli a5, a4, 32
+lwu a4, 996(a3)
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1024(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 548(a3)
+srli a5, a4, 32
+lwu a4, 1000(a3)
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1028(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 552(a3)
+srli a5, a4, 32
+lwu a4, 1004(a3)
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1032(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 556(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 504(a3)
+add a4, a4, a5
+sw a4, 504(a3)
+srli a5, a4, 32
+lwu a4, 508(a3)
+add a4, a4, a5
+sw a4, 508(a3)
+srli a5, a4, 32
+lwu a4, 512(a3)
+add a4, a4, a5
+sw a4, 512(a3)
+srli a5, a4, 32
+lwu a4, 516(a3)
+add a4, a4, a5
+sw a4, 516(a3)
+srli a5, a4, 32
+lwu a4, 520(a3)
+add a4, a4, a5
+sw a4, 520(a3)
+srli a5, a4, 32
+lwu a4, 524(a3)
+add a4, a4, a5
+sw a4, 524(a3)
+srli a5, a4, 32
+lwu a4, 528(a3)
+add a4, a4, a5
+sw a4, 528(a3)
+srli a5, a4, 32
+lwu a4, 532(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 532(a3)
+srli a5, a4, 32
+lwu a4, 536(a3)
+add a4, a4, a5
+sw a4, 536(a3)
+srli a5, a4, 32
+lwu a4, 540(a3)
+add a4, a4, a5
+sw a4, 540(a3)
+srli a5, a4, 32
+lwu a4, 544(a3)
+add a4, a4, a5
+sw a4, 544(a3)
+srli a5, a4, 32
+lwu a4, 548(a3)
+add a4, a4, a5
+sw a4, 548(a3)
+srli a5, a4, 32
+lwu a4, 552(a3)
+add a4, a4, a5
+sw a4, 552(a3)
+srli a5, a4, 32
+lwu a4, 556(a3)
+add a4, a4, a5
+sw a4, 556(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 504(a3)
+add a4, a4, a5
+sw a4, 504(a3)
+srli a5, a4, 32
+lwu a4, 508(a3)
+add a4, a4, a5
+sw a4, 508(a3)
+srli a5, a4, 32
+lwu a4, 512(a3)
+add a4, a4, a5
+sw a4, 512(a3)
+srli a5, a4, 32
+lwu a4, 516(a3)
+add a4, a4, a5
+sw a4, 516(a3)
+srli a5, a4, 32
+lwu a4, 520(a3)
+add a4, a4, a5
+sw a4, 520(a3)
+srli a5, a4, 32
+lwu a4, 524(a3)
+add a4, a4, a5
+sw a4, 524(a3)
+srli a5, a4, 32
+lwu a4, 528(a3)
+add a4, a4, a5
+sw a4, 528(a3)
+srli a5, a4, 32
+lwu a4, 532(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 532(a3)
+srli a5, a4, 32
+lwu a4, 536(a3)
+add a4, a4, a5
+sw a4, 536(a3)
+srli a5, a4, 32
+lwu a4, 540(a3)
+add a4, a4, a5
+sw a4, 540(a3)
+srli a5, a4, 32
+lwu a4, 544(a3)
+add a4, a4, a5
+sw a4, 544(a3)
+srli a5, a4, 32
+lwu a4, 548(a3)
+add a4, a4, a5
+sw a4, 548(a3)
+srli a5, a4, 32
+lwu a4, 552(a3)
+add a4, a4, a5
+sw a4, 552(a3)
+srli a5, a4, 32
+lwu a4, 556(a3)
+add a4, a4, a5
+sw a4, 556(a3)
+srli a5, a4, 32
+addi a5, zero, 0
+addi a1, zero, 1
+slli a1, a1, 34
+lwu a4, 448(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 504(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 728(a3)
+srli a5, a4, 32
+lwu a4, 452(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 508(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 732(a3)
+srli a5, a4, 32
+lwu a4, 456(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 512(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 736(a3)
+srli a5, a4, 32
+lwu a4, 460(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 516(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 740(a3)
+srli a5, a4, 32
+lwu a4, 464(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 520(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 744(a3)
+srli a5, a4, 32
+lwu a4, 468(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 524(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 748(a3)
+srli a5, a4, 32
+lwu a4, 472(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 528(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 752(a3)
+srli a5, a4, 32
+lwu a4, 476(a3)
+add a4, a4, a1
+addi a4, a4, -8
+lwu a2, 532(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 756(a3)
+srli a5, a4, 32
+lwu a4, 480(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 536(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 760(a3)
+srli a5, a4, 32
+lwu a4, 484(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 540(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 764(a3)
+srli a5, a4, 32
+lwu a4, 488(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 544(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 768(a3)
+srli a5, a4, 32
+lwu a4, 492(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 548(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 772(a3)
+srli a5, a4, 32
+lwu a4, 496(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 552(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 776(a3)
+srli a5, a4, 32
+lwu a4, 500(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 556(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 780(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 728(a3)
+add a4, a4, a5
+sw a4, 728(a3)
+srli a5, a4, 32
+lwu a4, 732(a3)
+add a4, a4, a5
+sw a4, 732(a3)
+srli a5, a4, 32
+lwu a4, 736(a3)
+add a4, a4, a5
+sw a4, 736(a3)
+srli a5, a4, 32
+lwu a4, 740(a3)
+add a4, a4, a5
+sw a4, 740(a3)
+srli a5, a4, 32
+lwu a4, 744(a3)
+add a4, a4, a5
+sw a4, 744(a3)
+srli a5, a4, 32
+lwu a4, 748(a3)
+add a4, a4, a5
+sw a4, 748(a3)
+srli a5, a4, 32
+lwu a4, 752(a3)
+add a4, a4, a5
+sw a4, 752(a3)
+srli a5, a4, 32
+lwu a4, 756(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 756(a3)
+srli a5, a4, 32
+lwu a4, 760(a3)
+add a4, a4, a5
+sw a4, 760(a3)
+srli a5, a4, 32
+lwu a4, 764(a3)
+add a4, a4, a5
+sw a4, 764(a3)
+srli a5, a4, 32
+lwu a4, 768(a3)
+add a4, a4, a5
+sw a4, 768(a3)
+srli a5, a4, 32
+lwu a4, 772(a3)
+add a4, a4, a5
+sw a4, 772(a3)
+srli a5, a4, 32
+lwu a4, 776(a3)
+add a4, a4, a5
+sw a4, 776(a3)
+srli a5, a4, 32
+lwu a4, 780(a3)
+add a4, a4, a5
+sw a4, 780(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 728(a3)
+add a4, a4, a5
+sw a4, 728(a3)
+srli a5, a4, 32
+lwu a4, 732(a3)
+add a4, a4, a5
+sw a4, 732(a3)
+srli a5, a4, 32
+lwu a4, 736(a3)
+add a4, a4, a5
+sw a4, 736(a3)
+srli a5, a4, 32
+lwu a4, 740(a3)
+add a4, a4, a5
+sw a4, 740(a3)
+srli a5, a4, 32
+lwu a4, 744(a3)
+add a4, a4, a5
+sw a4, 744(a3)
+srli a5, a4, 32
+lwu a4, 748(a3)
+add a4, a4, a5
+sw a4, 748(a3)
+srli a5, a4, 32
+lwu a4, 752(a3)
+add a4, a4, a5
+sw a4, 752(a3)
+srli a5, a4, 32
+lwu a4, 756(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 756(a3)
+srli a5, a4, 32
+lwu a4, 760(a3)
+add a4, a4, a5
+sw a4, 760(a3)
+srli a5, a4, 32
+lwu a4, 764(a3)
+add a4, a4, a5
+sw a4, 764(a3)
+srli a5, a4, 32
+lwu a4, 768(a3)
+add a4, a4, a5
+sw a4, 768(a3)
+srli a5, a4, 32
+lwu a4, 772(a3)
+add a4, a4, a5
+sw a4, 772(a3)
+srli a5, a4, 32
+lwu a4, 776(a3)
+add a4, a4, a5
+sw a4, 776(a3)
+srli a5, a4, 32
+lwu a4, 780(a3)
+add a4, a4, a5
+sw a4, 780(a3)
+srli a5, a4, 32
+addi a5, zero, 0
+lwu a4, 448(a3)
+lwu a2, 504(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 784(a3)
+srli a5, a4, 32
+lwu a4, 452(a3)
+lwu a2, 508(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 788(a3)
+srli a5, a4, 32
+lwu a4, 456(a3)
+lwu a2, 512(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 792(a3)
+srli a5, a4, 32
+lwu a4, 460(a3)
+lwu a2, 516(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 796(a3)
+srli a5, a4, 32
+lwu a4, 464(a3)
+lwu a2, 520(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 800(a3)
+srli a5, a4, 32
+lwu a4, 468(a3)
+lwu a2, 524(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 804(a3)
+srli a5, a4, 32
+lwu a4, 472(a3)
+lwu a2, 528(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 808(a3)
+srli a5, a4, 32
+lwu a4, 476(a3)
+lwu a2, 532(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 812(a3)
+srli a5, a4, 32
+lwu a4, 480(a3)
+lwu a2, 536(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 816(a3)
+srli a5, a4, 32
+lwu a4, 484(a3)
+lwu a2, 540(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 820(a3)
+srli a5, a4, 32
+lwu a4, 488(a3)
+lwu a2, 544(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 824(a3)
+srli a5, a4, 32
+lwu a4, 492(a3)
+lwu a2, 548(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 828(a3)
+srli a5, a4, 32
+lwu a4, 496(a3)
+lwu a2, 552(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 832(a3)
+srli a5, a4, 32
+lwu a4, 500(a3)
+lwu a2, 556(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 836(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 784(a3)
+add a4, a4, a5
+sw a4, 784(a3)
+srli a5, a4, 32
+lwu a4, 788(a3)
+add a4, a4, a5
+sw a4, 788(a3)
+srli a5, a4, 32
+lwu a4, 792(a3)
+add a4, a4, a5
+sw a4, 792(a3)
+srli a5, a4, 32
+lwu a4, 796(a3)
+add a4, a4, a5
+sw a4, 796(a3)
+srli a5, a4, 32
+lwu a4, 800(a3)
+add a4, a4, a5
+sw a4, 800(a3)
+srli a5, a4, 32
+lwu a4, 804(a3)
+add a4, a4, a5
+sw a4, 804(a3)
+srli a5, a4, 32
+lwu a4, 808(a3)
+add a4, a4, a5
+sw a4, 808(a3)
+srli a5, a4, 32
+lwu a4, 812(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 812(a3)
+srli a5, a4, 32
+lwu a4, 816(a3)
+add a4, a4, a5
+sw a4, 816(a3)
+srli a5, a4, 32
+lwu a4, 820(a3)
+add a4, a4, a5
+sw a4, 820(a3)
+srli a5, a4, 32
+lwu a4, 824(a3)
+add a4, a4, a5
+sw a4, 824(a3)
+srli a5, a4, 32
+lwu a4, 828(a3)
+add a4, a4, a5
+sw a4, 828(a3)
+srli a5, a4, 32
+lwu a4, 832(a3)
+add a4, a4, a5
+sw a4, 832(a3)
+srli a5, a4, 32
+lwu a4, 836(a3)
+add a4, a4, a5
+sw a4, 836(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 784(a3)
+add a4, a4, a5
+sw a4, 784(a3)
+srli a5, a4, 32
+lwu a4, 788(a3)
+add a4, a4, a5
+sw a4, 788(a3)
+srli a5, a4, 32
+lwu a4, 792(a3)
+add a4, a4, a5
+sw a4, 792(a3)
+srli a5, a4, 32
+lwu a4, 796(a3)
+add a4, a4, a5
+sw a4, 796(a3)
+srli a5, a4, 32
+lwu a4, 800(a3)
+add a4, a4, a5
+sw a4, 800(a3)
+srli a5, a4, 32
+lwu a4, 804(a3)
+add a4, a4, a5
+sw a4, 804(a3)
+srli a5, a4, 32
+lwu a4, 808(a3)
+add a4, a4, a5
+sw a4, 808(a3)
+srli a5, a4, 32
+lwu a4, 812(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 812(a3)
+srli a5, a4, 32
+lwu a4, 816(a3)
+add a4, a4, a5
+sw a4, 816(a3)
+srli a5, a4, 32
+lwu a4, 820(a3)
+add a4, a4, a5
+sw a4, 820(a3)
+srli a5, a4, 32
+lwu a4, 824(a3)
+add a4, a4, a5
+sw a4, 824(a3)
+srli a5, a4, 32
+lwu a4, 828(a3)
+add a4, a4, a5
+sw a4, 828(a3)
+srli a5, a4, 32
+lwu a4, 832(a3)
+add a4, a4, a5
+sw a4, 832(a3)
+srli a5, a4, 32
+lwu a4, 836(a3)
+add a4, a4, a5
+sw a4, 836(a3)
+srli a5, a4, 32
+addi a5, zero, 0
+lwu a4, 56(a3)
+lwu a2, 0(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 840(a3)
+srli a5, a4, 32
+lwu a4, 60(a3)
+lwu a2, 4(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 844(a3)
+srli a5, a4, 32
+lwu a4, 64(a3)
+lwu a2, 8(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 848(a3)
+srli a5, a4, 32
+lwu a4, 68(a3)
+lwu a2, 12(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 852(a3)
+srli a5, a4, 32
+lwu a4, 72(a3)
+lwu a2, 16(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 856(a3)
+srli a5, a4, 32
+lwu a4, 76(a3)
+lwu a2, 20(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 860(a3)
+srli a5, a4, 32
+lwu a4, 80(a3)
+lwu a2, 24(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 864(a3)
+srli a5, a4, 32
+lwu a4, 84(a3)
+lwu a2, 28(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 868(a3)
+srli a5, a4, 32
+lwu a4, 88(a3)
+lwu a2, 32(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 872(a3)
+srli a5, a4, 32
+lwu a4, 92(a3)
+lwu a2, 36(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 876(a3)
+srli a5, a4, 32
+lwu a4, 96(a3)
+lwu a2, 40(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 880(a3)
+srli a5, a4, 32
+lwu a4, 100(a3)
+lwu a2, 44(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 884(a3)
+srli a5, a4, 32
+lwu a4, 104(a3)
+lwu a2, 48(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 888(a3)
+srli a5, a4, 32
+lwu a4, 108(a3)
+lwu a2, 52(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 892(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 840(a3)
+add a4, a4, a5
+sw a4, 840(a3)
+srli a5, a4, 32
+lwu a4, 844(a3)
+add a4, a4, a5
+sw a4, 844(a3)
+srli a5, a4, 32
+lwu a4, 848(a3)
+add a4, a4, a5
+sw a4, 848(a3)
+srli a5, a4, 32
+lwu a4, 852(a3)
+add a4, a4, a5
+sw a4, 852(a3)
+srli a5, a4, 32
+lwu a4, 856(a3)
+add a4, a4, a5
+sw a4, 856(a3)
+srli a5, a4, 32
+lwu a4, 860(a3)
+add a4, a4, a5
+sw a4, 860(a3)
+srli a5, a4, 32
+lwu a4, 864(a3)
+add a4, a4, a5
+sw a4, 864(a3)
+srli a5, a4, 32
+lwu a4, 868(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 868(a3)
+srli a5, a4, 32
+lwu a4, 872(a3)
+add a4, a4, a5
+sw a4, 872(a3)
+srli a5, a4, 32
+lwu a4, 876(a3)
+add a4, a4, a5
+sw a4, 876(a3)
+srli a5, a4, 32
+lwu a4, 880(a3)
+add a4, a4, a5
+sw a4, 880(a3)
+srli a5, a4, 32
+lwu a4, 884(a3)
+add a4, a4, a5
+sw a4, 884(a3)
+srli a5, a4, 32
+lwu a4, 888(a3)
+add a4, a4, a5
+sw a4, 888(a3)
+srli a5, a4, 32
+lwu a4, 892(a3)
+add a4, a4, a5
+sw a4, 892(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 840(a3)
+add a4, a4, a5
+sw a4, 840(a3)
+srli a5, a4, 32
+lwu a4, 844(a3)
+add a4, a4, a5
+sw a4, 844(a3)
+srli a5, a4, 32
+lwu a4, 848(a3)
+add a4, a4, a5
+sw a4, 848(a3)
+srli a5, a4, 32
+lwu a4, 852(a3)
+add a4, a4, a5
+sw a4, 852(a3)
+srli a5, a4, 32
+lwu a4, 856(a3)
+add a4, a4, a5
+sw a4, 856(a3)
+srli a5, a4, 32
+lwu a4, 860(a3)
+add a4, a4, a5
+sw a4, 860(a3)
+srli a5, a4, 32
+lwu a4, 864(a3)
+add a4, a4, a5
+sw a4, 864(a3)
+srli a5, a4, 32
+lwu a4, 868(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 868(a3)
+srli a5, a4, 32
+lwu a4, 872(a3)
+add a4, a4, a5
+sw a4, 872(a3)
+srli a5, a4, 32
+lwu a4, 876(a3)
+add a4, a4, a5
+sw a4, 876(a3)
+srli a5, a4, 32
+lwu a4, 880(a3)
+add a4, a4, a5
+sw a4, 880(a3)
+srli a5, a4, 32
+lwu a4, 884(a3)
+add a4, a4, a5
+sw a4, 884(a3)
+srli a5, a4, 32
+lwu a4, 888(a3)
+add a4, a4, a5
+sw a4, 888(a3)
+srli a5, a4, 32
+lwu a4, 892(a3)
+add a4, a4, a5
+sw a4, 892(a3)
+srli a5, a4, 32
+addi a5, zero, 0
+lwu a4, 168(a3)
+lwu a2, 224(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 392(a3)
+srli a5, a4, 32
+lwu a4, 172(a3)
+lwu a2, 228(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 396(a3)
+srli a5, a4, 32
+lwu a4, 176(a3)
+lwu a2, 232(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 400(a3)
+srli a5, a4, 32
+lwu a4, 180(a3)
+lwu a2, 236(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 404(a3)
+srli a5, a4, 32
+lwu a4, 184(a3)
+lwu a2, 240(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 408(a3)
+srli a5, a4, 32
+lwu a4, 188(a3)
+lwu a2, 244(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 412(a3)
+srli a5, a4, 32
+lwu a4, 192(a3)
+lwu a2, 248(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 416(a3)
+srli a5, a4, 32
+lwu a4, 196(a3)
+lwu a2, 252(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 420(a3)
+srli a5, a4, 32
+lwu a4, 200(a3)
+lwu a2, 256(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 424(a3)
+srli a5, a4, 32
+lwu a4, 204(a3)
+lwu a2, 260(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 428(a3)
+srli a5, a4, 32
+lwu a4, 208(a3)
+lwu a2, 264(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 432(a3)
+srli a5, a4, 32
+lwu a4, 212(a3)
+lwu a2, 268(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 436(a3)
+srli a5, a4, 32
+lwu a4, 216(a3)
+lwu a2, 272(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 440(a3)
+srli a5, a4, 32
+lwu a4, 220(a3)
+lwu a2, 276(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 444(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 392(a3)
+add a4, a4, a5
+sw a4, 392(a3)
+srli a5, a4, 32
+lwu a4, 396(a3)
+add a4, a4, a5
+sw a4, 396(a3)
+srli a5, a4, 32
+lwu a4, 400(a3)
+add a4, a4, a5
+sw a4, 400(a3)
+srli a5, a4, 32
+lwu a4, 404(a3)
+add a4, a4, a5
+sw a4, 404(a3)
+srli a5, a4, 32
+lwu a4, 408(a3)
+add a4, a4, a5
+sw a4, 408(a3)
+srli a5, a4, 32
+lwu a4, 412(a3)
+add a4, a4, a5
+sw a4, 412(a3)
+srli a5, a4, 32
+lwu a4, 416(a3)
+add a4, a4, a5
+sw a4, 416(a3)
+srli a5, a4, 32
+lwu a4, 420(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 420(a3)
+srli a5, a4, 32
+lwu a4, 424(a3)
+add a4, a4, a5
+sw a4, 424(a3)
+srli a5, a4, 32
+lwu a4, 428(a3)
+add a4, a4, a5
+sw a4, 428(a3)
+srli a5, a4, 32
+lwu a4, 432(a3)
+add a4, a4, a5
+sw a4, 432(a3)
+srli a5, a4, 32
+lwu a4, 436(a3)
+add a4, a4, a5
+sw a4, 436(a3)
+srli a5, a4, 32
+lwu a4, 440(a3)
+add a4, a4, a5
+sw a4, 440(a3)
+srli a5, a4, 32
+lwu a4, 444(a3)
+add a4, a4, a5
+sw a4, 444(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 392(a3)
+add a4, a4, a5
+sw a4, 392(a3)
+srli a5, a4, 32
+lwu a4, 396(a3)
+add a4, a4, a5
+sw a4, 396(a3)
+srli a5, a4, 32
+lwu a4, 400(a3)
+add a4, a4, a5
+sw a4, 400(a3)
+srli a5, a4, 32
+lwu a4, 404(a3)
+add a4, a4, a5
+sw a4, 404(a3)
+srli a5, a4, 32
+lwu a4, 408(a3)
+add a4, a4, a5
+sw a4, 408(a3)
+srli a5, a4, 32
+lwu a4, 412(a3)
+add a4, a4, a5
+sw a4, 412(a3)
+srli a5, a4, 32
+lwu a4, 416(a3)
+add a4, a4, a5
+sw a4, 416(a3)
+srli a5, a4, 32
+lwu a4, 420(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 420(a3)
+srli a5, a4, 32
+lwu a4, 424(a3)
+add a4, a4, a5
+sw a4, 424(a3)
+srli a5, a4, 32
+lwu a4, 428(a3)
+add a4, a4, a5
+sw a4, 428(a3)
+srli a5, a4, 32
+lwu a4, 432(a3)
+add a4, a4, a5
+sw a4, 432(a3)
+srli a5, a4, 32
+lwu a4, 436(a3)
+add a4, a4, a5
+sw a4, 436(a3)
+srli a5, a4, 32
+lwu a4, 440(a3)
+add a4, a4, a5
+sw a4, 440(a3)
+srli a5, a4, 32
+lwu a4, 444(a3)
+add a4, a4, a5
+sw a4, 444(a3)
+srli a5, a4, 32
+addi a4, zero, 0
+sw a4, 952(a3)
+sw a4, 956(a3)
+sw a4, 960(a3)
+sw a4, 964(a3)
+sw a4, 968(a3)
+sw a4, 972(a3)
+sw a4, 976(a3)
+sw a4, 980(a3)
+sw a4, 984(a3)
+sw a4, 988(a3)
+sw a4, 992(a3)
+sw a4, 996(a3)
+sw a4, 1000(a3)
+sw a4, 1004(a3)
+addi a6, a3, 0
+addi t0, zero, 14
+28:
+lwu a1, 840(a6)
+addi a5, zero, 0
+lwu a2, 392(a3)
+mul a2, a1, a2
+lwu a4, 952(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 952(a6)
+srli a5, a4, 32
+lwu a2, 396(a3)
+mul a2, a1, a2
+lwu a4, 956(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 956(a6)
+srli a5, a4, 32
+lwu a2, 400(a3)
+mul a2, a1, a2
+lwu a4, 960(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 960(a6)
+srli a5, a4, 32
+lwu a2, 404(a3)
+mul a2, a1, a2
+lwu a4, 964(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 964(a6)
+srli a5, a4, 32
+lwu a2, 408(a3)
+mul a2, a1, a2
+lwu a4, 968(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 968(a6)
+srli a5, a4, 32
+lwu a2, 412(a3)
+mul a2, a1, a2
+lwu a4, 972(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 972(a6)
+srli a5, a4, 32
+lwu a2, 416(a3)
+mul a2, a1, a2
+lwu a4, 976(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 976(a6)
+srli a5, a4, 32
+lwu a2, 420(a3)
+mul a2, a1, a2
+lwu a4, 980(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 980(a6)
+srli a5, a4, 32
+lwu a2, 424(a3)
+mul a2, a1, a2
+lwu a4, 984(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 984(a6)
+srli a5, a4, 32
+lwu a2, 428(a3)
+mul a2, a1, a2
+lwu a4, 988(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 988(a6)
+srli a5, a4, 32
+lwu a2, 432(a3)
+mul a2, a1, a2
+lwu a4, 992(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 992(a6)
+srli a5, a4, 32
+lwu a2, 436(a3)
+mul a2, a1, a2
+lwu a4, 996(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 996(a6)
+srli a5, a4, 32
+lwu a2, 440(a3)
+mul a2, a1, a2
+lwu a4, 1000(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1000(a6)
+srli a5, a4, 32
+lwu a2, 444(a3)
+mul a2, a1, a2
+lwu a4, 1004(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1004(a6)
+srli a5, a4, 32
+sw a5, 1008(a6)
+addi a6, a6, 4
+addi t0, t0, -1
+bnez t0, 28b
+addi a5, zero, 0
+lwu a4, 952(a3)
+lwu a2, 1008(a3)
+add a4, a4, a2
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 840(a3)
+srli a5, a4, 32
+lwu a4, 956(a3)
+lwu a2, 1012(a3)
+add a4, a4, a2
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 844(a3)
+srli a5, a4, 32
+lwu a4, 960(a3)
+lwu a2, 1016(a3)
+add a4, a4, a2
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 848(a3)
+srli a5, a4, 32
+lwu a4, 964(a3)
+lwu a2, 1020(a3)
+add a4, a4, a2
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 852(a3)
+srli a5, a4, 32
+lwu a4, 968(a3)
+lwu a2, 1024(a3)
+add a4, a4, a2
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 856(a3)
+srli a5, a4, 32
+lwu a4, 972(a3)
+lwu a2, 1028(a3)
+add a4, a4, a2
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 860(a3)
+srli a5, a4, 32
+lwu a4, 976(a3)
+lwu a2, 1032(a3)
+add a4, a4, a2
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 864(a3)
+srli a5, a4, 32
+lwu a4, 980(a3)
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1008(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 868(a3)
+srli a5, a4, 32
+lwu a4, 984(a3)
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1012(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 872(a3)
+srli a5, a4, 32
+lwu a4, 988(a3)
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1016(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 876(a3)
+srli a5, a4, 32
+lwu a4, 992(a3)
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1020(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 880(a3)
+srli a5, a4, 32
+lwu a4, 996(a3)
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1024(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 884(a3)
+srli a5, a4, 32
+lwu a4, 1000(a3)
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1028(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 888(a3)
+srli a5, a4, 32
+lwu a4, 1004(a3)
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1032(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 892(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 840(a3)
+add a4, a4, a5
+sw a4, 840(a3)
+srli a5, a4, 32
+lwu a4, 844(a3)
+add a4, a4, a5
+sw a4, 844(a3)
+srli a5, a4, 32
+lwu a4, 848(a3)
+add a4, a4, a5
+sw a4, 848(a3)
+srli a5, a4, 32
+lwu a4, 852(a3)
+add a4, a4, a5
+sw a4, 852(a3)
+srli a5, a4, 32
+lwu a4, 856(a3)
+add a4, a4, a5
+sw a4, 856(a3)
+srli a5, a4, 32
+lwu a4, 860(a3)
+add a4, a4, a5
+sw a4, 860(a3)
+srli a5, a4, 32
+lwu a4, 864(a3)
+add a4, a4, a5
+sw a4, 864(a3)
+srli a5, a4, 32
+lwu a4, 868(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 868(a3)
+srli a5, a4, 32
+lwu a4, 872(a3)
+add a4, a4, a5
+sw a4, 872(a3)
+srli a5, a4, 32
+lwu a4, 876(a3)
+add a4, a4, a5
+sw a4, 876(a3)
+srli a5, a4, 32
+lwu a4, 880(a3)
+add a4, a4, a5
+sw a4, 880(a3)
+srli a5, a4, 32
+lwu a4, 884(a3)
+add a4, a4, a5
+sw a4, 884(a3)
+srli a5, a4, 32
+lwu a4, 888(a3)
+add a4, a4, a5
+sw a4, 888(a3)
+srli a5, a4, 32
+lwu a4, 892(a3)
+add a4, a4, a5
+sw a4, 892(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 840(a3)
+add a4, a4, a5
+sw a4, 840(a3)
+srli a5, a4, 32
+lwu a4, 844(a3)
+add a4, a4, a5
+sw a4, 844(a3)
+srli a5, a4, 32
+lwu a4, 848(a3)
+add a4, a4, a5
+sw a4, 848(a3)
+srli a5, a4, 32
+lwu a4, 852(a3)
+add a4, a4, a5
+sw a4, 852(a3)
+srli a5, a4, 32
+lwu a4, 856(a3)
+add a4, a4, a5
+sw a4, 856(a3)
+srli a5, a4, 32
+lwu a4, 860(a3)
+add a4, a4, a5
+sw a4, 860(a3)
+srli a5, a4, 32
+lwu a4, 864(a3)
+add a4, a4, a5
+sw a4, 864(a3)
+srli a5, a4, 32
+lwu a4, 868(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 868(a3)
+srli a5, a4, 32
+lwu a4, 872(a3)
+add a4, a4, a5
+sw a4, 872(a3)
+srli a5, a4, 32
+lwu a4, 876(a3)
+add a4, a4, a5
+sw a4, 876(a3)
+srli a5, a4, 32
+lwu a4, 880(a3)
+add a4, a4, a5
+sw a4, 880(a3)
+srli a5, a4, 32
+lwu a4, 884(a3)
+add a4, a4, a5
+sw a4, 884(a3)
+srli a5, a4, 32
+lwu a4, 888(a3)
+add a4, a4, a5
+sw a4, 888(a3)
+srli a5, a4, 32
+lwu a4, 892(a3)
+add a4, a4, a5
+sw a4, 892(a3)
+srli a5, a4, 32
+addi a4, zero, 0
+sw a4, 952(a3)
+sw a4, 956(a3)
+sw a4, 960(a3)
+sw a4, 964(a3)
+sw a4, 968(a3)
+sw a4, 972(a3)
+sw a4, 976(a3)
+sw a4, 980(a3)
+sw a4, 984(a3)
+sw a4, 988(a3)
+sw a4, 992(a3)
+sw a4, 996(a3)
+sw a4, 1000(a3)
+sw a4, 1004(a3)
+addi a6, a3, 0
+addi t0, zero, 14
+29:
+lwu a1, 560(a6)
+addi a5, zero, 0
+lwu a2, 728(a3)
+mul a2, a1, a2
+lwu a4, 952(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 952(a6)
+srli a5, a4, 32
+lwu a2, 732(a3)
+mul a2, a1, a2
+lwu a4, 956(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 956(a6)
+srli a5, a4, 32
+lwu a2, 736(a3)
+mul a2, a1, a2
+lwu a4, 960(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 960(a6)
+srli a5, a4, 32
+lwu a2, 740(a3)
+mul a2, a1, a2
+lwu a4, 964(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 964(a6)
+srli a5, a4, 32
+lwu a2, 744(a3)
+mul a2, a1, a2
+lwu a4, 968(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 968(a6)
+srli a5, a4, 32
+lwu a2, 748(a3)
+mul a2, a1, a2
+lwu a4, 972(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 972(a6)
+srli a5, a4, 32
+lwu a2, 752(a3)
+mul a2, a1, a2
+lwu a4, 976(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 976(a6)
+srli a5, a4, 32
+lwu a2, 756(a3)
+mul a2, a1, a2
+lwu a4, 980(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 980(a6)
+srli a5, a4, 32
+lwu a2, 760(a3)
+mul a2, a1, a2
+lwu a4, 984(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 984(a6)
+srli a5, a4, 32
+lwu a2, 764(a3)
+mul a2, a1, a2
+lwu a4, 988(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 988(a6)
+srli a5, a4, 32
+lwu a2, 768(a3)
+mul a2, a1, a2
+lwu a4, 992(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 992(a6)
+srli a5, a4, 32
+lwu a2, 772(a3)
+mul a2, a1, a2
+lwu a4, 996(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 996(a6)
+srli a5, a4, 32
+lwu a2, 776(a3)
+mul a2, a1, a2
+lwu a4, 1000(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1000(a6)
+srli a5, a4, 32
+lwu a2, 780(a3)
+mul a2, a1, a2
+lwu a4, 1004(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1004(a6)
+srli a5, a4, 32
+sw a5, 1008(a6)
+addi a6, a6, 4
+addi t0, t0, -1
+bnez t0, 29b
+addi a5, zero, 0
+lwu a4, 952(a3)
+lwu a2, 1008(a3)
+add a4, a4, a2
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 392(a3)
+srli a5, a4, 32
+lwu a4, 956(a3)
+lwu a2, 1012(a3)
+add a4, a4, a2
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 396(a3)
+srli a5, a4, 32
+lwu a4, 960(a3)
+lwu a2, 1016(a3)
+add a4, a4, a2
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 400(a3)
+srli a5, a4, 32
+lwu a4, 964(a3)
+lwu a2, 1020(a3)
+add a4, a4, a2
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 404(a3)
+srli a5, a4, 32
+lwu a4, 968(a3)
+lwu a2, 1024(a3)
+add a4, a4, a2
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 408(a3)
+srli a5, a4, 32
+lwu a4, 972(a3)
+lwu a2, 1028(a3)
+add a4, a4, a2
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 412(a3)
+srli a5, a4, 32
+lwu a4, 976(a3)
+lwu a2, 1032(a3)
+add a4, a4, a2
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 416(a3)
+srli a5, a4, 32
+lwu a4, 980(a3)
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1008(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 420(a3)
+srli a5, a4, 32
+lwu a4, 984(a3)
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1012(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 424(a3)
+srli a5, a4, 32
+lwu a4, 988(a3)
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1016(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 428(a3)
+srli a5, a4, 32
+lwu a4, 992(a3)
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1020(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 432(a3)
+srli a5, a4, 32
+lwu a4, 996(a3)
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1024(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 436(a3)
+srli a5, a4, 32
+lwu a4, 1000(a3)
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1028(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 440(a3)
+srli a5, a4, 32
+lwu a4, 1004(a3)
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1032(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 444(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 392(a3)
+add a4, a4, a5
+sw a4, 392(a3)
+srli a5, a4, 32
+lwu a4, 396(a3)
+add a4, a4, a5
+sw a4, 396(a3)
+srli a5, a4, 32
+lwu a4, 400(a3)
+add a4, a4, a5
+sw a4, 400(a3)
+srli a5, a4, 32
+lwu a4, 404(a3)
+add a4, a4, a5
+sw a4, 404(a3)
+srli a5, a4, 32
+lwu a4, 408(a3)
+add a4, a4, a5
+sw a4, 408(a3)
+srli a5, a4, 32
+lwu a4, 412(a3)
+add a4, a4, a5
+sw a4, 412(a3)
+srli a5, a4, 32
+lwu a4, 416(a3)
+add a4, a4, a5
+sw a4, 416(a3)
+srli a5, a4, 32
+lwu a4, 420(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 420(a3)
+srli a5, a4, 32
+lwu a4, 424(a3)
+add a4, a4, a5
+sw a4, 424(a3)
+srli a5, a4, 32
+lwu a4, 428(a3)
+add a4, a4, a5
+sw a4, 428(a3)
+srli a5, a4, 32
+lwu a4, 432(a3)
+add a4, a4, a5
+sw a4, 432(a3)
+srli a5, a4, 32
+lwu a4, 436(a3)
+add a4, a4, a5
+sw a4, 436(a3)
+srli a5, a4, 32
+lwu a4, 440(a3)
+add a4, a4, a5
+sw a4, 440(a3)
+srli a5, a4, 32
+lwu a4, 444(a3)
+add a4, a4, a5
+sw a4, 444(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 392(a3)
+add a4, a4, a5
+sw a4, 392(a3)
+srli a5, a4, 32
+lwu a4, 396(a3)
+add a4, a4, a5
+sw a4, 396(a3)
+srli a5, a4, 32
+lwu a4, 400(a3)
+add a4, a4, a5
+sw a4, 400(a3)
+srli a5, a4, 32
+lwu a4, 404(a3)
+add a4, a4, a5
+sw a4, 404(a3)
+srli a5, a4, 32
+lwu a4, 408(a3)
+add a4, a4, a5
+sw a4, 408(a3)
+srli a5, a4, 32
+lwu a4, 412(a3)
+add a4, a4, a5
+sw a4, 412(a3)
+srli a5, a4, 32
+lwu a4, 416(a3)
+add a4, a4, a5
+sw a4, 416(a3)
+srli a5, a4, 32
+lwu a4, 420(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 420(a3)
+srli a5, a4, 32
+lwu a4, 424(a3)
+add a4, a4, a5
+sw a4, 424(a3)
+srli a5, a4, 32
+lwu a4, 428(a3)
+add a4, a4, a5
+sw a4, 428(a3)
+srli a5, a4, 32
+lwu a4, 432(a3)
+add a4, a4, a5
+sw a4, 432(a3)
+srli a5, a4, 32
+lwu a4, 436(a3)
+add a4, a4, a5
+sw a4, 436(a3)
+srli a5, a4, 32
+lwu a4, 440(a3)
+add a4, a4, a5
+sw a4, 440(a3)
+srli a5, a4, 32
+lwu a4, 444(a3)
+add a4, a4, a5
+sw a4, 444(a3)
+srli a5, a4, 32
+addi a5, zero, 0
+addi a1, zero, 1
+slli a1, a1, 34
+lwu a4, 840(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 616(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 840(a3)
+srli a5, a4, 32
+lwu a4, 844(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 620(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 844(a3)
+srli a5, a4, 32
+lwu a4, 848(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 624(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 848(a3)
+srli a5, a4, 32
+lwu a4, 852(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 628(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 852(a3)
+srli a5, a4, 32
+lwu a4, 856(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 632(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 856(a3)
+srli a5, a4, 32
+lwu a4, 860(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 636(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 860(a3)
+srli a5, a4, 32
+lwu a4, 864(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 640(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 864(a3)
+srli a5, a4, 32
+lwu a4, 868(a3)
+add a4, a4, a1
+addi a4, a4, -8
+lwu a2, 644(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 868(a3)
+srli a5, a4, 32
+lwu a4, 872(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 648(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 872(a3)
+srli a5, a4, 32
+lwu a4, 876(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 652(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 876(a3)
+srli a5, a4, 32
+lwu a4, 880(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 656(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 880(a3)
+srli a5, a4, 32
+lwu a4, 884(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 660(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 884(a3)
+srli a5, a4, 32
+lwu a4, 888(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 664(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 888(a3)
+srli a5, a4, 32
+lwu a4, 892(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 668(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 892(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 840(a3)
+add a4, a4, a5
+sw a4, 840(a3)
+srli a5, a4, 32
+lwu a4, 844(a3)
+add a4, a4, a5
+sw a4, 844(a3)
+srli a5, a4, 32
+lwu a4, 848(a3)
+add a4, a4, a5
+sw a4, 848(a3)
+srli a5, a4, 32
+lwu a4, 852(a3)
+add a4, a4, a5
+sw a4, 852(a3)
+srli a5, a4, 32
+lwu a4, 856(a3)
+add a4, a4, a5
+sw a4, 856(a3)
+srli a5, a4, 32
+lwu a4, 860(a3)
+add a4, a4, a5
+sw a4, 860(a3)
+srli a5, a4, 32
+lwu a4, 864(a3)
+add a4, a4, a5
+sw a4, 864(a3)
+srli a5, a4, 32
+lwu a4, 868(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 868(a3)
+srli a5, a4, 32
+lwu a4, 872(a3)
+add a4, a4, a5
+sw a4, 872(a3)
+srli a5, a4, 32
+lwu a4, 876(a3)
+add a4, a4, a5
+sw a4, 876(a3)
+srli a5, a4, 32
+lwu a4, 880(a3)
+add a4, a4, a5
+sw a4, 880(a3)
+srli a5, a4, 32
+lwu a4, 884(a3)
+add a4, a4, a5
+sw a4, 884(a3)
+srli a5, a4, 32
+lwu a4, 888(a3)
+add a4, a4, a5
+sw a4, 888(a3)
+srli a5, a4, 32
+lwu a4, 892(a3)
+add a4, a4, a5
+sw a4, 892(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 840(a3)
+add a4, a4, a5
+sw a4, 840(a3)
+srli a5, a4, 32
+lwu a4, 844(a3)
+add a4, a4, a5
+sw a4, 844(a3)
+srli a5, a4, 32
+lwu a4, 848(a3)
+add a4, a4, a5
+sw a4, 848(a3)
+srli a5, a4, 32
+lwu a4, 852(a3)
+add a4, a4, a5
+sw a4, 852(a3)
+srli a5, a4, 32
+lwu a4, 856(a3)
+add a4, a4, a5
+sw a4, 856(a3)
+srli a5, a4, 32
+lwu a4, 860(a3)
+add a4, a4, a5
+sw a4, 860(a3)
+srli a5, a4, 32
+lwu a4, 864(a3)
+add a4, a4, a5
+sw a4, 864(a3)
+srli a5, a4, 32
+lwu a4, 868(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 868(a3)
+srli a5, a4, 32
+lwu a4, 872(a3)
+add a4, a4, a5
+sw a4, 872(a3)
+srli a5, a4, 32
+lwu a4, 876(a3)
+add a4, a4, a5
+sw a4, 876(a3)
+srli a5, a4, 32
+lwu a4, 880(a3)
+add a4, a4, a5
+sw a4, 880(a3)
+srli a5, a4, 32
+lwu a4, 884(a3)
+add a4, a4, a5
+sw a4, 884(a3)
+srli a5, a4, 32
+lwu a4, 888(a3)
+add a4, a4, a5
+sw a4, 888(a3)
+srli a5, a4, 32
+lwu a4, 892(a3)
+add a4, a4, a5
+sw a4, 892(a3)
+srli a5, a4, 32
+addi a5, zero, 0
+addi a1, zero, 1
+slli a1, a1, 34
+lwu a4, 840(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 672(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 840(a3)
+srli a5, a4, 32
+lwu a4, 844(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 676(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 844(a3)
+srli a5, a4, 32
+lwu a4, 848(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 680(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 848(a3)
+srli a5, a4, 32
+lwu a4, 852(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 684(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 852(a3)
+srli a5, a4, 32
+lwu a4, 856(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 688(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 856(a3)
+srli a5, a4, 32
+lwu a4, 860(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 692(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 860(a3)
+srli a5, a4, 32
+lwu a4, 864(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 696(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 864(a3)
+srli a5, a4, 32
+lwu a4, 868(a3)
+add a4, a4, a1
+addi a4, a4, -8
+lwu a2, 700(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 868(a3)
+srli a5, a4, 32
+lwu a4, 872(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 704(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 872(a3)
+srli a5, a4, 32
+lwu a4, 876(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 708(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 876(a3)
+srli a5, a4, 32
+lwu a4, 880(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 712(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 880(a3)
+srli a5, a4, 32
+lwu a4, 884(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 716(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 884(a3)
+srli a5, a4, 32
+lwu a4, 888(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 720(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 888(a3)
+srli a5, a4, 32
+lwu a4, 892(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 724(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 892(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 840(a3)
+add a4, a4, a5
+sw a4, 840(a3)
+srli a5, a4, 32
+lwu a4, 844(a3)
+add a4, a4, a5
+sw a4, 844(a3)
+srli a5, a4, 32
+lwu a4, 848(a3)
+add a4, a4, a5
+sw a4, 848(a3)
+srli a5, a4, 32
+lwu a4, 852(a3)
+add a4, a4, a5
+sw a4, 852(a3)
+srli a5, a4, 32
+lwu a4, 856(a3)
+add a4, a4, a5
+sw a4, 856(a3)
+srli a5, a4, 32
+lwu a4, 860(a3)
+add a4, a4, a5
+sw a4, 860(a3)
+srli a5, a4, 32
+lwu a4, 864(a3)
+add a4, a4, a5
+sw a4, 864(a3)
+srli a5, a4, 32
+lwu a4, 868(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 868(a3)
+srli a5, a4, 32
+lwu a4, 872(a3)
+add a4, a4, a5
+sw a4, 872(a3)
+srli a5, a4, 32
+lwu a4, 876(a3)
+add a4, a4, a5
+sw a4, 876(a3)
+srli a5, a4, 32
+lwu a4, 880(a3)
+add a4, a4, a5
+sw a4, 880(a3)
+srli a5, a4, 32
+lwu a4, 884(a3)
+add a4, a4, a5
+sw a4, 884(a3)
+srli a5, a4, 32
+lwu a4, 888(a3)
+add a4, a4, a5
+sw a4, 888(a3)
+srli a5, a4, 32
+lwu a4, 892(a3)
+add a4, a4, a5
+sw a4, 892(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 840(a3)
+add a4, a4, a5
+sw a4, 840(a3)
+srli a5, a4, 32
+lwu a4, 844(a3)
+add a4, a4, a5
+sw a4, 844(a3)
+srli a5, a4, 32
+lwu a4, 848(a3)
+add a4, a4, a5
+sw a4, 848(a3)
+srli a5, a4, 32
+lwu a4, 852(a3)
+add a4, a4, a5
+sw a4, 852(a3)
+srli a5, a4, 32
+lwu a4, 856(a3)
+add a4, a4, a5
+sw a4, 856(a3)
+srli a5, a4, 32
+lwu a4, 860(a3)
+add a4, a4, a5
+sw a4, 860(a3)
+srli a5, a4, 32
+lwu a4, 864(a3)
+add a4, a4, a5
+sw a4, 864(a3)
+srli a5, a4, 32
+lwu a4, 868(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 868(a3)
+srli a5, a4, 32
+lwu a4, 872(a3)
+add a4, a4, a5
+sw a4, 872(a3)
+srli a5, a4, 32
+lwu a4, 876(a3)
+add a4, a4, a5
+sw a4, 876(a3)
+srli a5, a4, 32
+lwu a4, 880(a3)
+add a4, a4, a5
+sw a4, 880(a3)
+srli a5, a4, 32
+lwu a4, 884(a3)
+add a4, a4, a5
+sw a4, 884(a3)
+srli a5, a4, 32
+lwu a4, 888(a3)
+add a4, a4, a5
+sw a4, 888(a3)
+srli a5, a4, 32
+lwu a4, 892(a3)
+add a4, a4, a5
+sw a4, 892(a3)
+srli a5, a4, 32
+addi a4, zero, 0
+sw a4, 952(a3)
+sw a4, 956(a3)
+sw a4, 960(a3)
+sw a4, 964(a3)
+sw a4, 968(a3)
+sw a4, 972(a3)
+sw a4, 976(a3)
+sw a4, 980(a3)
+sw a4, 984(a3)
+sw a4, 988(a3)
+sw a4, 992(a3)
+sw a4, 996(a3)
+sw a4, 1000(a3)
+sw a4, 1004(a3)
+addi a6, a3, 0
+addi t0, zero, 14
+210:
+lwu a1, 392(a6)
+addi a5, zero, 0
+lwu a2, 840(a3)
+mul a2, a1, a2
+lwu a4, 952(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 952(a6)
+srli a5, a4, 32
+lwu a2, 844(a3)
+mul a2, a1, a2
+lwu a4, 956(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 956(a6)
+srli a5, a4, 32
+lwu a2, 848(a3)
+mul a2, a1, a2
+lwu a4, 960(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 960(a6)
+srli a5, a4, 32
+lwu a2, 852(a3)
+mul a2, a1, a2
+lwu a4, 964(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 964(a6)
+srli a5, a4, 32
+lwu a2, 856(a3)
+mul a2, a1, a2
+lwu a4, 968(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 968(a6)
+srli a5, a4, 32
+lwu a2, 860(a3)
+mul a2, a1, a2
+lwu a4, 972(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 972(a6)
+srli a5, a4, 32
+lwu a2, 864(a3)
+mul a2, a1, a2
+lwu a4, 976(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 976(a6)
+srli a5, a4, 32
+lwu a2, 868(a3)
+mul a2, a1, a2
+lwu a4, 980(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 980(a6)
+srli a5, a4, 32
+lwu a2, 872(a3)
+mul a2, a1, a2
+lwu a4, 984(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 984(a6)
+srli a5, a4, 32
+lwu a2, 876(a3)
+mul a2, a1, a2
+lwu a4, 988(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 988(a6)
+srli a5, a4, 32
+lwu a2, 880(a3)
+mul a2, a1, a2
+lwu a4, 992(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 992(a6)
+srli a5, a4, 32
+lwu a2, 884(a3)
+mul a2, a1, a2
+lwu a4, 996(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 996(a6)
+srli a5, a4, 32
+lwu a2, 888(a3)
+mul a2, a1, a2
+lwu a4, 1000(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1000(a6)
+srli a5, a4, 32
+lwu a2, 892(a3)
+mul a2, a1, a2
+lwu a4, 1004(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1004(a6)
+srli a5, a4, 32
+sw a5, 1008(a6)
+addi a6, a6, 4
+addi t0, t0, -1
+bnez t0, 210b
+addi a5, zero, 0
+lwu a4, 952(a3)
+lwu a2, 1008(a3)
+add a4, a4, a2
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 392(a3)
+srli a5, a4, 32
+lwu a4, 956(a3)
+lwu a2, 1012(a3)
+add a4, a4, a2
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 396(a3)
+srli a5, a4, 32
+lwu a4, 960(a3)
+lwu a2, 1016(a3)
+add a4, a4, a2
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 400(a3)
+srli a5, a4, 32
+lwu a4, 964(a3)
+lwu a2, 1020(a3)
+add a4, a4, a2
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 404(a3)
+srli a5, a4, 32
+lwu a4, 968(a3)
+lwu a2, 1024(a3)
+add a4, a4, a2
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 408(a3)
+srli a5, a4, 32
+lwu a4, 972(a3)
+lwu a2, 1028(a3)
+add a4, a4, a2
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 412(a3)
+srli a5, a4, 32
+lwu a4, 976(a3)
+lwu a2, 1032(a3)
+add a4, a4, a2
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 416(a3)
+srli a5, a4, 32
+lwu a4, 980(a3)
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1008(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 420(a3)
+srli a5, a4, 32
+lwu a4, 984(a3)
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1012(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 424(a3)
+srli a5, a4, 32
+lwu a4, 988(a3)
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1016(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 428(a3)
+srli a5, a4, 32
+lwu a4, 992(a3)
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1020(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 432(a3)
+srli a5, a4, 32
+lwu a4, 996(a3)
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1024(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 436(a3)
+srli a5, a4, 32
+lwu a4, 1000(a3)
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1028(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 440(a3)
+srli a5, a4, 32
+lwu a4, 1004(a3)
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1032(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 444(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 392(a3)
+add a4, a4, a5
+sw a4, 392(a3)
+srli a5, a4, 32
+lwu a4, 396(a3)
+add a4, a4, a5
+sw a4, 396(a3)
+srli a5, a4, 32
+lwu a4, 400(a3)
+add a4, a4, a5
+sw a4, 400(a3)
+srli a5, a4, 32
+lwu a4, 404(a3)
+add a4, a4, a5
+sw a4, 404(a3)
+srli a5, a4, 32
+lwu a4, 408(a3)
+add a4, a4, a5
+sw a4, 408(a3)
+srli a5, a4, 32
+lwu a4, 412(a3)
+add a4, a4, a5
+sw a4, 412(a3)
+srli a5, a4, 32
+lwu a4, 416(a3)
+add a4, a4, a5
+sw a4, 416(a3)
+srli a5, a4, 32
+lwu a4, 420(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 420(a3)
+srli a5, a4, 32
+lwu a4, 424(a3)
+add a4, a4, a5
+sw a4, 424(a3)
+srli a5, a4, 32
+lwu a4, 428(a3)
+add a4, a4, a5
+sw a4, 428(a3)
+srli a5, a4, 32
+lwu a4, 432(a3)
+add a4, a4, a5
+sw a4, 432(a3)
+srli a5, a4, 32
+lwu a4, 436(a3)
+add a4, a4, a5
+sw a4, 436(a3)
+srli a5, a4, 32
+lwu a4, 440(a3)
+add a4, a4, a5
+sw a4, 440(a3)
+srli a5, a4, 32
+lwu a4, 444(a3)
+add a4, a4, a5
+sw a4, 444(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 392(a3)
+add a4, a4, a5
+sw a4, 392(a3)
+srli a5, a4, 32
+lwu a4, 396(a3)
+add a4, a4, a5
+sw a4, 396(a3)
+srli a5, a4, 32
+lwu a4, 400(a3)
+add a4, a4, a5
+sw a4, 400(a3)
+srli a5, a4, 32
+lwu a4, 404(a3)
+add a4, a4, a5
+sw a4, 404(a3)
+srli a5, a4, 32
+lwu a4, 408(a3)
+add a4, a4, a5
+sw a4, 408(a3)
+srli a5, a4, 32
+lwu a4, 412(a3)
+add a4, a4, a5
+sw a4, 412(a3)
+srli a5, a4, 32
+lwu a4, 416(a3)
+add a4, a4, a5
+sw a4, 416(a3)
+srli a5, a4, 32
+lwu a4, 420(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 420(a3)
+srli a5, a4, 32
+lwu a4, 424(a3)
+add a4, a4, a5
+sw a4, 424(a3)
+srli a5, a4, 32
+lwu a4, 428(a3)
+add a4, a4, a5
+sw a4, 428(a3)
+srli a5, a4, 32
+lwu a4, 432(a3)
+add a4, a4, a5
+sw a4, 432(a3)
+srli a5, a4, 32
+lwu a4, 436(a3)
+add a4, a4, a5
+sw a4, 436(a3)
+srli a5, a4, 32
+lwu a4, 440(a3)
+add a4, a4, a5
+sw a4, 440(a3)
+srli a5, a4, 32
+lwu a4, 444(a3)
+add a4, a4, a5
+sw a4, 444(a3)
+srli a5, a4, 32
+addi a4, zero, 0
+sw a4, 952(a3)
+sw a4, 956(a3)
+sw a4, 960(a3)
+sw a4, 964(a3)
+sw a4, 968(a3)
+sw a4, 972(a3)
+sw a4, 976(a3)
+sw a4, 980(a3)
+sw a4, 984(a3)
+sw a4, 988(a3)
+sw a4, 992(a3)
+sw a4, 996(a3)
+sw a4, 1000(a3)
+sw a4, 1004(a3)
+addi a6, a3, 0
+addi t0, zero, 14
+211:
+lwu a1, 560(a6)
+addi a5, zero, 0
+lwu a2, 784(a3)
+mul a2, a1, a2
+lwu a4, 952(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 952(a6)
+srli a5, a4, 32
+lwu a2, 788(a3)
+mul a2, a1, a2
+lwu a4, 956(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 956(a6)
+srli a5, a4, 32
+lwu a2, 792(a3)
+mul a2, a1, a2
+lwu a4, 960(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 960(a6)
+srli a5, a4, 32
+lwu a2, 796(a3)
+mul a2, a1, a2
+lwu a4, 964(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 964(a6)
+srli a5, a4, 32
+lwu a2, 800(a3)
+mul a2, a1, a2
+lwu a4, 968(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 968(a6)
+srli a5, a4, 32
+lwu a2, 804(a3)
+mul a2, a1, a2
+lwu a4, 972(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 972(a6)
+srli a5, a4, 32
+lwu a2, 808(a3)
+mul a2, a1, a2
+lwu a4, 976(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 976(a6)
+srli a5, a4, 32
+lwu a2, 812(a3)
+mul a2, a1, a2
+lwu a4, 980(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 980(a6)
+srli a5, a4, 32
+lwu a2, 816(a3)
+mul a2, a1, a2
+lwu a4, 984(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 984(a6)
+srli a5, a4, 32
+lwu a2, 820(a3)
+mul a2, a1, a2
+lwu a4, 988(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 988(a6)
+srli a5, a4, 32
+lwu a2, 824(a3)
+mul a2, a1, a2
+lwu a4, 992(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 992(a6)
+srli a5, a4, 32
+lwu a2, 828(a3)
+mul a2, a1, a2
+lwu a4, 996(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 996(a6)
+srli a5, a4, 32
+lwu a2, 832(a3)
+mul a2, a1, a2
+lwu a4, 1000(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1000(a6)
+srli a5, a4, 32
+lwu a2, 836(a3)
+mul a2, a1, a2
+lwu a4, 1004(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1004(a6)
+srli a5, a4, 32
+sw a5, 1008(a6)
+addi a6, a6, 4
+addi t0, t0, -1
+bnez t0, 211b
+addi a5, zero, 0
+lwu a4, 952(a3)
+lwu a2, 1008(a3)
+add a4, a4, a2
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 448(a3)
+srli a5, a4, 32
+lwu a4, 956(a3)
+lwu a2, 1012(a3)
+add a4, a4, a2
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 452(a3)
+srli a5, a4, 32
+lwu a4, 960(a3)
+lwu a2, 1016(a3)
+add a4, a4, a2
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 456(a3)
+srli a5, a4, 32
+lwu a4, 964(a3)
+lwu a2, 1020(a3)
+add a4, a4, a2
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 460(a3)
+srli a5, a4, 32
+lwu a4, 968(a3)
+lwu a2, 1024(a3)
+add a4, a4, a2
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 464(a3)
+srli a5, a4, 32
+lwu a4, 972(a3)
+lwu a2, 1028(a3)
+add a4, a4, a2
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 468(a3)
+srli a5, a4, 32
+lwu a4, 976(a3)
+lwu a2, 1032(a3)
+add a4, a4, a2
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 472(a3)
+srli a5, a4, 32
+lwu a4, 980(a3)
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1008(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 476(a3)
+srli a5, a4, 32
+lwu a4, 984(a3)
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1012(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 480(a3)
+srli a5, a4, 32
+lwu a4, 988(a3)
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1016(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 484(a3)
+srli a5, a4, 32
+lwu a4, 992(a3)
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1020(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 488(a3)
+srli a5, a4, 32
+lwu a4, 996(a3)
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1024(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 492(a3)
+srli a5, a4, 32
+lwu a4, 1000(a3)
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1028(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 496(a3)
+srli a5, a4, 32
+lwu a4, 1004(a3)
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1032(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 500(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 448(a3)
+add a4, a4, a5
+sw a4, 448(a3)
+srli a5, a4, 32
+lwu a4, 452(a3)
+add a4, a4, a5
+sw a4, 452(a3)
+srli a5, a4, 32
+lwu a4, 456(a3)
+add a4, a4, a5
+sw a4, 456(a3)
+srli a5, a4, 32
+lwu a4, 460(a3)
+add a4, a4, a5
+sw a4, 460(a3)
+srli a5, a4, 32
+lwu a4, 464(a3)
+add a4, a4, a5
+sw a4, 464(a3)
+srli a5, a4, 32
+lwu a4, 468(a3)
+add a4, a4, a5
+sw a4, 468(a3)
+srli a5, a4, 32
+lwu a4, 472(a3)
+add a4, a4, a5
+sw a4, 472(a3)
+srli a5, a4, 32
+lwu a4, 476(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 476(a3)
+srli a5, a4, 32
+lwu a4, 480(a3)
+add a4, a4, a5
+sw a4, 480(a3)
+srli a5, a4, 32
+lwu a4, 484(a3)
+add a4, a4, a5
+sw a4, 484(a3)
+srli a5, a4, 32
+lwu a4, 488(a3)
+add a4, a4, a5
+sw a4, 488(a3)
+srli a5, a4, 32
+lwu a4, 492(a3)
+add a4, a4, a5
+sw a4, 492(a3)
+srli a5, a4, 32
+lwu a4, 496(a3)
+add a4, a4, a5
+sw a4, 496(a3)
+srli a5, a4, 32
+lwu a4, 500(a3)
+add a4, a4, a5
+sw a4, 500(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 448(a3)
+add a4, a4, a5
+sw a4, 448(a3)
+srli a5, a4, 32
+lwu a4, 452(a3)
+add a4, a4, a5
+sw a4, 452(a3)
+srli a5, a4, 32
+lwu a4, 456(a3)
+add a4, a4, a5
+sw a4, 456(a3)
+srli a5, a4, 32
+lwu a4, 460(a3)
+add a4, a4, a5
+sw a4, 460(a3)
+srli a5, a4, 32
+lwu a4, 464(a3)
+add a4, a4, a5
+sw a4, 464(a3)
+srli a5, a4, 32
+lwu a4, 468(a3)
+add a4, a4, a5
+sw a4, 468(a3)
+srli a5, a4, 32
+lwu a4, 472(a3)
+add a4, a4, a5
+sw a4, 472(a3)
+srli a5, a4, 32
+lwu a4, 476(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 476(a3)
+srli a5, a4, 32
+lwu a4, 480(a3)
+add a4, a4, a5
+sw a4, 480(a3)
+srli a5, a4, 32
+lwu a4, 484(a3)
+add a4, a4, a5
+sw a4, 484(a3)
+srli a5, a4, 32
+lwu a4, 488(a3)
+add a4, a4, a5
+sw a4, 488(a3)
+srli a5, a4, 32
+lwu a4, 492(a3)
+add a4, a4, a5
+sw a4, 492(a3)
+srli a5, a4, 32
+lwu a4, 496(a3)
+add a4, a4, a5
+sw a4, 496(a3)
+srli a5, a4, 32
+lwu a4, 500(a3)
+add a4, a4, a5
+sw a4, 500(a3)
+srli a5, a4, 32
+addi a5, zero, 0
+addi a1, zero, 1
+slli a1, a1, 34
+lwu a4, 672(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 616(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 840(a3)
+srli a5, a4, 32
+lwu a4, 676(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 620(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 844(a3)
+srli a5, a4, 32
+lwu a4, 680(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 624(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 848(a3)
+srli a5, a4, 32
+lwu a4, 684(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 628(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 852(a3)
+srli a5, a4, 32
+lwu a4, 688(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 632(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 856(a3)
+srli a5, a4, 32
+lwu a4, 692(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 636(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 860(a3)
+srli a5, a4, 32
+lwu a4, 696(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 640(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 864(a3)
+srli a5, a4, 32
+lwu a4, 700(a3)
+add a4, a4, a1
+addi a4, a4, -8
+lwu a2, 644(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 868(a3)
+srli a5, a4, 32
+lwu a4, 704(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 648(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 872(a3)
+srli a5, a4, 32
+lwu a4, 708(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 652(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 876(a3)
+srli a5, a4, 32
+lwu a4, 712(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 656(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 880(a3)
+srli a5, a4, 32
+lwu a4, 716(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 660(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 884(a3)
+srli a5, a4, 32
+lwu a4, 720(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 664(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 888(a3)
+srli a5, a4, 32
+lwu a4, 724(a3)
+add a4, a4, a1
+addi a4, a4, -4
+lwu a2, 668(a3)
+sub a4, a4, a2
+add a4, a4, a5
+sw a4, 892(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 840(a3)
+add a4, a4, a5
+sw a4, 840(a3)
+srli a5, a4, 32
+lwu a4, 844(a3)
+add a4, a4, a5
+sw a4, 844(a3)
+srli a5, a4, 32
+lwu a4, 848(a3)
+add a4, a4, a5
+sw a4, 848(a3)
+srli a5, a4, 32
+lwu a4, 852(a3)
+add a4, a4, a5
+sw a4, 852(a3)
+srli a5, a4, 32
+lwu a4, 856(a3)
+add a4, a4, a5
+sw a4, 856(a3)
+srli a5, a4, 32
+lwu a4, 860(a3)
+add a4, a4, a5
+sw a4, 860(a3)
+srli a5, a4, 32
+lwu a4, 864(a3)
+add a4, a4, a5
+sw a4, 864(a3)
+srli a5, a4, 32
+lwu a4, 868(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 868(a3)
+srli a5, a4, 32
+lwu a4, 872(a3)
+add a4, a4, a5
+sw a4, 872(a3)
+srli a5, a4, 32
+lwu a4, 876(a3)
+add a4, a4, a5
+sw a4, 876(a3)
+srli a5, a4, 32
+lwu a4, 880(a3)
+add a4, a4, a5
+sw a4, 880(a3)
+srli a5, a4, 32
+lwu a4, 884(a3)
+add a4, a4, a5
+sw a4, 884(a3)
+srli a5, a4, 32
+lwu a4, 888(a3)
+add a4, a4, a5
+sw a4, 888(a3)
+srli a5, a4, 32
+lwu a4, 892(a3)
+add a4, a4, a5
+sw a4, 892(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 840(a3)
+add a4, a4, a5
+sw a4, 840(a3)
+srli a5, a4, 32
+lwu a4, 844(a3)
+add a4, a4, a5
+sw a4, 844(a3)
+srli a5, a4, 32
+lwu a4, 848(a3)
+add a4, a4, a5
+sw a4, 848(a3)
+srli a5, a4, 32
+lwu a4, 852(a3)
+add a4, a4, a5
+sw a4, 852(a3)
+srli a5, a4, 32
+lwu a4, 856(a3)
+add a4, a4, a5
+sw a4, 856(a3)
+srli a5, a4, 32
+lwu a4, 860(a3)
+add a4, a4, a5
+sw a4, 860(a3)
+srli a5, a4, 32
+lwu a4, 864(a3)
+add a4, a4, a5
+sw a4, 864(a3)
+srli a5, a4, 32
+lwu a4, 868(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 868(a3)
+srli a5, a4, 32
+lwu a4, 872(a3)
+add a4, a4, a5
+sw a4, 872(a3)
+srli a5, a4, 32
+lwu a4, 876(a3)
+add a4, a4, a5
+sw a4, 876(a3)
+srli a5, a4, 32
+lwu a4, 880(a3)
+add a4, a4, a5
+sw a4, 880(a3)
+srli a5, a4, 32
+lwu a4, 884(a3)
+add a4, a4, a5
+sw a4, 884(a3)
+srli a5, a4, 32
+lwu a4, 888(a3)
+add a4, a4, a5
+sw a4, 888(a3)
+srli a5, a4, 32
+lwu a4, 892(a3)
+add a4, a4, a5
+sw a4, 892(a3)
+srli a5, a4, 32
+addi a4, zero, 0
+sw a4, 952(a3)
+sw a4, 956(a3)
+sw a4, 960(a3)
+sw a4, 964(a3)
+sw a4, 968(a3)
+sw a4, 972(a3)
+sw a4, 976(a3)
+sw a4, 980(a3)
+sw a4, 984(a3)
+sw a4, 988(a3)
+sw a4, 992(a3)
+sw a4, 996(a3)
+sw a4, 1000(a3)
+sw a4, 1004(a3)
+addi a6, a3, 0
+addi t0, zero, 14
+212:
+lwu a1, 448(a6)
+addi a5, zero, 0
+lwu a2, 840(a3)
+mul a2, a1, a2
+lwu a4, 952(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 952(a6)
+srli a5, a4, 32
+lwu a2, 844(a3)
+mul a2, a1, a2
+lwu a4, 956(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 956(a6)
+srli a5, a4, 32
+lwu a2, 848(a3)
+mul a2, a1, a2
+lwu a4, 960(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 960(a6)
+srli a5, a4, 32
+lwu a2, 852(a3)
+mul a2, a1, a2
+lwu a4, 964(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 964(a6)
+srli a5, a4, 32
+lwu a2, 856(a3)
+mul a2, a1, a2
+lwu a4, 968(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 968(a6)
+srli a5, a4, 32
+lwu a2, 860(a3)
+mul a2, a1, a2
+lwu a4, 972(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 972(a6)
+srli a5, a4, 32
+lwu a2, 864(a3)
+mul a2, a1, a2
+lwu a4, 976(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 976(a6)
+srli a5, a4, 32
+lwu a2, 868(a3)
+mul a2, a1, a2
+lwu a4, 980(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 980(a6)
+srli a5, a4, 32
+lwu a2, 872(a3)
+mul a2, a1, a2
+lwu a4, 984(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 984(a6)
+srli a5, a4, 32
+lwu a2, 876(a3)
+mul a2, a1, a2
+lwu a4, 988(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 988(a6)
+srli a5, a4, 32
+lwu a2, 880(a3)
+mul a2, a1, a2
+lwu a4, 992(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 992(a6)
+srli a5, a4, 32
+lwu a2, 884(a3)
+mul a2, a1, a2
+lwu a4, 996(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 996(a6)
+srli a5, a4, 32
+lwu a2, 888(a3)
+mul a2, a1, a2
+lwu a4, 1000(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1000(a6)
+srli a5, a4, 32
+lwu a2, 892(a3)
+mul a2, a1, a2
+lwu a4, 1004(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1004(a6)
+srli a5, a4, 32
+sw a5, 1008(a6)
+addi a6, a6, 4
+addi t0, t0, -1
+bnez t0, 212b
+addi a5, zero, 0
+lwu a4, 952(a3)
+lwu a2, 1008(a3)
+add a4, a4, a2
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 448(a3)
+srli a5, a4, 32
+lwu a4, 956(a3)
+lwu a2, 1012(a3)
+add a4, a4, a2
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 452(a3)
+srli a5, a4, 32
+lwu a4, 960(a3)
+lwu a2, 1016(a3)
+add a4, a4, a2
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 456(a3)
+srli a5, a4, 32
+lwu a4, 964(a3)
+lwu a2, 1020(a3)
+add a4, a4, a2
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 460(a3)
+srli a5, a4, 32
+lwu a4, 968(a3)
+lwu a2, 1024(a3)
+add a4, a4, a2
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 464(a3)
+srli a5, a4, 32
+lwu a4, 972(a3)
+lwu a2, 1028(a3)
+add a4, a4, a2
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 468(a3)
+srli a5, a4, 32
+lwu a4, 976(a3)
+lwu a2, 1032(a3)
+add a4, a4, a2
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 472(a3)
+srli a5, a4, 32
+lwu a4, 980(a3)
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1008(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 476(a3)
+srli a5, a4, 32
+lwu a4, 984(a3)
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1012(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 480(a3)
+srli a5, a4, 32
+lwu a4, 988(a3)
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1016(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 484(a3)
+srli a5, a4, 32
+lwu a4, 992(a3)
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1020(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 488(a3)
+srli a5, a4, 32
+lwu a4, 996(a3)
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1024(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 492(a3)
+srli a5, a4, 32
+lwu a4, 1000(a3)
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1028(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 496(a3)
+srli a5, a4, 32
+lwu a4, 1004(a3)
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1032(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 500(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 448(a3)
+add a4, a4, a5
+sw a4, 448(a3)
+srli a5, a4, 32
+lwu a4, 452(a3)
+add a4, a4, a5
+sw a4, 452(a3)
+srli a5, a4, 32
+lwu a4, 456(a3)
+add a4, a4, a5
+sw a4, 456(a3)
+srli a5, a4, 32
+lwu a4, 460(a3)
+add a4, a4, a5
+sw a4, 460(a3)
+srli a5, a4, 32
+lwu a4, 464(a3)
+add a4, a4, a5
+sw a4, 464(a3)
+srli a5, a4, 32
+lwu a4, 468(a3)
+add a4, a4, a5
+sw a4, 468(a3)
+srli a5, a4, 32
+lwu a4, 472(a3)
+add a4, a4, a5
+sw a4, 472(a3)
+srli a5, a4, 32
+lwu a4, 476(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 476(a3)
+srli a5, a4, 32
+lwu a4, 480(a3)
+add a4, a4, a5
+sw a4, 480(a3)
+srli a5, a4, 32
+lwu a4, 484(a3)
+add a4, a4, a5
+sw a4, 484(a3)
+srli a5, a4, 32
+lwu a4, 488(a3)
+add a4, a4, a5
+sw a4, 488(a3)
+srli a5, a4, 32
+lwu a4, 492(a3)
+add a4, a4, a5
+sw a4, 492(a3)
+srli a5, a4, 32
+lwu a4, 496(a3)
+add a4, a4, a5
+sw a4, 496(a3)
+srli a5, a4, 32
+lwu a4, 500(a3)
+add a4, a4, a5
+sw a4, 500(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 448(a3)
+add a4, a4, a5
+sw a4, 448(a3)
+srli a5, a4, 32
+lwu a4, 452(a3)
+add a4, a4, a5
+sw a4, 452(a3)
+srli a5, a4, 32
+lwu a4, 456(a3)
+add a4, a4, a5
+sw a4, 456(a3)
+srli a5, a4, 32
+lwu a4, 460(a3)
+add a4, a4, a5
+sw a4, 460(a3)
+srli a5, a4, 32
+lwu a4, 464(a3)
+add a4, a4, a5
+sw a4, 464(a3)
+srli a5, a4, 32
+lwu a4, 468(a3)
+add a4, a4, a5
+sw a4, 468(a3)
+srli a5, a4, 32
+lwu a4, 472(a3)
+add a4, a4, a5
+sw a4, 472(a3)
+srli a5, a4, 32
+lwu a4, 476(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 476(a3)
+srli a5, a4, 32
+lwu a4, 480(a3)
+add a4, a4, a5
+sw a4, 480(a3)
+srli a5, a4, 32
+lwu a4, 484(a3)
+add a4, a4, a5
+sw a4, 484(a3)
+srli a5, a4, 32
+lwu a4, 488(a3)
+add a4, a4, a5
+sw a4, 488(a3)
+srli a5, a4, 32
+lwu a4, 492(a3)
+add a4, a4, a5
+sw a4, 492(a3)
+srli a5, a4, 32
+lwu a4, 496(a3)
+add a4, a4, a5
+sw a4, 496(a3)
+srli a5, a4, 32
+lwu a4, 500(a3)
+add a4, a4, a5
+sw a4, 500(a3)
+srli a5, a4, 32
+addi a4, zero, 0
+sw a4, 952(a3)
+sw a4, 956(a3)
+sw a4, 960(a3)
+sw a4, 964(a3)
+sw a4, 968(a3)
+sw a4, 972(a3)
+sw a4, 976(a3)
+sw a4, 980(a3)
+sw a4, 984(a3)
+sw a4, 988(a3)
+sw a4, 992(a3)
+sw a4, 996(a3)
+sw a4, 1000(a3)
+sw a4, 1004(a3)
+addi a6, a3, 0
+addi t0, zero, 14
+213:
+lwu a1, 728(a6)
+addi a5, zero, 0
+lwu a2, 784(a3)
+mul a2, a1, a2
+lwu a4, 952(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 952(a6)
+srli a5, a4, 32
+lwu a2, 788(a3)
+mul a2, a1, a2
+lwu a4, 956(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 956(a6)
+srli a5, a4, 32
+lwu a2, 792(a3)
+mul a2, a1, a2
+lwu a4, 960(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 960(a6)
+srli a5, a4, 32
+lwu a2, 796(a3)
+mul a2, a1, a2
+lwu a4, 964(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 964(a6)
+srli a5, a4, 32
+lwu a2, 800(a3)
+mul a2, a1, a2
+lwu a4, 968(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 968(a6)
+srli a5, a4, 32
+lwu a2, 804(a3)
+mul a2, a1, a2
+lwu a4, 972(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 972(a6)
+srli a5, a4, 32
+lwu a2, 808(a3)
+mul a2, a1, a2
+lwu a4, 976(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 976(a6)
+srli a5, a4, 32
+lwu a2, 812(a3)
+mul a2, a1, a2
+lwu a4, 980(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 980(a6)
+srli a5, a4, 32
+lwu a2, 816(a3)
+mul a2, a1, a2
+lwu a4, 984(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 984(a6)
+srli a5, a4, 32
+lwu a2, 820(a3)
+mul a2, a1, a2
+lwu a4, 988(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 988(a6)
+srli a5, a4, 32
+lwu a2, 824(a3)
+mul a2, a1, a2
+lwu a4, 992(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 992(a6)
+srli a5, a4, 32
+lwu a2, 828(a3)
+mul a2, a1, a2
+lwu a4, 996(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 996(a6)
+srli a5, a4, 32
+lwu a2, 832(a3)
+mul a2, a1, a2
+lwu a4, 1000(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1000(a6)
+srli a5, a4, 32
+lwu a2, 836(a3)
+mul a2, a1, a2
+lwu a4, 1004(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1004(a6)
+srli a5, a4, 32
+sw a5, 1008(a6)
+addi a6, a6, 4
+addi t0, t0, -1
+bnez t0, 213b
+addi a5, zero, 0
+lwu a4, 952(a3)
+lwu a2, 1008(a3)
+add a4, a4, a2
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 504(a3)
+srli a5, a4, 32
+lwu a4, 956(a3)
+lwu a2, 1012(a3)
+add a4, a4, a2
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 508(a3)
+srli a5, a4, 32
+lwu a4, 960(a3)
+lwu a2, 1016(a3)
+add a4, a4, a2
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 512(a3)
+srli a5, a4, 32
+lwu a4, 964(a3)
+lwu a2, 1020(a3)
+add a4, a4, a2
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 516(a3)
+srli a5, a4, 32
+lwu a4, 968(a3)
+lwu a2, 1024(a3)
+add a4, a4, a2
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 520(a3)
+srli a5, a4, 32
+lwu a4, 972(a3)
+lwu a2, 1028(a3)
+add a4, a4, a2
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 524(a3)
+srli a5, a4, 32
+lwu a4, 976(a3)
+lwu a2, 1032(a3)
+add a4, a4, a2
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 528(a3)
+srli a5, a4, 32
+lwu a4, 980(a3)
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1008(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 532(a3)
+srli a5, a4, 32
+lwu a4, 984(a3)
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1012(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 536(a3)
+srli a5, a4, 32
+lwu a4, 988(a3)
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1016(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 540(a3)
+srli a5, a4, 32
+lwu a4, 992(a3)
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1020(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 544(a3)
+srli a5, a4, 32
+lwu a4, 996(a3)
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1024(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 548(a3)
+srli a5, a4, 32
+lwu a4, 1000(a3)
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1028(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 552(a3)
+srli a5, a4, 32
+lwu a4, 1004(a3)
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1032(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 556(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 504(a3)
+add a4, a4, a5
+sw a4, 504(a3)
+srli a5, a4, 32
+lwu a4, 508(a3)
+add a4, a4, a5
+sw a4, 508(a3)
+srli a5, a4, 32
+lwu a4, 512(a3)
+add a4, a4, a5
+sw a4, 512(a3)
+srli a5, a4, 32
+lwu a4, 516(a3)
+add a4, a4, a5
+sw a4, 516(a3)
+srli a5, a4, 32
+lwu a4, 520(a3)
+add a4, a4, a5
+sw a4, 520(a3)
+srli a5, a4, 32
+lwu a4, 524(a3)
+add a4, a4, a5
+sw a4, 524(a3)
+srli a5, a4, 32
+lwu a4, 528(a3)
+add a4, a4, a5
+sw a4, 528(a3)
+srli a5, a4, 32
+lwu a4, 532(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 532(a3)
+srli a5, a4, 32
+lwu a4, 536(a3)
+add a4, a4, a5
+sw a4, 536(a3)
+srli a5, a4, 32
+lwu a4, 540(a3)
+add a4, a4, a5
+sw a4, 540(a3)
+srli a5, a4, 32
+lwu a4, 544(a3)
+add a4, a4, a5
+sw a4, 544(a3)
+srli a5, a4, 32
+lwu a4, 548(a3)
+add a4, a4, a5
+sw a4, 548(a3)
+srli a5, a4, 32
+lwu a4, 552(a3)
+add a4, a4, a5
+sw a4, 552(a3)
+srli a5, a4, 32
+lwu a4, 556(a3)
+add a4, a4, a5
+sw a4, 556(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 504(a3)
+add a4, a4, a5
+sw a4, 504(a3)
+srli a5, a4, 32
+lwu a4, 508(a3)
+add a4, a4, a5
+sw a4, 508(a3)
+srli a5, a4, 32
+lwu a4, 512(a3)
+add a4, a4, a5
+sw a4, 512(a3)
+srli a5, a4, 32
+lwu a4, 516(a3)
+add a4, a4, a5
+sw a4, 516(a3)
+srli a5, a4, 32
+lwu a4, 520(a3)
+add a4, a4, a5
+sw a4, 520(a3)
+srli a5, a4, 32
+lwu a4, 524(a3)
+add a4, a4, a5
+sw a4, 524(a3)
+srli a5, a4, 32
+lwu a4, 528(a3)
+add a4, a4, a5
+sw a4, 528(a3)
+srli a5, a4, 32
+lwu a4, 532(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 532(a3)
+srli a5, a4, 32
+lwu a4, 536(a3)
+add a4, a4, a5
+sw a4, 536(a3)
+srli a5, a4, 32
+lwu a4, 540(a3)
+add a4, a4, a5
+sw a4, 540(a3)
+srli a5, a4, 32
+lwu a4, 544(a3)
+add a4, a4, a5
+sw a4, 544(a3)
+srli a5, a4, 32
+lwu a4, 548(a3)
+add a4, a4, a5
+sw a4, 548(a3)
+srli a5, a4, 32
+lwu a4, 552(a3)
+add a4, a4, a5
+sw a4, 552(a3)
+srli a5, a4, 32
+lwu a4, 556(a3)
+add a4, a4, a5
+sw a4, 556(a3)
+srli a5, a4, 32
+srli a1, t1, 1
+add a1, a3, a1
+lbu a1, 1064(a1)
+or a1, a1, t2
+addi t0, zero, 0
+sub t0, t0, a1
+lwu a2, 56(a3)
+lwu a4, 392(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 56(a3)
+sw a4, 392(a3)
+lwu a2, 60(a3)
+lwu a4, 396(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 60(a3)
+sw a4, 396(a3)
+lwu a2, 64(a3)
+lwu a4, 400(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 64(a3)
+sw a4, 400(a3)
+lwu a2, 68(a3)
+lwu a4, 404(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 68(a3)
+sw a4, 404(a3)
+lwu a2, 72(a3)
+lwu a4, 408(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 72(a3)
+sw a4, 408(a3)
+lwu a2, 76(a3)
+lwu a4, 412(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 76(a3)
+sw a4, 412(a3)
+lwu a2, 80(a3)
+lwu a4, 416(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 80(a3)
+sw a4, 416(a3)
+lwu a2, 84(a3)
+lwu a4, 420(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 84(a3)
+sw a4, 420(a3)
+lwu a2, 88(a3)
+lwu a4, 424(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 88(a3)
+sw a4, 424(a3)
+lwu a2, 92(a3)
+lwu a4, 428(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 92(a3)
+sw a4, 428(a3)
+lwu a2, 96(a3)
+lwu a4, 432(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 96(a3)
+sw a4, 432(a3)
+lwu a2, 100(a3)
+lwu a4, 436(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 100(a3)
+sw a4, 436(a3)
+lwu a2, 104(a3)
+lwu a4, 440(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 104(a3)
+sw a4, 440(a3)
+lwu a2, 108(a3)
+lwu a4, 444(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 108(a3)
+sw a4, 444(a3)
+lwu a2, 0(a3)
+lwu a4, 448(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 0(a3)
+sw a4, 448(a3)
+lwu a2, 4(a3)
+lwu a4, 452(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 4(a3)
+sw a4, 452(a3)
+lwu a2, 8(a3)
+lwu a4, 456(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 8(a3)
+sw a4, 456(a3)
+lwu a2, 12(a3)
+lwu a4, 460(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 12(a3)
+sw a4, 460(a3)
+lwu a2, 16(a3)
+lwu a4, 464(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 16(a3)
+sw a4, 464(a3)
+lwu a2, 20(a3)
+lwu a4, 468(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 20(a3)
+sw a4, 468(a3)
+lwu a2, 24(a3)
+lwu a4, 472(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 24(a3)
+sw a4, 472(a3)
+lwu a2, 28(a3)
+lwu a4, 476(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 28(a3)
+sw a4, 476(a3)
+lwu a2, 32(a3)
+lwu a4, 480(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 32(a3)
+sw a4, 480(a3)
+lwu a2, 36(a3)
+lwu a4, 484(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 36(a3)
+sw a4, 484(a3)
+lwu a2, 40(a3)
+lwu a4, 488(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 40(a3)
+sw a4, 488(a3)
+lwu a2, 44(a3)
+lwu a4, 492(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 44(a3)
+sw a4, 492(a3)
+lwu a2, 48(a3)
+lwu a4, 496(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 48(a3)
+sw a4, 496(a3)
+lwu a2, 52(a3)
+lwu a4, 500(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 52(a3)
+sw a4, 500(a3)
+lwu a2, 112(a3)
+lwu a4, 504(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 112(a3)
+sw a4, 504(a3)
+lwu a2, 116(a3)
+lwu a4, 508(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 116(a3)
+sw a4, 508(a3)
+lwu a2, 120(a3)
+lwu a4, 512(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 120(a3)
+sw a4, 512(a3)
+lwu a2, 124(a3)
+lwu a4, 516(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 124(a3)
+sw a4, 516(a3)
+lwu a2, 128(a3)
+lwu a4, 520(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 128(a3)
+sw a4, 520(a3)
+lwu a2, 132(a3)
+lwu a4, 524(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 132(a3)
+sw a4, 524(a3)
+lwu a2, 136(a3)
+lwu a4, 528(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 136(a3)
+sw a4, 528(a3)
+lwu a2, 140(a3)
+lwu a4, 532(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 140(a3)
+sw a4, 532(a3)
+lwu a2, 144(a3)
+lwu a4, 536(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 144(a3)
+sw a4, 536(a3)
+lwu a2, 148(a3)
+lwu a4, 540(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 148(a3)
+sw a4, 540(a3)
+lwu a2, 152(a3)
+lwu a4, 544(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 152(a3)
+sw a4, 544(a3)
+lwu a2, 156(a3)
+lwu a4, 548(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 156(a3)
+sw a4, 548(a3)
+lwu a2, 160(a3)
+lwu a4, 552(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 160(a3)
+sw a4, 552(a3)
+lwu a2, 164(a3)
+lwu a4, 556(a3)
+xor a5, a2, a4
+and a5, a5, t0
+xor a2, a2, a5
+xor a4, a4, a5
+sw a2, 164(a3)
+sw a4, 556(a3)
+bnez t1, 21b
+addi a1, zero, 1
+addi a2, zero, 0
+sw a1, 840(a3)
+sw a2, 844(a3)
+sw a2, 848(a3)
+sw a2, 852(a3)
+sw a2, 856(a3)
+sw a2, 860(a3)
+sw a2, 864(a3)
+sw a2, 868(a3)
+sw a2, 872(a3)
+sw a2, 876(a3)
+sw a2, 880(a3)
+sw a2, 884(a3)
+sw a2, 888(a3)
+sw a2, 892(a3)
+addi t1, zero, 448
+214:
+addi t1, t1, -1
+addi a4, zero, 0
+sw a4, 952(a3)
+sw a4, 956(a3)
+sw a4, 960(a3)
+sw a4, 964(a3)
+sw a4, 968(a3)
+sw a4, 972(a3)
+sw a4, 976(a3)
+sw a4, 980(a3)
+sw a4, 984(a3)
+sw a4, 988(a3)
+sw a4, 992(a3)
+sw a4, 996(a3)
+sw a4, 1000(a3)
+sw a4, 1004(a3)
+addi a6, a3, 0
+addi t0, zero, 14
+215:
+lwu a1, 840(a6)
+addi a5, zero, 0
+lwu a2, 840(a3)
+mul a2, a1, a2
+lwu a4, 952(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 952(a6)
+srli a5, a4, 32
+lwu a2, 844(a3)
+mul a2, a1, a2
+lwu a4, 956(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 956(a6)
+srli a5, a4, 32
+lwu a2, 848(a3)
+mul a2, a1, a2
+lwu a4, 960(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 960(a6)
+srli a5, a4, 32
+lwu a2, 852(a3)
+mul a2, a1, a2
+lwu a4, 964(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 964(a6)
+srli a5, a4, 32
+lwu a2, 856(a3)
+mul a2, a1, a2
+lwu a4, 968(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 968(a6)
+srli a5, a4, 32
+lwu a2, 860(a3)
+mul a2, a1, a2
+lwu a4, 972(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 972(a6)
+srli a5, a4, 32
+lwu a2, 864(a3)
+mul a2, a1, a2
+lwu a4, 976(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 976(a6)
+srli a5, a4, 32
+lwu a2, 868(a3)
+mul a2, a1, a2
+lwu a4, 980(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 980(a6)
+srli a5, a4, 32
+lwu a2, 872(a3)
+mul a2, a1, a2
+lwu a4, 984(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 984(a6)
+srli a5, a4, 32
+lwu a2, 876(a3)
+mul a2, a1, a2
+lwu a4, 988(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 988(a6)
+srli a5, a4, 32
+lwu a2, 880(a3)
+mul a2, a1, a2
+lwu a4, 992(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 992(a6)
+srli a5, a4, 32
+lwu a2, 884(a3)
+mul a2, a1, a2
+lwu a4, 996(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 996(a6)
+srli a5, a4, 32
+lwu a2, 888(a3)
+mul a2, a1, a2
+lwu a4, 1000(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1000(a6)
+srli a5, a4, 32
+lwu a2, 892(a3)
+mul a2, a1, a2
+lwu a4, 1004(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1004(a6)
+srli a5, a4, 32
+sw a5, 1008(a6)
+addi a6, a6, 4
+addi t0, t0, -1
+bnez t0, 215b
+addi a5, zero, 0
+lwu a4, 952(a3)
+lwu a2, 1008(a3)
+add a4, a4, a2
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 840(a3)
+srli a5, a4, 32
+lwu a4, 956(a3)
+lwu a2, 1012(a3)
+add a4, a4, a2
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 844(a3)
+srli a5, a4, 32
+lwu a4, 960(a3)
+lwu a2, 1016(a3)
+add a4, a4, a2
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 848(a3)
+srli a5, a4, 32
+lwu a4, 964(a3)
+lwu a2, 1020(a3)
+add a4, a4, a2
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 852(a3)
+srli a5, a4, 32
+lwu a4, 968(a3)
+lwu a2, 1024(a3)
+add a4, a4, a2
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 856(a3)
+srli a5, a4, 32
+lwu a4, 972(a3)
+lwu a2, 1028(a3)
+add a4, a4, a2
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 860(a3)
+srli a5, a4, 32
+lwu a4, 976(a3)
+lwu a2, 1032(a3)
+add a4, a4, a2
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 864(a3)
+srli a5, a4, 32
+lwu a4, 980(a3)
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1008(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 868(a3)
+srli a5, a4, 32
+lwu a4, 984(a3)
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1012(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 872(a3)
+srli a5, a4, 32
+lwu a4, 988(a3)
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1016(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 876(a3)
+srli a5, a4, 32
+lwu a4, 992(a3)
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1020(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 880(a3)
+srli a5, a4, 32
+lwu a4, 996(a3)
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1024(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 884(a3)
+srli a5, a4, 32
+lwu a4, 1000(a3)
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1028(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 888(a3)
+srli a5, a4, 32
+lwu a4, 1004(a3)
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1032(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 892(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 840(a3)
+add a4, a4, a5
+sw a4, 840(a3)
+srli a5, a4, 32
+lwu a4, 844(a3)
+add a4, a4, a5
+sw a4, 844(a3)
+srli a5, a4, 32
+lwu a4, 848(a3)
+add a4, a4, a5
+sw a4, 848(a3)
+srli a5, a4, 32
+lwu a4, 852(a3)
+add a4, a4, a5
+sw a4, 852(a3)
+srli a5, a4, 32
+lwu a4, 856(a3)
+add a4, a4, a5
+sw a4, 856(a3)
+srli a5, a4, 32
+lwu a4, 860(a3)
+add a4, a4, a5
+sw a4, 860(a3)
+srli a5, a4, 32
+lwu a4, 864(a3)
+add a4, a4, a5
+sw a4, 864(a3)
+srli a5, a4, 32
+lwu a4, 868(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 868(a3)
+srli a5, a4, 32
+lwu a4, 872(a3)
+add a4, a4, a5
+sw a4, 872(a3)
+srli a5, a4, 32
+lwu a4, 876(a3)
+add a4, a4, a5
+sw a4, 876(a3)
+srli a5, a4, 32
+lwu a4, 880(a3)
+add a4, a4, a5
+sw a4, 880(a3)
+srli a5, a4, 32
+lwu a4, 884(a3)
+add a4, a4, a5
+sw a4, 884(a3)
+srli a5, a4, 32
+lwu a4, 888(a3)
+add a4, a4, a5
+sw a4, 888(a3)
+srli a5, a4, 32
+lwu a4, 892(a3)
+add a4, a4, a5
+sw a4, 892(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 840(a3)
+add a4, a4, a5
+sw a4, 840(a3)
+srli a5, a4, 32
+lwu a4, 844(a3)
+add a4, a4, a5
+sw a4, 844(a3)
+srli a5, a4, 32
+lwu a4, 848(a3)
+add a4, a4, a5
+sw a4, 848(a3)
+srli a5, a4, 32
+lwu a4, 852(a3)
+add a4, a4, a5
+sw a4, 852(a3)
+srli a5, a4, 32
+lwu a4, 856(a3)
+add a4, a4, a5
+sw a4, 856(a3)
+srli a5, a4, 32
+lwu a4, 860(a3)
+add a4, a4, a5
+sw a4, 860(a3)
+srli a5, a4, 32
+lwu a4, 864(a3)
+add a4, a4, a5
+sw a4, 864(a3)
+srli a5, a4, 32
+lwu a4, 868(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 868(a3)
+srli a5, a4, 32
+lwu a4, 872(a3)
+add a4, a4, a5
+sw a4, 872(a3)
+srli a5, a4, 32
+lwu a4, 876(a3)
+add a4, a4, a5
+sw a4, 876(a3)
+srli a5, a4, 32
+lwu a4, 880(a3)
+add a4, a4, a5
+sw a4, 880(a3)
+srli a5, a4, 32
+lwu a4, 884(a3)
+add a4, a4, a5
+sw a4, 884(a3)
+srli a5, a4, 32
+lwu a4, 888(a3)
+add a4, a4, a5
+sw a4, 888(a3)
+srli a5, a4, 32
+lwu a4, 892(a3)
+add a4, a4, a5
+sw a4, 892(a3)
+srli a5, a4, 32
+addi a2, t1, -224
+beqz a2, 216f
+addi a2, t1, -1
+beqz a2, 218f
+addi a4, zero, 0
+sw a4, 952(a3)
+sw a4, 956(a3)
+sw a4, 960(a3)
+sw a4, 964(a3)
+sw a4, 968(a3)
+sw a4, 972(a3)
+sw a4, 976(a3)
+sw a4, 980(a3)
+sw a4, 984(a3)
+sw a4, 988(a3)
+sw a4, 992(a3)
+sw a4, 996(a3)
+sw a4, 1000(a3)
+sw a4, 1004(a3)
+addi a6, a3, 0
+addi t0, zero, 14
+220:
+lwu a1, 840(a6)
+addi a5, zero, 0
+lwu a2, 112(a3)
+mul a2, a1, a2
+lwu a4, 952(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 952(a6)
+srli a5, a4, 32
+lwu a2, 116(a3)
+mul a2, a1, a2
+lwu a4, 956(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 956(a6)
+srli a5, a4, 32
+lwu a2, 120(a3)
+mul a2, a1, a2
+lwu a4, 960(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 960(a6)
+srli a5, a4, 32
+lwu a2, 124(a3)
+mul a2, a1, a2
+lwu a4, 964(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 964(a6)
+srli a5, a4, 32
+lwu a2, 128(a3)
+mul a2, a1, a2
+lwu a4, 968(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 968(a6)
+srli a5, a4, 32
+lwu a2, 132(a3)
+mul a2, a1, a2
+lwu a4, 972(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 972(a6)
+srli a5, a4, 32
+lwu a2, 136(a3)
+mul a2, a1, a2
+lwu a4, 976(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 976(a6)
+srli a5, a4, 32
+lwu a2, 140(a3)
+mul a2, a1, a2
+lwu a4, 980(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 980(a6)
+srli a5, a4, 32
+lwu a2, 144(a3)
+mul a2, a1, a2
+lwu a4, 984(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 984(a6)
+srli a5, a4, 32
+lwu a2, 148(a3)
+mul a2, a1, a2
+lwu a4, 988(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 988(a6)
+srli a5, a4, 32
+lwu a2, 152(a3)
+mul a2, a1, a2
+lwu a4, 992(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 992(a6)
+srli a5, a4, 32
+lwu a2, 156(a3)
+mul a2, a1, a2
+lwu a4, 996(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 996(a6)
+srli a5, a4, 32
+lwu a2, 160(a3)
+mul a2, a1, a2
+lwu a4, 1000(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1000(a6)
+srli a5, a4, 32
+lwu a2, 164(a3)
+mul a2, a1, a2
+lwu a4, 1004(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1004(a6)
+srli a5, a4, 32
+sw a5, 1008(a6)
+addi a6, a6, 4
+addi t0, t0, -1
+bnez t0, 220b
+addi a5, zero, 0
+lwu a4, 952(a3)
+lwu a2, 1008(a3)
+add a4, a4, a2
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 840(a3)
+srli a5, a4, 32
+lwu a4, 956(a3)
+lwu a2, 1012(a3)
+add a4, a4, a2
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 844(a3)
+srli a5, a4, 32
+lwu a4, 960(a3)
+lwu a2, 1016(a3)
+add a4, a4, a2
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 848(a3)
+srli a5, a4, 32
+lwu a4, 964(a3)
+lwu a2, 1020(a3)
+add a4, a4, a2
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 852(a3)
+srli a5, a4, 32
+lwu a4, 968(a3)
+lwu a2, 1024(a3)
+add a4, a4, a2
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 856(a3)
+srli a5, a4, 32
+lwu a4, 972(a3)
+lwu a2, 1028(a3)
+add a4, a4, a2
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 860(a3)
+srli a5, a4, 32
+lwu a4, 976(a3)
+lwu a2, 1032(a3)
+add a4, a4, a2
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 864(a3)
+srli a5, a4, 32
+lwu a4, 980(a3)
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1008(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 868(a3)
+srli a5, a4, 32
+lwu a4, 984(a3)
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1012(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 872(a3)
+srli a5, a4, 32
+lwu a4, 988(a3)
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1016(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 876(a3)
+srli a5, a4, 32
+lwu a4, 992(a3)
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1020(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 880(a3)
+srli a5, a4, 32
+lwu a4, 996(a3)
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1024(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 884(a3)
+srli a5, a4, 32
+lwu a4, 1000(a3)
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1028(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 888(a3)
+srli a5, a4, 32
+lwu a4, 1004(a3)
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1032(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 892(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 840(a3)
+add a4, a4, a5
+sw a4, 840(a3)
+srli a5, a4, 32
+lwu a4, 844(a3)
+add a4, a4, a5
+sw a4, 844(a3)
+srli a5, a4, 32
+lwu a4, 848(a3)
+add a4, a4, a5
+sw a4, 848(a3)
+srli a5, a4, 32
+lwu a4, 852(a3)
+add a4, a4, a5
+sw a4, 852(a3)
+srli a5, a4, 32
+lwu a4, 856(a3)
+add a4, a4, a5
+sw a4, 856(a3)
+srli a5, a4, 32
+lwu a4, 860(a3)
+add a4, a4, a5
+sw a4, 860(a3)
+srli a5, a4, 32
+lwu a4, 864(a3)
+add a4, a4, a5
+sw a4, 864(a3)
+srli a5, a4, 32
+lwu a4, 868(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 868(a3)
+srli a5, a4, 32
+lwu a4, 872(a3)
+add a4, a4, a5
+sw a4, 872(a3)
+srli a5, a4, 32
+lwu a4, 876(a3)
+add a4, a4, a5
+sw a4, 876(a3)
+srli a5, a4, 32
+lwu a4, 880(a3)
+add a4, a4, a5
+sw a4, 880(a3)
+srli a5, a4, 32
+lwu a4, 884(a3)
+add a4, a4, a5
+sw a4, 884(a3)
+srli a5, a4, 32
+lwu a4, 888(a3)
+add a4, a4, a5
+sw a4, 888(a3)
+srli a5, a4, 32
+lwu a4, 892(a3)
+add a4, a4, a5
+sw a4, 892(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 840(a3)
+add a4, a4, a5
+sw a4, 840(a3)
+srli a5, a4, 32
+lwu a4, 844(a3)
+add a4, a4, a5
+sw a4, 844(a3)
+srli a5, a4, 32
+lwu a4, 848(a3)
+add a4, a4, a5
+sw a4, 848(a3)
+srli a5, a4, 32
+lwu a4, 852(a3)
+add a4, a4, a5
+sw a4, 852(a3)
+srli a5, a4, 32
+lwu a4, 856(a3)
+add a4, a4, a5
+sw a4, 856(a3)
+srli a5, a4, 32
+lwu a4, 860(a3)
+add a4, a4, a5
+sw a4, 860(a3)
+srli a5, a4, 32
+lwu a4, 864(a3)
+add a4, a4, a5
+sw a4, 864(a3)
+srli a5, a4, 32
+lwu a4, 868(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 868(a3)
+srli a5, a4, 32
+lwu a4, 872(a3)
+add a4, a4, a5
+sw a4, 872(a3)
+srli a5, a4, 32
+lwu a4, 876(a3)
+add a4, a4, a5
+sw a4, 876(a3)
+srli a5, a4, 32
+lwu a4, 880(a3)
+add a4, a4, a5
+sw a4, 880(a3)
+srli a5, a4, 32
+lwu a4, 884(a3)
+add a4, a4, a5
+sw a4, 884(a3)
+srli a5, a4, 32
+lwu a4, 888(a3)
+add a4, a4, a5
+sw a4, 888(a3)
+srli a5, a4, 32
+lwu a4, 892(a3)
+add a4, a4, a5
+sw a4, 892(a3)
+srli a5, a4, 32
+j 219f
+218:
+219:
+j 217f
+216:
+217:
+bnez t1, 214b
+addi a4, zero, 0
+sw a4, 952(a3)
+sw a4, 956(a3)
+sw a4, 960(a3)
+sw a4, 964(a3)
+sw a4, 968(a3)
+sw a4, 972(a3)
+sw a4, 976(a3)
+sw a4, 980(a3)
+sw a4, 984(a3)
+sw a4, 988(a3)
+sw a4, 992(a3)
+sw a4, 996(a3)
+sw a4, 1000(a3)
+sw a4, 1004(a3)
+addi a6, a3, 0
+addi t0, zero, 14
+221:
+lwu a1, 56(a6)
+addi a5, zero, 0
+lwu a2, 840(a3)
+mul a2, a1, a2
+lwu a4, 952(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 952(a6)
+srli a5, a4, 32
+lwu a2, 844(a3)
+mul a2, a1, a2
+lwu a4, 956(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 956(a6)
+srli a5, a4, 32
+lwu a2, 848(a3)
+mul a2, a1, a2
+lwu a4, 960(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 960(a6)
+srli a5, a4, 32
+lwu a2, 852(a3)
+mul a2, a1, a2
+lwu a4, 964(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 964(a6)
+srli a5, a4, 32
+lwu a2, 856(a3)
+mul a2, a1, a2
+lwu a4, 968(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 968(a6)
+srli a5, a4, 32
+lwu a2, 860(a3)
+mul a2, a1, a2
+lwu a4, 972(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 972(a6)
+srli a5, a4, 32
+lwu a2, 864(a3)
+mul a2, a1, a2
+lwu a4, 976(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 976(a6)
+srli a5, a4, 32
+lwu a2, 868(a3)
+mul a2, a1, a2
+lwu a4, 980(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 980(a6)
+srli a5, a4, 32
+lwu a2, 872(a3)
+mul a2, a1, a2
+lwu a4, 984(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 984(a6)
+srli a5, a4, 32
+lwu a2, 876(a3)
+mul a2, a1, a2
+lwu a4, 988(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 988(a6)
+srli a5, a4, 32
+lwu a2, 880(a3)
+mul a2, a1, a2
+lwu a4, 992(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 992(a6)
+srli a5, a4, 32
+lwu a2, 884(a3)
+mul a2, a1, a2
+lwu a4, 996(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 996(a6)
+srli a5, a4, 32
+lwu a2, 888(a3)
+mul a2, a1, a2
+lwu a4, 1000(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1000(a6)
+srli a5, a4, 32
+lwu a2, 892(a3)
+mul a2, a1, a2
+lwu a4, 1004(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1004(a6)
+srli a5, a4, 32
+sw a5, 1008(a6)
+addi a6, a6, 4
+addi t0, t0, -1
+bnez t0, 221b
+addi a5, zero, 0
+lwu a4, 952(a3)
+lwu a2, 1008(a3)
+add a4, a4, a2
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 56(a3)
+srli a5, a4, 32
+lwu a4, 956(a3)
+lwu a2, 1012(a3)
+add a4, a4, a2
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 60(a3)
+srli a5, a4, 32
+lwu a4, 960(a3)
+lwu a2, 1016(a3)
+add a4, a4, a2
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 64(a3)
+srli a5, a4, 32
+lwu a4, 964(a3)
+lwu a2, 1020(a3)
+add a4, a4, a2
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 68(a3)
+srli a5, a4, 32
+lwu a4, 968(a3)
+lwu a2, 1024(a3)
+add a4, a4, a2
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 72(a3)
+srli a5, a4, 32
+lwu a4, 972(a3)
+lwu a2, 1028(a3)
+add a4, a4, a2
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 76(a3)
+srli a5, a4, 32
+lwu a4, 976(a3)
+lwu a2, 1032(a3)
+add a4, a4, a2
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 80(a3)
+srli a5, a4, 32
+lwu a4, 980(a3)
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1008(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 84(a3)
+srli a5, a4, 32
+lwu a4, 984(a3)
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1012(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 88(a3)
+srli a5, a4, 32
+lwu a4, 988(a3)
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1016(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 92(a3)
+srli a5, a4, 32
+lwu a4, 992(a3)
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1020(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 96(a3)
+srli a5, a4, 32
+lwu a4, 996(a3)
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1024(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 100(a3)
+srli a5, a4, 32
+lwu a4, 1000(a3)
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1028(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 104(a3)
+srli a5, a4, 32
+lwu a4, 1004(a3)
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1032(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 108(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 56(a3)
+add a4, a4, a5
+sw a4, 56(a3)
+srli a5, a4, 32
+lwu a4, 60(a3)
+add a4, a4, a5
+sw a4, 60(a3)
+srli a5, a4, 32
+lwu a4, 64(a3)
+add a4, a4, a5
+sw a4, 64(a3)
+srli a5, a4, 32
+lwu a4, 68(a3)
+add a4, a4, a5
+sw a4, 68(a3)
+srli a5, a4, 32
+lwu a4, 72(a3)
+add a4, a4, a5
+sw a4, 72(a3)
+srli a5, a4, 32
+lwu a4, 76(a3)
+add a4, a4, a5
+sw a4, 76(a3)
+srli a5, a4, 32
+lwu a4, 80(a3)
+add a4, a4, a5
+sw a4, 80(a3)
+srli a5, a4, 32
+lwu a4, 84(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 84(a3)
+srli a5, a4, 32
+lwu a4, 88(a3)
+add a4, a4, a5
+sw a4, 88(a3)
+srli a5, a4, 32
+lwu a4, 92(a3)
+add a4, a4, a5
+sw a4, 92(a3)
+srli a5, a4, 32
+lwu a4, 96(a3)
+add a4, a4, a5
+sw a4, 96(a3)
+srli a5, a4, 32
+lwu a4, 100(a3)
+add a4, a4, a5
+sw a4, 100(a3)
+srli a5, a4, 32
+lwu a4, 104(a3)
+add a4, a4, a5
+sw a4, 104(a3)
+srli a5, a4, 32
+lwu a4, 108(a3)
+add a4, a4, a5
+sw a4, 108(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 56(a3)
+add a4, a4, a5
+sw a4, 56(a3)
+srli a5, a4, 32
+lwu a4, 60(a3)
+add a4, a4, a5
+sw a4, 60(a3)
+srli a5, a4, 32
+lwu a4, 64(a3)
+add a4, a4, a5
+sw a4, 64(a3)
+srli a5, a4, 32
+lwu a4, 68(a3)
+add a4, a4, a5
+sw a4, 68(a3)
+srli a5, a4, 32
+lwu a4, 72(a3)
+add a4, a4, a5
+sw a4, 72(a3)
+srli a5, a4, 32
+lwu a4, 76(a3)
+add a4, a4, a5
+sw a4, 76(a3)
+srli a5, a4, 32
+lwu a4, 80(a3)
+add a4, a4, a5
+sw a4, 80(a3)
+srli a5, a4, 32
+lwu a4, 84(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 84(a3)
+srli a5, a4, 32
+lwu a4, 88(a3)
+add a4, a4, a5
+sw a4, 88(a3)
+srli a5, a4, 32
+lwu a4, 92(a3)
+add a4, a4, a5
+sw a4, 92(a3)
+srli a5, a4, 32
+lwu a4, 96(a3)
+add a4, a4, a5
+sw a4, 96(a3)
+srli a5, a4, 32
+lwu a4, 100(a3)
+add a4, a4, a5
+sw a4, 100(a3)
+srli a5, a4, 32
+lwu a4, 104(a3)
+add a4, a4, a5
+sw a4, 104(a3)
+srli a5, a4, 32
+lwu a4, 108(a3)
+add a4, a4, a5
+sw a4, 108(a3)
+srli a5, a4, 32
+addi a5, zero, 1
+addi a7, zero, 1
+lwu a4, 56(a3)
+add a4, a4, a5
+sw a4, 896(a3)
+srli a5, a4, 32
+lwu a4, 60(a3)
+add a4, a4, a5
+sw a4, 900(a3)
+srli a5, a4, 32
+lwu a4, 64(a3)
+add a4, a4, a5
+sw a4, 904(a3)
+srli a5, a4, 32
+lwu a4, 68(a3)
+add a4, a4, a5
+sw a4, 908(a3)
+srli a5, a4, 32
+lwu a4, 72(a3)
+add a4, a4, a5
+sw a4, 912(a3)
+srli a5, a4, 32
+lwu a4, 76(a3)
+add a4, a4, a5
+sw a4, 916(a3)
+srli a5, a4, 32
+lwu a4, 80(a3)
+add a4, a4, a5
+sw a4, 920(a3)
+srli a5, a4, 32
+lwu a4, 84(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 924(a3)
+srli a5, a4, 32
+lwu a4, 88(a3)
+add a4, a4, a5
+sw a4, 928(a3)
+srli a5, a4, 32
+lwu a4, 92(a3)
+add a4, a4, a5
+sw a4, 932(a3)
+srli a5, a4, 32
+lwu a4, 96(a3)
+add a4, a4, a5
+sw a4, 936(a3)
+srli a5, a4, 32
+lwu a4, 100(a3)
+add a4, a4, a5
+sw a4, 940(a3)
+srli a5, a4, 32
+lwu a4, 104(a3)
+add a4, a4, a5
+sw a4, 944(a3)
+srli a5, a4, 32
+lwu a4, 108(a3)
+add a4, a4, a5
+sw a4, 948(a3)
+srli a5, a4, 32
+addi a1, zero, 0
+sub t0, a1, a5
+lwu a2, 56(a3)
+lwu a4, 896(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 0(a0)
+srli a4, a2, 8
+sb a4, 1(a0)
+srli a4, a2, 16
+sb a4, 2(a0)
+srli a4, a2, 24
+sb a4, 3(a0)
+lwu a2, 60(a3)
+lwu a4, 900(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 4(a0)
+srli a4, a2, 8
+sb a4, 5(a0)
+srli a4, a2, 16
+sb a4, 6(a0)
+srli a4, a2, 24
+sb a4, 7(a0)
+lwu a2, 64(a3)
+lwu a4, 904(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 8(a0)
+srli a4, a2, 8
+sb a4, 9(a0)
+srli a4, a2, 16
+sb a4, 10(a0)
+srli a4, a2, 24
+sb a4, 11(a0)
+lwu a2, 68(a3)
+lwu a4, 908(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 12(a0)
+srli a4, a2, 8
+sb a4, 13(a0)
+srli a4, a2, 16
+sb a4, 14(a0)
+srli a4, a2, 24
+sb a4, 15(a0)
+lwu a2, 72(a3)
+lwu a4, 912(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 16(a0)
+srli a4, a2, 8
+sb a4, 17(a0)
+srli a4, a2, 16
+sb a4, 18(a0)
+srli a4, a2, 24
+sb a4, 19(a0)
+lwu a2, 76(a3)
+lwu a4, 916(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 20(a0)
+srli a4, a2, 8
+sb a4, 21(a0)
+srli a4, a2, 16
+sb a4, 22(a0)
+srli a4, a2, 24
+sb a4, 23(a0)
+lwu a2, 80(a3)
+lwu a4, 920(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 24(a0)
+srli a4, a2, 8
+sb a4, 25(a0)
+srli a4, a2, 16
+sb a4, 26(a0)
+srli a4, a2, 24
+sb a4, 27(a0)
+lwu a2, 84(a3)
+lwu a4, 924(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 28(a0)
+srli a4, a2, 8
+sb a4, 29(a0)
+srli a4, a2, 16
+sb a4, 30(a0)
+srli a4, a2, 24
+sb a4, 31(a0)
+lwu a2, 88(a3)
+lwu a4, 928(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 32(a0)
+srli a4, a2, 8
+sb a4, 33(a0)
+srli a4, a2, 16
+sb a4, 34(a0)
+srli a4, a2, 24
+sb a4, 35(a0)
+lwu a2, 92(a3)
+lwu a4, 932(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 36(a0)
+srli a4, a2, 8
+sb a4, 37(a0)
+srli a4, a2, 16
+sb a4, 38(a0)
+srli a4, a2, 24
+sb a4, 39(a0)
+lwu a2, 96(a3)
+lwu a4, 936(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 40(a0)
+srli a4, a2, 8
+sb a4, 41(a0)
+srli a4, a2, 16
+sb a4, 42(a0)
+srli a4, a2, 24
+sb a4, 43(a0)
+lwu a2, 100(a3)
+lwu a4, 940(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 44(a0)
+srli a4, a2, 8
+sb a4, 45(a0)
+srli a4, a2, 16
+sb a4, 46(a0)
+srli a4, a2, 24
+sb a4, 47(a0)
+lwu a2, 104(a3)
+lwu a4, 944(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 48(a0)
+srli a4, a2, 8
+sb a4, 49(a0)
+srli a4, a2, 16
+sb a4, 50(a0)
+srli a4, a2, 24
+sb a4, 51(a0)
+lwu a2, 108(a3)
+lwu a4, 948(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 52(a0)
+srli a4, a2, 8
+sb a4, 53(a0)
+srli a4, a2, 16
+sb a4, 54(a0)
+srli a4, a2, 24
+sb a4, 55(a0)
+lbu t1, 0(a0)
+addi a6, zero, 1
+and t1, t1, a6
+slli t1, t1, 7
+addi a4, zero, 0
+sw a4, 952(a3)
+sw a4, 956(a3)
+sw a4, 960(a3)
+sw a4, 964(a3)
+sw a4, 968(a3)
+sw a4, 972(a3)
+sw a4, 976(a3)
+sw a4, 980(a3)
+sw a4, 984(a3)
+sw a4, 988(a3)
+sw a4, 992(a3)
+sw a4, 996(a3)
+sw a4, 1000(a3)
+sw a4, 1004(a3)
+addi a6, a3, 0
+addi t0, zero, 14
+222:
+lwu a1, 0(a6)
+addi a5, zero, 0
+lwu a2, 840(a3)
+mul a2, a1, a2
+lwu a4, 952(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 952(a6)
+srli a5, a4, 32
+lwu a2, 844(a3)
+mul a2, a1, a2
+lwu a4, 956(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 956(a6)
+srli a5, a4, 32
+lwu a2, 848(a3)
+mul a2, a1, a2
+lwu a4, 960(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 960(a6)
+srli a5, a4, 32
+lwu a2, 852(a3)
+mul a2, a1, a2
+lwu a4, 964(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 964(a6)
+srli a5, a4, 32
+lwu a2, 856(a3)
+mul a2, a1, a2
+lwu a4, 968(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 968(a6)
+srli a5, a4, 32
+lwu a2, 860(a3)
+mul a2, a1, a2
+lwu a4, 972(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 972(a6)
+srli a5, a4, 32
+lwu a2, 864(a3)
+mul a2, a1, a2
+lwu a4, 976(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 976(a6)
+srli a5, a4, 32
+lwu a2, 868(a3)
+mul a2, a1, a2
+lwu a4, 980(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 980(a6)
+srli a5, a4, 32
+lwu a2, 872(a3)
+mul a2, a1, a2
+lwu a4, 984(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 984(a6)
+srli a5, a4, 32
+lwu a2, 876(a3)
+mul a2, a1, a2
+lwu a4, 988(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 988(a6)
+srli a5, a4, 32
+lwu a2, 880(a3)
+mul a2, a1, a2
+lwu a4, 992(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 992(a6)
+srli a5, a4, 32
+lwu a2, 884(a3)
+mul a2, a1, a2
+lwu a4, 996(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 996(a6)
+srli a5, a4, 32
+lwu a2, 888(a3)
+mul a2, a1, a2
+lwu a4, 1000(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1000(a6)
+srli a5, a4, 32
+lwu a2, 892(a3)
+mul a2, a1, a2
+lwu a4, 1004(a6)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 1004(a6)
+srli a5, a4, 32
+sw a5, 1008(a6)
+addi a6, a6, 4
+addi t0, t0, -1
+bnez t0, 222b
+addi a5, zero, 0
+lwu a4, 952(a3)
+lwu a2, 1008(a3)
+add a4, a4, a2
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 56(a3)
+srli a5, a4, 32
+lwu a4, 956(a3)
+lwu a2, 1012(a3)
+add a4, a4, a2
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 60(a3)
+srli a5, a4, 32
+lwu a4, 960(a3)
+lwu a2, 1016(a3)
+add a4, a4, a2
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 64(a3)
+srli a5, a4, 32
+lwu a4, 964(a3)
+lwu a2, 1020(a3)
+add a4, a4, a2
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 68(a3)
+srli a5, a4, 32
+lwu a4, 968(a3)
+lwu a2, 1024(a3)
+add a4, a4, a2
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 72(a3)
+srli a5, a4, 32
+lwu a4, 972(a3)
+lwu a2, 1028(a3)
+add a4, a4, a2
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 76(a3)
+srli a5, a4, 32
+lwu a4, 976(a3)
+lwu a2, 1032(a3)
+add a4, a4, a2
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 80(a3)
+srli a5, a4, 32
+lwu a4, 980(a3)
+lwu a2, 1036(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1008(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 84(a3)
+srli a5, a4, 32
+lwu a4, 984(a3)
+lwu a2, 1040(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1012(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 88(a3)
+srli a5, a4, 32
+lwu a4, 988(a3)
+lwu a2, 1044(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1016(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 92(a3)
+srli a5, a4, 32
+lwu a4, 992(a3)
+lwu a2, 1048(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1020(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 96(a3)
+srli a5, a4, 32
+lwu a4, 996(a3)
+lwu a2, 1052(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1024(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 100(a3)
+srli a5, a4, 32
+lwu a4, 1000(a3)
+lwu a2, 1056(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1028(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 104(a3)
+srli a5, a4, 32
+lwu a4, 1004(a3)
+lwu a2, 1060(a3)
+add a4, a4, a2
+add a4, a4, a2
+lwu a2, 1032(a3)
+add a4, a4, a2
+add a4, a4, a5
+sw a4, 108(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 56(a3)
+add a4, a4, a5
+sw a4, 56(a3)
+srli a5, a4, 32
+lwu a4, 60(a3)
+add a4, a4, a5
+sw a4, 60(a3)
+srli a5, a4, 32
+lwu a4, 64(a3)
+add a4, a4, a5
+sw a4, 64(a3)
+srli a5, a4, 32
+lwu a4, 68(a3)
+add a4, a4, a5
+sw a4, 68(a3)
+srli a5, a4, 32
+lwu a4, 72(a3)
+add a4, a4, a5
+sw a4, 72(a3)
+srli a5, a4, 32
+lwu a4, 76(a3)
+add a4, a4, a5
+sw a4, 76(a3)
+srli a5, a4, 32
+lwu a4, 80(a3)
+add a4, a4, a5
+sw a4, 80(a3)
+srli a5, a4, 32
+lwu a4, 84(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 84(a3)
+srli a5, a4, 32
+lwu a4, 88(a3)
+add a4, a4, a5
+sw a4, 88(a3)
+srli a5, a4, 32
+lwu a4, 92(a3)
+add a4, a4, a5
+sw a4, 92(a3)
+srli a5, a4, 32
+lwu a4, 96(a3)
+add a4, a4, a5
+sw a4, 96(a3)
+srli a5, a4, 32
+lwu a4, 100(a3)
+add a4, a4, a5
+sw a4, 100(a3)
+srli a5, a4, 32
+lwu a4, 104(a3)
+add a4, a4, a5
+sw a4, 104(a3)
+srli a5, a4, 32
+lwu a4, 108(a3)
+add a4, a4, a5
+sw a4, 108(a3)
+srli a5, a4, 32
+addi a7, a5, 0
+lwu a4, 56(a3)
+add a4, a4, a5
+sw a4, 56(a3)
+srli a5, a4, 32
+lwu a4, 60(a3)
+add a4, a4, a5
+sw a4, 60(a3)
+srli a5, a4, 32
+lwu a4, 64(a3)
+add a4, a4, a5
+sw a4, 64(a3)
+srli a5, a4, 32
+lwu a4, 68(a3)
+add a4, a4, a5
+sw a4, 68(a3)
+srli a5, a4, 32
+lwu a4, 72(a3)
+add a4, a4, a5
+sw a4, 72(a3)
+srli a5, a4, 32
+lwu a4, 76(a3)
+add a4, a4, a5
+sw a4, 76(a3)
+srli a5, a4, 32
+lwu a4, 80(a3)
+add a4, a4, a5
+sw a4, 80(a3)
+srli a5, a4, 32
+lwu a4, 84(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 84(a3)
+srli a5, a4, 32
+lwu a4, 88(a3)
+add a4, a4, a5
+sw a4, 88(a3)
+srli a5, a4, 32
+lwu a4, 92(a3)
+add a4, a4, a5
+sw a4, 92(a3)
+srli a5, a4, 32
+lwu a4, 96(a3)
+add a4, a4, a5
+sw a4, 96(a3)
+srli a5, a4, 32
+lwu a4, 100(a3)
+add a4, a4, a5
+sw a4, 100(a3)
+srli a5, a4, 32
+lwu a4, 104(a3)
+add a4, a4, a5
+sw a4, 104(a3)
+srli a5, a4, 32
+lwu a4, 108(a3)
+add a4, a4, a5
+sw a4, 108(a3)
+srli a5, a4, 32
+addi a5, zero, 1
+addi a7, zero, 1
+lwu a4, 56(a3)
+add a4, a4, a5
+sw a4, 896(a3)
+srli a5, a4, 32
+lwu a4, 60(a3)
+add a4, a4, a5
+sw a4, 900(a3)
+srli a5, a4, 32
+lwu a4, 64(a3)
+add a4, a4, a5
+sw a4, 904(a3)
+srli a5, a4, 32
+lwu a4, 68(a3)
+add a4, a4, a5
+sw a4, 908(a3)
+srli a5, a4, 32
+lwu a4, 72(a3)
+add a4, a4, a5
+sw a4, 912(a3)
+srli a5, a4, 32
+lwu a4, 76(a3)
+add a4, a4, a5
+sw a4, 916(a3)
+srli a5, a4, 32
+lwu a4, 80(a3)
+add a4, a4, a5
+sw a4, 920(a3)
+srli a5, a4, 32
+lwu a4, 84(a3)
+add a4, a4, a7
+add a4, a4, a5
+sw a4, 924(a3)
+srli a5, a4, 32
+lwu a4, 88(a3)
+add a4, a4, a5
+sw a4, 928(a3)
+srli a5, a4, 32
+lwu a4, 92(a3)
+add a4, a4, a5
+sw a4, 932(a3)
+srli a5, a4, 32
+lwu a4, 96(a3)
+add a4, a4, a5
+sw a4, 936(a3)
+srli a5, a4, 32
+lwu a4, 100(a3)
+add a4, a4, a5
+sw a4, 940(a3)
+srli a5, a4, 32
+lwu a4, 104(a3)
+add a4, a4, a5
+sw a4, 944(a3)
+srli a5, a4, 32
+lwu a4, 108(a3)
+add a4, a4, a5
+sw a4, 948(a3)
+srli a5, a4, 32
+addi a1, zero, 0
+sub t0, a1, a5
+lwu a2, 56(a3)
+lwu a4, 896(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 0(a0)
+srli a4, a2, 8
+sb a4, 1(a0)
+srli a4, a2, 16
+sb a4, 2(a0)
+srli a4, a2, 24
+sb a4, 3(a0)
+lwu a2, 60(a3)
+lwu a4, 900(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 4(a0)
+srli a4, a2, 8
+sb a4, 5(a0)
+srli a4, a2, 16
+sb a4, 6(a0)
+srli a4, a2, 24
+sb a4, 7(a0)
+lwu a2, 64(a3)
+lwu a4, 904(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 8(a0)
+srli a4, a2, 8
+sb a4, 9(a0)
+srli a4, a2, 16
+sb a4, 10(a0)
+srli a4, a2, 24
+sb a4, 11(a0)
+lwu a2, 68(a3)
+lwu a4, 908(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 12(a0)
+srli a4, a2, 8
+sb a4, 13(a0)
+srli a4, a2, 16
+sb a4, 14(a0)
+srli a4, a2, 24
+sb a4, 15(a0)
+lwu a2, 72(a3)
+lwu a4, 912(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 16(a0)
+srli a4, a2, 8
+sb a4, 17(a0)
+srli a4, a2, 16
+sb a4, 18(a0)
+srli a4, a2, 24
+sb a4, 19(a0)
+lwu a2, 76(a3)
+lwu a4, 916(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 20(a0)
+srli a4, a2, 8
+sb a4, 21(a0)
+srli a4, a2, 16
+sb a4, 22(a0)
+srli a4, a2, 24
+sb a4, 23(a0)
+lwu a2, 80(a3)
+lwu a4, 920(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 24(a0)
+srli a4, a2, 8
+sb a4, 25(a0)
+srli a4, a2, 16
+sb a4, 26(a0)
+srli a4, a2, 24
+sb a4, 27(a0)
+lwu a2, 84(a3)
+lwu a4, 924(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 28(a0)
+srli a4, a2, 8
+sb a4, 29(a0)
+srli a4, a2, 16
+sb a4, 30(a0)
+srli a4, a2, 24
+sb a4, 31(a0)
+lwu a2, 88(a3)
+lwu a4, 928(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 32(a0)
+srli a4, a2, 8
+sb a4, 33(a0)
+srli a4, a2, 16
+sb a4, 34(a0)
+srli a4, a2, 24
+sb a4, 35(a0)
+lwu a2, 92(a3)
+lwu a4, 932(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 36(a0)
+srli a4, a2, 8
+sb a4, 37(a0)
+srli a4, a2, 16
+sb a4, 38(a0)
+srli a4, a2, 24
+sb a4, 39(a0)
+lwu a2, 96(a3)
+lwu a4, 936(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 40(a0)
+srli a4, a2, 8
+sb a4, 41(a0)
+srli a4, a2, 16
+sb a4, 42(a0)
+srli a4, a2, 24
+sb a4, 43(a0)
+lwu a2, 100(a3)
+lwu a4, 940(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 44(a0)
+srli a4, a2, 8
+sb a4, 45(a0)
+srli a4, a2, 16
+sb a4, 46(a0)
+srli a4, a2, 24
+sb a4, 47(a0)
+lwu a2, 104(a3)
+lwu a4, 944(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 48(a0)
+srli a4, a2, 8
+sb a4, 49(a0)
+srli a4, a2, 16
+sb a4, 50(a0)
+srli a4, a2, 24
+sb a4, 51(a0)
+lwu a2, 108(a3)
+lwu a4, 948(a3)
+xor a4, a4, a2
+and a4, a4, t0
+xor a2, a2, a4
+sb a2, 52(a0)
+srli a4, a2, 8
+sb a4, 53(a0)
+srli a4, a2, 16
+sb a4, 54(a0)
+srli a4, a2, 24
+sb a4, 55(a0)
+sb t1, 56(a0)
+ret
+.option pop",
+    )
+}
