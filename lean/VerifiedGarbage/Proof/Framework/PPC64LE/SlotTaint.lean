@@ -7,7 +7,6 @@ public import Batteries.Data.List.Basic
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.TCB.PPC64LE.Isa
-import Mathlib.Util.CompileInductive
 
 /-!
 # Taint tracking for PPC64LE, with public slots in the writable regions
@@ -763,8 +762,12 @@ theorem regEq_eq (a b : Reg) : regEq a b = (a == b) := by
   rw [Bool.eq_iff_iff, regEq, Nat.beq_eq, beq_iff_eq]
   exact ⟨RegIdx.idx_inj, congrArg _⟩
 
-/-- `l.getD i 0`. -/
-def getDK (l : List Nat) (i : Nat) : Nat :=
+/-- `getDK`, for compiled code. -/
+def getDKC (l : List Nat) (i : Nat) : Nat := l.getD i 0
+
+/-- `l.getD i 0`. Compiled code runs `getDKC` (Lean's compiler does not
+compile `List.rec`). -/
+@[implemented_by getDKC] noncomputable def getDK (l : List Nat) (i : Nat) : Nat :=
   List.rec (motive := fun _ => Nat → Nat) (fun _ => 0) (fun a _ ih j => Nat.casesOn j a ih) l i
 
 theorem getDK_eq (l : List Nat) (i : Nat) : getDK l i = l.getD i 0 := by

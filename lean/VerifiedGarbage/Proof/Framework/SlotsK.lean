@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Slots
-import Mathlib.Util.CompileInductive
 
 /-!
 # `Slots` operations for the kernel
@@ -10,7 +9,9 @@ The kernel evaluates structural recursion (compiled to `brecOn`) several times
 slower than `List.rec` (`VG.KList`). `Slots` itself imports only Lean core,
 for the precompiled hint search, which cannot compile `List.rec`; here are the
 operations a taint domain's kernel-evaluated step uses, written with
-`List.rec`, each proven equal to `Slots`'.
+`List.rec`, each proven equal to `Slots`'. Lean's compiler does not compile
+`List.rec`, so compiled code (the hint search) runs `Slots`' functions for
+them (`@[implemented_by]`); the kernel checks what it computes.
 -/
 
 @[expose] public section
@@ -18,18 +19,18 @@ operations a taint domain's kernel-evaluated step uses, written with
 namespace VG.Slots
 
 /-- `nth`, with `List.rec`. -/
-def nthK (l : List Nat) : Nat → Nat :=
+@[implemented_by nth] def nthK (l : List Nat) : Nat → Nat :=
   List.rec (motive := fun _ => Nat → Nat) (fun _ => 0)
     (fun a _ ih i => Nat.casesOn (motive := fun _ => Nat) i a fun j => ih j) l
 
 /-- `modify`, with `List.rec`. -/
-def modifyK (f : Nat → Nat) (l : List Nat) : Nat → List Nat :=
+@[implemented_by modify] def modifyK (f : Nat → Nat) (l : List Nat) : Nat → List Nat :=
   List.rec (motive := fun _ => Nat → List Nat)
     (fun i => Nat.rec (motive := fun _ => List Nat) [f 0] (fun _ ih => 0 :: ih) i)
     (fun a l ih i => Nat.casesOn (motive := fun _ => List Nat) i (f a :: l) fun j => a :: ih j) l
 
 /-- `subsetL`, with `List.rec`. -/
-def subsetLK (s : List Nat) : List Nat → Bool :=
+@[implemented_by subsetL] def subsetLK (s : List Nat) : List Nat → Bool :=
   List.rec (motive := fun _ => List Nat → Bool) (fun _ => true)
     (fun a _ ih t => List.casesOn (motive := fun _ => Bool) t (Nat.beq a 0 && ih [])
       fun b t => Nat.beq (Nat.land a b) a && ih t) s

@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Rsa.X86.RvViews
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
-import Mathlib.Util.CompileInductive
 
 /-! # Importing the three key integers into the recovery workspace -/
 

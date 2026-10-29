@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Framework.TaintMap
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
-import Mathlib.Util.CompileInductive
 
 /-!
 # Taint tracking for x86-64: code without its displacements
@@ -375,9 +374,13 @@ theorem Abs.norm_eq (a : Abs) : a.norm = a := by
     · rw [Nat.eq_of_beq_eq_true h₁]; cases ok <;> rfl
   · rw [Nat.eq_of_beq_eq_true h₀]; cases ok <;> rfl
 
+/-- `runN`, for compiled code. -/
+def runNC (r : Reg) (is : List Instr) (ok : Bool) (xs : Nat) : Abs := is.foldl (step r) ⟨ok, ⟨xs⟩⟩
+
 /-- `run`, with what is known written out before every instruction if `r`
-is in `xmm0` alone, as well as in no SSE register. -/
-def runN (r : Reg) (is : List Instr) : Bool → Nat → Abs :=
+is in `xmm0` alone, as well as in no SSE register. Compiled code runs `runNC`
+(Lean's compiler does not compile `List.rec`). -/
+@[implemented_by runNC] noncomputable def runN (r : Reg) (is : List Instr) : Bool → Nat → Abs :=
   List.rec (fun ok xs => ⟨ok, ⟨xs⟩⟩)
     (fun i _ ih ok xs =>
       let g := fun a : Abs => ih a.ok a.xs.bits

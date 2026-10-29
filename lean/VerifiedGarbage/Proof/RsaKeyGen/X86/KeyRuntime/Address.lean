@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
-import Mathlib.Util.CompileInductive
 
 /-! # Public counts and array pointers for the shared key code -/
 
