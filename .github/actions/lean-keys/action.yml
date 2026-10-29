@@ -18,12 +18,23 @@ outputs:
 runs:
   using: composite
   steps:
+    # The sources' hash is of the blob hashes Git's index holds for them
+    # (as checked out: the step fails if any differs from the index), not
+    # of their contents: `hashFiles` read and hashed all 26,000-odd files,
+    # 9 s at the start of every run's Lean build, where this takes a tenth
+    # of a second.
     - id: keys
       shell: bash
       env:
         PREFIX: ${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-
-        SOURCES: ${{ hashFiles('lean/lakefile.toml', 'lean/*.lean', 'lean/VerifiedGarbage/**', 'lean/VerifiedGarbageTest/**') }}
       run: |
+        paths=(lean/lakefile.toml ':(glob)lean/*.lean' lean/VerifiedGarbage lean/VerifiedGarbageTest)
+        if [ -n "$(git status --porcelain --untracked-files=all -- "${paths[@]}")" ]; then
+          echo "::error::The Lean sources differ from Git's index, which names their caches."
+          git status --short -- "${paths[@]}"
+          exit 1
+        fi
+        SOURCES=$(git ls-files --stage -- "${paths[@]}" | sha256sum | cut -d' ' -f1)
         {
           echo "build-cache-prefix=lean-build-$PREFIX"
           echo "build-cache=lean-build-$PREFIX$SOURCES"
