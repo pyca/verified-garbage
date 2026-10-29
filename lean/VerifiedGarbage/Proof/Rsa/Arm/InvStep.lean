@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.Arm.InvHalf
 import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Rsa.KeyMath
+import Batteries.Tactic.Alias
 
 /-! # `inverse` on ARMv7: one step is `invStep` -/
 
