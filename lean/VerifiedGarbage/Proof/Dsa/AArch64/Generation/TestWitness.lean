@@ -18,8 +18,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
 import VerifiedGarbage.Proof.Bignum.Words
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Contract
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd -- shake: keep: its symbolic execution names RegUpd lemmas by path, which shake does not see
 /-! Classify the complete truncated draw while preserving its original bytes. -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/AArch64/Generation/WitnessRange.lean`, which only this module imported.

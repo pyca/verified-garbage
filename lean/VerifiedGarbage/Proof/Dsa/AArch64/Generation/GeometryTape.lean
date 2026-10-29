@@ -17,8 +17,6 @@ import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 import VerifiedGarbage.Proof.Dsa.AArch64.SourceSlices
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Impl.Dsa.Layout
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
-import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 /-! # Immutable entropy tapes are disjoint from every mutable generation area -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/AArch64/Generation/Geometry.lean`, which only this module imported.

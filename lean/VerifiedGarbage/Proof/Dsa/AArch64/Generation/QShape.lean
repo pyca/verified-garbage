@@ -18,7 +18,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.HalveOctets
 /-! The native digest-to-subgroup-candidate operation. -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/AArch64/Generation/QShapeEnds.lean`, which only this module imported.

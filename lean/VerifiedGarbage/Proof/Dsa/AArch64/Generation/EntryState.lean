@@ -19,7 +19,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameStore
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
-import VerifiedGarbage.Proof.Framework.AArch64.StackStore
 import VerifiedGarbage.TCB.AArch64.Isa
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameCopy
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameDerived

@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.TCB.AArch64.Simd
 /-! # Public oddness checks on the encoded DSA moduli -/
 
 -- Formerly `VerifiedGarbage/Proof/Dsa/AArch64/Parity.lean`, which only this module imported.
