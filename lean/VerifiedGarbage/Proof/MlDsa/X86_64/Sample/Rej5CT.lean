@@ -33,17 +33,17 @@ open VG.Proof.MlKem.X86_64 (Keep WP.keep)
 
 theorem batch2_ct : RelCT isa (R4 fun σ s => Batch σ 2 0 112 0 s)
     (batch 0 112) (R4 fun σ s => Batch σ 2 0 112 4 s) := by
-  refine RelCT.seq (segment_ct (K := 0) (by decide) (by decide) (by decide) (by decide) (by decide) (by taint_decide) (by taint_decide)) ?_
-  refine RelCT.seq (segment_ct (K := 1) (by decide) (by decide) (by decide) (by decide) (by decide) (by taint_decide) (by taint_decide)) ?_
-  refine RelCT.seq (segment_ct (K := 2) (by decide) (by decide) (by decide) (by decide) (by decide) (by taint_decide) (by taint_decide)) ?_
-  exact (segment_ct (K := 3) (by decide) (by decide) (by decide) (by decide) (by decide) (by taint_decide) (by taint_decide))
+  refine RelCT.seq (segment_ct (K := 0) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by taint_decide) (by taint_decide)) ?_
+  refine RelCT.seq (segment_ct (K := 1) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by taint_decide) (by taint_decide)) ?_
+  refine RelCT.seq (segment_ct (K := 2) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by taint_decide) (by taint_decide)) ?_
+  exact (segment_ct (K := 3) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by taint_decide) (by taint_decide))
 
 theorem batch3_ct : RelCT isa (R4 fun σ s => Batch σ 3 112 56 0 s)
     (batch 112 56) (R4 fun σ s => Batch σ 3 112 56 4 s) := by
-  refine RelCT.seq (segment_ct (K := 0) (by decide) (by decide) (by decide) (by decide) (by decide) (by taint_decide) (by taint_decide)) ?_
-  refine RelCT.seq (segment_ct (K := 1) (by decide) (by decide) (by decide) (by decide) (by decide) (by taint_decide) (by taint_decide)) ?_
-  refine RelCT.seq (segment_ct (K := 2) (by decide) (by decide) (by decide) (by decide) (by decide) (by taint_decide) (by taint_decide)) ?_
-  exact (segment_ct (K := 3) (by decide) (by decide) (by decide) (by decide) (by decide) (by taint_decide) (by taint_decide))
+  refine RelCT.seq (segment_ct (K := 0) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by taint_decide) (by taint_decide)) ?_
+  refine RelCT.seq (segment_ct (K := 1) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by taint_decide) (by taint_decide)) ?_
+  refine RelCT.seq (segment_ct (K := 2) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by taint_decide) (by taint_decide)) ?_
+  exact (segment_ct (K := 3) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by taint_decide) (by taint_decide))
 
 structure Checked (σ s : State) : Prop where
   prior : ∃ start, Batch σ 2 0 112 4 start ∧ s.mem = start.mem ∧ Keep [.rax, .r14] start s
@@ -123,10 +123,10 @@ theorem ct : ConstantTime isa r4K.pre r4K.pub VG.Impl.MlDsa.X86_64.Sample.Rej5.r
   refine RelCT.seq (relInv (fun σ s hp h => zeroJ_ok (pre_of hp) h)
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.env h₂.env) (by taint_decide))) ?_
-  refine RelCT.seq (first_ct (K := 0) (by decide) (by taint_decide) (by taint_decide)) ?_
-  refine RelCT.seq (first_ct (K := 1) (by decide) (by taint_decide) (by taint_decide)) ?_
-  refine RelCT.seq (first_ct (K := 2) (by decide) (by taint_decide) (by taint_decide)) ?_
-  refine RelCT.seq (first_ct (K := 3) (by decide) (by taint_decide) (by taint_decide)) ?_
+  refine RelCT.seq (segment0_ct (K := 0) (by decide) (by taint_decide) (by taint_decide)) ?_
+  refine RelCT.seq (segment0_ct (K := 1) (by decide) (by taint_decide) (by taint_decide)) ?_
+  refine RelCT.seq (segment0_ct (K := 2) (by decide) (by taint_decide) (by taint_decide)) ?_
+  refine RelCT.seq (segment0_ct (K := 3) (by decide) (by taint_decide) (by taint_decide)) ?_
   refine RelCT.seq (RelCT.mono (sqM_ct (by decide) (by decide) ⟨_, by taint_decide⟩)
     (fun _ _ ⟨σ₁, σ₂, p₁, p₂, hq, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, hq, m2_of h₁, m2_of h₂⟩) fun _ _ h => h) ?_
   exact RelCT.seq (RelCT.mono batch2_ct

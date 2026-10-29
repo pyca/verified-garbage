@@ -36,7 +36,10 @@ def artifacts : List Artifact := [
     notes := ["It runs the four instances of SHAKE128 at once, in the four \
       64-bit elements of AVX2 registers. It first samples from five blocks (840 bytes) per seed, and \
       squeezes a sixth block only if any polynomial is incomplete. Its coefficients and six-block \
-      failure bound match `vg_mldsa_rej_ntt_poly`. It saves callee-saved registers in `scratch`."]
+      failure bound match `vg_mldsa_rej_ntt_poly`. It parses eight candidates at a time in AVX2 registers \
+      while there is room for eight more coefficients, keeping those less than `q` with `vpshufb` by \
+      the static table `VG_MLDSA_REJ_TBL`, indexed by the mask of each 128-bit lane; it parses the \
+      rest one at a time. It saves callee-saved registers in `scratch`."]
     code := Impl.MlDsa.X86_64.Sample.Rej5.rejNTT4Avx2
     stack := 24
     verified := Proof.MlDsa.X86_64.Rej4.Segment.rejNTT4Avx2_verified
