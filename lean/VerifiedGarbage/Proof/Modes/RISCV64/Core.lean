@@ -54,17 +54,19 @@ theorem KeptBut.a0 {s s' : State} (h : KeptBut s s') : s'.gpr .a0 = s.gpr .a0 :=
   h .a0 (by decide) (by decide) (by decide) (by decide) (by decide)
 
 /-- The frame of `n` slots at `B` in `s`: 16-byte aligned, not wrapping
-around, its lowest 2032 bytes (or all of it) one writable region, and the
-rest writable an access within a 16-byte aligned chunk at a time. -/
+around, any access within its lowest 2032 bytes (or all of it) writable,
+all of it one writable region if it is at most 4064 bytes, and the rest
+writable an access within a 16-byte aligned chunk at a time. -/
 structure ScrIn (s : State) (B : Addr) (n : Nat) : Prop where
   al : B.toNat % 16 = 0
   fit : B.toNat + 8 * n ≤ 2 ^ 64
-  low : (⟨B, min (8 * n) 2032⟩ : Region) ∈ s.wr
+  low : ∀ o w, o + w ≤ min (8 * n) 2032 → InRegions s.wr (B + BitVec.ofNat 64 o) w
+  whole : 8 * n ≤ 4064 → (⟨B, 8 * n⟩ : Region) ∈ s.wr
   wr : ∀ o w, 0 < w → o + w ≤ 8 * n → o % 16 + w ≤ 16 → InRegions s.wr (B + BitVec.ofNat 64 o) w
 
 theorem ScrIn.congr {s s' : State} {B : Addr} {n : Nat} (h : ScrIn s B n) (hw : s'.wr = s.wr) :
     ScrIn s' B n :=
-  ⟨h.al, h.fit, by rw [hw]; exact h.low, by rw [hw]; exact h.wr⟩
+  ⟨h.al, h.fit, by rw [hw]; exact h.low, by rw [hw]; exact h.whole, by rw [hw]; exact h.wr⟩
 
 /-- Slot `k` of the frame at `B`. -/
 abbrev slotA (B : Addr) (k : Nat) : Addr := B + BitVec.ofNat 64 (8 * k)

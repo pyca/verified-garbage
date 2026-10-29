@@ -167,7 +167,7 @@ theorem crypt_wp (up : Bool) {n : Nat} (hn : n = 12 ∨ n = 16) {s : State} {B :
         dirCipher up k n (Spec.Aes.bytesAt s.mem (blkAddr (dirCore up n) B j) (4 * (dirCore up n).bw))) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hfit : B.toNat + 128 ≤ 2 ^ 64 := hS.fit
-  have hW : (⟨B, 128⟩ : Region) ∈ s.wr := hS.low
+  have hW : (⟨B, 128⟩ : Region) ∈ s.wr := hS.whole (by show 8 * 16 ≤ 4064; decide)
   have hal : B.toNat % 8 = 0 := by have := hS.al; omega_arith
   obtain ⟨hk, hkB, htB⟩ := hR
   have hn11 : n < 2048 := by rcases hn with rfl | rfl <;> decide

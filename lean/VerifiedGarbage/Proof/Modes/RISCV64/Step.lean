@@ -147,11 +147,9 @@ theorem areasOk {s₀ s : State} {B D : Addr} {n st j : Nat} (hF : Fixed c s₀ 
       refine ⟨_, hF.dataW, ?_⟩
       rw [VG.Offset.add_add]; exact VG.Offset.contains_base _ (by omega_using [hjn, ho]) (by omega_using [hD, hjn, ho, hw0])
     · simp only [lens, areas] at ho ⊢
-      refine ⟨_, hF.scr.low, ?_⟩
-      rw [VG.Offset.add_add]; exact slot_contains (by have := hge; simp only [coreSlot] at this; slot_omega)
+      rw [VG.Offset.add_add]; exact hF.scr.low _ _ (by have := hge; simp only [coreSlot] at this; slot_omega)
     · simp only [lens, areas] at ho ⊢
-      refine ⟨_, hF.scr.low, ?_⟩
-      rw [VG.Offset.add_add]; exact slot_contains (by omega_using [hb4, ho])
+      rw [VG.Offset.add_add]; exact hF.scr.low _ _ (by omega_using [hb4, ho])
   refine ⟨fun l off ho => ?_, fun l off ho => ?_, fun l off w hw0 ho => ?_, fun l _ off w hw0 ho => hW l off w hw0 ho,
     fun l l' hne => ?_, fun l => ?_⟩
   · cases l
