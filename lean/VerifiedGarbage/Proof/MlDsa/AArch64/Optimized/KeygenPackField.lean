@@ -6,8 +6,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import Mathlib.Tactic.SplitIfs
-
 @[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.KeygenPack
@@ -33,8 +31,8 @@ theorem field_ok (d j : Nat) (hd : d≤20) (hj : j<8) (s : State)
       ((t.gpr .x9=fieldAcc d j (s.gpr .x9) (fieldValue s.v j) ∧
         t.mem=fieldMem d j s.mem (s.gpr .x2) (s.gpr .x9) (fieldValue s.v j)) ∧
        Keep [.x9,.x10,.x11] s t) ∧ t.v=s.v := by
-  apply VG.Proof.MlKem.AArch64.WP.keepV (by dsimp only [field]; split_ifs <;> rfl)
-  refine VG.Proof.MlDsa.AArch64.Arith.WP.keep _ ?_ (by dsimp only [field]; split_ifs <;> rfl) (hv:=by dsimp only [field]; split_ifs <;> rfl)
+  apply VG.Proof.MlKem.AArch64.WP.keepV (by dsimp only [field]; (repeat' split) <;> rfl)
+  refine VG.Proof.MlDsa.AArch64.Arith.WP.keep _ ?_ (by dsimp only [field]; (repeat' split) <;> rfl) (hv:=by dsimp only [field]; (repeat' split) <;> rfl)
   have hs : d*j%64<64 := Nat.mod_lt _ (by decide)
   have hj4 : j%4<4 := Nat.mod_lt _ (by decide)
   have hidx : j%4*32<128 := by omega

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejLoopState
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideLoop
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFourLoop
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejScalarLoop
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdvance
 
 @[expose] public section
@@ -33,7 +32,7 @@ theorem parsed_done (s : State) (b : Addr) (L : List Zq) {d n : Nat}
     (hd : d≤n) (h : d=n ∨ (parsed s b L d).length=256) : parsed s b L d=parsed s b L n := by
   rcases h with rfl | hf
   · rfl
-  · conv_rhs => rw [show n=d+(n-d) by omega]
+  · conv => rhs; rw [show n=d+(n-d) by omega]
     unfold parsed at hf ⊢
     rw [candidateBytes_append,rnFold_append _ _ _ (by rw [candidateBytes_length]; omega),
       rnFold_full hf]

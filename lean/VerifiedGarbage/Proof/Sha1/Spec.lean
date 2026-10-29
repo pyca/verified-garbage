@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.Sha1
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
@@ -72,7 +71,7 @@ theorem rotateLeft_eq (x : Word) {n : Nat} (h : n < 32) :
     x.rotateLeft n = x.rotateRight (32 - n) := by
   ext i hi
   simp only [BitVec.getElem_rotateLeft, BitVec.getElem_rotateRight]
-  split_ifs <;> first | omega | (congr 1; omega)
+  (repeat' split) <;> first | omega | (congr 1; omega)
 
 theorem ch_eq (x y z : Word) : ch x y z = (y ^^^ z) &&& x ^^^ z := by
   ext i; simp only [ch, BitVec.getElem_xor, BitVec.getElem_and, BitVec.getElem_not]

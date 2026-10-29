@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Schedule
 public import VerifiedGarbage.Proof.Sha512.Spec
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
-import Mathlib.Tactic.SplitIfs
-
 /-!
 # SHA-512 with the SHA512 extension: the values in the AVX registers
 
@@ -28,7 +26,7 @@ open VG.Proof.Sha512.X86_64.Avx2 (pair qword_append_0 qword_append_1 paddq_eq al
 theorem app4 (a b c d : Word) : a ++ b ++ c ++ d = (a ++ b) ++ (c ++ d) := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_append]
-  split_ifs <;> first | omega | exact congrArg _ (by omega)
+  (repeat' split) <;> first | omega | exact congrArg _ (by omega)
 
 theorem lo64 (a b : Word) : (a ++ b).extractLsb' 0 64 = b := BitVec.extractLsb'_append_eq_right
 theorem hi64 (a b : Word) : (a ++ b).extractLsb' 64 64 = a := BitVec.extractLsb'_append_eq_left
@@ -38,12 +36,12 @@ theorem hi128 (a b : BitVec 128) : (a ++ b).extractLsb' 128 128 = a := BitVec.ex
 theorem lo4 (a b c d : Word) : (a ++ b ++ c ++ d : BitVec 256).extractLsb' 0 128 = c ++ d := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, decide_eq_true hi, Bool.true_and]
-  split_ifs <;> first | omega | exact congrArg _ (by omega)
+  (repeat' split) <;> first | omega | exact congrArg _ (by omega)
 
 theorem hi4 (a b c d : Word) : (a ++ b ++ c ++ d : BitVec 256).extractLsb' 128 128 = a ++ b := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, decide_eq_true hi, Bool.true_and]
-  split_ifs <;> first | omega | exact congrArg _ (by omega)
+  (repeat' split) <;> first | omega | exact congrArg _ (by omega)
 
 /-- A 256-bit value is its upper lane followed by its lower one. -/
 theorem split256 (x : BitVec 256) : x.extractLsb' 128 128 ++ x.extractLsb' 0 128 = x := by
@@ -58,25 +56,25 @@ theorem qword256_0 (a b c d : Word) : qword256 ((a ++ b) ++ (c ++ d)) 0 = d := b
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [qword256, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, decide_eq_true hi,
     Bool.true_and]
-  split_ifs <;> first | omega | exact congrArg _ (by omega)
+  (repeat' split) <;> first | omega | exact congrArg _ (by omega)
 
 theorem qword256_1 (a b c d : Word) : qword256 ((a ++ b) ++ (c ++ d)) 1 = c := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [qword256, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, decide_eq_true hi,
     Bool.true_and]
-  split_ifs <;> first | omega | exact congrArg _ (by omega)
+  (repeat' split) <;> first | omega | exact congrArg _ (by omega)
 
 theorem qword256_2 (a b c d : Word) : qword256 ((a ++ b) ++ (c ++ d)) 2 = b := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [qword256, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, decide_eq_true hi,
     Bool.true_and]
-  split_ifs <;> first | omega | exact congrArg _ (by omega)
+  (repeat' split) <;> first | omega | exact congrArg _ (by omega)
 
 theorem qword256_3 (a b c d : Word) : qword256 ((a ++ b) ++ (c ++ d)) 3 = a := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [qword256, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, decide_eq_true hi,
     Bool.true_and]
-  split_ifs <;> first | omega | exact congrArg _ (by omega)
+  (repeat' split) <;> first | omega | exact congrArg _ (by omega)
 
 /-! ## The working variables -/
 

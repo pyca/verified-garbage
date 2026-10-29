@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackField
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackLoads
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-import Mathlib.Tactic.SplitIfs
-
 @[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.Optimized.KeygenPack
@@ -40,7 +38,7 @@ theorem loadVec_ok (signed : Bool) (b c : Nat) (hc : c≤8) (hc4 : c%4=0) (s : S
     intro j hj
     have hreg : regAt (j/4)=(if j<4 then VReg.v0 else .v1) := by
       unfold regAt
-      split_ifs <;> first | rfl | omega
+      (repeat' split) <;> first | rfl | omega
     have h := hv (j/4) (by omega) (j%4) (by omega)
     rw [hreg,inputWord] at h
     exact congrArg (BitVec.setWidth 64) h
