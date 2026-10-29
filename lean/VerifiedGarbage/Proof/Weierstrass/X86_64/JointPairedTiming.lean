@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoopTiming
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
 public import VerifiedGarbage.Proof.Weierstrass.Joint
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigit
@@ -155,7 +156,7 @@ section
 variable {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat}
     {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {double : Prog isa}
     (hL : JointAddLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
-    (hC : Law C) (ha : AM3 C) (hOne : c.K.one<C.p)
+    (hC : Law C) (hd : JDblOk C c.dbl) (hOne : c.K.one<C.p)
     (hOneVal : toM C.p (2^(64*c.K.M.n)) c.K.one=1)
     (hG : onCurve C G=true) (hQ : onCurve C Q=true)
 
@@ -164,20 +165,20 @@ variable (ht : JointOpsTiming c double C base size (JointCore c C base size Q u 
     (hdouble : ∀ A s,onCurve C A=true → (JointCore c C base size Q u v (JointGenerator c C base T size row)) A s →
       WP isa double.inline s fun t => ProgKeep c.K.M base (jointWork c) s t ∧ (JointCore c C base size Q u v (JointGenerator c C base T size row)) (add A A) t)
 
-include hL hm hC ha hOne hOneVal hG hQ ht
+include hL hm hC hd hOne hOneVal hG hQ ht
 
 theorem jointPair_digits {j : Nat} {A : Point C} (hA : onCurve C A=true) (hj : j<64*c.K.M.n+1) :
     RelCT isa (JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row)) A j) (Joint.digits c).inline
       (JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row))
         (add (add A (FastNaf.point C Q 5 v j)) (FastNaf.point C G c.gw u j)) j) := by
-  apply RelCT.seq (jointPair_stage (fun s hs hb => jointCachedDigit_ok hL hm hC ha hOne hQ hA hs
+  apply RelCT.seq (jointPair_stage (fun s hs hb => jointCachedDigit_ok hL hm hC hd hOne hQ hA hs
     (JointGenerator.workKeep hL.lookup.layout hs.field.mod.tmp) hj hb) (ht.peer A j hj))
-  exact jointPair_stage (fun s hs hb => jointFixedDigit_ok hL hm hC ha hOne hOneVal hG
+  exact jointPair_stage (fun s hs hb => jointFixedDigit_ok hL hm hC hd hOne hOneVal hG
     (hC.onCurve_add hA (FastNaf.onCurve_point hC hQ 5 v j)) hs hj hb) (ht.generator _ j hj)
 
 include hdouble
 
-omit hm hC ha hOne hOneVal hG hQ in
+omit hm hC hd hOne hOneVal hG hQ in
 /-- The doubling but where `R` is `O`, in the first iteration (`j = 64 n`). -/
 theorem jointPair_guard {j : Nat} {A : Point C} (hA : onCurve C A=true) (hj : j<Joint.top c)
     (h0 : j=64*c.K.M.n → add A A=A) :
@@ -219,7 +220,7 @@ theorem jointPair_step (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) {j : Nat}
     (fun h => by rw [h, jointPoint_topB G Q hu hv c.gw]; rfl))
   apply RelCT.seq
   · simpa only [jointPoint_step hC hG hQ (gw:=c.gw)] using
-      jointPair_digits hL hm hC ha hOne hOneVal hG hQ ht (hC.onCurve_add hA hA)
+      jointPair_digits hL hm hC hd hOne hOneVal hG hQ ht (hC.onCurve_add hA hA)
         (by omega : j<64*c.K.M.n+1)
   · exact jointPair_test (j:=j) (hk [] (by simp)) (by omega)
 
@@ -238,12 +239,12 @@ theorem jointPair_run (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) :
     (fun j => JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row)) (jointPoint G Q u v j c.gw) j)
     (fun hp => by
       have seed := jointPair_digits (base:=base) (T:=T) (u:=u) (v:=v) (row:=row) (j:=64*c.K.M.n)
-        (A:=.infinity) hL hm hC ha hOne hOneVal hG hQ ht rfl (by omega)
+        (A:=.infinity) hL hm hC hd hOne hOneVal hG hQ ht rfl (by omega)
       rw [he] at seed
       simpa only [joint_top_peel hp] using seed)
     (fun hp s t h => by
       simpa only [joint_top_guard hp,jointPoint_topB G Q hu hv c.gw] using h)
-    (fun j hj => jointPair_step hL hm hC ha hOne hOneVal hG hQ ht hdouble hu hv hj)
+    (fun j hj => jointPair_step hL hm hC hd hOne hOneVal hG hQ ht hdouble hu hv hj)
   simpa only [jointPoint_zero (gw:=c.gw)] using out
 end
 end VG.Proof.Weierstrass.X86_64

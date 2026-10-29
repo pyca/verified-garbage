@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.JacMixedForward
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
 
@@ -15,7 +16,8 @@ namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64
 
-structure JacMixedChecks (K : WinCfg) (p q o : Pt) : Prop where
+/-- The checks of `Jacobian.jacMixedForward`'s parts, its doubling `dbl`. -/
+structure JacMixedChecks (K : WinCfg) (p q o : Pt) (dbl : RcbSlots → Pt → Pt → List FOp := dblJMul) : Prop where
   zeroP : ScratchCT (.block (Jacobian.zeroTest K.M.n p.z))
   zeroH : ScratchCT (.block (Jacobian.zeroTest K.M.n K.S.t3))
   zeroR : ScratchCT (.block (Jacobian.zeroTest K.M.n K.S.t5))
@@ -23,17 +25,17 @@ structure JacMixedChecks (K : WinCfg) (p q o : Pt) : Prop where
   init : ScratchCT (.block (copy K.M.n K.S.t2 p.x++copy K.M.n K.S.t4 p.y))
   head : ScratchCT (ForwardField.programB K.M (jacMixedHead K.S p q)).inline
   tail : ScratchCT (ForwardField.programB K.M (jacMixedTail K.S p q o)).inline
-  double : ScratchCT (ForwardField.programB K.M (dblJMul K.S p o)).inline
+  double : ScratchCT (ForwardField.programB K.M (dbl K.S p o)).inline
   infinity : ScratchCT (.block (Jacobian.infinity K o))
 
 theorem jacMixedForward_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay K.M size Sl)
-    (hm : UnitMod m (2^(64*K.M.n))) {p q o : Pt}
-    (hc : JacMixedChecks K p q o) (hA : RcbApart K.S p q o)
+    (hm : UnitMod m (2^(64*K.M.n))) {p q o : Pt} {dbl : RcbSlots → Pt → Pt → List FOp}
+    (hc : JacMixedChecks K p q o dbl) (hA : RcbApart K.S p q o)
     (hSl : ∀ x∈rcbW K.S o++rcbR K.S p q,Sl x)
-    {V : List Nat} {E : Nat → Fin m} (hV : ∀ x∈rcbR K.S p q,x∈V) (hOne : K.one<m) :
+    {V : List Nat} {E : Nat → Fin m} (hV : ∀ x∈rcbR K.S p q,x∈V) (hOne : K.one<m) (hds : JDblShape dbl := by exact jdblShape_dblJMul) :
     RelCT isa (FieldPair K.M base size m Sl V E)
-      (Jacobian.jacMixedForward K p q o).inline (fun s t => ∃ E',FieldPair K.M base size m Sl ([o.x,o.y,o.z]++V) E' s t) := by
+      (Jacobian.jacMixedForward K p q o dbl).inline (fun s t => ∃ E',FieldPair K.M base size m Sl ([o.x,o.y,o.z]++V) E' s t) := by
   have os : ∀ x∈[o.x,o.y,o.z],Sl x := by
     intro x hx
     apply hSl x
@@ -73,7 +75,7 @@ theorem jacMixedForward_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero 
           · exact hSl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
         have hdV : ∀ x∈rcbR K.S p p,x∈validAfter (jacMixedHead K.S p q) (K.S.t4::K.S.t2::V) :=
           fun x hx => oldV x (hV x (rcbR_self_mem _ _ _ hx))
-        exact (doubleField_relCT hL hm hdSl hdV hc.double).mono
+        exact (doubleField_relCT hL hm hdSl hdV hds hc.double).mono
           (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub subV⟩)
       · intro _
         exact (infinity_relCT hL os hOne hc.infinity).mono

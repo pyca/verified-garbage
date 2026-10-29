@@ -19,7 +19,7 @@ bits of `k` and its table of odd multiples. `p521` already has `pubVerify`. The 
 about 2% slower on Zen 5 (EPYC 9V45). -/
 def publicJoint : Joint.Cfg :=
   ⟨p521.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP,
-    3304,"VG_P521_COMB",4096,5968,none,false,true,false,7⟩
+    3304,"VG_P521_COMB",4096,5968,none,false,true,false,7,Impl.Weierstrass.dblJMul⟩
 
 def publicJointAdx : Joint.Cfg :=
   {publicJoint with K := p521x.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP}

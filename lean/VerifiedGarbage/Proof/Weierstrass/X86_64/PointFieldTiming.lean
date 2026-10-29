@@ -1,10 +1,10 @@
 module
 
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Proof.Weierstrass.JacMul
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
 import VerifiedGarbage.Proof.Framework.Block
 
@@ -91,12 +91,12 @@ theorem doubleField_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay M size Sl)
     (hm : UnitMod m (2^(64*M.n))) {S : RcbSlots} {p o : Pt}
     (hSl : ∀ x∈rcbW S o++rcbR S p p,Sl x)
-    {V : List Nat} {E : Nat → Fin m} (hV : ∀ x∈rcbR S p p,x∈V)
-    (hc : ScratchCT (ForwardField.programB M (dblJMul S p o)).inline) :
-    RelCT isa (FieldPair M base size m Sl V E) (ForwardField.programB M (dblJMul S p o)).inline
-      (FieldPair M base size m Sl ([o.x,o.y,o.z]++V) (runOps (dblJMul S p o) E)) := by
-  have he : dblJMul S p o=ofN (dblJChoiceN true) S p p o := dblJChoice_eq true S p o
+    {V : List Nat} {E : Nat → Fin m} (hV : ∀ x∈rcbR S p p,x∈V) {dbl : RcbSlots → Pt → Pt → List FOp}
+    (hs : JDblShape dbl) (hc : ScratchCT (ForwardField.programB M (dbl S p o)).inline) :
+    RelCT isa (FieldPair M base size m Sl V E) (ForwardField.programB M (dbl S p o)).inline
+      (FieldPair M base size m Sl ([o.x,o.y,o.z]++V) (runOps (dbl S p o) E)) := by
+  obtain ⟨N, hN, he⟩ := hs
   rw [he] at hc ⊢
-  exact ofN_forward_relCT hL hm (dblJChoiceN_ok true) hSl hV hc
+  exact ofN_forward_relCT hL hm hN hSl hV hc
 
 end VG.Proof.Weierstrass.X86_64

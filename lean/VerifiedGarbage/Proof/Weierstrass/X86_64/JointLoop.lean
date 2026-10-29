@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.Joint
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointGenerator
@@ -44,11 +45,11 @@ section
 variable {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat}
     {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)}
     (hL : JointAddLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
-    (hC : Law C) (ha : AM3 C) (hOne : c.K.one<C.p)
+    (hC : Law C) (hd : JDblOk C c.dbl) (hOne : c.K.one<C.p)
     (hOneVal : toM C.p (2^(64*c.K.M.n)) c.K.one=1)
     (hG : onCurve C G=true) (hQ : onCurve C Q=true)
 
-include hL hm hC ha hOne hOneVal hG hQ
+include hL hm hC hd hOne hOneVal hG hQ
 
 theorem jointDigits_core_ok {j : Nat} {A : Point C} {s : State}
     (hA : onCurve C A=true)
@@ -60,9 +61,9 @@ theorem jointDigits_core_ok {j : Nat} {A : Point C} {s : State}
   rw [Joint.digits]
   simp only [Code.inline]
   apply WP.seq
-  refine WP.mono (jointCachedDigit_ok hL hm hC ha hOne hQ hA hs
+  refine WP.mono (jointCachedDigit_ok hL hm hC hd hOne hQ hA hs
     (JointGenerator.workKeep hL.lookup.layout hs.field.mod.tmp) hj hb) fun a ⟨ka,ca⟩ => ?_
-  refine WP.mono (jointFixedDigit_ok hL hm hC ha hOne hOneVal hG
+  refine WP.mono (jointFixedDigit_ok hL hm hC hd hOne hOneVal hG
     (hC.onCurve_add hA (FastNaf.onCurve_point hC hQ 5 v j)) ca hj
     ((ka.gpr _ (rbx_not_clob _)).trans hb)) fun t ⟨kt,ct⟩ => ⟨ka.trans kt,ct⟩
 
@@ -117,7 +118,7 @@ theorem jointStep_core_ok (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) {j : N
   apply WP.seq
   refine WP.mono hg fun b ⟨kb,cb,bb⟩ => ?_
   apply WP.seq
-  refine WP.mono (jointDigits_core_ok hL hm hC ha hOne hOneVal hG hQ
+  refine WP.mono (jointDigits_core_ok hL hm hC hd hOne hOneVal hG hQ
     (hC.onCurve_add hA hA) cb (by omega) bb) fun d ⟨kd,cd⟩ => ?_
   rw [jointPoint_step hC hG hQ (gw:=c.gw)] at cd
   have db : d.gpr .rbx=BitVec.ofNat 64 j := (kd.gpr _ (rbx_not_clob _)).trans bb
@@ -143,7 +144,7 @@ theorem jointLoop_core_ok (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) {s : S
   · intro j a hj1 hj256 hi
     obtain ⟨ka,ca,ab⟩ := hi
     have he : j-1+1=j := by omega
-    refine WP.mono (jointStep_core_ok hL hm hC ha hOne hOneVal hG hQ hdouble hu hv
+    refine WP.mono (jointStep_core_ok hL hm hC hd hOne hOneVal hG hQ hdouble hu hv
       (by omega) (he.symm ▸ ca) (he.symm ▸ ab)) fun t ⟨kt,ct,tb,tz⟩ => ⟨⟨ka.trans kt,ct,tb⟩,tz⟩
   · intro t ht
     obtain ⟨kt,ct,tb⟩ := ht
@@ -164,19 +165,19 @@ theorem jointRun_core_ok {s : State} (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M
     rw [joint_top_peel hp] at hb
     simp only [Code.inline]
     apply WP.seq
-    refine WP.mono (jointDigits_core_ok hL hm hC ha hOne hOneVal hG hQ (A:=.infinity)
+    refine WP.mono (jointDigits_core_ok hL hm hC hd hOne hOneVal hG hQ (A:=.infinity)
       rfl hs (by omega) hb) fun a ⟨ka,ca⟩ => ?_
     have he := jointPoint_step hC hG hQ u v (64*c.K.M.n) c.gw
     rw [jointPoint_topB G Q hu hv c.gw] at he
     change add (add .infinity (FastNaf.point C Q 5 v (64*c.K.M.n)))
       (FastNaf.point C G c.gw u (64*c.K.M.n))=jointPoint G Q u v (64*c.K.M.n) c.gw at he
     rw [he,← joint_top_peel hp] at ca
-    refine WP.mono (jointLoop_core_ok hL hm hC ha hOne hOneVal hG hQ hdouble hu hv ca
+    refine WP.mono (jointLoop_core_ok hL hm hC hd hOne hOneVal hG hQ hdouble hu hv ca
       ((ka.gpr _ (rbx_not_clob _)).trans (hb.trans (by rw [joint_top_peel hp])))) fun t ⟨kt,ct,tb⟩ =>
       ⟨(JointLoopKeep.of_prog ka).trans kt,ct,tb⟩
   · rename_i hp
     have hp' : c.peel=false := by simpa using hp
     rw [← jointPoint_topB G Q hu hv c.gw,← joint_top_guard hp'] at hs
-    exact jointLoop_core_ok hL hm hC ha hOne hOneVal hG hQ hdouble hu hv hs hb
+    exact jointLoop_core_ok hL hm hC hd hOne hOneVal hG hQ hdouble hu hv hs hb
 end
 end VG.Proof.Weierstrass.X86_64

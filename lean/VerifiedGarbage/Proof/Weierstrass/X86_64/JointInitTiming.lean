@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitLayout
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointFieldTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingInit
@@ -21,11 +22,11 @@ open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
 
 /-- The taint checks of the table: the co-Z table's (`Joint.Cfg.coZ`), or the other's. -/
 def JointTableChecks (c : Joint.Cfg) : Prop :=
-  if c.coZ then NafTableCoZChecks c.K else NafTableChecks c.K
+  if c.coZ then NafTableCoZChecks c.K else NafTableChecks c.K c.dbl
 
 theorem jointTables_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Nat} {E : Nat → Fe C}
     (hL : JointInitLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
-    (hOne : c.K.one<C.p) (ht : JointTableChecks c)
+    (hOne : c.K.one<C.p) (ht : JointTableChecks c) (hds : JDblShape c.dbl)
     (hc : ScratchCT (Joint.cacheCode c).inline) :
     RelCT isa (FieldPair c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E)
       (Code.seq (Joint.tableCode c) (Joint.cacheCode c)).inline
@@ -36,7 +37,7 @@ theorem jointTables_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Nat}
     · simp only [Joint.tableCode,JointTableChecks,h,↓reduceIte] at ht ⊢
       exact nafTableCoZ_relCT hL.naf hL.count hm hL.tableSmall ht
     · simp only [Joint.tableCode,JointTableChecks,h,↓reduceIte,Bool.false_eq_true] at ht ⊢
-      exact nafTable_relCT hL.naf hL.count hm hL.tableSmall hOne ht
+      exact nafTable_relCT hL.naf hL.count hm hL.tableSmall hOne ht hds
   apply RelCT.seq tbl
   have cache : ∀ E',RelCT isa
       (FieldPair c.K.M base size C.p (·∈jointSlots c) (nafTableLive c.K 8) E')

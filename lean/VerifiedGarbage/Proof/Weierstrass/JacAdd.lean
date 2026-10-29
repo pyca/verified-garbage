@@ -37,6 +37,18 @@ theorem jacAddF_cross (b X1 Y1 Z1 X2 Y2 Z2 : F)
   dsimp only [jacAddF,rcbAdd3]
   constructor <;> grind
 
+/-- `jacAddF_cross` for any `a`: against Algorithm 1, with `b3 = 3b`. -/
+theorem jacAddF_cross' (a b b3 X1 Y1 Z1 X2 Y2 Z2 : F) (hb : b3 = 3*b)
+    (h1 : Y1*Y1 = X1*X1*X1+a*X1*Z1*Z1*Z1*Z1+b*Z1*Z1*Z1*Z1*Z1*Z1)
+    (h2 : Y2*Y2 = X2*X2*X2+a*X2*Z2*Z2*Z2*Z2+b*Z2*Z2*Z2*Z2*Z2*Z2) :
+    let j := jacAddF X1 Y1 Z1 X2 Y2 Z2
+    let p := rcbAdd a b3 (X1*Z1) Y1 (Z1*Z1*Z1) (X2*Z2) Y2 (Z2*Z2*Z2)
+    (j.1*j.2.2)*p.2.2 = p.1*(j.2.2*j.2.2*j.2.2) ∧
+      j.2.1*p.2.2 = p.2.1*(j.2.2*j.2.2*j.2.2) := by
+  subst hb
+  dsimp only [jacAddF,rcbAdd]
+  constructor <;> grind
+
 end
 
 variable {C : Curve}
@@ -57,6 +69,14 @@ theorem InvJ.curve (hC : Law C) (ha : AM3 C) {X Y Z : Fe C} {Q : Point C}
     Y*Y = X*X*X-3*X*Z*Z*Z*Z+Fin.ofNat C.p C.b*Z*Z*Z*Z*Z*Z := by
   have e := (h.rep_of_ne hz).proj hQ
   rw [ha] at e
+  apply cancel_right hC (cube_ne_zero hC hz)
+  grind
+
+/-- `InvJ.curve` for any `a`. -/
+theorem InvJ.curve' (hC : Law C) {X Y Z : Fe C} {Q : Point C}
+    (h : InvJ C X Y Z Q) (hz : Z ≠ 0) (hQ : onCurve C Q = true) :
+    Y*Y = X*X*X+Fin.ofNat C.p C.a*X*Z*Z*Z*Z+Fin.ofNat C.p C.b*Z*Z*Z*Z*Z*Z := by
+  have e := (h.rep_of_ne hz).proj hQ
   apply cancel_right hC (cube_ne_zero hC hz)
   grind
 
@@ -84,6 +104,24 @@ theorem InvJ.add_ne (hC : Law C) (ha : AM3 C) {X1 Y1 Z1 X2 Y2 Z2 : Fe C} {P Q : 
   have hjz : j.2.2 ≠ 0 := hC.mul_ne_zero (hC.mul_ne_zero hz1 hz2) hh
   have cross := jacAddF_cross (Fin.ofNat C.p C.b) X1 Y1 Z1 X2 Y2 Z2
     (h1.curve hC ha hz1 hP) (h2.curve hC ha hz2 hQ)
+  exact Or.inr (hr.of_cross hC (cube_ne_zero hC hjz) cross.1 cross.2)
+
+/-- `InvJ.add_ne` for any `a`: by Algorithm 1, the complete addition `Law`
+gives. -/
+theorem InvJ.add_ne' (hC : Law C) {X1 Y1 Z1 X2 Y2 Z2 : Fe C} {P Q : Point C}
+    (hP : onCurve C P = true) (hQ : onCurve C Q = true)
+    (h1 : InvJ C X1 Y1 Z1 P) (h2 : InvJ C X2 Y2 Z2 Q)
+    (hz1 : Z1 ≠ 0) (hz2 : Z2 ≠ 0) (hh : X2*(Z1*Z1)-X1*(Z2*Z2) ≠ 0) :
+    let j := jacAddF X1 Y1 Z1 X2 Y2 Z2
+    InvJ C j.1 j.2.1 j.2.2 (Spec.Weierstrass.add P Q) := by
+  let j := jacAddF X1 Y1 Z1 X2 Y2 Z2
+  let r := rcbAdd (Fin.ofNat C.p C.a) (Fin.ofNat C.p (3 * C.b))
+    (X1*Z1) Y1 (Z1*Z1*Z1) (X2*Z2) Y2 (Z2*Z2*Z2)
+  have hr : Rep C r.1 r.2.1 r.2.2 (Spec.Weierstrass.add P Q) :=
+    hC.add hP hQ (h1.rep_of_ne hz1) (h2.rep_of_ne hz2) rfl
+  have hjz : j.2.2 ≠ 0 := hC.mul_ne_zero (hC.mul_ne_zero hz1 hz2) hh
+  have cross := jacAddF_cross' (Fin.ofNat C.p C.a) (Fin.ofNat C.p C.b) _ X1 Y1 Z1 X2 Y2 Z2
+    (ofNat_three_mul C) (h1.curve' hC hz1 hP) (h2.curve' hC hz2 hQ)
   exact Or.inr (hr.of_cross hC (cube_ne_zero hC hjz) cross.1 cross.2)
 
 theorem InvJ.z_zero_iff (hC : Law C) {X Y Z : Fe C} {P : Point C}

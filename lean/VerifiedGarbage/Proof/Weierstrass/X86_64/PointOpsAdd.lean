@@ -3,7 +3,7 @@ public import VerifiedGarbage.Impl.Weierstrass.X86_64.PointOps
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacField
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
 
-import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsVal
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsVal
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAdd
@@ -55,7 +55,7 @@ theorem cachedN_spec {m : Nat} [NeZero m] (e : Nat → Fin m) :
 /-- What the cached addition's body needs of the slots: those of
 `CachedJac.add`'s proofs, and that its programs read only `V` (`R`, `E`
 and the cached powers) or what they wrote. -/
-structure CachedLay (K : WinCfg) (sel size : Nat) (Sl : Nat → Prop) : Prop where
+structure CachedLay (K : WinCfg) (sel size : Nat) (Sl : Nat → Prop) (dbl : RcbSlots → Pt → Pt → List FOp := dblJMul) : Prop where
   lay : Lay K.M size Sl
   apart : RcbApart K.S K.R K.E K.D
   c2 : sel ∉ rcbW K.S K.D
@@ -66,13 +66,14 @@ structure CachedLay (K : WinCfg) (sel size : Nat) (Sl : Nat → Prop) : Prop whe
   tail : readsOk (jacTail K.S K.R K.E K.D) (validAfter
     (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S K.R K.E sel)
     (jacCoords K.R ++ jacCoords K.E ++ [sel, sel + 8 * K.M.n])) = true
-  dbl : readsOk (dblJMul K.S K.R K.D) (jacCoords K.R) = true
+  dbl : readsOk (dbl K.S K.R K.D) (jacCoords K.R) = true
   accum : (jacCoords K.R).Nodup
   copy : ∀ x ∈ jacCoords K.D, ∀ y ∈ jacCoords K.R, x ≠ y
 
 
 section
 variable {K : WinCfg} {sel : Nat} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop}
+  {dbl : RcbSlots → Pt → Pt → List FOp}
 
 /-- The values the cached addition reads. -/
 abbrev cV (K : WinCfg) (sel : Nat) : List Nat := jacCoords K.R ++ jacCoords K.E ++ [sel, sel + 8 * K.M.n]
@@ -81,7 +82,7 @@ theorem cV_rcbR {x : Nat} (hx : x ∈ jacCoords K.R ++ jacCoords K.E) : x ∈ cV
   List.mem_append_left _ hx
 
 /-- The header: `H` in `t3`, `r` in `t5`. -/
-theorem cachedHead_val (hC : CachedLay K sel size Sl) (hm : UnitMod m (2 ^ (64 * K.M.n)))
+theorem cachedHead_val (hC : CachedLay K sel size Sl dbl) (hm : UnitMod m (2 ^ (64 * K.M.n)))
     {E : Nat → Fin m} {s : State} (hI : Inv K.M base size m Sl (cV K sel) E s) :
     WP isa (ForwardField.programB K.M (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S K.R K.E sel)).inline s
       fun t => ProgKeep K.M base (rcbW K.S K.D) s t ∧
@@ -107,7 +108,7 @@ theorem cachedHead_val (hC : CachedLay K sel size Sl) (hm : UnitMod m (2 ^ (64 *
     exact ⟨(congrFun he 3).trans hv.1, (congrFun he 5).trans hv.2⟩
 
 /-- The tail, for `H ≠ 0`: `D` is the specification's `jacTail`. -/
-theorem cachedTail_val (hC : CachedLay K sel size Sl) (hm : UnitMod m (2 ^ (64 * K.M.n)))
+theorem cachedTail_val (hC : CachedLay K sel size Sl dbl) (hm : UnitMod m (2 ^ (64 * K.M.n)))
     {E : Nat → Fin m} {s : State}
     (hI : Inv K.M base size m Sl (validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S K.R K.E sel) (cV K sel))
       (runOps (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S K.R K.E sel) E) s) :
@@ -143,17 +144,18 @@ theorem cachedTail_val (hC : CachedLay K sel size Sl) (hm : UnitMod m (2 ^ (64 *
 
 end
 
-/-- The doubling of `p` into `o` by `programB`: `o` is `jacDouble` of `p`'s
-values. -/
+/-- The doubling `dbl` of `p` into `o` by `programB`: `o` is `sdbl` of `p`'s
+values (`jacDouble` for `dblJMul`). -/
 theorem dblB_val {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop}
+    {dbl : RcbSlots → Pt → Pt → List FOp} {sdbl : Fin m → Fin m → Fin m → Fin m × Fin m × Fin m}
     (hL : Lay M size Sl) (hm : UnitMod m (2 ^ (64 * M.n))) {S : RcbSlots} {p o : Pt}
     (hA : RcbApart S p p o) (hSl : ∀ x ∈ rcbW S o ++ rcbR S p p, Sl x)
-    {V : List Nat} (hR : readsOk (dblJMul S p o) V = true)
-    {E : Nat → Fin m} {s : State} (hI : Inv M base size m Sl V E s) :
-    WP isa (ForwardField.programB M (dblJMul S p o)).inline s
-      (Val M base size m Sl (rcbW S o) V o (Spec.Weierstrass.PointOps.jacDouble (E p.x) (E p.y) (E p.z)) s) := by
-  have he : dblJMul S p o = ofN dblJMulN S p p o := rfl
-  have hN : NumOk dblJMulN := dblJChoiceN_ok true
+    {V : List Nat} (hR : readsOk (dbl S p o) V = true)
+    {E : Nat → Fin m} {s : State} (hI : Inv M base size m Sl V E s) (hds : JDblSpec dbl sdbl) :
+    WP isa (ForwardField.programB M (dbl S p o)).inline s
+      (Val M base size m Sl (rcbW S o) V o (sdbl (E p.x) (E p.y) (E p.z)) s) := by
+  obtain ⟨N, hN, hE, hs⟩ := hds
+  have he : dbl S p o = ofN N S p p o := hE _ _ _
   refine WP.mono (ForwardField.programB_ok hL hm _ hI (fun op hop x hx => hSl x (by
     rw [he] at hop; exact ofN_slots op hop x hx)) hR) fun t ⟨kt, it⟩ => ⟨kt.mono ?_, _, it.sub ?_, ?_⟩
   · intro w hw
@@ -167,7 +169,7 @@ theorem dblB_val {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat →
     · exact Or.inl hx
   · rw [he]
     exact (congrArg₂ Prod.mk (ofN_run hN hA E 6) (congrArg₂ Prod.mk (ofN_run hN hA E 7)
-      (ofN_run hN hA E 8))).trans (dblJMulN_spec (fun y => E (rcbσ S p p o y)))
+      (ofN_run hN hA E 8))).trans (hs fun y => E (rcbσ S p p o y))
 
 /-- The point at infinity `(0 : 1 : 0)` into `o`, for `one` standing for 1. -/
 theorem infinity_val {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop}
@@ -225,24 +227,27 @@ theorem copy_val {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat →
 
 section
 variable {K : WinCfg} {sel : Nat} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop}
+  {dbl : RcbSlots → Pt → Pt → List FOp}
 
 /-- `D` coordinates, distinct slots written by the cached addition's
 programs, apart from `R`'s and `E`'s. -/
-structure CachedPts (K : WinCfg) (sel size : Nat) (Sl : Nat → Prop) : Prop where
-  lay : CachedLay K sel size Sl
+structure CachedPts (K : WinCfg) (sel size : Nat) (Sl : Nat → Prop) (dbl : RcbSlots → Pt → Pt → List FOp := dblJMul) : Prop where
+  lay : CachedLay K sel size Sl dbl
   dN : (jacCoords K.D).Nodup
   eD : ∀ x ∈ jacCoords K.E, ∀ y ∈ jacCoords K.D, x ≠ y
   rD : ∀ x ∈ jacCoords K.R, ∀ y ∈ jacCoords K.D, x ≠ y
   one : K.one < m
   oneVal : toM m (2 ^ (64 * K.M.n)) K.one = 1
 
-/-- `CachedJac.add` into `D`: `jacAddCached` of the values it reads. -/
-theorem cachedAdd_val (hC : CachedPts (m := m) K sel size Sl) (hm : UnitMod m (2 ^ (64 * K.M.n)))
-    {E : Nat → Fin m} {s : State} (hI : Inv K.M base size m Sl (cV K sel) E s) :
-    WP isa (Impl.Weierstrass.X86_64.CachedJac.add K K.R K.E K.D sel).inline s
+/-- `CachedJac.add` into `D`: `jacAddCached` of the values it reads, with the
+specification's doubling `sdbl` that `dbl` computes. -/
+theorem cachedAdd_val {sdbl : Fin m → Fin m → Fin m → Fin m × Fin m × Fin m}
+    (hC : CachedPts (m := m) K sel size Sl dbl) (hm : UnitMod m (2 ^ (64 * K.M.n)))
+    {E : Nat → Fin m} {s : State} (hI : Inv K.M base size m Sl (cV K sel) E s) (hds : JDblSpec dbl sdbl) :
+    WP isa (Impl.Weierstrass.X86_64.CachedJac.add K K.R K.E K.D sel dbl).inline s
       (Val K.M base size m Sl (rcbW K.S K.D) (cV K sel) K.D
         (Spec.Weierstrass.PointOps.jacAddCached (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
-          (E K.E.z) (E sel) (E (sel + 8 * K.M.n))) s) := by
+          (E K.E.z) (E sel) (E (sel + 8 * K.M.n)) sdbl) s) := by
   have hL := hC.lay
   have dW : ∀ w ∈ jacCoords K.D, w ∈ rcbW K.S K.D := by
     intro w hw; simp only [jacCoords, List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -290,10 +295,9 @@ theorem cachedAdd_val (hC : CachedPts (m := m) K sel size Sl) (hm : UnitMod m (2
         · exact hL.sl x (List.mem_append_left _ (List.mem_append_left _ hx))
         · exact hL.sl x (List.mem_append_left _ (List.mem_append_right _ (rcbR_self_mem _ _ _ hx)))
       have hR' := readsOk_mono hL.dbl fun x hx => oldV x (rV x hx)
-      refine WP.mono (dblB_val hL.lay hm hdA hdSl hR' ie) fun t ht => ?_
+      refine WP.mono (dblB_val hL.lay hm hdA hdSl hR' ie hds) fun t ht => ?_
       have hs : Spec.Weierstrass.PointOps.jacAddCached (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
-          (E K.E.z) (E sel) (E (sel + 8 * K.M.n)) =
-          Spec.Weierstrass.PointOps.jacDouble (EH K.R.x) (EH K.R.y) (EH K.R.z) := by
+          (E K.E.z) (E sel) (E (sel + 8 * K.M.n)) sdbl = sdbl (EH K.R.x) (EH K.R.y) (EH K.R.z) := by
         rw [eh] at hH
         rw [er] at hr
         rw [hro _ (by simp [jacCoords]), hro _ (by simp [jacCoords]), hro _ (by simp [jacCoords])]
@@ -305,7 +309,7 @@ theorem cachedAdd_val (hC : CachedPts (m := m) K sel size Sl) (hm : UnitMod m (2
     · intro e ie ke hr
       refine WP.mono (infinity_val hL.lay dSl dW hC.dN ie hC.one hC.oneVal) fun t ht => ?_
       have hs : Spec.Weierstrass.PointOps.jacAddCached (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
-          (E K.E.z) (E sel) (E (sel + 8 * K.M.n)) = (0, 1, 0) := by
+          (E K.E.z) (E sel) (E (sel + 8 * K.M.n)) sdbl = (0, 1, 0) := by
         rw [eh] at hH
         rw [er] at hr
         simp only [Spec.Weierstrass.PointOps.jacAddCached, Spec.Weierstrass.PointOps.jacEqual,
@@ -316,7 +320,7 @@ theorem cachedAdd_val (hC : CachedPts (m := m) K sel size Sl) (hm : UnitMod m (2
   · intro d id kd hH
     refine WP.mono (cachedTail_val hL hm id) fun t ht => ?_
     have hs : Spec.Weierstrass.PointOps.jacAddCached (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
-        (E K.E.z) (E sel) (E (sel + 8 * K.M.n)) =
+        (E K.E.z) (E sel) (E (sel + 8 * K.M.n)) sdbl =
         Spec.Weierstrass.PointOps.jacTail (E K.R.x * E sel) (E K.R.y * E (sel + 8 * K.M.n))
           (E K.E.x * (E K.R.z * E K.R.z) - E K.R.x * E sel)
           (E K.E.y * E K.R.z * (E K.R.z * E K.R.z) - E K.R.y * E (sel + 8 * K.M.n))
@@ -326,19 +330,21 @@ theorem cachedAdd_val (hC : CachedPts (m := m) K sel size Sl) (hm : UnitMod m (2
     rw [hs]
     exact (ht.prefix kd (by simp)).prefix pre (fun _ h => h)
 
-/-- The cached addition's body: `R` becomes `jacAddCached` of what it reads. -/
-theorem addCachedBody_val (hC : CachedPts (m := m) K sel size Sl) (hm : UnitMod m (2 ^ (64 * K.M.n)))
-    {E : Nat → Fin m} {s : State} (hI : Inv K.M base size m Sl (cV K sel) E s) :
-    WP isa (PointOps.addCachedBody K sel).inline s fun t =>
+/-- The cached addition's body: `R` becomes `jacAddCached` of what it reads,
+with the specification's doubling `sdbl` that `dbl` computes. -/
+theorem addCachedBody_val {sdbl : Fin m → Fin m → Fin m → Fin m × Fin m × Fin m}
+    (hC : CachedPts (m := m) K sel size Sl dbl) (hm : UnitMod m (2 ^ (64 * K.M.n)))
+    {E : Nat → Fin m} {s : State} (hI : Inv K.M base size m Sl (cV K sel) E s) (hds : JDblSpec dbl sdbl := by exact jdblSpec_dblJMul) :
+    WP isa (PointOps.addCachedBody K sel dbl).inline s fun t =>
       ProgKeep K.M base (rcbW K.S K.D ++ jacCoords K.R) s t ∧ ∃ E',
         Inv K.M base size m Sl (jacCoords K.R) E' t ∧ (E' K.R.x, E' K.R.y, E' K.R.z) =
           Spec.Weierstrass.PointOps.jacAddCached (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
-            (E K.E.z) (E sel) (E (sel + 8 * K.M.n)) := by
+            (E K.E.z) (E sel) (E (sel + 8 * K.M.n)) sdbl := by
   have hL := hC.lay
   rw [PointOps.addCachedBody]
   simp only [Code.inline]
   apply WP.seq
-  refine WP.mono (cachedAdd_val hC hm hI) fun d ⟨kd, E', id, ed⟩ => ?_
+  refine WP.mono (cachedAdd_val hC hm hI hds) fun d ⟨kd, E', id, ed⟩ => ?_
   have rSl : ∀ x ∈ jacCoords K.R, Sl x := fun x hx => hL.sl x (List.mem_append_left _
     (List.mem_append_right _ (by
       simp only [jacCoords, List.mem_cons, List.not_mem_nil, or_false] at hx

@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDigitTiming
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedTiming
@@ -36,20 +37,20 @@ structure JointFixedChecks (c : Joint.Cfg) : Prop where
   read : RegCT [.rdi,.rbx] (.block (Joint.fixedRead c))
   entry : FixedLookupCT c.tsym
     (if c.gw=9 then Joint.fixedEntryW c.K c.tsym else Joint.fixedEntry c.K c.tsym)
-  add : JacMixedChecks c.K c.K.R c.K.E c.K.D
+  add : JacMixedChecks c.K c.K.R c.K.E c.K.D c.dbl
   copy : ScratchCT (.block (copyPt c.K.M.n c.K.R c.K.D))
 
 theorem jointFixedSum_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Nat} {E : Nat → Fe C}
     (hL : JointAddLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
-    (hOne : c.K.one<C.p) (hc : JointFixedChecks c) :
+    (hOne : c.K.one<C.p) (hc : JointFixedChecks c) (hds : JDblShape c.dbl) :
     RelCT isa (FieldPair c.K.M base size C.p (·∈jointSlots c) (jacCoords c.K.E++jointLive c) E)
       (Joint.fixedAdd c).inline
       (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t) := by
-  refine jointAdd_relCT_dispatch (body := PointOps.addAffineBody c.K) rfl (fun _ => rfl)
+  refine jointAdd_relCT_dispatch (body := PointOps.addAffineBody c.K c.dbl) rfl (fun _ => rfl)
     (fun C' hp => (hL.calls.ok C' hp).2.1) ?_
   have sl : ∀ x∈rcbW c.K.S c.K.D++rcbR c.K.S c.K.R c.K.E,x∈jointSlots c := by intro x hx; jslots
   have vr : ∀ x∈rcbR c.K.S c.K.R c.K.E,x∈jacCoords c.K.E++jointLive c := by intro x hx; jslots
-  apply RelCT.seq (jacMixedForward_relCT hL.lookup.layout.lay hm hc.add hL.addApart sl vr hOne)
+  apply RelCT.seq (jacMixedForward_relCT hL.lookup.layout.lay hm hc.add hL.addApart sl vr hOne hds)
   apply RelCT.exists_
   intro E'
   have cp := copyPoint_relCT (base:=base) (E:=E') hL.lookup.layout.lay
@@ -62,7 +63,7 @@ theorem jointFixedSum_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Na
 theorem jointFixedDigit_relCT {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v j : Nat}
     {G Q A : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {E : Nat → Fe C}
     (hL : JointAddLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
-    (hOne : c.K.one<C.p) (hj : j<64*c.K.M.n+1) (hc : JointFixedChecks c) :
+    (hOne : c.K.one<C.p) (hj : j<64*c.K.M.n+1) (hc : JointFixedChecks c) (hds : JDblShape c.dbl) :
     RelCT isa (fun s t => FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E s t ∧
       JointCore c C base size Q u v (JointGenerator c C base T size row) A s ∧
       JointCore c C base size Q u v (JointGenerator c C base T size row) A t ∧
@@ -128,6 +129,6 @@ theorem jointFixedDigit_relCT {c : Joint.Cfg} {C : Curve} {base T : Addr} {size 
       exact (e.mono (Q':=fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c)
         (jacCoords c.K.E++jointLive c) E' s t) (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)) _ _ _ _ _ _
         ⟨hp,cs.external _ ha hbound ho,ct.external _ ha hbound ho,s8,t8⟩ es et
-  exact RelCT.seq entry (RelCT.exists_ fun E' => jointFixedSum_relCT (E:=E') hL hm hOne hc)
+  exact RelCT.seq entry (RelCT.exists_ fun E' => jointFixedSum_relCT (E:=E') hL hm hOne hc hds)
 
 end VG.Proof.Weierstrass.X86_64

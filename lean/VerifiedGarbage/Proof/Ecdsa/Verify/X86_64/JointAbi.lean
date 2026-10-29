@@ -77,21 +77,23 @@ theorem jointVerify_p256_ok {s : State} (hp : VPre p256v s) :
     WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p256v publicJoint (jointDouble publicJoint.K)).inline s fun t =>
       (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VPost p256v s t := by
   have hc := p256v_ok hI
-  refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_
+  refine jointVerify_ok hc.toBaseCfgOk hL rfl (by decide +kernel) (by decide +kernel) hp ?_
   intro a g hM Q hQ hRep
-  exact jointPoints_ok hc hL (.ofGTab rfl hT (by decide) (by decide) rfl) rfl hc.am3 (by decide +kernel)
+  exact jointPoints_ok hc.toBaseCfgOk hL (.ofGTab rfl hT (by decide) (by decide) rfl) rfl (hc.jdbl hL)
+    (by decide +kernel)
     joint_add_layout joint_init_layout joint_prep_layout joint_frame_layout (joint_doubler hc hL)
-    (fun _ => ⟨hO,by decide⟩) hp hM hQ hRep
+    (fun _ => ⟨hO,by decide,hc.am3⟩) hp hM hQ hRep
 
 theorem jointVerify_p256_adx_ok {s : State} (hp : VPre p256vx s) :
     WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p256vx publicJointAdx (jointDouble publicJointAdx.K)).inline s fun t =>
       (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VPost p256vx s t := by
   have hc := p256vx_ok hI
-  refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_
+  refine jointVerify_ok hc.toBaseCfgOk hL rfl (by decide +kernel) (by decide +kernel) hp ?_
   intro a g hM Q hQ hRep
-  exact jointPoints_ok hc hL (.ofGTab rfl hT (by decide) (by decide) rfl) rfl hc.am3 (by decide +kernel)
+  exact jointPoints_ok hc.toBaseCfgOk hL (.ofGTab rfl hT (by decide) (by decide) rfl) rfl (hc.jdbl hL)
+    (by decide +kernel)
     joint_adx_add_layout joint_adx_init_layout joint_adx_prep_layout joint_adx_frame_layout
-    (joint_adx_doubler hc hL) (fun _ => ⟨hO,by decide⟩) hp hM hQ hRep
+    (joint_adx_doubler hc hL) (fun _ => ⟨hO,by decide,hc.am3⟩) hp hM hQ hRep
 
 end
 end VG.Proof.Ecdsa.Verify.X86_64

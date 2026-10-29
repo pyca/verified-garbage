@@ -35,12 +35,12 @@ theorem JointGTable.ofGTab {c : Cfg} {j : Joint.Cfg} {d : CombData} {J : Nat}
     (ht : jointGTop j<2^(d.w-1)) (hs : j.tsym=d.tsym) : JointGTable c j d J :=
   ⟨gtab_mem_consts hcd,hT,hJ,ht,hs⟩
 
-def jointCombRow {c : Cfg} {j : Joint.Cfg} {d : CombData} {J : Nat} (hc : CfgOk c) (hC : Law c.C)
+def jointCombRow {c : Cfg} {j : Joint.Cfg} {d : CombData} {J : Nat} (hc : BaseCfgOk c) (hC : Law c.C)
     (hG : JointGTable c j d J) : JointGeneratorRow j.K.M.n c.C (G c.C) (jointGTop j) :=
   combGeneratorRow j.K.M.n (unitMod_pow_two hc.p_odd (64*j.K.M.n)) hC hG.ok hG.pos hG.top
 
 theorem jointMid_generator {c : Cfg} {j : Joint.Cfg} {d : CombData} {J : Nat}
-    (hc : CfgOk c) (hC : Law c.C) (hG : JointGTable c j d J)
+    (hc : BaseCfgOk c) (hC : Law c.C) (hG : JointGTable c j d J)
     (hK : j.K=c.winCfg PX PY BP)
     {s₀ s : State} {g : Reg → BitVec 64} (hp : VPre c s₀) (h : Mid c s₀ (s₀.gpr .rcx) g s) :
     JointGenerator j c.C (s₀.gpr .rcx) (s₀.syms d.tsym) size

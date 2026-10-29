@@ -41,6 +41,9 @@ structure Cfg where
   as sixteen-bit words (`FastNaf.prepN16`), for a table of `[m]G` for
   `m ≤ 256` at `tsym`. -/
   gw : Nat := 7
+  /-- The Jacobian doubling of the digits' additions (of equal points) and
+  of the table of `Q`'s odd multiples: `dblJMul` for `a = -3`. -/
+  dbl : RcbSlots → Pt → Pt → List FOp := dblJMul
 
 def prep (c : Cfg) (u v : Nat) : Prog isa :=
   .seq (if c.gw=9 then FastNaf.prepN16 c.K.M.n u c.gBits else FastNaf.prepN c.K.M.n u c.gBits 7)
@@ -49,14 +52,14 @@ def prep (c : Cfg) (u v : Nat) : Prog isa :=
 /-- `R = R + E`, `E`'s `Z²` and `Z³` at `selected`. -/
 def cachedAdd (c : Cfg) : Prog isa :=
   match c.pts with
-  | some C => PointOps.addCachedCall C c.K c.selected
-  | none => PointOps.addCachedBody c.K c.selected
+  | some C => PointOps.addCachedCall C c.K c.selected c.dbl
+  | none => PointOps.addCachedBody c.K c.selected c.dbl
 
 /-- `R = R + E`, `E` affine. -/
 def fixedAdd (c : Cfg) : Prog isa :=
   match c.pts with
-  | some C => PointOps.addAffineCall C c.K
-  | none => PointOps.addAffineBody c.K
+  | some C => PointOps.addAffineCall C c.K c.dbl
+  | none => PointOps.addAffineBody c.K c.dbl
 
 def cachedDigit (c : Cfg) : Prog isa :=
   .seq (.block (Naf.digitRead c.K)) <|
@@ -98,7 +101,7 @@ def cacheCode (c : Cfg) : Prog isa :=
   else Naf.cacheTable c.K.M c.K.tbl c.cache c.K.E.x
 
 /-- The table of `Q`'s odd multiples. -/
-def tableCode (c : Cfg) : Prog isa := if c.coZ then Naf.tableCoZ c.K else Naf.table c.K
+def tableCode (c : Cfg) : Prog isa := if c.coZ then Naf.tableCoZ c.K else Naf.table c.K c.dbl
 
 def window (c : Cfg) (double : Prog isa) : Prog isa :=
   .seq (tableCode c) <| .seq (cacheCode c) <|

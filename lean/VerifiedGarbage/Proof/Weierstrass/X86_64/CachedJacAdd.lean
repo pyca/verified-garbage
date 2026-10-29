@@ -21,7 +21,7 @@ open VG.Impl.Weierstrass VG.Proof.Mont.X86_64 VG.Proof.Mont Spec.Weierstrass
 /-- Complete Jacobian addition on public data, including all exceptional cases. -/
 theorem cachedJacAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
     {Sl : Nat → Prop} (hL : Lay K.M size Sl)
-    (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) (ha : AM3 C)
+    (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) {dbl : RcbSlots → Pt → Pt → List FOp} (hd : JDblOk C dbl)
     {p q o : Pt} {dst : Nat} (hA : RcbApart K.S p q o)
     (h2a : dst∉rcbW K.S o) (h3a : dst+8*K.M.n∉rcbW K.S o)
     (hCacheSl : Sl dst ∧ Sl (dst+8*K.M.n))
@@ -32,7 +32,7 @@ theorem cachedJacAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
     (h2 : E dst=E q.z*E q.z) (h3 : E (dst+8*K.M.n)=E dst*E q.z)
     (hOne : K.one < C.p) {P Q : Point C} (hP : onCurve C P = true) (hQ : onCurve C Q = true)
     (hJP : InvJ C (E p.x) (E p.y) (E p.z) P) (hJQ : InvJ C (E q.x) (E q.y) (E q.z) Q) :
-    WP isa (Impl.Weierstrass.X86_64.CachedJac.add K p q o dst).inline s
+    WP isa (Impl.Weierstrass.X86_64.CachedJac.add K p q o dst dbl).inline s
       (JacPost K.M K.S base size C Sl V o (Spec.Weierstrass.add P Q) s) := by
   have hSlC : ∀ x∈(rcbW K.S o++rcbR K.S p q)++[dst,dst+8*K.M.n],Sl x := by
     intro x hx
@@ -100,7 +100,7 @@ theorem cachedJacAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
             · exact hSl x (List.mem_append_left _ hx)
             · exact hSl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
           rw [←hpq]
-          refine WP.mono (jacDoubleForward_ok hL hm hC ha hdA hdSl ie hv hP jp) fun t ⟨kt,it,jt⟩ => ?_
+          refine WP.mono (jacDoubleForward_ok hL hm hd hdA hdSl ie hv hP jp) fun t ⟨kt,it,jt⟩ => ?_
           exact (JacPost.sub ⟨_,kt,it,jt⟩ oldV).prefix
             (hkeep.trans ((kd.mono (by regions_sub)).trans (ke.mono (by regions_sub))))
         · intro e ie ke hrz
@@ -116,7 +116,7 @@ theorem cachedJacAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
       · intro d id kd hz
         have hh : E q.x*(E p.z*E p.z)-E p.x*(E q.z*E q.z)≠0 := fun he => hz (eh.trans he)
         refine WP.mono (CachedJac.tail_ok hL hm hA h2a h3a hSlC id hVC h2 h3) fun t ⟨kt,it,ht⟩ => ?_
-        have jt := hJP.add_ne hC ha hP hQ hJQ hpz hqz hh
+        have jt := hJP.add_ne' hC hP hQ hJQ hpz hqz hh
         dsimp only at jt
         rw [←ht] at jt
         exact JacPost.prefix ⟨_,kt,it,jt⟩ (hkeep.trans (kd.mono (by regions_sub)))

@@ -36,15 +36,17 @@ def tableStore (K : WinCfg) : List Instr :=
   [.mov .rax (.reg .rbx)] ++ tableAddress K.M.n K.tbl ++
   copyPieces ((3*K.M.n+1)/2) (fun i => sc (K.R.x+pieceOff K.M.n i)) (fun i => tblAt (pieceOff K.M.n i))
 
-def tableStep (K : WinCfg) : Prog isa :=
-  .seq (jacAdd K K.R (twice K) K.D) <|
+def tableStep (K : WinCfg) (dbl : RcbSlots → Pt → Pt → List FOp := dblJMul) : Prog isa :=
+  .seq (jacAdd K K.R (twice K) K.D dbl) <|
     .block (copyPt K.M.n K.R K.D ++ tableStore K ++
       [.alu .add .rbx (.imm 1),.alu .cmp .rbx (.imm 8)])
 
-def table (K : WinCfg) : Prog isa :=
-  .seq (fprogB K.M (dblJMul K.S K.P (twice K))) <|
+/-- The odd multiples `P, 3P, …, 15P`, doubling by `dbl` (`dblJMul` for
+`a = -3`). -/
+def table (K : WinCfg) (dbl : RcbSlots → Pt → Pt → List FOp := dblJMul) : Prog isa :=
+  .seq (fprogB K.M (dbl K.S K.P (twice K))) <|
   .seq (.block (copyPt K.M.n (K.tblPt 1) K.P ++ copyPt K.M.n K.R K.P ++ [.mov32 .rbx (.imm 1)])) <|
-    .loop (tableStep K) .b
+    .loop (tableStep K dbl) .b
 
 def digitRead (K : WinCfg) : List Instr :=
   [.movzx8 .r8 (tbl K.bits),.alu .test .r8 (.reg .r8)]

@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.CachedJac
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
 
@@ -15,7 +16,8 @@ namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64
 
-structure CachedJacChecks (K : WinCfg) (p q o : Pt) (dst : Nat) : Prop where
+/-- The checks of `CachedJac.add`'s parts, its doubling `dbl`. -/
+structure CachedJacChecks (K : WinCfg) (p q o : Pt) (dst : Nat) (dbl : RcbSlots → Pt → Pt → List FOp := dblJMul) : Prop where
   zeroP : ScratchCT (.block (Jacobian.zeroTest K.M.n p.z))
   zeroQ : ScratchCT (.block (Jacobian.zeroTest K.M.n q.z))
   zeroH : ScratchCT (.block (Jacobian.zeroTest K.M.n K.S.t3))
@@ -24,20 +26,20 @@ structure CachedJacChecks (K : WinCfg) (p q o : Pt) (dst : Nat) : Prop where
   copyQ : ScratchCT (.block (copyPt K.M.n o q))
   head : ScratchCT (ForwardField.programB K.M (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S p q dst)).inline
   tail : ScratchCT (ForwardField.programB K.M (jacTail K.S p q o)).inline
-  double : ScratchCT (ForwardField.programB K.M (dblJMul K.S p o)).inline
+  double : ScratchCT (ForwardField.programB K.M (dbl K.S p o)).inline
   infinity : ScratchCT (.block (Jacobian.infinity K o))
 
 theorem cachedJacAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay K.M size Sl)
-    (hm : UnitMod m (2^(64*K.M.n))) {p q o : Pt} {dst : Nat}
-    (hc : CachedJacChecks K p q o dst) (hA : RcbApart K.S p q o)
+    (hm : UnitMod m (2^(64*K.M.n))) {p q o : Pt} {dst : Nat} {dbl : RcbSlots → Pt → Pt → List FOp}
+    (hc : CachedJacChecks K p q o dst dbl) (hA : RcbApart K.S p q o)
     (h2a : dst∉rcbW K.S o) (h3a : dst+8*K.M.n∉rcbW K.S o)
     (hSl : ∀ x∈(rcbW K.S o++rcbR K.S p q)++[dst,dst+8*K.M.n],Sl x)
     {V : List Nat} {E : Nat → Fin m} (hV : ∀ x∈rcbR K.S p q++[dst,dst+8*K.M.n],x∈V)
     (hOne : K.one<m)
-    (h2 : E dst=E q.z*E q.z) (h3 : E (dst+8*K.M.n)=E dst*E q.z) :
+    (h2 : E dst=E q.z*E q.z) (h3 : E (dst+8*K.M.n)=E dst*E q.z) (hds : JDblShape dbl := by exact jdblShape_dblJMul) :
     RelCT isa (FieldPair K.M base size m Sl V E)
-      (Impl.Weierstrass.X86_64.CachedJac.add K p q o dst).inline (fun s t => ∃ E',FieldPair K.M base size m Sl ([o.x,o.y,o.z]++V) E' s t) := by
+      (Impl.Weierstrass.X86_64.CachedJac.add K p q o dst dbl).inline (fun s t => ∃ E',FieldPair K.M base size m Sl ([o.x,o.y,o.z]++V) E' s t) := by
   have hs : ∀ x∈rcbW K.S o++rcbR K.S p q,Sl x := fun x hx => hSl x (List.mem_append_left _ hx)
   have hv : ∀ x∈rcbR K.S p q,x∈V := fun x hx => hV x (List.mem_append_left _ hx)
   have os : ∀ x∈[o.x,o.y,o.z],Sl x := by
@@ -87,7 +89,7 @@ theorem cachedJacAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
             · exact hs x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
           have hdV : ∀ x∈rcbR K.S p p,x∈validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S p q dst) V :=
             fun x hx => oldV x (hv x (rcbR_self_mem _ _ _ hx))
-          exact (doubleField_relCT hL hm hdSl hdV hc.double).mono
+          exact (doubleField_relCT hL hm hdSl hdV hds hc.double).mono
             (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub subV⟩)
         · intro _
           exact (infinity_relCT hL os hOne hc.infinity).mono

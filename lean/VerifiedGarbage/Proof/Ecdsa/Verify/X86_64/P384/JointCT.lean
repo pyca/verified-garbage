@@ -34,9 +34,9 @@ theorem jointVerify_p384_public_ct :
   have hc := p384v_ok hI
   refine jointVerify_ct_of_points hc joint_before_ct ?_ joint_after_ct
   intro s₀ t₀ ps pt pub
-  exact jointPoints_relCT hc hL (.ofGTab rfl hT (by decide) (by decide) rfl) rfl (by decide +kernel)
+  exact jointPoints_relCT hc.toBaseCfgOk hL (hc.jdbl hL) (.ofGTab rfl hT (by decide) (by decide) rfl) rfl (by decide +kernel)
     joint_add_layout joint_init_layout joint_prep_layout (joint_doubler hc hL) joint_mul_checks
-    (fun _ => ⟨hO,by decide⟩) ps pt pub
+    (fun _ => ⟨hO,by decide,hc.am3⟩) ps pt pub
 
 theorem jointVerify_p384_adx_public_ct :
     ConstantTime isa (VPre p384vx) (JointPublic p384vx p384GTab)
@@ -45,9 +45,9 @@ theorem jointVerify_p384_adx_public_ct :
   have hc := p384vx_ok hI
   refine jointVerify_ct_of_points hc joint_adx_before_ct ?_ joint_adx_after_ct
   intro s₀ t₀ ps pt pub
-  exact jointPoints_relCT hc hL (.ofGTab rfl hT (by decide) (by decide) rfl) rfl (by decide +kernel)
+  exact jointPoints_relCT hc.toBaseCfgOk hL (hc.jdbl hL) (.ofGTab rfl hT (by decide) (by decide) rfl) rfl (by decide +kernel)
     joint_adx_add_layout joint_adx_init_layout joint_adx_prep_layout (joint_adx_doubler hc hL)
-    joint_adx_mul_checks (fun _ => ⟨hO,by decide⟩) ps pt pub
+    joint_adx_mul_checks (fun _ => ⟨hO,by decide,hc.am3⟩) ps pt pub
 
 theorem jointVerify_ct :
     ConstantTime isa

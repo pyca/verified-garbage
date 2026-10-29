@@ -21,7 +21,7 @@ def jointPrefix (c : Cfg) : Prog isa :=
   .seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline <| .seq c.nPow.inline <|
   .seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c).inline (.block [])
 
-theorem jointPrefix_ok {c : Cfg} (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) :
+theorem jointPrefix_ok {c : Cfg} (hc : BaseCfgOk c) {s₀ : State} (hp : VPre c s₀) :
     WP isa (jointPrefix c) s₀ fun s => ∃ g,Mid c s₀ (s₀.gpr .rcx) g s := by
   refine front_ok hc hp fun g _ _ hF => mid_ok hc hF fun _ hM => WP.block_nil ⟨g,hM⟩
 
@@ -47,7 +47,7 @@ theorem jointVerify_cut {c : Cfg} {j : Joint.Cfg} {double : Prog isa} {s s' : St
                     exact ⟨_,_,_,_,_,ep,ec,es,by simp only [List.append_nil,List.append_assoc]⟩
 
 theorem jointVerify_ct_of_points {c : Cfg} {j : Joint.Cfg} {double : Prog isa} {d : CombData}
-    (hc : CfgOk c)
+    (hc : BaseCfgOk c)
     (before : ConstantTime isa (fun _ => True)
       (X86_64.Taint.Agree (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])) (jointPrefix c))
     (points : ∀ {s₀ t₀ : State},VPre c s₀ → VPre c t₀ → JointPublic c d s₀ t₀ →

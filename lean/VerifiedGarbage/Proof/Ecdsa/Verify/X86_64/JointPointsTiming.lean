@@ -30,6 +30,11 @@ open VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdh.X86_64 Spec.Weierstrass
 open VG.Impl.Ecdh.X86_64 (PX PY BP)
 open VG.Impl.Ecdsa.Verify.X86_64 (U V)
 
+/-- For a curve with `a = -3` (`CfgOk`), `dblJMul` doubles: the doubling of
+every joint verifier on such a curve. -/
+theorem _root_.VG.Proof.Ecdsa.X86_64.CfgOk.jdbl {c : Cfg} (hc : CfgOk c) (hC : Law c.C) : JDblOk c.C dblJMul :=
+  jdblOk_dblJMul hC hc.am3
+
 structure JointMulChecks (c : Cfg) (j : Joint.Cfg) : Prop where
   cached : JointCachedChecks j
   fixed : JointFixedChecks j
@@ -41,11 +46,11 @@ structure JointMulChecks (c : Cfg) (j : Joint.Cfg) : Prop where
   prepQ : FastPrepChecks j.K.M.n (c.sl V) j.K.bits 5
 
 theorem jointPoints_relCT {c : Cfg} {j : Joint.Cfg} {d : CombData} {double : Prog isa}
-    (hc : CfgOk c) (hC : Law c.C) {J : Nat} (hG : JointGTable c j d J)
+    (hc : BaseCfgOk c) (hC : Law c.C) (hd : JDblOk c.C j.dbl) {J : Nat} (hG : JointGTable c j d J)
     (hK : j.K=c.winCfg PX PY BP) (hnp : c.C.n≤c.C.p)
     (hL : JointAddLayout j size) (hInit : JointInitLayout j size)
     (hPrep : JointPrepLayout j size (c.sl U) (c.sl V)) (hD : JointDoubler j c.C size double)
-    (checks : JointMulChecks c j) (hZ : j.coZ=true → PrimeOrder c.C ∧ 17≤c.C.n)
+    (checks : JointMulChecks c j) (hZ : j.coZ=true → PrimeOrder c.C ∧ 17≤c.C.n ∧ AM3 c.C)
     {s₀ t₀ : State} (ps : VPre c s₀) (pt : VPre c t₀) (pub : JointPublic c d s₀ t₀) :
     RelCT isa (fun s t => (∃ g,Mid c s₀ (s₀.gpr .rcx) g s) ∧ (∃ h,Mid c t₀ (t₀.gpr .rcx) h t))
       (Impl.Ecdsa.Verify.X86_64.Cfg.jointPoints c j double).inline
@@ -88,7 +93,7 @@ theorem jointPoints_relCT {c : Cfg} {j : Joint.Cfg} {d : CombData} {double : Pro
   have v : sv c (s₀.gpr .rcx) t V=sv c (s₀.gpr .rcx) s V :=
     (mid_publicV ht').trans (pub.v.symm.trans (mid_publicV hs).symm)
   have ct := jointMul_relCT (base:=s₀.gpr .rcx) (T:=s₀.syms d.tsym)
-    (row:=jointCombRow hc hC hG) hL hInit hPrep hm hC hc.am3 hD hone honeval hc.onG hQ
+    (row:=jointCombRow hc hC hG) hL hInit hPrep hm hC hd hD hone honeval hc.onG hQ
     point (jointMid_affine hc hK hs) zero hZ (Nat.lt_trans hs.u_lt nlt) (Nat.lt_trans hs.v_lt nlt)
     checks.cached checks.fixed checks.table checks.cache checks.seed checks.counter
     checks.prepG checks.prepQ

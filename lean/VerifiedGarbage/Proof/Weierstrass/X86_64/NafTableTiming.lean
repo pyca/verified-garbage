@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingInit
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingStep
@@ -16,18 +17,19 @@ open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
 
 theorem nafTable_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     (hL : NafLay K size) (hJ : 1≤K.J ∧ 4*K.J≤64*K.M.n+4) (hm : UnitMod C.p (2^(64*K.M.n)))
-    (ht : K.tbl<2^31) (hOne : K.one<C.p) (hc : NafTableChecks K) {E : Nat → Fe C} :
+    (ht : K.tbl<2^31) (hOne : K.one<C.p) {dbl : RcbSlots → Pt → Pt → List FOp} (hc : NafTableChecks K dbl) {E : Nat → Fe C}
+    (hds : JDblShape dbl := by exact jdblShape_dblJMul) :
     RelCT isa (FieldPair K.M base size C.p (·∈nafSlots K) (winRo K) E)
-      (Naf.table K).inline (NafTablePair K C base size 8) := by
+      (Naf.table K dbl).inline (NafTablePair K C base size 8) := by
   let I := fun j s t => 1≤j ∧ j≤7 ∧ NafTablePair K C base size (8-j) s t
-  have step : ∀ j, RelCT isa (I j) (Naf.tableStep K).inline (fun s t =>
+  have step : ∀ j, RelCT isa (I j) (Naf.tableStep K dbl).inline (fun s t =>
       eval .b s=eval .b t ∧
       (eval .b s=some false → NafTablePair K C base size 8 s t) ∧
       (eval .b s=some true → ∃ n<j, I n s t)) := by
     intro j
     by_cases hj : 1≤j
     · by_cases hj7 : j≤7
-      · refine (nafTable_step_relCT hL hJ hm ht hOne (m:=8-j) (by omega) hc).mono
+      · refine (nafTable_step_relCT hL hJ hm ht hOne (m:=8-j) (by omega) hc hds).mono
           (P':=I j) (fun _ _ h => h.2.2) ?_
         intro s t ⟨hp,cs,ct⟩
         refine ⟨cs.trans ct.symm,fun he => ?_,fun he => ?_⟩
@@ -46,7 +48,7 @@ theorem nafTable_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
   unfold Naf.table
   simp only [Code.inline]
   apply RelCT.assoc
-  apply RelCT.seq (nafTable_init_relCT hL hm hc)
+  apply RelCT.seq (nafTable_init_relCT hL hm hc hds)
   exact (RelCT.loop I step 7).mono (fun _ _ hp => ⟨by decide,by decide,hp⟩) (fun _ _ h => h)
 
 end VG.Proof.Weierstrass.X86_64

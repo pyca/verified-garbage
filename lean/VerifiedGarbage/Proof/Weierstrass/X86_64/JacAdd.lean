@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Jacobian
 public import VerifiedGarbage.Proof.Weierstrass.JacAdd
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
@@ -190,17 +191,18 @@ theorem rcbR_self_mem (S : RcbSlots) (p q : Pt) {x : Nat} (h : x ∈ rcbR S p p)
   simp only [rcbR,List.mem_cons,List.not_mem_nil,or_false] at h ⊢
   grind
 
-/-- Complete Jacobian addition on public data, including all exceptional cases. -/
+/-- Complete Jacobian addition on public data, including all exceptional cases, equal
+points doubled by any doubling of `C` (`JDblOk`). -/
 theorem jacAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
     {Sl : Nat → Prop} (hL : Lay K.M size Sl)
-    (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) (ha : AM3 C)
+    (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) {dbl : RcbSlots → Pt → Pt → List FOp} (hd : JDblOk C dbl)
     {p q o : Pt} (hA : RcbApart K.S p q o)
     (hSl : ∀ x ∈ rcbW K.S o ++ rcbR K.S p q, Sl x)
     {V : List Nat} {E : Nat → Fe C} {s : State}
     (hI : Inv K.M base size C.p Sl V E s) (hV : ∀ x ∈ rcbR K.S p q, x ∈ V)
     (hOne : K.one < C.p) {P Q : Point C} (hP : onCurve C P = true) (hQ : onCurve C Q = true)
     (hJP : InvJ C (E p.x) (E p.y) (E p.z) P) (hJQ : InvJ C (E q.x) (E q.y) (E q.z) Q) :
-    WP isa (Jacobian.jacAdd K p q o).inline s
+    WP isa (Jacobian.jacAdd K p q o dbl).inline s
       (JacPost K.M K.S base size C Sl V o (Spec.Weierstrass.add P Q) s) := by
   rw [Jacobian.jacAdd]
   apply fieldBranch_ok hL hm hI (hV p.z (by simp [rcbR]))
@@ -252,7 +254,7 @@ theorem jacAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
             · exact hSl x (List.mem_append_left _ hx)
             · exact hSl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
           rw [←hpq]
-          refine WP.mono (jacDouble_ok hL hm hC ha hdA hdSl ie hv hP jp) fun t ⟨kt,it,jt⟩ => ?_
+          refine WP.mono (jacDouble_ok hL hm hd hdA hdSl ie hv hP jp) fun t ⟨kt,it,jt⟩ => ?_
           exact (JacPost.sub ⟨_,kt,it,jt⟩ oldV).prefix
             (hkeep.trans ((kd.mono (by regions_sub)).trans (ke.mono (by regions_sub))))
         · intro e ie ke hrz
@@ -268,7 +270,7 @@ theorem jacAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
       · intro d id kd hz
         have hh : E q.x*(E p.z*E p.z)-E p.x*(E q.z*E q.z)≠0 := fun he => hz (eh.trans he)
         refine WP.mono (jacTail_ok hL hm hA hSl id hV) fun t ⟨kt,it,ht⟩ => ?_
-        have jt := hJP.add_ne hC ha hP hQ hJQ hpz hqz hh
+        have jt := hJP.add_ne' hC hP hQ hJQ hpz hqz hh
         dsimp only at jt
         rw [←ht] at jt
         exact JacPost.prefix ⟨_,kt,it,jt⟩ (hkeep.trans (kd.mono (by regions_sub)))

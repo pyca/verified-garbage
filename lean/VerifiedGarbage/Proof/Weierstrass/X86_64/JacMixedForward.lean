@@ -145,14 +145,14 @@ theorem jacMixedForwardTail_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
 
 theorem jacMixedForward_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
     {Sl : Nat → Prop} (hL : Lay K.M size Sl)
-    (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) (ha : AM3 C)
+    (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) {dbl : RcbSlots → Pt → Pt → List FOp} (hd : JDblOk C dbl)
     {p q o : Pt} (hA : RcbApart K.S p q o)
     (hSl : ∀ x ∈ rcbW K.S o ++ rcbR K.S p q, Sl x)
     {V : List Nat} {E : Nat → Fe C} {s : State}
     (hI : Inv K.M base size C.p Sl V E s) (hV : ∀ x ∈ rcbR K.S p q, x ∈ V)
     (hOne : K.one < C.p) {P Q : Point C} (hP : onCurve C P = true) (hQ : onCurve C Q = true)
     (hJP : InvJ C (E p.x) (E p.y) (E p.z) P) (hJQ : InvJ C (E q.x) (E q.y) (E q.z) Q) (hAff : E q.z=1) :
-    WP isa (Jacobian.jacMixedForward K p q o).inline s
+    WP isa (Jacobian.jacMixedForward K p q o dbl).inline s
       (JacPost K.M K.S base size C Sl V o (Spec.Weierstrass.add P Q) s) := by
   rw [Jacobian.jacMixedForward]
   apply fieldBranch_ok hL hm hI (hV p.z (by simp [rcbR]))
@@ -194,7 +194,7 @@ theorem jacMixedForward_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
           · exact hSl x (List.mem_append_left _ hx)
           · exact hSl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
         rw [←hpq]
-        refine WP.mono (jacDoubleForward_ok hL hm hC ha hdA hdSl ie hv hP jp) fun t ⟨kt,it,jt⟩ => ?_
+        refine WP.mono (jacDoubleForward_ok hL hm hd hdA hdSl ie hv hP jp) fun t ⟨kt,it,jt⟩ => ?_
         exact (JacPost.sub ⟨_,kt,it,jt⟩ oldV).prefix
           (hkeep.trans ((kd.mono (by regions_sub)).trans (ke.mono (by regions_sub))))
       · intro e ie ke hrz
@@ -218,7 +218,7 @@ theorem jacMixedForward_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
         rw [eh]
         simpa only [hAff,Lean.Grind.Semiring.mul_one] using he
       refine WP.mono (jacMixedForwardTail_ok hL hm hA hSl id hV) fun t ⟨kt,it,ht⟩ => ?_
-      have jt := hJP.add_ne hC ha hP hQ hJQ hpz hqz hh
+      have jt := hJP.add_ne' hC hP hQ hJQ hpz hqz hh
       dsimp only at jt
       rw [hAff,←ht] at jt
       exact JacPost.prefix ⟨_,kt,it,jt⟩ (hkeep.trans (kd.mono (by regions_sub)))

@@ -15,7 +15,7 @@ open VG.Proof.Mont VG.Proof.Mont.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstras
 open VG.Proof.Ecdsa.X86_64 Spec.Weierstrass
 open VG.Impl.Ecdh.X86_64 (PX PY BP)
 
-theorem jointMid_field {c : Cfg} {j : Joint.Cfg} (hc : CfgOk c)
+theorem jointMid_field {c : Cfg} {j : Joint.Cfg} (hc : BaseCfgOk c)
     (hK : j.K=c.winCfg PX PY BP) (hnp : c.C.n≤c.C.p)
     {s₀ s : State} {base : Addr} {g : Reg → BitVec 64} (h : Mid c s₀ base g s) :
     Inv j.K.M base size c.C.p (·∈nafSlots j.K) (winRo j.K) (tmv c.C j.K.M.n base s) s := by
@@ -41,7 +41,7 @@ theorem jointMid_zero {c : Cfg} {j : Joint.Cfg}
   exact toM_zero _ _
 
 /-- The peer's point is affine: its `z` is one. -/
-theorem jointMid_affine {c : Cfg} {j : Joint.Cfg} (hc : CfgOk c)
+theorem jointMid_affine {c : Cfg} {j : Joint.Cfg} (hc : BaseCfgOk c)
     (hK : j.K=c.winCfg PX PY BP) {s₀ s : State} {base : Addr} {g : Reg → BitVec 64}
     (h : Mid c s₀ base g s) : tmv c.C j.K.M.n base s j.K.P.z=1 := by
   rw [hK]
@@ -49,7 +49,7 @@ theorem jointMid_affine {c : Cfg} {j : Joint.Cfg} (hc : CfgOk c)
   rw [h.fixed.onep]
   exact toM_one (unitMod_pow_two hc.p_odd _)
 
-theorem jointMid_point {c : Cfg} {j : Joint.Cfg} (hc : CfgOk c) (hC : Law c.C)
+theorem jointMid_point {c : Cfg} {j : Joint.Cfg} (hc : BaseCfgOk c) (hC : Law c.C)
     (hK : j.K=c.winCfg PX PY BP) {Q : Point c.C}
     {s₀ s : State} {base : Addr} {g : Reg → BitVec 64} (h : Mid c s₀ base g s)
     (hp : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))

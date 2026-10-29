@@ -52,7 +52,7 @@ private theorem eq_of_toM_eq {m R x y : Nat} [NeZero m] (hm : UnitMod m R)
   have hv := congrArg Fin.val he
   simpa only [Fin.val_ofNat,Nat.mod_eq_of_lt hx,Nat.mod_eq_of_lt hy] using hv
 
-theorem jointMid_samefields {c : Cfg} {d : CombData} (hc : CfgOk c)
+theorem jointMid_samefields {c : Cfg} {d : CombData} (hc : BaseCfgOk c)
     {s₀ t₀ s t : State} {base : Addr} {g h : Reg → BitVec 64}
     (pub : JointPublic c d s₀ t₀) (hs : Mid c s₀ base g s) (ht : Mid c t₀ base h t) :
     ∀ x∈winRo (c.winCfg PX PY BP),tmv c.C c.n base t x=tmv c.C c.n base s x := by
@@ -74,7 +74,7 @@ theorem jointMid_samefields {c : Cfg} {d : CombData} (hc : CfgOk c)
   · change toM _ _ (wordsVal t.mem base (c.sl ONEP) c.n)=toM _ _ (wordsVal s.mem base (c.sl ONEP) c.n)
     rw [ht.fixed.onep,hs.fixed.onep]
 
-theorem jointMid_field_pair {c : Cfg} {j : Joint.Cfg} {d : CombData} (hc : CfgOk c)
+theorem jointMid_field_pair {c : Cfg} {j : Joint.Cfg} {d : CombData} (hc : BaseCfgOk c)
     (hK : j.K=c.winCfg PX PY BP) (hnp : c.C.n≤c.C.p)
     {s₀ t₀ s t : State} {base : Addr} {g h : Reg → BitVec 64}
     (pub : JointPublic c d s₀ t₀) (hs : Mid c s₀ base g s) (ht : Mid c t₀ base h t) :

@@ -27,7 +27,7 @@ theorem jointVerify_p224_public_ct :
   have hc := p224v_ok hI
   refine jointVerify_ct_of_points hc joint_before_ct ?_ joint_after_ct
   intro s₀ t₀ ps pt pub
-  exact jointPoints_relCT hc hL (.ofComb rfl hT (by decide) (by decide) rfl) rfl (by decide +kernel)
+  exact jointPoints_relCT hc.toBaseCfgOk hL (hc.jdbl hL) (.ofComb rfl hT (by decide) (by decide) rfl) rfl (by decide +kernel)
     joint_add_layout joint_init_layout joint_prep_layout (joint_doubler hc hL) joint_mul_checks
     (fun h => absurd h (by decide)) ps pt pub
 
