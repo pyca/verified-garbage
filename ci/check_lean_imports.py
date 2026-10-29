@@ -39,10 +39,9 @@ from check_registrations import THEOREM, code_only
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 LEAN = ROOT / "lean" / "VerifiedGarbage"
 
-# The start of an import: `import`, and in a module `public`, `meta` and
-# `all` imports.
-IMPORT = r"\s*(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?"
-IMPORT_ANY = re.compile(IMPORT + r"(\S+)")
+# An import, matched at the start of a line: `import`, and in a module
+# `public`, `meta` and `all` imports, with no part of it on another line.
+IMPORT_ANY = re.compile(r"[^\S\n]*(?:public[^\S\n]+)?(?:meta[^\S\n]+)?import[^\S\n]+(?:all[^\S\n]+)?(\S+)")
 
 ALLOWED_IMPORTS = {
     "TCB": ("Lean", "VerifiedGarbage.TCB."),
@@ -60,12 +59,12 @@ def target_of(parts, targets: set[str]) -> str | None:
     return next((p for p in parts if p in targets), None)
 
 
-def tcb_lemmas(lean: pathlib.Path) -> list[str]:
+def tcb_lemmas(lean: pathlib.Path, texts: dict[pathlib.Path, str] | None = None) -> list[str]:
     """A line for each theorem or lemma under `lean`'s (lean/VerifiedGarbage/'s)
-    TCB/, outside comments and strings."""
+    TCB/, outside comments and strings (from `texts`, each file's, if given)."""
     out = []
     for f in sorted((lean / "TCB").rglob("*.lean")):
-        code = code_only(f.read_text())
+        code = code_only(texts[f] if texts else f.read_text())
         for m in THEOREM.finditer(code):
             line = code.count("\n", 0, m.start()) + 1
             out.append(f"{f.relative_to(lean.parent.parent)}:{line}: a {m.group(1)} in TCB/, "
@@ -127,13 +126,15 @@ def full_closures(imps: dict[str, list[str]], starts: list[str]) -> dict[str, fr
     return lean_shards.closures({m: imps[m] for m in reach})
 
 
-def check_native_tcb(targets: set[str]) -> list[str]:
-    """`native_tcb` on the project, with ci/lean_shards.py's traces of the
-    targets' modules of TCB/ alone (`among`), and native traces only for
-    the modules of precompiled libraries, which alone have them."""
-    mods = lean_shards.modules()
-    modes = {}
-    imps, vis, _ = lean_shards.source_info(mods, import_modes=modes)
+def check_native_tcb(targets: set[str], mods: dict[str, pathlib.Path],
+                     texts: dict[pathlib.Path, str]) -> list[str]:
+    """`native_tcb` on the project (`lean_shards.modules()`, and each one's
+    text), with ci/lean_shards.py's traces of the targets' modules of TCB/
+    alone (`among`), and native traces only for the modules of precompiled
+    libraries, which alone have them."""
+    imps, vis, modes = {}, {}, {}
+    for m, f in mods.items():
+        imps[m], vis[m], modes[m] = lean_shards.parse_imports(texts[f], mods)
     tcb = {m: target_of(m.split("."), targets) for m in mods if m.startswith("VerifiedGarbage.TCB.")}
     among = frozenset(m for m, t in tcb.items() if t)
     traces = lean_shards.reads(imps, lean_shards.closures(imps, among), vis, modes, among)
@@ -149,30 +150,43 @@ def check_native_tcb(targets: set[str]) -> list[str]:
     return native_tcb(tcb, libraries, lib_names, traces, targets)
 
 
-def imports(f: pathlib.Path):
-    """Each import of `f`, with its line number."""
-    for n, line in enumerate(f.read_text().splitlines(), 1):
-        # Most lines are not imports: skip them before matching.
-        if "import" in line and (m := IMPORT_ANY.match(line)):
-            yield n, m.group(1)
+def imports(text: str):
+    """Each import of a file's `text`, with its line number."""
+    # Most lines are not imports: find those with the word, and match each
+    # once, from its start.
+    line, counted = 1, 0
+    pos = text.find("import")
+    while pos >= 0:
+        start = text.rfind("\n", 0, pos) + 1
+        line += text.count("\n", counted, start)
+        counted = start
+        if m := IMPORT_ANY.match(text, start):
+            yield line, m.group(1)
+        end = text.find("\n", pos)
+        if end < 0:
+            break
+        pos = text.find("import", end + 1)
 
 
 def main() -> int:
-    errors = tcb_lemmas(LEAN)
+    # Every check reads each file of the project once, from here.
+    mods = lean_shards.modules()
+    texts = {f: f.read_text() for f in mods.values()}
+    errors = tcb_lemmas(LEAN, texts)
     targets = {p.name for p in (LEAN / "TCB").iterdir() if p.is_dir()}
     lean = len(str(LEAN)) + 1
     for f in sorted(LEAN.rglob("*.lean")):
         own = target_of(str(f)[lean : -len(".lean")].split("/"), targets)
         if own is None:
             continue
-        for n, mod in imports(f):
+        for n, mod in imports(texts[f]):
             other = mod.startswith("VerifiedGarbage.") and target_of(mod.split("."), targets)
             if other and other != own:
                 errors.append(f"{f.relative_to(ROOT)}:{n}: a module of {own} may not import {mod}, of {other}")
-    errors += check_native_tcb(targets)
+    errors += check_native_tcb(targets, mods, texts)
     for d, prefixes in ALLOWED_IMPORTS.items():
         for f in sorted((LEAN / d).rglob("*.lean")):
-            for n, mod in imports(f):
+            for n, mod in imports(texts[f]):
                 if not allowed(mod, prefixes):
                     errors.append(f"{f.relative_to(ROOT)}:{n}: {d}/ may not import {mod}")
     for e in errors:

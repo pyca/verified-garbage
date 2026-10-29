@@ -36,6 +36,14 @@ class TcbLemmas(unittest.TestCase):
                 "prove it under Proof/"])
 
 
+class Imports(unittest.TestCase):
+    def test_lines_and_kinds(self):
+        text = ("module\n\npublic import A.B\n  meta import all C\npublic meta import D\n"
+                "-- a comment: import E\ndef x := 1 -- import F\nimport\nG\n\timport H")
+        self.assertEqual(list(check_lean_imports.imports(text)),
+                         [(3, "A.B"), (4, "C"), (5, "D"), (10, "H")])
+
+
 class NativeTcb(unittest.TestCase):
     # TCB.Mem (no target's), TCB.A.Isa and TCB.B.Isa (targets A and B), a
     # native spec importing TCB.Mem, and a proof of A.

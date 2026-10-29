@@ -183,10 +183,24 @@ def precompiled_libraries(closure):
     """The project's native libraries, in Lake's configuration order."""
     config = tomllib.loads((LEAN / "lakefile.toml").read_text())
     return {
-        lib["name"]: frozenset(m for m in closure if any(
-            matches(f"{k}:{e}", m, closure) for k in MODULE_LISTS for e in lib.get(k, [])))
+        lib["name"]: frozenset(library_members(lib, closure))
         for lib in config.get("lean_lib", []) if lib.get("precompileModules")
     }
+
+
+def library_members(lib: dict, closure: dict[str, frozenset[str]]) -> set[str]:
+    """The modules (of `closure`) a library's module lists take, as
+    `matches` says: an exact name or a root is looked up rather than matched
+    against every module, which only a glob of a prefix needs."""
+    out = set()
+    for k in MODULE_LISTS:
+        for e in lib.get(k, []):
+            if k == "roots" or not e.endswith((".*", ".+")):
+                named = closure.get(e, {e}) if k == "roots" else {e}
+                out.update(m for m in named if m in closure and matches(f"{k}:{e}", m, closure))
+            else:
+                out.update(m for m in closure if matches(f"{k}:{e}", m, closure))
+    return out
 
 
 def build_requirements(closure, libraries):
@@ -330,13 +344,19 @@ def source_info(mods, source_bytes=None, import_modes=None):
         text = data.decode("utf-8")
         if "\r" in text:
             text = text.replace("\r\n", "\n").replace("\r", "\n")
-        modes = {} if import_modes is not None else None
-        kinds = import_kinds(text, mods, modes)
-        if modes:
+        imps[m], vis[m], modes = parse_imports(text, mods)
+        if import_modes is not None and modes:
             import_modes[m] = modes
-        imps[m] = [i for _, _, i in kinds]
-        vis[m] = ([i for p, _, i in kinds if p], [i for _, a, i in kinds if a]) if is_module(text) else None
     return imps, vis, hashes
+
+
+def parse_imports(text: str, mods):
+    """A source's imports of modules of the project (of `mods`), its
+    `visibility` and its import modes (`meta`, `public_meta`), from one scan."""
+    modes = {}
+    kinds = import_kinds(text, mods, modes)
+    vis = ([i for p, _, i in kinds if p], [i for _, a, i in kinds if a]) if is_module(text) else None
+    return [i for _, _, i in kinds], vis, modes
 
 
 def reads(
@@ -405,8 +425,7 @@ def native_trace_modules(closure):
     config = tomllib.loads((LEAN / "lakefile.toml").read_text())
     dependent = set(closure)
     for lib in config.get("lean_lib", []):
-        members = {m for m in closure if any(matches(f"{k}:{e}", m, closure)
-                   for k in MODULE_LISTS for e in lib.get(k, []))}
+        members = library_members(lib, closure)
         if lib.get("platformIndependent") is True:
             dependent.difference_update(members)
         else:
