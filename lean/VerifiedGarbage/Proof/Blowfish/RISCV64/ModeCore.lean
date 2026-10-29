@@ -145,7 +145,7 @@ theorem crypt_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sche
   have hB' : s.gpr .s4 = B := hB
   obtain ⟨hk, _⟩ := hR
   have blkW : InRegions s.wr (B + BitVec.ofNat 64 48) 8 :=
-    ⟨_, hS.low, Offset.contains_base _ (by cases up <;> decide) (by omega)⟩
+    hS.low _ _ (by cases up <;> decide)
   have blkR : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 48) 8 :=
     let ⟨r, hr, hc⟩ := blkW; ⟨r, List.mem_append_right _ hr, hc⟩
   show WP isa (modeCrypt up) s _
