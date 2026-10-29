@@ -52,6 +52,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.X25519.Arm.AddSub
 meta import VerifiedGarbage.Proof.X25519.Arm.Cswap
+import Batteries.Logic
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarBaseCTInit`. -/
 

@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+import Batteries.Logic
 
 /-! # General complete addition for brainpoolp384r1 verification -/
 

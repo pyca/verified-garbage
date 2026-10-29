@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
 import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 import VerifiedGarbage.Proof.Framework.Block
+import Batteries.Logic
 
 /-!
 # ECDSA verification on AArch64: `[u]G + [v]Q`

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Weierstrass.AArch64
 public import VerifiedGarbage.Proof.Mont.AArch64.Ops
 public import VerifiedGarbage.Proof.Weierstrass.Env
 public import VerifiedGarbage.Proof.Weierstrass.Unch
+import Batteries.Logic
 
 @[expose] public section
 
