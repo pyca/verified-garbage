@@ -194,7 +194,7 @@ theorem ekHead_ok {s₀ : State} (hp : expandKeyRISCV64.pre s₀) :
     rw [hk₆ _ (by rw [slots_eq]; omega_arith) (notTail _ (Or.inr (by rw [tailSlot_eq]; omega_arith))),
       notCk _ (Or.inl (by rw [tableSlot_eq]; omega_arith)) (by rw [slots_eq]; omega_arith), v₃ kv hkv]
   -- The key, bitsliced.
-  obtain ⟨s₇, e₇, c₇, kr₇, X₇⟩ := toBs_step hkey₆ (Ctx.refl hm₆)
+  obtain ⟨s₇, e₇, c₇, kr₇, X₇⟩ := toBs_step hkey₆ (CtxW.refl hm₆)
   obtain ⟨s₈, e₈, r₈, o₈, m₈, rd₈, wr₈⟩ := slotAddr_ok s₇ .a4 tableEnd
   obtain ⟨s₉, e₉, r₉, o₉, m₉, rd₉, wr₉⟩ := slotAddr_ok s₈ kr tableSlot
   have hb₇ : s₇.gpr sb = b := by rw [c₇.base, hb₆]
@@ -221,7 +221,8 @@ theorem ekHead_ok {s₀ : State} (hp : expandKeyRISCV64.pre s₀) :
     ((X₇ w hw).congr fun j _ => by simp only [planes, slotW, mem₉, hb₉, hb₇]).congr_right fun c hc =>
       (keyInit_rel hK hT c hc w hw).symm
   refine ⟨s₉, ?_, ⟨hb₉, ?_, ?_, ?_, ?_, ?_, hst, fun i hi => by omega_arith, fun i hi => ?_, ?_,
-    by rw [rd₉, rd₈, c₇.rd, rd₆, rd₅, rd₄, rd₃], by rw [wr₉, wr₈, c₇.wr, wr₆, wr₅, wr₄, wr₃]⟩⟩
+    by rw [rd₉, rd₈, c₇.rd, rd₆, rd₅, rd₄, rd₃], by rw [wr₉, wr₈, c₇.wr, wr₆, wr₅, wr₄, wr₃],
+    by rw [g₉ _ (by decide) (by decide) (by decide), g₆' _ (by decide) (by decide) (by decide)]⟩⟩
   · rw [ekHead, Interleave.runBlock_append, Interleave.runBlock_append, Interleave.runBlock_append,
       Interleave.runBlock_append, Interleave.runBlock_append, Interleave.runBlock_append, e₃, Option.bind_some, e₄, Option.bind_some, e₅, Option.bind_some, e₆,
       Option.bind_some, e₇, Option.bind_some, e₈, Option.bind_some, e₉]
@@ -269,7 +270,7 @@ theorem ekLoop_wp {s₀ s : State} {b S : Addr} {key : Spec.Sm4.Block} (hp : EkP
   · exact .inr ⟨by rw [eval_nonzero, z']; simp [h8], 8 - (m + 1), by omega_arith, m + 1, rfl, by omega_arith, hi'⟩
 
 theorem expandKey_wp {s₀ : State} (hp : expandKeyRISCV64.pre s₀) :
-    WP isa expandKey s₀ fun s' => (∀ i < 12, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧
+    WP isa expandKey s₀ fun s' => (∀ i < 12, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧ s'.gpr .ra = s₀.gpr .ra ∧
       expandKeyRISCV64.post s₀ s' := by
   obtain ⟨s₁, e₁, h₁⟩ := ekHead_ok hp
   obtain ⟨hrd, hwr, dKS, dKB, dSB, fitK, fitS, fitB, hal⟩ := hp
@@ -279,8 +280,8 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyRISCV64.pre s₀) :
   have hwS : (⟨S, 128⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp [S]
   have pre : EkPre s₀ b S := ⟨hwB, hwS, dSB, fitB, fitS, hal⟩
   refine WP.seq (WP.of_runBlock ⟨s₁, e₁, WP.seq (WP.mono (ekLoop_wp pre h₁) fun s₂ h₂ => ?_)⟩)
-  obtain ⟨s₃, e₃, rg₃, -, m₃, -, -⟩ := restore_ok (by rw [h₂.wr]; exact hwB) h₂.base hal h₂.saved
-  refine WP.of_runBlock ⟨s₃, e₃, rg₃, ?_⟩
+  obtain ⟨s₃, e₃, rg₃, o₃, m₃, -, -⟩ := restore_ok (by rw [h₂.wr]; exact hwB) h₂.base hal h₂.saved
+  refine WP.of_runBlock ⟨s₃, e₃, rg₃, by rw [o₃ _ (by decide) (by decide), h₂.ra], ?_⟩
   show Spec.Sm4.scheduleAt s₃.mem S = _
   rw [expandKey_eq]
   apply Vector.ext

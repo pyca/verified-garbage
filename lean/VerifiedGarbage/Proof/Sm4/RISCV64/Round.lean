@@ -122,6 +122,8 @@ theorem runBlock_app (a b : List Instr) (s : State) :
     | none => rfl
     | some s' => rw [runStep_some, runStep_some, ih]
 
+theorem sm4Rest_sub : ∀ r ∈ sm4Rest, r ∈ restRegs := by decide
+
 /-- A round, with the round key at entry `a` of `kr`. -/
 theorem round_ok (l : Lin) {a b c d : Nat} (ha : a < 4)
     (hb : b = (a + 1) % 4) (hc : c = (a + 2) % 4) (hd : d = (a + 3) % 4)
@@ -135,15 +137,15 @@ theorem round_ok (l : Lin) {a b c d : Nat} (ha : a < 4)
     (hX : StRel s X) (hK : WordRel (fun j => keyW s (8 * a + j)) fun _ => k) :
     ∃ s', runBlock isa (round l a a b c d) s = some s' ∧
       StRel s' (fun b' => sround l k a (X b')) ∧ MasksOk s' ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ (∀ r, r ∉ sboxWrites → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ (∀ r, r ∉ sm4Writes → s'.gpr r = s.gpr r) ∧
       Frame [slotRegion layerCfg s] s.mem s'.mem := by
-  have hall' : ∀ r, r ∉ sboxWrites → ((preX a b c d).all fun i => dst i != some r) = true ∧
+  have hall' : ∀ r, r ∉ sm4Writes → ((preX a b c d).all fun i => dst i != some r) = true ∧
       ((lin l a).all fun i => dst i != some r) = true := fun r hr => by
-    have := List.all_eq_true.mp hall r (not_sboxWrites r hr)
+    have := List.all_eq_true.mp hall r (sm4Rest_sub r (not_sm4Writes r hr))
     rw [List.all_append, Bool.and_eq_true] at this
     exact this
-  have hsb : sb ∉ sboxWrites := by decide
-  have hkr : kr ∉ sboxWrites := by decide
+  have hsb : sb ∉ sm4Writes := by decide
+  have hkr : kr ∉ sm4Writes := by decide
   -- The S-box's input.
   let W₁ : Nat → BitVec 64 := fun i => if i < 32 then slotW s (64 + i) else keyW s (i - 32)
   obtain ⟨s₁, h₁, x₁, -, k₁, rd₁, wr₁, sp₁, o₁, f₁, -, -⟩ := linG_ok hpre hok W₁

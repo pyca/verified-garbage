@@ -125,7 +125,7 @@ theorem ecbWith_wp (sr : Reg) (k : Prog isa) (dir : Dir) {s₀ : State}
     (hk : ∀ s₁, SchedPre s₁ (s₀.gpr sr) (s₀.gpr .a0) → s₁.gpr .a0 = s₀.gpr .a0 → MasksOk s₁ →
       (∀ r, r ≠ sb → r ≠ t0 → r ≠ t1 → s₁.gpr r = s₀.gpr r) →
       WP isa k s₁ (KeysPost s₁ (s₀.gpr sr) (s₀.gpr .a0) dir)) :
-    WP isa (ecbWith sr k) s₀ fun s' => (∀ i < 12, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧
+    WP isa (ecbWith sr k) s₀ fun s' => (∀ i < 12, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧ s'.gpr .ra = s₀.gpr .ra ∧
       Spec.Sm4.blocksAt s'.mem (s₀.gpr .a1) (s₀.gpr .a2).toNat =
         Spec.Sm4.ecb (Spec.Sm4.scheduleAt s₀.mem (s₀.gpr .a0)) (specDirA dir)
           (Spec.Sm4.blocksAt s₀.mem (s₀.gpr .a1) (s₀.gpr .a2).toNat) := by
@@ -176,6 +176,8 @@ theorem ecbWith_wp (sr : Reg) (k : Prog isa) (dir : Dir) {s₀ : State}
     rw [k₂.regs _ (by decide) (by decide) (by decide), g₁ _ (by decide) (by decide) (by decide)]
   have rd₂ : s₂.rd = s₀.rd := by rw [k₂.rd, rd₁]
   have wr₂ : s₂.wr = s₀.wr := by rw [k₂.wr, wr₁]
+  have ra₂ : s₂.gpr .ra = s₀.gpr .ra := by
+    rw [k₂.regs _ (by decide) (by decide) (by decide), g₁ _ (by decide) (by decide) (by decide)]
   -- Any blocks?
   have hz₃ : (s₂.gpr .a2 == 0) = decide (n = 0) := by
     rw [a2₂, show s₀.gpr .a2 = BitVec.ofNat 64 n by simp only [n, BitVec.ofNat_toNat, BitVec.setWidth_eq]]
@@ -187,14 +189,14 @@ theorem ecbWith_wp (sr : Reg) (k : Prog isa) (dir : Dir) {s₀ : State}
     (WP.ite (decide (n = 0)) ((eval_zero s₂ .a2).trans (by rw [hz₃])) (fun h0 => ?_) (fun h0 => ?_))
     fun s₄ d₄ => ?_)
   · have hn0 : n = 0 := by simpa using h0
-    exact WP.block_nil ⟨base₂, sc₂, fun i hi => by omega, fr₂, rd₂, wr₂⟩
+    exact WP.block_nil ⟨base₂, sc₂, fun i hi => by omega, fr₂, rd₂, wr₂, ra₂⟩
   · have hn0 : n ≠ 0 := by simpa using h0
     refine dataLoop_wp ⟨hwS, hwD, dDS, fitB, fitD, hal⟩ ⟨base₂, by rw [a1₂]; simp,
-      by rw [a2₂, Nat.mul_zero, Nat.sub_zero]; simp [n], by omega, k₂.rdi, sc₂, fun i hi => ?_, fr₂, rd₂, wr₂⟩
+      by rw [a2₂, Nat.mul_zero, Nat.sub_zero]; simp [n], by omega, k₂.rdi, sc₂, fun i hi => ?_, fr₂, rd₂, wr₂, ra₂⟩
     rw [data₂ i hi, ite_eq_right (by omega)]
   -- The epilogue.
-  obtain ⟨s₅, e₅, rg₅, -, m₅, -, -⟩ := restore_ok (by rw [d₄.wr]; exact hwS) d₄.base hal d₄.scr.saved
-  refine WP.of_runBlock ⟨s₅, e₅, rg₅, ?_⟩
+  obtain ⟨s₅, e₅, rg₅, o₅, m₅, -, -⟩ := restore_ok (by rw [d₄.wr]; exact hwS) d₄.base hal d₄.scr.saved
+  refine WP.of_runBlock ⟨s₅, e₅, rg₅, by rw [o₅ _ (by decide) (by decide), d₄.ra], ?_⟩
   have hd₅ : DInv s₀.mem s₅.mem D n n (outF s₀.mem D E) := fun i hi => by
     rw [m₅]; exact d₄.data i hi
   show Spec.Sm4.blocksAt s₅.mem D n = _
@@ -204,7 +206,7 @@ theorem ecbWith_wp (sr : Reg) (k : Prog isa) (dir : Dir) {s₀ : State}
   exact outF_spec dir s₀.mem _ D j
 
 theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbRISCV64 dir).pre s₀) :
-    WP isa (ecb dir) s₀ fun s' => (∀ i < 12, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧
+    WP isa (ecb dir) s₀ fun s' => (∀ i < 12, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧ s'.gpr .ra = s₀.gpr .ra ∧
       (ecbRISCV64 dir).post s₀ s' := by
   obtain ⟨hrd, hwr, -, dSS, dDS, fitK, fitD, fitB, hal⟩ := hp
   exact ecbWith_wp .a3 (keys dir) dir hrd hwr dSS dDS fitK fitD fitB hal

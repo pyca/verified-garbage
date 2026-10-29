@@ -56,16 +56,10 @@ theorem expandKeyTaint_agree (s₁ s₂ : State) (_ : expandKeyRISCV64.pre s₁)
 theorem expandKey_ct : ConstantTime isa expandKeyRISCV64.pre expandKeyRISCV64.pub expandKey :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2]) expandKeyTaint_agree (by taint_decide)
 
-/-- The registers key expansion writes: all but `ra`. -/
-def expandKeyWrites : List Reg :=
-  [.t0, .t1, .t2, .s0, .s1, .a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9,
-   .s10, .s11, .t3, .t4, .t5, .t6]
-
 theorem expandKey_correct (s : State) (hs : expandKeyRISCV64.pre s) :
     ∃ t s', Exec isa expandKey s t s' ∧ abiPreserved s s' ∧ expandKeyRISCV64.post s s' := by
-  have hn : callFree expandKey = true := by lit_decide
-  obtain ⟨t, s', he, ⟨h₁, h₂⟩, hk⟩ := WP.keep expandKeyWrites (expandKey_wp hs) (by lit_decide) hn
-  refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, hk.gpr (by decide)⟩, h₂⟩
+  obtain ⟨t, s', he, h₁, hra, h₂⟩ := expandKey_wp hs
+  refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, hra⟩, h₂⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact h₁ 0 (by omega)
@@ -88,7 +82,7 @@ def expandKeySat : State where
   sp := 0x8000
   mem _ := 0
   rd := [⟨0x1000, 16⟩]
-  wr := [⟨0x2000, 128⟩, ⟨0x3000, 8 * 396⟩]
+  wr := [⟨0x2000, 128⟩, ⟨0x3000, 8 * 397⟩]
 
 theorem expandKey_verified :
     Verified target expandKey (Proof.Sm4.expandKeyScratchContract abi slots) :=
@@ -107,17 +101,17 @@ def expandKeyFrameSat : State where
   rd := [⟨0x1000, 16⟩]
   wr := [⟨0x2000, 128⟩]
 
-theorem expandKeyFrameSat_pre : ∃ s, (Spec.Sm4.expandKeyContract abi 3168).pre s := by
+theorem expandKeyFrameSat_pre : ∃ s, (Spec.Sm4.expandKeyContract abi 3184).pre s := by
   implies_sat [Spec.Sm4.expandKeyContract, Spec.Sm4.expandKeySig, abi, argRegs]
     [expandKeyFrameSat] using expandKeyFrameSat
 
 /-- Key expansion, with its working space on the stack. -/
 theorem expandKey_framed :
-    Verified target (Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a2 396 expandKey)
-      (Spec.Sm4.expandKeyContract abi 3168) :=
+    Verified target (Impl.StackScratch.RISCV64.withStackScratchWiped 3184 .a2 397 expandKey)
+      (Spec.Sm4.expandKeyContract abi 3184) :=
   RISCV64.Verified.stackScratchWiped (sig := Spec.Sm4.expandKeySig) (nm := "scratch") (e := .u64)
-    (n := 396) (post := Proof.Sm4.expandKeyPost abi.ptrBits) (wa := false) (stack := 0)
-    (bytes := 3168) (words := 396) expandKey_verified (by decide) (by decide) (by decide)
+    (n := 397) (post := Proof.Sm4.expandKeyPost abi.ptrBits) (wa := false) (stack := 0)
+    (bytes := 3184) (words := 397) expandKey_verified (by decide) (by decide) (by decide)
     (Proof.Sm4.expandKeyPostOut_local _) expandKeyFrameSat_pre
 
 end VG.Proof.Sm4.RISCV64

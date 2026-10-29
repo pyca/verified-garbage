@@ -25,9 +25,12 @@ The scratch buffer at `a5` holds, in 8-byte slots: the S-box's spills
 (0–39), the masks of the round keys' planes (40–44), the transposes' masks
 (45–50), the planes of the state's four words (64–95), the tail buffer
 (96–127, sixteen blocks), the table of the 32 bitsliced round keys
-(128–383), and the callee-saved registers `s0`–`s11` (384–395). The table
-and the saved registers are beyond the reach of a load's offset from `a5`,
-and are addressed through pointers to them.
+(128–383), the callee-saved registers `s0`–`s11` (384–395), and `ra`
+(396), which the S-box uses while the rounds run (as it does `a0` and `a4`,
+whose values are public and computed again after the rounds: a public
+value loaded from memory would be secret to the constant-time check).
+The table and the saved registers are beyond the reach of a load's offset
+from `a5`, and are addressed through pointers to them.
 -/
 
 @[expose] public section
@@ -65,8 +68,11 @@ def tableEnd : Nat := tableSlot + 8 * 32
 /-- The callee-saved registers' slots. -/
 def savedSlot : Nat := tableEnd
 
+/-- The slot of `ra` while the rounds' S-boxes use it. -/
+def auxSlot : Nat := savedSlot + 12
+
 /-- The number of slots. -/
-def slots : Nat := savedSlot + 12
+def slots : Nat := auxSlot + 1
 
 def keyMasks : List (Nat × BitVec 64) :=
   [(evenSlot, 0x00FF00FF00FF00FF), (oddSlot, 0xFF00FF00FF00FF00), (grpSlot, 0x0000FFFF0000FFFF),
@@ -97,6 +103,16 @@ def saveRegs : List Instr :=
 /-- The callee-saved registers from their slots, through `t0`. -/
 def restoreRegs : List Instr :=
   slotAddr t0 savedSlot ++ savedOffs.map fun (r, d) => .load .d r t0 d
+
+/-- The registers the rounds' S-boxes use beyond AES's whose values they
+keep, and their offsets from the first of their slots. -/
+def auxOffs : List (Reg × Nat) := [(.ra, 0)]
+
+/-- `ra` to its slot, through `t0`. -/
+def saveAux : List Instr := slotAddr t0 auxSlot ++ auxOffs.map fun (r, d) => .store .d r t0 d
+
+/-- `ra` from its slot, through `t0`. -/
+def restoreAux : List Instr := slotAddr t0 auxSlot ++ auxOffs.map fun (r, d) => .load .d r t0 d
 
 /-- The rotation temporary. -/
 def rk : Reg := .a7

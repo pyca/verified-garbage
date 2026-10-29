@@ -20,7 +20,7 @@ the working space, for the modes, as on PPC64LE
   sets the transposes' masks and transforms the sixteen blocks of the tail
   buffer (`crypt16`) under the table.
 
-The working space is ECB's 396 slots (`slots`). The table and the masks
+The working space is ECB's 397 slots (`slots`). The table and the masks
 of the round keys' planes are what the preparation writes for
 `vg_sm4_crypt_prepared` (`layout`): each plane of a round key is a 64-bit
 word whose bit `16 i + b` is bit `j` of the key's byte `i` (`planeOf`), for

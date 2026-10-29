@@ -109,7 +109,7 @@ def prepRISCV64 : Contract RISCV64.isa where
 
 theorem size_eq : layout.size = 8 * slots := rfl
 
-/-- The registers the bodies may write: all but `ra`. -/
+/-- The registers the preparation writes: all but `ra`. -/
 def bodyWrites : List Reg :=
   [.t0, .t1, .t2, .s0, .s1, .a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9,
    .s10, .s11, .t3, .t4, .t5, .t6]
@@ -167,11 +167,11 @@ theorem prep_ct : ConstantTime isa prepRISCV64.pre prepRISCV64.pub prepareKeys :
 
 /-- A state satisfying the preparation's precondition. -/
 def prepSat : State where
-  gpr r := match r with | .a0 => 0x1000 | .a2 => 0x2000 | .a3 => 396 | _ => 0
+  gpr r := match r with | .a0 => 0x1000 | .a2 => 0x2000 | .a3 => 397 | _ => 0
   sp := 0x8000
   mem _ := 0
   rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x2000, 396 * 8⟩]
+  wr := [⟨0x2000, 397 * 8⟩]
 
 theorem prepare_verified :
     Verified target prepareKeys (Spec.Sm4.Prepared.prepareContract layout abi) :=
@@ -229,13 +229,12 @@ theorem crypt_correct (s : State) (hs : cryptRISCV64.pre s) :
   have hwN : (⟨(narrow s (s.gpr .a0)).gpr .a0, 8 * slots⟩ : Region) ∈ (narrow s (s.gpr .a0)).wr := by simp
   have fitN : ((narrow s (s.gpr .a0)).gpr .a0).toNat + 8 * slots ≤ 2 ^ 64 := by
     show (s.gpr .a0).toNat + 8 * slots ≤ 2 ^ 64; omega
-  have hn : callFree cryptPrepared = true := by lit_decide
-  obtain ⟨t, s', he, ⟨h₁, hR, hF, -, -, -⟩, h₃⟩ := WP.keep bodyWrites
-    (cryptBody_wp hwN fitN hal (readyAt_of_words (words_of_holds hH))) (by lit_decide) hn
+  obtain ⟨t, s', he, h₁, hra, hR, hF, -, -, -⟩ :=
+    cryptBody_wp hwN fitN hal (readyAt_of_words (words_of_holds hH))
   have he' := exec_widen hwr hl he
-  refine ⟨t, s'.withRegions s.rd s.wr, he', helperAbi_of he' (h₃.gpr (by decide)) h₁,
+  refine ⟨t, s'.withRegions s.rd s.wr, he', helperAbi_of he' hra h₁,
     fun k d hk => ?_, fun i hi hout => ?_⟩
-  · obtain ⟨t₂, s₂, he₂, -, -, -, -, -, hB₂⟩ := cryptBody_wp hwN fitN hal (readyAt_of_words (words_of_holds hk))
+  · obtain ⟨t₂, s₂, he₂, -, -, -, -, -, -, hB₂⟩ := cryptBody_wp hwN fitN hal (readyAt_of_words (words_of_holds hk))
     obtain ⟨-, rfl⟩ := Exec.det he he₂
     refine blocks_of _ fun j hj => ?_
     have := hB₂ j hj
@@ -270,7 +269,7 @@ def zeroSchedule : Spec.Sm4.Schedule := Vector.replicate 32 0
 /-- A working space at `0x2000` holding the table of `zeroSchedule` for
 encryption. -/
 def cryptSatMem : Mem := fun a =>
-  if 0x2000 ≤ a.toNat ∧ a.toNat < 0x2000 + 3168 then layout.encode zeroSchedule .encrypt (a.toNat - 0x2000) else 0
+  if 0x2000 ≤ a.toNat ∧ a.toNat < 0x2000 + 3176 then layout.encode zeroSchedule .encrypt (a.toNat - 0x2000) else 0
 
 theorem cryptSat_holds : Holds layout cryptSatMem 0x2000 zeroSchedule .encrypt := by
   intro r hr i hi
@@ -280,17 +279,17 @@ theorem cryptSat_holds : Holds layout cryptSatMem 0x2000 zeroSchedule .encrypt :
     rcases hr with rfl | rfl <;> dsimp only at hi ⊢ <;> omega
   have ht : ((0x2000 : Addr) + BitVec.ofNat 64 (r.1 + i)).toNat = 0x2000 + (r.1 + i) := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, show (0x2000 : Addr).toNat = 0x2000 from rfl]; omega
-  have hc : 0x2000 ≤ 0x2000 + (r.1 + i) ∧ 0x2000 + (r.1 + i) < 0x2000 + 3168 := ⟨by omega, by omega⟩
+  have hc : 0x2000 ≤ 0x2000 + (r.1 + i) ∧ 0x2000 + (r.1 + i) < 0x2000 + 3176 := ⟨by omega, by omega⟩
   simp only [cryptSatMem, ht, hc, and_self, ↓reduceIte]
   rw [show 0x2000 + (r.1 + i) - 0x2000 = r.1 + i by omega]
 
 /-- A state satisfying the batch's precondition. -/
 def cryptSat : State where
-  gpr r := match r with | .a0 => 0x2000 | .a1 => 396 | _ => 0
+  gpr r := match r with | .a0 => 0x2000 | .a1 => 397 | _ => 0
   sp := 0x8000
   mem := cryptSatMem
   rd := []
-  wr := [⟨0x2000, 396 * 8⟩]
+  wr := [⟨0x2000, 397 * 8⟩]
 
 theorem crypt_implies : cryptRISCV64.Implies (Spec.Sm4.Prepared.cryptContract layout abi) where
   pre := by

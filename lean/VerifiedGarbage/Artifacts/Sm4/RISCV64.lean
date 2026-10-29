@@ -17,29 +17,29 @@ def artifacts : List Artifact := [
     notes := ["The key schedule's rounds bitsliced in general-purpose registers, sixteen copies of the \
         key at a time, through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no \
         table lookups; the key is read and the schedule written a byte at a time. The working space \
-        (3168 bytes, our caller's s0-s11 among them) is on the stack, zeroed before returning."]
-    code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a2 396 Impl.Sm4.RISCV64.expandKey
-    stack := 3168
+        (3184 bytes, our caller's s0-s11 among them) is on the stack, zeroed before returning."]
+    code := Impl.StackScratch.RISCV64.withStackScratchWiped 3184 .a2 397 Impl.Sm4.RISCV64.expandKey
+    stack := 3184
     verified := Proof.Sm4.RISCV64.expandKey_framed },
   Spec.Sm4.ecbEncryptApi.artifact RISCV64.target {
     notes := ["Sixteen blocks at a time, bitsliced in general-purpose registers through the AES S-box \
         circuit (SM4's S-box is an affine map of AES's), with no table lookups; the blocks and the \
         schedule are copied a byte at a time. Each round key's planes are made from its word: its \
         bytes spread to the planes' 16-bit groups, then each bit of a group filled to the group by \
-        doubling. The working space (3168 bytes, our caller's s0-s11 among them) is on the stack, \
+        doubling. The working space (3184 bytes, our caller's s0-s11 among them) is on the stack, \
         zeroed before returning."]
-    code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (Impl.Sm4.RISCV64.ecb .encrypt)
-    stack := 3168
+    code := Impl.StackScratch.RISCV64.withStackScratchWiped 3184 .a3 397 (Impl.Sm4.RISCV64.ecb .encrypt)
+    stack := 3184
     verified := Proof.Sm4.RISCV64.ecb_framed .encrypt },
   Spec.Sm4.ecbDecryptApi.artifact RISCV64.target {
     notes := ["Sixteen blocks at a time, bitsliced in general-purpose registers through the AES S-box \
         circuit (SM4's S-box is an affine map of AES's), with no table lookups; the blocks and the \
         schedule are copied a byte at a time. Each round key's planes are made from its word: its \
         bytes spread to the planes' 16-bit groups, then each bit of a group filled to the group by \
-        doubling. The working space (3168 bytes, our caller's s0-s11 among them) is on the stack, \
+        doubling. The working space (3184 bytes, our caller's s0-s11 among them) is on the stack, \
         zeroed before returning."]
-    code := Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (Impl.Sm4.RISCV64.ecb .decrypt)
-    stack := 3168
+    code := Impl.StackScratch.RISCV64.withStackScratchWiped 3184 .a3 397 (Impl.Sm4.RISCV64.ecb .decrypt)
+    stack := 3184
     verified := Proof.Sm4.RISCV64.ecb_framed .decrypt },
   (Spec.Sm4.Prepared.prepareApi Impl.Sm4.RISCV64.layout).artifact RISCV64.target {
     notes := ["ECB's key setup alone, for the modes: the masks of the round keys' planes, and the 32 \

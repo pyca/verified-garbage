@@ -36,7 +36,7 @@ taint analysis: the pointers, `n` and the stack pointer are public, and so
 is everything the code computes from them, which it keeps in registers
 (`a0`–`a4`, the copies' pointers and counts and the loop tests).
 `ecb_framed` runs it with its working space on the stack, zeroed on return:
-3168 bytes, for the 396 words of the scratch buffer. As on PPC64LE
+3184 bytes, for the 397 words of the scratch buffer. As on PPC64LE
 (`Proof/Sm4/PPC64LE/Verified.lean`).
 -/
 
@@ -62,16 +62,10 @@ theorem ecb_ct (dir : Dir) : ConstantTime isa (ecbRISCV64 dir).pre (ecbRISCV64 d
   · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
       (ecbTaint_agree .decrypt) (by taint_decide)
 
-/-- The registers ECB writes: all but `ra`. -/
-def ecbWrites : List Reg :=
-  [.t0, .t1, .t2, .s0, .s1, .a0, .a1, .a2, .a3, .a4, .a5, .a6, .a7, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9,
-   .s10, .s11, .t3, .t4, .t5, .t6]
-
 theorem ecb_correct (dir : Dir) (s : State) (hs : (ecbRISCV64 dir).pre s) :
     ∃ t s', Exec isa (ecb dir) s t s' ∧ abiPreserved s s' ∧ (ecbRISCV64 dir).post s s' := by
-  have hn : callFree (ecb dir) = true := by cases dir <;> lit_decide
-  obtain ⟨t, s', he, ⟨h₁, h₂⟩, hk⟩ := WP.keep ecbWrites (ecb_wp dir hs) (by cases dir <;> lit_decide) hn
-  refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, hk.gpr (by decide)⟩, h₂⟩
+  obtain ⟨t, s', he, h₁, hra, h₂⟩ := ecb_wp dir hs
+  refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, hra⟩, h₂⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact h₁ 0 (by omega)
@@ -94,7 +88,7 @@ def ecbSat : State where
   sp := 0x8000
   mem _ := 0
   rd := [⟨0x1000, 128⟩]
-  wr := [⟨0x3000, 16⟩, ⟨0x4000, 8 * 396⟩]
+  wr := [⟨0x3000, 16⟩, ⟨0x4000, 8 * 397⟩]
 
 theorem ecb_verified (dir : Dir) :
     Verified target (ecb dir) (Proof.Sm4.ecbScratchContract abi (specDirA dir) slots) :=
@@ -114,17 +108,17 @@ def ecbFrameSat : State where
   wr := [⟨0x3000, 16⟩]
 
 theorem ecbFrameSat_pre (d : Spec.Sm4.Direction) :
-    ∃ s, (Spec.Sm4.ecbContract abi d 3168).pre s := by
+    ∃ s, (Spec.Sm4.ecbContract abi d 3184).pre s := by
   implies_sat [Spec.Sm4.ecbContract, Spec.Sm4.ecbSig, Spec.Sm4.ecbPost, abi, argRegs]
     [ecbFrameSat] using ecbFrameSat
 
 /-- ECB in the direction `dir`, with its working space on the stack. -/
 theorem ecb_framed (dir : Dir) :
-    Verified target (Impl.StackScratch.RISCV64.withStackScratchWiped 3168 .a3 396 (ecb dir))
-      (Spec.Sm4.ecbContract abi (specDirA dir) 3168) :=
+    Verified target (Impl.StackScratch.RISCV64.withStackScratchWiped 3184 .a3 397 (ecb dir))
+      (Spec.Sm4.ecbContract abi (specDirA dir) 3184) :=
   RISCV64.Verified.stackScratchWiped (sig := Spec.Sm4.ecbSig) (nm := "scratch") (e := .u64)
-    (n := 396) (post := Spec.Sm4.ecbPost (specDirA dir) abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 3168) (words := 396) (ecb_verified dir) (by decide) (by decide) (by decide)
+    (n := 397) (post := Spec.Sm4.ecbPost (specDirA dir) abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 3184) (words := 397) (ecb_verified dir) (by decide) (by decide) (by decide)
     (Proof.Sm4.ecbPostOut_local _ _) (ecbFrameSat_pre _)
 
 end VG.Proof.Sm4.RISCV64

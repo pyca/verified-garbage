@@ -6,21 +6,21 @@
 ///
 /// Contract: `VG.Spec.Sm4.expandKeyContract`. Constant time: only pointers may affect timing, not key bytes.
 ///
-/// The key schedule's rounds bitsliced in general-purpose registers, sixteen copies of the key at a time, through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups; the key is read and the schedule written a byte at a time. The working space (3168 bytes, our caller's s0-s11 among them) is on the stack, zeroed before returning.
+/// The key schedule's rounds bitsliced in general-purpose registers, sixteen copies of the key at a time, through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups; the key is read and the schedule written a byte at a time. The working space (3184 bytes, our caller's s0-s11 among them) is on the stack, zeroed before returning.
 ///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 16 bytes.
 /// * `schedule` must be valid for reads and writes of 128 bytes.
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `schedule` may overlap the 3168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `key` nor `schedule` may overlap the 3184 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_expand_key(key: *const [u8; 16], schedule: *mut [u8; 128]) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m
 addi sp, sp, -2032
-addi sp, sp, -1136
+addi sp, sp, -1152
 addi a2, sp, 0
 addi a5, a2, 0
 addi t0, a5, 2040
@@ -2903,6 +2903,9 @@ addi a4, a5, 2040
 addi a4, a4, 1032
 addi a3, a5, 1024
 20:
+addi t0, a5, 2040
+addi t0, t0, 1128
+sd ra, 0(t0)
 ld s0, 576(a5)
 ld t0, 640(a5)
 xor s0, s0, t0
@@ -2976,8 +2979,7 @@ xori t6, t6, -1
 xor s10, t1, t3
 xor s11, s0, s8
 xor s8, t4, s8
-sd s8, 0(a5)
-xor s8, s1, t5
+xor a0, s1, t5
 xor s6, s6, s10
 xor s0, s0, t3
 xori s0, s0, -1
@@ -2985,10 +2987,8 @@ xor s10, s1, a7
 xor s3, s3, s9
 xori s3, s3, -1
 xor s4, t2, s4
-sd t3, 8(a5)
-xor t3, t0, t4
-sd t3, 16(a5)
-xor t3, t4, t5
+xor a4, t0, t4
+xor ra, t4, t5
 xor s2, s7, s2
 xori s2, s2, -1
 xor s11, s1, s11
@@ -3004,121 +3004,114 @@ xori s7, s7, -1
 and t2, a7, t6
 and s9, t4, s3
 xor s9, s9, t2
-sd t4, 24(a5)
+sd t4, 0(a5)
 and t4, s6, s10
 xor t4, t4, t2
 and t2, s1, t1
-sd s1, 32(a5)
+sd s1, 8(a5)
 and s1, t5, s5
 xor s1, s1, t2
-sd t5, 40(a5)
-and t5, s8, s0
+sd t5, 16(a5)
+and t5, a0, s0
 xor t5, t5, t2
 and t2, s4, t0
-sd s4, 48(a5)
+sd s4, 24(a5)
 and s4, a6, s7
 xor s4, s4, t2
-sd a6, 56(a5)
-ld a6, 8(a5)
-sd s8, 64(a5)
-and s8, t3, a6
-xor s8, s8, t2
+sd a6, 32(a5)
+and a6, ra, t3
+xor a6, a6, t2
 xor s9, s9, s4
-xor t4, t4, s8
+xor t4, t4, a6
 xor s1, s1, s4
-xor t5, t5, s8
+xor t5, t5, a6
 xor s9, s9, s2
-ld s2, 0(a5)
-xor t4, t4, s2
-ld s2, 16(a5)
-xor s1, s1, s2
+xor t4, t4, s8
+xor s1, s1, a4
 xor t5, t5, s11
 xor s11, s9, t4
 and s9, s9, s1
-xor s2, t5, s9
-and s8, s11, s2
+xor a4, t5, s9
+and s8, s11, a4
 xor s8, s8, t4
-xor s4, s1, t5
+xor s2, s1, t5
 xor t4, t4, s9
-and t4, t4, s4
+and t4, t4, s2
 xor t4, t4, t5
 xor s1, s1, t4
-xor s4, s2, t4
-and t5, t5, s4
+xor s2, a4, t4
+and t5, t5, s2
 xor s1, t5, s1
-xor s2, s2, t5
-and s2, s8, s2
-xor s11, s11, s2
-xor s2, s11, s1
+xor a4, a4, t5
+and a4, s8, a4
+xor s11, s11, a4
+xor a4, s11, s1
 xor t5, s8, t4
-xor s4, s8, s11
+xor s2, s8, s11
 xor s9, t4, s1
-xor t2, t5, s2
+xor a6, t5, a4
 and t6, s9, t6
 and s3, s1, s3
 and s10, t4, s10
-and t1, s4, t1
+and t1, s2, t1
 and s5, s11, s5
 and s0, s8, s0
 and t0, t5, t0
-and s7, t2, s7
-and a6, s2, a6
+and s7, a6, s7
+and t3, a4, t3
 and s9, s9, a7
-ld a7, 24(a5)
+ld a7, 0(a5)
 and s1, s1, a7
 and t4, t4, s6
-ld s6, 32(a5)
-and s4, s4, s6
-ld s6, 40(a5)
+ld s6, 8(a5)
+and s2, s2, s6
+ld s6, 16(a5)
 and s11, s11, s6
-ld s6, 64(a5)
-and s8, s8, s6
-ld s6, 48(a5)
-and t5, t5, s6
-ld s6, 56(a5)
-and t2, t2, s6
-and s2, s2, t3
+and s8, s8, a0
+ld a0, 24(a5)
+and t5, t5, a0
+ld a0, 32(a5)
+and a6, a6, a0
+and a4, a4, ra
 xor s9, s9, t5
 xor t0, t0, s1
 xor s0, t6, s0
-xor t3, s11, t0
-xor s8, s8, t3
-xor a6, s3, a6
-xor t3, s7, s8
-xor s2, s2, s9
-xor s6, s5, s0
-xor a7, t3, s2
-sd s5, 56(a5)
-xor s5, t4, s6
-sd a7, 48(a5)
-xor a7, t2, a6
-xor s9, s9, a7
+xor ra, s11, t0
+xor s8, s8, ra
+xor t3, s3, t3
+xor ra, s7, s8
+xor a4, a4, s9
+xor a0, s5, s0
+xor s6, ra, a4
+xor a7, t4, a0
+xor s4, a6, t3
+xor s9, s9, s4
 xor s0, t1, s0
 xor s0, s9, s0
-xor t4, t4, s2
-xor s11, s11, t2
-xor s4, s4, t5
-xor t0, t0, s6
-xor a6, a6, s5
-xor s8, s8, a6
+xor t4, t4, a4
+xor s11, s11, a6
+xor s2, s2, t5
+xor t0, t0, a0
+xor t3, t3, a7
+xor s8, s8, t3
 xori s8, s8, -1
 xor s1, s1, s0
-xor s10, s10, t3
+xor s10, s10, ra
 xor s0, s7, s1
 xori s0, s0, -1
-xor s7, s11, s4
+xor s7, s11, s2
 xori s7, s7, -1
 xor t6, t6, s3
-ld s3, 48(a5)
-xor t1, t1, s3
-xor s3, s3, t6
-xor s6, s5, s10
-xori s6, s6, -1
-ld s10, 56(a5)
-xor s2, s10, t1
+xor t1, t1, s6
+xor s6, s6, t6
+xor a7, a7, s10
+xori a7, a7, -1
+xor s2, s5, t1
 xor s4, s9, t0
 xori s4, s4, -1
-addi s5, s3, 0
+sd s6, 32(a5)
+addi s6, a7, 0
+ld s5, 32(a5)
 addi s3, t4, 0
 addi s1, s8, 0
 srli a7, s3, 32
@@ -3282,8 +3275,7 @@ xori t6, t6, -1
 xor s10, t1, t3
 xor s11, s0, s8
 xor s8, t4, s8
-sd s8, 0(a5)
-xor s8, s1, t5
+xor a0, s1, t5
 xor s6, s6, s10
 xor s0, s0, t3
 xori s0, s0, -1
@@ -3291,10 +3283,8 @@ xor s10, s1, a7
 xor s3, s3, s9
 xori s3, s3, -1
 xor s4, t2, s4
-sd t3, 8(a5)
-xor t3, t0, t4
-sd t3, 16(a5)
-xor t3, t4, t5
+xor a4, t0, t4
+xor ra, t4, t5
 xor s2, s7, s2
 xori s2, s2, -1
 xor s11, s1, s11
@@ -3310,121 +3300,114 @@ xori s7, s7, -1
 and t2, a7, t6
 and s9, t4, s3
 xor s9, s9, t2
-sd t4, 24(a5)
+sd t4, 0(a5)
 and t4, s6, s10
 xor t4, t4, t2
 and t2, s1, t1
-sd s1, 32(a5)
+sd s1, 8(a5)
 and s1, t5, s5
 xor s1, s1, t2
-sd t5, 40(a5)
-and t5, s8, s0
+sd t5, 16(a5)
+and t5, a0, s0
 xor t5, t5, t2
 and t2, s4, t0
-sd s4, 48(a5)
+sd s4, 24(a5)
 and s4, a6, s7
 xor s4, s4, t2
-sd a6, 56(a5)
-ld a6, 8(a5)
-sd s8, 64(a5)
-and s8, t3, a6
-xor s8, s8, t2
+sd a6, 32(a5)
+and a6, ra, t3
+xor a6, a6, t2
 xor s9, s9, s4
-xor t4, t4, s8
+xor t4, t4, a6
 xor s1, s1, s4
-xor t5, t5, s8
+xor t5, t5, a6
 xor s9, s9, s2
-ld s2, 0(a5)
-xor t4, t4, s2
-ld s2, 16(a5)
-xor s1, s1, s2
+xor t4, t4, s8
+xor s1, s1, a4
 xor t5, t5, s11
 xor s11, s9, t4
 and s9, s9, s1
-xor s2, t5, s9
-and s8, s11, s2
+xor a4, t5, s9
+and s8, s11, a4
 xor s8, s8, t4
-xor s4, s1, t5
+xor s2, s1, t5
 xor t4, t4, s9
-and t4, t4, s4
+and t4, t4, s2
 xor t4, t4, t5
 xor s1, s1, t4
-xor s4, s2, t4
-and t5, t5, s4
+xor s2, a4, t4
+and t5, t5, s2
 xor s1, t5, s1
-xor s2, s2, t5
-and s2, s8, s2
-xor s11, s11, s2
-xor s2, s11, s1
+xor a4, a4, t5
+and a4, s8, a4
+xor s11, s11, a4
+xor a4, s11, s1
 xor t5, s8, t4
-xor s4, s8, s11
+xor s2, s8, s11
 xor s9, t4, s1
-xor t2, t5, s2
+xor a6, t5, a4
 and t6, s9, t6
 and s3, s1, s3
 and s10, t4, s10
-and t1, s4, t1
+and t1, s2, t1
 and s5, s11, s5
 and s0, s8, s0
 and t0, t5, t0
-and s7, t2, s7
-and a6, s2, a6
+and s7, a6, s7
+and t3, a4, t3
 and s9, s9, a7
-ld a7, 24(a5)
+ld a7, 0(a5)
 and s1, s1, a7
 and t4, t4, s6
-ld s6, 32(a5)
-and s4, s4, s6
-ld s6, 40(a5)
+ld s6, 8(a5)
+and s2, s2, s6
+ld s6, 16(a5)
 and s11, s11, s6
-ld s6, 64(a5)
-and s8, s8, s6
-ld s6, 48(a5)
-and t5, t5, s6
-ld s6, 56(a5)
-and t2, t2, s6
-and s2, s2, t3
+and s8, s8, a0
+ld a0, 24(a5)
+and t5, t5, a0
+ld a0, 32(a5)
+and a6, a6, a0
+and a4, a4, ra
 xor s9, s9, t5
 xor t0, t0, s1
 xor s0, t6, s0
-xor t3, s11, t0
-xor s8, s8, t3
-xor a6, s3, a6
-xor t3, s7, s8
-xor s2, s2, s9
-xor s6, s5, s0
-xor a7, t3, s2
-sd s5, 56(a5)
-xor s5, t4, s6
-sd a7, 48(a5)
-xor a7, t2, a6
-xor s9, s9, a7
+xor ra, s11, t0
+xor s8, s8, ra
+xor t3, s3, t3
+xor ra, s7, s8
+xor a4, a4, s9
+xor a0, s5, s0
+xor s6, ra, a4
+xor a7, t4, a0
+xor s4, a6, t3
+xor s9, s9, s4
 xor s0, t1, s0
 xor s0, s9, s0
-xor t4, t4, s2
-xor s11, s11, t2
-xor s4, s4, t5
-xor t0, t0, s6
-xor a6, a6, s5
-xor s8, s8, a6
+xor t4, t4, a4
+xor s11, s11, a6
+xor s2, s2, t5
+xor t0, t0, a0
+xor t3, t3, a7
+xor s8, s8, t3
 xori s8, s8, -1
 xor s1, s1, s0
-xor s10, s10, t3
+xor s10, s10, ra
 xor s0, s7, s1
 xori s0, s0, -1
-xor s7, s11, s4
+xor s7, s11, s2
 xori s7, s7, -1
 xor t6, t6, s3
-ld s3, 48(a5)
-xor t1, t1, s3
-xor s3, s3, t6
-xor s6, s5, s10
-xori s6, s6, -1
-ld s10, 56(a5)
-xor s2, s10, t1
+xor t1, t1, s6
+xor s6, s6, t6
+xor a7, a7, s10
+xori a7, a7, -1
+xor s2, s5, t1
 xor s4, s9, t0
 xori s4, s4, -1
-addi s5, s3, 0
+sd s6, 32(a5)
+addi s6, a7, 0
+ld s5, 32(a5)
 addi s3, t4, 0
 addi s1, s8, 0
 srli a7, s3, 32
@@ -3588,8 +3571,7 @@ xori t6, t6, -1
 xor s10, t1, t3
 xor s11, s0, s8
 xor s8, t4, s8
-sd s8, 0(a5)
-xor s8, s1, t5
+xor a0, s1, t5
 xor s6, s6, s10
 xor s0, s0, t3
 xori s0, s0, -1
@@ -3597,10 +3579,8 @@ xor s10, s1, a7
 xor s3, s3, s9
 xori s3, s3, -1
 xor s4, t2, s4
-sd t3, 8(a5)
-xor t3, t0, t4
-sd t3, 16(a5)
-xor t3, t4, t5
+xor a4, t0, t4
+xor ra, t4, t5
 xor s2, s7, s2
 xori s2, s2, -1
 xor s11, s1, s11
@@ -3616,121 +3596,114 @@ xori s7, s7, -1
 and t2, a7, t6
 and s9, t4, s3
 xor s9, s9, t2
-sd t4, 24(a5)
+sd t4, 0(a5)
 and t4, s6, s10
 xor t4, t4, t2
 and t2, s1, t1
-sd s1, 32(a5)
+sd s1, 8(a5)
 and s1, t5, s5
 xor s1, s1, t2
-sd t5, 40(a5)
-and t5, s8, s0
+sd t5, 16(a5)
+and t5, a0, s0
 xor t5, t5, t2
 and t2, s4, t0
-sd s4, 48(a5)
+sd s4, 24(a5)
 and s4, a6, s7
 xor s4, s4, t2
-sd a6, 56(a5)
-ld a6, 8(a5)
-sd s8, 64(a5)
-and s8, t3, a6
-xor s8, s8, t2
+sd a6, 32(a5)
+and a6, ra, t3
+xor a6, a6, t2
 xor s9, s9, s4
-xor t4, t4, s8
+xor t4, t4, a6
 xor s1, s1, s4
-xor t5, t5, s8
+xor t5, t5, a6
 xor s9, s9, s2
-ld s2, 0(a5)
-xor t4, t4, s2
-ld s2, 16(a5)
-xor s1, s1, s2
+xor t4, t4, s8
+xor s1, s1, a4
 xor t5, t5, s11
 xor s11, s9, t4
 and s9, s9, s1
-xor s2, t5, s9
-and s8, s11, s2
+xor a4, t5, s9
+and s8, s11, a4
 xor s8, s8, t4
-xor s4, s1, t5
+xor s2, s1, t5
 xor t4, t4, s9
-and t4, t4, s4
+and t4, t4, s2
 xor t4, t4, t5
 xor s1, s1, t4
-xor s4, s2, t4
-and t5, t5, s4
+xor s2, a4, t4
+and t5, t5, s2
 xor s1, t5, s1
-xor s2, s2, t5
-and s2, s8, s2
-xor s11, s11, s2
-xor s2, s11, s1
+xor a4, a4, t5
+and a4, s8, a4
+xor s11, s11, a4
+xor a4, s11, s1
 xor t5, s8, t4
-xor s4, s8, s11
+xor s2, s8, s11
 xor s9, t4, s1
-xor t2, t5, s2
+xor a6, t5, a4
 and t6, s9, t6
 and s3, s1, s3
 and s10, t4, s10
-and t1, s4, t1
+and t1, s2, t1
 and s5, s11, s5
 and s0, s8, s0
 and t0, t5, t0
-and s7, t2, s7
-and a6, s2, a6
+and s7, a6, s7
+and t3, a4, t3
 and s9, s9, a7
-ld a7, 24(a5)
+ld a7, 0(a5)
 and s1, s1, a7
 and t4, t4, s6
-ld s6, 32(a5)
-and s4, s4, s6
-ld s6, 40(a5)
+ld s6, 8(a5)
+and s2, s2, s6
+ld s6, 16(a5)
 and s11, s11, s6
-ld s6, 64(a5)
-and s8, s8, s6
-ld s6, 48(a5)
-and t5, t5, s6
-ld s6, 56(a5)
-and t2, t2, s6
-and s2, s2, t3
+and s8, s8, a0
+ld a0, 24(a5)
+and t5, t5, a0
+ld a0, 32(a5)
+and a6, a6, a0
+and a4, a4, ra
 xor s9, s9, t5
 xor t0, t0, s1
 xor s0, t6, s0
-xor t3, s11, t0
-xor s8, s8, t3
-xor a6, s3, a6
-xor t3, s7, s8
-xor s2, s2, s9
-xor s6, s5, s0
-xor a7, t3, s2
-sd s5, 56(a5)
-xor s5, t4, s6
-sd a7, 48(a5)
-xor a7, t2, a6
-xor s9, s9, a7
+xor ra, s11, t0
+xor s8, s8, ra
+xor t3, s3, t3
+xor ra, s7, s8
+xor a4, a4, s9
+xor a0, s5, s0
+xor s6, ra, a4
+xor a7, t4, a0
+xor s4, a6, t3
+xor s9, s9, s4
 xor s0, t1, s0
 xor s0, s9, s0
-xor t4, t4, s2
-xor s11, s11, t2
-xor s4, s4, t5
-xor t0, t0, s6
-xor a6, a6, s5
-xor s8, s8, a6
+xor t4, t4, a4
+xor s11, s11, a6
+xor s2, s2, t5
+xor t0, t0, a0
+xor t3, t3, a7
+xor s8, s8, t3
 xori s8, s8, -1
 xor s1, s1, s0
-xor s10, s10, t3
+xor s10, s10, ra
 xor s0, s7, s1
 xori s0, s0, -1
-xor s7, s11, s4
+xor s7, s11, s2
 xori s7, s7, -1
 xor t6, t6, s3
-ld s3, 48(a5)
-xor t1, t1, s3
-xor s3, s3, t6
-xor s6, s5, s10
-xori s6, s6, -1
-ld s10, 56(a5)
-xor s2, s10, t1
+xor t1, t1, s6
+xor s6, s6, t6
+xor a7, a7, s10
+xori a7, a7, -1
+xor s2, s5, t1
 xor s4, s9, t0
 xori s4, s4, -1
-addi s5, s3, 0
+sd s6, 32(a5)
+addi s6, a7, 0
+ld s5, 32(a5)
 addi s3, t4, 0
 addi s1, s8, 0
 srli a7, s3, 32
@@ -3894,8 +3867,7 @@ xori t6, t6, -1
 xor s10, t1, t3
 xor s11, s0, s8
 xor s8, t4, s8
-sd s8, 0(a5)
-xor s8, s1, t5
+xor a0, s1, t5
 xor s6, s6, s10
 xor s0, s0, t3
 xori s0, s0, -1
@@ -3903,10 +3875,8 @@ xor s10, s1, a7
 xor s3, s3, s9
 xori s3, s3, -1
 xor s4, t2, s4
-sd t3, 8(a5)
-xor t3, t0, t4
-sd t3, 16(a5)
-xor t3, t4, t5
+xor a4, t0, t4
+xor ra, t4, t5
 xor s2, s7, s2
 xori s2, s2, -1
 xor s11, s1, s11
@@ -3922,121 +3892,114 @@ xori s7, s7, -1
 and t2, a7, t6
 and s9, t4, s3
 xor s9, s9, t2
-sd t4, 24(a5)
+sd t4, 0(a5)
 and t4, s6, s10
 xor t4, t4, t2
 and t2, s1, t1
-sd s1, 32(a5)
+sd s1, 8(a5)
 and s1, t5, s5
 xor s1, s1, t2
-sd t5, 40(a5)
-and t5, s8, s0
+sd t5, 16(a5)
+and t5, a0, s0
 xor t5, t5, t2
 and t2, s4, t0
-sd s4, 48(a5)
+sd s4, 24(a5)
 and s4, a6, s7
 xor s4, s4, t2
-sd a6, 56(a5)
-ld a6, 8(a5)
-sd s8, 64(a5)
-and s8, t3, a6
-xor s8, s8, t2
+sd a6, 32(a5)
+and a6, ra, t3
+xor a6, a6, t2
 xor s9, s9, s4
-xor t4, t4, s8
+xor t4, t4, a6
 xor s1, s1, s4
-xor t5, t5, s8
+xor t5, t5, a6
 xor s9, s9, s2
-ld s2, 0(a5)
-xor t4, t4, s2
-ld s2, 16(a5)
-xor s1, s1, s2
+xor t4, t4, s8
+xor s1, s1, a4
 xor t5, t5, s11
 xor s11, s9, t4
 and s9, s9, s1
-xor s2, t5, s9
-and s8, s11, s2
+xor a4, t5, s9
+and s8, s11, a4
 xor s8, s8, t4
-xor s4, s1, t5
+xor s2, s1, t5
 xor t4, t4, s9
-and t4, t4, s4
+and t4, t4, s2
 xor t4, t4, t5
 xor s1, s1, t4
-xor s4, s2, t4
-and t5, t5, s4
+xor s2, a4, t4
+and t5, t5, s2
 xor s1, t5, s1
-xor s2, s2, t5
-and s2, s8, s2
-xor s11, s11, s2
-xor s2, s11, s1
+xor a4, a4, t5
+and a4, s8, a4
+xor s11, s11, a4
+xor a4, s11, s1
 xor t5, s8, t4
-xor s4, s8, s11
+xor s2, s8, s11
 xor s9, t4, s1
-xor t2, t5, s2
+xor a6, t5, a4
 and t6, s9, t6
 and s3, s1, s3
 and s10, t4, s10
-and t1, s4, t1
+and t1, s2, t1
 and s5, s11, s5
 and s0, s8, s0
 and t0, t5, t0
-and s7, t2, s7
-and a6, s2, a6
+and s7, a6, s7
+and t3, a4, t3
 and s9, s9, a7
-ld a7, 24(a5)
+ld a7, 0(a5)
 and s1, s1, a7
 and t4, t4, s6
-ld s6, 32(a5)
-and s4, s4, s6
-ld s6, 40(a5)
+ld s6, 8(a5)
+and s2, s2, s6
+ld s6, 16(a5)
 and s11, s11, s6
-ld s6, 64(a5)
-and s8, s8, s6
-ld s6, 48(a5)
-and t5, t5, s6
-ld s6, 56(a5)
-and t2, t2, s6
-and s2, s2, t3
+and s8, s8, a0
+ld a0, 24(a5)
+and t5, t5, a0
+ld a0, 32(a5)
+and a6, a6, a0
+and a4, a4, ra
 xor s9, s9, t5
 xor t0, t0, s1
 xor s0, t6, s0
-xor t3, s11, t0
-xor s8, s8, t3
-xor a6, s3, a6
-xor t3, s7, s8
-xor s2, s2, s9
-xor s6, s5, s0
-xor a7, t3, s2
-sd s5, 56(a5)
-xor s5, t4, s6
-sd a7, 48(a5)
-xor a7, t2, a6
-xor s9, s9, a7
+xor ra, s11, t0
+xor s8, s8, ra
+xor t3, s3, t3
+xor ra, s7, s8
+xor a4, a4, s9
+xor a0, s5, s0
+xor s6, ra, a4
+xor a7, t4, a0
+xor s4, a6, t3
+xor s9, s9, s4
 xor s0, t1, s0
 xor s0, s9, s0
-xor t4, t4, s2
-xor s11, s11, t2
-xor s4, s4, t5
-xor t0, t0, s6
-xor a6, a6, s5
-xor s8, s8, a6
+xor t4, t4, a4
+xor s11, s11, a6
+xor s2, s2, t5
+xor t0, t0, a0
+xor t3, t3, a7
+xor s8, s8, t3
 xori s8, s8, -1
 xor s1, s1, s0
-xor s10, s10, t3
+xor s10, s10, ra
 xor s0, s7, s1
 xori s0, s0, -1
-xor s7, s11, s4
+xor s7, s11, s2
 xori s7, s7, -1
 xor t6, t6, s3
-ld s3, 48(a5)
-xor t1, t1, s3
-xor s3, s3, t6
-xor s6, s5, s10
-xori s6, s6, -1
-ld s10, 56(a5)
-xor s2, s10, t1
+xor t1, t1, s6
+xor s6, s6, t6
+xor a7, a7, s10
+xori a7, a7, -1
+xor s2, s5, t1
 xor s4, s9, t0
 xori s4, s4, -1
-addi s5, s3, 0
+sd s6, 32(a5)
+addi s6, a7, 0
+ld s5, 32(a5)
 addi s3, t4, 0
 addi s1, s8, 0
 srli a7, s3, 32
@@ -4127,6 +4090,9 @@ xor t0, t0, t1
 ld t1, 760(a5)
 xor t0, t0, t1
 sd t0, 760(a5)
+addi t0, a5, 2040
+addi t0, t0, 1128
+ld ra, 0(t0)
 addi a3, a3, 256
 ld t3, 360(a5)
 ld t4, 368(a5)
@@ -5065,6 +5031,8 @@ sb t1, 14(a1)
 srli t1, t0, 0
 sb t1, 15(a1)
 addi a1, a1, 16
+addi a4, a5, 2040
+addi a4, a4, 1032
 sub t0, a3, a4
 bnez t0, 20b
 addi t0, a5, 2040
@@ -5481,7 +5449,8 @@ sd t6, 1088(t5)
 sd t6, 1096(t5)
 sd t6, 1104(t5)
 sd t6, 1112(t5)
-addi sp, sp, 1136
+sd t6, 1120(t5)
+addi sp, sp, 1152
 addi sp, sp, 2032
 ret
 .option pop",
@@ -5492,21 +5461,21 @@ ret
 ///
 /// Contract: `VG.Spec.Sm4.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
 ///
-/// Sixteen blocks at a time, bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups; the blocks and the schedule are copied a byte at a time. Each round key's planes are made from its word: its bytes spread to the planes' 16-bit groups, then each bit of a group filled to the group by doubling. The working space (3168 bytes, our caller's s0-s11 among them) is on the stack, zeroed before returning.
+/// Sixteen blocks at a time, bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups; the blocks and the schedule are copied a byte at a time. Each round key's planes are made from its word: its bytes spread to the planes' 16-bit groups, then each bit of a group filled to the group by doubling. The working space (3184 bytes, our caller's s0-s11 among them) is on the stack, zeroed before returning.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the 3168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `schedule` nor `data` may overlap the 3184 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_ecb_encrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m
 addi sp, sp, -2032
-addi sp, sp, -1136
+addi sp, sp, -1152
 addi a3, sp, 0
 addi a5, a3, 0
 addi t0, a5, 2040
@@ -10179,6 +10148,9 @@ sd s4, 736(a5)
 sd s5, 744(a5)
 sd s6, 752(a5)
 sd s7, 760(a5)
+addi t0, a5, 2040
+addi t0, t0, 1128
+sd ra, 0(t0)
 addi a3, a5, 1024
 213:
 ld s0, 576(a5)
@@ -10254,8 +10226,7 @@ xori t6, t6, -1
 xor s10, t1, t3
 xor s11, s0, s8
 xor s8, t4, s8
-sd s8, 0(a5)
-xor s8, s1, t5
+xor a0, s1, t5
 xor s6, s6, s10
 xor s0, s0, t3
 xori s0, s0, -1
@@ -10263,10 +10234,8 @@ xor s10, s1, a7
 xor s3, s3, s9
 xori s3, s3, -1
 xor s4, t2, s4
-sd t3, 8(a5)
-xor t3, t0, t4
-sd t3, 16(a5)
-xor t3, t4, t5
+xor a4, t0, t4
+xor ra, t4, t5
 xor s2, s7, s2
 xori s2, s2, -1
 xor s11, s1, s11
@@ -10282,121 +10251,114 @@ xori s7, s7, -1
 and t2, a7, t6
 and s9, t4, s3
 xor s9, s9, t2
-sd t4, 24(a5)
+sd t4, 0(a5)
 and t4, s6, s10
 xor t4, t4, t2
 and t2, s1, t1
-sd s1, 32(a5)
+sd s1, 8(a5)
 and s1, t5, s5
 xor s1, s1, t2
-sd t5, 40(a5)
-and t5, s8, s0
+sd t5, 16(a5)
+and t5, a0, s0
 xor t5, t5, t2
 and t2, s4, t0
-sd s4, 48(a5)
+sd s4, 24(a5)
 and s4, a6, s7
 xor s4, s4, t2
-sd a6, 56(a5)
-ld a6, 8(a5)
-sd s8, 64(a5)
-and s8, t3, a6
-xor s8, s8, t2
+sd a6, 32(a5)
+and a6, ra, t3
+xor a6, a6, t2
 xor s9, s9, s4
-xor t4, t4, s8
+xor t4, t4, a6
 xor s1, s1, s4
-xor t5, t5, s8
+xor t5, t5, a6
 xor s9, s9, s2
-ld s2, 0(a5)
-xor t4, t4, s2
-ld s2, 16(a5)
-xor s1, s1, s2
+xor t4, t4, s8
+xor s1, s1, a4
 xor t5, t5, s11
 xor s11, s9, t4
 and s9, s9, s1
-xor s2, t5, s9
-and s8, s11, s2
+xor a4, t5, s9
+and s8, s11, a4
 xor s8, s8, t4
-xor s4, s1, t5
+xor s2, s1, t5
 xor t4, t4, s9
-and t4, t4, s4
+and t4, t4, s2
 xor t4, t4, t5
 xor s1, s1, t4
-xor s4, s2, t4
-and t5, t5, s4
+xor s2, a4, t4
+and t5, t5, s2
 xor s1, t5, s1
-xor s2, s2, t5
-and s2, s8, s2
-xor s11, s11, s2
-xor s2, s11, s1
+xor a4, a4, t5
+and a4, s8, a4
+xor s11, s11, a4
+xor a4, s11, s1
 xor t5, s8, t4
-xor s4, s8, s11
+xor s2, s8, s11
 xor s9, t4, s1
-xor t2, t5, s2
+xor a6, t5, a4
 and t6, s9, t6
 and s3, s1, s3
 and s10, t4, s10
-and t1, s4, t1
+and t1, s2, t1
 and s5, s11, s5
 and s0, s8, s0
 and t0, t5, t0
-and s7, t2, s7
-and a6, s2, a6
+and s7, a6, s7
+and t3, a4, t3
 and s9, s9, a7
-ld a7, 24(a5)
+ld a7, 0(a5)
 and s1, s1, a7
 and t4, t4, s6
-ld s6, 32(a5)
-and s4, s4, s6
-ld s6, 40(a5)
+ld s6, 8(a5)
+and s2, s2, s6
+ld s6, 16(a5)
 and s11, s11, s6
-ld s6, 64(a5)
-and s8, s8, s6
-ld s6, 48(a5)
-and t5, t5, s6
-ld s6, 56(a5)
-and t2, t2, s6
-and s2, s2, t3
+and s8, s8, a0
+ld a0, 24(a5)
+and t5, t5, a0
+ld a0, 32(a5)
+and a6, a6, a0
+and a4, a4, ra
 xor s9, s9, t5
 xor t0, t0, s1
 xor s0, t6, s0
-xor t3, s11, t0
-xor s8, s8, t3
-xor a6, s3, a6
-xor t3, s7, s8
-xor s2, s2, s9
-xor s6, s5, s0
-xor a7, t3, s2
-sd s5, 56(a5)
-xor s5, t4, s6
-sd a7, 48(a5)
-xor a7, t2, a6
-xor s9, s9, a7
+xor ra, s11, t0
+xor s8, s8, ra
+xor t3, s3, t3
+xor ra, s7, s8
+xor a4, a4, s9
+xor a0, s5, s0
+xor s6, ra, a4
+xor a7, t4, a0
+xor s4, a6, t3
+xor s9, s9, s4
 xor s0, t1, s0
 xor s0, s9, s0
-xor t4, t4, s2
-xor s11, s11, t2
-xor s4, s4, t5
-xor t0, t0, s6
-xor a6, a6, s5
-xor s8, s8, a6
+xor t4, t4, a4
+xor s11, s11, a6
+xor s2, s2, t5
+xor t0, t0, a0
+xor t3, t3, a7
+xor s8, s8, t3
 xori s8, s8, -1
 xor s1, s1, s0
-xor s10, s10, t3
+xor s10, s10, ra
 xor s0, s7, s1
 xori s0, s0, -1
-xor s7, s11, s4
+xor s7, s11, s2
 xori s7, s7, -1
 xor t6, t6, s3
-ld s3, 48(a5)
-xor t1, t1, s3
-xor s3, s3, t6
-xor s6, s5, s10
-xori s6, s6, -1
-ld s10, 56(a5)
-xor s2, s10, t1
+xor t1, t1, s6
+xor s6, s6, t6
+xor a7, a7, s10
+xori a7, a7, -1
+xor s2, s5, t1
 xor s4, s9, t0
 xori s4, s4, -1
-addi s5, s3, 0
+sd s6, 32(a5)
+addi s6, a7, 0
+ld s5, 32(a5)
 addi s3, t4, 0
 addi s1, s8, 0
 srli a7, s6, 16
@@ -10606,8 +10568,7 @@ xori t6, t6, -1
 xor s10, t1, t3
 xor s11, s0, s8
 xor s8, t4, s8
-sd s8, 0(a5)
-xor s8, s1, t5
+xor a0, s1, t5
 xor s6, s6, s10
 xor s0, s0, t3
 xori s0, s0, -1
@@ -10615,10 +10576,8 @@ xor s10, s1, a7
 xor s3, s3, s9
 xori s3, s3, -1
 xor s4, t2, s4
-sd t3, 8(a5)
-xor t3, t0, t4
-sd t3, 16(a5)
-xor t3, t4, t5
+xor a4, t0, t4
+xor ra, t4, t5
 xor s2, s7, s2
 xori s2, s2, -1
 xor s11, s1, s11
@@ -10634,121 +10593,114 @@ xori s7, s7, -1
 and t2, a7, t6
 and s9, t4, s3
 xor s9, s9, t2
-sd t4, 24(a5)
+sd t4, 0(a5)
 and t4, s6, s10
 xor t4, t4, t2
 and t2, s1, t1
-sd s1, 32(a5)
+sd s1, 8(a5)
 and s1, t5, s5
 xor s1, s1, t2
-sd t5, 40(a5)
-and t5, s8, s0
+sd t5, 16(a5)
+and t5, a0, s0
 xor t5, t5, t2
 and t2, s4, t0
-sd s4, 48(a5)
+sd s4, 24(a5)
 and s4, a6, s7
 xor s4, s4, t2
-sd a6, 56(a5)
-ld a6, 8(a5)
-sd s8, 64(a5)
-and s8, t3, a6
-xor s8, s8, t2
+sd a6, 32(a5)
+and a6, ra, t3
+xor a6, a6, t2
 xor s9, s9, s4
-xor t4, t4, s8
+xor t4, t4, a6
 xor s1, s1, s4
-xor t5, t5, s8
+xor t5, t5, a6
 xor s9, s9, s2
-ld s2, 0(a5)
-xor t4, t4, s2
-ld s2, 16(a5)
-xor s1, s1, s2
+xor t4, t4, s8
+xor s1, s1, a4
 xor t5, t5, s11
 xor s11, s9, t4
 and s9, s9, s1
-xor s2, t5, s9
-and s8, s11, s2
+xor a4, t5, s9
+and s8, s11, a4
 xor s8, s8, t4
-xor s4, s1, t5
+xor s2, s1, t5
 xor t4, t4, s9
-and t4, t4, s4
+and t4, t4, s2
 xor t4, t4, t5
 xor s1, s1, t4
-xor s4, s2, t4
-and t5, t5, s4
+xor s2, a4, t4
+and t5, t5, s2
 xor s1, t5, s1
-xor s2, s2, t5
-and s2, s8, s2
-xor s11, s11, s2
-xor s2, s11, s1
+xor a4, a4, t5
+and a4, s8, a4
+xor s11, s11, a4
+xor a4, s11, s1
 xor t5, s8, t4
-xor s4, s8, s11
+xor s2, s8, s11
 xor s9, t4, s1
-xor t2, t5, s2
+xor a6, t5, a4
 and t6, s9, t6
 and s3, s1, s3
 and s10, t4, s10
-and t1, s4, t1
+and t1, s2, t1
 and s5, s11, s5
 and s0, s8, s0
 and t0, t5, t0
-and s7, t2, s7
-and a6, s2, a6
+and s7, a6, s7
+and t3, a4, t3
 and s9, s9, a7
-ld a7, 24(a5)
+ld a7, 0(a5)
 and s1, s1, a7
 and t4, t4, s6
-ld s6, 32(a5)
-and s4, s4, s6
-ld s6, 40(a5)
+ld s6, 8(a5)
+and s2, s2, s6
+ld s6, 16(a5)
 and s11, s11, s6
-ld s6, 64(a5)
-and s8, s8, s6
-ld s6, 48(a5)
-and t5, t5, s6
-ld s6, 56(a5)
-and t2, t2, s6
-and s2, s2, t3
+and s8, s8, a0
+ld a0, 24(a5)
+and t5, t5, a0
+ld a0, 32(a5)
+and a6, a6, a0
+and a4, a4, ra
 xor s9, s9, t5
 xor t0, t0, s1
 xor s0, t6, s0
-xor t3, s11, t0
-xor s8, s8, t3
-xor a6, s3, a6
-xor t3, s7, s8
-xor s2, s2, s9
-xor s6, s5, s0
-xor a7, t3, s2
-sd s5, 56(a5)
-xor s5, t4, s6
-sd a7, 48(a5)
-xor a7, t2, a6
-xor s9, s9, a7
+xor ra, s11, t0
+xor s8, s8, ra
+xor t3, s3, t3
+xor ra, s7, s8
+xor a4, a4, s9
+xor a0, s5, s0
+xor s6, ra, a4
+xor a7, t4, a0
+xor s4, a6, t3
+xor s9, s9, s4
 xor s0, t1, s0
 xor s0, s9, s0
-xor t4, t4, s2
-xor s11, s11, t2
-xor s4, s4, t5
-xor t0, t0, s6
-xor a6, a6, s5
-xor s8, s8, a6
+xor t4, t4, a4
+xor s11, s11, a6
+xor s2, s2, t5
+xor t0, t0, a0
+xor t3, t3, a7
+xor s8, s8, t3
 xori s8, s8, -1
 xor s1, s1, s0
-xor s10, s10, t3
+xor s10, s10, ra
 xor s0, s7, s1
 xori s0, s0, -1
-xor s7, s11, s4
+xor s7, s11, s2
 xori s7, s7, -1
 xor t6, t6, s3
-ld s3, 48(a5)
-xor t1, t1, s3
-xor s3, s3, t6
-xor s6, s5, s10
-xori s6, s6, -1
-ld s10, 56(a5)
-xor s2, s10, t1
+xor t1, t1, s6
+xor s6, s6, t6
+xor a7, a7, s10
+xori a7, a7, -1
+xor s2, s5, t1
 xor s4, s9, t0
 xori s4, s4, -1
-addi s5, s3, 0
+sd s6, 32(a5)
+addi s6, a7, 0
+ld s5, 32(a5)
 addi s3, t4, 0
 addi s1, s8, 0
 srli a7, s6, 16
@@ -10958,8 +10910,7 @@ xori t6, t6, -1
 xor s10, t1, t3
 xor s11, s0, s8
 xor s8, t4, s8
-sd s8, 0(a5)
-xor s8, s1, t5
+xor a0, s1, t5
 xor s6, s6, s10
 xor s0, s0, t3
 xori s0, s0, -1
@@ -10967,10 +10918,8 @@ xor s10, s1, a7
 xor s3, s3, s9
 xori s3, s3, -1
 xor s4, t2, s4
-sd t3, 8(a5)
-xor t3, t0, t4
-sd t3, 16(a5)
-xor t3, t4, t5
+xor a4, t0, t4
+xor ra, t4, t5
 xor s2, s7, s2
 xori s2, s2, -1
 xor s11, s1, s11
@@ -10986,121 +10935,114 @@ xori s7, s7, -1
 and t2, a7, t6
 and s9, t4, s3
 xor s9, s9, t2
-sd t4, 24(a5)
+sd t4, 0(a5)
 and t4, s6, s10
 xor t4, t4, t2
 and t2, s1, t1
-sd s1, 32(a5)
+sd s1, 8(a5)
 and s1, t5, s5
 xor s1, s1, t2
-sd t5, 40(a5)
-and t5, s8, s0
+sd t5, 16(a5)
+and t5, a0, s0
 xor t5, t5, t2
 and t2, s4, t0
-sd s4, 48(a5)
+sd s4, 24(a5)
 and s4, a6, s7
 xor s4, s4, t2
-sd a6, 56(a5)
-ld a6, 8(a5)
-sd s8, 64(a5)
-and s8, t3, a6
-xor s8, s8, t2
+sd a6, 32(a5)
+and a6, ra, t3
+xor a6, a6, t2
 xor s9, s9, s4
-xor t4, t4, s8
+xor t4, t4, a6
 xor s1, s1, s4
-xor t5, t5, s8
+xor t5, t5, a6
 xor s9, s9, s2
-ld s2, 0(a5)
-xor t4, t4, s2
-ld s2, 16(a5)
-xor s1, s1, s2
+xor t4, t4, s8
+xor s1, s1, a4
 xor t5, t5, s11
 xor s11, s9, t4
 and s9, s9, s1
-xor s2, t5, s9
-and s8, s11, s2
+xor a4, t5, s9
+and s8, s11, a4
 xor s8, s8, t4
-xor s4, s1, t5
+xor s2, s1, t5
 xor t4, t4, s9
-and t4, t4, s4
+and t4, t4, s2
 xor t4, t4, t5
 xor s1, s1, t4
-xor s4, s2, t4
-and t5, t5, s4
+xor s2, a4, t4
+and t5, t5, s2
 xor s1, t5, s1
-xor s2, s2, t5
-and s2, s8, s2
-xor s11, s11, s2
-xor s2, s11, s1
+xor a4, a4, t5
+and a4, s8, a4
+xor s11, s11, a4
+xor a4, s11, s1
 xor t5, s8, t4
-xor s4, s8, s11
+xor s2, s8, s11
 xor s9, t4, s1
-xor t2, t5, s2
+xor a6, t5, a4
 and t6, s9, t6
 and s3, s1, s3
 and s10, t4, s10
-and t1, s4, t1
+and t1, s2, t1
 and s5, s11, s5
 and s0, s8, s0
 and t0, t5, t0
-and s7, t2, s7
-and a6, s2, a6
+and s7, a6, s7
+and t3, a4, t3
 and s9, s9, a7
-ld a7, 24(a5)
+ld a7, 0(a5)
 and s1, s1, a7
 and t4, t4, s6
-ld s6, 32(a5)
-and s4, s4, s6
-ld s6, 40(a5)
+ld s6, 8(a5)
+and s2, s2, s6
+ld s6, 16(a5)
 and s11, s11, s6
-ld s6, 64(a5)
-and s8, s8, s6
-ld s6, 48(a5)
-and t5, t5, s6
-ld s6, 56(a5)
-and t2, t2, s6
-and s2, s2, t3
+and s8, s8, a0
+ld a0, 24(a5)
+and t5, t5, a0
+ld a0, 32(a5)
+and a6, a6, a0
+and a4, a4, ra
 xor s9, s9, t5
 xor t0, t0, s1
 xor s0, t6, s0
-xor t3, s11, t0
-xor s8, s8, t3
-xor a6, s3, a6
-xor t3, s7, s8
-xor s2, s2, s9
-xor s6, s5, s0
-xor a7, t3, s2
-sd s5, 56(a5)
-xor s5, t4, s6
-sd a7, 48(a5)
-xor a7, t2, a6
-xor s9, s9, a7
+xor ra, s11, t0
+xor s8, s8, ra
+xor t3, s3, t3
+xor ra, s7, s8
+xor a4, a4, s9
+xor a0, s5, s0
+xor s6, ra, a4
+xor a7, t4, a0
+xor s4, a6, t3
+xor s9, s9, s4
 xor s0, t1, s0
 xor s0, s9, s0
-xor t4, t4, s2
-xor s11, s11, t2
-xor s4, s4, t5
-xor t0, t0, s6
-xor a6, a6, s5
-xor s8, s8, a6
+xor t4, t4, a4
+xor s11, s11, a6
+xor s2, s2, t5
+xor t0, t0, a0
+xor t3, t3, a7
+xor s8, s8, t3
 xori s8, s8, -1
 xor s1, s1, s0
-xor s10, s10, t3
+xor s10, s10, ra
 xor s0, s7, s1
 xori s0, s0, -1
-xor s7, s11, s4
+xor s7, s11, s2
 xori s7, s7, -1
 xor t6, t6, s3
-ld s3, 48(a5)
-xor t1, t1, s3
-xor s3, s3, t6
-xor s6, s5, s10
-xori s6, s6, -1
-ld s10, 56(a5)
-xor s2, s10, t1
+xor t1, t1, s6
+xor s6, s6, t6
+xor a7, a7, s10
+xori a7, a7, -1
+xor s2, s5, t1
 xor s4, s9, t0
 xori s4, s4, -1
-addi s5, s3, 0
+sd s6, 32(a5)
+addi s6, a7, 0
+ld s5, 32(a5)
 addi s3, t4, 0
 addi s1, s8, 0
 srli a7, s6, 16
@@ -11310,8 +11252,7 @@ xori t6, t6, -1
 xor s10, t1, t3
 xor s11, s0, s8
 xor s8, t4, s8
-sd s8, 0(a5)
-xor s8, s1, t5
+xor a0, s1, t5
 xor s6, s6, s10
 xor s0, s0, t3
 xori s0, s0, -1
@@ -11319,10 +11260,8 @@ xor s10, s1, a7
 xor s3, s3, s9
 xori s3, s3, -1
 xor s4, t2, s4
-sd t3, 8(a5)
-xor t3, t0, t4
-sd t3, 16(a5)
-xor t3, t4, t5
+xor a4, t0, t4
+xor ra, t4, t5
 xor s2, s7, s2
 xori s2, s2, -1
 xor s11, s1, s11
@@ -11338,121 +11277,114 @@ xori s7, s7, -1
 and t2, a7, t6
 and s9, t4, s3
 xor s9, s9, t2
-sd t4, 24(a5)
+sd t4, 0(a5)
 and t4, s6, s10
 xor t4, t4, t2
 and t2, s1, t1
-sd s1, 32(a5)
+sd s1, 8(a5)
 and s1, t5, s5
 xor s1, s1, t2
-sd t5, 40(a5)
-and t5, s8, s0
+sd t5, 16(a5)
+and t5, a0, s0
 xor t5, t5, t2
 and t2, s4, t0
-sd s4, 48(a5)
+sd s4, 24(a5)
 and s4, a6, s7
 xor s4, s4, t2
-sd a6, 56(a5)
-ld a6, 8(a5)
-sd s8, 64(a5)
-and s8, t3, a6
-xor s8, s8, t2
+sd a6, 32(a5)
+and a6, ra, t3
+xor a6, a6, t2
 xor s9, s9, s4
-xor t4, t4, s8
+xor t4, t4, a6
 xor s1, s1, s4
-xor t5, t5, s8
+xor t5, t5, a6
 xor s9, s9, s2
-ld s2, 0(a5)
-xor t4, t4, s2
-ld s2, 16(a5)
-xor s1, s1, s2
+xor t4, t4, s8
+xor s1, s1, a4
 xor t5, t5, s11
 xor s11, s9, t4
 and s9, s9, s1
-xor s2, t5, s9
-and s8, s11, s2
+xor a4, t5, s9
+and s8, s11, a4
 xor s8, s8, t4
-xor s4, s1, t5
+xor s2, s1, t5
 xor t4, t4, s9
-and t4, t4, s4
+and t4, t4, s2
 xor t4, t4, t5
 xor s1, s1, t4
-xor s4, s2, t4
-and t5, t5, s4
+xor s2, a4, t4
+and t5, t5, s2
 xor s1, t5, s1
-xor s2, s2, t5
-and s2, s8, s2
-xor s11, s11, s2
-xor s2, s11, s1
+xor a4, a4, t5
+and a4, s8, a4
+xor s11, s11, a4
+xor a4, s11, s1
 xor t5, s8, t4
-xor s4, s8, s11
+xor s2, s8, s11
 xor s9, t4, s1
-xor t2, t5, s2
+xor a6, t5, a4
 and t6, s9, t6
 and s3, s1, s3
 and s10, t4, s10
-and t1, s4, t1
+and t1, s2, t1
 and s5, s11, s5
 and s0, s8, s0
 and t0, t5, t0
-and s7, t2, s7
-and a6, s2, a6
+and s7, a6, s7
+and t3, a4, t3
 and s9, s9, a7
-ld a7, 24(a5)
+ld a7, 0(a5)
 and s1, s1, a7
 and t4, t4, s6
-ld s6, 32(a5)
-and s4, s4, s6
-ld s6, 40(a5)
+ld s6, 8(a5)
+and s2, s2, s6
+ld s6, 16(a5)
 and s11, s11, s6
-ld s6, 64(a5)
-and s8, s8, s6
-ld s6, 48(a5)
-and t5, t5, s6
-ld s6, 56(a5)
-and t2, t2, s6
-and s2, s2, t3
+and s8, s8, a0
+ld a0, 24(a5)
+and t5, t5, a0
+ld a0, 32(a5)
+and a6, a6, a0
+and a4, a4, ra
 xor s9, s9, t5
 xor t0, t0, s1
 xor s0, t6, s0
-xor t3, s11, t0
-xor s8, s8, t3
-xor a6, s3, a6
-xor t3, s7, s8
-xor s2, s2, s9
-xor s6, s5, s0
-xor a7, t3, s2
-sd s5, 56(a5)
-xor s5, t4, s6
-sd a7, 48(a5)
-xor a7, t2, a6
-xor s9, s9, a7
+xor ra, s11, t0
+xor s8, s8, ra
+xor t3, s3, t3
+xor ra, s7, s8
+xor a4, a4, s9
+xor a0, s5, s0
+xor s6, ra, a4
+xor a7, t4, a0
+xor s4, a6, t3
+xor s9, s9, s4
 xor s0, t1, s0
 xor s0, s9, s0
-xor t4, t4, s2
-xor s11, s11, t2
-xor s4, s4, t5
-xor t0, t0, s6
-xor a6, a6, s5
-xor s8, s8, a6
+xor t4, t4, a4
+xor s11, s11, a6
+xor s2, s2, t5
+xor t0, t0, a0
+xor t3, t3, a7
+xor s8, s8, t3
 xori s8, s8, -1
 xor s1, s1, s0
-xor s10, s10, t3
+xor s10, s10, ra
 xor s0, s7, s1
 xori s0, s0, -1
-xor s7, s11, s4
+xor s7, s11, s2
 xori s7, s7, -1
 xor t6, t6, s3
-ld s3, 48(a5)
-xor t1, t1, s3
-xor s3, s3, t6
-xor s6, s5, s10
-xori s6, s6, -1
-ld s10, 56(a5)
-xor s2, s10, t1
+xor t1, t1, s6
+xor s6, s6, t6
+xor a7, a7, s10
+xori a7, a7, -1
+xor s2, s5, t1
 xor s4, s9, t0
 xori s4, s4, -1
-addi s5, s3, 0
+sd s6, 32(a5)
+addi s6, a7, 0
+ld s5, 32(a5)
 addi s3, t4, 0
 addi s1, s8, 0
 srli a7, s6, 16
@@ -11590,8 +11522,13 @@ ld t1, 760(a5)
 xor t0, t0, t1
 sd t0, 760(a5)
 addi a3, a3, 256
-sub t0, a3, a0
+addi t0, a5, 2040
+addi t0, t0, 1032
+sub t0, a3, t0
 bnez t0, 213b
+addi t0, a5, 2040
+addi t0, t0, 1128
+ld ra, 0(t0)
 ld t3, 360(a5)
 ld t4, 368(a5)
 ld t5, 376(a5)
@@ -12494,6 +12431,8 @@ sd s2, 872(a5)
 sd s6, 1000(a5)
 sd s3, 888(a5)
 sd s7, 1016(a5)
+addi a0, a5, 2040
+addi a0, a0, 1032
 srli t0, a2, 4
 bnez t0, 214f
 addi a4, a2, 0
@@ -12945,7 +12884,8 @@ sd t6, 1088(t5)
 sd t6, 1096(t5)
 sd t6, 1104(t5)
 sd t6, 1112(t5)
-addi sp, sp, 1136
+sd t6, 1120(t5)
+addi sp, sp, 1152
 addi sp, sp, 2032
 ret
 .option pop",
@@ -12956,21 +12896,21 @@ ret
 ///
 /// Contract: `VG.Spec.Sm4.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
 ///
-/// Sixteen blocks at a time, bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups; the blocks and the schedule are copied a byte at a time. Each round key's planes are made from its word: its bytes spread to the planes' 16-bit groups, then each bit of a group filled to the group by doubling. The working space (3168 bytes, our caller's s0-s11 among them) is on the stack, zeroed before returning.
+/// Sixteen blocks at a time, bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups; the blocks and the schedule are copied a byte at a time. Each round key's planes are made from its word: its bytes spread to the planes' 16-bit groups, then each bit of a group filled to the group by doubling. The working space (3184 bytes, our caller's s0-s11 among them) is on the stack, zeroed before returning.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
-/// * Neither `schedule` nor `data` may overlap the 3168 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * Neither `schedule` nor `data` may overlap the 3184 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_ecb_decrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m
 addi sp, sp, -2032
-addi sp, sp, -1136
+addi sp, sp, -1152
 addi a3, sp, 0
 addi a5, a3, 0
 addi t0, a5, 2040
@@ -17644,6 +17584,9 @@ sd s4, 736(a5)
 sd s5, 744(a5)
 sd s6, 752(a5)
 sd s7, 760(a5)
+addi t0, a5, 2040
+addi t0, t0, 1128
+sd ra, 0(t0)
 addi a3, a5, 1024
 213:
 ld s0, 576(a5)
@@ -17719,8 +17662,7 @@ xori t6, t6, -1
 xor s10, t1, t3
 xor s11, s0, s8
 xor s8, t4, s8
-sd s8, 0(a5)
-xor s8, s1, t5
+xor a0, s1, t5
 xor s6, s6, s10
 xor s0, s0, t3
 xori s0, s0, -1
@@ -17728,10 +17670,8 @@ xor s10, s1, a7
 xor s3, s3, s9
 xori s3, s3, -1
 xor s4, t2, s4
-sd t3, 8(a5)
-xor t3, t0, t4
-sd t3, 16(a5)
-xor t3, t4, t5
+xor a4, t0, t4
+xor ra, t4, t5
 xor s2, s7, s2
 xori s2, s2, -1
 xor s11, s1, s11
@@ -17747,121 +17687,114 @@ xori s7, s7, -1
 and t2, a7, t6
 and s9, t4, s3
 xor s9, s9, t2
-sd t4, 24(a5)
+sd t4, 0(a5)
 and t4, s6, s10
 xor t4, t4, t2
 and t2, s1, t1
-sd s1, 32(a5)
+sd s1, 8(a5)
 and s1, t5, s5
 xor s1, s1, t2
-sd t5, 40(a5)
-and t5, s8, s0
+sd t5, 16(a5)
+and t5, a0, s0
 xor t5, t5, t2
 and t2, s4, t0
-sd s4, 48(a5)
+sd s4, 24(a5)
 and s4, a6, s7
 xor s4, s4, t2
-sd a6, 56(a5)
-ld a6, 8(a5)
-sd s8, 64(a5)
-and s8, t3, a6
-xor s8, s8, t2
+sd a6, 32(a5)
+and a6, ra, t3
+xor a6, a6, t2
 xor s9, s9, s4
-xor t4, t4, s8
+xor t4, t4, a6
 xor s1, s1, s4
-xor t5, t5, s8
+xor t5, t5, a6
 xor s9, s9, s2
-ld s2, 0(a5)
-xor t4, t4, s2
-ld s2, 16(a5)
-xor s1, s1, s2
+xor t4, t4, s8
+xor s1, s1, a4
 xor t5, t5, s11
 xor s11, s9, t4
 and s9, s9, s1
-xor s2, t5, s9
-and s8, s11, s2
+xor a4, t5, s9
+and s8, s11, a4
 xor s8, s8, t4
-xor s4, s1, t5
+xor s2, s1, t5
 xor t4, t4, s9
-and t4, t4, s4
+and t4, t4, s2
 xor t4, t4, t5
 xor s1, s1, t4
-xor s4, s2, t4
-and t5, t5, s4
+xor s2, a4, t4
+and t5, t5, s2
 xor s1, t5, s1
-xor s2, s2, t5
-and s2, s8, s2
-xor s11, s11, s2
-xor s2, s11, s1
+xor a4, a4, t5
+and a4, s8, a4
+xor s11, s11, a4
+xor a4, s11, s1
 xor t5, s8, t4
-xor s4, s8, s11
+xor s2, s8, s11
 xor s9, t4, s1
-xor t2, t5, s2
+xor a6, t5, a4
 and t6, s9, t6
 and s3, s1, s3
 and s10, t4, s10
-and t1, s4, t1
+and t1, s2, t1
 and s5, s11, s5
 and s0, s8, s0
 and t0, t5, t0
-and s7, t2, s7
-and a6, s2, a6
+and s7, a6, s7
+and t3, a4, t3
 and s9, s9, a7
-ld a7, 24(a5)
+ld a7, 0(a5)
 and s1, s1, a7
 and t4, t4, s6
-ld s6, 32(a5)
-and s4, s4, s6
-ld s6, 40(a5)
+ld s6, 8(a5)
+and s2, s2, s6
+ld s6, 16(a5)
 and s11, s11, s6
-ld s6, 64(a5)
-and s8, s8, s6
-ld s6, 48(a5)
-and t5, t5, s6
-ld s6, 56(a5)
-and t2, t2, s6
-and s2, s2, t3
+and s8, s8, a0
+ld a0, 24(a5)
+and t5, t5, a0
+ld a0, 32(a5)
+and a6, a6, a0
+and a4, a4, ra
 xor s9, s9, t5
 xor t0, t0, s1
 xor s0, t6, s0
-xor t3, s11, t0
-xor s8, s8, t3
-xor a6, s3, a6
-xor t3, s7, s8
-xor s2, s2, s9
-xor s6, s5, s0
-xor a7, t3, s2
-sd s5, 56(a5)
-xor s5, t4, s6
-sd a7, 48(a5)
-xor a7, t2, a6
-xor s9, s9, a7
+xor ra, s11, t0
+xor s8, s8, ra
+xor t3, s3, t3
+xor ra, s7, s8
+xor a4, a4, s9
+xor a0, s5, s0
+xor s6, ra, a4
+xor a7, t4, a0
+xor s4, a6, t3
+xor s9, s9, s4
 xor s0, t1, s0
 xor s0, s9, s0
-xor t4, t4, s2
-xor s11, s11, t2
-xor s4, s4, t5
-xor t0, t0, s6
-xor a6, a6, s5
-xor s8, s8, a6
+xor t4, t4, a4
+xor s11, s11, a6
+xor s2, s2, t5
+xor t0, t0, a0
+xor t3, t3, a7
+xor s8, s8, t3
 xori s8, s8, -1
 xor s1, s1, s0
-xor s10, s10, t3
+xor s10, s10, ra
 xor s0, s7, s1
 xori s0, s0, -1
-xor s7, s11, s4
+xor s7, s11, s2
 xori s7, s7, -1
 xor t6, t6, s3
-ld s3, 48(a5)
-xor t1, t1, s3
-xor s3, s3, t6
-xor s6, s5, s10
-xori s6, s6, -1
-ld s10, 56(a5)
-xor s2, s10, t1
+xor t1, t1, s6
+xor s6, s6, t6
+xor a7, a7, s10
+xori a7, a7, -1
+xor s2, s5, t1
 xor s4, s9, t0
 xori s4, s4, -1
-addi s5, s3, 0
+sd s6, 32(a5)
+addi s6, a7, 0
+ld s5, 32(a5)
 addi s3, t4, 0
 addi s1, s8, 0
 srli a7, s6, 16
@@ -18071,8 +18004,7 @@ xori t6, t6, -1
 xor s10, t1, t3
 xor s11, s0, s8
 xor s8, t4, s8
-sd s8, 0(a5)
-xor s8, s1, t5
+xor a0, s1, t5
 xor s6, s6, s10
 xor s0, s0, t3
 xori s0, s0, -1
@@ -18080,10 +18012,8 @@ xor s10, s1, a7
 xor s3, s3, s9
 xori s3, s3, -1
 xor s4, t2, s4
-sd t3, 8(a5)
-xor t3, t0, t4
-sd t3, 16(a5)
-xor t3, t4, t5
+xor a4, t0, t4
+xor ra, t4, t5
 xor s2, s7, s2
 xori s2, s2, -1
 xor s11, s1, s11
@@ -18099,121 +18029,114 @@ xori s7, s7, -1
 and t2, a7, t6
 and s9, t4, s3
 xor s9, s9, t2
-sd t4, 24(a5)
+sd t4, 0(a5)
 and t4, s6, s10
 xor t4, t4, t2
 and t2, s1, t1
-sd s1, 32(a5)
+sd s1, 8(a5)
 and s1, t5, s5
 xor s1, s1, t2
-sd t5, 40(a5)
-and t5, s8, s0
+sd t5, 16(a5)
+and t5, a0, s0
 xor t5, t5, t2
 and t2, s4, t0
-sd s4, 48(a5)
+sd s4, 24(a5)
 and s4, a6, s7
 xor s4, s4, t2
-sd a6, 56(a5)
-ld a6, 8(a5)
-sd s8, 64(a5)
-and s8, t3, a6
-xor s8, s8, t2
+sd a6, 32(a5)
+and a6, ra, t3
+xor a6, a6, t2
 xor s9, s9, s4
-xor t4, t4, s8
+xor t4, t4, a6
 xor s1, s1, s4
-xor t5, t5, s8
+xor t5, t5, a6
 xor s9, s9, s2
-ld s2, 0(a5)
-xor t4, t4, s2
-ld s2, 16(a5)
-xor s1, s1, s2
+xor t4, t4, s8
+xor s1, s1, a4
 xor t5, t5, s11
 xor s11, s9, t4
 and s9, s9, s1
-xor s2, t5, s9
-and s8, s11, s2
+xor a4, t5, s9
+and s8, s11, a4
 xor s8, s8, t4
-xor s4, s1, t5
+xor s2, s1, t5
 xor t4, t4, s9
-and t4, t4, s4
+and t4, t4, s2
 xor t4, t4, t5
 xor s1, s1, t4
-xor s4, s2, t4
-and t5, t5, s4
+xor s2, a4, t4
+and t5, t5, s2
 xor s1, t5, s1
-xor s2, s2, t5
-and s2, s8, s2
-xor s11, s11, s2
-xor s2, s11, s1
+xor a4, a4, t5
+and a4, s8, a4
+xor s11, s11, a4
+xor a4, s11, s1
 xor t5, s8, t4
-xor s4, s8, s11
+xor s2, s8, s11
 xor s9, t4, s1
-xor t2, t5, s2
+xor a6, t5, a4
 and t6, s9, t6
 and s3, s1, s3
 and s10, t4, s10
-and t1, s4, t1
+and t1, s2, t1
 and s5, s11, s5
 and s0, s8, s0
 and t0, t5, t0
-and s7, t2, s7
-and a6, s2, a6
+and s7, a6, s7
+and t3, a4, t3
 and s9, s9, a7
-ld a7, 24(a5)
+ld a7, 0(a5)
 and s1, s1, a7
 and t4, t4, s6
-ld s6, 32(a5)
-and s4, s4, s6
-ld s6, 40(a5)
+ld s6, 8(a5)
+and s2, s2, s6
+ld s6, 16(a5)
 and s11, s11, s6
-ld s6, 64(a5)
-and s8, s8, s6
-ld s6, 48(a5)
-and t5, t5, s6
-ld s6, 56(a5)
-and t2, t2, s6
-and s2, s2, t3
+and s8, s8, a0
+ld a0, 24(a5)
+and t5, t5, a0
+ld a0, 32(a5)
+and a6, a6, a0
+and a4, a4, ra
 xor s9, s9, t5
 xor t0, t0, s1
 xor s0, t6, s0
-xor t3, s11, t0
-xor s8, s8, t3
-xor a6, s3, a6
-xor t3, s7, s8
-xor s2, s2, s9
-xor s6, s5, s0
-xor a7, t3, s2
-sd s5, 56(a5)
-xor s5, t4, s6
-sd a7, 48(a5)
-xor a7, t2, a6
-xor s9, s9, a7
+xor ra, s11, t0
+xor s8, s8, ra
+xor t3, s3, t3
+xor ra, s7, s8
+xor a4, a4, s9
+xor a0, s5, s0
+xor s6, ra, a4
+xor a7, t4, a0
+xor s4, a6, t3
+xor s9, s9, s4
 xor s0, t1, s0
 xor s0, s9, s0
-xor t4, t4, s2
-xor s11, s11, t2
-xor s4, s4, t5
-xor t0, t0, s6
-xor a6, a6, s5
-xor s8, s8, a6
+xor t4, t4, a4
+xor s11, s11, a6
+xor s2, s2, t5
+xor t0, t0, a0
+xor t3, t3, a7
+xor s8, s8, t3
 xori s8, s8, -1
 xor s1, s1, s0
-xor s10, s10, t3
+xor s10, s10, ra
 xor s0, s7, s1
 xori s0, s0, -1
-xor s7, s11, s4
+xor s7, s11, s2
 xori s7, s7, -1
 xor t6, t6, s3
-ld s3, 48(a5)
-xor t1, t1, s3
-xor s3, s3, t6
-xor s6, s5, s10
-xori s6, s6, -1
-ld s10, 56(a5)
-xor s2, s10, t1
+xor t1, t1, s6
+xor s6, s6, t6
+xor a7, a7, s10
+xori a7, a7, -1
+xor s2, s5, t1
 xor s4, s9, t0
 xori s4, s4, -1
-addi s5, s3, 0
+sd s6, 32(a5)
+addi s6, a7, 0
+ld s5, 32(a5)
 addi s3, t4, 0
 addi s1, s8, 0
 srli a7, s6, 16
@@ -18423,8 +18346,7 @@ xori t6, t6, -1
 xor s10, t1, t3
 xor s11, s0, s8
 xor s8, t4, s8
-sd s8, 0(a5)
-xor s8, s1, t5
+xor a0, s1, t5
 xor s6, s6, s10
 xor s0, s0, t3
 xori s0, s0, -1
@@ -18432,10 +18354,8 @@ xor s10, s1, a7
 xor s3, s3, s9
 xori s3, s3, -1
 xor s4, t2, s4
-sd t3, 8(a5)
-xor t3, t0, t4
-sd t3, 16(a5)
-xor t3, t4, t5
+xor a4, t0, t4
+xor ra, t4, t5
 xor s2, s7, s2
 xori s2, s2, -1
 xor s11, s1, s11
@@ -18451,121 +18371,114 @@ xori s7, s7, -1
 and t2, a7, t6
 and s9, t4, s3
 xor s9, s9, t2
-sd t4, 24(a5)
+sd t4, 0(a5)
 and t4, s6, s10
 xor t4, t4, t2
 and t2, s1, t1
-sd s1, 32(a5)
+sd s1, 8(a5)
 and s1, t5, s5
 xor s1, s1, t2
-sd t5, 40(a5)
-and t5, s8, s0
+sd t5, 16(a5)
+and t5, a0, s0
 xor t5, t5, t2
 and t2, s4, t0
-sd s4, 48(a5)
+sd s4, 24(a5)
 and s4, a6, s7
 xor s4, s4, t2
-sd a6, 56(a5)
-ld a6, 8(a5)
-sd s8, 64(a5)
-and s8, t3, a6
-xor s8, s8, t2
+sd a6, 32(a5)
+and a6, ra, t3
+xor a6, a6, t2
 xor s9, s9, s4
-xor t4, t4, s8
+xor t4, t4, a6
 xor s1, s1, s4
-xor t5, t5, s8
+xor t5, t5, a6
 xor s9, s9, s2
-ld s2, 0(a5)
-xor t4, t4, s2
-ld s2, 16(a5)
-xor s1, s1, s2
+xor t4, t4, s8
+xor s1, s1, a4
 xor t5, t5, s11
 xor s11, s9, t4
 and s9, s9, s1
-xor s2, t5, s9
-and s8, s11, s2
+xor a4, t5, s9
+and s8, s11, a4
 xor s8, s8, t4
-xor s4, s1, t5
+xor s2, s1, t5
 xor t4, t4, s9
-and t4, t4, s4
+and t4, t4, s2
 xor t4, t4, t5
 xor s1, s1, t4
-xor s4, s2, t4
-and t5, t5, s4
+xor s2, a4, t4
+and t5, t5, s2
 xor s1, t5, s1
-xor s2, s2, t5
-and s2, s8, s2
-xor s11, s11, s2
-xor s2, s11, s1
+xor a4, a4, t5
+and a4, s8, a4
+xor s11, s11, a4
+xor a4, s11, s1
 xor t5, s8, t4
-xor s4, s8, s11
+xor s2, s8, s11
 xor s9, t4, s1
-xor t2, t5, s2
+xor a6, t5, a4
 and t6, s9, t6
 and s3, s1, s3
 and s10, t4, s10
-and t1, s4, t1
+and t1, s2, t1
 and s5, s11, s5
 and s0, s8, s0
 and t0, t5, t0
-and s7, t2, s7
-and a6, s2, a6
+and s7, a6, s7
+and t3, a4, t3
 and s9, s9, a7
-ld a7, 24(a5)
+ld a7, 0(a5)
 and s1, s1, a7
 and t4, t4, s6
-ld s6, 32(a5)
-and s4, s4, s6
-ld s6, 40(a5)
+ld s6, 8(a5)
+and s2, s2, s6
+ld s6, 16(a5)
 and s11, s11, s6
-ld s6, 64(a5)
-and s8, s8, s6
-ld s6, 48(a5)
-and t5, t5, s6
-ld s6, 56(a5)
-and t2, t2, s6
-and s2, s2, t3
+and s8, s8, a0
+ld a0, 24(a5)
+and t5, t5, a0
+ld a0, 32(a5)
+and a6, a6, a0
+and a4, a4, ra
 xor s9, s9, t5
 xor t0, t0, s1
 xor s0, t6, s0
-xor t3, s11, t0
-xor s8, s8, t3
-xor a6, s3, a6
-xor t3, s7, s8
-xor s2, s2, s9
-xor s6, s5, s0
-xor a7, t3, s2
-sd s5, 56(a5)
-xor s5, t4, s6
-sd a7, 48(a5)
-xor a7, t2, a6
-xor s9, s9, a7
+xor ra, s11, t0
+xor s8, s8, ra
+xor t3, s3, t3
+xor ra, s7, s8
+xor a4, a4, s9
+xor a0, s5, s0
+xor s6, ra, a4
+xor a7, t4, a0
+xor s4, a6, t3
+xor s9, s9, s4
 xor s0, t1, s0
 xor s0, s9, s0
-xor t4, t4, s2
-xor s11, s11, t2
-xor s4, s4, t5
-xor t0, t0, s6
-xor a6, a6, s5
-xor s8, s8, a6
+xor t4, t4, a4
+xor s11, s11, a6
+xor s2, s2, t5
+xor t0, t0, a0
+xor t3, t3, a7
+xor s8, s8, t3
 xori s8, s8, -1
 xor s1, s1, s0
-xor s10, s10, t3
+xor s10, s10, ra
 xor s0, s7, s1
 xori s0, s0, -1
-xor s7, s11, s4
+xor s7, s11, s2
 xori s7, s7, -1
 xor t6, t6, s3
-ld s3, 48(a5)
-xor t1, t1, s3
-xor s3, s3, t6
-xor s6, s5, s10
-xori s6, s6, -1
-ld s10, 56(a5)
-xor s2, s10, t1
+xor t1, t1, s6
+xor s6, s6, t6
+xor a7, a7, s10
+xori a7, a7, -1
+xor s2, s5, t1
 xor s4, s9, t0
 xori s4, s4, -1
-addi s5, s3, 0
+sd s6, 32(a5)
+addi s6, a7, 0
+ld s5, 32(a5)
 addi s3, t4, 0
 addi s1, s8, 0
 srli a7, s6, 16
@@ -18775,8 +18688,7 @@ xori t6, t6, -1
 xor s10, t1, t3
 xor s11, s0, s8
 xor s8, t4, s8
-sd s8, 0(a5)
-xor s8, s1, t5
+xor a0, s1, t5
 xor s6, s6, s10
 xor s0, s0, t3
 xori s0, s0, -1
@@ -18784,10 +18696,8 @@ xor s10, s1, a7
 xor s3, s3, s9
 xori s3, s3, -1
 xor s4, t2, s4
-sd t3, 8(a5)
-xor t3, t0, t4
-sd t3, 16(a5)
-xor t3, t4, t5
+xor a4, t0, t4
+xor ra, t4, t5
 xor s2, s7, s2
 xori s2, s2, -1
 xor s11, s1, s11
@@ -18803,121 +18713,114 @@ xori s7, s7, -1
 and t2, a7, t6
 and s9, t4, s3
 xor s9, s9, t2
-sd t4, 24(a5)
+sd t4, 0(a5)
 and t4, s6, s10
 xor t4, t4, t2
 and t2, s1, t1
-sd s1, 32(a5)
+sd s1, 8(a5)
 and s1, t5, s5
 xor s1, s1, t2
-sd t5, 40(a5)
-and t5, s8, s0
+sd t5, 16(a5)
+and t5, a0, s0
 xor t5, t5, t2
 and t2, s4, t0
-sd s4, 48(a5)
+sd s4, 24(a5)
 and s4, a6, s7
 xor s4, s4, t2
-sd a6, 56(a5)
-ld a6, 8(a5)
-sd s8, 64(a5)
-and s8, t3, a6
-xor s8, s8, t2
+sd a6, 32(a5)
+and a6, ra, t3
+xor a6, a6, t2
 xor s9, s9, s4
-xor t4, t4, s8
+xor t4, t4, a6
 xor s1, s1, s4
-xor t5, t5, s8
+xor t5, t5, a6
 xor s9, s9, s2
-ld s2, 0(a5)
-xor t4, t4, s2
-ld s2, 16(a5)
-xor s1, s1, s2
+xor t4, t4, s8
+xor s1, s1, a4
 xor t5, t5, s11
 xor s11, s9, t4
 and s9, s9, s1
-xor s2, t5, s9
-and s8, s11, s2
+xor a4, t5, s9
+and s8, s11, a4
 xor s8, s8, t4
-xor s4, s1, t5
+xor s2, s1, t5
 xor t4, t4, s9
-and t4, t4, s4
+and t4, t4, s2
 xor t4, t4, t5
 xor s1, s1, t4
-xor s4, s2, t4
-and t5, t5, s4
+xor s2, a4, t4
+and t5, t5, s2
 xor s1, t5, s1
-xor s2, s2, t5
-and s2, s8, s2
-xor s11, s11, s2
-xor s2, s11, s1
+xor a4, a4, t5
+and a4, s8, a4
+xor s11, s11, a4
+xor a4, s11, s1
 xor t5, s8, t4
-xor s4, s8, s11
+xor s2, s8, s11
 xor s9, t4, s1
-xor t2, t5, s2
+xor a6, t5, a4
 and t6, s9, t6
 and s3, s1, s3
 and s10, t4, s10
-and t1, s4, t1
+and t1, s2, t1
 and s5, s11, s5
 and s0, s8, s0
 and t0, t5, t0
-and s7, t2, s7
-and a6, s2, a6
+and s7, a6, s7
+and t3, a4, t3
 and s9, s9, a7
-ld a7, 24(a5)
+ld a7, 0(a5)
 and s1, s1, a7
 and t4, t4, s6
-ld s6, 32(a5)
-and s4, s4, s6
-ld s6, 40(a5)
+ld s6, 8(a5)
+and s2, s2, s6
+ld s6, 16(a5)
 and s11, s11, s6
-ld s6, 64(a5)
-and s8, s8, s6
-ld s6, 48(a5)
-and t5, t5, s6
-ld s6, 56(a5)
-and t2, t2, s6
-and s2, s2, t3
+and s8, s8, a0
+ld a0, 24(a5)
+and t5, t5, a0
+ld a0, 32(a5)
+and a6, a6, a0
+and a4, a4, ra
 xor s9, s9, t5
 xor t0, t0, s1
 xor s0, t6, s0
-xor t3, s11, t0
-xor s8, s8, t3
-xor a6, s3, a6
-xor t3, s7, s8
-xor s2, s2, s9
-xor s6, s5, s0
-xor a7, t3, s2
-sd s5, 56(a5)
-xor s5, t4, s6
-sd a7, 48(a5)
-xor a7, t2, a6
-xor s9, s9, a7
+xor ra, s11, t0
+xor s8, s8, ra
+xor t3, s3, t3
+xor ra, s7, s8
+xor a4, a4, s9
+xor a0, s5, s0
+xor s6, ra, a4
+xor a7, t4, a0
+xor s4, a6, t3
+xor s9, s9, s4
 xor s0, t1, s0
 xor s0, s9, s0
-xor t4, t4, s2
-xor s11, s11, t2
-xor s4, s4, t5
-xor t0, t0, s6
-xor a6, a6, s5
-xor s8, s8, a6
+xor t4, t4, a4
+xor s11, s11, a6
+xor s2, s2, t5
+xor t0, t0, a0
+xor t3, t3, a7
+xor s8, s8, t3
 xori s8, s8, -1
 xor s1, s1, s0
-xor s10, s10, t3
+xor s10, s10, ra
 xor s0, s7, s1
 xori s0, s0, -1
-xor s7, s11, s4
+xor s7, s11, s2
 xori s7, s7, -1
 xor t6, t6, s3
-ld s3, 48(a5)
-xor t1, t1, s3
-xor s3, s3, t6
-xor s6, s5, s10
-xori s6, s6, -1
-ld s10, 56(a5)
-xor s2, s10, t1
+xor t1, t1, s6
+xor s6, s6, t6
+xor a7, a7, s10
+xori a7, a7, -1
+xor s2, s5, t1
 xor s4, s9, t0
 xori s4, s4, -1
-addi s5, s3, 0
+sd s6, 32(a5)
+addi s6, a7, 0
+ld s5, 32(a5)
 addi s3, t4, 0
 addi s1, s8, 0
 srli a7, s6, 16
@@ -19055,8 +18958,13 @@ ld t1, 760(a5)
 xor t0, t0, t1
 sd t0, 760(a5)
 addi a3, a3, 256
-sub t0, a3, a0
+addi t0, a5, 2040
+addi t0, t0, 1032
+sub t0, a3, t0
 bnez t0, 213b
+addi t0, a5, 2040
+addi t0, t0, 1128
+ld ra, 0(t0)
 ld t3, 360(a5)
 ld t4, 368(a5)
 ld t5, 376(a5)
@@ -19959,6 +19867,8 @@ sd s2, 872(a5)
 sd s6, 1000(a5)
 sd s3, 888(a5)
 sd s7, 1016(a5)
+addi a0, a5, 2040
+addi a0, a0, 1032
 srli t0, a2, 4
 bnez t0, 214f
 addi a4, a2, 0
@@ -20410,14 +20320,15 @@ sd t6, 1088(t5)
 sd t6, 1096(t5)
 sd t6, 1104(t5)
 sd t6, 1112(t5)
-addi sp, sp, 1136
+sd t6, 1120(t5)
+addi sp, sp, 1152
 addi sp, sp, 2032
 ret
 .option pop",
     )
 }
 
-/// Prepares SM4's round keys for `vg_sm4_crypt_prepared`: writes at the bytes 320..360, 1024..3072 of `ws` the round keys written by `vg_sm4_expand_key` at `schedule`, in the order of encryption (`decrypt = 0`) or decryption (`decrypt = 1`), in the implementation's encoding (`VG.Spec.Sm4.Prepared.Layout.encode`). Every byte of `ws` but those of the ranges 0..3168 keeps its value. It is not part of the library's Rust API.
+/// Prepares SM4's round keys for `vg_sm4_crypt_prepared`: writes at the bytes 320..360, 1024..3072 of `ws` the round keys written by `vg_sm4_expand_key` at `schedule`, in the order of encryption (`decrypt = 0`) or decryption (`decrypt = 1`), in the implementation's encoding (`VG.Spec.Sm4.Prepared.Layout.encode`). Every byte of `ws` but those of the ranges 0..3176 keeps its value. It is not part of the library's Rust API.
 ///
 /// Contract: `VG.Spec.Sm4.Prepared.prepareContract`. Constant time: only pointers, `ws_len` and `decrypt` may affect timing, not the round keys.
 ///
@@ -20428,8 +20339,8 @@ ret
 /// * `schedule` must be valid for reads of 128 bytes.
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes, and aligned for `u64`.
 /// * `decrypt` must be 0 or 1.
-/// * `ws_len` must be at least 396.
-/// * The bytes 0..3168 of `ws` are unspecified on return and hold secrets, which the caller must destroy.
+/// * `ws_len` must be at least 397.
+/// * The bytes 0..3176 of `ws` are unspecified on return and hold secrets, which the caller must destroy.
 /// * `ws` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `ws` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
@@ -27845,7 +27756,7 @@ ret
     )
 }
 
-/// SM4 ECB (draft-ribose-cfrg-sm4-10 §7.1–7.2, SP 800-38A §6.1) of the 16 16-byte blocks at byte 768 of `ws`, in place, under the round keys that `vg_sm4_prepare_keys` wrote at the bytes 320..360, 1024..3072, in the direction it prepared them for. Every byte of `ws` but those of the ranges 0..320, 360..1024, 3072..3168 (the blocks' among them, not the round keys') keeps its value, so the round keys serve every batch. It is not part of the library's Rust API.
+/// SM4 ECB (draft-ribose-cfrg-sm4-10 §7.1–7.2, SP 800-38A §6.1) of the 16 16-byte blocks at byte 768 of `ws`, in place, under the round keys that `vg_sm4_prepare_keys` wrote at the bytes 320..360, 1024..3072, in the direction it prepared them for. Every byte of `ws` but those of the ranges 0..320, 360..1024, 3072..3176 (the blocks' among them, not the round keys') keeps its value, so the round keys serve every batch. It is not part of the library's Rust API.
 ///
 /// Contract: `VG.Spec.Sm4.Prepared.cryptContract`. Constant time: only pointers and `ws_len` may affect timing, not the round keys or the blocks.
 ///
@@ -27854,9 +27765,9 @@ ret
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes, and aligned for `u64`.
-/// * `ws_len` must be at least 396.
+/// * `ws_len` must be at least 397.
 /// * `ws` must hold the round keys as `vg_sm4_prepare_keys` wrote them.
-/// * The bytes 0..320, 360..1024, 3072..3168 of `ws` are unspecified on return but for the blocks, and hold secrets, which the caller must destroy.
+/// * The bytes 0..320, 360..1024, 3072..3176 of `ws` are unspecified on return but for the blocks, and hold secrets, which the caller must destroy.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_crypt_prepared(ws: *mut u64, ws_len: usize) {
@@ -28824,6 +28735,9 @@ sd s4, 736(a5)
 sd s5, 744(a5)
 sd s6, 752(a5)
 sd s7, 760(a5)
+addi t0, a5, 2040
+addi t0, t0, 1128
+sd ra, 0(t0)
 addi a3, a5, 1024
 20:
 ld s0, 576(a5)
@@ -28899,8 +28813,7 @@ xori t6, t6, -1
 xor s10, t1, t3
 xor s11, s0, s8
 xor s8, t4, s8
-sd s8, 0(a5)
-xor s8, s1, t5
+xor a0, s1, t5
 xor s6, s6, s10
 xor s0, s0, t3
 xori s0, s0, -1
@@ -28908,10 +28821,8 @@ xor s10, s1, a7
 xor s3, s3, s9
 xori s3, s3, -1
 xor s4, t2, s4
-sd t3, 8(a5)
-xor t3, t0, t4
-sd t3, 16(a5)
-xor t3, t4, t5
+xor a4, t0, t4
+xor ra, t4, t5
 xor s2, s7, s2
 xori s2, s2, -1
 xor s11, s1, s11
@@ -28927,121 +28838,114 @@ xori s7, s7, -1
 and t2, a7, t6
 and s9, t4, s3
 xor s9, s9, t2
-sd t4, 24(a5)
+sd t4, 0(a5)
 and t4, s6, s10
 xor t4, t4, t2
 and t2, s1, t1
-sd s1, 32(a5)
+sd s1, 8(a5)
 and s1, t5, s5
 xor s1, s1, t2
-sd t5, 40(a5)
-and t5, s8, s0
+sd t5, 16(a5)
+and t5, a0, s0
 xor t5, t5, t2
 and t2, s4, t0
-sd s4, 48(a5)
+sd s4, 24(a5)
 and s4, a6, s7
 xor s4, s4, t2
-sd a6, 56(a5)
-ld a6, 8(a5)
-sd s8, 64(a5)
-and s8, t3, a6
-xor s8, s8, t2
+sd a6, 32(a5)
+and a6, ra, t3
+xor a6, a6, t2
 xor s9, s9, s4
-xor t4, t4, s8
+xor t4, t4, a6
 xor s1, s1, s4
-xor t5, t5, s8
+xor t5, t5, a6
 xor s9, s9, s2
-ld s2, 0(a5)
-xor t4, t4, s2
-ld s2, 16(a5)
-xor s1, s1, s2
+xor t4, t4, s8
+xor s1, s1, a4
 xor t5, t5, s11
 xor s11, s9, t4
 and s9, s9, s1
-xor s2, t5, s9
-and s8, s11, s2
+xor a4, t5, s9
+and s8, s11, a4
 xor s8, s8, t4
-xor s4, s1, t5
+xor s2, s1, t5
 xor t4, t4, s9
-and t4, t4, s4
+and t4, t4, s2
 xor t4, t4, t5
 xor s1, s1, t4
-xor s4, s2, t4
-and t5, t5, s4
+xor s2, a4, t4
+and t5, t5, s2
 xor s1, t5, s1
-xor s2, s2, t5
-and s2, s8, s2
-xor s11, s11, s2
-xor s2, s11, s1
+xor a4, a4, t5
+and a4, s8, a4
+xor s11, s11, a4
+xor a4, s11, s1
 xor t5, s8, t4
-xor s4, s8, s11
+xor s2, s8, s11
 xor s9, t4, s1
-xor t2, t5, s2
+xor a6, t5, a4
 and t6, s9, t6
 and s3, s1, s3
 and s10, t4, s10
-and t1, s4, t1
+and t1, s2, t1
 and s5, s11, s5
 and s0, s8, s0
 and t0, t5, t0
-and s7, t2, s7
-and a6, s2, a6
+and s7, a6, s7
+and t3, a4, t3
 and s9, s9, a7
-ld a7, 24(a5)
+ld a7, 0(a5)
 and s1, s1, a7
 and t4, t4, s6
-ld s6, 32(a5)
-and s4, s4, s6
-ld s6, 40(a5)
+ld s6, 8(a5)
+and s2, s2, s6
+ld s6, 16(a5)
 and s11, s11, s6
-ld s6, 64(a5)
-and s8, s8, s6
-ld s6, 48(a5)
-and t5, t5, s6
-ld s6, 56(a5)
-and t2, t2, s6
-and s2, s2, t3
+and s8, s8, a0
+ld a0, 24(a5)
+and t5, t5, a0
+ld a0, 32(a5)
+and a6, a6, a0
+and a4, a4, ra
 xor s9, s9, t5
 xor t0, t0, s1
 xor s0, t6, s0
-xor t3, s11, t0
-xor s8, s8, t3
-xor a6, s3, a6
-xor t3, s7, s8
-xor s2, s2, s9
-xor s6, s5, s0
-xor a7, t3, s2
-sd s5, 56(a5)
-xor s5, t4, s6
-sd a7, 48(a5)
-xor a7, t2, a6
-xor s9, s9, a7
+xor ra, s11, t0
+xor s8, s8, ra
+xor t3, s3, t3
+xor ra, s7, s8
+xor a4, a4, s9
+xor a0, s5, s0
+xor s6, ra, a4
+xor a7, t4, a0
+xor s4, a6, t3
+xor s9, s9, s4
 xor s0, t1, s0
 xor s0, s9, s0
-xor t4, t4, s2
-xor s11, s11, t2
-xor s4, s4, t5
-xor t0, t0, s6
-xor a6, a6, s5
-xor s8, s8, a6
+xor t4, t4, a4
+xor s11, s11, a6
+xor s2, s2, t5
+xor t0, t0, a0
+xor t3, t3, a7
+xor s8, s8, t3
 xori s8, s8, -1
 xor s1, s1, s0
-xor s10, s10, t3
+xor s10, s10, ra
 xor s0, s7, s1
 xori s0, s0, -1
-xor s7, s11, s4
+xor s7, s11, s2
 xori s7, s7, -1
 xor t6, t6, s3
-ld s3, 48(a5)
-xor t1, t1, s3
-xor s3, s3, t6
-xor s6, s5, s10
-xori s6, s6, -1
-ld s10, 56(a5)
-xor s2, s10, t1
+xor t1, t1, s6
+xor s6, s6, t6
+xor a7, a7, s10
+xori a7, a7, -1
+xor s2, s5, t1
 xor s4, s9, t0
 xori s4, s4, -1
-addi s5, s3, 0
+sd s6, 32(a5)
+addi s6, a7, 0
+ld s5, 32(a5)
 addi s3, t4, 0
 addi s1, s8, 0
 srli a7, s6, 16
@@ -29251,8 +29155,7 @@ xori t6, t6, -1
 xor s10, t1, t3
 xor s11, s0, s8
 xor s8, t4, s8
-sd s8, 0(a5)
-xor s8, s1, t5
+xor a0, s1, t5
 xor s6, s6, s10
 xor s0, s0, t3
 xori s0, s0, -1
@@ -29260,10 +29163,8 @@ xor s10, s1, a7
 xor s3, s3, s9
 xori s3, s3, -1
 xor s4, t2, s4
-sd t3, 8(a5)
-xor t3, t0, t4
-sd t3, 16(a5)
-xor t3, t4, t5
+xor a4, t0, t4
+xor ra, t4, t5
 xor s2, s7, s2
 xori s2, s2, -1
 xor s11, s1, s11
@@ -29279,121 +29180,114 @@ xori s7, s7, -1
 and t2, a7, t6
 and s9, t4, s3
 xor s9, s9, t2
-sd t4, 24(a5)
+sd t4, 0(a5)
 and t4, s6, s10
 xor t4, t4, t2
 and t2, s1, t1
-sd s1, 32(a5)
+sd s1, 8(a5)
 and s1, t5, s5
 xor s1, s1, t2
-sd t5, 40(a5)
-and t5, s8, s0
+sd t5, 16(a5)
+and t5, a0, s0
 xor t5, t5, t2
 and t2, s4, t0
-sd s4, 48(a5)
+sd s4, 24(a5)
 and s4, a6, s7
 xor s4, s4, t2
-sd a6, 56(a5)
-ld a6, 8(a5)
-sd s8, 64(a5)
-and s8, t3, a6
-xor s8, s8, t2
+sd a6, 32(a5)
+and a6, ra, t3
+xor a6, a6, t2
 xor s9, s9, s4
-xor t4, t4, s8
+xor t4, t4, a6
 xor s1, s1, s4
-xor t5, t5, s8
+xor t5, t5, a6
 xor s9, s9, s2
-ld s2, 0(a5)
-xor t4, t4, s2
-ld s2, 16(a5)
-xor s1, s1, s2
+xor t4, t4, s8
+xor s1, s1, a4
 xor t5, t5, s11
 xor s11, s9, t4
 and s9, s9, s1
-xor s2, t5, s9
-and s8, s11, s2
+xor a4, t5, s9
+and s8, s11, a4
 xor s8, s8, t4
-xor s4, s1, t5
+xor s2, s1, t5
 xor t4, t4, s9
-and t4, t4, s4
+and t4, t4, s2
 xor t4, t4, t5
 xor s1, s1, t4
-xor s4, s2, t4
-and t5, t5, s4
+xor s2, a4, t4
+and t5, t5, s2
 xor s1, t5, s1
-xor s2, s2, t5
-and s2, s8, s2
-xor s11, s11, s2
-xor s2, s11, s1
+xor a4, a4, t5
+and a4, s8, a4
+xor s11, s11, a4
+xor a4, s11, s1
 xor t5, s8, t4
-xor s4, s8, s11
+xor s2, s8, s11
 xor s9, t4, s1
-xor t2, t5, s2
+xor a6, t5, a4
 and t6, s9, t6
 and s3, s1, s3
 and s10, t4, s10
-and t1, s4, t1
+and t1, s2, t1
 and s5, s11, s5
 and s0, s8, s0
 and t0, t5, t0
-and s7, t2, s7
-and a6, s2, a6
+and s7, a6, s7
+and t3, a4, t3
 and s9, s9, a7
-ld a7, 24(a5)
+ld a7, 0(a5)
 and s1, s1, a7
 and t4, t4, s6
-ld s6, 32(a5)
-and s4, s4, s6
-ld s6, 40(a5)
+ld s6, 8(a5)
+and s2, s2, s6
+ld s6, 16(a5)
 and s11, s11, s6
-ld s6, 64(a5)
-and s8, s8, s6
-ld s6, 48(a5)
-and t5, t5, s6
-ld s6, 56(a5)
-and t2, t2, s6
-and s2, s2, t3
+and s8, s8, a0
+ld a0, 24(a5)
+and t5, t5, a0
+ld a0, 32(a5)
+and a6, a6, a0
+and a4, a4, ra
 xor s9, s9, t5
 xor t0, t0, s1
 xor s0, t6, s0
-xor t3, s11, t0
-xor s8, s8, t3
-xor a6, s3, a6
-xor t3, s7, s8
-xor s2, s2, s9
-xor s6, s5, s0
-xor a7, t3, s2
-sd s5, 56(a5)
-xor s5, t4, s6
-sd a7, 48(a5)
-xor a7, t2, a6
-xor s9, s9, a7
+xor ra, s11, t0
+xor s8, s8, ra
+xor t3, s3, t3
+xor ra, s7, s8
+xor a4, a4, s9
+xor a0, s5, s0
+xor s6, ra, a4
+xor a7, t4, a0
+xor s4, a6, t3
+xor s9, s9, s4
 xor s0, t1, s0
 xor s0, s9, s0
-xor t4, t4, s2
-xor s11, s11, t2
-xor s4, s4, t5
-xor t0, t0, s6
-xor a6, a6, s5
-xor s8, s8, a6
+xor t4, t4, a4
+xor s11, s11, a6
+xor s2, s2, t5
+xor t0, t0, a0
+xor t3, t3, a7
+xor s8, s8, t3
 xori s8, s8, -1
 xor s1, s1, s0
-xor s10, s10, t3
+xor s10, s10, ra
 xor s0, s7, s1
 xori s0, s0, -1
-xor s7, s11, s4
+xor s7, s11, s2
 xori s7, s7, -1
 xor t6, t6, s3
-ld s3, 48(a5)
-xor t1, t1, s3
-xor s3, s3, t6
-xor s6, s5, s10
-xori s6, s6, -1
-ld s10, 56(a5)
-xor s2, s10, t1
+xor t1, t1, s6
+xor s6, s6, t6
+xor a7, a7, s10
+xori a7, a7, -1
+xor s2, s5, t1
 xor s4, s9, t0
 xori s4, s4, -1
-addi s5, s3, 0
+sd s6, 32(a5)
+addi s6, a7, 0
+ld s5, 32(a5)
 addi s3, t4, 0
 addi s1, s8, 0
 srli a7, s6, 16
@@ -29603,8 +29497,7 @@ xori t6, t6, -1
 xor s10, t1, t3
 xor s11, s0, s8
 xor s8, t4, s8
-sd s8, 0(a5)
-xor s8, s1, t5
+xor a0, s1, t5
 xor s6, s6, s10
 xor s0, s0, t3
 xori s0, s0, -1
@@ -29612,10 +29505,8 @@ xor s10, s1, a7
 xor s3, s3, s9
 xori s3, s3, -1
 xor s4, t2, s4
-sd t3, 8(a5)
-xor t3, t0, t4
-sd t3, 16(a5)
-xor t3, t4, t5
+xor a4, t0, t4
+xor ra, t4, t5
 xor s2, s7, s2
 xori s2, s2, -1
 xor s11, s1, s11
@@ -29631,121 +29522,114 @@ xori s7, s7, -1
 and t2, a7, t6
 and s9, t4, s3
 xor s9, s9, t2
-sd t4, 24(a5)
+sd t4, 0(a5)
 and t4, s6, s10
 xor t4, t4, t2
 and t2, s1, t1
-sd s1, 32(a5)
+sd s1, 8(a5)
 and s1, t5, s5
 xor s1, s1, t2
-sd t5, 40(a5)
-and t5, s8, s0
+sd t5, 16(a5)
+and t5, a0, s0
 xor t5, t5, t2
 and t2, s4, t0
-sd s4, 48(a5)
+sd s4, 24(a5)
 and s4, a6, s7
 xor s4, s4, t2
-sd a6, 56(a5)
-ld a6, 8(a5)
-sd s8, 64(a5)
-and s8, t3, a6
-xor s8, s8, t2
+sd a6, 32(a5)
+and a6, ra, t3
+xor a6, a6, t2
 xor s9, s9, s4
-xor t4, t4, s8
+xor t4, t4, a6
 xor s1, s1, s4
-xor t5, t5, s8
+xor t5, t5, a6
 xor s9, s9, s2
-ld s2, 0(a5)
-xor t4, t4, s2
-ld s2, 16(a5)
-xor s1, s1, s2
+xor t4, t4, s8
+xor s1, s1, a4
 xor t5, t5, s11
 xor s11, s9, t4
 and s9, s9, s1
-xor s2, t5, s9
-and s8, s11, s2
+xor a4, t5, s9
+and s8, s11, a4
 xor s8, s8, t4
-xor s4, s1, t5
+xor s2, s1, t5
 xor t4, t4, s9
-and t4, t4, s4
+and t4, t4, s2
 xor t4, t4, t5
 xor s1, s1, t4
-xor s4, s2, t4
-and t5, t5, s4
+xor s2, a4, t4
+and t5, t5, s2
 xor s1, t5, s1
-xor s2, s2, t5
-and s2, s8, s2
-xor s11, s11, s2
-xor s2, s11, s1
+xor a4, a4, t5
+and a4, s8, a4
+xor s11, s11, a4
+xor a4, s11, s1
 xor t5, s8, t4
-xor s4, s8, s11
+xor s2, s8, s11
 xor s9, t4, s1
-xor t2, t5, s2
+xor a6, t5, a4
 and t6, s9, t6
 and s3, s1, s3
 and s10, t4, s10
-and t1, s4, t1
+and t1, s2, t1
 and s5, s11, s5
 and s0, s8, s0
 and t0, t5, t0
-and s7, t2, s7
-and a6, s2, a6
+and s7, a6, s7
+and t3, a4, t3
 and s9, s9, a7
-ld a7, 24(a5)
+ld a7, 0(a5)
 and s1, s1, a7
 and t4, t4, s6
-ld s6, 32(a5)
-and s4, s4, s6
-ld s6, 40(a5)
+ld s6, 8(a5)
+and s2, s2, s6
+ld s6, 16(a5)
 and s11, s11, s6
-ld s6, 64(a5)
-and s8, s8, s6
-ld s6, 48(a5)
-and t5, t5, s6
-ld s6, 56(a5)
-and t2, t2, s6
-and s2, s2, t3
+and s8, s8, a0
+ld a0, 24(a5)
+and t5, t5, a0
+ld a0, 32(a5)
+and a6, a6, a0
+and a4, a4, ra
 xor s9, s9, t5
 xor t0, t0, s1
 xor s0, t6, s0
-xor t3, s11, t0
-xor s8, s8, t3
-xor a6, s3, a6
-xor t3, s7, s8
-xor s2, s2, s9
-xor s6, s5, s0
-xor a7, t3, s2
-sd s5, 56(a5)
-xor s5, t4, s6
-sd a7, 48(a5)
-xor a7, t2, a6
-xor s9, s9, a7
+xor ra, s11, t0
+xor s8, s8, ra
+xor t3, s3, t3
+xor ra, s7, s8
+xor a4, a4, s9
+xor a0, s5, s0
+xor s6, ra, a4
+xor a7, t4, a0
+xor s4, a6, t3
+xor s9, s9, s4
 xor s0, t1, s0
 xor s0, s9, s0
-xor t4, t4, s2
-xor s11, s11, t2
-xor s4, s4, t5
-xor t0, t0, s6
-xor a6, a6, s5
-xor s8, s8, a6
+xor t4, t4, a4
+xor s11, s11, a6
+xor s2, s2, t5
+xor t0, t0, a0
+xor t3, t3, a7
+xor s8, s8, t3
 xori s8, s8, -1
 xor s1, s1, s0
-xor s10, s10, t3
+xor s10, s10, ra
 xor s0, s7, s1
 xori s0, s0, -1
-xor s7, s11, s4
+xor s7, s11, s2
 xori s7, s7, -1
 xor t6, t6, s3
-ld s3, 48(a5)
-xor t1, t1, s3
-xor s3, s3, t6
-xor s6, s5, s10
-xori s6, s6, -1
-ld s10, 56(a5)
-xor s2, s10, t1
+xor t1, t1, s6
+xor s6, s6, t6
+xor a7, a7, s10
+xori a7, a7, -1
+xor s2, s5, t1
 xor s4, s9, t0
 xori s4, s4, -1
-addi s5, s3, 0
+sd s6, 32(a5)
+addi s6, a7, 0
+ld s5, 32(a5)
 addi s3, t4, 0
 addi s1, s8, 0
 srli a7, s6, 16
@@ -29955,8 +29839,7 @@ xori t6, t6, -1
 xor s10, t1, t3
 xor s11, s0, s8
 xor s8, t4, s8
-sd s8, 0(a5)
-xor s8, s1, t5
+xor a0, s1, t5
 xor s6, s6, s10
 xor s0, s0, t3
 xori s0, s0, -1
@@ -29964,10 +29847,8 @@ xor s10, s1, a7
 xor s3, s3, s9
 xori s3, s3, -1
 xor s4, t2, s4
-sd t3, 8(a5)
-xor t3, t0, t4
-sd t3, 16(a5)
-xor t3, t4, t5
+xor a4, t0, t4
+xor ra, t4, t5
 xor s2, s7, s2
 xori s2, s2, -1
 xor s11, s1, s11
@@ -29983,121 +29864,114 @@ xori s7, s7, -1
 and t2, a7, t6
 and s9, t4, s3
 xor s9, s9, t2
-sd t4, 24(a5)
+sd t4, 0(a5)
 and t4, s6, s10
 xor t4, t4, t2
 and t2, s1, t1
-sd s1, 32(a5)
+sd s1, 8(a5)
 and s1, t5, s5
 xor s1, s1, t2
-sd t5, 40(a5)
-and t5, s8, s0
+sd t5, 16(a5)
+and t5, a0, s0
 xor t5, t5, t2
 and t2, s4, t0
-sd s4, 48(a5)
+sd s4, 24(a5)
 and s4, a6, s7
 xor s4, s4, t2
-sd a6, 56(a5)
-ld a6, 8(a5)
-sd s8, 64(a5)
-and s8, t3, a6
-xor s8, s8, t2
+sd a6, 32(a5)
+and a6, ra, t3
+xor a6, a6, t2
 xor s9, s9, s4
-xor t4, t4, s8
+xor t4, t4, a6
 xor s1, s1, s4
-xor t5, t5, s8
+xor t5, t5, a6
 xor s9, s9, s2
-ld s2, 0(a5)
-xor t4, t4, s2
-ld s2, 16(a5)
-xor s1, s1, s2
+xor t4, t4, s8
+xor s1, s1, a4
 xor t5, t5, s11
 xor s11, s9, t4
 and s9, s9, s1
-xor s2, t5, s9
-and s8, s11, s2
+xor a4, t5, s9
+and s8, s11, a4
 xor s8, s8, t4
-xor s4, s1, t5
+xor s2, s1, t5
 xor t4, t4, s9
-and t4, t4, s4
+and t4, t4, s2
 xor t4, t4, t5
 xor s1, s1, t4
-xor s4, s2, t4
-and t5, t5, s4
+xor s2, a4, t4
+and t5, t5, s2
 xor s1, t5, s1
-xor s2, s2, t5
-and s2, s8, s2
-xor s11, s11, s2
-xor s2, s11, s1
+xor a4, a4, t5
+and a4, s8, a4
+xor s11, s11, a4
+xor a4, s11, s1
 xor t5, s8, t4
-xor s4, s8, s11
+xor s2, s8, s11
 xor s9, t4, s1
-xor t2, t5, s2
+xor a6, t5, a4
 and t6, s9, t6
 and s3, s1, s3
 and s10, t4, s10
-and t1, s4, t1
+and t1, s2, t1
 and s5, s11, s5
 and s0, s8, s0
 and t0, t5, t0
-and s7, t2, s7
-and a6, s2, a6
+and s7, a6, s7
+and t3, a4, t3
 and s9, s9, a7
-ld a7, 24(a5)
+ld a7, 0(a5)
 and s1, s1, a7
 and t4, t4, s6
-ld s6, 32(a5)
-and s4, s4, s6
-ld s6, 40(a5)
+ld s6, 8(a5)
+and s2, s2, s6
+ld s6, 16(a5)
 and s11, s11, s6
-ld s6, 64(a5)
-and s8, s8, s6
-ld s6, 48(a5)
-and t5, t5, s6
-ld s6, 56(a5)
-and t2, t2, s6
-and s2, s2, t3
+and s8, s8, a0
+ld a0, 24(a5)
+and t5, t5, a0
+ld a0, 32(a5)
+and a6, a6, a0
+and a4, a4, ra
 xor s9, s9, t5
 xor t0, t0, s1
 xor s0, t6, s0
-xor t3, s11, t0
-xor s8, s8, t3
-xor a6, s3, a6
-xor t3, s7, s8
-xor s2, s2, s9
-xor s6, s5, s0
-xor a7, t3, s2
-sd s5, 56(a5)
-xor s5, t4, s6
-sd a7, 48(a5)
-xor a7, t2, a6
-xor s9, s9, a7
+xor ra, s11, t0
+xor s8, s8, ra
+xor t3, s3, t3
+xor ra, s7, s8
+xor a4, a4, s9
+xor a0, s5, s0
+xor s6, ra, a4
+xor a7, t4, a0
+xor s4, a6, t3
+xor s9, s9, s4
 xor s0, t1, s0
 xor s0, s9, s0
-xor t4, t4, s2
-xor s11, s11, t2
-xor s4, s4, t5
-xor t0, t0, s6
-xor a6, a6, s5
-xor s8, s8, a6
+xor t4, t4, a4
+xor s11, s11, a6
+xor s2, s2, t5
+xor t0, t0, a0
+xor t3, t3, a7
+xor s8, s8, t3
 xori s8, s8, -1
 xor s1, s1, s0
-xor s10, s10, t3
+xor s10, s10, ra
 xor s0, s7, s1
 xori s0, s0, -1
-xor s7, s11, s4
+xor s7, s11, s2
 xori s7, s7, -1
 xor t6, t6, s3
-ld s3, 48(a5)
-xor t1, t1, s3
-xor s3, s3, t6
-xor s6, s5, s10
-xori s6, s6, -1
-ld s10, 56(a5)
-xor s2, s10, t1
+xor t1, t1, s6
+xor s6, s6, t6
+xor a7, a7, s10
+xori a7, a7, -1
+xor s2, s5, t1
 xor s4, s9, t0
 xori s4, s4, -1
-addi s5, s3, 0
+sd s6, 32(a5)
+addi s6, a7, 0
+ld s5, 32(a5)
 addi s3, t4, 0
 addi s1, s8, 0
 srli a7, s6, 16
@@ -30235,8 +30109,13 @@ ld t1, 760(a5)
 xor t0, t0, t1
 sd t0, 760(a5)
 addi a3, a3, 256
-sub t0, a3, a0
+addi t0, a5, 2040
+addi t0, t0, 1032
+sub t0, a3, t0
 bnez t0, 20b
+addi t0, a5, 2040
+addi t0, t0, 1128
+ld ra, 0(t0)
 ld t3, 360(a5)
 ld t4, 368(a5)
 ld t5, 376(a5)
@@ -31139,6 +31018,8 @@ sd s2, 872(a5)
 sd s6, 1000(a5)
 sd s3, 888(a5)
 sd s7, 1016(a5)
+addi a0, a5, 2040
+addi a0, a0, 1032
 addi t0, a5, 2040
 addi t0, t0, 1032
 ld s0, 0(t0)

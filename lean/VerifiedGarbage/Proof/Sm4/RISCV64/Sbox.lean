@@ -16,7 +16,7 @@ truth tables of the 256 inputs (`Bitslice.table`) and compares the result
 with the specification's S-box on the same inputs. `sbox_ok` then gives,
 at every bit position `p`, the S-box of the byte formed by bit `p` of the
 eight words. As AES's (`Proof/Aes/RISCV64/Layers.lean`), whose registers it
-writes (`sboxWrites`).
+writes (`sboxWrites`), and `a0`, `a4` and `ra` (`sm4Writes`).
 -/
 
 @[expose] public section
@@ -26,7 +26,7 @@ namespace VG.Proof.Sm4.RISCV64
 open VG VG.RISCV64 VG.RISCV64.Straight VG.Bitslice VG.Impl.Aes.RISCV64 VG.Impl.Sm4.RISCV64
 open VG.Proof.Sm4
 open VG.Proof.Aes (bsByte getLsbD_bsByte)
-open VG.Proof.Aes.RISCV64 (TabAll tabAll_sound tabAll_fun sboxWrites restRegs not_sboxWrites)
+open VG.Proof.Aes.RISCV64 (TabAll tabAll_sound tabAll_fun sboxWrites)
 
 /-- The S-box's memory: its spill slots, at `a5`. -/
 def sboxCfg : Cfg := { base := sb, slots := 40, ext := sb, exts := 0 }
@@ -38,24 +38,34 @@ def sboxEnv : Env Nat :=
 def sboxPost (e : Env Nat) : Bool :=
   (List.range 8).all fun j => word (e.reg (q j)) == some (sboxT j)
 
+/-- The registers SM4's S-box writes: AES's (`sboxWrites`), and `a0`, `a4`
+and `ra`, which the rounds set again or restore after it. -/
+def sm4Writes : List Reg := sboxWrites ++ [.a0, .a4, .ra]
+
+/-- The registers outside `sm4Writes`. -/
+def sm4Rest : List Reg := [.a1, .a2, .a3, .a5]
+
+theorem not_sm4Writes (r : Reg) (hr : r ∉ sm4Writes) : r ∈ sm4Rest := by
+  revert hr; cases r <;> decide
+
 theorem sbox_check :
     check (table 64 256) sboxCfg (fun _ => none) Impl.Sm4.RISCV64.sboxCode sboxEnv sboxPost = true := by
   decide +kernel
 
 theorem sbox_writes_rest :
-    restRegs.all (fun r => Impl.Sm4.RISCV64.sboxCode.all fun i => dst i != some r) = true := by
+    sm4Rest.all (fun r => Impl.Sm4.RISCV64.sboxCode.all fun i => dst i != some r) = true := by
   decide +kernel
 
-theorem sbox_writes (r : Reg) (hr : r ∉ sboxWrites) :
+theorem sbox_writes (r : Reg) (hr : r ∉ sm4Writes) :
     (Impl.Sm4.RISCV64.sboxCode.all fun i => dst i != some r) = true :=
-  List.all_eq_true.mp sbox_writes_rest r (not_sboxWrites r hr)
+  List.all_eq_true.mp sbox_writes_rest r (not_sm4Writes r hr)
 
 /-- The S-box, at every bit position of the words in `q 0 … q 7`. -/
 theorem sbox_ok {s : State} (hok : Ok sboxCfg s) :
     ∃ s', runBlock isa Impl.Sm4.RISCV64.sboxCode s = some s' ∧
       (∀ j < 8, ∀ p < 64,
         (s'.gpr (q j)).getLsbD p = (sboxB (bsByte (fun k => s.gpr (q k)) p)).getLsbD j) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ (∀ r, r ∉ sboxWrites → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ (∀ r, r ∉ sm4Writes → s'.gpr r = s.gpr r) ∧
       Frame [slotRegion sboxCfg s] s.mem s'.mem := by
   obtain ⟨e', he, hpost⟩ := of_check _ _ _ sbox_check
   have hout : ∀ j < 8, e'.reg (q j) = some (.v (sboxT j)) := by

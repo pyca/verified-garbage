@@ -31,8 +31,10 @@ allocates on the stack. As on PPC64LE (`Impl/Sm4/PPC64LE/Ecb.lean`):
 blocks left), `a3` (the round key's entry), `a4` (the group's blocks),
 `a5` and, between the rounds, the copies' pointers and counts (`t1`–`t3`)
 and the loop test (`t0`) hold public values; no address and no branch
-depends on anything else. The rounds use only the state, the temporaries
-and the scratch buffer, so the public values stay in `a0`–`a5` throughout.
+depends on anything else. The rounds' S-boxes also use `a0`, `a4` and
+`ra`, the last saved in the scratch buffer (a public value loaded from
+memory would be secret), so the rounds keep `a1`, `a2`, `a3` and `a5`,
+and `a0` is set again after them.
 -/
 
 @[expose] public section
@@ -75,15 +77,21 @@ def keys (dir : Dir) : Prog isa :=
 
 /-! ## Sixteen blocks -/
 
-/-- Four rounds, `kr += 256`, `t0 := kr - a0`. -/
-def roundsBody (l : Lin) : List Instr := rounds4 l ++ [.addi kr kr 256, .sub t0 kr .a0]
+/-- Four rounds, `kr += 256`, `t0 := kr - ` the table's end (the S-box
+uses `a0`). -/
+def roundsBody (l : Lin) : List Instr :=
+  rounds4 l ++ [.addi kr kr 256] ++ slotAddr t0 tableEnd ++ [.sub t0 kr t0]
 
-/-- The 32 rounds, with `kr` from the table's start to its end (in `a0`). -/
+/-- The 32 rounds, with `kr` from the table's start to its end. -/
 def rounds (l : Lin) : Prog isa :=
   .seq (.block (slotAddr kr tableSlot)) (.loop (.block (roundsBody l)) (.nonzero t0))
 
-/-- The sixteen blocks of the tail buffer, in place. -/
-def crypt16 : Prog isa := .seq (.block toBs) (.seq (rounds .enc) (.block fromBs))
+/-- The sixteen blocks of the tail buffer, in place, with `ra` saved while
+the rounds' S-boxes use it, and `a0` (the table's end) set again after
+them; they leave `a4` (the group's blocks, computed again by `copyOut`)
+as it is. -/
+def crypt16 : Prog isa :=
+  .seq (.block (toBs ++ saveAux)) (.seq (rounds .enc) (.block (restoreAux ++ fromBs ++ slotAddr .a0 tableEnd)))
 
 /-! ## The groups -/
 

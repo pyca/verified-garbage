@@ -204,6 +204,7 @@ structure GInv (s₀ : State) (b D : Addr) (n : Nat) (E : Nat → Spec.Sm4.Word)
   frame : Frame [⟨b, 8 * slots⟩, ⟨D, 16 * n⟩] s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
+  ra : s.gpr .ra = s₀.gpr .ra
 
 /-- The data loop, done. -/
 structure GDone (s₀ : State) (b D : Addr) (n : Nat) (E : Nat → Spec.Sm4.Word) (s : State) : Prop where
@@ -213,6 +214,7 @@ structure GDone (s₀ : State) (b D : Addr) (n : Nat) (E : Nat → Spec.Sm4.Word
   frame : Frame [⟨b, 8 * slots⟩, ⟨D, 16 * n⟩] s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
+  ra : s.gpr .ra = s₀.gpr .ra
 
 theorem inRd {s : State} {a : Addr} {n : Nat} (h : InRegions s.wr a n) : InRegions (s.rd ++ s.wr) a n :=
   let ⟨r, hr, hc⟩ := h; ⟨r, List.mem_append_right _ hr, hc⟩
@@ -291,24 +293,29 @@ theorem dataGroup_wp {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4
     rw [g₃' _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), hi.a0, base₃]
   refine WP.seq (WP.mono (crypt16_wp hkey (sc₃.masks.ok base₃) ha0₃) fun s₅ ⟨c₅, b₅⟩ => ?_)
   have base₅ : s₅.gpr sb = b := by rw [c₅.base, base₃]
-  have f₅ : Frame [⟨b, 8 * tableSlot⟩] s₃.mem s₅.mem := by have := c₅.frame; rw [base₃] at this; exact this
+  have f₅ : Frame [⟨b, 8 * tableSlot⟩, auxR b] s₃.mem s₅.mem := by
+    have := c₅.frame; rw [base₃] at this; exact this
   have sc₅ : ScrOk s₀ b E s₅.mem := by
     refine sc₃.frame2 f₅ (c₅.masks.at base₅) fun t ht r hr => ?_
     simp only [scrRegions, List.tail_cons, List.mem_cons, List.not_mem_nil, or_false] at ht hr
-    subst hr
-    rcases ht with rfl | rfl
+    rcases hr with rfl | rfl <;> rcases ht with rfl | rfl
     · exact VG.Offset.disjoint_base b (by rw [tableSlot_eq]) (by rw [tableSlot_eq]; omega_arith)
     · exact VG.Offset.disjoint_base b (by rw [tableSlot_eq, savedSlot_eq]; omega_arith) (by rw [savedSlot_eq]; omega_arith)
-  have k₅ : ∀ r, r ∉ sboxWrites → r ≠ kr → s₅.gpr r = s₃.gpr r := fun r h1 h2 => c₅.keep r h1 h2
+    · exact VG.Offset.disjoint b (Or.inl (by rw [tableSlot_eq, auxSlot_eq] <;> omega_arith))
+        (by rw [tableSlot_eq] <;> omega_arith) (by rw [auxSlot_eq] <;> omega_arith)
+    · exact VG.Offset.disjoint b (Or.inl (by rw [savedSlot_eq, auxSlot_eq] <;> omega_arith))
+        (by rw [savedSlot_eq] <;> omega_arith) (by rw [auxSlot_eq] <;> omega_arith)
+  have k₅ : ∀ r, r ∉ sboxWrites → r ≠ kr → r ≠ .a4 → s₅.gpr r = s₃.gpr r := fun r h1 h2 h3 => c₅.keep r h1 h2 h3
   have g₅ : ∀ r, r ∉ sboxWrites → r ≠ kr → r ≠ .a4 → s₅.gpr r = s.gpr r := fun r h1 h2 h3 => by
     have hsub : ∀ x ∈ ([.t1, .t2, .t3, .t4, t0] : List Reg), x ∈ sboxWrites := by decide
     have h' : r ∉ ([.t1, .t2, .t3, .t4, t0] : List Reg) := fun h => h1 (hsub r h)
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at h'
-    rw [k₅ r h1 h2, g₃' r h'.1 h'.2.1 h'.2.2.1 h'.2.2.2.1 h3 h'.2.2.2.2]
+    rw [k₅ r h1 h2 h3, g₃' r h'.1 h'.2.1 h'.2.2.1 h'.2.2.2.1 h3 h'.2.2.2.2]
   have a1₅ : s₅.gpr .a1 = A := by rw [g₅ _ (by decide) (by decide) (by decide), hi.a1]
   have a2₅ : s₅.gpr .a2 = BitVec.ofNat 64 v := by rw [g₅ _ (by decide) (by decide) (by decide), hi.a2]
   have a0₅ : s₅.gpr .a0 = b + BitVec.ofNat 64 (8 * tableEnd) := by
     rw [g₅ _ (by decide) (by decide) (by decide), hi.a0]
+  have ra₅ : s₅.gpr .ra = s₀.gpr .ra := by rw [g₅ _ (by decide) (by decide) (by decide), hi.ra]
   have wr₅' : s₅.wr = s.wr := by rw [c₅.wr, wr₃']
   have rd₅' : s₅.rd = s.rd := by rw [c₅.rd, rd₃']
   -- The tail buffer back to the group's blocks.
@@ -345,6 +352,8 @@ theorem dataGroup_wp {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4
     rw [g₉' _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), a2₅]
   have a0₉ : s₉.gpr .a0 = b + BitVec.ofNat 64 (8 * tableEnd) := by
     rw [g₉' _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), a0₅]
+  have ra₉ : s₉.gpr .ra = s₀.gpr .ra := by
+    rw [g₉' _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), ra₅]
   have wr₉' : s₉.wr = s₀.wr := by rw [wr₉, wr₈', hi.wr]
   have rd₉' : s₉.rd = s₀.rd := by rw [rd₉, rd₈', hi.rd]
   -- The scratch buffer and the frame.
@@ -363,8 +372,10 @@ theorem dataGroup_wp {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4
       ((f₅.sub fun r hr => ⟨⟨b, 8 * slots⟩, List.mem_cons_self, ?_⟩).trans
       ((mem₈ ▸ f₉).sub fun r hr => ⟨⟨D, 16 * n⟩, List.mem_cons_of_mem _ List.mem_cons_self, ?_⟩)))
     · simp only [List.mem_singleton] at hr; subst hr; exact subS (by rw [slots_eq, tailSlot_eq]; omega_arith)
-    · simp only [List.mem_singleton] at hr; subst hr
-      exact Region.sub_prefix (by rw [slots_eq, tableSlot_eq]; omega_arith)
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact Region.sub_prefix (by rw [slots_eq, tableSlot_eq]; omega_arith)
+      · rw [auxR]; exact VG.Offset.sub_base b (by rw [slots_eq, auxSlot_eq] <;> omega_arith)
     · simp only [List.mem_singleton] at hr; subst hr; exact VG.Offset.sub_base D (by omega_arith)
   -- The blocks the sixteen-block code read are the group's, as on entry.
   have hblk : ∀ j < c, tailBlock s₃ j = Spec.Sm4.blockAt s₀.mem (D + BitVec.ofNat 64 (16 * (16 * k + j))) := by
@@ -401,8 +412,11 @@ theorem dataGroup_wp {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4
           ∀ r ∈ rs, Region.Disjoint ⟨D, 16 * n⟩ r := fun h r hr => hp.sep.sub_right (h r hr)
       rw [f₉ _ hout, mem₈,
         f₅.bytes (R := ⟨D, 16 * n⟩) (hdS fun r hr => by
-          simp only [List.mem_singleton] at hr; subst hr
-          exact Region.sub_prefix (by rw [slots_eq, tableSlot_eq]; omega_arith)) (by simp only; omega_arith) hin,
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl
+          · exact Region.sub_prefix (by rw [slots_eq, tableSlot_eq]; omega_arith)
+          · rw [auxR]; exact VG.Offset.sub_base b (by rw [slots_eq, auxSlot_eq] <;> omega_arith))
+          (by simp only; omega_arith) hin,
         f₃'.bytes (R := ⟨D, 16 * n⟩) (hdS fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact subS (by rw [slots_eq, tailSlot_eq]; omega_arith))
           (by simp only; omega_arith) hin,
@@ -424,12 +438,13 @@ theorem dataGroup_wp {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4
   have base₁₁ : s₁₁.gpr sb = b := by rw [o₁₁ _ (by decide), o₁₀ _ (by decide), base₉]
   have rd₁₁' : s₁₁.rd = s₀.rd := by rw [rd₁₁, rd₁₀, rd₉']
   have wr₁₁' : s₁₁.wr = s₀.wr := by rw [wr₁₁, wr₁₀, wr₉']
+  have ra₁₁ : s₁₁.gpr .ra = s₀.gpr .ra := by rw [o₁₁ _ (by decide), o₁₀ _ (by decide), ra₉]
   by_cases hlt : v ≤ 16
   · have hn : 16 * k + c = n := by omega_arith
     refine .inl ⟨by rw [a2₁₁, show v - c = 0 by omega_arith]; rfl, base₁₁, hm ▸ sc₉,
-      fun i hi' => by rw [hm, hdata i hi', hn], hm ▸ fr, rd₁₁', wr₁₁'⟩
+      fun i hi' => by rw [hm, hdata i hi', hn], hm ▸ fr, rd₁₁', wr₁₁', ra₁₁⟩
   · have hc : c = 16 := by omega_arith
-    refine .inr ⟨fun h => ?_, base₁₁, ?_, ?_, by omega_arith, ?_, hm ▸ sc₉, ?_, hm ▸ fr, rd₁₁', wr₁₁'⟩
+    refine .inr ⟨fun h => ?_, base₁₁, ?_, ?_, by omega_arith, ?_, hm ▸ sc₉, ?_, hm ▸ fr, rd₁₁', wr₁₁', ra₁₁⟩
     · have hne : v - c ≠ 0 := by omega_arith
       rw [a2₁₁] at h
       apply hne

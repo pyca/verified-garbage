@@ -153,7 +153,7 @@ mod prepared_tests {
     #[cfg(target_arch = "powerpc64")]
     const WORDS: usize = 402;
     #[cfg(target_arch = "riscv64")]
-    const WORDS: usize = 396;
+    const WORDS: usize = 397;
 
     /// The first word of the batch of sixteen blocks in the working space.
     #[cfg(target_arch = "arm")]

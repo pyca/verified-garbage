@@ -51,10 +51,12 @@ at a time through `t1`). -/
 def extract : List Instr :=
   [ldS t0 (tailAt 0 1)] ++ storeBE 8 t0 t1 .a1 0 ++ [ldS t0 (tailAt 0 0)] ++ storeBE 8 t0 t1 .a1 8
 
-/-- Four rounds of the key schedule, and their round keys to the schedule;
-`t0` is zero when `kr` reaches the table's end. -/
+/-- Four rounds of the key schedule (with `ra` saved around them, and `a4`
+set again after them, for the S-box), and their round keys to the
+schedule; `t0` is zero when `kr` reaches the table's end. -/
 def keyBody : List Instr :=
-  rounds4 .key ++ [.addi kr kr 256] ++ fromBs ++ extract ++ [.addi .a1 .a1 16, .sub t0 kr .a4]
+  saveAux ++ rounds4 .key ++ restoreAux ++ [.addi kr kr 256] ++ fromBs ++ extract ++
+    [.addi .a1 .a1 16] ++ slotAddr .a4 tableEnd ++ [.sub t0 kr .a4]
 
 def expandKey : Prog isa :=
   .seq (.block ([movR sb .a2] ++ saveRegs ++ setSlots (keyMasks ++ bsKs) ++ ckTable ++ loadHalf 0 ++

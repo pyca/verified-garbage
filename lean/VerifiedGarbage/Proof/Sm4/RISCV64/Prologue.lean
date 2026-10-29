@@ -155,7 +155,7 @@ theorem save_ok {s : State} {b : Addr} (hw : (⟨b, 8 * slots⟩ : Region) ∈ s
     rw [← st.mem, r₁] at this
     rw [saved_addr, this, o₁ _ (sreg_ne_t0 i hi)]
   · simp only [List.mem_singleton] at hr; subst hr
-    exact VG.Offset.sub_base b (by rw [slots_eq, savedSlot_eq])
+    exact VG.Offset.sub_base b (by rw [slots_eq, savedSlot_eq]; decide)
   · rw [savedSlot_eq] at hk
     rw [slotW, slotW, g' _ sb_ne_t0, hb]
     refine hfr.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
