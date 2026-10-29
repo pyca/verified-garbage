@@ -284,6 +284,19 @@ namespace VG.Proof.Md5.X86_64
 …
 ```
 
+* Add a proof to the module that uses it, not to a new module of its own.
+  Every module is a `lean` process that first imports its whole closure,
+  about a second of CI's time, more than many modules' own work; the
+  per-declaration limits (`maxHeartbeats`, "Keeping proofs fast") apply to
+  declarations, not files, so splitting a file never helps them. A new proof
+  module is for code that several modules import, or for proofs that cost
+  more than their imports (`ci/lean_profile.py`), which a separate module
+  spares from re-checking when its importer changes. A module that only
+  one other proof module imports says why in a line
+  `-- separate module: <why>`; `ci/check_lean_single_importer.py` fails a
+  change that adds one without it (the modules of `Proof/Framework/` and
+  `Proof/Variants/`, `*Lit` and `Instances` modules, `meta` files and
+  those that `materialize_*` or `taint_summary` are exempt).
 * `public import` only what the file's statements and definitions mention
   (importers see it too); a plain `import` gives the file something for its
   proofs only, and importers do not see it. `@[expose] public section`
@@ -857,6 +870,7 @@ proofs that leave `src/asm/` as it was, tests, docs, CI).
 (cd lean && lake build --log-level=warning && lake env lean --run Emit.lean --check)
 python3 ci/check_lean_imports.py
 python3 ci/check_lean_modules.py
+python3 ci/check_lean_single_importer.py --base origin/main
 git diff --name-only origin/main -- lean/VerifiedGarbage | sed -n 's#^lean/\(.*\)\.lean$#\1#p' | tr / . \
   | xargs -r python3 ci/check_lean_public_imports.py --base origin/main -m   # after building them; --fix applies it
 python3 ci/check_registrations.py
