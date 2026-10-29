@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 public import VerifiedGarbage.Impl.Rsa.X86_64
 import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
-import Mathlib.Data.Int.GCD
+import VerifiedGarbage.Proof.Framework.ModArith
 public import Aesop.BuiltinRules
 import Mathlib.Tactic.ToDual
 
@@ -94,7 +94,7 @@ theorem pdLoadWith_ok (cmp : Prog isa) (hc : CompareCorrect cmp) {s : State} {B 
   have h0N : slot ((k + 7) / 8) 0 ≤ slot ((k + 7) / 8) aN := by unfold slot; omega_using []
   have eW : sW = 6 := rfl
   have eA : sArr 0 = 8 := rfl
-  have hsl : ∀ r ∈ pdLoadRanges ((k + 7) / 8), r.1 + r.2 ≤ Z := fun r hr => (pdLoadRanges_le _ r hr).trans hZ
+  have hsl : ∀ r ∈ pdLoadRanges ((k + 7) / 8), r.1 + r.2 ≤ Z := fun r hr => Nat.le_trans (pdLoadRanges_le _ r hr) hZ
   -- A word of `pre` is outside the working space.
   have hpsep : ∀ e, e + 8 * ((k + 7) / 8) ≤ 16 * ((k + 7) / 8) → ∀ j < (k + 7) / 8, ∀ b < 8,
       Z ≤ ofs B (off pp (e + 8 * j) + BitVec.ofNat 64 b) := fun e he j hj b hb => by
@@ -239,8 +239,7 @@ theorem exponent_facts {e : Nat} (h : Spec.Rsa.exponentValid e = true) : e % 2 =
 /-- `x` with `x R ≡ X`, for `R` invertible modulo `N > 1`. -/
 theorem exists_mont {R N : Nat} (hR : Nat.Coprime R N) (hN1 : 1 < N) (X : Nat) :
     ∃ x, X % N = x * R % N := by
-  obtain ⟨m, -, hm⟩ := Nat.exists_mul_mod_eq_one_of_coprime hR hN1
-  refine ⟨X * m, ?_⟩
-  rw [Nat.mul_assoc, Nat.mul_mod, Nat.mul_comm m R, hm, Nat.mul_one, Nat.mod_mod]
+  obtain ⟨x, -, hx⟩ := ModArith.exists_mul_mod_eq hR (by omega) X
+  exact ⟨x, hx.symm⟩
 
 end VG.Proof.Bignum.X86_64

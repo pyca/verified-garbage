@@ -25,7 +25,6 @@ meta import Mathlib.Tactic.TermCongr
 import Mathlib.Tactic.TermCongr
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-meta import Mathlib.Data.Int.ModEq
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
@@ -134,7 +133,7 @@ theorem amTail_ok {L : Ws} {s₁ : State} (h : AmHd L s₁) : WP isa (.seq amLoo
   obtain ⟨hdi, hbx, h9, h10, h8, h12, hsi, hbp, ⟨minv, hg, hZ⟩, hw, hw'⟩ := h
   have hs₁ := hg.scr
   have hn := hs₁.nowrap
-  have sl : ∀ j < 8, slot L.w j + 8 * (L.w + 2) ≤ L.Z := fun j hj => (slot_le hj).trans hZ
+  have sl : ∀ j < 8, slot L.w j + 8 * (L.w + 2) ≤ L.Z := fun j hj => Nat.le_trans (slot_le hj) hZ
   have sA := sl Public.aAcc (by decide)
   have sX := sl aXc (by decide)
   have sT := sl aT (by decide)

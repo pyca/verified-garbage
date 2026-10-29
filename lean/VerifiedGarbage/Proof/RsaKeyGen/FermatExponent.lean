@@ -1,6 +1,6 @@
 module
 
-public import Mathlib.Data.Nat.Prime.Basic
+public import Mathlib.Data.Nat.Prime.Defs
 
 /-! # Coprimality for RSA's usual public exponent
 

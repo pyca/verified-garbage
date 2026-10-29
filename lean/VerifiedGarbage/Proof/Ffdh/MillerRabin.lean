@@ -4,7 +4,6 @@ public import VerifiedGarbage.Spec.Ffdh
 public import VerifiedGarbage.Proof.RsaKeyGen.MrWindow
 import VerifiedGarbage.Proof.RsaKeyGen.KeyCheck
 import VerifiedGarbage.Proof.Bignum.Math
-import Mathlib.Data.Int.ModEq
 
 /-!
 # FFDH and RSA use the same Miller–Rabin round
@@ -30,15 +29,15 @@ private theorem split_bounds {p : Nat} (hp : 3 ≤ p) (hodd : p % 2 = 1) :
   obtain ⟨hN, hm2⟩ := splitTwos_spec (p - 1) (by omega)
   have hm : 0 < (splitTwos (p - 1)).2 := by omega
   constructor
-  · by_contra h
+  · refine Classical.byContradiction fun h => ?_
     have h0 : (splitTwos (p - 1)).1 = 0 := by omega
     rw [h0, Nat.pow_zero, Nat.mul_one] at hN
     omega
   · have hlt : p < 2 ^ bitLength p := bitLength_lt rfl
     have hpow : 2 ^ (splitTwos (p - 1)).1 ≤ p - 1 := by
-      exact (Nat.le_mul_of_pos_left _ hm).trans_eq hN.symm
+      exact Nat.le_trans (Nat.le_mul_of_pos_left _ hm) (Nat.le_of_eq hN.symm)
     have hbound : (splitTwos (p - 1)).1 < bitLength p := by
-      by_contra h
+      refine Classical.byContradiction fun h => ?_
       have := Nat.pow_le_pow_right (by decide : 1 ≤ 2) (show bitLength p ≤ (splitTwos (p - 1)).1 by omega)
       omega
     omega
