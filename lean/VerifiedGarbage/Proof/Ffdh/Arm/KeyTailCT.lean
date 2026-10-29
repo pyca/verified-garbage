@@ -19,8 +19,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMain
 import VerifiedGarbage.Proof.Ffdh.Arm.PowerAt
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyMemory
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyFinish
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyFail
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyArgsCT
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyByteCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT

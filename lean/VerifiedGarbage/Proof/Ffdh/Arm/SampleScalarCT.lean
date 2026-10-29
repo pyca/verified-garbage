@@ -16,9 +16,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Ffdh.Arm.SampleCut
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyByteCT
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ffdh.Arm.SampleFirstRetained
 import VerifiedGarbage.Proof.Ffdh.Arm.SamplePrefix
 /-! Public scalar layouts determine sampling addresses and loop counts. -/

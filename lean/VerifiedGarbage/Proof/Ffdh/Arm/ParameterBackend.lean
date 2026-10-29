@@ -65,7 +65,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.Table
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePair
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateTable
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidatePairMath
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateSieveMath
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CTScreenedTests
 import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.CandidateQOdd

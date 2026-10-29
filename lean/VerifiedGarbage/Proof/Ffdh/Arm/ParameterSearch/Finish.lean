@@ -11,8 +11,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.FinishHead
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
 import VerifiedGarbage.Proof.Ffdh.Arm.Output
-import VerifiedGarbage.Proof.Rc2.PairMem
-import VerifiedGarbage.Proof.Ffdh.Arm.InitValues
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.TCB.Code

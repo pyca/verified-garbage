@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.PublicPowerInput
 import VerifiedGarbage.Proof.Ffdh.Arm.PublicScanCT
 import VerifiedGarbage.Proof.Ffdh.Arm.PowerCT
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
-import VerifiedGarbage.Proof.Ffdh.Arm.PowerArgs
 /-! Subgroup checks have a trace determined by the domain width and pointers. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/PublicPowerAtCT.lean`, which only this module imported.

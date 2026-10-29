@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyGenerateCorrect
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeneratePre
-import VerifiedGarbage.Proof.Ffdh.Arm.Entered
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 /-! The vetted attempt uses the same caller-owned buffers and stack frame,
 with the reviewed group table added to readable regions. -/

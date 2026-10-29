@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Ffdh.Arm.ExchangePre
 import VerifiedGarbage.Proof.Ffdh.Arm.Head
-import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeBody
 import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMainCT
 import VerifiedGarbage.Proof.Ffdh.Arm.HeadCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT

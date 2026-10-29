@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
-import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicTail
 import VerifiedGarbage.Proof.Ffdh.Arm.QTest
 /-! The imported public value controls only the documented public validation branches. -/
 

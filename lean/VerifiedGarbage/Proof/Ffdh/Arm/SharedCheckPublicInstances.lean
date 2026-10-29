@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ValueChecksCT
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpSharedCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Impl.Ffdh.Arm.Domain
-import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicTail
 import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicStateCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
@@ -25,19 +24,15 @@ import VerifiedGarbage.Proof.Ffdh.Arm.DomainSharedPrepareAt
 import VerifiedGarbage.Proof.Ffdh.Arm.SharedPrepareCT
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
 import VerifiedGarbage.Impl.Bignum.Arm.MontCall
-import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicMain
-import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
 import VerifiedGarbage.Proof.Ffdh.Arm.RangeCT
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
-import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
 import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.Proof.Ffdh.Arm.Head
-import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicBody
 import VerifiedGarbage.Proof.Ffdh.Arm.HeadCT
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

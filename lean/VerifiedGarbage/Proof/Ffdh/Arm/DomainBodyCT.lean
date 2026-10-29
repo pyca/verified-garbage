@@ -28,12 +28,9 @@ import VerifiedGarbage.Proof.Bignum.Arm.ReduceOperand
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
-import VerifiedGarbage.Proof.Ffdh.Arm.DomainQChecks
 import VerifiedGarbage.Proof.Ffdh.Arm.SubgroupCT
 import VerifiedGarbage.Proof.Ffdh.Arm.FlagCT
-import VerifiedGarbage.Proof.Ffdh.Arm.DomainTail
 import VerifiedGarbage.Proof.Ffdh.Arm.QTest
-import VerifiedGarbage.Proof.Ffdh.Arm.DomainMain
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch

@@ -11,7 +11,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeProductState
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeProductRound
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeControlCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeProductBody
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeProductLoadCT
 import VerifiedGarbage.Proof.Ffdh.Arm.CombPrecomputeSquaresCT
 import VerifiedGarbage.Proof.Bignum.Arm.MontCallOpCT

@@ -77,7 +77,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyGenerateState
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyGenerateCalls
 import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRangeCT
-import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.FlagCT
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarCT
@@ -85,17 +84,14 @@ import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.TCB.Mem
 import VerifiedGarbage.Proof.Ffdh.Arm.HeadCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyGenerateMain
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyEntryCT
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Entered
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyGenerateCorrect
 import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsConsts
 import VerifiedGarbage.Proof.Ffdh.Arm.PrivateSpec
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyClassification
 import VerifiedGarbage.Proof.Framework.Sig
 import Init.Data.BitVec.Basic
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeneratePre
 import Init.Prelude
 import VerifiedGarbage.TCB.Artifact
 /-! Every callable Montgomery backend supplies the vetted attempt. -/

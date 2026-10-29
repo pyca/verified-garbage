@@ -23,13 +23,11 @@ import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPowerCT
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainNormalizedPrepareAtCT
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpSharedCT
 import VerifiedGarbage.Proof.Ffdh.Arm.RangeCT
-import VerifiedGarbage.Proof.Ffdh.Arm.Range
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Impl.Ffdh.Arm.SharedCheckPublic
 import VerifiedGarbage.Proof.Ffdh.Arm.PowerAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Head
-import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeBody
 import VerifiedGarbage.Proof.Ffdh.Arm.HeadCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack

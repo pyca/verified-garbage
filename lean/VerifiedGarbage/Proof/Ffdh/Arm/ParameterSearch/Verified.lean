@@ -20,7 +20,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Function
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTLoop
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.CTFinish
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Body
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Loop
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Widen
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Start

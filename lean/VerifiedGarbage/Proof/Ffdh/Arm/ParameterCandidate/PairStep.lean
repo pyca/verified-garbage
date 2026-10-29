@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SievePolicy
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SieveContext
-import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.SaveWord
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.X25519.Arm.Instr
 /-! One compact-table sieve iteration uses RSA's verified native reducer. -/

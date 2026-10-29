@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyBound
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeometry
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyCut
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyByteCT
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyFirstRetained
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyPrefix

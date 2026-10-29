@@ -15,11 +15,9 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeneratePre
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyMain
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyGenerateMain
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyGenerateState
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyGenerateCalls
 import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRangeCT
-import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.FlagCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT

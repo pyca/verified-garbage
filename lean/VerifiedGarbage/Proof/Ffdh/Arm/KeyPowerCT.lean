@@ -14,12 +14,10 @@ import VerifiedGarbage.Proof.Bignum.Arm.TwoExpByteState
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpByteHead
 import VerifiedGarbage.Proof.Bignum.Arm.ExpByteHeadCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpPhase
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpBytes
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyPowerDetect
 import VerifiedGarbage.Impl.Ffdh.Arm.KeyPowerDetect
 import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 import VerifiedGarbage.Proof.Framework.RelCT

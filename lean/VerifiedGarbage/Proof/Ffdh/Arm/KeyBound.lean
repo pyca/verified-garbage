@@ -20,7 +20,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Ffdh.Arm.StoreSlot
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyScanBlocks
 import VerifiedGarbage.Proof.Ffdh.KeyScalar
 /-! Derive the exact native scalar width and mask from the public domain bound. -/
 
