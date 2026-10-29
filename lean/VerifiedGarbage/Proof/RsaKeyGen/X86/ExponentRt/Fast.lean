@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Pointer
 import VerifiedGarbage.Proof.RsaKeyGen.X86.FilterStack
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Data.Nat.Prime.Basic
+import Mathlib.Data.Nat.Prime.Defs
 import VerifiedGarbage.Impl.RsaKeyGen.X86.FermatExponent
 import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.X86.Wp

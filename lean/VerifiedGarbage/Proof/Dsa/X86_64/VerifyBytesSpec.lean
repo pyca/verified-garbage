@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Dsa.SignVerify
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 import Mathlib.Tactic.Convert
-import Mathlib.Data.Int.ModEq
 
 /-! # The verification mask implements the packed DSA verification spec -/
 
@@ -54,7 +53,12 @@ theorem verifyBytes_compute (L : ExecutionLayout) (data : VerifyValues) (key sig
     by_cases hrange : 0 < Spec.Dsa.decodeBE data.signatureR ∧ Spec.Dsa.decodeBE data.signatureR < L.subgroup <;>
     by_cases srange : 0 < Spec.Dsa.decodeBE data.signatureS ∧ Spec.Dsa.decodeBE data.signatureS < L.subgroup <;>
     by_cases he : data.value L = Spec.Dsa.decodeBE data.signatureR <;>
-    simp_all [VerifyValues.key, ← Bool.decide_and, and_assoc]
-  exact decide_eq_decide.mpr Iff.rfl
+    simp_all [VerifyValues.key, ← Bool.decide_and, and_assoc] <;>
+    first
+      | exact decide_eq_decide.mpr Iff.rfl
+      | intro h₁ h₂
+        first
+          | exact absurd h₂ (Nat.not_lt.mpr (srange h₁))
+          | exact absurd h₂ (Nat.not_lt.mpr (hrange h₁))
 
 end VG.Proof.Dsa.X86_64
