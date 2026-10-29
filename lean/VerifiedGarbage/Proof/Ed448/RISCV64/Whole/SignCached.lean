@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Ed448.Signing
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Ed448.RISCV64.VChecks
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Common
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Hash
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Prune

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.SignSetup
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Prune
-import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Common

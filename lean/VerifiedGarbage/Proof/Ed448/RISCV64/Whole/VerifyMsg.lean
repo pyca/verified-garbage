@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.SignNonce
 public import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.HashCT
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Common
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Prune
-import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Calls
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Common

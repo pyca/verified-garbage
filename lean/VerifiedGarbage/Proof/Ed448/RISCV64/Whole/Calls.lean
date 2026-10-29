@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.Ed448.RISCV64.BaseVerified
 public import VerifiedGarbage.Proof.Ed448.RISCV64.ScalarVerified
 public import VerifiedGarbage.Proof.Ed448.RISCV64.VVerified
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
-import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 public import VerifiedGarbage.Proof.Ed448.RISCV64.BaseMain
 
 /-!

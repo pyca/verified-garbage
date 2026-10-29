@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Common
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Calls
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Prune
-import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Ed448.RISCV64.Whole
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Frame

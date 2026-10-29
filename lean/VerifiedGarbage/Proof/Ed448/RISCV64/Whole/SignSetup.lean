@@ -7,7 +7,6 @@ public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Sha3.Arith
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Prune
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Prune
-import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
@@ -16,8 +15,11 @@ public import VerifiedGarbage.Impl.Ed448.RISCV64.Whole
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.Frame
 public import VerifiedGarbage.Proof.Framework.RISCV64.Call
 public import VerifiedGarbage.Proof.Framework.RISCV64.Steps
-public import VerifiedGarbage.Proof.X25519.RISCV64.Instr
+import VerifiedGarbage.Proof.X25519.RISCV64.Instr
 public import VerifiedGarbage.Spec.Ed448
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.RISCV64.Isa
 
 /-!
 # `vg_ed448_sign_cached` on RISC-V: the setup

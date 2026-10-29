@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.SignNonce
 public import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.HashCT
 public import VerifiedGarbage.Proof.Ed448.Ref
-import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.SignCached
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.SignChallenge
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.Common
 import VerifiedGarbage.Proof.Framework.RISCV64.RelBlock
