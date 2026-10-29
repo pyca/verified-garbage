@@ -1,17 +1,121 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.BasisState
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.BasisStore
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SquareFrame
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeProducts
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeControls
+import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.ProductState
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeSquares
+
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Tactic.Ring
-
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Precompute
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Basis
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.BuildFrame
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.ContextBuild
 /-! Build one tooth and all new subsets containing it. -/
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/BasisState.lean`, which only this module imported.
+section
+
+/-! One public tooth index and the table prefix completed before constructing it. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum.AArch64
+open VG.Impl.Ffdh.AArch64.Cached
+open VG.Proof.Bignum
+
+structure BasisState (p : Parameters) (b : Nat) (s : State) : Prop where
+ tooth : 1≤b ∧ b≤5
+ bits : 0<p.N ∧ p.N≤8192
+ basis : Basis p (2^((b-1)*Spec.Rsa.FixedBaseComb.rows p.N)) s
+ space : ContextSpace p s
+ context : word s.mem p.B (8*sCtx)=p.ctx
+ index : word s.mem p.B (8*sD)=BitVec.ofNat 64 (2^b)
+ rows : word s.mem p.B (8*sRows)=BitVec.ofNat 64 (Spec.Rsa.FixedBaseComb.rows p.N)
+ table : TablePrefix p (2^b) s
+
+end VG.Proof.Ffdh.AArch64.Cached
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/BasisStore.lean`, which only this module imported.
+section
+
+/-! Store the next tooth at its public power-of-two index. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Impl.Ffdh.AArch64.Cached
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+
+theorem basisStore_ok {s : State} {p : Parameters} {d : Nat}
+ (good : Good s p.B p.Z p.w p.mi) (space : ContextSpace p s)
+ (context : word s.mem p.B (8*sCtx)=p.ctx) (index : word s.mem p.B (8*sD)=BitVec.ofNat 64 d)
+ (inside : d<32) :
+ WP isa (.seq (.block [ldh .x3 sD]) (storeEntry 5)) s fun t =>
+ Good t p.B p.Z p.w p.mi ∧ wv t.mem p.ctx (entryOffset p.w d) p.w=wv s.mem p.B (slot p.w 5) p.w ∧
+ Outside p.ctx (entryOffset p.w d) (8*p.w) s.mem t.mem ∧
+ (∀ x,ofs p.B x<p.Z→t.mem x=s.mem x) ∧ Keep mmRegs s t := by
+ rw [WP.seq_iff]
+ refine WP.mono (WP.keep [.x3] (Q:=fun u =>u.gpr .x3=BitVec.ofNat 64 d ∧ u.mem=s.mem) ?_ rfl rfl rfl) ?_
+ · brun [good.x0,hdr_enc (show sD<32 by decide),header_read good p.room (show sD<32 by decide),index]
+ · rintro u ⟨⟨indexU,memU⟩,restU⟩
+   have goodU : Good u p.B p.Z p.w p.mi :=
+    ⟨good.scr.congr restU.wr,(restU.gpr .x0 (by decide)).trans good.x0,memU ▸ good.hdr⟩
+   refine WP.mono (storeEntry_ok goodU p.room (by have := p.positive;omega) p.width (by decide : 5<8)
+    (memU ▸ context) indexU (entry_fit p inside)
+    (fun i hi => (space.after restU).entry_write inside hi)
+    (fun i hi => space.entry_outside inside hi)) ?_
+   rintro t ⟨goodT,value,frame,unchanged,restT⟩
+   rw [memU] at value frame unchanged
+   exact ⟨goodT,value,frame,unchanged,(restU.trans restT).mono (by simp [mmRegs])⟩
+
+end VG.Proof.Ffdh.AArch64.Cached
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/SquareFrame.lean`, which only this module imported.
+section
+
+/-! Squaring changes arithmetic arrays and one counter, preserving the context metadata. -/
+@[expose] public section
+namespace VG.Proof.Ffdh.AArch64.Cached
+open VG VG.Impl.Bignum VG.Impl.Bignum.AArch64
+open VG.Impl.Ffdh.AArch64.Cached
+open VG.Proof.Bignum
+
+theorem basisSquareRanges_le (w : Nat) : ∀ r∈basisSquareRanges w,r.1+r.2≤slot w 8 := by
+ have s2 := slot_le (w:=w) (by decide : 2<8)
+ have s3 := slot_le (w:=w) (by decide : 3<8)
+ have s5 := slot_le (w:=w) (by decide : 5<8)
+ have s6 := slot_le (w:=w) (by decide : 6<8)
+ have counter := hdr_lt_slot w 8 (show sI<32 by decide)
+ simp only [basisSquareRanges,squareRanges,List.mem_append,List.mem_cons,List.not_mem_nil,or_false]
+ rintro _ ((rfl|rfl|rfl|rfl)|rfl) <;> omega
+
+theorem squareFrame_header {B : Addr} {w i : Nat} {m m' : Mem}
+ (frame : Frm B (basisSquareRanges w) m m') (inside : i<32) (different : i≠sI) :
+ word m' B (8*i)=word m B (8*i) := by
+ apply frame.word_eq ?_ (by omega)
+ intro r hr
+ have s2 := hdr_lt_slot w 2 inside
+ have s3 := hdr_lt_slot w 3 inside
+ have s5 := hdr_lt_slot w 5 inside
+ have s6 := hdr_lt_slot w 6 inside
+ simp only [basisSquareRanges,squareRanges,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hr
+ rcases hr with ((rfl|rfl|rfl|rfl)|rfl) <;> omega
+
+end VG.Proof.Ffdh.AArch64.Cached
+end
+
+end
+
 @[expose] public section
 namespace VG.Proof.Ffdh.AArch64.Cached
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64
