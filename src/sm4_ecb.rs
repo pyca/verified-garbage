@@ -34,6 +34,9 @@ crate::error::impl_error! {
 /// An expanded SM4 key for ECB encryption and decryption.
 ///
 /// No padding is added or removed.
+// Aligned to 8 bytes so that the code, which copies the schedule into its
+// working space, can copy it a doubleword at a time on RISC-V.
+#[repr(C, align(8))]
 pub struct Sm4Ecb {
     schedule: [u8; 128],
 }
