@@ -191,7 +191,7 @@ theorem writesIn_sound {rs : List Reg} {i : Instr} (h : writesIn rs i = true) {r
 /-- Whether no instruction of `c` writes a register outside `rs`: of each
 instruction, only the registers it writes are looked up (`writesIn`), which the
 kernel evaluates far faster than every register against every instruction. -/
-def writesOnly (rs : List Reg) (c : Prog isa) : Bool :=
+noncomputable def writesOnly (rs : List Reg) (c : Prog isa) : Bool :=
   c.allInstrs (writesIn rs)
 
 /-- A register that no instruction writes keeps its value. -/
