@@ -12,9 +12,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Bignum.Arm.PcPrepare
 import VerifiedGarbage.Proof.Bignum.Arm.ExportState
-import VerifiedGarbage.Proof.Bignum.Arm.Precompute
 import VerifiedGarbage.Proof.Bignum.Arm.PcPrepareCT
-import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOutCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.PcFailCT

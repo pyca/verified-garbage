@@ -87,7 +87,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
 import VerifiedGarbage.Proof.Bignum.Arm.CrtPrepare
 import VerifiedGarbage.Impl.Bignum.Arm.CrtWorkspaceCall
 import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectWorkspace
-import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Bignum.Arm.CrtProductState
 import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
 import VerifiedGarbage.Proof.Bignum.Arm.CrtHeaderCopiesCT

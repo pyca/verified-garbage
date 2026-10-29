@@ -15,7 +15,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
 import VerifiedGarbage.Proof.Bignum.Arm.PdChecks
 import VerifiedGarbage.Proof.Bignum.Arm.PdPrepare
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.Arm.PublicStackFrame
 /-! # Packed-key checks branch only on public values -/
 
 -- Formerly `VerifiedGarbage/Proof/Bignum/Arm/PdStages.lean`, which only this module imported.

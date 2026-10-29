@@ -14,8 +14,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.MontCallArithmetic
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Bignum.Arm.MontCallCT
 import VerifiedGarbage.Proof.Bignum.Arm.SquareUmaalCT
-import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Framework.PlainSimp
 /-! The new diagonal square satisfies the unchanged callable RSA ABI. -/
 

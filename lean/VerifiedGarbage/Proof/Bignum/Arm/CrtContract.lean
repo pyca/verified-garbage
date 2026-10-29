@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.CrtCallStack
 import VerifiedGarbage.Proof.Bignum.Arm.PcPush
 import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Framework.Block
 /-! # Private CRT RSA satisfies its shared contract under AAPCS -/
 

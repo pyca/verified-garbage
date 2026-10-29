@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse
 import VerifiedGarbage.Proof.Bignum.Arm.R2
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
 /-! # RSA precomputation from modulus bytes, entirely in proved ARMv7 code -/
 
 -- Formerly `VerifiedGarbage/Proof/Bignum/Arm/PrecomputeLaw.lean`, which only this module imported.

@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Impl.Bignum.Arm.WideProduct
 import VerifiedGarbage.Proof.Bignum.Arm.WideProductState
 import VerifiedGarbage.Proof.Bignum.Arm.WideProductBody
-import VerifiedGarbage.Impl.Bignum.Arm.Zero
 /-! # Exact factor multiplication, including buffer initialization -/
 
 -- Formerly `VerifiedGarbage/Proof/Bignum/Arm/WideProduct.lean`, which only this module imported.

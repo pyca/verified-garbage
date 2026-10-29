@@ -32,7 +32,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayoutCT
 import VerifiedGarbage.Proof.Bignum.Arm.ExpControlsCT
-import VerifiedGarbage.Proof.Bignum.Arm.WindowPhaseCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.SquareRedCT
 /-! # A factor's narrow private power hides the factor, exponent, input and acceptance
