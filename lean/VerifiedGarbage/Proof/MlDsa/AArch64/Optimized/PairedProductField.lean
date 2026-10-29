@@ -103,7 +103,7 @@ theorem pair16_sep (base : Addr) {i j : Fin 2 × Fin 8} (hne : j≠i) :
       (base+BitVec.ofNat 64 (1024*j.1.val+16*j.2.val)) 16 := by
   have hd : j.1.val≠i.1.val ∨ j.2.val≠i.2.val := by
     by_contra h
-    simp only [not_or,not_not] at h
+    simp only [not_or,Classical.not_not] at h
     exact hne (Prod.ext (Fin.ext h.1) (Fin.ext h.2))
   exact Offset.sep base (by omega) (by omega) (by omega)
 
