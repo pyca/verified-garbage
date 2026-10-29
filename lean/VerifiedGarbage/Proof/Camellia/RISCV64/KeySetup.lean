@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.RISCV64.KaKb
-public import VerifiedGarbage.Proof.Camellia.RISCV64.KeyChecks2
 public import VerifiedGarbage.Proof.Camellia.RISCV64.Prologue
-public import VerifiedGarbage.Proof.Camellia.RISCV64.KeyStore
+import VerifiedGarbage.Proof.Camellia.RISCV64.KeyStore
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.Spill
@@ -18,6 +17,11 @@ import VerifiedGarbage.Proof.Camellia.KeySched
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Impl.Camellia.RISCV64.ExpandKey
+public import VerifiedGarbage.Proof.Camellia.Bitsliced
+public import VerifiedGarbage.Proof.Camellia.Common
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.RISCV64.Straight
 
 /-!
 # The Camellia key schedule on RISC-V: its parts

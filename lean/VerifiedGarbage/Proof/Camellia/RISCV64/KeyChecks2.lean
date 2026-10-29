@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.RISCV64.KeyChecks
+import VerifiedGarbage.Proof.Camellia.RISCV64.KeyChecks
 public import VerifiedGarbage.Impl.Camellia.RISCV64.ExpandKey
+public import VerifiedGarbage.Proof.Camellia.RISCV64.Linear
 
 /-!
 # The key schedule's evaluated facts on RISC-V

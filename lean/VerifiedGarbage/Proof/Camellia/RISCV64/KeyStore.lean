@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad64
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 public import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
-import VerifiedGarbage.Proof.Camellia.RISCV64.Keys
 import VerifiedGarbage.Proof.Camellia.RISCV64.Prologue
 import VerifiedGarbage.Proof.Camellia.RISCV64.Group
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
