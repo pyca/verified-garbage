@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Sm4.RISCV64.Core
 
 import VerifiedGarbage.Proof.Sm4.Layout
-import VerifiedGarbage.Proof.Framework.RISCV64.Steps
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.RISCV64.Spill

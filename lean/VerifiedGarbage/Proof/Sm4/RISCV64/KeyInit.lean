@@ -126,7 +126,7 @@ theorem loadHalf_ok {s : State} {b : Addr} (h : Nat) (hh : h < 2) (hb : s.gpr sb
 /-- `li64 t0, v` (through `t1`); `sd t0, d(a4)`. -/
 theorem ckOne_ok {s : State} {A : Addr} {d : Nat} (v : BitVec 64) (ha : s.gpr .a4 = A) (hd : d < 2048)
     (hal : (A + BitVec.ofNat 64 d).toNat % 8 = 0) (hw : InRegions s.wr (A + BitVec.ofNat 64 d) 8) :
-    ∃ s', runBlock isa (li64 t0 t1 v ++ [.store .d t0 .a4 d]) s = some s' ∧
+    ∃ s', runBlock isa (li64 t0 t1 v ++ ([.store .d t0 .a4 d] : List Instr)) s = some s' ∧
       s'.mem = s.mem.writeW (A + BitVec.ofNat 64 d) v ∧
       (∀ r, r ≠ t0 → r ≠ t1 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨s₁, e₁, h₁⟩ := Interleave.runBlock_of_WP (ByteLoad.li64_ok (s := s) (d := t0) (tmp := t1) (by decide) v)
@@ -150,7 +150,7 @@ theorem ckStores_ok {A : Addr} (hal : A.toNat % 8 = 0) :
     ∀ (ms : List (Nat × BitVec 64)) {s : State}, s.gpr .a4 = A →
       (∀ k < 256, InRegions s.wr (wordAddr A k) 8) →
       (∀ kv ∈ ms, kv.1 < 256) → (ms.map (·.1)).Nodup →
-      ∃ s', runBlock isa (ms.flatMap fun (k, v) => li64 t0 t1 v ++ [.store .d t0 .a4 (8 * k)]) s = some s' ∧
+      ∃ s', runBlock isa (ms.flatMap fun (k, v) => li64 t0 t1 v ++ ([.store .d t0 .a4 (8 * k)] : List Instr)) s = some s' ∧
         (∀ kv ∈ ms, s'.mem.readW (wordAddr A kv.1) 64 = kv.2) ∧
         (∀ k < 256, k ∉ ms.map (·.1) → s'.mem.readW (wordAddr A k) 64 = s.mem.readW (wordAddr A k) 64) ∧
         (∀ r, r ≠ t0 → r ≠ t1 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
