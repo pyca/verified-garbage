@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Mem
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Byte reversal of a little-endian load is a big-endian load
@@ -29,7 +28,8 @@ theorem getLsbD_cat4 (b0 b1 b2 b3 : BitVec 8) (i : Nat) :
       if i < 8 then b3.getLsbD i else if i < 16 then b2.getLsbD (i - 8)
       else if i < 24 then b1.getLsbD (i - 16) else b0.getLsbD (i - 24) := by
   simp only [BitVec.getLsbD_append]
-  split_ifs <;> first | omega | rfl
+  repeat' split
+  all_goals first | omega | rfl
 
 /-- The low byte of `y ++ a`. -/
 theorem extractLsb'_append_byte_lo {w : Nat} (y : BitVec w) (a : BitVec 8) :

@@ -5,8 +5,6 @@ meta import VerifiedGarbage.Proof.Mont.X86.Rt.Body
 import VerifiedGarbage.Proof.Dsa.X86.PowABI
 meta import VerifiedGarbage.Proof.Dsa.X86.PowABI
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 public import Init.Data.BitVec.Basic
@@ -176,7 +174,8 @@ theorem satMem_ws {d : Nat} (hd : d < 0xF000) :
   have ht : (0x1000 + BitVec.ofNat 64 d : Addr).toNat = 0x1000 + d := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, show (0x1000 : Addr).toNat = 0x1000 from rfl]; omega
   simp only [satMem, ht]
-  split_ifs <;> first | rfl | omega
+  repeat' split
+  all_goals first | rfl | omega
 
 theorem satArg_eq (i : Nat) (hi : i < 9) : arg satState i = satArg i := by
   show (Mem.read satMem (argAddr satState i) 4).setWidth 32 = _

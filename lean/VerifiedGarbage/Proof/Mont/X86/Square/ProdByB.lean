@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
 public import VerifiedGarbage.Impl.Mont.X86.MulRt
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Mont.X86.Square.DigitStore
 public import VerifiedGarbage.Proof.Mont.X86.Square.Step
 public import VerifiedGarbage.Proof.Framework.Mem
@@ -20,7 +19,8 @@ theorem mul_by_b_eq (s : State) (a : BitVec 32) :
     show Reg.ebx ≠ Reg.eax by decide, ↓reduceIte]
   congr 1
   funext r
-  split_ifs <;> simp_all
+  repeat' split
+  all_goals simp_all
 
 def prodByB : List Instr := [.mov .eax (.mem (at_ .ebp 0)), .mul .ebx] ++ VG.Impl.Mont.X86.Rt.Square.accum
 
