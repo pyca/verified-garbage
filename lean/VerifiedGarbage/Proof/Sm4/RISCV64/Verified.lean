@@ -6,7 +6,6 @@ public import VerifiedGarbage.Impl.StackScratch.RISCV64
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
-import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Sm4.RISCV64.Lit
 import VerifiedGarbage.Proof.Sm4.RISCV64.Prologue
@@ -19,7 +18,6 @@ meta import VerifiedGarbage.Impl.StackScratch.RISCV64
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.TCB.RISCV64.Target
 meta import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
-meta import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 meta import VerifiedGarbage.Proof.Sm4.RISCV64.Lit
 meta import VerifiedGarbage.Proof.Sm4.RISCV64.Prologue
