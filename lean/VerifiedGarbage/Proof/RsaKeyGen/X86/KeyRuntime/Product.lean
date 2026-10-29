@@ -1,17 +1,41 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.ProductLayout
+
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.ProductGeometry
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Product
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Table2
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
-import VerifiedGarbage.Proof.RsaKeyGen.X86.ProductLayout
-
+import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 /-! # The product at the run-time width: a row of `b` for each word of `a` -/
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/KeyRuntime/ProductGeometry.lean`, which only this module imported.
+section
+
+/-! # Geometry and public cursors of the shared native product -/
+
+@[expose] public section
+namespace VG.Proof.RsaKeyGen.X86.KeyRuntime
+open VG VG.Proof.Mont
+
+structure ProductGeometry (Z left right out a b : Nat) : Prop extends
+    VG.Proof.RsaKeyGen.X86.Product.Layout Z left right out a b 128 where
+  a_header : 156 ≤ a
+  b_header : 156 ≤ b
+  out_header : 156 ≤ out
+
+def productRanges (left right out : Nat) : List (Nat × Nat) :=
+  [(128, 28), (out, 4 * (left + right + 2))]
+
+
+end VG.Proof.RsaKeyGen.X86.KeyRuntime
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.KeyRuntime

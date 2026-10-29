@@ -2,12 +2,96 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64Shift
 public import VerifiedGarbage.Proof.Mont.X86.Words
-import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64Subtract
-import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64Select
-import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64Math
-import VerifiedGarbage.Proof.Mont.X86.Instr
 
+import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64Subtract
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Impl.RsaKeyGen.X86.Mod64
+import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Mont.X86.Csub
+import VerifiedGarbage.Proof.Bignum.Math
 /-! # A native paired-word bit reduction computes exactly the modular recurrence -/
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/Mod64Select.lean`, which only this module imported.
+section
+
+/-! # One mask selects both native words of the reduced remainder -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.Mod64
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont.X86 VG.Impl.RsaKeyGen.X86.Mod64
+
+theorem select_ok (s : State) (choose : Bool)
+    (mask : s.gpr .ebp = if choose then BitVec.allOnes 32 else 0) :
+    WP isa (.block select) s fun t =>
+      t.gpr .ecx = (if choose then s.gpr .eax else s.gpr .ecx) ∧
+      t.gpr .ebx = (if choose then s.gpr .edx else s.gpr .ebx) ∧
+      t.mem = s.mem ∧ Keeps [.eax, .ecx, .edx, .ebx] s t := by
+  unfold select
+  refine wp_xor fun a A => wp_and fun b B => wp_xor fun c C =>
+    wp_xor fun d D => wp_and fun e E => wp_xor fun t T => WP.block_nil ?_
+  have Kc : Keeps [.eax, .ecx] s c := ((A.keeps.mono (by decide)).widen B.keeps).widen C.keeps
+  refine ⟨?_, ?_, ?_, (((Kc.mono (by decide)).widen D.keeps).widen E.keeps).widen T.keeps⟩
+  · rw [T.other .ecx (by decide), E.other .ecx (by decide), D.other .ecx (by decide), C.gpr,
+      B.other .ecx (by decide), A.other .ecx (by decide), B.gpr, A.gpr,
+      A.other .ebp (by decide), mask, select_val]
+  · rw [T.gpr, E.other .ebx (by decide), D.other .ebx (by decide), Kc.1 .ebx (by decide),
+      E.gpr, D.gpr, Kc.1 .edx (by decide), Kc.1 .ebx (by decide),
+      D.other .ebp (by decide), Kc.1 .ebp (by decide), mask, select_val]
+  · rw [T.mem, E.mem, D.mem, C.mem, B.mem, A.mem]
+
+end VG.Proof.RsaKeyGen.X86.Mod64
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/Mod64Math.lean`, which only this module imported.
+section
+
+/-! # Carry, borrow and masked selection reduce the doubled remainder exactly once -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.Mod64
+
+def choose (carry borrow : Bool) : Bool := decide (borrow.toNat ≤ carry.toNat)
+
+theorem pair_lt (low high : BitVec 32) : pair low high < 2 ^ 64 := by
+  unfold pair
+  have := low.isLt
+  have := high.isLt
+  omega
+
+theorem carry_le_borrow {low difference exponent : Nat} {carry borrow : Bool}
+    (exponentBound : exponent < 2 ^ 64)
+    (sumBound : low + 2 ^ 64 * carry.toNat < 2 * exponent)
+    (sub : difference + exponent = low + 2 ^ 64 * borrow.toNat) : carry.toNat ≤ borrow.toNat := by
+  cases carry <;> cases borrow <;>
+    simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at * <;> omega
+
+theorem mask_value (carry borrow : Bool) (bound : carry.toNat ≤ borrow.toNat) :
+    ((if carry then BitVec.allOnes 32 else 0) + 0#32 + (BitVec.ofBool borrow).setWidth 32) - 1 =
+      if choose carry borrow then BitVec.allOnes 32 else 0 := by
+  cases carry <;> cases borrow <;> first | rfl | (simp only [Bool.toNat_false, Bool.toNat_true] at bound; omega)
+
+theorem selected_value {low difference exponent : Nat} {carry borrow : Bool}
+    (exponentBound : exponent < 2 ^ 64) (differenceBound : difference < 2 ^ 64)
+    (lowBound : low < 2 ^ 64) (sumBound : low + 2 ^ 64 * carry.toNat < 2 * exponent)
+    (sub : difference + exponent = low + 2 ^ 64 * borrow.toNat) :
+    (if choose carry borrow then difference else low) = (low + 2 ^ 64 * carry.toNat) % exponent := by
+  have H := VG.Proof.Bignum.csub_result (Tw1 := 0) exponentBound differenceBound (Bool.toNat_le borrow)
+    lowBound (by simpa only [Nat.mul_zero, Nat.add_zero] using sumBound) sub
+  simp only [Nat.mul_zero, Nat.add_zero] at H
+  by_cases accept : borrow.toNat ≤ carry.toNat
+  · rw [choose, decide_eq_true accept]
+    rw [ite_eq_right (by omega : ¬ carry.toNat < borrow.toNat)] at H
+    exact H
+  · rw [choose, decide_eq_false accept]
+    rw [ite_eq_left (by omega : carry.toNat < borrow.toNat)] at H
+    exact H
+
+end VG.Proof.RsaKeyGen.X86.Mod64
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.Mod64
