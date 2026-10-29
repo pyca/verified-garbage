@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Sm4.RISCV64.Crypt16
 import VerifiedGarbage.Proof.Sm4.Layout
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
-import VerifiedGarbage.Proof.Framework.RISCV64.Loops
 import VerifiedGarbage.Proof.Framework.RISCV64.CopyFast
 import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 import VerifiedGarbage.Proof.Framework.RISCV64.MRun
