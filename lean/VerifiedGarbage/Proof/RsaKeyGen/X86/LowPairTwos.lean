@@ -2,17 +2,77 @@ module
 
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Spec.Rsa
-import VerifiedGarbage.Proof.RsaKeyGen.X86.LowPairWord
-import VerifiedGarbage.Proof.RsaKeyGen.X86.LowPairFirst
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.LowPairScan
-import VerifiedGarbage.Proof.Mont.Digits64
-import VerifiedGarbage.Proof.RsaKeyGen.MrWindow
-import VerifiedGarbage.Proof.Rsa.RecoverMath
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.LowPair
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
 
+import VerifiedGarbage.Proof.RsaKeyGen.X86.LowPairFirst
+import VerifiedGarbage.Proof.RsaKeyGen.MrWindow
+import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rc2.PairMem
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.RsaKeyGen.X86.LowPairStep
+import VerifiedGarbage.Proof.Bignum.Words
 /-! # The native pair scan finds the word containing the exponent's lowest set bit -/
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/LowPairWord.lean`, which only this module imported.
+section
+
+/-! # Native halves read by the masked scan form the original 64-bit word -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.LowPair
+open VG VG.Proof.Mont
+
+theorem pairAt_word (m : Mem) (base : Addr) (src : Nat) :
+    (pairAt m base src).2 ++ (pairAt m base src).1 = word m base src := by
+  rw [word, VG.Proof.Rc2.Word32.read64_pair, VG.Offset.add_add]
+  rfl
+
+theorem pairAt_zero_iff (m : Mem) (base : Addr) (src : Nat) :
+    pairAt m base src = (0#32, 0#32) ↔ word m base src = 0#64 := by
+  constructor
+  · intro h
+    rw [← pairAt_word, h]
+    rfl
+  · intro h
+    have value := congrArg BitVec.toNat h
+    rw [word_eq_w32] at value
+    change w32 m base src + 2 ^ 32 * w32 m base (src + 4) = 0 at value
+    have low : w32 m base src = 0 := by omega
+    have high : w32 m base (src + 4) = 0 := by omega
+    exact Prod.ext (BitVec.eq_of_toNat_eq low) (BitVec.eq_of_toNat_eq high)
+
+end VG.Proof.RsaKeyGen.X86.LowPair
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Mont/Digits64.lean`, which only this module imported.
+section
+
+/-! # A native paired word is a base-2⁶⁴ digit of its integer -/
+
+section
+namespace VG.Proof.Mont
+open VG
+
+theorem word_digit64 (m : Mem) (base : Addr) (src n index : Nat) (bound : index < n) :
+    (word m base (src + 8 * index)).toNat = wordsVal m base src n / 2 ^ (64 * index) % 2 ^ 64 := by
+  have bridge : ∀ k, wordsVal m base src k = VG.Proof.Bignum.wv m base src k := by
+    intro k
+    induction k with
+    | zero => rfl
+    | succ k ih => rw [wordsVal_succ_top, VG.Proof.Bignum.wv, ih]
+  rw [bridge]
+  exact VG.Proof.Bignum.word_of_wv m base src n bound
+
+end VG.Proof.Mont
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.LowPair

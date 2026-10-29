@@ -1,18 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Pointer
-import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Copy
-import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Filter
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRanges
 public import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentImport
-import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentClass
-import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
-import VerifiedGarbage.Proof.Bignum.Octets
-import VerifiedGarbage.Proof.Bignum.MemoryFrame
-import VerifiedGarbage.Proof.MillerRabin.X86.Caller
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentFilterContext
 public import VerifiedGarbage.Impl.Bignum.X86.PublicContext
 public import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentRt
@@ -20,7 +9,167 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.X86.Words
 
+import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Pointer
+import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Copy
+import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentClass
+import VerifiedGarbage.Proof.RsaKeyGen.RandMemory
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.MillerRabin.X86.Caller
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import Init.Data.Nat.Gcd
+import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Fast
+import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.General
+import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Impl.RsaKeyGen.X86.ExponentImport
+import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Bignum.X86.LoadBE
+import VerifiedGarbage.Proof.Mont.X86.Instr
 /-! # The exponent stage at a run-time width: save, import and coprimality, with the candidate kept -/
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/EvenExponent.lean`, which only this module imported.
+section
+
+/-! # An even exponent cannot be coprime to an odd candidate minus one -/
+
+section
+namespace VG.Proof.RsaKeyGen
+
+theorem even_exponent_rejected {c e : Nat} (odd : c % 2 = 1) (large : 1 < c) (even : e % 2 = 0) :
+    Nat.gcd (c - 1) e ≠ 1 := by
+  have dc : 2 ∣ c - 1 := Nat.dvd_of_mod_eq_zero (by omega)
+  have de : 2 ∣ e := Nat.dvd_of_mod_eq_zero even
+  have both := Nat.dvd_gcd dc de
+  intro one
+  rw [one] at both
+  exact (by decide : ¬ 2 ∣ 1) both
+
+end VG.Proof.RsaKeyGen
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/ExponentRt/Filter.lean`, which only this module imported.
+section
+
+/-! # The exponent filter at a run-time width returns the exact coprimality bit -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.ExponentRt
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86
+open VG.Impl.RsaKeyGen.X86.ExponentRt VG.Impl.RsaKeyGen.X86.ExponentFilter
+open VG.Proof.RsaKeyGen.X86.ExponentFilter (Input Output)
+
+theorem nontrivial_ok {s : State} {base : Addr} {size w candidate exponent : Nat}
+    (S : Input base size w candidate exponent s) (len : s.mem.readW (off base 4) 32 = BitVec.ofNat 32 (8 * w))
+    (odd : exponent % 2 = 1) :
+    WP isa (.seq (.block (equal 65537)) (.ite .e fast general)) s
+      (Output base size w candidate exponent s) := by
+  refine WP.seq (WP.mono (VG.Proof.RsaKeyGen.X86.ExponentFilter.equal_ok S.scratch S.header (by decide : 65537 < 2 ^ 32))
+    fun a ⟨Z, M, K⟩ => ?_)
+  have A := S.keepReadonly M K
+  have lenA : a.mem.readW (off base 4) 32 = BitVec.ofNat 32 (8 * w) := by rw [M]; exact len
+  rw [S.exponentEq] at Z
+  by_cases common : exponent = 65537
+  · refine WP.ite true (by change a.zf = _; rw [Z, decide_eq_true common]) (fun _ => ?_) (fun impossible => nomatch impossible)
+    refine WP.mono (fast_ok A.scratch A.width A.widthBound A.space lenA A.saved A.fit A.separate)
+      fun t ⟨result, F, Kt⟩ => ?_
+    apply Output.prepend (s := s) (a := a) _ M K
+    refine ⟨?_, A.stackFrameValue F, F.mono (fun _ mem => List.mem_cons_of_mem _ mem), Kt, A.stackWorkspaceFrame F⟩
+    simpa only [common] using result
+  · refine WP.ite false (by change a.zf = _; rw [Z, decide_eq_false common]) (fun impossible => nomatch impossible) (fun _ => ?_)
+    refine WP.mono (general_ok A.scratch A.width A.widthBound A.space lenA A.saved A.large A.odd A.exponentEq odd
+      A.fit A.separate) fun t ⟨result, original, F, Kt, W⟩ => ?_
+    exact (show Output base size w candidate exponent a t from ⟨result, original, F, Kt, W⟩).prepend M K
+
+theorem odd_ok {s : State} {base : Addr} {size w candidate exponent : Nat}
+    (S : Input base size w candidate exponent s) (len : s.mem.readW (off base 4) 32 = BitVec.ofNat 32 (8 * w))
+    (odd : exponent % 2 = 1) :
+    WP isa (.seq (.block (equal 1)) (.ite .e (.block [.mov .eax (.imm 1)])
+      (.seq (.block (equal 65537)) (.ite .e fast general)))) s
+      (Output base size w candidate exponent s) := by
+  refine WP.seq (WP.mono (VG.Proof.RsaKeyGen.X86.ExponentFilter.equal_ok S.scratch S.header (by decide : 1 < 2 ^ 32))
+    fun a ⟨Z, M, K⟩ => ?_)
+  have A := S.keepReadonly M K
+  rw [S.exponentEq] at Z
+  by_cases one : exponent = 1
+  · refine WP.ite true (by change a.zf = _; rw [Z, decide_eq_true one]) (fun _ => ?_) (fun impossible => nomatch impossible)
+    refine wp_movS rfl fun t T _ => WP.block_nil ?_
+    apply Output.prepend (s := s) (a := a) _ M K
+    apply A.readonlyOutput _ T.mem T.keeps
+    rw [T.gpr]
+    simp only [one, Nat.gcd_one_right, decide_true, Bool.toNat_true]
+    rfl
+  · refine WP.ite false (by change a.zf = _; rw [Z, decide_eq_false one]) (fun impossible => nomatch impossible) (fun _ => ?_)
+    exact WP.mono (nontrivial_ok A (by rw [M]; exact len) odd) fun _ H => H.prepend M K
+
+theorem filter_ok {s : State} {base : Addr} {size w candidate exponent : Nat}
+    (S : Input base size w candidate exponent s) (len : s.mem.readW (off base 4) 32 = BitVec.ofNat 32 (8 * w)) :
+    WP isa filter s (Output base size w candidate exponent s) := by
+  unfold filter
+  refine WP.seq (WP.mono (VG.Proof.RsaKeyGen.X86.ExponentFilter.parity_ok S.scratch S.header) fun a ⟨Z, M, K⟩ => ?_)
+  have A := S.keepReadonly M K
+  rw [S.exponentEq] at Z
+  by_cases even : exponent % 2 = 0
+  · refine WP.ite true (by change a.zf = _; rw [Z, decide_eq_true even]) (fun _ => ?_) (fun impossible => nomatch impossible)
+    refine wp_movS rfl fun t T _ => WP.block_nil ?_
+    apply Output.prepend (s := s) (a := a) _ M K
+    apply A.readonlyOutput _ T.mem T.keeps
+    rw [T.gpr]
+    simp only [decide_eq_false (VG.Proof.RsaKeyGen.even_exponent_rejected S.odd S.large even), Bool.toNat_false]
+    rfl
+  · refine WP.ite false (by change a.zf = _; rw [Z, decide_eq_false even]) (fun impossible => nomatch impossible) (fun _ => ?_)
+    exact WP.mono (odd_ok A (by rw [M]; exact len) (by omega)) fun _ H => H.prepend M K
+
+end VG.Proof.RsaKeyGen.X86.ExponentRt
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/ExponentImport.lean`, which only this module imported.
+section
+
+/-! # Full-width exponent import agrees with the reviewed arbitrary-byte input -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.ExponentImport
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86
+
+theorem code_ok {s : State} {base : Addr} {size len : Nat} {source : BitVec 32}
+    (S : Scr s base size) (header : 256 ≤ size)
+    (pointer : s.mem.readW (off base 12) 32 = source) (length : w32 s.mem base 16 = len)
+    (positive : 0 < len) (bound : len ≤ 8) (sourceFit : source.toNat + len ≤ 2 ^ 32)
+    (readable : InRegions (s.rd ++ s.wr) (source.setWidth 64) len)
+    (separate : (⟨source.setWidth 64, len⟩ : Region).Disjoint ⟨off base 128, 8⟩) :
+    WP isa VG.Impl.RsaKeyGen.X86.ExponentImport.code s fun t =>
+      word t.mem base 128 = BitVec.ofNat 64 (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (source.setWidth 64) len)) ∧
+      Outside base 128 8 s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
+  unfold VG.Impl.RsaKeyGen.X86.ExponentImport.code
+  refine WP.seq (wp_movS (readSrc_sc S (by omega)) fun a A _ =>
+    wp_movS (readSrc_sc (S.of_keeps A.keeps (by decide)) (d := 16) (by omega)) fun b B _ => WP.block_nil ?_)
+  have K : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s b :=
+    (A.keeps.mono (by decide)).widen B.keeps
+  have mem : b.mem = s.mem := B.mem.trans A.mem
+  have ptr : b.gpr .esi = source := by rw [B.other .esi (by decide), A.gpr, pointer]
+  have count : b.gpr .ecx = BitVec.ofNat 32 len := by
+    rw [B.gpr, A.mem]
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ofNat, ← length, Nat.mod_eq_of_lt (s.mem.readW (off base 16) 32).isLt]
+  refine WP.mono (VG.Proof.Bignum.X86.loadBE_ok (S.of_keeps K (by decide)) (by decide) (by omega)
+    positive bound (by rw [ptr]; exact sourceFit) count
+    (by rw [ptr, K.2.1, K.2.2]; exact readable) (by rw [ptr]; exact separate))
+    fun t ⟨value, O, Kt⟩ => ?_
+  rw [mem, ptr] at value
+  rw [mem] at O
+  simp only [wordsVal, Nat.mul_zero, Nat.add_zero] at value
+  change (word t.mem base 128).toNat = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (source.setWidth 64) len) at value
+  exact ⟨by apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_ofNat, ← value, Nat.mod_eq_of_lt (word t.mem base 128).isLt], O, K.trans Kt⟩
+
+end VG.Proof.RsaKeyGen.X86.ExponentImport
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.ExponentRt

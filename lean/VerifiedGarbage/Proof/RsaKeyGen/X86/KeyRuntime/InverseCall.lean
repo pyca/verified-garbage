@@ -5,22 +5,51 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Workspace
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Entry
 public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
 public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StackRange
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseFrame
+
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Verified
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Framed
-public import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.X86.Inline
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Mont.Halve32
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.RsaKeyGen.X86.Inverse.Post
 import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.Address
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StackRange
-public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyInverseFrame
 import VerifiedGarbage.Proof.Framework.Covers
-
 /-! # The key's calls of `vg_rsa_keygen_inverse`, at the width of each inversion -/
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/Inverse/Post.lean`, which only this module imported.
+section
+
+/-! # What `vg_rsa_keygen_inverse`'s postcondition tells its caller -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.Inverse
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
+open VG.Proof.Rsa.X86.KeyRt (kw)
+open VG.Proof.Rsa.X86.Keys (num)
+
+theorem post_of {s t : State} (post : contract.post s t) :
+    (∀ i, i < size s → ¬ Spec.RsaKeyGen.inverseWrites (len s) i →
+      t.mem (base s + BitVec.ofNat 64 i) = s.mem (base s + BitVec.ofNat 64 i)) ∧
+    num t.mem (base s) (kw (len s)) 1 =
+      Nat.gcd (num s.mem (base s) (kw (len s)) 0) (num s.mem (base s) (kw (len s)) 8) ∧
+    (num s.mem (base s) (kw (len s)) 8 : Int) ∣
+      (num t.mem (base s) (kw (len s)) 3 : Int) * num s.mem (base s) (kw (len s)) 0 -
+        num t.mem (base s) (kw (len s)) 1 ∧
+    num t.mem (base s) (kw (len s)) 3 < num s.mem (base s) (kw (len s)) 8 := by
+  sig_post [contract, inverseStack, Spec.RsaKeyGen.inverseContract, Spec.RsaKeyGen.inverseSig,
+    abi, argSlots, argVal, argBytes] at post
+  simp only [← inverseNum_num]
+  exact post
+
+end VG.Proof.RsaKeyGen.X86.Inverse
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.KeyRuntime

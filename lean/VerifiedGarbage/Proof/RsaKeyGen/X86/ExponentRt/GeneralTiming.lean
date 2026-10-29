@@ -3,11 +3,9 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.FastTiming
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Array
+
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.General
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Copy
-import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64ArrayLoopTiming
-import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64ArrayTiming
-import VerifiedGarbage.Proof.RsaKeyGen.X86.Gcd64CheckTiming
 import VerifiedGarbage.Proof.RsaKeyGen.X86.Gcd64Timing
 import VerifiedGarbage.Proof.RsaKeyGen.X86.FilterStack
 import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
@@ -16,8 +14,174 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ExponentRt.Pointer
-
+import VerifiedGarbage.Impl.RsaKeyGen.X86.Mod64
+import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Impl.RsaKeyGen.X86.Mod64Word
+import VerifiedGarbage.Impl.RsaKeyGen.X86.Mod64Array
+import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64ArrayContext
+import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64ArrayLoadTiming
+import VerifiedGarbage.Proof.RsaKeyGen.X86.Mod64ArrayStep
+import VerifiedGarbage.Impl.RsaKeyGen.X86.Gcd64Check
+import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.X86.Taint
 /-! # The general public exponent at a run-time width: the remainder, the gcd and the restored candidate -/
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/Mod64Timing.lean`, which only this module imported.
+section
+
+/-! # A public-exponent reduction bit keeps every candidate bit secret -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.Mod64
+open VG VG.X86 VG.Proof.Dsa.X86 VG.Impl.RsaKeyGen.X86.Mod64
+
+theorem bit_trace (exponent : Nat) :
+    RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) (.block (bit exponent))
+      (VG.X86.Taint.Agree (τr [.esp, .edi])) :=
+  erased_relCT (.block (bit exponent)) (.block (bit 0)) (.block [])
+    (by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (by decide +kernel)
+
+end VG.Proof.RsaKeyGen.X86.Mod64
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/Mod64WordTiming.lean`, which only this module imported.
+section
+
+/-! # A whole native-word reduction has a fixed secret-independent trace -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.Mod64
+open VG VG.X86 VG.Proof.Dsa.X86 VG.Impl.RsaKeyGen.X86.Mod64
+
+theorem steps_trace (exponent count : Nat) :
+    RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) (.block (steps exponent count))
+      (VG.X86.Taint.Agree (τr [.esp, .edi])) :=
+  blockFlatMap_relCT (List.range count) (fun _ => bit exponent) (fun _ => bit_trace exponent)
+
+theorem word_trace (exponent : Nat) :
+    RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) (.block (VG.Impl.RsaKeyGen.X86.Mod64.word exponent))
+      (VG.X86.Taint.Agree (τr [.esp, .edi])) := steps_trace exponent 32
+
+end VG.Proof.RsaKeyGen.X86.Mod64
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/Mod64ArrayStepTiming.lean`, which only this module imported.
+section
+
+/-! # A complete word iteration has only public-address stack and workspace accesses -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.Mod64
+open VG VG.X86 VG.Proof.Dsa.X86 VG.Impl.RsaKeyGen.X86.Mod64
+
+theorem advance_trace : RelCT isa (VG.X86.Taint.Agree (τr [.esp, .edi])) (.block advance)
+    (VG.X86.Taint.Agree (τr [.esp, .edi])) := checkedBlockInvariant rfl rfl
+
+theorem arrayStep_trace {g : ArrayGeometry} {candidate exponent other otherExponent i : Nat} :
+    RelCT isa (fun s t => ArrayState g candidate exponent i s ∧ ArrayState g other otherExponent i t)
+      (arrayStep g.exponent) (VG.X86.Taint.Agree (τr [.esp, .edi])) :=
+  RelCT.seq loadWord_trace (RelCT.seq (word_trace g.exponent) advance_trace)
+
+end VG.Proof.RsaKeyGen.X86.Mod64
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/Mod64ArrayLoopTiming.lean`, which only this module imported.
+section
+
+/-! # Candidate size alone controls the modular reduction's word loop -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.Mod64
+open VG VG.X86 VG.Proof.Dsa.X86 VG.Impl.RsaKeyGen.X86.Mod64
+
+theorem loop_trace {g : ArrayGeometry} (v : g.Valid) {candidate exponent other otherExponent : Nat} :
+    RelCT isa (fun s t => ArrayState g candidate exponent 0 s ∧ ArrayState g other otherExponent 0 t)
+      (.loop (arrayStep g.exponent) .ne) (VG.X86.Taint.Agree (τr [.esp, .edi])) := by
+  refine (RelCT.loop (M := isa) (body := arrayStep g.exponent) (c := .ne)
+    (I := fun q s t => ∃ i, i < g.n ∧ q = g.n - i ∧ ArrayState g candidate exponent i s ∧
+      ArrayState g other otherExponent i t) (Q := VG.X86.Taint.Agree (τr [.esp, .edi])) ?_ g.n).mono
+    (fun _ _ H => ⟨0, v.positive, rfl, H⟩) (fun _ _ H => H)
+  rintro q s t tr ur u z ⟨i, index, rfl, S, T⟩ E G
+  have trace := (arrayStep_trace _ _ _ _ _ _ ⟨S, T⟩ E G).1
+  obtain ⟨U, Zu, _, _⟩ := wp_result (S.step v index) E
+  obtain ⟨Z, Zz, _, _⟩ := wp_result (T.step v index) G
+  have eu : isa.eval .ne u = some (!decide (i + 1 = g.n)) := by
+    change u.zf.map Bool.not = _
+    rw [Zu]
+    rfl
+  have ez : isa.eval .ne z = some (!decide (i + 1 = g.n)) := by
+    change z.zf.map Bool.not = _
+    rw [Zz]
+    rfl
+  refine ⟨trace, eu.trans ez.symm, fun _ => U.agree Z, ?_⟩
+  intro next
+  have more : i + 1 ≠ g.n := by
+    intro done
+    rw [eu, decide_eq_true done] at next
+    cases next
+  exact ⟨g.n - (i + 1), by omega, i + 1, by omega, rfl, U, Z⟩
+
+end VG.Proof.RsaKeyGen.X86.Mod64
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/Mod64ArrayTiming.lean`, which only this module imported.
+section
+
+/-! # Two runs of the reduction agree on its public pointers -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.Mod64
+open VG VG.X86
+
+theorem ArrayContext.agree {g : ArrayGeometry} {candidate exponent other otherExponent : Nat} {s t : State}
+    (S : ArrayContext g candidate exponent s) (T : ArrayContext g other otherExponent t) :
+    VG.X86.Taint.Agree (τr [.esp, .edi]) s t := by
+  apply agree_regs
+  intro r mem
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at mem
+  rcases mem with rfl | rfl
+  · exact S.stack.sp.trans T.stack.sp.symm
+  · exact S.workspace.trans T.workspace.symm
+
+end VG.Proof.RsaKeyGen.X86.Mod64
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/X86/Gcd64CheckTiming.lean`, which only this module imported.
+section
+
+/-! # Complete native coprimality executes independently of the remainder's value -/
+
+section
+namespace VG.Proof.RsaKeyGen.X86.Gcd64
+open VG VG.X86 VG.Proof.Mont.X86.Dynamic VG.Proof.Dsa.X86 VG.Impl.RsaKeyGen.X86.Gcd64
+
+theorem setup_trace (offset : Nat) :
+    RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (.block (setup offset))
+      (VG.X86.Taint.Agree (workspaceTaint false)) :=
+  erased_relCT (.block (setup offset)) (.block (setup 0)) (.block []) rfl rfl rfl (by decide +kernel)
+
+theorem result_trace : RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (.block result)
+    (VG.X86.Taint.Agree (workspaceTaint false)) := checkedBlockInvariant rfl rfl
+
+theorem check_trace (offset : Nat) :
+    RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (check offset)
+      (VG.X86.Taint.Agree (workspaceTaint false)) :=
+  RelCT.seq (setup_trace offset) (RelCT.seq code_trace result_trace)
+
+end VG.Proof.RsaKeyGen.X86.Gcd64
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.ExponentRt

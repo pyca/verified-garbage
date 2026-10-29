@@ -63,7 +63,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
 import VerifiedGarbage.Proof.Ffdh.Arm.VettedKeyGenerateInput
-import VerifiedGarbage.Proof.Ffdh.Arm.SampleKeyGenerateContractCT
 import VerifiedGarbage.Proof.Ffdh.Arm.VettedKeyGenerateSat
 import VerifiedGarbage.Proof.Ffdh.Arm.SampleBoundLaw
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalar
@@ -73,7 +72,351 @@ import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.TCB.Code
 import VerifiedGarbage.Proof.Ffdh.Arm.Context
 import VerifiedGarbage.Proof.Ffdh.Arm.SampleScalarCT
+import VerifiedGarbage.Proof.Ffdh.Arm.SampleState
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyGenerateState
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyGenerateCalls
+import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRangeCT
+import VerifiedGarbage.Proof.Ffdh.Arm.ImportAtCT
+import VerifiedGarbage.Proof.Ffdh.Arm.FlagCT
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarCT
+import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.TCB.Mem
+import VerifiedGarbage.Proof.Ffdh.Arm.HeadCT
+import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyEntryCT
+import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
+import VerifiedGarbage.Proof.Ffdh.Arm.Entered
+import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsConsts
+import VerifiedGarbage.Proof.Ffdh.Arm.PrivateSpec
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyClassification
+import VerifiedGarbage.Proof.Framework.Sig
+import Init.Data.BitVec.Basic
+import Init.Prelude
+import VerifiedGarbage.TCB.Artifact
 /-! Every callable Montgomery backend supplies the vetted attempt. -/
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/SampleKeyGenerateMainCT.lean`, which only this module imported.
+section
+
+/-! The only secret-dependent key-generation branch is scalar acceptance,
+whose classification is disclosed by the attempt's returned status. -/
+
+section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm
+
+theorem sampleKeyGenerateMain_ct (prepare sample tail : Prog isa) (env : SampleEnvironment) (layout : (p : Inputs) → ScalarLayout p) (prep : KeyPrepareLaw prepare) (sampler : SampleLaw env layout sample) (law : SampleTailLaw tail) {p : Inputs} {slots : List Nat} {rb1 rb2 : List Byte}
+    (stable : stableSlots slots = true) (h0 : 0 ∈ slots) (h4 : 4 ∈ slots) (h24 : 24 ∈ slots) (h28 : 28 ∈ slots)
+    (h32 : 32 ∈ slots) (h36 : 36 ∈ slots) (h40 : 40 ∈ slots) (h44 : 44 ∈ slots) (h48 : 48 ∈ slots) (h56 : 56 ∈ slots) (h60 : 60 ∈ slots)
+    (saved : ∀ d ∈ slots, d + 4 ≤ 64 ∨ 68 ≤ d)
+    (special : sampleSlots slots)
+    (size1 : rb1.length = p.k) (size2 : rb2.length = p.k)
+    (classification : sampleScalarValid p (layout p) rb1 ↔ sampleScalarValid p (layout p) rb2)
+    (entropySep : Region.Disjoint ⟨State.addr p.entropy, p.k⟩ ⟨State.addr p.privateValue, p.k⟩)
+    (privateLength : p.privateLength = p.k) (outputY : p.output = p.publicValue)
+    (large : 1 < p.P) (odd : p.P % 2 = 1) (normalized : 2 ^ (64 * (p.w - 1)) ≤ p.P) :
+    RelCT isa (fun s t => ((KeyScalarInput p slots rb1 s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧ ((KeyScalarInput p slots rb2 t ∧ KeyCallMemory p t) ∧ env.holds p t) ∧ env.publicRel s t ∧ s.sp = t.sp)
+      (VG.Impl.Ffdh.Arm.SampleKeyGenerate.main prepare sample tail) (fun _ _ => True) := by
+  have preparePost (s : State) {rb : List Byte} (size : rb.length = p.k)
+      (h : (KeyScalarInput p slots rb s ∧ KeyCallMemory p s) ∧ env.holds p s) :
+      WP isa prepare s (fun t => (KeyPrepared p slots rb t ∧ KeyCallMemory p t) ∧ env.holds p t) := by
+    refine (keyGeneratePrepare_next prepare prep s stable h0 h24 h32 large odd normalized size h.1.1 h.1.2).and ?_
+    refine WP.mono_syms (prep.correct s h.1.1.context h.1.2 stable h0 h24 h32 large odd normalized) ?_
+    rintro t ⟨_, _, _, _, frame, rest⟩ syms
+    apply env.stable h.2 _ rest syms
+    exact frame.sub (by
+      intro r hr
+      simp only [keyPrepareWrites, prepareAtWrites, prepareWrites, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with (rfl | rfl | rfl) | rfl
+      · exact ⟨⟨State.addr p.base, 8 * p.len⟩, by simp [keyCallWrites, keyWrites], by intro a ha; exact ha⟩
+      · exact ⟨⟨State.addr s.sp, 72⟩, by simp [keyCallWrites, keyWrites], Offset.sub_base _ (by decide)⟩
+      · exact ⟨⟨State.addr s.sp, 72⟩, by simp [keyCallWrites, keyWrites], Offset.sub_base _ (by decide)⟩
+      · exact ⟨_, by simp [keyCallWrites], fun _ hx => hx⟩)
+  have prepareCT : RelCT isa (fun s t =>
+      ((KeyScalarInput p slots rb1 s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧
+      ((KeyScalarInput p slots rb2 t ∧ KeyCallMemory p t) ∧ env.holds p t) ∧ env.publicRel s t ∧ s.sp = t.sp)
+      prepare (fun s t => ((KeyPrepared p slots rb1 s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧
+      ((KeyPrepared p slots rb2 t ∧ KeyCallMemory p t) ∧ env.holds p t) ∧ env.publicRel s t ∧ s.sp = t.sp) := by
+    intro s t tr1 tr2 u v h e1 e2
+    obtain ⟨trace, _⟩ := prep.ct stable h0 h24 h32 large odd normalized s t tr1 tr2 u v
+      ⟨⟨h.1.1.1.context, h.1.1.2⟩, ⟨h.2.1.1.1.context, h.2.1.1.2⟩, h.2.2.2⟩ e1 e2
+    obtain ⟨_, u', runU, postU⟩ := preparePost s size1 h.1
+    obtain ⟨_, v', runV, postV⟩ := preparePost t size2 h.2.1
+    obtain ⟨-, rfl⟩ := Exec.det e1 runU
+    obtain ⟨-, rfl⟩ := Exec.det e2 runV
+    exact ⟨trace, postU, postV, env.public_stable h.2.2.1 (Exec.syms e1) (Exec.syms e2),
+      (Exec.sp e1).trans (h.2.2.2.trans (Exec.sp e2).symm)⟩
+  have sampleCT := (sampler.ct stable special normalized odd h0 h24 h28 h32 h40 h48 h60 size1 size2 entropySep).mono
+    (P' := fun (s t : State) => ((KeyPrepared p slots rb1 s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧
+      ((KeyPrepared p slots rb2 t ∧ KeyCallMemory p t) ∧ env.holds p t) ∧ env.publicRel s t ∧ s.sp = t.sp)
+    (fun _ _ h => ⟨⟨h.1.1.1.toKeyScalarInput, h.1.2⟩, ⟨h.2.1.1.1.toKeyScalarInput, h.2.1.2⟩, h.2.2⟩) (fun _ _ h => h)
+  have sampled := (relCT_keep_sp sampleCT (fun _ _ h => h.2.2.2)).wp (fun s t h =>
+    ⟨keyGenerateWP_calls (sampleSample_next env sample layout sampler s stable special h0 h24 h28 h32 h40 h48 h60 size1 entropySep h.1.1.1 h.1.2 normalized odd) h.1.1.2,
+     keyGenerateWP_calls (sampleSample_next env sample layout sampler t stable special h0 h24 h28 h32 h40 h48 h60 size2 entropySep h.2.1.1.1 h.2.1.2 normalized odd) h.2.1.1.2⟩)
+  have imports := (importAt_ct (p := p) (a := 1) (slot := 40) (countSlot := 44) (k := p.k) stable (by simp [h40]) (by simp [h44])
+    (by change BitVec.ofNat 32 p.privateLength = _; rw [privateLength]) (by decide)).mono
+    (P' := fun (s t : State) => SampleReady p (layout p) slots rb1 s ∧ SampleReady p (layout p) slots rb2 t ∧ s.sp = t.sp)
+    (fun _ _ h => ⟨⟨h.1.context.toContext, h.1.ready⟩, ⟨h.2.1.context.toContext, h.2.1.ready⟩, h.2.2⟩) (fun _ _ h => h)
+  have ranges := (scalarRange_ct stable (by simp [h28]) (by simp [h32]) (by simp [h60]) odd).mono
+    (P' := fun (s t : State) => SampleImported p (layout p) slots rb1 s ∧ SampleImported p (layout p) slots rb2 t ∧ s.sp = t.sp)
+    (fun _ _ h => ⟨⟨h.1.context.toContext, h.1.ready, h.1.modulus⟩, ⟨h.2.1.context.toContext, h.2.1.ready, h.2.1.modulus⟩, h.2.2⟩) (fun _ _ h => h)
+  have sigSize {rb : List Byte} (size : rb.length = p.k) : (((layout p).encode rb).drop (layout p).lead).length = (layout p).width := by
+    rw [List.length_drop, (layout p).encode_length size]
+    rfl
+  have branches : RelCT isa (fun s t => (SampleRanged p (layout p) slots rb1 s ∧ KeyCallMemory p s) ∧ (SampleRanged p (layout p) slots rb2 t ∧ KeyCallMemory p t) ∧ s.sp = t.sp)
+      (VG.Impl.Ffdh.Arm.Domain.ifFlag tail VG.Impl.Ffdh.Arm.Domain.GenerateKey.failScalar)
+      (fun _ _ => True) := by
+    apply ifFlag_pair_ct (decide (sampleScalarValid p (layout p) rb1))
+      (fun s h => by
+        have f := h.1.flag
+        change s.gpr .r11 = (if sampleScalarValid p (layout p) rb1 then 1 else 0) at f
+        simpa only [decide_eq_true_eq] using f)
+      (fun s h => by
+        have f := h.1.flag
+        change s.gpr .r11 = (if sampleScalarValid p (layout p) rb2 then 1 else 0) at f
+        simp only [← classification] at f
+        simpa only [decide_eq_true_eq] using f)
+      (fun _ _ h mem rest => ⟨h.1.after_mem mem rest, h.2.after rest⟩) (fun _ _ h mem rest => ⟨h.1.after_mem mem rest, h.2.after rest⟩)
+    · intro _
+      exact (law.ct stable h4 h32 h36
+        h40 h56 saved (sigSize size1) (sigSize size2) odd outputY).mono
+        (fun _ _ h => ⟨⟨⟨h.1.1.context, h.1.1.ready, h.1.1.modulus, h.1.1.r2, h.1.1.significant, h.1.1.outputs⟩, h.1.2⟩,
+          ⟨⟨h.2.1.1.context, h.2.1.1.ready, h.2.1.1.modulus, h.2.1.1.r2, h.2.1.1.significant, h.2.1.1.outputs⟩, h.2.1.2⟩, h.2.2⟩)
+        (fun _ _ h => h)
+    · intro _
+      exact (keyFail_ct (fun d hd => (stableSlots_at stable hd).1) (by simp [h32]) (by simp [h36]) (by simp [h40])).mono
+        (fun _ _ h => ⟨⟨h.1.1.context.toContext.toArgumentMemory, h.1.1.outputs⟩, ⟨h.2.1.1.context.toContext.toArgumentMemory, h.2.1.1.outputs⟩, h.2.2⟩) (fun _ _ h => h)
+  unfold VG.Impl.Ffdh.Arm.SampleKeyGenerate.main
+  exact prepareCT.seq (sampled.seq ((relCT_chain (keyGenerateCT_calls imports)
+        (fun s h => keyGenerateWP_calls (sampleImport_next s stable (by simp [h40]) (by simp [h44]) size1 privateLength h.1) h.2)
+        (fun s h => keyGenerateWP_calls (sampleImport_next s stable (by simp [h40]) (by simp [h44]) size2 privateLength h.1) h.2)
+        (relCT_chain (keyGenerateCT_calls ranges)
+          (fun s h => keyGenerateWP_calls (sampleRange_scalar_next s stable (by simp [h28]) (by simp [h32]) (by simp [h60]) odd h.1) h.2)
+          (fun s h => keyGenerateWP_calls (sampleRange_scalar_next s stable (by simp [h28]) (by simp [h32]) (by simp [h60]) odd h.1) h.2)
+          branches)).mono (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩) (fun _ _ h => h)))
+
+end VG.Proof.Ffdh.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/SampleKeyGenerateBodyCT.lean`, which only this module imported.
+section
+
+/-! Key generation's public modulus gate and documented retry-status class
+account for every branch before native exponentiation. -/
+
+section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm
+
+theorem sampleKeyGenerateBody_ct (prepare sample tail : Prog isa) (env : SampleEnvironment) (layout : (p : Inputs) → ScalarLayout p)
+    (prep : KeyPrepareLaw prepare) (sampler : SampleLaw env layout sample) (law : SampleTailLaw tail) {p : Inputs} {slots : List Nat} {rb1 rb2 : List Byte}
+    (stable : stableSlots slots = true) (h0 : 0 ∈ slots) (h4 : 4 ∈ slots) (h24 : 24 ∈ slots) (h28 : 28 ∈ slots)
+    (h32 : 32 ∈ slots) (h36 : 36 ∈ slots) (h40 : 40 ∈ slots) (h44 : 44 ∈ slots) (h48 : 48 ∈ slots)
+    (saved : ∀ d ∈ slots, d + 4 ≤ 64 ∨ 68 ≤ d)
+    (special : sampleSlots slots)
+    (size1 : rb1.length = p.k) (size2 : rb2.length = p.k)
+    (classification : Spec.Rsa.modulusValid p.P p.k = true → (sampleScalarValid p (layout p) rb1 ↔ sampleScalarValid p (layout p) rb2))
+    (entropySep : Region.Disjoint ⟨State.addr p.entropy, p.k⟩ ⟨State.addr p.privateValue, p.k⟩)
+    (privateLength : p.privateLength = p.k) (outputY : p.output = p.publicValue) :
+    RelCT isa (fun s t => ((KeyScalarInput p slots rb1 s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧
+      ((KeyScalarInput p slots rb2 t ∧ KeyCallMemory p t) ∧ env.holds p t) ∧ env.publicRel s t ∧ s.sp = t.sp)
+      (VG.Impl.Ffdh.Arm.Domain.head (VG.Impl.Ffdh.Arm.SampleKeyGenerate.main prepare sample tail)) (fun _ _ => True) := by
+  let Q := fun (rb : List Byte) (s : State) =>
+    ((KeyScalarInput p (60 :: 56 :: slots) rb s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧
+      s.z = Spec.Rsa.modulusValid p.P p.k
+  have wp (s : State) {rb : List Byte} (size : rb.length = p.k)
+      (h : (KeyScalarInput p slots rb s ∧ KeyCallMemory p s) ∧ env.holds p s) :
+      WP isa (.seq (.block (VG.Impl.Ffdh.Arm.Domain.prepareArgs 24 ++ VG.Impl.Ffdh.Arm.Domain.domainPointers))
+        (.block VG.Impl.Bignum.Arm.modulusCheck)) s (Q rb) := by
+    refine WP.mono_syms (head_ok s h.1.1.context stable h0 h24 h32) ?_
+    rintro t ⟨context, zero, frame, rest⟩ syms
+    refine ⟨⟨⟨⟨context, h.1.1.entropy.after_frame frame rest (by simpa [size] using h.1.1.entropyStack),
+      h.1.1.outputs.after rest, by rw [rest.sp]; exact h.1.1.entropyStack⟩, h.1.2.after rest⟩, ?_⟩, zero⟩
+    apply env.stable h.2 _ rest syms
+    exact frame.mono (by simp [keyCallWrites, keyWrites])
+  have head : RelCT isa (fun s t =>
+      ((KeyScalarInput p slots rb1 s ∧ KeyCallMemory p s) ∧ env.holds p s) ∧
+      ((KeyScalarInput p slots rb2 t ∧ KeyCallMemory p t) ∧ env.holds p t) ∧ env.publicRel s t ∧ s.sp = t.sp)
+      (.seq (.block (VG.Impl.Ffdh.Arm.Domain.prepareArgs 24 ++ VG.Impl.Ffdh.Arm.Domain.domainPointers))
+        (.block VG.Impl.Bignum.Arm.modulusCheck))
+      (fun s t => Q rb1 s ∧ Q rb2 t ∧ env.publicRel s t ∧ s.sp = t.sp) := by
+    intro s t tr1 tr2 u v h e1 e2
+    have timing := (head_ct stable h0 h24 h32) s t tr1 tr2 u v
+      ⟨h.1.1.1.context, h.2.1.1.1.context, h.2.2.2⟩ e1 e2
+    obtain ⟨_, u', runU, postU⟩ := wp s size1 h.1
+    obtain ⟨_, v', runV, postV⟩ := wp t size2 h.2.1
+    obtain ⟨-, rfl⟩ := Exec.det e1 runU
+    obtain ⟨-, rfl⟩ := Exec.det e2 runV
+    exact ⟨timing.1, postU, postV,
+      env.public_stable h.2.2.1 (Exec.syms e1) (Exec.syms e2),
+      (Exec.sp e1).trans (h.2.2.2.trans (Exec.sp e2).symm)⟩
+  have stable' : stableSlots (60 :: 56 :: slots) = true := by
+    change (true && (true && stableSlots slots)) = true
+    rw [Bool.true_and, Bool.true_and, stable]
+  have saved' : ∀ d ∈ 60 :: 56 :: slots, d + 4 ≤ 64 ∨ 68 ≤ d := by
+    intro d hd
+    simp only [List.mem_cons] at hd
+    rcases hd with rfl | rfl | hd
+    · left; decide
+    · left; decide
+    · exact saved d hd
+  have branches : RelCT isa (fun s t => Q rb1 s ∧ Q rb2 t ∧ env.publicRel s t ∧ s.sp = t.sp)
+      (.ite .eq (VG.Impl.Ffdh.Arm.SampleKeyGenerate.main prepare sample tail) (VG.Impl.Ffdh.Arm.Domain.ret 0)) (fun _ _ => True) := by
+    apply RelCT.ite (fun s t h => by change some s.z = some t.z; rw [h.1.2, h.2.1.2])
+    · intro s t tr1 tr2 u v h e1 e2
+      have valid : Spec.Rsa.modulusValid p.P p.k = true := by
+        have selected := h.2
+        change some s.z = some true at selected
+        rw [h.1.1.2] at selected
+        exact Option.some.inj selected
+      have facts := VG.Proof.Bignum.valid_facts valid p.minLength
+      exact sampleKeyGenerateMain_ct prepare sample tail env layout prep sampler law stable' (by simp [h0]) (by simp [h4]) (by simp [h24]) (by simp [h28])
+        (by simp [h32]) (by simp [h36]) (by simp [h40]) (by simp [h44]) (by simp [h48]) (by simp) (by simp)
+        saved' (by
+          intro d hd
+          simp only [List.mem_cons] at hd
+          rcases hd with rfl | rfl | hd
+          · decide
+          · decide
+          · exact special d hd) size1 size2 (classification valid) entropySep privateLength outputY facts.2.1 facts.1 facts.2.2
+        s t tr1 tr2 u v ⟨h.1.1.1, h.1.2.1.1, h.1.2.2⟩ e1 e2
+    · exact (ret_ct 0).mono (fun _ _ _ => trivial) (fun _ _ h => h)
+  unfold VG.Impl.Ffdh.Arm.Domain.head
+  apply RelCT.assoc
+  exact head.seq branches
+
+end VG.Proof.Ffdh.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/SampleKeyGenerateFnCT.lean`, which only this module imported.
+section
+
+/-! The callable key-generation attempt reveals only its public domain and
+buffer layout and the scalar-acceptance class documented by its status. -/
+
+section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm
+
+theorem sampleKeyGenerateFn_ct (prepare sample tail : Prog isa) (env : SampleEnvironment) (layout : (p : Inputs) → ScalarLayout p)
+    (prep : KeyPrepareLaw prepare) (sampler : SampleLaw env layout sample) (law : SampleTailLaw tail) {p : Inputs} {rb1 rb2 : List Byte}
+    (classification : Spec.Rsa.modulusValid p.P p.k = true → (sampleScalarValid p (layout p) rb1 ↔ sampleScalarValid p (layout p) rb2)) :
+    RelCT isa (fun s t => (KeyGenerateFnInput p rb1 s ∧ env.holds p (entered s)) ∧ (KeyGenerateFnInput p rb2 t ∧ env.holds p (entered t)) ∧ env.publicRel s t ∧ s.sp = t.sp)
+      (VG.Impl.Ffdh.Arm.SampleKeyGenerate.code prepare sample tail) (fun _ _ => True) := by
+  let P := fun (rb : List Byte) (a : State) => ∃ s, KeyGenerateFnInput p rb s ∧ a = entered s ∧ env.holds p a
+  let Q := fun (rb : List Byte) (u : State) =>
+    (KeyScalarInput p [0, 48, 44, 32, 28, 24, 4, 36, 40] rb u ∧ KeyCallMemory p u) ∧ env.holds p u
+  have wp (a : State) {rb : List Byte} (h : P rb a) :
+      WP isa (.block VG.Impl.Ffdh.Arm.Domain.GenerateKey.entry) a (Q rb) := by
+    obtain ⟨s, input, rfl, environment⟩ := h
+    refine WP.mono_syms (withAllRest (keyEntry_ok (entered s) input.args input.incoming input.privateValue input.publicValue input.outputY input.privateLength)) ?_
+    rintro u ⟨⟨context, frame⟩, rest⟩ syms
+    refine ⟨⟨⟨context, input.entropy.after_frame frame rest (by simpa [input.size] using input.entropyStack),
+      input.outputs.after rest, by rw [rest.sp]; exact input.entropyStack⟩, input.calls.after rest⟩, ?_⟩
+    apply env.stable environment _ (rest.mono (by simp [roundClobbers])) syms
+    exact frame.mono (by simp [keyCallWrites, keyWrites])
+  have entry : RelCT isa (fun s t => P rb1 s ∧ P rb2 t ∧ env.publicRel s t ∧ s.sp = t.sp)
+      (.block VG.Impl.Ffdh.Arm.Domain.GenerateKey.entry)
+      (fun s t => Q rb1 s ∧ Q rb2 t ∧ env.publicRel s t ∧ s.sp = t.sp) := by
+    intro s t tr1 tr2 u v h e1 e2
+    have timing := keyEntry_ct s t tr1 tr2 u v h.2.2.2 e1 e2
+    obtain ⟨_, u', runU, postU⟩ := wp s h.1
+    obtain ⟨_, v', runV, postV⟩ := wp t h.2.1
+    obtain ⟨-, rfl⟩ := Exec.det e1 runU
+    obtain ⟨-, rfl⟩ := Exec.det e2 runV
+    exact ⟨timing.1, postU, postV,
+      env.public_stable h.2.2.1 (Exec.syms e1) (Exec.syms e2),
+      (Exec.sp e1).trans (h.2.2.2.trans (Exec.sp e2).symm)⟩
+  unfold VG.Impl.Ffdh.Arm.SampleKeyGenerate.code
+  apply framed_ct (fun _ _ h => ⟨h.1.1.stackFits, h.2.1.1.stackFits⟩) (fun _ _ h => h.2.2.2)
+  intro a b tr1 tr2 u v h e1 e2
+  obtain ⟨s, t, related, rfl, rfl⟩ := h
+  have body := entry.seq
+    (sampleKeyGenerateBody_ct prepare sample tail env layout prep sampler law (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by intro d hd; revert d; decide) (by intro d hd; revert d; decide) related.1.1.size related.2.1.1.size classification related.1.1.entropySep
+      related.1.1.privateLength related.1.1.outputY)
+  exact body _ _ _ _ _ _ ⟨⟨s, related.1.1, rfl, related.1.2⟩, ⟨t, related.2.1.1, rfl, related.2.1.2⟩,
+    env.public_stable related.2.2.1 (by rfl) (by rfl),
+    by rw [entered_sp, entered_sp, related.2.2.2]⟩ e1 e2
+
+end VG.Proof.Ffdh.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/SampleKeyGenerateContractCT.lean`, which only this module imported.
+section
+
+/-! Native key generation satisfies the shared timing policy for arbitrary
+secret entropy tapes with the same public domain and disclosed attempt status. -/
+
+section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm
+open VG.Impl.Ffdh.Arm.VettedGroups (tableConsts tableSym tableWords)
+
+theorem vettedKeyGenerate_contract_ct (prepare sample tail : Prog isa) (env : SampleEnvironment)
+    (prep : KeyPrepareLaw prepare) (sampler : SampleLaw env ScalarLayout.vetted sample) (law : SampleTailLaw tail)
+    (makeEnvironment : ∀ (s : State),
+      (Spec.Ffdh.vettedGenerateKeyContract (abi.withConsts tableConsts) 176).pre s →
+      ∀ {p : Inputs} {rb : List Byte}, KeyGenerateFnInput p rb s → env.holds p (entered s))
+    (publicEnvironment : ∀ (s t : State), s.syms tableSym = t.syms tableSym → env.publicRel s t) :
+    ConstantTime isa (Spec.Ffdh.vettedGenerateKeyContract (abi.withConsts tableConsts) 176).pre
+      (Spec.Ffdh.vettedGenerateKeyContract (abi.withConsts tableConsts) 176).pub
+      (VG.Impl.Ffdh.Arm.SampleKeyGenerate.code prepare sample tail) := by
+  intro s t tr1 tr2 u v hs ht hp e1 e2
+  obtain ⟨p, rb, base, privateValue, publicValue, domain, count, capacity, entropy, domainBytes, entropyBytes, inputS⟩ := vettedKeyGenerate_data_base s hs
+  have randLength (a : State) (h : (Spec.Ffdh.vettedGenerateKeyContract (abi.withConsts tableConsts) 176).pre a) :
+      (stackArg a 4).toNat = (stackArg a 2).toNat := by
+    have h := (vettedKeyGenerate_pre h).1
+    sig_pre [Spec.Ffdh.generateKeyContract, Spec.Ffdh.generateKeySig, abi, argRegs, reduceClassify, Loc.val, State.addr] at h
+    obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, length, _⟩ := h
+    exact length
+  have symbol := VettedGroups.consts_singleton_symEq (name := tableSym) (words := tableWords) (pub_consts.mp hp).2
+  have hp := (pub_consts.mp hp).1
+  sig_pub [Spec.Ffdh.vettedGenerateKeyContract, Spec.Ffdh.generateKeySig, abi, argRegs, reduceClassify, Loc.val, State.addr] at hp
+  obtain ⟨sp, bytes, p0, _, p2, _, p4, p5, p6, p7, _, p9, p10⟩ := hp
+  rw [randLength s hs, randLength t ht, ← p4, ← p5, ← p6, ← p7] at bytes
+  obtain ⟨domEqNat, statusEq⟩ := List.append_inj bytes
+    (by simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range])
+  have recover {a b : List Byte} (h : a.map BitVec.toNat = b.map BitVec.toNat) : a = b := by
+    have eq := congrArg (List.map (BitVec.ofNat 8)) h
+    simpa only [List.map_map, Function.comp_def, BitVec.ofNat_toNat,
+      BitVec.setWidth_eq, List.map_id'] using eq
+  have domEq := recover domEqNat
+  let rb2 := Spec.Rsa.bytesAt t.mem (State.addr p.entropy) p.k
+  have inputT := vettedKeyGenerate_input t ht (p := p) (rb := rb2)
+    (p9.symm.trans base) (p0.symm.trans privateValue) (p2.symm.trans publicValue) (p4.symm.trans domain)
+    (by rw [← p6]; exact count) (by rw [← p10]; exact capacity) (p7.symm.trans entropy) inputS.outputY inputS.privateLength ?_ rfl
+  · have status := (List.cons.inj statusEq).1
+    rw [← domEq] at status
+    simp only [State.addr] at domainBytes entropyBytes
+    simp only [count, domain, entropy, domainBytes, entropyBytes] at status
+    change Spec.Ffdh.keyStatus (Spec.Ffdh.domainOf p.k p.dom) (Spec.Ffdh.vettedScalarOfOctets (Spec.Ffdh.domainOf p.k p.dom) rb) =
+      Spec.Ffdh.keyStatus (Spec.Ffdh.domainOf p.k p.dom) (Spec.Ffdh.vettedScalarOfOctets (Spec.Ffdh.domainOf p.k p.dom) rb2) at status
+    rw [← ScalarLayout.vetted_value inputS.size, ← ScalarLayout.vetted_value inputT.size] at status
+    have classification := keyStatus_validity_same (Spec.Ffdh.domainOf p.k p.dom)
+      (Spec.Rsa.os2ip ((ScalarLayout.vetted p).encode rb))
+      (Spec.Rsa.os2ip ((ScalarLayout.vetted p).encode rb2)) status
+    rw [p.privateValid_native, p.privateValid_native] at classification
+    exact (sampleKeyGenerateFn_ct prepare sample tail env ScalarLayout.vetted prep sampler law
+      (fun _ => classification) s t tr1 tr2 u v
+      ⟨⟨inputS, makeEnvironment s hs inputS⟩, ⟨inputT, makeEnvironment t ht inputT⟩,
+        publicEnvironment s t symbol, sp⟩ e1 e2).1
+  · rw [← p5, ← domain]
+    change Spec.Rsa.bytesAt t.mem (BitVec.setWidth 64 (stackArg s 0)) (stackArg s 1).toNat = p.dom
+    rw [← domEq, domain]
+    exact domainBytes
+
+end VG.Proof.Ffdh.Arm
+end
+
+end
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/Arm/SamplePowerArgs.lean`, which only this module imported.
 section

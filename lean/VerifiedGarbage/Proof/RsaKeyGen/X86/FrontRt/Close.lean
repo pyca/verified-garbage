@@ -5,14 +5,36 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86.SieveStack
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.X86.WordOps
 public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.RsaKeyGen
+
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops2
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.RsaKeyGen.Difference
-public import VerifiedGarbage.Spec.RsaKeyGen
 import VerifiedGarbage.Proof.Framework.Offset
-
 /-! # The distance to `p` at the run-time width: the subtractions and the select -/
+
+-- Formerly `VerifiedGarbage/Proof/RsaKeyGen/Difference.lean`, which only this module imported.
+section
+
+/-! # Selecting the unborrowed difference computes the required absolute value -/
+
+section
+namespace VG.Proof.RsaKeyGen
+
+theorem absDiff_select {c p d e r : Nat} {borrow reverse : Bool}
+    (forward : d + p = c + r * borrow.toNat)
+    (backward : e + c = p + r * reverse.toNat)
+    (dBound : d < r) (eBound : e < r) :
+    (if borrow then e else d) = Spec.RsaKeyGen.absDiff c p := by
+  cases borrow <;> cases reverse <;>
+    simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero,
+      Bool.false_eq_true, ↓reduceIte] at forward backward ⊢ <;>
+    unfold Spec.RsaKeyGen.absDiff <;> split <;> omega
+
+end VG.Proof.RsaKeyGen
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.RsaKeyGen.X86.FrontRt
