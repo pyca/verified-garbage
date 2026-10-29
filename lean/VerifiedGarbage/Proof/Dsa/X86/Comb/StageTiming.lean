@@ -1,16 +1,16 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.X86.Comb.CorePowerTiming
 public import VerifiedGarbage.Proof.Dsa.X86.ScheduleFrame
 public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
-import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming
-import VerifiedGarbage.Proof.Dsa.X86.Comb.StagePower
-import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Impl.Dsa.X86.CombCore
 public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.Core
 public import VerifiedGarbage.Proof.Framework.RelCT
 
+import VerifiedGarbage.Proof.Dsa.X86.Comb.CorePowerTiming
+import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming
+import VerifiedGarbage.Proof.Dsa.X86.Comb.StagePower
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 /-! Comb stages retain the common public caller layout. -/
 
 @[expose] public section

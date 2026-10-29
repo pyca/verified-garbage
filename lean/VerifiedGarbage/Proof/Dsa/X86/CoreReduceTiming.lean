@@ -1,11 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.X86.CoreSetupTiming
-import VerifiedGarbage.Proof.Dsa.X86.CoreStoreTiming
 public import VerifiedGarbage.Proof.Dsa.X86.StreamTiming
 public import VerifiedGarbage.Proof.Dsa.X86.CoreReduce
+
+import VerifiedGarbage.Proof.Dsa.X86.CoreSetupTiming
+import VerifiedGarbage.Proof.Dsa.X86.CoreStoreTiming
 import VerifiedGarbage.Proof.Dsa.X86.PointerTiming
-import VerifiedGarbage.Proof.Dsa.X86.CoreStreamSource
 import VerifiedGarbage.Proof.Dsa.X86.CoreSetup
 import VerifiedGarbage.Proof.Dsa.X86.Layout
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
@@ -13,8 +13,38 @@ import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Dsa.X86.RedCall
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-
+import VerifiedGarbage.Proof.Dsa.X86.Pointer
+import VerifiedGarbage.Proof.Mont.X86.ContextFrame
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.TCB.X86.State
 /-! # Complete streaming reduction calls have secret-independent traces -/
+
+-- Formerly `VerifiedGarbage/Proof/Dsa/X86/CoreStreamSource.lean`, which only this module imported.
+section
+
+/-! # The public byte-source pointer for scalar reduction -/
+
+section
+namespace VG.Proof.Dsa.X86
+open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic
+open VG.Impl.Mont.X86 VG.Impl.Mont.X86.Dynamic VG.Impl.Dsa.Layout VG.Impl.Dsa.X86
+
+theorem streamSource_ok {s : State} {base : Addr} {size n m : Nat}
+    (h : Context n m base size s) (hz : VG.Impl.Dsa.X86.Layout.saved ≤ size) (p : Pointer) :
+    WP isa (.block (Core.pointer p)) s fun t =>
+      Context n m base size t ∧ t.gpr .esi = pointerValue base s p ∧ t.mem = s.mem ∧ Keeps [.esi] s t :=
+  WP.mono (pointer_ok h.scr hz p) fun u ⟨Pu, Ku, Mu⟩ =>
+    ⟨⟨h.scr.of_keeps Ku (by decide), h.size_le, Mu ▸ h.modulus, h.gt_one, Mu ▸ h.inverse⟩, Pu, Mu, Ku⟩
+
+end VG.Proof.Dsa.X86
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.Dsa.X86

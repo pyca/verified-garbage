@@ -1,13 +1,49 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Comb.PowerFrame
-import VerifiedGarbage.Proof.Mont.X86.PadWords
+
 import VerifiedGarbage.Proof.Mont.X86.WindowSelect
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 import VerifiedGarbage.Proof.Bignum.Math
-
+import VerifiedGarbage.Impl.Mont.X86.CombPower
+import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Mont.X86.Words
 /-! Initialize the comb accumulator and zero-pad its exponent. -/
+
+-- Formerly `VerifiedGarbage/Proof/Mont/X86/PadWords.lean`, which only this module imported.
+section
+
+/-! Zero padding retains the exponent's value at a wider public storage width. -/
+
+section
+namespace VG.Proof.Mont.X86.Comb
+open VG VG.X86 VG.Impl.Mont.X86 VG.Proof.Mont VG.Proof.Mont.X86
+
+theorem padWords_ok {s : State} {base : Addr} {size o used total : Nat}
+    (hs : Scr s base size) (hu : used≤total) (ho : o+4*total≤size) :
+    WP isa (VG.Impl.Mont.X86.Comb.padWords o used total) s fun t =>
+      Outside base (o+4*used) (4*(total-used)) s.mem t.mem ∧
+      val32 t.mem base o total=val32 s.mem base o used ∧ Keeps [.eax,.ebp,.edx] s t := by
+  unfold VG.Impl.Mont.X86.Comb.padWords
+  split
+  next h =>
+    refine WP.mono (zerosW_ok hs (by omega) (by omega)) fun t ⟨O,V,K⟩ => ⟨O,?_,K⟩
+    have hn := hs.nowrap
+    have bound : o+4*used≤2^64 := by omega
+    have eq : total=used+(total-used) := by omega
+    rw [eq,val32_append,O.val32 (.inl (by omega)) bound,V,Nat.mul_zero,Nat.add_zero]
+  next h =>
+    have eq : total=used := by omega
+    subst total
+    exact WP.block_nil ⟨Outside.refl _ _ _ _,rfl,Keeps.refl _ _⟩
+
+end VG.Proof.Mont.X86.Comb
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.Dsa.X86.Comb

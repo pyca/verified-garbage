@@ -1,4 +1,5 @@
 module
+
 public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
 public import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
 public import VerifiedGarbage.Proof.Framework.X86.Spill
@@ -14,7 +15,6 @@ import VerifiedGarbage.Proof.Dsa.X86.SavedFrame
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
-
 /-! # The complete public-size signer, including invalid-domain output clearing -/
 
 @[expose] public section
