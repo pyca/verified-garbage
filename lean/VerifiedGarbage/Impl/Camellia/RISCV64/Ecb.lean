@@ -21,10 +21,13 @@ artifact allocates on the stack. As on PPC64LE (`Impl/Camellia/PPC64LE/Ecb.lean`
   FLINV between them, the postwhitening, and the halves stored back
   swapped.
 
-`a0` (the schedule, then the end of six rounds), `a1` (the table, then
-the round key's entry), `a2` (the data), `a3` (the blocks left), `a4` (the
-postwhitening's entry), `a5`, the copies' pointers (`t3`–`t5`) and counts
-(`t6`), and the loop tests (`t0`, `t1`) hold public values; no address and
+The schedule and the data have no alignment, so they are read and written
+a byte at a time; the scratch buffer is aligned, as the artifact allocates
+it on the stack. `a0` (the schedule, then the end of six rounds), `a1`
+(the table, then the round key's entry), `a2` (the data), `a3` (the blocks
+left), `a4` (the postwhitening's entry), `a5`, the copies' pointers
+(`t3`, `t4`) and counts (`t5`, `t6`), and the loop tests (`t0`, `t1`)
+hold public values; no address and
 no branch depends on anything else. The rounds use only the state, the
 temporaries and the scratch buffer, so the public values stay in `a0`–`a5`
 throughout.
@@ -35,16 +38,17 @@ throughout.
 namespace VG.Impl.Camellia.RISCV64
 
 open VG.RISCV64 VG.Impl.Aes.RISCV64
+open VG.Impl
 
 inductive Dir | encrypt | decrypt
   deriving DecidableEq, Repr
 
 /-! ## The subkeys -/
 
-/-- Bitslice the subkey at `[a0 + d]` into the entry at `kp`, and step
-`kp` to the next entry. -/
+/-- Bitslice the subkey at `[a0 + d]` (read a byte at a time: the schedule
+has no alignment) into the entry at `kp`, and step `kp` to the next entry. -/
 def keyOne (d : Nat) : List Instr :=
-  ([.load .d (q 0) .a0 d] : List Instr) ++ ((List.range 7).map fun i => movR (q (i + 1)) (q 0)) ++
+  Words64.RISCV64.loadLE64 (q 0) t0 t2 .a0 d ++ ((List.range 7).map fun i => movR (q (i + 1)) (q 0)) ++
   toBs ++ (List.range 8).map (fun j => .store .d (q j) kp (8 * j)) ++
   ([.addi kp kp 64] : List Instr)
 
@@ -128,10 +132,20 @@ def crypt8 : Prog isa := .seq (.block head) (.seq (.loop groupBody (.nonzero t0)
 
 /-! ## The groups -/
 
-/-- Copy `t5` blocks from `t3` to `t4` (through `t0`). -/
-def copyBlocks : Prog isa :=
-  .loop (.block [.load .d t0 .t3 0, .store .d t0 .t4 0, .load .d t0 .t3 8, .store .d t0 .t4 8,
-      .addi .t3 .t3 16, .addi .t4 .t4 16, .addi .t5 .t5 (-1)]) (.nonzero .t5)
+/-- The pointers and the count on to the next block. -/
+def copyStep : List Instr := [.addi .t3 .t3 16, .addi .t4 .t4 16, .addi .t5 .t5 (-1)]
+
+/-- Copy `t5` blocks from the data at `t3` to the tail buffer at `t4`
+(through `t0`; the data has no alignment, so it is read a byte at a time). -/
+def copyInBlocks : Prog isa :=
+  .loop (.block (Words64.RISCV64.loadLE64 t0 t1 t2 .t3 0 ++ [.store .d t0 .t4 0] ++
+      Words64.RISCV64.loadLE64 t0 t1 t2 .t3 8 ++ [.store .d t0 .t4 8] ++ copyStep)) (.nonzero .t5)
+
+/-- Copy `t5` blocks from the tail buffer at `t3` to the data at `t4`,
+written a byte at a time. -/
+def copyOutBlocks : Prog isa :=
+  .loop (.block ([.load .d t0 .t3 0] ++ Words64.RISCV64.storeLE64 t0 t1 t2 .t4 0 ++
+      [.load .d t0 .t3 8] ++ Words64.RISCV64.storeLE64 t0 t1 t2 .t4 8 ++ copyStep)) (.nonzero .t5)
 
 /-- `t6 := min(a3, 8)`, the blocks of this group. -/
 def groupCount : Prog isa :=
@@ -143,11 +157,11 @@ def tailAddr (r : Reg) : List Instr := [.addi r sb ((8 * tailSlot : Nat) : Int)]
 
 /-- The group's blocks to the tail buffer. -/
 def copyIn : Prog isa :=
-  .seq groupCount (.seq (.block ([movR .t3 .a2] ++ tailAddr .t4 ++ [movR .t5 .t6])) copyBlocks)
+  .seq groupCount (.seq (.block ([movR .t3 .a2] ++ tailAddr .t4 ++ [movR .t5 .t6])) copyInBlocks)
 
 /-- The tail buffer back to the group's blocks. -/
 def copyOut : Prog isa :=
-  .seq groupCount (.seq (.block (tailAddr .t3 ++ [movR .t4 .a2, movR .t5 .t6])) copyBlocks)
+  .seq groupCount (.seq (.block (tailAddr .t3 ++ [movR .t4 .a2, movR .t5 .t6])) copyOutBlocks)
 
 /-- Eight blocks, or the last one to seven, and on to the next. -/
 def group : Prog isa :=
