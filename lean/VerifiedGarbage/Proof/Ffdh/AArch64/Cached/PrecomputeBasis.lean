@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeProducts
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeControls
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.ProductState
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeProductIO
+import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.ProductState
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeSquares
 
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
@@ -12,6 +11,10 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Precompute
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Basis
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.BuildFrame
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.ContextBuild
 /-! Build one tooth and all new subsets containing it. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/BasisState.lean`, which only this module imported.

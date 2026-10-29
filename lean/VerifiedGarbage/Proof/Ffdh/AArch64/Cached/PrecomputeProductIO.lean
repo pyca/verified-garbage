@@ -4,11 +4,13 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.ContextBuild
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.StoreEntry
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Precompute
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.EntryPointer
-public import VerifiedGarbage.Proof.Bignum.AArch64.Copy
+import VerifiedGarbage.Proof.Bignum.AArch64.Copy
 
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 /-! Public subset indices load and store canonical context entries. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/LoadEntry.lean`, which only this module imported.

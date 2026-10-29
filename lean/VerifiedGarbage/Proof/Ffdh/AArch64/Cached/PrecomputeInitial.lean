@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.MontgomeryOne
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.BuildFrame
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Basis
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.GeneratorSource
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeProductIO
 
 import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.WorkspaceState
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
@@ -14,6 +13,9 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Math
 import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.StoreEntry
+public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Precompute
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.ContextBuild
 /-! Initialize entries zero and one from cached R² and the checked generator. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/GeneratorBasis.lean`, which only this module imported.

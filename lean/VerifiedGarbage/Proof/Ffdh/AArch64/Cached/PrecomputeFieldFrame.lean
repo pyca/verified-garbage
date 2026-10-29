@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Layout
-public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Precompute
+import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Precompute
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
 
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Policy
+public import VerifiedGarbage.Impl.Rsa.AArch64
+public import VerifiedGarbage.Spec.Rsa
 /-! Modulus setup preserves the cached-generation controls in the upper header. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/PrecomputeField.lean`, which only this module imported.

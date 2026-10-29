@@ -3,16 +3,20 @@ module
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeNative
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.MetadataTiming
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyDomain
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyRecognizeTiming
+import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyRecognizeTiming
 public import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeFieldFrame
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeTailTiming
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.InverseUnique
+import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeFieldFrame
+import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeTailTiming
+import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.InverseUnique
 
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Precompute
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyRecognizeTimingState
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PowerState
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.TableTiming
 /-! Public inputs and staging predicates for the complete context initializer. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/PolicyDomainTiming.lean`, which only this module imported.

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.CallFacts
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Search
 public import VerifiedGarbage.Proof.Ffdh.ControlMemory
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Live
+import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Live
 
 import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Writes
 import VerifiedGarbage.Proof.Framework.Omega
@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Entry
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SearchProof.Data
 /-! # The attempt's arguments (AArch64) -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/SearchProof/ReadOnly.lean`, which only this module imported.

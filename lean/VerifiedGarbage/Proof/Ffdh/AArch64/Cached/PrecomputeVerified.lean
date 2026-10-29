@@ -3,13 +3,16 @@ module
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeSat
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeInput
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeTimingState
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeEntryTiming
+import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeEntryTiming
 
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Precompute
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PowerState
+public import VerifiedGarbage.Spec.Ffdh.VettedKeyGeneration
 /-! The complete native initializer satisfies the reviewed ABI and public-table convention. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/PrecomputeCorrect.lean`, which only this module imported.

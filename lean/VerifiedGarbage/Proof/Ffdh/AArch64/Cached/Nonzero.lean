@@ -3,12 +3,14 @@ module
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Generate
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Header
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
 
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.AArch64.Row
+public import Aesop.BuiltinRules
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 /-! The full scalar nonzero predicate is written as a 0/1 control word. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/NonzeroScan.lean`, which only this module imported.

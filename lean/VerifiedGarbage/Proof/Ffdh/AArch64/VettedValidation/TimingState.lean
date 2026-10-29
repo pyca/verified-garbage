@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Ffdh.AArch64.VettedValidation.Recognize
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyLoopTiming
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyTableFrame
+import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SourceSlices
 
 /-! Public ABI values determine every recognition record and loop exit. -/
 @[expose] public section

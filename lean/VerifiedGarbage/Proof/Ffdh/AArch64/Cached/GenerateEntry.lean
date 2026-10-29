@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Generate
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Header
+import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Header
 
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Layout
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
 /-! Complete cached-attempt entry with its original argument ordering. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/GenerateEntrySave.lean`, which only this module imported.

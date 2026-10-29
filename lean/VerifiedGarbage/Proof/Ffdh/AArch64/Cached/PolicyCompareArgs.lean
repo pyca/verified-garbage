@@ -3,13 +3,12 @@ module
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Header
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Policy
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Bit
-public import VerifiedGarbage.Proof.Bignum.AArch64.Copy
 
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.AArch64.Csub
 import VerifiedGarbage.Proof.Bignum.AArch64.Row
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 /-! Bind the complete byte-comparison loop to the public domain header. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/PolicyCompareStep.lean`, which only this module imported.

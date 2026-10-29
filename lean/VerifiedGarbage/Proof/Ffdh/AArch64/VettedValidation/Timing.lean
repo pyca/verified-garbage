@@ -9,6 +9,8 @@ meta import VerifiedGarbage.Impl.Ffdh.AArch64.VettedValidation
 meta import VerifiedGarbage.Impl.Bignum.AArch64.Core
 meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 meta import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyTableFrame
+import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SourceSlices
 
 /-! The fast acceptance and general fallback both depend only on the public domain. -/
 @[expose] public section

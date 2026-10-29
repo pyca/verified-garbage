@@ -3,12 +3,14 @@ module
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.ProductState
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeProductIO
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Precompute
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Header
+import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Header
 
 import VerifiedGarbage.Proof.Rsa.FixedBaseCombTable
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Layout
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 /-! Construct one new subset entry with the shared Montgomery product. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/ProductCounter.lean`, which only this module imported.

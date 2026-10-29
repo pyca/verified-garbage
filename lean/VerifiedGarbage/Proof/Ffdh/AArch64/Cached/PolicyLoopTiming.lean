@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyRecordTiming
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyTableFrame
 
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyTable
 /-! Early policy-recognition exits are completely determined by public records and domain bytes. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/PolicyLoopTimingState.lean`, which only this module imported.

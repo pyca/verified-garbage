@@ -3,11 +3,12 @@ module
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyRecordEnv
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyCompareArgs
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Policy
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Header
 
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Layout
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 /-! A cap is applied only after the complete vetted-domain match. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/PolicyMatch.lean`, which only this module imported.

@@ -11,6 +11,7 @@ meta import VerifiedGarbage.TCB.AArch64.Isa
 meta import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Policy
 meta import VerifiedGarbage.Impl.Bignum.AArch64.Core
 meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Header
 
 /-! Public metadata uses a public row count and fixed context addresses. -/
 @[expose] public section

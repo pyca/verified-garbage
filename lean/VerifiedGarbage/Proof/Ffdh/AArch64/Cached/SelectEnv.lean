@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Comb
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
-public import VerifiedGarbage.Proof.Bignum.AArch64.Copy
+import VerifiedGarbage.Proof.Bignum.AArch64.Copy
 
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -13,6 +13,9 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.Csub
 import VerifiedGarbage.Proof.Bignum.AArch64.Row
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Bignum.AArch64.Core
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 /-! Read-only packed table geometry and the two public header cells used by the scan. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/SelectWord.lean`, which only this module imported.

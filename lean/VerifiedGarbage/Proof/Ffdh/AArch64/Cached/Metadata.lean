@@ -2,11 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.MetadataRows
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Policy
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Header
 
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Layout
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 /-! Exact serialization of the reviewed sampling width and comb row count. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/MetadataHead.lean`, which only this module imported.

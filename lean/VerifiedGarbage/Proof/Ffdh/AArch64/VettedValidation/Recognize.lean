@@ -4,13 +4,15 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.VettedValidation.Entry
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyLoop
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyTable
 public import VerifiedGarbage.Proof.Ffdh.AArch64.VettedValidation.Contract
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SourceSlices
+import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SourceSlices
 
 import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyTableFrame
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Bit
+public import VerifiedGarbage.Spec.Rsa.Contract
 /-! Exact public recognition is safe for every permitted input, including invalid domains. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/VettedValidation/Geometry.lean`, which only this module imported.

@@ -3,13 +3,13 @@ module
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PrecomputeArithmetic
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PolicyDomain
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Precompute
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Header
+import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Header
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Metadata
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PublicFrame
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.WorkspaceState
+import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.WorkspaceState
 public import VerifiedGarbage.Spec.Ffdh.Contract
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Source
+import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Source
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.GeneratorSource
 
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -19,6 +19,10 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Impl.Ffdh.AArch64.Cached.Layout
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.Bit
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.PowerState
 /-! Functional composition of the complete native public precomputation routine. -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/AArch64/Cached/PrecomputeEntry.lean`, which only this module imported.
