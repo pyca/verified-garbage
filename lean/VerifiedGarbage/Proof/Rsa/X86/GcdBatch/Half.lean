@@ -9,7 +9,6 @@ import Mathlib.Tactic.Linarith.Frontend
 import Mathlib.Tactic.NormNum.Ineq
 import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Data.BitVec
-import Mathlib.Data.Int.ModEq
 import Mathlib.Tactic.Linarith
 public import Mathlib.Algebra.Group.Nat.Defs
 

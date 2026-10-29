@@ -302,7 +302,7 @@ theorem cpMain_ok (W : Window) (M : Mont) (S : Selector) {s t : State} (c : CpCt
       rw [publicValid_iff, hq, hpk]
       simp only [Option.some.injEq, forall_eq']
       exact ⟨fun h => h.2, fun h => ⟨hpk ▸ hR, h⟩⟩
-    rw [h0']; unfold bit; exact if_congr e.symm rfl rfl
+    rw [h0']; unfold bit; exact ite_congr (propext e.symm) (fun _ => rfl) (fun _ => rfl)
 
 /-- `vg_ffdh_check_public`. -/
 theorem cp_correct (W : Window) (M : Mont) (S : Selector) (s : State) (h : cpContract.pre s) :

@@ -1,5 +1,4 @@
 module
-import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Rsa.Arm.RvKS
 

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract

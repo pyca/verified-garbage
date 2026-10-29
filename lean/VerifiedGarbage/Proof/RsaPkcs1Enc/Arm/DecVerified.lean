@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecBody
 public import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Data.Fintype.Card
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivImpl
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecBase
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecFns

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecHash
-import Mathlib.Data.Fintype.Card
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecCall
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem

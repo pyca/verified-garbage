@@ -1,5 +1,4 @@
 module
-import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCallStack
 public import VerifiedGarbage.Proof.Bignum.Words
 

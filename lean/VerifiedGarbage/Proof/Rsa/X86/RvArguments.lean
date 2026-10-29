@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
-import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 import VerifiedGarbage.Proof.Bignum.X86.ArgumentFrame
 import VerifiedGarbage.Proof.Framework.Offset

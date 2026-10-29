@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.RsaOaep.X86_64.CtBase
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
 
 import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCorrect
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.RsaOaep.X86_64.EncEm

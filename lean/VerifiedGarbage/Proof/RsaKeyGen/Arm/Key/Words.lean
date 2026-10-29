@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Key
-public import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Mont.WriteWord32
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps

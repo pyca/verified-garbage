@@ -1,5 +1,4 @@
 module
-import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Rsa.X86.KeyCheck
 public import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
 

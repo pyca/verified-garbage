@@ -1,5 +1,4 @@
 module
-import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Core
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Contract

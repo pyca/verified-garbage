@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LeavePhase
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ModulusPolicy
-import Mathlib.Data.Nat.GCD.Basic
 
 /-! # FFDH parameter generation on x86-64: q followed by p -/
 

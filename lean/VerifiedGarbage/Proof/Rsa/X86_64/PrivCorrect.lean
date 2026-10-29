@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
 
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCheck
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCrt

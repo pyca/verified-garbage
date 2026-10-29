@@ -38,8 +38,8 @@ theorem wp_seqs_cons {e : Prog isa} {l : List (Prog isa)} (hl : l ≠ []) {s : S
 
 /-- A number of `len ≤ k` bytes fits in `w` words. -/
 theorem lt_w {bs : List Byte} {k : Nat} (hl : bs.length ≤ k) : Spec.Rsa.os2ip bs < 2 ^ (64 * wk k) :=
-  Nat.lt_of_lt_of_le (os2ip_lt bs) ((Nat.pow_le_pow_right (by decide) hl).trans
-    ((pow256_le_wk k).trans (Nat.pow_le_pow_right (by decide) (by simp only [wk]; omega))))
+  Nat.lt_of_lt_of_le (os2ip_lt bs) (Nat.le_trans (Nat.pow_le_pow_right (by decide) hl)
+    (Nat.le_trans (pow256_le_wk k) (Nat.pow_le_pow_right (by decide) (by simp only [wk]; omega))))
 
 /-- Between the phases. -/
 def KS (I : CkIn) (m₀ : Mem) (c : Bool) (s : State) : Prop :=

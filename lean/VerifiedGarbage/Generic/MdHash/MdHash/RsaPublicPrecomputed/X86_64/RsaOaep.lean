@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.TCB.Emit
 import VerifiedGarbage.Proof.RsaOaep.X86_64.PcSp
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Sp
 public import VerifiedGarbage.Proof.Framework.Registration

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
 public import VerifiedGarbage.Spec.Ffdh.Contract
 
 import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.CTTail
-import Mathlib.Data.Int.ModEq
 
 /-!
 # `vg_ffdh_generate_key` on AArch64: verified

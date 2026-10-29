@@ -1,5 +1,4 @@
 module
-public import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Rsa.X86.RvMontFrame
 
 import VerifiedGarbage.Proof.Rsa.RecoverMath

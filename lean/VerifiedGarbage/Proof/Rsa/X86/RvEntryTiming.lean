@@ -1,5 +1,4 @@
 module
-import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Rsa.X86.Recover
 public import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
 public import VerifiedGarbage.Spec.Weierstrass.Point

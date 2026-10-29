@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecMac
-import Mathlib.Data.Fintype.Card
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: `KDK = HMAC(DH, C)`

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtPair
-import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

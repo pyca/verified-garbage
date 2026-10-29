@@ -181,7 +181,7 @@ theorem win_step {P : MP} {m : Nat} (n : Nat) (fios : Bool := false) :
   -- The count and threshold of the squarings.
   refine VP.seq (G := SqS P (In P) (AW P (jw P m n)) LW.tail (fun σ => upd (V0w P m n σ) sR 0) LS4 4 (fun _ => 0)
     (fun σ => wst P σ (jw P m n)) 4) ?_ ?_
-  · refine St.psqFour.mono (fun _ _ h => h) fun σ s h => ⟨le_refl _, h.mono (fun i hi => ⟨hi, ?_⟩)
+  · refine St.psqFour.mono (fun _ _ h => h) fun σ s h => ⟨Nat.le_refl _, h.mono (fun i hi => ⟨hi, ?_⟩)
       (fun d hd => ⟨hd, ?_⟩)⟩
     · rcases List.mem_cons.mp hi with rfl | hi
       · show AW P (jw P m n) σ aY = upd (AW P (jw P m n) σ) aY (wst P σ (jw P m n)).1 aY
@@ -326,7 +326,7 @@ theorem word_step {P : MP} (n : Nat) (fios : Bool := false) :
       fun σ s ⟨h, z⟩ => ⟨?_, fun h0 => ⟨by omega_arith, h0 ▸ h⟩, fun _ => ⟨by omega_arith, h⟩⟩
     show some (!s.z) = _
     rw [z]
-    by_cases h0 : n = 0 <;> simp [h0] <;> omega_arith
+    by_cases h0 : n = 0 <;> simp [h0, Nat.pos_iff_ne_zero, Nat.mul_eq_zero]
 
 /-- The words. -/
 theorem words_loop {P : MP} (fios : Bool := false) : VP (WO P (2 * P.w)) (.loop (word (fios := fios)) .ne) (WO P 0) := by

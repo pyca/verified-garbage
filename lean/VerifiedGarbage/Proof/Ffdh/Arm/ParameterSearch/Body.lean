@@ -6,7 +6,6 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.ParameterSearch
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Loop
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterSearch.Stack
 import VerifiedGarbage.Proof.Framework.Block
-import Mathlib.Data.Int.ModEq
 
 /-! The complete native search body preserves its caller's registers and writes only its buffers and outgoing stack. -/
 

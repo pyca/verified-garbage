@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivPd
 public import VerifiedGarbage.Proof.Rsa.PrivCheck
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCrt

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtPair
-import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Spec.Weierstrass.Point
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck

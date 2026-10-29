@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Base
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Taint0
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Mul

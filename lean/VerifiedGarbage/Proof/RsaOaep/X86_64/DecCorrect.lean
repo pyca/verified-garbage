@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecMain
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCorrect
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaOaep.X86_64.DecPriv
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good

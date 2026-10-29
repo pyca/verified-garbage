@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecD
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
-import Mathlib.Data.Fintype.Card
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86_64.CTSetup
 

@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Rsa.Arm.CvCT
 public import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Rsa.Arm.CrtValues
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Lit

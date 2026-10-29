@@ -57,7 +57,7 @@ theorem crt_contract_pre (s : State) (h : (Spec.Rsa.privateCrtContract abi 56).p
     rw [addr_add (by omega_arith : s.sp.toNat + 4 * i < 2 ^ 32)]
   refine {
     workspace := ⟨?_, ?_⟩, lengthValid := valid,
-    storageFits := (crt_layout_fits valid).trans (Nat.mul_le_mul_left 8 space),
+    storageFits := Nat.le_trans (crt_layout_fits valid) (Nat.mul_le_mul_left 8 space),
     pPositive := pPositive, pShort := pShort, qPositive := qPositive, qShort := qShort,
     source := ?_, sourceSeparate := ?_, outputFits := outFit, write := ?_, outputSeparate := ?_,
     output := rfl, modulus := rfl, count := ?_, stackFit := stackFit, argFit := argFit,

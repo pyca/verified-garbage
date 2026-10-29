@@ -117,13 +117,13 @@ theorem in_k (h : CIn s) : In (mkP s) (sx s) := by
   have eP : (mkP s).rP = cP s := rfl
   have bP : Spec.Rsa.bytesAt (pcPushed s).mem (State.addr (stackArg s 0)) (stackArg s 1).toNat =
       Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 0)) (stackArg s 1).toNat :=
-    h.bytes (R := cP s) h.Fp (Nat.le_of_lt ((BitVec.isLt _).trans_le (by decide)))
+    h.bytes (R := cP s) h.Fp (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide)))
   have bQ : Spec.Rsa.bytesAt (pcPushed s).mem (State.addr (stackArg s 2)) (stackArg s 1).toNat =
       Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 2)) (stackArg s 1).toNat :=
-    h.bytes (R := (mkP s).rQ) (by rw [h.rQ]; exact h.Fq) (Nat.le_of_lt ((BitVec.isLt _).trans_le (by decide)))
+    h.bytes (R := (mkP s).rQ) (by rw [h.rQ]; exact h.Fq) (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide)))
   have bE : Spec.Rsa.bytesAt (pcPushed s).mem (State.addr (stackArg s 10)) (stackArg s 11).toNat =
       Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 10)) (stackArg s 11).toNat :=
-    h.bytes (R := cE s) h.Fe (Nat.le_of_lt ((BitVec.isLt _).trans_le (by decide)))
+    h.bytes (R := cE s) h.Fe (Nat.le_of_lt (Nat.lt_of_lt_of_le (BitVec.isLt _) (by decide)))
   refine ⟨by simp only [State.withRegions_sp]; rfl, by show (s.sp - BitVec.ofNat 32 56).toNat + 112 ≤ 2 ^ 32; omega,
     rfl, ⟨cE s, rdm _ (by simp), Region.contains_self _ _⟩, ⟨cA s, rdm _ (by simp), ?_⟩, hk.1, hk.2.1, hk.2.2,
     h.el1, h.el2, by show Spec.Rsa.scratchWords (2 * (stackArg s 1).toNat) ≤ (stackArg s 13).toNat; rw [← h.nl]; exact h.scr,

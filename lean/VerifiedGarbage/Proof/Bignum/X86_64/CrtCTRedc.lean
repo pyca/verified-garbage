@@ -23,7 +23,6 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import Mathlib.Tactic.TermCongr
 import Mathlib.Tactic.TermCongr
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import Mathlib.Data.Int.ModEq

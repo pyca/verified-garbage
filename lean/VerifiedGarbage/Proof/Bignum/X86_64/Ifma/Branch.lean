@@ -99,7 +99,7 @@ theorem branchA2_ok (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat} 
   rw [hql] at qws qxv
   have hh₀ : ∀ i < 32, hFixed i = true → word t₀.mem B (8 * i) = word s.mem B (8 * i) := hr.hfix
   obtain ⟨hg₁, hN₁, rp, rq, f₁, k₁, mk₁⟩ := hA
-  have ns₁ := preRanges_nsafe (w := (k + 7) / 8) (wp := l.W) (wq := l.W) (le_refl (offP ((k + 7) / 8)))
+  have ns₁ := preRanges_nsafe (w := (k + 7) / 8) (wp := l.W) (wq := l.W) (Nat.le_refl (offP ((k + 7) / 8)))
     (show slot ((k + 7) / 8) 8 ≤ offQ ((k + 7) / 8) pl by rw [hoq]; omega_using [])
   have hz : slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega_arith
   have hpr : ∀ r ∈ preRanges ((k + 7) / 8) (offP ((k + 7) / 8)) l.W (offQ ((k + 7) / 8) pl) l.W,
@@ -127,7 +127,7 @@ theorem branchA2_ok (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat} 
       by rw [hf₁ _ (by decide) (by decide), h.dql]; exact h.hQl⟩
   -- `ifma`.
   refine WP.mono (ifma_ok hl (K := (if Mk then P else 3) ∣ N ∧ (if Mk then Q else 3) ∣ N) (wp := l.W) hg₁.scr hg₁.rdi
-    ip (le_refl _) (by rw [hoq, hop]) rfl (by omega_using [hZa]) rfl hP'.2 hQ'.2 rp.ylt rq.ylt rp.clt rq.clt
+    ip (Nat.le_refl _) (by rw [hoq, hop]) rfl (by omega_using [hZa]) rfl hP'.2 hQ'.2 rp.ylt rq.ylt rp.clt rq.clt
     (fun hK => rp.cv hK.1) (fun hK => rq.cv hK.2) (fun hK => rp.yv hK.1) (fun hK => rq.yv hK.2)
     (h.dp.congrK (hr.iscr.trans i₀₁) kk₁) (h.dq.congrK (hr.iscr.trans i₀₁) kk₁) (by rw [h.dpl]; exact hpl1)
     (by rw [h.dpl]; exact hpl') (by rw [h.dql]; exact hql1) (by rw [h.dql]; exact hql'))
@@ -151,7 +151,7 @@ theorem branchA2_ok (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat} 
       rcases hr with rfl | rfl
       · simp only [sIfma, sFn]; rw [hop]; omega_using [o10, hW1, hEW, hZa', (lay_P hl).1, (lay_P hl).2.1, (lay_P hl).2.2.1]
       · simp only [sIfma, sFn]; rw [hoq]; omega_using [o10, hW1, hEW, hZa', (lay_P hl).1, (lay_P hl).2.1, (lay_P hl).2.2.1]
-    · have := ifmaR_le (by rw [hoq, hop]) (le_refl _) r hr; omega_using [hZa, this]
+    · have := ifmaR_le (by rw [hoq, hop]) (Nat.le_refl _) r hr; omega_using [hZa, this]
   have hb₂ : ∀ d, d + 8 ≤ offP ((k + 7) / 8) → word t.mem B d = word s₁.mem B d := fun d hd =>
     word_below_frm f₂ hge hd (by omega_using [hop, hz])
   have hMK : Mk = true → (if Mk then P else 3) ∣ N ∧ (if Mk then Q else 3) ∣ N := fun hm => by
@@ -159,7 +159,7 @@ theorem branchA2_ok (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat} 
     simp only [hm, ↓reduceIte]
     exact ⟨⟨Q, hpq.symm⟩, ⟨P, by rw [← hpq, Nat.mul_comm]⟩⟩
   rw [h.dpl, h.dql] at m₂
-  refine ⟨⟨⟨hg₁.scr.congr k₂.2.2, d₂, m₂.nh⟩, hN₁.of_nsafe f₂ (above_nsafe (le_refl _) hge) hz (by omega_using [hk1]),
+  refine ⟨⟨⟨hg₁.scr.congr k₂.2.2, d₂, m₂.nh⟩, hN₁.of_nsafe f₂ (above_nsafe (Nat.le_refl _) hge) hz (by omega_using [hk1]),
     by rw [hb₂ _ (by unfold Public.sMask sFn; omega_using [h8, hop]), hb₁ _ (by decide) (by decide) (by decide)]; exact hr.msk,
     m₂, qlt, fun hm => ?_, plt, fun hm => ?_,
     by rw [hb₂ _ (by unfold sQinv sFn; omega_using [h8, hop]), hf₁ _ (by decide) (by decide)]; exact h.hQi,
@@ -218,7 +218,7 @@ theorem branchA1_ok (hl : LayOk l) (M : Mont) {s t₀ : State} {B : Addr} {Z k :
   rw [hql] at qws qxv
   have hh₀ : ∀ i < 32, hFixed i = true → word t₀.mem B (8 * i) = word s.mem B (8 * i) := hr.hfix
   exact WP.mono_mx hpre
-    (pre_ok M (wp := l.W) hr.good (by omega_using [hw32, hW2]) (le_refl _) (by rw [hoq]) (by omega_using [hZq]) (by omega_using [hW1])
+    (pre_ok M (wp := l.W) hr.good (by omega_using [hw32, hW2]) (Nat.le_refl _) (by rw [hoq]) (by omega_using [hZq]) (by omega_using [hW1])
       (by omega_using [hw32]) hr.wsP hr.wsQ pws qws hr.nv hr.xm pxv hP'.1 hP'.2 qxv hQ'.1 hQ'.2)
     fun s₁ hA mx₁ => ⟨hA, mx₁⟩
 
@@ -265,7 +265,7 @@ theorem branchB_ok (hl : LayOk l) (M : Mont) {s t₁ : State} {B : Addr} {Z k : 
     (oq := offQ ((k + 7) / 8) pl) (mx := mp) (mq := mq) (X := if Mk then P else 3)
     (m1 := if Mk then C ^ Spec.Rsa.os2ip dpb else x0) (c := Mk) (qib := qib) hd.good (by omega_using [hw32, hW2]) hd.nv
     (by rw [hpl]; omega_using [hw32]) hm.wsQ (by rw [hpl]; exact hm.qws) (by have := hZq; rw [hql] at this; rw [hpl]; exact this)
-    (le_refl _) (by rw [hoq, hop]) (by rw [hpl]; omega_arith) hm.wsP
+    (Nat.le_refl _) (by rw [hoq, hop]) (by rw [hpl]; omega_arith) hm.wsP
     (by rw [hpl]; exact hm.pws) (by rw [hpl]; exact ⟨hm.pn, hm.pinv, hm.pone⟩) hP'.1 hP'.2
     (by rw [hpl]; exact hd.plt) (fun _ => ?_) hm.pmk
     (fun hm' => by obtain ⟨_, hpq, _⟩ := hMk' hm'; simp only [hm', ↓reduceIte]; exact ⟨Q, hpq.symm⟩) hd.qi

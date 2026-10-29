@@ -9,7 +9,6 @@ import Mathlib.Tactic.Ring
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import Mathlib.Data.BitVec
-import Mathlib.Data.Int.ModEq
 
 /-! # Low words and sign of a bounded signed GCD value -/
 

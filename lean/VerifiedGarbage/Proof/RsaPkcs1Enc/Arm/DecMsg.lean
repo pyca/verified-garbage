@@ -1,5 +1,4 @@
 module
-import Mathlib.Data.Fintype.Card
 import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecMem
 public import VerifiedGarbage.Proof.Sha1.Arm.Lit

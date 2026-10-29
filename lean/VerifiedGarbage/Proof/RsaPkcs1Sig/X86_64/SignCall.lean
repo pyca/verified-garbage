@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignEntry
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall

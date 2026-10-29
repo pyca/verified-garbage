@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Rsa.Arm.RvFusedCompare
 import VerifiedGarbage.Proof.Rsa.Arm.RvTaint3
 
 import VerifiedGarbage.Proof.Framework.Omega
+import Aesop
 
 /-! One ARMv7 fused exponentiation and root-search bit, including its trace. -/
 

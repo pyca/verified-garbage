@@ -1,5 +1,4 @@
 module
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Rsa.Arm.RvBase
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 

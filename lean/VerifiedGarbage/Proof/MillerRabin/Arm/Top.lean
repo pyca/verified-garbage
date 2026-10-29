@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Contract
 public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Rsa.Arm.RvVP

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseData
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundState
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
-import Mathlib.Data.Nat.GCD.Basic
 
 /-! # FFDH parameter generation on x86-64: instantiate the shared witness policy -/
 

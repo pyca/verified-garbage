@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.Finish
 import VerifiedGarbage.Proof.Ffdh.AArch64.OutMask
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode

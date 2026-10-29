@@ -10,7 +10,6 @@ meta import VerifiedGarbage.Proof.Rsa.X86.RvTaint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Rsa.X86.RvFusedSmall
-import Mathlib.Data.Int.ModEq
 import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Weierstrass

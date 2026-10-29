@@ -1,5 +1,4 @@
 module
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
 

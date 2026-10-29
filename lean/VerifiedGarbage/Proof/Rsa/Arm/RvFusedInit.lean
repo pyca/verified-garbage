@@ -12,9 +12,11 @@ meta import VerifiedGarbage.Proof.Rsa.Arm.RvTaint2
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import Aesop
 
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.Arm.RvCand1
+import Aesop
 
 /-! Initialize one fused candidate from the shared Montgomery setup. -/
 

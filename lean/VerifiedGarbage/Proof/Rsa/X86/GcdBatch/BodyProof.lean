@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.Finish
 import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.Encoding
 import VerifiedGarbage.Proof.Weierstrass.X86.InvSetWord
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
-import Mathlib.Data.Nat.GCD.Basic
 public import VerifiedGarbage.Impl.Rsa.X86.GcdBatch
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Mont.Words32
@@ -15,7 +14,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
 public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
 import VerifiedGarbage.Proof.Rsa.Divstep.OddInput
 import Mathlib.Data.BitVec
-import Mathlib.Data.Int.ModEq
 import Mathlib.Tactic.Linarith
 
 /-! # Functional correctness of the complete batched RSA GCD -/

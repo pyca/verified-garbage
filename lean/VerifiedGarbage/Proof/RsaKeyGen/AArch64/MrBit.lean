@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.MillerRabin.AArch64.Core
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtArith
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

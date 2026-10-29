@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtDifference
-import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtCoefficient
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtInverseInput
 import VerifiedGarbage.Proof.Bignum.Arm.CrtTimesInverse

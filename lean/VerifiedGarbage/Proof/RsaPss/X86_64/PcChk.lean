@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyMain
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaPss.X86_64.Safe
+import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Rsa.X86_64
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFrame

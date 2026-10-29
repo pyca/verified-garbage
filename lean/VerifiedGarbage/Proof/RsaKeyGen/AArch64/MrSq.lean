@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.RsaKeyGen.AArch64.TrialTable
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrCtx
 public import VerifiedGarbage.Impl.MillerRabin.AArch64.Core

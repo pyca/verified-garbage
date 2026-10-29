@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Base
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
-public import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Rsa.Arm.KeyEq
 import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
 import VerifiedGarbage.Proof.Framework.Block

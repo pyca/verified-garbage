@@ -54,7 +54,7 @@ theorem gv_even {σ : State} (pre : In P σ) (he : P.e % 2 = 0) : gv P σ = fals
   have sh := cv_shape (σ := σ) pre
   have h2 : 2 ∣ Nat.gcd (cv P σ - 1) P.e :=
     Nat.dvd_gcd (Nat.dvd_of_mod_eq_zero (by have := sh.1; omega)) (Nat.dvd_of_mod_eq_zero he)
-  have : Nat.gcd (cv P σ - 1) P.e ≠ 1 := fun e => by rw [e] at h2; exact absurd (Nat.le_of_dvd one_pos h2) (by decide)
+  have : Nat.gcd (cv P σ - 1) P.e ≠ 1 := fun e => by rw [e] at h2; exact absurd (Nat.le_of_dvd Nat.one_pos h2) (by decide)
   simpa using this
 
 theorem gv_one {σ : State} (he : P.e = 1) : gv P σ = true := by

@@ -16,7 +16,6 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Bignum.Octets
 meta import Mathlib.Tactic.TermCongr
 import Mathlib.Tactic.TermCongr
-import Mathlib.Data.Int.ModEq
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub

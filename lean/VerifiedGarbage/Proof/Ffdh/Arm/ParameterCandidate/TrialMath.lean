@@ -1,6 +1,5 @@
 module
 
-import Mathlib.Data.Nat.GCD.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
 

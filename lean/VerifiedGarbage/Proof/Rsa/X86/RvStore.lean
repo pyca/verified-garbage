@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvInputs
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops

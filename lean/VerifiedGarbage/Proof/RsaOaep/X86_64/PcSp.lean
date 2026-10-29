@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
 
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Sp
-import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT

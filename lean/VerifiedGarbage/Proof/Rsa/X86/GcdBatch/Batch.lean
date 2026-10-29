@@ -18,7 +18,6 @@ import Mathlib.Algebra.Order.Group.Unbundled.Abs
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Divstep.Steps
 import Mathlib.Data.BitVec
-import Mathlib.Data.Int.ModEq
 import Mathlib.Tactic.Linarith
 public import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvLinear

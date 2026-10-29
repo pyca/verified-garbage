@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Proof.Rsa.Arm.RvBase
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 import VerifiedGarbage.Proof.Rsa.Arm.CvLoad

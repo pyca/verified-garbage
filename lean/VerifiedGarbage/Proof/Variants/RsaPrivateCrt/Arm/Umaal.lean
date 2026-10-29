@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
 public meta import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
 public import Mathlib.Data.Nat.Basic
 public import Mathlib.Order.Basic
-import Mathlib.Data.Int.ModEq
 import Mathlib.Util.CompileInductive
 
 /-!

@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.MillerRabin.Arm.Mont
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Taint
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Math
 public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Base
 import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT

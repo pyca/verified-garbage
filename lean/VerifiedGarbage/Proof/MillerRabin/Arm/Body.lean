@@ -99,7 +99,7 @@ theorem winInit_vp : VP (TS P 0) (seqs winInit) (WO P (2 * P.w)) := by
     (fun _ _ h => h)
   refine VP.seq (St.pcopyClr cM1_taint (by decide) (by decide) (by decide) (by decide)) ?_
   refine VP.seq (St.pcopy cY0_taint (by decide) (by decide) (by decide)) ?_
-  refine St.pwinCnt.mono (fun _ _ h => h) fun σ s h => ⟨le_refl _, h.mono (fun i hi => ⟨?_, ?_⟩)
+  refine St.pwinCnt.mono (fun _ _ h => h) fun σ s h => ⟨Nat.le_refl _, h.mono (fun i hi => ⟨?_, ?_⟩)
     (fun d hd => ⟨?_, ?_⟩)⟩
   · exact (by decide : ∀ i ∈ LW, i ∈ aY :: aM1 :: LT) i hi
   · rw [show 16 * P.w - 8 * (2 * P.w) = 0 by omega]

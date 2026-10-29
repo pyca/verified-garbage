@@ -1,5 +1,4 @@
 module
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 

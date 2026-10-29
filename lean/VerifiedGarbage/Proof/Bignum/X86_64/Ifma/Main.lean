@@ -170,7 +170,7 @@ theorem sizesA_ok (hl' : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat}
   have hpl2 := h.pl2
   have hql2 := h.ql2
   have hns := preRanges_nsafe (w := (k + 7) / 8) (wp := wp) (wq := wp) (op := offP ((k + 7) / 8))
-    (oq := offQ ((k + 7) / 8) pl) (le_refl _) (by unfold offQ; omega_arith)
+    (oq := offQ ((k + 7) / 8) pl) (Nat.le_refl _) (by unfold offQ; omega_arith)
   have hpw : word s₁.mem B (8 * sPlen) = BitVec.ofNat 64 pl := by
     rw [nsafe_word hA.2.2.2.2.1 hns (by decide) (by decide) (by decide), hr.hfix _ (by decide) (by decide)]
     exact h.hPl

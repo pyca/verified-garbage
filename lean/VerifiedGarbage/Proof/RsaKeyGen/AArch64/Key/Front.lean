@@ -98,8 +98,8 @@ theorem order_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) :
       · exact ⟨.arr aPa, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
       · exact ⟨.arr aQa, by simp, by simp [Rc.range], by simp only [Rc.range]; omega_arith⟩
   refine ⟨h.step f (all_mut_arrs (js := [aPa, aQa]) (by decide)) ((k₁.trans k23).trans k₄), f, ?_, ?_⟩
-  · dsimp only [av]; rw [hX]; split <;> simp_all
-  · dsimp only [av]; rw [hY]; split <;> simp_all
+  · dsimp only [av]; rw [hX]; split <;> simp_all <;> (simp only [av] at *; omega)
+  · dsimp only [av]; rw [hY]; split <;> simp_all <;> (simp only [av] at *; omega)
 
 /-! ## Minus one -/
 

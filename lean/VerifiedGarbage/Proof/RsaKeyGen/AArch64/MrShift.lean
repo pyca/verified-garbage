@@ -256,7 +256,7 @@ theorem lowWord_ok {s : State} {B : Addr} {Z w c : Nat} (h : Ws s B Z w) (hn : w
       · have hz0 : nwv s.mem B w (i + 1) = 0 :=
           BitVec.eq_of_toNat_eq (by rw [nwv_toNat hn hodd (by omega_arith), hz (i + 1) h]; rfl)
         simp [show i + 1 ≤ i0 by omega_arith, show i + 1 + 1 ≤ i0 by omega_arith, hz0]
-      · subst h; simp
+      · subst h; simp [show ¬ i + 1 ≤ i by omega]
       · have hne : nwv s.mem B w i0 ≠ 0 := fun h0 => by
           have := hx1
           rw [← hx, h0] at this; simp at this

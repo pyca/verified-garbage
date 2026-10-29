@@ -46,7 +46,7 @@ private theorem exponent_fits {s : State} {B : Addr} {Z w c bm : Nat}
   change mrE c < (2 ^ 4) ^ (16 * w)
   rw [← Nat.pow_mul, show 4 * (16 * w) = 64 * w by omega_arith]
   have hn : c < 2 ^ (64 * w) := hc.n ▸ wv_lt s.mem B (slot w aN) w
-  exact lt_of_le_of_lt (Nat.div_le_self _ _) (lt_of_le_of_lt (Nat.sub_le _ _) hn)
+  exact Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (Nat.lt_of_le_of_lt (Nat.sub_le _ _) hn)
 
 private theorem core_fit (w : Nat) : ∀ r ∈ coreRanges w, r.1 + r.2 ≤ 8 * (Caller.callWords w) := by
   intro r hr

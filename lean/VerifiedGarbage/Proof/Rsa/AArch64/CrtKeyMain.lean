@@ -77,8 +77,8 @@ theorem ckcMain_ok {I : CkIn} {s : State} (h : CkPre I s) (hv : Spec.Rsa.modulus
     omega
   have hPl : I.P < 256 ^ I.pl := by have := os2ip_lt I.pb; rw [L.pbl] at this; exact this
   have hQl : I.Q < 256 ^ I.ql := by have := os2ip_lt I.qb; rw [L.qbl] at this; exact this
-  have hPn : I.P < I.N := Nat.lt_of_lt_of_le hPl ((Nat.pow_le_pow_right (by decide) (by have := L.pl2; omega)).trans hlo)
-  have hQn : I.Q < I.N := Nat.lt_of_lt_of_le hQl ((Nat.pow_le_pow_right (by decide) (by have := L.ql2; omega)).trans hlo)
+  have hPn : I.P < I.N := Nat.lt_of_lt_of_le hPl (Nat.le_trans (Nat.pow_le_pow_right (by decide) (by have := L.pl2; omega)) hlo)
+  have hQn : I.Q < I.N := Nat.lt_of_lt_of_le hQl (Nat.le_trans (Nat.pow_le_pow_right (by decide) (by have := L.ql2; omega)) hlo)
   rw [ckcMain_eq]
   refine wp_seqs_append (by simp) (by simp [loadA]) (WP.mono (ckcHeadS_ok h hc) fun s₁ ⟨h₁, m₁⟩ => ?_)
   refine wp_seqs_append (by simp [loadA]) (by simp [loadA]) (WP.mono (ckLoad_ok h₁ (j := 0) (by decide) (by decide)

@@ -11,8 +11,10 @@ meta import VerifiedGarbage.Proof.Rsa.Arm.RvTaint2
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import Aesop
 
 import VerifiedGarbage.Proof.Framework.Omega
+import Aesop
 
 /-! One complete fused candidate, retaining the exponent for subsequent tries. -/
 

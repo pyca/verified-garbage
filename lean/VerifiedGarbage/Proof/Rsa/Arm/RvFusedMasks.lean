@@ -3,11 +3,15 @@ module
 import VerifiedGarbage.Proof.Rsa.Arm.RvFusedFlags
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import Aesop
+import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Rsa.Arm.RvTaint2
 meta import VerifiedGarbage.Impl.Rsa.Arm.RecoverFused
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import Aesop
+meta import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Rsa.Arm.RecoverFused
 public import VerifiedGarbage.Proof.Rsa.Arm.RvSt
 public import VerifiedGarbage.Proof.Rsa.RecoverExp

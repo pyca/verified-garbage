@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.CT
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Safety
-import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
 import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Implies
 import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Correct

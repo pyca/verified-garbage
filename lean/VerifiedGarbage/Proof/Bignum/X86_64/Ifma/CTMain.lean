@@ -156,7 +156,7 @@ theorem prePre_of (hl : LayOk l) {s t₀ : State} {B : Addr} {Z k : Nat} {op np 
   have qxv := hr.qxv
   rw [hpl] at pws pxv
   rw [hql] at qws qxv
-  exact ⟨mp, mq, _, _, C, hr.good, by omega_arith, le_refl _, by rw [hoq]; rfl, by omega_arith, by omega_arith, by omega_arith,
+  exact ⟨mp, mq, _, _, C, hr.good, by omega_arith, Nat.le_refl _, by rw [hoq]; rfl, by omega_arith, by omega_arith, by omega_arith,
     hr.wsP, hr.wsQ, pws, qws, hr.nv, hr.xm, pxv, hP'.1, hP'.2, qxv, hQ'.1, hQ'.2⟩
 
 /-- `ifma`'s hypotheses, after `pre` (as `branchA2_ok` runs it). -/
@@ -201,7 +201,7 @@ theorem ifPre_of (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat} {op
   rw [hql] at hZq
   have hh₀ : ∀ i < 32, hFixed i = true → word t₀.mem B (8 * i) = word s.mem B (8 * i) := hr.hfix
   obtain ⟨hg₁, hN₁, rp, rq, f₁, k₁, mk₁⟩ := hA
-  have ns₁ := preRanges_nsafe (w := (k + 7) / 8) (wp := l.W) (wq := l.W) (le_refl (offP ((k + 7) / 8)))
+  have ns₁ := preRanges_nsafe (w := (k + 7) / 8) (wp := l.W) (wq := l.W) (Nat.le_refl (offP ((k + 7) / 8)))
     (show slot ((k + 7) / 8) 8 ≤ offQ ((k + 7) / 8) pl by rw [hoq]; omega_arith)
   have hpr : ∀ r ∈ preRanges ((k + 7) / 8) (offP ((k + 7) / 8)) l.W (offQ ((k + 7) / 8) pl) l.W,
       r.1 + r.2 ≤ offQ ((k + 7) / 8) pl + slot l.W 8 + wsTab l.W := fun r hr => by
@@ -226,7 +226,7 @@ theorem ifPre_of (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat} {op
       rq.x.n, rq.x.inv, rq.x.one, mk₁.trans hr.pmask, by rw [hf₁ _ (by decide) (by decide)]; exact h.hDp,
       by rw [hf₁ _ (by decide) (by decide), h.dpl]; exact h.hPl, by rw [hf₁ _ (by decide) (by decide)]; exact h.hDq,
       by rw [hf₁ _ (by decide) (by decide), h.dql]; exact h.hQl⟩
-  exact ⟨minv, mp, mq, mask Mk, _, _, dpb, dqb, hg₁.scr, hg₁.rdi, ip, le_refl _, by rw [hoq, hop], rfl,
+  exact ⟨minv, mp, mq, mask Mk, _, _, dpb, dqb, hg₁.scr, hg₁.rdi, ip, Nat.le_refl _, by rw [hoq, hop], rfl,
     by omega_arith, hP'.2, hQ'.2, rp.ylt, rq.ylt, rp.clt, rq.clt, h.dp.congrK (hr.iscr.trans i₀₁) kk₁,
     h.dq.congrK (hr.iscr.trans i₀₁) kk₁, by rw [h.dpl]; exact hpl1, by rw [h.dpl]; exact hpl',
     by rw [h.dql]; exact hql1, by rw [h.dql]; exact hql', h.dpl, h.dql⟩
@@ -264,7 +264,7 @@ theorem postPre_of (hl : LayOk l) {s t₁ : State} {B : Addr} {Z k : Nat} {op np
   have hW8 : 256 ≤ slot (wsWords pl) 8 := by unfold slot hdrBytes; omega_arith
   have hm := hd.im
   exact ⟨minv, mp, mq, _, qib, Mk, hd.good, by omega_arith, by rw [hpl]; omega_arith, hm.wsQ, by rw [hpl]; exact hm.qws,
-    by have := hZq; rw [hql] at this; rw [hpl]; exact this, le_refl _, by rw [hoq, hop], by rw [hpl]; omega_arith,
+    by have := hZq; rw [hql] at this; rw [hpl]; exact this, Nat.le_refl _, by rw [hoq, hop], by rw [hpl]; omega_arith,
     hm.wsP, by rw [hpl]; exact hm.pws, by rw [hpl]; exact ⟨hm.pn, hm.pinv, hm.pone⟩, hP'.1,
     by rw [hpl]; exact hd.plt, hm.pmk, hd.qi, by rw [hqil]; exact hm.pl, h.qi.congrK hd.iscr hd.keep,
     by rw [hqil]; exact hpl1, by rw [hqil]; omega_arith, by rw [hqil, hpl]; omega_arith,
@@ -305,7 +305,7 @@ theorem pre_apost (hl : LayOk l) (M : Mont) {s t₀ : State} {B : Addr} {Z k : N
   have qxv := hr.qxv
   rw [hpl] at pws pxv
   rw [hql] at qws qxv
-  exact pre_ok M (wp := l.W) hr.good (by omega_arith) (le_refl _) (by rw [hoq]; exact Nat.le_refl _) (by omega_arith)
+  exact pre_ok M (wp := l.W) hr.good (by omega_arith) (Nat.le_refl _) (by rw [hoq]; exact Nat.le_refl _) (by omega_arith)
     (by omega_arith) (by omega_arith) hr.wsP hr.wsQ pws qws hr.nv hr.xm pxv hP'.1 hP'.2 qxv hQ'.1 hQ'.2
 
 /-! ## The stages of the IFMA branch -/

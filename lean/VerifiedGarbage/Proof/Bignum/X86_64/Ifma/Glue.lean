@@ -1,5 +1,4 @@
 module
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Bignum.CrtFrame
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Spec
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
