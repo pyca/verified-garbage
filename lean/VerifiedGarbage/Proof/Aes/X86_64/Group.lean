@@ -6,8 +6,6 @@ public import VerifiedGarbage.Proof.Aes.Blocks
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import Mathlib.Tactic.SplitIfs
-
 @[expose] public section
 
 section
@@ -528,11 +526,15 @@ theorem bswap32_bit (v : BitVec 32) {k j : Nat} (hk : k < 4) (hj : j < 8) :
     j (List.mem_range.mpr hj))
   obtain ⟨t0, t1, t2, t3⟩ := T
   simp only [BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  split_ifs with h0 h1 h2
-  · rw [decide_eq_true h0, Bool.true_and, t0 h0]
-  · rw [decide_eq_true h1, Bool.true_and, t1 ⟨h0, h1⟩]
-  · rw [decide_eq_true h2, Bool.true_and, t2 ⟨h0, h1, h2⟩]
-  · rw [decide_eq_true (t3 ⟨h0, h1, h2⟩).1, Bool.true_and, (t3 ⟨h0, h1, h2⟩).2]
+  split
+  next h0 => rw [decide_eq_true h0, Bool.true_and, t0 h0]
+  next h0 =>
+    split
+    next h1 => rw [decide_eq_true h1, Bool.true_and, t1 ⟨h0, h1⟩]
+    next h1 =>
+      split
+      next h2 => rw [decide_eq_true h2, Bool.true_and, t2 ⟨h0, h1, h2⟩]
+      next h2 => rw [decide_eq_true (t3 ⟨h0, h1, h2⟩).1, Bool.true_and, (t3 ⟨h0, h1, h2⟩).2]
 
 theorem rot_bit (v : BitVec 32) {p : Nat} (hp : p < 64) :
     ((v.setWidth 64).rotateRight 32).getLsbD p = (decide (32 ≤ p) && v.getLsbD (p - 32)) := by

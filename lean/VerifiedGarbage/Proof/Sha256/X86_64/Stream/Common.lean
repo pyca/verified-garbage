@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.Sha256.X86_64.Contract
 import VerifiedGarbage.Proof.Sha256.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
@@ -23,7 +22,6 @@ meta import VerifiedGarbage.Proof.Sha256.X86_64.Contract
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Bswap
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
@@ -421,7 +419,7 @@ theorem bytesAt_getD {m : Mem} {p : Addr} {n : Nat} {l : List Byte} (h : bytesAt
 
 theorem sub_ofNat {a b : Nat} (h : b ≤ a) :
     BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
-  conv_lhs => rw [show a = (a - b) + b by omega, BitVec.ofNat_add]
+  conv => lhs; rw [show a = (a - b) + b by omega, BitVec.ofNat_add]
   rw [BitVec.add_sub_cancel]
 
 theorem sub_beq {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :

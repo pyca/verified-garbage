@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Aes.Blocks
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # CMAC: doubling a block in four 32-bit words
@@ -99,11 +98,15 @@ theorem le4_rev4 (a b c d : BitVec 32) :
   have Q : ∀ k < 16, (k < 4 → 3 - k / 4 = 3) ∧ (¬ k < 4 → k < 8 → 3 - k / 4 = 2) ∧
       (¬ k < 8 → k < 12 → 3 - k / 4 = 1) ∧ (¬ k < 12 → 3 - k / 4 = 0) := by decide +kernel
   obtain ⟨q0, q1, q2, q3⟩ := Q k hk
-  split_ifs with h0 h1 h2
-  · rw [q0 h0, getLsbD_app4_a _ _ _ _ hr]
-  · rw [q1 h0 h1, getLsbD_app4_b _ _ _ _ hr]
-  · rw [q2 h1 h2, getLsbD_app4_c _ _ _ _ hr]
-  · rw [q3 h2, Nat.mul_zero, Nat.zero_add, getLsbD_app4_d _ _ _ _ hr]
+  split
+  next h0 => rw [q0 h0, getLsbD_app4_a _ _ _ _ hr]
+  next h0 =>
+    split
+    next h1 => rw [q1 h0 h1, getLsbD_app4_b _ _ _ _ hr]
+    next h1 =>
+      split
+      next h2 => rw [q2 h1 h2, getLsbD_app4_c _ _ _ _ hr]
+      next h2 => rw [q3 h2, Nat.mul_zero, Nat.zero_add, getLsbD_app4_d _ _ _ _ hr]
 
 theorem mask_eq32 (hi : BitVec 32) :
     ((0 : BitVec 32) - (hi >>> 31)) &&& 0x87 = if hi.msb then 0x87 else 0 := by

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Spec.Sha256
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 
@@ -188,7 +187,7 @@ theorem lenBytes_length (m : List Byte) : (lenBytes m).length = 8 := by simp [le
 theorem shl3 (hi lo : BitVec 32) : (hi <<< 3 ||| lo >>> 29) ++ lo <<< 3 = (hi ++ lo) <<< 3 := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi'
-  conv_rhs => rw [BitVec.getLsbD_shiftLeft, BitVec.getLsbD_append]
+  conv => rhs; rw [BitVec.getLsbD_shiftLeft, BitVec.getLsbD_append]
   rw [BitVec.getLsbD_append]
   by_cases h1 : i < 32
   · simp only [h1, ↓reduceIte]; rw [BitVec.getLsbD_shiftLeft]

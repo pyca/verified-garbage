@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Spec.X25519.Contract
 public import VerifiedGarbage.Proof.X25519.Ladder
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # X25519: byte strings, numbers and words
@@ -274,9 +273,9 @@ theorem bit_and_or_64 : ∀ x < 256, ∀ r < 7,
 theorem getD_set (l : List Byte) {i : Nat} (j : Nat) (a : Byte) (hi : i < l.length) :
     (l.set i a).getD j 0 = if i = j then a else l.getD j 0 := by
   simp only [List.getD_eq_getElem?_getD, List.getElem?_set]
-  split_ifs with h
-  · subst h; simp only [Option.getD_some]
-  · rfl
+  split
+  next h => subst h; simp only [Option.getD_some]
+  next => rfl
 
 /-- The bits `0, …, 254` of the decoded scalar: those of its bytes, but for the
 clamped ones (bits 0–2 are 0, bit 254 is 1). -/
@@ -296,7 +295,8 @@ theorem scalar_bit {kb : List Byte} (h : kb.length = 32) {t : Nat} (ht : t < 255
       simp (disch := omega) only [ite_true, ite_eq_right]
       rw [BitVec.toNat_or, BitVec.toNat_and, show (127 : BitVec 8).toNat = 127 from rfl,
         show (64 : BitVec 8).toNat = 64 from rfl, bit_and_or_64 _ (kb.getD 31 0).isLt _ (by omega)]
-      split_ifs <;> first | rfl | omega
+      repeat' split
+      all_goals first | rfl | omega
     · simp (disch := omega) only [ite_eq_left, ite_eq_right]
 
 end VG.Proof.X25519

@@ -1,7 +1,4 @@
 module
-import Mathlib.Logic.Function.Basic
-import Mathlib.Tactic.Set
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Dsa.X86.Entry
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Lit
