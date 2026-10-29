@@ -135,6 +135,23 @@ fn ecb() {
     }
 }
 
+/// ECB of buffers at every offset modulo 8: on RISC-V, the copies to and
+/// from the working space move doublewords for the aligned buffer and bytes
+/// for the others.
+#[test]
+fn unaligned_data() {
+    let e = example(section("A.2.1.2.  Example 2", "A.2.2.  SM4-CBC Examples"));
+    let ctx = Sm4Ecb::new(&e.key);
+    for offset in 0..8 {
+        let mut buffer = vec![0; offset + e.plaintext.len()];
+        buffer[offset..].copy_from_slice(&e.plaintext);
+        ctx.encrypt(&mut buffer[offset..]).unwrap();
+        assert_eq!(buffer[offset..], e.ciphertext[..]);
+        ctx.decrypt(&mut buffer[offset..]).unwrap();
+        assert_eq!(buffer[offset..], e.plaintext[..]);
+    }
+}
+
 #[test]
 fn cbc() {
     for (from, to) in [
