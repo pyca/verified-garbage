@@ -6,10 +6,10 @@ public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 public import VerifiedGarbage.Impl.Secp256k1.X86_64.Joint
 public import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.Impl.Secp256k1.GTable9
 
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
-import VerifiedGarbage.Proof.Secp256k1.GTable9Shape
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Tables
 /-!
 # ECDSA verification over secp256k1 on x86-64: the contract the proof is written against
@@ -37,6 +37,21 @@ the contract's witness (`satMemG`).
 -/
 
 @[expose] public section
+
+namespace VG.Proof.Secp256k1
+
+/-! The shape of the verifier's table of generator multiples: one table of
+256 points, what `tcombWords_length` needs to count its words in memory. -/
+
+theorem secp256k1G9_length : Impl.Secp256k1.secp256k1G9.length = 1 := rfl
+
+/-- Its one table has 256 points. -/
+theorem secp256k1G9_rows : ∀ j < 1, (Impl.Secp256k1.secp256k1G9.getD j []).length = 256 := by
+  intro j hj
+  rw [show j = 0 by omega]
+  decide +kernel
+
+end VG.Proof.Secp256k1
 
 namespace VG.Proof.Ecdsa.Verify.X86_64.Secp256k1
 

@@ -1,4 +1,6 @@
-//! ECDSA over secp256k1 with SHA-256, and secp256k1 public keys, beside OpenSSL.
+//! ECDSA over secp256k1 with SHA-256, and secp256k1 public keys, beside
+//! OpenSSL and aws-lc-rs (which has no secp256k1 public key of a bare private
+//! key).
 
 use criterion::Criterion;
 
@@ -11,9 +13,9 @@ pub const USES: &[&str] = &[
 ];
 
 /// For each hash function, signing a message: deterministically (RFC 6979),
-/// and in OpenSSL with a random `k` (its default); and verifying a
-/// signature, with the public key decoded and checked in each verification,
-/// as the verified code does.
+/// and in OpenSSL and aws-lc-rs with a random `k` (their default; aws-lc-rs
+/// has no deterministic signing); and verifying a signature, with the public
+/// key decoded and checked in each verification, as the verified code does.
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "x86",
@@ -24,6 +26,7 @@ pub const USES: &[&str] = &[
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
+    use aws_lc_rs::signature::{ECDSA_P256K1_SHA256_ASN1, ECDSA_P256K1_SHA256_FIXED_SIGNING};
     use criterion::BenchmarkId;
     use openssl::bn::{BigNum, BigNumContext};
     use openssl::ec::{EcGroup, EcPoint, PointConversionForm};
@@ -35,7 +38,14 @@ pub fn bench(c: &mut Criterion) {
     use crate::{OPENSSL, VG};
 
     let d = [0x42; 32];
-    hash::<Sha256>(c, "sha256", MessageDigest::sha256(), &d);
+    hash::<Sha256>(
+        c,
+        "sha256",
+        MessageDigest::sha256(),
+        &ECDSA_P256K1_SHA256_FIXED_SIGNING,
+        &ECDSA_P256K1_SHA256_ASN1,
+        &d,
+    );
 
     // The public key of a private key, uncompressed: in OpenSSL, `[d]G` and
     // its encoding. The ids' size is the bytes of the public key.
@@ -62,7 +72,9 @@ pub fn bench(c: &mut Criterion) {
 }
 
 /// Signing and verifying with the hash function `H`, named `name`, which
-/// OpenSSL calls `md`, with the private key `d`.
+/// OpenSSL calls `md`, with the private key `d`; in aws-lc-rs, signing with
+/// `aws_lc_sign` (`r ‖ s`, as the verified code does) and verifying the DER
+/// signature OpenSSL verifies with `aws_lc_verify`.
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "x86",
@@ -74,10 +86,14 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::Secp2
     c: &mut Criterion,
     name: &str,
     md: openssl::hash::MessageDigest,
+    aws_lc_sign: &'static aws_lc_rs::signature::EcdsaSigningAlgorithm,
+    aws_lc_verify: &'static aws_lc_rs::signature::EcdsaVerificationAlgorithm,
     d: &[u8; 32],
 ) {
     use std::hint::black_box;
 
+    use aws_lc_rs::rand::SystemRandom;
+    use aws_lc_rs::signature::{EcdsaKeyPair, UnparsedPublicKey};
     use criterion::BenchmarkId;
     use openssl::bn::{BigNum, BigNumContext};
     use openssl::ec::{EcGroup, EcKey, EcPoint};
@@ -87,7 +103,7 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::Secp2
     use openssl::sign::{Signer, Verifier};
     use verified_garbage::ecdsa::{Secp256k1, SigningKey, VerifyingKey};
 
-    use crate::{OPENSSL, SIZES, VG};
+    use crate::{AWS_LC, OPENSSL, SIZES, VG};
 
     let key = SigningKey::<Secp256k1>::from_bytes(d);
     let group = EcGroup::from_curve_name(Nid::SECP256K1).unwrap();
@@ -97,6 +113,11 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::Secp2
     public.mul_generator2(&group, &d_bn, &mut ctx).unwrap();
     let openssl_key =
         PKey::from_ec_key(EcKey::from_private_components(&group, &d_bn, &public).unwrap()).unwrap();
+    let q = key.public_key().unwrap();
+    let verifying_key = VerifyingKey::<Secp256k1>::from_bytes(&q);
+    let aws_lc_key = EcdsaKeyPair::from_private_key_and_public_key(aws_lc_sign, d, &q).unwrap();
+    // Ignored: aws-lc-rs draws `k` from AWS-LC's own generator.
+    let rng = SystemRandom::new();
 
     let mut g = c.benchmark_group(format!("ecdsa_secp256k1_{name}_sign"));
     for size in SIZES {
@@ -112,11 +133,16 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::Secp2
                     .unwrap()
             })
         });
+        let sig = aws_lc_key.sign(&rng, &message).unwrap();
+        verifying_key
+            .verify::<H>(&message, sig.as_ref().try_into().unwrap())
+            .unwrap();
+        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+            b.iter(|| aws_lc_key.sign(&rng, black_box(&message)).unwrap())
+        });
     }
     g.finish();
 
-    let q = key.public_key().unwrap();
-    let verifying_key = VerifyingKey::<Secp256k1>::from_bytes(&q);
     let digest = H::digest(&[0x5a; 32]);
     let ec_private = openssl_key.ec_key().unwrap();
     let mut g = c.benchmark_group(format!("ecdsa_secp256k1_{name}_sign_prehashed"));
@@ -178,6 +204,16 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::Secp2
                 let pkey = PKey::from_ec_key(ec).unwrap();
                 let mut verifier = Verifier::new(md, &pkey).unwrap();
                 assert!(verifier.verify_oneshot(&der, black_box(&message)).unwrap());
+            })
+        });
+        UnparsedPublicKey::new(aws_lc_verify, &q)
+            .verify(&message, &der)
+            .unwrap();
+        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+            b.iter(|| {
+                UnparsedPublicKey::new(aws_lc_verify, black_box(&q))
+                    .verify(black_box(&message), &der)
+                    .unwrap()
             })
         });
     }
