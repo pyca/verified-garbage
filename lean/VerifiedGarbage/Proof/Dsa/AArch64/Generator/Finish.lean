@@ -269,7 +269,7 @@ theorem stage_ok (M : Mont) (hb : Supported pLen) (A : StageABI pLen s) {u : Sta
     have bounds := VG.Proof.Dsa.Generation.generator_bounds (Nat.lt_trans Nat.zero_lt_one (A.positive hb)) _
       (rem ▸ hgv)
     have qfit : qOf pLen s.mem (s.gpr .x0) < 256 ^ qLen pLen :=
-      VG.Proof.Dsa.decodeBE_lt _ |>.trans_eq (by rw [bytesAt_length]; rfl)
+      Nat.lt_of_lt_of_eq (VG.Proof.Dsa.decodeBE_lt _) (by rw [bytesAt_length]; rfl)
     have gdef : gOf (plan hb A) = gv := by simp [gOf, hgv]
     have check := VG.Proof.Dsa.Generation.check_encodedParams (a := domainOf pLen s (plan hb A)) hb.lengths pfit qfit
       (by show gOf (plan hb A) < _; rw [gdef]; exact Nat.lt_trans bounds.2 pfit)

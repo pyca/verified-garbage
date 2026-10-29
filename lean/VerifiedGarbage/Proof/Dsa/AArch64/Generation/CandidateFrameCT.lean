@@ -5,7 +5,6 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Arguments
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArguments
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateBuildCT
 import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Data.Int.ModEq
 
 /-! # Candidate arithmetic accepts the persistent frame's actual words -/
 

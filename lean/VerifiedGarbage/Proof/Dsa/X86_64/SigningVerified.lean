@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
-import Mathlib.Data.Int.ModEq
 import Mathlib.Tactic.Set
 public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel

@@ -1,5 +1,4 @@
 module
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Spec.Dsa
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Arguments
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs

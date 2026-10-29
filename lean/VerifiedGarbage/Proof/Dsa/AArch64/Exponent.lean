@@ -1,5 +1,4 @@
 module
-public import Mathlib.Data.Int.GCD
 public import VerifiedGarbage.Impl.Rsa.AArch64.Crt
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup

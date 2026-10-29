@@ -14,7 +14,6 @@ meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-import Mathlib.Data.Int.ModEq
 
 /-! # Initialize candidate-reduction scratch while retaining source bytes and frame arguments -/
 

@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 public import Mathlib.Data.Nat.Basic
-import Mathlib.Data.Int.ModEq
 public import Mathlib.Tactic.Push
 
 /-! # Concrete p-primality buffers preserve the generated candidate and exponent -/

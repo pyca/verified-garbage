@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorArguments
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorArguments
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Data.Int.ModEq
 
 /-! # Bind public generator inputs through the persistent frame -/
 

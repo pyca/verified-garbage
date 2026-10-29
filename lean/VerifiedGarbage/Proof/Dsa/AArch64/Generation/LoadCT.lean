@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
-public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTFront

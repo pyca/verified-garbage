@@ -20,7 +20,6 @@ meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.TCB.Registration
-import Mathlib.Data.Int.ModEq
 
 /-! # Initialize the bounded p search without assumptions about old controller words -/
 

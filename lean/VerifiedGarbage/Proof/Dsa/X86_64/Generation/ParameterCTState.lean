@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ChunkCheck
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
 import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSlice
 import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Data.Int.ModEq
 
 /-! # Public seed and witness cursors for the complete parameter search -/
 
