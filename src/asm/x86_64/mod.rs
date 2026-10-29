@@ -563,6 +563,9 @@ pub(crate) mod secp256k1_inverse;
 pub(crate) mod secp256k1_mul;
 
 #[rustfmt::skip]
+pub(crate) mod secp256k1_point_ops;
+
+#[rustfmt::skip]
 pub(crate) mod seed;
 
 #[rustfmt::skip]

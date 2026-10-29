@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Secp256k1.Lit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Secp256k1.Verified
+public import VerifiedGarbage.Proof.Secp256k1.GTable9
+public import VerifiedGarbage.Impl.Secp256k1.X86_64.Joint
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -134,13 +136,32 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.Secp256k1.curve) : Li
     stack := 8
     verified := Proof.Ecdsa.X86_64.Secp256k1.sign_verified h.law h.inv },
   Spec.Ecdsa.Secp256k1.verifyApi.artifact X86_64.target {
-    notes := ["Field elements are four 64-bit words in Montgomery form. \
-      Scalar multiplication calls `vg_secp256k1_mul`, a fixed 256-iteration ladder with the general complete addition \
-      formulas of Renes, Costello and Batina (Algorithm 1), including for a = 0. \
-      Inversions use divsteps, by calls of `vg_secp256k1_inv_mod_p` and `vg_secp256k1_inv_mod_n`. \
-      Branches and memory addresses depend only on pointers and loop counters."]
+    notes := ["The function saves its caller's callee-saved registers in `scratch`. Field elements \
+      and scalars are four 64-bit words in Montgomery form, multiplied by word-by-word Montgomery \
+      multiplication (CIOS) with a final conditional subtraction. The public key is checked \
+      without branches (a call of `vg_secp256k1_check_point`); an invalid key is replaced with \
+      `G` for the point operations and rejected by the final validity flag. Divsteps computes \
+      `s⁻¹` modulo `n` (a call of `vg_secp256k1_inv_mod_n`), then `u = e/s` and `v = r/s`. Both \
+      public scalars are recoded as non-adjacent signed digits, width nine for `u` (sixteen bits \
+      each) and width five for `v`. A single Jacobian accumulator computes `[u]G + [v]Q` with 256 \
+      doublings, adding only nonzero digits. Generator digits directly index the affine odd \
+      multiples `[m]G`, `m ≤ 255`, in the static `VG_SECP256K1_GTAB` of `[m]G` for \
+      `m = 1 … 256` (16 KB, in Montgomery form), added by mixed additions; peer digits index \
+      eight odd multiples of `Q` in `scratch`, built by Jacobian additions of `2Q`, with cached \
+      squares and cubes of their Z coordinates. The digits' additions are calls of \
+      `vg_secp256k1_jac_add_cached` (the peer's digits) and `vg_secp256k1_jac_add_affine` (the \
+      generator's), which cover infinity, equal points and opposite points; the doubling and the \
+      table of odd multiples are inline. Doubling is Jacobian, for `a = 0` (dbl-2009-l, 2 \
+      products and 5 squares), with `Z' = 2YZ` as a direct product, in place: each coordinate of \
+      the accumulator is read for the last time before it is written, so no copy. The final \
+      comparison squares the Jacobian Z coordinate and checks `X = rZ²`, or `X = (r+n)Z²` when \
+      `r+n < p` (secp256k1 has `n < p ≤ 2n`), without a field inversion. It rejects infinity and \
+      returns the conjunction of the key, scalar-range and coordinate checks as 0 or 1. Timing \
+      may depend on the public verification inputs, as permitted by the contract."]
+    consts := Impl.Secp256k1.X86_64.secp256k1v.combConsts
     code := Impl.Ecdsa.Verify.X86_64.verifySecp256k1
     stack := 8
-    verified := Proof.Ecdsa.Verify.X86_64.Secp256k1.verify_verified h.law h.inv }]
+    verified := Proof.Ecdsa.Verify.X86_64.Secp256k1.verify_verified h.law
+      (Proof.Secp256k1.gtabOk9 h.law) h.inv }]
 
 end VG.Generic.Secp256k1.X86_64.EcdsaSecp256k1
