@@ -7,8 +7,6 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.RISCV64.ByteLoad
 import VerifiedGarbage.Proof.Framework.RISCV64.Align
-import Mathlib.Tactic.SplitIfs
-
 /-!
 # PBKDF2-HMAC-SHA-1's iteration on RISC-V: one compression
 
@@ -41,7 +39,7 @@ def Clob (L : Lay) (r : Reg) : Prop := r ∈ L.vs ∨ r ∈ L.w ∨ r = KR ∨ r
 /-- `Kₜ` changes only every 20 rounds. -/
 theorem K_succ {t : Nat} (h : (t + 1) % 20 ≠ 0) : K (t + 1) = K t := by
   unfold Spec.Sha1.K
-  split_ifs <;> first | rfl | omega
+  (repeat' split) <;> first | rfl | omega
 
 /-- The block's words. -/
 theorem blk_lt (x : HashValue) {j : Nat} (hj : j < 5) : W (blk x) j = x[j] := by

@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Encode
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
@@ -159,9 +158,13 @@ theorem afterPub_checked (out : Option (List Byte)) {s t : State} (hp : PreV s) 
   have hk1 := hp.k1
   have hk2 := hp.k2
   have hF := fb_toNat hp
-  set k := (s.gpr .rsi).toNat with hkdef
-  set dB := Spec.Rsa.bytesAt s.mem (s.gpr .r9) (stackArg s 0).toNat
-  set x := (s.gpr .r8).setWidth 32
+  let k := (s.gpr .rsi).toNat
+  try rewrite [show (s.gpr .rsi).toNat = k from rfl] at *
+  have hkdef : k = (s.gpr .rsi).toNat := rfl
+  let dB := Spec.Rsa.bytesAt s.mem (s.gpr .r9) (stackArg s 0).toNat
+  try rewrite [show Spec.Rsa.bytesAt s.mem (s.gpr .r9) (stackArg s 0).toNat = dB from rfl] at *
+  let x := (s.gpr .r8).setWidth 32
+  try rewrite [show (s.gpr .r8).setWidth 32 = x from rfl] at *
   unfold afterPub
   refine WP.seq (WP.mono (test0_ok t) fun t₁ ⟨hs₁, hz₁⟩ => ?_)
   have he₁ : Env s t₁ := he.regs (by rw [hs₁.1]) hs₁.2.1 hs₁.2.2.1 hs₁.2.2.2

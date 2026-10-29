@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86.Fn
 import VerifiedGarbage.Proof.AesCcm.X86.Run
 import VerifiedGarbage.Proof.AesCcm.X86.Env
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 
@@ -57,7 +56,9 @@ theorem entry_ok {s : State} {W : BitVec 32} (hW : arg s 10 = W) (wW : Covers [�
   refine WP.seq (WP.of_runBlock ⟨_, by crun [hSP, i₀], ?_⟩)
   have hax : (s.setReg .eax (s.mem.readW (argA SP 10) 32)).gpr .eax = W := by
     rw [gpr_setReg_self, ← hSP]; exact hW
-  set s₀ := s.setReg .eax (s.mem.readW (argA SP 10) 32) with hs₀
+  let s₀ := s.setReg .eax (s.mem.readW (argA SP 10) 32)
+  try rewrite [show s.setReg .eax (s.mem.readW (argA SP 10) 32) = s₀ from rfl] at *
+  have hs₀ : s₀ = s.setReg .eax (s.mem.readW (argA SP 10) 32) := rfl
   obtain ⟨s₁, run₁, bp₁, g₁, rd₁, wr₁, sv₁, f₁⟩ := save_ok s₀ hax (by rw [hs₀]; exact wW) fw
   have sp₁ : s₁.gpr .esp = SP := by rw [g₁ _ (by decide), hs₀, gpr_setReg_of_ne _ _ (by decide), hSP]
   have f₁' : Frame [⟨w64 W + BitVec.ofNat 64 128, 16⟩] s.mem s₁.mem := f₁

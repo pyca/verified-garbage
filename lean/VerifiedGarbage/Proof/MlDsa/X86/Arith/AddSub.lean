@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 public import VerifiedGarbage.Proof.MlKem.X86.Common
 public import VerifiedGarbage.Proof.MlKem.X86.Leaf
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -16,7 +15,6 @@ meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 meta import VerifiedGarbage.Proof.MlKem.X86.Common
 meta import VerifiedGarbage.Proof.MlKem.X86.Leaf
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
-meta import Mathlib.Tactic.Set
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -74,8 +72,12 @@ theorem subOp_spec : OpSpec subOp fun a b => (a + q - b) % q := by
   have hin' : InRegions (s.rd ++ s.wr) ((s.gpr .edi + BitVec.ofNat 32 0).setWidth 64) 4 := hin
   have h₂' : (s.mem.readW ((s.gpr .edi + BitVec.ofNat 32 0).setWidth 64) 32).toNat = b := h₂
   rw [subOp, List.cons_append, List.cons_append]
-  set B := s.mem.readW ((s.gpr .edi + BitVec.ofNat 32 0).setWidth 64) 32 with hB
-  set A := s.gpr .eax + qImm with hA
+  let B := s.mem.readW ((s.gpr .edi + BitVec.ofNat 32 0).setWidth 64) 32
+  try rewrite [show s.mem.readW ((s.gpr .edi + BitVec.ofNat 32 0).setWidth 64) 32 = B from rfl] at *
+  have hB : B = s.mem.readW ((s.gpr .edi + BitVec.ofNat 32 0).setWidth 64) 32 := rfl
+  let A := s.gpr .eax + qImm
+  try rewrite [show s.gpr .eax + qImm = A from rfl] at *
+  have hA : A = s.gpr .eax + qImm := rfl
   refine wp_cons (s' := (arithFlags s A (2 ^ 32 ≤ (s.gpr .eax).toNat + qImm.toNat)
     (addOverflow (s.gpr .eax) qImm A)).setReg .eax A)
     (by simp only [exec, execAlu, readSrc, Option.bind_some]; rfl) ?_
@@ -202,7 +204,9 @@ theorem map_step {op : List Instr} {F : Nat → Nat → Nat} (hop : OpSpec op F)
   have ef : s.ea (at_ .esi 0) = coeffAddr (fA s₀) k := by
     rw [State.ea, at_, h.esi]; exact hp.ea_f k hk
   refine wp_movm (by rw [ef]; exact hp.in_f' h.wr hk) ?_
-  set s₁ := s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32) with hs₁
+  let s₁ := s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32)
+  try rewrite [show s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32) = s₁ from rfl] at *
+  have hs₁ : s₁ = s.setReg .eax (s.mem.readW (s.ea (at_ .esi 0)) 32) := rfl
   have ha : (coeffAt s₀.mem (fA s₀) k).toNat < q := hp.f_red k hk'
   have hb : (coeffAt s₀.mem (gA s₀) k).toNat < q := hp.g_red k hk'
   have eg : s₁.ea (at_ .edi 0) = coeffAddr (gA s₀) k := by

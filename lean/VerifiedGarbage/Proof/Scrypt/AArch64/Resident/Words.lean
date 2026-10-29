@@ -5,7 +5,6 @@ public import VerifiedGarbage.Impl.Scrypt.AArch64.Resident
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Range
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.MdStream.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
@@ -266,7 +265,7 @@ theorem wordLE_xor {a b : List Byte} {j : Nat} (ha : 4*j+4 ≤ a.length) (hb : 4
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [BitVec.getLsbD_append,BitVec.getLsbD_xor]
-  split_ifs <;> rfl
+  (repeat' split) <;> rfl
 
 theorem step_ok {s₀ : State} {src out xp : Addr} {d : Reg}
     (hd : d = .x20 ∨ d = .x21) (hsrc : s₀.gpr .x19 = src) (hdst : s₀.gpr d = out)

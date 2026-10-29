@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.DotW.Term
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.TaintSumGeneric
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
@@ -81,7 +80,8 @@ theorem finishR_ok {s : State} {a b c g t : VReg}
     (hlt := fun e he => by have := bb e he; omega) (k := fun s₁ h₁ l₁ b₁ => ?_)
   have a₁ : Lanes (s₁.v a) A := by rw [h₁.get a (by simp [hat, hab])]; exact la
   have g₁ : Lanes (s₁.v g) G := by rw [h₁.get g (by simp [hgt, hgb])]; exact lg
-  set R := fun e => B e - B e * 645083 / 2 ^ 31 * 3329
+  let R := fun e => B e - B e * 645083 / 2 ^ 31 * 3329
+  try rewrite [show fun e => B e - B e * 645083 / 2 ^ 31 * 3329 = R from rfl] at *
   have br : ∀ e < 4, R e * G e ≤ 2 * 3329 * 3329 := fun e he =>
     Nat.mul_le_mul (Nat.le_of_lt (b₁ e he).1) (Nat.le_of_lt (bg e he))
   have bylt : ∀ e < 4, A e + R e * G e < 2 ^ 31 := fun e he => by

@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.Blake2.Spec
 public import VerifiedGarbage.Impl.Blake2.Arm.CompressB
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
-import Mathlib.Tactic.SplitIfs
-
 @[expose] public section
 
 section
@@ -505,7 +503,7 @@ theorem ldH_ok {st scr : BitVec 32} {s : State} (c : Ctx st scr s) :
         (by omega_arith) _
 
 theorem tweak_ok (k : Nat) : 128 ≤ tweak k ∧ tweak k + 8 ≤ 512 := by
-  unfold tweak ctrLo ctrHi flagOff zeroOff; split_ifs <;> omega_arith
+  unfold tweak ctrLo ctrHi flagOff zeroOff; (repeat' split) <;> omega_arith
 
 theorem iv_getD {k : Nat} (hk : k < 8) :
     Spec.Blake2.b.IV.toList.getD k 0 = Spec.Blake2.b.IV[k] := by

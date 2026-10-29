@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Sha256.PPC64LE.Compress
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Sha256.PPC64LE.Compress
-import Mathlib.Data.List.Nodup
 public import VerifiedGarbage.Impl.Sha256.PPC64LE.Stream
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call

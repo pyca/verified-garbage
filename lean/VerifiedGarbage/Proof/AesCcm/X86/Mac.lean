@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.AesGcm.X86.Flush
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.AesGcm.X86.Loops
@@ -186,7 +185,7 @@ theorem b0Pre_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W 
       simp [Spec.Ccm.b0, Spec.Ccm.ctrBlock, hnl]
     have ht : (Spec.Ccm.ctrBlock nonce n).take 12 = (Spec.Ccm.ctrBlock nonce 0).take 12 := ctrBlock_take12 h7' h13' hn32
     rw [hb0]
-    conv_rhs => rw [← List.take_append_drop 12 (Spec.Ccm.ctrBlock nonce n)]
+    conv => rhs; rw [← List.take_append_drop 12 (Spec.Ccm.ctrBlock nonce n)]
     rw [ht, e, List.take_left' l12, List.drop_append_of_le_length (by rw [l12]; decide)]
     simp only [List.cons_append, List.append_assoc, List.drop_append_of_le_length
       (show 1 ≤ (le4 (s.mem.readW (w64 W + BitVec.ofNat 64 48) 32)).length by rw [Proof.Cmac.length_le4]; decide)]

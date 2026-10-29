@@ -24,9 +24,7 @@ meta import VerifiedGarbage.Proof.AesGcm.X86.Flush
 meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
 meta import VerifiedGarbage.Proof.Cmac.Stream
 meta import VerifiedGarbage.Proof.Cmac.Spec
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
@@ -172,7 +170,7 @@ theorem ctrAt_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W 
     rw [e, List.drop_left' l12]
   rw [hm, Cmac.bytesAt_store4, show bswap (BitVec.ofNat 32 i) = byteRev32 (BitVec.ofNat 32 i) from rfl,
     ctr_or32 h7 h13 hw hi hi32]
-  conv_rhs => rw [← List.take_append_drop 12 (Spec.Ccm.ctrBlock nonce i)]
+  conv => rhs; rw [← List.take_append_drop 12 (Spec.Ccm.ctrBlock nonce i)]
   rw [ctrBlock_take12 h7 h13 hi32, e, List.take_left' l12]
 
 /-! ## Chaining `B` -/

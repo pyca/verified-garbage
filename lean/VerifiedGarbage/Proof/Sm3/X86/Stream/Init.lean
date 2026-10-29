@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Sm3.X86.Contract
 public import VerifiedGarbage.Impl.Sm3.X86.Stream
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sm3.X86.Lit
@@ -18,7 +17,6 @@ meta import VerifiedGarbage.Proof.Sm3.X86.Contract
 meta import VerifiedGarbage.Impl.Sm3.X86.Stream
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import Mathlib.Tactic.Set
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Sm3.X86.Lit
@@ -60,7 +58,9 @@ theorem word_ok {x : BitVec 32} {k : Nat} {rest : List Instr} {s : State} {Q : S
 theorem init_correct {s₀ : State} (hp : Proof.Sm3.initX86.pre s₀) :
     WP isa init s₀ fun s' => abiPreserved s₀ s' ∧ Proof.Sm3.initX86.post s₀ s' := by
   obtain ⟨hrd, hwr, hargs, hret, hfit, hsp⟩ := hp
-  set st := arg s₀ 0 with hst
+  let st := arg s₀ 0
+  try rewrite [show arg s₀ 0 = st from rfl] at *
+  have hst : st = arg s₀ 0 := rfl
   have o : ∀ k, k < 8 → InRegions s₀.wr (addr st (4 * k)) 4 :=
     fun k hk => ⟨⟨st.setWidth 64, 96⟩, by simp [hwr], contains_addr (by omega) (by omega) hfit⟩
   rw [init_eq]

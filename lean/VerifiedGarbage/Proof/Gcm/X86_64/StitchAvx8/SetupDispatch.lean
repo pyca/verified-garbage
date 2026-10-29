@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Pipeline
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
@@ -517,7 +516,7 @@ theorem seedTemplate_ok {s₀ s : State} {P : Nat → Block} {lo : Nat} (hp : SP
       simpa only [Nat.zero_add, Nat.lt_add_one, Nat.le_refl, ite_true] using
         refreshCounter_ok s.mem (templateAddr s₀ n) (cb s₀) 0 n htn
     · have hk : (if i < n + 1 then i else 0) = (if i < n then i else 0) := by
-        split_ifs <;> omega_arith
+        (repeat' split) <;> omega_arith
       rw [VG.Proof.Aes.X86_64.AesNi.blockAt_frame hF (by
         intro r hr; simp only [List.mem_singleton] at hr; subst r
         exact Offset.disjoint (pp s₀) (by omega_arith) (by omega_arith) (by omega_arith)), hk]
