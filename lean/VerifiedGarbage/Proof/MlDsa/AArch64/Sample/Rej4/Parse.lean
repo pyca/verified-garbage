@@ -1,12 +1,103 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.ParseMem
 public import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SqPhase
+public import VerifiedGarbage.Proof.MlDsa.Sample.Mem
+
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Zero
 import VerifiedGarbage.Proof.MlDsa.Sample.Hash
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Setup
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Squeeze
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Init
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Env
+import VerifiedGarbage.Proof.Framework.Offset
+
+-- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Sample/Rej4/Sponge.lean`, which only this module imported.
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Sample.Rej4
+open VG VG.AArch64
+open VG.Impl.MlDsa.AArch64.Sample.Rej4 (init setup squeezeStepWith)
+
+structure Ready (σ s : State) : Prop where
+  env : Env σ s
+  out : ∀ k < 4, ∀ j < 1008, s.mem (bufP σ k+BitVec.ofNat 64 j) = F σ k j
+
+theorem sponge_ok (sha3 : Bool) {σ : State} (hp : Pre σ) :
+    WP isa (.seq (.block (init++setup))
+      (.loop (squeezeStepWith sha3) (.nonzero .x .x28))) σ (Ready σ) := by
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (init_ok hp) fun s ⟨he,h0,h1⟩ => ?_
+  refine WP.mono (setup_ok he h0 h1) fun u hu => ?_
+  refine WP.mono (squeeze_ok sha3 hp hu) fun t ht => ⟨ht.env,?_⟩
+  intro k hk j hj
+  exact ht.out k hk j (by simpa using hj)
+end VG.Proof.MlDsa.AArch64.Sample.Rej4
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Sample/Rej4/ParseMem.lean`, which only this module imported.
+section
+
+@[expose] public section
+
+namespace VG.Proof.MlDsa.AArch64.Sample.Rej4
+open VG VG.AArch64
+open VG.Proof.MlDsa.Sample (polyR coeffAddr)
+
+def polyP (σ : State) (k : Nat) : Addr := aP σ+BitVec.ofNat 64 (1024*k)
+
+theorem poly_sub (σ : State) {k : Nat} (hk : k < 4) : Region.Sub (polyR (polyP σ k)) (aR σ) :=
+  Offset.sub_base (aP σ) (by omega)
+
+theorem buf_sub (σ : State) {k : Nat} (hk : k < 4) : Region.Sub (⟨bufP σ k,1008⟩ : Region) (scrR σ) :=
+  Offset.sub_base (scr σ) (by dsimp only [VG.Impl.MlDsa.AArch64.Sample.Rej4.oBuf]; omega)
+
+theorem buf_poly {σ : State} (hp : Pre σ) {j k : Nat} (hj : j < 4) (hk : k < 4) :
+    (⟨bufP σ j,1008⟩ : Region).Disjoint (polyR (polyP σ k)) :=
+  hp.a_scr.symm.sub_left (buf_sub σ hj) |>.sub_right (poly_sub σ hk)
+
+theorem coeffs_in {σ s : State} (hp : Pre σ) (hw : s.wr = σ.wr) {k : Nat} (hk : k < 4) :
+    ∀ i < 256,InRegions s.wr (coeffAddr (polyP σ k) i) 4 := by
+  intro i hi
+  rw [hw,hp.wr]
+  refine ⟨aR σ,by simp,?_⟩
+  unfold coeffAddr polyP
+  rw [Offset.add_add]
+  exact Offset.contains_base _ (by omega) (by omega)
+
+theorem Env.polyStep {σ s t : State} (hp : Pre σ) {k : Nat} (hk : k < 4) (he : Env σ s)
+    (hf : Frame [polyR (polyP σ k)] s.mem t.mem)
+    (hr : t.rd = s.rd) (hw : t.wr = s.wr) (hsp : t.sp = s.sp)
+    (hg : ∀ r ∈ [Reg.x19,.x20,.x21,.x30],t.gpr r = s.gpr r) : Env σ t :=
+  he.frameStep hf (fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact ⟨aR σ,by simp,poly_sub σ hk⟩)
+    (fun r hr => by
+      rw [List.mem_singleton.mp hr]
+      exact hp.a_scr.symm.sub_left (Offset.sub_base (scr σ) (by decide)) |>.sub_right (poly_sub σ hk))
+    hr hw hsp hg
+
+theorem Ready.polyStep {σ s t : State} (hp : Pre σ) {k : Nat} (hk : k < 4) (h : Ready σ s)
+    (hf : Frame [polyR (polyP σ k)] s.mem t.mem)
+    (hr : t.rd = s.rd) (hw : t.wr = s.wr) (hsp : t.sp = s.sp)
+    (hg : ∀ r ∈ [Reg.x19,.x20,.x21,.x30],t.gpr r = s.gpr r) : Ready σ t := by
+  refine ⟨h.env.polyStep hp hk hf hr hw hsp hg,fun j hj i hi => ?_⟩
+  rw [← h.out j hj i hi]
+  exact hf _ (fun r hr hc => by
+    rw [List.mem_singleton.mp hr] at hc
+    exact buf_poly hp hj hk _ (Offset.contains_base _ (by omega) (by omega)) hc)
+end VG.Proof.MlDsa.AArch64.Sample.Rej4
+end
+
+end
 
 @[expose] public section
 
