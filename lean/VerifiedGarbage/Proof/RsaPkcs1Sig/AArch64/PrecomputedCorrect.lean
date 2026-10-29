@@ -57,9 +57,7 @@ theorem preP_of {K : Nat} {s : State}
   have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega_arith
   rw [e] at h
   sig_pre [Spec.RsaPkcs1Sig.verifyPrecomputedContract, Spec.RsaPkcs1Sig.verifyPrecomputedSig, abi, argRegs,
-    stackArgs_five, List.append_eq] at h
-  sig_pre [Spec.RsaPkcs1Sig.verifyPrecomputedContract, Spec.RsaPkcs1Sig.verifyPrecomputedSig, abi, argRegs,
-    stackArgs_five, List.append_eq] at h
+    stackArgs_five, List.append_eq, List.range, List.range.loop] at h
   obtain ⟨sp1, sp2, hrd, hwr, ns, es, ds, gs, sp, sa, kn, ke, kd, kg, ks, kp, ka, wn, we, wd, wg, ws, wp,
     ⟨k1, k2⟩, e1, e2, hs, hl⟩ := h
   rw [← e] at sp1 kn ke kd kg ks kp ka

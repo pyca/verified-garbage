@@ -37,9 +37,7 @@ structure PPre (H : Spec.Mgf1.Hash) (s : State) : Prop extends EPre H s where
 theorem pre_of {H G : Spec.Mgf1.Hash} {s : State}
     (h : (Spec.RsaOaep.encryptPrecomputedContract H G abi encStack).pre s) : PPre H s := by
   sig_pre [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, abi, argRegs, encStack,
-    stackArgs_nine, List.append_eq] at h
-  sig_pre [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, abi, argRegs, encStack,
-    stackArgs_nine, List.append_eq] at h
+    stackArgs_nine, List.append_eq, List.range, List.range.loop] at h
   obtain ⟨sp1, sp3, hrd, hwr, dOn, dOe, dOl, dOm, dOsd, dOs, dOq, dOa, dns, des, dls, dms, dsds, dsq, dsa,
     dRo, dRn, dRe, dRl, dRm, dRsd, dRs, -, dRa, dKo, dKn, dKe, dKl, dKm, dKsd, dKs, dKq, dKa,
     wO, wN, wE, wL, wM, wSd, wS, wQ, ⟨k1, k2⟩, hsi, L1, L2, hsl, pl⟩ := h

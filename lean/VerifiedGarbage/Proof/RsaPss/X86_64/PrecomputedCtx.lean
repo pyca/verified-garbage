@@ -37,9 +37,7 @@ padding code and the precomputed public operation. -/
 theorem pre_of {s : State}
     (h : (Spec.RsaPss.verifyPrecomputedContract G G abi verifyStack).pre s) : Pre G s := by
   sig_pre [Spec.RsaPss.verifyPrecomputedContract, Spec.RsaPss.verifyPrecomputedSig,
-    abi, argRegs, verifyStack, stackArgs_seven, List.append_eq] at h
-  sig_pre [Spec.RsaPss.verifyPrecomputedContract, Spec.RsaPss.verifyPrecomputedSig,
-    abi, argRegs, verifyStack, stackArgs_seven, List.append_eq] at h
+    abi, argRegs, verifyStack, stackArgs_seven, List.append_eq, List.range, List.range.loop] at h
   sig_split h
   rename_i sp1 sp2 hrd hwr dns des dds dgs dsp dsa dRn dRe dRd dRg dRs _ dRa dKn dKe dKd dKg dKs dKp
     dKa wN wE wD wG wS wP _ob1 L1 L2 hsg hsl

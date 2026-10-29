@@ -119,11 +119,9 @@ theorem PubOk.pre {K : Nat} {t : State} (hK : 0 < K) (h : PubOk K t) :
     (Spec.Rsa.publicCheckedContract abi K).pre (t.callEntry.withRegions (pubRd t) (pubWr t)) := by
   obtain ⟨K, rfl⟩ : ∃ K', K = K' + 1 := ⟨K - 1, by omega⟩
   have hl := h.hl
-  sig_pre [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, abi, argRegs, stackArgs_two, List.append_eq]
-  simp only [Sig.pairFacts, List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false,
-    Bool.true_or, Bool.false_or, List.cons_append, List.nil_append, Sig.conj,
-    List.append_nil, sa0]
-  exact ⟨hl.sp1, hl.sp2, rfl, rfl, hl.on, hl.oe, ⟨hl.oi, hl.os, hl.oa, hl.ns, hl.es, hl.is, hl.sa⟩,
+  sig_pre [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, abi, argRegs, stackArgs_two, List.append_eq, List.range, List.range.loop]
+  simp only [sa0]
+  exact ⟨hl.sp1, hl.sp2, rfl, rfl, hl.on, hl.oe, hl.oi, hl.os, hl.oa, hl.ns, hl.es, hl.is, hl.sa,
     hl.ko, hl.kn, hl.ke, hl.ki, hl.ks, hl.ka, hl.wo, hl.wn, hl.we, hl.wi, hl.ws, h.hk, h.h1, h.h7, h.he1,
     h.he2, h.hs⟩
 
@@ -142,7 +140,7 @@ theorem pubCall (c : PubChecked) {t : State} {Q : State → Prop} (h : PubOk c.s
     (Covers.append_left (Covers.trans h.hrd (Covers.refl _)) (Covers.right h.hwr)) h.hwr ?_
     (by have := c.le; have := c.depth; omega)
   intro s' hrd' hwr' hsp' hf hpres hvs hpost
-  sig_post [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, abi, argRegs, stackArgs_two, List.append_eq] at hpost
+  sig_post [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, abi, argRegs, stackArgs_two, List.append_eq, List.range, List.range.loop] at hpost
   exact hQ s' hrd' hwr' hsp' hf hpres hvs hpost
 
 /-- What two runs agree on at a call of an RSA operation: the stack
@@ -174,8 +172,7 @@ theorem pubCallCT (c : PubChecked) {P : State → State → Prop}
   refine ⟨_, _, _, _, h₁.pre c.pos, h₂.pre c.pos, ?_,
     Covers.append_left (Covers.trans h₁.hrd (Covers.refl _)) (Covers.right h₁.hwr), h₁.hwr,
     Covers.append_left (Covers.trans h₂.hrd (Covers.refl _)) (Covers.right h₂.hwr), h₂.hwr⟩
-  sig_pub [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, abi, argRegs, stackArgs_two, List.append_eq]
-  simp only [List.getD_cons_succ, List.getD_cons_zero]
+  sig_pub [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, abi, argRegs, stackArgs_two, List.append_eq, List.range, List.range.loop]
   obtain ⟨e0, e1, e2, e3, e4, e5, e6, e7⟩ := argsEq_regs he
   exact ⟨he.sp, by rw [hn, hE], e0, e1, e2, e3, e4, e5, e6, e7, he.args 0 (by decide), he.args 1 (by decide)⟩
 
@@ -202,11 +199,9 @@ theorem PdOk.pre {K : Nat} {t : State} (hK : 0 < K) (h : PdOk K t) :
   obtain ⟨K, rfl⟩ : ∃ K', K = K' + 1 := ⟨K - 1, by omega⟩
   have hl := h.hl
   sig_pre [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
-    stackArgs_two, List.append_eq]
-  simp only [Sig.pairFacts, List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false,
-    Bool.true_or, Bool.false_or, List.cons_append, List.nil_append, Sig.conj,
-    List.append_nil, sa0]
-  exact ⟨hl.sp1, hl.sp2, rfl, rfl, hl.on, hl.oe, ⟨hl.oi, hl.os, hl.oa, hl.ns, hl.es, hl.is, hl.sa⟩,
+    stackArgs_two, List.append_eq, List.range, List.range.loop]
+  simp only [sa0]
+  exact ⟨hl.sp1, hl.sp2, rfl, rfl, hl.on, hl.oe, hl.oi, hl.os, hl.oa, hl.ns, hl.es, hl.is, hl.sa,
     hl.ko, hl.kn, hl.ke, hl.ki, hl.ks, hl.ka, hl.wo, hl.wn, hl.we, hl.wi, hl.ws, h.hk, h.h3, h.h7, h.he1,
     h.he2, h.hs⟩
 
@@ -228,7 +223,7 @@ theorem pdCall (c : PdChecked) {t : State} {Q : State → Prop} (h : PdOk c.stac
     (by have := c.le; have := c.depth; omega)
   intro s' hrd' hwr' hsp' hf hpres hvs hpost
   sig_post [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
-    stackArgs_two, List.append_eq] at hpost
+    stackArgs_two, List.append_eq, List.range, List.range.loop] at hpost
   exact hQ s' hrd' hwr' hsp' hf hpres hvs hpost
 
 /-- Two calls of a precomputed public operation leak alike if their
@@ -246,8 +241,7 @@ theorem pdCallCT (c : PdChecked) {P : State → State → Prop}
     Covers.append_left (Covers.trans h₁.hrd (Covers.refl _)) (Covers.right h₁.hwr), h₁.hwr,
     Covers.append_left (Covers.trans h₂.hrd (Covers.refl _)) (Covers.right h₂.hwr), h₂.hwr⟩
   sig_pub [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
-    stackArgs_two, List.append_eq]
-  simp only [List.getD_cons_succ, List.getD_cons_zero]
+    stackArgs_two, List.append_eq, List.range, List.range.loop]
   obtain ⟨e0, e1, e2, e3, e4, e5, e6, e7⟩ := argsEq_regs he
   exact ⟨he.sp, by rw [hn, hE], e0, e1, e2, e3, e4, e5, e6, e7, he.args 0 (by decide), he.args 1 (by decide)⟩
 
@@ -348,12 +342,10 @@ theorem PrivOk.pre {K : Nat} {t : State} (hK : 0 < K) (h : PrivOk K t) :
   obtain ⟨K, rfl⟩ : ∃ K', K = K' + 1 := ⟨K - 1, by omega⟩
   have hl := h.hl
   sig_pre [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, stackArgs_twelve,
-    List.append_eq]
-  simp only [Sig.pairFacts, List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false,
-    Bool.true_or, Bool.false_or, List.cons_append, List.nil_append, Sig.conj,
-    List.append_nil, sa0]
-  exact ⟨hl.sp1, hl.sp2, rfl, rfl, hl.on, hl.oe, ⟨hl.oi, hl.op, hl.oq, hl.odp, hl.odq, hl.oqi, hl.os,
-    hl.oa, hl.ns, hl.es, hl.is, hl.ps, hl.qs, hl.dps, hl.dqs, hl.qis, hl.sa⟩,
+    List.append_eq, List.range, List.range.loop]
+  simp only [sa0]
+  exact ⟨hl.sp1, hl.sp2, rfl, rfl, hl.on, hl.oe, hl.oi, hl.op, hl.oq, hl.odp, hl.odq, hl.oqi, hl.os,
+    hl.oa, hl.ns, hl.es, hl.is, hl.ps, hl.qs, hl.dps, hl.dqs, hl.qis, hl.sa,
     hl.ko, hl.kn, hl.ke, hl.ki, hl.kp, hl.kq, hl.kdp, hl.kdq, hl.kqi, hl.ks, hl.ka, hl.wo, hl.wn, hl.we,
     hl.wi, hl.wp, hl.wq, hl.wdp, hl.wdq, hl.wqi, hl.ws, h.hk, h.h1, h.h7, h.he1, h.he2, h.hp1, h.hp2,
     h.hq1, h.hq2, h.hdp, h.hqi, h.hdq, h.hs⟩
@@ -379,7 +371,7 @@ theorem privCall (c : PrivChecked) {t : State} {Q : State → Prop} (h : PrivOk 
     (by have := c.le; have := c.depth; omega)
   intro s' hrd' hwr' hsp' hf hpres hvs hpost
   sig_post [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, stackArgs_twelve,
-    List.append_eq] at hpost
+    List.append_eq, List.range, List.range.loop] at hpost
   exact hQ s' hrd' hwr' hsp' hf hpres hvs hpost
 
 /-- Two calls of `vg_rsa_private_checked` leak alike if their arguments and
@@ -397,8 +389,7 @@ theorem privCallCT (c : PrivChecked) {P : State → State → Prop}
     Covers.append_left (Covers.trans h₁.hrd (Covers.refl _)) (Covers.right h₁.hwr), h₁.hwr,
     Covers.append_left (Covers.trans h₂.hrd (Covers.refl _)) (Covers.right h₂.hwr), h₂.hwr⟩
   sig_pub [Spec.Rsa.privateCheckedContract, Spec.Rsa.privateCheckedSig, abi, argRegs, stackArgs_twelve,
-    List.append_eq]
-  simp only [List.getD_cons_succ, List.getD_cons_zero]
+    List.append_eq, List.range, List.range.loop]
   obtain ⟨e0, e1, e2, e3, e4, e5, e6, e7⟩ := argsEq_regs he
   exact ⟨he.sp, by rw [hn, hE], e0, e1, e2, e3, e4, e5, e6, e7, he.args 0 (by decide),
     he.args 1 (by decide), he.args 2 (by decide), he.args 3 (by decide), he.args 4 (by decide),
