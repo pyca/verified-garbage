@@ -4,16 +4,178 @@ public import VerifiedGarbage.Proof.Dsa.X86.PowEntry
 public import VerifiedGarbage.Proof.Dsa.X86.StreamFrame
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Impl.Dsa.X86.Arith
+
 import VerifiedGarbage.Proof.Dsa.X86.MulBody
-import VerifiedGarbage.Proof.Dsa.X86.Stream
 import VerifiedGarbage.Proof.Dsa.X86.CoreSetup
 import VerifiedGarbage.Proof.Mont.X86.ContextInit
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Mont.X86.OutsZ
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-
+import VerifiedGarbage.Proof.Dsa.X86.StreamStep
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Proof.Dsa.StreamBytes
 /-! # IA-32 DSA reductions with their callee-saved registers restored -/
+
+-- Formerly `VerifiedGarbage/Proof/Dsa/X86/StreamInit.lean`, which only this module imported.
+section
+
+/-! # Initializing the streaming accumulator and byte padding -/
+
+section
+namespace VG.Proof.Dsa.X86
+open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Mont.X86.Dynamic VG.Proof.Mont
+open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic VG.Impl.Dsa.X86
+
+theorem zeroSlot_ok {n size m j : Nat} {base : Addr} {s : State}
+    (h : Context n m base size s) (hj : 0 < j) (hj9 : j < 9) :
+    WP isa (zerosW (slot n j) (2 * n)) s fun t =>
+      Context n m base size t ∧ wordsVal t.mem base (slot n j) n = 0 ∧
+      Outside base (slot n j) (8 * n) s.mem t.mem ∧ Keeps [.eax, .ebp, .edx] s t := by
+  have b := slot_bound (n := n) hj9
+  have sep := slot_le (n := n) (i := 0) (j := j) hj
+  have hd := slot_header n j
+  have sz := h.size_le
+  have n0 : 0 < n := h.modulus.n0
+  refine WP.mono (zerosW_ok h.scr (by omega) (by unfold stride at b; omega)) fun t ⟨O, V, K⟩ => ?_
+  have len : 4 * (2 * n) = 8 * n := by omega
+  rw [len] at O
+  exact ⟨h.outside_keep K (by decide) (by decide) O (.inl (by unfold stride at sep; omega)) (by omega),
+    by rw [wordsVal_eq_val32, V], O, K⟩
+
+/-- Clearing slots six and seven before `rest`. -/
+theorem streamInit_ok {n size m : Nat} {base : Addr} {s : State} {rest : Prog isa} {Q : State → Prop}
+    (h : Context n m base size s)
+    (k : ∀ t, Context n m base size t → wordsVal t.mem base (slot n 6) n = 0 →
+      wordsVal t.mem base (slot n 7) n = 0 → Outs base (streamRanges n) s.mem t.mem →
+      Keeps [.eax, .ebp, .edx] s t → WP isa rest t Q) :
+    WP isa (.seq (zerosW (slot n 6) (2 * n)) (.seq (zerosW (slot n 7) (2 * n)) rest)) s Q := by
+  refine WP.seq (WP.mono (zeroSlot_ok h (j := 6) (by decide) (by decide)) fun u ⟨cu, Yu, Ou, Ku⟩ => ?_)
+  refine WP.seq (WP.mono (zeroSlot_ok cu (j := 7) (by decide) (by decide)) fun v ⟨cv, Bv, Ov, Kv⟩ => ?_)
+  have sep := slot_le (n := n) (i := 6) (j := 7) (by decide)
+  have bd := slot_bound (n := n) (i := 6) (by decide)
+  have sz := h.size_le
+  have nw := h.scr.nowrap
+  have Yv : wordsVal v.mem base (slot n 6) n = 0 := by
+    rw [wordsVal_eq_val32, Ov.val32 (by unfold stride at sep; omega)
+      (by unfold stride at bd; omega), ← wordsVal_eq_val32, Yu]
+  exact k v cv Yv Bv ((Outs.of_outside Ou (by simp [streamRanges])).trans (Outs.of_outside Ov (by simp [streamRanges])))
+    (Ku.trans Kv)
+
+end VG.Proof.Dsa.X86
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Dsa/X86/StreamLoop.lean`, which only this module imported.
+section
+
+/-! # Functional correctness and termination of streaming reduction -/
+
+section
+namespace VG.Proof.Dsa.X86
+open VG VG.X86 VG.Impl.Mont.X86.Dynamic VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic
+open VG.Impl.Dsa.X86
+
+structure StreamInv (n size m len i : Nat) (base : Addr) (p : BitVec 32) (s t : State) : Prop where
+  context : Context n m base size t
+  counter : t.gpr .esi = p + BitVec.ofNat 32 i
+  stop : t.gpr .ebx = p + BitVec.ofNat 32 len
+  value : wordsVal t.mem base (slot n 6) n = Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem (p.setWidth 64) i) % m
+  lt : wordsVal t.mem base (slot n 6) n < m
+  pad : wordsVal t.mem base (slot n 7) n < 2 ^ 32
+  mem : Outs base (streamRanges n) s.mem t.mem
+  keeps : Keeps powerClob s t
+
+theorem streamLoop_ok {n size m len : Nat} {base : Addr} {s : State} {p : BitVec 32}
+    (h : Context n m base size s) (hm : 255 < m) (hlen : 0 < len) (hlen32 : len < 2 ^ 32)
+    (inp : StreamInput s base (contextBytes n) p len)
+    (hc : s.gpr .esi = p) (he : s.gpr .ebx = p + BitVec.ofNat 32 len) (hv : wordsVal s.mem base (slot n 6) n = 0)
+    (hpad : wordsVal s.mem base (slot n 7) n < 2 ^ 32) :
+    WP isa (.loop (streamStep n) .ne) s (StreamInv n size m len len base p s) := by
+  have init : StreamInv n size m len 0 base p s s := by
+    refine ⟨h, by rw [hc]; exact (BitVec.add_zero _).symm, he, ?_, by rw [hv]; omega, hpad, Outs.refl _ _ _,
+      Keeps.refl _ _⟩
+    rw [hv]
+    simp only [Spec.Rsa.bytesAt, List.range_zero, List.map_nil, Spec.Dsa.decodeBE, List.foldl_nil, Nat.zero_mod]
+  refine WP.loop (M := isa)
+    (fun k t => ∃ i, k = len - i ∧ i < len ∧ StreamInv n size m len i base p s t)
+    ?_ len s ⟨0, rfl, hlen, init⟩
+  rintro k t ⟨i, rfl, hi, I⟩
+  have inpt := inp.keep I.keeps
+  refine WP.mono (streamStep_ok I.context hm hi hlen32 I.counter I.stop inpt.fit (inpt.read i hi) I.lt I.pad)
+    fun u ⟨cu, count, stop, zf, val, pad, O, K⟩ => ?_
+  have next : StreamInv n size m len (i + 1) base p s u := by
+    refine ⟨cu, count, stop.trans I.stop, ?_, ?_, pad, I.mem.trans O, I.keeps.trans K⟩
+    · rw [val, I.value, inp.byte hi (streamRanges_whole (Nat.le_refl _) I.mem), VG.Proof.Dsa.reduce_prefix_succ]
+    · rw [val]; exact Nat.mod_lt _ (by omega)
+  by_cases done : i + 1 = len
+  · refine .inl ⟨?_, done ▸ next⟩
+    simp only [eval, zf, done, decide_true, Option.map_some, Bool.not_true]
+  · refine .inr ⟨?_, len - (i + 1), by omega, i + 1, rfl, by omega, next⟩
+    simp only [eval, zf, decide_eq_false done, Option.map_some, Bool.not_false]
+
+end VG.Proof.Dsa.X86
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Dsa/X86/Stream.lean`, which only this module imported.
+section
+
+/-! # Complete streaming reduction, including the empty input -/
+
+section
+namespace VG.Proof.Dsa.X86
+open VG VG.X86 VG.Impl.Mont.X86.Dynamic VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic
+open VG.Impl.Dsa.X86
+
+theorem reduceStream_ok {n size m len : Nat} {base : Addr} {s : State} {p : BitVec 32} {src : Src}
+    (h : Context n m base size s) (hm : 255 < m) (hlen : len < 2 ^ 32)
+    (hsrc : LenSrc base size n s src len)
+    (inp : StreamInput s base (contextBytes n) p len) (hp : s.gpr .esi = p) :
+    WP isa (reduceStream n src) s fun t =>
+      Context n m base size t ∧
+      wordsVal t.mem base (slot n 6) n = Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem (p.setWidth 64) len) % m ∧
+      Outs base (streamRanges n) s.mem t.mem ∧ Keeps powerClob s t := by
+  unfold reduceStream
+  refine streamInit_ok h fun u cu Y B O K' => ?_
+  have K : Keeps powerClob s u := K'.mono (by decide)
+  have esi : u.gpr .esi = p := by rw [K'.1 _ (by decide)]; exact hp
+  refine WP.seq (wp_movS (hsrc u cu.scr K.2.1 K.2.2 O) fun u₁ v₁ _ => WP.block_nil ?_)
+  refine WP.seq (wp_addS rfl fun u₂ v₂ _ => wp_cmpS rfl fun u₃ f₃ z₃ => WP.block_nil ?_)
+  have K₃ : Keeps powerClob u u₃ := ((v₁.keeps.mono (by decide)).widen v₂.keeps).trans (f₃.keeps _)
+  have m₃ : u₃.mem = u.mem := by rw [f₃.mem, v₂.mem, v₁.mem]
+  have c₃ : Context n m base size u₃ := ⟨cu.scr.of_keeps K₃ (by decide), cu.size_le,
+    m₃ ▸ cu.modulus, cu.gt_one, m₃ ▸ cu.inverse⟩
+  have esi₂ : u₂.gpr .esi = p := by rw [v₂.other _ (by decide), v₁.other _ (by decide), esi]
+  have ebx₂ : u₂.gpr .ebx = p + BitVec.ofNat 32 len := by
+    rw [v₂.gpr, v₁.gpr, v₁.other _ (by decide), esi, BitVec.add_comm]
+  have z : (p - (p + BitVec.ofNat 32 len) == 0) = decide (len = 0) := by
+    rw [show p - (p + BitVec.ofNat 32 len) = BitVec.ofNat 32 0 - BitVec.ofNat 32 len by bv_omega,
+      counter_equal (by decide) hlen]
+    exact decide_eq_decide.mpr eq_comm
+  rw [esi₂, ebx₂, z] at z₃
+  by_cases hz : len = 0
+  · refine WP.ite true (by simp only [eval, z₃, hz, decide_true]) (fun _ => WP.block_nil ⟨c₃, ?_, by rw [m₃]; exact O,
+      K.trans K₃⟩) (fun h => Bool.noConfusion h)
+    rw [m₃, Y, hz]
+    simp only [Spec.Rsa.bytesAt, List.range_zero, List.map_nil, Spec.Dsa.decodeBE, List.foldl_nil, Nat.zero_mod]
+  · refine WP.ite false (by simp only [eval, z₃, hz, decide_false]) (fun h => Bool.noConfusion h) (fun _ => ?_)
+    have Os : Outs base (streamRanges n) s.mem u₃.mem := by rw [m₃]; exact O
+    have Ks : Keeps powerClob s u₃ := K.trans K₃
+    have count : u₃.gpr .esi = p := by rw [f₃.gpr, esi₂]
+    have stop : u₃.gpr .ebx = p + BitVec.ofNat 32 len := by rw [f₃.gpr, ebx₂]
+    refine WP.mono (streamLoop_ok c₃ hm (by omega) hlen (inp.keep Ks) count stop
+      (by rw [m₃]; exact Y) (by rw [m₃, B]; decide)) fun t I => ⟨I.context, ?_, Os.trans I.mem, Ks.trans I.keeps⟩
+    rw [I.value, inp.bytes (streamRanges_whole (Nat.le_refl _) Os)]
+
+end VG.Proof.Dsa.X86
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.Dsa.X86.Red

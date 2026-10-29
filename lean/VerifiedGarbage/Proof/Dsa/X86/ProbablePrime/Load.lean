@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Memory
+
 import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Enter
 import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Width
 import VerifiedGarbage.Proof.RsaKeyGen.X86.ImportLoad
@@ -12,8 +14,6 @@ import VerifiedGarbage.Proof.Mont.RegionOutside
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86.Syms
-public import VerifiedGarbage.Proof.Dsa.X86.ProbablePrime.Memory
-
 /-! # The candidate's octets become arrays 0 and 5 of the workspace -/
 
 @[expose] public section

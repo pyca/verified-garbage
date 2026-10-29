@@ -1,14 +1,14 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.X86.SignTiming
 public import VerifiedGarbage.Proof.Dsa.X86.SignatureTiming
+
+import VerifiedGarbage.Proof.Dsa.X86.SignTiming
 import VerifiedGarbage.Proof.Dsa.X86.SignCompute
 import VerifiedGarbage.Proof.Dsa.X86.VerifyTiming
 import VerifiedGarbage.Proof.Dsa.X86.OutputTiming
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-
 /-! # Constant-time post-shape DSA bodies, including status and output -/
 
 @[expose] public section

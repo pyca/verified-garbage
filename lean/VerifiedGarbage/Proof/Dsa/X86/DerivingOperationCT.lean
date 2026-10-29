@@ -1,18 +1,106 @@
 module
+
 public import VerifiedGarbage.Proof.Dsa.X86.DerivingLayout
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
+public import VerifiedGarbage.Proof.Mont.Words
+
 import VerifiedGarbage.Proof.Dsa.X86.CheckingDispatchCT
 import VerifiedGarbage.Proof.Dsa.X86.VerifyingOperation
-
-import VerifiedGarbage.Proof.Dsa.X86.DeriveSizedTiming
 import VerifiedGarbage.Proof.Dsa.X86.EntryTiming
 import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.X86.DerivingEntry
-public import VerifiedGarbage.Proof.Mont.Words
-
+import VerifiedGarbage.Proof.Dsa.X86.KeyOutputReady
+import VerifiedGarbage.Proof.Dsa.X86.DeriveCompute
+import VerifiedGarbage.Proof.Dsa.X86.GenerateTiming
+import VerifiedGarbage.Proof.Dsa.X86.ShapeCall
+import VerifiedGarbage.Proof.Dsa.X86.VerifySizedTiming
+import VerifiedGarbage.Proof.Dsa.X86.DeriveFailureTiming
 /-! # Whole domain-deriving traces from common public arguments and domain values -/
+
+-- Formerly `VerifiedGarbage/Proof/Dsa/X86/DeriveBodyTiming.lean`, which only this module imported.
+section
+
+/-! # Exponentiation and output copies preserve the public layout -/
+
+section
+namespace VG.Proof.Dsa.X86
+open VG VG.X86 VG.Impl.Dsa.Layout VG.Impl.Dsa.X86
+
+theorem deriveBody_relCT (L : CallLayout) (out : BitVec 32)
+    (P : (.input .p, L.pLen) ∈ L.inputs) (Q : (.input .q, L.qLen) ∈ L.inputs)
+    (G : (.input .g, L.pLen) ∈ L.inputs) (X : (.input .nonce, L.qLen) ∈ L.inputs)
+    (Params : (.input .p, 2 * L.pLen + L.qLen) ∈ L.inputs)
+    (ho : out.toNat + (3 * L.pLen + 2 * L.qLen) ≤ 2 ^ 32)
+    (A : Region.Disjoint ⟨L.base, L.size⟩ ⟨out.setWidth 64, 3 * L.pLen + 2 * L.qLen⟩) :
+    RelCT isa (fun s t => CallPair L s t ∧ KeyOutputReady L out s ∧ KeyOutputReady L out t)
+      (.seq (Generate.deriveCompute L.pLen L.qLen) (Generate.writeKey L.pLen L.qLen))
+      (VG.X86.Taint.Agree (VG.Proof.Mont.X86.Dynamic.workspaceTaint false)) := by
+  have W := L.lengths
+  refine RelCT.seq (R := fun s t => CallPair L s t ∧ KeyOutputReady L out s ∧ KeyOutputReady L out t) ?_ ?_
+  · intro s t tr ur sf tf ⟨Pair, S, T⟩ E F
+    obtain ⟨Trace, Pair'⟩ := deriveCompute_relCT L (.inl ⟨_, P, Nat.le_refl _⟩)
+      (.inl ⟨_, Q, Nat.le_refl _⟩) (.inl ⟨_, G, Nat.le_refl _⟩) (.inl ⟨_, X, Nat.le_refl _⟩)
+      _ _ _ _ _ _ Pair E F
+    have Es := (wp_result (deriveCompute_ok Pair.1.moduli (Pair.1.buffers _ G) (Pair.1.buffers _ X) rfl rfl) E).2.2.2
+    have Et := (wp_result (deriveCompute_ok Pair.2.moduli (Pair.2.buffers _ G) (Pair.2.buffers _ X) rfl rfl) F).2.2.2
+    exact ⟨Trace, Pair', S.keep Es, T.keep Et⟩
+  · apply (writeKey_relCT L.base L.size L.pLen L.qLen out L.saved ho (by omega) A).mono ?_ (fun _ _ h => h)
+    intro s t ⟨Pair, S, T⟩
+    exact ⟨S.writeReady Pair.1 Params X A, T.writeReady Pair.2 Params X A,
+      Pair.pointer (.inl ⟨_, P, Nat.le_refl _⟩), Pair.pointer (.inl ⟨_, X, Nat.le_refl _⟩)⟩
+
+end VG.Proof.Dsa.X86
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Dsa/X86/DeriveSizedTiming.lean`, which only this module imported.
+section
+
+/-! # Derivation branches only on the public domain shape -/
+
+section
+namespace VG.Proof.Dsa.X86
+open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic
+open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86
+
+theorem deriveSized_relCT (L : CallLayout) (out : BitVec 32) (digestLen : Nat)
+    (P : (.input .p, L.pLen) ∈ L.inputs) (Q : (.input .q, L.qLen) ∈ L.inputs)
+    (G : (.input .g, L.pLen) ∈ L.inputs) (X : (.input .nonce, L.qLen) ∈ L.inputs)
+    (Params : (.input .p, 2 * L.pLen + L.qLen) ∈ L.inputs)
+    (stable : ∀ input ∈ L.inputs, ShapePointer input.1)
+    (hd : L.digestPrefix = min digestLen (Spec.Dsa.bitLength L.q / 8))
+    (ho : out.toNat + (3 * L.pLen + 2 * L.qLen) ≤ 2 ^ 32)
+    (A : Region.Disjoint ⟨L.base, L.size⟩ ⟨out.setWidth 64, 3 * L.pLen + 2 * L.qLen⟩) :
+    RelCT isa (fun s t => ShapeCallReady L digestLen s ∧ ShapeCallReady L digestLen t ∧
+      KeyOutputReady L out s ∧ KeyOutputReady L out t)
+      (Generate.deriveSized L.pLen L.qLen) (VG.X86.Taint.Agree (workspaceTaint false)) := by
+  let R := fun s t => (shapeValid L.p L.q → CallPair L s t) ∧
+    Scr s L.base L.size ∧ Scr t L.base L.size ∧ KeyOutputReady L out s ∧ KeyOutputReady L out t
+  unfold Generate.deriveSized
+  refine RelCT.seq (M := isa) (R := fun s t => R s t ∧ s.zf = some (!decide (shapeValid L.p L.q)) ∧
+      t.zf = some (!decide (shapeValid L.p L.q))) ?_
+    (fixedChoice_relCT (!decide (shapeValid L.p L.q)) ?_)
+  · intro s t tr ur sf tf ⟨S, T, Os, Ot⟩ E F
+    have Trace := (shapeCall_relCT L digestLen P Q stable hd _ _ _ _ _ _ ⟨S, T⟩ E F).1
+    obtain ⟨Zs, Ms, Ks, Fs⟩ := wp_result (shapeCall_ok S P Q stable hd) E
+    obtain ⟨Zt, Mt, Kt, Ft⟩ := wp_result (shapeCall_ok T P Q stable hd) F
+    exact ⟨Trace, ⟨fun h => ⟨(Ms h).ready, (Mt h).ready⟩,
+      S.scr.of_keeps Ks (by decide), T.scr.of_keeps Kt (by decide), Os.shape Fs Ks, Ot.shape Ft Kt⟩, Zs, Zt⟩
+  · by_cases valid : shapeValid L.p L.q
+    · simp only [valid, decide_true, Bool.not_true, Bool.false_eq_true, ite_false]
+      exact (deriveBody_relCT L out P Q G X Params ho A).mono
+        (fun _ _ H => ⟨H.1 valid, H.2.2.2⟩) (fun _ _ h => h)
+    · simp only [valid, decide_false, Bool.not_false, ite_true]
+      exact (deriveFailure_relCT L.pLen L.qLen L.base L.size L.saved).mono
+        (fun _ _ H => ⟨H.2.1, H.2.2.1, H.2.2.2.1.pointer.trans H.2.2.2.2.pointer.symm⟩) (fun _ _ h => h)
+
+end VG.Proof.Dsa.X86
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.Dsa.X86
