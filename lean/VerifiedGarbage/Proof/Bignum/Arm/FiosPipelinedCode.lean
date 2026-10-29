@@ -2,18 +2,101 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.FiosState
 public import VerifiedGarbage.Impl.Bignum.Arm.FiosPipelined
+
 import VerifiedGarbage.Proof.Bignum.Arm.FiosPipelinedStart
 import VerifiedGarbage.Proof.Bignum.Arm.FiosPipelinedPairs
 import VerifiedGarbage.Proof.Bignum.Arm.FiosPipelinedStep
 import VerifiedGarbage.Proof.Bignum.Arm.FiosPipelinedFinish
-import VerifiedGarbage.Proof.Bignum.Arm.FiosFixedFinishCursor
 import VerifiedGarbage.Proof.Bignum.Arm.FiosFirst
 import VerifiedGarbage.Proof.Bignum.Arm.FiosStepInv
 import VerifiedGarbage.Proof.Bignum.Arm.FiosFinish
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp
-
+import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Bignum.Arm.FiosFixedState
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 /-! One integrated UMAAL row computes a Montgomery quotient without an intermediate product pass. -/
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/FiosFixedAdvance.lean`, which only this module imported.
+section
+
+/-! One encodable update advances the public cursors after a fixed scan. -/
+
+section
+namespace VG.Proof.Bignum.Arm.FiosFixed
+open VG VG.Arm
+open VG.Proof.X25519.Arm (Rest wp_dp wp_subs op2_imm dpVal)
+
+theorem advance_ok (s : State) (k : Nat) (h4 : encodable (BitVec.ofNat 32 (4*k))=true)
+    (h1 : encodable (BitVec.ofNat 32 k)=true) :
+    WP isa (.block (VG.Impl.Bignum.Arm.FiosPipelined.advance k)) s fun t =>
+      t.gpr .r0=s.gpr .r0+BitVec.ofNat 32 (4*k) ∧
+      t.gpr .r12=s.gpr .r12+BitVec.ofNat 32 (4*k) ∧
+      t.gpr .r4=s.gpr .r4+BitVec.ofNat 32 (4*k) ∧
+      t.gpr .lr=s.gpr .lr-BitVec.ofNat 32 k ∧
+      t.z=(s.gpr .lr-BitVec.ofNat 32 k==0) ∧
+      t.mem=s.mem ∧ Rest [.r0,.r12,.r4,.lr] s t := by
+  unfold VG.Impl.Bignum.Arm.FiosPipelined.advance
+  refine wp_dp (op2_imm h4) fun a ha => ?_
+  refine wp_dp (op2_imm h4) fun b hb => ?_
+  refine wp_dp (op2_imm h4) fun c hc => ?_
+  refine wp_subs (op2_imm h1) fun t ht hz => WP.block_nil ?_
+  refine ⟨?_,?_,?_,?_,?_,?_,?_⟩
+  · rw [ht.other .r0 (by decide),hc.other .r0 (by decide),hb.other .r0 (by decide),ha.gpr,dpVal]
+  · rw [ht.other .r12 (by decide),hc.other .r12 (by decide),hb.gpr,dpVal,ha.other .r12 (by decide)]
+  · rw [ht.other .r4 (by decide),hc.gpr,dpVal,hb.other .r4 (by decide),ha.other .r4 (by decide)]
+  · rw [ht.gpr,hc.other .lr (by decide),hb.other .lr (by decide),ha.other .lr (by decide)]
+  · rw [hz,hc.other .lr (by decide),hb.other .lr (by decide),ha.other .lr (by decide)]
+  · rw [ht.mem,hc.mem,hb.mem,ha.mem]
+  · exact (ha.rest (by simp)).trans ((hb.rest (by simp)).trans ((hc.rest (by simp)).trans (ht.rest (by simp))))
+
+end VG.Proof.Bignum.Arm.FiosFixed
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/FiosFixedFinishCursor.lean`, which only this module imported.
+section
+
+/-! Advance the cursors once after the fixed scan. -/
+
+section
+namespace VG.Proof.Bignum.Arm.FiosFixed
+open VG VG.Arm VG.Proof.Bignum.Arm
+
+theorem finishCursor_ok {s0 s : State} {x q base : BitVec 32} {size acc b mod n start i : Nat}
+    (ctx : Fios.Ctx s0 base size acc b mod n) (h : Inv s0 x q base acc b mod n start i s)
+    (h4 : encodable (BitVec.ofNat 32 (4*(i-start)))=true)
+    (h1 : encodable (BitVec.ofNat 32 (i-start))=true) :
+    WP isa (.block (VG.Impl.Bignum.Arm.FiosPipelined.advance (i-start))) s
+      (Fios.Inv s0 x q base acc b mod n i) := by
+  refine WP.mono (advance_ok s (i-start) h4 h1) ?_
+  rintro t ⟨p0,p12,p4,count,_,mem,rt⟩
+  have small : n<2^32 := by have := ctx.workspace.nowrap;have := ctx.accFits;omega
+  refine ⟨h.index,?_,?_,?_,?_,?_,?_,?_,?_,?_⟩
+  · rw [p0,h.outPtr,Offset.add_add]
+    congr 2
+    have := h.progress;omega
+  · rw [p12,h.bPtr,Offset.add_add]
+    congr 2
+    have := h.progress;omega
+  · rw [p4,h.mPtr,Offset.add_add]
+    congr 2
+    have := h.progress;omega
+  · rw [count,h.count,BitVec.ofNat_sub_ofNat_of_le _ _ (by have := h.index;omega) (by have := h.progress;have := h.index;omega)]
+    congr 1
+    have := h.progress;have := h.index;omega
+  · rw [rt.gpr .r1 (by decide)];exact h.scalar
+  · rw [rt.gpr .r2 (by decide)];exact h.quotient
+  · rw [mem];exact h.outside
+  · rw [mem,rt.gpr .r7 (by decide),rt.gpr .r8 (by decide)];exact h.value
+  · exact h.rest.trans (rt.mono (by decide))
+
+end VG.Proof.Bignum.Arm.FiosFixed
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.FiosPipelined

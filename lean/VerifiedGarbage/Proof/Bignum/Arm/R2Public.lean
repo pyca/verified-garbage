@@ -1,18 +1,99 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.R2Normalized
-import VerifiedGarbage.Proof.Bignum.Arm.R2NormalizedCountState
+public import VerifiedGarbage.Impl.Bignum.Arm.ArrayCompare
+public import VerifiedGarbage.Proof.Bignum.Arm.R2
+
 import VerifiedGarbage.Proof.Bignum.Arm.R2NormalizedConstants
 import VerifiedGarbage.Proof.Bignum.Arm.ArrayCompare
 import VerifiedGarbage.Proof.Bignum.Arm.R2Init
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Impl.Bignum.Arm.ArrayCompare
-public import VerifiedGarbage.Proof.Bignum.Arm.R2
 import VerifiedGarbage.Proof.Bignum.Arm.R2Normalized
-
+import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Bignum.Arm.DoubleCountMemory
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopState
 /-! The normalized public-modulus path preserves the original R-squared result. -/
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/R2NormalizedCount.lean`, which only this module imported.
+section
+
+/-! # Initialize the public R-squared loop count to w+1 -/
+
+section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
+open VG.Proof.X25519.Arm (Rest wp_ldr wp_dp wp_str op2_imm dpVal)
+
+theorem r2NormalizedCount_ok (s : State) {base : BitVec 32} {size w : Nat}
+    (ws : Workspace s base size) (fits : 212 ≤ size) (ptr : s.gpr .r0 = base)
+    (width : s.mem.readW (off (State.addr base) 48) 32 = BitVec.ofNat 32 w) :
+    WP isa (.block r2NormalizedCount) s fun t =>
+      t.mem = s.mem.writeW (off (State.addr base) 208) (BitVec.ofNat 32 (w + 1)) ∧ Rest [.r1] s t := by
+  have nowrap := ws.nowrap
+  have a48 : State.addr (s.gpr .r0 + BitVec.ofNat 32 48) = off (State.addr base) 48 := by
+    rw [ptr]; exact addr_add (by omega)
+  have a208 : State.addr (s.gpr .r0 + BitVec.ofNat 32 208) = off (State.addr base) 208 := by
+    rw [ptr]; exact addr_add (by omega)
+  unfold r2NormalizedCount
+  refine wp_ldr (a := off (State.addr base) 48) (by decide) a48 (ws.read (by omega)) fun s1 u1 => ?_
+  refine wp_dp (op2_imm (by decide)) fun s2 u2 => ?_
+  refine wp_str (a := off (State.addr base) 208) (by decide)
+    (by rw [u2.other .r0 (by decide), u1.other .r0 (by decide)]; exact a208)
+    (by rw [u2.wr, u1.wr]; exact ws.write (by omega)) fun t u3 => WP.block_nil ?_
+  refine ⟨?_, (u1.rest (by simp)).trans ((u2.rest (by simp)).trans (u3.rest _))⟩
+  rw [u3.mem, u2.mem, u1.mem, u2.gpr, dpVal, u1.gpr, width]
+  change s.mem.writeW _ (BitVec.ofNat 32 w + BitVec.ofNat 32 1) = _
+  rw [← BitVec.ofNat_add]
+
+end VG.Proof.Bignum.Arm
+end
+
+end
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/R2NormalizedCountState.lean`, which only this module imported.
+section
+
+/-! Establish the original doubling-loop invariant after normalized initialization. -/
+
+section
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
+open VG.Spec.Rsa.Mont (arrAt numAt)
+open VG.Proof.X25519.Arm (Rest)
+
+theorem r2NormalizedCountState_ok (s : State) {base : BitVec 32} {len w : Nat}
+    (h : ArithmeticReady base len w s)
+    (top : numAt s.mem (State.addr base) w 4 = 2 ^ (64 * w - 1))
+    (bound : numAt s.mem (State.addr base) w 4 < numAt s.mem (State.addr base) w 0)
+    (two : w32 s.mem (State.addr base) (arrAt w 7) = 2) :
+    WP isa (.block r2NormalizedCount) s fun t => DoubleLoopReady base len w (w + 1) t ∧
+      numAt t.mem (State.addr base) w 4 = 2 ^ (64 * w - 1) ∧
+      numAt t.mem (State.addr base) w 0 = numAt s.mem (State.addr base) w 0 ∧
+      Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
+  have fits := h.layout.2.2.1
+  have size : 212 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
+  have header := nativeHeader_of_layout s.mem base h.workspace.nowrap (Nat.le_refl _) h.layout
+  rw [h.width] at header
+  let c := (s.mem.readW (off (State.addr base) 208) 32).toNat
+  have loop : DoubleLoopReady base len w c s :=
+    ⟨h.workspace, h.layout, h.width, h.ptr, h.inverse, bound, two,
+      by simp only [c, BitVec.ofNat_toNat, BitVec.setWidth_eq], h.stackRead, h.stackSep, h.saved⟩
+  refine WP.mono (r2NormalizedCount_ok s h.workspace size h.ptr header.count) ?_
+  rintro u ⟨mem, keep⟩
+  obtain ⟨next, frame, number, modulus⟩ := loop.after_count mem keep
+  exact ⟨next, number.trans top, modulus, frame, keep.mono (by decide)⟩
+
+end VG.Proof.Bignum.Arm
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.Bignum.Arm

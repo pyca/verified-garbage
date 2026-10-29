@@ -1,10 +1,50 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.Words32
-import VerifiedGarbage.Proof.Bignum.Arm.FiosPipelinedMath
-import VerifiedGarbage.Proof.Framework.PlainSimp
 
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Omega
 /-! Lift the carry identities to Montgomery operand prefixes. -/
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/FiosPipelinedMath.lean`, which only this module imported.
+section
+
+/-! One pending product joins the independent product and cancellation sums. -/
+
+section
+namespace VG.Proof.Bignum.Arm.FiosPipelined
+
+theorem start_value {R P O ca cm lo ca' V a : Nat}
+    (prior : R*O+P*(ca+cm)=V) (product : lo+R*ca'=a+ca) :
+    R*O+P*(lo+cm)+P*R*ca'=V+P*a := by
+  have scaled := congrArg (fun z => P*z) product
+  simp only [Nat.mul_add,Nat.mul_assoc,Nat.add_assoc] at *
+  omega
+
+theorem step_value {R P O O' pending ca cm next ca' cm' out V a m : Nat}
+    (prior : R*O+P*(pending+cm)+P*R*ca=V)
+    (product : next+R*ca'=a+ca)
+    (cancel : out+R*cm'=pending+m+cm)
+    (stored : R*O'=R*O+P*out) :
+    R*O'+P*R*(next+cm')+P*R*R*ca'=V+P*R*a+P*m := by
+  have prodScaled := congrArg (fun z => P*R*z) product
+  have modScaled := congrArg (fun z => P*z) cancel
+  simp only [Nat.mul_add,Nat.mul_assoc,Nat.add_assoc] at *
+  omega
+
+theorem finish_value {R P O O' pending ca cm cm' out V m : Nat}
+    (prior : R*O+P*(pending+cm)+P*R*ca=V)
+    (cancel : out+R*cm'=pending+m+cm)
+    (stored : R*O'=R*O+P*out) :
+    R*O'+P*R*(ca+cm')=V+P*m := by
+  have scaled := congrArg (fun z => P*z) cancel
+  simp only [Nat.mul_add,Nat.mul_assoc,Nat.add_assoc] at *
+  omega
+
+end VG.Proof.Bignum.Arm.FiosPipelined
+end
+
+end
 
 @[expose] public section
 namespace VG.Proof.Bignum.Arm.FiosPipelined

@@ -3,13 +3,48 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFinishRecombine
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtAddWide
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulusState
-import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombineValue
+
 import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulus
 import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 import VerifiedGarbage.Proof.Framework.Block
-
+import VerifiedGarbage.Spec.Rsa.Mont
+import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.PlainSimp
 /-! # Exact CRT product-plus-residue reconstruction -/
+
+-- Formerly `VerifiedGarbage/Proof/Bignum/Arm/CrtRecombineValue.lean`, which only this module imported.
+section
+
+/-! # The padded CRT residue fits the addition loop's input width -/
+
+section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Proof.Mont
+open VG.Spec.Rsa.Mont (numAt arrAt)
+
+theorem val32_prefix_of_eq {m : Mem} {base : Addr} {d n k value : Nat}
+    (h : val32 m base d (n + k) = value) (fit : value < 2 ^ (32 * n)) :
+    val32 m base d n = value := by
+  have eq := congrArg (fun x => x % 2 ^ (32 * n)) h
+  rw [val32_append] at eq
+  simpa only [Nat.add_mod, Nat.mul_mod, Nat.mod_self, Nat.zero_mul, Nat.zero_mod,
+    Nat.add_zero, Nat.mod_eq_of_lt (val32_lt m base d n), Nat.mod_eq_of_lt fit] using eq
+
+theorem crt_paddedResidue_low {m before : Mem} {base : Addr} {d w o : Nat}
+    (h : val32 m base d (4 * w + 2) = numAt before base w o) :
+    val32 m base d (4 * w) = numAt before base w o := by
+  apply val32_prefix_of_eq h
+  rw [numAt_native]
+  exact Nat.lt_of_lt_of_le (val32_lt before base (arrAt w o) (2 * w))
+    (Nat.pow_le_pow_right (by decide) (by omega))
+
+end VG.Proof.Bignum.Arm
+end
+
+end
 
 @[expose] public section
 
