@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.Words32
-import Mathlib.Data.Nat.Bitwise
+import Mathlib.Tactic.Conv
 
 /-! Setting the low bit of a packed operand implements the p-1 bound. -/
 
@@ -10,9 +10,7 @@ namespace VG.Proof.Ffdh.Arm
 open VG VG.Proof.Mont
 
 theorem orOne (n : Nat) : n ||| 1 = n + (1 - n % 2) := by
-  have div : (n ||| 1) / 2 = n / 2 := by
-    have := Nat.or_div_two_pow (a := n) (b := 1) (n := 1)
-    simpa using this
+  have div : (n ||| 1) / 2 = n / 2 := by rw [Nat.or_div_two]; simp
   have mod : (n ||| 1) % 2 = 1 := Nat.or_mod_two_eq_one.mpr (Or.inr rfl)
   omega
 
