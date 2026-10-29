@@ -14,8 +14,6 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-import VerifiedGarbage.Proof.Bignum.X86_64.Words
-import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 /-! # FFDH parameter candidates on x86-64: complete shaping and its buffer frame -/
 
 -- Formerly `VerifiedGarbage/Proof/Ffdh/X86_64/ParameterCandidate/LowByte.lean`, which only this module imported.

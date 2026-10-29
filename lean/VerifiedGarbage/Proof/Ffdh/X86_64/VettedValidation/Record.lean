@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.VettedValidation.State
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare
 
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
-import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.CallLay
