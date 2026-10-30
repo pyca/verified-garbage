@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
 public import VerifiedGarbage.Proof.BrainpoolP256r1.Arm.Comb
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombScan
-import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Contract
