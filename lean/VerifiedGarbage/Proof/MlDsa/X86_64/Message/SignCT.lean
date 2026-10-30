@@ -131,9 +131,8 @@ theorem signCall_tr {n : String} {c : Prog isa} (hS : SignFn p c) (hp : p ∈ pa
         bytesAt a1.callEntry.mem L.MU 64 = bytesAt a.mem L.MU 64 := fun c f => by
       rw [(c.regs f.2.2.1 f.2.2.2 f.1.2.1 f.1.2.2 fun r hr => f.2.gpr (argRegs_cs r hr)).ce_bytesAt
         (hL.stk_x (d := 32) (n := 8) (e := 840) (k := 64) (by decide) (by decide)) (by decide), f.1.2.1]
-    rw [ek c₁ f₁, ek c₂ f₂, er c₁ f₁, er c₂ f₂, eμ c₁ f₁, eμ c₂ f₂, φ₁.2, φ₂.2]
-    refine Sign.signLeakT_congr p (by simp only [VG.Spec.Sha3.bytesAt, List.length_map, List.length_range]) ?_
-    rw [← leak_eq hL F.key, ← leak_eq hL F.key]
+    rw [ek c₁ f₁, ek c₂ f₂, er c₁ f₁, er c₂ f₂, eμ c₁ f₁, eμ c₂ f₂, φ₁.2, φ₂.2,
+      ← leak_eq hL F.key, ← leak_eq hL F.key]
     exact hi
   · have F := hφ.1.facts
     refine ⟨fun r hr => ?_, fun r hr => ?_⟩

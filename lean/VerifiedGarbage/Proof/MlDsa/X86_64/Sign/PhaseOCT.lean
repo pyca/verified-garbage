@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 
 Writing the signature leaks its pointers and the hint (`output_tr`), on which
 two runs whose loops leaked the same agree (`OX`); so all but `Â` leaks what
-`signLeakT` says (`rest_tr`).
+`signLeak` says (`rest_tr`).
 -/
 
 @[expose] public section

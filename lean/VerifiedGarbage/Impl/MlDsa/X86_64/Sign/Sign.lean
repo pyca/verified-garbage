@@ -41,8 +41,8 @@ keeps `scratch` in `rbx`, `sk` in `rbp`, `mu` in `r12`, `rnd` in `r13` and
 Only the calls of `vg_mldsa_rej_ntt_poly` and `vg_mldsa_rej_ntt_poly4`
 (whose seeds are `ρ` and two indices), and the branch on their results, depend on `ρ`; only the calls of
 `vg_mldsa_sample_in_ball`, and the branch on their results, on `c̃`; only
-the branches on the validity checks on which group of them rejected the
-iteration, if one did (`signRejectTag`), and only the call
+the branches on the validity checks on which of them rejected the
+iteration, and at which polynomial, if one did (`signRejectTag`), and only the call
 of `vg_mldsa_hint_bit_pack` on the hint of the signature. Every other
 address and branch depends only on the pointers.
 -/
@@ -226,18 +226,19 @@ def onesOk : List Instr :=
   [.mov32 .rax (.mem (at_ .rbx oONES)), .alu .sub .rax (.imm (BitVec.ofNat 32 (p.ω + 1))), .shift .shr .rax 63,
     .alu32 .and .r15 (.reg .rax)]
 
-/-- The checks of `r₀`, and if they pass, those of `ct₀` and the hint. -/
+/-- The checks of `r₀`, stopping at the first polynomial that fails, and if
+they pass, those of `ct₀` and the hint. -/
 def checksR0 : Prog isa :=
-  .seq (seqR (r0R P p) 0 p.k) (ifOk (.seq (seqR (hR P p) 0 p.k) (.block (onesOk p))))
+  .seq (seqOk (r0R P p) 0 p.k) (ifOk (.seq (seqR (hR P p) 0 p.k) (.block (onesOk p))))
 
 /-- The validity checks of an iteration in the order of Algorithm 7, each
-group combined into `r15` and run only if those before it passed: the norms
-of `z`, then those of `r₀`, then those of `ct₀` and the number of 1s of the
-hint; then, if they passed, `CNT ← 1` (the loop ends with `r15 = 1`), and
+combined into `r15` and run only if those before it passed: the norms of
+`z`, then those of `r₀`, each stopping at the first polynomial that fails,
+then those of `ct₀` and the number of 1s of the hint; then, if they passed, `CNT ← 1` (the loop ends with `r15 = 1`), and
 otherwise `κ ← κ + ℓ`. -/
 def checks : Prog isa :=
   .seq (nttAt P cP) (.seq (.block (([.mov32 .r15 (.imm 1)] : List Instr) ++ setQ (sc oONES) 0))
-    (.seq (seqR (zR P p) 0 p.ℓ) (.seq (ifOk (checksR0 P p))
+    (.seq (seqOk (zR P p) 0 p.ℓ) (.seq (ifOk (checksR0 P p))
       (ifOkElse (.block (setQ (sc oCNT) 1))
         (.block [.mov .rax (.mem (at_ .rbx oKAP)), .alu .add .rax (.imm (BitVec.ofNat 32 p.ℓ)),
           .store (at_ .rbx oKAP) .rax])))))

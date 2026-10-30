@@ -142,6 +142,23 @@ theorem signLeakT_eq {Â : List (List Poly)} (hA : expandA p maxBounds (sk.take 
   subst hρ hK
   rw [hA, h1, h2, h3]
 
+/-- What the contract lets signing leak, once `ExpandA` finishes. -/
+theorem signLeak_eq {Â : List (List Poly)} (hA : expandA p maxBounds (sk.take 32) = some Â) :
+    signLeak p sk μ rnd = leakBytes (sk.take 32) ++
+      signLeakLoop p maxBounds Â ((List.range p.ℓ).map (s1F p sk)) ((List.range p.k).map (s2F p sk))
+        ((List.range p.k).map (t0F p sk)) μ (H ((sk.drop 32).take 32 ++ rnd ++ μ) 64) maxBounds.sign 0 := by
+  have h1 := skS1_eq p sk
+  have h2 := skS2_eq p sk
+  have h3 := skT0_eq p sk
+  unfold signLeak
+  rcases e : skDecode p sk with ⟨ρ, K, tr, s₁, s₂, t₀⟩
+  rw [e] at h1 h2 h3
+  have hρ : ρ = sk.take 32 := by rw [← skRho_eq p sk, e]
+  have hK : K = (sk.drop 32).take 32 := by rw [← skK_eq p sk, e]
+  dsimp only at h1 h2 h3 ⊢
+  subst hρ hK
+  rw [hA, h1, h2, h3]
+
 end
 
 end VG.Proof.MlDsa.Sign

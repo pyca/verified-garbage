@@ -266,6 +266,12 @@ def ifOkElse (t e : Prog isa) : Prog isa := .seq (.block [.alu32 .test .r15 (.re
 /-- `c` if `r15 ≠ 0`. -/
 def ifOk (c : Prog isa) : Prog isa := ifOkElse c (.block [])
 
+/-- `f a`, `f (a + 1)`, …, `f (a + n - 1)` while `r15 ≠ 0`: the first that
+leaves `r15 = 0` is the last. -/
+def seqOk (f : Nat → Prog isa) (a : Nat) : Nat → Prog isa
+  | 0 => .block []
+  | n + 1 => .seq (f a) (ifOk (seqOk f (a + 1) n))
+
 /-- The callee-saved registers the function saves, at `scratch + 840 + 8k`. -/
 def savedRegs : List Reg := [.rbx, .rbp, .r12, .r13, .r14, .r15]
 

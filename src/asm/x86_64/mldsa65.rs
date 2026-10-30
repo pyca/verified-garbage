@@ -2375,6 +2375,10 @@ add rdi, 16384
 mov esi, 524092
 call {vg_mldsa_norm_lt_avx2}
 and r15d, eax
+test r15d, r15d
+jne 219f
+jmp 220f
+219:
 mov rdi, rbx
 add rdi, 6144
 mov rsi, rbx
@@ -2397,6 +2401,10 @@ add rdi, 17408
 mov esi, 524092
 call {vg_mldsa_norm_lt_avx2}
 and r15d, eax
+test r15d, r15d
+jne 221f
+jmp 222f
+221:
 mov rdi, rbx
 add rdi, 6144
 mov rsi, rbx
@@ -2419,6 +2427,10 @@ add rdi, 18432
 mov esi, 524092
 call {vg_mldsa_norm_lt_avx2}
 and r15d, eax
+test r15d, r15d
+jne 223f
+jmp 224f
+223:
 mov rdi, rbx
 add rdi, 6144
 mov rsi, rbx
@@ -2441,6 +2453,10 @@ add rdi, 19456
 mov esi, 524092
 call {vg_mldsa_norm_lt_avx2}
 and r15d, eax
+test r15d, r15d
+jne 225f
+jmp 226f
+225:
 mov rdi, rbx
 add rdi, 6144
 mov rsi, rbx
@@ -2464,9 +2480,18 @@ mov esi, 524092
 call {vg_mldsa_norm_lt_avx2}
 and r15d, eax
 test r15d, r15d
-jne 219f
-jmp 220f
-219:
+jne 227f
+jmp 228f
+227:
+228:
+226:
+224:
+222:
+220:
+test r15d, r15d
+jne 229f
+jmp 230f
+229:
 mov rdi, rbx
 add rdi, 6144
 mov rsi, rbx
@@ -2495,6 +2520,10 @@ add rdi, 7168
 mov esi, 261692
 call {vg_mldsa_norm_lt_avx2}
 and r15d, eax
+test r15d, r15d
+jne 231f
+jmp 232f
+231:
 mov rdi, rbx
 add rdi, 6144
 mov rsi, rbx
@@ -2523,6 +2552,10 @@ add rdi, 7168
 mov esi, 261692
 call {vg_mldsa_norm_lt_avx2}
 and r15d, eax
+test r15d, r15d
+jne 233f
+jmp 234f
+233:
 mov rdi, rbx
 add rdi, 6144
 mov rsi, rbx
@@ -2551,6 +2584,10 @@ add rdi, 7168
 mov esi, 261692
 call {vg_mldsa_norm_lt_avx2}
 and r15d, eax
+test r15d, r15d
+jne 235f
+jmp 236f
+235:
 mov rdi, rbx
 add rdi, 6144
 mov rsi, rbx
@@ -2579,6 +2616,10 @@ add rdi, 7168
 mov esi, 261692
 call {vg_mldsa_norm_lt_avx2}
 and r15d, eax
+test r15d, r15d
+jne 237f
+jmp 238f
+237:
 mov rdi, rbx
 add rdi, 6144
 mov rsi, rbx
@@ -2607,6 +2648,10 @@ add rdi, 7168
 mov esi, 261692
 call {vg_mldsa_norm_lt_avx2}
 and r15d, eax
+test r15d, r15d
+jne 239f
+jmp 240f
+239:
 mov rdi, rbx
 add rdi, 6144
 mov rsi, rbx
@@ -2636,9 +2681,19 @@ mov esi, 261692
 call {vg_mldsa_norm_lt_avx2}
 and r15d, eax
 test r15d, r15d
-jne 221f
-jmp 222f
-221:
+jne 241f
+jmp 242f
+241:
+242:
+240:
+238:
+236:
+234:
+232:
+test r15d, r15d
+jne 243f
+jmp 244f
+243:
 mov rdi, rbx
 add rdi, 8192
 mov rsi, rbx
@@ -2661,13 +2716,13 @@ add rdi, 9216
 mov rsi, rbx
 add rsi, 26624
 mov ecx, 128
-223:
+245:
 mov rax, QWORD PTR [rsi]
 mov QWORD PTR [rdi], rax
 add rdi, 8
 add rsi, 8
 sub rcx, 1
-jne 223b
+jne 245b
 mov rdi, rbx
 add rdi, 26624
 mov rsi, rbx
@@ -2711,13 +2766,13 @@ add rdi, 9216
 mov rsi, rbx
 add rsi, 27648
 mov ecx, 128
-224:
+246:
 mov rax, QWORD PTR [rsi]
 mov QWORD PTR [rdi], rax
 add rdi, 8
 add rsi, 8
 sub rcx, 1
-jne 224b
+jne 246b
 mov rdi, rbx
 add rdi, 27648
 mov rsi, rbx
@@ -2761,13 +2816,13 @@ add rdi, 9216
 mov rsi, rbx
 add rsi, 28672
 mov ecx, 128
-225:
+247:
 mov rax, QWORD PTR [rsi]
 mov QWORD PTR [rdi], rax
 add rdi, 8
 add rsi, 8
 sub rcx, 1
-jne 225b
+jne 247b
 mov rdi, rbx
 add rdi, 28672
 mov rsi, rbx
@@ -2811,13 +2866,13 @@ add rdi, 9216
 mov rsi, rbx
 add rsi, 29696
 mov ecx, 128
-226:
+248:
 mov rax, QWORD PTR [rsi]
 mov QWORD PTR [rdi], rax
 add rdi, 8
 add rsi, 8
 sub rcx, 1
-jne 226b
+jne 248b
 mov rdi, rbx
 add rdi, 29696
 mov rsi, rbx
@@ -2861,13 +2916,13 @@ add rdi, 9216
 mov rsi, rbx
 add rsi, 30720
 mov ecx, 128
-227:
+249:
 mov rax, QWORD PTR [rsi]
 mov QWORD PTR [rdi], rax
 add rdi, 8
 add rsi, 8
 sub rcx, 1
-jne 227b
+jne 249b
 mov rdi, rbx
 add rdi, 30720
 mov rsi, rbx
@@ -2911,13 +2966,13 @@ add rdi, 9216
 mov rsi, rbx
 add rsi, 31744
 mov ecx, 128
-228:
+250:
 mov rax, QWORD PTR [rsi]
 mov QWORD PTR [rdi], rax
 add rdi, 8
 add rsi, 8
 sub rcx, 1
-jne 228b
+jne 250b
 mov rdi, rbx
 add rdi, 31744
 mov rsi, rbx
@@ -2943,39 +2998,39 @@ mov eax, DWORD PTR [rbx+904]
 sub rax, 56
 shr rax, 63
 and r15d, eax
-222:
-220:
+244:
+230:
 test r15d, r15d
-jne 229f
+jne 251f
 mov rax, QWORD PTR [rbx+896]
 add rax, 5
 mov QWORD PTR [rbx+896], rax
-jmp 230f
-229:
+jmp 252f
+251:
 mov eax, 1
 mov QWORD PTR [rbx+888], rax
-230:
+252:
 218:
 mov rax, QWORD PTR [rbx+888]
 sub rax, 1
 mov QWORD PTR [rbx+888], rax
 jne 27b
 test r15d, r15d
-jne 231f
-jmp 232f
-231:
+jne 253f
+jmp 254f
+253:
 mov rdi, r14
 add rdi, 0
 mov rsi, rbx
 add rsi, 1040
 mov ecx, 6
-233:
+255:
 mov rax, QWORD PTR [rsi]
 mov QWORD PTR [rdi], rax
 add rdi, 8
 add rsi, 8
 sub rcx, 1
-jne 233b
+jne 255b
 mov rdi, rbx
 add rdi, 16384
 mov esi, 524287
@@ -3024,7 +3079,7 @@ mov rcx, r14
 add rcx, 3248
 mov r8d, 61
 call {vg_mldsa_hint_bit_pack}
-232:
+254:
 26:
 mov eax, r15d
 mov r15, QWORD PTR [rbx+880]
@@ -6835,6 +6890,10 @@ add rdi, 16384
 mov esi, 524092
 call {vg_mldsa_norm_lt}
 and r15d, eax
+test r15d, r15d
+jne 219f
+jmp 220f
+219:
 mov rdi, rbx
 add rdi, 6144
 mov rsi, rbx
@@ -6857,6 +6916,10 @@ add rdi, 17408
 mov esi, 524092
 call {vg_mldsa_norm_lt}
 and r15d, eax
+test r15d, r15d
+jne 221f
+jmp 222f
+221:
 mov rdi, rbx
 add rdi, 6144
 mov rsi, rbx
@@ -6879,6 +6942,10 @@ add rdi, 18432
 mov esi, 524092
 call {vg_mldsa_norm_lt}
 and r15d, eax
+test r15d, r15d
+jne 223f
+jmp 224f
+223:
 mov rdi, rbx
 add rdi, 6144
 mov rsi, rbx
@@ -6901,6 +6968,10 @@ add rdi, 19456
 mov esi, 524092
 call {vg_mldsa_norm_lt}
 and r15d, eax
+test r15d, r15d
+jne 225f
+jmp 226f
+225:
 mov rdi, rbx
 add rdi, 6144
 mov rsi, rbx
@@ -6924,9 +6995,18 @@ mov esi, 524092
 call {vg_mldsa_norm_lt}
 and r15d, eax
 test r15d, r15d
-jne 219f
-jmp 220f
-219:
+jne 227f
+jmp 228f
+227:
+228:
+226:
+224:
+222:
+220:
+test r15d, r15d
+jne 229f
+jmp 230f
+229:
 mov rdi, rbx
 add rdi, 6144
 mov rsi, rbx
@@ -6955,6 +7035,10 @@ add rdi, 7168
 mov esi, 261692
 call {vg_mldsa_norm_lt}
 and r15d, eax
+test r15d, r15d
+jne 231f
+jmp 232f
+231:
 mov rdi, rbx
 add rdi, 6144
 mov rsi, rbx
@@ -6983,6 +7067,10 @@ add rdi, 7168
 mov esi, 261692
 call {vg_mldsa_norm_lt}
 and r15d, eax
+test r15d, r15d
+jne 233f
+jmp 234f
+233:
 mov rdi, rbx
 add rdi, 6144
 mov rsi, rbx
@@ -7011,6 +7099,10 @@ add rdi, 7168
 mov esi, 261692
 call {vg_mldsa_norm_lt}
 and r15d, eax
+test r15d, r15d
+jne 235f
+jmp 236f
+235:
 mov rdi, rbx
 add rdi, 6144
 mov rsi, rbx
@@ -7039,6 +7131,10 @@ add rdi, 7168
 mov esi, 261692
 call {vg_mldsa_norm_lt}
 and r15d, eax
+test r15d, r15d
+jne 237f
+jmp 238f
+237:
 mov rdi, rbx
 add rdi, 6144
 mov rsi, rbx
@@ -7067,6 +7163,10 @@ add rdi, 7168
 mov esi, 261692
 call {vg_mldsa_norm_lt}
 and r15d, eax
+test r15d, r15d
+jne 239f
+jmp 240f
+239:
 mov rdi, rbx
 add rdi, 6144
 mov rsi, rbx
@@ -7096,9 +7196,19 @@ mov esi, 261692
 call {vg_mldsa_norm_lt}
 and r15d, eax
 test r15d, r15d
-jne 221f
-jmp 222f
-221:
+jne 241f
+jmp 242f
+241:
+242:
+240:
+238:
+236:
+234:
+232:
+test r15d, r15d
+jne 243f
+jmp 244f
+243:
 mov rdi, rbx
 add rdi, 8192
 mov rsi, rbx
@@ -7121,13 +7231,13 @@ add rdi, 9216
 mov rsi, rbx
 add rsi, 26624
 mov ecx, 128
-223:
+245:
 mov rax, QWORD PTR [rsi]
 mov QWORD PTR [rdi], rax
 add rdi, 8
 add rsi, 8
 sub rcx, 1
-jne 223b
+jne 245b
 mov rdi, rbx
 add rdi, 26624
 mov rsi, rbx
@@ -7171,13 +7281,13 @@ add rdi, 9216
 mov rsi, rbx
 add rsi, 27648
 mov ecx, 128
-224:
+246:
 mov rax, QWORD PTR [rsi]
 mov QWORD PTR [rdi], rax
 add rdi, 8
 add rsi, 8
 sub rcx, 1
-jne 224b
+jne 246b
 mov rdi, rbx
 add rdi, 27648
 mov rsi, rbx
@@ -7221,13 +7331,13 @@ add rdi, 9216
 mov rsi, rbx
 add rsi, 28672
 mov ecx, 128
-225:
+247:
 mov rax, QWORD PTR [rsi]
 mov QWORD PTR [rdi], rax
 add rdi, 8
 add rsi, 8
 sub rcx, 1
-jne 225b
+jne 247b
 mov rdi, rbx
 add rdi, 28672
 mov rsi, rbx
@@ -7271,13 +7381,13 @@ add rdi, 9216
 mov rsi, rbx
 add rsi, 29696
 mov ecx, 128
-226:
+248:
 mov rax, QWORD PTR [rsi]
 mov QWORD PTR [rdi], rax
 add rdi, 8
 add rsi, 8
 sub rcx, 1
-jne 226b
+jne 248b
 mov rdi, rbx
 add rdi, 29696
 mov rsi, rbx
@@ -7321,13 +7431,13 @@ add rdi, 9216
 mov rsi, rbx
 add rsi, 30720
 mov ecx, 128
-227:
+249:
 mov rax, QWORD PTR [rsi]
 mov QWORD PTR [rdi], rax
 add rdi, 8
 add rsi, 8
 sub rcx, 1
-jne 227b
+jne 249b
 mov rdi, rbx
 add rdi, 30720
 mov rsi, rbx
@@ -7371,13 +7481,13 @@ add rdi, 9216
 mov rsi, rbx
 add rsi, 31744
 mov ecx, 128
-228:
+250:
 mov rax, QWORD PTR [rsi]
 mov QWORD PTR [rdi], rax
 add rdi, 8
 add rsi, 8
 sub rcx, 1
-jne 228b
+jne 250b
 mov rdi, rbx
 add rdi, 31744
 mov rsi, rbx
@@ -7403,39 +7513,39 @@ mov eax, DWORD PTR [rbx+904]
 sub rax, 56
 shr rax, 63
 and r15d, eax
-222:
-220:
+244:
+230:
 test r15d, r15d
-jne 229f
+jne 251f
 mov rax, QWORD PTR [rbx+896]
 add rax, 5
 mov QWORD PTR [rbx+896], rax
-jmp 230f
-229:
+jmp 252f
+251:
 mov eax, 1
 mov QWORD PTR [rbx+888], rax
-230:
+252:
 218:
 mov rax, QWORD PTR [rbx+888]
 sub rax, 1
 mov QWORD PTR [rbx+888], rax
 jne 27b
 test r15d, r15d
-jne 231f
-jmp 232f
-231:
+jne 253f
+jmp 254f
+253:
 mov rdi, r14
 add rdi, 0
 mov rsi, rbx
 add rsi, 1040
 mov ecx, 6
-233:
+255:
 mov rax, QWORD PTR [rsi]
 mov QWORD PTR [rdi], rax
 add rdi, 8
 add rsi, 8
 sub rcx, 1
-jne 233b
+jne 255b
 mov rdi, rbx
 add rdi, 16384
 mov esi, 524287
@@ -7484,7 +7594,7 @@ mov rcx, r14
 add rcx, 3248
 mov r8d, 61
 call {vg_mldsa_hint_bit_pack}
-232:
+254:
 26:
 mov eax, r15d
 mov r15, QWORD PTR [rbx+880]

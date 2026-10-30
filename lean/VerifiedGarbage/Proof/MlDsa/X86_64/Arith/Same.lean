@@ -79,6 +79,11 @@ theorem Same.seqRS {f g : Nat → Prog isa} (h : ∀ k, Same m (f k) (g k)) :
   | _, 0 => rfl
   | a, n + 1 => Same.seq hm (h a) (Same.seqRS h (a + 1) n)
 
+theorem Same.seqOkS {f g : Nat → Prog isa} (h : ∀ k, Same m (f k) (g k)) :
+    ∀ a n, Same m (Impl.MlDsa.X86_64.Sign.seqOk f a n) (Impl.MlDsa.X86_64.Sign.seqOk g a n)
+  | _, 0 => rfl
+  | a, n + 1 => Same.seq hm (h a) (Same.seq hm rfl (Same.ite hm (Same.seqOkS h (a + 1) n) rfl))
+
 theorem Same.seqRV {f g : Nat → Prog isa} (h : ∀ k, Same m (f k) (g k)) :
     ∀ a n, Same m (Impl.MlDsa.X86_64.Verify.seqR f a n) (Impl.MlDsa.X86_64.Verify.seqR g a n)
   | _, 0 => rfl
@@ -106,6 +111,7 @@ tactic_template "same_tac " hm:term : tactic =>
     | apply Same.loop $hm
     | apply Same.cond
     | (apply Same.seqRS $hm; intro)
+    | (apply Same.seqOkS $hm; intro)
     | (apply Same.seqRV $hm; intro)
     | (apply Same.seqRK $hm; intro)
     | rfl))

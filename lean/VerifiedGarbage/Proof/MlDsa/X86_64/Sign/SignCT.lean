@@ -44,9 +44,9 @@ meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
 /-!
 # ML-DSA signing on x86-64: constant time
 
-Two runs whose entry states agree on `signK`'s public data (`signLeakT` among
+Two runs whose entry states agree on `signK`'s public data (`signLeak` among
 them) leak the same: the prologue and the return only the pointers, `ExpandA`
-only `ρ` (`expandA_tr`), and the rest what `signLeakT` says after `ρ`, on
+only `ρ` (`expandA_tr`), and the rest what `signLeak` says after `ρ`, on
 which they agree once `ExpandA` finished (`pub_leq`, `rest_tr`).
 -/
 
@@ -68,7 +68,7 @@ theorem pub_leq {σ₁ σ₂ : State} (hpub : (signK p D).pub σ₁ σ₂)
     (hA₁ : expandA p maxBounds (rhoOf p σ₁) = some (amat p (Am p σ₁)))
     (hA₂ : expandA p maxBounds (rhoOf p σ₂) = some (amat p (Am p σ₂))) : LeakEq p 0 σ₁ σ₂ := by
   have e := hpub.2.2.2.2.2.2
-  rw [signLeakT_eq hA₁, signLeakT_eq hA₂] at e
+  rw [signLeak_eq hA₁, signLeak_eq hA₂] at e
   have hρ : (skOf p σ₁).take 32 = (skOf p σ₂).take 32 := pub_rho hpub
   rw [hρ] at e
   exact List.append_cancel_left e
