@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.TripleDes.AArch64.Block
+public import VerifiedGarbage.Impl.CmacTripleDes.AArch64
 public import VerifiedGarbage.Impl.Modes.AArch64.CbcChained
 
 /-!
@@ -71,5 +72,24 @@ def cbcEncryptChained : Prog isa := (dirCore .encrypt).cbcEncryptChained ⟨.x1,
 
 /-- `vg_triple_des_cbc_decrypt_chained`. -/
 def cbcDecryptChained : Prog isa := (dirCore .decrypt).cbcDecryptChained ⟨.x1, .x2, .x3, .x4⟩
+
+namespace TablesCbc
+
+open VG.Impl.CmacTripleDes.AArch64 (mov prep enc chainIn)
+
+/-- Ciphertext replaces the current plaintext and becomes the next IV. -/
+def store : List Instr :=
+  [.rev .x5 .x5, .str .x .x5 .x2 0, .str .x .x5 .x1 0,
+   .addImm .x .x2 .x2 8, .subImm .x .x3 .x3 1]
+
+/-- Reuse CMAC's rotated/spread layout and register-resident S-box tables.
+Setup and round-key spreading happen once, before all blocks of the call. -/
+def encrypt : Prog isa :=
+  .seq (.block [mov .x14 .x0, mov .x15 .x4]) <|
+  .ite (.zero .x .x3) (.block []) <|
+  .seq prep <| .seq (.loop (.seq (.block chainIn) (.seq enc (.block store))) (.nonzero .x .x3))
+    (.block VG.Impl.CmacTripleDes.AArch64.blockRestore)
+
+end TablesCbc
 
 end VG.Impl.TripleDes.AArch64
