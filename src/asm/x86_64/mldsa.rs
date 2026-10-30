@@ -2889,24 +2889,30 @@ add rdx, 128
 sub rax, 1
 jne 27b
 mov rdx, rdi
-mov r8, rsi
-add r8, 12
-mov eax, 2
-29:
-vbroadcasti128 ymm13, XMMWORD PTR [r8]
-vpshufd ymm13, ymm13, 0
-vpshufd ymm12, ymm13, 245
-add r8, -4
+mov eax, 7861508
+vmovq xmm7, rax
+vpbroadcastd ymm7, xmm7
+mov eax, 5771523
+vmovq xmm8, rax
+vpbroadcastd ymm8, xmm8
+mov eax, 4404704
+vmovq xmm9, rax
+vpbroadcastd ymm9, xmm9
+mov eax, 41978
+vmovq xmm10, rax
+vpbroadcastd ymm10, xmm10
 mov ecx, 8
-210:
+29:
 vmovdqu ymm0, YMMWORD PTR [rdx]
 vmovdqu ymm1, YMMWORD PTR [rdx+256]
+vmovdqu ymm5, YMMWORD PTR [rdx+512]
+vmovdqu ymm6, YMMWORD PTR [rdx+768]
 vpsubd ymm3, ymm1, ymm0
 vpaddd ymm3, ymm3, ymm11
 vpaddd ymm0, ymm0, ymm1
 vpshufd ymm4, ymm3, 245
-vpmuludq ymm3, ymm3, ymm13
-vpmuludq ymm4, ymm4, ymm12
+vpmuludq ymm3, ymm3, ymm7
+vpmuludq ymm4, ymm4, ymm7
 vpmuludq ymm2, ymm3, ymm14
 vpmuludq ymm2, ymm2, ymm15
 vpaddq ymm3, ymm3, ymm2
@@ -2915,60 +2921,66 @@ vpmuludq ymm2, ymm4, ymm14
 vpmuludq ymm2, ymm2, ymm15
 vpaddq ymm4, ymm4, ymm2
 vpor ymm3, ymm3, ymm4
-vmovdqu YMMWORD PTR [rdx], ymm0
-vmovdqu YMMWORD PTR [rdx+256], ymm3
-add rdx, 32
-sub rcx, 1
-jne 210b
-add rdx, 256
-sub rax, 1
-jne 29b
-mov rdx, rdi
-mov r8, rsi
-add r8, 4
-mov eax, 1
-211:
-vbroadcasti128 ymm13, XMMWORD PTR [r8]
-vpshufd ymm13, ymm13, 0
-vpshufd ymm12, ymm13, 245
-add r8, -4
-mov ecx, 16
-212:
-vmovdqu ymm0, YMMWORD PTR [rdx]
-vmovdqu ymm1, YMMWORD PTR [rdx+512]
-vpsubd ymm3, ymm1, ymm0
-vpaddd ymm3, ymm3, ymm11
-vpaddd ymm0, ymm0, ymm1
-vpshufd ymm4, ymm3, 245
-vpmuludq ymm3, ymm3, ymm13
-vpmuludq ymm4, ymm4, ymm12
-vpmuludq ymm2, ymm3, ymm14
+vpsubd ymm1, ymm6, ymm5
+vpaddd ymm1, ymm1, ymm11
+vpaddd ymm5, ymm5, ymm6
+vpshufd ymm4, ymm1, 245
+vpmuludq ymm1, ymm1, ymm8
+vpmuludq ymm4, ymm4, ymm8
+vpmuludq ymm2, ymm1, ymm14
 vpmuludq ymm2, ymm2, ymm15
-vpaddq ymm3, ymm3, ymm2
-vpsrlq ymm3, ymm3, 32
+vpaddq ymm1, ymm1, ymm2
+vpsrlq ymm1, ymm1, 32
 vpmuludq ymm2, ymm4, ymm14
 vpmuludq ymm2, ymm2, ymm15
 vpaddq ymm4, ymm4, ymm2
-vpor ymm3, ymm3, ymm4
-vmovdqu YMMWORD PTR [rdx], ymm0
-vmovdqu YMMWORD PTR [rdx+512], ymm3
-add rdx, 32
-sub rcx, 1
-jne 212b
-add rdx, 512
-sub rax, 1
-jne 211b
-mov rdx, rdi
-mov eax, 41978
-vmovq xmm13, rax
-vpbroadcastd ymm13, xmm13
-vmovdqa ymm12, ymm13
-mov ecx, 32
-213:
-vmovdqu ymm3, YMMWORD PTR [rdx]
+vpor ymm1, ymm1, ymm4
+vpsubd ymm6, ymm5, ymm0
+vpaddd ymm6, ymm6, ymm11
+vpaddd ymm0, ymm0, ymm5
+vpshufd ymm4, ymm6, 245
+vpmuludq ymm6, ymm6, ymm9
+vpmuludq ymm4, ymm4, ymm9
+vpmuludq ymm2, ymm6, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm6, ymm6, ymm2
+vpsrlq ymm6, ymm6, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm6, ymm6, ymm4
+vpsubd ymm5, ymm1, ymm3
+vpaddd ymm5, ymm5, ymm11
+vpaddd ymm3, ymm3, ymm1
+vpshufd ymm4, ymm5, 245
+vpmuludq ymm5, ymm5, ymm9
+vpmuludq ymm4, ymm4, ymm9
+vpmuludq ymm2, ymm5, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm5, ymm5, ymm2
+vpsrlq ymm5, ymm5, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm5, ymm5, ymm4
+vpshufd ymm4, ymm0, 245
+vpmuludq ymm0, ymm0, ymm10
+vpmuludq ymm4, ymm4, ymm10
+vpmuludq ymm2, ymm0, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm0, ymm0, ymm2
+vpsrlq ymm0, ymm0, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm0, ymm0, ymm4
+vpsubd ymm0, ymm0, ymm15
+vpsrad ymm2, ymm0, 31
+vpand ymm2, ymm2, ymm15
+vpaddd ymm0, ymm0, ymm2
 vpshufd ymm4, ymm3, 245
-vpmuludq ymm3, ymm3, ymm13
-vpmuludq ymm4, ymm4, ymm12
+vpmuludq ymm3, ymm3, ymm10
+vpmuludq ymm4, ymm4, ymm10
 vpmuludq ymm2, ymm3, ymm14
 vpmuludq ymm2, ymm2, ymm15
 vpaddq ymm3, ymm3, ymm2
@@ -2981,10 +2993,21 @@ vpsubd ymm3, ymm3, ymm15
 vpsrad ymm2, ymm3, 31
 vpand ymm2, ymm2, ymm15
 vpaddd ymm3, ymm3, ymm2
-vmovdqu YMMWORD PTR [rdx], ymm3
+vpsubd ymm6, ymm6, ymm15
+vpsrad ymm2, ymm6, 31
+vpand ymm2, ymm2, ymm15
+vpaddd ymm6, ymm6, ymm2
+vpsubd ymm5, ymm5, ymm15
+vpsrad ymm2, ymm5, 31
+vpand ymm2, ymm2, ymm15
+vpaddd ymm5, ymm5, ymm2
+vmovdqu YMMWORD PTR [rdx], ymm0
+vmovdqu YMMWORD PTR [rdx+256], ymm3
+vmovdqu YMMWORD PTR [rdx+512], ymm6
+vmovdqu YMMWORD PTR [rdx+768], ymm5
 add rdx, 32
 sub rcx, 1
-jne 213b
+jne 29b
 vzeroupper
 lfence
 mov DWORD PTR [rsi+768], r11d
