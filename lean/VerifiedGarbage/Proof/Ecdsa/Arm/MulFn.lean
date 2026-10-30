@@ -270,7 +270,7 @@ theorem mulBody_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base siz
     show Q _ (tmv c.C c.n base s₆ (c.sl RX)) (tmv c.C c.n base s₆ (c.sl RY)) (tmv c.C c.n base s₆ (c.sl RZ))
     rw [tv rx₆, tv ry₆, tv rz₆]; exact hO
   refine WP.mono (VG.Proof.Weierstrass.Arm.Point.ladderP_ok (L := c.mulLadder) (mulLadLay hc) (mulLadWk hc)
-    hc.fp mulLadPt hpR (bitsAt_lt hc (j := 0) (by decide)) hs₆ hf₆ M₆ hlt hstep₆ hR
+    hc.fp mulLadPt hpR (bitsAt_lt hc (j := 0) (by decide)) hs₆ hf₆ M₆ hlt nofun hstep₆ hR
     (fun t ht => T₆ t (Nat.lt_of_lt_of_le ht (scalarBits_le hc))) (scalarBits_enc hc))
     fun s₇ ⟨K₇, U₇, M₇, L₇, R₇⟩ => ⟨K₁₆.trans K₇, ?_, M₇, L₇, R₇⟩
   rw [mulLadWp_eq] at U₇
@@ -680,7 +680,7 @@ theorem qMul_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) 
     (hpx : sv c base s px < c.C.p) (hpy : sv c base s py < c.C.p)
     (hrx : sv c base s RX = 0) (hry : sv c base s RY = c.mont 1) (hrz : sv c base s RZ = 0)
     {k : Nat} {Q : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
-    (hstep : Step (pLadder c px py) c.C base s k Q) (hO : Q (8 * c.C.len) 0 1 0)
+    (hstep : Step (pLadder c px py) c.C base s k Q c.qA0) (hO : Q (8 * c.C.len) 0 1 0)
     (hk : c.mul.isSome → sv c base s K = k)
     (ht : c.mul = none → ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0) :
     WP isa (c.qMul px py) s fun t => Rest powClob s t ∧
@@ -720,7 +720,9 @@ theorem qMul_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) 
       exact hO
     refine WP.mono (VG.Proof.Weierstrass.Arm.Point.ladderP_ok (L := pLadder c px py) (k := k)
       (pLadLay hc hp) (pLadWk hc hp) hc.fp (pLadPt hp) hpR (bitsAt_lt hc (j := 0) (by decide)) hs hf
-      (modP_of hc F.mp) hlt hstep hR (fun t h => ht hm t (Nat.lt_of_lt_of_le h (scalarBits_le hc)))
+      (modP_of hc F.mp) hlt (fun h => by
+        simp only [Cfg.qA0, Bool.and_eq_true, decide_eq_true_eq] at h
+        exact h.2.2) hstep hR (fun t h => ht hm t (Nat.lt_of_lt_of_le h (scalarBits_le hc)))
       (scalarBits_enc hc)) fun t ⟨K, U, M, L, R⟩ => ⟨K, U.mono fun w hw => List.mem_append_left _ hw, M, L, R⟩
   | some C =>
     simp only
@@ -735,6 +737,8 @@ theorem qMul_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) 
       · exact List.mem_cons_self
       · rw [List.mem_singleton.mp h]; exact List.mem_cons_of_mem _ List.mem_cons_self)
     have hk' : sv c base s K = k := hk (by rw [hm]; rfl)
+    have hq : c.qA0 = false := by simp only [Cfg.qA0, hm, Option.isNone_some, Bool.false_and]
+    rw [hq] at hstep
     have hstep' : Step (pLadder c px py) c.C base s (sv c base s K) Q := by rw [hk']; exact hstep
     have hO' : Q c.ladderCfg.nbits (tmv c.C c.n base s (c.sl ZERO)) (tmv c.C c.n base s (c.sl ONEP))
         (tmv c.C c.n base s (c.sl ZERO)) := by

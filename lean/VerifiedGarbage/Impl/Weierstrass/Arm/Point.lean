@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.Arm
+public import VerifiedGarbage.Impl.Weierstrass.Rcb0
 public import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-!
@@ -85,10 +86,21 @@ def entry (k : Nat) : List Instr := [.mov .r12 (.reg .r0), .str .lr .r12 (saveAt
 /-- `lr` restored. -/
 def restore (k : Nat) : List Instr := [.ldr .lr .r12 (saveAt k)]
 
+/-- A function computing the field operations `ops` on the slots, calling the
+Montgomery functions of `S` (the second operand's slots `P`'s if `dbl`). -/
+def fnOps (S : Spec.Weierstrass.Mont.Modulus) (dbl : Bool) (ops : List FOp) : Prog isa :=
+  .seq (.block (entry S.k)) <| .seq (fprogR (enc S.k dbl) S ops) <| .block (restore S.k)
+
 /-- The function's code, calling the Montgomery functions of `S`: `O = P + Q`,
 or `P + P` if `dbl`. -/
 def fn (S : Spec.Weierstrass.Mont.Modulus) (dbl : Bool) : Prog isa :=
-  .seq (.block (entry S.k)) <| .seq (fprogR (enc S.k dbl) S (rcb sId pId qId oId)) <| .block (restore S.k)
+  fnOps S dbl (rcb sId pId qId oId)
+
+/-- The formulas for `a = 0`: Algorithm 9 doubles (`dbl`), Algorithm 8 adds. -/
+def ops0 (dbl : Bool) : List FOp := if dbl then dbl0 sId pId oId else rcb0m sId pId qId oId
+
+/-- `O = P + P` (`dbl`) or `P + Q` by the formulas for `a = 0`. -/
+def fn0 (S : Spec.Weierstrass.Mont.Modulus) (dbl : Bool) : Prog isa := fnOps S dbl (ops0 dbl)
 
 /-- The curve's prime as a modulus of `Spec/Weierstrass/Mont.lean`, whose
 functions (`vg_<curve>_<op>_mod_p`) the point functions call. -/
@@ -100,5 +112,11 @@ def pointAdd (C : Spec.Weierstrass.Point.Curve) : Prog isa := fn (modP C) false
 
 /-- `vg_<curve>_point_double`. -/
 def pointDouble (C : Spec.Weierstrass.Point.Curve) : Prog isa := fn (modP C) true
+
+/-- `vg_<curve>_point_double_a0`: `O = P + P` by Algorithm 9. -/
+def pointDouble0 (C : Spec.Weierstrass.Point.Curve) : Prog isa := fn0 (modP C) true
+
+/-- `vg_<curve>_point_add_affine_a0`: `O = P + Q` by Algorithm 8. -/
+def pointAdd0m (C : Spec.Weierstrass.Point.Curve) : Prog isa := fn0 (modP C) false
 
 end VG.Impl.Weierstrass.Arm.Point

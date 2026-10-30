@@ -113,7 +113,7 @@ theorem add_ok (K : TCombCfg) {s : State} {base : Addr} {m : Nat} [NeZero m]
     simp only [Eb,enc_0,enc_1,enc_2] at ev
     simp only [TCombCfg.O,ptAt]
     rw [ev]
-    simp only [Eb,enc_3,enc_4,enc_5,enc_6,enc_7,enc_8,enc_9,enc_10,Bool.false_eq_true,↓reduceIte]
+    simp only [ptVal,Eb,enc_3,enc_4,enc_5,enc_6,enc_7,enc_8,enc_9,enc_10,Bool.false_eq_true,↓reduceIte]
     rw [px,py,pz]
     have oa := other (Spec.Weierstrass.Point.aAt K.L.M.n) (by simp)
     have ob := other (Spec.Weierstrass.Point.b3At K.L.M.n) (by simp)

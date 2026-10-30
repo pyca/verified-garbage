@@ -98,15 +98,14 @@ def E₀ (k m : Nat) [NeZero m] (dbl : Bool) (s : State) (x : Nat) : Fin m :=
 
 theorem rIds_lt : ∀ x ∈ rIds, x < 17 := by decide
 
-theorem out_valid : ∀ j < 3, j ∈ validAfter (rcb sId pId qId oId) rIds := by decide
-
-/-- The function: the callee-saved registers and `sp` kept, `r12 = ws`, the
-memory changed only at `O` and in the own working space, and `O`'s
-coordinates below the prime, standing for `rcbAdd` of what the constants
-and the operands stand for. -/
-theorem fn_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.k S.m) (hodd : S.m % 2 = 1)
-    {dbl : Bool} {s : State} (hp : PrePt S.k S.m dbl s) :
-    WP isa (Impl.Weierstrass.Arm.Point.fn S dbl) s fun s' => abiPreserved s s' ∧
+/-- A function of field operations `ops` that write only the result and the
+temporaries (`OpsOk`): the callee-saved registers and `sp` kept, `r12 = ws`,
+the memory changed only at `O` and in the own working space, and `O`'s
+coordinates below the prime, standing for what `ops` computes from what the
+slots stand for. -/
+theorem fnOps_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.k S.m) (hodd : S.m % 2 = 1)
+    {dbl : Bool} {ops : List FOp} (hO : OpsOk ops) {s : State} (hp : PrePt S.k S.m dbl s) :
+    WP isa (Impl.Weierstrass.Arm.Point.fnOps S dbl ops) s fun s' => abiPreserved s s' ∧
       Outs (State.addr (s.gpr .r0)) [(Spec.Weierstrass.Point.oAt S.k, 3 * Spec.Weierstrass.Point.elemBytes S.k),
         (Spec.Weierstrass.Point.ownAt S.k, 4096 - Spec.Weierstrass.Point.ownAt S.k)] s.mem s'.mem ∧
       s'.gpr .r12 = s.gpr .r0 ∧
@@ -114,13 +113,12 @@ theorem fn_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.k S
       (toM S.m (2 ^ (64 * S.k)) (wordsVal s'.mem (State.addr (s.gpr .r0)) (enc S.k dbl 0) S.k),
         toM S.m (2 ^ (64 * S.k)) (wordsVal s'.mem (State.addr (s.gpr .r0)) (enc S.k dbl 1) S.k),
         toM S.m (2 ^ (64 * S.k)) (wordsVal s'.mem (State.addr (s.gpr .r0)) (enc S.k dbl 2) S.k)) =
-        VG.Proof.Weierstrass.rcbAdd (E₀ S.k S.m dbl s 9) (E₀ S.k S.m dbl s 10) (E₀ S.k S.m dbl s 3)
-          (E₀ S.k S.m dbl s 4) (E₀ S.k S.m dbl s 5) (E₀ S.k S.m dbl s 6) (E₀ S.k S.m dbl s 7)
-          (E₀ S.k S.m dbl s 8) := by
+        (runOps ops (E₀ S.k S.m dbl s) 0, runOps ops (E₀ S.k S.m dbl s) 1,
+          runOps ops (E₀ S.k S.m dbl s) 2) := by
   have hl := lay_nums hp.k3 hp.k6
   have hR := enc_rIds hp.k3 hp.k6 dbl
   have hW := enc_wIds hp.k3 hp.k6 dbl
-  rw [Impl.Weierstrass.Arm.Point.fn]
+  rw [Impl.Weierstrass.Arm.Point.fnOps]
   refine WP.seq (WP.mono (entry_ok hp) fun s₁ E => ?_)
   have hI : InvR S.k 17 (enc S.k dbl) (State.addr (s.gpr .r0)) S.m rIds (E₀ S.k S.m dbl s) s₁ := by
     have heq : ∀ x ∈ rIds, wordsVal s₁.mem (State.addr (s.gpr .r0)) (enc S.k dbl x) S.k =
@@ -129,8 +127,8 @@ theorem fn_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.k S
         rw [List.mem_singleton] at hr; subst hr; exact .inl (hR x hx)) (by have := hR x hx; omega_arith)
     exact ⟨E.scr, E.far, rIds_lt, fun x hx => by rw [heq x hx]; exact hp.lt x hx,
       fun x hx => by rw [heq x hx]; rfl⟩
-  refine WP.seq (WP.mono (rcbR_ok hM rfl (enc_lay hp.k3 hp.k6 dbl) (unitMod_pow_two hodd _) hI)
-    fun s₂ ⟨K, I₂, hEq⟩ => ?_)
+  refine WP.seq (WP.mono (opsR_ok hM rfl (enc_lay hp.k3 hp.k6 dbl) (unitMod_pow_two hodd _) hO hI)
+    fun s₂ ⟨K, I₂⟩ => ?_)
   refine WP.mono (ldrs_ok I₂.scr [(.lr, Spec.Weierstrass.Point.ownAt S.k)] (by simp; omega_arith) (by simp) (by simp))
     fun s₃ ⟨M₃, K₃, V₃⟩ => ⟨⟨fun r hr => ?_, ?_⟩, ?_, ?_, fun j hj => ?_, ?_⟩
   · -- The callee-saved registers.
@@ -160,9 +158,26 @@ theorem fn_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.k S
         · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.1, by dsimp only; omega_arith⟩
       · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by dsimp only; omega_arith, by dsimp only; omega_arith⟩
   · rw [K₃.gpr _ (by simp), K.r12, E.r12]
-  · rw [M₃]; exact I₂.lt j (out_valid j hj)
-  · rw [M₃, I₂.val 0 (out_valid 0 (by decide)), I₂.val 1 (out_valid 1 (by decide)),
-      I₂.val 2 (out_valid 2 (by decide))]
-    exact hEq
+  · rw [M₃]; exact I₂.lt j (hO.outs j hj)
+  · rw [M₃, I₂.val 0 (hO.outs 0 (by decide)), I₂.val 1 (hO.outs 1 (by decide)),
+      I₂.val 2 (hO.outs 2 (by decide))]
+
+/-- `fnOps_ok` for the complete addition: `O`'s coordinates stand for
+`rcbAdd` of what the constants and the operands stand for. -/
+theorem fn_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.k S.m) (hodd : S.m % 2 = 1)
+    {dbl : Bool} {s : State} (hp : PrePt S.k S.m dbl s) :
+    WP isa (Impl.Weierstrass.Arm.Point.fn S dbl) s fun s' => abiPreserved s s' ∧
+      Outs (State.addr (s.gpr .r0)) [(Spec.Weierstrass.Point.oAt S.k, 3 * Spec.Weierstrass.Point.elemBytes S.k),
+        (Spec.Weierstrass.Point.ownAt S.k, 4096 - Spec.Weierstrass.Point.ownAt S.k)] s.mem s'.mem ∧
+      s'.gpr .r12 = s.gpr .r0 ∧
+      (∀ j < 3, wordsVal s'.mem (State.addr (s.gpr .r0)) (enc S.k dbl j) S.k < S.m) ∧
+      (toM S.m (2 ^ (64 * S.k)) (wordsVal s'.mem (State.addr (s.gpr .r0)) (enc S.k dbl 0) S.k),
+        toM S.m (2 ^ (64 * S.k)) (wordsVal s'.mem (State.addr (s.gpr .r0)) (enc S.k dbl 1) S.k),
+        toM S.m (2 ^ (64 * S.k)) (wordsVal s'.mem (State.addr (s.gpr .r0)) (enc S.k dbl 2) S.k)) =
+        VG.Proof.Weierstrass.rcbAdd (E₀ S.k S.m dbl s 9) (E₀ S.k S.m dbl s 10) (E₀ S.k S.m dbl s 3)
+          (E₀ S.k S.m dbl s 4) (E₀ S.k S.m dbl s 5) (E₀ S.k S.m dbl s 6) (E₀ S.k S.m dbl s 7)
+          (E₀ S.k S.m dbl s 8) :=
+  WP.mono (fnOps_ok hM hodd rcbIds_opsOk hp) fun _ ⟨A, O, R, L, V⟩ =>
+    ⟨A, O, R, L, V.trans (rcb_run rcbIds_apart _)⟩
 
 end VG.Proof.Weierstrass.Arm.Point
