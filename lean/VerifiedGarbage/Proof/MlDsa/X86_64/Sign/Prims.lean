@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Glue
+public import VerifiedGarbage.Spec.MlDsa.FusedInverse
+import VerifiedGarbage.Proof.MlDsa.Arith.DotSum
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ML-DSA signing on x86-64: the primitives it calls
@@ -36,7 +39,6 @@ structure PrimsOk (P : Prims) (D : Nat) where
   ntt : Callee (fun S => nttContract X86_64.abi S) D P.ntt
   invNtt : Callee (fun S => inverseContract P.montgomery X86_64.abi S) D P.invNtt
   mul : Callee (fun S => productContract P.montgomery X86_64.abi S) D P.mul
-  mulAdd : Callee (fun S => accumulateContract P.montgomery X86_64.abi S) D P.mulAdd
   add : Callee (fun S => addContract X86_64.abi S) D P.add
   sub : Callee (fun S => subContract X86_64.abi S) D P.sub
   rejNTT : Callee (fun S => rejNTTContract X86_64.abi S) D P.rejNTT
@@ -52,6 +54,7 @@ structure PrimsOk (P : Prims) (D : Nat) where
   hintBitPack : Callee (fun S => hintBitPackContract X86_64.abi S) D P.hintBitPack
   rej4 : Callee (fun S => rejNTT4Contract X86_64.abi S) D P.rej4
   expandMask4 : Callee (fun S => expandMask4Contract X86_64.abi S) D P.expandMask4
+  dotInv : ∀ c, c = 4 ∨ c = 5 ∨ c = 7 → Callee (fun S => dotInverseContract c X86_64.abi S) D (P.dotInv c)
   /-- `vg_mldsa_rej_ntt_poly`'s result depends only on its public data (its seed). -/
   rejRet : RetPub (rejNTTContract X86_64.abi rejNTT.S) P.rejNTT
   /-- `vg_mldsa_rej_ntt_poly` succeeds only if `RejNTTPoly` finishes within `maxBounds`. -/
@@ -271,22 +274,6 @@ theorem mulPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s
   simp only [List.mem_cons, List.mem_nil_iff, or_false, forall_eq_or_imp, forall_eq]
   exact ⟨A.stk hS i1, A.stk hS i2, A.stk hS i3⟩
 
-theorem mulAddPre {S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {h f g : Ptr}
-    (hc : mulChk (rbs ++ wbs) wbs h f g = true) (hA : ArgsIn [.ptr h, .ptr f, .ptr g] s s1)
-    (rh : Reduced s.mem (pa s h)) (rf : Reduced s.mem (pa s f)) (rg : Reduced s.mem (pa s g)) :
-    (accumulateContract P.montgomery X86_64.abi S).pre (s1.callEntry.withRegions [pR (pa s f), pR (pa s g)] [pR (pa s h)]) := by
-  obtain ⟨_, i1, i2, i3, d12, d13, _⟩ := mulChk_spec hc
-  obtain ⟨e1, e2, e3⟩ := argsIn3 hA
-  have hD : 8 ≤ D := by omega
-  have hwf := ce_wfS (ws := [64, 64, 64]) (by decide) hS (A.rsp ▸ A.L.sp) [pR (pa s f), pR (pa s g)] [pR (pa s h)]
-  sig_pre [accumulateContract, mulSig, X86_64.abi, VG.X86_64.argRegs]
-  simp only [e1, e2, e3, Arg.val]
-  refine ⟨hwf, trivial, trivial, A.L.disj d12, A.L.disj d13, A.ret i1 hD, A.ret i2 hD, ?_, A.L.nwp i1, A.L.nwp i2,
-    A.L.nwp i3, A.red' i1 hD rh, A.red' i2 hD rf, A.red' i3 hD rg⟩
-  refine Sig.conj_cons.mpr ⟨A.ret i3 hD, conj_stk [pR (pa s h), pR (pa s f), pR (pa s g)] ?_⟩
-  simp only [List.mem_cons, List.mem_nil_iff, or_false, forall_eq_or_imp, forall_eq]
-  exact ⟨A.stk hS i1, A.stk hS i2, A.stk hS i3⟩
-
 theorem mulAt_ok {P : Prims} (C : Callee (fun S => productContract P.montgomery X86_64.abi S) D P.mul)
     {s : State} (L : Lay D rbs wbs s) {h f g : Ptr} (hc : mulChk (rbs ++ wbs) wbs h f g = true)
     (rf : Reduced s.mem (pa s f)) (rg : Reduced s.mem (pa s g)) :
@@ -303,25 +290,6 @@ theorem mulAt_ok {P : Prims} (C : Callee (fun S => productContract P.montgomery 
   obtain ⟨e1, e2, e3⟩ := argsIn3 hA
   sig_post [productContract, mulSig, X86_64.abi, VG.X86_64.argRegs] at hq
   simp only [e1, e2, e3, Arg.val, hm₂, A.poly' i2 hD, A.poly' i3 hD] at hq
-  exact hq
-
-theorem mulAddAt_ok {P : Prims} (C : Callee (fun S => accumulateContract P.montgomery X86_64.abi S) D P.mulAdd)
-    {s : State} (L : Lay D rbs wbs s) {h f g : Ptr} (hc : mulChk (rbs ++ wbs) wbs h f g = true)
-    (rh : Reduced s.mem (pa s h)) (rf : Reduced s.mem (pa s f)) (rg : Reduced s.mem (pa s g)) :
-    WP isa (mulAddAt P h f g) s fun s' => PPostB D s s' [(h, 1024)] ∧
-      (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
-      PolyIs s'.mem (pa s h)
-        (add (polyAt s.mem (pa s h)) (product P.montgomery (polyAt s.mem (pa s f)) (polyAt s.mem (pa s g)))) := by
-  obtain ⟨w1, i1, i2, i3, _, _, ok⟩ := mulChk_spec hc
-  have hD : 8 ≤ D := by have := C.hS; omega
-  refine WP.mono (callP_ok C.ver.1 C.nosp C.depth L.dsm ok
-    (fun s1 hA hm k => mulAddPre C.hS (At.of L hm k) hc hA rh rf rg)
-    (Covers.append_left (Covers.cons (L.cR i2) (L.cR i3)) (Covers.right (L.cW w1))) (L.cW w1))
-    fun s' ⟨hpost, hcs, s1, hA, hm, k, s₂, hm₂, _, hq⟩ => ⟨hpost, hcs, ?_⟩
-  have A := At.of L hm k
-  obtain ⟨e1, e2, e3⟩ := argsIn3 hA
-  sig_post [accumulateContract, accumulate, mulSig, X86_64.abi, VG.X86_64.argRegs] at hq
-  simp only [e1, e2, e3, Arg.val, hm₂, A.poly' i1 hD, A.poly' i2 hD, A.poly' i3 hD] at hq
   exact hq
 
 /-- Two runs in the same layout, with the arguments of a call in their registers. -/
@@ -355,26 +323,106 @@ theorem mulAt_tr {P : Prims} (C : Callee (fun S => productContract P.montgomery 
   simp only [hx1, hx2, hx3, hy1, hy2, hy3, Arg.val, R.pa i1, R.pa i2, R.pa i3,
     (At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp, and_self]
 
-theorem mulAddAt_tr {P : Prims} (C : Callee (fun S => accumulateContract P.montgomery X86_64.abi S) D P.mulAdd)
-    {h f g : Ptr} (hc : mulChk (rbs ++ wbs) wbs h f g = true) :
+/-! ## A row's sum of products and its inverse transform -/
+
+/-- Polynomial `j` of the family at `p`. -/
+abbrev famP (p : Ptr) (j : Nat) : Ptr := (p.1, p.2 + 1024 * j)
+
+theorem pa_famP (s : State) (p : Ptr) (j : Nat) : pa s (famP p j) = pa s p + BitVec.ofNat 64 (1024 * j) := by
+  simp only [pa]; rw [VG.Offset.add_add]
+
+/-- What a call of `vg_mldsa_dot_inverse{c}` on `h`, the families `f` and `g`
+and `scratch` needs of the layout. -/
+def dotChk (bs wbs : List (Reg × Nat)) (h f g : Ptr) (c : Nat) : Bool :=
+  inB wbs h 1024 && inB wbs (sc oPS) 1024 && inB bs h 1024 && inB bs (sc oPS) 1024 &&
+    inB bs f (c * 256 * 4) && inB bs g (c * 256 * 4) && sepB bs h 1024 f (c * 256 * 4) &&
+    sepB bs h 1024 g (c * 256 * 4) && sepB bs h 1024 (sc oPS) 1024 && sepB bs (sc oPS) 1024 f (c * 256 * 4) &&
+    sepB bs (sc oPS) 1024 g (c * 256 * 4) &&
+    (List.range c).all (fun j => inB bs (famP f j) 1024 && inB bs (famP g j) 1024) &&
+    [Arg.ptr h, .ptr f, .ptr g, .ptr (sc oPS)].all Arg.ok
+
+theorem dotChk_spec {bs wbs : List (Reg × Nat)} {h f g : Ptr} {c : Nat} (hc : dotChk bs wbs h f g c = true) :
+    inB wbs h 1024 = true ∧ inB wbs (sc oPS) 1024 = true ∧ inB bs h 1024 = true ∧ inB bs (sc oPS) 1024 = true ∧
+      inB bs f (c * 256 * 4) = true ∧ inB bs g (c * 256 * 4) = true ∧ sepB bs h 1024 f (c * 256 * 4) = true ∧
+      sepB bs h 1024 g (c * 256 * 4) = true ∧ sepB bs h 1024 (sc oPS) 1024 = true ∧
+      sepB bs (sc oPS) 1024 f (c * 256 * 4) = true ∧ sepB bs (sc oPS) 1024 g (c * 256 * 4) = true ∧
+      (∀ j < c, inB bs (famP f j) 1024 = true ∧ inB bs (famP g j) 1024 = true) ∧
+      [Arg.ptr h, .ptr f, .ptr g, .ptr (sc oPS)].all Arg.ok = true := by
+  simp only [dotChk, Bool.and_eq_true] at hc
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩, h9⟩, h10⟩, h11⟩, h12⟩, h13⟩ := hc
+  refine ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, fun j hj => ?_, h13⟩
+  have := List.all_eq_true.mp h12 j (List.mem_range.mpr hj)
+  simpa only [Bool.and_eq_true] using this
+
+theorem dotPre {c S : Nat} (hS : S + 8 ≤ D) {s s1 : State} (A : At D rbs wbs s s1) {h f g : Ptr}
+    (hc : dotChk (rbs ++ wbs) wbs h f g c = true) (hA : ArgsIn [.ptr h, .ptr f, .ptr g, .ptr (sc oPS)] s s1)
+    (rf : ∀ j < c, Reduced s.mem (pa s (famP f j))) (rg : ∀ j < c, Reduced s.mem (pa s (famP g j))) :
+    (dotInverseContract c X86_64.abi S).pre (s1.callEntry.withRegions [⟨pa s f, c * 256 * 4⟩, ⟨pa s g, c * 256 * 4⟩]
+      [pR (pa s h), pR (pa s (sc oPS))]) := by
+  obtain ⟨w1, w2, i1, i2, i3, i4, d1, d2, d3, d4, d5, hfam, _⟩ := dotChk_spec hc
+  obtain ⟨e1, e2, e3, e4⟩ := argsIn4 hA
+  have hD : 8 ≤ D := by omega
+  have hwf := ce_wfS (ws := [64, 64, 64, 64]) (by decide) hS (A.rsp ▸ A.L.sp)
+    [⟨pa s f, c * 256 * 4⟩, ⟨pa s g, c * 256 * 4⟩] [pR (pa s h), pR (pa s (sc oPS))]
+  sig_pre [dotInverseContract, dotInverseSig, X86_64.abi, VG.X86_64.argRegs]
+  simp only [e1, e2, e3, e4, Arg.val]
+  have pos : ∀ {p : Ptr}, (∀ j < c, inB (rbs ++ wbs) (famP p j) 1024 = true) → (∀ j < c, Reduced s.mem (pa s (famP p j))) →
+      ∀ j < c, PositiveReduced (s1.mem.writeW (s1.gpr .rsp - 8) (s1.unknowns 0)) (pa s p + BitVec.ofNat 64 (1024 * j)) :=
+    fun hi hr j hj k hk => by
+      rw [← pa_famP, A.coeff' (hi j hj) hD (by exact hk)]
+      exact Nat.lt_trans (hr j hj k hk) (by decide)
+  refine ⟨hwf, trivial, trivial, A.L.disj d1, A.L.disj d2, A.L.disj d3, (A.L.disj d4).symm, (A.L.disj d5).symm,
+    A.ret i1 hD, A.ret i3 hD, A.ret i4 hD, ?_, A.L.nwp i1, A.L.nwp i3, A.L.nwp i4, A.L.nwp i2,
+    pos (fun j hj => (hfam j hj).1) rf, pos (fun j hj => (hfam j hj).2) rg⟩
+  refine Sig.conj_cons.mpr ⟨A.ret i2 hD, conj_stk [pR (pa s h), ⟨pa s f, c * 256 * 4⟩, ⟨pa s g, c * 256 * 4⟩,
+    pR (pa s (sc oPS))] ?_⟩
+  simp only [List.mem_cons, List.mem_nil_iff, or_false, forall_eq_or_imp, forall_eq]
+  exact ⟨A.stk hS i1, A.stk hS i3, A.stk hS i4, A.stk hS i2⟩
+
+
+theorem dotAt_ok {P : Prims} {c : Nat} (C : Callee (fun S => dotInverseContract c X86_64.abi S) D (P.dotInv c))
+    {s : State} (L : Lay D rbs wbs s) {h f g : Ptr} (hc : dotChk (rbs ++ wbs) wbs h f g c = true)
+    (rf : ∀ j < c, Reduced s.mem (pa s (famP f j))) (rg : ∀ j < c, Reduced s.mem (pa s (famP g j))) :
+    WP isa (dotInvAt P c h f g) s fun s' => PPostB D s s' [(h, 1024), (sc oPS, 1024)] ∧
+      (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
+      PolyIs s'.mem (pa s h) (nttInv (dotNTT (fun j => polyAt s.mem (pa s (famP f j)))
+        (fun j => polyAt s.mem (pa s (famP g j))) c)) := by
+  obtain ⟨w1, w2, i1, i2, i3, i4, _, _, _, _, _, hfam, ok⟩ := dotChk_spec hc
+  have hD : 8 ≤ D := by have := C.hS; omega
+  refine WP.mono (callP_ok C.ver.1 C.nosp C.depth L.dsm ok
+    (fun s1 hA hm k => dotPre C.hS (At.of L hm k) hc hA rf rg)
+    (Covers.append_left (Covers.cons (L.cR i3) (L.cR i4)) (Covers.right (Covers.cons (L.cW w1) (L.cW w2))))
+    (Covers.cons (L.cW w1) (L.cW w2)))
+    fun s' ⟨hpost, hcs, s1, hA, hm, k, s₂, hm₂, _, hq⟩ => ⟨hpost, hcs, ?_⟩
+  have A := At.of L hm k
+  obtain ⟨e1, e2, e3, _⟩ := argsIn4 hA
+  sig_post [dotInverseContract, dotInverseSig, X86_64.abi, VG.X86_64.argRegs] at hq
+  simp only [e1, e2, e3, Arg.val, hm₂] at hq
+  rw [VG.Proof.MlDsa.Arith.dotNTT_congr (fun j hj => by rw [← pa_famP, A.poly' (hfam j hj).1 hD])
+    (fun j hj => by rw [← pa_famP, A.poly' (hfam j hj).2 hD])] at hq
+  exact hq
+
+theorem dotAt_tr {P : Prims} {c : Nat} (C : Callee (fun S => dotInverseContract c X86_64.abi S) D (P.dotInv c))
+    {h f g : Ptr} (hc : dotChk (rbs ++ wbs) wbs h f g c = true) :
     RelCT isa (fun x y => LRel D rbs wbs x y ∧
-      (Reduced x.mem (pa x h) ∧ Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
-      (Reduced y.mem (pa y h) ∧ Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) (mulAddAt P h f g)
-      fun _ _ => True := by
-  obtain ⟨w1, i1, i2, i3, _, _, ok⟩ := mulChk_spec hc
+      ((∀ j < c, Reduced x.mem (pa x (famP f j))) ∧ ∀ j < c, Reduced x.mem (pa x (famP g j))) ∧
+      ((∀ j < c, Reduced y.mem (pa y (famP f j))) ∧ ∀ j < c, Reduced y.mem (pa y (famP g j))))
+      (dotInvAt P c h f g) fun _ _ => True := by
+  obtain ⟨w1, w2, i1, i2, i3, i4, _, _, _, _, _, _, ok⟩ := dotChk_spec hc
   refine callP_tr C.ver.1 C.ver.2.1 ok
-    fun x y x1 y1 ⟨R, ⟨rhx, rfx, rgx⟩, ⟨rhy, rfy, rgy⟩⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
-      ⟨_, _, _, _, mulAddPre C.hS (At.of R.lx hmx kx) hc hAx rhx rfx rgx,
-        mulAddPre C.hS (At.of R.ly hmy ky) hc hAy rhy rfy rgy, ?_,
-        by rw [kx.2.1, kx.2.2]; exact Covers.append_left (Covers.cons (R.lx.cR i2) (R.lx.cR i3)) (Covers.right (R.lx.cW w1)),
-        by rw [kx.2.2]; exact R.lx.cW w1,
-        by rw [ky.2.1, ky.2.2]; exact Covers.append_left (Covers.cons (R.ly.cR i2) (R.ly.cR i3)) (Covers.right (R.ly.cW w1)),
-        by rw [ky.2.2]; exact R.ly.cW w1,
+    fun x y x1 y1 ⟨R, ⟨rfx, rgx⟩, ⟨rfy, rgy⟩⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
+      ⟨_, _, _, _, dotPre C.hS (At.of R.lx hmx kx) hc hAx rfx rgx, dotPre C.hS (At.of R.ly hmy ky) hc hAy rfy rgy, ?_,
+        by rw [kx.2.1, kx.2.2]; exact (Covers.append_left (Covers.cons (R.lx.cR i3) (R.lx.cR i4))
+          (Covers.right (Covers.cons (R.lx.cW w1) (R.lx.cW w2)))),
+        by rw [kx.2.2]; exact Covers.cons (R.lx.cW w1) (R.lx.cW w2),
+        by rw [ky.2.1, ky.2.2]; exact (Covers.append_left (Covers.cons (R.ly.cR i3) (R.ly.cR i4))
+          (Covers.right (Covers.cons (R.ly.cW w1) (R.ly.cW w2)))),
+        by rw [ky.2.2]; exact Covers.cons (R.ly.cW w1) (R.ly.cW w2),
         by rw [(At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp]⟩
-  obtain ⟨hx1, hx2, hx3⟩ := argsIn3 hAx
-  obtain ⟨hy1, hy2, hy3⟩ := argsIn3 hAy
-  sig_pub [accumulateContract, mulSig, X86_64.abi, VG.X86_64.argRegs]
-  simp only [hx1, hx2, hx3, hy1, hy2, hy3, Arg.val, R.pa i1, R.pa i2, R.pa i3,
+  obtain ⟨hx1, hx2, hx3, hx4⟩ := argsIn4 hAx
+  obtain ⟨hy1, hy2, hy3, hy4⟩ := argsIn4 hAy
+  sig_pub [dotInverseContract, dotInverseSig, X86_64.abi, VG.X86_64.argRegs]
+  simp only [hx1, hx2, hx3, hx4, hy1, hy2, hy3, hy4, Arg.val, R.pa i1, R.pa i2, R.pa i3, R.pa i4,
     (At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp, and_self]
 
 end

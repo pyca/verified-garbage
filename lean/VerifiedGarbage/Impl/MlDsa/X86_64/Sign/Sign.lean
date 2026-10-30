@@ -177,9 +177,7 @@ def mask4 (g : Nat) : Prog isa :=
   .seq (seqR (cpM4 g) 0 4) (.seq (mask4At P p.γ₁ (yP p (4 * g)) (r4P p)) (seqR (yhR P p) (4 * g) 4))
 
 /-- `w[i] = NTT⁻¹(∑_j Â[i, j] ŷ[j])`. -/
-def rowW (i : Nat) : Prog isa :=
-  .seq (mulAt P (wP p i) (aP p i 0) (yhP p 0))
-    (.seq (seqR (fun j => mulAddAt P (wP p i) (aP p i j) (yhP p j)) 1 (p.ℓ - 1)) (invNttAt P (wP p i)))
+def rowW (i : Nat) : Prog isa := dotInvAt P p.ℓ (wP p i) (aP p i 0) (yhP p 0)
 
 /-- `w1Encode(HighBits(w[i]))` to `W1 + i · w1Len`. -/
 def w1R (i : Nat) : Prog isa :=

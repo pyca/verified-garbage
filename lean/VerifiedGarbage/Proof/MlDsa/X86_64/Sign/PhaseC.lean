@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseD
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Blocks
+import VerifiedGarbage.Proof.MlDsa.Arith.DotSum
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PrimsD
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseA4
@@ -501,68 +502,46 @@ theorem ICw.step {p : Params} {D : Nat} {σ s s' : State} {t i : Nat} (h : ICw p
   have I : ICm p D σ t p.ℓ s' := (ICm.mk h.l h.y h.yh).step hP hc.1
   exact ⟨I.l, I.y, I.yh, Fam.keep h.l.st.lay hP hc.2 h.w⟩
 
-/-- `∑_{j < m} Â[i, j] ŷ[j]`, summed from `j = 0` with `AddNTT`. -/
-abbrev wAcc (p : Params) (σ : State) (κ i m : Nat) : Poly :=
-  ((List.range m).map fun j => multiplyNTT (Am p σ i j) (YHv p σ κ j)).foldl add zero
-
-theorem add_zero_left (x : Poly) : add zero x = x := by
-  apply Vector.ext
-  intro j hj
-  simp [add, zero]
-
-theorem wAcc_one (p : Params) (σ : State) (κ i : Nat) :
-    wAcc p σ κ i 1 = multiplyNTT (Am p σ i 0) (YHv p σ κ 0) := by
-  simp only [wAcc, List.range_one, List.map_cons, List.map_nil, List.foldl_cons, List.foldl_nil, add_zero_left]
-
-theorem wAcc_succ (p : Params) (σ : State) (κ i m : Nat) :
-    wAcc p σ κ i (m + 1) = add (wAcc p σ κ i m) (multiplyNTT (Am p σ i m) (YHv p σ κ m)) := by
-  simp only [wAcc, List.range_succ, List.map_append, List.map_cons, List.map_nil, List.foldl_append,
-    List.foldl_cons, List.foldl_nil]
-
 theorem aP_ij (p : Params) (i j : Nat) : aP p i j = pS (aBase p + (p.ℓ * i + j)) := by
   show pS (5 + 4 * p.k + 3 * p.ℓ + p.ℓ * i + j) = _
   rw [Nat.add_assoc (5 + 4 * p.k + 3 * p.ℓ)]
 
+theorem famP_aP (p : Params) (i j : Nat) : famP (aP p i 0) j = aP p i j := by
+  simp only [famP, aP, pS, sc, oP, Prod.mk.injEq, true_and]; omega
+
+theorem famP_yhP (p : Params) (j : Nat) : famP (yhP p 0) j = yhP p j := by
+  simp only [famP, yhP, pS, sc, oP, Prod.mk.injEq, true_and]; omega
+
 /-- What `w[i]` needs of the layout. -/
 def wChk (p : Params) (i : Nat) : Bool :=
   let w := pS (wBase p + i)
-  (List.range p.ℓ).all (fun j => mulChk (sgB p) (sgW p) w (aP p i j) (yhP p j)) && ipChk (sgB p) (sgW p) w &&
-    icwChk p [(w, 1024)] i && icwChk p [(w, 1024), (sc oPS, 1024)] i && decide (0 < p.ℓ)
+  dotChk (sgB p) (sgW p) w (aP p i 0) (yhP p 0) p.ℓ && icwChk p [(w, 1024), (sc oPS, 1024)] i &&
+    decide (p.ℓ = 4 ∨ p.ℓ = 5 ∨ p.ℓ = 7)
+
+/-- `Â[i, j]`, reduced, for `j < ℓ`. -/
+theorem rowA {p : Params} {D : Nat} {σ : State} {t i : Nat} (hi : i < p.k) {s : State} (I : ICw p D σ t i s)
+    {j : Nat} (hj : j < p.ℓ) : PolyIs s.mem (pa s (aP p i j)) (Am p σ i j) := by
+  have := I.l.k.d.im.A (p.ℓ * i + j) (by
+    have := Nat.mul_le_mul_left p.ℓ (show i + 1 ≤ p.k from hi)
+    rw [Nat.mul_add, Nat.mul_one, Nat.mul_comm p.ℓ p.k] at this; omega)
+  rw [aVal_ij hj] at this
+  rw [aP_ij]; exact this
 
 theorem rowW_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : State} {t i : Nat}
     (hc : wChk p i = true) (hi : i < p.k) {s : State} (h : ICw p D σ t i s) :
     WP isa (rowW P p i) s (ICw p D σ t (i + 1)) := by
-  simp only [wChk, Bool.and_eq_true, List.all_eq_true, List.mem_range, decide_eq_true_eq] at hc
-  obtain ⟨⟨⟨⟨cm, ci⟩, c1⟩, c2⟩, hl⟩ := hc
-  have hA : ∀ {s : State} (I : ICw p D σ t i s) j, j < p.ℓ → PolyIs s.mem (pa s (aP p i j)) (Am p σ i j) :=
-    fun I j hj => by
-      have := I.l.k.d.im.A (p.ℓ * i + j) (by
-        have := Nat.mul_le_mul_left p.ℓ (show i + 1 ≤ p.k from hi)
-        rw [Nat.mul_add, Nat.mul_one, Nat.mul_comm p.ℓ p.k] at this; omega)
-      rw [aVal_ij hj] at this
-      rw [aP_ij]; exact this
-  have hY : ∀ {s : State} (I : ICw p D σ t i s) j, j < p.ℓ → PolyIs s.mem (pa s (yhP p j)) (YHv p σ (p.ℓ * t) j) :=
-    fun I j hj => I.yh j hj
+  simp only [wChk, Bool.and_eq_true, decide_eq_true_eq] at hc
+  obtain ⟨⟨cd, c2⟩, hl⟩ := hc
   unfold rowW
-  refine WP.seq (WP.mono (mulAt_ok hP.mul h.l.st.lay (cm 0 hl) (hA h 0 hl).1 (hY h 0 hl).1)
-    fun s1 ⟨hP1, _, hq1⟩ => ?_)
-  have I1 := h.step hP1 c1
-  rw [product, (hA h 0 hl).2, (hY h 0 hl).2, ← wAcc_one] at hq1
-  refine WP.seq (WP.mono (seqR_ok (I := fun j s => ICw p D σ t i s ∧ Pl s (wBase p + i) (encode P.montgomery (wAcc p σ (p.ℓ * t) i j)))
-    (p.ℓ - 1) 1 (fun j hj1 hj s ⟨I, hw⟩ => ?_) s1 ⟨I1, by show PolyIs _ _ _; rw [hP1.pa (pS_bases _)]; exact hq1⟩)
-    fun s2 ⟨I2, hw2⟩ => ?_)
-  · refine WP.mono (mulAddAt_ok hP.mulAdd I.l.st.lay (cm j (by omega)) hw.1 (hA I j (by omega)).1
-      (hY I j (by omega)).1) fun s' ⟨hP', _, hq'⟩ => ⟨I.step hP' c1, ?_⟩
-    rw [product, hw.2, (hA I j (by omega)).2, (hY I j (by omega)).2, ← encode_add, ← wAcc_succ] at hq'
-    show PolyIs _ _ _
-    rw [hP'.pa (pS_bases _)]; exact hq'
-  rw [show 1 + (p.ℓ - 1) = p.ℓ by omega] at hw2
-  refine WP.mono (ipAt_ok (t := inverse P.montgomery) hP.invNtt I2.l.st.lay ci hw2.1) fun s3 ⟨hP3, _, hq3⟩ => ?_
-  have I3 := I2.step hP3 c2
+  refine WP.mono (dotAt_ok (hP.dotInv p.ℓ hl) h.l.st.lay cd
+    (fun j hj => by rw [famP_aP]; exact (rowA hi h hj).1) (fun j hj => by rw [famP_yhP]; exact (h.yh j hj).1))
+    fun s3 ⟨hP3, _, hq3⟩ => ?_
+  have I3 := h.step hP3 c2
   refine ⟨I3.l, I3.y, I3.yh, Fam.snoc I3.w ?_⟩
   show PolyIs _ _ _
   rw [hP3.pa (pS_bases _)]
-  rw [hw2.2, inverse_encode] at hq3
+  rw [VG.Proof.MlDsa.Arith.dotNTT_congr (fun j hj => by rw [famP_aP, (rowA hi h hj).2])
+    (fun j hj => by rw [famP_yhP, (h.yh j hj).2])] at hq3
   exact hq3
 
 /-! ## `w₁` and `c̃` -/

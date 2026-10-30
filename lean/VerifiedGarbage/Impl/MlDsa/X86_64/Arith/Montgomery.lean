@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Lazy
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Dot
 
 /-! # Montgomery-scaled AVX2 products for ML-DSA -/
 
@@ -65,11 +66,31 @@ def ylast : Prog isa :=
 /-- `NTT⁻¹` with Montgomery scaling: the eight layers with `vibflyLazy`, whose
 coefficients stay below `256 q < 2^32`, the last two of them with the
 reducing multiplication by `R/256`, which accepts any doubleword (`ylast`). -/
-def montNttInvAvx2 : Prog isa := VG.Impl.MlKem.X86_64.withMxcsr .rsi 768 <|
+def montInvBody : Prog isa :=
   .seq (.block ypro) (.seq (.block (yconst .xmm11 1072693376)) (.seq (ylay1 vibflyLazy 248 yzeta8R (-32))
     (.seq (ylay2 vibflyLazy 124 0x5F 0x0A (-16)) (.seq (ylay4 vibflyLazy 62 0x55 0x00 (-8))
       (.seq (ylay vibflyLazy 8 31 (-4)) (.seq (ylay vibflyLazy 16 15 (-4)) (.seq (ylay vibflyLazy 32 7 (-4))
         (.seq ylast (.block yepi)))))))))
+
+def montNttInvAvx2 : Prog isa := VG.Impl.MlKem.X86_64.withMxcsr .rsi 768 montInvBody
+
+/-! ## A row's sum of products, then `NTT⁻¹` -/
+
+/-- The coefficients of `a[j]` and `b[j]`. -/
+def dotLoads (j : Nat) : List Instr :=
+  [.vmovdquLoad .l256 .xmm0 (at_ .r10 (1024 * j)), .vmovdquLoad .l256 .xmm1 (at_ .rdx (1024 * j))]
+
+/-- Eight coefficients of the sum of the `c` products, scaled by `2⁻³²`. -/
+def dotBody (c : Nat) : List Instr :=
+  toY dotZero ++ (List.range c).flatMap (fun j => dotLoads j ++ toY dotMac) ++
+    toY dotRed ++ [.vmovdquStore .l256 (at_ .r8 0) .xmm5, .alu .add .r8 (.imm 32), .alu .add .r10 (.imm 32),
+      .alu .add .rdx (.imm 32)]
+
+/-- `vg_mldsa_dot_inverse{c}_avx2`: the sum of the `c` products scaled by
+`2⁻³²`, then `NTT⁻¹` with Montgomery scaling, in one MXCSR region. -/
+def dotInvAvx2 (c : Nat) : Prog isa :=
+  .seq (.block [.mov .r10 (.reg .rsi), .mov .rsi (.reg .rcx)]) <| VG.Impl.MlKem.X86_64.withMxcsr .rsi 768 <|
+    .seq (.block (yconsts ++ [.mov .r8 (.reg .rdi)])) (.seq (rcxLoop 32 (dotBody c)) montInvBody)
 
 /-- AVX2 arithmetic with lazy forward NTT, scaled products and a compensating inverse NTT. -/
 def Backend.avx2Combined : Backend :=
@@ -78,6 +99,9 @@ def Backend.avx2Combined : Backend :=
     invNtt := montNttInvAvx2
     mul := montMulAvx2
     mulAdd := montMulAddAvx2
-    montgomery := true }
+    montgomery := true
+    dotInv4 := dotInvAvx2 4
+    dotInv5 := dotInvAvx2 5
+    dotInv7 := dotInvAvx2 7 }
 
 end VG.Impl.MlDsa.X86_64.Arith

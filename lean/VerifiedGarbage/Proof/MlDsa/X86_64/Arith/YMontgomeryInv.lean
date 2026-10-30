@@ -653,33 +653,54 @@ theorem map_residue {b : Nat} {F : VG.Proof.MlDsa.Arith.Lazy.Poly} {g : Poly} (h
   apply Vector.ext; intro i hi
   rw [Vector.getElem_map, Vector.getElem_map, ← getElem!_pos F i hi, ← getElem!_pos g i hi, (h i hi).2]
 
-theorem correct (s : State) (hs : (inPlaceK Spec.MlDsa.montgomeryNttInv).pre s) :
-    ∃ t s', Exec isa montNttInvAvx2 s t s' ∧ abiPreserved s s' ∧ (inPlaceK Spec.MlDsa.montgomeryNttInv).post s s' := by
-  have hd : (pR (s.gpr .rsi)).Disjoint (pR (s.gpr .rdi)) := hs.2.2.1.symm
-  refine ymx_correct s hs (by decide +kernel) (by decide +kernel) (by decide +kernel) fun s1 k1 f1 =>
-    WP.mono (ynttBody_ok hs k1 f1
-      (G := (nttInvLens.foldl nttInvLayer (polyAt s.mem (s.gpr .rdi))).map (· * 16382))
-      fun s2 hI hdi hsi hwf hw => ?_) fun s' ⟨hP, hf⟩ => ⟨by rw [inv_eq]; exact hP, hf⟩
+/-- Everything but `withMxcsr`, on any reduced `F` at `fP`, with the scratch at `sP`. -/
+theorem body_ok {fP sP : Addr} {F : Poly} {s : State} (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP)
+    (hF : PolyIs s.mem fP F) (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr) (hd : (pR fP).Disjoint (pR sP)) :
+    WP isa montInvBody s fun s' => PolyIs s'.mem fP (Spec.MlDsa.montgomeryNttInv F) ∧
+      Frame [pR fP, pR sP] s.mem s'.mem := by
+  have hd' : (pR sP).Disjoint (pR fP) := hd.symm
+  refine WP.seq (WP.mono (ypro_ok hsi hw) fun s2 ⟨hT, hc0, hf2, k2, _⟩ => ?_)
+  have hF2 : PolyIs s2.mem fP F :=
+    polyIs_frame hf2 (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) hF
+  have hdi : s2.gpr .rdi = fP := by rw [k2.gpr (by decide), hdi]
+  have hsi : s2.gpr .rsi = sP := by rw [k2.gpr (by decide), hsi]
+  have hwf : pR fP ∈ s2.wr := by rw [k2.2.2]; exact hwf
+  have hw : pR sP ∈ s2.wr := by rw [k2.2.2]; exact hw
   refine WP.seq (WP.mono (yconst_ok .xmm11 1072693376 s2) fun w ⟨lc, kc, mc, _, oc⟩ => ?_)
   have hc : Lazy.YConstsW Lazy.bInvC w := fun l hl => ⟨⟨by
-      rw [State.proj_xmm, oc _ (by decide) l hl]; exact (hI.c l hl).q,
-    by rw [State.proj_xmm, oc _ (by decide) l hl]; exact (hI.c l hl).qinv⟩,
+      rw [State.proj_xmm, oc _ (by decide) l hl]; exact (hc0 l hl).q,
+    by rw [State.proj_xmm, oc _ (by decide) l hl]; exact (hc0 l hl).qinv⟩,
     by rw [State.proj_xmm, lc l hl]; rfl⟩
-  have hi : Lazy.LII (s.gpr .rdi) (s.gpr .rsi) s2 (Lazy.lift (polyAt s.mem (s.gpr .rdi))) w :=
-    ⟨by rw [mc]; exact Lazy.lift_mem hI.P, by rw [mc]; exact hI.T, hc,
-      kc.mono (by simp), by rw [mc]; exact Frame.refl _ _⟩
-  refine Lazy.LII.seq hdi hsi hwf hw hd (Lazy.yinvLay1_ok hd) ?_ hi
-  refine fun _ hI => Lazy.LII.seq hdi hsi hwf hw hd (Lazy.yinvLay2_ok hd) ?_ hI
-  refine fun _ hI => Lazy.LII.seq hdi hsi hwf hw hd (Lazy.yinvLay4_ok hd) ?_ hI
-  refine fun _ hI => Lazy.LII.seq hdi hsi hwf hw hd (Lazy.yinvLay_ok hd 8 31 (by decide) (by decide)) ?_ hI
-  refine fun _ hI => Lazy.LII.seq hdi hsi hwf hw hd (Lazy.yinvLay_ok hd 16 15 (by decide) (by decide)) ?_ hI
-  refine fun _ hI => Lazy.LII.seq hdi hsi hwf hw hd (Lazy.yinvLay_ok hd 32 7 (by decide) (by decide)) ?_ hI
+  have hi : Lazy.LII fP sP s2 (Lazy.lift F) w :=
+    ⟨by rw [mc]; exact Lazy.lift_mem hF2, by rw [mc]; exact hT, hc, kc.mono (by simp), by rw [mc]; exact Frame.refl _ _⟩
+  refine Lazy.LII.seq hdi hsi hwf hw hd' (Lazy.yinvLay1_ok hd') ?_ hi
+  refine fun _ hI => Lazy.LII.seq hdi hsi hwf hw hd' (Lazy.yinvLay2_ok hd') ?_ hI
+  refine fun _ hI => Lazy.LII.seq hdi hsi hwf hw hd' (Lazy.yinvLay4_ok hd') ?_ hI
+  refine fun _ hI => Lazy.LII.seq hdi hsi hwf hw hd' (Lazy.yinvLay_ok hd' 8 31 (by decide) (by decide)) ?_ hI
+  refine fun _ hI => Lazy.LII.seq hdi hsi hwf hw hd' (Lazy.yinvLay_ok hd' 16 15 (by decide) (by decide)) ?_ hI
+  refine fun _ hI => Lazy.LII.seq hdi hsi hwf hw hd' (Lazy.yinvLay_ok hd' 32 7 (by decide) (by decide)) ?_ hI
   intro u hu
-  refine WP.seq (WP.mono (ylast_ok (fun k hk => (Lazy.transformInv6_rel (polyAt s.mem (s.gpr .rdi)) k hk).1) u
+  refine WP.seq (WP.mono (ylast_ok (fun k hk => (Lazy.transformInv6_rel F k hk).1) u
     hu.c (by rw [hu.keep.gpr (by decide), hdi]) hu.P (by rw [hu.keep.2.2]; exact hwf)) fun v ⟨hv, _, hb⟩ => ?_)
   refine WP.mono (Q := fun (u' : State) => u'.mem = v.mem) (by simp only [yepi]; vrund; rfl) fun u' hm => ?_
-  rw [hm, ← map_residue (Lazy.transformInv_rel (polyAt s.mem (s.gpr .rdi)))]
-  exact ⟨hv, hu.frame.trans hb⟩
+  rw [hm, inv_eq, ← map_residue (Lazy.transformInv_rel F)]
+  refine ⟨hv, (frame_fs hf2 ?_).trans (frame_fs (hu.frame.trans hb) ?_)⟩ <;>
+    intro r hr <;> simp only [List.mem_singleton] at hr <;> subst hr
+  exacts [.inr fun _ h => h, .inl fun _ h => h]
+
+theorem correct (s : State) (hs : (inPlaceK Spec.MlDsa.montgomeryNttInv).pre s) :
+    ∃ t s', Exec isa montNttInvAvx2 s t s' ∧ abiPreserved s s' ∧ (inPlaceK Spec.MlDsa.montgomeryNttInv).post s s' := by
+  have hw : pR (s.gpr .rsi) ∈ s.wr := by rw [hs.2.1]; simp
+  have hwf : pR (s.gpr .rdi) ∈ s.wr := by rw [hs.2.1]; simp
+  have hd : (pR (s.gpr .rdi)).Disjoint (pR (s.gpr .rsi)) := hs.2.2.1
+  refine ymx_correct s hs (by decide +kernel) (by decide +kernel) (by decide +kernel) fun s1 k1 f1 => ?_
+  have hF1 : PolyIs s1.mem (s.gpr .rdi) (polyAt s.mem (s.gpr .rdi)) :=
+    polyIs_frame f1 (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd.sub_right (mx_sub' _))
+      ⟨hs.2.2.2.2.2, rfl⟩
+  refine WP.mono (body_ok (k1.gpr (by decide)) (k1.gpr (by decide)) hF1 (by rw [k1.2.2]; exact hwf)
+    (by rw [k1.2.2]; exact hw) hd) fun s' ⟨hP, hf⟩ => ⟨hP, ?_⟩
+  exact (frame_fs f1 fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact .inr (mx_sub' _)).trans hf
 
 theorem ct : ConstantTime isa (inPlaceK Spec.MlDsa.montgomeryNttInv).pre
     (inPlaceK Spec.MlDsa.montgomeryNttInv).pub montNttInvAvx2 :=

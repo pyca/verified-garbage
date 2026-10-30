@@ -31,6 +31,7 @@ namespace VG
 open Impl.MlDsa.X86_64
 
 materialize_code Arith.lazyNtt
+materialize_code Arith.montInvBody
 materialize_code Arith.montNttInvAvx2
 materialize_code Arith.montMulAvx2
 materialize_code Arith.montMulAddAvx2

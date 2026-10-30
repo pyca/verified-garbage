@@ -3307,6 +3307,4608 @@ ret
     )
 }
 
+/// Writes the canonical inverse NTT of the sum of coefficientwise products of 4 pairs of polynomials. Each input family is contiguous. Timing depends only on pointers, as specified by `dotInverseContract`.
+///
+/// The function computes on four coefficients at a time in SSE2 registers: it sums the products in 64-bit lanes, reduces each sum once, then runs `vg_mldsa_inv_ntt`'s code, with a table of the 256 zetas that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 1024 bytes.
+/// * `a` must be valid for reads of 4096 bytes.
+/// * `b` must be valid for reads of 4096 bytes.
+/// * `scratch` must be valid for reads and writes of 1024 bytes.
+/// * Every coefficient of both input families must be less than 25141251 (3q).
+/// * `out` and `scratch` must not overlap each other, `a` or `b` (distinct Rust objects never do).
+/// * None of `out`, `a`, `b` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mldsa_dot_inverse4(out: *mut [u32; 256], a: *const [u32; 1024], b: *const [u32; 1024], scratch: *mut [u64; 128]) {
+    core::arch::naked_asm!(
+        r"mov r10, rsi
+mov rsi, rcx
+stmxcsr DWORD PTR [rsi+768]
+mov r11d, DWORD PTR [rsi+768]
+and r11d, 65535
+mov eax, 8127
+mov DWORD PTR [rsi+772], eax
+ldmxcsr DWORD PTR [rsi+772]
+lfence
+mov eax, 8380417
+movq xmm15, rax
+pshufd xmm15, xmm15, 0
+mov eax, -58728449
+movq xmm14, rax
+pshufd xmm14, xmm14, 0
+mov eax, 2365951
+movq xmm11, rax
+pshufd xmm11, xmm11, 0
+mov r8, rdi
+mov ecx, 64
+20:
+pxor xmm5, xmm5
+pxor xmm6, xmm6
+movdqu xmm0, XMMWORD PTR [r10]
+movdqu xmm1, XMMWORD PTR [rdx]
+movdqa xmm2, xmm0
+psrlq xmm2, 32
+movdqa xmm3, xmm1
+psrlq xmm3, 32
+pmuludq xmm2, xmm3
+pmuludq xmm0, xmm1
+paddq xmm5, xmm0
+paddq xmm6, xmm2
+movdqu xmm0, XMMWORD PTR [r10+1024]
+movdqu xmm1, XMMWORD PTR [rdx+1024]
+movdqa xmm2, xmm0
+psrlq xmm2, 32
+movdqa xmm3, xmm1
+psrlq xmm3, 32
+pmuludq xmm2, xmm3
+pmuludq xmm0, xmm1
+paddq xmm5, xmm0
+paddq xmm6, xmm2
+movdqu xmm0, XMMWORD PTR [r10+2048]
+movdqu xmm1, XMMWORD PTR [rdx+2048]
+movdqa xmm2, xmm0
+psrlq xmm2, 32
+movdqa xmm3, xmm1
+psrlq xmm3, 32
+pmuludq xmm2, xmm3
+pmuludq xmm0, xmm1
+paddq xmm5, xmm0
+paddq xmm6, xmm2
+movdqu xmm0, XMMWORD PTR [r10+3072]
+movdqu xmm1, XMMWORD PTR [rdx+3072]
+movdqa xmm2, xmm0
+psrlq xmm2, 32
+movdqa xmm3, xmm1
+psrlq xmm3, 32
+pmuludq xmm2, xmm3
+pmuludq xmm0, xmm1
+paddq xmm5, xmm0
+paddq xmm6, xmm2
+movdqa xmm2, xmm5
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm5, xmm2
+psrlq xmm5, 32
+movdqa xmm2, xmm6
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm6, xmm2
+por xmm5, xmm6
+psubd xmm5, xmm15
+movdqa xmm2, xmm5
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm5, xmm2
+pshufd xmm4, xmm5, 245
+pmuludq xmm5, xmm11
+pmuludq xmm4, xmm11
+movdqa xmm2, xmm5
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm5, xmm2
+psrlq xmm5, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm5, xmm4
+psubd xmm5, xmm15
+movdqa xmm2, xmm5
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm5, xmm2
+movdqu XMMWORD PTR [r8], xmm5
+add r8, 16
+add r10, 16
+add rdx, 16
+sub rcx, 1
+jne 20b
+movabs r9, 111012023893504
+mov QWORD PTR [rsi], r9
+movabs r9, 33764919763013891
+mov QWORD PTR [rsi+8], r9
+movabs r9, 32652304184483396
+mov QWORD PTR [rsi+16], r9
+movabs r9, 2003464812134697
+mov QWORD PTR [rsi+24], r9
+movabs r9, 10107995079564843
+mov QWORD PTR [rsi+32], r9
+movabs r9, 27008953388524718
+mov QWORD PTR [rsi+40], r9
+movabs r9, 23603259066260085
+mov QWORD PTR [rsi+48], r9
+movabs r9, 11510954738022985
+mov QWORD PTR [rsi+56], r9
+movabs r9, 4398527550166616
+mov QWORD PTR [rsi+64], r9
+movabs r9, 15401443493111205
+mov QWORD PTR [rsi+72], r9
+movabs r9, 31185040284548497
+mov QWORD PTR [rsi+80], r9
+movabs r9, 26937467947448680
+mov QWORD PTR [rsi+88], r9
+movabs r9, 19416172761943511
+mov QWORD PTR [rsi+96], r9
+movabs r9, 21916122901808376
+mov QWORD PTR [rsi+104], r9
+movabs r9, 35910200088776757
+mov QWORD PTR [rsi+112], r9
+movabs r9, 1202612321726977
+mov QWORD PTR [rsi+120], r9
+movabs r9, 411354790447719
+mov QWORD PTR [rsi+128], r9
+movabs r9, 15163111458665677
+mov QWORD PTR [rsi+136], r9
+movabs r9, 20565458766169348
+mov QWORD PTR [rsi+144], r9
+movabs r9, 16816682460325845
+mov QWORD PTR [rsi+152], r9
+movabs r9, 22920956268049798
+mov QWORD PTR [rsi+160], r9
+movabs r9, 23677166863944342
+mov QWORD PTR [rsi+168], r9
+movabs r9, 34703121006855168
+mov QWORD PTR [rsi+176], r9
+movabs r9, 33677345376425628
+mov QWORD PTR [rsi+184], r9
+movabs r9, 28933472397947454
+mov QWORD PTR [rsi+192], r9
+movabs r9, 19579390106369566
+mov QWORD PTR [rsi+200], r9
+movabs r9, 26799599498134591
+mov QWORD PTR [rsi+208], r9
+movabs r9, 15889643835192413
+mov QWORD PTR [rsi+216], r9
+movabs r9, 2282148053410728
+mov QWORD PTR [rsi+224], r9
+movabs r9, 16668952760323958
+mov QWORD PTR [rsi+232], r9
+movabs r9, 25011900965946676
+mov QWORD PTR [rsi+240], r9
+movabs r9, 23977247637478740
+mov QWORD PTR [rsi+248], r9
+movabs r9, 29427887555995366
+mov QWORD PTR [rsi+256], r9
+movabs r9, 22931526182748624
+mov QWORD PTR [rsi+264], r9
+movabs r9, 14929091579459166
+mov QWORD PTR [rsi+272], r9
+movabs r9, 29185144592086471
+mov QWORD PTR [rsi+280], r9
+movabs r9, 8329290213797750
+mov QWORD PTR [rsi+288], r9
+movabs r9, 31697782066745459
+mov QWORD PTR [rsi+296], r9
+movabs r9, 22432987854353025
+mov QWORD PTR [rsi+304], r9
+movabs r9, 545125843890401
+mov QWORD PTR [rsi+312], r9
+movabs r9, 31769864501989618
+mov QWORD PTR [rsi+320], r9
+movabs r9, 11662103226140216
+mov QWORD PTR [rsi+328], r9
+movabs r9, 20130185304250276
+mov QWORD PTR [rsi+336], r9
+movabs r9, 25354781094156910
+mov QWORD PTR [rsi+344], r9
+movabs r9, 30717142252233347
+mov QWORD PTR [rsi+352], r9
+movabs r9, 30375073877558844
+mov QWORD PTR [rsi+360], r9
+movabs r9, 5794237307816926
+mov QWORD PTR [rsi+368], r9
+movabs r9, 29849966874477923
+mov QWORD PTR [rsi+376], r9
+movabs r9, 1137925820308458
+mov QWORD PTR [rsi+384], r9
+movabs r9, 13305774323778583
+mov QWORD PTR [rsi+392], r9
+movabs r9, 31268732009491712
+mov QWORD PTR [rsi+400], r9
+movabs r9, 17002134848261444
+mov QWORD PTR [rsi+408], r9
+movabs r9, 35956774717033419
+mov QWORD PTR [rsi+416], r9
+movabs r9, 22036141462600008
+mov QWORD PTR [rsi+424], r9
+movabs r9, 35087477629023596
+mov QWORD PTR [rsi+432], r9
+movabs r9, 30337763489061025
+mov QWORD PTR [rsi+440], r9
+movabs r9, 20732429908239468
+mov QWORD PTR [rsi+448], r9
+movabs r9, 28041905903253186
+mov QWORD PTR [rsi+456], r9
+movabs r9, 35231517950811284
+mov QWORD PTR [rsi+464], r9
+movabs r9, 5760968484459269
+mov QWORD PTR [rsi+472], r9
+movabs r9, 29186403016613413
+mov QWORD PTR [rsi+480], r9
+movabs r9, 29809972144732485
+mov QWORD PTR [rsi+488], r9
+movabs r9, 19324591173389987
+mov QWORD PTR [rsi+496], r9
+movabs r9, 16492506917666904
+mov QWORD PTR [rsi+504], r9
+movabs r9, 14635985826474643
+mov QWORD PTR [rsi+512], r9
+movabs r9, 16398082059229396
+mov QWORD PTR [rsi+520], r9
+movabs r9, 9638297459285875
+mov QWORD PTR [rsi+528], r9
+movabs r9, 20692959164533664
+mov QWORD PTR [rsi+536], r9
+movabs r9, 10455835889373941
+mov QWORD PTR [rsi+544], r9
+movabs r9, 15088997507073265
+mov QWORD PTR [rsi+552], r9
+movabs r9, 19847271512942753
+mov QWORD PTR [rsi+560], r9
+movabs r9, 22278162875259735
+mov QWORD PTR [rsi+568], r9
+movabs r9, 7984765110959710
+mov QWORD PTR [rsi+576], r9
+movabs r9, 3517724245221606
+mov QWORD PTR [rsi+584], r9
+movabs r9, 29065087369580419
+mov QWORD PTR [rsi+592], r9
+movabs r9, 33749496538019589
+mov QWORD PTR [rsi+600], r9
+movabs r9, 22582830675910690
+mov QWORD PTR [rsi+608], r9
+movabs r9, 13774157688799364
+mov QWORD PTR [rsi+616], r9
+movabs r9, 33738338209470846
+mov QWORD PTR [rsi+624], r9
+movabs r9, 20549610337740179
+mov QWORD PTR [rsi+632], r9
+movabs r9, 1232604074686745
+mov QWORD PTR [rsi+640], r9
+movabs r9, 17645078572608834
+mov QWORD PTR [rsi+648], r9
+movabs r9, 21638646536106727
+mov QWORD PTR [rsi+656], r9
+movabs r9, 872067341384903
+mov QWORD PTR [rsi+664], r9
+movabs r9, 11559822875647717
+mov QWORD PTR [rsi+672], r9
+movabs r9, 5433172289935931
+mov QWORD PTR [rsi+680], r9
+movabs r9, 5358487101890844
+mov QWORD PTR [rsi+688], r9
+movabs r9, 6854656137752657
+mov QWORD PTR [rsi+696], r9
+movabs r9, 5370830838457625
+mov QWORD PTR [rsi+704], r9
+movabs r9, 20753904747165841
+mov QWORD PTR [rsi+712], r9
+movabs r9, 8027804982718602
+mov QWORD PTR [rsi+720], r9
+movabs r9, 31479735164668747
+mov QWORD PTR [rsi+728], r9
+movabs r9, 5314055668205759
+mov QWORD PTR [rsi+736], r9
+movabs r9, 29850847345983039
+mov QWORD PTR [rsi+744], r9
+movabs r9, 5636951310400997
+mov QWORD PTR [rsi+752], r9
+movabs r9, 27564133741392515
+mov QWORD PTR [rsi+760], r9
+movabs r9, 8233800205883732
+mov QWORD PTR [rsi+768], r9
+movabs r9, 30088883024233849
+mov QWORD PTR [rsi+776], r9
+movabs r9, 3338009929245701
+mov QWORD PTR [rsi+784], r9
+movabs r9, 14628791756398056
+mov QWORD PTR [rsi+792], r9
+movabs r9, 23830870862829877
+mov QWORD PTR [rsi+800], r9
+movabs r9, 28061014216302585
+mov QWORD PTR [rsi+808], r9
+movabs r9, 19997999096164636
+mov QWORD PTR [rsi+816], r9
+movabs r9, 19771555530215640
+mov QWORD PTR [rsi+824], r9
+movabs r9, 10447056982320729
+mov QWORD PTR [rsi+832], r9
+movabs r9, 35286145636332471
+mov QWORD PTR [rsi+840], r9
+movabs r9, 14470225858518424
+mov QWORD PTR [rsi+848], r9
+movabs r9, 30807937853347003
+mov QWORD PTR [rsi+856], r9
+movabs r9, 699409659546815
+mov QWORD PTR [rsi+864], r9
+movabs r9, 12945035726727688
+mov QWORD PTR [rsi+872], r9
+movabs r9, 7098008983067813
+mov QWORD PTR [rsi+880], r9
+movabs r9, 28266511219523944
+mov QWORD PTR [rsi+888], r9
+movabs r9, 15135022374814013
+mov QWORD PTR [rsi+896], r9
+movabs r9, 1158610381635861
+mov QWORD PTR [rsi+904], r9
+movabs r9, 31802227079365879
+mov QWORD PTR [rsi+912], r9
+movabs r9, 2027559572878823
+mov QWORD PTR [rsi+920], r9
+movabs r9, 7402805639339334
+mov QWORD PTR [rsi+928], r9
+movabs r9, 8205002449640623
+mov QWORD PTR [rsi+936], r9
+movabs r9, 31250542829661849
+mov QWORD PTR [rsi+944], r9
+movabs r9, 19527171898598875
+mov QWORD PTR [rsi+952], r9
+movabs r9, 26390134497937253
+mov QWORD PTR [rsi+960], r9
+movabs r9, 26173917256840158
+mov QWORD PTR [rsi+968], r9
+movabs r9, 31797902045269139
+mov QWORD PTR [rsi+976], r9
+movabs r9, 20765007236602922
+mov QWORD PTR [rsi+984], r9
+movabs r9, 16834811519265361
+mov QWORD PTR [rsi+992], r9
+movabs r9, 30142973844857679
+mov QWORD PTR [rsi+1000], r9
+movabs r9, 6014775284471242
+mov QWORD PTR [rsi+1008], r9
+movabs r9, 8490214048855735
+mov QWORD PTR [rsi+1016], r9
+mov eax, 8380417
+movq xmm15, rax
+pshufd xmm15, xmm15, 0
+mov eax, -58728449
+movq xmm14, rax
+pshufd xmm14, xmm14, 0
+mov rdx, rdi
+mov r8, rsi
+add r8, 1008
+mov ecx, 32
+21:
+movdqu xmm0, XMMWORD PTR [rdx]
+movdqu xmm2, XMMWORD PTR [rdx+16]
+movdqu xmm13, XMMWORD PTR [r8]
+pshufd xmm13, xmm13, 27
+pshufd xmm12, xmm13, 245
+add r8, -16
+pshufd xmm0, xmm0, 216
+pshufd xmm2, xmm2, 216
+movdqa xmm1, xmm0
+punpcklqdq xmm0, xmm2
+punpckhqdq xmm1, xmm2
+movdqa xmm3, xmm1
+psubd xmm3, xmm0
+paddd xmm3, xmm15
+paddd xmm0, xmm1
+psubd xmm0, xmm15
+movdqa xmm2, xmm0
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm0, xmm2
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqa xmm1, xmm0
+punpckldq xmm0, xmm3
+punpckhdq xmm1, xmm3
+movdqu XMMWORD PTR [rdx], xmm0
+movdqu XMMWORD PTR [rdx+16], xmm1
+add rdx, 32
+sub rcx, 1
+jne 21b
+mov rdx, rdi
+mov r8, rsi
+add r8, 504
+mov ecx, 32
+22:
+movdqu xmm0, XMMWORD PTR [rdx]
+movdqu xmm1, XMMWORD PTR [rdx+16]
+movdqu xmm13, XMMWORD PTR [r8]
+pshufd xmm13, xmm13, 5
+pshufd xmm12, xmm13, 245
+add r8, -8
+movdqa xmm2, xmm0
+punpcklqdq xmm0, xmm1
+punpckhqdq xmm2, xmm1
+movdqa xmm1, xmm2
+movdqa xmm3, xmm1
+psubd xmm3, xmm0
+paddd xmm3, xmm15
+paddd xmm0, xmm1
+psubd xmm0, xmm15
+movdqa xmm2, xmm0
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm0, xmm2
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqa xmm1, xmm0
+punpcklqdq xmm0, xmm3
+punpckhqdq xmm1, xmm3
+movdqu XMMWORD PTR [rdx], xmm0
+movdqu XMMWORD PTR [rdx+16], xmm1
+add rdx, 32
+sub rcx, 1
+jne 22b
+mov rdx, rdi
+mov r8, rsi
+add r8, 252
+mov eax, 32
+23:
+movdqu xmm13, XMMWORD PTR [r8]
+pshufd xmm13, xmm13, 0
+pshufd xmm12, xmm13, 245
+add r8, -4
+mov ecx, 1
+24:
+movdqu xmm0, XMMWORD PTR [rdx]
+movdqu xmm1, XMMWORD PTR [rdx+16]
+movdqa xmm3, xmm1
+psubd xmm3, xmm0
+paddd xmm3, xmm15
+paddd xmm0, xmm1
+psubd xmm0, xmm15
+movdqa xmm2, xmm0
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm0, xmm2
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqu XMMWORD PTR [rdx], xmm0
+movdqu XMMWORD PTR [rdx+16], xmm3
+add rdx, 16
+sub rcx, 1
+jne 24b
+add rdx, 16
+sub rax, 1
+jne 23b
+mov rdx, rdi
+mov r8, rsi
+add r8, 124
+mov eax, 16
+25:
+movdqu xmm13, XMMWORD PTR [r8]
+pshufd xmm13, xmm13, 0
+pshufd xmm12, xmm13, 245
+add r8, -4
+mov ecx, 2
+26:
+movdqu xmm0, XMMWORD PTR [rdx]
+movdqu xmm1, XMMWORD PTR [rdx+32]
+movdqa xmm3, xmm1
+psubd xmm3, xmm0
+paddd xmm3, xmm15
+paddd xmm0, xmm1
+psubd xmm0, xmm15
+movdqa xmm2, xmm0
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm0, xmm2
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqu XMMWORD PTR [rdx], xmm0
+movdqu XMMWORD PTR [rdx+32], xmm3
+add rdx, 16
+sub rcx, 1
+jne 26b
+add rdx, 32
+sub rax, 1
+jne 25b
+mov rdx, rdi
+mov r8, rsi
+add r8, 60
+mov eax, 8
+27:
+movdqu xmm13, XMMWORD PTR [r8]
+pshufd xmm13, xmm13, 0
+pshufd xmm12, xmm13, 245
+add r8, -4
+mov ecx, 4
+28:
+movdqu xmm0, XMMWORD PTR [rdx]
+movdqu xmm1, XMMWORD PTR [rdx+64]
+movdqa xmm3, xmm1
+psubd xmm3, xmm0
+paddd xmm3, xmm15
+paddd xmm0, xmm1
+psubd xmm0, xmm15
+movdqa xmm2, xmm0
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm0, xmm2
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqu XMMWORD PTR [rdx], xmm0
+movdqu XMMWORD PTR [rdx+64], xmm3
+add rdx, 16
+sub rcx, 1
+jne 28b
+add rdx, 64
+sub rax, 1
+jne 27b
+mov rdx, rdi
+mov r8, rsi
+add r8, 28
+mov eax, 4
+29:
+movdqu xmm13, XMMWORD PTR [r8]
+pshufd xmm13, xmm13, 0
+pshufd xmm12, xmm13, 245
+add r8, -4
+mov ecx, 8
+210:
+movdqu xmm0, XMMWORD PTR [rdx]
+movdqu xmm1, XMMWORD PTR [rdx+128]
+movdqa xmm3, xmm1
+psubd xmm3, xmm0
+paddd xmm3, xmm15
+paddd xmm0, xmm1
+psubd xmm0, xmm15
+movdqa xmm2, xmm0
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm0, xmm2
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqu XMMWORD PTR [rdx], xmm0
+movdqu XMMWORD PTR [rdx+128], xmm3
+add rdx, 16
+sub rcx, 1
+jne 210b
+add rdx, 128
+sub rax, 1
+jne 29b
+mov rdx, rdi
+mov r8, rsi
+add r8, 12
+mov eax, 2
+211:
+movdqu xmm13, XMMWORD PTR [r8]
+pshufd xmm13, xmm13, 0
+pshufd xmm12, xmm13, 245
+add r8, -4
+mov ecx, 16
+212:
+movdqu xmm0, XMMWORD PTR [rdx]
+movdqu xmm1, XMMWORD PTR [rdx+256]
+movdqa xmm3, xmm1
+psubd xmm3, xmm0
+paddd xmm3, xmm15
+paddd xmm0, xmm1
+psubd xmm0, xmm15
+movdqa xmm2, xmm0
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm0, xmm2
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqu XMMWORD PTR [rdx], xmm0
+movdqu XMMWORD PTR [rdx+256], xmm3
+add rdx, 16
+sub rcx, 1
+jne 212b
+add rdx, 256
+sub rax, 1
+jne 211b
+mov rdx, rdi
+mov r8, rsi
+add r8, 4
+mov eax, 1
+213:
+movdqu xmm13, XMMWORD PTR [r8]
+pshufd xmm13, xmm13, 0
+pshufd xmm12, xmm13, 245
+add r8, -4
+mov ecx, 32
+214:
+movdqu xmm0, XMMWORD PTR [rdx]
+movdqu xmm1, XMMWORD PTR [rdx+512]
+movdqa xmm3, xmm1
+psubd xmm3, xmm0
+paddd xmm3, xmm15
+paddd xmm0, xmm1
+psubd xmm0, xmm15
+movdqa xmm2, xmm0
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm0, xmm2
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqu XMMWORD PTR [rdx], xmm0
+movdqu XMMWORD PTR [rdx+512], xmm3
+add rdx, 16
+sub rcx, 1
+jne 214b
+add rdx, 512
+sub rax, 1
+jne 213b
+mov rdx, rdi
+mov eax, 16382
+movq xmm13, rax
+pshufd xmm13, xmm13, 0
+movdqa xmm12, xmm13
+mov ecx, 64
+215:
+movdqu xmm3, XMMWORD PTR [rdx]
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqu XMMWORD PTR [rdx], xmm3
+add rdx, 16
+sub rcx, 1
+jne 215b
+lfence
+mov DWORD PTR [rsi+768], r11d
+ldmxcsr DWORD PTR [rsi+768]
+ret
+.p2align 6",
+    )
+}
+
+/// Writes the canonical inverse NTT of the sum of coefficientwise products of 5 pairs of polynomials. Each input family is contiguous. Timing depends only on pointers, as specified by `dotInverseContract`.
+///
+/// The function computes on four coefficients at a time in SSE2 registers: it sums the products in 64-bit lanes, reduces each sum once, then runs `vg_mldsa_inv_ntt`'s code, with a table of the 256 zetas that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 1024 bytes.
+/// * `a` must be valid for reads of 5120 bytes.
+/// * `b` must be valid for reads of 5120 bytes.
+/// * `scratch` must be valid for reads and writes of 1024 bytes.
+/// * Every coefficient of both input families must be less than 25141251 (3q).
+/// * `out` and `scratch` must not overlap each other, `a` or `b` (distinct Rust objects never do).
+/// * None of `out`, `a`, `b` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mldsa_dot_inverse5(out: *mut [u32; 256], a: *const [u32; 1280], b: *const [u32; 1280], scratch: *mut [u64; 128]) {
+    core::arch::naked_asm!(
+        r"mov r10, rsi
+mov rsi, rcx
+stmxcsr DWORD PTR [rsi+768]
+mov r11d, DWORD PTR [rsi+768]
+and r11d, 65535
+mov eax, 8127
+mov DWORD PTR [rsi+772], eax
+ldmxcsr DWORD PTR [rsi+772]
+lfence
+mov eax, 8380417
+movq xmm15, rax
+pshufd xmm15, xmm15, 0
+mov eax, -58728449
+movq xmm14, rax
+pshufd xmm14, xmm14, 0
+mov eax, 2365951
+movq xmm11, rax
+pshufd xmm11, xmm11, 0
+mov r8, rdi
+mov ecx, 64
+20:
+pxor xmm5, xmm5
+pxor xmm6, xmm6
+movdqu xmm0, XMMWORD PTR [r10]
+movdqu xmm1, XMMWORD PTR [rdx]
+movdqa xmm2, xmm0
+psrlq xmm2, 32
+movdqa xmm3, xmm1
+psrlq xmm3, 32
+pmuludq xmm2, xmm3
+pmuludq xmm0, xmm1
+paddq xmm5, xmm0
+paddq xmm6, xmm2
+movdqu xmm0, XMMWORD PTR [r10+1024]
+movdqu xmm1, XMMWORD PTR [rdx+1024]
+movdqa xmm2, xmm0
+psrlq xmm2, 32
+movdqa xmm3, xmm1
+psrlq xmm3, 32
+pmuludq xmm2, xmm3
+pmuludq xmm0, xmm1
+paddq xmm5, xmm0
+paddq xmm6, xmm2
+movdqu xmm0, XMMWORD PTR [r10+2048]
+movdqu xmm1, XMMWORD PTR [rdx+2048]
+movdqa xmm2, xmm0
+psrlq xmm2, 32
+movdqa xmm3, xmm1
+psrlq xmm3, 32
+pmuludq xmm2, xmm3
+pmuludq xmm0, xmm1
+paddq xmm5, xmm0
+paddq xmm6, xmm2
+movdqu xmm0, XMMWORD PTR [r10+3072]
+movdqu xmm1, XMMWORD PTR [rdx+3072]
+movdqa xmm2, xmm0
+psrlq xmm2, 32
+movdqa xmm3, xmm1
+psrlq xmm3, 32
+pmuludq xmm2, xmm3
+pmuludq xmm0, xmm1
+paddq xmm5, xmm0
+paddq xmm6, xmm2
+movdqu xmm0, XMMWORD PTR [r10+4096]
+movdqu xmm1, XMMWORD PTR [rdx+4096]
+movdqa xmm2, xmm0
+psrlq xmm2, 32
+movdqa xmm3, xmm1
+psrlq xmm3, 32
+pmuludq xmm2, xmm3
+pmuludq xmm0, xmm1
+paddq xmm5, xmm0
+paddq xmm6, xmm2
+movdqa xmm2, xmm5
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm5, xmm2
+psrlq xmm5, 32
+movdqa xmm2, xmm6
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm6, xmm2
+por xmm5, xmm6
+psubd xmm5, xmm15
+movdqa xmm2, xmm5
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm5, xmm2
+pshufd xmm4, xmm5, 245
+pmuludq xmm5, xmm11
+pmuludq xmm4, xmm11
+movdqa xmm2, xmm5
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm5, xmm2
+psrlq xmm5, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm5, xmm4
+psubd xmm5, xmm15
+movdqa xmm2, xmm5
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm5, xmm2
+movdqu XMMWORD PTR [r8], xmm5
+add r8, 16
+add r10, 16
+add rdx, 16
+sub rcx, 1
+jne 20b
+movabs r9, 111012023893504
+mov QWORD PTR [rsi], r9
+movabs r9, 33764919763013891
+mov QWORD PTR [rsi+8], r9
+movabs r9, 32652304184483396
+mov QWORD PTR [rsi+16], r9
+movabs r9, 2003464812134697
+mov QWORD PTR [rsi+24], r9
+movabs r9, 10107995079564843
+mov QWORD PTR [rsi+32], r9
+movabs r9, 27008953388524718
+mov QWORD PTR [rsi+40], r9
+movabs r9, 23603259066260085
+mov QWORD PTR [rsi+48], r9
+movabs r9, 11510954738022985
+mov QWORD PTR [rsi+56], r9
+movabs r9, 4398527550166616
+mov QWORD PTR [rsi+64], r9
+movabs r9, 15401443493111205
+mov QWORD PTR [rsi+72], r9
+movabs r9, 31185040284548497
+mov QWORD PTR [rsi+80], r9
+movabs r9, 26937467947448680
+mov QWORD PTR [rsi+88], r9
+movabs r9, 19416172761943511
+mov QWORD PTR [rsi+96], r9
+movabs r9, 21916122901808376
+mov QWORD PTR [rsi+104], r9
+movabs r9, 35910200088776757
+mov QWORD PTR [rsi+112], r9
+movabs r9, 1202612321726977
+mov QWORD PTR [rsi+120], r9
+movabs r9, 411354790447719
+mov QWORD PTR [rsi+128], r9
+movabs r9, 15163111458665677
+mov QWORD PTR [rsi+136], r9
+movabs r9, 20565458766169348
+mov QWORD PTR [rsi+144], r9
+movabs r9, 16816682460325845
+mov QWORD PTR [rsi+152], r9
+movabs r9, 22920956268049798
+mov QWORD PTR [rsi+160], r9
+movabs r9, 23677166863944342
+mov QWORD PTR [rsi+168], r9
+movabs r9, 34703121006855168
+mov QWORD PTR [rsi+176], r9
+movabs r9, 33677345376425628
+mov QWORD PTR [rsi+184], r9
+movabs r9, 28933472397947454
+mov QWORD PTR [rsi+192], r9
+movabs r9, 19579390106369566
+mov QWORD PTR [rsi+200], r9
+movabs r9, 26799599498134591
+mov QWORD PTR [rsi+208], r9
+movabs r9, 15889643835192413
+mov QWORD PTR [rsi+216], r9
+movabs r9, 2282148053410728
+mov QWORD PTR [rsi+224], r9
+movabs r9, 16668952760323958
+mov QWORD PTR [rsi+232], r9
+movabs r9, 25011900965946676
+mov QWORD PTR [rsi+240], r9
+movabs r9, 23977247637478740
+mov QWORD PTR [rsi+248], r9
+movabs r9, 29427887555995366
+mov QWORD PTR [rsi+256], r9
+movabs r9, 22931526182748624
+mov QWORD PTR [rsi+264], r9
+movabs r9, 14929091579459166
+mov QWORD PTR [rsi+272], r9
+movabs r9, 29185144592086471
+mov QWORD PTR [rsi+280], r9
+movabs r9, 8329290213797750
+mov QWORD PTR [rsi+288], r9
+movabs r9, 31697782066745459
+mov QWORD PTR [rsi+296], r9
+movabs r9, 22432987854353025
+mov QWORD PTR [rsi+304], r9
+movabs r9, 545125843890401
+mov QWORD PTR [rsi+312], r9
+movabs r9, 31769864501989618
+mov QWORD PTR [rsi+320], r9
+movabs r9, 11662103226140216
+mov QWORD PTR [rsi+328], r9
+movabs r9, 20130185304250276
+mov QWORD PTR [rsi+336], r9
+movabs r9, 25354781094156910
+mov QWORD PTR [rsi+344], r9
+movabs r9, 30717142252233347
+mov QWORD PTR [rsi+352], r9
+movabs r9, 30375073877558844
+mov QWORD PTR [rsi+360], r9
+movabs r9, 5794237307816926
+mov QWORD PTR [rsi+368], r9
+movabs r9, 29849966874477923
+mov QWORD PTR [rsi+376], r9
+movabs r9, 1137925820308458
+mov QWORD PTR [rsi+384], r9
+movabs r9, 13305774323778583
+mov QWORD PTR [rsi+392], r9
+movabs r9, 31268732009491712
+mov QWORD PTR [rsi+400], r9
+movabs r9, 17002134848261444
+mov QWORD PTR [rsi+408], r9
+movabs r9, 35956774717033419
+mov QWORD PTR [rsi+416], r9
+movabs r9, 22036141462600008
+mov QWORD PTR [rsi+424], r9
+movabs r9, 35087477629023596
+mov QWORD PTR [rsi+432], r9
+movabs r9, 30337763489061025
+mov QWORD PTR [rsi+440], r9
+movabs r9, 20732429908239468
+mov QWORD PTR [rsi+448], r9
+movabs r9, 28041905903253186
+mov QWORD PTR [rsi+456], r9
+movabs r9, 35231517950811284
+mov QWORD PTR [rsi+464], r9
+movabs r9, 5760968484459269
+mov QWORD PTR [rsi+472], r9
+movabs r9, 29186403016613413
+mov QWORD PTR [rsi+480], r9
+movabs r9, 29809972144732485
+mov QWORD PTR [rsi+488], r9
+movabs r9, 19324591173389987
+mov QWORD PTR [rsi+496], r9
+movabs r9, 16492506917666904
+mov QWORD PTR [rsi+504], r9
+movabs r9, 14635985826474643
+mov QWORD PTR [rsi+512], r9
+movabs r9, 16398082059229396
+mov QWORD PTR [rsi+520], r9
+movabs r9, 9638297459285875
+mov QWORD PTR [rsi+528], r9
+movabs r9, 20692959164533664
+mov QWORD PTR [rsi+536], r9
+movabs r9, 10455835889373941
+mov QWORD PTR [rsi+544], r9
+movabs r9, 15088997507073265
+mov QWORD PTR [rsi+552], r9
+movabs r9, 19847271512942753
+mov QWORD PTR [rsi+560], r9
+movabs r9, 22278162875259735
+mov QWORD PTR [rsi+568], r9
+movabs r9, 7984765110959710
+mov QWORD PTR [rsi+576], r9
+movabs r9, 3517724245221606
+mov QWORD PTR [rsi+584], r9
+movabs r9, 29065087369580419
+mov QWORD PTR [rsi+592], r9
+movabs r9, 33749496538019589
+mov QWORD PTR [rsi+600], r9
+movabs r9, 22582830675910690
+mov QWORD PTR [rsi+608], r9
+movabs r9, 13774157688799364
+mov QWORD PTR [rsi+616], r9
+movabs r9, 33738338209470846
+mov QWORD PTR [rsi+624], r9
+movabs r9, 20549610337740179
+mov QWORD PTR [rsi+632], r9
+movabs r9, 1232604074686745
+mov QWORD PTR [rsi+640], r9
+movabs r9, 17645078572608834
+mov QWORD PTR [rsi+648], r9
+movabs r9, 21638646536106727
+mov QWORD PTR [rsi+656], r9
+movabs r9, 872067341384903
+mov QWORD PTR [rsi+664], r9
+movabs r9, 11559822875647717
+mov QWORD PTR [rsi+672], r9
+movabs r9, 5433172289935931
+mov QWORD PTR [rsi+680], r9
+movabs r9, 5358487101890844
+mov QWORD PTR [rsi+688], r9
+movabs r9, 6854656137752657
+mov QWORD PTR [rsi+696], r9
+movabs r9, 5370830838457625
+mov QWORD PTR [rsi+704], r9
+movabs r9, 20753904747165841
+mov QWORD PTR [rsi+712], r9
+movabs r9, 8027804982718602
+mov QWORD PTR [rsi+720], r9
+movabs r9, 31479735164668747
+mov QWORD PTR [rsi+728], r9
+movabs r9, 5314055668205759
+mov QWORD PTR [rsi+736], r9
+movabs r9, 29850847345983039
+mov QWORD PTR [rsi+744], r9
+movabs r9, 5636951310400997
+mov QWORD PTR [rsi+752], r9
+movabs r9, 27564133741392515
+mov QWORD PTR [rsi+760], r9
+movabs r9, 8233800205883732
+mov QWORD PTR [rsi+768], r9
+movabs r9, 30088883024233849
+mov QWORD PTR [rsi+776], r9
+movabs r9, 3338009929245701
+mov QWORD PTR [rsi+784], r9
+movabs r9, 14628791756398056
+mov QWORD PTR [rsi+792], r9
+movabs r9, 23830870862829877
+mov QWORD PTR [rsi+800], r9
+movabs r9, 28061014216302585
+mov QWORD PTR [rsi+808], r9
+movabs r9, 19997999096164636
+mov QWORD PTR [rsi+816], r9
+movabs r9, 19771555530215640
+mov QWORD PTR [rsi+824], r9
+movabs r9, 10447056982320729
+mov QWORD PTR [rsi+832], r9
+movabs r9, 35286145636332471
+mov QWORD PTR [rsi+840], r9
+movabs r9, 14470225858518424
+mov QWORD PTR [rsi+848], r9
+movabs r9, 30807937853347003
+mov QWORD PTR [rsi+856], r9
+movabs r9, 699409659546815
+mov QWORD PTR [rsi+864], r9
+movabs r9, 12945035726727688
+mov QWORD PTR [rsi+872], r9
+movabs r9, 7098008983067813
+mov QWORD PTR [rsi+880], r9
+movabs r9, 28266511219523944
+mov QWORD PTR [rsi+888], r9
+movabs r9, 15135022374814013
+mov QWORD PTR [rsi+896], r9
+movabs r9, 1158610381635861
+mov QWORD PTR [rsi+904], r9
+movabs r9, 31802227079365879
+mov QWORD PTR [rsi+912], r9
+movabs r9, 2027559572878823
+mov QWORD PTR [rsi+920], r9
+movabs r9, 7402805639339334
+mov QWORD PTR [rsi+928], r9
+movabs r9, 8205002449640623
+mov QWORD PTR [rsi+936], r9
+movabs r9, 31250542829661849
+mov QWORD PTR [rsi+944], r9
+movabs r9, 19527171898598875
+mov QWORD PTR [rsi+952], r9
+movabs r9, 26390134497937253
+mov QWORD PTR [rsi+960], r9
+movabs r9, 26173917256840158
+mov QWORD PTR [rsi+968], r9
+movabs r9, 31797902045269139
+mov QWORD PTR [rsi+976], r9
+movabs r9, 20765007236602922
+mov QWORD PTR [rsi+984], r9
+movabs r9, 16834811519265361
+mov QWORD PTR [rsi+992], r9
+movabs r9, 30142973844857679
+mov QWORD PTR [rsi+1000], r9
+movabs r9, 6014775284471242
+mov QWORD PTR [rsi+1008], r9
+movabs r9, 8490214048855735
+mov QWORD PTR [rsi+1016], r9
+mov eax, 8380417
+movq xmm15, rax
+pshufd xmm15, xmm15, 0
+mov eax, -58728449
+movq xmm14, rax
+pshufd xmm14, xmm14, 0
+mov rdx, rdi
+mov r8, rsi
+add r8, 1008
+mov ecx, 32
+21:
+movdqu xmm0, XMMWORD PTR [rdx]
+movdqu xmm2, XMMWORD PTR [rdx+16]
+movdqu xmm13, XMMWORD PTR [r8]
+pshufd xmm13, xmm13, 27
+pshufd xmm12, xmm13, 245
+add r8, -16
+pshufd xmm0, xmm0, 216
+pshufd xmm2, xmm2, 216
+movdqa xmm1, xmm0
+punpcklqdq xmm0, xmm2
+punpckhqdq xmm1, xmm2
+movdqa xmm3, xmm1
+psubd xmm3, xmm0
+paddd xmm3, xmm15
+paddd xmm0, xmm1
+psubd xmm0, xmm15
+movdqa xmm2, xmm0
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm0, xmm2
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqa xmm1, xmm0
+punpckldq xmm0, xmm3
+punpckhdq xmm1, xmm3
+movdqu XMMWORD PTR [rdx], xmm0
+movdqu XMMWORD PTR [rdx+16], xmm1
+add rdx, 32
+sub rcx, 1
+jne 21b
+mov rdx, rdi
+mov r8, rsi
+add r8, 504
+mov ecx, 32
+22:
+movdqu xmm0, XMMWORD PTR [rdx]
+movdqu xmm1, XMMWORD PTR [rdx+16]
+movdqu xmm13, XMMWORD PTR [r8]
+pshufd xmm13, xmm13, 5
+pshufd xmm12, xmm13, 245
+add r8, -8
+movdqa xmm2, xmm0
+punpcklqdq xmm0, xmm1
+punpckhqdq xmm2, xmm1
+movdqa xmm1, xmm2
+movdqa xmm3, xmm1
+psubd xmm3, xmm0
+paddd xmm3, xmm15
+paddd xmm0, xmm1
+psubd xmm0, xmm15
+movdqa xmm2, xmm0
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm0, xmm2
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqa xmm1, xmm0
+punpcklqdq xmm0, xmm3
+punpckhqdq xmm1, xmm3
+movdqu XMMWORD PTR [rdx], xmm0
+movdqu XMMWORD PTR [rdx+16], xmm1
+add rdx, 32
+sub rcx, 1
+jne 22b
+mov rdx, rdi
+mov r8, rsi
+add r8, 252
+mov eax, 32
+23:
+movdqu xmm13, XMMWORD PTR [r8]
+pshufd xmm13, xmm13, 0
+pshufd xmm12, xmm13, 245
+add r8, -4
+mov ecx, 1
+24:
+movdqu xmm0, XMMWORD PTR [rdx]
+movdqu xmm1, XMMWORD PTR [rdx+16]
+movdqa xmm3, xmm1
+psubd xmm3, xmm0
+paddd xmm3, xmm15
+paddd xmm0, xmm1
+psubd xmm0, xmm15
+movdqa xmm2, xmm0
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm0, xmm2
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqu XMMWORD PTR [rdx], xmm0
+movdqu XMMWORD PTR [rdx+16], xmm3
+add rdx, 16
+sub rcx, 1
+jne 24b
+add rdx, 16
+sub rax, 1
+jne 23b
+mov rdx, rdi
+mov r8, rsi
+add r8, 124
+mov eax, 16
+25:
+movdqu xmm13, XMMWORD PTR [r8]
+pshufd xmm13, xmm13, 0
+pshufd xmm12, xmm13, 245
+add r8, -4
+mov ecx, 2
+26:
+movdqu xmm0, XMMWORD PTR [rdx]
+movdqu xmm1, XMMWORD PTR [rdx+32]
+movdqa xmm3, xmm1
+psubd xmm3, xmm0
+paddd xmm3, xmm15
+paddd xmm0, xmm1
+psubd xmm0, xmm15
+movdqa xmm2, xmm0
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm0, xmm2
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqu XMMWORD PTR [rdx], xmm0
+movdqu XMMWORD PTR [rdx+32], xmm3
+add rdx, 16
+sub rcx, 1
+jne 26b
+add rdx, 32
+sub rax, 1
+jne 25b
+mov rdx, rdi
+mov r8, rsi
+add r8, 60
+mov eax, 8
+27:
+movdqu xmm13, XMMWORD PTR [r8]
+pshufd xmm13, xmm13, 0
+pshufd xmm12, xmm13, 245
+add r8, -4
+mov ecx, 4
+28:
+movdqu xmm0, XMMWORD PTR [rdx]
+movdqu xmm1, XMMWORD PTR [rdx+64]
+movdqa xmm3, xmm1
+psubd xmm3, xmm0
+paddd xmm3, xmm15
+paddd xmm0, xmm1
+psubd xmm0, xmm15
+movdqa xmm2, xmm0
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm0, xmm2
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqu XMMWORD PTR [rdx], xmm0
+movdqu XMMWORD PTR [rdx+64], xmm3
+add rdx, 16
+sub rcx, 1
+jne 28b
+add rdx, 64
+sub rax, 1
+jne 27b
+mov rdx, rdi
+mov r8, rsi
+add r8, 28
+mov eax, 4
+29:
+movdqu xmm13, XMMWORD PTR [r8]
+pshufd xmm13, xmm13, 0
+pshufd xmm12, xmm13, 245
+add r8, -4
+mov ecx, 8
+210:
+movdqu xmm0, XMMWORD PTR [rdx]
+movdqu xmm1, XMMWORD PTR [rdx+128]
+movdqa xmm3, xmm1
+psubd xmm3, xmm0
+paddd xmm3, xmm15
+paddd xmm0, xmm1
+psubd xmm0, xmm15
+movdqa xmm2, xmm0
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm0, xmm2
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqu XMMWORD PTR [rdx], xmm0
+movdqu XMMWORD PTR [rdx+128], xmm3
+add rdx, 16
+sub rcx, 1
+jne 210b
+add rdx, 128
+sub rax, 1
+jne 29b
+mov rdx, rdi
+mov r8, rsi
+add r8, 12
+mov eax, 2
+211:
+movdqu xmm13, XMMWORD PTR [r8]
+pshufd xmm13, xmm13, 0
+pshufd xmm12, xmm13, 245
+add r8, -4
+mov ecx, 16
+212:
+movdqu xmm0, XMMWORD PTR [rdx]
+movdqu xmm1, XMMWORD PTR [rdx+256]
+movdqa xmm3, xmm1
+psubd xmm3, xmm0
+paddd xmm3, xmm15
+paddd xmm0, xmm1
+psubd xmm0, xmm15
+movdqa xmm2, xmm0
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm0, xmm2
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqu XMMWORD PTR [rdx], xmm0
+movdqu XMMWORD PTR [rdx+256], xmm3
+add rdx, 16
+sub rcx, 1
+jne 212b
+add rdx, 256
+sub rax, 1
+jne 211b
+mov rdx, rdi
+mov r8, rsi
+add r8, 4
+mov eax, 1
+213:
+movdqu xmm13, XMMWORD PTR [r8]
+pshufd xmm13, xmm13, 0
+pshufd xmm12, xmm13, 245
+add r8, -4
+mov ecx, 32
+214:
+movdqu xmm0, XMMWORD PTR [rdx]
+movdqu xmm1, XMMWORD PTR [rdx+512]
+movdqa xmm3, xmm1
+psubd xmm3, xmm0
+paddd xmm3, xmm15
+paddd xmm0, xmm1
+psubd xmm0, xmm15
+movdqa xmm2, xmm0
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm0, xmm2
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqu XMMWORD PTR [rdx], xmm0
+movdqu XMMWORD PTR [rdx+512], xmm3
+add rdx, 16
+sub rcx, 1
+jne 214b
+add rdx, 512
+sub rax, 1
+jne 213b
+mov rdx, rdi
+mov eax, 16382
+movq xmm13, rax
+pshufd xmm13, xmm13, 0
+movdqa xmm12, xmm13
+mov ecx, 64
+215:
+movdqu xmm3, XMMWORD PTR [rdx]
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqu XMMWORD PTR [rdx], xmm3
+add rdx, 16
+sub rcx, 1
+jne 215b
+lfence
+mov DWORD PTR [rsi+768], r11d
+ldmxcsr DWORD PTR [rsi+768]
+ret
+.p2align 6",
+    )
+}
+
+/// Writes the canonical inverse NTT of the sum of coefficientwise products of 7 pairs of polynomials. Each input family is contiguous. Timing depends only on pointers, as specified by `dotInverseContract`.
+///
+/// The function computes on four coefficients at a time in SSE2 registers: it sums the products in 64-bit lanes, reduces each sum once, then runs `vg_mldsa_inv_ntt`'s code, with a table of the 256 zetas that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 1024 bytes.
+/// * `a` must be valid for reads of 7168 bytes.
+/// * `b` must be valid for reads of 7168 bytes.
+/// * `scratch` must be valid for reads and writes of 1024 bytes.
+/// * Every coefficient of both input families must be less than 25141251 (3q).
+/// * `out` and `scratch` must not overlap each other, `a` or `b` (distinct Rust objects never do).
+/// * None of `out`, `a`, `b` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mldsa_dot_inverse7(out: *mut [u32; 256], a: *const [u32; 1792], b: *const [u32; 1792], scratch: *mut [u64; 128]) {
+    core::arch::naked_asm!(
+        r"mov r10, rsi
+mov rsi, rcx
+stmxcsr DWORD PTR [rsi+768]
+mov r11d, DWORD PTR [rsi+768]
+and r11d, 65535
+mov eax, 8127
+mov DWORD PTR [rsi+772], eax
+ldmxcsr DWORD PTR [rsi+772]
+lfence
+mov eax, 8380417
+movq xmm15, rax
+pshufd xmm15, xmm15, 0
+mov eax, -58728449
+movq xmm14, rax
+pshufd xmm14, xmm14, 0
+mov eax, 2365951
+movq xmm11, rax
+pshufd xmm11, xmm11, 0
+mov r8, rdi
+mov ecx, 64
+20:
+pxor xmm5, xmm5
+pxor xmm6, xmm6
+movdqu xmm0, XMMWORD PTR [r10]
+movdqu xmm1, XMMWORD PTR [rdx]
+movdqa xmm2, xmm0
+psrlq xmm2, 32
+movdqa xmm3, xmm1
+psrlq xmm3, 32
+pmuludq xmm2, xmm3
+pmuludq xmm0, xmm1
+paddq xmm5, xmm0
+paddq xmm6, xmm2
+movdqu xmm0, XMMWORD PTR [r10+1024]
+movdqu xmm1, XMMWORD PTR [rdx+1024]
+movdqa xmm2, xmm0
+psrlq xmm2, 32
+movdqa xmm3, xmm1
+psrlq xmm3, 32
+pmuludq xmm2, xmm3
+pmuludq xmm0, xmm1
+paddq xmm5, xmm0
+paddq xmm6, xmm2
+movdqu xmm0, XMMWORD PTR [r10+2048]
+movdqu xmm1, XMMWORD PTR [rdx+2048]
+movdqa xmm2, xmm0
+psrlq xmm2, 32
+movdqa xmm3, xmm1
+psrlq xmm3, 32
+pmuludq xmm2, xmm3
+pmuludq xmm0, xmm1
+paddq xmm5, xmm0
+paddq xmm6, xmm2
+movdqu xmm0, XMMWORD PTR [r10+3072]
+movdqu xmm1, XMMWORD PTR [rdx+3072]
+movdqa xmm2, xmm0
+psrlq xmm2, 32
+movdqa xmm3, xmm1
+psrlq xmm3, 32
+pmuludq xmm2, xmm3
+pmuludq xmm0, xmm1
+paddq xmm5, xmm0
+paddq xmm6, xmm2
+movdqu xmm0, XMMWORD PTR [r10+4096]
+movdqu xmm1, XMMWORD PTR [rdx+4096]
+movdqa xmm2, xmm0
+psrlq xmm2, 32
+movdqa xmm3, xmm1
+psrlq xmm3, 32
+pmuludq xmm2, xmm3
+pmuludq xmm0, xmm1
+paddq xmm5, xmm0
+paddq xmm6, xmm2
+movdqu xmm0, XMMWORD PTR [r10+5120]
+movdqu xmm1, XMMWORD PTR [rdx+5120]
+movdqa xmm2, xmm0
+psrlq xmm2, 32
+movdqa xmm3, xmm1
+psrlq xmm3, 32
+pmuludq xmm2, xmm3
+pmuludq xmm0, xmm1
+paddq xmm5, xmm0
+paddq xmm6, xmm2
+movdqu xmm0, XMMWORD PTR [r10+6144]
+movdqu xmm1, XMMWORD PTR [rdx+6144]
+movdqa xmm2, xmm0
+psrlq xmm2, 32
+movdqa xmm3, xmm1
+psrlq xmm3, 32
+pmuludq xmm2, xmm3
+pmuludq xmm0, xmm1
+paddq xmm5, xmm0
+paddq xmm6, xmm2
+movdqa xmm2, xmm5
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm5, xmm2
+psrlq xmm5, 32
+movdqa xmm2, xmm6
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm6, xmm2
+por xmm5, xmm6
+psubd xmm5, xmm15
+movdqa xmm2, xmm5
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm5, xmm2
+pshufd xmm4, xmm5, 245
+pmuludq xmm5, xmm11
+pmuludq xmm4, xmm11
+movdqa xmm2, xmm5
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm5, xmm2
+psrlq xmm5, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm5, xmm4
+psubd xmm5, xmm15
+movdqa xmm2, xmm5
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm5, xmm2
+movdqu XMMWORD PTR [r8], xmm5
+add r8, 16
+add r10, 16
+add rdx, 16
+sub rcx, 1
+jne 20b
+movabs r9, 111012023893504
+mov QWORD PTR [rsi], r9
+movabs r9, 33764919763013891
+mov QWORD PTR [rsi+8], r9
+movabs r9, 32652304184483396
+mov QWORD PTR [rsi+16], r9
+movabs r9, 2003464812134697
+mov QWORD PTR [rsi+24], r9
+movabs r9, 10107995079564843
+mov QWORD PTR [rsi+32], r9
+movabs r9, 27008953388524718
+mov QWORD PTR [rsi+40], r9
+movabs r9, 23603259066260085
+mov QWORD PTR [rsi+48], r9
+movabs r9, 11510954738022985
+mov QWORD PTR [rsi+56], r9
+movabs r9, 4398527550166616
+mov QWORD PTR [rsi+64], r9
+movabs r9, 15401443493111205
+mov QWORD PTR [rsi+72], r9
+movabs r9, 31185040284548497
+mov QWORD PTR [rsi+80], r9
+movabs r9, 26937467947448680
+mov QWORD PTR [rsi+88], r9
+movabs r9, 19416172761943511
+mov QWORD PTR [rsi+96], r9
+movabs r9, 21916122901808376
+mov QWORD PTR [rsi+104], r9
+movabs r9, 35910200088776757
+mov QWORD PTR [rsi+112], r9
+movabs r9, 1202612321726977
+mov QWORD PTR [rsi+120], r9
+movabs r9, 411354790447719
+mov QWORD PTR [rsi+128], r9
+movabs r9, 15163111458665677
+mov QWORD PTR [rsi+136], r9
+movabs r9, 20565458766169348
+mov QWORD PTR [rsi+144], r9
+movabs r9, 16816682460325845
+mov QWORD PTR [rsi+152], r9
+movabs r9, 22920956268049798
+mov QWORD PTR [rsi+160], r9
+movabs r9, 23677166863944342
+mov QWORD PTR [rsi+168], r9
+movabs r9, 34703121006855168
+mov QWORD PTR [rsi+176], r9
+movabs r9, 33677345376425628
+mov QWORD PTR [rsi+184], r9
+movabs r9, 28933472397947454
+mov QWORD PTR [rsi+192], r9
+movabs r9, 19579390106369566
+mov QWORD PTR [rsi+200], r9
+movabs r9, 26799599498134591
+mov QWORD PTR [rsi+208], r9
+movabs r9, 15889643835192413
+mov QWORD PTR [rsi+216], r9
+movabs r9, 2282148053410728
+mov QWORD PTR [rsi+224], r9
+movabs r9, 16668952760323958
+mov QWORD PTR [rsi+232], r9
+movabs r9, 25011900965946676
+mov QWORD PTR [rsi+240], r9
+movabs r9, 23977247637478740
+mov QWORD PTR [rsi+248], r9
+movabs r9, 29427887555995366
+mov QWORD PTR [rsi+256], r9
+movabs r9, 22931526182748624
+mov QWORD PTR [rsi+264], r9
+movabs r9, 14929091579459166
+mov QWORD PTR [rsi+272], r9
+movabs r9, 29185144592086471
+mov QWORD PTR [rsi+280], r9
+movabs r9, 8329290213797750
+mov QWORD PTR [rsi+288], r9
+movabs r9, 31697782066745459
+mov QWORD PTR [rsi+296], r9
+movabs r9, 22432987854353025
+mov QWORD PTR [rsi+304], r9
+movabs r9, 545125843890401
+mov QWORD PTR [rsi+312], r9
+movabs r9, 31769864501989618
+mov QWORD PTR [rsi+320], r9
+movabs r9, 11662103226140216
+mov QWORD PTR [rsi+328], r9
+movabs r9, 20130185304250276
+mov QWORD PTR [rsi+336], r9
+movabs r9, 25354781094156910
+mov QWORD PTR [rsi+344], r9
+movabs r9, 30717142252233347
+mov QWORD PTR [rsi+352], r9
+movabs r9, 30375073877558844
+mov QWORD PTR [rsi+360], r9
+movabs r9, 5794237307816926
+mov QWORD PTR [rsi+368], r9
+movabs r9, 29849966874477923
+mov QWORD PTR [rsi+376], r9
+movabs r9, 1137925820308458
+mov QWORD PTR [rsi+384], r9
+movabs r9, 13305774323778583
+mov QWORD PTR [rsi+392], r9
+movabs r9, 31268732009491712
+mov QWORD PTR [rsi+400], r9
+movabs r9, 17002134848261444
+mov QWORD PTR [rsi+408], r9
+movabs r9, 35956774717033419
+mov QWORD PTR [rsi+416], r9
+movabs r9, 22036141462600008
+mov QWORD PTR [rsi+424], r9
+movabs r9, 35087477629023596
+mov QWORD PTR [rsi+432], r9
+movabs r9, 30337763489061025
+mov QWORD PTR [rsi+440], r9
+movabs r9, 20732429908239468
+mov QWORD PTR [rsi+448], r9
+movabs r9, 28041905903253186
+mov QWORD PTR [rsi+456], r9
+movabs r9, 35231517950811284
+mov QWORD PTR [rsi+464], r9
+movabs r9, 5760968484459269
+mov QWORD PTR [rsi+472], r9
+movabs r9, 29186403016613413
+mov QWORD PTR [rsi+480], r9
+movabs r9, 29809972144732485
+mov QWORD PTR [rsi+488], r9
+movabs r9, 19324591173389987
+mov QWORD PTR [rsi+496], r9
+movabs r9, 16492506917666904
+mov QWORD PTR [rsi+504], r9
+movabs r9, 14635985826474643
+mov QWORD PTR [rsi+512], r9
+movabs r9, 16398082059229396
+mov QWORD PTR [rsi+520], r9
+movabs r9, 9638297459285875
+mov QWORD PTR [rsi+528], r9
+movabs r9, 20692959164533664
+mov QWORD PTR [rsi+536], r9
+movabs r9, 10455835889373941
+mov QWORD PTR [rsi+544], r9
+movabs r9, 15088997507073265
+mov QWORD PTR [rsi+552], r9
+movabs r9, 19847271512942753
+mov QWORD PTR [rsi+560], r9
+movabs r9, 22278162875259735
+mov QWORD PTR [rsi+568], r9
+movabs r9, 7984765110959710
+mov QWORD PTR [rsi+576], r9
+movabs r9, 3517724245221606
+mov QWORD PTR [rsi+584], r9
+movabs r9, 29065087369580419
+mov QWORD PTR [rsi+592], r9
+movabs r9, 33749496538019589
+mov QWORD PTR [rsi+600], r9
+movabs r9, 22582830675910690
+mov QWORD PTR [rsi+608], r9
+movabs r9, 13774157688799364
+mov QWORD PTR [rsi+616], r9
+movabs r9, 33738338209470846
+mov QWORD PTR [rsi+624], r9
+movabs r9, 20549610337740179
+mov QWORD PTR [rsi+632], r9
+movabs r9, 1232604074686745
+mov QWORD PTR [rsi+640], r9
+movabs r9, 17645078572608834
+mov QWORD PTR [rsi+648], r9
+movabs r9, 21638646536106727
+mov QWORD PTR [rsi+656], r9
+movabs r9, 872067341384903
+mov QWORD PTR [rsi+664], r9
+movabs r9, 11559822875647717
+mov QWORD PTR [rsi+672], r9
+movabs r9, 5433172289935931
+mov QWORD PTR [rsi+680], r9
+movabs r9, 5358487101890844
+mov QWORD PTR [rsi+688], r9
+movabs r9, 6854656137752657
+mov QWORD PTR [rsi+696], r9
+movabs r9, 5370830838457625
+mov QWORD PTR [rsi+704], r9
+movabs r9, 20753904747165841
+mov QWORD PTR [rsi+712], r9
+movabs r9, 8027804982718602
+mov QWORD PTR [rsi+720], r9
+movabs r9, 31479735164668747
+mov QWORD PTR [rsi+728], r9
+movabs r9, 5314055668205759
+mov QWORD PTR [rsi+736], r9
+movabs r9, 29850847345983039
+mov QWORD PTR [rsi+744], r9
+movabs r9, 5636951310400997
+mov QWORD PTR [rsi+752], r9
+movabs r9, 27564133741392515
+mov QWORD PTR [rsi+760], r9
+movabs r9, 8233800205883732
+mov QWORD PTR [rsi+768], r9
+movabs r9, 30088883024233849
+mov QWORD PTR [rsi+776], r9
+movabs r9, 3338009929245701
+mov QWORD PTR [rsi+784], r9
+movabs r9, 14628791756398056
+mov QWORD PTR [rsi+792], r9
+movabs r9, 23830870862829877
+mov QWORD PTR [rsi+800], r9
+movabs r9, 28061014216302585
+mov QWORD PTR [rsi+808], r9
+movabs r9, 19997999096164636
+mov QWORD PTR [rsi+816], r9
+movabs r9, 19771555530215640
+mov QWORD PTR [rsi+824], r9
+movabs r9, 10447056982320729
+mov QWORD PTR [rsi+832], r9
+movabs r9, 35286145636332471
+mov QWORD PTR [rsi+840], r9
+movabs r9, 14470225858518424
+mov QWORD PTR [rsi+848], r9
+movabs r9, 30807937853347003
+mov QWORD PTR [rsi+856], r9
+movabs r9, 699409659546815
+mov QWORD PTR [rsi+864], r9
+movabs r9, 12945035726727688
+mov QWORD PTR [rsi+872], r9
+movabs r9, 7098008983067813
+mov QWORD PTR [rsi+880], r9
+movabs r9, 28266511219523944
+mov QWORD PTR [rsi+888], r9
+movabs r9, 15135022374814013
+mov QWORD PTR [rsi+896], r9
+movabs r9, 1158610381635861
+mov QWORD PTR [rsi+904], r9
+movabs r9, 31802227079365879
+mov QWORD PTR [rsi+912], r9
+movabs r9, 2027559572878823
+mov QWORD PTR [rsi+920], r9
+movabs r9, 7402805639339334
+mov QWORD PTR [rsi+928], r9
+movabs r9, 8205002449640623
+mov QWORD PTR [rsi+936], r9
+movabs r9, 31250542829661849
+mov QWORD PTR [rsi+944], r9
+movabs r9, 19527171898598875
+mov QWORD PTR [rsi+952], r9
+movabs r9, 26390134497937253
+mov QWORD PTR [rsi+960], r9
+movabs r9, 26173917256840158
+mov QWORD PTR [rsi+968], r9
+movabs r9, 31797902045269139
+mov QWORD PTR [rsi+976], r9
+movabs r9, 20765007236602922
+mov QWORD PTR [rsi+984], r9
+movabs r9, 16834811519265361
+mov QWORD PTR [rsi+992], r9
+movabs r9, 30142973844857679
+mov QWORD PTR [rsi+1000], r9
+movabs r9, 6014775284471242
+mov QWORD PTR [rsi+1008], r9
+movabs r9, 8490214048855735
+mov QWORD PTR [rsi+1016], r9
+mov eax, 8380417
+movq xmm15, rax
+pshufd xmm15, xmm15, 0
+mov eax, -58728449
+movq xmm14, rax
+pshufd xmm14, xmm14, 0
+mov rdx, rdi
+mov r8, rsi
+add r8, 1008
+mov ecx, 32
+21:
+movdqu xmm0, XMMWORD PTR [rdx]
+movdqu xmm2, XMMWORD PTR [rdx+16]
+movdqu xmm13, XMMWORD PTR [r8]
+pshufd xmm13, xmm13, 27
+pshufd xmm12, xmm13, 245
+add r8, -16
+pshufd xmm0, xmm0, 216
+pshufd xmm2, xmm2, 216
+movdqa xmm1, xmm0
+punpcklqdq xmm0, xmm2
+punpckhqdq xmm1, xmm2
+movdqa xmm3, xmm1
+psubd xmm3, xmm0
+paddd xmm3, xmm15
+paddd xmm0, xmm1
+psubd xmm0, xmm15
+movdqa xmm2, xmm0
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm0, xmm2
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqa xmm1, xmm0
+punpckldq xmm0, xmm3
+punpckhdq xmm1, xmm3
+movdqu XMMWORD PTR [rdx], xmm0
+movdqu XMMWORD PTR [rdx+16], xmm1
+add rdx, 32
+sub rcx, 1
+jne 21b
+mov rdx, rdi
+mov r8, rsi
+add r8, 504
+mov ecx, 32
+22:
+movdqu xmm0, XMMWORD PTR [rdx]
+movdqu xmm1, XMMWORD PTR [rdx+16]
+movdqu xmm13, XMMWORD PTR [r8]
+pshufd xmm13, xmm13, 5
+pshufd xmm12, xmm13, 245
+add r8, -8
+movdqa xmm2, xmm0
+punpcklqdq xmm0, xmm1
+punpckhqdq xmm2, xmm1
+movdqa xmm1, xmm2
+movdqa xmm3, xmm1
+psubd xmm3, xmm0
+paddd xmm3, xmm15
+paddd xmm0, xmm1
+psubd xmm0, xmm15
+movdqa xmm2, xmm0
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm0, xmm2
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqa xmm1, xmm0
+punpcklqdq xmm0, xmm3
+punpckhqdq xmm1, xmm3
+movdqu XMMWORD PTR [rdx], xmm0
+movdqu XMMWORD PTR [rdx+16], xmm1
+add rdx, 32
+sub rcx, 1
+jne 22b
+mov rdx, rdi
+mov r8, rsi
+add r8, 252
+mov eax, 32
+23:
+movdqu xmm13, XMMWORD PTR [r8]
+pshufd xmm13, xmm13, 0
+pshufd xmm12, xmm13, 245
+add r8, -4
+mov ecx, 1
+24:
+movdqu xmm0, XMMWORD PTR [rdx]
+movdqu xmm1, XMMWORD PTR [rdx+16]
+movdqa xmm3, xmm1
+psubd xmm3, xmm0
+paddd xmm3, xmm15
+paddd xmm0, xmm1
+psubd xmm0, xmm15
+movdqa xmm2, xmm0
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm0, xmm2
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqu XMMWORD PTR [rdx], xmm0
+movdqu XMMWORD PTR [rdx+16], xmm3
+add rdx, 16
+sub rcx, 1
+jne 24b
+add rdx, 16
+sub rax, 1
+jne 23b
+mov rdx, rdi
+mov r8, rsi
+add r8, 124
+mov eax, 16
+25:
+movdqu xmm13, XMMWORD PTR [r8]
+pshufd xmm13, xmm13, 0
+pshufd xmm12, xmm13, 245
+add r8, -4
+mov ecx, 2
+26:
+movdqu xmm0, XMMWORD PTR [rdx]
+movdqu xmm1, XMMWORD PTR [rdx+32]
+movdqa xmm3, xmm1
+psubd xmm3, xmm0
+paddd xmm3, xmm15
+paddd xmm0, xmm1
+psubd xmm0, xmm15
+movdqa xmm2, xmm0
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm0, xmm2
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqu XMMWORD PTR [rdx], xmm0
+movdqu XMMWORD PTR [rdx+32], xmm3
+add rdx, 16
+sub rcx, 1
+jne 26b
+add rdx, 32
+sub rax, 1
+jne 25b
+mov rdx, rdi
+mov r8, rsi
+add r8, 60
+mov eax, 8
+27:
+movdqu xmm13, XMMWORD PTR [r8]
+pshufd xmm13, xmm13, 0
+pshufd xmm12, xmm13, 245
+add r8, -4
+mov ecx, 4
+28:
+movdqu xmm0, XMMWORD PTR [rdx]
+movdqu xmm1, XMMWORD PTR [rdx+64]
+movdqa xmm3, xmm1
+psubd xmm3, xmm0
+paddd xmm3, xmm15
+paddd xmm0, xmm1
+psubd xmm0, xmm15
+movdqa xmm2, xmm0
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm0, xmm2
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqu XMMWORD PTR [rdx], xmm0
+movdqu XMMWORD PTR [rdx+64], xmm3
+add rdx, 16
+sub rcx, 1
+jne 28b
+add rdx, 64
+sub rax, 1
+jne 27b
+mov rdx, rdi
+mov r8, rsi
+add r8, 28
+mov eax, 4
+29:
+movdqu xmm13, XMMWORD PTR [r8]
+pshufd xmm13, xmm13, 0
+pshufd xmm12, xmm13, 245
+add r8, -4
+mov ecx, 8
+210:
+movdqu xmm0, XMMWORD PTR [rdx]
+movdqu xmm1, XMMWORD PTR [rdx+128]
+movdqa xmm3, xmm1
+psubd xmm3, xmm0
+paddd xmm3, xmm15
+paddd xmm0, xmm1
+psubd xmm0, xmm15
+movdqa xmm2, xmm0
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm0, xmm2
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqu XMMWORD PTR [rdx], xmm0
+movdqu XMMWORD PTR [rdx+128], xmm3
+add rdx, 16
+sub rcx, 1
+jne 210b
+add rdx, 128
+sub rax, 1
+jne 29b
+mov rdx, rdi
+mov r8, rsi
+add r8, 12
+mov eax, 2
+211:
+movdqu xmm13, XMMWORD PTR [r8]
+pshufd xmm13, xmm13, 0
+pshufd xmm12, xmm13, 245
+add r8, -4
+mov ecx, 16
+212:
+movdqu xmm0, XMMWORD PTR [rdx]
+movdqu xmm1, XMMWORD PTR [rdx+256]
+movdqa xmm3, xmm1
+psubd xmm3, xmm0
+paddd xmm3, xmm15
+paddd xmm0, xmm1
+psubd xmm0, xmm15
+movdqa xmm2, xmm0
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm0, xmm2
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqu XMMWORD PTR [rdx], xmm0
+movdqu XMMWORD PTR [rdx+256], xmm3
+add rdx, 16
+sub rcx, 1
+jne 212b
+add rdx, 256
+sub rax, 1
+jne 211b
+mov rdx, rdi
+mov r8, rsi
+add r8, 4
+mov eax, 1
+213:
+movdqu xmm13, XMMWORD PTR [r8]
+pshufd xmm13, xmm13, 0
+pshufd xmm12, xmm13, 245
+add r8, -4
+mov ecx, 32
+214:
+movdqu xmm0, XMMWORD PTR [rdx]
+movdqu xmm1, XMMWORD PTR [rdx+512]
+movdqa xmm3, xmm1
+psubd xmm3, xmm0
+paddd xmm3, xmm15
+paddd xmm0, xmm1
+psubd xmm0, xmm15
+movdqa xmm2, xmm0
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm0, xmm2
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqu XMMWORD PTR [rdx], xmm0
+movdqu XMMWORD PTR [rdx+512], xmm3
+add rdx, 16
+sub rcx, 1
+jne 214b
+add rdx, 512
+sub rax, 1
+jne 213b
+mov rdx, rdi
+mov eax, 16382
+movq xmm13, rax
+pshufd xmm13, xmm13, 0
+movdqa xmm12, xmm13
+mov ecx, 64
+215:
+movdqu xmm3, XMMWORD PTR [rdx]
+pshufd xmm4, xmm3, 245
+pmuludq xmm3, xmm13
+pmuludq xmm4, xmm12
+movdqa xmm2, xmm3
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm3, xmm2
+psrlq xmm3, 32
+movdqa xmm2, xmm4
+pmuludq xmm2, xmm14
+pmuludq xmm2, xmm15
+paddq xmm4, xmm2
+por xmm3, xmm4
+psubd xmm3, xmm15
+movdqa xmm2, xmm3
+psrad xmm2, 31
+pand xmm2, xmm15
+paddd xmm3, xmm2
+movdqu XMMWORD PTR [rdx], xmm3
+add rdx, 16
+sub rcx, 1
+jne 215b
+lfence
+mov DWORD PTR [rsi+768], r11d
+ldmxcsr DWORD PTR [rsi+768]
+ret
+.p2align 6",
+    )
+}
+
+/// The CPU features `vg_mldsa_dot_inverse4_avx2` requires (`Artifact.features`).
+pub(crate) const VG_MLDSA_DOT_INVERSE4_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
+
+/// Writes the canonical inverse NTT of the sum of coefficientwise products of 4 pairs of polynomials. Each input family is contiguous. Timing depends only on pointers, as specified by `dotInverseContract`.
+///
+/// The function computes on eight coefficients at a time in AVX2 registers: it sums the products in 64-bit lanes, reduces each sum once to the sum times `2⁻³²`, then runs `vg_mldsa_montgomery_inv_ntt_avx2`'s code, which cancels the factor, with a table of the 256 zetas that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 1024 bytes.
+/// * `a` must be valid for reads of 4096 bytes.
+/// * `b` must be valid for reads of 4096 bytes.
+/// * `scratch` must be valid for reads and writes of 1024 bytes.
+/// * Every coefficient of both input families must be less than 25141251 (3q).
+/// * `out` and `scratch` must not overlap each other, `a` or `b` (distinct Rust objects never do).
+/// * None of `out`, `a`, `b` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mldsa_dot_inverse4_avx2(out: *mut [u32; 256], a: *const [u32; 1024], b: *const [u32; 1024], scratch: *mut [u64; 128]) {
+    core::arch::naked_asm!(
+        r"mov r10, rsi
+mov rsi, rcx
+stmxcsr DWORD PTR [rsi+768]
+mov r11d, DWORD PTR [rsi+768]
+and r11d, 65535
+mov eax, 8127
+mov DWORD PTR [rsi+772], eax
+ldmxcsr DWORD PTR [rsi+772]
+lfence
+mov eax, 8380417
+vmovq xmm15, rax
+vpbroadcastd ymm15, xmm15
+mov eax, -58728449
+vmovq xmm14, rax
+vpbroadcastd ymm14, xmm14
+mov r8, rdi
+mov ecx, 32
+20:
+vpxor ymm5, ymm5, ymm5
+vpxor ymm6, ymm6, ymm6
+vmovdqu ymm0, YMMWORD PTR [r10]
+vmovdqu ymm1, YMMWORD PTR [rdx]
+vpsrlq ymm2, ymm0, 32
+vpsrlq ymm3, ymm1, 32
+vpmuludq ymm2, ymm2, ymm3
+vpmuludq ymm0, ymm0, ymm1
+vpaddq ymm5, ymm5, ymm0
+vpaddq ymm6, ymm6, ymm2
+vmovdqu ymm0, YMMWORD PTR [r10+1024]
+vmovdqu ymm1, YMMWORD PTR [rdx+1024]
+vpsrlq ymm2, ymm0, 32
+vpsrlq ymm3, ymm1, 32
+vpmuludq ymm2, ymm2, ymm3
+vpmuludq ymm0, ymm0, ymm1
+vpaddq ymm5, ymm5, ymm0
+vpaddq ymm6, ymm6, ymm2
+vmovdqu ymm0, YMMWORD PTR [r10+2048]
+vmovdqu ymm1, YMMWORD PTR [rdx+2048]
+vpsrlq ymm2, ymm0, 32
+vpsrlq ymm3, ymm1, 32
+vpmuludq ymm2, ymm2, ymm3
+vpmuludq ymm0, ymm0, ymm1
+vpaddq ymm5, ymm5, ymm0
+vpaddq ymm6, ymm6, ymm2
+vmovdqu ymm0, YMMWORD PTR [r10+3072]
+vmovdqu ymm1, YMMWORD PTR [rdx+3072]
+vpsrlq ymm2, ymm0, 32
+vpsrlq ymm3, ymm1, 32
+vpmuludq ymm2, ymm2, ymm3
+vpmuludq ymm0, ymm0, ymm1
+vpaddq ymm5, ymm5, ymm0
+vpaddq ymm6, ymm6, ymm2
+vpmuludq ymm2, ymm5, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm5, ymm5, ymm2
+vpsrlq ymm5, ymm5, 32
+vpmuludq ymm2, ymm6, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm6, ymm6, ymm2
+vpor ymm5, ymm5, ymm6
+vpsubd ymm5, ymm5, ymm15
+vpsrad ymm2, ymm5, 31
+vpand ymm2, ymm2, ymm15
+vpaddd ymm5, ymm5, ymm2
+vmovdqu YMMWORD PTR [r8], ymm5
+add r8, 32
+add r10, 32
+add rdx, 32
+sub rcx, 1
+jne 20b
+movabs r9, 111012023893504
+mov QWORD PTR [rsi], r9
+movabs r9, 33764919763013891
+mov QWORD PTR [rsi+8], r9
+movabs r9, 32652304184483396
+mov QWORD PTR [rsi+16], r9
+movabs r9, 2003464812134697
+mov QWORD PTR [rsi+24], r9
+movabs r9, 10107995079564843
+mov QWORD PTR [rsi+32], r9
+movabs r9, 27008953388524718
+mov QWORD PTR [rsi+40], r9
+movabs r9, 23603259066260085
+mov QWORD PTR [rsi+48], r9
+movabs r9, 11510954738022985
+mov QWORD PTR [rsi+56], r9
+movabs r9, 4398527550166616
+mov QWORD PTR [rsi+64], r9
+movabs r9, 15401443493111205
+mov QWORD PTR [rsi+72], r9
+movabs r9, 31185040284548497
+mov QWORD PTR [rsi+80], r9
+movabs r9, 26937467947448680
+mov QWORD PTR [rsi+88], r9
+movabs r9, 19416172761943511
+mov QWORD PTR [rsi+96], r9
+movabs r9, 21916122901808376
+mov QWORD PTR [rsi+104], r9
+movabs r9, 35910200088776757
+mov QWORD PTR [rsi+112], r9
+movabs r9, 1202612321726977
+mov QWORD PTR [rsi+120], r9
+movabs r9, 411354790447719
+mov QWORD PTR [rsi+128], r9
+movabs r9, 15163111458665677
+mov QWORD PTR [rsi+136], r9
+movabs r9, 20565458766169348
+mov QWORD PTR [rsi+144], r9
+movabs r9, 16816682460325845
+mov QWORD PTR [rsi+152], r9
+movabs r9, 22920956268049798
+mov QWORD PTR [rsi+160], r9
+movabs r9, 23677166863944342
+mov QWORD PTR [rsi+168], r9
+movabs r9, 34703121006855168
+mov QWORD PTR [rsi+176], r9
+movabs r9, 33677345376425628
+mov QWORD PTR [rsi+184], r9
+movabs r9, 28933472397947454
+mov QWORD PTR [rsi+192], r9
+movabs r9, 19579390106369566
+mov QWORD PTR [rsi+200], r9
+movabs r9, 26799599498134591
+mov QWORD PTR [rsi+208], r9
+movabs r9, 15889643835192413
+mov QWORD PTR [rsi+216], r9
+movabs r9, 2282148053410728
+mov QWORD PTR [rsi+224], r9
+movabs r9, 16668952760323958
+mov QWORD PTR [rsi+232], r9
+movabs r9, 25011900965946676
+mov QWORD PTR [rsi+240], r9
+movabs r9, 23977247637478740
+mov QWORD PTR [rsi+248], r9
+movabs r9, 29427887555995366
+mov QWORD PTR [rsi+256], r9
+movabs r9, 22931526182748624
+mov QWORD PTR [rsi+264], r9
+movabs r9, 14929091579459166
+mov QWORD PTR [rsi+272], r9
+movabs r9, 29185144592086471
+mov QWORD PTR [rsi+280], r9
+movabs r9, 8329290213797750
+mov QWORD PTR [rsi+288], r9
+movabs r9, 31697782066745459
+mov QWORD PTR [rsi+296], r9
+movabs r9, 22432987854353025
+mov QWORD PTR [rsi+304], r9
+movabs r9, 545125843890401
+mov QWORD PTR [rsi+312], r9
+movabs r9, 31769864501989618
+mov QWORD PTR [rsi+320], r9
+movabs r9, 11662103226140216
+mov QWORD PTR [rsi+328], r9
+movabs r9, 20130185304250276
+mov QWORD PTR [rsi+336], r9
+movabs r9, 25354781094156910
+mov QWORD PTR [rsi+344], r9
+movabs r9, 30717142252233347
+mov QWORD PTR [rsi+352], r9
+movabs r9, 30375073877558844
+mov QWORD PTR [rsi+360], r9
+movabs r9, 5794237307816926
+mov QWORD PTR [rsi+368], r9
+movabs r9, 29849966874477923
+mov QWORD PTR [rsi+376], r9
+movabs r9, 1137925820308458
+mov QWORD PTR [rsi+384], r9
+movabs r9, 13305774323778583
+mov QWORD PTR [rsi+392], r9
+movabs r9, 31268732009491712
+mov QWORD PTR [rsi+400], r9
+movabs r9, 17002134848261444
+mov QWORD PTR [rsi+408], r9
+movabs r9, 35956774717033419
+mov QWORD PTR [rsi+416], r9
+movabs r9, 22036141462600008
+mov QWORD PTR [rsi+424], r9
+movabs r9, 35087477629023596
+mov QWORD PTR [rsi+432], r9
+movabs r9, 30337763489061025
+mov QWORD PTR [rsi+440], r9
+movabs r9, 20732429908239468
+mov QWORD PTR [rsi+448], r9
+movabs r9, 28041905903253186
+mov QWORD PTR [rsi+456], r9
+movabs r9, 35231517950811284
+mov QWORD PTR [rsi+464], r9
+movabs r9, 5760968484459269
+mov QWORD PTR [rsi+472], r9
+movabs r9, 29186403016613413
+mov QWORD PTR [rsi+480], r9
+movabs r9, 29809972144732485
+mov QWORD PTR [rsi+488], r9
+movabs r9, 19324591173389987
+mov QWORD PTR [rsi+496], r9
+movabs r9, 16492506917666904
+mov QWORD PTR [rsi+504], r9
+movabs r9, 14635985826474643
+mov QWORD PTR [rsi+512], r9
+movabs r9, 16398082059229396
+mov QWORD PTR [rsi+520], r9
+movabs r9, 9638297459285875
+mov QWORD PTR [rsi+528], r9
+movabs r9, 20692959164533664
+mov QWORD PTR [rsi+536], r9
+movabs r9, 10455835889373941
+mov QWORD PTR [rsi+544], r9
+movabs r9, 15088997507073265
+mov QWORD PTR [rsi+552], r9
+movabs r9, 19847271512942753
+mov QWORD PTR [rsi+560], r9
+movabs r9, 22278162875259735
+mov QWORD PTR [rsi+568], r9
+movabs r9, 7984765110959710
+mov QWORD PTR [rsi+576], r9
+movabs r9, 3517724245221606
+mov QWORD PTR [rsi+584], r9
+movabs r9, 29065087369580419
+mov QWORD PTR [rsi+592], r9
+movabs r9, 33749496538019589
+mov QWORD PTR [rsi+600], r9
+movabs r9, 22582830675910690
+mov QWORD PTR [rsi+608], r9
+movabs r9, 13774157688799364
+mov QWORD PTR [rsi+616], r9
+movabs r9, 33738338209470846
+mov QWORD PTR [rsi+624], r9
+movabs r9, 20549610337740179
+mov QWORD PTR [rsi+632], r9
+movabs r9, 1232604074686745
+mov QWORD PTR [rsi+640], r9
+movabs r9, 17645078572608834
+mov QWORD PTR [rsi+648], r9
+movabs r9, 21638646536106727
+mov QWORD PTR [rsi+656], r9
+movabs r9, 872067341384903
+mov QWORD PTR [rsi+664], r9
+movabs r9, 11559822875647717
+mov QWORD PTR [rsi+672], r9
+movabs r9, 5433172289935931
+mov QWORD PTR [rsi+680], r9
+movabs r9, 5358487101890844
+mov QWORD PTR [rsi+688], r9
+movabs r9, 6854656137752657
+mov QWORD PTR [rsi+696], r9
+movabs r9, 5370830838457625
+mov QWORD PTR [rsi+704], r9
+movabs r9, 20753904747165841
+mov QWORD PTR [rsi+712], r9
+movabs r9, 8027804982718602
+mov QWORD PTR [rsi+720], r9
+movabs r9, 31479735164668747
+mov QWORD PTR [rsi+728], r9
+movabs r9, 5314055668205759
+mov QWORD PTR [rsi+736], r9
+movabs r9, 29850847345983039
+mov QWORD PTR [rsi+744], r9
+movabs r9, 5636951310400997
+mov QWORD PTR [rsi+752], r9
+movabs r9, 27564133741392515
+mov QWORD PTR [rsi+760], r9
+movabs r9, 8233800205883732
+mov QWORD PTR [rsi+768], r9
+movabs r9, 30088883024233849
+mov QWORD PTR [rsi+776], r9
+movabs r9, 3338009929245701
+mov QWORD PTR [rsi+784], r9
+movabs r9, 14628791756398056
+mov QWORD PTR [rsi+792], r9
+movabs r9, 23830870862829877
+mov QWORD PTR [rsi+800], r9
+movabs r9, 28061014216302585
+mov QWORD PTR [rsi+808], r9
+movabs r9, 19997999096164636
+mov QWORD PTR [rsi+816], r9
+movabs r9, 19771555530215640
+mov QWORD PTR [rsi+824], r9
+movabs r9, 10447056982320729
+mov QWORD PTR [rsi+832], r9
+movabs r9, 35286145636332471
+mov QWORD PTR [rsi+840], r9
+movabs r9, 14470225858518424
+mov QWORD PTR [rsi+848], r9
+movabs r9, 30807937853347003
+mov QWORD PTR [rsi+856], r9
+movabs r9, 699409659546815
+mov QWORD PTR [rsi+864], r9
+movabs r9, 12945035726727688
+mov QWORD PTR [rsi+872], r9
+movabs r9, 7098008983067813
+mov QWORD PTR [rsi+880], r9
+movabs r9, 28266511219523944
+mov QWORD PTR [rsi+888], r9
+movabs r9, 15135022374814013
+mov QWORD PTR [rsi+896], r9
+movabs r9, 1158610381635861
+mov QWORD PTR [rsi+904], r9
+movabs r9, 31802227079365879
+mov QWORD PTR [rsi+912], r9
+movabs r9, 2027559572878823
+mov QWORD PTR [rsi+920], r9
+movabs r9, 7402805639339334
+mov QWORD PTR [rsi+928], r9
+movabs r9, 8205002449640623
+mov QWORD PTR [rsi+936], r9
+movabs r9, 31250542829661849
+mov QWORD PTR [rsi+944], r9
+movabs r9, 19527171898598875
+mov QWORD PTR [rsi+952], r9
+movabs r9, 26390134497937253
+mov QWORD PTR [rsi+960], r9
+movabs r9, 26173917256840158
+mov QWORD PTR [rsi+968], r9
+movabs r9, 31797902045269139
+mov QWORD PTR [rsi+976], r9
+movabs r9, 20765007236602922
+mov QWORD PTR [rsi+984], r9
+movabs r9, 16834811519265361
+mov QWORD PTR [rsi+992], r9
+movabs r9, 30142973844857679
+mov QWORD PTR [rsi+1000], r9
+movabs r9, 6014775284471242
+mov QWORD PTR [rsi+1008], r9
+movabs r9, 8490214048855735
+mov QWORD PTR [rsi+1016], r9
+mov eax, 8380417
+vmovq xmm15, rax
+vpbroadcastd ymm15, xmm15
+mov eax, -58728449
+vmovq xmm14, rax
+vpbroadcastd ymm14, xmm14
+mov eax, 1072693376
+vmovq xmm11, rax
+vpbroadcastd ymm11, xmm11
+mov rdx, rdi
+mov r8, rsi
+add r8, 992
+mov ecx, 16
+21:
+vmovdqu ymm0, YMMWORD PTR [rdx]
+vmovdqu ymm2, YMMWORD PTR [rdx+32]
+vmovdqu ymm13, YMMWORD PTR [r8]
+vpermq ymm13, ymm13, 39
+vpshufd ymm13, ymm13, 177
+vpshufd ymm12, ymm13, 245
+add r8, -32
+vpshufd ymm0, ymm0, 216
+vpshufd ymm2, ymm2, 216
+vmovdqa ymm1, ymm0
+vpunpcklqdq ymm0, ymm0, ymm2
+vpunpckhqdq ymm1, ymm1, ymm2
+vpsubd ymm3, ymm1, ymm0
+vpaddd ymm3, ymm3, ymm11
+vpaddd ymm0, ymm0, ymm1
+vpshufd ymm4, ymm3, 245
+vpmuludq ymm3, ymm3, ymm13
+vpmuludq ymm4, ymm4, ymm12
+vpmuludq ymm2, ymm3, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm3, ymm3, ymm2
+vpsrlq ymm3, ymm3, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm3, ymm3, ymm4
+vmovdqa ymm1, ymm0
+vpunpckldq ymm0, ymm0, ymm3
+vpunpckhdq ymm1, ymm1, ymm3
+vmovdqu YMMWORD PTR [rdx], ymm0
+vmovdqu YMMWORD PTR [rdx+32], ymm1
+add rdx, 64
+sub rcx, 1
+jne 21b
+mov rdx, rdi
+mov r8, rsi
+add r8, 496
+mov ecx, 16
+22:
+vmovdqu ymm0, YMMWORD PTR [rdx]
+vmovdqu ymm1, YMMWORD PTR [rdx+32]
+vbroadcasti128 ymm13, XMMWORD PTR [r8]
+vpshufd ymm2, ymm13, 10
+vpshufd ymm13, ymm13, 95
+vpblendd ymm13, ymm13, ymm2, 240
+vpshufd ymm12, ymm13, 245
+add r8, -16
+vmovdqa ymm2, ymm0
+vpunpcklqdq ymm0, ymm0, ymm1
+vpunpckhqdq ymm2, ymm2, ymm1
+vmovdqa ymm1, ymm2
+vpsubd ymm3, ymm1, ymm0
+vpaddd ymm3, ymm3, ymm11
+vpaddd ymm0, ymm0, ymm1
+vpshufd ymm4, ymm3, 245
+vpmuludq ymm3, ymm3, ymm13
+vpmuludq ymm4, ymm4, ymm12
+vpmuludq ymm2, ymm3, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm3, ymm3, ymm2
+vpsrlq ymm3, ymm3, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm3, ymm3, ymm4
+vmovdqa ymm1, ymm0
+vpunpcklqdq ymm0, ymm0, ymm3
+vpunpckhqdq ymm1, ymm1, ymm3
+vmovdqu YMMWORD PTR [rdx], ymm0
+vmovdqu YMMWORD PTR [rdx+32], ymm1
+add rdx, 64
+sub rcx, 1
+jne 22b
+mov rdx, rdi
+mov r8, rsi
+add r8, 248
+mov ecx, 16
+23:
+vmovdqu ymm4, YMMWORD PTR [rdx]
+vmovdqu ymm5, YMMWORD PTR [rdx+32]
+vbroadcasti128 ymm13, XMMWORD PTR [r8]
+vpshufd ymm2, ymm13, 0
+vpshufd ymm13, ymm13, 85
+vpblendd ymm13, ymm13, ymm2, 240
+vpshufd ymm12, ymm13, 245
+add r8, -8
+vperm2i128 ymm0, ymm4, ymm5, 32
+vperm2i128 ymm1, ymm4, ymm5, 49
+vpsubd ymm3, ymm1, ymm0
+vpaddd ymm3, ymm3, ymm11
+vpaddd ymm0, ymm0, ymm1
+vpshufd ymm4, ymm3, 245
+vpmuludq ymm3, ymm3, ymm13
+vpmuludq ymm4, ymm4, ymm12
+vpmuludq ymm2, ymm3, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm3, ymm3, ymm2
+vpsrlq ymm3, ymm3, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm3, ymm3, ymm4
+vperm2i128 ymm4, ymm0, ymm3, 32
+vperm2i128 ymm5, ymm0, ymm3, 49
+vmovdqu YMMWORD PTR [rdx], ymm4
+vmovdqu YMMWORD PTR [rdx+32], ymm5
+add rdx, 64
+sub rcx, 1
+jne 23b
+mov rdx, rdi
+mov r8, rsi
+add r8, 124
+mov eax, 16
+24:
+vbroadcasti128 ymm13, XMMWORD PTR [r8]
+vpshufd ymm13, ymm13, 0
+vpshufd ymm12, ymm13, 245
+add r8, -4
+mov ecx, 1
+25:
+vmovdqu ymm0, YMMWORD PTR [rdx]
+vmovdqu ymm1, YMMWORD PTR [rdx+32]
+vpsubd ymm3, ymm1, ymm0
+vpaddd ymm3, ymm3, ymm11
+vpaddd ymm0, ymm0, ymm1
+vpshufd ymm4, ymm3, 245
+vpmuludq ymm3, ymm3, ymm13
+vpmuludq ymm4, ymm4, ymm12
+vpmuludq ymm2, ymm3, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm3, ymm3, ymm2
+vpsrlq ymm3, ymm3, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm3, ymm3, ymm4
+vmovdqu YMMWORD PTR [rdx], ymm0
+vmovdqu YMMWORD PTR [rdx+32], ymm3
+add rdx, 32
+sub rcx, 1
+jne 25b
+add rdx, 32
+sub rax, 1
+jne 24b
+mov rdx, rdi
+mov r8, rsi
+add r8, 60
+mov eax, 8
+26:
+vbroadcasti128 ymm13, XMMWORD PTR [r8]
+vpshufd ymm13, ymm13, 0
+vpshufd ymm12, ymm13, 245
+add r8, -4
+mov ecx, 2
+27:
+vmovdqu ymm0, YMMWORD PTR [rdx]
+vmovdqu ymm1, YMMWORD PTR [rdx+64]
+vpsubd ymm3, ymm1, ymm0
+vpaddd ymm3, ymm3, ymm11
+vpaddd ymm0, ymm0, ymm1
+vpshufd ymm4, ymm3, 245
+vpmuludq ymm3, ymm3, ymm13
+vpmuludq ymm4, ymm4, ymm12
+vpmuludq ymm2, ymm3, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm3, ymm3, ymm2
+vpsrlq ymm3, ymm3, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm3, ymm3, ymm4
+vmovdqu YMMWORD PTR [rdx], ymm0
+vmovdqu YMMWORD PTR [rdx+64], ymm3
+add rdx, 32
+sub rcx, 1
+jne 27b
+add rdx, 64
+sub rax, 1
+jne 26b
+mov rdx, rdi
+mov r8, rsi
+add r8, 28
+mov eax, 4
+28:
+vbroadcasti128 ymm13, XMMWORD PTR [r8]
+vpshufd ymm13, ymm13, 0
+vpshufd ymm12, ymm13, 245
+add r8, -4
+mov ecx, 4
+29:
+vmovdqu ymm0, YMMWORD PTR [rdx]
+vmovdqu ymm1, YMMWORD PTR [rdx+128]
+vpsubd ymm3, ymm1, ymm0
+vpaddd ymm3, ymm3, ymm11
+vpaddd ymm0, ymm0, ymm1
+vpshufd ymm4, ymm3, 245
+vpmuludq ymm3, ymm3, ymm13
+vpmuludq ymm4, ymm4, ymm12
+vpmuludq ymm2, ymm3, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm3, ymm3, ymm2
+vpsrlq ymm3, ymm3, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm3, ymm3, ymm4
+vmovdqu YMMWORD PTR [rdx], ymm0
+vmovdqu YMMWORD PTR [rdx+128], ymm3
+add rdx, 32
+sub rcx, 1
+jne 29b
+add rdx, 128
+sub rax, 1
+jne 28b
+mov rdx, rdi
+mov eax, 7861508
+vmovq xmm7, rax
+vpbroadcastd ymm7, xmm7
+mov eax, 5771523
+vmovq xmm8, rax
+vpbroadcastd ymm8, xmm8
+mov eax, 4404704
+vmovq xmm9, rax
+vpbroadcastd ymm9, xmm9
+mov eax, 41978
+vmovq xmm10, rax
+vpbroadcastd ymm10, xmm10
+mov ecx, 8
+210:
+vmovdqu ymm0, YMMWORD PTR [rdx]
+vmovdqu ymm1, YMMWORD PTR [rdx+256]
+vmovdqu ymm5, YMMWORD PTR [rdx+512]
+vmovdqu ymm6, YMMWORD PTR [rdx+768]
+vpsubd ymm3, ymm1, ymm0
+vpaddd ymm3, ymm3, ymm11
+vpaddd ymm0, ymm0, ymm1
+vpshufd ymm4, ymm3, 245
+vpmuludq ymm3, ymm3, ymm7
+vpmuludq ymm4, ymm4, ymm7
+vpmuludq ymm2, ymm3, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm3, ymm3, ymm2
+vpsrlq ymm3, ymm3, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm3, ymm3, ymm4
+vpsubd ymm1, ymm6, ymm5
+vpaddd ymm1, ymm1, ymm11
+vpaddd ymm5, ymm5, ymm6
+vpshufd ymm4, ymm1, 245
+vpmuludq ymm1, ymm1, ymm8
+vpmuludq ymm4, ymm4, ymm8
+vpmuludq ymm2, ymm1, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm1, ymm1, ymm2
+vpsrlq ymm1, ymm1, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm1, ymm1, ymm4
+vpsubd ymm6, ymm5, ymm0
+vpaddd ymm6, ymm6, ymm11
+vpaddd ymm0, ymm0, ymm5
+vpshufd ymm4, ymm6, 245
+vpmuludq ymm6, ymm6, ymm9
+vpmuludq ymm4, ymm4, ymm9
+vpmuludq ymm2, ymm6, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm6, ymm6, ymm2
+vpsrlq ymm6, ymm6, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm6, ymm6, ymm4
+vpsubd ymm5, ymm1, ymm3
+vpaddd ymm5, ymm5, ymm11
+vpaddd ymm3, ymm3, ymm1
+vpshufd ymm4, ymm5, 245
+vpmuludq ymm5, ymm5, ymm9
+vpmuludq ymm4, ymm4, ymm9
+vpmuludq ymm2, ymm5, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm5, ymm5, ymm2
+vpsrlq ymm5, ymm5, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm5, ymm5, ymm4
+vpshufd ymm4, ymm0, 245
+vpmuludq ymm0, ymm0, ymm10
+vpmuludq ymm4, ymm4, ymm10
+vpmuludq ymm2, ymm0, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm0, ymm0, ymm2
+vpsrlq ymm0, ymm0, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm0, ymm0, ymm4
+vpsubd ymm0, ymm0, ymm15
+vpsrad ymm2, ymm0, 31
+vpand ymm2, ymm2, ymm15
+vpaddd ymm0, ymm0, ymm2
+vpshufd ymm4, ymm3, 245
+vpmuludq ymm3, ymm3, ymm10
+vpmuludq ymm4, ymm4, ymm10
+vpmuludq ymm2, ymm3, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm3, ymm3, ymm2
+vpsrlq ymm3, ymm3, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm3, ymm3, ymm4
+vpsubd ymm3, ymm3, ymm15
+vpsrad ymm2, ymm3, 31
+vpand ymm2, ymm2, ymm15
+vpaddd ymm3, ymm3, ymm2
+vpsubd ymm6, ymm6, ymm15
+vpsrad ymm2, ymm6, 31
+vpand ymm2, ymm2, ymm15
+vpaddd ymm6, ymm6, ymm2
+vpsubd ymm5, ymm5, ymm15
+vpsrad ymm2, ymm5, 31
+vpand ymm2, ymm2, ymm15
+vpaddd ymm5, ymm5, ymm2
+vmovdqu YMMWORD PTR [rdx], ymm0
+vmovdqu YMMWORD PTR [rdx+256], ymm3
+vmovdqu YMMWORD PTR [rdx+512], ymm6
+vmovdqu YMMWORD PTR [rdx+768], ymm5
+add rdx, 32
+sub rcx, 1
+jne 210b
+vzeroupper
+lfence
+mov DWORD PTR [rsi+768], r11d
+ldmxcsr DWORD PTR [rsi+768]
+ret
+.p2align 6",
+    )
+}
+
+/// The CPU features `vg_mldsa_dot_inverse5_avx2` requires (`Artifact.features`).
+pub(crate) const VG_MLDSA_DOT_INVERSE5_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
+
+/// Writes the canonical inverse NTT of the sum of coefficientwise products of 5 pairs of polynomials. Each input family is contiguous. Timing depends only on pointers, as specified by `dotInverseContract`.
+///
+/// The function computes on eight coefficients at a time in AVX2 registers: it sums the products in 64-bit lanes, reduces each sum once to the sum times `2⁻³²`, then runs `vg_mldsa_montgomery_inv_ntt_avx2`'s code, which cancels the factor, with a table of the 256 zetas that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 1024 bytes.
+/// * `a` must be valid for reads of 5120 bytes.
+/// * `b` must be valid for reads of 5120 bytes.
+/// * `scratch` must be valid for reads and writes of 1024 bytes.
+/// * Every coefficient of both input families must be less than 25141251 (3q).
+/// * `out` and `scratch` must not overlap each other, `a` or `b` (distinct Rust objects never do).
+/// * None of `out`, `a`, `b` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mldsa_dot_inverse5_avx2(out: *mut [u32; 256], a: *const [u32; 1280], b: *const [u32; 1280], scratch: *mut [u64; 128]) {
+    core::arch::naked_asm!(
+        r"mov r10, rsi
+mov rsi, rcx
+stmxcsr DWORD PTR [rsi+768]
+mov r11d, DWORD PTR [rsi+768]
+and r11d, 65535
+mov eax, 8127
+mov DWORD PTR [rsi+772], eax
+ldmxcsr DWORD PTR [rsi+772]
+lfence
+mov eax, 8380417
+vmovq xmm15, rax
+vpbroadcastd ymm15, xmm15
+mov eax, -58728449
+vmovq xmm14, rax
+vpbroadcastd ymm14, xmm14
+mov r8, rdi
+mov ecx, 32
+20:
+vpxor ymm5, ymm5, ymm5
+vpxor ymm6, ymm6, ymm6
+vmovdqu ymm0, YMMWORD PTR [r10]
+vmovdqu ymm1, YMMWORD PTR [rdx]
+vpsrlq ymm2, ymm0, 32
+vpsrlq ymm3, ymm1, 32
+vpmuludq ymm2, ymm2, ymm3
+vpmuludq ymm0, ymm0, ymm1
+vpaddq ymm5, ymm5, ymm0
+vpaddq ymm6, ymm6, ymm2
+vmovdqu ymm0, YMMWORD PTR [r10+1024]
+vmovdqu ymm1, YMMWORD PTR [rdx+1024]
+vpsrlq ymm2, ymm0, 32
+vpsrlq ymm3, ymm1, 32
+vpmuludq ymm2, ymm2, ymm3
+vpmuludq ymm0, ymm0, ymm1
+vpaddq ymm5, ymm5, ymm0
+vpaddq ymm6, ymm6, ymm2
+vmovdqu ymm0, YMMWORD PTR [r10+2048]
+vmovdqu ymm1, YMMWORD PTR [rdx+2048]
+vpsrlq ymm2, ymm0, 32
+vpsrlq ymm3, ymm1, 32
+vpmuludq ymm2, ymm2, ymm3
+vpmuludq ymm0, ymm0, ymm1
+vpaddq ymm5, ymm5, ymm0
+vpaddq ymm6, ymm6, ymm2
+vmovdqu ymm0, YMMWORD PTR [r10+3072]
+vmovdqu ymm1, YMMWORD PTR [rdx+3072]
+vpsrlq ymm2, ymm0, 32
+vpsrlq ymm3, ymm1, 32
+vpmuludq ymm2, ymm2, ymm3
+vpmuludq ymm0, ymm0, ymm1
+vpaddq ymm5, ymm5, ymm0
+vpaddq ymm6, ymm6, ymm2
+vmovdqu ymm0, YMMWORD PTR [r10+4096]
+vmovdqu ymm1, YMMWORD PTR [rdx+4096]
+vpsrlq ymm2, ymm0, 32
+vpsrlq ymm3, ymm1, 32
+vpmuludq ymm2, ymm2, ymm3
+vpmuludq ymm0, ymm0, ymm1
+vpaddq ymm5, ymm5, ymm0
+vpaddq ymm6, ymm6, ymm2
+vpmuludq ymm2, ymm5, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm5, ymm5, ymm2
+vpsrlq ymm5, ymm5, 32
+vpmuludq ymm2, ymm6, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm6, ymm6, ymm2
+vpor ymm5, ymm5, ymm6
+vpsubd ymm5, ymm5, ymm15
+vpsrad ymm2, ymm5, 31
+vpand ymm2, ymm2, ymm15
+vpaddd ymm5, ymm5, ymm2
+vmovdqu YMMWORD PTR [r8], ymm5
+add r8, 32
+add r10, 32
+add rdx, 32
+sub rcx, 1
+jne 20b
+movabs r9, 111012023893504
+mov QWORD PTR [rsi], r9
+movabs r9, 33764919763013891
+mov QWORD PTR [rsi+8], r9
+movabs r9, 32652304184483396
+mov QWORD PTR [rsi+16], r9
+movabs r9, 2003464812134697
+mov QWORD PTR [rsi+24], r9
+movabs r9, 10107995079564843
+mov QWORD PTR [rsi+32], r9
+movabs r9, 27008953388524718
+mov QWORD PTR [rsi+40], r9
+movabs r9, 23603259066260085
+mov QWORD PTR [rsi+48], r9
+movabs r9, 11510954738022985
+mov QWORD PTR [rsi+56], r9
+movabs r9, 4398527550166616
+mov QWORD PTR [rsi+64], r9
+movabs r9, 15401443493111205
+mov QWORD PTR [rsi+72], r9
+movabs r9, 31185040284548497
+mov QWORD PTR [rsi+80], r9
+movabs r9, 26937467947448680
+mov QWORD PTR [rsi+88], r9
+movabs r9, 19416172761943511
+mov QWORD PTR [rsi+96], r9
+movabs r9, 21916122901808376
+mov QWORD PTR [rsi+104], r9
+movabs r9, 35910200088776757
+mov QWORD PTR [rsi+112], r9
+movabs r9, 1202612321726977
+mov QWORD PTR [rsi+120], r9
+movabs r9, 411354790447719
+mov QWORD PTR [rsi+128], r9
+movabs r9, 15163111458665677
+mov QWORD PTR [rsi+136], r9
+movabs r9, 20565458766169348
+mov QWORD PTR [rsi+144], r9
+movabs r9, 16816682460325845
+mov QWORD PTR [rsi+152], r9
+movabs r9, 22920956268049798
+mov QWORD PTR [rsi+160], r9
+movabs r9, 23677166863944342
+mov QWORD PTR [rsi+168], r9
+movabs r9, 34703121006855168
+mov QWORD PTR [rsi+176], r9
+movabs r9, 33677345376425628
+mov QWORD PTR [rsi+184], r9
+movabs r9, 28933472397947454
+mov QWORD PTR [rsi+192], r9
+movabs r9, 19579390106369566
+mov QWORD PTR [rsi+200], r9
+movabs r9, 26799599498134591
+mov QWORD PTR [rsi+208], r9
+movabs r9, 15889643835192413
+mov QWORD PTR [rsi+216], r9
+movabs r9, 2282148053410728
+mov QWORD PTR [rsi+224], r9
+movabs r9, 16668952760323958
+mov QWORD PTR [rsi+232], r9
+movabs r9, 25011900965946676
+mov QWORD PTR [rsi+240], r9
+movabs r9, 23977247637478740
+mov QWORD PTR [rsi+248], r9
+movabs r9, 29427887555995366
+mov QWORD PTR [rsi+256], r9
+movabs r9, 22931526182748624
+mov QWORD PTR [rsi+264], r9
+movabs r9, 14929091579459166
+mov QWORD PTR [rsi+272], r9
+movabs r9, 29185144592086471
+mov QWORD PTR [rsi+280], r9
+movabs r9, 8329290213797750
+mov QWORD PTR [rsi+288], r9
+movabs r9, 31697782066745459
+mov QWORD PTR [rsi+296], r9
+movabs r9, 22432987854353025
+mov QWORD PTR [rsi+304], r9
+movabs r9, 545125843890401
+mov QWORD PTR [rsi+312], r9
+movabs r9, 31769864501989618
+mov QWORD PTR [rsi+320], r9
+movabs r9, 11662103226140216
+mov QWORD PTR [rsi+328], r9
+movabs r9, 20130185304250276
+mov QWORD PTR [rsi+336], r9
+movabs r9, 25354781094156910
+mov QWORD PTR [rsi+344], r9
+movabs r9, 30717142252233347
+mov QWORD PTR [rsi+352], r9
+movabs r9, 30375073877558844
+mov QWORD PTR [rsi+360], r9
+movabs r9, 5794237307816926
+mov QWORD PTR [rsi+368], r9
+movabs r9, 29849966874477923
+mov QWORD PTR [rsi+376], r9
+movabs r9, 1137925820308458
+mov QWORD PTR [rsi+384], r9
+movabs r9, 13305774323778583
+mov QWORD PTR [rsi+392], r9
+movabs r9, 31268732009491712
+mov QWORD PTR [rsi+400], r9
+movabs r9, 17002134848261444
+mov QWORD PTR [rsi+408], r9
+movabs r9, 35956774717033419
+mov QWORD PTR [rsi+416], r9
+movabs r9, 22036141462600008
+mov QWORD PTR [rsi+424], r9
+movabs r9, 35087477629023596
+mov QWORD PTR [rsi+432], r9
+movabs r9, 30337763489061025
+mov QWORD PTR [rsi+440], r9
+movabs r9, 20732429908239468
+mov QWORD PTR [rsi+448], r9
+movabs r9, 28041905903253186
+mov QWORD PTR [rsi+456], r9
+movabs r9, 35231517950811284
+mov QWORD PTR [rsi+464], r9
+movabs r9, 5760968484459269
+mov QWORD PTR [rsi+472], r9
+movabs r9, 29186403016613413
+mov QWORD PTR [rsi+480], r9
+movabs r9, 29809972144732485
+mov QWORD PTR [rsi+488], r9
+movabs r9, 19324591173389987
+mov QWORD PTR [rsi+496], r9
+movabs r9, 16492506917666904
+mov QWORD PTR [rsi+504], r9
+movabs r9, 14635985826474643
+mov QWORD PTR [rsi+512], r9
+movabs r9, 16398082059229396
+mov QWORD PTR [rsi+520], r9
+movabs r9, 9638297459285875
+mov QWORD PTR [rsi+528], r9
+movabs r9, 20692959164533664
+mov QWORD PTR [rsi+536], r9
+movabs r9, 10455835889373941
+mov QWORD PTR [rsi+544], r9
+movabs r9, 15088997507073265
+mov QWORD PTR [rsi+552], r9
+movabs r9, 19847271512942753
+mov QWORD PTR [rsi+560], r9
+movabs r9, 22278162875259735
+mov QWORD PTR [rsi+568], r9
+movabs r9, 7984765110959710
+mov QWORD PTR [rsi+576], r9
+movabs r9, 3517724245221606
+mov QWORD PTR [rsi+584], r9
+movabs r9, 29065087369580419
+mov QWORD PTR [rsi+592], r9
+movabs r9, 33749496538019589
+mov QWORD PTR [rsi+600], r9
+movabs r9, 22582830675910690
+mov QWORD PTR [rsi+608], r9
+movabs r9, 13774157688799364
+mov QWORD PTR [rsi+616], r9
+movabs r9, 33738338209470846
+mov QWORD PTR [rsi+624], r9
+movabs r9, 20549610337740179
+mov QWORD PTR [rsi+632], r9
+movabs r9, 1232604074686745
+mov QWORD PTR [rsi+640], r9
+movabs r9, 17645078572608834
+mov QWORD PTR [rsi+648], r9
+movabs r9, 21638646536106727
+mov QWORD PTR [rsi+656], r9
+movabs r9, 872067341384903
+mov QWORD PTR [rsi+664], r9
+movabs r9, 11559822875647717
+mov QWORD PTR [rsi+672], r9
+movabs r9, 5433172289935931
+mov QWORD PTR [rsi+680], r9
+movabs r9, 5358487101890844
+mov QWORD PTR [rsi+688], r9
+movabs r9, 6854656137752657
+mov QWORD PTR [rsi+696], r9
+movabs r9, 5370830838457625
+mov QWORD PTR [rsi+704], r9
+movabs r9, 20753904747165841
+mov QWORD PTR [rsi+712], r9
+movabs r9, 8027804982718602
+mov QWORD PTR [rsi+720], r9
+movabs r9, 31479735164668747
+mov QWORD PTR [rsi+728], r9
+movabs r9, 5314055668205759
+mov QWORD PTR [rsi+736], r9
+movabs r9, 29850847345983039
+mov QWORD PTR [rsi+744], r9
+movabs r9, 5636951310400997
+mov QWORD PTR [rsi+752], r9
+movabs r9, 27564133741392515
+mov QWORD PTR [rsi+760], r9
+movabs r9, 8233800205883732
+mov QWORD PTR [rsi+768], r9
+movabs r9, 30088883024233849
+mov QWORD PTR [rsi+776], r9
+movabs r9, 3338009929245701
+mov QWORD PTR [rsi+784], r9
+movabs r9, 14628791756398056
+mov QWORD PTR [rsi+792], r9
+movabs r9, 23830870862829877
+mov QWORD PTR [rsi+800], r9
+movabs r9, 28061014216302585
+mov QWORD PTR [rsi+808], r9
+movabs r9, 19997999096164636
+mov QWORD PTR [rsi+816], r9
+movabs r9, 19771555530215640
+mov QWORD PTR [rsi+824], r9
+movabs r9, 10447056982320729
+mov QWORD PTR [rsi+832], r9
+movabs r9, 35286145636332471
+mov QWORD PTR [rsi+840], r9
+movabs r9, 14470225858518424
+mov QWORD PTR [rsi+848], r9
+movabs r9, 30807937853347003
+mov QWORD PTR [rsi+856], r9
+movabs r9, 699409659546815
+mov QWORD PTR [rsi+864], r9
+movabs r9, 12945035726727688
+mov QWORD PTR [rsi+872], r9
+movabs r9, 7098008983067813
+mov QWORD PTR [rsi+880], r9
+movabs r9, 28266511219523944
+mov QWORD PTR [rsi+888], r9
+movabs r9, 15135022374814013
+mov QWORD PTR [rsi+896], r9
+movabs r9, 1158610381635861
+mov QWORD PTR [rsi+904], r9
+movabs r9, 31802227079365879
+mov QWORD PTR [rsi+912], r9
+movabs r9, 2027559572878823
+mov QWORD PTR [rsi+920], r9
+movabs r9, 7402805639339334
+mov QWORD PTR [rsi+928], r9
+movabs r9, 8205002449640623
+mov QWORD PTR [rsi+936], r9
+movabs r9, 31250542829661849
+mov QWORD PTR [rsi+944], r9
+movabs r9, 19527171898598875
+mov QWORD PTR [rsi+952], r9
+movabs r9, 26390134497937253
+mov QWORD PTR [rsi+960], r9
+movabs r9, 26173917256840158
+mov QWORD PTR [rsi+968], r9
+movabs r9, 31797902045269139
+mov QWORD PTR [rsi+976], r9
+movabs r9, 20765007236602922
+mov QWORD PTR [rsi+984], r9
+movabs r9, 16834811519265361
+mov QWORD PTR [rsi+992], r9
+movabs r9, 30142973844857679
+mov QWORD PTR [rsi+1000], r9
+movabs r9, 6014775284471242
+mov QWORD PTR [rsi+1008], r9
+movabs r9, 8490214048855735
+mov QWORD PTR [rsi+1016], r9
+mov eax, 8380417
+vmovq xmm15, rax
+vpbroadcastd ymm15, xmm15
+mov eax, -58728449
+vmovq xmm14, rax
+vpbroadcastd ymm14, xmm14
+mov eax, 1072693376
+vmovq xmm11, rax
+vpbroadcastd ymm11, xmm11
+mov rdx, rdi
+mov r8, rsi
+add r8, 992
+mov ecx, 16
+21:
+vmovdqu ymm0, YMMWORD PTR [rdx]
+vmovdqu ymm2, YMMWORD PTR [rdx+32]
+vmovdqu ymm13, YMMWORD PTR [r8]
+vpermq ymm13, ymm13, 39
+vpshufd ymm13, ymm13, 177
+vpshufd ymm12, ymm13, 245
+add r8, -32
+vpshufd ymm0, ymm0, 216
+vpshufd ymm2, ymm2, 216
+vmovdqa ymm1, ymm0
+vpunpcklqdq ymm0, ymm0, ymm2
+vpunpckhqdq ymm1, ymm1, ymm2
+vpsubd ymm3, ymm1, ymm0
+vpaddd ymm3, ymm3, ymm11
+vpaddd ymm0, ymm0, ymm1
+vpshufd ymm4, ymm3, 245
+vpmuludq ymm3, ymm3, ymm13
+vpmuludq ymm4, ymm4, ymm12
+vpmuludq ymm2, ymm3, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm3, ymm3, ymm2
+vpsrlq ymm3, ymm3, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm3, ymm3, ymm4
+vmovdqa ymm1, ymm0
+vpunpckldq ymm0, ymm0, ymm3
+vpunpckhdq ymm1, ymm1, ymm3
+vmovdqu YMMWORD PTR [rdx], ymm0
+vmovdqu YMMWORD PTR [rdx+32], ymm1
+add rdx, 64
+sub rcx, 1
+jne 21b
+mov rdx, rdi
+mov r8, rsi
+add r8, 496
+mov ecx, 16
+22:
+vmovdqu ymm0, YMMWORD PTR [rdx]
+vmovdqu ymm1, YMMWORD PTR [rdx+32]
+vbroadcasti128 ymm13, XMMWORD PTR [r8]
+vpshufd ymm2, ymm13, 10
+vpshufd ymm13, ymm13, 95
+vpblendd ymm13, ymm13, ymm2, 240
+vpshufd ymm12, ymm13, 245
+add r8, -16
+vmovdqa ymm2, ymm0
+vpunpcklqdq ymm0, ymm0, ymm1
+vpunpckhqdq ymm2, ymm2, ymm1
+vmovdqa ymm1, ymm2
+vpsubd ymm3, ymm1, ymm0
+vpaddd ymm3, ymm3, ymm11
+vpaddd ymm0, ymm0, ymm1
+vpshufd ymm4, ymm3, 245
+vpmuludq ymm3, ymm3, ymm13
+vpmuludq ymm4, ymm4, ymm12
+vpmuludq ymm2, ymm3, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm3, ymm3, ymm2
+vpsrlq ymm3, ymm3, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm3, ymm3, ymm4
+vmovdqa ymm1, ymm0
+vpunpcklqdq ymm0, ymm0, ymm3
+vpunpckhqdq ymm1, ymm1, ymm3
+vmovdqu YMMWORD PTR [rdx], ymm0
+vmovdqu YMMWORD PTR [rdx+32], ymm1
+add rdx, 64
+sub rcx, 1
+jne 22b
+mov rdx, rdi
+mov r8, rsi
+add r8, 248
+mov ecx, 16
+23:
+vmovdqu ymm4, YMMWORD PTR [rdx]
+vmovdqu ymm5, YMMWORD PTR [rdx+32]
+vbroadcasti128 ymm13, XMMWORD PTR [r8]
+vpshufd ymm2, ymm13, 0
+vpshufd ymm13, ymm13, 85
+vpblendd ymm13, ymm13, ymm2, 240
+vpshufd ymm12, ymm13, 245
+add r8, -8
+vperm2i128 ymm0, ymm4, ymm5, 32
+vperm2i128 ymm1, ymm4, ymm5, 49
+vpsubd ymm3, ymm1, ymm0
+vpaddd ymm3, ymm3, ymm11
+vpaddd ymm0, ymm0, ymm1
+vpshufd ymm4, ymm3, 245
+vpmuludq ymm3, ymm3, ymm13
+vpmuludq ymm4, ymm4, ymm12
+vpmuludq ymm2, ymm3, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm3, ymm3, ymm2
+vpsrlq ymm3, ymm3, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm3, ymm3, ymm4
+vperm2i128 ymm4, ymm0, ymm3, 32
+vperm2i128 ymm5, ymm0, ymm3, 49
+vmovdqu YMMWORD PTR [rdx], ymm4
+vmovdqu YMMWORD PTR [rdx+32], ymm5
+add rdx, 64
+sub rcx, 1
+jne 23b
+mov rdx, rdi
+mov r8, rsi
+add r8, 124
+mov eax, 16
+24:
+vbroadcasti128 ymm13, XMMWORD PTR [r8]
+vpshufd ymm13, ymm13, 0
+vpshufd ymm12, ymm13, 245
+add r8, -4
+mov ecx, 1
+25:
+vmovdqu ymm0, YMMWORD PTR [rdx]
+vmovdqu ymm1, YMMWORD PTR [rdx+32]
+vpsubd ymm3, ymm1, ymm0
+vpaddd ymm3, ymm3, ymm11
+vpaddd ymm0, ymm0, ymm1
+vpshufd ymm4, ymm3, 245
+vpmuludq ymm3, ymm3, ymm13
+vpmuludq ymm4, ymm4, ymm12
+vpmuludq ymm2, ymm3, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm3, ymm3, ymm2
+vpsrlq ymm3, ymm3, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm3, ymm3, ymm4
+vmovdqu YMMWORD PTR [rdx], ymm0
+vmovdqu YMMWORD PTR [rdx+32], ymm3
+add rdx, 32
+sub rcx, 1
+jne 25b
+add rdx, 32
+sub rax, 1
+jne 24b
+mov rdx, rdi
+mov r8, rsi
+add r8, 60
+mov eax, 8
+26:
+vbroadcasti128 ymm13, XMMWORD PTR [r8]
+vpshufd ymm13, ymm13, 0
+vpshufd ymm12, ymm13, 245
+add r8, -4
+mov ecx, 2
+27:
+vmovdqu ymm0, YMMWORD PTR [rdx]
+vmovdqu ymm1, YMMWORD PTR [rdx+64]
+vpsubd ymm3, ymm1, ymm0
+vpaddd ymm3, ymm3, ymm11
+vpaddd ymm0, ymm0, ymm1
+vpshufd ymm4, ymm3, 245
+vpmuludq ymm3, ymm3, ymm13
+vpmuludq ymm4, ymm4, ymm12
+vpmuludq ymm2, ymm3, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm3, ymm3, ymm2
+vpsrlq ymm3, ymm3, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm3, ymm3, ymm4
+vmovdqu YMMWORD PTR [rdx], ymm0
+vmovdqu YMMWORD PTR [rdx+64], ymm3
+add rdx, 32
+sub rcx, 1
+jne 27b
+add rdx, 64
+sub rax, 1
+jne 26b
+mov rdx, rdi
+mov r8, rsi
+add r8, 28
+mov eax, 4
+28:
+vbroadcasti128 ymm13, XMMWORD PTR [r8]
+vpshufd ymm13, ymm13, 0
+vpshufd ymm12, ymm13, 245
+add r8, -4
+mov ecx, 4
+29:
+vmovdqu ymm0, YMMWORD PTR [rdx]
+vmovdqu ymm1, YMMWORD PTR [rdx+128]
+vpsubd ymm3, ymm1, ymm0
+vpaddd ymm3, ymm3, ymm11
+vpaddd ymm0, ymm0, ymm1
+vpshufd ymm4, ymm3, 245
+vpmuludq ymm3, ymm3, ymm13
+vpmuludq ymm4, ymm4, ymm12
+vpmuludq ymm2, ymm3, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm3, ymm3, ymm2
+vpsrlq ymm3, ymm3, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm3, ymm3, ymm4
+vmovdqu YMMWORD PTR [rdx], ymm0
+vmovdqu YMMWORD PTR [rdx+128], ymm3
+add rdx, 32
+sub rcx, 1
+jne 29b
+add rdx, 128
+sub rax, 1
+jne 28b
+mov rdx, rdi
+mov eax, 7861508
+vmovq xmm7, rax
+vpbroadcastd ymm7, xmm7
+mov eax, 5771523
+vmovq xmm8, rax
+vpbroadcastd ymm8, xmm8
+mov eax, 4404704
+vmovq xmm9, rax
+vpbroadcastd ymm9, xmm9
+mov eax, 41978
+vmovq xmm10, rax
+vpbroadcastd ymm10, xmm10
+mov ecx, 8
+210:
+vmovdqu ymm0, YMMWORD PTR [rdx]
+vmovdqu ymm1, YMMWORD PTR [rdx+256]
+vmovdqu ymm5, YMMWORD PTR [rdx+512]
+vmovdqu ymm6, YMMWORD PTR [rdx+768]
+vpsubd ymm3, ymm1, ymm0
+vpaddd ymm3, ymm3, ymm11
+vpaddd ymm0, ymm0, ymm1
+vpshufd ymm4, ymm3, 245
+vpmuludq ymm3, ymm3, ymm7
+vpmuludq ymm4, ymm4, ymm7
+vpmuludq ymm2, ymm3, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm3, ymm3, ymm2
+vpsrlq ymm3, ymm3, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm3, ymm3, ymm4
+vpsubd ymm1, ymm6, ymm5
+vpaddd ymm1, ymm1, ymm11
+vpaddd ymm5, ymm5, ymm6
+vpshufd ymm4, ymm1, 245
+vpmuludq ymm1, ymm1, ymm8
+vpmuludq ymm4, ymm4, ymm8
+vpmuludq ymm2, ymm1, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm1, ymm1, ymm2
+vpsrlq ymm1, ymm1, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm1, ymm1, ymm4
+vpsubd ymm6, ymm5, ymm0
+vpaddd ymm6, ymm6, ymm11
+vpaddd ymm0, ymm0, ymm5
+vpshufd ymm4, ymm6, 245
+vpmuludq ymm6, ymm6, ymm9
+vpmuludq ymm4, ymm4, ymm9
+vpmuludq ymm2, ymm6, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm6, ymm6, ymm2
+vpsrlq ymm6, ymm6, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm6, ymm6, ymm4
+vpsubd ymm5, ymm1, ymm3
+vpaddd ymm5, ymm5, ymm11
+vpaddd ymm3, ymm3, ymm1
+vpshufd ymm4, ymm5, 245
+vpmuludq ymm5, ymm5, ymm9
+vpmuludq ymm4, ymm4, ymm9
+vpmuludq ymm2, ymm5, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm5, ymm5, ymm2
+vpsrlq ymm5, ymm5, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm5, ymm5, ymm4
+vpshufd ymm4, ymm0, 245
+vpmuludq ymm0, ymm0, ymm10
+vpmuludq ymm4, ymm4, ymm10
+vpmuludq ymm2, ymm0, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm0, ymm0, ymm2
+vpsrlq ymm0, ymm0, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm0, ymm0, ymm4
+vpsubd ymm0, ymm0, ymm15
+vpsrad ymm2, ymm0, 31
+vpand ymm2, ymm2, ymm15
+vpaddd ymm0, ymm0, ymm2
+vpshufd ymm4, ymm3, 245
+vpmuludq ymm3, ymm3, ymm10
+vpmuludq ymm4, ymm4, ymm10
+vpmuludq ymm2, ymm3, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm3, ymm3, ymm2
+vpsrlq ymm3, ymm3, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm3, ymm3, ymm4
+vpsubd ymm3, ymm3, ymm15
+vpsrad ymm2, ymm3, 31
+vpand ymm2, ymm2, ymm15
+vpaddd ymm3, ymm3, ymm2
+vpsubd ymm6, ymm6, ymm15
+vpsrad ymm2, ymm6, 31
+vpand ymm2, ymm2, ymm15
+vpaddd ymm6, ymm6, ymm2
+vpsubd ymm5, ymm5, ymm15
+vpsrad ymm2, ymm5, 31
+vpand ymm2, ymm2, ymm15
+vpaddd ymm5, ymm5, ymm2
+vmovdqu YMMWORD PTR [rdx], ymm0
+vmovdqu YMMWORD PTR [rdx+256], ymm3
+vmovdqu YMMWORD PTR [rdx+512], ymm6
+vmovdqu YMMWORD PTR [rdx+768], ymm5
+add rdx, 32
+sub rcx, 1
+jne 210b
+vzeroupper
+lfence
+mov DWORD PTR [rsi+768], r11d
+ldmxcsr DWORD PTR [rsi+768]
+ret
+.p2align 6",
+    )
+}
+
+/// The CPU features `vg_mldsa_dot_inverse7_avx2` requires (`Artifact.features`).
+pub(crate) const VG_MLDSA_DOT_INVERSE7_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
+
+/// Writes the canonical inverse NTT of the sum of coefficientwise products of 7 pairs of polynomials. Each input family is contiguous. Timing depends only on pointers, as specified by `dotInverseContract`.
+///
+/// The function computes on eight coefficients at a time in AVX2 registers: it sums the products in 64-bit lanes, reduces each sum once to the sum times `2⁻³²`, then runs `vg_mldsa_montgomery_inv_ntt_avx2`'s code, which cancels the factor, with a table of the 256 zetas that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 1024 bytes.
+/// * `a` must be valid for reads of 7168 bytes.
+/// * `b` must be valid for reads of 7168 bytes.
+/// * `scratch` must be valid for reads and writes of 1024 bytes.
+/// * Every coefficient of both input families must be less than 25141251 (3q).
+/// * `out` and `scratch` must not overlap each other, `a` or `b` (distinct Rust objects never do).
+/// * None of `out`, `a`, `b` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mldsa_dot_inverse7_avx2(out: *mut [u32; 256], a: *const [u32; 1792], b: *const [u32; 1792], scratch: *mut [u64; 128]) {
+    core::arch::naked_asm!(
+        r"mov r10, rsi
+mov rsi, rcx
+stmxcsr DWORD PTR [rsi+768]
+mov r11d, DWORD PTR [rsi+768]
+and r11d, 65535
+mov eax, 8127
+mov DWORD PTR [rsi+772], eax
+ldmxcsr DWORD PTR [rsi+772]
+lfence
+mov eax, 8380417
+vmovq xmm15, rax
+vpbroadcastd ymm15, xmm15
+mov eax, -58728449
+vmovq xmm14, rax
+vpbroadcastd ymm14, xmm14
+mov r8, rdi
+mov ecx, 32
+20:
+vpxor ymm5, ymm5, ymm5
+vpxor ymm6, ymm6, ymm6
+vmovdqu ymm0, YMMWORD PTR [r10]
+vmovdqu ymm1, YMMWORD PTR [rdx]
+vpsrlq ymm2, ymm0, 32
+vpsrlq ymm3, ymm1, 32
+vpmuludq ymm2, ymm2, ymm3
+vpmuludq ymm0, ymm0, ymm1
+vpaddq ymm5, ymm5, ymm0
+vpaddq ymm6, ymm6, ymm2
+vmovdqu ymm0, YMMWORD PTR [r10+1024]
+vmovdqu ymm1, YMMWORD PTR [rdx+1024]
+vpsrlq ymm2, ymm0, 32
+vpsrlq ymm3, ymm1, 32
+vpmuludq ymm2, ymm2, ymm3
+vpmuludq ymm0, ymm0, ymm1
+vpaddq ymm5, ymm5, ymm0
+vpaddq ymm6, ymm6, ymm2
+vmovdqu ymm0, YMMWORD PTR [r10+2048]
+vmovdqu ymm1, YMMWORD PTR [rdx+2048]
+vpsrlq ymm2, ymm0, 32
+vpsrlq ymm3, ymm1, 32
+vpmuludq ymm2, ymm2, ymm3
+vpmuludq ymm0, ymm0, ymm1
+vpaddq ymm5, ymm5, ymm0
+vpaddq ymm6, ymm6, ymm2
+vmovdqu ymm0, YMMWORD PTR [r10+3072]
+vmovdqu ymm1, YMMWORD PTR [rdx+3072]
+vpsrlq ymm2, ymm0, 32
+vpsrlq ymm3, ymm1, 32
+vpmuludq ymm2, ymm2, ymm3
+vpmuludq ymm0, ymm0, ymm1
+vpaddq ymm5, ymm5, ymm0
+vpaddq ymm6, ymm6, ymm2
+vmovdqu ymm0, YMMWORD PTR [r10+4096]
+vmovdqu ymm1, YMMWORD PTR [rdx+4096]
+vpsrlq ymm2, ymm0, 32
+vpsrlq ymm3, ymm1, 32
+vpmuludq ymm2, ymm2, ymm3
+vpmuludq ymm0, ymm0, ymm1
+vpaddq ymm5, ymm5, ymm0
+vpaddq ymm6, ymm6, ymm2
+vmovdqu ymm0, YMMWORD PTR [r10+5120]
+vmovdqu ymm1, YMMWORD PTR [rdx+5120]
+vpsrlq ymm2, ymm0, 32
+vpsrlq ymm3, ymm1, 32
+vpmuludq ymm2, ymm2, ymm3
+vpmuludq ymm0, ymm0, ymm1
+vpaddq ymm5, ymm5, ymm0
+vpaddq ymm6, ymm6, ymm2
+vmovdqu ymm0, YMMWORD PTR [r10+6144]
+vmovdqu ymm1, YMMWORD PTR [rdx+6144]
+vpsrlq ymm2, ymm0, 32
+vpsrlq ymm3, ymm1, 32
+vpmuludq ymm2, ymm2, ymm3
+vpmuludq ymm0, ymm0, ymm1
+vpaddq ymm5, ymm5, ymm0
+vpaddq ymm6, ymm6, ymm2
+vpmuludq ymm2, ymm5, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm5, ymm5, ymm2
+vpsrlq ymm5, ymm5, 32
+vpmuludq ymm2, ymm6, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm6, ymm6, ymm2
+vpor ymm5, ymm5, ymm6
+vpsubd ymm5, ymm5, ymm15
+vpsrad ymm2, ymm5, 31
+vpand ymm2, ymm2, ymm15
+vpaddd ymm5, ymm5, ymm2
+vmovdqu YMMWORD PTR [r8], ymm5
+add r8, 32
+add r10, 32
+add rdx, 32
+sub rcx, 1
+jne 20b
+movabs r9, 111012023893504
+mov QWORD PTR [rsi], r9
+movabs r9, 33764919763013891
+mov QWORD PTR [rsi+8], r9
+movabs r9, 32652304184483396
+mov QWORD PTR [rsi+16], r9
+movabs r9, 2003464812134697
+mov QWORD PTR [rsi+24], r9
+movabs r9, 10107995079564843
+mov QWORD PTR [rsi+32], r9
+movabs r9, 27008953388524718
+mov QWORD PTR [rsi+40], r9
+movabs r9, 23603259066260085
+mov QWORD PTR [rsi+48], r9
+movabs r9, 11510954738022985
+mov QWORD PTR [rsi+56], r9
+movabs r9, 4398527550166616
+mov QWORD PTR [rsi+64], r9
+movabs r9, 15401443493111205
+mov QWORD PTR [rsi+72], r9
+movabs r9, 31185040284548497
+mov QWORD PTR [rsi+80], r9
+movabs r9, 26937467947448680
+mov QWORD PTR [rsi+88], r9
+movabs r9, 19416172761943511
+mov QWORD PTR [rsi+96], r9
+movabs r9, 21916122901808376
+mov QWORD PTR [rsi+104], r9
+movabs r9, 35910200088776757
+mov QWORD PTR [rsi+112], r9
+movabs r9, 1202612321726977
+mov QWORD PTR [rsi+120], r9
+movabs r9, 411354790447719
+mov QWORD PTR [rsi+128], r9
+movabs r9, 15163111458665677
+mov QWORD PTR [rsi+136], r9
+movabs r9, 20565458766169348
+mov QWORD PTR [rsi+144], r9
+movabs r9, 16816682460325845
+mov QWORD PTR [rsi+152], r9
+movabs r9, 22920956268049798
+mov QWORD PTR [rsi+160], r9
+movabs r9, 23677166863944342
+mov QWORD PTR [rsi+168], r9
+movabs r9, 34703121006855168
+mov QWORD PTR [rsi+176], r9
+movabs r9, 33677345376425628
+mov QWORD PTR [rsi+184], r9
+movabs r9, 28933472397947454
+mov QWORD PTR [rsi+192], r9
+movabs r9, 19579390106369566
+mov QWORD PTR [rsi+200], r9
+movabs r9, 26799599498134591
+mov QWORD PTR [rsi+208], r9
+movabs r9, 15889643835192413
+mov QWORD PTR [rsi+216], r9
+movabs r9, 2282148053410728
+mov QWORD PTR [rsi+224], r9
+movabs r9, 16668952760323958
+mov QWORD PTR [rsi+232], r9
+movabs r9, 25011900965946676
+mov QWORD PTR [rsi+240], r9
+movabs r9, 23977247637478740
+mov QWORD PTR [rsi+248], r9
+movabs r9, 29427887555995366
+mov QWORD PTR [rsi+256], r9
+movabs r9, 22931526182748624
+mov QWORD PTR [rsi+264], r9
+movabs r9, 14929091579459166
+mov QWORD PTR [rsi+272], r9
+movabs r9, 29185144592086471
+mov QWORD PTR [rsi+280], r9
+movabs r9, 8329290213797750
+mov QWORD PTR [rsi+288], r9
+movabs r9, 31697782066745459
+mov QWORD PTR [rsi+296], r9
+movabs r9, 22432987854353025
+mov QWORD PTR [rsi+304], r9
+movabs r9, 545125843890401
+mov QWORD PTR [rsi+312], r9
+movabs r9, 31769864501989618
+mov QWORD PTR [rsi+320], r9
+movabs r9, 11662103226140216
+mov QWORD PTR [rsi+328], r9
+movabs r9, 20130185304250276
+mov QWORD PTR [rsi+336], r9
+movabs r9, 25354781094156910
+mov QWORD PTR [rsi+344], r9
+movabs r9, 30717142252233347
+mov QWORD PTR [rsi+352], r9
+movabs r9, 30375073877558844
+mov QWORD PTR [rsi+360], r9
+movabs r9, 5794237307816926
+mov QWORD PTR [rsi+368], r9
+movabs r9, 29849966874477923
+mov QWORD PTR [rsi+376], r9
+movabs r9, 1137925820308458
+mov QWORD PTR [rsi+384], r9
+movabs r9, 13305774323778583
+mov QWORD PTR [rsi+392], r9
+movabs r9, 31268732009491712
+mov QWORD PTR [rsi+400], r9
+movabs r9, 17002134848261444
+mov QWORD PTR [rsi+408], r9
+movabs r9, 35956774717033419
+mov QWORD PTR [rsi+416], r9
+movabs r9, 22036141462600008
+mov QWORD PTR [rsi+424], r9
+movabs r9, 35087477629023596
+mov QWORD PTR [rsi+432], r9
+movabs r9, 30337763489061025
+mov QWORD PTR [rsi+440], r9
+movabs r9, 20732429908239468
+mov QWORD PTR [rsi+448], r9
+movabs r9, 28041905903253186
+mov QWORD PTR [rsi+456], r9
+movabs r9, 35231517950811284
+mov QWORD PTR [rsi+464], r9
+movabs r9, 5760968484459269
+mov QWORD PTR [rsi+472], r9
+movabs r9, 29186403016613413
+mov QWORD PTR [rsi+480], r9
+movabs r9, 29809972144732485
+mov QWORD PTR [rsi+488], r9
+movabs r9, 19324591173389987
+mov QWORD PTR [rsi+496], r9
+movabs r9, 16492506917666904
+mov QWORD PTR [rsi+504], r9
+movabs r9, 14635985826474643
+mov QWORD PTR [rsi+512], r9
+movabs r9, 16398082059229396
+mov QWORD PTR [rsi+520], r9
+movabs r9, 9638297459285875
+mov QWORD PTR [rsi+528], r9
+movabs r9, 20692959164533664
+mov QWORD PTR [rsi+536], r9
+movabs r9, 10455835889373941
+mov QWORD PTR [rsi+544], r9
+movabs r9, 15088997507073265
+mov QWORD PTR [rsi+552], r9
+movabs r9, 19847271512942753
+mov QWORD PTR [rsi+560], r9
+movabs r9, 22278162875259735
+mov QWORD PTR [rsi+568], r9
+movabs r9, 7984765110959710
+mov QWORD PTR [rsi+576], r9
+movabs r9, 3517724245221606
+mov QWORD PTR [rsi+584], r9
+movabs r9, 29065087369580419
+mov QWORD PTR [rsi+592], r9
+movabs r9, 33749496538019589
+mov QWORD PTR [rsi+600], r9
+movabs r9, 22582830675910690
+mov QWORD PTR [rsi+608], r9
+movabs r9, 13774157688799364
+mov QWORD PTR [rsi+616], r9
+movabs r9, 33738338209470846
+mov QWORD PTR [rsi+624], r9
+movabs r9, 20549610337740179
+mov QWORD PTR [rsi+632], r9
+movabs r9, 1232604074686745
+mov QWORD PTR [rsi+640], r9
+movabs r9, 17645078572608834
+mov QWORD PTR [rsi+648], r9
+movabs r9, 21638646536106727
+mov QWORD PTR [rsi+656], r9
+movabs r9, 872067341384903
+mov QWORD PTR [rsi+664], r9
+movabs r9, 11559822875647717
+mov QWORD PTR [rsi+672], r9
+movabs r9, 5433172289935931
+mov QWORD PTR [rsi+680], r9
+movabs r9, 5358487101890844
+mov QWORD PTR [rsi+688], r9
+movabs r9, 6854656137752657
+mov QWORD PTR [rsi+696], r9
+movabs r9, 5370830838457625
+mov QWORD PTR [rsi+704], r9
+movabs r9, 20753904747165841
+mov QWORD PTR [rsi+712], r9
+movabs r9, 8027804982718602
+mov QWORD PTR [rsi+720], r9
+movabs r9, 31479735164668747
+mov QWORD PTR [rsi+728], r9
+movabs r9, 5314055668205759
+mov QWORD PTR [rsi+736], r9
+movabs r9, 29850847345983039
+mov QWORD PTR [rsi+744], r9
+movabs r9, 5636951310400997
+mov QWORD PTR [rsi+752], r9
+movabs r9, 27564133741392515
+mov QWORD PTR [rsi+760], r9
+movabs r9, 8233800205883732
+mov QWORD PTR [rsi+768], r9
+movabs r9, 30088883024233849
+mov QWORD PTR [rsi+776], r9
+movabs r9, 3338009929245701
+mov QWORD PTR [rsi+784], r9
+movabs r9, 14628791756398056
+mov QWORD PTR [rsi+792], r9
+movabs r9, 23830870862829877
+mov QWORD PTR [rsi+800], r9
+movabs r9, 28061014216302585
+mov QWORD PTR [rsi+808], r9
+movabs r9, 19997999096164636
+mov QWORD PTR [rsi+816], r9
+movabs r9, 19771555530215640
+mov QWORD PTR [rsi+824], r9
+movabs r9, 10447056982320729
+mov QWORD PTR [rsi+832], r9
+movabs r9, 35286145636332471
+mov QWORD PTR [rsi+840], r9
+movabs r9, 14470225858518424
+mov QWORD PTR [rsi+848], r9
+movabs r9, 30807937853347003
+mov QWORD PTR [rsi+856], r9
+movabs r9, 699409659546815
+mov QWORD PTR [rsi+864], r9
+movabs r9, 12945035726727688
+mov QWORD PTR [rsi+872], r9
+movabs r9, 7098008983067813
+mov QWORD PTR [rsi+880], r9
+movabs r9, 28266511219523944
+mov QWORD PTR [rsi+888], r9
+movabs r9, 15135022374814013
+mov QWORD PTR [rsi+896], r9
+movabs r9, 1158610381635861
+mov QWORD PTR [rsi+904], r9
+movabs r9, 31802227079365879
+mov QWORD PTR [rsi+912], r9
+movabs r9, 2027559572878823
+mov QWORD PTR [rsi+920], r9
+movabs r9, 7402805639339334
+mov QWORD PTR [rsi+928], r9
+movabs r9, 8205002449640623
+mov QWORD PTR [rsi+936], r9
+movabs r9, 31250542829661849
+mov QWORD PTR [rsi+944], r9
+movabs r9, 19527171898598875
+mov QWORD PTR [rsi+952], r9
+movabs r9, 26390134497937253
+mov QWORD PTR [rsi+960], r9
+movabs r9, 26173917256840158
+mov QWORD PTR [rsi+968], r9
+movabs r9, 31797902045269139
+mov QWORD PTR [rsi+976], r9
+movabs r9, 20765007236602922
+mov QWORD PTR [rsi+984], r9
+movabs r9, 16834811519265361
+mov QWORD PTR [rsi+992], r9
+movabs r9, 30142973844857679
+mov QWORD PTR [rsi+1000], r9
+movabs r9, 6014775284471242
+mov QWORD PTR [rsi+1008], r9
+movabs r9, 8490214048855735
+mov QWORD PTR [rsi+1016], r9
+mov eax, 8380417
+vmovq xmm15, rax
+vpbroadcastd ymm15, xmm15
+mov eax, -58728449
+vmovq xmm14, rax
+vpbroadcastd ymm14, xmm14
+mov eax, 1072693376
+vmovq xmm11, rax
+vpbroadcastd ymm11, xmm11
+mov rdx, rdi
+mov r8, rsi
+add r8, 992
+mov ecx, 16
+21:
+vmovdqu ymm0, YMMWORD PTR [rdx]
+vmovdqu ymm2, YMMWORD PTR [rdx+32]
+vmovdqu ymm13, YMMWORD PTR [r8]
+vpermq ymm13, ymm13, 39
+vpshufd ymm13, ymm13, 177
+vpshufd ymm12, ymm13, 245
+add r8, -32
+vpshufd ymm0, ymm0, 216
+vpshufd ymm2, ymm2, 216
+vmovdqa ymm1, ymm0
+vpunpcklqdq ymm0, ymm0, ymm2
+vpunpckhqdq ymm1, ymm1, ymm2
+vpsubd ymm3, ymm1, ymm0
+vpaddd ymm3, ymm3, ymm11
+vpaddd ymm0, ymm0, ymm1
+vpshufd ymm4, ymm3, 245
+vpmuludq ymm3, ymm3, ymm13
+vpmuludq ymm4, ymm4, ymm12
+vpmuludq ymm2, ymm3, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm3, ymm3, ymm2
+vpsrlq ymm3, ymm3, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm3, ymm3, ymm4
+vmovdqa ymm1, ymm0
+vpunpckldq ymm0, ymm0, ymm3
+vpunpckhdq ymm1, ymm1, ymm3
+vmovdqu YMMWORD PTR [rdx], ymm0
+vmovdqu YMMWORD PTR [rdx+32], ymm1
+add rdx, 64
+sub rcx, 1
+jne 21b
+mov rdx, rdi
+mov r8, rsi
+add r8, 496
+mov ecx, 16
+22:
+vmovdqu ymm0, YMMWORD PTR [rdx]
+vmovdqu ymm1, YMMWORD PTR [rdx+32]
+vbroadcasti128 ymm13, XMMWORD PTR [r8]
+vpshufd ymm2, ymm13, 10
+vpshufd ymm13, ymm13, 95
+vpblendd ymm13, ymm13, ymm2, 240
+vpshufd ymm12, ymm13, 245
+add r8, -16
+vmovdqa ymm2, ymm0
+vpunpcklqdq ymm0, ymm0, ymm1
+vpunpckhqdq ymm2, ymm2, ymm1
+vmovdqa ymm1, ymm2
+vpsubd ymm3, ymm1, ymm0
+vpaddd ymm3, ymm3, ymm11
+vpaddd ymm0, ymm0, ymm1
+vpshufd ymm4, ymm3, 245
+vpmuludq ymm3, ymm3, ymm13
+vpmuludq ymm4, ymm4, ymm12
+vpmuludq ymm2, ymm3, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm3, ymm3, ymm2
+vpsrlq ymm3, ymm3, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm3, ymm3, ymm4
+vmovdqa ymm1, ymm0
+vpunpcklqdq ymm0, ymm0, ymm3
+vpunpckhqdq ymm1, ymm1, ymm3
+vmovdqu YMMWORD PTR [rdx], ymm0
+vmovdqu YMMWORD PTR [rdx+32], ymm1
+add rdx, 64
+sub rcx, 1
+jne 22b
+mov rdx, rdi
+mov r8, rsi
+add r8, 248
+mov ecx, 16
+23:
+vmovdqu ymm4, YMMWORD PTR [rdx]
+vmovdqu ymm5, YMMWORD PTR [rdx+32]
+vbroadcasti128 ymm13, XMMWORD PTR [r8]
+vpshufd ymm2, ymm13, 0
+vpshufd ymm13, ymm13, 85
+vpblendd ymm13, ymm13, ymm2, 240
+vpshufd ymm12, ymm13, 245
+add r8, -8
+vperm2i128 ymm0, ymm4, ymm5, 32
+vperm2i128 ymm1, ymm4, ymm5, 49
+vpsubd ymm3, ymm1, ymm0
+vpaddd ymm3, ymm3, ymm11
+vpaddd ymm0, ymm0, ymm1
+vpshufd ymm4, ymm3, 245
+vpmuludq ymm3, ymm3, ymm13
+vpmuludq ymm4, ymm4, ymm12
+vpmuludq ymm2, ymm3, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm3, ymm3, ymm2
+vpsrlq ymm3, ymm3, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm3, ymm3, ymm4
+vperm2i128 ymm4, ymm0, ymm3, 32
+vperm2i128 ymm5, ymm0, ymm3, 49
+vmovdqu YMMWORD PTR [rdx], ymm4
+vmovdqu YMMWORD PTR [rdx+32], ymm5
+add rdx, 64
+sub rcx, 1
+jne 23b
+mov rdx, rdi
+mov r8, rsi
+add r8, 124
+mov eax, 16
+24:
+vbroadcasti128 ymm13, XMMWORD PTR [r8]
+vpshufd ymm13, ymm13, 0
+vpshufd ymm12, ymm13, 245
+add r8, -4
+mov ecx, 1
+25:
+vmovdqu ymm0, YMMWORD PTR [rdx]
+vmovdqu ymm1, YMMWORD PTR [rdx+32]
+vpsubd ymm3, ymm1, ymm0
+vpaddd ymm3, ymm3, ymm11
+vpaddd ymm0, ymm0, ymm1
+vpshufd ymm4, ymm3, 245
+vpmuludq ymm3, ymm3, ymm13
+vpmuludq ymm4, ymm4, ymm12
+vpmuludq ymm2, ymm3, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm3, ymm3, ymm2
+vpsrlq ymm3, ymm3, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm3, ymm3, ymm4
+vmovdqu YMMWORD PTR [rdx], ymm0
+vmovdqu YMMWORD PTR [rdx+32], ymm3
+add rdx, 32
+sub rcx, 1
+jne 25b
+add rdx, 32
+sub rax, 1
+jne 24b
+mov rdx, rdi
+mov r8, rsi
+add r8, 60
+mov eax, 8
+26:
+vbroadcasti128 ymm13, XMMWORD PTR [r8]
+vpshufd ymm13, ymm13, 0
+vpshufd ymm12, ymm13, 245
+add r8, -4
+mov ecx, 2
+27:
+vmovdqu ymm0, YMMWORD PTR [rdx]
+vmovdqu ymm1, YMMWORD PTR [rdx+64]
+vpsubd ymm3, ymm1, ymm0
+vpaddd ymm3, ymm3, ymm11
+vpaddd ymm0, ymm0, ymm1
+vpshufd ymm4, ymm3, 245
+vpmuludq ymm3, ymm3, ymm13
+vpmuludq ymm4, ymm4, ymm12
+vpmuludq ymm2, ymm3, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm3, ymm3, ymm2
+vpsrlq ymm3, ymm3, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm3, ymm3, ymm4
+vmovdqu YMMWORD PTR [rdx], ymm0
+vmovdqu YMMWORD PTR [rdx+64], ymm3
+add rdx, 32
+sub rcx, 1
+jne 27b
+add rdx, 64
+sub rax, 1
+jne 26b
+mov rdx, rdi
+mov r8, rsi
+add r8, 28
+mov eax, 4
+28:
+vbroadcasti128 ymm13, XMMWORD PTR [r8]
+vpshufd ymm13, ymm13, 0
+vpshufd ymm12, ymm13, 245
+add r8, -4
+mov ecx, 4
+29:
+vmovdqu ymm0, YMMWORD PTR [rdx]
+vmovdqu ymm1, YMMWORD PTR [rdx+128]
+vpsubd ymm3, ymm1, ymm0
+vpaddd ymm3, ymm3, ymm11
+vpaddd ymm0, ymm0, ymm1
+vpshufd ymm4, ymm3, 245
+vpmuludq ymm3, ymm3, ymm13
+vpmuludq ymm4, ymm4, ymm12
+vpmuludq ymm2, ymm3, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm3, ymm3, ymm2
+vpsrlq ymm3, ymm3, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm3, ymm3, ymm4
+vmovdqu YMMWORD PTR [rdx], ymm0
+vmovdqu YMMWORD PTR [rdx+128], ymm3
+add rdx, 32
+sub rcx, 1
+jne 29b
+add rdx, 128
+sub rax, 1
+jne 28b
+mov rdx, rdi
+mov eax, 7861508
+vmovq xmm7, rax
+vpbroadcastd ymm7, xmm7
+mov eax, 5771523
+vmovq xmm8, rax
+vpbroadcastd ymm8, xmm8
+mov eax, 4404704
+vmovq xmm9, rax
+vpbroadcastd ymm9, xmm9
+mov eax, 41978
+vmovq xmm10, rax
+vpbroadcastd ymm10, xmm10
+mov ecx, 8
+210:
+vmovdqu ymm0, YMMWORD PTR [rdx]
+vmovdqu ymm1, YMMWORD PTR [rdx+256]
+vmovdqu ymm5, YMMWORD PTR [rdx+512]
+vmovdqu ymm6, YMMWORD PTR [rdx+768]
+vpsubd ymm3, ymm1, ymm0
+vpaddd ymm3, ymm3, ymm11
+vpaddd ymm0, ymm0, ymm1
+vpshufd ymm4, ymm3, 245
+vpmuludq ymm3, ymm3, ymm7
+vpmuludq ymm4, ymm4, ymm7
+vpmuludq ymm2, ymm3, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm3, ymm3, ymm2
+vpsrlq ymm3, ymm3, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm3, ymm3, ymm4
+vpsubd ymm1, ymm6, ymm5
+vpaddd ymm1, ymm1, ymm11
+vpaddd ymm5, ymm5, ymm6
+vpshufd ymm4, ymm1, 245
+vpmuludq ymm1, ymm1, ymm8
+vpmuludq ymm4, ymm4, ymm8
+vpmuludq ymm2, ymm1, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm1, ymm1, ymm2
+vpsrlq ymm1, ymm1, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm1, ymm1, ymm4
+vpsubd ymm6, ymm5, ymm0
+vpaddd ymm6, ymm6, ymm11
+vpaddd ymm0, ymm0, ymm5
+vpshufd ymm4, ymm6, 245
+vpmuludq ymm6, ymm6, ymm9
+vpmuludq ymm4, ymm4, ymm9
+vpmuludq ymm2, ymm6, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm6, ymm6, ymm2
+vpsrlq ymm6, ymm6, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm6, ymm6, ymm4
+vpsubd ymm5, ymm1, ymm3
+vpaddd ymm5, ymm5, ymm11
+vpaddd ymm3, ymm3, ymm1
+vpshufd ymm4, ymm5, 245
+vpmuludq ymm5, ymm5, ymm9
+vpmuludq ymm4, ymm4, ymm9
+vpmuludq ymm2, ymm5, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm5, ymm5, ymm2
+vpsrlq ymm5, ymm5, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm5, ymm5, ymm4
+vpshufd ymm4, ymm0, 245
+vpmuludq ymm0, ymm0, ymm10
+vpmuludq ymm4, ymm4, ymm10
+vpmuludq ymm2, ymm0, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm0, ymm0, ymm2
+vpsrlq ymm0, ymm0, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm0, ymm0, ymm4
+vpsubd ymm0, ymm0, ymm15
+vpsrad ymm2, ymm0, 31
+vpand ymm2, ymm2, ymm15
+vpaddd ymm0, ymm0, ymm2
+vpshufd ymm4, ymm3, 245
+vpmuludq ymm3, ymm3, ymm10
+vpmuludq ymm4, ymm4, ymm10
+vpmuludq ymm2, ymm3, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm3, ymm3, ymm2
+vpsrlq ymm3, ymm3, 32
+vpmuludq ymm2, ymm4, ymm14
+vpmuludq ymm2, ymm2, ymm15
+vpaddq ymm4, ymm4, ymm2
+vpor ymm3, ymm3, ymm4
+vpsubd ymm3, ymm3, ymm15
+vpsrad ymm2, ymm3, 31
+vpand ymm2, ymm2, ymm15
+vpaddd ymm3, ymm3, ymm2
+vpsubd ymm6, ymm6, ymm15
+vpsrad ymm2, ymm6, 31
+vpand ymm2, ymm2, ymm15
+vpaddd ymm6, ymm6, ymm2
+vpsubd ymm5, ymm5, ymm15
+vpsrad ymm2, ymm5, 31
+vpand ymm2, ymm2, ymm15
+vpaddd ymm5, ymm5, ymm2
+vmovdqu YMMWORD PTR [rdx], ymm0
+vmovdqu YMMWORD PTR [rdx+256], ymm3
+vmovdqu YMMWORD PTR [rdx+512], ymm6
+vmovdqu YMMWORD PTR [rdx+768], ymm5
+add rdx, 32
+sub rcx, 1
+jne 210b
+vzeroupper
+lfence
+mov DWORD PTR [rsi+768], r11d
+ldmxcsr DWORD PTR [rsi+768]
+ret
+.p2align 6",
+    )
+}
+
 /// `SimpleBitPack(f, b)` (FIPS 204 Algorithm 16): writes the 256 coefficients of `*f` to `out` as `bitlen b`-bit little-endian fields.
 ///
 /// Contract: `VG.Spec.MlDsa.simpleBitPackContract`. Constant time: only the pointers, `b` and `len` may affect timing, not the data.

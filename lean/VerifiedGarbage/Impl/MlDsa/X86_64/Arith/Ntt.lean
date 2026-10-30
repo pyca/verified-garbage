@@ -99,10 +99,13 @@ def ntt : Prog isa := withMxcsr .rsi 768 <|
     (.seq (vlay vbfly 16 8 4) (.seq (vlay vbfly 8 16 4) (.seq (vlay vbfly 4 32 4)
       (.seq (vlay2 vbfly 64 0x50 8) (vlay1 vbfly 128 0xE4 16))))))))
 
-def nttInv : Prog isa := withMxcsr .rsi 768 <|
+/-- `NTT⁻¹` but for `withMxcsr`. -/
+def nttInvBody : Prog isa :=
   .seq (.block vpro) (.seq (vlay1 vibfly 252 0x1B (-16)) (.seq (vlay2 vibfly 126 0x05 (-8))
     (.seq (vlay vibfly 4 63 (-4)) (.seq (vlay vibfly 8 31 (-4)) (.seq (vlay vibfly 16 15 (-4))
       (.seq (vlay vibfly 32 7 (-4)) (.seq (vlay vibfly 64 3 (-4)) (.seq (vlay vibfly 128 1 (-4))
         vscale))))))))
+
+def nttInv : Prog isa := withMxcsr .rsi 768 nttInvBody
 
 end VG.Impl.MlDsa.X86_64.Arith

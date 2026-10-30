@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNtt
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YAddSub
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomery
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomeryInv
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YDot
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YBits
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YHint
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YNorm
@@ -55,7 +56,12 @@ def ArithImpl.avx2 : ArithImpl where
       rej4 := ⟨Rej4.Segment.rejNTT4Avx2_verified, Proof.MlKem.X86_64.nosp_of (by lit_decide), by lit_decide,
         by lit_decide, Code.all_of_allInstrs (by lit_decide), fun _ _ _ => Rej4.Segment.rejNTT4Avx2_ret⟩
       expandMask4 := ⟨Mask4.expandMask4Avx2_verified, Proof.MlKem.X86_64.nosp_of (by lit_decide),
-        by lit_decide, by lit_decide, Code.all_of_allInstrs (by lit_decide)⟩ }
+        by lit_decide, by lit_decide, Code.all_of_allInstrs (by lit_decide)⟩
+      dotInv := fun c hc => by
+        rcases hc with rfl | rfl | rfl
+        · exact FnOk.of Arith.YDot.verified4 (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide)
+        · exact FnOk.of Arith.YDot.verified5 (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide)
+        · exact FnOk.of Arith.YDot.verified7 (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide) }
   features := ["avx", "avx2"]
 
 end VG.Proof.MlDsa.X86_64

@@ -9,12 +9,29 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomery
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Dot
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YDot
 
 /-! # ML-DSA (FIPS 204) on x86-64: the arithmetic of polynomials -/
 
 @[expose] public section
 
 namespace VG.Artifacts.MlDsaArith.X86_64
+
+/-- Notes on `vg_mldsa_dot_inverse{c}`. -/
+def dotNotes : List String :=
+  ["The function computes on four coefficients at a time in SSE2 registers: it sums the products in \
+      64-bit lanes, reduces each sum once, then runs `vg_mldsa_inv_ntt`'s code, with a table of the 256 \
+      zetas that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications (Intel's \
+      mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning."]
+
+/-- Notes on `vg_mldsa_dot_inverse{c}_avx2`. -/
+def dotNotesAvx2 : List String :=
+  ["The function computes on eight coefficients at a time in AVX2 registers: it sums the products in \
+      64-bit lanes, reduces each sum once to the sum times `2⁻³²`, then runs \
+      `vg_mldsa_montgomery_inv_ntt_avx2`'s code, which cancels the factor, with a table of the 256 zetas \
+      that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications (Intel's \
+      mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning."]
 
 def artifacts : List Artifact := [
   Spec.MlDsa.nttApi.artifact X86_64.target {
@@ -101,6 +118,36 @@ def artifacts : List Artifact := [
     notes := ["The function computes on eight coefficients at a time in AVX2 registers."]
     code := Impl.MlDsa.X86_64.Arith.subAvx2
     verified := Proof.MlDsa.X86_64.Arith.subY_verified
+    features := ["avx", "avx2"] },
+  (Spec.MlDsa.dotInverseApi 4).artifact X86_64.target {
+    notes := dotNotes
+    code := Impl.MlDsa.X86_64.Arith.dotInvSse2 4
+    verified := Proof.MlDsa.X86_64.Arith.DotS.verified4 },
+  (Spec.MlDsa.dotInverseApi 5).artifact X86_64.target {
+    notes := dotNotes
+    code := Impl.MlDsa.X86_64.Arith.dotInvSse2 5
+    verified := Proof.MlDsa.X86_64.Arith.DotS.verified5 },
+  (Spec.MlDsa.dotInverseApi 7).artifact X86_64.target {
+    notes := dotNotes
+    code := Impl.MlDsa.X86_64.Arith.dotInvSse2 7
+    verified := Proof.MlDsa.X86_64.Arith.DotS.verified7 },
+  (Spec.MlDsa.dotInverseApi 4).artifact X86_64.target {
+    suffix := "_avx2"
+    notes := dotNotesAvx2
+    code := Impl.MlDsa.X86_64.Arith.dotInvAvx2 4
+    verified := Proof.MlDsa.X86_64.Arith.YDot.verified4
+    features := ["avx", "avx2"] },
+  (Spec.MlDsa.dotInverseApi 5).artifact X86_64.target {
+    suffix := "_avx2"
+    notes := dotNotesAvx2
+    code := Impl.MlDsa.X86_64.Arith.dotInvAvx2 5
+    verified := Proof.MlDsa.X86_64.Arith.YDot.verified5
+    features := ["avx", "avx2"] },
+  (Spec.MlDsa.dotInverseApi 7).artifact X86_64.target {
+    suffix := "_avx2"
+    notes := dotNotesAvx2
+    code := Impl.MlDsa.X86_64.Arith.dotInvAvx2 7
+    verified := Proof.MlDsa.X86_64.Arith.YDot.verified7
     features := ["avx", "avx2"] }]
 
 end VG.Artifacts.MlDsaArith.X86_64

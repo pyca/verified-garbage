@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Dot
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
@@ -81,6 +82,7 @@ structure BackendOk (B : Backend) : Prop where
   useHint : FnOk (fun S => Spec.MlDsa.useHintContract X86_64.abi S) B.useHint
   rej4 : Rej4Ok B.rej4
   expandMask4 : Mask4Ok B.expandMask4
+  dotInv : ∀ c, c = 4 ∨ c = 5 ∨ c = 7 → FnOk (fun S => Spec.MlDsa.dotInverseContract c X86_64.abi S) (B.dotInv c)
 
 /-- An implementation of the polynomial arithmetic on x86-64. -/
 structure ArithImpl where
@@ -124,7 +126,15 @@ def ArithImpl.sse2 : ArithImpl where
       rej4 := ⟨Rej4.rejNTT4_verified, Proof.MlKem.X86_64.nosp_of (by decide +kernel), by decide +kernel,
         by decide +kernel, Code.all_of_allInstrs (by decide +kernel), fun _ _ _ => Rej4.rejNTT4_ret⟩
       expandMask4 := ⟨Mask4.expandMask4_verified, Proof.MlKem.X86_64.nosp_of (by decide +kernel), by decide +kernel,
-        by decide +kernel, Code.all_of_allInstrs (by decide +kernel)⟩ }
+        by decide +kernel, Code.all_of_allInstrs (by decide +kernel)⟩
+      dotInv := fun c hc => by
+        rcases hc with rfl | rfl | rfl
+        · exact FnOk.of Arith.DotS.verified4 (by decide +kernel) (by decide +kernel) (by decide +kernel)
+            (by decide +kernel)
+        · exact FnOk.of Arith.DotS.verified5 (by decide +kernel) (by decide +kernel) (by decide +kernel)
+            (by decide +kernel)
+        · exact FnOk.of Arith.DotS.verified7 (by decide +kernel) (by decide +kernel) (by decide +kernel)
+            (by decide +kernel) }
   features := []
 
 end VG.Proof.MlDsa.X86_64
