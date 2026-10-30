@@ -31,8 +31,8 @@ whose working space is in `edi` loads it again from its own arguments
 `esp` plus a constant, so only the pointer may affect timing. A call's
 frame and return address use 20 bytes of stack.
 
-For a curve with `a = 0`, `vg_<curve>_point_double_a0` and
-`vg_<curve>_point_add_affine_a0` (`Spec/Weierstrass/Point0.lean`) are the
+For a curve with `a = 0`, `vg_<curve>_point_a0_double` and
+`vg_<curve>_point_a0_add_affine` (`Spec/Weierstrass/Point0.lean`) are the
 same function with Algorithm 9 (`dbl0`) or Algorithm 8 (`rcb0m`) in place
 of `rcb` (`fnOps`).
 -/
@@ -120,10 +120,10 @@ def ops0 (dbl : Bool) : List FOp := if dbl then dbl0 sId pId oId else rcb0m sId 
 /-- `O = P + P` (`dbl`) or `P + Q` by the formulas for `a = 0`. -/
 def fn0 (S : Spec.Weierstrass.Mont.Modulus) (dbl : Bool) : Prog isa := fnOps S dbl (ops0 dbl)
 
-/-- `vg_<curve>_point_double_a0`: `O = P + P` by Algorithm 9. -/
+/-- `vg_<curve>_point_a0_double`: `O = P + P` by Algorithm 9. -/
 def pointDouble0 (C : Spec.Weierstrass.Point.Curve) : Prog isa := fn0 (modP C) true
 
-/-- `vg_<curve>_point_add_affine_a0`: `O = P + Q` by Algorithm 8. -/
+/-- `vg_<curve>_point_a0_add_affine`: `O = P + Q` by Algorithm 8. -/
 def pointAdd0m (C : Spec.Weierstrass.Point.Curve) : Prog isa := fn0 (modP C) false
 
 end VG.Impl.Weierstrass.X86.Point

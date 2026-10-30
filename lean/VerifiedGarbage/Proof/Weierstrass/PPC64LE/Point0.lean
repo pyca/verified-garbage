@@ -30,7 +30,7 @@ def val0 (C : Spec.Weierstrass.Point.Curve) (dbl : Bool) (ws : Addr) (m : Mem) :
     Fin C.p × Fin C.p × Fin C.p :=
   if dbl then C.dbl0 ws m else C.add0m ws m
 
-/-- `vg_<curve>_point_double_a0(ws = r3)` (`dbl`) or `vg_<curve>_point_add_affine_a0`. -/
+/-- `vg_<curve>_point_a0_double(ws = r3)` (`dbl`) or `vg_<curve>_point_a0_add_affine`. -/
 def pt0PPC (C : Spec.Weierstrass.Point.Curve) (dbl : Bool) : Contract PPC64LE.isa where
   pre := (sumPPC C dbl).pre
   post s s' :=
@@ -98,7 +98,7 @@ theorem pt0_implies (C : Spec.Weierstrass.Point.Curve) (hp : 0 < C.p) (dbl : Boo
       refine ⟨trivial, rfl, rfl, by simp, by simp, by simp, ?_⟩
       exact pre_zero C hp _ _⟩ }
 
-/-- `vg_<curve>_point_double_a0` (`dbl`) or `vg_<curve>_point_add_affine_a0`
+/-- `vg_<curve>_point_a0_double` (`dbl`) or `vg_<curve>_point_a0_add_affine`
 meets its contract, given its constant time. -/
 theorem pt0_verified (C : Spec.Weierstrass.Point.Curve) (hM : ModOk C.k C.p) (hk3 : 3 ≤ C.k) (hk6 : C.k ≤ 6)
     (hodd : C.p % 2 = 1) (h1 : (1 : Fin C.p) ≠ 0) (hF : Fermat C.p) (dbl : Bool)

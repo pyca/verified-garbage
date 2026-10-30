@@ -72,7 +72,7 @@ theorem combVerify_ok (hC : Law Spec.P224.curve) {s₀ : State} (hp : combVerify
   have ht := tableMem_of_consts hp.2 member
   have hd := table_disjoint_of_consts hp.2 member
     (show (⟨ptr s₀ .r3,8192⟩ : Region)∈s₀.wr by rw [hp.1.wr]; simp)
-  apply verifyWith_ok p224_ok hC hp.1
+  apply verifyWith_ok p224_ok hC hp.1 (a0₁ := false) nofun
   intro s M syms
   intro u hs hf F _ _ _ _ _ _ _ kv keep unch syu
   have frame : Frame [⟨ptr s₀ .r3,8192⟩] s₀.mem u.mem := outside_frame

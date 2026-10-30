@@ -113,10 +113,10 @@ def pointAdd (C : Spec.Weierstrass.Point.Curve) : Prog isa := fn (modP C) false
 /-- `vg_<curve>_point_double`. -/
 def pointDouble (C : Spec.Weierstrass.Point.Curve) : Prog isa := fn (modP C) true
 
-/-- `vg_<curve>_point_double_a0`: `O = P + P` by Algorithm 9. -/
+/-- `vg_<curve>_point_a0_double`: `O = P + P` by Algorithm 9. -/
 def pointDouble0 (C : Spec.Weierstrass.Point.Curve) : Prog isa := fn0 (modP C) true
 
-/-- `vg_<curve>_point_add_affine_a0`: `O = P + Q` by Algorithm 8. -/
+/-- `vg_<curve>_point_a0_add_affine`: `O = P + Q` by Algorithm 8. -/
 def pointAdd0m (C : Spec.Weierstrass.Point.Curve) : Prog isa := fn0 (modP C) false
 
 end VG.Impl.Weierstrass.Arm.Point

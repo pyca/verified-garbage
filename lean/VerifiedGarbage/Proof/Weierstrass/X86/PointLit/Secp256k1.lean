@@ -21,8 +21,8 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 # Literals of secp256k1's x86 point addition and doubling
 
 The code of `vg_<curve>_point_add` and `vg_<curve>_point_double`, and of
-the functions for `a = 0` (`vg_<curve>_point_double_a0` and
-`vg_<curve>_point_add_affine_a0`), checked
+the functions for `a = 0` (`vg_<curve>_point_a0_double` and
+`vg_<curve>_point_a0_add_affine`), checked
 once here, so that the taint analysis and `spSafe` read it rather than
 building it again; its calls refer to the Montgomery functions' literals.
 -/

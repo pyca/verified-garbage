@@ -348,7 +348,7 @@ def mulAt (C : Spec.Weierstrass.Mul.Curve) (px py : Nat) : Prog isa :=
   .seq (.call C.mulApi.name c.mulFn) (.block [.mov .lr (.reg .r10)])
 
 /-- Whether `qMul`'s inline ladder doubles and adds by the point functions
-for `a = 0` (`vg_<curve>_point_double_a0`, `vg_<curve>_point_add_affine_a0`):
+for `a = 0` (`vg_<curve>_point_a0_double`, `vg_<curve>_point_a0_add_affine`):
 for a curve without `vg_<curve>_mul` whose `a` is zero and whose
 coordinates fit the point functions' slots. -/
 def qA0 : Bool := c.mul.isNone && (c.C.a == 0 && decide (c.n ≤ 6))
