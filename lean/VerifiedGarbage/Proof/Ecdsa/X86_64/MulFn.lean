@@ -13,7 +13,8 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
 `Cfg.mulBody`: the table of `k`'s bits (`bits_ok`), from the scalar in `K`'s
 slot, `Q` (in `R`'s first two slots) copied to `ACC` and `PT`, `R` the point
 at infinity (copies of zero and one, `copy_ok`), then `R = [k]Q` by the
-ladder (`ladder_ok`, `step_rep`), which reads `p`, `a R` and `3 b R` from
+ladder (`ladder_ok`, `step_rep'`, with the formulas for `a = 0` if the curve's `a`
+is zero), which reads `p`, `a R` and `3 b R` from
 their slots and writes only its slots, `R`'s, `ACC`'s, `PT`'s and the table
 of bits (`mulBody_ok`). `Cfg.mulFn` runs it between copying the callee-saved
 registers to `xmm0`–`xmm5` and back (`mulFn_ok`), as the inversions do; that
@@ -107,7 +108,7 @@ theorem mulBody_ok (hc : BaseCfgOk c) (hC : Law c.C) {base : Addr} {s : State} (
   show WP isa (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
     (.seq (.block (copy c.n (c.sl ACC) (c.sl RX) ++ copy c.n (c.sl PT) (c.sl RY) ++
       copy c.n (c.sl RX) (c.sl ZERO) ++ copy c.n (c.sl RY) (c.sl ONEP) ++ copy c.n (c.sl RZ) (c.sl ZERO)))
-      (ladder c.mulLadder).inline)) s _
+      (ladder c.mulLadder (c.C.a == 0)).inline)) s _
   -- The table of `k`'s bits.
   refine WP.seq (WP.mono (bits_ok hs h0 (by omega_arith) (sz (i := K) (by decide)) hsz
     (Or.inl (by have := sl_below_bits c (i := K) (by decide) 0 0 (.inl (by decide)); omega_arith)))
@@ -199,9 +200,11 @@ theorem mulBody_ok (hc : BaseCfgOk c) (hC : Law c.C) {base : Addr} {s : State} (
       (Point.affine (toM _ _ (sv c base s RX)) (toM _ _ (sv c base s RY)))
     rw [acc₆, pt₆, one₆, toM_one hpR]
     exact rep_affine' hC _ _
-  have hstep := step_rep (L := c.mulLadder) (k := sv c base s K) hC hQ
+  have hstep := step_rep' (L := c.mulLadder) (k := sv c base s K) (a0 := c.C.a == 0) hC hQ
     (by show toM c.C.p (2 ^ (64 * c.n)) (sv c base s₆ AP) = _; rw [ap₆]; exact toM_cmont hc _)
     (by show toM c.C.p (2 ^ (64 * c.n)) (sv c base s₆ B3P) = _; rw [b3₆]; exact toM_cmont hc _) hG
+    fun h0 => ⟨by rw [beq_iff_eq.mp h0]; rfl, by
+      show toM _ _ (sv c base s₆ ONEP) = 1; rw [one₆]; exact toM_one hpR⟩
   have hR : Rep c.C (tmv c.C c.n base s₆ (c.sl RX)) (tmv c.C c.n base s₆ (c.sl RY))
       (tmv c.C c.n base s₆ (c.sl RZ)) (mul (sv c base s K >>> (64 * c.n)) (ptQ c base s)) := by
     show Rep c.C (toM _ _ (sv c base s₆ RX)) (toM _ _ (sv c base s₆ RY)) (toM _ _ (sv c base s₆ RZ)) _

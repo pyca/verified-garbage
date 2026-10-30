@@ -20,7 +20,8 @@ import VerifiedGarbage.Proof.Framework.Block
 `Cfg.mulBody`: the table of `k`'s bits (`bits_ok`), from the scalar in `K`'s
 slot, `Q` (in `R`'s first two slots) copied to `ACC` and `PT`, `R` the point
 at infinity (copies of zero and one, `copy_ok`), then `R = [k]Q` by the
-ladder (`ladder_ok`, `step_rep`), which reads `p`, `a R` and `3 b R` (at
+ladder (`ladder_ok`, `step_rep'`, with the formulas for `a = 0` if the curve's `a`
+is zero), which reads `p`, `a R` and `3 b R` (at
 `BM`'s slot, where the contract has it) and writes only its slots, `R`'s,
 `ACC`'s, `PT`'s and the table of bits (`mulBody_ok`). `Cfg.mulFn` runs it
 between keeping `x19` and `invRegs` (`invKept`) in the words past the table
@@ -185,9 +186,11 @@ theorem mulBody_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8) (hL
       (Point.affine (toM _ _ (sv c base s RX)) (toM _ _ (sv c base s RY)))
     rw [acc₆, pt₆, one₆, toM_one hpR]
     exact rep_affine' hC _ _
-  have hstep := step_rep (L := c.mulLadder) (k := sv c base s K) hC hQ
+  have hstep := step_rep' (L := c.mulLadder) (k := sv c base s K) (a0 := c.C.a == 0) hC hQ
     (by show toM c.C.p (2 ^ (64 * c.n)) (sv c base s₆ AP) = _; rw [ap₆]; exact toM_cmont hc _)
     (by show toM c.C.p (2 ^ (64 * c.n)) (sv c base s₆ BM) = _; rw [b3₆]; exact toM_cmont hc _) hG
+    fun h0 => ⟨by rw [beq_iff_eq.mp h0]; rfl, by
+      show toM _ _ (sv c base s₆ ONEP) = 1; rw [one₆]; exact toM_one hpR⟩
   have hR : Rep c.C (tmv c.C c.n base s₆ (c.sl RX)) (tmv c.C c.n base s₆ (c.sl RY))
       (tmv c.C c.n base s₆ (c.sl RZ)) (mul (sv c base s K >>> (64 * c.n)) (ptQ c base s)) := by
     show Rep c.C (toM _ _ (sv c base s₆ RX)) (toM _ _ (sv c base s₆ RY)) (toM _ _ (sv c base s₆ RZ)) _

@@ -66,8 +66,8 @@ namespace VG.Generic.Secp256k1.AArch64.EcdsaSecp256k1
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.Secp256k1.curve) : List Artifact := [
   Spec.Ecdsa.Secp256k1.signApi.artifact AArch64.target {
     notes := ["Field elements are four 64-bit words in Montgomery form. \
-      Scalar multiplication uses a fixed 256-iteration ladder with the general complete addition \
-      formulas of Renes, Costello and Batina (Algorithm 1), including for a = 0. \
+      Scalar multiplication uses a fixed 256-iteration ladder with the complete formulas for \
+      a = 0 of Renes, Costello and Batina (Algorithm 9 doubles, Algorithm 8 adds the affine point). \
       Inversions are calls of `vg_secp256k1_inv_mod_p` and `vg_secp256k1_inv_mod_n`, by divsteps. \
       Branches and memory addresses depend only on pointers and loop counters."]
     code := Impl.Ecdsa.AArch64.signSecp256k1
