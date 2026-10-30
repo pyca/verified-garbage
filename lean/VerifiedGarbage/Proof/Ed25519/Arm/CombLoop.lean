@@ -853,6 +853,52 @@ theorem combStart_ok : Rep combStart ((17 * combGVal) • baseAff) := by
 
 /-! ## The multiplication -/
 
+/-- The accumulator's start and the counter, for the scalar's copy at byte `SCAL`. -/
+theorem combInit_ok {u : State} {b T : BitVec 32} (hcu : Ctx b u) (lu : AllLim u.mem b)
+    (tu : TblAt u T) (syu : u.syms combSym = T) (apart : (TBL T).Disjoint ⟨State.addr b, 8192⟩) :
+    WP isa combInit u fun w => PointKeep b u w ∧ CombEnv w b (b + BitVec.ofNat 32 SCAL) T ∧
+      CombInv w b (b + BitVec.ofNat 32 SCAL) T
+        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt u.mem (State.addr (b + BitVec.ofNat 32 SCAL)) 32)) 0 w := by
+  have hfb := hcu.fit
+  rw [combInit, WP.seq_iff]
+  refine WP.mono_syms (fieldCode_ok _ hcu lu) fun v ⟨kv, lv, ev⟩ syv => ?_
+  refine WP.mono_syms (Q := fun w => Upd v w .r11 ((0 : BitVec 16).setWidth 32))
+    (wp_movw fun w uw => WP.block_nil uw) fun w uw syw => ?_
+  let p := b + BitVec.ofNat 32 SCAL
+  have hpa : State.addr p = State.addr b + BitVec.ofNat 64 SCAL := addr_add (by simp only [SCAL]; omega)
+  have hpn : p.toNat = b.toNat + SCAL := by
+    simp only [p, BitVec.toNat_add, BitVec.toNat_ofNat, SCAL]
+    rw [Nat.mod_eq_of_lt (by omega : 2048 < 2 ^ 32), Nat.mod_eq_of_lt (by omega)]
+  have frw : Frame [FA b] u.mem w.mem := by rw [uw.mem]; exact kv.frame
+  have tw : TblAt w T := tu.of_frame (by rw [uw.rd, uw.wr, kv.rest.rd, kv.rest.wr]) frw fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact apart.sub_right (Offset.sub_base _ (by decide))
+  have scal : Spec.Ed25519.bytesAt w.mem (State.addr p) 32 = Spec.Ed25519.bytesAt u.mem (State.addr p) 32 := by
+    unfold Spec.Ed25519.bytesAt
+    refine List.map_congr_left fun n hn => ?_
+    have hn := List.mem_range.mp hn
+    rw [hpa, frw.bytes (R := ⟨State.addr b + BitVec.ofNat 64 SCAL, 32⟩)
+      (by simp only [List.mem_singleton, forall_eq]
+          exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide))
+      (show (32 : Nat) ≤ 2 ^ 64 by decide) hn]
+  have E : CombEnv w b p T := by
+    refine ⟨rfl, by rw [hpn]; simp only [SCAL]; omega, fun k hk => ?_, ?_, tw, apart⟩
+    · rw [hpa, Offset.add_add, uw.rd, uw.wr, kv.rest.rd, kv.rest.wr]
+      have hw : (⟨State.addr b, 4096 + 4096⟩ : Region) ∈ u.wr := hcu.wr
+      exact in_base (List.mem_append_right _ hw) (by simp only [SCAL]; omega) (by simp only [SCAL]; omega)
+    · intro r hr
+      rw [hpa]
+      simp only [stepRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)
+  have hcw : Ctx b w := (kv.ctx hcu).of_rest (uw.rest (ws := [.r11]) (by decide)) (by decide)
+  have kvw : PointKeep b v w := ⟨uw.rest (by decide), by rw [uw.mem]; exact Frame.refl _ _⟩
+  have I : CombInv w b p T (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt u.mem (State.addr p) 32)) 0 w := by
+    refine ⟨by decide, hcw, by rw [uw.gpr]; rfl, by rw [uw.mem]; exact lv, by rw [uw.mem, ev]; rfl, ?_,
+      PointKeep.refl _ _, by rw [scal], by rw [syw, syv]; exact syu⟩
+    rw [uw.mem, ev, evalOps, List.foldl_append, ← evalOps, ← evalOps, constPoint_eval]
+    simpa only [digitSum64, add_zero, natCast_zsmul] using combStart_ok
+  exact ⟨(PointKeep.of_keep kv).trans kvw, E, I⟩
+
+/-- The scalar copied (`combCopy_ok`), then `combInit_ok`. -/
 theorem combPrepare_ok {s : State} {b P T : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
     (hp : s.gpr .r12 = P) (hfit : P.toNat + 32 ≤ 2 ^ 32)
     (hr : ∀ k < 32, InRegions (s.rd ++ s.wr) (State.addr P + BitVec.ofNat 64 k) 1)
@@ -870,47 +916,29 @@ theorem combPrepare_ok {s : State} {b P T : BitVec 32} (hc : Ctx b s) (hl : AllL
   have lu : AllLim u.mem b := fun sl =>
     (env_frame fu sl (slot_apart sl (.inr (by simp only [offset, SCAL]; have := sl.isLt; omega))
       (by decide))).2 (hl sl)
-  rw [combInit, WP.seq_iff]
-  refine WP.mono_syms (fieldCode_ok _ hcu lu) fun v ⟨kv, lv, ev⟩ syv => ?_
-  refine WP.mono_syms (Q := fun w => Upd v w .r11 ((0 : BitVec 16).setWidth 32))
-    (wp_movw fun w uw => WP.block_nil uw) fun w uw syw => ?_
-  -- Where the loop starts.
-  let p := b + BitVec.ofNat 32 SCAL
-  have hpa : State.addr p = State.addr b + BitVec.ofNat 64 SCAL := addr_add (by simp only [SCAL]; omega)
-  have hpn : p.toNat = b.toNat + SCAL := by
-    simp only [p, BitVec.toNat_add, BitVec.toNat_ofNat, SCAL]
-    rw [Nat.mod_eq_of_lt (by omega : 2048 < 2 ^ 32), Nat.mod_eq_of_lt (by omega)]
-  have frw : Frame [FA b] u.mem w.mem := by rw [uw.mem]; exact kv.frame
   have tu : TblAt u T := hT.of_frame (by rw [ru.rd, ru.wr]) fu fun r hr => by
     rw [List.mem_singleton.mp hr]; exact apart.sub_right sub
-  have tw : TblAt w T := tu.of_frame (by rw [uw.rd, uw.wr, kv.rest.rd, kv.rest.wr]) frw fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact apart.sub_right (Offset.sub_base _ (by decide))
-  have scal : Spec.Ed25519.bytesAt w.mem (State.addr p) 32 = Spec.Ed25519.bytesAt s.mem (State.addr P) 32 := by
+  have hpa : State.addr (b + BitVec.ofNat 32 SCAL) = State.addr b + BitVec.ofNat 64 SCAL :=
+    addr_add (by simp only [SCAL]; omega)
+  have scal : Spec.Ed25519.bytesAt u.mem (State.addr (b + BitVec.ofNat 32 SCAL)) 32 =
+      Spec.Ed25519.bytesAt s.mem (State.addr P) 32 := by
     unfold Spec.Ed25519.bytesAt
     refine List.map_congr_left fun n hn => ?_
-    have hn := List.mem_range.mp hn
-    rw [hpa, frw.bytes (R := ⟨State.addr b + BitVec.ofNat 64 SCAL, 32⟩)
-      (by simp only [List.mem_singleton, forall_eq]
-          exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide))
-      (show (32 : Nat) ≤ 2 ^ 64 by decide) hn, Offset.add_add]
-    exact cu n hn
-  have E : CombEnv w b p T := by
-    refine ⟨rfl, by rw [hpn]; simp only [SCAL]; omega, fun k hk => ?_, ?_, tw, apart⟩
-    · rw [hpa, Offset.add_add, uw.rd, uw.wr, kv.rest.rd, kv.rest.wr]
-      have hw : (⟨State.addr b, 4096 + 4096⟩ : Region) ∈ u.wr := hcu.wr
-      exact in_base (List.mem_append_right _ hw) (by simp only [SCAL]; omega) (by simp only [SCAL]; omega)
-    · intro r hr
-      rw [hpa]
-      simp only [stepRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)
-  have hcw : Ctx b w := (kv.ctx hcu).of_rest (uw.rest (ws := [.r11]) (by decide)) (by decide)
-  have kvw : PointKeep b v w := ⟨uw.rest (by decide), by rw [uw.mem]; exact Frame.refl _ _⟩
-  have I : CombInv w b p T (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr P) 32)) 0 w := by
-    refine ⟨by decide, hcw, by rw [uw.gpr]; rfl, by rw [uw.mem]; exact lv, by rw [uw.mem, ev]; rfl, ?_,
-      PointKeep.refl _ _, by rw [scal], by rw [syw, syv, syu]; exact hsym⟩
-    rw [uw.mem, ev, evalOps, List.foldl_append, ← evalOps, ← evalOps, constPoint_eval]
-    simpa only [digitSum64, add_zero, natCast_zsmul] using combStart_ok
-  exact ⟨ku.trans ((PointKeep.of_keep kv).trans kvw), E, I⟩
+    rw [hpa, Offset.add_add]
+    exact cu n (List.mem_range.mp hn)
+  refine WP.mono (combInit_ok hcu lu tu (by rw [syu]; exact hsym) apart) fun w ⟨kw, E, I⟩ => ?_
+  rw [scal] at I
+  exact ⟨ku.trans kw, E, I⟩
+
+/-- The loop from its start: `[S]B` for the scalar `S` of the start's copy. -/
+theorem combFrom_ok {w : State} {b p T : BitVec 32} {S : Nat} (E : CombEnv w b p T)
+    (I : CombInv w b p T S 0 w) (hS : S < 2 ^ 256) :
+    WP isa (.loop combStep .ne) w fun t => PointKeep b w t ∧ AllLim t.mem b ∧
+      Rep (point (env t.mem b) 0 1 2 3) (S • baseAff) := by
+  refine WP.mono (combSteps_ok E I (by decide)) fun t ht => ⟨ht.keep, ht.lim, ?_⟩
+  have := ht.acc
+  rw [comb64_total hS, natCast_zsmul] at this
+  exact this
 
 theorem combMultiply_ok {s : State} {b P T : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
     (hp : s.gpr .r12 = P) (hfit : P.toNat + 32 ≤ 2 ^ 32)
@@ -922,12 +950,7 @@ theorem combMultiply_ok {s : State} {b P T : BitVec 32} (hc : Ctx b s) (hl : All
         (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr P) 32) • baseAff) := by
   rw [combMultiply]
   refine WP.seq (WP.mono (combPrepare_ok hc hl hp hfit hr hsep hT hsym apart) fun w ⟨kw, E, I⟩ => ?_)
-  refine WP.mono (combSteps_ok E I (by decide)) fun t ht => ⟨kw.trans ht.keep, ht.lim, ?_⟩
   have hS := decodeLE_lt32 s.mem (State.addr P)
-  have e := comb64_total (S := Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr P) 32))
-    (by simpa using hS)
-  have := ht.acc
-  rw [e, natCast_zsmul] at this
-  exact this
+  refine WP.mono (combFrom_ok E I (by simpa using hS)) fun t ⟨kt, lt, rt⟩ => ⟨kw.trans kt, lt, rt⟩
 
 end VG.Proof.Ed25519.Arm
