@@ -69,20 +69,38 @@ theorem copyPt_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) (
 def Eb (k m : Nat) [NeZero m] (dbl : Bool) (mem : Mem) (base : Addr) (x : Nat) : Fin m :=
   toM m (2 ^ (64 * k)) (wordsVal mem base (enc k dbl x) k)
 
+/-- What the point function `ptName S a0 dbl` computes from the values of
+the slots: Algorithm 9 or 8 for `a0`, else Algorithm 1. -/
+def ptVal {m : Nat} [NeZero m] (a0 dbl : Bool) (E : Nat → Fin m) : Fin m × Fin m × Fin m :=
+  if a0 then
+    (if dbl then Spec.Weierstrass.Point.rcbDbl0 (E 10) (E 3) (E 4) (E 5)
+    else Spec.Weierstrass.Point.rcbAdd0m (E 10) (E 3) (E 4) (E 5) (E 6) (E 7))
+  else VG.Proof.Weierstrass.rcbAdd (E 9) (E 10) (E 3) (E 4) (E 5) (E 6) (E 7) (E 8)
+
+theorem ptOps_opsOk (a0 dbl : Bool) : OpsOk (ptOps a0 dbl) := by
+  cases a0
+  · exact rcbIds_opsOk
+  · exact ops0_opsOk dbl
+
+theorem ptOps_run {m : Nat} [NeZero m] (E : Nat → Fin m) (a0 dbl : Bool) :
+    (runOps (ptOps a0 dbl) E 0, runOps (ptOps a0 dbl) E 1, runOps (ptOps a0 dbl) E 2) =
+      ptVal a0 dbl E := by
+  cases a0
+  · exact rcb_run rcbIds_apart E
+  · exact ops0_run E dbl
+
 /-- A call of a point function, from the working space at `r3`: only
 `fnClob`, `O` and the own working space change, and `O` holds `rcbAdd` of
 what the constants and the operands stood for. -/
 theorem ptCall_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S.k S.m) (hodd : S.m % 2 = 1)
-    (hk3 : 3 ≤ S.k) (hk6 : S.k ≤ 6) (dbl : Bool) {s : State} {base : Addr} (hw : WsReg s base)
+    (hk3 : 3 ≤ S.k) (hk6 : S.k ≤ 6) (dbl : Bool) {a0 : Bool} {s : State} {base : Addr} (hw : WsReg s base)
     (hlt : ∀ x ∈ rIds, wordsVal s.mem base (enc S.k dbl x) S.k < S.m) :
-    WP isa (ptCall S dbl) s fun s' => Rk fnClob s s' ∧
+    WP isa (ptCall S dbl a0) s fun s' => Rk fnClob s s' ∧
       Outs base [(Spec.Weierstrass.Point.oAt S.k, 3 * Spec.Weierstrass.Point.elemBytes S.k),
         (Spec.Weierstrass.Point.ownAt S.k, 4096 - Spec.Weierstrass.Point.ownAt S.k)] s.mem s'.mem ∧
       (∀ j < 3, wordsVal s'.mem base (enc S.k dbl j) S.k < S.m) ∧
       (Eb S.k S.m dbl s'.mem base 0, Eb S.k S.m dbl s'.mem base 1, Eb S.k S.m dbl s'.mem base 2) =
-        VG.Proof.Weierstrass.rcbAdd (Eb S.k S.m dbl s.mem base 9) (Eb S.k S.m dbl s.mem base 10)
-          (Eb S.k S.m dbl s.mem base 3) (Eb S.k S.m dbl s.mem base 4) (Eb S.k S.m dbl s.mem base 5)
-          (Eb S.k S.m dbl s.mem base 6) (Eb S.k S.m dbl s.mem base 7) (Eb S.k S.m dbl s.mem base 8) := by
+        ptVal a0 dbl (Eb S.k S.m dbl s.mem base) := by
   have hcov : Covers [⟨base, 8192⟩] s.wr := Covers.of_mem fun r hr => by
     rw [List.mem_singleton] at hr; subst hr; exact hw.wr
   have g3 : ∀ t : State, (t.callEntry.withRegions [] [⟨base, 8192⟩]).gpr .r3 = t.gpr .r3 := fun t => by
@@ -96,13 +114,11 @@ theorem ptCall_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S
         (toM S.m (2 ^ (64 * S.k)) (wordsVal t'.mem (t.gpr .r3) (enc S.k dbl 0) S.k),
           toM S.m (2 ^ (64 * S.k)) (wordsVal t'.mem (t.gpr .r3) (enc S.k dbl 1) S.k),
           toM S.m (2 ^ (64 * S.k)) (wordsVal t'.mem (t.gpr .r3) (enc S.k dbl 2) S.k)) =
-        VG.Proof.Weierstrass.rcbAdd (E₀ S.k S.m dbl t 9) (E₀ S.k S.m dbl t 10) (E₀ S.k S.m dbl t 3)
-          (E₀ S.k S.m dbl t 4) (E₀ S.k S.m dbl t 5) (E₀ S.k S.m dbl t 6) (E₀ S.k S.m dbl t 7)
-          (E₀ S.k S.m dbl t 8),
+        ptVal a0 dbl (Eb S.k S.m dbl t.mem (t.gpr .r3)),
       fun _ _ => True⟩)
     (fun t ⟨hp, _, _⟩ => by
-      obtain ⟨tr, t', he, A, G, O, L, E⟩ := fn_ok hM hodd hp
-      exact ⟨tr, t', he, A, G, O, L, E⟩)
+      obtain ⟨tr, t', he, A, G, O, L, E⟩ := fnOps_ok hM hodd (ptOps_opsOk a0 dbl) hp
+      exact ⟨tr, t', he, A, G, O, L, E.trans (ptOps_run _ a0 dbl)⟩)
     (rd := []) (wr := [⟨base, 8192⟩])
     ⟨⟨by rw [State.withRegions_wr, g3, hw.r3], by rw [g3, hw.r3]; exact hw.nowrap, hk3, hk6,
         fun x hx => by
@@ -110,10 +126,9 @@ theorem ptCall_ok {S : Spec.Weierstrass.Mont.Modulus} [NeZero S.m] (hM : ModOk S
           exact hlt x hx⟩,
       by rw [g3, hw.r3],
       by rw [State.withRegions_mem, State.callEntry_mem]⟩
-    (Covers.right hcov) hcov ?_ (by rfl)
+    (Covers.right hcov) hcov ?_ (by cases a0 <;> cases dbl <;> rfl)
   intro s' r' w' p' _ _ _ ⟨G, O, L, E⟩
   simp only [State.withRegions_mem, State.callEntry_mem, g3, hw.r3, State.withRegions_gpr] at G O L E
-  simp only [E₀, State.withRegions_mem, State.callEntry_mem, g3, hw.r3] at E
   refine ⟨⟨fun r hr => ?_, r', w', p'⟩, O, L, E⟩
   have hl : r ∉ linkRegs := not_mem_sub hr
   rw [G r hr, State.callEntry_gpr _ hl]

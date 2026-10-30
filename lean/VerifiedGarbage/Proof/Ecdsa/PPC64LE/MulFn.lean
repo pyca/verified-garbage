@@ -179,7 +179,7 @@ theorem mulBody_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) {base : Addr} {s : State} (hw
     rw [tv rx₆, tv ry₆, tv rz₆]; exact hO
   refine WP.mono (ladderP_ok (L := ladderAt c ACC PT) (S := c.SP) hc.fpk hc.fpm (modP hc) hc.p_odd hpR
     (fun h6 => ladPtLay hc h3 h6 (by decide) (by decide))
-    (fun _ => ladLayI hc (by decide) (by decide) (by decide) (by decide)) hw₆ hlt hstep₆ hR
+    (fun _ => ladLayI hc (by decide) (by decide) (by decide) (by decide)) hw₆ hlt nofun hstep₆ hR
     (fun t ht => T₆ t (by have := hc.len_hi; show t < 64 * c.n; change t < 8 * c.C.len at ht; omega_arith)))
     fun s₇ ⟨K₇, U₇, L₇, R₇⟩ => ⟨K₁₆.trans K₇, ?_, L₇, R₇⟩
   refine (U₁₆.trans U₇).mono fun w hw => ?_
@@ -412,7 +412,7 @@ theorem qMul_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hnf : ∀ C, c.mul = some C →
     (hzero : sv c base s ZERO < c.C.p) (hqx : sv c base s gx < c.C.p) (hqy : sv c base s gy < c.C.p)
     (hrx : sv c base s RX < c.C.p) (hry : sv c base s RY < c.C.p) (hrz : sv c base s RZ < c.C.p)
     {k : Nat} {Q : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
-    (hstep : Step (ladderAt c gx gy) c.C base s k Q)
+    (hstep : Step (ladderAt c gx gy) c.C base s k Q c.qA0)
     (hR : Q c.ladderCfg.nbits (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY))
       (tmv c.C c.n base s (c.sl RZ)))
     (hO : Q c.ladderCfg.nbits (tmv c.C c.n base s (c.sl ZERO)) (tmv c.C c.n base s (c.sl ONEP))
@@ -432,6 +432,8 @@ theorem qMul_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hnf : ∀ C, c.mul = some C →
   split
   · -- The call: `Q` copied to `R`'s first two slots.
     next C hC =>
+    have hq : c.qA0 = false := by simp only [Cfg.qA0, hC, Option.isNone_some, Bool.false_and]
+    rw [hq] at hstep
     refine WP.seq ?_
     refine wp_append (WP.mono (copySl_ok hc hw (o := RX) (a := gx) (by decide) hgx (Ne.symm hgr.1))
       fun s₁ ⟨x₁, k₁, O₁⟩ => ?_)
@@ -528,7 +530,9 @@ theorem qMul_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hnf : ∀ C, c.mul = some C →
       · exact hry
       · exact hrz
     refine WP.mono (ladderP_ok (L := ladderAt c gx gy) (S := c.SP) hc.fpk hc.fpm (modP hc) hc.p_odd hpR
-      (fun h6 => ladPtLay hc h3 h6 hgx hgy) (fun _ => ladLayI hc hgx hgy hgw hgw') hw hlt hstep hR
+      (fun h6 => ladPtLay hc h3 h6 hgx hgy) (fun _ => ladLayI hc hgx hgy hgw hgw') hw hlt (fun h => by
+        simp only [Cfg.qA0, Bool.and_eq_true, decide_eq_true_eq] at h
+        exact h.2.2) hstep hR
       (fun t ht' => ht hN t (by have := hc.len_hi; show t < 64 * c.n; change t < 8 * c.C.len at ht'; omega_arith)))
       fun s' ⟨K, U, L, R⟩ => ⟨K, U.mono fun w hw => List.mem_append_left _ hw, L, R⟩
 
