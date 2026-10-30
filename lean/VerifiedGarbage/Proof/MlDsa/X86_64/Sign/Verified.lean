@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.MlDsa.Sign.Leak
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inv
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Top
 public import VerifiedGarbage.Spec.MlDsa.Contract
+import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
 
 /-!
 # ML-DSA signing on x86-64: verified
@@ -86,12 +87,24 @@ and the stack pointer (`sign_spSafe`) are checked by evaluating signing
 with no implementation of it. -/
 
 theorem sign_same {m mc : Prog isa → Bool} (hm : Comp m mc) {B : Backend} (h1 : mc B.ntt = true)
-    (h2 : mc B.invNtt = true) (h3 : mc B.mul = true) (h4 : mc B.mulAdd = true) (h5 : mc B.add = true)
+    (h2 : mc B.invNtt = true) (h3 : mc B.mul = true) (h5 : mc B.add = true)
     (h6 : mc B.sub = true) (h7 : mc B.rej4 = true) (h8 : mc B.expandMask4 = true) (h9 : mc B.highBits = true)
-    (h10 : mc B.lowBits = true) (h11 : mc B.normLt = true) (h12 : mc B.makeHint = true) (p : Params) :
+    (h10 : mc B.lowBits = true) (h11 : mc B.normLt = true) (h12 : mc B.makeHint = true)
+    (h13 : mc B.dotInv4 = true) (h14 : mc B.dotInv5 = true) (h15 : mc B.dotInv7 = true) (p : Params) :
     Same m (Impl.MlDsa.X86_64.Sign.sign (primsWith B) p) (Impl.MlDsa.X86_64.Sign.sign (primsWith .empty) p) := by
+  have hd : mc ((primsWith B).dotInv p.ℓ) = true := by
+    unfold Prims.dotInv; split
+    · exact h13
+    · split
+      · exact h14
+      · exact h15
+  have he : (primsWith Backend.empty).dotInv p.ℓ = .block [] := by
+    unfold Prims.dotInv; split
+    · rfl
+    · split <;> rfl
   unfold Impl.MlDsa.X86_64.Sign.sign
   same_tac hm
+  all_goals rw [he]; exact Same.call hm hd _ _
 
 theorem sign0_ctlC {p : Params} (h3 : Ok3 p) : ctlC (Impl.MlDsa.X86_64.Sign.sign (primsWith .empty) p) = true := by
   rcases h3 with rfl | rfl | rfl
@@ -110,18 +123,21 @@ variable (v : ArithImpl) {p : Params} (h3 : Ok3 p)
 include h3
 
 theorem sign_ctl : ctlOk (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) = true :=
-  ctlOk_of_ctlC (Same.ok (sign_same Comp.ctlC v.ok.ntt.ctl v.ok.invNtt.ctl v.ok.mul.ctl v.ok.mulAdd.ctl
+  ctlOk_of_ctlC (Same.ok (sign_same Comp.ctlC v.ok.ntt.ctl v.ok.invNtt.ctl v.ok.mul.ctl
     v.ok.add.ctl v.ok.sub.ctl v.ok.rej4.ctl v.ok.expandMask4.ctl v.ok.highBits.ctl v.ok.lowBits.ctl
-    v.ok.normLt.ctl v.ok.makeHint.ctl p) (sign0_ctlC h3))
+    v.ok.normLt.ctl v.ok.makeHint.ctl (v.ok.dotInv 4 (.inl rfl)).ctl (v.ok.dotInv 5 (.inr (.inl rfl))).ctl
+    (v.ok.dotInv 7 (.inr (.inr rfl))).ctl p) (sign0_ctlC h3))
 
 theorem sign_spSafe : (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p).all (fun i => !isa.writesSp i) = true :=
   Code.all_of_allInstrs (Same.ok (sign_same (Comp.all _) (Code.allInstrs_of_all v.ok.ntt.sp)
     (Code.allInstrs_of_all v.ok.invNtt.sp) (Code.allInstrs_of_all v.ok.mul.sp)
-    (Code.allInstrs_of_all v.ok.mulAdd.sp) (Code.allInstrs_of_all v.ok.add.sp)
+    (Code.allInstrs_of_all v.ok.add.sp)
     (Code.allInstrs_of_all v.ok.sub.sp) (Code.allInstrs_of_all v.ok.rej4.sp)
     (Code.allInstrs_of_all v.ok.expandMask4.sp)
     (Code.allInstrs_of_all v.ok.highBits.sp) (Code.allInstrs_of_all v.ok.lowBits.sp)
-    (Code.allInstrs_of_all v.ok.normLt.sp) (Code.allInstrs_of_all v.ok.makeHint.sp) p) (sign0_sp h3))
+    (Code.allInstrs_of_all v.ok.normLt.sp) (Code.allInstrs_of_all v.ok.makeHint.sp)
+    (Code.allInstrs_of_all (v.ok.dotInv 4 (.inl rfl)).sp) (Code.allInstrs_of_all (v.ok.dotInv 5 (.inr (.inl rfl))).sp)
+    (Code.allInstrs_of_all (v.ok.dotInv 7 (.inr (.inr rfl))).sp) p) (sign0_sp h3))
 
 theorem sign_verified :
     Verified X86_64.target (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) (signContractT p X86_64.abi signStack) :=

@@ -49,7 +49,6 @@ def prims : Prims where
   ntt := Impl.MlDsa.X86_64.Arith.ntt
   invNtt := Impl.MlDsa.X86_64.Arith.nttInv
   mul := Impl.MlDsa.X86_64.Arith.mul
-  mulAdd := Impl.MlDsa.X86_64.Arith.mulAdd
   add := Impl.MlDsa.X86_64.Arith.add
   sub := Impl.MlDsa.X86_64.Arith.sub
   rejNTT := Impl.MlDsa.X86_64.Sample.rejNTT
@@ -72,7 +71,6 @@ def primsWith (B : Impl.MlDsa.X86_64.Arith.Backend) : Prims :=
     ntt := B.ntt
     invNtt := B.invNtt
     mul := B.mul
-    mulAdd := B.mulAdd
     add := B.add
     sub := B.sub
     rej4 := B.rej4
@@ -82,7 +80,10 @@ def primsWith (B : Impl.MlDsa.X86_64.Arith.Backend) : Prims :=
     normLt := B.normLt
     makeHint := B.makeHint
     sfx := B.sfx
-    montgomery := B.montgomery }
+    montgomery := B.montgomery
+    dotInv4 := B.dotInv4
+    dotInv5 := B.dotInv5
+    dotInv7 := B.dotInv7 }
 
 theorem nosp_of {c : Prog isa} (h : c.allInstrs (fun i => !Taint.clobbers i .rsp) = true) : NoSp c := by
   rw [Code.allInstrs_eq] at h
@@ -148,7 +149,6 @@ def prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) signStack where
   ntt := calleeOf v.ok.ntt
   invNtt := calleeOf v.ok.invNtt
   mul := calleeOf v.ok.mul
-  mulAdd := calleeOf v.ok.mulAdd
   add := calleeOf v.ok.add
   sub := calleeOf v.ok.sub
   rejNTT := (⟨16, by decide, Proof.MlDsa.X86_64.Sample.rejNTT_verified, nosp_of (by decide +kernel),
@@ -191,6 +191,7 @@ def prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) signStack where
     have := v.ok.expandMask4.depth
     show 8 * (v.code.expandMask4.depth + 1) ≤ signStack
     unfold signStack; omega⟩
+  dotInv := fun c hc => calleeOf (v.ok.dotInv c hc)
   rej4Ret := by exact (fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ =>
     ⟨v.ok.rej4.ver.2.1 s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂,
       show _ = _ by

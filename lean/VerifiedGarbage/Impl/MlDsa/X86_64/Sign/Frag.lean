@@ -34,7 +34,6 @@ structure Prims where
   ntt : Prog isa
   invNtt : Prog isa
   mul : Prog isa
-  mulAdd : Prog isa
   add : Prog isa
   sub : Prog isa
   rejNTT : Prog isa
@@ -55,6 +54,10 @@ structure Prims where
   /-- What the names of the polynomial arithmetic's functions end with (`Arith.Backend`). -/
   sfx : String := ""
   montgomery : Bool := false
+  /-- `vg_mldsa_dot_inverse4`, `5` and `7` -/
+  dotInv4 : Prog isa := .block []
+  dotInv5 : Prog isa := .block []
+  dotInv7 : Prog isa := .block []
 
 /-! ## The layout of the working space (in bytes)
 
@@ -184,9 +187,19 @@ def nttAt (f : Ptr) : Prog isa := callP ("vg_mldsa_ntt" ++ P.sfx) P.ntt [.ptr f,
 
 def invNttAt (f : Ptr) : Prog isa := callP ((if P.montgomery then "vg_mldsa_montgomery_inv_ntt" else "vg_mldsa_inv_ntt") ++ P.sfx) P.invNtt [.ptr f, .ptr (sc oPS)]
 
+/-- `vg_mldsa_dot_inverse{c}`, for `c` of 4, 5 and 7. -/
+abbrev Prims.dotInv (P : Prims) (c : Nat) : Prog isa := if c = 4 then P.dotInv4 else if c = 5 then P.dotInv5 else P.dotInv7
+
+/-- The name of `vg_mldsa_dot_inverse{c}`, written out (the kernel evaluates
+code, and `toString` on `Nat` is well-founded recursion). -/
+abbrev dotInvName (c : Nat) : String :=
+  if c = 4 then "vg_mldsa_dot_inverse4" else if c = 5 then "vg_mldsa_dot_inverse5" else "vg_mldsa_dot_inverse7"
+
+def dotInvAt (count : Nat) (h f g : Ptr) : Prog isa :=
+  callP (dotInvName count ++ P.sfx) (P.dotInv count) [.ptr h, .ptr f, .ptr g, .ptr (sc oPS)]
+
 def mulAt (h f g : Ptr) : Prog isa := callP ((if P.montgomery then "vg_mldsa_montgomery_multiply_ntt" else "vg_mldsa_multiply_ntt") ++ P.sfx) P.mul [.ptr h, .ptr f, .ptr g]
 
-def mulAddAt (h f g : Ptr) : Prog isa := callP ((if P.montgomery then "vg_mldsa_montgomery_multiply_add_ntt" else "vg_mldsa_multiply_add_ntt") ++ P.sfx) P.mulAdd [.ptr h, .ptr f, .ptr g]
 
 def addAt (f g : Ptr) : Prog isa := callP ("vg_mldsa_add" ++ P.sfx) P.add [.ptr f, .ptr g]
 

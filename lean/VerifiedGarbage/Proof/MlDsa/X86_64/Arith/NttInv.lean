@@ -194,23 +194,48 @@ theorem vscale_ok {fP sP : Addr} (_hd : (pR sP).Disjoint (pR fP)) {G : Poly} (s 
   rw [n_eq] at hk
   rw [hS' k hk, ifp (by omega), map_mul_get _ _ (by rw [n_eq]; exact hk)]
 
+/-- Everything but `withMxcsr`, on any reduced `F` at `fP`, with the scratch at `sP`. -/
+theorem invBody_ok {fP sP : Addr} {F : Poly} {s : State} (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP)
+    (hF : PolyIs s.mem fP F) (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr) (hd : (pR fP).Disjoint (pR sP)) :
+    WP isa nttInvBody s fun s' => PolyIs s'.mem fP (nttInv F) ∧ Frame [pR fP, pR sP] s.mem s'.mem := by
+  have hd' : (pR sP).Disjoint (pR fP) := hd.symm
+  refine WP.seq (WP.mono (vpro_ok hsi hw) fun s2 ⟨hT, hc, hf2, k2, _⟩ => ?_)
+  have hF2 : PolyIs s2.mem fP F := polyIs_frame hf2 (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) hF
+  have hdi : s2.gpr .rdi = fP := by rw [k2.gpr (by decide), hdi]
+  have hsi : s2.gpr .rsi = sP := by rw [k2.gpr (by decide), hsi]
+  have hwf : pR fP ∈ s2.wr := by rw [k2.2.2]; exact hwf
+  have hw : pR sP ∈ s2.wr := by rw [k2.2.2]; exact hw
+  refine WP.mono (Q := LI fP sP s2 ((nttInvLens.foldl nttInvLayer F).map (· * 8347681))) ?_
+    fun s3 hI => ⟨by rw [nttInv_eq_layers]; exact hI.P, ?_⟩
+  rotate_left
+  · refine (frame_fs hf2 ?_).trans (frame_fs hI.frame ?_) <;>
+      intro r hr <;> simp only [List.mem_singleton] at hr <;> subst hr
+    exacts [.inr fun _ h => h, .inl fun _ h => h]
+  simp only [nttInvLens, List.foldl_cons, List.foldl_nil]
+  have hI : LI fP sP s2 F s2 := ⟨hF2, hT, hc, Keep.refl _ _, Frame.refl _ _⟩
+  refine LI.seq hdi hsi hwf hw hd' (invLay1_ok hd') ?_ hI
+  refine fun _ hI => LI.seq hdi hsi hwf hw hd' (invLay2_ok hd') ?_ hI
+  refine fun _ hI => LI.seq hdi hsi hwf hw hd' (invLay_ok hd' 4 63 (by decide) (by decide)) ?_ hI
+  refine fun _ hI => LI.seq hdi hsi hwf hw hd' (invLay_ok hd' 8 31 (by decide) (by decide)) ?_ hI
+  refine fun _ hI => LI.seq hdi hsi hwf hw hd' (invLay_ok hd' 16 15 (by decide) (by decide)) ?_ hI
+  refine fun _ hI => LI.seq hdi hsi hwf hw hd' (invLay_ok hd' 32 7 (by decide) (by decide)) ?_ hI
+  refine fun _ hI => LI.seq hdi hsi hwf hw hd' (invLay_ok hd' 64 3 (by decide) (by decide)) ?_ hI
+  refine fun _ hI => LI.seq hdi hsi hwf hw hd' (invLay_ok hd' 128 1 (by decide) (by decide)) ?_ hI
+  exact fun _ hI => LI.last hdi hsi hwf hw hd' (vscale_ok hd') hI
+
 theorem nttInv_correct (s : State) (hs : (inPlaceK nttInv).pre s) :
     ∃ t s', Exec isa Impl.MlDsa.X86_64.Arith.nttInv s t s' ∧ abiPreserved s s' ∧ (inPlaceK nttInv).post s s' := by
-  have hd : (pR (s.gpr .rsi)).Disjoint (pR (s.gpr .rdi)) := hs.2.2.1.symm
-  refine mx_correct s hs (by decide +kernel) (by decide +kernel) (by decide +kernel) fun s1 k1 f1 =>
-    WP.mono (nttBody_ok hs k1 f1
-      (G := (nttInvLens.foldl nttInvLayer (polyAt s.mem (s.gpr .rdi))).map (· * 8347681))
-      fun s2 hI hdi hsi hwf hw => ?_) fun s' ⟨hP, hf⟩ => ⟨by rw [nttInv_eq_layers]; exact hP, hf⟩
-  simp only [nttInvLens, List.foldl_cons, List.foldl_nil]
-  refine LI.seq hdi hsi hwf hw hd (invLay1_ok hd) ?_ hI
-  refine fun _ hI => LI.seq hdi hsi hwf hw hd (invLay2_ok hd) ?_ hI
-  refine fun _ hI => LI.seq hdi hsi hwf hw hd (invLay_ok hd 4 63 (by decide) (by decide)) ?_ hI
-  refine fun _ hI => LI.seq hdi hsi hwf hw hd (invLay_ok hd 8 31 (by decide) (by decide)) ?_ hI
-  refine fun _ hI => LI.seq hdi hsi hwf hw hd (invLay_ok hd 16 15 (by decide) (by decide)) ?_ hI
-  refine fun _ hI => LI.seq hdi hsi hwf hw hd (invLay_ok hd 32 7 (by decide) (by decide)) ?_ hI
-  refine fun _ hI => LI.seq hdi hsi hwf hw hd (invLay_ok hd 64 3 (by decide) (by decide)) ?_ hI
-  refine fun _ hI => LI.seq hdi hsi hwf hw hd (invLay_ok hd 128 1 (by decide) (by decide)) ?_ hI
-  exact fun _ hI => LI.last hdi hsi hwf hw hd (vscale_ok hd) hI
+  have hw : pR (s.gpr .rsi) ∈ s.wr := by rw [hs.2.1]; simp
+  have hwf : pR (s.gpr .rdi) ∈ s.wr := by rw [hs.2.1]; simp
+  have hd : (pR (s.gpr .rdi)).Disjoint (pR (s.gpr .rsi)) := hs.2.2.1
+  refine mx_correct s hs (by decide +kernel) (by decide +kernel) (by decide +kernel) fun s1 k1 f1 => ?_
+  have hF1 : PolyIs s1.mem (s.gpr .rdi) (polyAt s.mem (s.gpr .rdi)) :=
+    polyIs_frame f1 (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd.sub_right (mx_sub' _))
+      ⟨hs.2.2.2.2.2, rfl⟩
+  refine WP.mono (invBody_ok (k1.gpr (by decide)) (k1.gpr (by decide)) hF1 (by rw [k1.2.2]; exact hwf)
+    (by rw [k1.2.2]; exact hw) hd) fun s' ⟨hP, hf⟩ => ⟨hP, ?_⟩
+  exact (frame_fs f1 fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact .inr (mx_sub' _)).trans hf
 
 theorem nttInv_ct : ConstantTime isa (inPlaceK nttInv).pre (inPlaceK nttInv).pub Impl.MlDsa.X86_64.Arith.nttInv :=
   VG.Taint.constantTime (A := taint) (X86_64.Taint.ofRegs [.rdi, .rsi, .rsp]) inPlace_agree (by taint_decide)

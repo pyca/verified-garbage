@@ -215,38 +215,13 @@ theorem rowW_trL {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {t i : Na
     (hi : i < p.k) :
     RelCT isa (fun x y => LRel D (sgR p) (sgW p) x y ∧ (∃ σ, ICw p D σ t i x) ∧ ∃ σ, ICw p D σ t i y) (rowW P p i)
       fun _ _ => True := by
-  simp only [wChk, Bool.and_eq_true, List.all_eq_true, List.mem_range, decide_eq_true_eq] at hc
-  obtain ⟨⟨⟨⟨cm, ci⟩, c1⟩, _⟩, hl⟩ := hc
-  have hA : ∀ {σ s : State} (I : ICw p D σ t i s) j, j < p.ℓ → Reduced s.mem (pa s (aP p i j)) :=
-    fun I j hj => by
-      have := I.l.k.d.im.A (p.ℓ * i + j) (by
-        have := Nat.mul_le_mul_left p.ℓ (show i + 1 ≤ p.k from hi)
-        rw [Nat.mul_add, Nat.mul_one, Nat.mul_comm p.ℓ p.k] at this; omega)
-      rw [aP_ij]; exact this.1
-  let J : State → Prop := fun s => (∃ σ, ICw p D σ t i s) ∧ Reduced s.mem (pa s (wP p i))
+  simp only [wChk, Bool.and_eq_true, decide_eq_true_eq] at hc
+  obtain ⟨⟨cd, _⟩, hl⟩ := hc
   unfold rowW
-  refine seqL (J := J) ?_ ?_ (seqL (J := J) ?_ ?_ ?_)
-  · refine RelCT.mono (mulAt_tr hP.mul (cm 0 hl)) (fun x y ⟨R, ⟨σ₁, I₁⟩, ⟨σ₂, I₂⟩⟩ =>
-      ⟨R, ⟨hA I₁ 0 hl, (I₁.yh 0 hl).1⟩, ⟨hA I₂ 0 hl, (I₂.yh 0 hl).1⟩⟩) fun _ _ h => h
-  · rintro x L ⟨σ, I⟩
-    refine WP.mono (mulAt_ok hP.mul L (cm 0 hl) (hA I 0 hl) (I.yh 0 hl).1) fun x' ⟨hP', _, hq⟩ =>
-      ⟨⟨_, hP'⟩, ⟨σ, I.step hP' c1⟩, by rw [hP'.pa (pS_bases _)]; exact hq.1⟩
-  · refine RelCT.mono (seqR_tr (R := fun _ x y => LRel D (sgR p) (sgW p) x y ∧ J x ∧ J y) (p.ℓ - 1) 1
-      fun j hj1 hj => stepSelf ?_ ?_) (fun _ _ h => h) fun _ _ _ => trivial
-    · refine RelCT.mono (mulAddAt_tr hP.mulAdd (cm j (by omega))) (fun x y ⟨R, ⟨⟨σ₁, I₁⟩, r₁⟩, ⟨⟨σ₂, I₂⟩, r₂⟩⟩ =>
-        ⟨R, ⟨r₁, hA I₁ j (by omega), (I₁.yh j (by omega)).1⟩, ⟨r₂, hA I₂ j (by omega), (I₂.yh j (by omega)).1⟩⟩)
-        fun _ _ h => h
-    · rintro x L ⟨⟨σ, I⟩, r⟩
-      refine WP.mono (mulAddAt_ok hP.mulAdd L (cm j (by omega)) r (hA I j (by omega)) (I.yh j (by omega)).1)
-        fun x' ⟨hP', _, hq⟩ => ⟨⟨_, hP'⟩, ⟨σ, I.step hP' c1⟩, by rw [hP'.pa (pS_bases _)]; exact hq.1⟩
-  · rintro x L ⟨I, r⟩
-    exact WP.mono (seqR_ok (I := fun _ s => ∃ W, PostB D x s W ∧ J s) (p.ℓ - 1) 1
-      (fun j hj1 hj s ⟨W, hW, ⟨σ, I'⟩, r'⟩ => WP.mono (mulAddAt_ok hP.mulAdd I'.l.st.lay (cm j (by omega)) r'
-        (hA I' j (by omega)) (I'.yh j (by omega)).1) fun x' ⟨hP', _, hq⟩ =>
-          ⟨_, hW.trans hP' (fun _ h => List.mem_append_left _ h) (fun _ h => List.mem_append_right _ h),
-            ⟨σ, I'.step hP' c1⟩, by rw [hP'.pa (pS_bases _)]; exact hq.1⟩) x ⟨[], PostB.refl D x [], I, r⟩)
-      fun x' ⟨W, hW, j⟩ => ⟨⟨W, hW⟩, j⟩
-  · exact RelCT.mono (ipAt_tr (t := inverse P.montgomery) hP.invNtt ci) (fun _ _ h => ⟨h.1, h.2.1.2, h.2.2.2⟩) fun _ _ h => h
+  exact RelCT.mono (dotAt_tr (hP.dotInv p.ℓ hl) cd) (fun x y ⟨R, ⟨_, I₁⟩, ⟨_, I₂⟩⟩ =>
+    ⟨R, ⟨fun j hj => by rw [famP_aP]; exact (rowA hi I₁ hj).1, fun j hj => by rw [famP_yhP]; exact (I₁.yh j hj).1⟩,
+      ⟨fun j hj => by rw [famP_aP]; exact (rowA hi I₂ hj).1, fun j hj => by rw [famP_yhP]; exact (I₂.yh j hj).1⟩⟩)
+    fun _ _ h => h
 
 /-! ## `w₁` -/
 

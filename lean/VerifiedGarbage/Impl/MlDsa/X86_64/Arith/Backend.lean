@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Ntt
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Mul
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Dot
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.AddSub
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Round.Round
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt4
@@ -47,18 +48,27 @@ structure Backend where
   sfx : String
   /-- Whether products and the inverse transform use Montgomery scaling. -/
   montgomery : Bool := false
+  /-- `vg_mldsa_dot_inverse4`, `5` and `7`: the inverse NTT of a row's sum of products. -/
+  dotInv4 : Prog isa
+  dotInv5 : Prog isa
+  dotInv7 : Prog isa
 
 /-- The SSE2 code. -/
 def Backend.sse2 : Backend :=
   ⟨Arith.ntt, Arith.nttInv, Arith.mul, Arith.mulAdd, Arith.add, Arith.sub, Round.highBits,
     Round.lowBits, Round.normLt, Round.makeHint, Round.useHint, Sample.Rej4.rejNTT4,
-    Sample.Mask4.expandMask4, "", false⟩
+    Sample.Mask4.expandMask4, "", false, dotInvSse2 4, dotInvSse2 5,
+    dotInvSse2 7⟩
+
+/-- `vg_mldsa_dot_inverse{c}`, for `c` of 4, 5 and 7. -/
+abbrev Backend.dotInv (B : Backend) (c : Nat) : Prog isa :=
+  if c = 4 then B.dotInv4 else if c = 5 then B.dotInv5 else B.dotInv7
 
 /-- Every function empty, which the proofs that the functions calling a
 backend never write `rsp` (and load MXCSR only to restore it) evaluate in
 its place. -/
 def Backend.empty : Backend :=
   ⟨.block [], .block [], .block [], .block [], .block [], .block [], .block [], .block [], .block [],
-    .block [], .block [], .block [], .block [], "", false⟩
+    .block [], .block [], .block [], .block [], "", false, .block [], .block [], .block []⟩
 
 end VG.Impl.MlDsa.X86_64.Arith

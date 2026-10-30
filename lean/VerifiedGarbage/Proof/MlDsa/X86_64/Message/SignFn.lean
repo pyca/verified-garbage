@@ -73,13 +73,16 @@ theorem signFn (v : ArithImpl) {p : Params} (hp : p ∈ params) :
   have dep2 : ∀ {c : Prog isa}, c.depth ≤ 2 → decide (c.depth ≤ 3) = true := fun h => decide_eq_true (by omega)
   refine ⟨sign_correct (prims_okWith v) h3 (Proof.MlDsa.X86_64.Sign.sign_ctl v h3), sign_ct (prims_okWith v) h3,
     noSp_of (Same.ok (sign_same (Comp.all _) (noSpB_of v.ok.ntt.nosp) (noSpB_of v.ok.invNtt.nosp)
-      (noSpB_of v.ok.mul.nosp) (noSpB_of v.ok.mulAdd.nosp) (noSpB_of v.ok.add.nosp) (noSpB_of v.ok.sub.nosp)
+      (noSpB_of v.ok.mul.nosp) (noSpB_of v.ok.add.nosp) (noSpB_of v.ok.sub.nosp)
       (noSpB_of v.ok.rej4.nosp) (noSpB_of v.ok.expandMask4.nosp) (noSpB_of v.ok.highBits.nosp)
-      (noSpB_of v.ok.lowBits.nosp) (noSpB_of v.ok.normLt.nosp) (noSpB_of v.ok.makeHint.nosp) p) (sign0_noSp h3)),
+      (noSpB_of v.ok.lowBits.nosp) (noSpB_of v.ok.normLt.nosp) (noSpB_of v.ok.makeHint.nosp)
+      (noSpB_of (v.ok.dotInv 4 (.inl rfl)).nosp) (noSpB_of (v.ok.dotInv 5 (.inr (.inl rfl))).nosp)
+      (noSpB_of (v.ok.dotInv 7 (.inr (.inr rfl))).nosp) p) (sign0_noSp h3)),
     of_decide_eq_true (Same.ok (sign_same (depthCompN 3) (dep2 v.ok.ntt.depth) (dep2 v.ok.invNtt.depth)
-      (dep2 v.ok.mul.depth) (dep2 v.ok.mulAdd.depth) (dep2 v.ok.add.depth) (dep2 v.ok.sub.depth)
+      (dep2 v.ok.mul.depth) (dep2 v.ok.add.depth) (dep2 v.ok.sub.depth)
       (dep v.ok.rej4.depth) (dep v.ok.expandMask4.depth) (dep2 v.ok.highBits.depth) (dep2 v.ok.lowBits.depth)
-      (dep2 v.ok.normLt.depth) (dep2 v.ok.makeHint.depth) p) (sign0_depth h3))⟩
+      (dep2 v.ok.normLt.depth) (dep2 v.ok.makeHint.depth) (dep2 (v.ok.dotInv 4 (.inl rfl)).depth)
+      (dep2 (v.ok.dotInv 5 (.inr (.inl rfl))).depth) (dep2 (v.ok.dotInv 7 (.inr (.inr rfl))).depth) p) (sign0_depth h3))⟩
 
 theorem kabs_spSafe : Impl.Sha3.X86_64.Stream.absorb.all (fun i => !isa.writesSp i) = true := by lit_decide
 theorem kpad_spSafe : Impl.Sha3.X86_64.Stream.pad.all (fun i => !isa.writesSp i) = true := by lit_decide
