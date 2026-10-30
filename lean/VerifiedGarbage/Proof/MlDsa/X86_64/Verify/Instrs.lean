@@ -86,14 +86,13 @@ theorem hint_q : SameQ q (hint P p) (hint P0 p) := (SameQ.call hP.hintUnpack _).
 theorem zOne_q (i : Nat) : SameQ q (zOne P p i) (zOne P0 p i) :=
   (SameQ.call hP.bitUnpack _).seq ((SameQ.call hP.normLt _).seq rfl)
 
-theorem aOne_q (e : Nat) : SameQ q (aOne P p e) (aOne P0 p e) :=
-  SameQ.seq rfl (SameQ.sampled (SameQ.call hP.rejNtt _) _)
-
-theorem aGrp_q (g : Nat) : SameQ q (aGrp P p g) (aGrp P0 p g) :=
+theorem aQuad_q (e : Nat) : SameQ q (aQuad P p e) (aQuad P0 p e) :=
   SameQ.seq rfl (SameQ.seq rfl (SameQ.seq rfl (SameQ.seq rfl (SameQ.sampled4 (SameQ.call hP.rej4 _) _))))
 
+theorem aGrp_q (g : Nat) : SameQ q (aGrp P p g) (aGrp P0 p g) := aQuad_q hP p _
+
 theorem samples_q : SameQ q (samples P p) (samples P0 p) :=
-  SameQ.seq rfl ((SameQ.seqR (aGrp_q hP p) _ _).seq ((SameQ.seqR (aOne_q hP p) _ _).seq
+  SameQ.seq rfl ((SameQ.seqR (aGrp_q hP p) _ _).seq ((SameQ.seqR (fun _ => aQuad_q hP p _) _ _).seq
     (SameQ.sampled (SameQ.call hP.ball _) _)))
 
 theorem dot_q (r : Nat) : SameQ q (dot P p r) (dot P0 p r) :=
@@ -168,18 +167,16 @@ variable {P : Prims} (hP : PrimsC P) (p : Params)
 include hP
 
 theorem verify_c : SameC (verify P p) (verify P0 p) := by
-  have aOne : ∀ e, SameC (aOne P p e) (aOne P0 p e) := fun e =>
-    SameC.seq rfl (SameC.sampled (SameC.call hP.rejNtt _) _)
   have dot : ∀ r, SameC (dot P p r) (dot P0 p r) := fun r =>
     (SameC.call hP.mul _).seq (SameC.seqR (fun _ => SameC.call hP.mulAdd _) _ _)
   have row : ∀ r, SameC (row P p r) (row P0 p r) := fun r =>
     (dot r).seq ((SameC.call hP.unpackT1 _).seq ((SameC.call hP.ntt _).seq ((SameC.call hP.mul _).seq
       ((SameC.call hP.sub _).seq ((SameC.call hP.invNtt _).seq ((SameC.call hP.useHint _).seq
         (SameC.call hP.simpleBitPack _)))))))
-  have aGrp : ∀ g, SameC (aGrp P p g) (aGrp P0 p g) := fun g =>
+  have aQuad : ∀ e, SameC (aQuad P p e) (aQuad P0 p e) := fun e =>
     SameC.seq rfl (SameC.seq rfl (SameC.seq rfl (SameC.seq rfl (SameC.sampled4 (SameC.call hP.rej4 _) _))))
   have samples : SameC (samples P p) (samples P0 p) :=
-    SameC.seq rfl ((SameC.seqR aGrp _ _).seq ((SameC.seqR aOne _ _).seq
+    SameC.seq rfl ((SameC.seqR (fun g => aQuad (4 * g)) _ _).seq ((SameC.seqR (fun _ => aQuad _) _ _).seq
       (SameC.sampled (SameC.call hP.ball _) _)))
   have compute : SameC (compute P p) (compute P0 p) :=
     (SameC.seqR (fun _ => SameC.call hP.ntt _) _ _).seq ((SameC.call hP.ntt _).seq

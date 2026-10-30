@@ -3654,21 +3654,33 @@ movdqu XMMWORD PTR [rdi], xmm1
 add rdi, 16
 sub rcx, 1
 jne 215b
-mov eax, 3
-mov BYTE PTR [rbx+928], al
+mov eax, 1
+mov BYTE PTR [rbx+2592], al
 mov eax, 5
-mov BYTE PTR [rbx+929], al
+mov BYTE PTR [rbx+2593], al
+mov eax, 2
+mov BYTE PTR [rbx+2626], al
+mov eax, 5
+mov BYTE PTR [rbx+2627], al
+mov eax, 3
+mov BYTE PTR [rbx+2660], al
+mov eax, 5
+mov BYTE PTR [rbx+2661], al
+mov eax, 4
+mov BYTE PTR [rbx+2694], al
+mov eax, 5
+mov BYTE PTR [rbx+2695], al
 mov rdi, rbx
-add rdi, 896
+add rdi, 2560
 mov rsi, rbx
-add rsi, 57344
+add rsi, 55296
 mov rdx, rbx
-add rdx, 4096
-call {vg_mldsa_rej_ntt_poly}
+add rdx, 77824
+call {vg_mldsa_rej_ntt_poly4_avx2}
 and r15d, eax
 mov rdi, rbx
-add rdi, 57344
-mov ecx, 64
+add rdi, 55296
+mov ecx, 256
 mov edx, 0
 sub edx, eax
 movq xmm0, rdx
@@ -3680,32 +3692,6 @@ movdqu XMMWORD PTR [rdi], xmm1
 add rdi, 16
 sub rcx, 1
 jne 216b
-mov eax, 4
-mov BYTE PTR [rbx+928], al
-mov eax, 5
-mov BYTE PTR [rbx+929], al
-mov rdi, rbx
-add rdi, 896
-mov rsi, rbx
-add rsi, 58368
-mov rdx, rbx
-add rdx, 4096
-call {vg_mldsa_rej_ntt_poly}
-and r15d, eax
-mov rdi, rbx
-add rdi, 58368
-mov ecx, 64
-mov edx, 0
-sub edx, eax
-movq xmm0, rdx
-pshufd xmm0, xmm0, 0
-217:
-movdqu xmm1, XMMWORD PTR [rdi]
-pand xmm1, xmm0
-movdqu XMMWORD PTR [rdi], xmm1
-add rdi, 16
-sub rcx, 1
-jne 217b
 mov rdi, r13
 add rdi, 0
 mov esi, 48
@@ -3723,13 +3709,13 @@ mov edx, 0
 sub edx, eax
 movq xmm0, rdx
 pshufd xmm0, xmm0, 0
-218:
+217:
 movdqu xmm1, XMMWORD PTR [rdi]
 pand xmm1, xmm0
 movdqu XMMWORD PTR [rdi], xmm1
 add rdi, 16
 sub rcx, 1
-jne 218b
+jne 217b
 mov rdi, rbx
 add rdi, 16384
 mov rsi, rbx
@@ -4292,7 +4278,7 @@ mov rdi, r13
 add rdi, 0
 mov ecx, 48
 mov edx, 0
-219:
+218:
 movzx eax, BYTE PTR [rsi]
 movzx r8d, BYTE PTR [rdi]
 xor rax, r8
@@ -4300,7 +4286,7 @@ or rdx, rax
 add rsi, 1
 add rdi, 1
 sub rcx, 1
-jne 219b
+jne 218b
 sub rdx, 1
 sbb rax, rax
 and r15d, eax
@@ -4319,7 +4305,6 @@ ret
         vg_mldsa_bit_unpack = sym super::mldsa::vg_mldsa_bit_unpack,
         vg_mldsa_norm_lt_avx2 = sym super::mldsa::vg_mldsa_norm_lt_avx2,
         vg_mldsa_rej_ntt_poly4_avx2 = sym super::mldsa::vg_mldsa_rej_ntt_poly4_avx2,
-        vg_mldsa_rej_ntt_poly = sym super::mldsa::vg_mldsa_rej_ntt_poly,
         vg_mldsa_sample_in_ball = sym super::mldsa::vg_mldsa_sample_in_ball,
         vg_mldsa_ntt_avx2 = sym super::mldsa::vg_mldsa_ntt_avx2,
         vg_mldsa_montgomery_multiply_ntt_avx2 = sym super::mldsa::vg_mldsa_montgomery_multiply_ntt_avx2,
@@ -8121,21 +8106,33 @@ movdqu XMMWORD PTR [rdi], xmm1
 add rdi, 16
 sub rcx, 1
 jne 215b
-mov eax, 3
-mov BYTE PTR [rbx+928], al
+mov eax, 1
+mov BYTE PTR [rbx+2592], al
 mov eax, 5
-mov BYTE PTR [rbx+929], al
+mov BYTE PTR [rbx+2593], al
+mov eax, 2
+mov BYTE PTR [rbx+2626], al
+mov eax, 5
+mov BYTE PTR [rbx+2627], al
+mov eax, 3
+mov BYTE PTR [rbx+2660], al
+mov eax, 5
+mov BYTE PTR [rbx+2661], al
+mov eax, 4
+mov BYTE PTR [rbx+2694], al
+mov eax, 5
+mov BYTE PTR [rbx+2695], al
 mov rdi, rbx
-add rdi, 896
+add rdi, 2560
 mov rsi, rbx
-add rsi, 57344
+add rsi, 55296
 mov rdx, rbx
-add rdx, 4096
-call {vg_mldsa_rej_ntt_poly}
+add rdx, 77824
+call {vg_mldsa_rej_ntt_poly4}
 and r15d, eax
 mov rdi, rbx
-add rdi, 57344
-mov ecx, 64
+add rdi, 55296
+mov ecx, 256
 mov edx, 0
 sub edx, eax
 movq xmm0, rdx
@@ -8147,32 +8144,6 @@ movdqu XMMWORD PTR [rdi], xmm1
 add rdi, 16
 sub rcx, 1
 jne 216b
-mov eax, 4
-mov BYTE PTR [rbx+928], al
-mov eax, 5
-mov BYTE PTR [rbx+929], al
-mov rdi, rbx
-add rdi, 896
-mov rsi, rbx
-add rsi, 58368
-mov rdx, rbx
-add rdx, 4096
-call {vg_mldsa_rej_ntt_poly}
-and r15d, eax
-mov rdi, rbx
-add rdi, 58368
-mov ecx, 64
-mov edx, 0
-sub edx, eax
-movq xmm0, rdx
-pshufd xmm0, xmm0, 0
-217:
-movdqu xmm1, XMMWORD PTR [rdi]
-pand xmm1, xmm0
-movdqu XMMWORD PTR [rdi], xmm1
-add rdi, 16
-sub rcx, 1
-jne 217b
 mov rdi, r13
 add rdi, 0
 mov esi, 48
@@ -8190,13 +8161,13 @@ mov edx, 0
 sub edx, eax
 movq xmm0, rdx
 pshufd xmm0, xmm0, 0
-218:
+217:
 movdqu xmm1, XMMWORD PTR [rdi]
 pand xmm1, xmm0
 movdqu XMMWORD PTR [rdi], xmm1
 add rdi, 16
 sub rcx, 1
-jne 218b
+jne 217b
 mov rdi, rbx
 add rdi, 16384
 mov rsi, rbx
@@ -8759,7 +8730,7 @@ mov rdi, r13
 add rdi, 0
 mov ecx, 48
 mov edx, 0
-219:
+218:
 movzx eax, BYTE PTR [rsi]
 movzx r8d, BYTE PTR [rdi]
 xor rax, r8
@@ -8767,7 +8738,7 @@ or rdx, rax
 add rsi, 1
 add rdi, 1
 sub rcx, 1
-jne 219b
+jne 218b
 sub rdx, 1
 sbb rax, rax
 and r15d, eax
@@ -8786,7 +8757,6 @@ ret
         vg_mldsa_bit_unpack = sym super::mldsa::vg_mldsa_bit_unpack,
         vg_mldsa_norm_lt = sym super::mldsa::vg_mldsa_norm_lt,
         vg_mldsa_rej_ntt_poly4 = sym super::mldsa::vg_mldsa_rej_ntt_poly4,
-        vg_mldsa_rej_ntt_poly = sym super::mldsa::vg_mldsa_rej_ntt_poly,
         vg_mldsa_sample_in_ball = sym super::mldsa::vg_mldsa_sample_in_ball,
         vg_mldsa_ntt = sym super::mldsa::vg_mldsa_ntt,
         vg_mldsa_multiply_ntt = sym super::mldsa::vg_mldsa_multiply_ntt,

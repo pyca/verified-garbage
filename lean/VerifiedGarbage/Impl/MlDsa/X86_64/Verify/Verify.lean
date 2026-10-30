@@ -75,11 +75,6 @@ def zOne (i : Nat) : Prog isa :=
   .seq (bitUnpackAt P (.r13, p.ctildeLen + lenZ p * i) (lenZ p) (p.γ₁ - 1) p.γ₁ (pZ i))
     (.seq (normLtAt P (pZ i) (p.γ₁ - p.β)) (.block and15))
 
-/-- Entry `e` of `Â`, `Â[e / ℓ, e mod ℓ]`. -/
-def aOne (e : Nat) : Prog isa :=
-  .seq (.block (setB (sc (oSB + 32)) (e % p.ℓ) ++ setB (sc (oSB + 33)) (e / p.ℓ)))
-    (sampled (rejNttAt P (pS (20 + e))) (pS (20 + e)))
-
 /-- Where `vg_mldsa_rej_ntt_poly4` works: after the last row of `Â`. -/
 def oR4 : Nat := oP (20 + 8 * p.k)
 
@@ -87,10 +82,17 @@ def oR4 : Nat := oP (20 + 8 * p.k)
 def setSR (e k : Nat) : List Instr :=
   setB (sc (oSB4 + 34 * k + 32)) ((e + k) % p.ℓ) ++ setB (sc (oSB4 + 34 * k + 33)) ((e + k) / p.ℓ)
 
+/-- Entries `e, …, e + 3` of `Â`. -/
+def aQuad (e : Nat) : Prog isa :=
+  .seq (.block (setSR p e 0)) (.seq (.block (setSR p e 1)) (.seq (.block (setSR p e 2))
+    (.seq (.block (setSR p e 3)) (sampled4 (rej4At P (pS (20 + e)) (sc (oR4 p))) (pS (20 + e))))))
+
 /-- Entries `4g, …, 4g + 3` of `Â`. -/
-def aGrp (g : Nat) : Prog isa :=
-  .seq (.block (setSR p (4 * g) 0)) (.seq (.block (setSR p (4 * g) 1)) (.seq (.block (setSR p (4 * g) 2))
-    (.seq (.block (setSR p (4 * g) 3)) (sampled4 (rej4At P (pS (20 + 4 * g)) (sc (oR4 p))) (pS (20 + 4 * g))))))
+abbrev aGrp (g : Nat) : Prog isa := aQuad P p (4 * g)
+
+/-- The entries after the last four `4g, …, 4g + 3`, if there are any: the
+last four entries, `kℓ - 4, …, kℓ - 1`, sampling again some done already. -/
+abbrev aTail : Prog isa := seqR (fun _ => aQuad P p (p.k * p.ℓ - 4)) 0 ((p.k * p.ℓ % 4 + 3) / 4)
 
 /-- `ρ` to `SB` and to the four seeds of `SB4`. -/
 def rhos : Prog isa :=
@@ -99,7 +101,7 @@ def rhos : Prog isa :=
 
 /-- `ρ` to `SB` and `SB4`, `Â`, and `c`. -/
 def samples : Prog isa :=
-  .seq rhos (.seq (seqR (aGrp P p) 0 (p.k * p.ℓ / 4)) (.seq (seqR (aOne P p) (4 * (p.k * p.ℓ / 4)) (p.k * p.ℓ % 4))
+  .seq rhos (.seq (seqR (aGrp P p) 0 (p.k * p.ℓ / 4)) (.seq (aTail P p)
     (sampled (ballAt P (.r13, 0) p.ctildeLen p.τ pC) pC)))
 
 /-- `Σₛ Â[r, s] ẑ[s]` to `W`. -/
