@@ -409,21 +409,24 @@ theorem wp_cmpC {is : List Instr} {s : State} {Q : State → Prop} {d : Reg} {sr
   cons (s' := arithFlags s (s.gpr d - v) (decide ((s.gpr d).toNat < v.toNat)) (subOverflow (s.gpr d) v (s.gpr d - v)))
     (by simp only [exec, execAlu, h, Option.bind_some]) (k _ ⟨rfl, rfl, rfl, rfl, rfl⟩ rfl)
 
-/-- A factor's power, at half the width when its length (argument `l`) fits it. -/
-theorem power_ok (h : In Ex base bytes len args s) {f e o l : Nat} (hf9 : 9 ≤ f) (hf : f ≤ 15) (he9 : 9 ≤ e)
-    (he : e ≤ 15) (ho16 : 16 ≤ o) (ho : o ≤ 17) (hl : l < 18) {p d x : Nat}
+/-- A factor's power, at half the width when its length (the header word at `lenOff`) fits it. -/
+theorem power_ok (h : In Ex base bytes len args s) {f e o : Nat} (hf9 : 9 ≤ f) (hf : f ≤ 15) (he9 : 9 ≤ e)
+    (he : e ≤ 15) (ho16 : 16 ≤ o) (ho : o ≤ 17) {p d x : Nat}
     (hp : val32 s.mem base (lo len (.slot .wide f)) (cwc len .wide) = p)
     (hd : val32 s.mem base (lo len (.slot .wide e)) (cwc len .wide) = d)
     (hx : val32 s.mem base (lo len (.slot .wide 15)) (cwc len .wide) = x)
-    (fits : (args l).toNat ≤ bc len .half → p < 2 ^ (32 * cwc len .half) ∧ d < 2 ^ (32 * cwc len .half)) :
-    WP isa (power f e o l) s fun u =>
+    (fits : w32 s.mem base lenOff ≤ bc len .half → p < 2 ^ (32 * cwc len .half) ∧ d < 2 ^ (32 * cwc len .half)) :
+    WP isa (power f e o) s fun u =>
       Frame (frameR base (s.gpr .esp) (stR len o)) s.mem u.mem ∧
       val32 u.mem base (lo len (.slot .wide o)) (2 * cwc len .wide) = x ^ d % safeM p ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
   have hb := bc_le h.upper' .half
+  have f0 := h.slot_fit .half (j := 0) (by decide)
+  have lo0 : numBase ≤ lo len (.slot .half 0) := by simp [lo]
   unfold power
   simp only [List.cons_append]
-  refine WP.seq (wp_movS (h.arg hl) fun u₁ a₁ _ => ?_)
+  refine WP.seq (wp_movS (readSrc_sc h.scratch (d := lenOff) (by simp only [lenOff, numBase] at *; omega_arith))
+    fun u₁ a₁ _ => ?_)
   have h₁ := h.regs a₁.keeps a₁.mem
   refine widthC_ok (k := 0) (c := .half) (r := .edx) h₁.width h.upper' fun u₂ K₂ m₂ e₂ => ?_
   refine wp_addS rfl fun u₃ a₃ _ => wp_cmpC rfl fun u₄ f₄ c₄ => WP.block_nil ?_
@@ -432,7 +435,8 @@ theorem power_ok (h : In Ex base bytes len args s) {f e o l : Nat} (hf9 : 9 ≤ 
       (f₄.keeps _)
   have m₄ : u₄.mem = s.mem := by rw [f₄.mem, a₃.mem, m₂, a₁.mem]
   have h₄ := h.regs K₄ m₄
-  have eax : u₃.gpr .eax = args l := by rw [a₃.other _ (by decide), K₂.1 _ (by decide), a₁.gpr]
+  have eax : (u₃.gpr .eax).toNat = w32 s.mem base lenOff := by
+    rw [a₃.other _ (by decide), K₂.1 _ (by decide), a₁.gpr]
   have edx : (u₃.gpr .edx).toNat = bc len .half + 1 := by
     rw [a₃.gpr, e₂, BitVec.toNat_add, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]
     omega_arith

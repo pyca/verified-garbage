@@ -53,6 +53,11 @@ def accOff : Nat := 8
 /-- The header word holding a saved mask. -/
 def maskOff : Nat := 12
 def savedRegisters : List (Reg × Nat) := [(.ebx, 32), (.ebp, 36), (.esi, 40), (.edi, 44)]
+/-- The header words holding the current factor's length, the other factor's, and
+the count of factors left. -/
+def lenOff : Nat := 16
+def otherLenOff : Nat := 20
+def leftOff : Nat := 24
 /-- The header word holding a product row's multiplier. -/
 def multOff : Nat := 48
 /-- The product of two numbers: `2 B + 4` bytes. -/
@@ -417,9 +422,9 @@ def widePower (f e o : Nat) : Prog isa :=
   .seq (prepare .wide) <|
   .seq (windowPower .wide) (saveResult .wide o)
 
-/-- The factor's power, at half the width if its length (argument `l`) fits it. -/
-def power (f e o l : Nat) : Prog isa :=
-  .seq (.block ([.mov .eax (.mem (argAt 0 l))] ++ widthC 0 .half .edx ++
+/-- The factor's power, at half the width if its length (the header word at `lenOff`) fits it. -/
+def power (f e o : Nat) : Prog isa :=
+  .seq (.block ([.mov .eax (.mem (sc lenOff))] ++ widthC 0 .half .edx ++
     [.alu .add .edx (.imm 1), .alu .cmp .eax (.reg .edx)]))
     (.ite .b (narrowPower f e o) (widePower f e o))
 
@@ -447,11 +452,35 @@ def exportResult : Prog isa :=
   .seq (.block (PublicFn.outputArgs ++ ptrTo (.slot .wide 19) .esi .edx ++ [.alu .add .esi (.reg .ecx), .alu .sub .esi (.imm 1)]))
     (.seq reverseBytes (.block [.mov .eax (.mem (sc accOff)), .alu .and .eax (.imm 1)]))
 
+/-- The wide slots `a` and `b` exchanged through the wide slot 18. -/
+def swap (a b : Nat) (n : Cnt) : Prog isa :=
+  .seq (copy (.slot .wide a) (.slot .wide 18) n) <|
+  .seq (copy (.slot .wide b) (.slot .wide a) n) (copy (.slot .wide 18) (.slot .wide b) n)
+
+/-- The factors' lengths (arguments 7 and 9) into the header, and two factors left. -/
+def factorsInit : List Instr :=
+  [.mov .eax (.mem (argAt 0 7)), .store (sc lenOff) .eax, .mov .eax (.mem (argAt 0 9)),
+    .store (sc otherLenOff) .eax, .mov .eax (.imm 2), .store (sc leftOff) .eax]
+
+/-- The lengths exchanged, and one factor fewer left: ZF after the last. -/
+def factorNext : List Instr :=
+  [.mov .eax (.mem (sc lenOff)), .mov .ecx (.mem (sc otherLenOff)), .store (sc lenOff) .ecx,
+    .store (sc otherLenOff) .eax, .mov .eax (.mem (sc leftOff)), .alu .sub .eax (.imm 1), .store (sc leftOff) .eax]
+
+/-- The power of the factor in the wide slot 10 into 16, then the factors (10
+and 11), their exponents (12 and 13), their powers (16 and 17) and their lengths
+exchanged: after two steps, `m_p` in 16 and `m_q` in 17, the rest as it was. -/
+def factorStep : Prog isa :=
+  .seq (power 10 12 16) <|
+  .seq (swap 10 11 (one .wide)) <|
+  .seq (swap 12 13 (one .wide)) <|
+  .seq (swap 16 17 (two .wide)) (.block factorNext)
+
 def sized : Prog isa :=
   .seq importComponents <|
   .seq validate <|
-  .seq (power 10 12 16 7) <|
-  .seq (power 11 13 17 9) <|
+  .seq (.block factorsInit) <|
+  .seq (.loop factorStep .ne) <|
   .seq coefficient <|
   .seq recombine exportResult
 
