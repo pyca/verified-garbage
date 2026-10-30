@@ -64,7 +64,7 @@ theorem jacDouble_doubler {c : Joint.Cfg} {C : Curve} {size : Nat}
   · intro base u v Q A External s hExt hA h
     rw [Joint.jacDouble]
     apply WP.seq
-    refine WP.mono_syms (jacDouble_ok hL.lookup.layout.lay hm hC ha apart sl h.field vr hA h.point)
+    refine WP.mono_syms (jacDouble_ok hL.lookup.layout.lay hm (jdblOk_dblJMul hC ha) apart sl h.field vr hA h.point)
       fun d ⟨kd,id,jd⟩ sd => ?_
     have wd : ∀ x∈rcbW c.K.S c.K.D,x∈jointWork c := by intro x hx; jslots
     have edExt := hExt s d (kd.mono wd) sd h.external
@@ -81,7 +81,7 @@ theorem jacDouble_doubler {c : Joint.Cfg} {C : Curve} {size : Nat}
     exact ⟨kw,h.next hL.lookup.layout kw ie jp (hExt d t kt' st edExt)⟩
   · intro base E
     rw [Joint.jacDouble]
-    apply RelCT.seq (doubleFieldPlain_relCT hL.lookup.layout.lay hm sl vr hd)
+    apply RelCT.seq (doubleFieldPlain_relCT hL.lookup.layout.lay hm sl vr jdblShape_dblJMul hd)
     have cp := copyPoint_relCT (base:=base) (E:=runOps (dblJMul c.K.S c.K.R c.K.D) E)
       hL.lookup.layout.lay (o:=c.K.R) (q:=c.K.D) (by intro x hx; jslots)
       (V:=[c.K.D.x,c.K.D.y,c.K.D.z]++jointLive c) (by intro x hx; exact List.mem_append_left _ hx) hcp

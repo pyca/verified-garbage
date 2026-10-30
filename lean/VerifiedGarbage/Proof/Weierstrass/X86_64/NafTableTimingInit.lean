@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAddTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableState
@@ -17,16 +18,17 @@ namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64 VG.Impl.Weierstrass
 open VG.Impl.Weierstrass.X86_64 VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
 
-structure NafTableChecks (K : WinCfg) : Prop where
-  double : ScratchCT (fprogB K.M (dblJMul K.S K.P (Naf.twice K))).inline
+/-- The checks of `Naf.table`'s parts, its doubling `dbl`. -/
+structure NafTableChecks (K : WinCfg) (dbl : RcbSlots → Pt → Pt → List FOp := dblJMul) : Prop where
+  double : ScratchCT (fprogB K.M (dbl K.S K.P (Naf.twice K))).inline
   copyFirst : ScratchCT (.block (copyPt K.M.n (K.tblPt 1) K.P))
   copyInit : ScratchCT (.block (copyPt K.M.n K.R K.P))
   initCounter : ScratchCT (.block [.mov32 .rbx (.imm 1)])
-  add : JacAddChecks K K.R (Naf.twice K) K.D
+  add : JacAddChecks K K.R (Naf.twice K) K.D dbl
   copyStep : ScratchCT (.block (copyPt K.M.n K.R K.D))
   store : RegCT [.rdi,.rbx] (.block (Naf.tableStore K))
   advance : RegCT [.rbx] (.block [.alu .add .rbx (.imm 1),.alu .cmp .rbx (.imm 8)])
-  keepAdd : KeepReg.keeps .rbx (Jacobian.jacAdd K K.R (Naf.twice K) K.D).inline = true
+  keepAdd : KeepReg.keeps .rbx (Jacobian.jacAdd K K.R (Naf.twice K) K.D dbl).inline = true
   keepCopy : ∀ i∈instrs (.block (copyPt K.M.n K.R K.D) : Prog isa), Taint.clobbers i .rbx=false
 
 def NafTablePair (K : WinCfg) (C : Curve) (base : Addr) (size m : Nat) (s t : State) : Prop :=
@@ -35,9 +37,9 @@ def NafTablePair (K : WinCfg) (C : Curve) (base : Addr) (size m : Nat) (s t : St
 
 theorem nafTable_init_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     (hL : NafLay K size) (hm : UnitMod C.p (2^(64*K.M.n)))
-    (hc : NafTableChecks K) {E : Nat → Fe C} :
+    {dbl : RcbSlots → Pt → Pt → List FOp} (hc : NafTableChecks K dbl) {E : Nat → Fe C} (hds : JDblShape dbl := by exact jdblShape_dblJMul) :
     RelCT isa (FieldPair K.M base size C.p (·∈nafSlots K) (winRo K) E)
-      (Code.seq (fprogB K.M (dblJMul K.S K.P (Naf.twice K)))
+      (Code.seq (fprogB K.M (dbl K.S K.P (Naf.twice K)))
         (.block (copyPt K.M.n (K.tblPt 1) K.P++copyPt K.M.n K.R K.P++([.mov32 .rbx (.imm 1)] : List Instr)))).inline
       (NafTablePair K C base size 1) := by
   have rs : ∀ x∈jacCoords K.R,x∈nafSlots K := by
@@ -61,7 +63,7 @@ theorem nafTable_init_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
       grind
     exact he.elim (List.mem_append_left _) (nafTblPt_mem K (by decide) (by decide) x)
   simp only [Code.inline]
-  apply RelCT.seq (doubleFieldPlain_relCT hL.lay hm ds dv hc.double)
+  apply RelCT.seq (doubleFieldPlain_relCT hL.lay hm ds dv hds hc.double)
   rw [List.append_assoc]
   apply RelCT.block_append
   apply RelCT.seq (copyPoint_relCT hL.lay (nafTblPt_mem K (by decide) (by decide))
@@ -72,7 +74,7 @@ theorem nafTable_init_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
   have ctr := keepsField_relCT (M:=K.M) (base:=base) (size:=size) (m:=C.p)
     (Sl:=(·∈nafSlots K))
     (V:=jacCoords K.R++(jacCoords (K.tblPt 1)++(jacCoords (Naf.twice K)++winRo K)))
-    (E:=copyPointEnv (copyPointEnv (runOps (dblJMul K.S K.P (Naf.twice K)) E) (K.tblPt 1) K.P) K.R K.P)
+    (E:=copyPointEnv (copyPointEnv (runOps (dbl K.S K.P (Naf.twice K)) E) (K.tblPt 1) K.P) K.R K.P)
     (Pre:=fun _ => True) (Post:=fun s => s.gpr .rbx=1) (by decide : Reg.rdi∉[Reg.rbx])
     hc.initCounter (fun _ _ hp _ _ => fieldPair_public hp)
     (fun s _ _ => nafTable_initCounter_ok s)

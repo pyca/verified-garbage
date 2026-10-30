@@ -34,11 +34,11 @@ structure JointPointsPost (c : Cfg) (s₀ sM : State) (g : Reg → BitVec 64) (Q
     (add (mul (sv c (s₀.gpr .rcx) sM U) (G c.C)) (mul (sv c (s₀.gpr .rcx) sM V) Q))
 
 theorem jointPoints_ok {c : Cfg} {j : Joint.Cfg} {d : CombData} {double : Prog isa}
-    (hc : CfgOk c) (hC : Law c.C) {J : Nat} (hG : JointGTable c j d J)
-    (hK : j.K=c.winCfg PX PY BP) (ha : AM3 c.C) (hnp : c.C.n≤c.C.p)
+    (hc : BaseCfgOk c) (hC : Law c.C) {J : Nat} (hG : JointGTable c j d J)
+    (hK : j.K=c.winCfg PX PY BP) (hd : JDblOk c.C j.dbl) (hnp : c.C.n≤c.C.p)
     (hL : JointAddLayout j size) (hInit : JointInitLayout j size)
     (hPrep : JointPrepLayout j size (c.sl U) (c.sl V)) (hFrame : JointFrameLayout c j)
-    (hD : JointDoubler j c.C size double) (hZ : j.coZ=true → PrimeOrder c.C ∧ 17≤c.C.n)
+    (hD : JointDoubler j c.C size double) (hZ : j.coZ=true → PrimeOrder c.C ∧ 17≤c.C.n ∧ AM3 c.C)
     {s₀ s : State} {g : Reg → BitVec 64} (hp : VPre c s₀) (h : Mid c s₀ (s₀.gpr .rcx) g s)
     {Q : Point c.C} (hQ : onCurve c.C Q=true)
     (hq : Rep c.C (tmv c.C c.n (s₀.gpr .rcx) s (c.sl PX))
@@ -62,7 +62,7 @@ theorem jointPoints_ok {c : Cfg} {j : Joint.Cfg} {d : CombData} {double : Prog i
   have sv4 (i : Nat) : wordsVal s.mem (s₀.gpr .rcx) (c.sl i) j.K.M.n=sv c (s₀.gpr .rcx) s i := by
     unfold sv
     rw [hjn]
-  refine WP.mono (jointMul_ok hL hInit hPrep hm hC ha hD hone honeval hc.onG hQ
+  refine WP.mono (jointMul_ok hL hInit hPrep hm hC hd hD hone honeval hc.onG hQ
     point (jointMid_affine hc hK h) zero hZ (Nat.lt_trans h.u_lt nlt) (Nat.lt_trans h.v_lt nlt) field generator (sv4 U) (sv4 V))
     fun t ⟨ct,_,_,_,ut⟩ => ?_
   refine ⟨jointFrame_input hc hK hFrame h ct ut,?_⟩
@@ -98,7 +98,7 @@ theorem jointVerify_inline (c : Cfg) (j : Joint.Cfg) (double : Prog isa) :
   rfl
 
 theorem jointVerify_ok {c : Cfg} {j : Joint.Cfg} {double : Prog isa}
-    (hc : CfgOk c) (hC : Law c.C)
+    (hc : BaseCfgOk c) (hC : Law c.C)
     (hpub : c.pubVerify=true) (hnp : c.C.n<c.C.p) (hpn : c.C.p≤2*c.C.n)
     {s₀ : State} (hp : VPre c s₀)
     (hpoints : ∀ {s : State} {g : Reg → BitVec 64} (_h : Mid c s₀ (s₀.gpr .rcx) g s)

@@ -22,7 +22,7 @@ structure JointFrameLayout (c : Cfg) (j : Joint.Cfg) : Prop where
   k : ∀ w∈jointRanges j,c.sl K+8*c.n≤w.1 ∨ w.1+w.2≤c.sl K
   flag : ∀ w∈jointRanges j,c.sl FLAG+8≤w.1 ∨ w.1+w.2≤c.sl FLAG
 
-theorem jointFrame_input {c : Cfg} {j : Joint.Cfg} (hc : CfgOk c)
+theorem jointFrame_input {c : Cfg} {j : Joint.Cfg} (hc : BaseCfgOk c)
     (hK : j.K=c.winCfg PX PY BP) (hF : JointFrameLayout c j)
     {s₀ s t : State} {base : Addr} {g : Reg → BitVec 64} (h : Mid c s₀ base g s)
     {Q A : Point c.C} {u v : Nat} {External : State → Prop}

@@ -41,14 +41,14 @@ theorem mixedN_spec {m : Nat} [NeZero m] (e : Nat → Fin m) :
 /-- What the mixed addition's body needs of the slots: those of
 `Jacobian.jacMixedForward`'s proofs, and that its programs read only `R`
 and `E` or what they wrote. -/
-structure MixedLay (K : WinCfg) (size : Nat) (Sl : Nat → Prop) : Prop where
+structure MixedLay (K : WinCfg) (size : Nat) (Sl : Nat → Prop) (dbl : RcbSlots → Pt → Pt → List FOp := dblJMul) : Prop where
   lay : Lay K.M size Sl
   apart : RcbApart K.S K.R K.E K.D
   sl : ∀ x ∈ rcbW K.S K.D ++ rcbR K.S K.R K.E, Sl x
   head : readsOk (jacMixedHead K.S K.R K.E) (K.S.t4 :: K.S.t2 :: (jacCoords K.R ++ jacCoords K.E)) = true
   tail : readsOk (jacMixedTail K.S K.R K.E K.D)
     (validAfter (jacMixedHead K.S K.R K.E) (K.S.t4 :: K.S.t2 :: (jacCoords K.R ++ jacCoords K.E))) = true
-  dbl : readsOk (dblJMul K.S K.R K.D) (jacCoords K.R) = true
+  dbl : readsOk (dbl K.S K.R K.D) (jacCoords K.R) = true
   accum : (jacCoords K.R).Nodup
   copy : ∀ x ∈ jacCoords K.D, ∀ y ∈ jacCoords K.R, x ≠ y
   dN : (jacCoords K.D).Nodup
@@ -56,11 +56,12 @@ structure MixedLay (K : WinCfg) (size : Nat) (Sl : Nat → Prop) : Prop where
 
 section
 variable {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop}
+  {dbl : RcbSlots → Pt → Pt → List FOp}
 
 /-- The values the mixed addition reads. -/
 abbrev mV (K : WinCfg) : List Nat := jacCoords K.R ++ jacCoords K.E
 
-theorem mixedInit_val (hC : MixedLay K size Sl) {E : Nat → Fin m} {s : State}
+theorem mixedInit_val (hC : MixedLay K size Sl dbl) {E : Nat → Fin m} {s : State}
     (hI : Inv K.M base size m Sl (mV K) E s) :
     WP isa (.block (copy K.M.n K.S.t2 K.R.x ++ copy K.M.n K.S.t4 K.R.y)) s fun t =>
       ProgKeep K.M base (rcbW K.S K.D) s t ∧
@@ -72,7 +73,7 @@ theorem mixedInit_val (hC : MixedLay K size Sl) {E : Nat → Fin m} {s : State}
     (List.mem_cons_of_mem _ (by simp [jacCoords]))) fun t ⟨kt, it⟩ =>
     ⟨(progKeep_of_op ka (by simp [rcbW])).trans (progKeep_of_op kt (by simp [rcbW])), it⟩
 
-theorem mixedHead_val (hC : MixedLay K size Sl) (hm : UnitMod m (2 ^ (64 * K.M.n)))
+theorem mixedHead_val (hC : MixedLay K size Sl dbl) (hm : UnitMod m (2 ^ (64 * K.M.n)))
     {E : Nat → Fin m} {s : State}
     (hI : Inv K.M base size m Sl (K.S.t4 :: K.S.t2 :: mV K) (jacMixedInit K.S K.R E) s) :
     WP isa (ForwardField.programB K.M (jacMixedHead K.S K.R K.E)).inline s fun t =>
@@ -95,7 +96,7 @@ theorem mixedHead_val (hC : MixedLay K size Sl) (hm : UnitMod m (2 ^ (64 * K.M.n
     rw [jacMixedInit_rename hC.apart] at h
     exact h.trans (jacMixedHeadN_run (fun i => E (rcbσ K.S K.R K.E K.D i))).2
 
-theorem mixedTail_val (hC : MixedLay K size Sl) (hm : UnitMod m (2 ^ (64 * K.M.n)))
+theorem mixedTail_val (hC : MixedLay K size Sl dbl) (hm : UnitMod m (2 ^ (64 * K.M.n)))
     {E : Nat → Fin m} {s : State}
     (hI : Inv K.M base size m Sl (validAfter (jacMixedHead K.S K.R K.E) (K.S.t4 :: K.S.t2 :: mV K))
       (runOps (jacMixedHead K.S K.R K.E) (jacMixedInit K.S K.R E)) s) :
@@ -139,14 +140,16 @@ theorem mixedTail_val (hC : MixedLay K size Sl) (hm : UnitMod m (2 ^ (64 * K.M.n
       (congrArg₂ Prod.mk (congrFun hren 7) (congrFun hren 8))).trans
       (mixedN_spec (fun i => E (rcbσ K.S K.R K.E K.D i)))
 
-/-- `Jacobian.jacMixedForward` into `D`: `jacAddAffine` of the values it reads. -/
-theorem mixedAdd_val (hC : MixedLay K size Sl) (hm : UnitMod m (2 ^ (64 * K.M.n)))
+/-- `Jacobian.jacMixedForward` into `D`: `jacAddAffine` of the values it
+reads, with the specification's doubling `sdbl` that `dbl` computes. -/
+theorem mixedAdd_val {sdbl : Fin m → Fin m → Fin m → Fin m × Fin m × Fin m}
+    (hC : MixedLay K size Sl dbl) (hm : UnitMod m (2 ^ (64 * K.M.n)))
     (hOne : K.one < m) (hOneVal : toM m (2 ^ (64 * K.M.n)) K.one = 1)
-    {E : Nat → Fin m} {s : State} (hI : Inv K.M base size m Sl (mV K) E s) :
-    WP isa (Jacobian.jacMixedForward K K.R K.E K.D).inline s
+    {E : Nat → Fin m} {s : State} (hI : Inv K.M base size m Sl (mV K) E s) (hds : JDblSpec dbl sdbl) :
+    WP isa (Jacobian.jacMixedForward K K.R K.E K.D dbl).inline s
       (Val K.M base size m Sl (rcbW K.S K.D) (mV K) K.D
         (Spec.Weierstrass.PointOps.jacAddAffine (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
-          (E K.E.z)) s) := by
+          (E K.E.z) sdbl) s) := by
   have dW : ∀ w ∈ jacCoords K.D, w ∈ rcbW K.S K.D := by
     intro w hw; simp only [jacCoords, List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl | rfl <;> simp [rcbW]
@@ -187,9 +190,9 @@ theorem mixedAdd_val (hC : MixedLay K size Sl) (hm : UnitMod m (2 ^ (64 * K.M.n)
         · exact hC.sl x (List.mem_append_left _ hx)
         · exact hC.sl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
       have hR' := readsOk_mono hC.dbl fun x hx => oldV x (rV x hx)
-      refine WP.mono (dblB_val hC.lay hm hdA hdSl hR' ie) fun t ht => ?_
+      refine WP.mono (dblB_val hC.lay hm hdA hdSl hR' ie hds) fun t ht => ?_
       have hs : Spec.Weierstrass.PointOps.jacAddAffine (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
-          (E K.E.z) = Spec.Weierstrass.PointOps.jacDouble (EH K.R.x) (EH K.R.y) (EH K.R.z) := by
+          (E K.E.z) sdbl = sdbl (EH K.R.x) (EH K.R.y) (EH K.R.z) := by
         rw [eh] at hH
         rw [er] at hr
         rw [hro _ (by simp [jacCoords]), hro _ (by simp [jacCoords]), hro _ (by simp [jacCoords])]
@@ -201,7 +204,7 @@ theorem mixedAdd_val (hC : MixedLay K size Sl) (hm : UnitMod m (2 ^ (64 * K.M.n)
     · intro e ie ke hr
       refine WP.mono (infinity_val hC.lay dSl dW hC.dN ie hOne hOneVal) fun t ht => ?_
       have hs : Spec.Weierstrass.PointOps.jacAddAffine (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
-          (E K.E.z) = (0, 1, 0) := by
+          (E K.E.z) sdbl = (0, 1, 0) := by
         rw [eh] at hH
         rw [er] at hr
         simp only [Spec.Weierstrass.PointOps.jacAddAffine, Spec.Weierstrass.PointOps.jacEqual,
@@ -212,7 +215,7 @@ theorem mixedAdd_val (hC : MixedLay K size Sl) (hm : UnitMod m (2 ^ (64 * K.M.n)
   · intro d id kd hH
     refine WP.mono (mixedTail_val hC hm id) fun t ht => ?_
     have hs : Spec.Weierstrass.PointOps.jacAddAffine (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
-        (E K.E.z) = Spec.Weierstrass.PointOps.jacTail (E K.R.x) (E K.R.y)
+        (E K.E.z) sdbl = Spec.Weierstrass.PointOps.jacTail (E K.R.x) (E K.R.y)
           (E K.E.x * (E K.R.z * E K.R.z) - E K.R.x) (E K.E.y * E K.R.z * (E K.R.z * E K.R.z) - E K.R.y)
           (E K.R.z) := by
       rw [eh] at hH
@@ -220,19 +223,21 @@ theorem mixedAdd_val (hC : MixedLay K size Sl) (hm : UnitMod m (2 ^ (64 * K.M.n)
     rw [hs]
     exact (ht.prefix kd (by simp)).prefix pre (fun _ h => h)
 
-/-- The mixed addition's body: `R` becomes `jacAddAffine` of what it reads. -/
-theorem addAffineBody_val (hC : MixedLay K size Sl) (hm : UnitMod m (2 ^ (64 * K.M.n)))
+/-- The mixed addition's body: `R` becomes `jacAddAffine` of what it reads,
+with the specification's doubling `sdbl` that `dbl` computes. -/
+theorem addAffineBody_val {sdbl : Fin m → Fin m → Fin m → Fin m × Fin m × Fin m}
+    (hC : MixedLay K size Sl dbl) (hm : UnitMod m (2 ^ (64 * K.M.n)))
     (hOne : K.one < m) (hOneVal : toM m (2 ^ (64 * K.M.n)) K.one = 1)
-    {E : Nat → Fin m} {s : State} (hI : Inv K.M base size m Sl (mV K) E s) :
-    WP isa (PointOps.addAffineBody K).inline s fun t =>
+    {E : Nat → Fin m} {s : State} (hI : Inv K.M base size m Sl (mV K) E s) (hds : JDblSpec dbl sdbl := by exact jdblSpec_dblJMul) :
+    WP isa (PointOps.addAffineBody K dbl).inline s fun t =>
       ProgKeep K.M base (rcbW K.S K.D ++ jacCoords K.R) s t ∧ ∃ E',
         Inv K.M base size m Sl (jacCoords K.R) E' t ∧ (E' K.R.x, E' K.R.y, E' K.R.z) =
           Spec.Weierstrass.PointOps.jacAddAffine (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
-            (E K.E.z) := by
+            (E K.E.z) sdbl := by
   rw [PointOps.addAffineBody]
   simp only [Code.inline]
   apply WP.seq
-  refine WP.mono (mixedAdd_val hC hm hOne hOneVal hI) fun d ⟨kd, E', id, ed⟩ => ?_
+  refine WP.mono (mixedAdd_val hC hm hOne hOneVal hI hds) fun d ⟨kd, E', id, ed⟩ => ?_
   have rSl : ∀ x ∈ jacCoords K.R, Sl x := fun x hx => hC.sl x (List.mem_append_right _ (by
       simp only [jacCoords, List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl <;> simp [rcbR]))

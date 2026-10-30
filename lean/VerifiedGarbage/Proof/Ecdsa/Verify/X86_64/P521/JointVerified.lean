@@ -90,9 +90,9 @@ theorem jointVerify_p521_ok {s : State} (hp : VPre p521 s) :
     WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p521 publicJoint (Joint.jacDouble publicJoint.K)).inline s
       fun t => (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VPost p521 s t := by
   have hc := p521_ok hI
-  refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_
+  refine jointVerify_ok hc.toBaseCfgOk hL rfl (by decide +kernel) (by decide +kernel) hp ?_
   intro a g hM Q hQ hRep
-  exact jointPoints_ok hc hL (.ofComb rfl hT (by decide) (by decide) rfl) rfl hc.am3 (by decide +kernel)
+  exact jointPoints_ok hc.toBaseCfgOk hL (.ofComb rfl hT (by decide) (by decide) rfl) rfl (hc.jdbl hL) (by decide +kernel)
     joint_add_layout joint_init_layout joint_prep_layout joint_frame_layout (joint_doubler hc hL)
     (fun h => absurd h (by decide)) hp hM hQ hRep
 
@@ -101,9 +101,9 @@ theorem jointVerify_p521_adx_ok {s : State} (hp : VPre p521x s) :
       (Joint.jacDouble publicJointAdx.K)).inline s
       fun t => (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VPost p521x s t := by
   have hc := p521x_ok hI
-  refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_
+  refine jointVerify_ok hc.toBaseCfgOk hL rfl (by decide +kernel) (by decide +kernel) hp ?_
   intro a g hM Q hQ hRep
-  exact jointPoints_ok hc hL (.ofComb rfl hT (by decide) (by decide) rfl) rfl hc.am3 (by decide +kernel)
+  exact jointPoints_ok hc.toBaseCfgOk hL (.ofComb rfl hT (by decide) (by decide) rfl) rfl (hc.jdbl hL) (by decide +kernel)
     joint_adx_add_layout joint_adx_init_layout joint_adx_prep_layout joint_adx_frame_layout
     (joint_adx_doubler hc hL) (fun h => absurd h (by decide)) hp hM hQ hRep
 

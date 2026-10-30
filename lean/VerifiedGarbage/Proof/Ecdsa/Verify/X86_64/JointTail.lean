@@ -27,7 +27,7 @@ open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64 VG
 open VG.Proof.Mont VG.Proof.Mont.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86_64
 open VG.Proof.Ecdsa.X86_64 Spec.Weierstrass
 
-theorem jointSquare_ok {c : Cfg} (hc : CfgOk c)
+theorem jointSquare_ok {c : Cfg} (hc : BaseCfgOk c)
     {s₀ s : State} {base : Addr} {g : Reg → BitVec 64} (h : ProjectiveInput c s₀ base g s) :
     WP isa (ForwardField.programB c.MP' [.mul (c.sl RZ) (c.sl RZ) (c.sl RZ)]).inline s fun t =>
       ProjectiveInput c s₀ base g t ∧
@@ -123,7 +123,7 @@ open VG.Proof.Mont VG.Proof.Mont.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstras
 open VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdh.X86_64 Spec.Weierstrass
 open VG.Impl.Ecdsa.Verify.X86_64 (U V)
 
-theorem jointTail_ok {c : Cfg} (hc : CfgOk c) (hC : Law c.C)
+theorem jointTail_ok {c : Cfg} (hc : BaseCfgOk c) (hC : Law c.C)
     (hpub : c.pubVerify=true) (hnp : c.C.n<c.C.p) (hpn : c.C.p≤2*c.C.n)
     {s₀ sM s : State} {g : Reg → BitVec 64} (hM : Mid c s₀ (s₀.gpr .rcx) g sM)
     (hInput : ProjectiveInput c s₀ (s₀.gpr .rcx) g s)

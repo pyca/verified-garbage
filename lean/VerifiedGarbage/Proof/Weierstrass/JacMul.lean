@@ -64,4 +64,33 @@ theorem dblJSChoiceN_run {F : Type _} [Lean.Grind.CommRing F] (direct : Bool) (e
   · exact dblJSN_run e
   · exact dblJMulN_run e
 
+/-- `dbl` doubles a Jacobian point of `C`: the same numbered field
+operations `N` (`ofN`) wherever it runs, which, from a Jacobian triple of a
+point of `C` in `p` (`11`–`13`), leave one of its double in `o` (`6`–`8`).
+What the additions' case of equal points and the tables of multiples need
+of the curve's `a`: `dblJMul` for `a = -3` (`jdblOk_dblJMul`). -/
+def JDblOk (C : Spec.Weierstrass.Curve) (dbl : RcbSlots → Pt → Pt → List FOp) : Prop :=
+  ∃ N : List FOp, NumOk N ∧ (∀ S p o, dbl S p o = ofN N S p p o) ∧
+    ∀ (e : Nat → Spec.Weierstrass.Fe C) {Q : Spec.Weierstrass.Point C},
+      Spec.Weierstrass.onCurve C Q = true → InvJ C (e 11) (e 12) (e 13) Q →
+      InvJ C (runOps N e 6) (runOps N e 7) (runOps N e 8) (Spec.Weierstrass.add Q Q)
+
+/-- `dbl` is the same numbered field operations `N` (`ofN`) wherever it
+runs: what the proofs of constant time need of a doubling. -/
+def JDblShape (dbl : RcbSlots → Pt → Pt → List FOp) : Prop :=
+  ∃ N : List FOp, NumOk N ∧ ∀ S p o, dbl S p o = ofN N S p p o
+
+theorem JDblOk.shape {C : Spec.Weierstrass.Curve} {dbl : RcbSlots → Pt → Pt → List FOp}
+    (h : JDblOk C dbl) : JDblShape dbl :=
+  let ⟨N, hN, he, _⟩ := h
+  ⟨N, hN, he⟩
+
+theorem jdblShape_dblJMul : JDblShape dblJMul :=
+  ⟨dblJChoiceN true, dblJChoiceN_ok true, dblJChoice_eq true⟩
+
+/-- `dblJMul` doubles on a curve with `a = -3`. -/
+theorem jdblOk_dblJMul {C : Spec.Weierstrass.Curve} (hC : Law C) (ha : AM3 C) : JDblOk C dblJMul :=
+  ⟨dblJChoiceN true, dblJChoiceN_ok true, dblJChoice_eq true,
+    fun e _ hQ hJ => InvJ.dbl' hC ha hQ hJ (dblJChoiceN_run true e)⟩
+
 end VG.Proof.Weierstrass

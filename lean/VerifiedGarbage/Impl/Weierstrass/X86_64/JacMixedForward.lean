@@ -10,7 +10,9 @@ public import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
 namespace VG.Impl.Weierstrass.X86_64.Jacobian
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64 VG.Impl.Weierstrass
 
-def jacMixedForward (K : WinCfg) (p q o : Pt) : Prog isa :=
+/-- `o = p + q` for an affine `q`, the double of `p` by `dbl` if they are
+equal (`dblJMul` for `a = -3`). -/
+def jacMixedForward (K : WinCfg) (p q o : Pt) (dbl : RcbSlots → Pt → Pt → List FOp := dblJMul) : Prog isa :=
   let head := jacMixedHead K.S p q
   let tail := jacMixedTail K.S p q o
   .seq (.block (zeroTest K.M.n p.z)) <|
@@ -20,7 +22,7 @@ def jacMixedForward (K : WinCfg) (p q o : Pt) : Prog isa :=
   .seq (.block (zeroTest K.M.n K.S.t3)) <|
   .ite .e
     (.seq (.block (zeroTest K.M.n K.S.t5)) <|
-      .ite .e (ForwardField.programB K.M (dblJMul K.S p o)) (.block (infinity K o)))
+      .ite .e (ForwardField.programB K.M (dbl K.S p o)) (.block (infinity K o)))
     (ForwardField.programB K.M tail)
 
 

@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.PointFieldTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAdd
-import VerifiedGarbage.Proof.Weierstrass.JacMul
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
 
 /-!
 # Point operations as functions on x86-64: the additions' timing
@@ -47,10 +47,11 @@ theorem validAfter_sub {ops : List FOp} {V : List Nat} {o : Pt}
 section
 variable {K : WinCfg} {sel : Nat} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop}
 
-theorem cachedAdd_relCT (hC : CachedPts (m := m) K sel size Sl) (hm : UnitMod m (2 ^ (64 * K.M.n)))
-    (hc : CachedJacChecks K K.R K.E K.D sel) {E : Nat → Fin m} :
+theorem cachedAdd_relCT {dbl : RcbSlots → Pt → Pt → List FOp} (hC : CachedPts (m := m) K sel size Sl dbl)
+    (hm : UnitMod m (2 ^ (64 * K.M.n))) (hc : CachedJacChecks K K.R K.E K.D sel dbl) {E : Nat → Fin m}
+    (hds : JDblShape dbl := by exact jdblShape_dblJMul) :
     RelCT isa (FieldPair K.M base size m Sl (cV K sel) E)
-      (Impl.Weierstrass.X86_64.CachedJac.add K K.R K.E K.D sel).inline
+      (Impl.Weierstrass.X86_64.CachedJac.add K K.R K.E K.D sel dbl).inline
       (fun s t => ∃ E', FieldPair K.M base size m Sl (jacCoords K.D ++ cV K sel) E' s t) := by
   have hL := hC.lay
   have dW : ∀ w ∈ jacCoords K.D, w ∈ rcbW K.S K.D := by
@@ -85,8 +86,8 @@ theorem cachedAdd_relCT (hC : CachedPts (m := m) K sel size Sl) (hm : UnitMod m 
     apply fieldBranch_relCT hL.lay hm (a := K.S.t5) (by
       rw [mem_validAfter]; right; simp [Impl.Weierstrass.X86_64.CachedJac.head, FOp.out]) hc.zeroR
     · intro _
-      have he : dblJMul K.S K.R K.D = ofN dblJMulN K.S K.R K.R K.D := rfl
-      have hN : NumOk dblJMulN := dblJChoiceN_ok true
+      obtain ⟨N, hN, hE⟩ := hds
+      have he : dbl K.S K.R K.D = ofN N K.S K.R K.R K.D := hE _ _ _
       refine (programB_relCT hL.lay hm (fun op hop x hx => hL.sl x (by
           rw [he] at hop
           rcases List.mem_append.mp (ofN_slots op hop x hx) with h | h
@@ -107,13 +108,14 @@ theorem cachedAdd_relCT (hC : CachedPts (m := m) K sel size Sl) (hm : UnitMod m 
         rcases hx with rfl | rfl | rfl <;> simp [jacTail, FOp.out])).sub subV⟩)
 
 /-- The cached addition's body, its sum copied to `R`. -/
-theorem addCachedBody_relCT (hC : CachedPts (m := m) K sel size Sl) (hm : UnitMod m (2 ^ (64 * K.M.n)))
-    (hc : CachedJacChecks K K.R K.E K.D sel) (hcp : ScratchCT (.block (copyPt K.M.n K.R K.D)))
-    {E : Nat → Fin m} :
-    RelCT isa (FieldPair K.M base size m Sl (cV K sel) E) (PointOps.addCachedBody K sel).inline
+theorem addCachedBody_relCT {dbl : RcbSlots → Pt → Pt → List FOp} (hC : CachedPts (m := m) K sel size Sl dbl)
+    (hm : UnitMod m (2 ^ (64 * K.M.n)))
+    (hc : CachedJacChecks K K.R K.E K.D sel dbl) (hcp : ScratchCT (.block (copyPt K.M.n K.R K.D)))
+    {E : Nat → Fin m} (hds : JDblShape dbl := by exact jdblShape_dblJMul) :
+    RelCT isa (FieldPair K.M base size m Sl (cV K sel) E) (PointOps.addCachedBody K sel dbl).inline
       (fun s t => ∃ E', FieldPair K.M base size m Sl (jacCoords K.R) E' s t) := by
   rw [PointOps.addCachedBody]
-  apply RelCT.seq (cachedAdd_relCT hC hm hc)
+  apply RelCT.seq (cachedAdd_relCT hC hm hc hds)
   apply RelCT.exists_
   intro E'
   have rSl : ∀ x ∈ jacCoords K.R, Sl x := fun x hx => hC.lay.sl x (List.mem_append_left _
@@ -128,9 +130,10 @@ end
 section
 variable {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop}
 
-theorem mixedAdd_relCT (hC : MixedLay K size Sl) (hm : UnitMod m (2 ^ (64 * K.M.n))) (hOne : K.one < m)
-    (hc : JacMixedChecks K K.R K.E K.D) {E : Nat → Fin m} :
-    RelCT isa (FieldPair K.M base size m Sl (mV K) E) (Jacobian.jacMixedForward K K.R K.E K.D).inline
+theorem mixedAdd_relCT {dbl : RcbSlots → Pt → Pt → List FOp} (hC : MixedLay K size Sl dbl) (hm : UnitMod m (2 ^ (64 * K.M.n)))
+    (hOne : K.one < m) (hc : JacMixedChecks K K.R K.E K.D dbl) {E : Nat → Fin m}
+    (hds : JDblShape dbl := by exact jdblShape_dblJMul) :
+    RelCT isa (FieldPair K.M base size m Sl (mV K) E) (Jacobian.jacMixedForward K K.R K.E K.D dbl).inline
       (fun s t => ∃ E', FieldPair K.M base size m Sl (jacCoords K.D ++ mV K) E' s t) := by
   have dW : ∀ w ∈ jacCoords K.D, w ∈ rcbW K.S K.D := by
     intro w hw; simp only [jacCoords, List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -161,8 +164,8 @@ theorem mixedAdd_relCT (hC : MixedLay K size Sl) (hm : UnitMod m (2 ^ (64 * K.M.
     apply fieldBranch_relCT hC.lay hm (a := K.S.t5) (by
       rw [mem_validAfter]; right; simp [jacMixedHead, FOp.out]) hc.zeroR
     · intro _
-      have he : dblJMul K.S K.R K.D = ofN dblJMulN K.S K.R K.R K.D := rfl
-      have hN : NumOk dblJMulN := dblJChoiceN_ok true
+      obtain ⟨N, hN, hE⟩ := hds
+      have he : dbl K.S K.R K.D = ofN N K.S K.R K.R K.D := hE _ _ _
       refine (programB_relCT hC.lay hm (fun op hop x hx => hC.sl x (by
           rw [he] at hop
           rcases List.mem_append.mp (ofN_slots op hop x hx) with h | h
@@ -184,13 +187,14 @@ theorem mixedAdd_relCT (hC : MixedLay K size Sl) (hm : UnitMod m (2 ^ (64 * K.M.
         rcases hx with rfl | rfl | rfl <;> simp [jacMixedTail, jacTail, FOp.out])).sub subV⟩)
 
 /-- The mixed addition's body, its sum copied to `R`. -/
-theorem addAffineBody_relCT (hC : MixedLay K size Sl) (hm : UnitMod m (2 ^ (64 * K.M.n))) (hOne : K.one < m)
-    (hc : JacMixedChecks K K.R K.E K.D) (hcp : ScratchCT (.block (copyPt K.M.n K.R K.D)))
-    {E : Nat → Fin m} :
-    RelCT isa (FieldPair K.M base size m Sl (mV K) E) (PointOps.addAffineBody K).inline
+theorem addAffineBody_relCT {dbl : RcbSlots → Pt → Pt → List FOp} (hC : MixedLay K size Sl dbl) (hm : UnitMod m (2 ^ (64 * K.M.n)))
+    (hOne : K.one < m)
+    (hc : JacMixedChecks K K.R K.E K.D dbl) (hcp : ScratchCT (.block (copyPt K.M.n K.R K.D)))
+    {E : Nat → Fin m} (hds : JDblShape dbl := by exact jdblShape_dblJMul) :
+    RelCT isa (FieldPair K.M base size m Sl (mV K) E) (PointOps.addAffineBody K dbl).inline
       (fun s t => ∃ E', FieldPair K.M base size m Sl (jacCoords K.R) E' s t) := by
   rw [PointOps.addAffineBody]
-  apply RelCT.seq (mixedAdd_relCT hC hm hOne hc)
+  apply RelCT.seq (mixedAdd_relCT hC hm hOne hc hds)
   apply RelCT.exists_
   intro E'
   have rSl : ∀ x ∈ jacCoords K.R, Sl x := fun x hx => hC.sl x (List.mem_append_right _ (by

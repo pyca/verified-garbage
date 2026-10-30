@@ -36,32 +36,36 @@ def restores : List Instr := kept.map fun (r, x) => .movqR r x
 /-- A function running `body`. -/
 def wrap (body : Prog isa) : Prog isa := .seq (.block saves) (.seq body (.block restores))
 
-/-- `R = 2R`, into `D` and copied back (`Joint.jacDouble`). -/
-def doubleBody (K : WinCfg) : Prog isa :=
-  .seq (fprogB K.M (dblJMul K.S K.R K.D)) (.block (copyPt K.M.n K.R K.D))
+/-- `R = 2R` by `dbl` (`dblJMul` for `a = -3`), into `D` and copied back
+(`Joint.jacDouble`). -/
+def doubleBody (K : WinCfg) (dbl : RcbSlots → Pt → Pt → List FOp := dblJMul) : Prog isa :=
+  .seq (fprogB K.M (dbl K.S K.R K.D)) (.block (copyPt K.M.n K.R K.D))
 
 /-- `R = R + E` by the cached Jacobian addition, `E`'s `Z²` and `Z³` at `sel`,
-into `D` and copied back. -/
-def addCachedBody (K : WinCfg) (sel : Nat) : Prog isa :=
-  .seq (CachedJac.add K K.R K.E K.D sel) (.block (copyPt K.M.n K.R K.D))
+into `D` and copied back; equal points doubled by `dbl`. -/
+def addCachedBody (K : WinCfg) (sel : Nat) (dbl : RcbSlots → Pt → Pt → List FOp := dblJMul) : Prog isa :=
+  .seq (CachedJac.add K K.R K.E K.D sel dbl) (.block (copyPt K.M.n K.R K.D))
 
-/-- `R = R + E` by the mixed Jacobian addition, into `D` and copied back. -/
-def addAffineBody (K : WinCfg) : Prog isa :=
-  .seq (Jacobian.jacMixedForward K K.R K.E K.D) (.block (copyPt K.M.n K.R K.D))
+/-- `R = R + E` by the mixed Jacobian addition, into `D` and copied back;
+equal points doubled by `dbl`. -/
+def addAffineBody (K : WinCfg) (dbl : RcbSlots → Pt → Pt → List FOp := dblJMul) : Prog isa :=
+  .seq (Jacobian.jacMixedForward K K.R K.E K.D dbl) (.block (copyPt K.M.n K.R K.D))
 
 /-- The suffix of the functions with the products `K.M`. -/
 def suffix (K : WinCfg) : String := if K.M.adx then "_adx" else ""
 
 /-- A call of `vg_<curve>_jac_double`. -/
-def doubleCall (C : Spec.Weierstrass.PointOps.Curve) (K : WinCfg) : Prog isa :=
-  .call (C.doubleApi.name ++ suffix K) (wrap (doubleBody K))
+def doubleCall (C : Spec.Weierstrass.PointOps.Curve) (K : WinCfg) (dbl : RcbSlots → Pt → Pt → List FOp := dblJMul) : Prog isa :=
+  .call (C.doubleApi.name ++ suffix K) (wrap (doubleBody K dbl))
 
 /-- A call of `vg_<curve>_jac_add_cached`. -/
-def addCachedCall (C : Spec.Weierstrass.PointOps.Curve) (K : WinCfg) (sel : Nat) : Prog isa :=
-  .call (C.addCachedApi.name ++ suffix K) (wrap (addCachedBody K sel))
+def addCachedCall (C : Spec.Weierstrass.PointOps.Curve) (K : WinCfg) (sel : Nat)
+    (dbl : RcbSlots → Pt → Pt → List FOp := dblJMul) : Prog isa :=
+  .call (C.addCachedApi.name ++ suffix K) (wrap (addCachedBody K sel dbl))
 
 /-- A call of `vg_<curve>_jac_add_affine`. -/
-def addAffineCall (C : Spec.Weierstrass.PointOps.Curve) (K : WinCfg) : Prog isa :=
-  .call (C.addAffineApi.name ++ suffix K) (wrap (addAffineBody K))
+def addAffineCall (C : Spec.Weierstrass.PointOps.Curve) (K : WinCfg)
+    (dbl : RcbSlots → Pt → Pt → List FOp := dblJMul) : Prog isa :=
+  .call (C.addAffineApi.name ++ suffix K) (wrap (addAffineBody K dbl))
 
 end VG.Impl.Weierstrass.X86_64.PointOps

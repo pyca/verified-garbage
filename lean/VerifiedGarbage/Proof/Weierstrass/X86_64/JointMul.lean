@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubler
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointSeed
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
@@ -40,7 +41,7 @@ structure JointWindowInput (c : Joint.Cfg) (C : Curve) (base T : Addr) (size u v
 theorem jointMulRun_ok {c : Joint.Cfg} {C : Curve} {double : Prog isa} {base T : Addr} {size u v : Nat}
     {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {s : State}
     (hL : JointAddLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
-    (hC : Law C) (ha : AM3 C) (hD : JointDoubler c C size double)
+    (hC : Law C) (hd : JDblOk C c.dbl) (hD : JointDoubler c C size double)
     (hOne : c.K.one<C.p) (hOneVal : toM C.p (2^(64*c.K.M.n)) c.K.one=1)
     (hG : onCurve C G=true) (hQ : onCurve C Q=true)
     (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n))
@@ -50,15 +51,15 @@ theorem jointMulRun_ok {c : Joint.Cfg} {C : Curve} {double : Prog isa} {base T :
       JointLoopKeep c.K.M base (jointWork c) s t ∧
       JointCore c C base size Q u v (JointGenerator c C base T size row) (add (mul u G) (mul v Q)) t ∧
       t.gpr .rbx=0 :=
-  jointRun_core_ok hL hm hC ha hOne hOneVal hG hQ
+  jointRun_core_ok hL hm hC hd hOne hOneVal hG hQ
     (fun _ _ hp hi => hD.ok (JointGenerator.workKeep hL.lookup.layout hi.field.mod.tmp) hp hi) hu hv h hb
 
 theorem jointMulWindow_ok {c : Joint.Cfg} {C : Curve} {double : Prog isa} {base T : Addr} {size u v : Nat}
     {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {s : State}
     (hL : JointAddLayout c size) (hInit : JointInitLayout c size)
-    (hm : UnitMod C.p (2^(64*c.K.M.n))) (hC : Law C) (ha : AM3 C) (hD : JointDoubler c C size double)
+    (hm : UnitMod C.p (2^(64*c.K.M.n))) (hC : Law C) (hd : JDblOk C c.dbl) (hD : JointDoubler c C size double)
     (hOne : c.K.one<C.p) (hOneVal : toM C.p (2^(64*c.K.M.n)) c.K.one=1)
-    (hG : onCurve C G=true) (hQ : onCurve C Q=true) (hZ : c.coZ=true → PrimeOrder C ∧ 17≤C.n)
+    (hG : onCurve C G=true) (hQ : onCurve C Q=true) (hZ : c.coZ=true → PrimeOrder C ∧ 17≤C.n ∧ AM3 C)
     (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n))
     (hi : Inv c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) (tmv C c.K.M.n base s) s)
     (hw : JointWindowInput c C base T size u v Q row s) :
@@ -70,11 +71,11 @@ theorem jointMulWindow_ok {c : Joint.Cfg} {C : Curve} {double : Prog isa} {base 
   simp only [Code.inline]
   apply WP.assoc
   apply WP.seq
-  refine WP.mono (jointTables_ok hInit hm hC ha hOne hQ hi hw.point hw.affine hZ hw.zero hw.peer hw.generator hw.external)
+  refine WP.mono (jointTables_ok hInit hm hC hd hOne hQ hi hw.point hw.affine hZ hw.zero hw.peer hw.generator hw.external)
     fun a ⟨ka,ia,sa,ea⟩ => ?_
   apply WP.seq
   refine WP.mono (jointSeed_ok hL.lookup.layout hOne ia sa ea) fun b ⟨kb,cb,bb⟩ => ?_
-  refine WP.mono (jointMulRun_ok hL hm hC ha hD hOne hOneVal hG hQ hu hv cb bb)
+  refine WP.mono (jointMulRun_ok hL hm hC hd hD hOne hOneVal hG hQ hu hv cb bb)
     fun t ⟨kt,ct,tb⟩ => ?_
   exact ⟨(ka.mono (fun _ h => List.mem_append_left _ h)).trans
     ((kb.trans kt).mono (fun _ h => List.mem_append_right _ h)),ct,tb⟩
@@ -107,12 +108,12 @@ theorem jointMul_ok {C : Curve} {c : Joint.Cfg} {double : Prog isa} {base T : Ad
     {E : Nat → Fin C.p}
     (hL : JointAddLayout c size) (hInit : JointInitLayout c size)
     (hPrep : JointPrepLayout c size srcU srcV)
-    (hm : UnitMod C.p (2^(64*c.K.M.n))) (hC : Law C) (ha : AM3 C)
+    (hm : UnitMod C.p (2^(64*c.K.M.n))) (hC : Law C) (hd : JDblOk C c.dbl)
     (hD : JointDoubler c C size double)
     (hOne : c.K.one<C.p) (hOneVal : toM C.p (2^(64*c.K.M.n)) c.K.one=1)
     (hG : onCurve C G=true) (hQ : onCurve C Q=true)
     (hp : InvJ C (E c.K.P.x) (E c.K.P.y) (E c.K.P.z) Q) (hp1 : E c.K.P.z=1) (hz : E c.K.zero=0)
-    (hZ : c.coZ=true → PrimeOrder C ∧ 17≤C.n) (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) {s : State}
+    (hZ : c.coZ=true → PrimeOrder C ∧ 17≤C.n ∧ AM3 C) (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) {s : State}
     (hi : Inv c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E s)
     (he : JointGenerator c C base T size row s)
     (hU : wordsVal s.mem base srcU c.K.M.n=u) (hV : wordsVal s.mem base srcV c.K.M.n=v) :
@@ -125,7 +126,7 @@ theorem jointMul_ok {C : Curve} {c : Joint.Cfg} {double : Prog isa} {base T : Ad
   rw [jointPrep_inline]
   refine WP.mono (jointMulPrep_ok hPrep hInit.naf.lay hi hp hp1 hz he hU hV)
     fun a ⟨ia,pa,ka,ua⟩ => ?_
-  refine WP.mono (jointMulWindow_ok hL hInit hm hC ha hD hOne hOneVal hG hQ hZ hu hv
+  refine WP.mono (jointMulWindow_ok hL hInit hm hC hd hD hOne hOneVal hG hQ hZ hu hv
     (ia.to_tmv (C:=C)) pa) fun t ⟨kt,ct,tb⟩ => ?_
   exact ⟨ct,tb,kt.regs.rd.trans ka.rd,kt.regs.wr.trans ka.wr,ua.trans kt.unch⟩
 

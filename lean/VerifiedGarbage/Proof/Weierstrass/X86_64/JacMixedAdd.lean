@@ -200,7 +200,7 @@ theorem jacMixedAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
           · exact hSl x (List.mem_append_left _ hx)
           · exact hSl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
         rw [←hpq]
-        refine WP.mono (jacDouble_ok hL hm hC ha hdA hdSl ie hv hP jp) fun t ⟨kt,it,jt⟩ => ?_
+        refine WP.mono (jacDouble_ok hL hm (jdblOk_dblJMul hC ha) hdA hdSl ie hv hP jp) fun t ⟨kt,it,jt⟩ => ?_
         exact (JacPost.sub ⟨_,kt,it,jt⟩ oldV).prefix
           (hkeep.trans ((kd.mono (by regions_sub)).trans (ke.mono (by regions_sub))))
       · intro e ie ke hrz

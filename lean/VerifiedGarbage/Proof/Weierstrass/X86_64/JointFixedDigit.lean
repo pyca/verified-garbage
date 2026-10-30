@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointGenerator
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedForward
@@ -37,7 +38,7 @@ local macro "jslots" : tactic => `(tactic| plain_simp_names (simp only [jointSlo
 theorem jointFixedAdd_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v : Nat}
     {Q A P : Point C} {External : State → Prop} {E : Nat → Fe C} {s : State}
     (hL : JointAddLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
-    (hC : Law C) (ha : AM3 C) (hOne : c.K.one<C.p) (hA : onCurve C A=true) (hP : onCurve C P=true)
+    (hC : Law C) (hd : JDblOk C c.dbl) (hOne : c.K.one<C.p) (hA : onCurve C A=true) (hP : onCurve C P=true)
     (hExternal : ∀ s t,ProgKeep c.K.M base (jointWork c) s t → t.syms=s.syms → External s → External t)
     (h : JointCore c C base size Q u v External A s)
     (hI : Inv c.K.M base size C.p (·∈jointSlots c) (jacCoords c.K.E++jointLive c) E s)
@@ -45,7 +46,7 @@ theorem jointFixedAdd_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v : N
     (hJE : InvJ C (E c.K.E.x) (E c.K.E.y) (E c.K.E.z) P) (hz : E c.K.E.z=1) :
     WP isa (Joint.fixedAdd c).inline s fun t =>
       ProgKeep c.K.M base (jointWork c) s t ∧ JointCore c C base size Q u v External (add A P) t := by
-  refine jointAdd_dispatch (body := PointOps.addAffineBody c.K) rfl (fun _ => rfl)
+  refine jointAdd_dispatch (body := PointOps.addAffineBody c.K c.dbl) rfl (fun _ => rfl)
     (fun C' hp => (hL.calls.ok C' hp).2.1) (fun C' hp => (hL.calls.ok C' hp).2.2) hExternal ⟨h, hI⟩
     fun b ⟨cb, ib⟩ => ?_
   rw [PointOps.addAffineBody]
@@ -55,7 +56,7 @@ theorem jointFixedAdd_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v : N
     intro x hx; jslots
   have vr : ∀ x∈rcbR c.K.S c.K.R c.K.E,x∈jacCoords c.K.E++jointLive c := by
     intro x hx; jslots
-  refine WP.mono_syms (jacMixedForward_ok hL.lookup.layout.lay hm hC ha
+  refine WP.mono_syms (jacMixedForward_ok hL.lookup.layout.lay hm hC hd
     hL.addApart sl ib vr hOne hA hP hJ hJE hz)
     fun d ⟨ed,kd,id,jd⟩ sd => ?_
   have wd : ∀ x∈rcbW c.K.S c.K.D,x∈jointWork c := by intro x hx; jslots
@@ -112,7 +113,7 @@ theorem jointFixedRead_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v j 
 theorem jointFixedDigit_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v j : Nat}
     {G Q A : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {s : State}
     (hL : JointAddLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
-    (hC : Law C) (ha : AM3 C) (hOne : c.K.one<C.p)
+    (hC : Law C) (hd : JDblOk C c.dbl) (hOne : c.K.one<C.p)
     (hOneVal : toM C.p (2^(64*c.K.M.n)) c.K.one=1)
     (hG : onCurve C G=true) (hA : onCurve C A=true)
     (h : JointCore c C base size Q u v (JointGenerator c C base T size row) A s)
@@ -156,7 +157,7 @@ theorem jointFixedDigit_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v
       · next h9 => rw [ite_eq_left h9] at e; exact e
       · next h9 => rw [ite_eq_right h9] at e; exact e
     refine WP.mono e' fun b ⟨kb,cb,ib,jb,zb⟩ => ?_
-    refine WP.mono (jointFixedAdd_ok hL hm hC ha hOne hA (FastNaf.onCurve_point hC hG c.gw u j)
+    refine WP.mono (jointFixedAdd_ok hL hm hC hd hOne hA (FastNaf.onCurve_point hC hG c.gw u j)
       hExternal cb ib cb.point jb zb) fun t ⟨kt,ct⟩ => ⟨(kp.trans kb).trans kt,ct⟩
 
 end VG.Proof.Weierstrass.X86_64

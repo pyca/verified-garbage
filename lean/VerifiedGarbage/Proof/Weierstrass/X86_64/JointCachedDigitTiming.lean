@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDigitTiming
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheEntryTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacTiming
@@ -32,23 +33,23 @@ local macro "jslots" : tactic => `(tactic| plain_simp_names (simp only [jointSlo
 structure JointCachedChecks (c : Joint.Cfg) : Prop where
   read : RegCT [.rdi,.rbx] (.block (Naf.digitRead c.K))
   entry : RegCT [.rdi,.r8] (Naf.signedCachedEntry c.K c.cache c.selected)
-  add : CachedJacChecks c.K c.K.R c.K.E c.K.D c.selected
+  add : CachedJacChecks c.K c.K.R c.K.E c.K.D c.selected c.dbl
   copy : ScratchCT (.block (copyPt c.K.M.n c.K.R c.K.D))
 
 theorem jointCachedSum_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Nat} {E : Nat → Fe C}
     (hL : JointAddLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
-    (hOne : c.K.one<C.p) (hc : JointCachedChecks c)
+    (hOne : c.K.one<C.p) (hc : JointCachedChecks c) (hds : JDblShape c.dbl)
     (h2 : E c.selected=E c.K.E.z*E c.K.E.z)
     (h3 : E (c.selected+8*c.K.M.n)=E c.selected*E c.K.E.z) :
     RelCT isa (FieldPair c.K.M base size C.p (·∈jointSlots c) (cachedSlots c.K.M.n c.K.E c.selected++jointLive c) E)
       (Joint.cachedAdd c).inline
       (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t) := by
-  refine jointAdd_relCT_dispatch (body := PointOps.addCachedBody c.K c.selected) rfl (fun _ => rfl)
+  refine jointAdd_relCT_dispatch (body := PointOps.addCachedBody c.K c.selected c.dbl) rfl (fun _ => rfl)
     (fun C' hp => (hL.calls.ok C' hp).1) ?_
   have sl : ∀ x∈(rcbW c.K.S c.K.D++rcbR c.K.S c.K.R c.K.E)++[c.selected,c.selected+8*c.K.M.n],x∈jointSlots c := by intro x hx; jslots
   have vr : ∀ x∈rcbR c.K.S c.K.R c.K.E++[c.selected,c.selected+8*c.K.M.n],x∈cachedSlots c.K.M.n c.K.E c.selected++jointLive c := by intro x hx; jslots
   apply RelCT.seq (cachedJacAdd_relCT hL.lookup.layout.lay hm hc.add
-    hL.addApart hL.cache2Apart hL.cache3Apart sl vr hOne h2 h3)
+    hL.addApart hL.cache2Apart hL.cache3Apart sl vr hOne h2 h3 hds)
   apply RelCT.exists_
   intro E'
   have cp := copyPoint_relCT (base:=base) (E:=E') hL.lookup.layout.lay
@@ -61,7 +62,7 @@ theorem jointCachedSum_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size : N
 theorem jointCachedDigit_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v j : Nat}
     {Q A : Point C} {External : State → Prop} {E : Nat → Fe C}
     (hL : JointAddLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
-    (hOne : c.K.one<C.p) (hj : j<64*c.K.M.n+1) (hc : JointCachedChecks c)
+    (hOne : c.K.one<C.p) (hj : j<64*c.K.M.n+1) (hc : JointCachedChecks c) (hds : JDblShape c.dbl)
     (hExternal : ∀ s t,VG.Proof.X25519.X86_64.Keeps [.r8] s t → t.syms=s.syms → External s → External t) :
     RelCT isa (fun s t => FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E s t ∧
       JointCore c C base size Q u v External A s ∧ JointCore c C base size Q u v External A t ∧
@@ -110,7 +111,7 @@ theorem jointCachedDigit_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size u
     hL.lookup.tableSmall hL.lookup.cacheSmall hL.lookup.tableBound hL.lookup.cacheBound ds hq
     hL.lookup.entryTable hL.lookup.entryCache hL.lookup.selectedCache hL.lookup.selectedEntry
     (by simp [jointLive,winRo]) zero hL.lookup.zeroApart hc.entry
-  exact (RelCT.seq entry (jointCachedSum_relCT hL hm hOne hc result.2.1 result.2.2))
+  exact (RelCT.seq entry (jointCachedSum_relCT hL hm hOne hc hds result.2.1 result.2.2))
     _ _ _ _ _ _ ⟨hp,s8,t8⟩ es et
 
 end VG.Proof.Weierstrass.X86_64

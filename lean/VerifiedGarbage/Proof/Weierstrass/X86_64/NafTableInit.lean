@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableState
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacDouble
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -25,10 +26,10 @@ theorem nafTable_initCounter_ok (s : State) :
 
 theorem nafTable_init_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     (hL : NafLay K size) (hJ : 1≤K.J ∧ 4*K.J≤64*K.M.n+4) (hm : UnitMod C.p (2^(64*K.M.n)))
-    (hC : Law C) (ha : AM3 C) {P : Point C} (hP : onCurve C P=true) {s : State}
+    (hC : Law C) {dbl : RcbSlots → Pt → Pt → List FOp} (hd : JDblOk C dbl) {P : Point C} (hP : onCurve C P=true) {s : State}
     (hI : Inv K.M base size C.p (·∈nafSlots K) (winRo K) (tmv C K.M.n base s) s)
     (hp : InvJ C (tmv C K.M.n base s K.P.x) (tmv C K.M.n base s K.P.y) (tmv C K.M.n base s K.P.z) P) :
-    WP isa (Code.seq (fprogB K.M (dblJMul K.S K.P (Naf.twice K)))
+    WP isa (Code.seq (fprogB K.M (dbl K.S K.P (Naf.twice K)))
       (.block (copyPt K.M.n (K.tblPt 1) K.P++copyPt K.M.n K.R K.P++([.mov32 .rbx (.imm 1)] : List Instr)))).inline s
       (fun t => NafTableInv K C base size P s t 1) := by
   simp only [Code.inline]
@@ -62,7 +63,7 @@ theorem nafTable_init_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     · exact slR x (dv x hx)
   have da := hL.rcbApart_init hJ
   apply WP.seq
-  refine WP.mono (jacDouble_ok hL.lay hm hC ha da ds hI dv hP hp) fun a ⟨ka,ia,ja⟩ => ?_
+  refine WP.mono (jacDouble_ok hL.lay hm hd da ds hI dv hP hp) fun a ⟨ka,ia,ja⟩ => ?_
   have ja : InvJ C (tmv C K.M.n base a (Naf.twice K).x) (tmv C K.M.n base a (Naf.twice K).y)
       (tmv C K.M.n base a (Naf.twice K).z) (mul 2 P) := by
     have h := ia.point_tmv (fun _ hx => List.mem_append_left _ hx) ja

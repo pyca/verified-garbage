@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedEntry
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacAdd
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsWrap
@@ -63,8 +64,8 @@ local macro "jslots" : tactic => `(tactic| plain_simp_names (simp only [jointSlo
 bodies call nothing, and the registers their wrappers keep are among those
 the field arithmetic may write. -/
 structure JointCalls (c : Joint.Cfg) : Prop where
-  ok : ∀ C', c.pts = some C' → (PointOps.addCachedBody c.K c.selected).noCalls = true ∧
-    (PointOps.addAffineBody c.K).noCalls = true ∧
+  ok : ∀ C', c.pts = some C' → (PointOps.addCachedBody c.K c.selected c.dbl).noCalls = true ∧
+    (PointOps.addAffineBody c.K c.dbl).noCalls = true ∧
     ∀ r ∈ Proof.Weierstrass.X86_64.PointOps.keptRegs, r ∈ clob c.K.M.n
 
 structure JointAddLayout (c : Joint.Cfg) (size : Nat) : Prop where
@@ -142,7 +143,7 @@ theorem jointAdd_relCT_dispatch {c : Joint.Cfg} {C : Curve} {base : Addr} {size 
 theorem jointCachedAdd_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v : Nat}
     {Q A P : Point C} {External : State → Prop} {E : Nat → Fe C} {s : State}
     (hL : JointAddLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
-    (hC : Law C) (ha : AM3 C) (hOne : c.K.one<C.p) (hA : onCurve C A=true) (hP : onCurve C P=true)
+    (hC : Law C) (hd : JDblOk C c.dbl) (hOne : c.K.one<C.p) (hA : onCurve C A=true) (hP : onCurve C P=true)
     (hExternal : ∀ s t,ProgKeep c.K.M base (jointWork c) s t → t.syms=s.syms → External s → External t)
     (h : JointCore c C base size Q u v External A s)
     (hI : Inv c.K.M base size C.p (·∈jointSlots c) (cachedSlots c.K.M.n c.K.E c.selected++jointLive c) E s)
@@ -150,7 +151,7 @@ theorem jointCachedAdd_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v : 
     (hc : CachedPoint c.K.M.n C E c.K.E c.selected P) :
     WP isa (Joint.cachedAdd c).inline s fun t =>
       ProgKeep c.K.M base (jointWork c) s t ∧ JointCore c C base size Q u v External (add A P) t := by
-  refine jointAdd_dispatch (body := PointOps.addCachedBody c.K c.selected) rfl (fun _ => rfl)
+  refine jointAdd_dispatch (body := PointOps.addCachedBody c.K c.selected c.dbl) rfl (fun _ => rfl)
     (fun C' hp => (hL.calls.ok C' hp).1) (fun C' hp => (hL.calls.ok C' hp).2.2) hExternal ⟨h, hI⟩
     fun b ⟨cb, ib⟩ => ?_
   rw [PointOps.addCachedBody]
@@ -160,7 +161,7 @@ theorem jointCachedAdd_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v : 
     intro x hx; jslots
   have vr : ∀ x∈rcbR c.K.S c.K.R c.K.E,x∈cachedSlots c.K.M.n c.K.E c.selected++jointLive c := by
     intro x hx; jslots
-  refine WP.mono_syms (cachedJacAdd_ok hL.lookup.layout.lay hm hC ha
+  refine WP.mono_syms (cachedJacAdd_ok hL.lookup.layout.lay hm hC hd
     hL.addApart hL.cache2Apart hL.cache3Apart (by constructor <;> simp [jointSlots])
     sl ib vr (by constructor <;> simp [cachedSlots]) hc.2.1 hc.2.2 hOne hA
     hP hJ hc.1) fun d ⟨ed,kd,id,jd⟩ sd => ?_
@@ -183,7 +184,7 @@ theorem jointCachedAdd_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v : 
 theorem jointCachedDigit_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v j : Nat}
     {Q A : Point C} {External : State → Prop} {s : State}
     (hL : JointAddLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
-    (hC : Law C) (ha : AM3 C) (hOne : c.K.one<C.p)
+    (hC : Law C) (hd : JDblOk C c.dbl) (hOne : c.K.one<C.p)
     (hQ : onCurve C Q=true) (hA : onCurve C A=true)
     (h : JointCore c C base size Q u v External A s)
     (hExternal : ∀ s t,ProgKeep c.K.M base (jointWork c) s t → t.syms=s.syms → External s → External t)
@@ -220,7 +221,7 @@ theorem jointCachedDigit_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v 
     apply WP.seq
     refine WP.mono (jointCachedEntry_ok hL.lookup hm ca hExternal hmag a8)
       fun b ⟨kb,cb,ib,jb⟩ => ?_
-    refine WP.mono (jointCachedAdd_ok hL hm hC ha hOne hA (FastNaf.onCurve_point hC hQ 5 v j)
+    refine WP.mono (jointCachedAdd_ok hL hm hC hd hOne hA (FastNaf.onCurve_point hC hQ 5 v j)
       hExternal cb ib cb.point jb) fun t ⟨kt,ct⟩ => ⟨(kp.trans kb).trans kt,ct⟩
 
 end VG.Proof.Weierstrass.X86_64

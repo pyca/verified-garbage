@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitLayout
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoop
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
@@ -70,11 +71,11 @@ theorem jointCache_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Nat} {a 
 theorem jointTables_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat}
     {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {s : State}
     (hL : JointInitLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
-    (hC : Law C) (ha : AM3 C) (hOne : c.K.one<C.p) (hQ : onCurve C Q=true)
+    (hC : Law C) (hd : JDblOk C c.dbl) (hOne : c.K.one<C.p) (hQ : onCurve C Q=true)
     (hi : Inv c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) (tmv C c.K.M.n base s) s)
     (hp : InvJ C (tmv C c.K.M.n base s c.K.P.x) (tmv C c.K.M.n base s c.K.P.y)
       (tmv C c.K.M.n base s c.K.P.z) Q) (h1 : tmv C c.K.M.n base s c.K.P.z=1)
-    (hZ : c.coZ=true → PrimeOrder C ∧ 17≤C.n)
+    (hZ : c.coZ=true → PrimeOrder C ∧ 17≤C.n ∧ AM3 C)
     (hz : tmv C c.K.M.n base s c.K.zero=0)
     (hv : ∀ i<64*c.K.M.n+1,s.mem (off base (c.K.bits+i))=FastNaf.byte 5 v i)
     (hu : ∀ i<jointGLen c,s.mem (off base (c.gBits+i))=jointGByte c u i)
@@ -87,9 +88,9 @@ theorem jointTables_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : N
     unfold Joint.tableCode
     split
     · next h =>
-      obtain ⟨hO,hn⟩ := hZ h
+      obtain ⟨hO,hn,ha⟩ := hZ h
       exact nafTableCoZ_ok hL.naf hL.count hm hC hO hn ha hL.tableSmall hQ hi hp h1
-    · exact nafTable_ok hL.naf hL.count hm hC ha hL.tableSmall hOne hQ hi hp
+    · exact nafTable_ok hL.naf hL.count hm hC hd hL.tableSmall hOne hQ hi hp
   apply WP.seq
   refine WP.mono_syms tbl fun a ia sa => ?_
   have ii : Inv c.K.M base size C.p (·∈jointSlots c) (nafTableLive c.K 8) (tmv C c.K.M.n base a) a :=
