@@ -274,6 +274,70 @@ theorem leakT_tag {n κ : Nat}
   rw [e₁, e₂] at hr
   exact (List.cons.inj hr).1
 
+/-- `leakT_step` for the contract's `signLeakLoop`: two runs that agree on
+what an iteration leaks agree on its `c̃`, on
+whether it finished, was rejected or passed, and on the hint if it passed;
+and, if it was rejected, on what the following iterations leak. -/
+theorem leakF_step {n κ : Nat}
+    (h : signLeakLoop p b Â₁ s₁ s₁' t₁ μ₁ ρ₁ (n + 1) κ = signLeakLoop p b Â₂ s₂ s₂' t₂ μ₂ ρ₂ (n + 1) κ) :
+    (signCommit p Â₁ μ₁ ρ₁ κ).2.2 = (signCommit p Â₂ μ₂ ρ₂ κ).2.2 ∧
+      ((∃ ct, signIteration p b Â₁ s₁ s₁' t₁ μ₁ ρ₁ κ = some (ct, none)) →
+        (∃ ct, signIteration p b Â₂ s₂ s₂' t₂ μ₂ ρ₂ κ = some (ct, none)) ∧
+        signLeakLoop p b Â₁ s₁ s₁' t₁ μ₁ ρ₁ n (κ + p.ℓ) = signLeakLoop p b Â₂ s₂ s₂' t₂ μ₂ ρ₂ n (κ + p.ℓ)) ∧
+      outTag (signIteration p b Â₁ s₁ s₁' t₁ μ₁ ρ₁ κ) = outTag (signIteration p b Â₂ s₂ s₂' t₂ μ₂ ρ₂ κ) := by
+  simp only [signLeakLoop] at h
+  have hl : (leakBytes (signCommit p Â₁ μ₁ ρ₁ κ).2.2).length = (leakBytes (signCommit p Â₂ μ₂ ρ₂ κ).2.2).length := by
+    rw [leakBytes_length, leakBytes_length, signCommit_length, signCommit_length]
+  obtain ⟨hc, hr⟩ := List.append_inj h hl
+  refine ⟨leakBytes_inj hc, ?_, ?_⟩
+  · rintro ⟨ct, e₁⟩
+    rw [e₁] at hr
+    dsimp only at hr
+    cases e₂ : signIteration p b Â₂ s₂ s₂' t₂ μ₂ ρ₂ κ with
+    | none => rw [e₂] at hr; cases hr
+    | some r =>
+      obtain ⟨ct', o⟩ := r
+      rw [e₂] at hr
+      cases o with
+      | none => exact ⟨⟨ct', rfl⟩, List.cons.inj hr |>.2⟩
+      | some zh => exact absurd (List.cons.inj hr).1 (signRejectTag_ne_one _ _ _ _ _ _ _ _ _)
+  · revert hr
+    cases signIteration p b Â₁ s₁ s₁' t₁ μ₁ ρ₁ κ with
+    | none =>
+      cases signIteration p b Â₂ s₂ s₂' t₂ μ₂ ρ₂ κ with
+      | none => intro; rfl
+      | some r => obtain ⟨_, o⟩ := r; cases o <;> intro hr <;> cases hr
+    | some r =>
+      obtain ⟨_, o⟩ := r
+      cases signIteration p b Â₂ s₂ s₂' t₂ μ₂ ρ₂ κ with
+      | none => cases o <;> intro hr <;> cases hr
+      | some r' =>
+        obtain ⟨_, o'⟩ := r'
+        cases o with
+        | none =>
+          cases o' with
+          | none => intro; rfl
+          | some _ => intro hr; exact absurd (List.cons.inj hr).1 (signRejectTag_ne_one _ _ _ _ _ _ _ _ _)
+        | some zh =>
+          cases o' with
+          | none => intro hr; exact absurd (List.cons.inj hr).1.symm (signRejectTag_ne_one _ _ _ _ _ _ _ _ _)
+          | some zh' => intro hr; simp only [outTag]; exact hr
+
+/-- `leakT_tag` for the contract's `signLeakLoop`: two runs that agree on
+what an iteration leaks, and both reject it,
+agree on which check rejected it, and at which polynomial. -/
+theorem leakF_tag {n κ : Nat}
+    (h : signLeakLoop p b Â₁ s₁ s₁' t₁ μ₁ ρ₁ (n + 1) κ = signLeakLoop p b Â₂ s₂ s₂' t₂ μ₂ ρ₂ (n + 1) κ)
+    {ct₁ ct₂ : List Byte} (e₁ : signIteration p b Â₁ s₁ s₁' t₁ μ₁ ρ₁ κ = some (ct₁, none))
+    (e₂ : signIteration p b Â₂ s₂ s₂' t₂ μ₂ ρ₂ κ = some (ct₂, none)) :
+    signRejectTag p b Â₁ s₁ s₁' t₁ μ₁ ρ₁ κ = signRejectTag p b Â₂ s₂ s₂' t₂ μ₂ ρ₂ κ := by
+  simp only [signLeakLoop] at h
+  have hl : (leakBytes (signCommit p Â₁ μ₁ ρ₁ κ).2.2).length = (leakBytes (signCommit p Â₂ μ₂ ρ₂ κ).2.2).length := by
+    rw [leakBytes_length, leakBytes_length, signCommit_length, signCommit_length]
+  have hr := (List.append_inj h hl).2
+  rw [e₁, e₂] at hr
+  exact (List.cons.inj hr).1
+
 end
 
 theorem signLeakLoopT_succ (p : Params) (b : Bounds) (Â : List (List Poly)) (ŝ₁ ŝ₂ t₀Hat : List Poly)

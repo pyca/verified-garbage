@@ -705,12 +705,16 @@ theorem IR.ih {p : Params} {D : Nat} {σ : State} {t : Nat} {s : State} (h : IR 
     by rw [h.1.ones]; rfl⟩,
     by rw [h.2]; exact bit_congr ⟨fun h => ⟨h, fun _ h => absurd h (Nat.not_lt_zero _)⟩, fun h => h.1⟩⟩
 
-/-- What the branches of the checks need two runs to agree on: whether `z`
-passed, whether `z` and `r₀` passed, and whether the iteration passed. -/
+/-- What the branches of the checks need two runs to agree on: whether the
+first `r` polynomials of `z` passed, for each `r` (the checks stop at the
+first that fails), whether `z` and the first `i` polynomials of `r₀` passed,
+for each `i`, and whether the iteration passed. -/
 abbrev ChecksAgree (p : Params) (t : Nat) (σ₁ σ₂ : State) : Prop :=
-  (ZOk p σ₁ (p.ℓ * t) ↔ ZOk p σ₂ (p.ℓ * t)) ∧
-    ((ZOk p σ₁ (p.ℓ * t) ∧ R0Ok p σ₁ (p.ℓ * t)) ↔ (ZOk p σ₂ (p.ℓ * t) ∧ R0Ok p σ₂ (p.ℓ * t))) ∧
-    (PassV p σ₁ (p.ℓ * t) ↔ PassV p σ₂ (p.ℓ * t))
+  (∀ r ≤ p.ℓ, (∀ j < r, normRq [Zv p σ₁ (p.ℓ * t) j] < p.γ₁ - p.β) ↔
+    (∀ j < r, normRq [Zv p σ₂ (p.ℓ * t) j] < p.γ₁ - p.β)) ∧
+  (∀ i ≤ p.k, (ZOk p σ₁ (p.ℓ * t) ∧ ∀ j < i, normRq [R0v p σ₁ (p.ℓ * t) j] < p.γ₂ - p.β) ↔
+    (ZOk p σ₂ (p.ℓ * t) ∧ ∀ j < i, normRq [R0v p σ₂ (p.ℓ * t) j] < p.γ₂ - p.β)) ∧
+  (PassV p σ₁ (p.ℓ * t) ↔ PassV p σ₂ (p.ℓ * t))
 
 /-- The checks done: whether the iteration passes in `r15`, and if it does,
 `z` and the hints. -/
@@ -773,6 +777,48 @@ def ksChk2 (p : Params) : Bool :=
   zfam p [] p.ℓ && famChk (sgB p) [] (yBase p + p.ℓ) (p.ℓ - p.ℓ) && rfam p [] p.k &&
     famChk (sgB p) [] (wBase p + p.k) (p.k - p.k)
 
+/-- The test of `r15` after `z[k - 1]` keeps the checks of `z`. -/
+theorem IZ.stable {p : Params} {D : Nat} (hc : ksChk p = true) {σ : State} {t k : Nat} (hk0 : 0 < k)
+    (hk : k ≤ p.ℓ) {s s₁ : State} (h : IZ p D σ t k s) (hP : PPostB D s s₁ [])
+    (hcs : ∀ r ∈ calleeSaved, s₁.gpr r = s.gpr r) : IZ p D σ t k s₁ := by
+  refine ksChk_spec hc fun _ _ _ _ _ _ _ hz _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => ?_
+  have hc' := hz (k - 1) (by omega)
+  simp only [zChk, Bool.and_eq_true, decide_eq_true_eq, show k - 1 + 1 = k by omega] at hc'
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨_, _⟩, _⟩, _⟩, _⟩, _⟩, _⟩, z4⟩, _⟩, _⟩, _⟩, y4⟩, _⟩, _⟩, _⟩, _⟩ := hc'
+  exact ⟨h.1.step hP z4 y4, by rw [hcs _ (by decide), h.2]⟩
+
+/-- The test of `r15` after `r₀[i - 1]` keeps the checks of `r₀`. -/
+theorem IR.stable {p : Params} {D : Nat} (hc : ksChk p = true) {σ : State} {t i : Nat} (hi0 : 0 < i)
+    (hi : i ≤ p.k) {s s₁ : State} (h : IR p D σ t i s) (hP : PPostB D s s₁ [])
+    (hcs : ∀ r ∈ calleeSaved, s₁.gpr r = s.gpr r) : IR p D σ t i s₁ := by
+  refine ksChk_spec hc fun _ _ _ _ _ _ _ _ hr _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => ?_
+  have hc' := hr (i - 1) (by omega)
+  simp only [rChk, Bool.and_eq_true, decide_eq_true_eq, show i - 1 + 1 = i by omega] at hc'
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨_, _⟩, _⟩, _⟩, _⟩, _⟩, _⟩, _⟩, _⟩, z5⟩, _⟩, _⟩, _⟩, _⟩, y5⟩, _⟩, _⟩, _⟩, _⟩ := hc'
+  exact ⟨h.1.step hP z5 y5, by rw [hcs _ (by decide), h.2]⟩
+
+/-- The checks of `z` stopped after `z[k - 1]`, the last or the first that
+failed: `r15` says whether `z` passed. -/
+theorem IZ.done {p : Params} {D : Nat} {σ : State} {t k : Nat} {s : State} (hk : k ≤ p.ℓ) (h : IZ p D σ t k s)
+    (hd : k = p.ℓ ∨ (s.gpr .r15).setWidth 32 = 0) : s.gpr .r15 = bit (ZOk p σ (p.ℓ * t)) := by
+  rcases hd with rfl | h0
+  · exact h.2
+  · rw [h.2] at h0 ⊢
+    have ha : ¬ ∀ j < k, normRq [Zv p σ (p.ℓ * t) j] < p.γ₁ - p.β := fun ha => (bit_ne.mpr ha) h0
+    rw [bit_zero.mpr ha, bit_zero.mpr fun hz => ha fun j hj => hz j (by omega)]
+
+/-- The checks of `r₀` stopped after `r₀[i - 1]`, the last or the first that
+failed: `r15` says whether `z` and `r₀` passed. -/
+theorem IR.done {p : Params} {D : Nat} {σ : State} {t i : Nat} {s : State} (hi : i ≤ p.k) (h : IR p D σ t i s)
+    (hd : i = p.k ∨ (s.gpr .r15).setWidth 32 = 0) :
+    s.gpr .r15 = bit (ZOk p σ (p.ℓ * t) ∧ R0Ok p σ (p.ℓ * t)) := by
+  rcases hd with rfl | h0
+  · exact h.2
+  · rw [h.2] at h0 ⊢
+    have ha : ¬ (ZOk p σ (p.ℓ * t) ∧ ∀ j < i, normRq [R0v p σ (p.ℓ * t) j] < p.γ₂ - p.β) :=
+      fun ha => (bit_ne.mpr ha) h0
+    rw [bit_zero.mpr ha, bit_zero.mpr fun hz => ha ⟨hz.1, fun j hj => hz.2 j (by omega)⟩]
+
 /-- A group of checks rejected the iteration: nothing more is computed. -/
 theorem kFail_ko {D : Nat} {p : Params} (hc : ksChk p = true) {σ : State} {t : Nat} {s s₁ : State} {a : Prop}
     [Decidable a] (hb : KB p D σ t s) (h15 : s.gpr .r15 = bit a) (ha : PassV p σ (p.ℓ * t) → a)
@@ -793,16 +839,20 @@ theorem checksR0_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : 
   simp only [ksChk2, Bool.and_eq_true] at hc2
   obtain ⟨⟨⟨_, _⟩, d3⟩, d4⟩ := hc2
   unfold checksR0
-  refine WP.seq (WP.mono (seqR_ok (I := fun i => IR p D σ t i) p.k 0 (fun i _ hi s hs => r0R_ok hP (hr i (by omega_arith)) hs)
-    s h) fun s6 hs6 => ?_)
-  rw [Nat.zero_add] at hs6
+  refine WP.seq (WP.mono (seqOk_ok (D := D) (I := fun i => IR p D σ t i) p.k 0
+    (fun i hi hi' s s₁ h hP hcs _ => IR.stable hc (by omega) (by omega) h hP hcs)
+    (fun i _ hi s hs => r0R_ok hP (hr i (by omega_arith)) hs) s h) fun s6 ⟨i, _, hi, hs6, hd⟩ => ?_)
+  rw [Nat.zero_add] at hi hd
+  have h15 := IR.done hi hs6 hd
   refine ifOkElse_ok (D := D) (fun s7 hP7 hcs7 _ hne => ?_) (fun s7 hP7 hcs7 _ he => ?_)
-  · have I7 : IR p D σ t p.k s7 := ⟨hs6.1.step hP7 d3 d4, by rw [hcs7 _ (by decide), hs6.2]⟩
+  · have hik : i = p.k := hd.resolve_right hne
+    subst hik
+    have I7 : IR p D σ t p.k s7 := ⟨hs6.1.step hP7 d3 d4, by rw [hcs7 _ (by decide), hs6.2]⟩
     refine WP.seq (WP.mono (seqR_ok (I := fun i => IH p D σ t i) p.k 0 (fun i _ hi s hs => hR_ok hP (hh i (by omega_arith)) hs)
       s7 I7.ih) fun s8 hs8 => ?_)
     rw [Nat.zero_add] at hs8
     exact onesOk_ok hc hs8
-  · exact WP.block_nil_iff.mpr (kFail_ko hc hs6.1.b hs6.2 (fun hp => ⟨hp.1, hp.2.1⟩) hP7 hcs7 he)
+  · exact WP.block_nil_iff.mpr (kFail_ko hc hs6.1.b h15 (fun hp => ⟨hp.1, hp.2.1⟩) hP7 hcs7 he)
 
 theorem checks_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : ksChk p = true)
     (hc2 : ksChk2 p = true) {σ : State} {t : Nat}
@@ -815,14 +865,18 @@ theorem checks_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : ks
   unfold checks
   refine WP.seq (WP.mono (cntt_ok hP hc h) fun s1 h1 => ?_)
   refine WP.seq (WP.mono (kInit_ok hc h1) fun s3 I3 => ?_)
-  refine WP.seq (WP.mono (seqR_ok (I := fun r => IZ p D σ t r) p.ℓ 0 (fun r _ hr s hs => zR_ok hP (hz r (by omega_arith)) hs)
-    s3 I3) fun s4 hs4 => ?_)
-  rw [Nat.zero_add] at hs4
-  refine WP.seq (WP.mono (ifOkElse_ok (D := D) (Q := KO p D σ t) (fun s5 hP5 hcs5 _ _ => ?_)
+  refine WP.seq (WP.mono (seqOk_ok (D := D) (I := fun r => IZ p D σ t r) p.ℓ 0
+    (fun k hk hk' s s₁ h hP hcs _ => IZ.stable hc (by omega) (by omega) h hP hcs)
+    (fun r _ hr s hs => zR_ok hP (hz r (by omega_arith)) hs) s3 I3) fun s4 ⟨k, _, hk, hs4, hd⟩ => ?_)
+  rw [Nat.zero_add] at hk hd
+  have h15 := IZ.done hk hs4 hd
+  refine WP.seq (WP.mono (ifOkElse_ok (D := D) (Q := KO p D σ t) (fun s5 hP5 hcs5 _ hne => ?_)
     (fun s5 hP5 hcs5 _ he => ?_)) fun s7 h7 => kBranch_ok hc h7)
-  · have I5 : IZ p D σ t p.ℓ s5 := ⟨hs4.1.step hP5 d1 d2, by rw [hcs5 _ (by decide), hs4.2]⟩
+  · have hkl : k = p.ℓ := hd.resolve_right hne
+    subst hkl
+    have I5 : IZ p D σ t p.ℓ s5 := ⟨hs4.1.step hP5 d1 d2, by rw [hcs5 _ (by decide), hs4.2]⟩
     exact checksR0_ok hP hc hc2 I5.ir
-  · exact WP.block_nil_iff.mpr (kFail_ko hc hs4.1.b hs4.2 (fun hp => hp.1) hP5 hcs5 he)
+  · exact WP.block_nil_iff.mpr (kFail_ko hc hs4.1.b h15 (fun hp => hp.1) hP5 hcs5 he)
 
 theorem ksChk2_ok {p : Params} (h : Ok3 p) : ksChk2 p = true := by
   rcases h with rfl | rfl | rfl <;> decide +kernel

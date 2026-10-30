@@ -16,13 +16,10 @@ import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
 # ML-DSA signing on x86-64: verified
 
 `vg_mldsa{44,65,87}_sign` (`sign (primsWith v.code) p`, for an implementation
-`v` of the polynomial arithmetic) is verified against `signContractT`:
-`signContract` with `signLeakT` (`Proof/MlDsa/Sign/Leak.lean`) for `signLeak`,
-which tags what each iteration of the loop leaks after its `c̃` with the
-check that rejected it. The contract's `signLeak` also says at which
-polynomial; two runs that agree on it agree on `signLeakT`
-(`signContract_pubT`), so `signContractT_narrow` moves the proof to
-`signContract`, against which `sign*_verified'` state it.
+`v` of the polynomial arithmetic) is verified against `signContract`, whose
+`signLeak` says of each rejected iteration which check rejected it, and at
+which polynomial: the checks of `z` and `r₀` stop at the first polynomial
+that fails.
 -/
 
 @[expose] public section
@@ -36,18 +33,7 @@ open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlDsa.X86_64 (Comp Same Same.ok ArithImpl Code.allInstrs_of_all)
 open VG.Impl.MlDsa.X86_64.Arith (Backend)
 
-/-- `signContract`, with `signLeakT` for `signLeak`. -/
-def signContractT (p : Params) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  (signSig p).contract A
-    (post := fun sk mu rnd sig _scratch m m' r =>
-      Outcome (fun b => signMu p b (bytesAt m sk p.skLen) (bytesAt m mu 64) (bytesAt m rnd 32)) r
-        (bytesAt m' sig p.sigLen))
-    (writeArgs := true)
-    (stack := stack)
-    (leak := some fun sk mu rnd _sig _scratch m =>
-      signLeakT p (bytesAt m sk p.skLen) (bytesAt m mu 64) (bytesAt m rnd 32))
-
-/-- A state satisfying `signContractT`'s precondition. -/
+/-- A state satisfying `signContract`'s precondition. -/
 def signSat (p : Params) : State where
   gpr r := match r with
     | .rdi => 0x1000 | .rsi => 0x3000 | .rdx => 0x3100 | .rcx => 0x4000 | .r8 => 0x10000 | .rsp => 0x80000
@@ -60,24 +46,24 @@ def signSat (p : Params) : State where
   rd := [⟨0x1000, p.skLen⟩, ⟨0x3000, 64⟩, ⟨0x3100, 32⟩]
   wr := [⟨0x4000, p.sigLen⟩, ⟨0x10000, 8 * scratchWords p⟩]
 
-theorem signK_implies_of {p : Params} (hsat : ∃ s, (signContractT p X86_64.abi signStack).pre s) :
-    (signK p signStack).Implies (signContractT p X86_64.abi signStack) where
-  pre := by sig_implies_pre [signContractT, signSig, signK, X86_64.abi, X86_64.argRegs]
-  post := by sig_implies_post [signContractT, signSig, signK, X86_64.abi, X86_64.argRegs]
+theorem signK_implies_of {p : Params} (hsat : ∃ s, (signContract p X86_64.abi signStack).pre s) :
+    (signK p signStack).Implies (signContract p X86_64.abi signStack) where
+  pre := by sig_implies_pre [signContract, signSig, signK, X86_64.abi, X86_64.argRegs]
+  post := by sig_implies_post [signContract, signSig, signK, X86_64.abi, X86_64.argRegs]
   pub := by
     intro s₁ s₂ _ _ h
-    sig_pub [signContractT, signSig, signK, X86_64.abi, X86_64.argRegs] at h
+    sig_pub [signContract, signSig, signK, X86_64.abi, X86_64.argRegs] at h
     obtain ⟨hsp, hb, hdi, hsi, hdx, hcx, h8⟩ := h
     exact ⟨hdi, hsi, hdx, hcx, h8, hsp, hb⟩
   sat := hsat
 
 theorem signK_implies {p : Params} (h3 : Ok3 p) :
-    (signK p signStack).Implies (signContractT p X86_64.abi signStack) := by
+    (signK p signStack).Implies (signContract p X86_64.abi signStack) := by
   refine signK_implies_of ?_
   rcases h3 with rfl | rfl | rfl
-  · sig_implies_sat [signContractT, signSig, X86_64.abi, X86_64.argRegs] [signSat] using signSat mlDsa44
-  · sig_implies_sat [signContractT, signSig, X86_64.abi, X86_64.argRegs] [signSat] using signSat mlDsa65
-  · sig_implies_sat [signContractT, signSig, X86_64.abi, X86_64.argRegs] [signSat] using signSat mlDsa87
+  · sig_implies_sat [signContract, signSig, X86_64.abi, X86_64.argRegs] [signSat] using signSat mlDsa44
+  · sig_implies_sat [signContract, signSig, X86_64.abi, X86_64.argRegs] [signSat] using signSat mlDsa65
+  · sig_implies_sat [signContract, signSig, X86_64.abi, X86_64.argRegs] [signSat] using signSat mlDsa87
 
 /-! ## For any implementation of the polynomial arithmetic
 
@@ -141,22 +127,12 @@ theorem sign_spSafe : (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p).all (fu
     (Code.allInstrs_of_all (v.ok.dotInv 7 (.inr (.inr rfl))).sp) p) (sign0_sp h3))
 
 theorem sign_verified :
-    Verified X86_64.target (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) (signContractT p X86_64.abi signStack) :=
+    Verified X86_64.target (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) (signContract p X86_64.abi signStack) :=
   Verified.of_correct (sign_correct (prims_okWith v) h3 (sign_ctl v h3)) (sign_ct (prims_okWith v) h3)
     (signK_implies h3)
 
-omit h3 in
-/-- From `signContractT` to `signContract`: two runs that agree on what
-`signContract` takes as public agree on what `signContractT` does
-(`signContract_pubT`). -/
-theorem signContractT_narrow {c : Prog X86_64.target.isa} {p : Params} {stack : Nat}
-    (h : Verified X86_64.target c (signContractT p X86_64.abi stack)) :
-    Verified X86_64.target c (signContract p X86_64.abi stack) :=
-  h.of_narrow id (fun _ s => s) (fun _ h => h) (fun _ _ _ _ e => e) (fun _ _ _ _ _ ha hq => ⟨ha, hq⟩)
-    (fun _ _ _ _ hp => Sign.signContract_pubT hp) h.2.2
-
 theorem sign_verified' :
     Verified X86_64.target (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) (signContract p X86_64.abi signStack) :=
-  signContractT_narrow <| sign_verified v h3
+  sign_verified v h3
 
 end VG.Proof.MlDsa.X86_64.Sign

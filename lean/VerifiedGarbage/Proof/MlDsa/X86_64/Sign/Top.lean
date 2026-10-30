@@ -19,7 +19,8 @@ holds of the state throughout (`Top`: the permissions and the stack pointer of
 entry, the pointers in their registers, the caller's callee-saved registers
 saved in `scratch`, and the return address), the saves (`pro_ok`), the return
 (`topEpi_ok`), branches on `r15` (`ifOkElse_ok`, `ifOkElse_tr`) and sequences
-of pieces indexed by a number (`seqR_ok`, `seqR_tr`).
+of pieces indexed by a number (`seqR_ok`, `seqR_tr`), and of pieces that stop
+at the first that leaves `r15 = 0` (`seqOk_ok`).
 -/
 
 @[expose] public section
@@ -38,7 +39,7 @@ open VG.Spec.Sha3 (bytesAt)
 abbrev scrLen (p : Params) : Nat := 8 * scratchWords p
 
 /-- `vg_mldsa*_sign(sk = rdi, mu = rsi, rnd = rdx, sig = rcx, scratch = r8) -> eax`, with `D` bytes
-of stack, and the leakage `signLeakT`. -/
+of stack, and the leakage `signLeak`. -/
 def signK (p : Params) (D : Nat) : Contract isa where
   pre s :=
     s.rd = [⟨s.gpr .rdi, p.skLen⟩, ⟨s.gpr .rsi, 64⟩, ⟨s.gpr .rdx, 32⟩] ∧
@@ -62,9 +63,9 @@ def signK (p : Params) (D : Nat) : Contract isa where
       (bytesAt s.mem (s.gpr .rdx) 32)) ((s'.gpr .rax).setWidth 32) (bytesAt s'.mem (s.gpr .rcx) p.sigLen)
   pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .rsp = s₂.gpr .rsp ∧
-    signLeakT p (bytesAt s₁.mem (s₁.gpr .rdi) p.skLen) (bytesAt s₁.mem (s₁.gpr .rsi) 64)
+    signLeak p (bytesAt s₁.mem (s₁.gpr .rdi) p.skLen) (bytesAt s₁.mem (s₁.gpr .rsi) 64)
         (bytesAt s₁.mem (s₁.gpr .rdx) 32) =
-      signLeakT p (bytesAt s₂.mem (s₂.gpr .rdi) p.skLen) (bytesAt s₂.mem (s₂.gpr .rsi) 64)
+      signLeak p (bytesAt s₂.mem (s₂.gpr .rdi) p.skLen) (bytesAt s₂.mem (s₂.gpr .rsi) 64)
         (bytesAt s₂.mem (s₂.gpr .rdx) 32)
 
 /-! ## The layout -/
@@ -345,6 +346,26 @@ theorem seqR_ok {f : Nat → Prog isa} {I : Nat → State → Prop} :
     refine WP.seq (WP.mono (h a (Nat.le_refl _) (by omega_arith) s hs) fun s₁ h₁ => ?_)
     rw [show a + (n + 1) = a + 1 + n by omega_arith]
     exact seqR_ok n (a + 1) (fun k hk hk' => h k (by omega_arith) (by omega_arith)) s₁ h₁
+
+/-- `seqOk`: each piece from `I k` to `I (k + 1)`, and `I k` kept by the
+test of `r15` after it; it ends in `I k` after the last piece, or after the
+first that leaves `r15 = 0`. -/
+theorem seqOk_ok {D : Nat} {f : Nat → Prog isa} {I : Nat → State → Prop} :
+    ∀ (n a : Nat), (∀ k, a < k → k ≤ a + n → ∀ s s₁, I k s → PPostB D s s₁ [] →
+        (∀ r ∈ calleeSaved, s₁.gpr r = s.gpr r) → s₁.mem = s.mem → I k s₁) →
+      (∀ k, a ≤ k → k < a + n → ∀ s, I k s → WP isa (f k) s (I (k + 1))) →
+      ∀ s, I a s → WP isa (seqOk f a n) s fun s' => ∃ k, a ≤ k ∧ k ≤ a + n ∧ I k s' ∧
+        (k = a + n ∨ (s'.gpr .r15).setWidth 32 = 0)
+  | 0, a, _, _, s, hs => WP.block_nil ⟨a, Nat.le_refl _, by omega, hs, .inl rfl⟩
+  | n + 1, a, hst, h, s, hs => by
+    rw [seqOk]
+    refine WP.seq (WP.mono (h a (Nat.le_refl _) (by omega) s hs) fun s₁ h₁ => ?_)
+    refine ifOkElse_ok (D := D) (fun s₂ hP hcs hm _ => ?_) fun s₂ hP hcs hm he => ?_
+    · refine WP.mono (seqOk_ok n (a + 1) (fun k hk hk' => hst k (by omega) (by omega))
+        (fun k hk hk' => h k (by omega) (by omega)) s₂ (hst _ (by omega) (by omega) _ _ h₁ hP hcs hm))
+        fun s' ⟨k, hk, hk', hI, hk''⟩ => ⟨k, by omega, by omega, hI, hk''.imp (fun _ => by omega) id⟩
+    · exact WP.block_nil ⟨a + 1, by omega, by omega, hst _ (by omega) (by omega) _ _ h₁ hP hcs hm,
+        .inr (by rw [hcs _ (by decide)]; exact he)⟩
 
 theorem seqR_tr {f : Nat → Prog isa} {R : Nat → State → State → Prop} :
     ∀ (n a : Nat), (∀ k, a ≤ k → k < a + n → RelCT isa (R k) (f k) (R (k + 1))) →
