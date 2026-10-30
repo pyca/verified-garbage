@@ -89,11 +89,11 @@ theorem msgCL_ok {t : State} {B : Addr} {i : Nat} (h9 : t.gpr .r9 = B) (h11 : t.
         Spec.Rsa.i2osp i 2 ++ Spec.RsaPkcs1Enc.ascii "length" ++ Spec.Rsa.i2osp (8 * 256) 2) ∧ Keep [.r10] t u := by
   refine VG.Proof.Bignum.PPC64LE.WP.keep _ ?_ rfl
   simp only [msgBytes, lengthLabel, clLen, putByte, List.zipIdx, List.zipIdx_cons, List.flatMap_cons,
-    List.flatMap_nil, List.append_nil]
+    List.flatMap_nil, List.append_nil, List.cons_append, List.nil_append]
   repeat (first
-    | refine WP.cons (exec_li (by decide)) ?_
-    | refine WP.cons (exec_lsl (by decide)) ?_
-    | refine WP.cons (exec_lsr_d (by decide)) ?_
+    | with_reducible refine WP.cons (exec_li (by decide)) ?_
+    | with_reducible refine WP.cons (exec_lsl (by decide)) ?_
+    | with_reducible refine WP.cons (exec_lsr_d (by decide)) ?_
     | refine WP.cons (exec_stb9 (by simp only [VG.Proof.Bignum.PPC64LE.gpr_write, reduceCtorEq, ↓reduceIte, h9])
         (by decide) (hw _ (by decide))) ?_)
   refine WP.block_nil ?_
@@ -116,11 +116,11 @@ theorem msgAM_ok {t : State} {B : Addr} {i : Nat} {K : BitVec 64} (h9 : t.gpr .r
       Keep [.r10] t u := by
   refine VG.Proof.Bignum.PPC64LE.WP.keep _ ?_ rfl
   simp only [msgBytes, messageLabel, amLen, putByte, List.zipIdx, List.zipIdx_cons, List.flatMap_cons,
-    List.flatMap_nil, List.append_nil]
+    List.flatMap_nil, List.append_nil, List.cons_append, List.nil_append]
   repeat (first
-    | refine WP.cons (exec_li (by decide)) ?_
-    | refine WP.cons (exec_lsl (by decide)) ?_
-    | refine WP.cons (exec_lsr_d (by decide)) ?_
+    | with_reducible refine WP.cons (exec_li (by decide)) ?_
+    | with_reducible refine WP.cons (exec_lsl (by decide)) ?_
+    | with_reducible refine WP.cons (exec_lsr_d (by decide)) ?_
     | refine WP.cons (exec_stb9 (by simp only [VG.Proof.Bignum.PPC64LE.gpr_write, reduceCtorEq, ↓reduceIte, h9])
         (by decide) (hw _ (by decide))) ?_)
   refine WP.block_nil ?_
