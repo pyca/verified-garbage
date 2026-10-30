@@ -148,7 +148,7 @@ import tomllib
 # ci/arm32-run, so on a host without AArch32 they fail rather than time QEMU.
 PLATFORMS = {
     "x86_64": {"os": "ubuntu-26.04"},
-    "aarch64": {"os": "ubuntu-26.04-arm"},
+    "aarch64": {"os": "ubuntu-26.04-arm", "rounds": 3},
     "x86": {
         "os": "ubuntu-26.04",
         "image": "ghcr.io/pyca/verified-garbage-runner:i686",

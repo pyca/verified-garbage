@@ -407,6 +407,9 @@ def run(binary, home, library, args, checkout, modules, groups=None, bench=None)
     for est in home.glob(f"*/{library}/*/new/estimates.json"):
         primitive, _, size = est.relative_to(home).parts[:3]
         times[primitive, int(size)] = json.loads(est.read_text())["median"]["point_estimate"]
+    print("VG_MEASUREMENT " + json.dumps({"home": str(home), "library": library,
+          "times_ns": {f"{name}/{size}": t for (name, size), t in times.items()},
+          "samples": {str(p.relative_to(home)): json.loads(p.read_text()) for p in home.glob("**/new/sample.json")}}), flush=True)
     return times
 
 
@@ -461,8 +464,8 @@ def main():
     p.add_argument("--confirm", type=int, default=2,
                    help="runs of each side again for the benchmarks over the threshold")
     p.add_argument("--threshold", type=float, default=0.35)
-    p.add_argument("--warm-up-time", type=float, default=0.1)
-    p.add_argument("--measurement-time", type=float, default=0.3)
+    p.add_argument("--warm-up-time", type=float, default=1.0)
+    p.add_argument("--measurement-time", type=float, default=1.0)
     p.add_argument("--openssl", action="store_true",
                    help="also run OpenSSL's and aws-lc-rs's benchmarks, for reference")
     p.add_argument("--openssl-with-features", action="store_true",
