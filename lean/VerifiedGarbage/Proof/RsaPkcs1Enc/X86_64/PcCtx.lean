@@ -45,9 +45,7 @@ theorem stackArgs_eight (s : State) :
 theorem pre_of {s : State}
     (h : (Spec.RsaPkcs1Enc.encryptPrecomputedContract abi encStack).pre s) : PPre s := by
   sig_pre [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig,
-    abi, argRegs, encStack, Impl.RsaPkcs1Enc.X86_64.Encrypt.frameBytes, stackArgs_eight, List.append_eq] at h
-  sig_pre [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig,
-    abi, argRegs, encStack, Impl.RsaPkcs1Enc.X86_64.Encrypt.frameBytes, stackArgs_eight, List.append_eq] at h
+    abi, argRegs, encStack, Impl.RsaPkcs1Enc.X86_64.Encrypt.frameBytes, stackArgs_eight, List.append_eq, List.range, List.range.loop] at h
   obtain ⟨sp1, sp3, hrd, hwr, dOn, dOe, dOm, dOp, dOs, dOq, dOa, dns, des, dms, dps, dsq, dsa,
     dRo, -, -, -, -, dRs, -, -, dKo, dKn, dKe, dKm, dKp, dKs, dKq, dKa,
     wO, wN, wE, wM, wP, wS, wQ, ⟨k1, k2⟩, hsi, L1, L2, hml, hpl, hsl, pl⟩ := h

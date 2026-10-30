@@ -79,10 +79,8 @@ theorem preV_of {s : State} (h : (Spec.RsaPkcs1Sig.verifyPrecomputedContract abi
   have e : frameBytes = 2223 + 1 := rfl
   rw [e] at h
   sig_pre [Spec.RsaPkcs1Sig.verifyPrecomputedContract, Spec.RsaPkcs1Sig.verifyPrecomputedSig, abi, argRegs,
-    stackArgs_five, List.append_eq] at h
-  simp only [Sig.pairFacts, List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false,
-    Bool.true_or, Bool.false_or, List.cons_append, List.nil_append, Sig.conj, List.append_nil] at h
-  obtain ⟨sp1, sp2, hrd, hwr, ⟨ns, es, ds, gs, sp, sa⟩, kn, ke, kd, kg, ks, kp, ka, wn, we, wd, wg, ws, wp, ⟨k1, k2⟩,
+    stackArgs_five, List.append_eq, List.range, List.range.loop] at h
+  obtain ⟨sp1, sp2, hrd, hwr, ns, es, ds, gs, sp, sa, kn, ke, kd, kg, ks, kp, ka, wn, we, wd, wg, ws, wp, ⟨k1, k2⟩,
     e1, e2, hs, hp⟩ := h
   exact ⟨sp1, by omega, hrd, hwr, ns, es, ds, gs, sp, sa, kn, ke, kd, kg, ks, kp, ka, wn, we, wd, wg, ws, wp, k1, k2,
     e1, e2, hs, hp⟩

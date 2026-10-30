@@ -164,11 +164,12 @@ theorem in_of_pre {H G : Spec.Mgf1.Hash} {s : State} (h : (spec H G).pre s) :
     In (ep s) (entered frameBytes s) := by
   sig_pre [Spec.RsaOaep.decryptContract, Spec.RsaOaep.decryptSig, abi, argSlots, argVal,
     argBytes, stackBelow] at h
-  obtain ⟨hsp, hsa, hrd, hwr, oM, oN, oE, oP, oQ, oDP, oDQ, oQI, oL, oC, oS, oA, mN, mE, mP, mQ, mDP, mDQ, mQI, mL,
-    mC, mS, mA, nS, nA, eS, eA, pS, pA, qS, qA, dpS, dpA, dqS, dqA, qiS, qiA, lS, lA, cS, cA, sA,
-    rO, rM, rN, rE, rP, rQ, rDP, rDQ, rQI, rL, rC, rS, rA, kO, kM, kN, kE, kP, kQ, kDP, kDQ, kQI, kL, kC, kS, kA,
-    fO, fM, fN, fE, fP, fQ, fDP, fDQ, fQI, fL, fC, fS,
-    kv, olk, clk, el1, elK, pl1, plK, ql1, qlK, dpl, qil, dql, slK⟩ := h
+  sig_split h
+  rename_i hsp hsa hrd hwr oM oN oE oP oQ oDP oDQ oQI oL oC oS oA mN mE mP mQ mDP mDQ mQI mL mC mS mA nS nA
+    eS eA pS pA qS qA dpS dpA dqS dqA qiS qiA lS lA cS cA sA rO rM rN rE rP rQ rDP rDQ rQI rL rC rS rA kO kM
+    kN kE kP kQ kDP kDQ kQI kL kC kS kA fO fM fN fE fP fQ fDP fDQ fQI fL fC fS kv olk clk el1 elK pl1 plK
+    ql1 qlK dpl qil dql
+  have slK := h
   simp only [stackBytes, frameBytes, Nat.reduceAdd] at hsp kO kM kN kE kP kQ kDP kDQ kQI kL kC kS kA
   have a1 : arg s 1 = arg s 4 := BitVec.eq_of_toNat_eq olk
   have a20 : arg s 20 = arg s 4 := BitVec.eq_of_toNat_eq clk

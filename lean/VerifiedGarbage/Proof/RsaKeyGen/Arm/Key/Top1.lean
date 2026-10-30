@@ -145,10 +145,11 @@ structure CIn (s : State) : Prop where
 
 theorem cin_of_pre (s : State) (h : (Spec.RsaKeyGen.keyContract abi 56).pre s) : CIn s := by
   sig_pre [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, reduceClassify, Loc.val] at h
-  obtain ⟨spLo, spHi, rd, wr, nD, nP, nQ, nDp, nDq, nQi, nE, nS, nA, dP, dQ, dDp, dDq, dQi, dE, dS, dA,
-    pQ, pDp, pDq, pQi, pE, pS, pA, qDp, qDq, qQi, qE, qS, qA, dpDq, dpQi, dpE, dpS, dpA, dqQi, dqE, dqS, dqA,
-    qiE, qiS, qiA, eS, SA, Fn, Fd, Fp, Fq, Fdp, Fdq, Fqi, Fe, FS, FA, fn, fd, fp, fq, fdp, fdq, fqi, fe, fS,
-    valid, nl, dl, ql, dpl, dql, qil, el1, el2, scr⟩ := h
+  sig_split h
+  rename_i spLo spHi rd wr nD nP nQ nDp nDq nQi nE nS nA dP dQ dDp dDq dQi dE dS dA pQ pDp pDq pQi pE pS pA
+    qDp qDq qQi qE qS qA dpDq dpQi dpE dpS dpA dqQi dqE dqS dqA qiE qiS qiA eS SA Fn Fd Fp Fq Fdp Fdq Fqi Fe
+    FS FA fn fd fp fq fdp fdq fqi fe fS valid nl dl ql dpl dql qil el1 el2
+  have scr := h
   exact ⟨spLo, spHi, rd, wr, nD, nP, nQ, nDp, nDq, nQi, nE, nS, nA, dP, dQ, dDp, dDq, dQi, dE, dS, dA,
     pQ, pDp, pDq, pQi, pE, pS, pA, qDp, qDq, qQi, qE, qS, qA, dpDq, dpQi, dpE, dpS, dpA, dqQi, dqE, dqS, dqA,
     qiE, qiS, qiA, eS, SA, Fn, Fd, Fp, Fq, Fdp, Fdq, Fqi, Fe, FS, FA, fn, fd, fp, fq, fdp, fdq, fqi, fe, fS,

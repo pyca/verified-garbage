@@ -112,10 +112,8 @@ theorem sPre_of {s : State} (h : (Spec.RsaPkcs1Sig.signContract abi stackBytes).
   have e : stackBytes = 4591 + 1 := rfl
   rw [e] at h
   sig_pre [Spec.RsaPkcs1Sig.signContract, Spec.RsaPkcs1Sig.signSig, abi, argRegs,
-    stackArgs_thirteen, List.append_eq] at h
-  simp only [Sig.pairFacts, List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false,
-    Bool.true_or, Bool.false_or, List.cons_append, List.nil_append, Sig.conj, List.append_nil] at h
-  obtain ⟨sp1, sp2, hrd, hwr, on, ⟨oe, od, op, oq, odp, odq, oqi, os, oa, ns, es, ds, ps, qs, dps, dqs, qis, sa⟩,
+    stackArgs_thirteen, List.append_eq, List.range, List.range.loop] at h
+  obtain ⟨sp1, sp2, hrd, hwr, on, oe, od, op, oq, odp, odq, oqi, os, oa, ns, es, ds, ps, qs, dps, dqs, qis, sa,
     ko, kn, ke, kd, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wd, wp, wq, wdp, wdq, wqi, ws, ⟨k1, k2⟩, h4,
     e1, e2, p1, p2, q1, q2, h6, h10, h8, hs⟩ := h
   exact ⟨sp1, by omega, hrd, hwr, on, oe, od, op, oq, odp, odq, oqi, os, oa, ns, es, ds, ps, qs, dps, dqs, qis, sa,

@@ -146,9 +146,10 @@ theorem ep_lay (s : State) :
 theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s) := by
   sig_pre [Spec.RsaPkcs1Sig.signContract, Spec.RsaPkcs1Sig.signSig, abi,
     argRegs, reduceClassify, Loc.val] at h
-  obtain ⟨hsp, hsa, hrd, hwr, oN, oE, oD, oP, oQ, oDP, oDQ, oQI, oS, oA, nS, eS, dS, pS, qS, dpS, dqS, qiS, sA,
-    kO, kN, kE, kD, kP, kQ, kDP, kDQ, kQI, kS, kA, fO, fN, fE, fD, fP, fQ, fDP, fDQ, fQI, fS,
-    kv, olk, el1, elK, pl1, plK, ql1, qlK, dpl, qil, dql, slK⟩ := h
+  sig_split h
+  rename_i hsp hsa hrd hwr oN oE oD oP oQ oDP oDQ oQI oS oA nS eS dS pS qS dpS dqS qiS sA kO kN kE kD kP kQ
+    kDP kDQ kQI kS kA fO fN fE fD fP fQ fDP fDQ fQI fS kv olk el1 elK pl1 plK ql1 qlK dpl qil dql
+  have slK := h
   have h4584 : 4584 ≤ s.sp.toNat := hsp
   have r1 : s.gpr .r1 = s.gpr .r3 := BitVec.eq_of_toNat_eq olk
   have a10 : stackArg s 10 = stackArg s 6 := BitVec.eq_of_toNat_eq dpl

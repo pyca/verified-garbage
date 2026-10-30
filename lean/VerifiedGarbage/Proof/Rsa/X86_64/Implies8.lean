@@ -25,18 +25,15 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 theorem crt_implies8 : crtContract.Implies (Spec.Rsa.privateCrtContract abi 8) where
   pre := by
     intro s h
-    -- Twice: the stack arguments' list evaluates only on the second pass.
-    sig_pre [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq] at h
-    sig_pre [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq] at h
+    sig_pre [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
     sig_split h
-    sig_reduce [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq]
+    sig_reduce [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq, List.range, List.range.loop]
     sig_and_intros
     sig_close
-  post := by sig_implies_post [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq]
+  post := by sig_implies_post [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq, List.range, List.range.loop]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq] at h
-    simp only [List.getD_cons_succ, List.getD_cons_zero] at h
+    sig_pub [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
     obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11⟩ := h
     refine ⟨?_, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11,
       (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hl⟩
@@ -47,24 +44,20 @@ theorem crt_implies8 : crtContract.Implies (Spec.Rsa.privateCrtContract abi 8) w
 theorem rp_implies8 : rpContract.Implies (Spec.Rsa.recoverPrimesContract abi 8) where
   pre := by
     intro s h
-    -- Twice: the stack arguments' list evaluates only on the second pass.
     sig_pre [Spec.Rsa.recoverPrimesContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, rpContract, stackArgs_six,
-      List.append_eq] at h
-    sig_pre [Spec.Rsa.recoverPrimesContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, rpContract, stackArgs_six,
-      List.append_eq] at h
+      List.append_eq, List.range, List.range.loop] at h
     sig_split h
     sig_reduce [Spec.Rsa.recoverPrimesContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, rpContract, stackArgs_six,
-      List.append_eq]
+      List.append_eq, List.range, List.range.loop]
     sig_and_intros
     sig_close
     all_goals with_reducible assumption
   post := by sig_implies_post [Spec.Rsa.recoverPrimesContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, rpContract,
-    stackArgs_six, List.append_eq]
+    stackArgs_six, List.append_eq, List.range, List.range.loop]
   pub := by
     rintro s₁ s₂ - - h
     sig_pub [Spec.Rsa.recoverPrimesContract, Spec.Rsa.recoverPrimesSig, abi, argRegs, rpContract, stackArgs_six,
-      List.append_eq] at h
-    simp only [List.getD_cons_succ, List.getD_cons_zero] at h
+      List.append_eq, List.range, List.range.loop] at h
     obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5⟩ := h
     obtain ⟨hl₁, hc⟩ := List.append_inj' hl (List.length_singleton.trans List.length_singleton.symm)
     have hm := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hl₁

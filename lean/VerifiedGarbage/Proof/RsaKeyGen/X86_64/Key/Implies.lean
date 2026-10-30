@@ -41,21 +41,21 @@ theorem key_implies : keyCtr.Implies (Spec.RsaKeyGen.keyContract abi) where
   pre := by
     intro s h
     sig_pre [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, keyCtr, keyPre,
-      stackArgs_twelve, List.append_eq] at h
+      stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
     sig_pre [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, keyCtr, keyPre,
-      stackArgs_twelve, List.append_eq] at h
+      stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
     sig_split h
     sig_reduce [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, keyCtr, keyPre,
-      stackArgs_twelve, List.append_eq]
+      stackArgs_twelve, List.append_eq, List.range, List.range.loop]
     sig_and_intros
     sig_close
     all_goals with_reducible assumption
   post := by
     intro s s' _ h
     sig_post [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, keyCtr, keyPre, keyPost, keyRes,
-      keyOuts, stackArgs_twelve, List.append_eq]
+      keyOuts, stackArgs_twelve, List.append_eq, List.range, List.range.loop]
     sig_reduce [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, keyCtr, keyPre, keyPost, keyRes,
-      keyOuts, stackArgs_twelve, List.append_eq] at h
+      keyOuts, stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
     sig_simp [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, keyCtr, keyPre, keyPost, keyRes,
       keyOuts, stackArgs_twelve, List.append_eq] [] at h
     obtain ⟨h1, h2⟩ := h
@@ -67,8 +67,7 @@ theorem key_implies : keyCtr.Implies (Spec.RsaKeyGen.keyContract abi) where
   pub := by
     intro s₁ s₂ _ _ h
     sig_pub [Spec.RsaKeyGen.keyContract, Spec.RsaKeyGen.keySig, abi, argRegs, keyCtr, keyPub,
-      keyLeak, keyRes, stackArgs_twelve, List.append_eq] at h
-    simp only [List.getD_cons_succ, List.getD_cons_zero] at h
+      keyLeak, keyRes, stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
     obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11⟩ := h
     refine ⟨hdi, hsi, hdx, hcx, h8, h9, hsp, fun i hi => ?_, hl⟩
     rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11

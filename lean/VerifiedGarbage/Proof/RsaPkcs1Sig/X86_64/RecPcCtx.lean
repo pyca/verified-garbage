@@ -46,9 +46,7 @@ theorem stackArgs_seven (s : State) :
 theorem pre_of {s : State}
     (h : (Spec.RsaPkcs1Sig.recoverPrecomputedContract abi verStack).pre s) : PPreR s := by
   sig_pre [Spec.RsaPkcs1Sig.recoverPrecomputedContract, Spec.RsaPkcs1Sig.recoverPrecomputedSig,
-    abi, argRegs, verStack, stackArgs_seven, List.append_eq] at h
-  sig_pre [Spec.RsaPkcs1Sig.recoverPrecomputedContract, Spec.RsaPkcs1Sig.recoverPrecomputedSig,
-    abi, argRegs, verStack, stackArgs_seven, List.append_eq] at h
+    abi, argRegs, verStack, stackArgs_seven, List.append_eq, List.range, List.range.loop] at h
   obtain ⟨sp1, sp3, hrd, hwr, dOn, dOe, dOg, dOs, dOq, dOa, dns, des, dgs, dsq, dsa,
     dRo, -, -, -, dRs, -, -, dKo, dKn, dKe, dKg, dKs, dKq, dKa,
     wO, wN, wE, wG, wS, wQ, ⟨k1, k2⟩, L1, L2, hash, hsl, pl⟩ := h

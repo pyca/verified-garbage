@@ -153,9 +153,11 @@ theorem ep_lay (D : Nat) (s : State) :
 
 theorem in_of_pre {G : Spec.Mgf1.Hash} {s : State} (h : (spec G).pre s) : In G.len (ep s) (entered frameBytes s) := by
   sig_pre [Spec.RsaPss.signContract, Spec.RsaPss.signSig, abi, argRegs, reduceClassify, Loc.val] at h
-  obtain ⟨hsp, hsa, hrd, hwr, oN, oE, oP, oQ, oDP, oDQ, oQI, oD, oSl, oS, oA, nS, eS, pS, qS, dpS, dqS, qiS, dS, slS,
-    sA, kO, kN, kE, kP, kQ, kDP, kDQ, kQI, kD, kSl, kS, kA, fO, fN, fE, fP, fQ, fDP, fDQ, fQI, fD, fSl, fS,
-    kv, olk, el1, elK, pl1, plK, ql1, qlK, dpl, qil, dql, slK⟩ := h
+  sig_split h
+  rename_i hsp hsa hrd hwr oN oE oP oQ oDP oDQ oQI oD oSl oS oA nS eS pS qS dpS dqS qiS dS slS sA kO kN kE
+    kP kQ kDP kDQ kQI kD kSl kS kA fO fN fE fP fQ fDP fDQ fQI fD fSl fS kv olk el1 elK pl1 plK ql1 qlK dpl
+    qil dql
+  have slK := h
   have h3624 : 3624 ≤ s.sp.toNat := hsp
   have r1 : s.gpr .r1 = s.gpr .r3 := BitVec.eq_of_toNat_eq olk
   have a7 : stackArg s 7 = stackArg s 3 := BitVec.eq_of_toNat_eq dpl

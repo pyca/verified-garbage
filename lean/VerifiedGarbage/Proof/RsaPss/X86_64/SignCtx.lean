@@ -132,18 +132,16 @@ theorem sign_sat (hG : G ∈ Pbkdf2.Md.X86_64.mdHashes) :
 theorem sign_implies (hsat : ∃ s, (Spec.RsaPss.signContract G G abi signStack).pre s) : (signK G).Implies (Spec.RsaPss.signContract G G abi signStack) where
   pre := by
     intro s h
-    sig_pre [Spec.RsaPss.signContract, Spec.RsaPss.signSig, abi, argRegs, signK, signStack, stackArgs_fifteen, List.append_eq] at h
-    sig_pre [Spec.RsaPss.signContract, Spec.RsaPss.signSig, abi, argRegs, signK, signStack, stackArgs_fifteen, List.append_eq] at h
+    sig_pre [Spec.RsaPss.signContract, Spec.RsaPss.signSig, abi, argRegs, signK, signStack, stackArgs_fifteen, List.append_eq, List.range, List.range.loop] at h
     sig_split h
-    sig_reduce [Spec.RsaPss.signContract, Spec.RsaPss.signSig, abi, argRegs, signK, signStack, stackArgs_fifteen, List.append_eq]
+    sig_reduce [Spec.RsaPss.signContract, Spec.RsaPss.signSig, abi, argRegs, signK, signStack, stackArgs_fifteen, List.append_eq, List.range, List.range.loop]
     sig_and_intros
     sig_close
     all_goals with_reducible assumption
-  post := by sig_implies_post [Spec.RsaPss.signContract, Spec.RsaPss.signSig, abi, argRegs, signK, signStack, stackArgs_fifteen, List.append_eq]
+  post := by sig_implies_post [Spec.RsaPss.signContract, Spec.RsaPss.signSig, abi, argRegs, signK, signStack, stackArgs_fifteen, List.append_eq, List.range, List.range.loop]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.RsaPss.signContract, Spec.RsaPss.signSig, abi, argRegs, signK, signStack, stackArgs_fifteen, List.append_eq] at h
-    simp only [List.getD_cons_succ, List.getD_cons_zero] at h
+    sig_pub [Spec.RsaPss.signContract, Spec.RsaPss.signSig, abi, argRegs, signK, signStack, stackArgs_fifteen, List.append_eq, List.range, List.range.loop] at h
     obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14⟩ := h
     obtain ⟨hn, he⟩ := leak_eq (by simp [Spec.Rsa.bytesAt, hcx]) hl
     refine ⟨?_, by simp only [stackArgs_fifteen, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14],

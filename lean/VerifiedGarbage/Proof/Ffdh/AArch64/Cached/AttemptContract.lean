@@ -64,12 +64,12 @@ theorem stackArgs_five (s : State) :
 
 theorem attempt_shared_pre {s : State} (h : (cachedGenerateKeyContract abi).pre s) : attemptPre s :=by
  sig_pre [cachedGenerateKeyContract,cachedGenerateKeySig,generateKeySig,abi,argRegs,attemptPre,stackArgs_five,List.append_eq,
-  pLenValid,domainLenValid] at h
+  pLenValid,domainLenValid, List.range, List.range.loop] at h
  sig_pre [cachedGenerateKeyContract,cachedGenerateKeySig,generateKeySig,abi,argRegs,attemptPre,stackArgs_five,List.append_eq,
-  pLenValid,domainLenValid] at h
+  pLenValid,domainLenValid, List.range, List.range.loop] at h
  sig_split h
  sig_reduce [cachedGenerateKeyContract,cachedGenerateKeySig,generateKeySig,abi,argRegs,attemptPre,stackArgs_five,
-  List.append_eq,pLenValid,domainLenValid]
+  List.append_eq,pLenValid,domainLenValid, List.range, List.range.loop]
  sig_and_intros
  sig_close
  all_goals first | with_reducible assumption | exact ⟨by assumption,by assumption⟩

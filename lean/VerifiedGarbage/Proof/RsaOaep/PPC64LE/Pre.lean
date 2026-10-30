@@ -92,10 +92,8 @@ theorem preO_of {H G : Spec.Mgf1.Hash} {s : State}
   have e : (304 : Nat) = 303 + 1 := rfl
   rw [e] at h
   sig_pre [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, abi, argRegs,
-    stackArgs_seven, List.append_eq] at h
-  simp only [Sig.pairFacts, List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false,
-    Bool.true_or, Bool.false_or, List.cons_append, List.nil_append, Sig.conj, List.append_nil] at h
-  obtain ⟨sp1, sp2, hrd, hwr, on, oe, ⟨ol, om, osd, osc, op, oa, ns, es, ls, ms, sds, sp, sa⟩, ko, kn, ke, kl, km,
+    stackArgs_seven, List.append_eq, List.range, List.range.loop] at h
+  obtain ⟨sp1, sp2, hrd, hwr, on, oe, ol, om, osd, osc, op, oa, ns, es, ls, ms, sds, sp, sa, ko, kn, ke, kl, km,
     ksd, ksc, kp, ka, wo, wn, we, wl, wm, wsd, wsc, wp, ⟨k1, k2⟩, ok, e1, e2, hs, hp⟩ := h
   exact ⟨sp1, by omega, hrd, hwr, on, oe, ol, om, osd, osc, op, oa, ns, es, ls, ms, sds, sp, sa, ko, kn, ke, kl, km,
     ksd, ksc, kp, ka, wo, wn, we, wl, wm, wsd, wsc, wp, k1, k2, ok, e1, e2, hs, hp⟩

@@ -113,9 +113,9 @@ theorem preS_of (G : Spec.Mgf1.Hash) {K : Nat} {s : State}
   have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega
   rw [e] at h
   sig_pre [Spec.RsaPss.signContract, Spec.RsaPss.signSig, abi, argRegs, stackArgs_thirteen,
-    List.append_eq] at h
+    List.append_eq, List.range, List.range.loop] at h
   sig_pre [Spec.RsaPss.signContract, Spec.RsaPss.signSig, abi, argRegs, stackArgs_thirteen,
-    List.append_eq] at h
+    List.append_eq, List.range, List.range.loop] at h
   sig_split h
   rename_i sp1 sp2 hrd hwr on oe op oq odp odq oqi odg osl os oa ns es ps qs dps dqs qis dgs sls sa
     ko kn ke kp kq kdp kdq kqi kdg ksl ks ka wo wn we wp wq wdp wdq wqi wdg wsl ws _ob1 ol e1 e2 p1

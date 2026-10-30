@@ -48,18 +48,15 @@ def ckSatState : State where
 theorem ck_implies : ckContract.Implies (Spec.Rsa.checkCrtKeyContract abi) where
   pre := by
     intro s h
-    -- Twice: the stack arguments' list evaluates only on the second pass.
-    sig_pre [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, abi, argRegs, ckContract, stackArgs_ten, List.append_eq] at h
-    sig_pre [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, abi, argRegs, ckContract, stackArgs_ten, List.append_eq] at h
+    sig_pre [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, abi, argRegs, ckContract, stackArgs_ten, List.append_eq, List.range, List.range.loop] at h
     sig_split h
-    sig_reduce [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, abi, argRegs, ckContract, stackArgs_ten, List.append_eq]
+    sig_reduce [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, abi, argRegs, ckContract, stackArgs_ten, List.append_eq, List.range, List.range.loop]
     sig_and_intros
     sig_close
-  post := by sig_implies_post [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, abi, argRegs, ckContract, ckOf, stackArgs_ten, List.append_eq]
+  post := by sig_implies_post [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, abi, argRegs, ckContract, ckOf, stackArgs_ten, List.append_eq, List.range, List.range.loop]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, abi, argRegs, ckContract, stackArgs_ten, List.append_eq] at h
-    simp only [List.getD_cons_succ, List.getD_cons_zero] at h
+    sig_pub [Spec.Rsa.checkCrtKeyContract, Spec.Rsa.checkCrtKeySig, abi, argRegs, ckContract, stackArgs_ten, List.append_eq, List.range, List.range.loop] at h
     obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9⟩ := h
     obtain ⟨hn, he⟩ := leak_eq (by simp [Spec.Rsa.bytesAt, hsi]) hl
     refine ⟨?_, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, hn, he⟩

@@ -90,10 +90,8 @@ theorem preE_of {s : State} (h : (Spec.RsaPkcs1Enc.encryptPrecomputedContract ab
   have e : frameBytes = 2223 + 1 := rfl
   rw [e] at h
   sig_pre [Spec.RsaPkcs1Enc.encryptPrecomputedContract, Spec.RsaPkcs1Enc.encryptPrecomputedSig, abi, argRegs,
-    stackArgs_six, List.append_eq] at h
-  simp only [Sig.pairFacts, List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false,
-    Bool.true_or, Bool.false_or, List.cons_append, List.nil_append, Sig.conj, List.append_nil] at h
-  obtain ⟨sp1, sp2, hrd, hwr, on, oe, ⟨om, ops, osc, op, oa, ns, es, ms, pss, sp, sa⟩, ko, kn, ke, km, kps, ksc, kp,
+    stackArgs_six, List.append_eq, List.range, List.range.loop] at h
+  obtain ⟨sp1, sp2, hrd, hwr, on, oe, om, ops, osc, op, oa, ns, es, ms, pss, sp, sa, ko, kn, ke, km, kps, ksc, kp,
     ka, wo, wn, we, wm, wps, wsc, wp, ⟨k1, k2⟩, ok, e1, e2, ml, pl, hs, hp⟩ := h
   exact ⟨sp1, by omega, hrd, hwr, on, oe, om, ops, osc, op, oa, ns, es, ms, pss, sp, sa, ko, kn, ke, km, kps, ksc,
     kp, ka, wo, wn, we, wm, wps, wsc, wp, k1, k2, ok, e1, e2, ml, pl, hs, hp⟩

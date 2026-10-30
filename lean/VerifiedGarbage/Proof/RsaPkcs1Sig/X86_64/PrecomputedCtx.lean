@@ -35,9 +35,7 @@ padding code and the precomputed public operation. -/
 theorem pre_of {s : State}
     (h : (Spec.RsaPkcs1Sig.verifyPrecomputedContract abi verStack).pre s) : Pre s := by
   sig_pre [Spec.RsaPkcs1Sig.verifyPrecomputedContract, Spec.RsaPkcs1Sig.verifyPrecomputedSig,
-    abi, argRegs, verStack, stackArgs_seven, List.append_eq] at h
-  sig_pre [Spec.RsaPkcs1Sig.verifyPrecomputedContract, Spec.RsaPkcs1Sig.verifyPrecomputedSig,
-    abi, argRegs, verStack, stackArgs_seven, List.append_eq] at h
+    abi, argRegs, verStack, stackArgs_seven, List.append_eq, List.range, List.range.loop] at h
   obtain ⟨sp1, sp2, hrd, hwr, dns, des, dds, dgs, dsp, dsa, -, -, -, -, dRs, -, -,
     dKn, dKe, dKd, dKg, dKs, dKp, dKa, wN, wE, wD, wG, wS, wP, ⟨k1, k2⟩, L1, L2, hsl, pl⟩ := h
   have ha : Region.Sub ⟨stackArgAddr s 0, 40⟩ ⟨stackArgAddr s 0, 56⟩ := Region.sub_prefix (by decide)

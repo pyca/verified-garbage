@@ -124,19 +124,16 @@ def sigSatState : State where
 theorem sign_implies : sigContract.Implies (Spec.RsaPkcs1Sig.signContract abi sigStack) where
   pre := by
     intro s h
-    -- Twice: the stack arguments' list evaluates only on the second pass.
-    sig_pre [Spec.RsaPkcs1Sig.signContract, Spec.RsaPkcs1Sig.signSig, abi, argRegs, sigContract, sigStack, stackArgs_fifteen, List.append_eq] at h
-    sig_pre [Spec.RsaPkcs1Sig.signContract, Spec.RsaPkcs1Sig.signSig, abi, argRegs, sigContract, sigStack, stackArgs_fifteen, List.append_eq] at h
+    sig_pre [Spec.RsaPkcs1Sig.signContract, Spec.RsaPkcs1Sig.signSig, abi, argRegs, sigContract, sigStack, stackArgs_fifteen, List.append_eq, List.range, List.range.loop] at h
     sig_split h
-    sig_reduce [Spec.RsaPkcs1Sig.signContract, Spec.RsaPkcs1Sig.signSig, abi, argRegs, sigContract, sigStack, stackArgs_fifteen, List.append_eq]
+    sig_reduce [Spec.RsaPkcs1Sig.signContract, Spec.RsaPkcs1Sig.signSig, abi, argRegs, sigContract, sigStack, stackArgs_fifteen, List.append_eq, List.range, List.range.loop]
     sig_and_intros
     sig_close
     all_goals with_reducible assumption
-  post := by sig_implies_post [Spec.RsaPkcs1Sig.signContract, Spec.RsaPkcs1Sig.signSig, abi, argRegs, sigContract, sigStack, stackArgs_fifteen, List.append_eq]
+  post := by sig_implies_post [Spec.RsaPkcs1Sig.signContract, Spec.RsaPkcs1Sig.signSig, abi, argRegs, sigContract, sigStack, stackArgs_fifteen, List.append_eq, List.range, List.range.loop]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.RsaPkcs1Sig.signContract, Spec.RsaPkcs1Sig.signSig, abi, argRegs, sigContract, sigStack, stackArgs_fifteen, List.append_eq] at h
-    simp only [List.getD_cons_succ, List.getD_cons_zero] at h
+    sig_pub [Spec.RsaPkcs1Sig.signContract, Spec.RsaPkcs1Sig.signSig, abi, argRegs, sigContract, sigStack, stackArgs_fifteen, List.append_eq, List.range, List.range.loop] at h
     obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13,
       a14⟩ := h
     obtain ⟨hn, he⟩ := leak_eq (by simp [Spec.Rsa.bytesAt, hcx]) hl
