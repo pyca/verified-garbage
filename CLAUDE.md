@@ -382,7 +382,7 @@ still run everything before pushing.
 ## Checks to run before pushing
 
 ```sh
-(cd lean && lake build --log-level=warning && lake env lean --run Emit.lean --check)
+(cd lean && lake env lean --run Emit.lean --prepare && lake build --log-level=warning && lake env lean --run Emit.lean --check)
 python3 ci/check_lean_imports.py
 python3 ci/check_lean_modules.py
 python3 ci/check_lean_single_importer.py --base origin/main

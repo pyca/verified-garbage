@@ -15,6 +15,10 @@ both theorems, and checks that `EmitOne.lean --check Selftest.X86_64` fails
 with the audit's `depends on non-standard axioms: [...]`, listing both
 `VG.Spec.Selftest.vg_bad` and `VG.Proof.Selftest.AuditPrivate.vg_bad`: the
 audit lists every axiom it finds, so one build checks both ways of hiding one.
+It checks the same of the audit `Emit.lean` relies on, `VGEmit.Audit.X86_64`
+(see "Drivers as modules" in `TCB/Emit.lean`), which `lake build` builds: it
+imports the module driver, a module, so this also checks that Lake rebuilds
+it when a proof behind a private import changes.
 
 It edits the files in place, after copying them to a temporary directory,
 and restores them from there (and deletes the module it added) whatever
@@ -146,11 +150,15 @@ def audits_refused(proc: subprocess.Popen) -> bool:
     return ok
 
 
-def emit_check(edits: dict, added: pathlib.Path | None = None) -> str | None:
+# The audit `Emit.lean` relies on for the self-test's target directory.
+BUILD_AUDIT = "VGEmit.Audit.X86_64"
+
+
+def emit_check(edits: dict, added: pathlib.Path | None = None) -> list[tuple[str, str | None]]:
     """Writes `edits` (file: new text) and `added` (with `PRIVATE_TEXT`), runs
-    `EmitOne.lean --check` on the self-test, restores the files and deletes
-    `added` (and its build), and returns the output if it failed, else
-    `None`."""
+    `EmitOne.lean --check` on the self-test and builds `BUILD_AUDIT`,
+    restores the files and deletes `added` (and its build), and returns, for
+    each, what ran and its output if it failed, else `None`."""
     with tempfile.TemporaryDirectory() as tmp:
         saved = {p: pathlib.Path(tmp) / p.name for p in edits}
         for p, copy in saved.items():
@@ -160,8 +168,17 @@ def emit_check(edits: dict, added: pathlib.Path | None = None) -> str | None:
                 added.write_text(PRIVATE_TEXT)
             for p, text in edits.items():
                 p.write_text(text)
-            r = subprocess.run(["lake", "env", "lean", "--run", "EmitOne.lean", "--check", TARGET],
-                               cwd=LEAN, capture_output=True, text=True)
+            runs = []
+            for cmd in (["lake", "env", "lean", "--run", "EmitOne.lean", "--check", TARGET],
+                        ["lake", "env", "lean", "--run", "Emit.lean", "--prepare"],
+                        ["lake", "build", "--log-level=warning", BUILD_AUDIT]):
+                r = subprocess.run(cmd, cwd=LEAN, capture_output=True, text=True)
+                if cmd[-1] == "--prepare":
+                    if r.returncode != 0:
+                        raise SystemExit(f"{' '.join(cmd)} failed:\n{r.stdout}{r.stderr}")
+                    continue
+                runs.append((" ".join(cmd[-3:]) if "EmitOne.lean" in cmd else f"lake build {BUILD_AUDIT}",
+                             None if r.returncode == 0 else r.stdout + r.stderr))
         finally:
             for p, copy in saved.items():
                 shutil.copy2(copy, p)
@@ -171,23 +188,24 @@ def emit_check(edits: dict, added: pathlib.Path | None = None) -> str | None:
                 for d in ("lib/lean", "ir"):
                     for f in (build / d).glob(f"{added.relative_to(LEAN).with_suffix('')}.*"):
                         f.unlink()
-    return None if r.returncode == 0 else r.stdout + r.stderr
+    return runs
 
 
 # The audit's error: the axioms it found, as a Lean list.
 REJECTED = re.compile(r"depends on non-standard axioms: \[([^\]]*)\]")
 
 
-def rejected(out: str | None) -> bool:
-    """Whether the audit rejected both axioms (`out`, from `emit_check`)."""
+def rejected(what: str, out: str | None) -> bool:
+    """Whether the audit `what` ran rejected both axioms (`out`, from
+    `emit_check`)."""
     found = REJECTED.search(out or "")
     axioms = {a.strip() for a in found.group(1).split(",")} if found else set()
     ok = True
     for axiom, how in ((AXIOM, "in a module"), (PRIVATE_AXIOM, "behind a private import")):
         if axiom in axioms:
-            print(f"the audit rejects an axiom {how}: `{axiom}`")
+            print(f"the audit of {what} rejects an axiom {how}: `{axiom}`")
         else:
-            print(f"EmitOne.lean --check {TARGET} did not reject `{axiom}`: "
+            print(f"{what} did not reject `{axiom}`: "
                   f"the axiom audit no longer sees an axiom {how}", file=sys.stderr)
             ok = False
     if not ok:
@@ -204,7 +222,7 @@ def main() -> int:
     with tempfile.TemporaryDirectory() as tmp:
         audits = start_audits_in_module(tmp)
         try:
-            out = emit_check({MODULE: inject_module(MODULE.read_text()),
+            runs = emit_check({MODULE: inject_module(MODULE.read_text()),
                               PROOF: inject_private_import(PROOF.read_text())}, PRIVATE)
         finally:
             refused = audits_refused(audits)
@@ -214,7 +232,8 @@ def main() -> int:
             or PRIVATE.exists()):
         print(f"{MODULE} or {PROOF} was not restored, or {PRIVATE} not deleted", file=sys.stderr)
         return 1
-    return 0 if rejected(out) and refused else 1
+    results = [rejected(what, out) for what, out in runs]
+    return 0 if all(results) and refused else 1
 
 
 if __name__ == "__main__":

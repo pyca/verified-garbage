@@ -92,6 +92,9 @@ jobs:
         env:
           MATCHED: ${{ steps.manifest.outputs.cache-matched-key }}
         run: |
+          # The emitter's module drivers and audits (lean/lakefile.toml's
+          # `VGEmit`), which the plan reads like any module.
+          python3 ci/emit_sources.py
           python3 ci/lean_shards.py plan .lean-manifest/manifest.json "$RUNNER_TEMP/lean-plan.json" >> "$GITHUB_OUTPUT"
           # The build saved with the manifest, which the plan is for.
           if [ -n "$MATCHED" ]; then
@@ -211,6 +214,9 @@ jobs:
         run: |
           set -o pipefail
           touch "$RUNNER_TEMP/before-build"
+          # The emitter's module drivers and audits, which the plan may give
+          # this shard (see the `lean` job's plan).
+          python3 ../ci/emit_sources.py
           # Warnings and errors only: not the profile every module records
           # (lean/lakefile.toml), which Lake replays for each one it finds
           # built.

@@ -86,7 +86,8 @@ and [the evidence and verification guide](../../../ci/IMPORT_NARROWING.md).
 
 The audits (`#assert_standard_axioms`, `#assert_no_compiler_overrides`,
 `#assert_spec_origin`) run only in files that are not modules (the
-emitter's drivers, `VerifiedGarbageTest/`), and refuse
-to run in a module: a module sees the theorems it imports as axioms,
-without their proofs. A file that is not a module sees every module's
+emitter's audits, `VGEmit.Audit.<Target>`, which `lake build` builds from
+what `Emit.lean` writes, `EmitOne.lean`'s driver, `VerifiedGarbageTest/`),
+and refuse to run in a module: a module sees the theorems it imports as
+axioms, without their proofs. A file that is not a module sees every module's
 private imports too.

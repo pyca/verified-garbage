@@ -28,10 +28,11 @@ VerifiedGarbage/
     Audit.lean      `#assert_no_compiler_overrides` (the compiled code the emitter
                     runs is what the kernel checked) and `#assert_spec_origin`
                     (`VG.Spec` definitions are declared in `Spec/`)
-    Emit.lean       what is emitted (every registration file under
-                    `Artifacts/`, and every generic function under `Generic/`
-                    for every variant of its interface under `Variants/`), and
-                    writing or checking `src/asm/`
+    Emit.lean       what is emitted (every registration file under `Artifacts/`,
+                    and every generic function under `Generic/` for every
+                    variant of its interface under `Variants/`), each target's
+                    module driver, audit and program, and writing or checking
+                    `src/asm/`
     X86_64/         ISA model, printer, System V ABI target
     PPC64LE/        ISA model, printer, ELFv2 ABI target (64-bit little-endian PowerPC)
     RISCV64/        ISA model, printer, psABI target (64-bit RISC-V, RV64IM)
@@ -148,17 +149,30 @@ only proven against a spec and TCB that were reviewed and merged beforehand.
 
 ```sh
 lake exe cache get                  # download prebuilt Mathlib
+lake env lean --run Emit.lean --prepare   # the emitter's drivers and audits, for the build
 lake build --log-level=warning      # check every proof, run the axiom audit and golden tests
 lake env lean --run Emit.lean       # regenerate ../src/asm
 lake env lean --run Emit.lean --check
 lake env lean --run EmitOne.lean [--check] Rc2.AArch64   # one registration file
 ```
 
+`Emit.lean` emits each target directory with a program that is a module
+(`VGEmit.Driver.<Target>`'s list, see "Drivers as modules" in
+`TCB/Emit.lean`), which imports far less than a file that is not a module,
+and relies on the audits of those lists, `VGEmit.Audit.<Target>`, which
+`lake build` builds and caches (the library `VGEmit` of `lakefile.toml`,
+whose files `Emit.lean --prepare` writes under `.lake/emit/src`). It trusts
+the `lake build` before it to have built them, as it trusts it for every
+proof, and builds only those of the targets whose files it changed or that
+were never built: after building some modules alone (`lake build +Module`,
+or `ci/audit_negative.py`), run `lake build` before it.
+
 On Linux, `Emit.lean` needs `vm.max_map_count` above the default of many
-distributions (65,530): its driver is not a module, so it maps every module
-it imports with its `.olean.server` and `.olean.private` parts, about six
-regions of memory per `.olean`. It refuses to start below eight per `.olean`
-and names the command to raise the limit, `sudo sysctl -w
+distributions (65,530): an audit is not a module, so it maps every module it
+imports with its `.olean.server` and `.olean.private` parts, about six
+regions of memory per `.olean`, and the programs, though modules, still map
+every part of each module whose data they import. It refuses to start below
+eight per `.olean` and names the command to raise the limit, `sudo sysctl -w
 vm.max_map_count=262144`, which CI runs (`EmitOne.lean` loads far fewer).
 Past the limit Lean would fail with `failed to read file '….olean.private'`.
 
