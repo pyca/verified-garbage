@@ -17,7 +17,7 @@ verification of the signature holds, for any curve the proof of the code
 supports (`CfgOk`) whose group law the proofs support (`Law`), restores the
 callee-saved registers, keeps `esp` and writes only the working space.
 `front_ok`, `mid_ok`, `points_ok` (with the invariants of the group law for
-the two ladders, `step_rep`) and `vtail_ok` compute what
+the two ladders, `step_rep'`) and `vtail_ok` compute what
 `Proof.Ecdsa.verify_eq` connects to the specification.
 -/
 
@@ -119,12 +119,15 @@ theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hcomb : c.comb = none)
   have hA : c.mul.isSome ∨ 3 ≤ c.n ∧ c.n ≤ 6 → Point.LadArg s₂ (ptr s₀ 3) Impl.Ecdsa.Verify.X86.Args.verify.ao :=
     fun h => hM.keep.ladArg (A := Impl.Ecdsa.Verify.X86.Args.verify) hp.setup (vArgs_disjI hp (i := 3) (by decide))
       (Cfg.stk_28q hcomb h)
+  have h0 : c.qA0 = true → (Fin.ofNat c.C.p c.C.a : Fe c.C) = 0 ∧
+      tmv c.C c.n (ptr s₀ 3) s₂ (c.sl ONEP) = 1 := fun h =>
+    ⟨by simp only [Impl.Ecdsa.X86.Cfg.qA0, Bool.and_eq_true, beq_iff_eq] at h; rw [h.2.1]; rfl, h1⟩
   refine points_ok hc hM hA
     (Q₁ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (ptr s₀ 3) s₂ U >>> j) (G c.C)))
     (Q₂ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (ptr s₀ 3) s₂ V >>> j) P))
-    (step_rep hC hc.onG ha hb hG)
+    (step_rep' hC hc.onG ha hb hG h0)
     (by rw [shiftRight_eq_zero hu, mul_zero_pt]; exact rep_infinity' hC)
-    (step_rep hC hPc ha hb hQ)
+    (step_rep' hC hPc ha hb hQ h0)
     (by rw [shiftRight_eq_zero hv, mul_zero_pt]; exact rep_infinity' hC) H.points
     fun s₃ hP => ?_
   refine WP.mono (vtail_ok hc hP H.pPow H.final) fun s' ⟨saved, esp, frame, xo, hxo, hx, ret⟩ =>

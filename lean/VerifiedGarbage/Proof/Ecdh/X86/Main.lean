@@ -446,7 +446,7 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) (hcomb : c.comb = none)
         tbl_unch U₃ h7 hj ht (apart_append (tbl_apart_slW (by decide) _ t) (tbl_apart_flag h0 _ t))]
   have hpk : sv c (ptr s₀ 3) s₂ K < 2 ^ (64 * c.n) := wordsVal_lt _ _ _ _
   -- `[d]P`, then `Z^(p-2)`.
-  have hstep := step_rep (L := Impl.Ecdh.X86.Cfg.ladderQ c) (k := sv c (ptr s₀ 3) s₂ K) hC
+  have hstep := step_rep' (L := Impl.Ecdh.X86.Cfg.ladderQ c) (k := sv c (ptr s₀ 3) s₂ K) (a0 := c.qA0) hC
     (peerPt_onCurve hc _ _ _)
     (by
       show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₄.mem _ (c.sl AP) c.n) = _
@@ -459,6 +459,11 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) (hcomb : c.comb = none)
         (toM c.C.p (2 ^ (64 * c.n)) (sv c (ptr s₀ 3) s₄ PY))
         (toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₄.mem (ptr s₀ 3) (c.sl ONEP) c.n)) _
       rw [F₄.onep, toM_one hpR]; exact h)
+    (fun h => ⟨by
+      simp only [Impl.Ecdsa.X86.Cfg.qA0, Bool.and_eq_true, beq_iff_eq] at h
+      rw [h.2.1]; rfl, by
+      show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₄.mem (ptr s₀ 3) (c.sl ONEP) c.n) = 1
+      rw [F₄.onep]; exact toM_one hpR⟩)
   have K₄ : Keep c s₀ (ptr s₀ 3) s₄ := ⟨hs₄, by rw [g₄ _ (by decide), K₃.esp], by rw [rd₄, K₃.rd],
     by rw [wr₄, K₃.wr], F₄, w₄, S₂.sp_lo⟩
   have hA : c.mul.isSome ∨ 3 ≤ c.n ∧ c.n ≤ 6 → Point.LadArg s₄ (ptr s₀ 3) Args.ecdh.ao := fun h =>

@@ -276,7 +276,7 @@ theorem qMul_ok (hc : CfgOk c) {gx gy ao : Nat} (hgx : gx < 45) (hgy : gy < 45) 
     (hzero : sv c base s ZERO < c.C.p) (hqx : sv c base s gx < c.C.p) (hqy : sv c base s gy < c.C.p)
     (hrx : sv c base s RX < c.C.p) (hry : sv c base s RY < c.C.p) (hrz : sv c base s RZ < c.C.p)
     {k : Nat} {Q : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
-    (hstep : Step (ladAt c gx gy) c.C base s k Q)
+    (hstep : Step (ladAt c gx gy) c.C base s k Q c.qA0)
     (hR : Q (64 * c.n) (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY))
       (tmv c.C c.n base s (c.sl RZ)))
     (hO : Q (64 * c.n) (tmv c.C c.n base s (c.sl ZERO)) (tmv c.C c.n base s (c.sl ONEP))
@@ -318,9 +318,11 @@ theorem qMul_ok (hc : CfgOk c) {gx gy ao : Nat} (hgx : gx < 45) (hgy : gy < 45) 
     have tv : ∀ {i j}, sv c base s₂ i = sv c base s j →
         tmv c.C c.n base s₂ (c.sl i) = tmv c.C c.n base s (c.sl j) := fun h => by
       show toM _ _ (sv c base s₂ _) = toM _ _ (sv c base s _); rw [h]
+    have hq : c.qA0 = false := by simp only [Cfg.qA0, hC, Option.isNone_some, Bool.false_and]
+    rw [hq] at hstep
     have hstep₂ : Step (ladAt c RX RY) c.C base s₂ (sv c base s₂ K) Q := by
       rw [e₂ (by decide) (by decide) (by decide), hk hsome]
-      exact step_congr (L := ladAt c gx gy) rfl (tv (e₂ (by decide) (by decide) (by decide)))
+      exact step_congr (L := ladAt c gx gy) (L' := ladAt c RX RY) rfl (tv (e₂ (by decide) (by decide) (by decide)))
         (tv (e₂ (by decide) (by decide) (by decide))) (tv rx₂) (tv ry₂)
         (tv (e₂ (by decide) (by decide) (by decide))) hstep
     have hO₂ : Q c.ladderCfg.nbits (tmv c.C c.n base s₂ (c.sl ZERO)) (tmv c.C c.n base s₂ (c.sl ONEP))
@@ -368,7 +370,9 @@ theorem qMul_ok (hc : CfgOk c) {gx gy ao : Nat} (hgx : gx < 45) (hgy : gy < 45) 
       · exact hrz
     have hnone : c.mul = none := hN
     refine WP.mono (Point.ladderP_ok (L := ladAt c gx gy) (k := k) hL hW hP hpR hs
-      (fun h => hA (.inr h)) (modP_of hc hmp) hlt hstep hR (ht hnone)) fun s' ⟨K, U, _, L, R, A⟩ =>
+      (fun h => hA (.inr h)) (modP_of hc hmp) hlt (fun h => by
+        simp only [Cfg.qA0, Bool.and_eq_true, decide_eq_true_eq] at h
+        exact h.2.2) hstep hR (ht hnone)) fun s' ⟨K, U, _, L, R, A⟩ =>
       ⟨K, U.mono fun w hw => List.mem_append_left _ hw, L, R, fun h => A (h.resolve_left (by rw [hnone]; decide))⟩
 
 end VG.Proof.Ecdsa.X86

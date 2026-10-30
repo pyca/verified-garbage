@@ -206,12 +206,12 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
 
 /-- `Step` depends only on what the slots of `a`, `3b` and `G` stand for. -/
 theorem Step.congr {L : LadderCfg} {C : Curve} {base : Addr} {s s' : State} {k : Nat}
-    {Q : Nat → Fe C → Fe C → Fe C → Prop} (h : Step L C base s k Q)
+    {Q : Nat → Fe C → Fe C → Fe C → Prop} {a0 : Bool} (h : Step L C base s k Q a0)
     (ha : tmv C L.M.n base s' L.S.a = tmv C L.M.n base s L.S.a)
     (hb : tmv C L.M.n base s' L.S.b3 = tmv C L.M.n base s L.S.b3)
     (hx : tmv C L.M.n base s' L.G.x = tmv C L.M.n base s L.G.x)
     (hy : tmv C L.M.n base s' L.G.y = tmv C L.M.n base s L.G.y)
-    (hz : tmv C L.M.n base s' L.G.z = tmv C L.M.n base s L.G.z) : Step L C base s' k Q := by
+    (hz : tmv C L.M.n base s' L.G.z = tmv C L.M.n base s L.G.z) : Step L C base s' k Q a0 := by
   intro j hj X Y Z X2 Y2 Z2 X3 Y3 Z3 hq h2 h3
   rw [ha, hb] at h2
   rw [ha, hb, hx, hy, hz] at h3
@@ -304,8 +304,8 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     (hM : Mid c s₀ base s)
     (hA : c.mul.isSome ∨ 3 ≤ c.n ∧ c.n ≤ 6 → Point.LadArg s base Impl.Ecdsa.Verify.X86.Args.verify.ao)
     {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
-    (hstep₁ : Step c.ladderCfg c.C base s (sv c base s U) Q₁) (hO₁ : Q₁ (64 * c.n) 0 1 0)
-    (hstep₂ : Step (Impl.Ecdh.X86.Cfg.ladderQ c) c.C base s (sv c base s V) Q₂)
+    (hstep₁ : Step c.ladderCfg c.C base s (sv c base s U) Q₁ c.qA0) (hO₁ : Q₁ (64 * c.n) 0 1 0)
+    (hstep₂ : Step (Impl.Ecdh.X86.Cfg.ladderQ c) c.C base s (sv c base s V) Q₂ c.qA0)
     (hO₂ : Q₂ (64 * c.n) 0 1 0) (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.points c) c.stk)
     {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Pts c s₀ base Q₁ Q₂ s' → WP isa rest s' Q) :
