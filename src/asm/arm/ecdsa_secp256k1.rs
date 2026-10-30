@@ -4457,7 +4457,7 @@ ldr r4, [r12, #604]
 str r4, [r12, #3420]
 mov r10, lr
 mov r0, r12
-bl {vg_secp256k1_point_double_a0}
+bl {vg_secp256k1_point_a0_double}
 mov lr, r10
 ldr r4, [r12, #3232]
 str r4, [r12, #3328]
@@ -4509,7 +4509,7 @@ ldr r4, [r12, #3324]
 str r4, [r12, #3420]
 mov r10, lr
 mov r0, r12
-bl {vg_secp256k1_point_add_affine_a0}
+bl {vg_secp256k1_point_a0_add_affine}
 mov lr, r10
 add r4, r12, r11
 add r4, r4, #4096
@@ -5174,8 +5174,8 @@ bx lr",
         vg_secp256k1_sub_mod_p = sym super::secp256k1_mont::vg_secp256k1_sub_mod_p,
         vg_secp256k1_mul_mod_n = sym super::secp256k1_mont::vg_secp256k1_mul_mod_n,
         vg_secp256k1_point_add = sym super::secp256k1_point::vg_secp256k1_point_add,
-        vg_secp256k1_point_double_a0 = sym super::secp256k1_point::vg_secp256k1_point_double_a0,
-        vg_secp256k1_point_add_affine_a0 = sym super::secp256k1_point::vg_secp256k1_point_add_affine_a0,
+        vg_secp256k1_point_a0_double = sym super::secp256k1_point::vg_secp256k1_point_a0_double,
+        vg_secp256k1_point_a0_add_affine = sym super::secp256k1_point::vg_secp256k1_point_a0_add_affine,
         vg_secp256k1_sub_mod_n = sym super::secp256k1_mont::vg_secp256k1_sub_mod_n,
         VG_SECP256K1_COMB = sym super::consts::VG_SECP256K1_COMB,
     )

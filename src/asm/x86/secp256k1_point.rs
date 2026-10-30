@@ -16,7 +16,7 @@
 /// * `ws` must not overlap the arguments on the stack (distinct Rust objects never do).
 /// * `ws` must not overlap the return address on the stack or the 20 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_secp256k1_point_double_a0(ws: *mut [u64; 1024]) {
+pub(crate) unsafe extern "C" fn vg_secp256k1_point_a0_double(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+3584], edi
@@ -260,7 +260,7 @@ ret
 /// * `ws` must not overlap the arguments on the stack (distinct Rust objects never do).
 /// * `ws` must not overlap the return address on the stack or the 20 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_secp256k1_point_add_affine_a0(ws: *mut [u64; 1024]) {
+pub(crate) unsafe extern "C" fn vg_secp256k1_point_a0_add_affine(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+3584], edi
