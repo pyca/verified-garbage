@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointGenerator
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheBuild
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableState
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
 
@@ -14,10 +15,39 @@ namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
 
-def jointInitWork (c : Joint.Cfg) : List Nat := nafWrites c.K++jointCacheSlots c
+/-- The slots the table and the cache write: those of `Naf.table` and the
+cache's, and the selected pair (which the table by calls, `Joint.tableCall`,
+writes `E`'s `Z²` and `Z³` to). -/
+def jointInitWork (c : Joint.Cfg) : List Nat :=
+  nafWrites c.K++jointCacheSlots c++[c.selected,c.selected+8*c.K.M.n]
 
 def jointInitRanges (c : Joint.Cfg) : List (Nat×Nat) :=
   (jointInitWork c).map (·,8*c.K.M.n)++[(c.K.M.tmp,8*c.K.M.n)]
+
+/-- What the cache's code and the joint loop need of the table of `Q`'s odd
+multiples, however it is built, from `s` to `t`: the fields of the table,
+`R` and `P` valid, the registers but `rbx` and the field arithmetic's kept,
+the memory but `jointInitRanges`, and `P`, `a`, `3b` and zero unchanged, and
+the eight entries `Q, 3Q, …, 15Q`. -/
+structure JointTablePost (c : Joint.Cfg) (C : Curve) (base : Addr) (size : Nat) (Q : Point C)
+    (s t : State) : Prop where
+  field : Inv c.K.M base size C.p (·∈jointSlots c) (nafTableLive c.K 8) (tmv C c.K.M.n base t) t
+  keep : KeepRegs (.rbx::clob c.K.M.n) s t
+  unch : Unch base (jointInitRanges c) s.mem t.mem
+  ro : ∀ x∈winRo c.K, tmv C c.K.M.n base t x=tmv C c.K.M.n base s x
+  table : ∀ n,1≤n → n≤8 → InvJ C (tmv C c.K.M.n base t (c.K.tblPt n).x)
+    (tmv C c.K.M.n base t (c.K.tblPt n).y) (tmv C c.K.M.n base t (c.K.tblPt n).z) (mul (2*n-1) Q)
+
+/-- The table by calls of `C'`'s functions (`Joint.tableCall`) builds the
+table, for any curve `C` whose doubling `c.dbl` is, from `Q` affine in `P`. -/
+def JointTableCallOk (c : Joint.Cfg) (C' : Spec.Weierstrass.PointOps.Curve) (size : Nat) : Prop :=
+  ∀ {C : Curve} {base : Addr} {Q : Point C} {s : State},
+    UnitMod C.p (2^(64*c.K.M.n)) → Law C → JDblOk C c.dbl → c.K.one<C.p → onCurve C Q=true →
+    Inv c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) (tmv C c.K.M.n base s) s →
+    InvJ C (tmv C c.K.M.n base s c.K.P.x) (tmv C c.K.M.n base s c.K.P.y)
+      (tmv C c.K.M.n base s c.K.P.z) Q →
+    tmv C c.K.M.n base s c.K.P.z=1 →
+    WP isa (Joint.tableCall c C').inline s (JointTablePost c C base size Q s)
 
 structure JointInitLayout (c : Joint.Cfg) (size : Nat) : Prop where
   layout : JointLayout c size
@@ -31,6 +61,8 @@ structure JointInitLayout (c : Joint.Cfg) (size : Nat) : Prop where
     d.1+d.2≤w.1 ∨ w.1+w.2≤d.1
   cacheSmall : c.cache<2^31
   cacheFar : ∀ x∈winRo c.K++winOther c.K,x+8*c.K.M.n≤c.cache ∨ c.cache+128*c.K.M.n≤x
+  /-- The table by calls, where the code has it, builds the table. -/
+  tableCall : c.coZ=false → ∀ C', c.pts=some C' → JointTableCallOk c C' size
 
 theorem jointInit_sl (c : Joint.Cfg) : ∀ x∈jointInitWork c,x∈jointSlots c := by
   intro x hx

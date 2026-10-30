@@ -88,6 +88,48 @@ theorem jacDouble_doubler {c : Joint.Cfg} {C : Curve} {size : Nat}
     exact cp.mono (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub (fun _ hx =>
       List.mem_append_right _ (List.mem_append_right _ hx))⟩)
 
+/-- The point functions' doubling body (`PointOps.doubleBody`: `D = 2R` by any
+doubling `dbl` of `C`, copied back to `R`) is a doubler. -/
+theorem doubleBody_doubler {c : Joint.Cfg} {C : Curve} {size : Nat}
+    (hL : JointAddLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
+    {dbl : RcbSlots → Pt → Pt → List FOp} (hdo : JDblOk C dbl)
+    (hd : ScratchCT (fprogB c.K.M (dbl c.K.S c.K.R c.K.D)).inline)
+    (hcp : ScratchCT (.block (copyPt c.K.M.n c.K.R c.K.D))) :
+    JointDoubler c C size (PointOps.doubleBody c.K dbl) := by
+  have apart : RcbApart c.K.S c.K.R c.K.R c.K.D :=
+    ⟨hL.addApart.nodup,fun x hx => hL.addApart.apart x (by
+      simp only [rcbR,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢; grind)⟩
+  have sl : ∀ x∈rcbW c.K.S c.K.D++rcbR c.K.S c.K.R c.K.R,x∈jointSlots c := by intro x hx; jslots
+  have vr : ∀ x∈rcbR c.K.S c.K.R c.K.R,x∈jointLive c := by intro x hx; jslots
+  have rs : ∀ x∈jacCoords c.K.R,x∈jointSlots c := by intro x hx; jslots
+  constructor
+  · intro base u v Q A External s hExt hA h
+    rw [PointOps.doubleBody]
+    apply WP.seq
+    refine WP.mono_syms (jacDouble_ok hL.lookup.layout.lay hm hdo apart sl h.field vr hA h.point)
+      fun d ⟨kd,id,jd⟩ sd => ?_
+    have wd : ∀ x∈rcbW c.K.S c.K.D,x∈jointWork c := by intro x hx; jslots
+    have edExt := hExt s d (kd.mono wd) sd h.external
+    refine WP.mono_syms (copyPointFields_ok hL.lookup.layout.lay hL.accumNodup hL.copyApart rs id
+      (fun _ hx => List.mem_append_left _ hx)) fun t ⟨et,kt,it,jt⟩ st => ?_
+    have wr : ∀ x∈jacCoords c.K.R,x∈jointWork c := by intro x hx; jslots
+    have kt' := kt.mono wr
+    have kw := (kd.mono wd).trans kt'
+    have ie := it.sub (fun x hx => List.mem_append_right _ (List.mem_append_right _ hx))
+    have jp : InvJ C (et c.K.R.x) (et c.K.R.y) (et c.K.R.z) (add A A) := by
+      simp only [Prod.mk.injEq] at jt
+      rw [jt.1,jt.2.1,jt.2.2]
+      exact jd
+    exact ⟨kw,h.next hL.lookup.layout kw ie jp (hExt d t kt' st edExt)⟩
+  · intro base E
+    rw [PointOps.doubleBody]
+    apply RelCT.seq (doubleFieldPlain_relCT hL.lookup.layout.lay hm sl vr hdo.shape hd)
+    have cp := copyPoint_relCT (base:=base) (E:=runOps (dbl c.K.S c.K.R c.K.D) E)
+      hL.lookup.layout.lay (o:=c.K.R) (q:=c.K.D) (by intro x hx; jslots)
+      (V:=[c.K.D.x,c.K.D.y,c.K.D.z]++jointLive c) (by intro x hx; exact List.mem_append_left _ hx) hcp
+    exact cp.mono (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub (fun _ hx =>
+      List.mem_append_right _ (List.mem_append_right _ hx))⟩)
+
 /-- A call of a doubler that calls nothing, between `saves` and `restores`
 (`PointOps.wrap`), is a doubler. -/
 theorem call_doubler {c : Joint.Cfg} {C : Curve} {size : Nat} {d : Prog isa}

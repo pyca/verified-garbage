@@ -21,4 +21,10 @@ theorem cfgOk_gtab {c : Cfg} (h : CfgOk c) (g : Option CombData) :
     CfgOk { c with comb := none, gtab := g } :=
   { h with comb := fun _ hd => (by cases hd), comb_am3 := fun _ hd => (by cases hd) }
 
+/-- `cfgOk_pubVerify` and `cfgOk_gtab` for a curve without a comb, of the
+facts that do not need `a = -3` (`BaseCfgOk`). -/
+theorem baseCfgOk_pubVerify_gtab {c : Cfg} (h : BaseCfgOk c) (hc : c.comb = none) (b : Bool)
+    (g : Option CombData) : BaseCfgOk { c with pubVerify := b, gtab := g } :=
+  { h with comb := fun d hd => absurd (hc.symm.trans hd) (by simp) }
+
 end VG.Proof.Ecdsa.Verify.X86_64

@@ -1,86 +1,201 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Secp256k1.Contract
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
-public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Front
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Secp256k1.Lit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.Secp256k1.X86_64
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
+public import VerifiedGarbage.Proof.Weierstrass.CombW
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.PubVerify
+import VerifiedGarbage.Proof.Ecdh.X86_64.Main
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Secp256k1.JointChecks
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPublic
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Secp256k1.Lit
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Secp256k1.JointErased
+import Batteries.Data.List.Lemmas
 import VerifiedGarbage.Proof.Framework.LitShare
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Lit
-import VerifiedGarbage.Proof.Weierstrass.WinLay
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Secp256k1.Contract
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Verified
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Front
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Secp256k1.Lit
-meta import VerifiedGarbage.Impl.Ecdsa.Verify.Secp256k1.X86_64
-meta import VerifiedGarbage.Proof.Framework.LitShare
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Secp256k1.Lit
-meta import VerifiedGarbage.Proof.Weierstrass.WinLay
-import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.EraseChecks
-meta import VerifiedGarbage.Proof.Framework.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.EraseChecks
+public import VerifiedGarbage.Impl.Secp256k1.X86_64.Joint
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointFrame
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Front
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Secp256k1.X86_64.JointLayout
+import VerifiedGarbage.Proof.Secp256k1.X86_64.JointTable
 
 /-!
 # ECDSA verification over secp256k1 on x86-64: `Verified`
 
-secp256k1 is a curve the proof supports (`secp256k1_ok`, and `Law` for its group law,
-which the registration file supplies: `Proof.Secp256k1.law`), so `verify_ok` gives
-the contract's postcondition; the callee-saved registers are restored, `rsp`
-is never written, and every store is to `scratch`, which the return address is
-apart from (`abiPreserved`). Constant time by taint tracking: the only
-branches are on loop counters, and every address is an argument plus a
-constant or a counter, so only the pointers affect timing (the contract would
-let the key, the hash and the signature affect it too).
+secp256k1 is a curve the proof supports (`secp256k1v_ok`, `a = 0` for its
+doublings, and `Law` for its group law, its table of the generator's
+multiples and `InvSounds` for its inversions, which the registration file
+supplies), so `jointVerify_ok` gives the contract's postcondition; the
+callee-saved registers are restored, `rsp` is never written, and every store
+is to `scratch`, which the return address is apart from (`abiPreserved`).
+The timing depends only on what the shared contract makes public: the
+pointers, the key, the digest and the signature (`jointVerify_ct`).
 -/
 
 @[expose] public section
 
+/-! secp256k1's joint verifier's curve and contract: `secp256k1v` is
+`secp256k1` with `pubVerify`, which only verification reads, and with the
+table of the generator's multiples: the same curve, layout and
+multiplications, so the same facts (`secp256k1v_ok`, from `secp256k1_ok`:
+those that do not need `a = -3`), and the contract's precondition gives
+theirs (`pre_of`). The shared contract makes the key, the digest and the
+signature public (`jointPublic_of_spec`). -/
+
 namespace VG.Proof.Ecdsa.Verify.X86_64.Secp256k1
 
-open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.Ecdsa.Verify.X86_64
-open VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdsa.X86_64.Secp256k1
+open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.Secp256k1.X86_64
+open VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdsa.X86_64.Secp256k1 VG.Proof.Weierstrass VG.Proof.Ecdh.X86_64
+open VG.Proof.Weierstrass.X86_64 (InvSounds)
 
-theorem pre_of {s : State} (h : verifyX86_64.pre s) : VPre secp256k1 s := by
-  obtain ⟨h1, h2, h3, h4, h5, -, h7⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h7, by simp [TblsHeld, Cfg.combConsts, secp256k1, Abi.constsHeld, Abi.constRegions]⟩
+theorem secp256k1v_ok (hI : InvSounds) : BaseCfgOk secp256k1v :=
+  baseCfgOk_pubVerify_gtab (secp256k1_ok hI) rfl true _
 
-/-- `verifySecp256k1` without its displacements, as a literal of shared blocks
-(`materialize_shared`): what its constant-time check analyses
-(`Proof/Framework/X86_64/TaintErase.lean`), and its checks of every instruction
-(`EraseChecks`). -/
-def verifySecp256k1Erased : Prog isa := Code.erase verifySecp256k1
+theorem pre_of {s : State} (h : verifyX86_64.pre s) : VPre secp256k1v s := by
+  obtain ⟨h1, h2, h3, h4, h5, -, h7, held, fit, hdw⟩ := h
+  refine ⟨by rw [h1, secp256k1v_combConsts, show secp256k1v.C.len = 32 from rfl]; simp only [Abi.constRegions_cons,
+    Abi.constRegions_nil, List.cons_append, List.nil_append], h2, h3, h4, h5, h7, ?_⟩
+  rw [TblsHeld, secp256k1v_combConsts, Abi.constRegions_cons, Abi.constRegions_nil, Sig.forall_mem_const_single]
+  refine ⟨fun c hc => ?_, fit, fun r hr => hdw r ?_⟩
+  · simp only [List.mem_singleton] at hc; subst hc; exact held
+  · rw [h2] at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+    simp [hr]
 
-materialize_shared verifySecp256k1Erased
+theorem jointPublic_of_spec {a b : State}
+    (pub : (Spec.Ecdsa.Secp256k1.inst.verifyContract (X86_64.abi.withConsts secp256k1v.combConsts)).pub a b) :
+    JointPublic secp256k1v secp256k1GTab a b := by
+  sig_pub [Spec.Ecdsa.Secp256k1.inst,Spec.Ecdsa.Instance.verifyContract,Spec.Ecdsa.Instance.verifySig,
+    Spec.Secp256k1.curve,Spec.Ecdsa.scratchWords,X86_64.abi,X86_64.argRegs,secp256k1v_combConsts,
+    Abi.withConsts] at pub
+  obtain ⟨_,hsy,inputs,h0,h1,h2,h3⟩ := pub
+  have eqBytes := (List.map_inj_right (fun (a b : BitVec 8) h => BitVec.eq_of_toNat_eq h)).mp inputs
+  have parts := List.append_inj eqBytes (by simp only [List.length_append,length_bytesAt])
+  have kd := List.append_inj parts.1 (by simp only [length_bytesAt])
+  have key := kd.1
+  rw [peer_bytes _ _ 32,peer_bytes _ _ 32] at key
+  obtain ⟨tag,xy⟩ := List.cons.inj key
+  have coords := List.append_inj xy (by simp only [length_bytesAt])
+  have sig := parts.2
+  change Spec.Ecdsa.bytesAt a.mem (a.gpr .rdx) (32+32)=
+    Spec.Ecdsa.bytesAt b.mem (b.gpr .rdx) (32+32) at sig
+  rw [bytesAt_add,bytesAt_add] at sig
+  have rs := List.append_inj sig (by simp only [length_bytesAt])
+  refine ⟨Taint.agree_ofRegs ?_,hsy,tag,congrArg Spec.Weierstrass.ofBytes coords.1,
+    congrArg Spec.Weierstrass.ofBytes coords.2,
+    congrArg (fun bs => Spec.Weierstrass.ofBytes bs >>> secp256k1v.sh) kd.2,
+    congrArg Spec.Weierstrass.ofBytes rs.1,congrArg Spec.Weierstrass.ofBytes rs.2⟩
+  intro r hr
+  simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+  rcases hr with rfl|rfl|rfl|rfl
+  · exact h0
+  · exact h1
+  · exact h2
+  · exact h3
 
-theorem verify_inlineOk : verifySecp256k1.InlineOk = true :=
-  Code.inlineOk_of_erase (show verifySecp256k1Erased.InlineOk = true by lit_decide)
+end VG.Proof.Ecdsa.Verify.X86_64.Secp256k1
 
-theorem verify_x86 (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : verifyX86_64.pre s) :
-    ∃ t s', Exec isa verifySecp256k1.inline s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok (secp256k1_ok hI) hL secp256k1_tbls (pre_of hs) secp256k1_mulBase.2
-  have hok := verify_inlineOk
-  have hsp := Code.clobbers_rsp_of_inlineOk hok
-  have hmx : verifySecp256k1.inline.allInstrs (fun i => !loadsMxcsr i) = true := by
-    rw [Code.allInstrs_inline]
-    exact Code.allInstrs_of_erase (fun i => by rw [Instr.loadsMxcsr_erase])
-      (show verifySecp256k1Erased.allInstrs _ = true by lit_decide)
-  have F := (Exec.regions he (Code.noCalls_inline hok)).2.2
-  obtain ⟨-, hwr, -, -, -, hrs, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec hmx he
-    ⟨fun r hr => ?_, ?_⟩, hpost⟩
-  · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+namespace VG.Proof.Secp256k1.X86_64
+open VG VG.Impl.Secp256k1.X86_64 VG.Proof.Ecdsa.Verify.X86_64
+
+/-- The joint multiplication's writes are apart from the final check's fixed inputs. -/
+theorem joint_frame_layout : JointFrameLayout secp256k1v publicJoint := by
+  constructor
+  · unfold VG.Proof.Ecdsa.X86_64.FixedOk
+    decide +kernel
+  · decide +kernel
+  · decide +kernel
+
+end VG.Proof.Secp256k1.X86_64
+
+/-! Whole-function timing of secp256k1's joint verification follows the public-input contract. -/
+
+namespace VG.Proof.Ecdsa.Verify.X86_64.Secp256k1
+open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.Secp256k1.X86_64 VG.Impl.Weierstrass.X86_64
+open VG.Proof.Ecdsa.X86_64 VG.Proof.Secp256k1.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86_64
+
+section
+variable (hL : Law Spec.Secp256k1.curve)
+    (hT : CombOkW Spec.Secp256k1.curve 9 1 Impl.Secp256k1.secp256k1G9 Impl.Secp256k1.secp256k1G9Start)
+    (hI : InvSounds)
+include hL hT hI
+
+theorem jointVerify_secp256k1_public_ct :
+    ConstantTime isa (VPre secp256k1v) (JointPublic secp256k1v secp256k1GTab)
+      (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify secp256k1v publicJoint (jointDouble publicJoint.K)).inline := by
+  have hc := secp256k1v_ok hI
+  refine jointVerify_ct_of_points hc joint_before_ct ?_ joint_after_ct
+  intro s₀ t₀ ps pt pub
+  exact jointPoints_relCT (j := publicJoint) hc hL (jdblOk_dblJ0 hL secp256k1_a0) (.ofGTab rfl hT (by decide) (by decide) rfl) rfl
+    (by decide +kernel) joint_add_layout joint_init_layout joint_prep_layout (joint_doubler hc hL)
+    joint_mul_checks (fun h => absurd h (by decide)) ps pt pub
+
+theorem jointVerify_ct :
+    ConstantTime isa
+      (Spec.Ecdsa.Secp256k1.inst.verifyContract (X86_64.abi.withConsts secp256k1v.combConsts)).pre
+      (Spec.Ecdsa.Secp256k1.inst.verifyContract (X86_64.abi.withConsts secp256k1v.combConsts)).pub
+      Impl.Ecdsa.Verify.X86_64.verifySecp256k1.inline := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
+  exact jointVerify_secp256k1_public_ct hL hT hI _ _ _ _ _ _ (pre_of (implies.pre _ pre₁))
+    (pre_of (implies.pre _ pre₂)) (jointPublic_of_spec pub) e₁ e₂
+
+end
+end VG.Proof.Ecdsa.Verify.X86_64.Secp256k1
+
+namespace VG.Proof.Ecdsa.Verify.X86_64.Secp256k1
+open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.Ecdsa.Verify.X86_64 VG.Impl.Secp256k1.X86_64
+open VG.Impl.Weierstrass.X86_64
+open VG.Proof.Ecdsa.X86_64 VG.Proof.Secp256k1.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86_64
+
+section
+variable (hL : Law Spec.Secp256k1.curve)
+    (hT : CombOkW Spec.Secp256k1.curve 9 1 Impl.Secp256k1.secp256k1G9 Impl.Secp256k1.secp256k1G9Start)
+    (hI : InvSounds)
+include hL hT hI
+
+theorem jointVerify_secp256k1_ok {s : State} (hp : VPre secp256k1v s) :
+    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify secp256k1v publicJoint (jointDouble publicJoint.K)).inline s
+      fun t => (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VPost secp256k1v s t := by
+  have hc := secp256k1v_ok hI
+  refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_
+  intro a g hM Q hQ hRep
+  exact jointPoints_ok (j := publicJoint) hc hL (.ofGTab rfl hT (by decide) (by decide) rfl) rfl
+    (jdblOk_dblJ0 hL secp256k1_a0)
+    (by decide +kernel) joint_add_layout joint_init_layout joint_prep_layout joint_frame_layout
+    (joint_doubler hc hL) (fun h => absurd h (by decide)) hp hM hQ hRep
+
+end
+
+theorem verify_abi_of_wp {code : Prog isa} {s : State} (hs : verifyX86_64.pre s)
+    (hw : WP isa code s fun t =>
+      (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ verifyX86_64.post s t)
+    (hc : code.allInstrs (fun i => !Taint.clobbers i .rsp && !loadsMxcsr i)=true)
+    (hnc : code.noCalls=true) :
+    ∃ t s',Exec isa code s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
+  obtain ⟨t,s',he,hsv,hpost⟩ := hw
+  rw [Code.allInstrs_eq,List.all_eq_true] at hc
+  have hsp : ∀ i∈instrs code,Taint.clobbers i .rsp=false := fun i hi => by
+    have := hc i hi
+    simp only [Bool.and_eq_true,Bool.not_eq_eq_eq_not,Bool.not_true] at this
+    exact this.1
+  have hmx : code.allInstrs (fun i => !loadsMxcsr i)=true := by
+    rw [Code.allInstrs_eq,List.all_eq_true]
+    intro i hi
+    have := hc i hi
+    simp only [Bool.and_eq_true] at this
+    exact this.2
+  have F := (Exec.regions he hnc).2.2
+  obtain ⟨-,hwr,-,-,-,hrs,-,-⟩ := hs
+  refine ⟨t,s',he,abiPreserved_of_exec hmx he ⟨fun r hr => ?_,?_⟩,hpost⟩
+  · simp only [calleeSaved,List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl|rfl|rfl|rfl|rfl|rfl
     · exact hsv _ (by decide)
     · exact hsv _ (by decide)
     · exact Exec.gpr hsp he
@@ -89,34 +204,52 @@ theorem verify_x86 (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass
     · exact hsv _ (by decide)
     · exact hsv _ (by decide)
   · rw [hwr] at F
-    exact F.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false]
+    exact F.readW (r:=⟨s.gpr .rsp,8⟩) (Region.contains_self _ _) (by
+      simp only [List.mem_cons,List.not_mem_nil,or_false]
       rintro r rfl
       exact hrs) (by decide)
 
-theorem verify_ct : ConstantTime isa verifyX86_64.pre verifyX86_64.pub verifySecp256k1 := by
-  refine VG.Taint.constantTime_mapBlocks (c' := verifySecp256k1Erased) taintS_eraseInv
-    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .rsp]) rfl ?_ rfl (by taint_decide)
-  intro s₁ s₂ _ _ ⟨h0, h1, h2, h3, h4⟩
-  refine Taint.agree_ofRegs fun r hr => ?_
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact h1
-  · exact h2
-  · exact h3
-  · exact h4
-  · exact h0
+/-- The shared contract, but with `verifyX86_64`'s postcondition: what the
+proofs of the inlined code give. -/
+def verifyK₀ : Contract isa :=
+  { pre := (Spec.Ecdsa.Secp256k1.inst.verifyContract (X86_64.abi.withConsts secp256k1v.combConsts)).pre
+    post := verifyX86_64.post
+    pub := (Spec.Ecdsa.Secp256k1.inst.verifyContract (X86_64.abi.withConsts secp256k1v.combConsts)).pub }
+
+theorem sat_spec8 :
+    (Spec.Ecdsa.Secp256k1.inst.verifyContract (X86_64.abi.withConsts secp256k1v.combConsts) 8).pre
+      satState := by
+  have held : ∀ i < secp256k1GW.length, satState.mem.readW (satState.syms "VG_SECP256K1_GTAB" +
+      BitVec.ofNat 64 (8 * i)) 64 = secp256k1GW.getD i 0 := satMemG_held
+  sig_pre [Spec.Ecdsa.Secp256k1.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+    Spec.Secp256k1.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, secp256k1v_combConsts,
+    Abi.withConsts, secp256k1G_constRegions, Abi.constsHeld, stackBelow]
+  sig_and_intros
+  all_goals first | exact Region.disjoint_of_sep (by decide) | rfl | exact held | decide
 
 /-- The contract with 8 bytes of stack, for the calls' return address. -/
-theorem implies8 : verifyX86_64.Implies (Spec.Ecdsa.Secp256k1.inst.verifyContract X86_64.abi 8) :=
-  implies.stack8_abi (by
-    sig_implies_sat [Spec.Ecdsa.Secp256k1.inst, Spec.Ecdsa.Instance.verifyContract,
-      Spec.Ecdsa.Instance.verifySig, Spec.Secp256k1.curve, Spec.Ecdsa.scratchWords, X86_64.abi,
-      X86_64.argRegs, satState] [satState] using satState)
+theorem implies8 :
+    verifyK₀.Implies
+      (Spec.Ecdsa.Secp256k1.inst.verifyContract (X86_64.abi.withConsts secp256k1v.combConsts) 8) :=
+  ⟨fun _ hs => Sig.pre_stack0 hs, fun s s' hs hp => implies.post s s' (Sig.pre_stack0 hs) hp,
+    fun _ _ _ _ hp => hp, ⟨satState, sat_spec8⟩⟩
 
-theorem verify_verified (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.X86_64.InvSounds) :
-    Verified X86_64.target verifySecp256k1 (Spec.Ecdsa.Secp256k1.inst.verifyContract X86_64.abi 8) :=
-  Verified.of_inline_ct verify_inlineOk (verify_x86 hL hI) verify_ct implies8
-    (fun _ h => Sig.clear_of_pre h) fun _ _ _ _ _ hp => hp
+section
+variable (hL : Law Spec.Secp256k1.curve)
+    (hT : CombOkW Spec.Secp256k1.curve 9 1 Impl.Secp256k1.secp256k1G9 Impl.Secp256k1.secp256k1G9Start)
+    (hI : InvSounds)
+include hL hT hI
 
+theorem verify_x86 (s : State) (hs : verifyX86_64.pre s) :
+    ∃ t s',Exec isa verifySecp256k1.inline s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' :=
+  verify_abi_of_wp hs (jointVerify_secp256k1_ok hL hT hI (pre_of hs))
+    (by rw [Code.allInstrs_inline]; exact verify_rspMxcsr) (Code.noCalls_inline verify_inlineOk)
+
+theorem verify_verified : Verified X86_64.target verifySecp256k1
+    (Spec.Ecdsa.Secp256k1.inst.verifyContract (X86_64.abi.withConsts secp256k1v.combConsts) 8) :=
+  Verified.of_inline (k₀ := verifyK₀) verify_inlineOk (fun s hs => verify_x86 hL hT hI s (implies.pre _ hs))
+    (jointVerify_ct hL hT hI) implies8 (fun _ h => Sig.clear_of_pre_consts h) (fun _ _ _ _ _ hp => hp)
+    fun s₁ s₂ h₁ h₂ hp => (implies.pub s₁ s₂ (Sig.pre_stack0 h₁) (Sig.pre_stack0 h₂) hp).1
+
+end
 end VG.Proof.Ecdsa.Verify.X86_64.Secp256k1

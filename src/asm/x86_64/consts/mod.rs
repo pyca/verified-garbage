@@ -71,6 +71,10 @@ mod vg_p521_comb;
 pub(crate) use vg_p521_comb::VG_P521_COMB;
 
 #[rustfmt::skip]
+mod vg_secp256k1_gtab;
+pub(crate) use vg_secp256k1_gtab::VG_SECP256K1_GTAB;
+
+#[rustfmt::skip]
 mod vg_sha256_shani_k;
 pub(crate) use vg_sha256_shani_k::VG_SHA256_SHANI_K;
 
