@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.Sign.Loop
 public import VerifiedGarbage.Spec.MlDsa.Poly
 public import VerifiedGarbage.Spec.MlDsa.Contract
+public import VerifiedGarbage.Proof.MlDsa.Sign.Leak
 import VerifiedGarbage.Proof.MlDsa.Round.Decompose
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 import VerifiedGarbage.Proof.Framework.InstancePriority
@@ -245,11 +246,11 @@ theorem signIteration_eqF {p : Params} (hp : ParamsOk p) (b : Bounds) (A : Nat �
   funext c
   rw [iterOut_eq p A S1 S2 T0 ρ'' κ c hp]
 
-/-- Which check rejects an iteration (`signRejectTag`), polynomial by
+/-- Which check rejects an iteration (`signRejectTagC`), polynomial by
 polynomial. -/
-theorem signRejectTag_eqF {p : Params} (hp : ParamsOk p) (b : Bounds) (A : Nat → Nat → Poly)
+theorem signRejectTagC_eqF {p : Params} (hp : ParamsOk p) (b : Bounds) (A : Nat → Nat → Poly)
     (S1 S2 T0 : Nat → Poly) (μ ρ'' : List Byte) (κ : Nat) :
-    signRejectTag p b (amat p A) ((List.range p.ℓ).map S1) ((List.range p.k).map S2) ((List.range p.k).map T0)
+    signRejectTagC p b (amat p A) ((List.range p.ℓ).map S1) ((List.range p.k).map S2) ((List.range p.k).map T0)
       μ ρ'' κ =
       match sampleInBall p.τ b.ball (ctF p A μ ρ'' κ) with
       | none => 0
@@ -258,7 +259,7 @@ theorem signRejectTag_eqF {p : Params} (hp : ParamsOk p) (b : Bounds) (A : Nat �
         else if ¬ ∀ i < p.k, normRq [r0F p A S2 ρ'' κ c i] < p.γ₂ - p.β then 2
         else if ¬ ∀ i < p.k, normRq [ct0F T0 c i] < p.γ₂ then 3 else 4 := by
   have hγ₂ : 0 < p.γ₂ := by have := hp.pos₂; omega
-  unfold signRejectTag
+  unfold signRejectTagC
   rw [signCommit_eq]
   dsimp only
   cases sampleInBall p.τ b.ball (ctF p A μ ρ'' κ) with

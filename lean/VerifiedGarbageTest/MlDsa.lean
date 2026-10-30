@@ -337,15 +337,17 @@ def check (name : String) : CommandElabM Unit := do
     -- What the contract lets signing leak ends with the hint of the signature.
     let some h := (sigDecode g.params σ).2.2 | throw "the signature's hint is malformed"
 
-    -- `ρ`, then each iteration's `c̃` and the check that rejected it (0, 2, 3
-    -- or 4), then the last one's `c̃`, 1 and hint.
+    -- `ρ`, then each iteration's `c̃` and the check that rejected it (`5j` for
+    -- `z[j]`, `2 + 5i` for `r₀[i]`, 3 or 4), then the last one's `c̃`, 1 and
+    -- hint.
     let hint := h.flatMap (·.toList.map Bool.toNat)
     let iters := (leak.length - 32 - hint.length) / (g.params.ctildeLen + 1)
     unless leak.take 32 == leakBytes (sk.take 32) && leak.drop (leak.length - hint.length) == hint &&
         32 + iters * (g.params.ctildeLen + 1) + hint.length == leak.length &&
         (List.range iters).all (fun i =>
           let tag := leak.getD (32 + (i + 1) * (g.params.ctildeLen + 1) - 1) 1
-          if i + 1 = iters then tag == 1 else tag ∈ [0, 2, 3, 4]) do
+          if i + 1 = iters then tag == 1
+          else tag ∈ [3, 4] || (tag % 5 == 0 && tag / 5 < g.params.ℓ) || (tag % 5 == 2 && tag / 5 < g.params.k)) do
       throw "signLeak is wrong"
   checkGroups name "ML-DSA-sigVer-FIPS204" fun g => do
     if g.preHash == "preHash" then return

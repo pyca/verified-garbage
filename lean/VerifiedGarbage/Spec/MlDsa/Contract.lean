@@ -113,13 +113,22 @@ def keyGenContract (p : Params) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contr
 /-! ## Signing -/
 
 /-- The first of the validity checks of Algorithm 7 that rejects the
-iteration with counter `κ`, in the order of lines 23 and 28: 0 if
-`‖z‖∞ ≥ γ₁ - β`, 2 if `‖r₀‖∞ ≥ γ₂ - β`, 3 if `‖⟨⟨ct₀⟩⟩‖∞ ≥ γ₂`, and 4 if the
-hint has more than `ω` 1s (as `signIteration` computes them). It is what
-an implementation that stops an iteration at the first check that fails,
-and computes only what that check needs, reveals of a rejected iteration,
-as the reference implementation of CRYSTALS-Dilithium does. (Its value for
-an iteration that passes, or whose `SampleInBall` does not finish, is not
+iteration with counter `κ`, in the order of lines 23 and 28, and for the
+first two the first polynomial that fails it: `5j` if `‖z‖∞ ≥ γ₁ - β` and
+`z[j]` is the first polynomial of `z` with `‖z[j]‖∞ ≥ γ₁ - β`; `2 + 5i` if
+`‖r₀‖∞ ≥ γ₂ - β` and `r₀[i]` is the first of `r₀` with `‖r₀[i]‖∞ ≥ γ₂ - β`;
+3 if `‖⟨⟨ct₀⟩⟩‖∞ ≥ γ₂`; and 4 if the hint has more than `ω` 1s (as
+`signIteration` computes them). It is what an implementation that stops an
+iteration at the first polynomial that fails a check, and computes only
+what that check needs, reveals of a rejected iteration. FIPS 204 requires
+only that a rejected iteration's invalid signature not be released (§6.2:
+"an invalid signature whose release would leak information about the
+private key"); the reference implementation of CRYSTALS-Dilithium reveals
+more, as its `polyvecl_chknorm` and `polyveck_chknorm` return at the first
+polynomial that fails, and its `poly_chknorm` at the first coefficient ("It
+is ok to leak which coefficient violates the bound since the probability for
+each coefficient is independent of secret data"). (Its value for an
+iteration that passes, or whose `SampleInBall` does not finish, is not
 used.) -/
 def signRejectTag (p : Params) (b : Bounds) (Â : List (List Poly)) (ŝ₁ ŝ₂ t₀Hat : List Poly)
     (μ ρ'' : List Byte) (κ : Nat) : Nat :=
@@ -130,16 +139,16 @@ def signRejectTag (p : Params) (b : Bounds) (Â : List (List Poly)) (ŝ₁ ŝ₂
     let ĉ := ntt (toRq c)
     let z := addVec (y.map toRq) (ŝ₁.map fun s => nttInv (multiplyNTT ĉ s))
     let r₀ := (subVec w (ŝ₂.map fun s => nttInv (multiplyNTT ĉ s))).map fun ri => ri.map (lowBits p.γ₂)
-    if normRq z ≥ p.γ₁ - p.β then 0
-    else if normR r₀ ≥ p.γ₂ - p.β then 2
+    if normRq z ≥ p.γ₁ - p.β then 5 * z.findIdx fun zj => decide (normRq [zj] ≥ p.γ₁ - p.β)
+    else if normR r₀ ≥ p.γ₂ - p.β then 2 + 5 * r₀.findIdx fun rj => decide (normR [rj] ≥ p.γ₂ - p.β)
     else if normRq (t₀Hat.map fun t => nttInv (multiplyNTT ĉ t)) ≥ p.γ₂ then 3
     else 4
 
 /-- What the signing loop may leak (lines 10–32 of Algorithm 7, as
 `signLoop`), from the counter `κ`, for at most `iters` more iterations: the
 commitment hash `c̃` of each iteration, each followed by how the iteration
-ended: which validity check rejected it (`signRejectTag`: 0, 2, 3 or 4) if
-one did, and 1 then its hint `h` (as 0s and 1s, which the signature
+ended: which validity check rejected it, and for the first two at which
+polynomial (`signRejectTag`, never 1), if one did, and 1 then its hint `h` (as 0s and 1s, which the signature
 contains) if they passed; nothing if its `SampleInBall` did not finish.
 (The tags say where each iteration's leakage ends: without them, a hint of
 0s and 1s would read as the `c̃`s of more iterations.) -/

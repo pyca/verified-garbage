@@ -11,11 +11,11 @@ public import VerifiedGarbage.Proof.Framework.Contract
 
 `vg_mldsa{44,65,87}_sign` (`sign prims p`) is verified against
 `signContractT`: `signContract` with `signLeakT`
-(`Proof/MlDsa/Sign/Leak.lean`) for `signLeak`, which tags what each iteration
-of the loop leaks after its `c̃` with whether it was rejected. The contract's
-`signLeak` tags the iterations the same way (`signLeakT_eq_signLeak`), so
-`signContractT` is `signContract` (`signContractT_eq`), against which
-`sign*_verified'` state it.
+(`Proof/MlDsa/Sign/Leak.lean`) for `signLeak`, which tags what each iteration of the loop leaks after its `c̃` with the
+check that rejected it. The contract's `signLeak` also says at which
+polynomial; two runs that agree on it agree on `signLeakT`
+(`signContract_pubT`), so `signContractT_narrow` moves the proof to
+`signContract`, against which `sign*_verified'` state it.
 -/
 
 @[expose] public section
@@ -87,24 +87,25 @@ theorem sign_verified {p : Params} (h3 : Ok3 p) :
     Verified Arm.target (Impl.MlDsa.Arm.Sign.sign prims p) (signContractT p Arm.abi signStack) :=
   Verified.of_correct (sign_correct prims_ok h3) (sign_ct prims_ok h3) (signK_implies h3)
 
-/-! Against the contract: `signContractT` is `signContract`, whose leakage
-tags each iteration as `signLeakT` does (`signLeakT_eq_signLeak`). -/
-
-theorem signContractT_eq (p : Params) {M : ISA} (A : Abi M) (stack : Nat) :
-    signContractT p A stack = signContract p A stack := by
-  unfold signContractT signContract
-  simp only [Sign.signLeakT_eq_signLeak]
+/-- From `signContractT` to `signContract`: two runs that agree on what
+`signContract` takes as public agree on what `signContractT` does
+(`signContract_pubT`). -/
+theorem signContractT_narrow {c : Prog Arm.target.isa} {p : Params} {stack : Nat}
+    (h : Verified Arm.target c (signContractT p Arm.abi stack)) :
+    Verified Arm.target c (signContract p Arm.abi stack) :=
+  h.of_narrow id (fun _ s => s) (fun _ h => h) (fun _ _ _ _ e => e) (fun _ _ _ _ _ ha hq => ⟨ha, hq⟩)
+    (fun _ _ _ _ hp => Sign.signContract_pubT hp) h.2.2
 
 theorem sign44_verified' :
     Verified Arm.target (Impl.MlDsa.Arm.Sign.sign prims mlDsa44) (signContract mlDsa44 Arm.abi signStack) :=
-  signContractT_eq mlDsa44 Arm.abi signStack ▸ sign_verified (.inl rfl)
+  signContractT_narrow <| sign_verified (.inl rfl)
 
 theorem sign65_verified' :
     Verified Arm.target (Impl.MlDsa.Arm.Sign.sign prims mlDsa65) (signContract mlDsa65 Arm.abi signStack) :=
-  signContractT_eq mlDsa65 Arm.abi signStack ▸ sign_verified (.inr (.inl rfl))
+  signContractT_narrow <| sign_verified (.inr (.inl rfl))
 
 theorem sign87_verified' :
     Verified Arm.target (Impl.MlDsa.Arm.Sign.sign prims mlDsa87) (signContract mlDsa87 Arm.abi signStack) :=
-  signContractT_eq mlDsa87 Arm.abi signStack ▸ sign_verified (.inr (.inr rfl))
+  signContractT_narrow <| sign_verified (.inr (.inr rfl))
 
 end VG.Proof.MlDsa.Arm.Sign
