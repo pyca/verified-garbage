@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 namespace VG.Proof.MlDsa.X86_64.Arith.Lazy
 
+variable {c11 : BitVec 32}
+
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
 open VG.Proof.MlDsa.Arith hiding BlkOk layF layF1_get layF2_get
 open VG.Proof.MlDsa.Arith.Lazy
@@ -30,12 +32,12 @@ theorem ystep21 {core zl : List Instr} {r2 : XReg} {zs : List XReg} {dz : BitVec
     (hY : laneSseBlock (toY core) = some core) (h0 : XReg.xmm0 ∉ zs) (h2 : r2 ∉ zs)
     (h14 : XReg.xmm14 ∉ [XReg.xmm0] ++ [r2] ++ zs) (h15 : XReg.xmm15 ∉ [XReg.xmm0] ++ [r2] ++ zs)
     (h11 : XReg.xmm11 ∉ [XReg.xmm0] ++ [r2] ++ zs) (h20 : XReg.xmm0 ∉ [r2]) {fP : Addr} {j : Nat} (hj : j + 16 ≤ 256) {G R : Poly}
-    {ζ : Nat → Nat → Zq} {s : State} (hc : YConsts s) (hdx : s.gpr .rdx = coeffAddr fP j)
+    {ζ : Nat → Nat → Zq} {s : State} (hc : YConstsW c11 s) (hdx : s.gpr .rdx = coeffAddr fP j)
     (hS : PolyIs s.mem fP G) (hw : pR fP ∈ s.wr)
     (hz : ∀ s', XKeep s s' →
       WP isa (.block zl) s' fun s'' => (∀ l < 2, ZLanes (s''.lane .xmm13 l) (ζ l) ∧
         ZOdd (s''.lane .xmm13 l) (s''.lane .xmm12 l)) ∧ YOnly zs s' s'')
-    (hcore : ∀ l < 2, ∀ t : State, VConsts t → DLanes (t.xmm .xmm0) (fun e => G[j + 4 * l + e]!) →
+    (hcore : ∀ l < 2, ∀ t : State, VConstsW c11 t → DLanes (t.xmm .xmm0) (fun e => G[j + 4 * l + e]!) →
       DLanes (t.xmm r2) (fun e => G[j + 8 + 4 * l + e]!) → ZLanes (t.xmm .xmm13) (ζ l) →
       ZOdd (t.xmm .xmm13) (t.xmm .xmm12) →
       WP isa (.block core) t fun t' => (DLanes (t'.xmm .xmm0) (fun e => R[j + 4 * l + e]!) ∧
@@ -45,7 +47,7 @@ theorem ystep21 {core zl : List Instr} {r2 : XReg} {zs : List XReg} {dz : BitVec
     WP isa (.block (ybody21 r2 zl core dz)) s fun s' =>
       PolyIs s'.mem fP R ∧ s'.gpr .rdx = coeffAddr fP (j + 16) ∧
       s'.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
-      s'.zf = some (s.gpr .rcx - 1 == 0) ∧ BInvY fP s s' := by
+      s'.zf = some (s.gpr .rcx - 1 == 0) ∧ BInvYW c11 fP s s' := by
   have j0 : j + 8 ≤ 256 := by omega_using [hj]
   have j1 : j + 8 + 8 ≤ 256 := by omega_using [hj]
   have a1 : coeffAddr fP j + BitVec.ofNat 64 32 = coeffAddr fP (j + 8) := coeffAddr_add _ _ 8
@@ -63,7 +65,7 @@ theorem ystep21 {core zl : List Instr} {r2 : XReg} {zs : List XReg} {dz : BitVec
   rw [WP.block_append_iff]
   refine WP.mono (addR_ok .r8 dz s3) fun s4 ⟨h84, g4, y4⟩ => ?_
   have l4 := g4.lane y4
-  have c4 : YConsts s4 := ylanes_gpr (s := s3) l4 (o12.trans o3) hc h14 h15 h11
+  have c4 : YConstsW c11 s4 := ylanes_gpr (s := s3) l4 (o12.trans o3) hc h14 h15 h11
   rw [WP.block_append_iff]
   refine WP.mono (ylanes hY (P := fun l t => DLanes (t.xmm .xmm0) (fun e => R[j + 4 * l + e]!) ∧
       DLanes (t.xmm .xmm1) (fun e => R[j + 8 + 4 * l + e]!))
@@ -104,13 +106,13 @@ theorem ystep21 {core zl : List Instr} {r2 : XReg} {zs : List XReg} {dz : BitVec
 /-! ## The gatherings, the butterflies and the interleavings back of a lane -/
 
 section
-variable {bf : List Instr} {op : Word → Word → Zq → Word × Word} (hbf : VBflyOk bf op)
+variable {bf : List Instr} {op : Word → Word → Zq → Word × Word} (hbf : VBflyOkW c11 bf op)
 include hbf
 
 /-- `vlay2`'s work on the coefficients `A` of `xmm0` and `B` of `xmm1`: the
 blocks `A` and `B` of `len = 2`, with the zetas `ζ` (the first two for `A`,
 the last two for `B`). -/
-theorem core2_ok {t : State} (hc : VConsts t) {A B : Nat → Word} {ζ : Nat → Zq} (hA : DLanes (t.xmm .xmm0) A)
+theorem core2_ok {t : State} (hc : VConstsW c11 t) {A B : Nat → Word} {ζ : Nat → Zq} (hA : DLanes (t.xmm .xmm0) A)
     (hB : DLanes (t.xmm .xmm1) B) (hz : ZLanes (t.xmm .xmm13) ζ) (ho : ZOdd (t.xmm .xmm13) (t.xmm .xmm12)) :
     WP isa (.block (gath2 ++ bf ++ scat2)) t fun t' =>
       (DLanes (t'.xmm .xmm0) (fun e => if e < 2 then (op (A e) (A (2 + e)) (ζ e)).1
@@ -157,7 +159,7 @@ theorem core2_ok {t : State} (hc : VConsts t) {A B : Nat → Word} {ζ : Nat →
 
 /-- `vlay1`'s work on the coefficients `A` of `xmm0` and `B` of `xmm2`: the
 blocks `A₀₁`, `A₂₃`, `B₀₁` and `B₂₃` of `len = 1`, with the zetas `ζ`. -/
-theorem core1_ok {t : State} (hc : VConsts t) {A B : Nat → Word} {ζ : Nat → Zq} (hA : DLanes (t.xmm .xmm0) A)
+theorem core1_ok {t : State} (hc : VConstsW c11 t) {A B : Nat → Word} {ζ : Nat → Zq} (hA : DLanes (t.xmm .xmm0) A)
     (hB : DLanes (t.xmm .xmm2) B) (hz : ZLanes (t.xmm .xmm13) ζ) (ho : ZOdd (t.xmm .xmm13) (t.xmm .xmm12)) :
     WP isa (.block (gath1 ++ bf ++ scat1)) t fun t' =>
       (DLanes (t'.xmm .xmm0) (fun e => if e % 2 = 0 then (op (A e) (A (e + 1)) (ζ (e / 2))).1
@@ -254,7 +256,7 @@ theorem layF1_next (F : Poly) (zi : Nat → Nat) {i : Nat} (hi : i < 16) {x : Na
     · rw [ite_eq_right (show ¬ x < 2 * 1 * (8 * (i + 1)) by omega_using [h1, h3]),
         ite_eq_right (show ¬ x < 2 * 1 * (8 * i) by omega_using [h3])]
 
-variable {bf : List Instr} (hbf : VBflyOk bf op)
+variable {bf : List Instr} (hbf : VBflyOkW c11 bf op)
 include hbf
 
 theorem ylay2_ok (hY : laneSseBlock (toY (gath2 ++ bf ++ scat2)) = some (gath2 ++ bf ++ scat2)) {fP sP : Addr}
@@ -263,16 +265,16 @@ theorem ylay2_ok (hY : laneSseBlock (toY (gath2 ++ bf ++ scat2)) = some (gath2 +
     (hsel : ∀ i < 16, ∀ e < 4, kb i + sel o₀ e = zi (4 * i + 2 * (e / 2)) ∧
       kb i + sel o₁ e = zi (4 * i + 1 + 2 * (e / 2)))
     (hstep : ∀ i < 16, coeffAddr sP (kb i) + BitVec.signExtend 64 dz = coeffAddr sP (kb (i + 1)))
-    {F : Poly} {s : State} (hc : YConsts s) (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP)
+    {F : Poly} {s : State} (hc : YConstsW c11 s) (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP)
     (hS : PolyIs s.mem fP F) (hT : Tab zmTab s.mem sP 256) (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr)
     (hd : (pR sP).Disjoint (pR fP)) :
-    WP isa (ylay2 bf k o₀ o₁ dz) s fun s' => PolyIs s'.mem fP (layF blk F 2 zi 64) ∧ BInvY fP s s' := by
+    WP isa (ylay2 bf k o₀ o₁ dz) s fun s' => PolyIs s'.mem fP (layF blk F 2 zi 64) ∧ BInvYW c11 fP s s' := by
   have hk0 : k + 4 ≤ 256 := by have := hk 0 (by decide); omega_using [hkb0, this]
   refine WP.seq (WP.mono (ypre21 k hk0 hdi hsi) fun w ⟨hdx, h8, og, hy⟩ => ?_)
-  have cw : YConsts w := ylanes_gpr (s := s) (og.lane hy) (YOnly.refl [] s) hc (by decide) (by decide)
+  have cw : YConstsW c11 w := ylanes_gpr (s := s) (og.lane hy) (YOnly.refl [] s) hc (by decide) (by decide)
   refine WP.mono (wp_rcxLoopY (N := 16) (by decide) (by decide)
     (fun i u => PolyIs u.mem fP (layF blk F 2 zi (4 * i)) ∧ u.gpr .rdx = coeffAddr fP (16 * i) ∧
-      u.gpr .r8 = coeffAddr sP (kb i) ∧ BInvY fP w u)
+      u.gpr .r8 = coeffAddr sP (kb i) ∧ BInvYW c11 fP w u)
     (fun u ou hu _ => ⟨by rw [ou.mem, og.mem]; exact hS,
       by rw [ou.keep.gpr (by decide), hdx, Nat.mul_zero, coeffAddr, Nat.mul_zero, add_ofNat_zero],
       by rw [ou.keep.gpr (by decide), h8, hkb0], ⟨ou.keep.mono (by simp), by rw [ou.mem]; exact Frame.refl _ _,
@@ -328,16 +330,16 @@ theorem ylay1_ok (hY : laneSseBlock (toY (gath1 ++ bf ++ scat1)) = some (gath1 +
           (fun e => zetas (zi (8 * i + 2 * l + e + 2 * (e / 2)))) ∧ ZOdd (s'.lane .xmm13 l) (s'.lane .xmm12 l)) ∧
         YOnly [.xmm13, .xmm12] s s')
     (hstep : ∀ i < 16, coeffAddr sP (kb i) + BitVec.signExtend 64 dz = coeffAddr sP (kb (i + 1)))
-    {F : Poly} {s : State} (hc : YConsts s) (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP)
+    {F : Poly} {s : State} (hc : YConstsW c11 s) (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP)
     (hS : PolyIs s.mem fP F) (hT : Tab zmTab s.mem sP 256) (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr)
     (hd : (pR sP).Disjoint (pR fP)) :
-    WP isa (ylay1 bf k zl dz) s fun s' => PolyIs s'.mem fP (layF blk F 1 zi 128) ∧ BInvY fP s s' := by
+    WP isa (ylay1 bf k zl dz) s fun s' => PolyIs s'.mem fP (layF blk F 1 zi 128) ∧ BInvYW c11 fP s s' := by
   have hk0 : k + 4 ≤ 256 := by have := hk 0 (by decide); omega_using [hkb0, this]
   refine WP.seq (WP.mono (ypre21 k hk0 hdi hsi) fun w ⟨hdx, h8, og, hy⟩ => ?_)
-  have cw : YConsts w := ylanes_gpr (s := s) (og.lane hy) (YOnly.refl [] s) hc (by decide) (by decide)
+  have cw : YConstsW c11 w := ylanes_gpr (s := s) (og.lane hy) (YOnly.refl [] s) hc (by decide) (by decide)
   refine WP.mono (wp_rcxLoopY (N := 16) (by decide) (by decide)
     (fun i u => PolyIs u.mem fP (layF blk F 1 zi (8 * i)) ∧ u.gpr .rdx = coeffAddr fP (16 * i) ∧
-      u.gpr .r8 = coeffAddr sP (kb i) ∧ BInvY fP w u)
+      u.gpr .r8 = coeffAddr sP (kb i) ∧ BInvYW c11 fP w u)
     (fun u ou hu _ => ⟨by rw [ou.mem, og.mem]; exact hS,
       by rw [ou.keep.gpr (by decide), hdx, Nat.mul_zero, coeffAddr, Nat.mul_zero, add_ofNat_zero],
       by rw [ou.keep.gpr (by decide), h8, hkb0], ⟨ou.keep.mono (by simp), by rw [ou.mem]; exact Frame.refl _ _,
