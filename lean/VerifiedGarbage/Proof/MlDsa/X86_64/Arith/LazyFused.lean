@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyBase
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay21
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay21
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Lazy
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyInvariant
 public import VerifiedGarbage.Proof.MlDsa.Arith.LazyButterfly
@@ -13,6 +13,12 @@ import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNttLayers
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyButterfly
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Avx2
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Table
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLanes
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
+public import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 
 /-!
 # ML-DSA on x86-64: the last three layers of the lazy NTT and its reduction, at once

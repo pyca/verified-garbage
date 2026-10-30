@@ -1790,19 +1790,16 @@ jne 29b
 add rdx, 32
 sub rax, 1
 jne 28b
-mov rdx, rdi
-mov r8, rsi
-add r8, 128
+mov eax, 0
 mov ecx, 16
 210:
-vmovdqu ymm4, YMMWORD PTR [rdx]
-vmovdqu ymm5, YMMWORD PTR [rdx+32]
-vbroadcasti128 ymm13, XMMWORD PTR [r8]
+vmovdqu ymm4, YMMWORD PTR [rdi+rax*8]
+vmovdqu ymm5, YMMWORD PTR [rdi+rax*8+32]
+vbroadcasti128 ymm13, XMMWORD PTR [rsi+rax*1+128]
 vpshufd ymm2, ymm13, 85
 vpshufd ymm13, ymm13, 0
 vpblendd ymm13, ymm13, ymm2, 240
 vpshufd ymm12, ymm13, 245
-add r8, 8
 vperm2i128 ymm0, ymm4, ymm5, 32
 vperm2i128 ymm1, ymm4, ymm5, 49
 vpshufd ymm4, ymm1, 245
@@ -1820,26 +1817,13 @@ vmovdqa ymm3, ymm0
 vpaddd ymm0, ymm0, ymm1
 vpaddd ymm3, ymm3, ymm11
 vpsubd ymm3, ymm3, ymm1
-vperm2i128 ymm4, ymm0, ymm3, 32
-vperm2i128 ymm5, ymm0, ymm3, 49
-vmovdqu YMMWORD PTR [rdx], ymm4
-vmovdqu YMMWORD PTR [rdx+32], ymm5
-add rdx, 64
-sub rcx, 1
-jne 210b
-mov rdx, rdi
-mov r8, rsi
-add r8, 256
-mov ecx, 16
-211:
-vmovdqu ymm0, YMMWORD PTR [rdx]
-vmovdqu ymm1, YMMWORD PTR [rdx+32]
-vbroadcasti128 ymm13, XMMWORD PTR [r8]
+vperm2i128 ymm1, ymm0, ymm3, 49
+vperm2i128 ymm0, ymm0, ymm3, 32
+vbroadcasti128 ymm13, XMMWORD PTR [rsi+rax*2+256]
 vpshufd ymm2, ymm13, 245
 vpshufd ymm13, ymm13, 160
 vpblendd ymm13, ymm13, ymm2, 240
 vpshufd ymm12, ymm13, 245
-add r8, 16
 vmovdqa ymm2, ymm0
 vpunpcklqdq ymm0, ymm0, ymm1
 vpunpckhqdq ymm2, ymm2, ymm1
@@ -1862,22 +1846,10 @@ vpsubd ymm3, ymm3, ymm1
 vmovdqa ymm1, ymm0
 vpunpcklqdq ymm0, ymm0, ymm3
 vpunpckhqdq ymm1, ymm1, ymm3
-vmovdqu YMMWORD PTR [rdx], ymm0
-vmovdqu YMMWORD PTR [rdx+32], ymm1
-add rdx, 64
-sub rcx, 1
-jne 211b
-mov rdx, rdi
-mov r8, rsi
-add r8, 512
-mov ecx, 16
-212:
-vmovdqu ymm0, YMMWORD PTR [rdx]
-vmovdqu ymm2, YMMWORD PTR [rdx+32]
-vmovdqu ymm13, YMMWORD PTR [r8]
+vmovdqa ymm2, ymm1
+vmovdqu ymm13, YMMWORD PTR [rsi+rax*4+512]
 vpermq ymm13, ymm13, 216
 vpshufd ymm12, ymm13, 245
-add r8, 32
 vpshufd ymm0, ymm0, 216
 vpshufd ymm2, ymm2, 216
 vmovdqa ymm1, ymm0
@@ -1901,15 +1873,7 @@ vpsubd ymm3, ymm3, ymm1
 vmovdqa ymm1, ymm0
 vpunpckldq ymm0, ymm0, ymm3
 vpunpckhdq ymm1, ymm1, ymm3
-vmovdqu YMMWORD PTR [rdx], ymm0
-vmovdqu YMMWORD PTR [rdx+32], ymm1
-add rdx, 64
-sub rcx, 1
-jne 212b
-mov rdx, rdi
-mov ecx, 32
-213:
-vmovdqu ymm0, YMMWORD PTR [rdx]
+vmovdqa ymm5, ymm1
 vpsrld ymm1, ymm0, 23
 vpslld ymm2, ymm1, 23
 vpsubd ymm0, ymm0, ymm2
@@ -1920,10 +1884,22 @@ vpsubd ymm0, ymm0, ymm15
 vpsrad ymm2, ymm0, 31
 vpand ymm2, ymm2, ymm15
 vpaddd ymm0, ymm0, ymm2
-vmovdqu YMMWORD PTR [rdx], ymm0
-add rdx, 32
+vmovdqu YMMWORD PTR [rdi+rax*8], ymm0
+vmovdqa ymm0, ymm5
+vpsrld ymm1, ymm0, 23
+vpslld ymm2, ymm1, 23
+vpsubd ymm0, ymm0, ymm2
+vpslld ymm2, ymm1, 13
+vpaddd ymm0, ymm0, ymm2
+vpsubd ymm0, ymm0, ymm1
+vpsubd ymm0, ymm0, ymm15
+vpsrad ymm2, ymm0, 31
+vpand ymm2, ymm2, ymm15
+vpaddd ymm0, ymm0, ymm2
+vmovdqu YMMWORD PTR [rdi+rax*8+32], ymm0
+add rax, 8
 sub rcx, 1
-jne 213b
+jne 210b
 vzeroupper
 lfence
 mov DWORD PTR [rsi+768], r11d
