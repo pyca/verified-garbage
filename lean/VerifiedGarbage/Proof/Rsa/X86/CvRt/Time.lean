@@ -167,9 +167,15 @@ theorem before_ready {g : CallGeometry} {sp : BitVec 32} {s : State} (h : Run g 
 theorem after_inverse {g : CallGeometry} {m : Mem} {sp : BitVec 32} {s t : State}
     (h : Ready g m sp s) (post : InvPost g.base g.size (g.args 7).toNat (arithmeticGeometry g m).P (arithmeticGeometry g m).Q s t) :
     Inputs g t ∧ InvTiming.Public g.args g.base g.size sp t := by
-  have outside := VG.Proof.Rsa.X86.KeyRt.keep_outside h.2.2.ws.ws post.2.1 (by decide) (by decide)
-  exact ⟨h.1.after post.2.2.1 (by decide) (by decide) (scratchFrame h.1 outside),
-    h.2.1.keep post.2.2.1 (by decide) outside⟩
+  have F : Frame (g.writes ++ [below (s.gpr .esp) 52]) s.mem t.mem :=
+    VG.Proof.RsaKeyGen.X86.KeyRuntime.OutsS.toFrame (fun _ _ o => scratchFrame h.1
+      (VG.Proof.Rsa.X86.KeyRt.keep_outside h.2.2.ws.ws o (by decide) (by decide))) post.2.1
+  have K := post.2.2.1
+  have it := h.1.afterBelow K (by decide) (by decide) F
+  have esp : t.gpr .esp = s.gpr .esp := K.1 .esp (by decide)
+  refine ⟨it, ⟨⟨?_, ?_⟩, esp.trans h.2.1.stack, it.arguments⟩⟩
+  · rw [esp]; exact h.2.1.argsOk.1
+  · intro r hr; rw [esp]; exact h.2.1.argsOk.2 r (K.2.2 ▸ hr)
 
 theorem sized_relCT [VG.Proof.Rsa.X86.BatchLaw] (g : CallGeometry) (len : Lengths g) (sp : BitVec 32) :
     RelCT isa (Both (Run g sp)) sized fun _ _ => True := by
@@ -209,7 +215,7 @@ theorem narrow_inputs {g : CallGeometry} {s : State} (h : Inputs g s) :
       h.ws.workspace.stk⟩, h.ws.fits, h.ws.wpos, h.ws.wle⟩, h.lower, h.upper,
     fun i hi => ⟨⟨?_, (h.arguments i hi).stack.apart⟩, (h.arguments i hi).value⟩, h.stackApart, h.inputPositive,
     h.inputBound, h.inputFit, fun j => ?_, h.inputApart, h.outputPositive, h.outputBound, h.outputFit, fun j => ?_,
-    h.outputScratch, h.outputSeparate⟩
+    h.outputScratch, h.outputSeparate, h.room⟩
   · obtain ⟨r, hr, hc⟩ := (h.arguments i hi).stack.read
     exact ⟨r, List.mem_append_left _ hr, hc⟩
   · obtain ⟨r, hr, hc⟩ := h.inputRead j

@@ -87,7 +87,8 @@ theorem installed_ok {s : State} (a : ABI s) :
   have w := a.width
   refine ⟨⟨sc, a.space, by omega, by omega⟩, w.1, w.2.1, ?_, ?_,
     (fun i => (a.inputLength i).1), (fun i => (a.inputLength i).2), a.inputFit, ?_, ?_,
-    (fun i => (a.outputLength i).1), (fun i => (a.outputLength i).2), a.outputFit, ?_, ?_, a.outputSeparate⟩
+    (fun i => (a.outputLength i).1), (fun i => (a.outputLength i).2), a.outputFit, ?_, ?_, a.outputSeparate,
+    by rw [k.1 .esp (by decide)]; exact a.room⟩
   · intro i hi
     exact (CallArgument.mk (a.stackArgument hi) rfl).keep k (by decide) o
   · intro i hi r hr

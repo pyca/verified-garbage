@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.CvRt.Load
 import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
 import VerifiedGarbage.Proof.Dsa.X86.ABIResources
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86.Call
 public import Init.Data.List.Basic
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 public import VerifiedGarbage.Spec.Rsa
@@ -33,6 +34,34 @@ theorem ABI.width {s : State} (a : ABI s) : 8 ≤ (caller s).n ∧ (caller s).n 
   simp only [caller, Spec.Rsa.modulusWords]
   omega
 
+/-- Room below `esp` for the general inverse's call. -/
+theorem ABI.room {s : State} (a : ABI s) :
+    VG.Proof.Rsa.X86.CrtValuesRt.Room (s.gpr .esp) (caller s).base (caller s).size := by
+  refine ⟨a.stackLow, a.stackBound, ?_⟩
+  have e : below (s.gpr .esp) 52 = ⟨(s.gpr .esp).setWidth 64 - 52#64, 52⟩ := by
+    unfold below
+    rw [VG.X86.Taint.sub_setWidth a.stackLow]
+  rw [e]
+  exact a.belowScratch.symm
+
+/-- The return address lies above the stack the general inverse's call uses. -/
+theorem ABI.retAbove {s : State} (a : ABI s) :
+    Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ (below (s.gpr .esp) 52) := by
+  have low := a.stackLow
+  have high := a.stackBound
+  have b : (below (s.gpr .esp) 52).base.toNat = (s.gpr .esp).toNat - 52 := by
+    change ((s.gpr .esp - 52#32).setWidth 64).toNat = _
+    rw [BitVec.toNat_setWidth, sub_toNat low]
+    exact Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega)
+  have e : ((s.gpr .esp).setWidth 64).toNat = (s.gpr .esp).toNat := by
+    rw [BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by have := (s.gpr .esp).isLt; omega)
+  intro x hx hb
+  simp only [Region.Contains, BitVec.toNat_sub] at hx hb
+  rw [b] at hb
+  rw [e] at hx
+  have := x.isLt
+  omega
+
 theorem ABI.stackArgument {s : State} (a : ABI s) {i : Nat} (hi : i < 16) :
     StackArgument s (caller s).base (caller s).size i := by
   apply stackArgument_of (count := 16) (by have := a.stackBound; omega) hi
@@ -40,7 +69,7 @@ theorem ABI.stackArgument {s : State} (a : ABI s) {i : Nat} (hi : i < 16) :
   · exact a.argsApart _ (by simp [CallGeometry.writes])
 
 theorem ABI.stack {s : State} (a : ABI s) : StkOk (s.gpr .esp) (caller s).base (caller s).size := by
-  apply VG.Proof.Weierstrass.X86.stkOk_of (Nat.le_refl 20) a.stackLow
+  apply VG.Proof.Weierstrass.X86.stkOk_of (by decide : 20 ≤ 52) a.stackLow
   · have h := a.scratchBound
     simpa only [caller, argumentPointer, BitVec.toNat_setWidth,
       Nat.mod_eq_of_lt (Nat.lt_trans (arg s 14).isLt (by decide : 2 ^ 32 < 2 ^ 64))] using h

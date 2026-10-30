@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 public import VerifiedGarbage.Proof.Rsa.CrtValuesMask
 import VerifiedGarbage.Proof.Rsa.X86.InvChoose
+public import VerifiedGarbage.Proof.Rsa.X86.InvDispatch
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Framework.Mem
@@ -202,10 +203,15 @@ structure StD (g : Geometry) (len : Nat) (X₁ X₂ : Nat) (s : State) : Prop wh
 theorem checksB_ok [VG.Proof.Rsa.X86.BatchLaw] {g : Geometry} {len : Nat} {s : State} {X₁ X₂ : Nat} (h : StI g len X₁ X₂ s) {args : Nat → BitVec 32}
     (gate : InvGate args g.base g.size g.P g.Q s) :
     WP isa (seqs (checksB)) s fun t => StD g len X₁ X₂ t ∧
-      Keep g.base (kw len) (invArrs ++ [aDQ, aDD]) (invSlots ++ rtSlots ++ [sT, sE3, sMask]) s.mem t.mem ∧
+      VG.Proof.RsaKeyGen.X86.KeyRuntime.OutsS g.base (s.gpr .esp)
+        (VG.Proof.Rsa.X86.Keys.ranges (kw len) (invOut ++ [aDQ, aDD]) (invSlots ++ rtSlots ++ [sT, sE3, sMask])) s.mem t.mem ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
   have hw := h.ws
   have fit := fun j (hj : j < nArr) => hw.ws.fit64 (j := j) hj
+  have inside := fun j (hj : j < nArr) => Nat.le_trans (VG.Proof.Rsa.X86.Keys.arr_end hj) hw.ws.fits
+  have room := gate.room
+  have nowrap : g.size ≤ 2 ^ 64 := by have := hw.ws.workspace.nowrap; omega
+  have hdrLe : hdr ≤ g.size := hw.ws.hdr_le
   unfold checksB
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   have input : InvInput args g.base g.size len g.P g.Q s :=
@@ -218,14 +224,15 @@ theorem checksB_ok [VG.Proof.Rsa.X86.BatchLaw] {g : Geometry} {len : Nat} {s : S
   refine WP.mono (eqS_ok h1 (d := sE3) (a := 1) (b := aOne) (t := aT1) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide)) fun t2 ⟨h2, k2, e2, r2⟩ => ?_
   have one1 : num t1.mem g.base (kw len) aOne = 1 := by
-    rw [k1.num (by decide) (by decide) (fit _ (by decide)), h.one]
+    rw [outsS_num k1 room (by decide) (by decide) (inside _ (by decide)) nowrap, h.one]
   rw [one1] at e2
   have sl : ∀ d, d + 4 ≤ hdr → d % 4 = 0 → 100 ≤ d → d ∉ [sT, sE3, sOdd, sB, sC] →
       slot t2.mem g.base d = slot s.mem g.base d := fun d hd h4 h100 hn => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
     simp only [sT, sE3, sOdd, sB, sC, hdr] at hn hd
     rw [k2.slot (by simp only [hdr]; omega_arith) (by simp only [sT, sE3]; simp; omega_arith),
-      k1.slot (by simp only [hdr]; omega_arith) (by simp only [invSlots, rtSlots, sOdd, sB, sC]; simp; omega_arith)]
+      outsS_slot k1 room (by simp only [hdr]; omega_arith) hdrLe
+        (by simp only [invSlots, rtSlots, sOdd, sB, sC]; simp; omega_arith)]
   rw [wp_seqs_cons (List.cons_ne_nil _ _), List.append_assoc]
   refine WP.block_append ?_
   refine WP.mono (andS_ok h2 (d := sMask) (a := sPodd) (b := sE1) (by decide) (by decide) (by decide)
@@ -248,14 +255,17 @@ theorem checksB_ok [VG.Proof.Rsa.X86.BatchLaw] {g : Geometry} {len : Nat} {s : S
     fun t5 ⟨h5, k5, e5, r5, top5⟩ => ?_
   refine WP.mono (clrLow_ok h5 (by decide)) fun t ⟨h6, k6, e6, r6, top6⟩ => ?_
   -- The count, through every step.
-  have K : Keep g.base (kw len) (invArrs ++ [aDQ, aDD]) (invSlots ++ rtSlots ++ [sT, sE3, sMask]) s.mem t.mem :=
-    k1.mono.trans (k2.mono.trans (K3.mono.trans (k4.mono.trans (k5.mono.trans k6.mono))))
+  have K₂ : Keep g.base (kw len) (invOut ++ [aDQ, aDD]) (invSlots ++ rtSlots ++ [sT, sE3, sMask]) t1.mem t.mem :=
+    k2.mono.trans (K3.mono.trans (k4.mono.trans (k5.mono.trans k6.mono)))
+  have K : VG.Proof.RsaKeyGen.X86.KeyRuntime.OutsS g.base (s.gpr .esp)
+      (VG.Proof.Rsa.X86.Keys.ranges (kw len) (invOut ++ [aDQ, aDD]) (invSlots ++ rtSlots ++ [sT, sE3, sMask])) s.mem t.mem :=
+    (k1.mono (ranges_sub (by decide) (by decide))).trans (VG.Proof.RsaKeyGen.X86.KeyRuntime.OutsS.of_outs K₂)
   have R : Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t :=
     (r1.mono (by decide)).trans ((r2.mono (by decide)).trans ((r3a.mono (by decide)).trans ((r3b.mono (by decide)).trans
       ((r3.mono (by decide)).trans ((r4.mono (by decide)).trans ((r5.mono (by decide)).trans (r6.mono (by decide))))))))
-  have tr : ∀ j, j < nArr → j ∉ invArrs ++ [aDQ, aDD] →
+  have tr : ∀ j, j < nArr → j ∉ invOut ++ [aDQ, aDD] →
       num t.mem g.base (kw len) j = num s.mem g.base (kw len) j := fun j hj hn =>
-    K.num (fun k hk e => hn (by subst e; exact hk)) (by decide) (fit j hj)
+    outsS_num K room (fun k hk e => hn (by subst e; exact hk)) (by decide) (inside j hj) nowrap
   have fDD := fit aDD (by decide)
   have hS : S (kw len) = 4 * ((kw len) + 2) := rfl
   refine ⟨?_, K, R⟩
@@ -264,13 +274,14 @@ theorem checksB_ok [VG.Proof.Rsa.X86.BatchLaw] {g : Geometry} {len : Nat} {s : S
   · rw [tr _ (by decide) (by decide), h.d]
   · rw [top6, top5,
       k4.word (by omega_arith) (by decide) (by simp) fDD, K3.word (by omega_arith) (by simp) (by decide) fDD,
-      k2.word (by omega_arith) (by decide) (by decide) fDD, k1.word (by omega_arith) (by decide) (by decide) fDD, h.ddTop]
+      k2.word (by omega_arith) (by decide) (by decide) fDD, outsS_word k1 room (by omega_arith) (by decide) (by decide) (inside _ (by decide)) nowrap, h.ddTop]
   · rw [k6.num (by decide) (by simp) (fit _ (by decide)),
       k5.num (by decide) (by simp) (fit _ (by decide)), e4, K3.num (by simp) (by decide) (fit _ (by decide)),
-      k2.num (by decide) (by decide) (fit _ (by decide)), k1.num (by decide) (by decide) (fit _ (by decide)), h.d]
+      k2.num (by decide) (by decide) (fit _ (by decide)),
+      outsS_num k1 room (by decide) (by decide) (inside _ (by decide)) nowrap, h.d]
   · rw [e6, e5, k4.num (by decide) (by simp) (fit _ (by decide)),
       K3.num (by simp) (by decide) (fit _ (by decide)), k2.num (by decide) (by decide) (fit _ (by decide)),
-      k1.num (by decide) (by decide) (fit _ (by decide)), h.p]
+      outsS_num k1 room (by decide) (by decide) (inside _ (by decide)) nowrap, h.p]
   · have x3 : num t.mem g.base (kw len) 3 = num t1.mem g.base (kw len) 3 := by
       rw [k6.num (by decide) (by simp) (fit _ (by decide)),
         k5.num (by decide) (by simp) (fit _ (by decide)), k4.num (by decide) (by simp) (fit _ (by decide)),

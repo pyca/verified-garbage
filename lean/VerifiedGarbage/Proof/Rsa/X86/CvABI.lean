@@ -16,13 +16,13 @@ def caller (s : State) : CallGeometry :=
   ⟨argumentPointer s 14, (arg s 15).toNat * 8, Spec.Rsa.modulusWords (arg s 7).toNat, arg s⟩
 
 structure ABI (s : State) : Prop where
-  stackLow : 20 ≤ (s.gpr .esp).toNat
+  stackLow : 52 ≤ (s.gpr .esp).toNat
   stackBound : (s.gpr .esp).toNat + 68 ≤ 2 ^ 32
   rd : s.rd = [(caller s).buffer 6, (caller s).buffer 8, (caller s).buffer 10, (caller s).buffer 12]
   wr : s.wr = [(caller s).buffer 0, (caller s).buffer 2, (caller s).buffer 4,
     ⟨(caller s).base, (caller s).size⟩, ⟨argAddr s 0, 64⟩]
   scratchBound : (arg s 14).toNat + (caller s).size ≤ 2 ^ 32
-  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 20#64, 20⟩ : Region).Disjoint
+  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 52#64, 52⟩ : Region).Disjoint
     ⟨(caller s).base, (caller s).size⟩
   argsApart : ∀ r ∈ (caller s).writes, (⟨argAddr s 0, 64⟩ : Region).Disjoint r
   retApart : ∀ r ∈ (caller s).writes, (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint r
@@ -45,7 +45,7 @@ structure ABI (s : State) : Prop where
   dBound : (arg s 13).toNat ≤ (arg s 7).toNat
   scratchLength : Spec.Rsa.scratchWords (arg s 7).toNat ≤ (arg s 15).toNat
 
-theorem abi_of {s : State} (h : (Spec.Rsa.crtValuesContract abi 20).pre s) : ABI s := by
+theorem abi_of {s : State} (h : (Spec.Rsa.crtValuesContract abi 52).pre s) : ABI s := by
   sig_pre [Spec.Rsa.crtValuesContract, Spec.Rsa.crtValuesSig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   have rd : s.rd = [(caller s).buffer 6, (caller s).buffer 8, (caller s).buffer 10, (caller s).buffer 12] := by

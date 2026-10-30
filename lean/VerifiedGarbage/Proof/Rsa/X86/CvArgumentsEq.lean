@@ -21,7 +21,7 @@ theorem Inputs.argsEq {g : CallGeometry} {s : State} {args : Nat → BitVec 32} 
   have writes : ({g with args := args} : CallGeometry).writes = g.writes := by
     unfold CallGeometry.writes
     rw [buffers 0 (by decide), buffers 2 (by decide), buffers 4 (by decide)]
-  refine ⟨h.ws, h.lower, h.upper, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨h.ws, h.lower, h.upper, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, h.room⟩
   · intro i hi
     change CallArgument s g.base g.size i (args i)
     rw [eq i hi]

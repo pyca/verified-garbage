@@ -19,7 +19,8 @@ open VG.Proof.Rsa.X86.CrtValuesRt (Lengths sized_ok)
 
 theorem body_ok [VG.Proof.Rsa.X86.BatchLaw] {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g) :
     WP isa body s fun t => Inputs g t ∧ Written g s.mem t ∧
-      Frame (bodyWrites g) s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
+      Frame (bodyWrites g ++ [below (s.gpr .esp) 52]) s.mem t.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   unfold body inputArgs
   refine WP.seq (WP.mono (argumentPair_ok (d := .esi) (by decide) (by decide)
     (h.arguments 6 (by decide)).readSrc (h.arguments 7 (by decide)).readSrc)
@@ -36,7 +37,8 @@ theorem body_ok [VG.Proof.Rsa.X86.BatchLaw] {g : CallGeometry} {s : State} (h : 
   refine WP.ite (Spec.Rsa.modulusValid (Spec.Rsa.os2ip (inputBytes g s.mem 0)) (g.args 7).toNat) z ?_ ?_
   · intro accepted
     refine WP.mono (sized_ok hv len) fun t ⟨ht, result, frame, rest⟩ => ?_
-    rw [mem] at result frame
+    rw [mem, keeps.1 .esp (by decide)] at frame
+    rw [mem] at result
     refine ⟨ht, written_arithmetic result ?_ ?_ ?_ ?_ ?_ ?_, frame, keeps.trans rest⟩
     · simp only [inputBytes, bytesAt_length, CallGeometry.buffer]
       exact accepted
@@ -57,7 +59,7 @@ theorem body_ok [VG.Proof.Rsa.X86.BatchLaw] {g : CallGeometry} {s : State} (h : 
       rw [ln]
       simp only [rejected, Bool.false_eq_true, false_and, ite_false]
     refine WP.mono (failure_ok hv) fun t ⟨ht, dp, dq, qi, status, frame, rest⟩ => ?_
-    refine ⟨ht, ?_, mem ▸ frame, keeps.trans (rest.mono (by decide))⟩
+    refine ⟨ht, ?_, (mem ▸ frame).mono fun r hr => List.mem_append_left _ hr, keeps.trans (rest.mono (by decide))⟩
     unfold Written
     rw [failed]
     refine ⟨status, ?_⟩

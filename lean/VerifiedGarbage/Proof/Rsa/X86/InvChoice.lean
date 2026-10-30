@@ -43,6 +43,8 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Proof.Mont VG.Proof.Mont.X86
     (h : InvPost base size len P Q u t) (K : Keeps regs s u)
     (incl : ∀ r∈regs,r∈VG.Proof.Weierstrass.X86.Inv.wordClob) (mem : u.mem=s.mem) :
     InvPost base size len P Q s t := by
-  exact ⟨h.1,mem ▸ h.2.1,(K.mono incl).trans h.2.2.1,h.2.2.2⟩
+  have sp : u.gpr .esp=s.gpr .esp := K.1 .esp fun e => by
+    have := incl _ e; simp [VG.Proof.Weierstrass.X86.Inv.wordClob] at this
+  exact ⟨h.1,mem ▸ sp ▸ h.2.1,(K.mono incl).trans h.2.2.1,h.2.2.2⟩
 
 end VG.Proof.Rsa.X86.CrtValuesRt
