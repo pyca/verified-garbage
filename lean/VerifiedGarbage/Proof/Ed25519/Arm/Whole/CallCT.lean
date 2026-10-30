@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Arm.Syms
 
 @[expose] public section
 
@@ -58,5 +59,14 @@ theorem callEx {n : String} {c : Prog isa} {k : Contract isa}
       obtain ⟨_, nb⟩ := trace_narrow hv pb (by simpa using cb) (by simpa using wb) xb
       have ht := hct _ _ _ _ _ _ pa pb pub na nb
       exact ⟨by simp only [ht], trivial⟩
+
+/-- No code changes a static's address: a relational property keeps it. -/
+theorem keepSym {P Q : State → State → Prop} {c : Prog isa} (n : String) (T : BitVec 32)
+    (h : RelCT isa P c Q) :
+    RelCT isa (fun a b => P a b ∧ a.syms n = T ∧ b.syms n = T) c
+      (fun a b => Q a b ∧ a.syms n = T ∧ b.syms n = T) := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨hp, h1, h2⟩ e₁ e₂
+  obtain ⟨ht, hq⟩ := h _ _ _ _ _ _ hp e₁ e₂
+  exact ⟨ht, hq, by rw [Exec.syms e₁, h1], by rw [Exec.syms e₂, h2]⟩
 
 end VG.Proof.Ed25519.Arm.Whole

@@ -11,6 +11,7 @@ def artifacts : List Artifact := [
   Spec.Ed25519.signCachedApi.artifact Arm.target {
     notes := ["Includes SHA-512, scalar reduction, \
       base-point multiplication, and scalar multiply-add. Secret intermediate buffers are cleared before returning."]
+    consts := Impl.Ed25519.Arm.combConsts
     code := Impl.Ed25519.Arm.SignCached.code
     stack := 280
     verified := Proof.Ed25519.Arm.SignCached.signCached_verified }]

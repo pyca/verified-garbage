@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.Arm.PointFromScalar
+public import VerifiedGarbage.Impl.Ed25519.Arm.Comb
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointEncode
 public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointTableIO
@@ -12,9 +12,9 @@ public import VerifiedGarbage.Impl.Ed25519.Arm.PointTableIO
 namespace VG.Impl.Ed25519.Arm
 open VG.Arm
 
+/-- The slots cleared, `[s]B` by the comb (`combMultiply`), and its encoding. -/
 def scalarBaseEngine : Prog isa :=
-  .seq (.block initFields) (.seq (constPoint Spec.Ed25519.basePoint)
-    (.seq (pointFromScalar 16) pointEncode))
+  .seq (.block initFields) (.seq combMultiply pointEncode)
 
 def scalarBaseSetup : List Instr :=
   scalarSave .r2 ++ [.str .r0 .r2 48, .mov .r0 (.reg .r2)] ++ scratchAddr LRS ++

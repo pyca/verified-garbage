@@ -18,11 +18,12 @@ structure EntryStep (s t : State) : Prop where
   wr : t.wr = s.wr
   sp : t.sp = s.sp
   regs : ∀ r, r ≠ .r12 → r ≠ .lr → t.gpr r = s.gpr r
+  syms : t.syms = s.syms
 
-theorem EntryStep.refl (s : State) : EntryStep s s := ⟨rfl, rfl, rfl, fun _ _ _ => rfl⟩
+theorem EntryStep.refl (s : State) : EntryStep s s := ⟨rfl, rfl, rfl, fun _ _ _ => rfl, rfl⟩
 theorem EntryStep.trans {s t u : State} (h : EntryStep s t) (h' : EntryStep t u) : EntryStep s u :=
   ⟨h'.rd.trans h.rd, h'.wr.trans h.wr, h'.sp.trans h.sp,
-    fun r hn hl => (h'.regs r hn hl).trans (h.regs r hn hl)⟩
+    fun r hn hl => (h'.regs r hn hl).trans (h.regs r hn hl), h'.syms.trans h.syms⟩
 
 theorem argReg_ne12 (j : Nat) : argReg j ≠ .r12 := by unfold argReg; split <;> decide
 theorem argReg_neLR (j : Nat) : argReg j ≠ .lr := by unfold argReg; split <;> decide
@@ -46,7 +47,7 @@ theorem saveWord_ok {s : State} {j : Nat} (hj : j < 6)
       exec, State.store32, Nat.reduceLT, hs, ite_true, RegUpd.gpr_setReg, RegUpd.wr_setReg,
       RegUpd.mem_setReg, RegUpd.sp_setReg, argReg_ne12, ite_false, BitVec.add_assoc, ha,
       hw, Option.some.injEq, exists_eq_left', inputWord, h4, ite_true]
-    refine ⟨⟨rfl, rfl, rfl, ?_⟩, True.intro⟩
+    refine ⟨⟨rfl, rfl, rfl, ?_, rfl⟩, True.intro⟩
     intro r hn _
     simp only [RegUpd.gpr_setReg, hn, ite_false]
   · have hl : 280 + 4 * (j - 4) < 4096 := by omega
@@ -57,7 +58,7 @@ theorem saveWord_ok {s : State} {j : Nat} (hj : j < 6)
       Nat.reduceLT, reduceCtorEq, hs, hl, ite_true, hr', Option.map_some, RegUpd.gpr_setReg,
       RegUpd.wr_setReg, RegUpd.mem_setReg, RegUpd.sp_setReg, BitVec.add_assoc, ha,
       hw, Option.some.injEq, exists_eq_left', inputWord, h4, ite_false]
-    refine ⟨⟨rfl, rfl, rfl, ?_⟩, True.intro⟩
+    refine ⟨⟨rfl, rfl, rfl, ?_, rfl⟩, True.intro⟩
     intro r hn hlr
     simp only [RegUpd.gpr_setReg, hn, hlr, ite_false]
 

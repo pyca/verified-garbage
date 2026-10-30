@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.PruneCT
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
+import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.Prune
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -33,6 +34,8 @@ structure Lay where
   seed : BitVec 32
   scr : BitVec 32
   E : BitVec 32
+  /-- The address of the comb's tables (`combSym`). -/
+  T : BitVec 32
 
 namespace Lay
 variable (L : Lay)
@@ -42,7 +45,8 @@ abbrev SCR : Region := ⟨State.addr L.scr, 8192⟩
 abbrev ARGS : Region := Whole.ARGS L.E
 abbrev FR : Region := Whole.FR L.E
 abbrev STK : Region := ⟨State.addr L.E, 280⟩
-def inputs : List Region := [L.SEED, L.ARGS]
+abbrev TB : Region := TBL L.T
+def inputs : List Region := [L.SEED, L.TB, L.ARGS]
 def outputs : List Region := [L.OUT, L.SCR]
 def value (j : Nat) : BitVec 32 := match j with | 0 => L.out | 1 => L.seed | _ => L.scr
 structure Ok : Prop where
@@ -56,7 +60,15 @@ structure Ok : Prop where
   no : L.out.toNat + 32 ≤ 2 ^ 32
   ns : L.seed.toNat + 32 ≤ 2 ^ 32
   nc : L.scr.toNat + 8192 ≤ 2 ^ 32
+  tfit : L.T.toNat + 98304 ≤ 2 ^ 32
+  tout : L.TB.Disjoint L.OUT
+  tscr : L.TB.Disjoint L.SCR
+  tstk : L.TB.Disjoint L.STK
 end Lay
+
+/-- The comb's tables at `L.T` in `m`. -/
+def Tbl (L : Lay) (m : Mem) : Prop :=
+  ∀ j < 64 * 192, m.readW (State.addr L.T + BitVec.ofNat 64 (8 * j)) 64 = VG.Impl.Ed25519.Arm.combWord j
 
 abbrev Ctx (L : Lay) (g : Reg → BitVec 32) (m₀ : Mem) (t : State) :=
   Whole.Ctx L.E g m₀ L.inputs L.outputs t
@@ -287,37 +299,54 @@ def BaseArgs (L : Lay) (t : State) : Prop :=
 theorem scalar_addr (hL : L.Ok) : State.addr (L.E + 24) = State.addr L.E + 24 :=
   addr_add (k := 24) (by have := hL.top; omega)
 
-theorem base_pre (hL : L.Ok) (ha : BaseArgs L t) :
-    scalarBaseLocal.pre (t.callEntry.withRegions [⟨State.addr L.E + 24, 32⟩] L.outputs) := by
+theorem base_pre (hL : L.Ok) (ha : BaseArgs L t) (hsy : t.syms VG.Impl.Ed25519.Arm.combSym = L.T)
+    (hw : Tbl L t.mem) :
+    scalarBaseLocal.pre (t.callEntry.withRegions [⟨State.addr L.E + 24, 32⟩, L.TB] L.outputs) := by
   obtain ⟨h0, h1, h2⟩ := ha
-  simp only [scalarBaseLocal, State.withRegions_rd, State.withRegions_wr,
-    State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.r0 ∉ linkRegs),
+  have sy : (t.callEntry.withRegions [⟨State.addr L.E + 24, 32⟩, L.TB] L.outputs).syms
+      VG.Impl.Ed25519.Arm.combSym = L.T := hsy
+  simp only [scalarBaseLocal, sy, State.withRegions_rd, State.withRegions_wr, State.withRegions_mem,
+    State.callEntry_mem, State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.r0 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.r1 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.r2 ∉ linkRegs), h0, h1, h2, scalar_addr hL]
   refine ⟨True.intro, rfl, (hL.ko.sub_left (Offset.sub_base _ (by decide : 24 + 32 ≤ 280))).symm,
-    hL.oc, hL.kc.sub_left (Offset.sub_base _ (by decide : 24 + 32 ≤ 280)), hL.no, ?_, hL.nc⟩
+    hL.oc, hL.kc.sub_left (Offset.sub_base _ (by decide : 24 + 32 ≤ 280)), hL.no, ?_, hL.nc, hL.tfit, hw,
+    hL.tout, hL.tscr⟩
   have h := hL.top
   rw [BitVec.toNat_add_of_lt (by change L.E.toNat + 24 < 2 ^ 32; omega)]
   change L.E.toNat + 24 + 32 ≤ 2 ^ 32
   omega
 
-theorem base_covers (L : Lay) : Covers ([⟨State.addr L.E + 24, 32⟩] ++ L.outputs)
+theorem base_covers (L : Lay) : Covers ([⟨State.addr L.E + 24, 32⟩, L.TB] ++ L.outputs)
     (L.inputs ++ Whole.FR L.E :: L.outputs) := by
   refine Covers.of_sub fun r hr => ?_
   rcases List.mem_append.mp hr with hr | hr
-  · rw [List.mem_singleton.mp hr]
-    exact ⟨Whole.FR L.E, List.mem_append_right _ List.mem_cons_self, 24, rfl, by change 24 + 32 ≤ 248; decide⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨Whole.FR L.E, List.mem_append_right _ List.mem_cons_self, 24, rfl, by change 24 + 32 ≤ 248; decide⟩
+    · exact ⟨L.TB, by simp [Lay.inputs], 0, by simp⟩
   · exact ⟨r, List.mem_append_right _ (List.mem_cons_of_mem _ hr), 0, by simp⟩
+
+/-- The tables in a memory the body leaves them in. -/
+theorem Ctx.tbl (hc : Ctx L g m₀ t) (hL : L.Ok) (hw : Tbl L m₀) : Tbl L t.mem := fun j hj => by
+  rw [← hw j hj]
+  refine hc.frame.readW (r := L.TB) (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
+  simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl | rfl)
+  · exact hL.tout
+  · exact hL.tscr
+  · exact hL.tstk.sub_right (frame_sub L)
 
 theorem base_writes (L : Lay) : ∀ r ∈ L.outputs,
     Whole.Within r (Whole.FR L.E) ∨ ∃ R ∈ L.outputs, Whole.Within r R :=
   fun r hr => .inr ⟨r, hr, 0, (BitVec.add_zero _).symm, by simp⟩
 
-theorem base_call (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : BaseArgs L t) :
+theorem base_call (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : BaseArgs L t)
+    (hsy : t.syms VG.Impl.Ed25519.Arm.combSym = L.T) (hw : Tbl L t.mem) :
     WP isa (.call "vg_ed25519_scalar_base" Impl.Ed25519.Arm.scalarBase) t fun u =>
       Ctx L g m₀ u ∧ Spec.Ed25519.bytesAt u.mem (State.addr L.out) 32 =
         Spec.Ed25519.scalarBase (Spec.Ed25519.bytesAt t.mem (State.addr L.E + 24) 32) := by
-  refine Whole.call_ok hc scalarBase_ok base_noFrames (base_pre hL ha) (base_covers L)
+  refine Whole.call_ok hc scalarBase_ok base_noFrames (base_pre hL ha hsy hw) (base_covers L)
     (base_writes L) fun u hu _ hp => ⟨hu, ?_⟩
   change Spec.Ed25519.bytesAt u.mem (State.addr (t.callEntry.gpr .r0)) 32 =
     Spec.Ed25519.scalarBase (Spec.Ed25519.bytesAt t.mem (State.addr (t.callEntry.gpr .r1)) 32) at hp
@@ -338,15 +367,16 @@ theorem prune_step (hc : Ctx L g m₀ t) (hL : L.Ok) {digest : List Byte}
     rw [List.mem_singleton.mp hr]
     exact .inl (Offset.sub_base _ (by decide : 24 + 32 ≤ 248))
 
-theorem base_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) {n : Nat}
+theorem base_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) (hw : Tbl L m₀)
+    (hsy : t.syms VG.Impl.Ed25519.Arm.combSym = L.T) {n : Nat}
     (hs : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt t.mem (State.addr L.E + 24) 32) = n) :
     WP isa (callWith baseArgs "vg_ed25519_scalar_base" Impl.Ed25519.Arm.scalarBase) t fun u =>
       Ctx L g m₀ u ∧ Spec.Ed25519.bytesAt u.mem (State.addr L.out) 32 =
         Spec.Ed25519.encodePoint (Spec.Ed25519.pointMul n Spec.Ed25519.basePoint) := by
-  refine WP.seq (WP.mono (setup_ok hc hL ha
+  refine WP.seq (WP.mono_syms (setup_ok hc hL ha
     (args := [(.r0, .caller 0 0), (.r1, .frame 24), (.r2, .caller 2 0)]) (stk := [])
     (by decide) (by simp [Whole.valid]) (by simp) (by simp [preserved])
-    (by decide) (by simp) (by simp)) fun u ⟨hu, hm, hav, _⟩ => ?_)
+    (by decide) (by simp) (by simp)) fun u ⟨hu, hm, hav, _⟩ syu => ?_)
   have h0 := hav (.r0, .caller 0 0) (by simp)
   have h1 := hav (.r1, .frame 24) (by simp)
   have h2 := hav (.r2, .caller 2 0) (by simp)
@@ -359,7 +389,8 @@ theorem base_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) {n :
     rintro r hr
     rw [List.mem_singleton.mp hr]
     exact Offset.disjoint_base _ (by decide) (by decide)
-  refine WP.mono (base_call hu hL ⟨h0, h1, h2⟩) fun u' ⟨hu', hp⟩ => ⟨hu', ?_⟩
+  refine WP.mono (base_call hu hL ⟨h0, h1, h2⟩ (by rw [syu]; exact hsy) (hu.tbl hL hw))
+    fun u' ⟨hu', hp⟩ => ⟨hu', ?_⟩
   rw [hp, he, Spec.Ed25519.scalarBase, hs]
 
 theorem wipe_step (hc : Ctx L g m₀ t) (hL : L.Ok) :
@@ -388,31 +419,55 @@ def pkLocal : Contract isa where
     let seed : Region := ⟨State.addr (s.gpr .r1), 32⟩
     let scr : Region := ⟨State.addr (s.gpr .r2), 8192⟩
     let stk : Region := ⟨State.addr s.sp - 280, 280⟩
-    s.rd = [seed] ∧ s.wr = [out, scr] ∧
+    let tb : Region := TBL (s.syms VG.Impl.Ed25519.Arm.combSym)
+    s.rd = [seed, tb] ∧ s.wr = [out, scr] ∧
       out.Disjoint seed ∧ out.Disjoint scr ∧ seed.Disjoint scr ∧
       stk.Disjoint out ∧ stk.Disjoint seed ∧ stk.Disjoint scr ∧
       (s.gpr .r0).toNat + 32 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 32 ≤ 2 ^ 32 ∧
-      (s.gpr .r2).toNat + 8192 ≤ 2 ^ 32 ∧ 280 ≤ s.sp.toNat
+      (s.gpr .r2).toNat + 8192 ≤ 2 ^ 32 ∧ 280 ≤ s.sp.toNat ∧
+      (s.syms VG.Impl.Ed25519.Arm.combSym).toNat + 98304 ≤ 2 ^ 32 ∧
+      (∀ j < 64 * 192, s.mem.readW (State.addr (s.syms VG.Impl.Ed25519.Arm.combSym) +
+        BitVec.ofNat 64 (8 * j)) 64 = VG.Impl.Ed25519.Arm.combWord j) ∧
+      tb.Disjoint out ∧ tb.Disjoint scr ∧ tb.Disjoint stk
   post s t := Spec.Ed25519.bytesAt t.mem (State.addr (s.gpr .r0)) 32 =
     Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) 32)
-  pub s t := s.sp = t.sp ∧ s.gpr .r0 = t.gpr .r0 ∧ s.gpr .r1 = t.gpr .r1 ∧ s.gpr .r2 = t.gpr .r2
+  pub s t := s.sp = t.sp ∧ s.gpr .r0 = t.gpr .r0 ∧ s.gpr .r1 = t.gpr .r1 ∧ s.gpr .r2 = t.gpr .r2 ∧
+    s.syms VG.Impl.Ed25519.Arm.combSym = t.syms VG.Impl.Ed25519.Arm.combSym
 
-def lay (s : State) : Lay := ⟨s.gpr .r0, s.gpr .r1, s.gpr .r2, Whole.base s⟩
+def lay (s : State) : Lay :=
+  ⟨s.gpr .r0, s.gpr .r1, s.gpr .r2, Whole.base s, s.syms VG.Impl.Ed25519.Arm.combSym⟩
 
 theorem lay_ok {s : State} (h : pkLocal.pre s) : (lay s).Ok := by
-  obtain ⟨_, _, os, oc, sc, ko, ks, kc, no, ns, nc, hb⟩ := h
+  obtain ⟨_, _, os, oc, sc, ko, ks, kc, no, ns, nc, hb, tf, _, tout, tscr, tstk⟩ := h
   have he := Whole.base_addr hb
   have top := Whole.base_top hb
   have hs := s.sp.isLt
-  refine ⟨by change (Whole.base s).toNat + 272 ≤ 2 ^ 32; omega, os, oc, sc, ?_, ?_, ?_, no, ns, nc⟩
+  refine ⟨by change (Whole.base s).toNat + 272 ≤ 2 ^ 32; omega, os, oc, sc, ?_, ?_, ?_, no, ns, nc,
+    tf, tout, tscr, ?_⟩
   · change (⟨State.addr (Whole.base s), 280⟩ : Region).Disjoint _
     rw [he]; exact ko
   · change (⟨State.addr (Whole.base s), 280⟩ : Region).Disjoint _
     rw [he]; exact ks
   · change (⟨State.addr (Whole.base s), 280⟩ : Region).Disjoint _
     rw [he]; exact kc
+  · change Region.Disjoint _ (⟨State.addr (Whole.base s), 280⟩ : Region)
+    rw [he]; exact tstk
 
-theorem entry_below {s : State} (h : pkLocal.pre s) : 280 ≤ s.sp.toNat := h.2.2.2.2.2.2.2.2.2.2.2
+theorem entry_below {s : State} (h : pkLocal.pre s) : 280 ≤ s.sp.toNat := h.2.2.2.2.2.2.2.2.2.2.2.1
+
+/-- The tables at the body's entry. -/
+theorem entry_tbl {s p : State} (h : pkLocal.pre s) (hp : Whole.Saved (Whole.entered s) 3 p) :
+    Tbl (lay s) p.mem := fun j hj => by
+  have hf := Whole.saved_frame (entry_below h) hp
+  have hw := h.2.2.2.2.2.2.2.2.2.2.2.2.2.1 j hj
+  rw [← hw]
+  refine hf.readW (r := TBL (s.syms VG.Impl.Ed25519.Arm.combSym))
+    (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
+  intro r hr
+  rw [List.mem_singleton.mp hr]
+  change Region.Disjoint _ (⟨State.addr (Whole.base s), 280⟩ : Region)
+  rw [Whole.base_addr (entry_below h)]
+  exact h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
 
 theorem entry_writes {s : State} (h : pkLocal.pre s) :
     ∀ r ∈ s.wr, (Whole.stack s).Disjoint r := by
@@ -427,7 +482,7 @@ theorem entry_ctx {s p : State} (h : pkLocal.pre s) (hp : Whole.Saved (Whole.ent
     Ctx (lay s) s.gpr p.mem (p.withRegions (Whole.bodyRd s) (Whole.bodyWr s)) := by
   have hc := Whole.saved_ctx hp
   simpa only [Whole.bodyRd, h.1, Whole.bodyWr, h.2.1, Ctx, Lay.inputs, Lay.outputs,
-    Lay.SEED, Lay.OUT, Lay.SCR, Lay.ARGS, lay, List.cons_append, List.nil_append] using hc
+    Lay.SEED, Lay.OUT, Lay.SCR, Lay.ARGS, Lay.TB, lay, List.cons_append, List.nil_append] using hc
 
 theorem entry_args {s p : State} (hs : 280 ≤ s.sp.toNat) (hp : Whole.Saved (Whole.entered s) 3 p) : Arguments (lay s) p.mem := by
   intro j hj
@@ -436,6 +491,38 @@ theorem entry_args {s p : State} (hs : 280 ≤ s.sp.toNat) (hp : Whole.Saved (Wh
   have he : j = 0 ∨ j = 1 ∨ j = 2 := by omega
   rcases he with rfl | rfl | rfl <;> exact hw
 
+abbrev pkSpec : Contract isa :=
+  Spec.Ed25519.publicKeyContract (Arm.abi.withConsts VG.Impl.Ed25519.Arm.combConsts) 280
+
+theorem pk_pre {s : State} (h : pkSpec.pre s) : pkLocal.pre s := by
+  have hp : (Spec.Ed25519.publicKeyContract Arm.abi 280).pre (stripConsts VG.Impl.Ed25519.Arm.combConsts s) ∧
+      ConstsOk VG.Impl.Ed25519.Arm.combConsts 280 s := pre_consts.mp h
+  have h1 := hp.1
+  sig_pre [Spec.Ed25519.publicKeyContract, Spec.Ed25519.publicKeySig,
+    Spec.Ed25519.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr,
+    stackBelow] at h1
+  obtain ⟨hb, _, rd, wr, os, oc, sc, ko, ks, kc, no, ns, nc⟩ := h1
+  have hk := hp.2
+  have mem : (VG.Impl.Ed25519.Arm.combSym, VG.Impl.Ed25519.Arm.combWords) ∈
+      VG.Impl.Ed25519.Arm.combConsts := List.mem_singleton_self _
+  have fit := hk.fit mem
+  rw [combWords_length] at fit
+  have ht := hk.2.2.1 _ (by rw [combConsts_regs]; exact List.mem_singleton_self _)
+  refine ⟨?_, wr, os, oc, sc, ko, ks, kc, no, ns, nc, hb, fit, fun j hj => ?_,
+    ht.2.1 _ (by rw [wr]; exact List.mem_cons_self),
+    ht.2.1 _ (by rw [wr]; exact List.mem_cons_of_mem _ List.mem_cons_self),
+    ht.2.2 _ (by simp [Arm.abi, stackBelow])⟩
+  · have e1 := hk.1
+    rw [combConsts_regs] at e1
+    have hl : VG.Impl.Ed25519.Arm.combConsts.length = 1 := rfl
+    rw [hl] at e1
+    rw [← List.take_append_drop (s.rd.length - 1) s.rd, e1, rd, List.singleton_append]
+    rfl
+  · have hw := hk.2.1 _ mem j (by rw [combWords_length]; exact hj)
+    dsimp only at hw
+    rw [combWords_getD hj] at hw
+    exact hw
+
 def satState : State where
   gpr r := match r with | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x4000 | _ => 0
   sp := 0x9000
@@ -443,14 +530,43 @@ def satState : State where
   z := false
   c := false
   v := false
-  mem _ := 0
-  rd := [⟨0x2000, 32⟩]
+  mem := baseSatMem
+  rd := [⟨0x2000, 32⟩, ⟨0x100000, 98304⟩]
   wr := [⟨0x1000, 32⟩, ⟨0x4000, 8192⟩]
+  syms _ := 0x100000
 
-theorem pk_implies : pkLocal.Implies (Spec.Ed25519.publicKeyContract Arm.abi 280) := by
-  sig_implies [Spec.Ed25519.publicKeyContract, Spec.Ed25519.publicKeySig,
-    Spec.Ed25519.scratchWords, pkLocal, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
-    [satState] using satState
+theorem pk_sat : pkSpec.pre satState := by
+  have held := baseSatMem_held
+  generalize eqs : satState = s
+  sig_pre [Spec.Ed25519.publicKeyContract, Spec.Ed25519.publicKeySig,
+    Spec.Ed25519.scratchWords, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr,
+    combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
+  subst s
+  rw [combWords_length]
+  rw [combWords_length] at held
+  refine ⟨by decide, by decide, by decide, held, by decide, ?_, Region.disjoint_of_sep (by decide),
+    by decide, by decide, by decide, Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
+    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
+    Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), by decide, by decide, by decide⟩
+  intro r hr
+  change r ∈ [⟨0x1000, 32⟩, ⟨0x4000, 8192⟩] at hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
+
+theorem pk_implies : pkLocal.Implies pkSpec where
+  pre _ h := pk_pre h
+  post := by
+    intro s s' _ h
+    sig_post [Spec.Ed25519.publicKeyContract, Spec.Ed25519.publicKeySig, Spec.Ed25519.scratchWords,
+      Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, combConsts_eq, Abi.withConsts]
+    exact h
+  pub s₁ s₂ _ _ h := by
+    sig_pub [Spec.Ed25519.publicKeyContract, Spec.Ed25519.publicKeySig, Spec.Ed25519.scratchWords,
+      Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, combConsts_eq,
+      Abi.withConsts] at h
+    obtain ⟨hsp, hsy, h0, h1, h2⟩ := h
+    exact ⟨hsp, h0, h1, h2, hsy⟩
+  sat := ⟨satState, pk_sat⟩
 
 end VG.Proof.Ed25519.Arm.PublicKey
 end
@@ -460,13 +576,15 @@ open VG VG.Arm VG.Impl.Ed25519.Arm.PublicKey
 
 variable {L : Lay} {g : Reg → BitVec 32} {m₀ : Mem} {t : State}
 
-theorem body_ok (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
+theorem body_ok (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) (hw : Tbl L m₀)
+    (hsy : t.syms VG.Impl.Ed25519.Arm.combSym = L.T) :
     WP isa body t fun u => Ctx L g m₀ u ∧
       Spec.Ed25519.bytesAt u.mem (State.addr L.out) 32 =
         Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ (State.addr L.seed) 32) := by
-  refine WP.seq (WP.mono (hash_ok hc hL ha) fun u ⟨hu, hh⟩ => ?_)
-  refine WP.seq (WP.mono (prune_step hu hL hh) fun u' ⟨hu', hs⟩ => ?_)
-  refine WP.seq (WP.mono (base_step hu' hL ha hs) fun u'' ⟨hu'', hp⟩ => ?_)
+  refine WP.seq (WP.mono_syms (hash_ok hc hL ha) fun u ⟨hu, hh⟩ syu => ?_)
+  refine WP.seq (WP.mono_syms (prune_step hu hL hh) fun u' ⟨hu', hs⟩ syu' => ?_)
+  refine WP.seq (WP.mono (base_step hu' hL ha hw (by rw [syu', syu]; exact hsy) hs)
+    fun u'' ⟨hu'', hp⟩ => ?_)
   exact WP.mono (wipe_step hu'' hL) fun w ⟨hw, hm⟩ => ⟨hw, hm.trans hp⟩
 
 theorem body_noFrames : body.noFrames = true := by
@@ -482,10 +600,11 @@ theorem publicKey_ok {s : State} (h : pkLocal.pre s) :
     (by intro j hj h4; omega) (entry_writes h)
     (P := fun m m' _ => Spec.Ed25519.bytesAt m' (State.addr (s.gpr .r0)) 32 =
       Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m (State.addr (s.gpr .r1)) 32))
-    (fun p hp => WP.mono (body_ok (entry_ctx h hp) (lay_ok h) (entry_args (entry_below h) hp))
+    (fun p hp => WP.mono (body_ok (entry_ctx h hp) (lay_ok h) (entry_args (entry_below h) hp)
+      (entry_tbl h hp) (congrFun hp.step.syms _))
       fun u ⟨hu, ho⟩ => ⟨by
         simpa only [Whole.bodyRd, h.1, Ctx, Lay.inputs, Lay.outputs, Lay.SEED, Lay.OUT,
-          Lay.SCR, Lay.ARGS, lay, h.2.1, List.cons_append, List.nil_append] using hu, ho⟩)
+          Lay.SCR, Lay.ARGS, Lay.TB, lay, h.2.1, List.cons_append, List.nil_append] using hu, ho⟩)
   refine WP.mono hw fun u ⟨hu, m, hf, hp⟩ => ⟨hu, ?_⟩
   have hs : Spec.Ed25519.bytesAt m (State.addr (s.gpr .r1)) 32 =
       Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) 32 := by
@@ -618,13 +737,19 @@ def finalize_ready (hL : L.Ok) (he : t.sp = L.E) (hs : Slots L finalizeValues fi
       (hL.kc.sub_left (Region.sub_prefix (by decide : 8 ≤ 280))) ds hL.nc nf
       (by have := hL.top; omega), finalize_covers hL, finalize_writes hL⟩
 
-def base_ready (hL : L.Ok) (hs : Slots L baseValues [] t) :
+/-- What the call of `vg_ed25519_scalar_base` needs besides its arguments: the tables' address
+and words. -/
+def BaseReady (L : Lay) (t : State) : Prop :=
+  Slots L baseValues [] t ∧ t.syms VG.Impl.Ed25519.Arm.combSym = L.T ∧ Tbl L t.mem
+
+def base_ready (hL : L.Ok) (hs : BaseReady L t) :
     Whole.CallReady scalarBaseLocal L.E L.inputs L.outputs t := by
-  have h0 := hs.1 (.r0, .caller 0 0) (by simp [baseValues])
-  have h1 := hs.1 (.r1, .frame 24) (by simp [baseValues])
-  have h2 := hs.1 (.r2, .caller 2 0) (by simp [baseValues])
+  have h0 := hs.1.1 (.r0, .caller 0 0) (by simp [baseValues])
+  have h1 := hs.1.1 (.r1, .frame 24) (by simp [baseValues])
+  have h2 := hs.1.1 (.r2, .caller 2 0) (by simp [baseValues])
   simp only [argValue, Lay.value, BitVec.add_zero] at h0 h1 h2
-  exact ⟨[⟨State.addr L.E + 24, 32⟩], L.outputs, base_pre hL ⟨h0, h1, h2⟩, base_covers L, base_writes L⟩
+  exact ⟨[⟨State.addr L.E + 24, 32⟩, L.TB], L.outputs, base_pre hL ⟨h0, h1, h2⟩ hs.2.1 hs.2.2,
+    base_covers L, base_writes L⟩
 
 end VG.Proof.Ed25519.Arm.PublicKey
 end
@@ -658,12 +783,26 @@ theorem finalize_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ (Slots L 
     exact ⟨hsp, hg (.r0, .caller 2 0) (by simp [finalizeValues]), hg (.r2, .const 32) (by simp [finalizeValues]), hg (.r3, .const 0) (by simp [finalizeValues]), ht 0 (by decide), ht 1 (by decide)⟩
   · simp [finalizeValues, linkRegs]
 
-theorem base_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ (Slots L baseValues []))
+theorem base_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ (BaseReady L))
     (.call "vg_ed25519_scalar_base" Impl.Ed25519.Arm.scalarBase) (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
-  apply call_ct scalarBase_ok scalarBase_ct base_noFrames (fun _ _ h => base_ready hL h)
-  · intro a b ar aw br bw hsp hg ht
-    exact ⟨hsp, hg (.r0, .caller 0 0) (by simp [baseValues]), hg (.r1, .frame 24) (by simp [baseValues]), hg (.r2, .caller 2 0) (by simp [baseValues])⟩
-  · simp [baseValues, linkRegs]
+  refine Whole.rel_wp ?_ ?_ ?_
+  · refine Whole.callEx scalarBase_ok scalarBase_ct fun a b h => ?_
+    let ra := base_ready hL h.1.2
+    let rb := base_ready hL h.2.2
+    obtain ⟨ca, wa⟩ := ra.covers_state h.1.1
+    obtain ⟨cb, wb⟩ := rb.covers_state h.2.1
+    have hg : ∀ p ∈ baseValues, a.callEntry.gpr p.1 = b.callEntry.gpr p.1 := fun p hp => by
+      have hl : p.1 ∉ linkRegs := by simp only [baseValues, List.mem_cons, List.not_mem_nil, or_false] at hp
+                                     rcases hp with rfl | rfl | rfl <;> decide
+      rw [State.callEntry_gpr _ hl, State.callEntry_gpr _ hl, h.1.2.1.1 p hp, h.2.2.1.1 p hp]
+    exact ⟨ra.reads, ra.writes, rb.reads, rb.writes, ra.pre, rb.pre,
+      ⟨h.1.1.sp.trans h.2.1.sp.symm, hg (.r0, .caller 0 0) (by simp [baseValues]),
+        hg (.r1, .frame 24) (by simp [baseValues]), hg (.r2, .caller 2 0) (by simp [baseValues]),
+        h.1.2.2.1.trans h.2.2.2.1.symm⟩, ca, wa, cb, wb⟩
+  · intro t ⟨hc, hs⟩
+    exact WP.mono ((base_ready hL hs).wp hc scalarBase_ok base_noFrames) fun _ hu => ⟨hu, trivial⟩
+  · intro t ⟨hc, hs⟩
+    exact WP.mono ((base_ready hL hs).wp hc scalarBase_ok base_noFrames) fun _ hu => ⟨hu, trivial⟩
 
 theorem prune_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) (.block prune)
     (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
@@ -683,8 +822,11 @@ theorem wipe_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True
   · intro t ⟨hc, _⟩; exact WP.mono (wipe_step hc hL) fun _ ⟨hu, _⟩ => ⟨hu, trivial⟩
   · intro t ⟨hc, _⟩; exact WP.mono (wipe_step hc hL) fun _ ⟨hu, _⟩ => ⟨hu, trivial⟩
 
-theorem body_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
-    RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) body (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
+theorem body_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) (hw₁ : Tbl L m₁)
+    (hw₂ : Tbl L m₂) :
+    RelCT isa (fun a b => Two L g₁ g₂ m₁ m₂ (fun _ => True) a b ∧
+      a.syms VG.Impl.Ed25519.Arm.combSym = L.T ∧ b.syms VG.Impl.Ed25519.Arm.combSym = L.T)
+      body (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   have i := setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb initValues []
     (by decide) (by simp [initValues, Whole.valid]) (by simp [initValues])
     (by simp [initValues, preserved]) (by decide) (by simp [Whole.valid])
@@ -701,12 +843,17 @@ theorem body_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     (by decide) (by simp [baseValues, Whole.valid]) (by simp [baseValues])
     (by simp [baseValues, preserved]) (by decide) (by simp [Whole.valid])
     (by simp)
-  exact ((i.seq (init_ct hL)).seq ((u.seq (update_ct hL)).seq (f.seq (finalize_ct hL)))).seq
-    ((prune_ct hL).seq ((b.seq (base_ct hL)).seq (wipe_ct hL)))
+  have bc : RelCT isa (fun a b => Two L g₁ g₂ m₁ m₂ (Slots L baseValues []) a b ∧
+      a.syms VG.Impl.Ed25519.Arm.combSym = L.T ∧ b.syms VG.Impl.Ed25519.Arm.combSym = L.T)
+      (.call "vg_ed25519_scalar_base" Impl.Ed25519.Arm.scalarBase) (Two L g₁ g₂ m₁ m₂ fun _ => True) :=
+    (base_ct hL).mono (fun a b ⟨⟨⟨hca, hsa⟩, ⟨hcb, hsb⟩⟩, sa, sb⟩ =>
+      ⟨⟨hca, hsa, sa, hca.tbl hL hw₁⟩, ⟨hcb, hsb, sb, hcb.tbl hL hw₂⟩⟩) fun _ _ h => h
+  exact (Whole.keepSym VG.Impl.Ed25519.Arm.combSym L.T ((i.seq (init_ct hL)).seq ((u.seq (update_ct hL)).seq (f.seq (finalize_ct hL))))).seq
+    ((Whole.keepSym VG.Impl.Ed25519.Arm.combSym L.T (prune_ct hL)).seq (((Whole.keepSym VG.Impl.Ed25519.Arm.combSym L.T b).seq bc).seq (wipe_ct hL)))
 
 theorem lay_eq {s t : State} (hp : pkLocal.pub s t) : lay s = lay t := by
-  obtain ⟨sp, h0, h1, h2⟩ := hp
-  simp only [lay, Whole.base, sp, h0, h1, h2]
+  obtain ⟨sp, h0, h1, h2, hy⟩ := hp
+  simp only [lay, Whole.base, sp, h0, h1, h2, hy]
 
 theorem publicKey_ct : ConstantTime isa pkLocal.pre pkLocal.pub code := by
   refine Whole.wrap_ct (by decide : 3 ≤ 6) (fun _ _ hp => hp.1)
@@ -715,15 +862,19 @@ theorem publicKey_ct : ConstantTime isa pkLocal.pre pkLocal.pub code := by
     simp only [Nat.reduceSub, Nat.mul_zero, Nat.add_zero]
     exact Nat.le_of_lt s.sp.isLt
   · intro s hs p hp
-    exact WP.mono (body_ok (entry_ctx hs hp) (lay_ok hs) (entry_args (entry_below hs) hp)) fun _ _ => trivial
+    exact WP.mono (body_ok (entry_ctx hs hp) (lay_ok hs) (entry_args (entry_below hs) hp)
+      (entry_tbl hs hp) (congrFun hp.step.syms _)) fun _ _ => trivial
   · intro s t hs ht hp
     rintro a b ta tb a' b' ⟨p, q, hpa, hqb, rfl, rfl⟩ ea eb
     have he := lay_eq hp
     have hq : Ctx (lay s) t.gpr q.mem (q.withRegions (Whole.bodyRd t) (Whole.bodyWr t)) :=
       he ▸ entry_ctx ht hqb
     have hqa : Arguments (lay s) q.mem := he ▸ entry_args (entry_below ht) hqb
-    exact ⟨(body_ct (lay_ok hs) (entry_args (entry_below hs) hpa) hqa _ _ _ _ _ _
-      ⟨⟨entry_ctx hs hpa, trivial⟩, ⟨hq, trivial⟩⟩ ea eb).1, trivial⟩
+    have hqw : Tbl (lay s) q.mem := he ▸ entry_tbl ht hqb
+    have hqy : (q.withRegions (Whole.bodyRd t) (Whole.bodyWr t)).syms VG.Impl.Ed25519.Arm.combSym =
+        (lay s).T := (congrFun hqb.step.syms _).trans hp.2.2.2.2.symm
+    exact ⟨(body_ct (lay_ok hs) (entry_args (entry_below hs) hpa) hqa (entry_tbl hs hpa) hqw _ _ _ _ _ _
+      ⟨⟨⟨entry_ctx hs hpa, trivial⟩, ⟨hq, trivial⟩⟩, congrFun hpa.step.syms _, hqy⟩ ea eb).1, trivial⟩
 
 end VG.Proof.Ed25519.Arm.PublicKey
 end
@@ -732,7 +883,7 @@ namespace VG.Proof.Ed25519.Arm.PublicKey
 open VG VG.Arm VG.Impl.Ed25519.Arm.PublicKey
 
 theorem publicKey_verified :
-    Verified Arm.target code (Spec.Ed25519.publicKeyContract Arm.abi 280) :=
+    Verified Arm.target code pkSpec :=
   Verified.of_implies
     (Verified.of_correct (fun _ h => publicKey_ok h) publicKey_ct (.refl pk_implies.sat_left))
     pk_implies

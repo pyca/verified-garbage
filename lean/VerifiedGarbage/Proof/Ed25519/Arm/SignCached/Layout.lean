@@ -18,6 +18,8 @@ structure Lay where
   len : BitVec 32
   scr : BitVec 32
   E : BitVec 32
+  /-- The address of the comb's tables (`VG_ED25519_COMB`). -/
+  T : BitVec 32
 
 namespace Lay
 variable (L : Lay)
@@ -29,7 +31,9 @@ abbrev SCR : Region := ⟨State.addr L.scr, 8192⟩
 abbrev ORIGINALARGS : Region := ⟨State.addr L.E + BitVec.ofNat 64 280, 8⟩
 abbrev ARGS : Region := ⟨State.addr L.E + BitVec.ofNat 64 248, 24⟩
 abbrev FR : Region := Whole.FR L.E
-def inputs : List Region := [L.SEED, L.PK, L.MSG, L.ORIGINALARGS, L.ARGS]
+/-- The comb's tables. -/
+abbrev TB : Region := ⟨State.addr L.T, 98304⟩
+def inputs : List Region := [L.SEED, L.PK, L.MSG, L.ORIGINALARGS, L.TB, L.ARGS]
 def outputs : List Region := [L.OUT, L.SCR]
 def value (j : Nat) : BitVec 32 :=
   match j with | 0 => L.out | 1 => L.seed | 2 => L.pk | 3 => L.msg | 4 => L.len | _ => L.scr
@@ -47,6 +51,7 @@ structure Ok : Prop where
   nm : L.msg.toNat + L.len.toNat ≤ 2 ^ 32
   ns : L.seed.toNat + 32 ≤ 2 ^ 32
   nc : L.scr.toNat + 8192 ≤ 2 ^ 32
+  tfit : L.T.toNat + 98304 ≤ 2 ^ 32
 end Lay
 
 /-- The scratch allocation leaves enough address space for either hash prefix. -/
