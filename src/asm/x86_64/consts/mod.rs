@@ -35,6 +35,10 @@ mod vg_mldsa_rej_tbl;
 pub(crate) use vg_mldsa_rej_tbl::VG_MLDSA_REJ_TBL;
 
 #[rustfmt::skip]
+mod vg_mldsa_zetas;
+pub(crate) use vg_mldsa_zetas::VG_MLDSA_ZETAS;
+
+#[rustfmt::skip]
 mod vg_mlkem_ntt_zetas;
 pub(crate) use vg_mlkem_ntt_zetas::VG_MLKEM_NTT_ZETAS;
 

@@ -92,7 +92,7 @@ def vscale : Prog isa :=
       vcsub .xmm3 .xmm2 ++ ([.movdquStore (at_ .rdx 0) .xmm3, .alu .add .rdx (.imm 16)] : List Instr)))
 
 /-- The table and the constants. -/
-def vpro : List Instr := dwordTab zmTab 256 .rsi ++ vconsts
+def vpro : List Instr := vtabFill zetaTbl zmTab 256 .rsi ++ vconsts
 
 def ntt : Prog isa := withMxcsr .rsi 768 <|
   .seq (.block vpro) (.seq (vlay vbfly 128 1 4) (.seq (vlay vbfly 64 2 4) (.seq (vlay vbfly 32 4 4)

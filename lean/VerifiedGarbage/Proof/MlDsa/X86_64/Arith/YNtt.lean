@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
 import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.TabFill
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
@@ -64,8 +65,8 @@ theorem ypro_ok {sP : Addr} {s : State} (hsi : s.gpr .rsi = sP) (hw : pR sP ∈ 
     WP isa (.block ypro) s fun s' => Tab zmTab s'.mem sP 256 ∧ YConsts s' ∧
       Frame [pR sP] s.mem s'.mem ∧ Keep [.r9, .rax] s s' ∧ s'.mxcsr = s.mxcsr := by
   rw [ypro, WP.block_append_iff]
-  refine WP.mono (dwordTab_ok zmTab (fun k => Nat.lt_trans (zmTab_lt k) (by decide)) (by decide) hsi hw)
-    fun s1 ⟨hT, hf, k1, x1, _⟩ => WP.mono (yconsts_ok s1) fun s2 ⟨hc, k2, m2, x2, _⟩ =>
+  refine WP.mono (ytabFill_ok zetaTbl zmTab (fun k => Nat.lt_trans (zmTab_lt k) (by decide)) (by decide) hsi hw)
+    fun s1 ⟨hT, hf, k1, x1⟩ => WP.mono (yconsts_ok s1) fun s2 ⟨hc, k2, m2, x2, _⟩ =>
       ⟨by rw [m2]; exact hT, hc, by rw [m2]; exact hf, (k1.trans k2).mono (by simp), by rw [x2, x1]⟩
 
 /-- Between the layers: the polynomial `F` at `fP`, the table at `sP`, and

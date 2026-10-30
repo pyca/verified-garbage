@@ -145,7 +145,7 @@ def yscale : Prog isa :=
       vcsub .xmm3 .xmm2) ++ ([.vmovdquStore .l256 (at_ .rdx 0) .xmm3, .alu .add .rdx (.imm 32)] : List Instr)))
 
 /-- The table and the constants. -/
-def ypro : List Instr := dwordTab zmTab 256 .rsi ++ yconsts
+def ypro : List Instr := ytabFill zetaTbl zmTab 256 .rsi ++ yconsts
 
 def nttAvx2 : Prog isa := withMxcsr .rsi 768 <|
   .seq (.block ypro) (.seq (ylay vbfly 128 1 4) (.seq (ylay vbfly 64 2 4) (.seq (ylay vbfly 32 4 4)

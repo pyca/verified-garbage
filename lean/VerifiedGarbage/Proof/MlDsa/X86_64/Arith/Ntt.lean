@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.TabFill
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.Offset
@@ -41,49 +42,6 @@ open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced PolyIs zetas ntt)
 
 /-! ## The prologue -/
 
-/-- A table of 256 `u32`s `t k`, stored at `sP` (in `r`), two at a time
-through `r9`. -/
-theorem dwordTab_ok (t : Nat → Nat) (ht : ∀ k, t k < 2 ^ 32) {r : Reg} (hr : r ≠ .r9) {sP : Addr} {s : State}
-    (hsi : s.gpr r = sP) (hw : pR sP ∈ s.wr) :
-    WP isa (.block (dwordTab t 256 r)) s fun s' => Tab t s'.mem sP 256 ∧
-      Frame [pR sP] s.mem s'.mem ∧ Keep [.r9] s s' ∧ s'.mxcsr = s.mxcsr ∧ s'.xmm = s.xmm := by
-  refine WP.mono (wp_range_flatMap (M := isa) (N := 128) (fun i w =>
-      Tab t w.mem sP (2 * i) ∧ Frame [pR sP] s.mem w.mem ∧
-        Keep [.r9] s w ∧ w.mxcsr = s.mxcsr ∧ w.xmm = s.xmm)
-    (fun i w hi ⟨hT, hf, hk, hm, hx⟩ => ?_) 128 (Nat.le_refl _) s
-    ⟨fun _ h => absurd h (by omega_arith), Frame.refl _ _, Keep.refl _ _, rfl, rfl⟩)
-    fun w ⟨hT, hf, hk, hm, hx⟩ => ⟨hT, hf, hk, hm, hx⟩
-  have hsi' : w.gpr r = sP := by
-    rw [hk.gpr (by simp only [List.mem_singleton]; exact hr), hsi]
-  have w0 : InRegions w.wr (sP + BitVec.ofNat 64 (8 * i)) 8 :=
-    ⟨_, by rw [hk.2.2]; exact hw, Offset.contains_base sP (by omega_arith) (by omega_arith)⟩
-  have hV : ∀ e < 2, (BitVec.ofNat 64 (t (2 * i) + 2 ^ 32 * t (2 * i + 1))).extractLsb' (32 * e) 32 =
-      BitVec.ofNat 32 (t (2 * i + e)) := fun e he => by
-    apply BitVec.eq_of_toNat_eq
-    have h0 := ht (2 * i)
-    have h1 := ht (2 * i + 1)
-    rw [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    rcases (by omega_arith : e = 0 ∨ e = 1) with rfl | rfl
-    · simp only [Nat.mul_zero, Nat.pow_zero, Nat.div_one, Nat.add_zero]; omega_arith
-    · simp only [Nat.mul_one]; omega_arith
-  vrund [hsi', w0, hr]
-  generalize BitVec.ofNat 64 (t (2 * i) + 2 ^ 32 * t (2 * i + 1)) = V at hV ⊢
-  refine ⟨fun k hk' => ?_, hf.writeW (List.mem_singleton_self _) _
-      (Offset.contains_base sP (by omega_arith) (by omega_arith)),
-    ⟨fun r hr => ?_, hk.2.1, hk.2.2⟩, hm, hx⟩
-  · by_cases h : 2 * i ≤ k
-    · rw [coeffAt_eq, coeffAddr, show sP + BitVec.ofNat 64 (4 * k) =
-          sP + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 (4 * (k - 2 * i)) by
-        rw [BitVec.add_assoc, ← BitVec.ofNat_add]; exact congrArg _ (congrArg _ (by omega_arith)),
-        show 32 = 8 * 4 from rfl, readW_writeW_inside _ _ _ (by omega_arith) (by decide),
-        show 8 * (4 * (k - 2 * i)) = 32 * (k - 2 * i) by omega_arith, hV _ (by omega_arith),
-        show 2 * i + (k - 2 * i) = k by omega_arith]
-    · rw [coeffAt_eq, Mem.readW_writeW_sep (Offset.sep sP (by omega_arith) (by omega_arith) (by omega_arith)) (by decide)]
-      exact hT k (by omega_arith)
-  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    simp only [RegUpd.gpr_setReg, hr, ite_false]
-    exact hk.1 r (by simp [hr])
-
 theorem vconsts_ok (s : State) :
     WP isa (.block vconsts) s fun s' => VConsts s' ∧ Keep [.rax] s s' ∧ s'.mem = s.mem ∧
       s'.mxcsr = s.mxcsr := by
@@ -100,8 +58,8 @@ theorem vpro_ok {sP : Addr} {s : State} (hsi : s.gpr .rsi = sP) (hw : pR sP ∈ 
     WP isa (.block vpro) s fun s' => Tab zmTab s'.mem sP 256 ∧ VConsts s' ∧
       Frame [pR sP] s.mem s'.mem ∧ Keep [.r9, .rax] s s' ∧ s'.mxcsr = s.mxcsr := by
   rw [vpro, WP.block_append_iff]
-  refine WP.mono (dwordTab_ok zmTab (fun k => Nat.lt_trans (zmTab_lt k) (by decide)) (by decide) hsi hw)
-    fun s1 ⟨hT, hf, k1, x1, _⟩ => WP.mono (vconsts_ok s1) fun s2 ⟨hc, k2, m2, x2⟩ =>
+  refine WP.mono (vtabFill_ok zetaTbl zmTab (fun k => Nat.lt_trans (zmTab_lt k) (by decide)) (by decide) hsi hw)
+    fun s1 ⟨hT, hf, k1, x1⟩ => WP.mono (vconsts_ok s1) fun s2 ⟨hc, k2, m2, x2⟩ =>
       ⟨by rw [m2]; exact hT, hc, by rw [m2]; exact hf, (k1.trans k2).mono (by simp), by rw [x2, x1]⟩
 
 /-! ## The layers -/
