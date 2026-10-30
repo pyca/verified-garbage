@@ -19,35 +19,45 @@ open VG.Proof.MlDsa.Arith.Lazy
 open VG.Proof.MlKem.X86_64 (Keep XOnly XKeep YOnly ylanes yld_ok yconst_ok ifp ifn)
 open VG.Spec.MlDsa (q n Zq coeffAt zetas)
 
-/-- The lazy butterfly also keeps twice q in xmm11. -/
-structure VConsts (s : State) : Prop extends Arith.VConsts s where
-  q2 : s.xmm .xmm11 = ofDwords 16760834#32 16760834#32 16760834#32 16760834#32
+/-- A lazy butterfly also keeps a constant `c` in each doubleword of xmm11:
+twice q for the forward transform's (`VConsts`). -/
+structure VConstsW (c : BitVec 32) (s : State) : Prop extends Arith.VConsts s where
+  q2 : s.xmm .xmm11 = ofDwords c c c c
 
-def YConsts (s : State) : Prop := ∀ l < 2, VConsts (s.proj l)
+/-- The constants of the forward transform's lazy butterfly: twice q in xmm11. -/
+abbrev VConsts := VConstsW 16760834#32
 
-theorem xonly_vconsts {rs : List XReg} {s s' : State} (h : XOnly rs s s') (hc : VConsts s)
-    (h14 : XReg.xmm14 ∉ rs) (h15 : XReg.xmm15 ∉ rs) (h11 : XReg.xmm11 ∉ rs := by decide) : VConsts s' :=
+def YConstsW (c : BitVec 32) (s : State) : Prop := ∀ l < 2, VConstsW c (s.proj l)
+
+abbrev YConsts := YConstsW 16760834#32
+
+variable {c11 : BitVec 32}
+
+theorem xonly_vconsts {rs : List XReg} {s s' : State} (h : XOnly rs s s') (hc : VConstsW c11 s)
+    (h14 : XReg.xmm14 ∉ rs) (h15 : XReg.xmm15 ∉ rs) (h11 : XReg.xmm11 ∉ rs := by decide) : VConstsW c11 s' :=
   ⟨Arith.xonly_vconsts h hc.toVConsts h14 h15, by rw [h.xmm _ h11]; exact hc.q2⟩
 
-theorem yonly_yconsts {rs : List XReg} {s s' : State} (h : YOnly rs s s') (hc : YConsts s)
-    (h14 : XReg.xmm14 ∉ rs) (h15 : XReg.xmm15 ∉ rs) (h11 : XReg.xmm11 ∉ rs := by decide) : YConsts s' :=
+theorem yonly_yconsts {rs : List XReg} {s s' : State} (h : YOnly rs s s') (hc : YConstsW c11 s)
+    (h14 : XReg.xmm14 ∉ rs) (h15 : XReg.xmm15 ∉ rs) (h11 : XReg.xmm11 ∉ rs := by decide) : YConstsW c11 s' :=
   fun l hl => ⟨⟨by rw [State.proj_xmm, h.lane _ h15 l hl]; exact (hc l hl).q,
     by rw [State.proj_xmm, h.lane _ h14 l hl]; exact (hc l hl).qinv⟩,
     by rw [State.proj_xmm, h.lane _ h11 l hl]; exact (hc l hl).q2⟩
 
-structure BInvY (fP : Addr) (s₀ s : State) : Prop where
+structure BInvYW (c : BitVec 32) (fP : Addr) (s₀ s : State) : Prop where
   keep : Keep [.r8, .rcx, .rdx, .rax] s₀ s
   frame : Frame [pR fP] s₀.mem s.mem
-  consts : YConsts s
+  consts : YConstsW c s
   mxcsr : s.mxcsr = s₀.mxcsr
 
-theorem BInvY.trans {fP : Addr} {s₁ s₂ s₃ : State} (h₁ : BInvY fP s₁ s₂) (h₂ : BInvY fP s₂ s₃) :
-    BInvY fP s₁ s₃ :=
+abbrev BInvY := BInvYW 16760834#32
+
+theorem BInvYW.trans {fP : Addr} {s₁ s₂ s₃ : State} (h₁ : BInvYW c11 fP s₁ s₂) (h₂ : BInvYW c11 fP s₂ s₃) :
+    BInvYW c11 fP s₁ s₃ :=
   ⟨(h₁.keep.trans h₂.keep).mono (by simp), h₁.frame.trans h₂.frame, h₂.consts, h₂.mxcsr.trans h₁.mxcsr⟩
 
 theorem ylanes_gpr {s s' : State} (h : ∀ r l, s'.lane r l = s.lane r l) {rs : List XReg} {s₀ : State}
-    (o : YOnly rs s₀ s) (hc : YConsts s₀) (h14 : XReg.xmm14 ∉ rs) (h15 : XReg.xmm15 ∉ rs)
-    (h11 : XReg.xmm11 ∉ rs := by decide) : YConsts s' :=
+    (o : YOnly rs s₀ s) (hc : YConstsW c11 s₀) (h14 : XReg.xmm14 ∉ rs) (h15 : XReg.xmm15 ∉ rs)
+    (h11 : XReg.xmm11 ∉ rs := by decide) : YConstsW c11 s' :=
   fun l hl => ⟨⟨by rw [State.proj_xmm, h]; exact (yonly_yconsts o hc h14 h15 h11 l hl).q,
     by rw [State.proj_xmm, h]; exact (yonly_yconsts o hc h14 h15 h11 l hl).qinv⟩,
     by rw [State.proj_xmm, h]; exact (yonly_yconsts o hc h14 h15 h11 l hl).q2⟩
@@ -107,12 +117,14 @@ theorem dlanes_loadY {m : Mem} {p : Addr} {F : Poly} (h : PolyIs m p F) {j : Nat
   rw [lane_load]
   exact dlanes_load h (by omega)
 
-def VBflyOk (bf : List Instr) (op : Word → Word → Zq → Word × Word) : Prop :=
-  ∀ s : State, VConsts s → ∀ x y : Nat → Word, ∀ ζ : Nat → Zq, DLanes (s.xmm .xmm0) x → DLanes (s.xmm .xmm1) y →
+def VBflyOkW (c : BitVec 32) (bf : List Instr) (op : Word → Word → Zq → Word × Word) : Prop :=
+  ∀ s : State, VConstsW c s → ∀ x y : Nat → Word, ∀ ζ : Nat → Zq, DLanes (s.xmm .xmm0) x → DLanes (s.xmm .xmm1) y →
     ZLanes (s.xmm .xmm13) ζ → ZOdd (s.xmm .xmm13) (s.xmm .xmm12) →
     WP isa (.block bf) s fun s' => DLanes (s'.xmm .xmm0) (fun i => (op (x i) (y i) (ζ i)).1) ∧
       DLanes (s'.xmm .xmm3) (fun i => (op (x i) (y i) (ζ i)).2) ∧
       XOnly [.xmm1, .xmm2, .xmm4, .xmm0, .xmm3] s s'
 
+
+abbrev VBflyOk := VBflyOkW 16760834#32
 
 end VG.Proof.MlDsa.X86_64.Arith.Lazy

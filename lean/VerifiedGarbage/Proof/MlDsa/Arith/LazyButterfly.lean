@@ -73,4 +73,50 @@ theorem final_reduce {x : Nat} (hx : x < 17 * q) :
   rw [q_eq] at hx ⊢
   omega
 
+/-! ## The butterflies of `NTT⁻¹` -/
+
+/-- The lazy butterfly of `NTT⁻¹`: `(x + y, ζ · (y - x + 128 q))` on unsigned
+doublewords, `128 q` keeping the difference nonnegative. -/
+def opInv (x y : Word) (z : Zq) : Word × Word :=
+  (x + y, Fin.ofNat 4294967296 (product (y + 1072693376 - x) z))
+
+theorem opInv_values (x y : Word) (z : Zq) (hx : x.val < 128 * q) (hy : y.val < 128 * q) :
+    (opInv x y z).1.val = x.val + y.val ∧ (y + 1072693376 - x).val = y.val + 128 * q - x.val ∧
+      (opInv x y z).2.val = product (y + 1072693376 - x) z := by
+  have ht := product_lt (y + 1072693376 - x) z
+  have ht32 : product (y + 1072693376 - x) z < 4294967296 := by rw [q_eq] at ht; omega
+  rw [q_eq] at hx hy ⊢
+  have hxy : x.val + y.val < 4294967296 := by omega
+  have hb : y.val + 1072693376 < 4294967296 := by omega
+  refine ⟨by simp only [opInv, Fin.val_add, Nat.mod_eq_of_lt hxy], ?_, by simp only [opInv, Fin.val_ofNat, Nat.mod_eq_of_lt ht32]⟩
+  simp only [Fin.val_sub, Fin.val_add, show (1072693376 : Word).val = 1072693376 from rfl, Nat.mod_eq_of_lt hb]
+  omega
+
+theorem opInv_bound (x y : Word) (z : Zq) {b : Nat} (hb : 1 ≤ b) (hb' : b ≤ 128) (hx : x.val < b * q)
+    (hy : y.val < b * q) : (opInv x y z).1.val < 2 * b * q ∧ (opInv x y z).2.val < 2 * b * q := by
+  have hv := opInv_values x y z (Nat.lt_of_lt_of_le hx (Nat.mul_le_mul_right q hb'))
+    (Nat.lt_of_lt_of_le hy (Nat.mul_le_mul_right q hb'))
+  have ht := product_lt (y + 1072693376 - x) z
+  rw [hv.1, hv.2.2, Nat.mul_assoc]
+  constructor
+  · omega
+  · exact Nat.lt_of_lt_of_le ht (Nat.mul_le_mul_left 2 (Nat.le_mul_of_pos_left q hb))
+
+theorem opInv_residue (x y : Word) (z : Zq) (hx : x.val < 128 * q) (hy : y.val < 128 * q) :
+    residue (opInv x y z).1 = residue x + residue y ∧
+    residue (opInv x y z).2 = z * (residue y - residue x) := by
+  have hv := opInv_values x y z hx hy
+  constructor
+  · apply Fin.ext
+    rw [Fin.val_add]
+    change (opInv x y z).1.val % q = (x.val % q + y.val % q) % q
+    rw [hv.1, Nat.add_mod]
+  · apply Fin.ext
+    have hm : product (y + 1072693376 - x) z % q = (y + 1072693376 - x).val * z.val % q := mont_mulR _ _
+    change (opInv x y z).2.val % q = (z * (residue y - residue x)).val
+    rw [hv.2.2, hm, hv.2.1, Fin.val_mul, Fin.val_sub, residue, residue, Fin.val_ofNat, Fin.val_ofNat]
+    have hl : (y.val + 128 * q - x.val) % q = (q - x.val % q + y.val % q) % q := by
+      rw [q_eq] at hx hy ⊢; omega
+    rw [Nat.mul_mod, hl, Nat.mul_comm, Nat.mul_mod z.val ((q - x.val % q + y.val % q) % q), Nat.mod_mod]
+
 end VG.Proof.MlDsa.Arith.Lazy

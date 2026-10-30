@@ -65,9 +65,10 @@ def artifacts : List Artifact := [
   Spec.MlDsa.montgomeryNttInvApi.artifact X86_64.target {
     suffix := "_avx2"
     notes := ["The function computes on eight coefficients at a time in AVX2 registers, with a table of \
-        the 256 zetas that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications \
-        (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back \
-        before returning."]
+        the 256 zetas that it stores in `scratch`. Its butterflies do not reduce: a coefficient's bound \
+        doubles each layer, from `q` to `256 q`, and the final multiplication by `R/256` reduces each. It \
+        sets MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of \
+        MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning."]
     code := Impl.MlDsa.X86_64.Arith.montNttInvAvx2
     verified := Proof.MlDsa.X86_64.Arith.MontgomeryInv.verified
     features := ["avx", "avx2"] },
