@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigit
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitLayout
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepFields
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
 public import VerifiedGarbage.Impl.Secp256k1.X86_64.Joint
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedEntry
 
 /-! Concrete separation checks for secp256k1's joint verifier's scratch allocation. -/
 

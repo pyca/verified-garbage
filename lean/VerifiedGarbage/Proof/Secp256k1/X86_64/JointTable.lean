@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Secp256k1.X86_64.JointLayout
+import VerifiedGarbage.Proof.Secp256k1.X86_64.JointLayout
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitLayout
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoop
 import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsWrap
@@ -21,10 +21,14 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAddTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.PointFieldTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableStoreTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableState
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableState
 import VerifiedGarbage.Proof.Weierstrass.JacDbl0
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Secp256k1.X86_64.JointTiming
+public import VerifiedGarbage.Impl.Secp256k1.X86_64.Joint
+public import VerifiedGarbage.Proof.Weierstrass.JacMul
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInvariant
 
 /-!
 # secp256k1 on x86-64: the table of `Q`'s odd multiples by calls

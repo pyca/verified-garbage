@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNaf16Timing
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
 public import VerifiedGarbage.Impl.Secp256k1.X86_64.Joint
 public import VerifiedGarbage.Impl.Secp256k1.X86_64.PointOps
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingInit
 import VerifiedGarbage.Proof.Secp256k1.X86_64.PointOpsLit
 import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Secp256k1.X86_64.JacTiming
@@ -19,9 +18,12 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNaf16Timing
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
 meta import VerifiedGarbage.Impl.Secp256k1.X86_64.Joint
 meta import VerifiedGarbage.Impl.Secp256k1.X86_64.PointOps
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingInit
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
 meta import VerifiedGarbage.Proof.Secp256k1.X86_64.PointOpsLit
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
 
 /-! Taint checks of the rest of secp256k1's joint loop: its digits' reads and
 entries, the cache of `Z²`, `Z³`, the seed, the counter, the recoders, the
