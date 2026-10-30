@@ -9,11 +9,14 @@ public import VerifiedGarbage.Spec.Weierstrass.Point
 functions (`Spec/Weierstrass/Point.lean`) for a curve `y² = x³ + b`, whose
 `a` is zero (secp256k1's), by the complete formulas of Renes, Costello and
 Batina for such curves (*Complete addition formulas for prime order elliptic
-curves*, EUROCRYPT 2016), which take fewer products than Algorithm 1:
+curves*, EUROCRYPT 2016), which take fewer products than Algorithm 1. They
+are named `point_a0_…`: a name `point_double_…` or `point_add_…` would make
+them variants of those functions (`ci/check_variants.py`), whose contracts
+they do not have.
 
-* `vg_<curve>_point_double_a0(ws)`: `O = P + P` by Algorithm 9 (exception-free
+* `vg_<curve>_point_a0_double(ws)`: `O = P + P` by Algorithm 9 (exception-free
   doubling for `a = 0`);
-* `vg_<curve>_point_add_affine_a0(ws)`: `O = P + Q` by Algorithm 8 (mixed
+* `vg_<curve>_point_a0_add_affine(ws)`: `O = P + Q` by Algorithm 8 (mixed
   addition for `a = 0`), for `Q = (X₂ : Y₂ : 1)`: the function reads `Q`'s
   `X` and `Y` only.
 
@@ -109,13 +112,13 @@ every byte of `ws` but `O`'s and the own working space kept. -/
 def resultPost (v : Fin C.p × Fin C.p × Fin C.p) (ws : Addr) (m m' : Mem) : Prop :=
   C.Below (C.pointAt m' ws (oAt C.k)) ∧ C.decPt (C.pointAt m' ws (oAt C.k)) = v ∧ Keeps C.k ws m m'
 
-/-- `double_a0`: `O = P + P` by Algorithm 9, under `doubleContract`'s
+/-- `a0_double`: `O = P + P` by Algorithm 9, under `doubleContract`'s
 precondition. -/
 def double0Contract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
   sig.contract A (pre := fun ws m => C.sumPre (pAt C.k) (pAt C.k) ws m)
     (post := fun ws m m' _ => C.resultPost (C.dbl0 ws m) ws m m') (stack := stack)
 
-/-- `add_affine_a0`: `O = P + (X₂ : Y₂ : 1)` by Algorithm 8, under
+/-- `a0_add_affine`: `O = P + (X₂ : Y₂ : 1)` by Algorithm 8, under
 `addContract`'s precondition. -/
 def add0mContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
   sig.contract A (pre := fun ws m => C.sumPre (pAt C.k) (qAt C.k) ws m)
@@ -133,20 +136,20 @@ def common0 : String :=
     Contract: `double0Contract` or `add0mContract` of `VG.Spec.Weierstrass.Point.Curve`. \
     Constant time: only the pointer may affect timing."
 
-/-- `vg_<curve>_point_double_a0` on every target. -/
+/-- `vg_<curve>_point_a0_double` on every target. -/
 def double0Api : Api where
   module := C.module
-  name := C.fn "double_a0"
+  name := C.fn "a0_double"
   sig := sig
   contracts := some fun A stack => C.double0Contract A stack
   summary := s!"The doubling `O = P + P` of a point on {C.desc}, whose `a` is zero, by Renes, \
     Costello and Batina's complete doubling for `a = 0` (Algorithm 9). " ++ C.common0
   safety := C.safety "the point `P`"
 
-/-- `vg_<curve>_point_add_affine_a0` on every target. -/
+/-- `vg_<curve>_point_a0_add_affine` on every target. -/
 def add0mApi : Api where
   module := C.module
-  name := C.fn "add_affine_a0"
+  name := C.fn "a0_add_affine"
   sig := sig
   contracts := some fun A stack => C.add0mContract A stack
   summary := s!"The addition `O = P + Q` of points on {C.desc}, whose `a` is zero, for \
