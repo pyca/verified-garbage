@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Mont
 public import VerifiedGarbage.Impl.Weierstrass.Slots
+public import VerifiedGarbage.Impl.Weierstrass.Rcb0
 
 /-!
 # Short Weierstrass curves on x86-64: points, scalar multiplication, powers
@@ -16,7 +17,9 @@ the working space; a point is three slots, projective coordinates
   such as the complete addition `rcb`, one after the other.
 * `ladder`: `[k]G` by double-and-add from the top bit, 256 times (or as many
   bits as the table has): `D = R + R`, `S = D + G` and `R = D` or `S` by a
-  mask of the bit, so every iteration does the same.
+  mask of the bit, so every iteration does the same. For a curve with
+  `a = 0` and an affine `G` (`a0`), the doubling and the addition are those
+  for `a = 0` (`dbl0`, `rcb0m`: 22 products, against 34).
 * `pow`: `x^e` by square-and-multiply over the bits of a public exponent,
   also always multiplying and selecting by a mask, so that one loop serves
   every exponent.
@@ -99,17 +102,27 @@ def tbl (d : Nat) : MemOp := { base := .rdi, index := some .rbx, disp := d }
 def bitMask (d : Nat) : List Instr :=
   [.movzx8 .rax (tbl d), .mov32 .rcx (.imm 0), .alu .sub .rcx (.reg .rax)]
 
+/-- The ladder's doubling `D = R + R`: Algorithm 9 for `a0` (`a = 0`), else
+Algorithm 1. -/
+def ladDblOps (L : LadderCfg) (a0 : Bool) : List FOp :=
+  if a0 then dbl0 L.S L.R L.D else rcb L.S L.R L.R L.D
+
+/-- The ladder's addition `T = D + G`: Algorithm 8 for `a0` (`a = 0` and `G`
+affine, `G.z` not read), else Algorithm 1. -/
+def ladAddOps (L : LadderCfg) (a0 : Bool) : List FOp :=
+  if a0 then rcb0m L.S L.D L.G L.T else rcb L.S L.D L.G L.T
+
 /-- One iteration of the ladder, for the bit `t = rbx - 1`: `D = R + R`,
 `T = D + G`, then `R = T` if bit `t` is set, else `D`. -/
-def ladderBody (L : LadderCfg) : Prog isa :=
-  .seq (.block [.alu .sub .rbx (.imm 1)]) <| .seq (fprogB L.M (rcb L.S L.R L.R L.D)) <|
-    .seq (fprogB L.M (rcb L.S L.D L.G L.T)) <|
+def ladderBody (L : LadderCfg) (a0 : Bool := false) : Prog isa :=
+  .seq (.block [.alu .sub .rbx (.imm 1)]) <| .seq (fprogB L.M (ladDblOps L a0)) <|
+    .seq (fprogB L.M (ladAddOps L a0)) <|
     .block (bitMask L.bits ++ selPt L.M.n L.R L.D L.T ++ [.alu .test .rbx (.reg .rbx)])
 
 /-- The ladder over the bits `nbits - 1` down to 0, from `R` as set up by the
 caller (the point at infinity). -/
-def ladder (L : LadderCfg) : Prog isa :=
-  .seq (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 L.nbits))]) (.loop (ladderBody L) .ne)
+def ladder (L : LadderCfg) (a0 : Bool := false) : Prog isa :=
+  .seq (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 L.nbits))]) (.loop (ladderBody L a0) .ne)
 
 /-- One iteration: `acc = acc²`, `tmp = acc · base`, and `acc = tmp` if the
 exponent's bit `rbx - 1` is set. -/
