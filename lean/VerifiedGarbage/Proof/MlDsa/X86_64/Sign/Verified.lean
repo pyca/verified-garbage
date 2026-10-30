@@ -18,10 +18,11 @@ import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
 `vg_mldsa{44,65,87}_sign` (`sign (primsWith v.code) p`, for an implementation
 `v` of the polynomial arithmetic) is verified against `signContractT`:
 `signContract` with `signLeakT` (`Proof/MlDsa/Sign/Leak.lean`) for `signLeak`,
-which tags what each iteration of the loop leaks after its `c̃` with whether
-it was rejected. The contract's `signLeak` tags the iterations the same way
-(`signLeakT_eq_signLeak`), so `signContractT` is `signContract`
-(`signContractT_eq`), against which `sign*_verified'` state it.
+which tags what each iteration of the loop leaks after its `c̃` with the
+check that rejected it. The contract's `signLeak` also says at which
+polynomial; two runs that agree on it agree on `signLeakT`
+(`signContract_pubT`), so `signContractT_narrow` moves the proof to
+`signContract`, against which `sign*_verified'` state it.
 -/
 
 @[expose] public section
@@ -145,15 +146,17 @@ theorem sign_verified :
     (signK_implies h3)
 
 omit h3 in
-/-- Against the contract: `signContractT` is `signContract`, whose leakage
-tags each iteration as `signLeakT` does (`signLeakT_eq_signLeak`). -/
-theorem signContractT_eq (p : Params) {M : ISA} (A : Abi M) (stack : Nat) :
-    signContractT p A stack = signContract p A stack := by
-  unfold signContractT signContract
-  simp only [Sign.signLeakT_eq_signLeak]
+/-- From `signContractT` to `signContract`: two runs that agree on what
+`signContract` takes as public agree on what `signContractT` does
+(`signContract_pubT`). -/
+theorem signContractT_narrow {c : Prog X86_64.target.isa} {p : Params} {stack : Nat}
+    (h : Verified X86_64.target c (signContractT p X86_64.abi stack)) :
+    Verified X86_64.target c (signContract p X86_64.abi stack) :=
+  h.of_narrow id (fun _ s => s) (fun _ h => h) (fun _ _ _ _ e => e) (fun _ _ _ _ _ ha hq => ⟨ha, hq⟩)
+    (fun _ _ _ _ hp => Sign.signContract_pubT hp) h.2.2
 
 theorem sign_verified' :
     Verified X86_64.target (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) p) (signContract p X86_64.abi signStack) :=
-  signContractT_eq p X86_64.abi signStack ▸ sign_verified v h3
+  signContractT_narrow <| sign_verified v h3
 
 end VG.Proof.MlDsa.X86_64.Sign

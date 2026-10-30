@@ -307,8 +307,7 @@ theorem RR.mono {p : Params} {STK : Nat} {I I' E E' : State → State → Prop} 
 
 theorem signLeak_head (p : Params) (sk μ rnd : List Byte) :
     ∃ X, signLeak p sk μ rnd = leakBytes (sk.take 32) ++ X := by
-  rw [← Proof.MlDsa.Sign.signLeakT_eq_signLeak]
-  unfold Proof.MlDsa.Sign.signLeakT
+  unfold signLeak
   rcases e : skDecode p sk with ⟨ρ, K, tr, s₁, s₂, t₀⟩
   have hρ : ρ = sk.take 32 := by rw [← Proof.MlDsa.Sign.skRho_eq p sk, e]
   subst hρ

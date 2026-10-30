@@ -136,10 +136,10 @@ theorem tagFn_eq {a b c a' b' c' : Prop} [Decidable a] [Decidable b] [Decidable 
 
 theorem tag_eq (hp : ParamsOk p) {σ : State} {κ : Nat}
     (hs : (sampleInBall p.τ maxBounds.ball (CTv p σ κ)).isSome) :
-    signRejectTag p maxBounds (amat p (Am p σ)) ((List.range p.ℓ).map (S1v p σ)) ((List.range p.k).map (S2v p σ))
+    signRejectTagC p maxBounds (amat p (Am p σ)) ((List.range p.ℓ).map (S1v p σ)) ((List.range p.k).map (S2v p σ))
       ((List.range p.k).map (T0v p σ)) (muOf σ) (rppOf p σ) κ =
       tagFn (ZOk p σ κ) (R0Ok p σ κ) (∀ j < p.k, normRq [CT0v p σ κ j] < p.γ₂) := by
-  rw [signRejectTag_eqF hp, show ctF p (Am p σ) (muOf σ) (rppOf p σ) κ = CTv p σ κ from rfl, cV_eq hs]
+  rw [signRejectTagC_eqF hp, show ctF p (Am p σ) (muOf σ) (rppOf p σ) κ = CTv p σ κ from rfl, cV_eq hs]
   rfl
 
 /-- Two runs that agree on what the iterations from `t` leak agree on the

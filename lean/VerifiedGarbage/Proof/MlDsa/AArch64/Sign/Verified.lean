@@ -11,11 +11,11 @@ public import VerifiedGarbage.Proof.Framework.Contract
 
 `vg_mldsa{44,65,87}_sign` (`sign prims p`) is verified against
 `signContractT`: `signContract` with `signLeakT`
-(`Proof/MlDsa/Sign/Leak.lean`) for `signLeak`, which tags what each iteration
-of the loop leaks after its `c̃` with whether it was rejected. The contract's
-`signLeak` tags the iterations the same way (`signLeakT_eq_signLeak`), so
-`signContractT` is `signContract` (`signContractT_eq`), against which
-`sign*_verified'` state it.
+(`Proof/MlDsa/Sign/Leak.lean`) for `signLeak`, which tags what each iteration of the loop leaks after its `c̃` with the
+check that rejected it. The contract's `signLeak` also says at which
+polynomial; two runs that agree on it agree on `signLeakT`
+(`signContract_pubT`), so `signContractT_narrow` moves the proof to
+`signContract`, against which `sign*_verified'` state it.
 -/
 
 @[expose] public section
@@ -86,25 +86,26 @@ theorem sign87_verifiedWith :
     Verified AArch64.target (Impl.MlDsa.AArch64.Sign.signWith keccak.callee (primsWith keccak.callee) mlDsa87) (signContractT mlDsa87 AArch64.abi signStack) :=
   sign_verified (.inr (.inr rfl))
 
-/-! Against the contract: `signContractT` is `signContract`, whose leakage
-tags each iteration as `signLeakT` does (`signLeakT_eq_signLeak`). -/
-
-theorem signContractT_eq (p : Params) {M : ISA} (A : Abi M) (stack : Nat) :
-    signContractT p A stack = signContract p A stack := by
-  unfold signContractT signContract
-  simp only [Sign.signLeakT_eq_signLeak]
+/-- From `signContractT` to `signContract`: two runs that agree on what
+`signContract` takes as public agree on what `signContractT` does
+(`signContract_pubT`). -/
+theorem signContractT_narrow {c : Prog AArch64.target.isa} {p : Params} {stack : Nat}
+    (h : Verified AArch64.target c (signContractT p AArch64.abi stack)) :
+    Verified AArch64.target c (signContract p AArch64.abi stack) :=
+  h.of_narrow id (fun _ s => s) (fun _ h => h) (fun _ _ _ _ e => e) (fun _ _ _ _ _ ha hq => ⟨ha, hq⟩)
+    (fun _ _ _ _ hp => Sign.signContract_pubT hp) h.2.2
 
 theorem sign44_verifiedWith' :
     Verified AArch64.target (Impl.MlDsa.AArch64.Sign.signWith keccak.callee (primsWith keccak.callee) mlDsa44) (signContract mlDsa44 AArch64.abi signStack) :=
-  signContractT_eq mlDsa44 AArch64.abi signStack ▸ sign44_verifiedWith
+  signContractT_narrow <| sign44_verifiedWith
 
 theorem sign65_verifiedWith' :
     Verified AArch64.target (Impl.MlDsa.AArch64.Sign.signWith keccak.callee (primsWith keccak.callee) mlDsa65) (signContract mlDsa65 AArch64.abi signStack) :=
-  signContractT_eq mlDsa65 AArch64.abi signStack ▸ sign65_verifiedWith
+  signContractT_narrow <| sign65_verifiedWith
 
 theorem sign87_verifiedWith' :
     Verified AArch64.target (Impl.MlDsa.AArch64.Sign.signWith keccak.callee (primsWith keccak.callee) mlDsa87) (signContract mlDsa87 AArch64.abi signStack) :=
-  signContractT_eq mlDsa87 AArch64.abi signStack ▸ sign87_verifiedWith
+  signContractT_narrow <| sign87_verifiedWith
 
 theorem sign44_verified' :
     Verified AArch64.target (Impl.MlDsa.AArch64.Sign.sign prims mlDsa44)
