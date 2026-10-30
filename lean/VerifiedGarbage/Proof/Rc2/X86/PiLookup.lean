@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 public import VerifiedGarbage.Proof.Framework.X86.SseLanes
 import VerifiedGarbage.Proof.Framework.X86.SseDword
 import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Framework.X86.Reduce
+public import VerifiedGarbage.Proof.Framework.X86.Reduce -- shake: keep (`lrun` simps with `reduceExec`)
 
 /-!
 # RC2 on x86: PITABLE in SSE2 registers
