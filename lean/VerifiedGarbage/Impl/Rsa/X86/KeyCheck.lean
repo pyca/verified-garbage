@@ -47,8 +47,6 @@ def nArr : Nat := 24
 
 def acc : List Instr := andS sMask sMask sF
 
-def cnt33 : List Instr := [.mov .esi (.imm 33)]
-
 /-- The cdecl pointer/length pair index for each input array. -/
 def inputs (full : Bool) : List (Nat × Nat) :=
   [(0, aN), (1, aE)] ++ (if full then [(2, aD)] else []) ++
