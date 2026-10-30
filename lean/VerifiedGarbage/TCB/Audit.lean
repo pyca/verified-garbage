@@ -132,4 +132,73 @@ elab "#assert_spec_origin" : command => do
       {"\n".intercalate (bad.map fun (n, m) => s!"{n} (in {m})")}"
   logInfo m!"every `VG.Spec` definition is declared in `Spec/`"
 
+/-! ## Audit digests
+
+The emitter emits each target from a program that is a module, and relies
+on that target's audit, a file that is not a module, which `lake build`
+built (see "Drivers as modules" in `TCB/Emit.lean`). The audit is of what it
+imported when it was built: if some of those modules were built again since
+(`lake build +Module`, without the audit), the program would emit code the
+audit never saw. So the audit records, as its last command, a digest of
+everything it imported (`#record_audit_digest`), and the program, which
+imports the same modules, checks before it emits that the digest of what it
+imported is the same (`#check_audit_digest`).
+
+The digest is of the modules' names and of Lake's hashes of the contents of
+each one's `.olean`, `.olean.server`, `.olean.private` and `.ir`: the
+digests of two files that imported the same modules are equal exactly when
+every one of those outputs is the same (but for a collision of the 64-bit
+hashes, which nothing here could arrange: the outputs are Lean's, of sources
+that are reviewed). Lean's own modules, which come with the toolchain and
+which Lake does not hash, are in it by name, with the toolchain's version.
+An audit that failed records nothing: Lean writes no `.olean` for a file with
+an error, so an audit of something else can only have an older digest. -/
+
+/-- One line of the digest: the module `m`'s name and Lake's hashes of its
+outputs, or only its name if it is one of Lean's own (in `coreDir`). Fails
+if Lake has no hash of its `.olean`. -/
+def digestLine (coreDir : String) (m : Name) : IO String := do
+  let olean ← findOLean m
+  if olean.toString.startsWith coreDir then return s!"{m} core"
+  let base := (olean.withExtension "").toString
+  let hashOf (part : String) : IO String := do
+    let f : System.FilePath := s!"{base}.{part}.hash"
+    if ← f.pathExists then return (← IO.FS.readFile f).trimAscii.toString else return "-"
+  let o ← hashOf "olean"
+  if o == "-" then throw <| IO.userError s!"{m}: Lake has no hash of {olean}"
+  return s!"{m} {o} {← hashOf "olean.server"} {← hashOf "olean.private"} {← hashOf "ir"}"
+
+/-- The digest of the modules `env` imported (see above). -/
+def auditDigest (env : Environment) : IO String := do
+  let coreDir := (← getLibDir (← getBuildDir)).toString ++ "/"
+  let names := env.header.moduleNames.qsort (·.toString < ·.toString)
+  let mut h : UInt64 := hash versionString
+  for m in names do
+    h := mixHash h (hash (← digestLine coreDir m))
+  return s!"{versionString} {String.ofList (Nat.toDigits 16 h.toNat)}"
+
+/-- `#record_audit_digest d` defines `d : String`, the digest of what the file
+imported. An audit runs it after its audits, which it is then the digest of. -/
+elab "#record_audit_digest " id:ident : command => do
+  if (← getEnv).header.isModule then
+    throwError "#record_audit_digest must run in a file that is not a module"
+  let d ← auditDigest (← getEnv)
+  elabCommand (← `(def $id : String := $(quote d)))
+
+/-- `#check_audit_digest A d ok` defines `ok : Bool`: whether the module `A`,
+an audit, defines `d` as the digest of what this file imported. False if
+`A` has no `.olean` or no `d`, or if Lake has no hash of an output of a
+module this file imported. -/
+elab "#check_audit_digest " audit:ident digest:ident ok:ident : command => do
+  let env ← getEnv
+  let current ← try
+      let (mod, _) ← readModuleData (← findOLean audit.getId)
+      let recorded := (mod.constants.find? (·.name == digest.getId)).bind fun c =>
+        match c.value? with
+        | some (.lit (.strVal s)) => some s
+        | _ => none
+      pure (recorded == some (← auditDigest env))
+    catch _ => pure false
+  elabCommand (← `(def $ok : Bool := $(quote current)))
+
 end VG
