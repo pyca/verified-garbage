@@ -232,8 +232,8 @@ def main(argv=None):
     rows, unprofiled, (skipped, skipped_secs) = collect(
         args.build, args.module, args.source, args.tests)
     if not rows:
-        sys.exit(f"no profiles under {args.build}: restore the CI cache with "
-                 "`lean_cache.py unpack --profile`, or build with the lakefile's `profiler` options")
+        sys.exit(f"no profiles under {args.build}: restore the CI cache, or build "
+                 "with the lakefile's `profiler` options")
     if args.by == "module":
         rows = by_module(rows)
     key = total if args.sort == "total" else (lambda r: r[args.sort])
@@ -252,8 +252,8 @@ def main(argv=None):
         print(f"{total(r):8.2f} {r['kernel']:8.2f} {r['elab']:8.2f} "
               f"{r['blocked']:8.2f}  {what}")
     if unprofiled:
-        print(f"({unprofiled} modules' logs held no profile: restored without "
-              "`lean_cache.py unpack --profile`, or with every step under its threshold)",
+        print(f"({unprofiled} modules' logs held no profile: built before the "
+              "profiler was on, or with every step under its threshold)",
               file=sys.stderr)
 
 

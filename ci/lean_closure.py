@@ -518,8 +518,7 @@ def rank_main(args) -> int:
     build = args.build or ROOT / "lean/.lake/build/lib/lean"
     rows, _, _ = lean_profile.collect(build, [], tests=True)
     if not rows:
-        raise SystemExit(f"no profiles under {build}: restore the CI build cache with `unpack --profile` "
-                         "(lean/README.md)")
+        raise SystemExit(f"no profiles under {build}: restore the CI build cache (lean/README.md)")
     profile = {r["module"]: lean_profile.total(r) for r in lean_profile.by_module(rows)}
     times = latest_times(load_runs(args.metrics) if args.metrics.is_dir() else [], profile)
     modes: dict[str, dict] = {}

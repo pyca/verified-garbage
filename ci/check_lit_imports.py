@@ -123,7 +123,7 @@ def main(argv=None):
 
     rows, _, _ = lean_profile.collect(lean_profile.BUILD, [])
     if not rows:
-        sys.exit("no profile: restore the CI build cache with `unpack --profile` (lean/README.md) or build first")
+        sys.exit("no profile: restore the CI build cache (lean/README.md) or build first")
     kernel = {(r["module"], r["decl"]): r["kernel"] for r in rows}
     lit_times = literal_times(rows)
 

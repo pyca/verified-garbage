@@ -131,27 +131,6 @@ class LeanArchiveTests(unittest.TestCase):
         self.assertEqual(restored, original)
         self.assertTrue(os.access(target / ".lake/packages/mathlib/scripts/run.sh", os.X_OK))
 
-    def test_unpack_strips_the_profile_unless_asked(self):
-        profile = [{"level": "info", "message": "A/B.lean:3:0: simp took 2.5ms\ntype checking took 1e+03ms"},
-                   {"level": "info", "message": "stderr:\nimport took 1.02s\ncumulative profiling times:\n"
-                    "\timport 1.02s\n\tsimp 2.5ms\n"}]
-        other = [{"level": "info", "message": "A/B.lean:4:2: s : State"},
-                 {"level": "info", "message": "stderr:\nimport took 1ms\nsomething else\n"},
-                 {"level": "warning", "message": "A/B.lean:5:0: simp took 1ms"}]
-        trace = {"depHash": "1", "outputs": {"o": "x"}, "log": profile[:1] + other + profile[1:]}
-        write(self.lean / ".lake/build/lib/lean/A/B.trace", json.dumps(trace))
-        data, _ = self.pack()
-        for keep in (False, True):
-            target = self.root / f"restored-{keep}"
-            target.mkdir()
-            with tempfile.TemporaryDirectory() as tmp:
-                lean_cache.unpack(target, 2, tmp, 1, str(self.stub), io.BytesIO(data), keep)
-            restored = json.loads((target / ".lake/build/lib/lean/A/B.trace").read_text())
-            self.assertEqual(restored, trace if keep else dict(trace, log=other))
-            # A trace without a profile is left as it was.
-            self.assertEqual((target / ".lake/build/lib/lean/C.trace").read_bytes(),
-                             (self.lean / ".lake/build/lib/lean/C.trace").read_bytes())
-
     def test_unpack_fails_when_tar_does(self):
         data, _ = self.pack()
         target = self.root / "restored"

@@ -165,9 +165,8 @@ Past the limit Lean would fail with `failed to read file '….olean.private'`.
 Every module records a profile of its build, kept in its `.trace` file
 (`moreLeanArgs` in `lakefile.toml`), which Lake prints again for each module
 it finds already built: `--log-level=warning` (or `-q`) leaves it out and
-shows only warnings and errors. `python3 ../ci/lean_profile.py` reads it (in
-a restored cache, only if restored with `unpack --profile`), to list the
-declarations the build spends the most on (the `lean-profiling` skill,
+shows only warnings and errors. `python3 ../ci/lean_profile.py` reads it, to
+list the declarations the build spends the most on (the `lean-profiling` skill,
 `.agents/skills/lean-profiling/SKILL.md`).
 
 ## Iterating on import narrowing
@@ -335,9 +334,7 @@ progress, or a download that does not match the digest), run it again. The
 manifest's `io.pyca.lean.toolchain` and `org.opencontainers.image.revision`
 annotations identify the cached build. Lake rebuilds outputs that differ
 from the checkout. The modules' `.trace` files carry the profile CI's build
-recorded, which `ci/lean_profile.py` reads; `unpack` leaves it out (nine
-tenths of the traces' bytes, which nothing else reads) unless given
-`--profile` (`ci/lean_cache.py unpack --profile lean`).
+recorded, which `ci/lean_profile.py` reads.
 
 Without the `zstd` command, `pip install zstandard` and replace `zstd -dc`
 with
