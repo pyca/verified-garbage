@@ -366,6 +366,123 @@ theorem mask4_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : Sta
     (fun r h1 hr s hs => yhR_ok hP (hyh r h1 hr) (by omega) hs) s2 hs2)
     fun s3 hs3 => ⟨hs3.l, hs3.y, hs3.yh⟩
 
+/-! ## The last three polynomials of `y`, four at a time -/
+
+/-- Iteration `t`, with the first `r` polynomials of `y` and `ŷ`, and in the
+temporaries those of the last three of `y` from `r` on. -/
+structure ICT (p : Params) (D : Nat) (σ : State) (t r : Nat) (s : State) : Prop where
+  m : ICm p D σ t r s
+  tmp : ∀ k < 3, r ≤ 4 * (p.ℓ / 4) + k → Pl s (1 + k) (Yv p σ (p.ℓ * t) (4 * (p.ℓ / 4) + k))
+
+/-- The temporaries lie apart from `ws`. -/
+def tmpChk (p : Params) (ws : List (Ptr × Nat)) : Bool :=
+  (List.range 3).all fun k => keepB (sgB p) ws (pS (1 + k)) 1024
+
+theorem tmp_keep {p : Params} {D : Nat} {σ : State} {t r : Nat} {s s' : State} (L : Lay D (sgR p) (sgW p) s)
+    {ws : List (Ptr × Nat)} (hP : PPostB D s s' ws) (hc : tmpChk p ws = true)
+    (h : ∀ k < 3, r ≤ 4 * (p.ℓ / 4) + k → Pl s (1 + k) (Yv p σ (p.ℓ * t) (4 * (p.ℓ / 4) + k))) :
+    ∀ k < 3, r ≤ 4 * (p.ℓ / 4) + k → Pl s' (1 + k) (Yv p σ (p.ℓ * t) (4 * (p.ℓ / 4) + k)) := fun k hk hr =>
+  L.keepPoly hP (List.all_eq_true.mp hc k (List.mem_range.mpr hk)) (h k hk hr)
+
+/-- What `y[r]` from its temporary, and `ŷ[r]`, need of the layout. -/
+def tChk (p : Params) (r : Nat) : Bool :=
+  let y := pS (yBase p + r)
+  let yh := pS (yhBase p + r)
+  let w1 : List (Ptr × Nat) := [(y, 1024)]
+  let w3 : List (Ptr × Nat) := [(yh, 1024)]
+  let w4 : List (Ptr × Nat) := [(yh, 1024), (sc oPS, 1024)]
+  copyChk (sgB p) (sgW p) y (pS (1 + (r - 4 * (p.ℓ / 4)))) 1024 && icmChk p w1 r && tmpChk p w1 &&
+    copyChk (sgB p) (sgW p) yh y 1024 && icmChk p w3 r && famChk (sgB p) w3 (yBase p) (r + 1) && tmpChk p w3 &&
+    ipChk (sgB p) (sgW p) yh && icmChk p w4 r && famChk (sgB p) w4 (yBase p) (r + 1) && tmpChk p w4
+
+theorem tailR_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : State} {t r : Nat}
+    (hc : tChk p r = true) (h1 : 4 * (p.ℓ / 4) ≤ r) (h2 : r < 4 * (p.ℓ / 4) + 3) {s : State} (h : ICT p D σ t r s) :
+    WP isa (tailR P p r) s (ICT p D σ t (r + 1)) := by
+  simp only [tChk, Bool.and_eq_true] at hc
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨c0, c1⟩, k1⟩, cc⟩, c3⟩, f3⟩, k3⟩, ci⟩, c4⟩, f4⟩, k4⟩ := hc
+  unfold tailR yhR
+  refine WP.seq (WP.mono (copy_okB h.m.l.st.lay c0) fun s1 ⟨hP1, _, hb1⟩ => ?_)
+  have I1 := h.m.step hP1 c1
+  have T1 := tmp_keep h.m.l.st.lay hP1 k1 h.tmp
+  have hy1 : Fam s1 (yBase p) (r + 1) (Yv p σ (p.ℓ * t)) := by
+    refine Fam.snoc I1.y ?_
+    show PolyIs s1.mem (pa s1 (pS (yBase p + r))) _
+    rw [hP1.pa (pS_bases _)]
+    have := h.tmp (r - 4 * (p.ℓ / 4)) (by omega) (by omega)
+    rw [show 4 * (p.ℓ / 4) + (r - 4 * (p.ℓ / 4)) = r by omega] at this
+    exact polyIs_of_bytes hb1 this
+  refine WP.seq (WP.mono (copy_okB I1.l.st.lay cc) fun s3 ⟨hP3, _, hb3⟩ => ?_)
+  have I3 := I1.step hP3 c3
+  have T3 := tmp_keep I1.l.st.lay hP3 k3 T1
+  have hyh3 : Pl s3 (yhBase p + r) (Yv p σ (p.ℓ * t) r) := by
+    show PolyIs _ _ _
+    rw [hP3.pa (pS_bases _)]
+    exact polyIs_of_bytes hb3 (hy1 r (by omega))
+  refine WP.mono (ipAt_ok (t := ntt) hP.ntt I3.l.st.lay ci hyh3.1) fun s4 ⟨hP4, _, hq4⟩ => ?_
+  have I4 := I3.step hP4 c4
+  refine ⟨⟨I4.l, Fam.keep I3.l.st.lay hP4 f4 (Fam.keep I1.l.st.lay hP3 f3 hy1), Fam.snoc I4.yh ?_⟩,
+    fun k hk hr => tmp_keep I3.l.st.lay hP4 k4 T3 k hk (by omega)⟩
+  show PolyIs _ _ _
+  rw [hP4.pa (pS_bases _), hyh3.2] at *
+  exact hq4
+
+/-- What the last three polynomials of `y`, four at a time, need of the layout. -/
+def tailChk (p : Params) : Bool :=
+  (List.range 4).all (ms4Chk p (p.ℓ / 4)) && mask4Chk (sgB p) (sgW p) t1P (r4P p) &&
+    icmChk p [(t1P, 4096), (r4P p, 8192)] (4 * (p.ℓ / 4)) &&
+    (List.range 3).all (fun k => tChk p (4 * (p.ℓ / 4) + k)) && decide (p.γ₁ = 2 ^ 17 ∨ p.γ₁ = 2 ^ 19)
+
+/-- The four-at-a-time call of `maskTail`, to the temporaries. -/
+theorem maskTailCall_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : State} {t : Nat}
+    (hc : tailChk p = true) {s : State} (h : SD p D σ t (p.ℓ / 4) 4 s) :
+    WP isa (mask4At P p.γ₁ t1P (r4P p)) s (ICT p D σ t (4 * (p.ℓ / 4))) := by
+  simp only [tailChk, Bool.and_eq_true, List.all_eq_true, List.mem_range, decide_eq_true_eq] at hc
+  obtain ⟨⟨⟨⟨_, cm⟩, c2⟩, _⟩, hγ⟩ := hc
+  refine WP.mono (mask4Call_ok hP h.m.l.st.lay hγ cm) fun s2 ⟨hP2, _, hq2⟩ => ?_
+  refine ⟨h.m.step hP2 c2, fun k hk _ => ?_⟩
+  have hq := hq2 k (by omega)
+  rw [seed66, pa_sc_add, h.sd k (by omega)] at hq
+  show PolyIs s2.mem (pa s2 (pS (1 + k))) _
+  rw [hP2.pa (pS_bases _), ← pa_poly4]
+  exact hq
+
+theorem maskTail_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : State} {t : Nat}
+    (hl : p.ℓ % 4 = 3) (hc : tailChk p = true) {s : State} (h : ICm p D σ t (4 * (p.ℓ / 4)) s) :
+    WP isa (maskTail P p) s (ICm p D σ t p.ℓ) := by
+  have hc' := hc
+  simp only [tailChk, Bool.and_eq_true, List.all_eq_true, List.mem_range, decide_eq_true_eq] at hc
+  obtain ⟨⟨⟨⟨hcp, _⟩, _⟩, ht⟩, _⟩ := hc
+  unfold maskTail
+  refine WP.seq (WP.mono (seqR_ok (I := fun k => SD p D σ t (p.ℓ / 4) k) 4 0
+    (fun k _ hk s hs => ms4_ok (hcp k (by omega)) hs) s ⟨h, fun _ h => absurd h (Nat.not_lt_zero _)⟩)
+    fun s1 hs1 => ?_)
+  rw [Nat.zero_add] at hs1
+  refine WP.seq (WP.mono (maskTailCall_ok hP hc' hs1) fun s2 T2 => ?_)
+  have htr : ∀ r, 4 * (p.ℓ / 4) ≤ r → r < 4 * (p.ℓ / 4) + 3 → tChk p r = true := fun r h1 h2 => by
+    have := ht (r - 4 * (p.ℓ / 4)) (by omega)
+    rwa [show 4 * (p.ℓ / 4) + (r - 4 * (p.ℓ / 4)) = r by omega] at this
+  refine WP.mono (seqR_ok (I := fun r => ICT p D σ t r) 3 (4 * (p.ℓ / 4))
+    (fun r h1 hr s hs => tailR_ok hP (htr r h1 hr) h1 hr hs) s2 T2) fun s3 hs3 => ?_
+  rw [show 4 * (p.ℓ / 4) + 3 = p.ℓ by omega] at hs3
+  exact hs3.m
+
+/-- What the polynomials of `y` after the groups of four need of the layout. -/
+def restChk (p : Params) : Bool := bif p.ℓ % 4 == 3 then tailChk p else true
+
+theorem maskRest_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : State} {t : Nat}
+    (hc : restChk p = true) (hm : ∀ r < p.ℓ, mChk p r = true) {s : State} (h : ICm p D σ t (4 * (p.ℓ / 4)) s) :
+    WP isa (maskRest P p) s (ICm p D σ t p.ℓ) := by
+  unfold maskRest
+  unfold restChk at hc
+  cases e : p.ℓ % 4 == 3
+  · rw [Bool.cond_false]
+    refine WP.mono (seqR_ok (I := fun r => ICm p D σ t r) (p.ℓ % 4) (4 * (p.ℓ / 4))
+      (fun r _ hr s hs => maskR_ok hP (hm r (by omega)) hs) s h) fun s1 hs1 => ?_
+    rwa [Nat.div_add_mod] at hs1
+  · rw [Bool.cond_true]
+    rw [e, Bool.cond_true] at hc
+    exact maskTail_ok hP (beq_iff_eq.mp e) hc h
+
 /-! ## `w` -/
 
 /-- Iteration `t`, with `y`, `ŷ`, and the first `i` polynomials of `w`. -/
@@ -505,7 +622,7 @@ structure IC (p : Params) (D : Nat) (σ : State) (t : Nat) (s : State) : Prop wh
 
 /-- What the commitment needs of the layout. -/
 def cChk (p : Params) : Bool :=
-  (List.range (p.ℓ / 4)).all (m4Chk p) && (List.range p.ℓ).all (mChk p) && (List.range p.k).all (wChk p) && (List.range p.k).all (hChk p) &&
+  (List.range (p.ℓ / 4)).all (m4Chk p) && (List.range p.ℓ).all (mChk p) && restChk p && (List.range p.k).all (wChk p) && (List.range p.k).all (hChk p) &&
     shakeChk (sgB p) (sgW p) [((.r12, 0), 64), (sc oW1, p.k * w1Len p)] (sc oCT) (cLen p) &&
     icwChk p [(sc 0, 200), (sc 200, 640), (sc oCT, cLen p)] p.k
 
@@ -515,15 +632,13 @@ theorem cChk_ok {p : Params} (h : Ok3 p) : cChk p = true := by
 theorem commit_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : cChk p = true) {σ : State} {t : Nat}
     {s : State} (h : IL p D σ t s) : WP isa (commit P p) s (IC p D σ t) := by
   simp only [cChk, Bool.and_eq_true, List.all_eq_true, List.mem_range] at hc
-  obtain ⟨⟨⟨⟨⟨hm4, hm⟩, hw⟩, hh⟩, hs⟩, hk⟩ := hc
+  obtain ⟨⟨⟨⟨⟨⟨hm4, hm⟩, hrest⟩, hw⟩, hh⟩, hs⟩, hk⟩ := hc
   unfold commit
   refine WP.seq (WP.mono (seqR_ok (I := fun g => ICm p D σ t (4 * g)) (p.ℓ / 4) 0
     (fun g _ hg s hs => mask4_ok hP (hm4 g (by omega)) hs) s
     ⟨h, fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _)⟩) fun s0 hs0 => ?_)
   rw [Nat.zero_add] at hs0
-  refine WP.seq (WP.mono (seqR_ok (I := fun r => ICm p D σ t r) (p.ℓ % 4) (4 * (p.ℓ / 4))
-    (fun r _ hr s hs => maskR_ok hP (hm r (by omega)) hs) s0 hs0) fun s1 hs1 => ?_)
-  rw [Nat.div_add_mod] at hs1
+  refine WP.seq (WP.mono (maskRest_ok hP hrest hm hs0) fun s1 hs1 => ?_)
   refine WP.seq (WP.mono (seqR_ok (I := fun i => ICw p D σ t i) p.k 0
     (fun i _ hi s hs => rowW_ok hP (hw i (by omega)) (by omega) hs) s1
     ⟨hs1.l, hs1.y, hs1.yh, fun _ h => absurd h (Nat.not_lt_zero _)⟩) fun s2 hs2 => ?_)

@@ -25,7 +25,8 @@ keeps `scratch` in `rbx`, `sk` in `rbp`, `mu` in `r12`, `rnd` in `r13` and
 3. The rejection sampling loop, at most 814 iterations (`minBounds.sign`),
    with the counter `κ` at `KAP`: the commitment (`y ← ExpandMask(ρ″, κ)`:
    four polynomials at a time (`vg_mldsa_expand_mask_poly4`, from the seeds
-   `ρ″ ‖ κ + r` at `MS4`), then the last `ℓ mod 4` one at a time;
+   `ρ″ ‖ κ + r` at `MS4`), then the last `ℓ mod 4` one at a time, or, when
+   there are three, four at a time to the temporaries (`maskTail`);
    `ŷ = NTT(y)`, `w = NTT⁻¹(Â ŷ)`, and `c̃ = H(μ ‖ w1Encode(HighBits(w)), λ/4)`
    at `CT`), then `c = SampleInBall(c̃)` and, if it succeeded, the validity
    checks of the iteration in three groups, each combined without a branch
@@ -184,9 +185,24 @@ def rowW (i : Nat) : Prog isa :=
 def w1R (i : Nat) : Prog isa :=
   .seq (highBitsAt P (wP p i) p.γ₂ t1P) (simpleBitPackAt P t1P (w1Max p) (sc (oW1 + w1Len p * i)) (w1Len p))
 
+/-- `y[r]` from the temporary the four-at-a-time call of `maskTail` wrote it
+to, and its `ŷ[r]`. -/
+def tailR (r : Nat) : Prog isa := .seq (copy (yP p r) (pS (1 + (r - 4 * (p.ℓ / 4)))) 1024) (yhR P p r)
+
+/-- The last three polynomials of `y` when `ℓ mod 4 = 3`: four at a time, to the
+temporaries (the fourth, of `κ + ℓ`, is not used), then each to `y` with its
+`ŷ`. -/
+def maskTail : Prog isa :=
+  .seq (seqR (cpM4 (p.ℓ / 4)) 0 4) (.seq (mask4At P p.γ₁ t1P (r4P p)) (seqR (tailR P p) (4 * (p.ℓ / 4)) 3))
+
+/-- The polynomials of `y` after the groups of four: three at once (`maskTail`),
+or one at a time. -/
+def maskRest : Prog isa :=
+  bif p.ℓ % 4 == 3 then maskTail P p else seqR (maskR P p) (4 * (p.ℓ / 4)) (p.ℓ % 4)
+
 /-- `y`, `ŷ`, `w`, `w₁` and `c̃ = H(μ ‖ w1Encode(w₁), λ/4)` to `CT`. -/
 def commit : Prog isa :=
-  .seq (seqR (mask4 P p) 0 (p.ℓ / 4)) (.seq (seqR (maskR P p) (4 * (p.ℓ / 4)) (p.ℓ % 4))
+  .seq (seqR (mask4 P p) 0 (p.ℓ / 4)) (.seq (maskRest P p)
     (.seq (seqR (rowW P p) 0 p.k) (.seq (seqR (w1R P p) 0 p.k)
       (shakeAt [((.r12, 0), 64), (sc oW1, p.k * w1Len p)] (sc oCT) (cLen p)))))
 

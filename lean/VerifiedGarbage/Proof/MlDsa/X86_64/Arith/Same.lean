@@ -68,6 +68,12 @@ theorem Same.loop {b b' : Prog isa} {c : isa.Cond} (hb : Same m b b') : Same m (
 theorem Same.call {c : Prog isa} (hc : mc c = true) (n n' : String) : Same m (.call n c) (.call n' (.block [])) := by
   unfold Same; rw [hm.call, hm.call, hc, hm.nil]
 
+omit hm in
+theorem Same.cond {c : Bool} {a a' b b' : Prog isa} (ha : Same m a a') (hb : Same m b b') :
+    Same m (bif c then a else b) (bif c then a' else b') := by
+  cases c
+  exacts [hb, ha]
+
 theorem Same.seqRS {f g : Nat → Prog isa} (h : ∀ k, Same m (f k) (g k)) :
     ∀ a n, Same m (Impl.MlDsa.X86_64.Sign.seqR f a n) (Impl.MlDsa.X86_64.Sign.seqR g a n)
   | _, 0 => rfl
@@ -98,6 +104,7 @@ tactic_template "same_tac " hm:term : tactic =>
     | apply Same.seq $hm
     | apply Same.ite $hm
     | apply Same.loop $hm
+    | apply Same.cond
     | (apply Same.seqRS $hm; intro)
     | (apply Same.seqRV $hm; intro)
     | (apply Same.seqRK $hm; intro)
