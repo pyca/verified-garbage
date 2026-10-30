@@ -368,7 +368,9 @@ namespace VG.Proof.Md5.X86_64
   to build (`ci/check_lean_speed.py` checks it).
 * The audits (`#assert_standard_axioms`, `#assert_no_compiler_overrides`,
   `#assert_spec_origin`) run only in files that are not modules (the
-  emitter's drivers, `Artifacts.lean`, `VerifiedGarbageTest/`), and refuse
+  emitter's audits, `VGEmit.Audit.<Target>`, which `lake build` builds from
+  what `Emit.lean` writes, `EmitOne.lean`'s driver, `Artifacts.lean`,
+  `VerifiedGarbageTest/`), and refuse
   to run in a module: a module sees the theorems it imports as axioms,
   without their proofs. A file that is not a module sees every module's
   private imports too.
@@ -871,7 +873,7 @@ proofs that leave `src/asm/` as it was, tests, docs, CI).
 ## Checks to run before pushing
 
 ```sh
-(cd lean && lake build --log-level=warning && lake env lean --run Emit.lean --check)
+(cd lean && lake env lean --run Emit.lean --prepare && lake build --log-level=warning && lake env lean --run Emit.lean --check)
 python3 ci/check_lean_imports.py
 python3 ci/check_lean_modules.py
 python3 ci/check_lean_single_importer.py --base origin/main

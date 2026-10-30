@@ -8,8 +8,8 @@ public import VerifiedGarbage.TCB.Rust
 **Trusted.** What `Emit.lean` runs: which artifacts are emitted, and how the
 generated files are written or checked.
 
-The artifacts emitted are those of `Artifacts.lean` and of every
-*registration file*: each `.lean` file under `VerifiedGarbage/Artifacts/`,
+The artifacts emitted are those of every *registration file* (and the list
+of `Artifacts.lean`, which must stay empty): each `.lean` file under `VerifiedGarbage/Artifacts/`,
 say `VerifiedGarbage/Artifacts/Sha3/X86_64.lean`, must define the list
 `VG.Artifacts.Sha3.X86_64.artifacts : List Artifact`. Adding functions for
 an algorithm or a target adds such a file, so that parallel changes don't
@@ -54,11 +54,14 @@ A variant's own functions (e.g. the implementation itself) are listed in a
 registration file as usual.
 
 `Emit.lean` finds the registration, variant and generic files
-(`registrations`, `grouped`, `genericGroups`), writes a program that
-imports them all, checks that the whole list depends only on the standard
-axioms, that what it runs is what the kernel checked and that the `Spec/`
-names it uses come from `Spec/` (`TCB/Audit.lean`), and emits it
-(`driver`), and runs that program, whose `main` is `run`.
+(`registrations`, `grouped`, `genericGroups`), and for each target directory
+(`parts`) writes a module that defines the target's list, a file that checks
+that the list depends only on the standard axioms, that what it runs is what
+the kernel checked and that the `Spec/` names it uses come from `Spec/`
+(`TCB/Audit.lean`), which `lake build` builds, and a program whose `main` runs
+`run` on the list (`prepare`, see "Drivers as modules" below), and runs those
+programs. `EmitOne.lean` writes a single program that does all three for the
+files it is given (`driver`).
 -/
 
 @[expose] public section
@@ -180,7 +183,8 @@ def instances (gens : List String) (vars : List (List String)) : String :=
   (names.zip vars).foldr (fun (v, ms) acc =>
     s!"(List.flatMap (fun {v} => {acc}) [" ++ ", ".intercalate (ms.map variantOf) ++ "])") body
 
-/-- The program that emits every artifact: those of each registration
+/-- The program that emits every artifact (`EmitOne.lean`'s, for the files
+it is given): those of each registration
 module `mods`, in order, then each generic function of `gens` applied to
 each variant of its interface and target in `vars` (each combination of
 variants of its interfaces), then those of
@@ -211,6 +215,138 @@ def driver (mods : List String) (gens : List (List String × List String) := [])
   "#assert_spec_origin\n\n" ++
   "end VG.Emit\n\n" ++
   "def main (args : List String) : IO UInt32 := VG.Emit.run VG.Emit.all args\n"
+
+/-! ## Drivers as modules, audits in the build
+
+`Emit.lean` runs a driver per target directory (`parts`), as above, but
+splits it in three files, so that the audits run in `lake build` and are
+cached with the rest of the build rather than run again by every emitter run:
+
+* the *module driver* `VGEmit.Driver.<Target>` (`moduleDriver`), a module
+  that defines the target's artifacts `VG.Emit.<Target>.all` and nothing
+  else. It imports each registration, generic and variant module of the
+  target both ways: `public import` for `all`'s statement, and `public meta
+  import`, without which a module imports no compiled code of its imports
+  but through `import all` (Lean's `importModulesCore`), and running `all`
+  needs all of it.
+* the *audit* `VGEmit.Audit.<Target>` (`auditFile`), a file that is not a
+  module, which imports the module driver and runs the three audits on that
+  `all` and on `run`: a file that is not a module imports everything at the
+  private level, every proof included (`TCB/Axioms.lean`), and Lake
+  rebuilds it whenever anything it imports, transitively, changes, the
+  private parts of modules included. It also checks that the old list of
+  `Artifacts.lean`, which no module may import, is still empty.
+* the *runner* (`runnerFile`), a module importing the module driver both
+  ways, whose `main` runs `run` on that `all`. Being a module, it imports
+  far less than the old driver, which was not one (only what the registration
+  modules import publicly, and the compiled code of the rest).
+
+The module drivers and audits are the library `VGEmit` (`lakefile.toml`), in
+`libDir`, which `prepare` writes; `lake build` builds them with the rest. The
+runner and the audit name the same constant of the same module, so what is
+emitted is what was audited, as long as the audit was built from the module
+driver the runner imports: `Emit.lean` trusts the `lake build` before it for
+that, as it does for every proof, but builds the audits itself of the
+targets whose files `prepare` changed or that were never built. -/
+
+/-- The directory of the library `VGEmit` (its `srcDir` in `lakefile.toml`),
+relative to `lean/`. -/
+def libDir : FilePath := ".lake" / "emit" / "src"
+
+/-- The module driver of the target directory `t`. -/
+def driverModule (t : String) : String := s!"VGEmit.Driver.{t}"
+
+/-- The audit of the target directory `t`. -/
+def auditModule (t : String) : String := s!"VGEmit.Audit.{t}"
+
+/-- The module driver of the target directory `t`, whose registration,
+generic and variant modules are `mods`, `gens` and `vars` (as `driver` takes
+them): `VG.Emit.<t>.all`, each registration module's list, in order, then
+each generic function of `gens` applied to each variant of its interface and
+target in `vars` (each combination of variants of its interfaces). -/
+def moduleDriver (t : String) (mods : List String) (gens : List (List String × List String))
+    (vars : List (String × List String)) : String :=
+  let groups := gens.map fun (is, gs) =>
+    (gs, is.map fun i => ((vars.find? (·.1 == i)).map (·.2)).getD [])
+  "-- Generated by Emit.lean (`VG.Emit.moduleDriver`). DO NOT EDIT.\n" ++
+  "module\n\n" ++
+  "public import VerifiedGarbage.TCB.Emit\n" ++
+  "public meta import VerifiedGarbage.TCB.Emit\n" ++
+  String.join ((mods ++ gens.flatMap (·.2) ++ vars.flatMap (·.2)).map fun m =>
+    s!"public import {m}\npublic meta import {m}\n") ++
+  "\n@[expose] public section\n\n" ++
+  s!"namespace VG.Emit.{t}\n\n" ++
+  "def all : List Artifact := List.flatten [\n" ++
+  String.join (mods.map fun m => s!"  {listOf m},\n") ++
+  String.join (groups.map fun (gs, vs) => s!"  {instances gs vs},\n") ++
+  "  []]\n\n" ++
+  s!"end VG.Emit.{t}\n"
+
+/-- The audit of the target directory `t`: it fails to elaborate unless
+`VG.Emit.<t>.all` depends only on the standard axioms
+(`#assert_standard_axioms`), the compiled code of it and of `run` is what
+the kernel checked (`#assert_no_compiler_overrides`), every `VG.Spec`
+definition is declared in `Spec/` (`#assert_spec_origin`), and the list of
+`Artifacts.lean`, which the module drivers cannot import, is empty. -/
+def auditFile (t : String) : String :=
+  "-- Generated by Emit.lean (`VG.Emit.auditFile`). DO NOT EDIT.\n" ++
+  "import VerifiedGarbage.TCB.Audit\n" ++
+  "import VerifiedGarbage.TCB.Axioms\n" ++
+  "import VerifiedGarbage.Artifacts\n" ++
+  s!"import {driverModule t}\n\n" ++
+  s!"#assert_standard_axioms VG.Emit.{t}.all\n" ++
+  s!"#assert_no_compiler_overrides VG.Emit.{t}.all VG.Emit.run\n" ++
+  "#assert_spec_origin\n\n" ++
+  "example : VG.artifacts = [] := rfl\n"
+
+/-- The program that emits the artifacts of the target directory `t`: `run`
+on the `all` of its module driver. -/
+def runnerFile (t : String) : String :=
+  "-- Generated by Emit.lean (`VG.Emit.runnerFile`). DO NOT EDIT.\n" ++
+  "module\n\n" ++
+  s!"public import {driverModule t}\n" ++
+  s!"public meta import {driverModule t}\n\n" ++
+  "public def main (args : List String) : IO UInt32 :=\n" ++
+  s!"  VG.Emit.run VG.Emit.{t}.all args\n"
+
+/-- The runner of the target directory `t`, relative to `lean/`: outside
+`libDir`, as nothing builds it. -/
+def runnerPath (t : String) : FilePath := ".lake" / "emit" / s!"Run{t}.lean"
+
+/-- The path of a module of `VGEmit`, relative to `lean/`. -/
+def libPath (mod : String) : FilePath :=
+  (mod.splitOn ".").foldl (· / ·) libDir |>.addExtension "lean"
+
+/-- The files of the target directories `parts` (`parts`' result): each one's
+module driver, audit and runner, as paths relative to `lean/` and their
+text, with the target directory each is of. -/
+def sources (parts : List (String × List String × List (List String × List String) ×
+    List (String × List String))) : List (String × FilePath × String) :=
+  parts.flatMap fun (t, mods, gens, vars) =>
+    [(t, libPath (driverModule t), moduleDriver t mods gens vars),
+     (t, libPath (auditModule t), auditFile t),
+     (t, runnerPath t, runnerFile t)]
+
+/-- Writes the files of `parts` (`sources`), each only if its text differs
+from what is there, and deletes any other `.lean` file under `libDir`, so
+that `VGEmit` has exactly these modules; the target directories one of whose
+files it wrote. -/
+def prepare (parts : List (String × List String × List (List String × List String) ×
+    List (String × List String))) : IO (List String) := do
+  let files := sources parts
+  let mut changed : List String := []
+  for (t, path, text) in files do
+    if ← path.pathExists then
+      if (← IO.FS.readFile path) == text then continue
+    if let some d := path.parent then IO.FS.createDirAll d
+    IO.FS.writeFile path text
+    unless changed.contains t do changed := changed ++ [t]
+  if ← libDir.pathExists then
+    let expected := files.map fun (_, p, _) => p.normalize
+    for path in ← libDir.walkDir do
+      if path.extension == some "lean" && !expected.contains path.normalize then
+        IO.FS.removeFile path
+  return changed
 
 /-- The target directory a registration, generic or variant module's path
 names: `X86_64` for `VerifiedGarbage.Artifacts.Sha3.X86_64`,

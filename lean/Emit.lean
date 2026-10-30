@@ -3,10 +3,10 @@ import VerifiedGarbage.TCB.Emit
 /-!
 # The emitter
 
-Renders every artifact (those of `VerifiedGarbage/Artifacts.lean`, of
-each registration file under `VerifiedGarbage/Artifacts/`, and of each
-generic file under `VerifiedGarbage/Generic/` for each variant under
-`VerifiedGarbage/Variants/`, see `VerifiedGarbage/TCB/Emit.lean`) into Rust, under `src/asm/` of the crate
+Renders every artifact (those of each registration file under
+`VerifiedGarbage/Artifacts/`, and of each generic file under
+`VerifiedGarbage/Generic/` for each variant under `VerifiedGarbage/Variants/`,
+see `VerifiedGarbage/TCB/Emit.lean`) into Rust, under `src/asm/` of the crate
 (by default `../src/asm`, relative to `lean/`). Run it from `lean/` after
 `lake build` (which checks every proof):
 
@@ -15,17 +15,25 @@ generic file under `VerifiedGarbage/Generic/` for each variant under
 * `lake env lean --run Emit.lean --check [DIR]` writes nothing and fails if
   the files on disk differ from what would be generated; CI runs this.
 
-It writes a program for each target directory that imports its
-registration files (`.lake/emit/Driver<Target>.lean`, `VG.Emit.parts`) and
-runs them at once, as processes with the same arguments, each auditing and
-emitting the artifacts of its targets (`VG.Emit.run`'s `--part`); and then,
-if they all pass, checks that no target is in two of them and writes or
-checks the root module (`VG.Emit.finish`). (They are run by the
-interpreter rather than as a `lean_exe` so that CI does not have to compile
-Mathlib to native code.) The interpreter runs the trusted base, which
+For each target directory (`VG.Emit.parts`) it writes the files of
+`VG.Emit.prepare` (see "Drivers as modules" in `TCB/Emit.lean`): a module
+that defines the target's artifacts, an audit of them, which `lake build`
+builds (the library `VGEmit`, `lakefile.toml`), and a program that emits
+them. It trusts the `lake build` before it to have built the audits of the
+module drivers on disk, as it trusts it for every proof, but builds the
+audits of the targets whose files it changed, or that were never built, with
+`lake build` itself. Then it runs the programs at once, as processes with the
+same arguments, each emitting the artifacts of its targets (`VG.Emit.run`'s
+`--part`); and then, if they all pass, checks that no target is in two of
+them and writes or checks the root module (`VG.Emit.finish`). (They are run
+by the interpreter rather than as a `lean_exe` so that CI does not have to
+compile Mathlib to native code.) The interpreter runs the trusted base, which
 does the printing and checking, as the compiled code of the `NativeTCB`
 libraries (`lakefile.toml`: one of what no target owns, and one per target),
 which `lake build` builds, and so an order of magnitude faster.
+
+* `lake env lean --run Emit.lean --prepare` only writes those files: CI runs
+  it before `lake build`, so that the build audits every target.
 -/
 
 /-- A shared library of the trusted base, as the lakefile names it
@@ -58,11 +66,13 @@ partial def oleanCount (dir : System.FilePath) : IO Nat := do
   return n
 
 /-- On Linux, a process may map at most `vm.max_map_count` regions of memory,
-and the driver maps each module it imports, with its `.olean.server` and
-`.olean.private` parts, since it is not a module and sees every module's
-private part. Past the limit, Lean fails with `failed to read file
-'….olean.private'`, naming whichever module it was loading. The driver
-needed about six regions per `.olean` (80,144 for 13,700); require eight.
+and an audit (which this may build) maps each module it imports, with its
+`.olean.server` and `.olean.private` parts, since it is not a module and sees
+every module's private part; the programs, which are modules, map fewer, but
+still every part of each module whose data they import. Past the limit, Lean
+fails with `failed to read file '….olean.private'`, naming whichever module
+it was loading. The old driver, which was not a module, needed about six
+regions per `.olean` (80,144 for 13,700); require eight.
 `none` if the limit is high enough, or not Linux. -/
 def mapCountProblem : IO (Option String) := do
   let limitFile : System.FilePath := "/proc/sys/vm/max_map_count"
@@ -79,7 +89,19 @@ def mapCountProblem : IO (Option String) := do
     regions of memory ({oleans} .olean files): raise it, e.g. \
     `sudo sysctl -w vm.max_map_count=262144` (see lean/README.md)"
 
+/-- The `.olean` of the module `mod` of `VGEmit`, relative to `lean/`. -/
+def oleanOf (mod : String) : System.FilePath :=
+  (mod.splitOn ".").foldl (· / ·) (".lake" / "build" / "lib" / "lean" : System.FilePath)
+    |>.addExtension "olean"
+
 def main (args : List String) : IO UInt32 := do
+  let parts ← match VG.Emit.parts (← VG.Emit.registrations)
+      (← VG.Emit.genericGroups VG.Emit.genericDir) (← VG.Emit.grouped VG.Emit.variantDir) with
+    | .ok parts => pure parts
+    | .error e => do IO.eprintln e; return 1
+  if args == ["--prepare"] then
+    discard <| VG.Emit.prepare parts
+    return 0
   let libs ← nativeTCB
   for lib in libs do
     unless ← lib.pathExists do
@@ -90,26 +112,30 @@ def main (args : List String) : IO UInt32 := do
     return 1
   let some (check, none, _) := VG.Emit.parseArgs args
     | IO.eprintln VG.Emit.usage; return 2
-  let parts ← match VG.Emit.parts (← VG.Emit.registrations)
-      (← VG.Emit.genericGroups VG.Emit.genericDir) (← VG.Emit.grouped VG.Emit.variantDir) with
-    | .ok parts => pure parts
-    | .error e => do IO.eprintln e; return 1
-  let emitDir : System.FilePath := ".lake" / "emit"
-  IO.FS.createDirAll emitDir
+  let changed ← VG.Emit.prepare parts
+  -- The audits of the targets whose files changed, or never built: the
+  -- `lake build` before this audited the others' module drivers as they are.
+  let mut stale := #[]
+  for (t, _) in parts do
+    if changed.contains t || !(← (oleanOf (VG.Emit.auditModule t)).pathExists) then
+      stale := stale.push (VG.Emit.auditModule t)
+  unless stale.isEmpty do
+    IO.println s!"building {", ".intercalate stale.toList}"
+    let child ← IO.Process.spawn { cmd := "lake", args := #["build", "--log-level=warning"] ++ stale }
+    let code ← child.wait
+    unless code == 0 do return code
   let lean ← IO.appPath
-  -- Each part's driver, run at once.
+  -- Each part's program, run at once.
   let mut children : Array (System.FilePath × IO.Process.Child {}) := #[]
-  for (t, mods, gens, vars) in parts do
-    let driver := emitDir / s!"Driver{t}.lean"
-    let targets := emitDir / s!"{t}.targets"
-    IO.FS.writeFile driver (VG.Emit.driver mods gens vars)
+  for (t, _) in parts do
+    let targets : System.FilePath := ".lake" / "emit" / s!"{t}.targets"
     if ← targets.pathExists then IO.FS.removeFile targets
     let partArgs := (if check then ["--check"] else []) ++ ["--part", targets.toString] ++
       (if check then args.drop 1 else args)
     children := children.push (targets, ← IO.Process.spawn
       { cmd := lean.toString,
-        args := (libs.map fun l => s!"--load-dynlib={l}").toArray ++ #["--run", driver.toString] ++
-          partArgs.toArray })
+        args := (libs.map fun l => s!"--load-dynlib={l}").toArray ++
+          #["--run", (VG.Emit.runnerPath t).toString] ++ partArgs.toArray })
   let mut code := 0
   for (_, child) in children do
     let c ← child.wait
