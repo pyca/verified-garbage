@@ -5,8 +5,11 @@ public meta import Lean
 /-!
 # Environment audit
 
-**Trusted.** Two checks the emitter runs (`Emit.driver`) on everything it
-imports, besides the axiom audit (`TCB/Axioms.lean`):
+**Trusted.** Two checks the emitter's audits run on everything they import
+(each target's audit, `Emit.auditFile`, which `lake build` builds, and
+`EmitOne.lean`'s driver, `Emit.driver`), besides the axiom audit
+(`TCB/Axioms.lean`), and the digests that tie each audit to the program that
+emits its target ("Audit digests" below):
 
 * `#assert_no_compiler_overrides all run` fails if the compiler may run
   something other than what the kernel checked in the code the emitter runs.
@@ -34,7 +37,7 @@ imports, besides the axiom audit (`TCB/Axioms.lean`):
 
 Both refuse to run in a module, which sees what it imports from other
 modules without their proofs, and without the values of definitions they
-do not expose: the emitter's driver is not a module.
+do not expose: the emitter's audits are not modules.
 -/
 
 public meta section
