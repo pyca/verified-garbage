@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.BrainpoolP256r1Sha256
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.BrainpoolP256r1Sha256Comb
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -22,7 +22,7 @@ A generic file (see `TCB/Emit.lean`) over brainpoolP256r1's group law `h`, the v
 namespace VG.Generic.BrainpoolP256r1.Arm.EcdsaBrainpoolP256r1Sha256
 
 open VG.Proof.Ecdsa.Rfc6979.Arm (cfgOf signNotes)
-open VG.Proof.Ecdsa.Rfc6979.Arm.BrainpoolP256r1Sha256 (pack sign_verified)
+open VG.Proof.Ecdsa.Rfc6979.Arm.BrainpoolP256r1Sha256Comb (pack sign_verified)
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP256r1.curve) : List Artifact := [
   Spec.Ecdsa.Rfc6979.BrainpoolP256r1Sha256.signApi.artifact Arm.target {
@@ -30,6 +30,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP256r1.curve) : List A
       Proof.Pbkdf2.Whole.Arm.sha256F.hiN Proof.Pbkdf2.Whole.Arm.sha256F.H.updN
       Proof.Pbkdf2.Whole.Arm.sha256F.hfN 32 Spec.Ecdsa.BrainpoolP256r1.signApi.name]
     code := (cfgOf (pack h.law)).sign
+    consts := Impl.Weierstrass.Arm.brainpoolp256r1CombConsts
     stack := 240
     verified := sign_verified h.law }]
 
