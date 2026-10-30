@@ -66,6 +66,23 @@ theorem positiveKBranch_ok {D : Nat} {p : Params} (hp : Ok3 p) (hc : ksChk p = t
       by rw [k9.get .x24, h.x24]; exact bit_zero.mpr hfail, B7.l.t_lt, B7.l.rej⟩
     rw [hP9'.pa (by decide), hm9, Mem.readW_writeW_self64, B7.l.kap, ofNat64_add, Nat.mul_succ]
 
+/-- A failed complete norm phase discards the attempt without computing the
+remaining polynomials. Only the counter and temporary register x9 change. -/
+theorem positiveReject_ok {D : Nat} {p : Params} (hp : Ok3 p) (hc : ksChk p = true)
+    {σ s : State} {t : Nat} (h : PositiveIL p D σ t s)
+    (sampled : (sampleInBall p.τ maxBounds.ball (CTv p σ (p.ℓ*t))).isSome)
+    (fail : ¬ PassV p σ (p.ℓ*t)) (flag : s.gpr .x24 = 0) :
+    WP isa (.block (kapAdd p)) s (PositiveEF p D σ t) := by
+  refine ksChk_spec hc fun _ _ _ _ _ _ _ _ _ _ _ _ c10 _ _ _ _ _ _ c19 c20 _ _ hl _ _ _ c23 => ?_
+  have L := h.st.lay
+  refine WP.mono_syms (kapAdd_ok p hl s (L.inW c10) (L.inR c23)) fun u ⟨hm,k⟩ hy => ?_
+  have hf : Frame [⟨pa s (sc oKAP),8⟩] s.mem u.mem := by
+    rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  have hP : PPostB D s u [(sc oKAP,8)] := postB_of_keep k (by decide) hf
+  refine ⟨h.k.step hP hy c19 (by rcases hp with rfl|rfl|rfl <;> decide), ?_,
+    by rw [L.keepW hP c20,h.cnt],sampled,fail,by rw [k.get .x24,flag],h.t_lt,h.rej⟩
+  rw [hP.pa (by decide),hm,Mem.readW_writeW_self64,h.kap,ofNat64_add,Nat.mul_succ]
+
 /-- A passing checks branch supplies the exact precondition of the
 accepted-only conversion and signature-packing phase. -/
 theorem PositiveEP.outputReady {p : Params} {S : Nat} {σ s : State} {t : Nat}

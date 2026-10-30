@@ -302,14 +302,30 @@ theorem checks_ok {p : Params} {S : Nat} {σ s : State} {t : Nat} {f : Poly}
       (PositiveEP p S σ t u ∨ PositiveEF p S σ t u) ∧ PairedRoots S u ∧
       PolyIs u.mem (pa u t4P) f := by
   unfold Impl.MlDsa.AArch64.Sign.Optimized.pairedChecks
-    Impl.MlDsa.AArch64.Sign.Optimized.pairedChecksPrefix
-  refine WP.seq (WP.seq (WP.seq (WP.mono (challenge_ok hp ⟨roots,cache⟩ h h1) fun a ha=>?_)))
+  refine WP.seq (WP.seq (WP.mono (challenge_ok hp ⟨roots,cache⟩ h h1) fun a ha=>?_))
   refine WP.seq (WP.mono (init_ok hp hc ha.2 ha.1) fun b hb=>?_)
-  refine WP.mono (optimizedZ_paired_vector_ok hp hb.2 hb.1) fun c hcstate=>?_
-  refine WP.mono (optimizedR0_paired_vector_ok hp hcstate.2 (positiveIR_of_IZ hcstate.1)) fun d hd=>?_
-  refine WP.seq (WP.mono (optimizedHint_paired_vector_ok hp hd.2 (positiveIH_of_IR hd.1)) fun e he=>?_)
-  refine WP.seq (WP.mono (ones_ok hp hc he.2 he.1) fun a ha=>?_)
-  exact WP.mono (branch_ok hp hc ha.2 ha.1) fun u hu=>⟨hu.1,hu.2.roots,hu.2.cache⟩
+  refine WP.mono (optimizedZ_paired_vector_ok hp hb.2 hb.1) fun c hz=>?_
+  refine ifOkElse_ok (fun hzpass=>?_) fun hzfail=>?_
+  · refine WP.seq (WP.mono (optimizedR0_paired_vector_ok hp hz.2 (positiveIR_of_IZ hz.1)) fun d hr=>?_)
+    refine ifOkElse_ok (fun hrpass=>?_) fun hrfail=>?_
+    · refine WP.seq (WP.mono (optimizedHint_paired_vector_ok hp hr.2 (positiveIH_of_IR hr.1)) fun e he=>?_)
+      refine WP.seq (WP.mono (ones_ok hp hc he.2 he.1) fun a ha=>?_)
+      exact WP.mono (branch_ok hp hc ha.2 ha.1) fun u hu=>⟨hu.1,hu.2.roots,hu.2.cache⟩
+    · have flag : d.gpr .x24=0 := by
+        rw [hr.1.2]; exact bit_zero.mpr (fun h=>(bit_ne.mpr h) (by rw [←hr.1.2]; exact hrfail))
+      have fail : ¬ PassV p σ (p.ℓ*t) := by
+        intro hpass
+        exact (bit_ne.mpr (show ZOk p σ (p.ℓ*t) ∧ R0Ok p σ (p.ℓ*t) from ⟨hpass.1,hpass.2.1⟩))
+          (by rw [←hr.1.2]; exact hrfail)
+      exact WP.mono (reject_ok hp hc hr.2 hr.1.1.b.l hr.1.1.b.sampled fail flag)
+        fun _ hu=>⟨.inr hu.1,hu.2.roots,hu.2.cache⟩
+  · have flag : c.gpr .x24=0 := by
+      rw [hz.1.2]; exact bit_zero.mpr (fun h=>(bit_ne.mpr h) (by rw [←hz.1.2]; exact hzfail))
+    have fail : ¬ PassV p σ (p.ℓ*t) := by
+      intro hpass
+      exact (bit_ne.mpr hpass.1) (by rw [←hz.1.2]; exact hzfail)
+    exact WP.mono (reject_ok hp hc hz.2 hz.1.1.b.l hz.1.1.b.sampled fail flag)
+      fun _ hu=>⟨.inr hu.1,hu.2.roots,hu.2.cache⟩
 
 end VG.Proof.MlDsa.AArch64.Sign.CachedChecks
 
