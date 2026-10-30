@@ -337,7 +337,7 @@ annotations identify the cached build. Lake rebuilds outputs that differ
 from the checkout. The build's messages, with the profile CI's build
 recorded that `ci/lean_profile.py` reads, are not in the modules' `.trace`
 files but in one file, which `unpack --logs` writes
-(`ci/lean_cache.py unpack --logs lean`, to `lean/.lake/ltar/logs.json`).
+(`ci/lean_cache.py unpack --logs lean`, to `lean/.lake/ltar/logs.json.gz`).
 
 Without the `zstd` command, `pip install zstandard` and replace `zstd -dc`
 with
