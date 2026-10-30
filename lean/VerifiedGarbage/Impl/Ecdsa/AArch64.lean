@@ -333,12 +333,13 @@ def mulLadder : LadderCfg where
 
 /-- `vg_<curve>_mul`'s body: the table of `k`'s bits, `Q` (in `R`'s first two
 slots) copied to `ACC` and `PT`, `R` the point at infinity (from zero and
-one), then `R = [k]Q` by the ladder. -/
+one), then `R = [k]Q` by the ladder, with the formulas for `a = 0` if the
+curve's `a` is zero (`Q` is affine). -/
 def mulBody : Prog isa :=
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (.block (copy c.n (c.sl ACC) (c.sl RX) ++ copy c.n (c.sl PT) (c.sl RY) ++
     copy c.n (c.sl RX) (c.sl ZERO) ++ copy c.n (c.sl RY) (c.sl ONEP) ++ copy c.n (c.sl RZ) (c.sl ZERO)))
-    (ladder c.mulLadder)
+    (ladder c.mulLadder (c.C.a == 0))
 
 /-- Where `vg_<curve>_mul` keeps `x19`, which the ladder counts with, and
 `invRegs`: the words past the table of bits, in its own working space. -/

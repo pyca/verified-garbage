@@ -79,20 +79,6 @@ structure AddsPost (L : LadderCfg) (C : Curve) (base : Addr) (size : Nat) (E : N
     tmv C L.M.n base s' L.D.z = Z2 ∧ tmv C L.M.n base s' L.T.x = X3 ∧
     tmv C L.M.n base s' L.T.y = Y3 ∧ tmv C L.M.n base s' L.T.z = Z3
 
-/-- The ladder's formulas on numbered slots (`Env.lean`), which compute
-`ladDbl` and `ladAdd` on the ladder's. -/
-theorem ladOps (C : Curve) (L : LadderCfg) (a0 : Bool) : ∃ N₁ N₂, NumOk N₁ ∧ NumOk N₂ ∧
-    ladDblOps L a0 = ofN N₁ L.S L.R L.R L.D ∧ ladAddOps L a0 = ofN N₂ L.S L.D L.G L.T ∧
-    (∀ E : Nat → Fe C, (runOps N₁ (fun y => E (rcbσ L.S L.R L.R L.D y)) 6,
-      runOps N₁ (fun y => E (rcbσ L.S L.R L.R L.D y)) 7, runOps N₁ (fun y => E (rcbσ L.S L.R L.R L.D y)) 8) =
-        ladDbl a0 (E L.S.a) (E L.S.b3) (E L.R.x) (E L.R.y) (E L.R.z)) ∧
-    (∀ E : Nat → Fe C, (runOps N₂ (fun y => E (rcbσ L.S L.D L.G L.T y)) 6,
-      runOps N₂ (fun y => E (rcbσ L.S L.D L.G L.T y)) 7, runOps N₂ (fun y => E (rcbσ L.S L.D L.G L.T y)) 8) =
-        ladAdd a0 (E L.S.a) (E L.S.b3) (E L.D.x) (E L.D.y) (E L.D.z) (E L.G.x) (E L.G.y) (E L.G.z)) := by
-  cases a0
-  · exact ⟨rcbN, rcbN, rcbN_ok, rcbN_ok, rfl, rfl, fun _ => rcbN_run _, fun _ => rcbN_run _⟩
-  · exact ⟨dbl0N, rcb0mN, dbl0N_ok, rcb0mN_ok, rfl, rfl, fun _ => dbl0N_run _, fun _ => rcb0mN_run _⟩
-
 /-- The two additions, from a state holding `E` in the slots `ladR`. -/
 theorem ladAdds_ok {L : LadderCfg} {C : Curve} {base : Addr} {size : Nat} (hL : LadLay L size)
     (hp : UnitMod C.p (2 ^ (64 * L.M.n))) {E : Nat → Fe C} {s : State}

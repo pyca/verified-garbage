@@ -13,7 +13,8 @@ Costello and Batina, as `Impl/Weierstrass/Rcb0.lean`'s code computes them
 (`rcbAdd0m`, `rcbDbl0`), over any commutative ring of Lean's core, are
 Algorithm 1 for `a = 0`: Algorithm 8 with `Z₂ = 1` (`rcbAdd0m_eq`), and
 Algorithm 9 for a point and itself on `Y²Z = X³ + bZ³` (`rcbDbl0_eq`). On
-numbered slots (`rcb0mN`, `dbl0N`), as `ofN_ok` takes them.
+numbered slots (`rcb0mN`, `dbl0N`), as `ofN_ok` takes them, and so are the ladders'
+(`ladOps`).
 
 A ladder's iteration doubles and adds either by Algorithm 1 or, for a curve
 with `a = 0` and an affine point, by Algorithms 9 and 8 (`ladDbl`, `ladAdd`,
@@ -101,6 +102,20 @@ theorem dbl0N_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     (runOps dbl0N e 6, runOps dbl0N e 7, runOps dbl0N e 8) = rcbDbl0 (e 10) (e 11) (e 12) (e 13) := rfl
 
 theorem rcbN_ok : NumOk rcbN := ⟨rcbN_out, by decide, rcbN_reads⟩
+
+/-- The ladder's formulas on numbered slots (`Env.lean`), which compute
+`ladDbl` and `ladAdd` on the ladder's. -/
+theorem ladOps (C : Curve) (L : LadderCfg) (a0 : Bool) : ∃ N₁ N₂, NumOk N₁ ∧ NumOk N₂ ∧
+    ladDblOps L a0 = ofN N₁ L.S L.R L.R L.D ∧ ladAddOps L a0 = ofN N₂ L.S L.D L.G L.T ∧
+    (∀ E : Nat → Fe C, (runOps N₁ (fun y => E (rcbσ L.S L.R L.R L.D y)) 6,
+      runOps N₁ (fun y => E (rcbσ L.S L.R L.R L.D y)) 7, runOps N₁ (fun y => E (rcbσ L.S L.R L.R L.D y)) 8) =
+        ladDbl a0 (E L.S.a) (E L.S.b3) (E L.R.x) (E L.R.y) (E L.R.z)) ∧
+    (∀ E : Nat → Fe C, (runOps N₂ (fun y => E (rcbσ L.S L.D L.G L.T y)) 6,
+      runOps N₂ (fun y => E (rcbσ L.S L.D L.G L.T y)) 7, runOps N₂ (fun y => E (rcbσ L.S L.D L.G L.T y)) 8) =
+        ladAdd a0 (E L.S.a) (E L.S.b3) (E L.D.x) (E L.D.y) (E L.D.z) (E L.G.x) (E L.G.y) (E L.G.z)) := by
+  cases a0
+  · exact ⟨rcbN, rcbN, rcbN_ok, rcbN_ok, rfl, rfl, fun _ => rcbN_run _, fun _ => rcbN_run _⟩
+  · exact ⟨dbl0N, rcb0mN, dbl0N_ok, rcb0mN_ok, rfl, rfl, fun _ => dbl0N_run _, fun _ => rcb0mN_run _⟩
 
 /-! ## The ladder's step -/
 

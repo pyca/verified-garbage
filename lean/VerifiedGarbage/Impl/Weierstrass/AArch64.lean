@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Mont.AArch64.P256Square
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Mont
-public import VerifiedGarbage.Impl.Weierstrass.Slots
+public import VerifiedGarbage.Impl.Weierstrass.Rcb0
 
 /-!
 # Short Weierstrass curves on AArch64: points and scalar multiplication
@@ -116,16 +116,17 @@ def bitMask (d : Nat) : List Instr :=
 def decCounter : Instr := .subImm .x .x19 .x19 1
 
 /-- One iteration of the ladder, for the bit `t = x19 - 1`: `D = R + R`,
-`T = D + G`, then `R = T` if bit `t` is set, else `D`. -/
-def ladderBody (L : LadderCfg) : Prog isa :=
-  .seq (.block [decCounter]) <| .seq (fprogB L.M (rcb L.S L.R L.R L.D)) <|
-    .seq (fprogB L.M (rcb L.S L.D L.G L.T)) <|
+`T = D + G` (for `a0`, by the formulas for `a = 0` and an affine `G`,
+`ladDblOps`), then `R = T` if bit `t` is set, else `D`. -/
+def ladderBody (L : LadderCfg) (a0 : Bool := false) : Prog isa :=
+  .seq (.block [decCounter]) <| .seq (fprogB L.M (ladDblOps L a0)) <|
+    .seq (fprogB L.M (ladAddOps L a0)) <|
     .block (bitMask L.bits ++ selPt L.M.n L.R L.D L.T)
 
 /-- The ladder over the bits `nbits - 1` down to 0, from `R` as set up by the
 caller (the point at infinity). -/
-def ladder (L : LadderCfg) : Prog isa :=
-  .seq (.block [.movz .x .x19 (BitVec.ofNat 16 L.nbits) 0]) (.loop (ladderBody L) (.nonzero .x .x19))
+def ladder (L : LadderCfg) (a0 : Bool := false) : Prog isa :=
+  .seq (.block [.movz .x .x19 (BitVec.ofNat 16 L.nbits) 0]) (.loop (ladderBody L a0) (.nonzero .x .x19))
 
 /-- `x2` all ones iff `x1 = 0` (below 1), with `x7 = 0`, through `x5` and `x16`. -/
 def isZeroMask : List Instr := [.movz .x .x5 1 0, .subs .x .x16 .x1 .x5, .sbc .x .x2 .x7 .x7]

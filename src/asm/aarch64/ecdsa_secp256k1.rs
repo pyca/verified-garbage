@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.signContract`. Constant time: only the pointers may affect timing, not the key, the hash or `k`.
 ///
-/// Field elements are four 64-bit words in Montgomery form. Scalar multiplication uses a fixed 256-iteration ladder with the general complete addition formulas of Renes, Costello and Batina (Algorithm 1), including for a = 0. Inversions are calls of `vg_secp256k1_inv_mod_p` and `vg_secp256k1_inv_mod_n`, by divsteps. Branches and memory addresses depend only on pointers and loop counters.
+/// Field elements are four 64-bit words in Montgomery form. Scalar multiplication uses a fixed 256-iteration ladder with the complete formulas for a = 0 of Renes, Costello and Batina (Algorithm 9 doubles, Algorithm 8 adds the affine point). Inversions are calls of `vg_secp256k1_inv_mod_p` and `vg_secp256k1_inv_mod_n`, by divsteps. Branches and memory addresses depend only on pointers and loop counters.
 ///
 /// # Safety
 ///

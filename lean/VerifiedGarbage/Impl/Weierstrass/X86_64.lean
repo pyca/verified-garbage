@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Mont
-public import VerifiedGarbage.Impl.Weierstrass.Slots
 public import VerifiedGarbage.Impl.Weierstrass.Rcb0
 
 /-!
@@ -101,16 +100,6 @@ def tbl (d : Nat) : MemOp := { base := .rdi, index := some .rbx, disp := d }
 /-- The mask `rcx = -[rdi + rbx + d]` of the bit of iteration `rbx`. -/
 def bitMask (d : Nat) : List Instr :=
   [.movzx8 .rax (tbl d), .mov32 .rcx (.imm 0), .alu .sub .rcx (.reg .rax)]
-
-/-- The ladder's doubling `D = R + R`: Algorithm 9 for `a0` (`a = 0`), else
-Algorithm 1. -/
-def ladDblOps (L : LadderCfg) (a0 : Bool) : List FOp :=
-  if a0 then dbl0 L.S L.R L.D else rcb L.S L.R L.R L.D
-
-/-- The ladder's addition `T = D + G`: Algorithm 8 for `a0` (`a = 0` and `G`
-affine, `G.z` not read), else Algorithm 1. -/
-def ladAddOps (L : LadderCfg) (a0 : Bool) : List FOp :=
-  if a0 then rcb0m L.S L.D L.G L.T else rcb L.S L.D L.G L.T
 
 /-- One iteration of the ladder, for the bit `t = rbx - 1`: `D = R + R`,
 `T = D + G`, then `R = T` if bit `t` is set, else `D`. -/

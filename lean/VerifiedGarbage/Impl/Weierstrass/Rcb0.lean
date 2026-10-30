@@ -11,6 +11,9 @@ an affine point (11 products and 2 by `3b`, against Algorithm 1's 12, 3 by
 `a` and 2 by `3b`), and Algorithm 9 doubles (6 products and 1 by `3b`, and 2
 squares). Each is in its stated order, with `3b` in the slot `S.b3`; `S.a`
 and `S.t5` are not used, and `o` must be apart from what they read.
+
+The ladders' doubling and addition (`ladDblOps`, `ladAddOps`) are these for
+`a0`, else Algorithm 1 (`rcb`).
 -/
 
 -- separate module: `Slots.lean`'s importers would all be rebuilt for formulas only the
@@ -38,5 +41,15 @@ def dbl0 (S : RcbSlots) (p o : Pt) : List FOp :=
     .add o.y S.t0 S.t2, .mul o.z S.t1 o.z, .add S.t1 S.t2 S.t2, .add S.t2 S.t1 S.t2,
     .sub S.t0 S.t0 S.t2, .mul o.y S.t0 o.y, .add o.y o.x o.y, .mul S.t1 p.x p.y,
     .mul o.x S.t0 S.t1, .add o.x o.x o.x]
+
+/-- The ladder's doubling `D = R + R`: Algorithm 9 for `a0` (`a = 0`), else
+Algorithm 1. -/
+def ladDblOps (L : LadderCfg) (a0 : Bool) : List FOp :=
+  if a0 then dbl0 L.S L.R L.D else rcb L.S L.R L.R L.D
+
+/-- The ladder's addition `T = D + G`: Algorithm 8 for `a0` (`a = 0` and `G`
+affine, `G.z` not read), else Algorithm 1. -/
+def ladAddOps (L : LadderCfg) (a0 : Bool) : List FOp :=
+  if a0 then rcb0m L.S L.D L.G L.T else rcb L.S L.D L.G L.T
 
 end VG.Impl.Weierstrass
