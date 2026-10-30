@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.Blake2
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! # H′: copying digest bytes -/
 
@@ -31,7 +32,7 @@ theorem copyByte_ok (s : State)
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .r14 → t.gpr r = s.gpr r) ∧
       t.rd = s.rd ∧ t.wr = s.wr := by
   apply WP.of_runBlock
-  simp only [copyByte, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+  simp only [copyByte, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc,
     State.load8, State.store8, execAlu, ea_at, BitVec.add_zero,
     RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
     RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags,

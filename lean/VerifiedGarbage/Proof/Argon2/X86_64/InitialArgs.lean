@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Argon2.X86_64.Initial
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! # Argument handling for Argon2 H₀ -/
 
@@ -26,7 +27,7 @@ theorem headerWord_ok (s : State) (source destination : Nat)
         ((s.mem.readW (s.gpr .rbp + BitVec.ofNat 64 source) 64).setWidth 32) ∧
       (∀ r, r ≠ .rax → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   apply WP.of_runBlock
-  simp only [headerWord, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+  simp only [headerWord, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc,
     State.load64, State.store32, ea_at, RegUpd.gpr_setReg, RegUpd.wr_setReg,
     RegUpd.rd_setReg, RegUpd.mem_setReg, hr, hw, reduceCtorEq, ite_true, ite_false,
     Option.map_some, Option.some.injEq, exists_eq_left']
@@ -50,7 +51,7 @@ theorem lengthArgs_ok (s : State) (offset : Nat)
     (hw : InRegions s.wr (s.gpr .rbx + 792) 4) :
     WP isa (.block (lengthArgs offset)) s (LengthArgs s offset) := by
   apply WP.of_runBlock
-  simp only [lengthArgs, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+  simp only [lengthArgs, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc,
     readSrc32, State.setReg32, State.load64, State.store32, execAlu, ea_at,
     RegUpd.gpr_setReg, RegUpd.wr_setReg, RegUpd.rd_setReg,
     RegUpd.mem_setReg, hr, hw, reduceCtorEq, ite_true, ite_false,
@@ -74,7 +75,7 @@ theorem inputArgs_ok (s : State) (offset : Nat)
     (hr : InRegions (s.rd ++ s.wr) (s.gpr .rbp + BitVec.ofNat 64 offset) 8) :
     WP isa (.block (inputArgs offset)) s (fun t => InputArgs s t offset) := by
   apply WP.of_runBlock
-  simp only [inputArgs, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+  simp only [inputArgs, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc,
     State.load64, execAlu, ea_at, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags,
     RegUpd.mem_setReg, RegUpd.mem_arithFlags, RegUpd.rd_setReg, RegUpd.rd_arithFlags,
     RegUpd.wr_setReg, RegUpd.wr_arithFlags, hr, reduceCtorEq, ite_true, ite_false,

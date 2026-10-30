@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+import VerifiedGarbage.Proof.Framework.PPC64LE.Reduce
 
 /-!
 # Inlining verified code (PPC64LE)
@@ -96,26 +97,26 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     (h : exec i s = some s') : exec i (s.withRegions rd wr) = some (s'.withRegions rd wr) := by
   cases i with
   | load sz t n off | lbz t n off =>
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h ⊢
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h ⊢
     obtain ⟨a, ha, v, hv, rfl⟩ := h
     exact ⟨a, ha, v, load_widen hc hv, rfl⟩
   | loadRev sz t a b =>
     cases sz <;>
-    · simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h ⊢
+    · simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h ⊢
       obtain ⟨a, ha, v, hv, rfl⟩ := h
       exact ⟨a, ha, v, load_widen hc hv, rfl⟩
   | store sz t n off | stb t n off =>
-    simp only [exec, Option.bind_eq_some_iff] at h ⊢
+    simp only [reduceExec, Option.bind_eq_some_iff] at h ⊢
     obtain ⟨a, ha, hs⟩ := h
     exact ⟨a, ha, store_widen hw hs⟩
   | storeRev sz t a b =>
     cases sz <;>
-    · simp only [exec, Option.bind_eq_some_iff] at h ⊢
+    · simp only [reduceExec, Option.bind_eq_some_iff] at h ⊢
       obtain ⟨a, ha, hs⟩ := h
       exact ⟨a, ha, store_widen hw hs⟩
-  | push _ | pop _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
+  | push _ | pop _ | alloc _ | free _ => simp only [reduceExec, reduceCtorEq] at h
   | _ =>
-    simp only [exec] at h ⊢
+    simp only [reduceExec] at h ⊢
     first
     | (simp only [Option.some.injEq] at h; subst h; rfl)
     | (split at h <;> [skip; cases h]

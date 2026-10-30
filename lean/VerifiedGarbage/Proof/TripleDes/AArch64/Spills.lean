@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.TripleDes.AArch64.Sbox
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 @[expose] public section
 
@@ -35,26 +36,26 @@ theorem spillStep_frame (i : Instr) (s s' : State)
   case addImm sz d n imm | subImm sz d n imm | movz sz d imm hw =>
     cases sz <;> simp only [Bool.false_eq_true] at h
     have hd : d ≠ .x2 := by simpa using h
-    simp only [exec] at he
+    simp only [reduceExec] at he
     split at he <;> [skip; cases he]
     obtain rfl := Option.some.inj he
     exact write_frame _ _ _ hd
   case logic op sz d n m =>
     cases sz <;> simp only [Bool.false_eq_true] at h
     have hd : d ≠ .x2 := by simpa using h
-    simp only [exec, Option.some.injEq] at he
+    simp only [reduceExec, Option.some.injEq] at he
     subst s'
     exact write_frame _ _ _ hd
   case ldr sz d n off =>
     cases sz <;> simp only [Bool.false_eq_true] at h
     have hd : d ≠ .x2 := by simpa using h
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at he
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at he
     obtain ⟨a, _, v, _, rfl⟩ := he
     exact write_frame _ _ _ hd
   case str sz t n off =>
     cases sz <;> simp only [Bool.false_eq_true] at h
     obtain ⟨rfl, hlo, hhi⟩ := of_decide_eq_true h
-    simp only [exec, addr, Size.bytes] at he
+    simp only [reduceExec, addr, Size.bytes] at he
     split at he <;> [skip; cases he]
     simp only [Option.bind_some, State.store] at he
     split at he <;> [skip; cases he]

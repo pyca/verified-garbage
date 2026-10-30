@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Aes.Arm.Sbox
 public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Arm.Reduce
 
 /-!
 # A block that stores only at given offsets of `sb` (ARMv7)
@@ -42,7 +43,7 @@ theorem exec_mem_of_noStore {i : Instr} {s s' : State} (h : exec i s = some s')
   | str t n off => exact absurd rfl (hi t n off)
   | strb t n off => exact absurd rfl (hb t n off)
   | _ =>
-    simp only [exec, State.load32, State.load8, Option.map_eq_some_iff] at h
+    simp only [reduceExec, State.load32, State.load8, Option.map_eq_some_iff] at h
     (repeat' split at h) <;>
     (try simp only [Option.some.injEq, reduceCtorEq] at h) <;>
     first
@@ -57,7 +58,7 @@ theorem exec_storesIn {lo hi : Nat} {i : Instr} {s s' : State} (hs : storesIn lo
   | str t n d =>
     simp only [storesIn, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hs
     obtain ⟨⟨rfl, h1⟩, h2⟩ := hs
-    simp only [exec, State.store32] at h
+    simp only [reduceExec, State.store32] at h
     split at h <;> [skip; cases h]
     split at h <;> [skip; cases h]
     simp only [Option.some.injEq] at h; subst h

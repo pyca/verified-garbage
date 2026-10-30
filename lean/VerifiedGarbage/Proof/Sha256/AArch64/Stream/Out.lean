@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-! # Streaming SHA-256 on AArch64: the digest, sixteen bytes at a time
 
@@ -82,7 +83,7 @@ theorem out256_ok {s₀ : State}
   apply WP.of_runBlock
   simp only [Impl.Sha256.AArch64.Stream.out256, reduceCtorEq, ↓reduceIte, Nat.reduceMod, Nat.reduceLT,
     Nat.reduceMul, runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, State.store,
-    VOp.eval, Option.bind_some, Option.map_some, and_self, isa, RegUpd.gpr_setV, RegUpd.v_setV,
+    reduceVOpEval, Option.bind_some, Option.map_some, and_self, isa, RegUpd.gpr_setV, RegUpd.v_setV,
     RegUpd.mem_setV, RegUpd.rd_setV, RegUpd.wr_setV, i0, i16, o0, o16, Option.some.injEq,
     exists_eq_left']
   exact ⟨fun _ _ => trivial, trivial, trivial, rfl, write_digest _ _ _⟩

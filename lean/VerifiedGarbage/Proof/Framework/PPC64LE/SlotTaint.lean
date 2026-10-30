@@ -7,6 +7,7 @@ public import Batteries.Data.List.Basic
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.TCB.PPC64LE.Isa
+import VerifiedGarbage.Proof.Framework.PPC64LE.Reduce
 
 /-!
 # Taint tracking for PPC64LE, with public slots in the writable regions
@@ -507,7 +508,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
   | push | pop | alloc | free | adrSym => simp only [step, reduceCtorEq] at hs
   | addSp d imm =>
     simp only [step, Option.some.injEq] at hs; subst hs
-    simp only [exec] at e₁ e₂
+    simp only [reduceExec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i h
     rw [ite_eq_left_of_eq_true _ _ (eq_true h)] at e₂
@@ -515,22 +516,22 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     exact ⟨rfl, ha.wrW d fun _ => by rw [ha.sp]⟩
   | add d n m | sub d n m | mul d n m | mulhu d n m =>
     simp only [step, Option.some.injEq] at hs; subst hs
-    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    simp only [reduceExec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     refine ⟨rfl, ha.wrW d fun hp => ?_⟩
     simp only [Bool.and_eq_true] at hp
     rw [ha.reg hp.1, ha.reg hp.2]
   | addc d n m | subc d n m =>
     simp only [step, Option.some.injEq] at hs; subst hs
-    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    simp only [reduceExec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     refine ⟨rfl, Agree.carry (ha.wrW d fun hp => ?_)⟩
     simp only [Bool.and_eq_true] at hp
     rw [ha.reg hp.1, ha.reg hp.2]
   | adde d n m | addze d n | sube d n m =>
     simp only [step, Option.some.injEq] at hs; subst hs
-    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    simp only [reduceExec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     exact ⟨rfl, Agree.carry (ha.wrW d fun h => by cases h)⟩
   | logic op d n m =>
-    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    simp only [reduceExec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     simp only [step] at hs
     split at hs
     · rename_i hc
@@ -544,7 +545,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
       rw [ha.reg hp.1, ha.reg hp.2]
   | addi d n imm =>
     simp only [step, Option.some.injEq] at hs; subst hs
-    simp only [exec] at e₁ e₂
+    simp only [reduceExec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i h
     rw [ite_eq_left_of_eq_true _ _ (eq_true h)] at e₂
@@ -553,7 +554,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
       (addiBases_ok ha.wf₂ d n imm)⟩
   | subi d n imm =>
     simp only [step, Option.some.injEq] at hs; subst hs
-    simp only [exec] at e₁ e₂
+    simp only [reduceExec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i h
     rw [ite_eq_left_of_eq_true _ _ (eq_true h)] at e₂
@@ -562,7 +563,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
       (subiBases_ok ha.wf₂ d n imm)⟩
   | li d imm =>
     simp only [step, Option.some.injEq] at hs; subst hs
-    simp only [exec] at e₁ e₂
+    simp only [reduceExec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i h
     rw [ite_eq_left_of_eq_true _ _ (eq_true h)] at e₂
@@ -570,7 +571,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     exact ⟨rfl, ha.wrW d fun _ => rfl⟩
   | lsl d n sh =>
     simp only [step, Option.some.injEq] at hs; subst hs
-    simp only [exec] at e₁ e₂
+    simp only [reduceExec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i h
     rw [ite_eq_left_of_eq_true _ _ (eq_true h)] at e₂
@@ -578,7 +579,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     exact ⟨rfl, ha.wrW d fun hp => by rw [ha.reg hp]⟩
   | rotr sz d n sh | lsr sz d n sh =>
     simp only [step, Option.some.injEq] at hs; subst hs
-    simp only [exec] at e₁ e₂
+    simp only [reduceExec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i h
     rw [ite_eq_left_of_eq_true _ _ (eq_true h)] at e₂
@@ -586,26 +587,26 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     exact ⟨rfl, ha.wrW d fun hp => by simp only [State.read, ha.reg hp]⟩
   | lis d imm =>
     simp only [step, Option.some.injEq] at hs; subst hs
-    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    simp only [reduceExec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     exact ⟨rfl, ha.wrW d fun _ => rfl⟩
   | ori d n imm | oris d n imm =>
     simp only [step, Option.some.injEq] at hs; subst hs
-    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    simp only [reduceExec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     exact ⟨rfl, ha.wrW d fun hp => by rw [ha.reg hp]⟩
   | mflr d =>
     simp only [step, Option.some.injEq] at hs; subst hs
-    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    simp only [reduceExec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     exact ⟨rfl, ha.wrW d fun h => by cases h⟩
   | mtlr r =>
     simp only [step, Option.some.injEq] at hs; subst hs
-    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    simp only [reduceExec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     exact ⟨rfl, ha.withLr _ _⟩
   | load sz t n off | lbz t n off =>
     simp only [step] at hs
     split at hs <;> [skip; cases hs]
     rename_i hn; cases hs
     refine ⟨by simp [addrs, ha.reg hn], ?_⟩
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at e₁ e₂
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨a₁, ha₁, v₁, hv₁, rfl⟩ := e₁; obtain ⟨a₂, ha₂, v₂, hv₂, rfl⟩ := e₂
     refine ha.wrW t fun hp => ?_
     rw [addr_eq ha₁] at hv₁; rw [addr_eq ha₂] at hv₂
@@ -622,7 +623,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at hs <;> [skip; cases hs]
     rename_i hn; cases hs
     refine ⟨by simp [addrs, ha.reg hn], ?_⟩
-    simp only [exec, Option.bind_eq_some_iff, State.store] at e₁ e₂
+    simp only [reduceExec, Option.bind_eq_some_iff, State.store] at e₁ e₂
     obtain ⟨a₁, ha₁, e₁⟩ := e₁; obtain ⟨a₂, ha₂, e₂⟩ := e₂
     rw [addr_eq ha₁] at e₁; rw [addr_eq ha₂] at e₂
     split at e₁ <;> [skip; cases e₁]
@@ -638,7 +639,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     simp only [Bool.and_eq_true] at hn
     refine ⟨by simp [addrs, ha.reg hn.1, ha.reg hn.2], ?_⟩
     cases sz <;>
-    · simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at e₁ e₂
+    · simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at e₁ e₂
       obtain ⟨a₁, -, v₁, -, rfl⟩ := e₁; obtain ⟨a₂, -, v₂, -, rfl⟩ := e₂
       exact ha.wrW t fun h => by cases h
   | storeRev sz t a b =>
@@ -648,7 +649,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     simp only [Bool.and_eq_true] at hn
     refine ⟨by simp [addrs, ha.reg hn.1, ha.reg hn.2], ?_⟩
     cases sz <;>
-    · simp only [exec, Option.bind_eq_some_iff, State.store] at e₁ e₂
+    · simp only [reduceExec, Option.bind_eq_some_iff, State.store] at e₁ e₂
       obtain ⟨a₁, ha₁, e₁⟩ := e₁; obtain ⟨a₂, ha₂, e₂⟩ := e₂
       split at e₁ <;> [skip; cases e₁]
       split at e₂ <;> [skip; cases e₂]

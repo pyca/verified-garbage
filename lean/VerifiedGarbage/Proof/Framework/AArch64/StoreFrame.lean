@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # Code that stores only at given offsets of a base register (AArch64)
@@ -44,34 +45,34 @@ theorem exec_mem_of_noStore {i : Instr} {s s' : State} (h : exec i s = some s')
   | strb t n off => exact absurd rfl (hb t n off)
   | strq t n off => exact absurd rfl (hq t n off)
   | ldr sz t n off =>
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h
     rfl
   | ldrb t n off =>
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h
     rfl
   | ldrq t n off =>
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h
     rfl
   | vop op =>
-    simp only [exec, Option.map_eq_some_iff] at h
+    simp only [reduceExec, Option.map_eq_some_iff] at h
     obtain ⟨⟨_, _⟩, -, rfl⟩ := h
     rfl
   | ldrSp t off =>
-    simp only [exec] at h
+    simp only [reduceExec] at h
     split at h <;> [skip; cases h]
     obtain ⟨v, -, rfl⟩ := Option.map_eq_some_iff.mp h
     rfl
   | ccmp sz n imm nzcv cond =>
-    simp only [exec] at h
+    simp only [reduceExec] at h
     split at h <;> [skip; cases h]
     simp only [Option.some.injEq] at h; subst h
     split <;> rfl
-  | push _ | pop _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
+  | push _ | pop _ | alloc _ | free _ => simp only [reduceExec, reduceCtorEq] at h
   | _ =>
-    simp only [exec] at h
+    simp only [reduceExec] at h
     first
     | (simp only [Option.some.injEq] at h; subst h; rfl)
     | (split at h <;> [skip; cases h]
@@ -93,14 +94,14 @@ theorem exec_storeGet {ok : Nat → Bool} {i : Instr} {s s' : State} (hi : store
     unfold storesAt at hi
     split at hi
     · rename_i t d
-      simp only [exec, Option.bind_eq_some_iff, State.store, addr] at h
+      simp only [reduceExec, Option.bind_eq_some_iff, State.store, addr] at h
       obtain ⟨a₀, ha₀, h⟩ := h
       split at ha₀ <;> [skip; cases ha₀]
       simp only [Option.some.injEq] at ha₀; subst ha₀
       split at h <;> cases h
       exact Mem.write_apply (ha d hi)
     · rename_i t d
-      simp only [exec, Option.bind_eq_some_iff, State.store, addr] at h
+      simp only [reduceExec, Option.bind_eq_some_iff, State.store, addr] at h
       obtain ⟨a₀, ha₀, h⟩ := h
       split at ha₀ <;> [rename_i hd; cases ha₀]
       simp only [Option.some.injEq] at ha₀; subst ha₀

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Rc2.Select
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! # Correctness of baseline x86-64 RC2 lookup steps -/
 
@@ -75,7 +76,7 @@ theorem piStep_ok (s : State) (x : Byte) (hx : s.gpr .rax = x.setWidth 64)
       Keep [.rcx, .r10, .r11] s s' := by
   refine ⟨_, by
     simp only [reduceCtorEq, ↓reduceIte, BitVec.reduceSignExtend, piStep, selectMask, rr, List.cons_append,
-      List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+      List.nil_append, runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu,
       readSrc, Option.bind_some, Option.map_some, gpr_setReg, gpr_arithFlags, cf_setReg, cf_arithFlags,
       ]
     rfl, ?_⟩
@@ -135,7 +136,7 @@ theorem piStart_ok (s : State) :
       s'.gpr .rax = ((s.gpr .rax).setWidth 8).setWidth 64 ∧ s'.gpr .rcx = 0 ∧
       Keep [.rax, .rcx, .r10, .r11] s s' := by
   refine ⟨_, by
-    simp only [imm, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
+    simp only [imm, runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu, readSrc,
       Option.bind_some, Option.map_some]
     rfl, ?_⟩
   refine ⟨?_, ?_, ?_⟩
@@ -167,7 +168,7 @@ theorem piLookup_ok (s : State) :
     rw [ite_eq_left ((s.gpr .rax).setWidth 8).isLt]
     exact BitVec.zero_or
   refine WP.of_runBlock ⟨s₂.setReg .rax (s₂.gpr .rcx), ?_, ?_⟩
-  · simp only [rr, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, Option.map_some]
+  · simp only [rr, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, Option.map_some]
   · constructor
     · rw [gpr_setReg_self, out₂]
     · have k₂ : Keep [.rax, .rcx, .r10, .r11] s₁ s₂ := h₂.2.weaken (by
@@ -197,7 +198,7 @@ theorem keyStep_ok (s : State) (x : Byte) (hx : s.gpr .rax = x.setWidth 64)
   refine ⟨_, by
     simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, and_self, BitVec.reduceSignExtend, keyStep, selectMask, loadKey, rr, memOp,
       List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil,
-      exec, execAlu, execShift, readSrc, State.load8, State.ea, offset_nat,
+      reduceExec, execAlu, execShift, readSrc, State.load8, State.ea, offset_nat,
       Option.bind_some, Option.map_some, gpr_setReg, gpr_arithFlags, cf_setReg, cf_arithFlags, gpr_setFlags,
       mem_setReg, mem_arithFlags, rd_setReg, rd_arithFlags,
       wr_setReg, wr_arithFlags, hlo, hhi]
@@ -275,7 +276,7 @@ theorem keyStart_ok (s : State) :
       s'.gpr .rax = ((s.gpr .rax).setWidth 6).setWidth 64 ∧ s'.gpr .rcx = 0 ∧
       Keep [.rax, .rcx, .r8, .r9, .r10, .r11] s s' := by
   refine ⟨_, by
-    simp only [imm, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
+    simp only [imm, runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu, readSrc,
       Option.bind_some, Option.map_some]
     rfl, ?_⟩
   refine ⟨?_, ?_, ?_⟩
@@ -327,7 +328,7 @@ theorem keyLookup_ok (s : State)
       ite_eq_left bound, scheduleAt_getD _ _ _ bound]
     exact BitVec.zero_or
   refine WP.of_runBlock ⟨s₂.setReg .rax (s₂.gpr .rcx), ?_, ?_⟩
-  · simp only [rr, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, Option.map_some]
+  · simp only [rr, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, Option.map_some]
   · constructor
     · rw [gpr_setReg_self, out₂]
     · have k₂ : Keep [.rax, .rcx, .r8, .r9, .r10, .r11] s₁ s₂ := h₂.2.weaken (by

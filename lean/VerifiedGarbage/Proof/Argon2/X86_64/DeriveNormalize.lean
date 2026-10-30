@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! Normalize u32 stack arguments without assuming anything about their upper bits. -/
 
@@ -29,7 +30,7 @@ theorem normalize_ok (s : State) (d : Nat)
     (write : InRegions s.wr (s.gpr .rbp + BitVec.ofNat 64 d) 8) :
     WP isa (.block (normalize d)) s (Normalized s · d) := by
   apply WP.of_runBlock
-  simp only [normalize, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+  simp only [normalize, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc,
     readSrc32, State.load64, State.store64, State.setReg32, State.ea, Impl.Argon2.X86_64.at_, BitVec.ofInt_natCast,
     RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
     read, write, reduceCtorEq, ite_true, ite_false, Option.map_some, Option.some.injEq, exists_eq_left']

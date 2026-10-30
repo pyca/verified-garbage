@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rc4.AArch64.WriteJ
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # One swap
@@ -138,7 +139,7 @@ theorem swapStep_run (prga : Bool) {l : Nat} (hl : l < 16) {s : State} (hk : Con
     (w * ((l + 1) % 16)) w) 0 0)
   have e₇ : exec (.vop (.dupE .b16 si (treg ((l + 1) / 16)) ((l + 1) % 16))) s₆ = some s₇ := by
     rw [exec_vop']
-    simp only [VOp.eval, VArr.esize, show (l + 1) % 16 < 128 / 8 by omega_arith, ite_true]
+    simp only [reduceVOpEval, VArr.esize, show (l + 1) % 16 < 128 / 8 by omega_arith, ite_true]
     rfl
   have i₇ : s₇.v si = bc (tbyte s₄.v (l + 1)) := by
     rw [v_setV_self, dupE_bc, ← t₆]; rfl
@@ -146,7 +147,7 @@ theorem swapStep_run (prga : Bool) {l : Nat} (hl : l < 16) {s : State} (hk : Con
   let s₈ := s₇.setV (treg 0) (setLane (s₇.v (treg 0)) 8 l ((s₇.v .v5).extractLsb' (8 * 0) 8))
   have e₈ : exec (.vop (.insE .b16 (treg 0) l .v5 0)) s₇ = some s₈ := by
     rw [exec_vop']
-    simp only [VOp.eval, VArr.esize, show l < 128 / 8 by omega_arith, show 0 < 128 / 8 by omega_arith,
+    simp only [reduceVOpEval, VArr.esize, show l < 128 / 8 by omega_arith, show 0 < 128 / 8 by omega_arith,
       and_self, ite_true]
     rfl
   have five₇ : s₇.v .v5 = bc (R J.toNat) := by rw [v_setV_of_ne _ _ (by decide), five₆]

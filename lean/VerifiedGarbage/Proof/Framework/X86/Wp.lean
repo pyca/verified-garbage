@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 /-!
 # x86 (32-bit): weakest-precondition rules for single instructions
@@ -83,7 +84,7 @@ theorem wp_ldm {d b : Reg} {B : BitVec 32} {o : Nat} (hb : s.gpr b = B)
     (hin : InRegions (s.rd ++ s.wr) (addr B o) 4)
     (k : ∀ s', Upd s s' d (s.mem.readW (addr B o) 32) → WP isa (.block is) s' Q) :
     WP isa (.block (.mov d (.mem ⟨b, o⟩) :: is)) s Q :=
-  cons (s' := s.setReg d _) (by simp [exec, readSrc_mem hb hin]) (k _ (Upd.setReg _ _ _))
+  cons (s' := s.setReg d _) (by simp [reduceExec, readSrc_mem hb hin]) (k _ (Upd.setReg _ _ _))
 
 /-- `mov [b + o], r` -/
 theorem wp_stm {b r : Reg} {B : BitVec 32} {o : Nat} (hb : s.gpr b = B)
@@ -91,21 +92,21 @@ theorem wp_stm {b r : Reg} {B : BitVec 32} {o : Nat} (hb : s.gpr b = B)
     (k : ∀ s', Mupd s s' (s.mem.writeW (addr B o) (s.gpr r)) → WP isa (.block is) s' Q) :
     WP isa (.block (.store ⟨b, o⟩ r :: is)) s Q := by
   refine cons (s' := { s with mem := s.mem.writeW (addr B o) (s.gpr r) }) ?_ (k _ ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩)
-  simp [exec, State.store32, ea_mk, hb, hout]
+  simp [reduceExec, State.store32, ea_mk, hb, hout]
 
 /-- `xor d, [b + o]` -/
 theorem wp_xorm {d b : Reg} {B : BitVec 32} {o : Nat} (hb : s.gpr b = B)
     (hin : InRegions (s.rd ++ s.wr) (addr B o) 4)
     (k : ∀ s', Upd s s' d (s.gpr d ^^^ s.mem.readW (addr B o) 32) → WP isa (.block is) s' Q) :
     WP isa (.block (.alu .xor d (.mem ⟨b, o⟩) :: is)) s Q :=
-  cons (by simp [exec, execAlu, readSrc_mem hb hin]; rfl) (k _ (Upd.flags _ _ _ _ _ _))
+  cons (by simp [reduceExec, execAlu, readSrc_mem hb hin]; rfl) (k _ (Upd.flags _ _ _ _ _ _))
 
 /-- `add d, [b + o]` -/
 theorem wp_addm {d b : Reg} {B : BitVec 32} {o : Nat} (hb : s.gpr b = B)
     (hin : InRegions (s.rd ++ s.wr) (addr B o) 4)
     (k : ∀ s', Upd s s' d (s.gpr d + s.mem.readW (addr B o) 32) → WP isa (.block is) s' Q) :
     WP isa (.block (.alu .add d (.mem ⟨b, o⟩) :: is)) s Q :=
-  cons (by simp [exec, execAlu, readSrc_mem hb hin]; rfl) (k _ (Upd.flags _ _ _ _ _ _))
+  cons (by simp [reduceExec, execAlu, readSrc_mem hb hin]; rfl) (k _ (Upd.flags _ _ _ _ _ _))
 
 theorem wp_addi {d : Reg} {v : BitVec 32} (k : ∀ s', Upd s s' d (s.gpr d + v) → WP isa (.block is) s' Q) :
     WP isa (.block (.alu .add d (.imm v) :: is)) s Q :=
@@ -144,7 +145,7 @@ theorem wp_sbb_self {d : Reg} {c : Bool} (hc : s.cf = some c)
     (subOverflow (s.gpr d) (s.gpr d) (s.gpr d - s.gpr d - (BitVec.ofBool c).setWidth 32))
     (if c then BitVec.allOnes 32 else 0))
   refine cons ?_ this
-  simp only [exec, execAlu, readSrc, Option.bind_some, hc, Option.map_some, sbb_self]
+  simp only [reduceExec, execAlu, readSrc, Option.bind_some, hc, Option.map_some, sbb_self]
 
 theorem wp_andi {d : Reg} {v : BitVec 32} (k : ∀ s', Upd s s' d (s.gpr d &&& v) → WP isa (.block is) s' Q) :
     WP isa (.block (.alu .and d (.imm v) :: is)) s Q :=
@@ -184,12 +185,12 @@ theorem wp_shr {d : Reg} {n : Nat} (hn : 1 ≤ n ∧ n ≤ 31)
     (k : ∀ s', Upd s s' d (s.gpr d >>> n) → s'.cf = some ((s.gpr d).getLsbD (n - 1)) →
       WP isa (.block is) s' Q) :
     WP isa (.block (.shift .shr d n :: is)) s Q :=
-  cons (by simp only [exec, execShift, hn, and_self, ite_true]; rfl) (k _ (Upd.setFlags _ _ _ _ _ _ _) rfl)
+  cons (by simp only [reduceExec, execShift, hn, and_self, ite_true]; rfl) (k _ (Upd.setFlags _ _ _ _ _ _ _) rfl)
 
 theorem wp_ror {d : Reg} {n : Nat} (hn : 1 ≤ n ∧ n ≤ 31)
     (k : ∀ s', Upd s s' d ((s.gpr d).rotateRight n) → WP isa (.block is) s' Q) :
     WP isa (.block (.shift .ror d n :: is)) s Q :=
-  cons (by simp only [exec, execShift, hn, and_self, ite_true]; rfl)
+  cons (by simp only [reduceExec, execShift, hn, and_self, ite_true]; rfl)
     (k _ (Upd.setFlags _ _ _ _ _ _ _))
 
 theorem wp_bswap {d : Reg} (k : ∀ s', Upd s s' d (bswap (s.gpr d)) → WP isa (.block is) s' Q) :

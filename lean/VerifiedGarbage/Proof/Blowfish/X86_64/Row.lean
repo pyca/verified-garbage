@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Words
 import VerifiedGarbage.Proof.Rc2.X86_64.Lookup
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # A row of the scan, instruction by instruction
@@ -33,11 +34,11 @@ theorem byte_readW128 (m : Mem) (a : Addr) {e : Nat} (he : e < 16) :
 
 theorem word_psubw (a b : BitVec 128) {i : Nat} (hi : i < 8) :
     word (XBinOp.eval .psubw a b) i = word a i - word b i := by
-  simp only [XBinOp.eval]; exact word_ofWords _ hi
+  simp only [reduceXBinOpEval]; exact word_ofWords _ hi
 
 theorem word_paddw (a b : BitVec 128) {i : Nat} (hi : i < 8) :
     word (XBinOp.eval .paddw a b) i = word a i + word b i := by
-  simp only [XBinOp.eval]; exact word_ofWords _ hi
+  simp only [reduceXBinOpEval]; exact word_ofWords _ hi
 
 theorem word_psraw15 (a : BitVec 128) {i : Nat} (hi : i < 8) :
     word (XShiftOp.eval .psraw a (BitVec.ofNat 8 15)) i = (word a i).sshiftRight 15 := by
@@ -68,12 +69,12 @@ theorem wordMasks_run (u : State) (x : Byte) {r : Nat} (hr : r < 16) (hk : u.xmm
   refine ⟨u', runXops ops u, fun w hw => ?_, fun w hw => ?_, fun d h1 h2 => ?_, ?_⟩
   · simp (disch := decide) only [u', ops, List.foldl, XOp.exec, xmm_setXmm_self, xmm_setXmm_of_ne, hk, hx, h1]
     rw [word_psraw15 _ hw, word_psubw _ _ hw]
-    simp only [XBinOp.eval]
+    simp only [reduceXBinOpEval]
     rw [word_pxor, rowK, bcast, wordsOf, word_ofWords _ hw, word_ofWords _ hw, word_ofWords _ hw]
     exact word_mask x _ (by omega_arith)
   · simp (disch := decide) only [u', ops, List.foldl, XOp.exec, xmm_setXmm_self, xmm_setXmm_of_ne, hk, hx, h1]
     rw [word_psraw15 _ hw, word_psubw _ _ hw]
-    simp only [XBinOp.eval]
+    simp only [reduceXBinOpEval]
     rw [word_pxor, word_ofWords _ hw, rowK, bcast, wordsOf, word_ofWords _ hw, word_ofWords _ hw,
       word_ofWords _ hw, show BitVec.ofNat 16 (16 * r + 2 * w) + BitVec.ofNat 16 1 =
         BitVec.ofNat 16 (16 * r + 2 * w + 1) by rw [BitVec.ofNat_add_ofNat]]
@@ -94,7 +95,7 @@ theorem masks_run (u : State) (x : Byte) {r : Nat} (hr : r < 16) (hk : u.xmm kRe
   · rw [masks, runBlock_append, run]
     exact runXops ops v
   · simp (disch := decide) only [u', ops, List.foldl, XOp.exec, xmm_setXmm_self, xmm_setXmm_of_ne,
-      XBinOp.eval]
+      reduceXBinOpEval]
     rw [word_or, word_pand, keep lowReg (by decide) (by decide), hl]
     rw [hE w hw]
     simp only [XShiftOp.eval, show (8 : BitVec 8).toNat = 8 by rfl, show ¬ 15 < 8 by decide, ite_false]
@@ -131,7 +132,7 @@ theorem plane_run (u : State) (sch : Reg) (j : Nat) {b : Nat} (hb : b < 4)
   · rw [plane, runBlock_cons, exec_movdquLoad hR, runStep_some]
     exact runXops ops u₁
   · simp (disch := first | decide | with_reducible assumption | exact Ne.symm ‹_›) only [ops, u₁, List.foldl, XOp.exec,
-      xmm_setXmm_self, xmm_setXmm_of_ne, XBinOp.eval]
+      xmm_setXmm_self, xmm_setXmm_of_ne, reduceXBinOpEval]
     rfl
   · simp (disch := decide) only [ops, u₁, List.foldl, XOp.exec, xmm_setXmm_of_ne _ _ h1, xmm_setXmm_of_ne _ _ h3]
   · simp only [ops, u₁, List.foldl, XOp.exec, State.setXmm]

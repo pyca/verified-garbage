@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # A scratch buffer on the stack, after stack arguments, wiped after use (x86-64)
@@ -71,7 +72,7 @@ theorem wipeAt_run (R : Region) (u : State) (off words : Nat) (hR : R ∈ u.wr)
   simp [addrs, srcAddrs]
 
 theorem wipeAt_spSafe (off words : Nat) : (wipeAt off words).all (fun i => !isa.writesSp i) = true := by
-  simp [wipeAt, wipeStoresAt, Instr.dst]
+  simp [wipeAt, wipeStoresAt, reduceInstrDst]
 
 /-- The trace of `wipeStoresAtX off n` from a state whose `rsp` is `sp`. -/
 def wipeAtXTrace (sp : Addr) (off n : Nat) : List Leak :=
@@ -110,7 +111,7 @@ theorem wipeAtX_run (R : Region) (u : State) (off n : Nat) (hR : R ∈ u.wr)
         some ({ u.setXmm .xmm0 0 with mem := m' }, wipeAtXTrace (u.gpr .rsp) off n) ∧
       Frame [R] u.mem m' := by
   have hx : XOp.exec (.bin .pxor .xmm0 .xmm0) u = u.setXmm .xmm0 0 := by
-    simp [XOp.exec, XBinOp.eval]
+    simp [XOp.exec, reduceXBinOpEval]
   obtain ⟨m', he, hf⟩ := wipeStoresAtX_run R (u.setXmm .xmm0 0) off (by simpa [State.setXmm]) n
     (by simpa [State.setXmm] using hc)
   refine ⟨m', ?_, by simpa [State.setXmm] using hf⟩
@@ -119,7 +120,7 @@ theorem wipeAtX_run (R : Region) (u : State) (off n : Nat) (hR : R ∈ u.wr)
   simp [addrs, State.setXmm]
 
 theorem wipeAtX_spSafe (off n : Nat) : (wipeAtX off n).all (fun i => !isa.writesSp i) = true := by
-  simp [wipeAtX, wipeStoresAtX, Instr.dst]
+  simp [wipeAtX, wipeStoresAtX, reduceInstrDst]
 
 /-- A wipe: code `code off` that zeroes the `len` bytes at `rsp + off`, of
 which the proofs need that it changes memory only in a region `R` holding

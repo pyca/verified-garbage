@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! # Public pointer advances and lane countdowns -/
 
@@ -25,7 +26,7 @@ structure Advanced (s t : State) : Prop where
 theorem advance_ok (s : State) :
     WP isa (.block [.alu .add .r14 (.imm 1024)]) s (Advanced s) := by
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, execAlu,
     Option.bind_some, Option.some.injEq, exists_eq_left',
     show (BitVec.signExtend 64 (1024 : BitVec 32)) = 1024 from rfl]
   refine ⟨rfl, fun r hr => ?_, rfl, rfl, rfl⟩
@@ -45,7 +46,7 @@ theorem laneEnd_ok (s : State) :
     WP isa (.block [.alu .add .r14 (.reg .r13), .alu .sub .r14 (.imm 1024),
       .alu .add .r12 (.imm 1), .alu .sub .r15 (.imm 1)]) s (LaneEnd s) := by
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, execAlu,
     RegUpd.gpr_arithFlags, RegUpd.gpr_setReg,
     reduceCtorEq, ite_true, ite_false,
     Option.bind_some, Option.some.injEq, exists_eq_left',

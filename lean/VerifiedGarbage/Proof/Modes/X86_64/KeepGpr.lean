@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # Code that keeps a general-purpose register
@@ -45,7 +46,7 @@ theorem execAlu_gpr {op : AluOp} {d : Reg} {src : Src} {s t : State} (h : execAl
 theorem exec_gprSafe {r : Reg} {i : Instr} (hi : gprSafeI r i = true) {s t : State} (h : exec i s = some t) :
     t.gpr r = s.gpr r := by
   cases i <;> simp only [gprSafeI, bne_iff_ne, ne_eq, Bool.false_eq_true] at hi
-  all_goals simp only [exec, Option.map_eq_some_iff, Option.some.injEq] at h
+  all_goals simp only [reduceExec, Option.map_eq_some_iff, Option.some.injEq] at h
   all_goals first
     | (subst h; first | rfl | exact congrFun (xop_exec_gpr _ _) _ |
         simp only [State.setReg32, gpr_setReg_of_ne _ _ (Ne.symm hi)])

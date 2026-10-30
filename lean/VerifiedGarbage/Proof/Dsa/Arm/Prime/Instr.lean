@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.Arm.Reduce
 
 /-! # A candidate on ARMv7: the carry flag
 
@@ -23,17 +24,17 @@ variable {is : List Instr} {s : State} {Q : State → Prop}
 theorem wp_subsC {d n : Reg} {o : Op2} {y : BitVec 32} (ho : o.eval s = some y)
     (k : ∀ s', Upd s s' d (s.gpr n - y) → s'.c = decide (y.toNat ≤ (s.gpr n).toNat) → WP isa (.block is) s' Q) :
     WP isa (.block (.subs d n o :: is)) s Q :=
-  WP.cons (s' := (subFlags s (s.gpr n) y).setReg d (s.gpr n - y)) (by simp only [exec, ho, Option.map_some])
+  WP.cons (s' := (subFlags s (s.gpr n) y).setReg d (s.gpr n - y)) (by simp only [reduceExec, ho, Option.map_some])
     (k _ (Upd.subs _ _ _ _ _) (by simp [State.setReg, subFlags]))
 
 theorem wp_movC {d : Reg} {o : Op2} {v : BitVec 32} (ho : o.eval s = some v)
     (k : ∀ s', Upd s s' d v → s'.c = s.c → WP isa (.block is) s' Q) : WP isa (.block (.mov d o :: is)) s Q :=
-  WP.cons (s' := s.setReg d v) (by simp only [exec, ho, Option.map_some]) (k _ (Upd.setReg _ _ _) rfl)
+  WP.cons (s' := s.setReg d v) (by simp only [reduceExec, ho, Option.map_some]) (k _ (Upd.setReg _ _ _) rfl)
 
 theorem wp_adc {d n : Reg} {o : Op2} {y : BitVec 32} (ho : o.eval s = some y)
     (k : ∀ s', Upd s s' d (s.gpr n + y + (if s.c then 1 else 0)) → WP isa (.block is) s' Q) :
     WP isa (.block (.adc d n o :: is)) s Q :=
-  WP.cons (s' := s.setReg d (s.gpr n + y + (if s.c then 1 else 0))) (by simp only [exec, ho, Option.map_some])
+  WP.cons (s' := s.setReg d (s.gpr n + y + (if s.c then 1 else 0))) (by simp only [reduceExec, ho, Option.map_some])
     (k _ (Upd.setReg _ _ _))
 
 /-- `subs t, x, y; mov t, #0; adc t, t, #0`: `t := 1` if `y ≤ x`, else 0. -/

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
+import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 /-!
 # x86 (32-bit): straight-line bitwise code, by evaluation
@@ -297,7 +298,7 @@ theorem step_ok (hD : D.Sound R) {e e' : Env α} {s : State} (hok : Ok c s)
       simp only [not_or] at hd
       obtain ⟨a, ha, rfl⟩ := Option.map_eq_some_iff.mp h
       obtain ⟨v, hv, hR⟩ := absSrc_ok hD hok hrel ha
-      simp only [exec, hv, Option.map_some, Option.some.injEq, exists_eq_left']
+      simp only [reduceExec, hv, Option.map_some, Option.some.injEq, exists_eq_left']
       exact (post_setReg hok hrel hR hd.1 hd.2 s ⟨rfl, rfl, rfl, rfl⟩).writes
         fun r h => by simp [Instr.dst, h]
   | store m r =>
@@ -308,7 +309,7 @@ theorem step_ok (hD : D.Sound R) {e e' : Env α} {s : State} (hok : Ok c s)
       obtain ⟨hb, hd, hlt⟩ := loc_some_slot hk
       have hea := ea_of (s := s) hb hd
       have hin := hok.slotIn k hlt
-      simp only [exec, State.store32, hea, hin, ite_true, Option.some.injEq, exists_eq_left']
+      simp only [reduceExec, State.store32, hea, hin, ite_true, Option.some.injEq, exists_eq_left']
       have hsep : ∀ j < c.slots, j ≠ k → Mem.Sep (wordAddr (s.gpr c.base) j) (32 / 8)
           (wordAddr (s.gpr c.base) k) (32 / 8) := fun j hj hjk =>
         slot_sep _ (by have := hok.fit; omega_using [hj, this]) (by have := hok.fit; omega_using [hlt, this]) hjk
@@ -342,7 +343,7 @@ theorem step_ok (hD : D.Sound R) {e e' : Env α} {s : State} (hok : Ok c s)
         obtain ⟨v, hv, hR⟩ := absSrc_ok hD hok hrel hb
         have hRa := hrel.reg d a ha
         cases op <;> simp only [binop, reduceCtorEq, Option.some.injEq] at hf <;> subst hf <;>
-          simp only [exec, execAlu, hv, Option.bind_some, Option.some.injEq, exists_eq_left']
+          simp only [reduceExec, execAlu, hv, Option.bind_some, Option.some.injEq, exists_eq_left']
         · exact Post.writes (post_setReg hok hrel (hD.and hRa hR hr) hd.1 hd.2
             (arithFlags s _ false false) ⟨rfl, rfl, rfl, rfl⟩) fun r h => by simp [Instr.dst, h]
         · exact Post.writes (post_setReg hok hrel (hD.or hRa hR hr) hd.1 hd.2
@@ -361,7 +362,7 @@ theorem step_ok (hD : D.Sound R) {e e' : Env α} {s : State} (hok : Ok c s)
       · rename_i a ha
         obtain ⟨r, hr, rfl⟩ := Option.map_eq_some_iff.mp h
         have hRa := hrel.reg d a ha
-        cases op <;> simp only [exec, execShift, hn, and_self, ite_true, Option.some.injEq,
+        cases op <;> simp only [reduceExec, execShift, hn, and_self, ite_true, Option.some.injEq,
           exists_eq_left']
         · exact Post.writes (post_setReg hok hrel (hD.ror hRa hr) hdb hde
             (s.setFlags _ _ _ _) ⟨rfl, rfl, rfl, rfl⟩) fun r h => by simp [Instr.dst, h]

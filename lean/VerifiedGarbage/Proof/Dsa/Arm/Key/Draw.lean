@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.Arm.Key.Scan
 import VerifiedGarbage.Proof.Dsa.RandomEncoding
 public import VerifiedGarbage.Impl.Dsa.Arm.KeyRandom
+import VerifiedGarbage.Proof.Framework.Arm.Reduce
 
 /-!
 # One draw (32-bit ARM)
@@ -203,12 +204,12 @@ theorem wp_subsC {d n : Reg} {o : Op2} {y : BitVec 32} (ho : o.eval s = some y)
     (k : ∀ s', Upd s s' d (s.gpr n - y) → s'.c = decide (y.toNat ≤ (s.gpr n).toNat) → WP isa (.block is) s' Q) :
     WP isa (.block (.subs d n o :: is)) s Q :=
   VG.Proof.X25519.Arm.WP.cons (s' := (subFlags s (s.gpr n) y).setReg d (s.gpr n - y))
-    (by simp only [exec, ho, Option.map_some]) (k _ (Upd.subs _ _ _ _ _) rfl)
+    (by simp only [reduceExec, ho, Option.map_some]) (k _ (Upd.subs _ _ _ _ _) rfl)
 
 /-- `mov d, op2`, keeping the carry. -/
 theorem wp_movC {d : Reg} {o : Op2} {v : BitVec 32} (ho : o.eval s = some v)
     (k : ∀ s', Upd s s' d v → s'.c = s.c → WP isa (.block is) s' Q) : WP isa (.block (.mov d o :: is)) s Q :=
-  VG.Proof.X25519.Arm.WP.cons (s' := s.setReg d v) (by simp only [exec, ho, Option.map_some])
+  VG.Proof.X25519.Arm.WP.cons (s' := s.setReg d v) (by simp only [reduceExec, ho, Option.map_some])
     (k _ (Upd.setReg _ _ _) rfl)
 
 /-- `adc d, n, op2`. -/
@@ -216,7 +217,7 @@ theorem wp_adc {d n : Reg} {o : Op2} {y : BitVec 32} (ho : o.eval s = some y)
     (k : ∀ s', Upd s s' d (s.gpr n + y + (if s.c then 1 else 0)) → WP isa (.block is) s' Q) :
     WP isa (.block (.adc d n o :: is)) s Q :=
   VG.Proof.X25519.Arm.WP.cons (s' := s.setReg d (s.gpr n + y + (if s.c then 1 else 0)))
-    (by simp only [exec, ho, Option.map_some]) (k _ (Upd.setReg _ _ _))
+    (by simp only [reduceExec, ho, Option.map_some]) (k _ (Upd.setReg _ _ _))
 
 end
 

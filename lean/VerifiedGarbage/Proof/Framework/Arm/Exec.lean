@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.TCB.Arm.Isa
+import VerifiedGarbage.Proof.Framework.Arm.Reduce
 
 /-!
 # ARMv7: instruction-level rewrite lemmas for symbolic execution
@@ -17,13 +18,13 @@ theorem exec_ldr {s : State} {t n : Reg} {off : Nat} (ho : off < 4096)
     (h : InRegions (s.rd ++ s.wr) (State.addr (s.gpr n + BitVec.ofNat 32 off)) 4) :
     exec (.ldr t n off) s =
       some (s.setReg t (s.mem.readW (State.addr (s.gpr n + BitVec.ofNat 32 off)) 32)) := by
-  simp only [exec, ho, ite_true, State.load32, h, Option.map_some]
+  simp only [reduceExec, ho, ite_true, State.load32, h, Option.map_some]
 
 theorem exec_str {s : State} {t n : Reg} {off : Nat} (ho : off < 4096)
     (h : InRegions s.wr (State.addr (s.gpr n + BitVec.ofNat 32 off)) 4) :
     exec (.str t n off) s =
       some { s with mem := s.mem.writeW (State.addr (s.gpr n + BitVec.ofNat 32 off)) (s.gpr t) } := by
-  simp only [exec, ho, ite_true, State.store32, h]
+  simp only [reduceExec, ho, ite_true, State.store32, h]
 
 /-- `adrSym d name` puts the address of the static `name` in `d`. -/
 theorem exec_adrSym {s : State} {d : Reg} {name : String} :
@@ -48,7 +49,7 @@ theorem rev_readW (m : Mem) (a : Addr) :
 
 theorem exec_sp {i : Instr} {s s' : State} (h : exec i s = some s') : s'.sp = s.sp := by
   cases i <;>
-  simp only [exec, Option.map_eq_some_iff, State.setReg, State.load32, State.store32, State.load8,
+  simp only [reduceExec, Option.map_eq_some_iff, State.setReg, State.load32, State.store32, State.load8,
     State.store8, addFlags, subFlags] at h <;>
   (repeat' split at h) <;>
   (try simp only [Option.some.injEq, reduceCtorEq] at h) <;>

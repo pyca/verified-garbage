@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Impl.Aes.AArch64.Aese
 public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # The Armv8 AES instructions are FIPS 197's rounds
@@ -294,13 +295,13 @@ theorem setV_setV (s : State) (r : VReg) (x y : BitVec 128) : (s.setV r x).setV 
 theorem rnd_run (k b : VReg) (s : State) :
     runBlock isa [.vop (.aese b k), .vop (.aesmc b b)] s =
       some (s.setV b (aesMixColumns (aesMapBytes aesSbox (aesShiftRows (s.v b ^^^ s.v k))))) := by
-  simp only [runBlock_cons, runStep_some, runBlock_nil, isa, exec, VOp.eval, Option.map_some]
+  simp only [runBlock_cons, runStep_some, runBlock_nil, isa, exec, reduceVOpEval, Option.map_some]
   rw [setV_v_self, setV_setV]
 
 theorem last_run (b : VReg) (s : State) (hb30 : b ≠ .v30) :
     runBlock isa [.vop (.aese b .v29), .vop (.logic .eor b b .v30)] s =
       some (s.setV b (aesMapBytes aesSbox (aesShiftRows (s.v b ^^^ s.v .v29)) ^^^ s.v .v30)) := by
-  simp only [runBlock_cons, runStep_some, runBlock_nil, isa, exec, VOp.eval, Option.map_some]
+  simp only [runBlock_cons, runStep_some, runBlock_nil, isa, exec, reduceVOpEval, Option.map_some]
   rw [setV_v_self, setV_v_of_ne _ _ (Ne.symm hb30), setV_setV]
 
 /-- The registers the blocks may be in. -/

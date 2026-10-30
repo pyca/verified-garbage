@@ -136,6 +136,9 @@ globs = ["VerifiedGarbage.Proof.Framework.SigEval", "VerifiedGarbage.Proof.Frame
   "VerifiedGarbage.Proof.Framework.KernelRfl", "VerifiedGarbage.Proof.Framework.Sig",
   "VerifiedGarbage.Proof.Framework.RegionsSub",
   "VerifiedGarbage.Proof.Framework.PlainSimp", "VerifiedGarbage.Proof.Framework.TacticTemplate",
+  "VerifiedGarbage.Proof.Framework.UnfoldStep", "VerifiedGarbage.Proof.Framework.X86_64.Reduce",
+  "VerifiedGarbage.Proof.Framework.X86.Reduce", "VerifiedGarbage.Proof.Framework.AArch64.Reduce",
+  "VerifiedGarbage.Proof.Framework.Arm.Reduce", "VerifiedGarbage.Proof.Framework.PPC64LE.Reduce",
   "VerifiedGarbage.Proof.MlDsa.DecideAt", "VerifiedGarbage.Impl.NatPairs",
   "VerifiedGarbage.Impl.AArch64Instrs"]
 precompileModules = true

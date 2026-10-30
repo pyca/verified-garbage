@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # X448 on x86-64: the bits of the scalar
@@ -138,7 +139,7 @@ theorem bitJ_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i < 
   apply WP.of_runBlock
   rcases Nat.eq_zero_or_pos j with rfl | hj0
   · simp only [bitJ, ite_true, List.nil_append, List.cons_append, runBlock_cons, runStep_some,
-      runBlock_nil, exec, readSrc, execAlu, State.store8, ea_bitAt, RegUpd.gpr_setReg,
+      runBlock_nil, reduceExec, readSrc, execAlu, State.store8, ea_bitAt, RegUpd.gpr_setReg,
       RegUpd.gpr_arithFlags, RegUpd.wr_setReg, RegUpd.wr_arithFlags, RegUpd.mem_setReg,
       RegUpd.mem_arithFlags, hs.rdi, hb, ha, addr_bit, w, ite_false, reduceCtorEq, Option.map_some,
       Option.bind_some, Option.some.injEq, exists_eq_left']
@@ -146,7 +147,7 @@ theorem bitJ_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i < 
     · simp only [hr, ite_false]
     · rw [← e]; rfl
   · simp only [bitJ, show ¬j = 0 by omega_arith, ite_false, List.nil_append, List.cons_append,
-    runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, execShift, State.store8,
+    runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, execAlu, execShift, State.store8,
     ea_bitAt, RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, RegUpd.wr_setReg,
     RegUpd.wr_setFlags, RegUpd.wr_arithFlags, RegUpd.mem_setReg, RegUpd.mem_setFlags,
     RegUpd.mem_arithFlags, hs.rdi, hb, ha, addr_bit, w, show 1 ≤ j ∧ j ≤ 63 from ⟨hj0, by omega_arith⟩,
@@ -188,7 +189,7 @@ theorem bitsBody_ok {s : State} {base k : Addr} (hs : Scr s base) (hk : s.gpr .r
       (fun s' => s'.gpr .rax = (s.mem (k + BitVec.ofNat 64 i)).setWidth 64 ∧
         (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr) by
     apply WP.of_runBlock
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, ea_scalar s hk hb, State.load8, hkr,
+    simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, ea_scalar s hk hb, State.load8, hkr,
       ite_true, Option.map_some, Option.some.injEq, exists_eq_left', RegUpd.gpr_setReg_self]
     exact ⟨trivial, fun r hr => by simp only [RegUpd.gpr_setReg, hr, ite_false], rfl, rfl, rfl⟩)
     fun s₀ ⟨a0, g0, m0, rd0, wr0⟩ => ?_
@@ -225,7 +226,7 @@ theorem bitsBody_ok {s : State} {base k : Addr} (hs : Scr s base) (hk : s.gpr .r
   refine WP.mono (bitJ_ok hs₇ hi hb₇ ha₇ (j := 7) (by omega_arith)) fun s₈ ⟨g8, rd8, wr8, m8⟩ => ?_
   obtain ⟨hs₈, hb₈, ha₈⟩ := keep g8 rd8 wr8 hs₇ hb₇ ha₇
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, Option.bind_some,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, execAlu, Option.bind_some,
     Option.some.injEq, exists_eq_left', RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hb₈, inc_eq,
     ite_true, RegUpd.zf_arithFlags, RegUpd.rd_arithFlags, RegUpd.rd_setReg, RegUpd.wr_arithFlags,
     RegUpd.wr_setReg, RegUpd.mem_arithFlags, RegUpd.mem_setReg, cmp56 i hi]
@@ -321,7 +322,7 @@ theorem bits_ok {s : State} {base k : Addr} (hs : Scr s base) (hk : s.gpr .rsi =
   refine WP.seq (WP.mono (show WP isa (.block [.mov32 .rbx (.imm 0)]) s (fun s' =>
       BInv base k s s' 0) by
     apply WP.of_runBlock
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, Option.map_some,
+    simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc32, Option.map_some,
       State.setReg32, Option.some.injEq, exists_eq_left']
     refine ⟨⟨hs.rdi, hs.wr, hs.nowrap⟩, hk, rfl, fun r hr => ?_, rfl, rfl, Outside.refl _ _ _ _,
       fun t ht => absurd ht (by omega_arith)⟩
@@ -332,7 +333,7 @@ theorem bits_ok {s : State} {base k : Addr} (hs : Scr s base) (hk : s.gpr .rsi =
   have w : ∀ d, d + 1 ≤ 8192 → InRegions s₂.wr (off base d) 1 :=
     fun d hd => ⟨_, hs₂.wr, contains_sc hd⟩
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, Option.map_some,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc32, Option.map_some,
     State.setReg32, State.store8, ea_sc, RegUpd.gpr_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg,
     hs₂.rdi, w BITS (by simp only [BITS]; omega_arith), w (BITS + 1) (by simp only [BITS]; omega_arith),
     w (BITS + 447) (by simp only [BITS]; omega_arith),

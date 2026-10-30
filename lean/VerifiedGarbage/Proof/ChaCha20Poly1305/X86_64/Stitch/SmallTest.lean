@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.Stitch
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # ChaCha20-Poly1305 with the AVX2 code for short data (x86-64): the length test
@@ -55,7 +56,7 @@ theorem smallTest_ok {lim : Nat} (hl : BitVec.signExtend 64 (BitVec.ofNat 32 lim
   by_cases h : (s.gpr .r9 - 961#64).toNat < 64
   · have hc : ((s.gpr .r9).toNat < lim ∨ winLo ≤ (s.gpr .r9).toNat ∧ (s.gpr .r9).toNat < winHi) := by
       simp only [winLo, winHi]; omega
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execCmov, readSrc, x961, x64, x0, hl,
+    simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu, execCmov, readSrc, x961, x64, x0, hl,
       Option.bind_some, Option.map_some, gpr_arithFlags, cf_arithFlags, cf_setReg, gpr_setReg, eval, h, hc,
       readSrc32, State.setReg32,
       decide_true, Option.some.injEq, exists_eq_left', ↓reduceIte, reduceCtorEq, e64, el, e0, hl0]
@@ -63,7 +64,7 @@ theorem smallTest_ok {lim : Nat} (hl : BitVec.signExtend 64 (BitVec.ofNat 32 lim
   · have hc : ((s.gpr .r9).toNat < lim ∨ winLo ≤ (s.gpr .r9).toNat ∧ (s.gpr .r9).toNat < winHi) ↔
         (s.gpr .r9).toNat < lim := by
       simp only [winLo, winHi]; omega
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execCmov, readSrc, x961, x64, x0, hl,
+    simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu, execCmov, readSrc, x961, x64, x0, hl,
       Option.bind_some, Option.map_some, gpr_arithFlags, cf_arithFlags, cf_setReg, gpr_setReg, eval, h, hc,
       readSrc32, State.setReg32,
       decide_false, Bool.false_eq_true, Option.some.injEq, exists_eq_left', ↓reduceIte, reduceCtorEq, e64, el]
@@ -86,7 +87,7 @@ theorem ifmaTest_ok (s : State) :
   have x191 : BitVec.signExtend 64 (BitVec.ofNat 32 191) = BitVec.ofNat 64 191 := by decide
   have e191 : (BitVec.ofNat 64 191).toNat = 191 := rfl
   have hw := ifma_iff (s.gpr .r9)
-  simp only [ifmaTest, ifmaLo, ifmaHi, Nat.reduceSub, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+  simp only [ifmaTest, ifmaLo, ifmaHi, Nat.reduceSub, runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu,
     readSrc, x449, x191, Option.bind_some, Option.map_some, gpr_arithFlags, cf_arithFlags, gpr_setReg, eval,
     e191, Option.some.injEq, exists_eq_left', ↓reduceIte]
   exact ⟨decide_eq_decide.mpr hw, fun r h1 => by simp only [h1, ite_false], rfl, rfl, rfl, rfl⟩
@@ -121,7 +122,7 @@ theorem restTest_ok {lo n : Nat} (hlo : lo < 512) (hn : n ≤ 512)
   have en : (BitVec.ofNat 64 n).toNat = n := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show n < 2 ^ 64 by omega)]
   have hw := rest_iff (s.gpr .r13) hlo hn
-  simp only [restTest, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, x511, xl, xn,
+  simp only [restTest, runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu, readSrc, x511, xl, xn,
     Option.bind_some, Option.map_some, gpr_arithFlags, cf_arithFlags, gpr_setReg, eval, en,
     Option.some.injEq, exists_eq_left', ↓reduceIte]
   exact ⟨by rw [decide_eq_decide]; exact hw, fun r h1 => by simp only [h1, ite_false], rfl, rfl, rfl, rfl⟩
@@ -134,7 +135,7 @@ theorem cmp13_ok (s : State) :
   apply WP.of_runBlock
   have x512 : BitVec.signExtend 64 (512 : BitVec 32) = BitVec.ofNat 64 512 := by decide
   have e512 : (BitVec.ofNat 64 512).toNat = 512 := rfl
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, x512,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu, readSrc, x512,
     Option.bind_some, cf_arithFlags, eval, e512, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, rfl, rfl, rfl, rfl, rfl⟩
 

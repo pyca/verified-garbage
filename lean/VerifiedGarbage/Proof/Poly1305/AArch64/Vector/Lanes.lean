@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: the lanes of the operations
@@ -39,7 +40,7 @@ theorem exec_vo {op : VOp} {s : State} {d : VReg} {x : BitVec 128} (h : op.eval 
 theorem exec_ldrq {s : State} {t : VReg} {n : Reg} {off : Nat} (ho : off % 16 = 0 ∧ off < 4096 * 16)
     (hr : InRegions (s.rd ++ s.wr) (s.gpr n + BitVec.ofNat 64 off) 16) :
     isa.exec (.ldrq t n off) s = some (s.setV t (s.mem.read (s.gpr n + BitVec.ofNat 64 off) 16)) := by
-  simp only [exec, addr, ho, and_self, ite_true, Option.bind_some, State.load, hr]
+  simp only [reduceExec, addr, ho, and_self, ite_true, Option.bind_some, State.load, hr]
   rfl
 
 theorem exec_umov (s : State) (d : Reg) (n : VReg) {i : Nat} (hi : i < 2) :
@@ -50,14 +51,14 @@ theorem exec_str {s : State} {t n : Reg} {off : Nat} (ho : off % 8 = 0 ∧ off <
     (hw : InRegions s.wr (s.gpr n + BitVec.ofNat 64 off) 8) :
     isa.exec (.str .x t n off) s =
       some { s with mem := s.mem.write (s.gpr n + BitVec.ofNat 64 off) 8 (s.gpr t) } := by
-  simp only [exec, addr, Size.bytes, ho, and_self, ite_true, Option.bind_some, State.store, hw, State.read]
+  simp only [reduceExec, addr, Size.bytes, ho, and_self, ite_true, Option.bind_some, State.store, hw, State.read]
   rfl
 
 theorem exec_ldr {s : State} {t n : Reg} {off : Nat} (ho : off % 8 = 0 ∧ off < 4096 * 8)
     (hr : InRegions (s.rd ++ s.wr) (s.gpr n + BitVec.ofNat 64 off) 8) :
     isa.exec (.ldr .x t n off) s =
       some (s.write .x t (s.mem.read (s.gpr n + BitVec.ofNat 64 off) 8)) := by
-  simp only [exec, addr, Size.bytes, ho, and_self, ite_true, Option.bind_some, State.load, hr]
+  simp only [reduceExec, addr, Size.bytes, ho, and_self, ite_true, Option.bind_some, State.load, hr]
   rfl
 
 /-! ## 64-bit lanes -/

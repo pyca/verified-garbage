@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Camellia.Bitsliced
 public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # FL and FLINV on x86-64
@@ -73,7 +74,7 @@ theorem flRotStep_ok {s : State} {j kw sh : Nat} {src : Reg} {K M : BitVec 64} (
       s'.wr = s.wr := by
   refine ⟨_, by
     simp only [flRotStep, andK, keyAt, slotAt, movR, rorI, andS, xorR, runBlock_cons, runStep_some,
-      runBlock_nil, exec, execAlu, execShift, readSrc, State.load64, State.ea, RegUpd.rd_setReg,
+      runBlock_nil, reduceExec, execAlu, execShift, readSrc, State.load64, State.ea, RegUpd.rd_setReg,
       RegUpd.wr_setReg, RegUpd.mem_setReg, RegUpd.gpr_setReg_of_ne _ _ kp_ne_t0,
       RegUpd.gpr_setReg_of_ne _ _ sb_ne_t0,
       RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.mem_arithFlags, RegUpd.gpr_arithFlags,
@@ -97,7 +98,7 @@ theorem flOrStep_ok {s : State} {j kw : Nat} {K M : BitVec 64} (hj : q j ≠ t0)
       s'.wr = s.wr := by
   refine ⟨_, by
     simp only [flOrStep, orK, keyAt, slotAt, movR, rorI, andS, xorR, runBlock_cons, runStep_some,
-      runBlock_nil, exec, execAlu, execShift, readSrc, State.load64, State.ea, RegUpd.rd_setReg,
+      runBlock_nil, reduceExec, execAlu, execShift, readSrc, State.load64, State.ea, RegUpd.rd_setReg,
       RegUpd.wr_setReg, RegUpd.mem_setReg, RegUpd.gpr_setReg_of_ne _ _ kp_ne_t0,
       RegUpd.gpr_setReg_of_ne _ _ sb_ne_t0,
       RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.mem_arithFlags, RegUpd.gpr_arithFlags,
@@ -196,7 +197,7 @@ theorem flRot_ok {off K} {s : State} (hf : FlMem s off K) :
   -- `mov t1, q 7`
   let s₀ := s.setReg t1 (s.gpr (q 7))
   have h₀ : runBlock isa [movR t1 (q 7)] s = some s₀ := by
-    simp only [movR, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, Option.map_some]; rfl
+    simp only [movR, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, Option.map_some]; rfl
   have g₀ : ∀ r, r ≠ t1 → s₀.gpr r = s.gpr r := fun r h => RegUpd.gpr_setReg_of_ne _ _ h
   have hf₀ : FlMem s₀ off K := hf.congr rfl rfl rfl (g₀ _ (by decide)) (g₀ _ (by decide))
   obtain ⟨s₁, h₁, g₁, o₁, m₁, rd₁, wr₁⟩ := flRotDesc_ok 7 (by omega_arith) s₀ hf₀

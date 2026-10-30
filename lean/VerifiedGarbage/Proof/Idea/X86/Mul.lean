@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Spec.Idea
 import VerifiedGarbage.Proof.Idea.Arith
+import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 /-!
 # IDEA on x86 (32-bit): ⊙ without branches
@@ -89,14 +90,14 @@ theorem mul_run (src : Src) (v : BitVec 32) (s : State) (hsrc : SrcOk s src v) :
   obtain ⟨s₁, h₁, v₁, e₁⟩ : ∃ s₁, runBlock isa [.alu .sub .eax (.imm 1), .alu .and .eax (.imm 0xffff),
       .alu .add .eax (.imm 1)] s = some s₁ ∧ s₁.gpr .eax = ((s.gpr .eax - 1) &&& 65535) + 1 ∧
       Keep [.eax] s s₁ := by
-    simp only [runBlock_cons, runStep_some, runBlock_nil, isa, exec, execAlu, readSrc, Option.bind_some,
+    simp only [runBlock_cons, runStep_some, runBlock_nil, isa, reduceExec, execAlu, readSrc, Option.bind_some,
       RegUpd.gpr_setReg, ↓reduceIte, Option.some.injEq, exists_eq_left', true_and]
     keep_tac
   have hv : readSrc s₁ src = some v := hsrc s₁ e₁.mem e₁.rd e₁.wr fun r hr => e₁.reg r (by simpa using hr)
   refine ⟨_, run_append (a := [_, _, _]) h₁ (by
-    rw [runBlock_cons, show exec (.mov .edx src) s₁ = some (s₁.setReg .edx v) by simp [exec, hv],
+    rw [runBlock_cons, show exec (.mov .edx src) s₁ = some (s₁.setReg .edx v) by simp [reduceExec, hv],
       runStep_some]
-    simp only [runBlock_cons, runStep_some, runBlock_nil, isa, exec, execAlu, execShift, execMul,
+    simp only [runBlock_cons, runStep_some, runBlock_nil, isa, reduceExec, execAlu, execShift, execMul,
       readSrc, Option.bind_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags,
       ↓reduceIte, reduceCtorEq, Nat.reduceLeDiff, and_self, Option.map_some]
     rfl), ?_, ?_⟩

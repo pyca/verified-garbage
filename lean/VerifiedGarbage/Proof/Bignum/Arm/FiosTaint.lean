@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Reduce
 
 /-! A local analysis for the fused scan forgets secret UMAAL results and retains its public pointers. -/
 
@@ -25,8 +26,8 @@ private theorem umaal_keep {s t : State} {lo hi n m r : Reg}
     (hlo : r ≠ lo) (hhi : r ≠ hi) (h : exec (.umaal lo hi n m) s = some t) :
     t.gpr r = s.gpr r := by
   by_cases same : lo = hi
-  · simp only [exec, same, ite_true, reduceCtorEq] at h
-  · simp only [exec, same, ite_false, Option.some.injEq] at h
+  · simp only [reduceExec, same, ite_true, reduceCtorEq] at h
+  · simp only [reduceExec, same, ite_false, Option.some.injEq] at h
     subst t
     rw [RegUpd.gpr_setReg_of_ne _ _ hhi, RegUpd.gpr_setReg_of_ne _ _ hlo]
 

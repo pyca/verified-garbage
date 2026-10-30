@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # SHA-256 with AVX2 on x86-64: one round
@@ -114,7 +115,7 @@ theorem round_ok (j t : Nat) (s : State) (v : HashValue) (w : Word)
     List.reverse_nil, List.nil_append, List.cons_append, or_false, not_or,
     List.nodup_nil, and_true] at hd hd' ⊢
   simp only [↓reduceIte, Nat.reduceLeDiff, Nat.reducePow, runBlock_cons, runStep_some,
-    runBlock_nil, exec, execAlu32, execRorx32, execAndn32, readSrc32, State.ea,
+    runBlock_nil, reduceExec, execAlu32, execRorx32, execAndn32, readSrc32, State.ea,
     isa, State.load32, State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg,
     RegUpd.wr_setReg, RegUpd.xmm_setReg, RegUpd.ymmHi_setReg, arithFlags, RegUpd.gpr_setFlags,
     RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, RegUpd.xmm_setFlags,

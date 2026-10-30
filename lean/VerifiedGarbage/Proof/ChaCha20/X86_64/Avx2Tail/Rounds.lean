@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Rounds
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # ChaCha20 on x86-64 with AVX2, the last bytes: the rounds
@@ -79,7 +80,7 @@ theorem rotS_ok (d t : XReg) {n : Nat} (hn : n = 12 ∨ n = 7) (htd : t ≠ d) (
   apply WP.of_runBlock
   simp only [rotS, v, runBlock_cons, runStep_some, runBlock_nil, exec, Option.some.injEq, exists_eq_left']
   refine ⟨fun l q hq => ?_, fun r l h₁ h₂ => ?_, by simp, by simp, by simp, by simp⟩
-  · simp only [lane_vbin256, lane_vshift256, ite_true, htd, Ne.symm htd, ite_false, VBinOp.sse, dword_por]
+  · simp only [lane_vbin256, lane_vshift256, ite_true, htd, Ne.symm htd, ite_false, reduceVBinOpSse, dword_por]
     rcases hn with rfl | rfl
     · rw [dword_psrld _ _ (by decide) hq, dword_pslld _ _ (by decide) hq]; exact rot12' _
     · rw [dword_psrld _ _ (by decide) hq, dword_pslld _ _ (by decide) hq]; exact rot7' _
@@ -105,7 +106,7 @@ theorem step_ok (i : HI) (hi : hiOk i = true) {ws : Nat → W} {s : State} (h : 
     refine ⟨fun r l q hr hl hq => ?_, fun l => ?_, by simp, by simp, by simp, by simp⟩
     · simp only [lane_vbin256, hstep, setRow_row _ _ _ _ hq, xidx_inj]
       split
-      · simp only [VBinOp.sse, dword_paddd _ _ hq]; rw [h a l q ha hl hq, h b l q hb hl hq]
+      · simp only [reduceVBinOpSse, dword_paddd _ _ hq]; rw [h a l q ha hl hq, h b l q hb hl hq]
       · exact h r l q hr hl hq
     · have := (xidx8 d).1 hd
       simp only [lane_vbin256, Ne.symm this.1, Ne.symm this.2.1, ite_false]; exact hm l
@@ -117,7 +118,7 @@ theorem step_ok (i : HI) (hi : hiOk i = true) {ws : Nat → W} {s : State} (h : 
     refine ⟨fun r l q hr hl hq => ?_, fun l => ?_, by simp, by simp, by simp, by simp⟩
     · simp only [lane_vbin256, hstep, setRow_row _ _ _ _ hq, xidx_inj]
       split
-      · simp only [VBinOp.sse, dword_pxor]; rw [h a l q ha hl hq, h b l q hb hl hq]
+      · simp only [reduceVBinOpSse, dword_pxor]; rw [h a l q ha hl hq, h b l q hb hl hq]
       · exact h r l q hr hl hq
     · have := (xidx8 d).1 hd
       simp only [lane_vbin256, Ne.symm this.1, Ne.symm this.2.1, ite_false]; exact hm l
@@ -145,7 +146,7 @@ theorem step_ok (i : HI) (hi : hiOk i = true) {ws : Nat → W} {s : State} (h : 
       · simp only [lane_vbin256, hstep, setRow_row _ _ _ _ hq, xidx_inj]
         split
         · rename_i e; subst e
-          simp only [VBinOp.sse, (hm l).1, dword_pshufb_rot16 _ hq]; rw [h r l q hr hl hq]; rfl
+          simp only [reduceVBinOpSse, (hm l).1, dword_pshufb_rot16 _ hq]; rw [h r l q hr hl hq]; rfl
         · exact h r l q hr hl hq
       · simp only [lane_vbin256, Ne.symm dd.1, Ne.symm dd.2.1, ite_false]; exact hm l
     · apply WP.of_runBlock
@@ -155,7 +156,7 @@ theorem step_ok (i : HI) (hi : hiOk i = true) {ws : Nat → W} {s : State} (h : 
       · simp only [lane_vbin256, hstep, setRow_row _ _ _ _ hq, xidx_inj]
         split
         · rename_i e; subst e
-          simp only [VBinOp.sse, (hm l).2, dword_pshufb_rot8 _ hq]; rw [h r l q hr hl hq]; rfl
+          simp only [reduceVBinOpSse, (hm l).2, dword_pshufb_rot8 _ hq]; rw [h r l q hr hl hq]; rfl
         · exact h r l q hr hl hq
       · simp only [lane_vbin256, Ne.symm dd.1, Ne.symm dd.2.1, ite_false]; exact hm l
     · show WP isa (.block (rotS d (tmp d) 12)) s _

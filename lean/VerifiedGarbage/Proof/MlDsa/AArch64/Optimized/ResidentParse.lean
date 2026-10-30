@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-! ## From `ResidentUnpackLoop.lean` -/
 
@@ -129,8 +130,8 @@ theorem parse_ok (s : State) {d off : Nat} {p : Reg} (hd : d=18 ∨ d=20)
   let a := s.write .x .x0 (s.gpr .x19+BitVec.ofNat 64 off)
   let b := a.write .x .x4 (a.gpr p)
   let t := b.write .x .x11 16
-  refine WP.block_cons_iff.mpr ⟨a,by simp [isa,exec,hoff,State.read,a],?_⟩
-  refine WP.block_cons_iff.mpr ⟨b,by simp [isa,exec,Impl.MlKem.AArch64.mov,State.read,b],?_⟩
+  refine WP.block_cons_iff.mpr ⟨a,by simp [isa,reduceExec,hoff,State.read,a],?_⟩
+  refine WP.block_cons_iff.mpr ⟨b,by simp [isa,reduceExec,Impl.MlKem.AArch64.mov,State.read,b],?_⟩
   refine WP.block_cons_iff.mpr ⟨t,rfl,WP.block_nil_iff.mpr ?_⟩
   refine parser_loop_ok hd (by decide) (s := t) (start := 0) ?_ hsep h0 h1 h2 hw
   refine ⟨by decide,hr.keep (fun _ _ => rfl),?_,Frame.refl _ _,?_,?_,rfl,?_,

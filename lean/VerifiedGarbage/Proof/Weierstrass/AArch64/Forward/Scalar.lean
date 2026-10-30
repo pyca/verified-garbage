@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Data
 import Std.Data.DTreeMap.Internal.Operations
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-! Pure scalar effects used by the checked doubling schedule. The semantics
 below run the existing ISA; no arithmetic operation is redefined. -/
@@ -22,7 +23,7 @@ theorem scalar_run (op : Op) (hv : op.valid=true) (s : State) (d a b c : Reg) :
       t.sp=s.sp ∧ t.v=s.v ∧ t.syms=s.syms ∧ t.unknowns=s.unknowns := by
   cases op <;>
     simp only [Op.valid,decide_eq_true_eq] at hv <;>
-    simp [Op.instr,Op.eval,Op.flags,Op.useA,Op.useB,Op.useC,Op.useD,Op.useCarry,exec,scalarState,State.read,State.write,State.addWithCarry,
+    simp [Op.instr,Op.eval,Op.flags,Op.useA,Op.useB,Op.useC,Op.useD,Op.useCarry,reduceExec,scalarState,State.read,State.write,State.addWithCarry,
       hv,Size.bits,BitVec.setWidth_eq ]
   all_goals intro r hne he; exact (hne he).elim
 

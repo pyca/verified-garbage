@@ -230,3 +230,19 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   (… r.1, r.2)`) duplicates the call at every level. Evaluate it in one
   step with a `dsimproc` instead (`Arm.reduceClassify`,
   `Proof/Framework/Arm/Contract.lean`).
+* **Unfolding a definition by `match` in `simp`:** `simp [f]` (and `dsimp`,
+  `simp_all`, `simpa`) realizes `f`'s equation lemmas in the module, and
+  those of its `match` (`f.match_N.eq_*`, `f.match_N.splitter`) under a
+  private name, so no importer reuses them: every module that unfolds an
+  ISA's `exec` this way carried about a megabyte of them in the build cache,
+  and `simp` spent up to half a second realizing them. Unfold a model's
+  function on an instruction given by its constructor with its `dsimproc`
+  (`reduceExec`, `reduceVOpEval`, `reduceInstrDst`, …,
+  `Proof/Framework/<ISA>/Reduce.lean`, built on `unfoldStep?` in
+  `Proof/Framework/UnfoldStep.lean`), which unfolds by definitional
+  reduction and realizes nothing; for a function without one, add it there.
+  Rewrite with per-case lemmas proved `rfl` where there are a few cases
+  (`Sig.bufs_array`, `Proof/Framework/Sig.lean`). A `dsimproc` reduces only
+  the outer `match`, as an equation lemma does, but needs its argument to be
+  a constructor: where a proof relies on `simp` unfolding a `match` it
+  cannot reduce, keep the definition.

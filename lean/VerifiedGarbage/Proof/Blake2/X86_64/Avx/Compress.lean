@@ -22,6 +22,7 @@ meta import VerifiedGarbage.Proof.Blake2.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Spill
 meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # BLAKE2s compression function on x86-64 with AVX
@@ -69,7 +70,7 @@ theorem qword_app0 (a b : BitVec 64) : qword (a ++ b) 0 = b := by
 
 theorem unpck_app (lo hi : BitVec 64) :
     XBinOp.eval .punpcklqdq ((0 : BitVec 64) ++ lo) ((0 : BitVec 64) ++ hi) = hi ++ lo := by
-  simp only [XBinOp.eval, qword_app0]
+  simp only [reduceXBinOpEval, qword_app0]
 
 theorem dword_app (a b : BitVec 64) {q : Nat} (hq : q < 4) :
     dword (a ++ b) q = if q < 2 then b.extractLsb' (32 * q) 32 else a.extractLsb' (32 * (q - 2)) 32 := by

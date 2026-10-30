@@ -7,6 +7,7 @@ public import VerifiedGarbage.Impl.ChaCha20.X86
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.ChaCha20
 import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 /-!
 # ChaCha20 on x86 (32-bit): the quarter round on XMM registers
@@ -64,7 +65,7 @@ theorem vqr_ok {a b c d : XReg} (hab : a ≠ b) (hac : a ≠ c) (had : a ≠ d) 
   unfold QrPost
   apply WP.of_runBlock
   simp only [vqr, vrot, xb, List.cons_append, List.nil_append, runBlock_cons, runStep_some,
-    runBlock_nil, exec, XOp.exec, RegUpd.gpr_setXmm, RegUpd.mem_setXmm, RegUpd.rd_setXmm,
+    runBlock_nil, reduceExec, XOp.exec, RegUpd.gpr_setXmm, RegUpd.mem_setXmm, RegUpd.rd_setXmm,
     RegUpd.wr_setXmm, Option.some.injEq, exists_eq_left']
   refine ⟨fun l hl => ?_, fun r h0 h1 h2 h3 h4 => ?_, trivial, trivial, trivial, trivial⟩
   · simp only [dw, RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne _ _ hab, RegUpd.xmm_setXmm_of_ne _ _ hac,
@@ -133,7 +134,7 @@ theorem vqr3_ok {a b c d : XReg} (hab : a ≠ b) (hac : a ≠ c) (had : a ≠ d)
   unfold QrPost
   apply WP.of_runBlock
   simp only [vqr3, vrot, xb, List.cons_append, List.nil_append, runBlock_cons, runStep_some,
-    runBlock_nil, exec, XOp.exec, State.load128, ea_setXmm', e₁, e₂, RegUpd.rd_setXmm, RegUpd.wr_setXmm,
+    runBlock_nil, reduceExec, XOp.exec, State.load128, ea_setXmm', e₁, e₂, RegUpd.rd_setXmm, RegUpd.wr_setXmm,
     RegUpd.mem_setXmm, i₁, i₂, ite_true, Option.map_some, m₁, m₂, RegUpd.gpr_setXmm,
     Option.some.injEq, exists_eq_left']
   refine ⟨fun l hl => ?_, fun r h0 h1 h2 h3 h4 => ?_, trivial, trivial, trivial, trivial⟩

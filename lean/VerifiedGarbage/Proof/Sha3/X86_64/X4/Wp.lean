@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Avx
 public import VerifiedGarbage.Impl.Sha3.X86_64.X4
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # Keccak-f[1600] four times at once on x86-64: one instruction at a time
@@ -138,17 +139,17 @@ theorem wp_vror {d a : XReg} {n : Nat} (hn : n < 64)
 
 theorem wp_vxor {d a b : XReg} (k : ∀ s', VUpd s s' d (fun i => q4 s a i ^^^ q4 s b i) → WP isa (.block is) s' Q) :
     WP isa (.block (vb .vpxor d a b :: is)) s Q :=
-  WP.cons rfl (k _ (VUpd.vbin _ _ _ _ _ fun _ _ => by simp only [VBinOp.sse, XBinOp.eval, qword_xor]; rfl))
+  WP.cons rfl (k _ (VUpd.vbin _ _ _ _ _ fun _ _ => by simp only [reduceVBinOpSse, reduceXBinOpEval, qword_xor]; rfl))
 
 theorem wp_vor {d a b : XReg} (k : ∀ s', VUpd s s' d (fun i => q4 s a i ||| q4 s b i) → WP isa (.block is) s' Q) :
     WP isa (.block (vb .vpor d a b :: is)) s Q :=
-  WP.cons rfl (k _ (VUpd.vbin _ _ _ _ _ fun _ _ => by simp only [VBinOp.sse, XBinOp.eval, qword_or]; rfl))
+  WP.cons rfl (k _ (VUpd.vbin _ _ _ _ _ fun _ _ => by simp only [reduceVBinOpSse, reduceXBinOpEval, qword_or]; rfl))
 
 theorem wp_vandn {d a b : XReg}
     (k : ∀ s', VUpd s s' d (fun i => ~~~q4 s a i &&& q4 s b i) → WP isa (.block is) s' Q) :
     WP isa (.block (vb .vpandn d a b :: is)) s Q :=
   WP.cons rfl (k _ (VUpd.vbin _ _ _ _ _ fun _ _ => by
-    simp only [VBinOp.sse, XBinOp.eval]; rw [qword_andn _ _ (mod2_lt _)]; rfl))
+    simp only [reduceVBinOpSse, reduceXBinOpEval]; rw [qword_andn _ _ (mod2_lt _)]; rfl))
 
 theorem wp_vshl {d a : XReg} {n : Nat} (hn : n < 64)
     (k : ∀ s', VUpd s s' d (fun i => q4 s a i <<< n) → WP isa (.block is) s' Q) :

@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 /-! A proof-only taint domain for public values saved in either 64-bit SIMD lane. -/
 @[expose] public section
 namespace VG.AArch64.LaneTaint
@@ -30,7 +31,7 @@ private theorem scalar_vectors {i : Instr} {s s' : State}
   case ldp => obtain ⟨_, _, rfl⟩ := exec_ldp_eq he; rfl
   case stp => obtain ⟨_, rfl⟩ := exec_stp_eq he; rfl
   all_goals
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at he
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at he
   all_goals
     repeat' first
       | split at he
@@ -128,7 +129,7 @@ theorem step_sound {q q' : T} {i : Instr} {s t s' t' : State}
    cases op <;> try exact ordinary_sound h hs es et
    case dup a d n =>
      simp only [step,Option.some.injEq] at hs; subst hs
-     cases a <;> simp only [exec,VOp.eval,Option.map_some,Option.some.injEq] at es et
+     cases a <;> simp only [reduceExec,VOp.eval,Option.map_some,Option.some.injEq] at es et
      all_goals
        subst es; subst et
        exact ⟨rfl,⟨h.1.1,h.1.2⟩,both_set h.2 d (fun hp=>by rw [h.1.reg hp])⟩
@@ -138,7 +139,7 @@ theorem step_sound {q q' : T} {i : Instr} {s t s' t' : State}
      split at hs <;> [skip; cases hs]
      rename_i hk
      cases hs
-     simp only [exec,VOp.eval,hk,ite_true,Option.map_some,Option.some.injEq] at es et
+     simp only [reduceExec,VOp.eval,hk,ite_true,Option.map_some,Option.some.injEq] at es et
      subst es; subst et
      exact ⟨rfl,⟨h.1.1,h.1.2⟩,ins_set h.2 d hk (fun hp=>h.1.reg hp)⟩
  | umov sz d n k =>
@@ -148,14 +149,14 @@ theorem step_sound {q q' : T} {i : Instr} {s t s' t' : State}
      split at hs <;> [skip; cases hs]
      rename_i hk
      cases hs
-     simp only [exec,Size.bits,show k*64<128 by omega,ite_true,Option.some.injEq] at es et
+     simp only [reduceExec,Size.bits,show k*64<128 by omega,ite_true,Option.some.injEq] at es et
      subst es; subst et
      refine ⟨rfl,h.1.write .x d (fun hp=>?_),h.2⟩
      have hh := h.2 (k==1) n hp
      rcases (by omega : k=0 ∨ k=1) with rfl | rfl <;> exact hh
  | ldrqTbl d n off name ws =>
    simp only [step,Option.some.injEq] at hs; subst hs
-   simp only [exec] at es et
+   simp only [reduceExec] at es et
    split at es <;> [skip; cases es]
    split at et <;> [skip; cases et]
    cases es; cases et

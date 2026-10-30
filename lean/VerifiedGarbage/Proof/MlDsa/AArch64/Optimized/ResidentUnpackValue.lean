@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-! ## From `ResidentUnpackArithmetic.lean` -/
 
@@ -68,7 +69,7 @@ theorem arithmetic_ok (s : State) (r : VReg) {d : Nat} (hd : d=18 ∨ d=20)
   have hs : VShiftOp.ok .ushr 32 (if d=20 then 4 else 6)=true := by
     rcases hd with rfl | rfl <;> decide
   refine wp_vop (d := r) rfl fun a ha => ?_
-  refine wp_vop (d := r) (x := VArr.s4.map2 (fun _ _ y => y >>> (if d=20 then 4 else 6)) (a.v r) (a.v r)) (by simp only [VOp.eval,VArr.esize,hs,ite_true,VShiftOp.eval]) fun b hb => ?_
+  refine wp_vop (d := r) (x := VArr.s4.map2 (fun _ _ y => y >>> (if d=20 then 4 else 6)) (a.v r) (a.v r)) (by simp only [reduceVOpEval,VArr.esize,hs,ite_true,VShiftOp.eval]) fun b hb => ?_
   refine wp_vop (d := r) rfl fun c hc => ?_
   refine wp_vop (d := r) rfl fun f hf => ?_
   refine wp_vop (d := .v24) rfl fun g hg => ?_

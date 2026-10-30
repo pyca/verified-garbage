@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # The comb from tables in memory on x86-64: the selection's pass with AVX2
@@ -104,7 +105,7 @@ theorem selStepY_ok (s : State) {X : Addr} (hx : s.gpr .rdx = X) {d c : Nat} (hc
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, ea_tblAt, hx, State.load256, hr,
     ite_true, Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨fun l hl => ?_, ⟨fun _ _ => rfl, rfl, rfl, rfl, fun r hr l => ?_⟩⟩
-  · simp only [lane_vbin256, State.lane_setV256, ↓reduceIte, h11, VBinOp.sse, XBinOp.eval]
+  · simp only [lane_vbin256, State.lane_setV256, ↓reduceIte, h11, reduceVBinOpSse, XBinOp.eval]
     rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl
     · simp only [↓reduceIte]
       rw [show (s.mem.readW (X + BitVec.ofNat 64 d) 256).extractLsb' 0 128 =
@@ -177,10 +178,10 @@ theorem selMaskY_ok (s : State) {a m : Nat} (ha : a < 2 ^ 31) (hm : m < 2 ^ 31)
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, Option.some.injEq, exists_eq_left']
   refine ⟨fun l hl => ?_, fun l hl => ?_, ⟨fun _ _ => rfl, rfl, rfl, rfl, fun r hr l => ?_⟩⟩
-  · simp only [lane_vbin256, ↓reduceIte, show XReg.xmm15 ≠ XReg.xmm14 from by decide, VBinOp.sse,
+  · simp only [lane_vbin256, ↓reduceIte, show XReg.xmm15 ≠ XReg.xmm14 from by decide, reduceVBinOpSse,
       h14 l hl, h13 l hl, pcmpeqd_bcast, ofNat32_eq (show a < 2 ^ 32 by omega_arith) (show m < 2 ^ 32 by omega_arith)]
   · simp only [lane_vbin256, ↓reduceIte, show XReg.xmm14 ≠ XReg.xmm15 from by decide,
-      show XReg.xmm12 ≠ XReg.xmm15 from by decide, VBinOp.sse, h14 l hl, h12 l hl, paddd_bcast,
+      show XReg.xmm12 ≠ XReg.xmm15 from by decide, reduceVBinOpSse, h14 l hl, h12 l hl, paddd_bcast,
       ← BitVec.ofNat_add]
   · simp only [not_or] at hr
     simp only [lane_vbin256, hr.1, hr.2, ↓reduceIte]
@@ -351,7 +352,7 @@ theorem clearAccY_ok : ∀ k ≤ 11, ∀ (s : State),
     · rw [lane_vbin256]
       by_cases hck : c = k
       · rw [hck, ifT rfl]
-        simp only [VBinOp.sse, XBinOp.eval, BitVec.xor_self]
+        simp only [reduceVBinOpSse, XBinOp.eval, BitVec.xor_self]
         rfl
       · rw [ifF (fun h => hck (selAcc_inj c (by omega_arith) k (by omega_arith) h)), a₁ c (by omega_arith) l hl]
     · rw [lane_vbin256, ifF (fun h => hr ⟨k, by omega_arith, h⟩),

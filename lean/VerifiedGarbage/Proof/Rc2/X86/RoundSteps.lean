@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Rc2.Select32
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 @[expose] public section
 
@@ -57,7 +58,7 @@ theorem rotate16_ok (s : State) (r : Reg) (hr : r ≠ .esi)
   have hright : 1 ≤ 16 - n ∧ 16 - n ≤ 31 := by omega
   refine ⟨_, by
     simp only [hleft, hright, and_self, rotate16, rr, runBlock_cons, runStep_some, runBlock_nil,
-      exec, execAlu, execShift, readSrc, Option.bind_some, Option.map_some,
+      reduceExec, execAlu, execShift, readSrc, Option.bind_some, Option.map_some,
       gpr_setReg, gpr_arithFlags, gpr_setFlags, hr, Ne.symm hr, ite_true, ite_false]
     rfl, ?_⟩
   constructor
@@ -81,7 +82,7 @@ theorem mixSelect_ok (s : State) (i : Nat) :
   have h3 := (wordReg_separate (i + 3)).1
   refine ⟨_, by
     simp only [mixSelect, rr, runBlock_cons, runStep_some, runBlock_nil,
-      exec, execAlu, readSrc, Option.bind_some, Option.map_some, gpr_setReg,
+      reduceExec, execAlu, readSrc, Option.bind_some, Option.map_some, gpr_setReg,
       gpr_arithFlags, h1, h3, ite_false, ite_true]
     rfl, ?_⟩
   constructor
@@ -108,7 +109,7 @@ theorem mixKey_ok (s : State) (j : Nat) (hj : j < 64)
   simp only [arg, argAddr, Nat.mul_zero, Nat.add_zero, ← addr_eq_def] at stackRead lo hi loAddr hiAddr ⊢
   refine ⟨_, by
     simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, and_self, mixKey, memOp, State.ea, runBlock_cons,
-      runStep_some, runBlock_nil, exec, execAlu, execShift, readSrc, State.load32, State.load8,
+      runStep_some, runBlock_nil, reduceExec, execAlu, execShift, readSrc, State.load32, State.load8,
       gpr_setReg, gpr_setFlags, mem_setReg,
       rd_setReg, wr_setReg,
       stackRead, Option.map_some, Option.bind_some, 
@@ -130,7 +131,7 @@ theorem adjust_ok (sub : Bool) (s : State) (r : Reg) :
       Keep [r] s s' := by
   cases sub <;>
     refine ⟨_, by simp only [adjust, Bool.false_eq_true, ite_false, ite_true,
-      runBlock_cons, exec, execAlu, readSrc, Option.bind_some, runStep_some, runBlock_nil]; rfl, ?_⟩
+      runBlock_cons, reduceExec, execAlu, readSrc, Option.bind_some, runStep_some, runBlock_nil]; rfl, ?_⟩
   all_goals
     constructor
     · exact gpr_setReg_self _ _ _

@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! Forwarding changes memory reads to register reads with identical state results. -/
 
@@ -35,7 +36,7 @@ private theorem one_frame {i : Instr} {d : Reg} {s t : State}
     (hd : i.dst=some d) (he : exec i s=some t) :
     t.rd=s.rd ∧ t.wr=s.wr ∧ t.mem=s.mem ∧ ∀ r,r≠d → t.gpr r=s.gpr r := by
   have hd' : Taint.dstOf i=some d := by
-    cases i <;> simp only [Instr.dst,Option.some.injEq,reduceCtorEq] at hd
+    cases i <;> simp only [reduceInstrDst,Option.some.injEq,reduceCtorEq] at hd
     all_goals subst d
     all_goals first | rfl | cases he
   exact Taint.exec_nonstore hd' he
@@ -43,7 +44,7 @@ private theorem one_frame {i : Instr} {d : Reg} {s t : State}
 theorem writes_frame {i : Instr} {rs : List Reg} {s t : State}
     (hw : writes i=some rs) (he : exec i s=some t) :
     t.rd=s.rd ∧ t.wr=s.wr ∧ t.mem=s.mem ∧ ∀ r,r∉rs → t.gpr r=s.gpr r := by
-  cases i <;> simp only [writes,Instr.dst,Option.map_some,Option.map_none,
+  cases i <;> simp only [writes,reduceInstrDst,Option.map_some,Option.map_none,
     Option.some.injEq,reduceCtorEq] at hw
   all_goals subst rs
   all_goals first

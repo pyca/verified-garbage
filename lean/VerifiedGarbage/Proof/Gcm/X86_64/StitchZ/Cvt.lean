@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # Converting the powers of a key context, two at a time
@@ -38,7 +39,7 @@ def ones : BitVec 128 := XBinOp.eval .punpcklqdq ((0 : BitVec 64) ++ (0xffffffff
 theorem eval_mov (a b : BitVec 128) : XBinOp.eval .movdqa a b = b := rfl
 
 theorem pcmpeqd_self (v : BitVec 128) : XBinOp.eval .pcmpeqd v v = ones := by
-  simp only [XBinOp.eval, ↓reduceIte]; decide
+  simp only [reduceXBinOpEval, ↓reduceIte]; decide
 
 /-! ## The constants -/
 

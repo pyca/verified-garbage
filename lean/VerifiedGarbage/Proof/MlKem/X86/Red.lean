@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86.Common
 public import VerifiedGarbage.Impl.MlKem.X86.Ntt
+import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 /-!
 # ML-KEM on x86 (32-bit): Barrett reduction and products
@@ -48,7 +49,7 @@ theorem red_spec {r : Reg} (h1 : r ≠ .eax) (h2 : r ≠ .edx) (is : List Instr)
   rw [WP.block_append_iff]
   apply WP.of_runBlock
   simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, red, csub, List.cons_append, List.nil_append, runBlock_cons,
-    runStep_some, runBlock_nil, exec, execAlu, execMul, readSrc, State.setReg, arithFlags, State.setFlags,
+    runStep_some, runBlock_nil, reduceExec, execAlu, execMul, readSrc, State.setReg, arithFlags, State.setFlags,
     Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left', h1, h2,
     h2']
   refine k _ ⟨fun q hq => ?_, rfl, rfl, rfl⟩ ?_

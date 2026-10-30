@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PPC64LE.Reduce
 
 /-!
 # PPC64LE: instruction-level rewrite lemmas for symbolic execution
@@ -32,7 +33,7 @@ theorem exec_load_w {s : State} {t n : Reg} {off : Nat} (hn : n ≠ .r0) (ho : o
     (h : InRegions (s.rd ++ s.wr) (s.gpr n + BitVec.ofNat 64 off) 4) :
     exec (.load .w t n off) s =
       some (s.write t ((s.mem.readW (s.gpr n + BitVec.ofNat 64 off) 32).setWidth 64)) := by
-  simp only [exec, addr_eq (bytes := 4) hn ⟨ho, fun h => absurd h (by decide)⟩, Option.bind_some,
+  simp only [reduceExec, addr_eq (bytes := 4) hn ⟨ho, fun h => absurd h (by decide)⟩, Option.bind_some,
     State.load, Size.bytes, h, ite_true, Option.map_some, Mem.readW]
   rfl
 
@@ -40,14 +41,14 @@ theorem exec_load_d {s : State} {t n : Reg} {off : Nat} (hn : n ≠ .r0)
     (ho : off < 2 ^ 15 ∧ off % 4 = 0)
     (h : InRegions (s.rd ++ s.wr) (s.gpr n + BitVec.ofNat 64 off) 8) :
     exec (.load .d t n off) s = some (s.write t (s.mem.readW (s.gpr n + BitVec.ofNat 64 off) 64)) := by
-  simp only [exec, addr_eq (bytes := 8) hn ⟨ho.1, fun _ => ho.2⟩, Option.bind_some,
+  simp only [reduceExec, addr_eq (bytes := 8) hn ⟨ho.1, fun _ => ho.2⟩, Option.bind_some,
     State.load, Size.bytes, h, ite_true, Option.map_some, Mem.readW]
 
 theorem exec_store_w {s : State} {t n : Reg} {off : Nat} (hn : n ≠ .r0) (ho : off < 2 ^ 15)
     (h : InRegions s.wr (s.gpr n + BitVec.ofNat 64 off) 4) :
     exec (.store .w t n off) s =
       some { s with mem := s.mem.writeW (s.gpr n + BitVec.ofNat 64 off) ((s.gpr t).setWidth 32) } := by
-  simp only [exec, addr_eq (bytes := 4) hn ⟨ho, fun h => absurd h (by decide)⟩, Option.bind_some,
+  simp only [reduceExec, addr_eq (bytes := 4) hn ⟨ho, fun h => absurd h (by decide)⟩, Option.bind_some,
     State.store, Size.bytes, h, ite_true, Mem.writeW]
   rfl
 
@@ -56,35 +57,35 @@ theorem exec_store_d {s : State} {t n : Reg} {off : Nat} (hn : n ≠ .r0)
     (h : InRegions s.wr (s.gpr n + BitVec.ofNat 64 off) 8) :
     exec (.store .d t n off) s =
       some { s with mem := s.mem.writeW (s.gpr n + BitVec.ofNat 64 off) (s.gpr t) } := by
-  simp only [exec, addr_eq (bytes := 8) hn ⟨ho.1, fun _ => ho.2⟩, Option.bind_some,
+  simp only [reduceExec, addr_eq (bytes := 8) hn ⟨ho.1, fun _ => ho.2⟩, Option.bind_some,
     State.store, Size.bytes, h, ite_true, Mem.writeW]
 
 theorem exec_lbz {s : State} {t n : Reg} {off : Nat} (hn : n ≠ .r0) (ho : off < 2 ^ 15)
     (h : InRegions (s.rd ++ s.wr) (s.gpr n + BitVec.ofNat 64 off) 1) :
     exec (.lbz t n off) s =
       some (s.write t ((s.mem.read (s.gpr n + BitVec.ofNat 64 off) 1).setWidth 64)) := by
-  simp only [exec, addr_eq (bytes := 1) hn ⟨ho, fun h => absurd h (by decide)⟩, Option.bind_some, State.load, h,
+  simp only [reduceExec, addr_eq (bytes := 1) hn ⟨ho, fun h => absurd h (by decide)⟩, Option.bind_some, State.load, h,
     ite_true, Option.map_some]
 
 theorem exec_stb {s : State} {t n : Reg} {off : Nat} (hn : n ≠ .r0) (ho : off < 2 ^ 15)
     (h : InRegions s.wr (s.gpr n + BitVec.ofNat 64 off) 1) :
     exec (.stb t n off) s =
       some { s with mem := s.mem.write (s.gpr n + BitVec.ofNat 64 off) 1 ((s.gpr t).setWidth 8) } := by
-  simp only [exec, addr_eq (bytes := 1) hn ⟨ho, fun h => absurd h (by decide)⟩, Option.bind_some, State.store, h,
+  simp only [reduceExec, addr_eq (bytes := 1) hn ⟨ho, fun h => absurd h (by decide)⟩, Option.bind_some, State.store, h,
     ite_true]
 
 theorem exec_loadRev_w {s : State} {t a b : Reg} (ha : a ≠ .r0)
     (h : InRegions (s.rd ++ s.wr) (s.gpr a + s.gpr b) 4) :
     exec (.loadRev .w t a b) s =
       some (s.write t ((rev32 (s.mem.readW (s.gpr a + s.gpr b) 32)).setWidth 64)) := by
-  simp only [exec, addrX_eq ha, Option.bind_some, State.load, h, ite_true, Option.map_some,
+  simp only [reduceExec, addrX_eq ha, Option.bind_some, State.load, h, ite_true, Option.map_some,
     Mem.readW]
   rfl
 
 theorem exec_loadRev_d {s : State} {t a b : Reg} (ha : a ≠ .r0)
     (h : InRegions (s.rd ++ s.wr) (s.gpr a + s.gpr b) 8) :
     exec (.loadRev .d t a b) s = some (s.write t (rev64 (s.mem.readW (s.gpr a + s.gpr b) 64))) := by
-  simp only [exec, addrX_eq ha, Option.bind_some, State.load, h, ite_true, Option.map_some,
+  simp only [reduceExec, addrX_eq ha, Option.bind_some, State.load, h, ite_true, Option.map_some,
     Mem.readW]
   rfl
 
@@ -92,7 +93,7 @@ theorem exec_storeRev_w {s : State} {t a b : Reg} (ha : a ≠ .r0)
     (h : InRegions s.wr (s.gpr a + s.gpr b) 4) :
     exec (.storeRev .w t a b) s =
       some { s with mem := s.mem.writeW (s.gpr a + s.gpr b) (rev32 ((s.gpr t).setWidth 32)) } := by
-  simp only [exec, addrX_eq ha, Option.bind_some, State.store, h, ite_true, Mem.writeW,
+  simp only [reduceExec, addrX_eq ha, Option.bind_some, State.store, h, ite_true, Mem.writeW,
     State.read, Size.bits]
   rfl
 
@@ -100,7 +101,7 @@ theorem exec_storeRev_d {s : State} {t a b : Reg} (ha : a ≠ .r0)
     (h : InRegions s.wr (s.gpr a + s.gpr b) 8) :
     exec (.storeRev .d t a b) s =
       some { s with mem := s.mem.writeW (s.gpr a + s.gpr b) (rev64 (s.gpr t)) } := by
-  simp only [exec, addrX_eq ha, Option.bind_some, State.store, h, ite_true, Mem.writeW]
+  simp only [reduceExec, addrX_eq ha, Option.bind_some, State.store, h, ite_true, Mem.writeW]
   rfl
 
 theorem exec_add {s : State} {d n m : Reg} :
@@ -141,15 +142,15 @@ theorem exec_logic {op : LogicOp} {s : State} {d n m : Reg} :
 
 theorem exec_addi {s : State} {d n : Reg} {imm : Nat} (hn : n ≠ .r0) (h : imm < 2 ^ 15) :
     exec (.addi d n imm) s = some (s.write d (s.gpr n + BitVec.ofNat 64 imm)) := by
-  simp [exec, hn, show imm < 32768 from h]
+  simp [reduceExec, hn, show imm < 32768 from h]
 
 theorem exec_subi {s : State} {d n : Reg} {imm : Nat} (hn : n ≠ .r0) (h : imm ≤ 2 ^ 15) :
     exec (.subi d n imm) s = some (s.write d (s.gpr n - BitVec.ofNat 64 imm)) := by
-  simp [exec, hn, show imm ≤ 32768 from h]
+  simp [reduceExec, hn, show imm ≤ 32768 from h]
 
 theorem exec_li {s : State} {d : Reg} {imm : Nat} (h : imm < 2 ^ 15) :
     exec (.li d imm) s = some (s.write d (BitVec.ofNat 64 imm)) := by
-  simp [exec, show imm < 32768 from h]
+  simp [reduceExec, show imm < 32768 from h]
 
 theorem exec_lis {s : State} {d : Reg} {imm : BitVec 16} :
     exec (.lis d imm) s = some (s.write d ((imm ++ (0 : BitVec 16)).signExtend 64)) := rfl
@@ -162,23 +163,23 @@ theorem exec_oris {s : State} {d n : Reg} {imm : BitVec 16} :
 
 theorem exec_rotr_w {s : State} {d n : Reg} {sh : Nat} (h : sh < 32) :
     exec (.rotr .w d n sh) s = some (s.write d (((s.gpr n).setWidth 32).rotateRight sh |>.setWidth 64)) := by
-  simp [exec, Size.bits, h, State.read]
+  simp [reduceExec, Size.bits, h, State.read]
 
 theorem exec_rotr_d {s : State} {d n : Reg} {sh : Nat} (h : sh < 64) :
     exec (.rotr .d d n sh) s = some (s.write d ((s.gpr n).rotateRight sh)) := by
-  simp [exec, Size.bits, h, State.read]
+  simp [reduceExec, Size.bits, h, State.read]
 
 theorem exec_lsr_w {s : State} {d n : Reg} {sh : Nat} (h : sh < 32) :
     exec (.lsr .w d n sh) s = some (s.write d (((s.gpr n).setWidth 32 >>> sh).setWidth 64)) := by
-  simp [exec, Size.bits, h, State.read]
+  simp [reduceExec, Size.bits, h, State.read]
 
 theorem exec_lsr_d {s : State} {d n : Reg} {sh : Nat} (h : sh < 64) :
     exec (.lsr .d d n sh) s = some (s.write d (s.gpr n >>> sh)) := by
-  simp [exec, Size.bits, h, State.read]
+  simp [reduceExec, Size.bits, h, State.read]
 
 theorem exec_lsl {s : State} {d n : Reg} {sh : Nat} (h : sh < 64) :
     exec (.lsl d n sh) s = some (s.write d (s.gpr n <<< sh)) := by
-  simp [exec, h]
+  simp [reduceExec, h]
 
 theorem exec_mflr {s : State} {d : Reg} : exec (.mflr d) s = some (s.write d s.lr) := rfl
 
@@ -240,14 +241,14 @@ namespace VG.PPC64LE
 theorem exec_sp {i : Instr} {s s' : State} (h : exec i s = some s') : s'.sp = s.sp := by
   cases i with
   | loadRev sz =>
-    cases sz <;> simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h <;>
+    cases sz <;> simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h <;>
     obtain ⟨_, _, _, _, rfl⟩ := h <;> rfl
   | storeRev sz =>
-    cases sz <;> simp only [exec, Option.bind_eq_some_iff, State.store] at h <;>
+    cases sz <;> simp only [reduceExec, Option.bind_eq_some_iff, State.store] at h <;>
     (obtain ⟨_, _, h⟩ := h; split at h <;> simp only [Option.some.injEq, reduceCtorEq] at h
      subst h; rfl)
   | _ =>
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff, State.write, State.load,
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff, State.write, State.load,
       State.store] at h
     (repeat' split at h) <;>
     (try simp only [Option.some.injEq, reduceCtorEq] at h) <;>
@@ -323,14 +324,14 @@ theorem exec_lr {i : Instr} {s s' : State} (h : exec i s = some s') (hi : i.writ
   cases i with
   | mtlr | adrSym => simp [Instr.writesLr] at hi
   | loadRev sz =>
-    cases sz <;> simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h <;>
+    cases sz <;> simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h <;>
     obtain ⟨_, _, _, _, rfl⟩ := h <;> rfl
   | storeRev sz =>
-    cases sz <;> simp only [exec, Option.bind_eq_some_iff, State.store] at h <;>
+    cases sz <;> simp only [reduceExec, Option.bind_eq_some_iff, State.store] at h <;>
     (obtain ⟨_, _, h⟩ := h; split at h <;> simp only [Option.some.injEq, reduceCtorEq] at h
      subst h; rfl)
   | _ =>
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff, State.write, State.load,
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff, State.write, State.load,
       State.store] at h
     (repeat' split at h) <;>
     (try simp only [Option.some.injEq, reduceCtorEq] at h) <;>

@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 @[expose] public section
 
@@ -36,7 +37,7 @@ theorem xorScalarRow_ok (s : State) (k : Fin 8)
   have hb : (384 + 16 * k.val) % 16 = 0 ∧ 384 + 16 * k.val < 4096 * 16 := by omega
   apply WP.of_runBlock
   simp (config := {decide := true}) only [xorScalarRow,runBlock_cons,runBlock_nil,exec,addr,
-    ha,hb,and_self,ite_true,State.load,hin,hi,State.setV,VOp.eval,State.store,hout,
+    ha,hb,and_self,ite_true,State.load,hin,hi,State.setV,reduceVOpEval,State.store,hout,
     Option.bind_some,Option.map_some,isa,runStep_some,Option.some.injEq,exists_eq_left']
   exact ⟨rfl,rfl,rfl,rfl,rfl⟩
 

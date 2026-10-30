@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Sbox
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Framework.PPC64LE.Reduce
 
 /-!
 # The S-boxes' spills
@@ -37,25 +38,25 @@ theorem spillStep_frame (i : Instr) (s s' : State)
   cases i <;> simp only [spillSafe, Bool.false_eq_true] at h
   case logic op d n m =>
     have hd : d ≠ .r5 := by simpa using h
-    simp only [exec, Option.some.injEq] at he
+    simp only [reduceExec, Option.some.injEq] at he
     subst s'
     exact write_frame _ _ _ hd
   case li d imm | subi d n imm =>
     have hd : d ≠ .r5 := by simpa using h
-    simp only [exec] at he
+    simp only [reduceExec] at he
     split at he <;> [skip; cases he]
     obtain rfl := Option.some.inj he
     exact write_frame _ _ _ hd
   case load sz d n off =>
     cases sz <;> simp only [Bool.false_eq_true] at h
     have hd : d ≠ .r5 := by simpa using h
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at he
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at he
     obtain ⟨a, _, v, _, rfl⟩ := he
     exact write_frame _ _ _ hd
   case store sz t n off =>
     cases sz <;> simp only [Bool.false_eq_true] at h
     obtain ⟨rfl, hlo, hhi⟩ := of_decide_eq_true h
-    simp only [exec, addr, Size.bytes] at he
+    simp only [reduceExec, addr, Size.bytes] at he
     split at he <;> [skip; cases he]
     simp only [Option.bind_some, State.store] at he
     split at he <;> [skip; cases he]

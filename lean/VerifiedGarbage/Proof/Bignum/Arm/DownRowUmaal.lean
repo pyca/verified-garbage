@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Impl.Bignum.Arm.DownRowUmaal
 public import VerifiedGarbage.Proof.Bignum.Arm.RowUmaal
 public import VerifiedGarbage.Impl.Bignum.Arm.DownRow
+import VerifiedGarbage.Proof.Framework.Arm.Reduce
 
 /-! The UMAAL downward row has the baseline row's exact trace and final state. -/
 
@@ -55,7 +56,7 @@ theorem coreU_sim {x : BitVec 32} {s s' : State} {t : List Leak}
   let n := s.setReg .r9 (s.gpr .r1 ||| (s.gpr .r10 <<< 16))
   have ej : Exec isa (.block rowUJoin) s [] n := by
     refine Exec.block_iff.mpr ?_
-    simp only [rowUJoin, execBlock, isa, exec, Op2.eval, show (1 ≤ 16 ∧ 16 ≤ 31) = True by decide,
+    simp only [rowUJoin, execBlock, isa, reduceExec, Op2.eval, show (1 ≤ 16 ∧ 16 ≤ 31) = True by decide,
       ↓reduceIte, Option.map_some, addrs, List.map_nil, List.append_nil]
     rfl
   have hx : n.gpr .r9 = x := by

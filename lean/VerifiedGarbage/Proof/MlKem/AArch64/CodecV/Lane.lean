@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 public import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # ML-KEM on AArch64: the lanes of the vector codecs
@@ -67,7 +68,7 @@ theorem lanes_get {s s' : State} {d : VReg} {x : BitVec 128} (h : VUpd s s' d x)
 theorem eval_shift {s : State} {op : VShiftOp} {a : VArr} {d n : VReg} {sh : Nat}
     (h : op.ok a.esize sh = true) :
     VOp.eval s (.shift op a d n sh) = some (d, a.map2 (fun w x y => op.eval sh w x y) (s.v d) (s.v n)) := by
-  simp only [VOp.eval, h, ite_true]
+  simp only [reduceVOpEval, h, ite_true]
 
 /-- `Compress_d` of the lanes of `v`. -/
 theorem cmpV_ok {s : State} {v : VReg} {d M A : Nat} (hM : M ≤ 322542) (hA : A < 2 ^ 19)

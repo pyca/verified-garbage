@@ -11,6 +11,7 @@ meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # The vector loads and stores of `Neon.mul2`
@@ -37,7 +38,7 @@ theorem off_add (base : Addr) (d e : Nat) : off base d + BitVec.ofNat 64 e = off
 theorem exec_ldq {s : State} {base : Addr} (hs : Scr s base) (t : Nat) {d : Nat} (h16 : d % 16 = 0)
     (hd : d + 16 ≤ 8192) : isa.exec (ldq t d) s = some (s.setV (V t) (s.mem.read (off base d) 16)) := by
   have hr := hs.read (d := d) (n := 16) hd
-  simp only [ldq, exec, addr, show d % 16 = 0 ∧ d < 4096 * 16 from ⟨h16, by omega⟩, and_self, ite_true,
+  simp only [ldq, reduceExec, addr, show d % 16 = 0 ∧ d < 4096 * 16 from ⟨h16, by omega⟩, and_self, ite_true,
     Option.bind_some, State.load, hs.x3]
   rw [ite_eq_left_iff.mpr fun h => absurd hr h]
   rfl
@@ -61,7 +62,7 @@ theorem exec_stq {s : State} {base : Addr} (hs : Scr s base) (t : Nat) {d : Nat}
     (hd : d + 16 ≤ 8192) :
     isa.exec (stq t d) s = some (setMem s (s.mem.write (off base d) 16 (s.v (V t)))) := by
   have hw := hs.write (d := d) (n := 16) hd
-  simp only [stq, exec, addr, show d % 16 = 0 ∧ d < 4096 * 16 from ⟨h16, by omega⟩, and_self, ite_true,
+  simp only [stq, reduceExec, addr, show d % 16 = 0 ∧ d < 4096 * 16 from ⟨h16, by omega⟩, and_self, ite_true,
     Option.bind_some, State.store, hs.x3]
   rw [ite_eq_left_iff.mpr fun h => absurd hw h]
   rfl

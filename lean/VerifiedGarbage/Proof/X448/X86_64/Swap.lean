@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # X448 on x86-64: the conditional swap
@@ -61,7 +62,7 @@ theorem swapStep_ok {s : State} {base : Addr} (hs : Scr s base) {x y i : Nat}
   have wx := hs.write (d := x + 8 * i) (n := 8) (by omega_arith)
   have wy := hs.write (d := y + 8 * i) (n := 8) (by omega_arith)
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, ea_sc,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, execAlu, ea_sc,
     State.load64, State.store64, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags,
     RegUpd.mem_setReg, RegUpd.mem_arithFlags, RegUpd.rd_setReg, RegUpd.wr_setReg,
     RegUpd.wr_arithFlags, hs.rdi, hc, lx, ly, wx, wy, ite_true, ite_false, reduceCtorEq,

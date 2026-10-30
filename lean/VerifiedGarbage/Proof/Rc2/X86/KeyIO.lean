@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Rc2.Select32
+import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 @[expose] public section
 
@@ -24,7 +25,7 @@ theorem cmpMask_ok (s : State) (i : Nat) (_hi : i < 7) :
     ∃ s', runBlock isa [.alu .cmp .edx (.imm (BitVec.ofNat 32 (i + 1)))] s = some s' ∧
       zeroFlag s' = some (s.gpr .edx == BitVec.ofNat 32 (i + 1)) ∧ Keep [] s s' := by
   refine ⟨_, by
-    simp only [runBlock_cons, exec, execAlu, readSrc, Option.bind_some, runStep_some, runBlock_nil]
+    simp only [runBlock_cons, reduceExec, execAlu, readSrc, Option.bind_some, runStep_some, runBlock_nil]
     rfl, ?_⟩
   constructor
   · change some ((s.gpr .edx - BitVec.ofNat 32 (i + 1)) == 0) = _
@@ -38,7 +39,7 @@ theorem setMask_ok (s : State) (i : Nat) (_hi : i < 7) :
     ∃ s', runBlock isa [imm .ebx (2 ^ (i + 1) - 1)] s = some s' ∧
       s'.gpr .ebx = BitVec.ofNat 32 (2 ^ (i + 1) - 1) ∧ Keep [.ebx] s s' := by
   refine ⟨_, by
-    simp only [imm, runBlock_cons, exec]
+    simp only [imm, runBlock_cons, reduceExec]
     rfl, ?_⟩
   constructor
   · rfl
@@ -112,7 +113,7 @@ theorem maskStart_ok (s : State)
   simp only [addr32, BitVec.ofNat_eq_ofNat] at *
   refine ⟨_, by
     simp only [↓reduceIte, imm, memOp, State.ea, runBlock_cons,
-      runStep_some, runBlock_nil, exec, execAlu, readSrc, State.load32, Option.bind_some,
+      runStep_some, runBlock_nil, reduceExec, execAlu, readSrc, State.load32, Option.bind_some,
       Option.map_some, gpr_setReg, readable]
     rfl, ?_⟩
   refine ⟨?_, rfl, ?_⟩
@@ -384,7 +385,7 @@ theorem cmp128_ok (s : State) :
     ∃ s', runBlock isa [.alu .cmp .ecx (.imm 128)] s = some s' ∧
       zeroFlag s' = some ((s.gpr .ecx - 128) == 0) ∧ Keep [] s s' := by
   refine ⟨_, by
-    simp only [runBlock_cons, exec, execAlu, readSrc, Option.bind_some, runStep_some, runBlock_nil]
+    simp only [runBlock_cons, reduceExec, execAlu, readSrc, Option.bind_some, runStep_some, runBlock_nil]
     rfl, ?_⟩
   constructor
   · rfl
@@ -683,7 +684,7 @@ theorem loadArg_ok (s : State) (r : Reg) (i : Nat)
       s'.gpr r = arg s i ∧ Keep [r] s s' := by
   simp only [argAddr] at readable
   refine ⟨s.setReg r (arg s i), ?_, gpr_setReg_self _ _ _, ?_⟩
-  · simp only [runBlock_cons, exec, readSrc, State.ea, memOp, State.load32,
+  · simp only [runBlock_cons, reduceExec, readSrc, State.ea, memOp, State.load32,
       readable, ite_true, Option.map_some, runStep_some, runBlock_nil]
     rfl
   · exact ⟨fun _ hr => gpr_setReg_of_ne _ _ (by simpa using hr), rfl, rfl, rfl⟩
@@ -704,7 +705,7 @@ theorem pinKey_ok (s : State)
   have r3 := readable 3 (by decide)
   simp only [argAddr, Nat.mul_zero, Nat.add_zero, Nat.reduceMul, Nat.reduceAdd] at r0 r1 r3
   refine WP.of_runBlock ⟨_, by
-    simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, exec, imm, memOp, State.ea,
+    simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, reduceExec, imm, memOp, State.ea,
       readSrc, State.load32, gpr_setReg, mem_setReg, rd_setReg, wr_setReg,
       r0, r1, r3, Option.map_some, runStep_some, runBlock_nil]
     rfl, ?_⟩

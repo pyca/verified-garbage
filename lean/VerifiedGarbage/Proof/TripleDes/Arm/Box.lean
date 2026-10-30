@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.TripleDes.Arm.Round
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Reduce
 
 /-! ## `Spills` -/
 
@@ -34,24 +35,24 @@ theorem spillStep_frame (i : Instr) (s s' : State)
   cases i <;> simp only [spillSafe, Bool.false_eq_true] at h
   case mov d op2 =>
     have hd : d ≠ .r2 := by simpa using h
-    simp only [exec, Option.map_eq_some_iff] at he
+    simp only [reduceExec, Option.map_eq_some_iff] at he
     obtain ⟨v, _, rfl⟩ := he
     exact write_frame _ _ _ hd
   case dp op d n op2 =>
     have hd : d ≠ .r2 := by simpa using h
-    simp only [exec, Option.map_eq_some_iff] at he
+    simp only [reduceExec, Option.map_eq_some_iff] at he
     obtain ⟨v, _, rfl⟩ := he
     exact write_frame _ _ _ hd
   case ldr d n off =>
     have hd : d ≠ .r2 := by simpa using h
-    simp only [exec] at he
+    simp only [reduceExec] at he
     split at he <;> [skip; cases he]
     simp only [Option.map_eq_some_iff] at he
     obtain ⟨v, _, rfl⟩ := he
     exact write_frame _ _ _ hd
   case str t n off =>
     obtain ⟨rfl, hlo, hhi⟩ := of_decide_eq_true h
-    simp only [exec] at he
+    simp only [reduceExec] at he
     split at he <;> [skip; cases he]
     simp only [State.store32] at he
     split at he <;> [skip; cases he]

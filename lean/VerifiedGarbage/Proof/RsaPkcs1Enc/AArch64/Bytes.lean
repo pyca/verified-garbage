@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.AArch64.Isa
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # RSA encryption on AArch64: bytes, one at a time
@@ -30,7 +31,7 @@ theorem read1 (m : Mem) (a : Addr) : (m.read a 1).setWidth 32 = (m a).setWidth 3
 theorem exec_ldrb0 {s : State} {t n : Reg} (h : InRegions (s.rd ++ s.wr) (s.gpr n + BitVec.ofNat 64 0) 1) :
     exec (.ldrb t n 0) s = some (s.write .w t ((s.mem (s.gpr n)).setWidth 32)) := by
   have h' : InRegions (s.rd ++ s.wr) (s.gpr n + 0#64) 1 := h
-  simp only [exec, addr, Nat.mod_one, and_self, show (0 : Nat) < 4096 * 1 from by decide, ite_true,
+  simp only [reduceExec, addr, Nat.mod_one, and_self, show (0 : Nat) < 4096 * 1 from by decide, ite_true,
     Option.bind_some, State.load, BitVec.add_zero]
   simp only [BitVec.add_zero] at h'
   simp only [h', ite_true, Option.map_some, read1]
@@ -39,7 +40,7 @@ theorem exec_ldrb0 {s : State} {t n : Reg} (h : InRegions (s.rd ++ s.wr) (s.gpr 
 theorem exec_strb0 {s : State} {t n : Reg} (h : InRegions s.wr (s.gpr n + BitVec.ofNat 64 0) 1) :
     exec (.strb t n 0) s = some { s with mem := s.mem.write (s.gpr n) 1 ((s.gpr t).setWidth 8) } := by
   have h' : InRegions s.wr (s.gpr n + 0#64) 1 := h
-  simp only [exec, addr, Nat.mod_one, show (0 : Nat) < 4096 * 1 from by decide, and_self, ite_true,
+  simp only [reduceExec, addr, Nat.mod_one, show (0 : Nat) < 4096 * 1 from by decide, and_self, ite_true,
     Option.bind_some, State.store]
   simp only [BitVec.add_zero] at h' ⊢
   simp only [h', ite_true, State.read, Size.bits, BitVec.setWidth_setWidth_of_le _ (show 8 ≤ 32 by decide)]
@@ -124,7 +125,7 @@ theorem byte_writeW_sep {m : Mem} {x b : Addr} {w : Nat} {v : BitVec w} (h : Mem
 /-- `movz xd, #imm`. -/
 theorem exec_movz_x (s : State) (d : Reg) (imm : BitVec 16) :
     exec (.movz .x d imm 0) s = some (s.write .x d (imm.setWidth 64)) := by
-  simp only [exec, Size.bits, Nat.mul_zero, show (0 : Nat) < 64 from by decide, ite_true,
+  simp only [reduceExec, Size.bits, Nat.mul_zero, show (0 : Nat) < 64 from by decide, ite_true,
     BitVec.shiftLeft_zero]
 
 theorem read_one (m : Mem) (a : Addr) : m.read a 1 = m a := by
@@ -189,6 +190,6 @@ theorem rotateRight_zero (x : BitVec 64) : x.rotateRight 0 = x := by
 theorem exec_ldrSp {s : State} {t : Reg} {off : Nat} (ho : off % 8 = 0 ∧ off < 32768)
     (h : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 off) 8) :
     exec (.ldrSp t off) s = some (s.write .x t (s.mem.readW (s.sp + BitVec.ofNat 64 off) 64)) := by
-  simp only [exec, ho, and_self, ite_true, State.load, h, Option.map_some, Mem.readW, Nat.reduceDiv]
+  simp only [reduceExec, ho, and_self, ite_true, State.load, h, Option.map_some, Mem.readW, Nat.reduceDiv]
 
 end VG.AArch64.Bytes

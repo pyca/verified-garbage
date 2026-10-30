@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Argon2.X86_64.Words
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! Merged from `Proof.Argon2.X86_64.Copy`. -/
 
@@ -29,7 +30,7 @@ theorem initWord_ok (s : State) {p : Addr} (hs : Scratch s p) (i : Fin 128)
   have w1 := hs.write (d := 8 * i.val) (n := 8) (by omega)
   have w2 := hs.write (d := 1024 + 8 * i.val) (n := 8) (by omega)
   apply WP.of_runBlock
-  simp only [initWord, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+  simp only [initWord, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc,
     State.load64, State.store64, execAlu, ea_at,
     RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
     RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
@@ -46,7 +47,7 @@ theorem finishWord_ok (s : State) {p : Addr} (hs : Scratch s p) (i : Fin 128)
   have r1 := hs.read (d := 8 * i.val) (n := 8) (by omega)
   have r2 := hs.read (d := 1024 + 8 * i.val) (n := 8) (by omega)
   apply WP.of_runBlock
-  simp only [finishWord, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+  simp only [finishWord, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc,
     State.load64, State.store64, execAlu, ea_at,
     RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
     RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,

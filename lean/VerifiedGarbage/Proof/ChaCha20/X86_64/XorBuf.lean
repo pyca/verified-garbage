@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # XORing keystream from a buffer into the data, eight bytes at a time
@@ -215,7 +216,7 @@ theorem q_step (hd : (⟨D, n⟩ : Region).Disjoint ⟨B, n⟩) (hn : n < 2 ^ 64
     rw [hI.rd, hI.wr]; exact inRegions_offset hr hi
   have e8 : 8 * (j + 1) = 8 * j + 8 := by omega_arith
   apply WP.of_runBlock
-  simp only [reduceCtorEq, ↓reduceIte, qBody, idx, runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [reduceCtorEq, ↓reduceIte, qBody, idx, runBlock_cons, runStep_some, runBlock_nil, reduceExec,
     State.ea, readSrc, execAlu, arithFlags, State.load64, State.store64, State.setReg,
     State.setFlags, hR.rd, hR.rb, hR.rcx, hbx.2.1, hdx.2.1, ea₁, ea₂,
     i₁, i₂, o₁, Option.map_some, Option.bind_some, Option.some.injEq,
@@ -249,7 +250,7 @@ theorem b_step (hd : (⟨D, n⟩ : Region).Disjoint ⟨B, n⟩) (hn : n < 2 ^ 64
   have i₂ : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 i) 1 := by
     rw [hI.rd, hI.wr]; exact inRegions_offset hr hi
   apply WP.of_runBlock
-  simp only [reduceCtorEq, ↓reduceIte, bBody, idx, runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [reduceCtorEq, ↓reduceIte, bBody, idx, runBlock_cons, runStep_some, runBlock_nil, reduceExec,
     State.ea, readSrc, execAlu, arithFlags, State.load8, State.store8, State.setReg,
     State.setFlags, hR.rd, hR.rb, hR.rcx, hbx.1, hdx.1, hdx.2.1, ea₁, ea₂,
     i₁, i₂, o₁, Option.map_some, Option.bind_some, Option.some.injEq,
@@ -298,7 +299,7 @@ theorem xorBuf_ok {d b : Reg} (hdx : d ≠ .rax ∧ d ≠ .r8 ∧ d ≠ .rcx)
         s.zf = some (decide (n / 8 = 0)) ∧ V s := by
     apply WP.of_runBlock
     simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, and_self, runBlock_cons, runStep_some,
-      runBlock_nil, exec, readSrc, readSrc32, execShift, State.setReg, State.setReg32, State.setFlags,
+      runBlock_nil, reduceExec, readSrc, readSrc32, execShift, State.setReg, State.setReg32, State.setFlags,
       Option.map_some, Option.some.injEq, exists_eq_left', hrdx]
     have hs : BitVec.ofNat 64 n >>> 3 = BitVec.ofNat 64 (n / 8) := by
       apply BitVec.eq_of_toNat_eq
@@ -352,7 +353,7 @@ theorem xorBuf_ok {d b : Reg} (hdx : d ≠ .rax ∧ d ≠ .r8 ∧ d ≠ .rcx)
         Inv D B n s₀ (8 * (n / 8)) s' ∧ Regs d b D B n s₀ (8 * (n / 8)) s' ∧ V s' ∧
           s'.zf = some (decide (8 * (n / 8) = n)) := by
       apply WP.of_runBlock
-      simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, arithFlags,
+      simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, execAlu, arithFlags,
         State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left']
       refine ⟨⟨hI.data, hI.frame, hI.rd, hI.wr⟩, ⟨hR.rd, hR.rb, hR.rdx, hR.rcx, hR.keep⟩, hV, ?_⟩
       rw [hR.rcx, hR.rdx, Offset.ofNat_sub_ofNat_beq (by omega_arith) hn]

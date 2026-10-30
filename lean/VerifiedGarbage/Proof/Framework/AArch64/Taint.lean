@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Framework.RegSet
 public import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # Taint tracking for AArch64
@@ -153,11 +154,11 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
   | ccmp sz n imm nzcv cond =>
     obtain rfl := Option.some.inj hs
     by_cases h : imm < 32 ∧ nzcv < 16
-    · simp only [exec, h, and_self, ↓reduceIte, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    · simp only [reduceExec, h, and_self, ↓reduceIte, Option.some.injEq] at e₁ e₂; subst e₁ e₂
       refine ⟨rfl, ?_, fun r hr => ?_⟩
       · split <;> split <;> exact ha.1
       · split <;> split <;> exact ha.2 r hr
-    · simp only [exec, h, ↓reduceIte, reduceCtorEq] at e₁
+    · simp only [reduceExec, h, ↓reduceIte, reduceCtorEq] at e₁
   | adrSym d name =>
     obtain rfl := Option.some.inj hs
     obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂
@@ -275,7 +276,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at hs <;> [skip; cases hs]
     rename_i hn; cases hs
     refine ⟨by simp [addrs, ha.reg hn], ?_⟩
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at e₁ e₂
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨a₁, -, v₁, -, rfl⟩ := e₁; obtain ⟨a₂, -, v₂, -, rfl⟩ := e₂
     exact ha.write sz t fun h => by cases h
   | str sz t n off =>
@@ -283,7 +284,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at hs <;> [skip; cases hs]
     rename_i hn; cases hs
     refine ⟨by simp [addrs, ha.reg hn], ?_⟩
-    simp only [exec, Option.bind_eq_some_iff, State.store] at e₁ e₂
+    simp only [reduceExec, Option.bind_eq_some_iff, State.store] at e₁ e₂
     obtain ⟨a₁, -, e₁⟩ := e₁; obtain ⟨a₂, -, e₂⟩ := e₂
     split at e₁ <;> [cases e₁; cases e₁]
     split at e₂ <;> [cases e₂; cases e₂]
@@ -291,7 +292,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
   | strSp t off =>
     obtain rfl := Option.some.inj hs
     refine ⟨by simp [addrs, ha.1], ?_⟩
-    simp only [exec] at e₁ e₂
+    simp only [reduceExec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i h; simp only [h, and_self, ite_true, State.store] at e₁ e₂
     split at e₁ <;> [cases e₁; cases e₁]
@@ -302,13 +303,13 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at hs <;> [skip; cases hs]
     rename_i hn; cases hs
     refine ⟨by simp [addrs, ha.reg hn], ?_⟩
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at e₁ e₂
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨a₁, -, v₁, -, rfl⟩ := e₁; obtain ⟨a₂, -, v₂, -, rfl⟩ := e₂
     exact ha.write .w t fun h => by cases h
   | ldrSp t off =>
     obtain rfl := Option.some.inj hs
     refine ⟨by simp [addrs, ha.1], ?_⟩
-    simp only [exec] at e₁ e₂
+    simp only [reduceExec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i h; simp only [h, and_self, ite_true, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
@@ -318,7 +319,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at hs <;> [skip; cases hs]
     rename_i hn; cases hs
     refine ⟨by simp [addrs, ha.reg hn], ?_⟩
-    simp only [exec, Option.bind_eq_some_iff, State.store] at e₁ e₂
+    simp only [reduceExec, Option.bind_eq_some_iff, State.store] at e₁ e₂
     obtain ⟨a₁, -, e₁⟩ := e₁; obtain ⟨a₂, -, e₂⟩ := e₂
     split at e₁ <;> [cases e₁; cases e₁]
     split at e₂ <;> [cases e₂; cases e₂]
@@ -347,7 +348,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     exact ha
   | vop op =>
     obtain rfl := Option.some.inj hs
-    simp only [exec, Option.map_eq_some_iff] at e₁ e₂
+    simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨⟨_, _⟩, -, rfl⟩ := e₁; obtain ⟨⟨_, _⟩, -, rfl⟩ := e₂
     exact ⟨rfl, ha.1, ha.2⟩
   | ldrq t n off =>
@@ -355,13 +356,13 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at hs <;> [skip; cases hs]
     rename_i hn; cases hs
     refine ⟨by simp [addrs, ha.reg hn], ?_⟩
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at e₁ e₂
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨a₁, -, v₁, -, rfl⟩ := e₁; obtain ⟨a₂, -, v₂, -, rfl⟩ := e₂
     exact ⟨ha.1, ha.2⟩
   | ldrqTbl t n off name ws =>
     obtain rfl := Option.some.inj hs
     refine ⟨rfl, ?_⟩
-    simp only [exec] at e₁ e₂
+    simp only [reduceExec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     split at e₂ <;> [skip; cases e₂]
     cases e₁; cases e₂
@@ -371,7 +372,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at hs <;> [skip; cases hs]
     rename_i hn; cases hs
     refine ⟨by simp [addrs, ha.reg hn], ?_⟩
-    simp only [exec, Option.bind_eq_some_iff, State.store] at e₁ e₂
+    simp only [reduceExec, Option.bind_eq_some_iff, State.store] at e₁ e₂
     obtain ⟨a₁, -, e₁⟩ := e₁; obtain ⟨a₂, -, e₂⟩ := e₂
     split at e₁ <;> [cases e₁; cases e₁]
     split at e₂ <;> [cases e₂; cases e₂]

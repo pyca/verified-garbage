@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Sm4.X86_64.LayersLit
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # The table of bitsliced round keys on x86-64
@@ -103,7 +104,7 @@ theorem keyOne_step {s : State} {b : Addr} {e h : Nat} (hh : h = 0 ∨ h = 1)
     (fun j i hji => by simp at hji) (fun kv hkv => by simp at hkv)
     (fun j hj => by simp [entryCfg] at hj)
   simp only [entryCfg] at hb₂ hso₂ f₂
-  have k₂ : ∀ r, s₂.gpr r = s₁.gpr r := fun r => o₂ r (by simp [keyStore, Instr.dst])
+  have k₂ : ∀ r, s₂.gpr r = s₁.gpr r := fun r => o₂ r (by simp [keyStore, reduceInstrDst])
   have he₂ : ∀ j < 8, entryW s₂.mem b e j = Qs s₁ j := fun j hj => BitVec.eq_of_getLsbD_eq fun p hp => by
     have h := hso₂ j (fun p => [64 * j + p]) (by simp only [List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩)
       hj p hp
