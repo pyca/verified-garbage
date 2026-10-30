@@ -47,20 +47,21 @@ theorem validAfter_sub {ops : List FOp} {V : List Nat} {o : Pt}
 section
 variable {K : WinCfg} {sel : Nat} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop}
 
-theorem cachedAdd_relCT {dbl : RcbSlots → Pt → Pt → List FOp} (hC : CachedPts (m := m) K sel size Sl dbl)
-    (hm : UnitMod m (2 ^ (64 * K.M.n))) (hc : CachedJacChecks K K.R K.E K.D sel dbl) {E : Nat → Fin m}
-    (hds : JDblShape dbl := by exact jdblShape_dblJMul) :
-    RelCT isa (FieldPair K.M base size m Sl (cV K sel) E)
+/-- The cached addition into `D`, from any slots `V` holding `R`, `E` and the
+selected pair: the timing needs no relation among their values. -/
+theorem cachedAdd_relCT {dbl : RcbSlots → Pt → Pt → List FOp} (hL : CachedLay K sel size Sl dbl)
+    (hm : UnitMod m (2 ^ (64 * K.M.n))) (hOne : K.one < m) (hc : CachedJacChecks K K.R K.E K.D sel dbl) {V : List Nat}
+    {E : Nat → Fin m} (hV : ∀ x ∈ cV K sel, x ∈ V) (hds : JDblShape dbl := by exact jdblShape_dblJMul) :
+    RelCT isa (FieldPair K.M base size m Sl V E)
       (Impl.Weierstrass.X86_64.CachedJac.add K K.R K.E K.D sel dbl).inline
-      (fun s t => ∃ E', FieldPair K.M base size m Sl (jacCoords K.D ++ cV K sel) E' s t) := by
-  have hL := hC.lay
+      (fun s t => ∃ E', FieldPair K.M base size m Sl (jacCoords K.D ++ V) E' s t) := by
   have dW : ∀ w ∈ jacCoords K.D, w ∈ rcbW K.S K.D := by
     intro w hw; simp only [jacCoords, List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl | rfl <;> simp [rcbW]
   have dSl : ∀ x ∈ jacCoords K.D, Sl x := fun x hx => hL.sl x (List.mem_append_left _
     (List.mem_append_left _ (dW x hx)))
-  have rV : ∀ x ∈ jacCoords K.R, x ∈ cV K sel := fun x hx => by simp [cV, hx]
-  have eV : ∀ x ∈ jacCoords K.E, x ∈ cV K sel := fun x hx => by simp [cV, hx]
+  have rV : ∀ x ∈ jacCoords K.R, x ∈ V := fun x hx => hV x (by simp [cV, hx])
+  have eV : ∀ x ∈ jacCoords K.E, x ∈ V := fun x hx => hV x (by simp [cV, hx])
   rw [Impl.Weierstrass.X86_64.CachedJac.add]
   apply fieldBranch_relCT hL.lay hm (rV _ (by simp [jacCoords])) hc.zeroP
   · intro _
@@ -70,12 +71,14 @@ theorem cachedAdd_relCT {dbl : RcbSlots → Pt → Pt → List FOp} (hC : Cached
   · intro _
     exact (copyPoint_relCT hL.lay dSl rV hc.copyP).mono (fun _ _ h => h) (fun _ _ h => ⟨_, h⟩)
   intro _
-  apply RelCT.seq (fieldProgram_relCT hc.head (fun s hi =>
-    WP.mono (cachedHead_val hL hm hi) (fun _ ht => ht.2.1)))
-  have oldV : ∀ x ∈ cV K sel, x ∈ validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S K.R K.E sel) (cV K sel) :=
+  have hsH : ∀ op ∈ Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S K.R K.E sel, ∀ x ∈ op.out :: op.ins, Sl x := by
+    rw [CachedJac.head_eq K.M.n K.S K.R K.E K.D sel]
+    exact fun op hop x hx => hL.sl x (CachedJac.slots op hop x hx)
+  apply RelCT.seq (programB_relCT hL.lay hm hsH (readsOk_mono hL.head hV) hc.head)
+  have oldV : ∀ x ∈ V, x ∈ validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S K.R K.E sel) V :=
     fun x hx => (mem_validAfter _ _).mpr (Or.inl hx)
-  have subV : ∀ x ∈ jacCoords K.D ++ cV K sel, x ∈ jacCoords K.D ++
-      validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S K.R K.E sel) (cV K sel) := by
+  have subV : ∀ x ∈ jacCoords K.D ++ V, x ∈ jacCoords K.D ++
+      validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S K.R K.E sel) V := by
     intro x hx
     rcases List.mem_append.mp hx with hx | hx
     · exact List.mem_append_left _ hx
@@ -97,33 +100,40 @@ theorem cachedAdd_relCT {dbl : RcbSlots → Pt → Pt → List FOp} (hC : Cached
         (fun _ _ h => ⟨_, (h.sub (validAfter_sub fun x hx => by
           rw [he]; exact ofN_out_mem hN (by simpa [jacCoords] using hx))).sub subV⟩)
     · intro _
-      exact (infinity_relCT hL.lay dSl hC.one hc.infinity).mono
+      exact (infinity_relCT hL.lay dSl hOne hc.infinity).mono
         (fun _ _ h => h) (fun _ _ h => ⟨_, h.sub subV⟩)
   · intro _
     refine (programB_relCT hL.lay hm (fun op hop x hx => hL.sl x (by
         rw [CachedJac.tail_eq K.M.n K.S K.R K.E K.D sel] at hop
-        exact CachedJac.slots op hop x hx)) hL.tail hc.tail).mono (fun _ _ h => h)
+        exact CachedJac.slots op hop x hx)) (readsOk_mono hL.tail fun x hx => by
+          rw [mem_validAfter] at hx ⊢
+          exact hx.imp_left (hV x)) hc.tail).mono (fun _ _ h => h)
       (fun _ _ h => ⟨_, (h.sub (validAfter_sub fun x hx => by
         simp only [jacCoords, List.mem_cons, List.not_mem_nil, or_false] at hx
         rcases hx with rfl | rfl | rfl <;> simp [jacTail, FOp.out])).sub subV⟩)
 
-/-- The cached addition's body, its sum copied to `R`. -/
-theorem addCachedBody_relCT {dbl : RcbSlots → Pt → Pt → List FOp} (hC : CachedPts (m := m) K sel size Sl dbl)
-    (hm : UnitMod m (2 ^ (64 * K.M.n)))
+/-- The cached addition's body, its sum copied to `R`, from any slots `V`
+holding `R`, `E` and the selected pair. -/
+theorem addCachedBody_relCT {dbl : RcbSlots → Pt → Pt → List FOp} (hL : CachedLay K sel size Sl dbl)
+    (hm : UnitMod m (2 ^ (64 * K.M.n))) (hOne : K.one < m)
     (hc : CachedJacChecks K K.R K.E K.D sel dbl) (hcp : ScratchCT (.block (copyPt K.M.n K.R K.D)))
-    {E : Nat → Fin m} (hds : JDblShape dbl := by exact jdblShape_dblJMul) :
-    RelCT isa (FieldPair K.M base size m Sl (cV K sel) E) (PointOps.addCachedBody K sel dbl).inline
-      (fun s t => ∃ E', FieldPair K.M base size m Sl (jacCoords K.R) E' s t) := by
+    {V : List Nat} {E : Nat → Fin m} (hV : ∀ x ∈ cV K sel, x ∈ V)
+    (hds : JDblShape dbl := by exact jdblShape_dblJMul) :
+    RelCT isa (FieldPair K.M base size m Sl V E) (PointOps.addCachedBody K sel dbl).inline
+      (fun s t => ∃ E', FieldPair K.M base size m Sl (jacCoords K.R ++ V) E' s t) := by
   rw [PointOps.addCachedBody]
-  apply RelCT.seq (cachedAdd_relCT hC hm hc hds)
+  apply RelCT.seq (cachedAdd_relCT hL hm hOne hc hV hds)
   apply RelCT.exists_
   intro E'
-  have rSl : ∀ x ∈ jacCoords K.R, Sl x := fun x hx => hC.lay.sl x (List.mem_append_left _
+  have rSl : ∀ x ∈ jacCoords K.R, Sl x := fun x hx => hL.sl x (List.mem_append_left _
     (List.mem_append_right _ (by
       simp only [jacCoords, List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl <;> simp [rcbR])))
-  exact (copyPoint_relCT (E := E') hC.lay.lay rSl (fun x hx => List.mem_append_left _ hx) hcp).mono
-    (fun _ _ h => h) (fun _ _ h => ⟨_, h.sub fun x hx => List.mem_append_left _ hx⟩)
+  exact (copyPoint_relCT (E := E') hL.lay rSl (fun x hx => List.mem_append_left _ hx) hcp).mono
+    (fun _ _ h => h) (fun _ _ h => ⟨_, h.sub fun x hx => by
+      rcases List.mem_append.mp hx with hx | hx
+      · exact List.mem_append_left _ hx
+      · exact List.mem_append_right _ (List.mem_append_right _ hx)⟩)
 
 end
 

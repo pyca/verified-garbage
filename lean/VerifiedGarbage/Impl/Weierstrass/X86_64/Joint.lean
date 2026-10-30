@@ -100,8 +100,36 @@ def cacheCode (c : Cfg) : Prog isa :=
     if c.K.M.adx then Naf.cacheUnrolled c.K.M c.K.tbl c.cache 8 else Naf.cacheStaged c.K.M c.K.tbl c.cache c.K.E.x
   else Naf.cacheTable c.K.M c.K.tbl c.cache c.K.E.x
 
-/-- The table of `Q`'s odd multiples. -/
-def tableCode (c : Cfg) : Prog isa := if c.coZ then Naf.tableCoZ c.K else Naf.table c.K c.dbl
+/-- `E`'s `Z²` and `Z³` at `selected`, which the cached addition reads. -/
+def cacheE (c : Cfg) : List FOp :=
+  [.mul c.selected c.K.E.z c.K.E.z, .mul (c.selected+8*c.K.M.n) c.selected c.K.E.z]
+
+/-- A step of `tableCall`: `R = R + E` (a call of `C`'s `jac_add_cached`),
+stored in entry `rbx`. -/
+def tableCallStep (c : Cfg) (C : Spec.Weierstrass.PointOps.Curve) : Prog isa :=
+  .seq (PointOps.addCachedCall C c.K c.selected c.dbl)
+    (.block (Naf.tableStore c.K ++ [.alu .add .rbx (.imm 1),.alu .cmp .rbx (.imm 8)]))
+
+/-- The table of `Q`'s odd multiples `Naf.table` builds, by calls of `C`'s
+functions: `R = 2Q` (a call of `jac_double`), copied to `E`, with its `Z²`
+and `Z³` (`cacheE`), and to the table's ninth entry; then `Q` in the first
+entry and `R`, and seven steps `R = R + E` (`tableCallStep`). -/
+def tableCall (c : Cfg) (C : Spec.Weierstrass.PointOps.Curve) : Prog isa :=
+  .seq (.block (copyPt c.K.M.n c.K.R c.K.P)) <|
+  .seq (PointOps.doubleCall C c.K c.dbl) <|
+  .seq (.block (copyPt c.K.M.n c.K.E c.K.R ++ copyPt c.K.M.n (Naf.twice c.K) c.K.R)) <|
+  .seq (fprogB c.K.M (cacheE c)) <|
+  .seq (.block (copyPt c.K.M.n (c.K.tblPt 1) c.K.P ++ copyPt c.K.M.n c.K.R c.K.P ++
+    [.mov32 .rbx (.imm 1)])) <|
+  .loop (tableCallStep c C) .b
+
+/-- The table of `Q`'s odd multiples: by co-Z arithmetic (`coZ`), by calls
+where the digits' additions are calls (`pts`), else `Naf.table`. -/
+def tableCode (c : Cfg) : Prog isa :=
+  if c.coZ then Naf.tableCoZ c.K else
+  match c.pts with
+  | some C => tableCall c C
+  | none => Naf.table c.K c.dbl
 
 def window (c : Cfg) (double : Prog isa) : Prog isa :=
   .seq (tableCode c) <| .seq (cacheCode c) <|

@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
 import VerifiedGarbage.Proof.Secp256k1.X86_64.JointTiming
-import VerifiedGarbage.Proof.Secp256k1.X86_64.NafTableTiming
 import VerifiedGarbage.Proof.Secp256k1.X86_64.JointLayout
+import VerifiedGarbage.Proof.Secp256k1.X86_64.JointTable
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubler
 public import VerifiedGarbage.Proof.Weierstrass.JacDbl0
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
@@ -14,8 +14,8 @@ import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
 meta import VerifiedGarbage.Proof.Secp256k1.X86_64.JointTiming
-meta import VerifiedGarbage.Proof.Secp256k1.X86_64.NafTableTiming
 meta import VerifiedGarbage.Proof.Secp256k1.X86_64.JointLayout
+meta import VerifiedGarbage.Proof.Secp256k1.X86_64.JointTable
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Impl.Secp256k1.X86_64.Joint
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.Secp256k1Literals
@@ -34,7 +34,7 @@ open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.Secp256k1.X86_64 VG.Impl.Weierstr
 open VG.Proof.Secp256k1.X86_64 VG.Proof.Weierstrass.X86_64 VG.Proof.Ecdsa.X86_64 VG.Proof.Mont
 
 theorem joint_mul_checks : JointMulChecks secp256k1v publicJoint :=
-  ⟨joint_cached_checks,joint_fixed_checks,nafTable_checks,nafCacheTable_ct,
+  ⟨joint_cached_checks,joint_fixed_checks,table_call_ct,nafCacheTable_ct,
     joint_infinity_ct,joint_counter_ct,fastGenerator16_checks,fastPeer_checks⟩
 
 /-- secp256k1's `a` is `0`. -/

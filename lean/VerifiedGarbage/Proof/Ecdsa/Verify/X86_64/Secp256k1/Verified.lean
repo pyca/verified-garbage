@@ -24,6 +24,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Secp256k1.X86_64.JointLayout
+import VerifiedGarbage.Proof.Secp256k1.X86_64.JointTable
 
 /-!
 # ECDSA verification over secp256k1 on x86-64: `Verified`

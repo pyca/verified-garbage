@@ -437,8 +437,8 @@ theorem addCached_ct : ConstantTime isa addCachedK.pre addCachedK.pub addCachedF
     intro x hx
     simp only [env, K_n]
     rw [reads_wordsVal hr.symm (cV_readSlots x hx)]
-  have hb := addCachedBody_relCT (base := s₁.gpr .rdi) cachedPts (unitMod_pow_two p_odd _)
-    cachedChecks copyCt (E := env C.p K.M.n s₁.mem (s₁.gpr .rdi)) ⟨dblJ0N, dblJ0N_ok, dblJ0_eq⟩
+  have hb := addCachedBody_relCT (base := s₁.gpr .rdi) cachedPts.lay (unitMod_pow_two p_odd _) cachedPts.one
+    cachedChecks copyCt (E := env C.p K.M.n s₁.mem (s₁.gpr .rdi)) (fun _ h => h) ⟨dblJ0N, dblJ0N_ok, dblJ0_eq⟩
   rw [Code.inline_of_noCalls (by decide +kernel)] at hb
   exact (wrap_relCT hb s₁ s₂ t₁ t₂ s₁' s₂' ⟨I₁, I₂.congr_env ag⟩ e₁ e₂).1
 

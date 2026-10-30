@@ -45,7 +45,7 @@ theorem joint_naf_layout : NafLay publicJoint.K 8192 :=
 
 theorem joint_init_layout : JointInitLayout publicJoint 8192 :=
   ⟨joint_layout,joint_naf_layout,by decide,by decide,by decide,by decide,by decide,by decide +kernel,
-    by decide,by decide⟩
+    by decide,by decide,fun _ _ h => by cases h⟩
 
 theorem joint_prep_layout : JointPrepLayout publicJoint 8192
     (p224v.sl Impl.Ecdsa.Verify.X86_64.U)

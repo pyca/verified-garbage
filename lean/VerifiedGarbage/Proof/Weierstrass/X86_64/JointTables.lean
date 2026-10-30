@@ -68,6 +68,24 @@ theorem jointCache_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Nat} {a 
     · exact nafCacheStaged_current_ok hL.layout.lay hm hCL ii
   · exact nafCacheTable_current_ok hL.layout.lay hm hCL ii
 
+/-- The table `Naf.table` or its co-Z form builds gives what the joint loop needs. -/
+theorem NafTableInv.post {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Nat} {Q : Point C}
+    {s t : State} (hL : JointInitLayout c size) (ia : NafTableInv c.K C base size Q s t 8) :
+    JointTablePost c C base size Q s t where
+  field := ⟨ia.field.scr,ia.field.mod,fun x hx => List.mem_append_left _ (List.mem_append_left _
+    (ia.field.sl x hx)),ia.field.lt,ia.field.val⟩
+  keep := ia.keep.mono (by
+    intro r hr
+    simp only [nafTableClob,List.mem_append,List.mem_cons] at hr ⊢
+    grind)
+  unch := ia.unch.mono (by
+    intro w hw
+    simp only [nafTableWrites,jointInitRanges,jointInitWork,List.mem_append,List.mem_map,
+      List.mem_singleton] at hw ⊢
+    grind)
+  ro _ hx := ia.readonly hL.naf hx
+  table := ia.table
+
 theorem jointTables_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat}
     {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G (jointGTop c)} {s : State}
     (hL : JointInitLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
@@ -84,26 +102,24 @@ theorem jointTables_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : N
       JointLoopKeep c.K.M base (jointInitWork c) s t ∧
       Inv c.K.M base size C.p (·∈jointSlots c) (jointLive c) (tmv C c.K.M.n base t) t ∧
       JointStable c C base Q u v t ∧ JointGenerator c C base T size row t := by
-  have tbl : WP isa (Joint.tableCode c).inline s (fun t => NafTableInv c.K C base size Q s t 8) := by
+  have tbl : WP isa (Joint.tableCode c).inline s (JointTablePost c C base size Q s) := by
     unfold Joint.tableCode
     split
     · next h =>
       obtain ⟨hO,hn,ha⟩ := hZ h
-      exact nafTableCoZ_ok hL.naf hL.count hm hC hO hn ha hL.tableSmall hQ hi hp h1
-    · exact nafTable_ok hL.naf hL.count hm hC hd hL.tableSmall hOne hQ hi hp
+      exact WP.mono (nafTableCoZ_ok hL.naf hL.count hm hC hO hn ha hL.tableSmall hQ hi hp h1)
+        fun t ht => ht.post hL
+    · next h =>
+      split
+      · next C' hp' =>
+        exact hL.tableCall (by simpa using h) C' hp' hm hC hd hOne hQ hi hp h1
+      · exact WP.mono (nafTable_ok hL.naf hL.count hm hC hd hL.tableSmall hOne hQ hi hp)
+          fun t ht => ht.post hL
   apply WP.seq
   refine WP.mono_syms tbl fun a ia sa => ?_
-  have ii : Inv c.K.M base size C.p (·∈jointSlots c) (nafTableLive c.K 8) (tmv C c.K.M.n base a) a :=
-    ⟨ia.field.scr,ia.field.mod,fun x hx => List.mem_append_left _ (List.mem_append_left _ (ia.field.sl x hx)),
-      ia.field.lt,ia.field.val⟩
-  have ka : KeepRegs (.rbx::clob c.K.M.n) s a := ia.keep.mono (by
-    intro r hr
-    simp only [nafTableClob,List.mem_append,List.mem_cons] at hr ⊢
-    grind)
-  have ua : Unch base (jointInitRanges c) s.mem a.mem := ia.unch.mono (by
-    intro w hw
-    simp only [nafTableWrites,jointInitRanges,jointInitWork,List.mem_append,List.mem_map,List.mem_singleton] at hw ⊢
-    grind)
+  have ii := ia.field
+  have ka := ia.keep
+  have ua := ia.unch
   have ea := he.keep_init hL.layout hi.mod.tmp ka ua sa
   have hCL := hL.cacheLay
   have hN := hL.naf
@@ -119,12 +135,15 @@ theorem jointTables_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : N
     · refine Or.inl ⟨x,?_,rfl⟩
       simp only [cacheLoopSlots,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx
       rcases hx with hx|rfl|rfl|rfl
-      · exact List.mem_append_right _ (joint_cache_mem.mp hx)
-      · exact List.mem_append_left _ (List.mem_append_left _ (eo _ (by simp [jacCoords])))
+      · exact List.mem_append_left _ (List.mem_append_right _ (joint_cache_mem.mp hx))
+      · exact List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _
+          (eo _ (by simp [jacCoords]))))
       · rw [← hN.exy]
-        exact List.mem_append_left _ (List.mem_append_left _ (eo _ (by simp [jacCoords])))
+        exact List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _
+          (eo _ (by simp [jacCoords]))))
       · rw [← hN.exz]
-        exact List.mem_append_left _ (List.mem_append_left _ (eo _ (by simp [jacCoords])))
+        exact List.mem_append_left _ (List.mem_append_left _ (List.mem_append_left _
+          (eo _ (by simp [jacCoords]))))
     · exact Or.inr rfl)
   have ut : Unch base (jointInitRanges c) s.mem t.mem := fun z hz => (ub z hz).trans (ua z hz)
   have kr : KeepRegs (.rbx::clob c.K.M.n) a t := kt.regs
@@ -147,7 +166,7 @@ theorem jointTables_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : N
     unfold tmv
     rw [kt.unch.slot hL.layout.lay ii.scr hCL.slots (ii.sl _ (by simp [nafTableLive,winRo]))
       (fun hx => ?_)]
-    · exact (ia.readonly hL.naf (by simp [winRo])).trans hz
+    · exact (ia.ro _ (by simp [winRo])).trans hz
     simp only [cacheLoopSlots,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx
     rcases hx with hx|hx|hx|hx
     · exact hL.zeroCache (joint_cache_mem.mp hx)

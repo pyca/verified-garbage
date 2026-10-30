@@ -58,7 +58,7 @@ theorem joint_naf_layout : NafLay publicJoint.K 8192 :=
 
 theorem joint_init_layout : JointInitLayout publicJoint 8192 :=
   ⟨joint_layout,joint_naf_layout,by decide,by decide,by decide,by decide,by decide,by decide +kernel,
-    by decide,by decide⟩
+    by decide,by decide,fun h => absurd h (by decide)⟩
 
 theorem joint_adx_naf_layout : NafLay publicJointAdx.K 8192 :=
   ⟨Or.inr (Or.inl rfl),⟨naf_lay.le,naf_lay.apart,naf_lay.mo,naf_lay.tmp⟩,
@@ -67,7 +67,8 @@ theorem joint_adx_naf_layout : NafLay publicJointAdx.K 8192 :=
 
 theorem joint_adx_init_layout : JointInitLayout publicJointAdx 8192 :=
   ⟨joint_adx_layout,joint_adx_naf_layout,by decide,by decide,by decide,by decide,by decide,
-    joint_init_layout.bitsSep,joint_init_layout.cacheSmall,joint_init_layout.cacheFar⟩
+    joint_init_layout.bitsSep,joint_init_layout.cacheSmall,joint_init_layout.cacheFar,
+    fun h => absurd h (by decide)⟩
 
 theorem joint_prep_layout : JointPrepLayout publicJoint 8192
     (p384v.sl Impl.Ecdsa.Verify.X86_64.U)
