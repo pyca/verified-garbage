@@ -18,6 +18,9 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 
 /-!
 # AES counter mode on ARMv7: the whole function
@@ -883,7 +886,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.Aes.ctr32Arm.pre s₁) (h₂ 
     · exact congrArg _ a1
 
 theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32Arm.pre Proof.Aes.ctr32Arm.pub Impl.Aes.Arm.ctr32 :=
-  VG.Taint.constantTime (A := VG.Arm.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.Arm.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by native_taint_decide)
 
 /-- A state satisfying the precondition (with no data, and the scratch buffer at 0). -/
 def sat : State where

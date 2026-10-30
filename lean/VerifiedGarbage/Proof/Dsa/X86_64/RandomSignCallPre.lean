@@ -22,8 +22,8 @@ theorem random_call_pre {extra : Nat} {s t : State} (h : RandomSignABI extra s)
   have hE (i : Nat) (hi : i < 5) :
       stackArg (t.callEntry.withRegions (randomCallRd s) (randomCallWr s)) i = randomCallArg s i :=
     (random_call_stackArg hsp _ _ hi).trans (hw i hi)
-  sig_pre [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five]
-  sig_pre [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five]
+  sig_pre [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five, List.range, List.range.loop]
+  sig_pre [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five, List.range, List.range.loop]
   simp only [hdi, hsi, hdx, hcx, h8, h9, hsp,
     random_call_stackArgAddr hsp, hE 0 (by decide), hE 1 (by decide), hE 2 (by decide),
     hE 3 (by decide), hE 4 (by decide)]

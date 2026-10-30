@@ -26,6 +26,9 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # ECDH over P-521 on x86 (32-bit): `Verified`
@@ -148,7 +151,7 @@ def τMul : VG.X86.Taint.T :=
 taint_summary mulSum : taint τMul (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p521p.k Spec.Weierstrass.Mont.p521p.m)
 
 theorem ecdh_ct : ConstantTime isa ecdhX86.pre ecdhX86.pub exchangeP521 := by
-  obtain ⟨_, hc⟩ : ∃ h, (taint.check τ₀ exchangeP521 h).isSome = true := by taint_decide_sum [mulSum]
+  obtain ⟨_, hc⟩ : ∃ h, (taint.check τ₀ exchangeP521 h).isSome = true := by native_taint_decide_sum [mulSum]
   exact VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) hc
 
 /-- The contract with the regions the shared one gives: the arguments'

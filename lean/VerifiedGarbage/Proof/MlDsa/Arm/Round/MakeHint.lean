@@ -22,6 +22,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Basic
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_make_hint`

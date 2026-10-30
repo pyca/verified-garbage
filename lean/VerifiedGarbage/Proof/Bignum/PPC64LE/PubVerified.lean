@@ -43,7 +43,7 @@ theorem publicChecked_implies : fnContract.Implies (Spec.Rsa.publicPrecomputedCh
   sig_implies [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs,
     fnContract, stackArgs_two, List.append_eq, List.getD_cons_succ, List.getD_cons_zero, Sig.pairFacts,
     List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false,
-    List.cons_append, List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, pairFacts_two]
+    List.cons_append, List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, pairFacts_two, List.range, List.range.loop]
     [satState, stackArg, stackArgAddr, Mem.readW, Mem.read] using satState
 
 /-- `vg_rsa_public_precomputed_checked`. -/

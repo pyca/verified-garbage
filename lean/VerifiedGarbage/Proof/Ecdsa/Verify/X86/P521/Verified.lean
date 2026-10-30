@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86
 import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Contract
@@ -26,6 +27,8 @@ meta import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -129,7 +132,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : verifyX86.pre s₁) (h₂ : verifyX
 functions (`CallTaint`) in place of the analysis of each call. -/
 theorem verify_ct : ConstantTime isa verifyX86.pre verifyX86.pub verifyP521 := by
   obtain ⟨_, hc⟩ : ∃ h, (taint.check τ₀ verifyP521 h).isSome = true := by
-    taint_decide_sum [mulPSum, addPSum, subPSum, mulNSum, subNSum]
+    native_taint_decide_sum [mulPSum, addPSum, subPSum, mulNSum, subNSum]
   exact VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) hc
 
 /-- The contract with the regions the shared one gives: the arguments'

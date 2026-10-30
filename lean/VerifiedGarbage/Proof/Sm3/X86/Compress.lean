@@ -20,6 +20,9 @@ meta import VerifiedGarbage.Proof.Sm3.X86.Contract
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Sm3.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # SM3 compression function on x86 (32-bit): the message expansion and the iterations
@@ -1099,7 +1102,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.Sm3.compressX86.pre s₁)
 theorem compress_verified :
     Verified X86.target Impl.Sm3.X86.compress Proof.Sm3.compressX86 :=
   ⟨fun s hs => correct (pre_of s hs),
-    VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hpub => agree₀ h₁ h₂ hpub) (by taint_decide),
+    VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hpub => agree₀ h₁ h₂ hpub) (by native_taint_decide),
     ⟨satState, sat_pre⟩⟩
 
 end VG.Proof.Sm3.X86

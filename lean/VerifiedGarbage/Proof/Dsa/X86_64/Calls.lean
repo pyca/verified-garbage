@@ -32,33 +32,33 @@ open VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 theorem signing_implies8 : (Spec.Dsa.signContract abi).Implies (Spec.Dsa.signContract abi 8) where
   pre := by
     intro s h
-    sig_pre [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five] at h
-    sig_pre [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five] at h
+    sig_pre [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five, List.range, List.range.loop] at h
+    sig_pre [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five, List.range, List.range.loop] at h
     sig_split h
-    sig_pre [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five]
-    sig_pre [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five]
+    sig_pre [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five, List.range, List.range.loop]
+    sig_pre [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five, List.range, List.range.loop]
     sig_and_intros
     sig_close
-  post := by sig_implies_post [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five]
+  post := by sig_implies_post [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five, List.range, List.range.loop]
   pub := by intro s t _ _ h; exact h
   sat := by
-    sig_implies_sat [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five]
+    sig_implies_sat [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five, List.range, List.range.loop]
       [signingSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using signingSatState
 
 theorem verifying_implies8 : (Spec.Dsa.verifyContract abi).Implies (Spec.Dsa.verifyContract abi 8) where
   pre := by
     intro s h
-    sig_pre [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four] at h
-    sig_pre [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four] at h
+    sig_pre [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four, List.range, List.range.loop] at h
+    sig_pre [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four, List.range, List.range.loop] at h
     sig_split h
-    sig_pre [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four]
-    sig_pre [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four]
+    sig_pre [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four, List.range, List.range.loop]
+    sig_pre [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four, List.range, List.range.loop]
     sig_and_intros
     sig_close
-  post := by sig_implies_post [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four]
+  post := by sig_implies_post [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four, List.range, List.range.loop]
   pub := by intro s t _ _ h; exact h
   sat := by
-    sig_implies_sat [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four]
+    sig_implies_sat [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four, List.range, List.range.loop]
       [verifyingSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using verifyingSatState
 
 theorem signing_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
@@ -68,15 +68,15 @@ theorem signing_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
   have ha := signingABI_of hs
   have hm := Clear.miss_wr hc (by rw [ha.wr]; exact List.mem_cons_self)
     ha.outBound (Nat.le_refl _)
-  sig_post [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five] at hp ⊢
-  sig_post [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five] at hp ⊢
+  sig_post [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five, List.range, List.range.loop] at hp ⊢
+  sig_post [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five, List.range, List.range.loop] at hp ⊢
   simpa only [State.patch_gpr, patch_mem, bytesAt_overlay hm] using hp
 
 theorem verifying_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
     (hp : (Spec.Dsa.verifyContract abi).post s b) :
     (Spec.Dsa.verifyContract abi).post s (b.patch (hole (s.gpr .rsp)) hv u) := by
-  sig_post [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four] at hp ⊢
-  sig_post [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four] at hp ⊢
+  sig_post [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four, List.range, List.range.loop] at hp ⊢
+  sig_post [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four, List.range, List.range.loop] at hp ⊢
   simpa only [State.patch_gpr] using hp
 
 theorem signing_call_verified (M : Mont) (Sq : MontS) {c : Prog isa}

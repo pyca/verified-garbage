@@ -22,6 +22,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
 meta import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_expand_mask_poly`

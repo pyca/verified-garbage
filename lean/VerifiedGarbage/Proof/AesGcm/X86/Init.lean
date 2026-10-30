@@ -22,6 +22,9 @@ meta import VerifiedGarbage.Proof.AesGcm.X86.Flush
 meta import VerifiedGarbage.Proof.Gcm.Ctr
 import VerifiedGarbage.Proof.AesGcm.X86.Crypt
 meta import VerifiedGarbage.Proof.AesGcm.X86.Crypt
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # AES-GCM on x86: `vg_aes_gcm_init`
@@ -177,12 +180,12 @@ theorem iEntry_pc (p : BitVec 32 × (Nat → BitVec 32)) :
   · refine CT.seq (J := fun s => s.gpr .eax = p.2 3 ∧ s.gpr .esp = p.1)
       (CT.taint [.esp] (fun s₁ s₂ ⟨a₁, _, h₁, e₁⟩ ⟨a₂, _, h₂, e₂⟩ r hr => by
         simp only [List.mem_singleton] at hr; subst hr; subst e₁; subst e₂
-        rw [pubOf_esp h₁, pubOf_esp h₂]) (by taint_decide)) (fun s ⟨s₀, hpre, hpub, hs⟩ => ?_)
+        rw [pubOf_esp h₁, pubOf_esp h₂]) (by native_taint_decide)) (fun s ⟨s₀, hpre, hpub, hs⟩ => ?_)
       (CT.taint [.eax, .esp] (fun s₁ s₂ h₁ h₂ r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · rw [h₁.1, h₂.1]
-        · rw [h₁.2, h₂.2]) (by taint_decide))
+        · rw [h₁.2, h₂.2]) (by native_taint_decide))
     subst s
     have hp := hpre
     simp only [initPre] at hp
@@ -354,13 +357,13 @@ theorem init_pc (p : BitVec 32 × (Nat → BitVec 32)) :
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · rw [g₁.saved .esi (by decide), g₂.saved .esi (by decide), h₁.esi, h₂.esi]
-      · rw [g₁.saved .ebp (by decide), g₂.saved .ebp (by decide), h₁.call.ebp, h₂.call.ebp]) (by taint_decide)) ?_
+      · rw [g₁.saved .ebp (by decide), g₂.saved .ebp (by decide), h₁.call.ebp, h₂.call.ebp]) (by native_taint_decide)) ?_
   refine Pc.seq (Pc.of (I := fun s => CtrCall s (p.2 2) (p.2 3 + BitVec.ofNat 32 96) (p.2 2 + BitVec.ofNat 32 240)
     (p.2 3 + BitVec.ofNat 32 512) ((p.2 1).toNat / 4 + 6) 1 ∧ s.gpr .esp = p.1) (fun s h => (ctr_call vg) h.1)
     (ctr_ct vg fun s h => h) _ fun _ _ h => ⟨h.call, h.esp⟩) ?_
   refine Pc.taint [.ebp] (fun s₀ s' ⟨s, hm, g⟩ => ?_) (fun _ _ s₁ s₂ ⟨_, h₁, g₁⟩ ⟨_, h₂, g₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      rw [g₁.saved .ebp (by decide), g₂.saved .ebp (by decide), h₁.call.ebp, h₂.call.ebp]) (by taint_decide)
+      rw [g₁.saved .ebp (by decide), g₂.saved .ebp (by decide), h₁.call.ebp, h₂.call.ebp]) (by native_taint_decide)
   obtain ⟨s₁, h₁, fE⟩ := hm.ent
   have eS := w64_add (x := p.2 3) (k := 512) (by have := hc.fw; omega_arith)
   have eT := w64_add (x := p.2 3) (k := 96) (by have := hc.fw; omega_arith)

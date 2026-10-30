@@ -42,7 +42,7 @@ theorem sign_implies : sContract.Implies (Spec.Dsa.signContract abi) := by
   sig_implies [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, sContract, sRes, stackArgs_three,
     List.append_eq, List.getD_cons_succ, List.getD_cons_zero, Sig.pairFacts, List.filterMap_cons,
     List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false, List.cons_append,
-    List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, pairFacts_three]
+    List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, pairFacts_three, List.range, List.range.loop]
     [signSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using signSatState
 
 end VG.Proof.Dsa.PPC64LE
