@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
 import VerifiedGarbage.Proof.Ed25519.Signing
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Syms
 
 /-! Merged from `Proof.Ed25519.Arm.SignCached.PrimitiveSteps`. -/
 
@@ -32,21 +33,23 @@ theorem reduce_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
   · rw [hm] at hf; exact hf
   · rw [hm] at hp; exact hp
 
-theorem base_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
+theorem base_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (hw : Tbl L m₀)
+    (hsy : s.syms VG.Impl.Ed25519.Arm.combSym = L.T) :
     WP isa (VG.Impl.Ed25519.Arm.Whole.callWith baseArgs "vg_ed25519_scalar_base" VG.Impl.Ed25519.Arm.scalarBase) s
       fun t => Ctx L g m₀ t ∧ Frame (baseWr L) s.mem t.mem ∧
         Spec.Ed25519.bytesAt t.mem (State.addr L.out) 32 =
           Spec.Ed25519.scalarBase (Spec.Ed25519.bytesAt s.mem (State.addr L.E + 88) 32) := by
-  refine WP.seq (WP.mono (args_regs_ok hc hL ha
+  refine WP.seq (WP.mono_syms (args_regs_ok hc hL ha
     (args := [(.r0, .caller 0 0), (.r1, .frame 88), (.r2, .caller 5 0)])
-    (by decide) (by simp [Whole.valid]) (by simp [preserved])) fun u ⟨hu, hm, hs⟩ => ?_)
+    (by decide) (by simp [Whole.valid]) (by simp [preserved])) fun u ⟨hu, hm, hs⟩ syu => ?_)
   have a0 := hs (.r0, .caller 0 0) (by simp)
   have a1 := hs (.r1, .frame 88) (by simp)
   have a2 := hs (.r2, .caller 5 0) (by simp)
   change u.gpr .r0 = L.out + 0#32 at a0
   change u.gpr .r2 = L.scr + 0#32 at a2
   rw [BitVec.add_zero] at a0 a2
-  refine WP.mono (base_call hu hL ⟨a0, a1, a2⟩) fun t ⟨ht, hf, hp⟩ => ⟨ht, ?_, ?_⟩
+  refine WP.mono (base_call hu hL ⟨a0, a1, a2⟩ (by rw [syu]; exact hsy) (hu.tbl hL hw))
+    fun t ⟨ht, hf, hp⟩ => ⟨ht, ?_, ?_⟩
   · rw [hm] at hf; exact hf
   · rw [hm] at hp; exact hp
 
@@ -103,15 +106,16 @@ structure NonceReady (L : Lay) (m : Mem) (t : State) : Prop where
   nonce : Spec.Ed25519.bytesAt t.mem (State.addr L.E + 88) 32 = nonce L m
   point : Spec.Ed25519.bytesAt t.mem (State.addr L.out) 32 = Spec.Ed25519.scalarBase (SignCached.nonce L m)
 
-theorem nonce_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (hs : SecretReady L m₀ s) :
+theorem nonce_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (hs : SecretReady L m₀ s)
+    (hw : Tbl L m₀) (hsy : s.syms VG.Impl.Ed25519.Arm.combSym = L.T) :
     WP isa (nonceCode) s fun t => Ctx L g m₀ t ∧ NonceReady L m₀ t := by
-  refine WP.seq (WP.mono (hashNonce_ok hc hL ha) fun u ⟨hu, fu, du⟩ => ?_)
+  refine WP.seq (WP.mono_syms (hashNonce_ok hc hL ha) fun u ⟨hu, fu, du⟩ syu => ?_)
   rw [hs.prefixBytes] at du
   have su := (hash_field_bytes hL fu (d := 24) (by decide) (by decide)).trans hs.scalar
-  refine WP.seq (WP.mono (reduce_step hu hL ha 88 (by decide)) fun v ⟨hv, fv, nv⟩ => ?_)
+  refine WP.seq (WP.mono_syms (reduce_step hu hL ha 88 (by decide)) fun v ⟨hv, fv, nv⟩ syv => ?_)
   rw [du] at nv
   have sv := (reduce_field_bytes hL fv (d := 24) (by decide) (by decide) (by decide)).trans su
-  refine WP.mono (base_step hv hL ha) fun t ⟨ht, ft, pt⟩ => ⟨ht, ?_, ?_, ?_⟩
+  refine WP.mono (base_step hv hL ha hw (by rw [syv, syu]; exact hsy)) fun t ⟨ht, ft, pt⟩ => ⟨ht, ?_, ?_, ?_⟩
   · exact (base_field_bytes hL ft (d := 24) (by decide)).trans sv
   · exact (base_field_bytes hL ft (d := 88) (by decide)).trans nv
   · change Spec.Ed25519.bytesAt v.mem (State.addr L.E + 88) 32 = _ at nv
@@ -157,13 +161,14 @@ theorem wipe_ok (hc : Ctx L g m₀ s) (hL : L.Ok) :
 
 theorem body_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     (hk : Spec.Ed25519.bytesAt m₀ (State.addr L.pk) 32 =
-      Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ (State.addr L.seed) 32)) :
+      Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ (State.addr L.seed) 32))
+    (hw : Tbl L m₀) (hsy : s.syms VG.Impl.Ed25519.Arm.combSym = L.T) :
     WP isa (body) s fun t => Ctx L g m₀ t ∧
       Spec.Ed25519.bytesAt t.mem (State.addr L.out) 64 = Spec.Ed25519.sign
         (Spec.Ed25519.bytesAt m₀ (State.addr L.seed) 32)
         (Spec.Ed25519.bytesAt m₀ (State.addr L.msg) L.len.toNat) := by
-  refine WP.seq (WP.mono (secret_ok hc hL ha) fun u ⟨hu, su⟩ => ?_)
-  refine WP.seq (WP.mono (nonce_ok hu hL ha su) fun v ⟨hv, nv⟩ => ?_)
+  refine WP.seq (WP.mono_syms (secret_ok hc hL ha) fun u ⟨hu, su⟩ syu => ?_)
+  refine WP.seq (WP.mono (nonce_ok hu hL ha su hw (by rw [syu]; exact hsy)) fun v ⟨hv, nv⟩ => ?_)
   refine WP.seq (WP.mono (challenge_ok hv hL ha nv hk) fun w ⟨hw, sw⟩ => ?_)
   exact WP.mono (wipe_ok hw hL) fun t ⟨ht, same⟩ => ⟨ht, same.trans sw⟩
 

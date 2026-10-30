@@ -11,6 +11,7 @@ def artifacts : List Artifact := [
   Spec.Ed25519.publicKeyApi.artifact Arm.target {
     notes := ["Includes SHA-512 of the seed, RFC 8032 pruning, \
       and base-point multiplication. The temporary seed hash and scalar are cleared before returning."]
+    consts := Impl.Ed25519.Arm.combConsts
     code := Impl.Ed25519.Arm.PublicKey.code
     stack := 280
     verified := Proof.Ed25519.Arm.PublicKey.publicKey_verified }]
