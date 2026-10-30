@@ -14,9 +14,29 @@ the README's Python one-liner.
 Restoring takes the whole cache (about 1 GB to download, 13 GB unpacked),
 since optimizing a proof means rebuilding it.
 
-After rebasing a long-running session onto `main`, consider pulling and
-restoring the latest cache again to avoid rebuilding upstream Lean changes.
-Lake rebuilds your changes and anything not yet cached.
+After every rebase onto `main` (or pull of it), check how much Lean
+changed upstream before building. Lake rebuilds each changed module and
+everything that imports it, so a large merge can cost far more locally than
+restoring the cache again. Before rebasing, note the old base
+(`old=$(git merge-base HEAD origin/main)`), then after it list what `main`
+changed under `lean/`:
+
+```sh
+git diff --name-only "$old" origin/main -- lean/ | grep -c '\.lean$'
+git diff --name-only "$old" origin/main -- lean/lean-toolchain lean/lakefile.toml lean/lake-manifest.json
+```
+
+Restore the latest cache again unless the rebuild is clearly small. It is
+not small when the second command prints anything (a toolchain,
+dependency or lakefile change rebuilds every module), when upstream touched
+`TCB/`, `Spec/` or `Proof/Framework/` (thousands of modules import them), or
+when more than a handful of modules changed. A rebuild is only cheaper for a
+few leaf modules (registrations, a proof nothing else imports), or a
+handful that few others import. Restoring costs one download (about 1 GB); rebuilding a
+shared module often costs much longer. `fetch_lean_cache.py` prints the
+cached build's revision: if it does not yet include the merged change (its
+CI is still running), wait for `main`'s cache rather than building. Your
+own changes are rebuilt either way, on top of the restored build.
 
 ## Hard rules
 
