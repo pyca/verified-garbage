@@ -20,7 +20,9 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 /-!
 # Literals of secp256k1's x86 point addition and doubling
 
-The code of `vg_<curve>_point_add` and `vg_<curve>_point_double`, checked
+The code of `vg_<curve>_point_add` and `vg_<curve>_point_double`, and of
+the functions for `a = 0` (`vg_<curve>_point_double_a0` and
+`vg_<curve>_point_add_affine_a0`), checked
 once here, so that the taint analysis and `spSafe` read it rather than
 building it again; its calls refer to the Montgomery functions' literals.
 -/
@@ -31,7 +33,7 @@ namespace VG.Proof.Weierstrass.X86.PointLit.Secp256k1
 
 open VG VG.Impl.Weierstrass.X86.Point
 
-materialize_code add := fn (modP Impl.Secp256k1.point) false
-materialize_code double := fn (modP Impl.Secp256k1.point) true
+materialize_code double0 := fn0 (modP Impl.Secp256k1.point) true
+materialize_code addAffine0 := fn0 (modP Impl.Secp256k1.point) false
 
 end VG.Proof.Weierstrass.X86.PointLit.Secp256k1

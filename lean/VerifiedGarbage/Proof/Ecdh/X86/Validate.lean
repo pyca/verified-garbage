@@ -417,7 +417,7 @@ theorem ladPow_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (K : K
     (hA : c.mul.isSome ∨ 3 ≤ c.n ∧ c.n ≤ 6 → Point.LadArg s base Impl.Ecdh.X86.Args.ecdh.ao)
     (hsp₁ : SpOk (c.qMul PX PY Impl.Ecdh.X86.Args.ecdh.ao) c.stk) (hsp₂ : SpOk c.pPow c.stk) {k : Nat}
     {Q : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
-    (hstep : Step (Impl.Ecdh.X86.Cfg.ladderQ c) c.C base s k Q) (hO : Q (64 * c.n) 0 1 0)
+    (hstep : Step (Impl.Ecdh.X86.Cfg.ladderQ c) c.C base s k Q c.qA0) (hO : Q (64 * c.n) 0 1 0)
     (hk : sv c base s Impl.Ecdsa.X86.K = k)
     (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
     (hrx : sv c base s RX = 0) (hry : sv c base s RY = c.mont 1) (hrz : sv c base s RZ = 0)

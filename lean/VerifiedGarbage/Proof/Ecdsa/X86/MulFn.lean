@@ -50,7 +50,7 @@ theorem step_congr {L L' : LadderCfg} {C : Curve} {base : Addr} {s s' : State} {
     (hx : tmv C L'.M.n base s' L'.G.x = tmv C L.M.n base s L.G.x)
     (hy : tmv C L'.M.n base s' L'.G.y = tmv C L.M.n base s L.G.y)
     (hz : tmv C L'.M.n base s' L'.G.z = tmv C L.M.n base s L.G.z)
-    (h : Step L C base s k Q) : Step L' C base s' k Q := by
+    {a0 : Bool} (h : Step L C base s k Q a0) : Step L' C base s' k Q a0 := by
   intro j hj X Y Z X2 Y2 Z2 X3 Y3 Z3 hq h2 h3'
   rw [ha, h3] at h2 h3'
   rw [hx, hy, hz] at h3'
@@ -222,7 +222,7 @@ theorem mulBody_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base siz
       tmv c.C c.n base s₆ (c.sl i) = tmv c.C c.n base s (c.sl j) := fun h => by
     show toM _ _ (sv c base s₆ _) = toM _ _ (sv c base s _); rw [h]
   have hstep₆ : Step c.mulLadder c.C base s₆ (sv c base s K) Q :=
-    step_congr (L := ladAt c RX RY) rfl (tv (e₆ (by decide) (by decide))) (tv (e₆ (by decide) (by decide)))
+    step_congr (L := ladAt c RX RY) (L' := c.mulLadder) rfl (tv (e₆ (by decide) (by decide))) (tv (e₆ (by decide) (by decide)))
       (tv acc₆) (tv pt₆) (tv (e₆ (by decide) (by decide))) hstep
   have hlt : ∀ x ∈ ladR c.mulLadder, wordsVal s₆.mem base x c.mulLadder.M.n < c.C.p := by
     intro x hx

@@ -151,12 +151,17 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hcomb : c.comb = none) {s₀ : S
       (toM _ _ (wordsVal s.mem base (c.sl ZERO) c.n)) _
     rw [F.zero, F.onep, toM_zero, toM_one hpR, shiftRight_eq_zero hkl, mul_zero_pt]
     exact rep_infinity' hC
-  have hstep := step_rep (L := c.ladderCfg) (k := kv c A s₀) hC hc.onG (by
+  have hstep := step_rep' (L := c.ladderCfg) (k := kv c A s₀) (a0 := c.qA0) hC hc.onG (by
       show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl AP) c.n) = _
       rw [F.ap]; exact toM_cmont hc _)
     (by
       show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl B3P) c.n) = _
       rw [F.b3p]; exact toM_cmont hc _) hG
+    (fun h => ⟨by
+      simp only [Impl.Ecdsa.X86.Cfg.qA0, Bool.and_eq_true, beq_iff_eq] at h
+      rw [h.2.1]; rfl, by
+      show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl ONEP) c.n) = 1
+      rw [F.onep]; exact toM_one hpR⟩)
   refine WP.seq (hS.withSp hsp₁ (WP.mono (qMul_ok hc (gx := GX) (gy := GY) (by decide) (by decide)
     (by decide) (by decide) (by decide) (ladLay hc) (ladWk hc) ladPt
     ⟨hsp₁.1, Nat.le_trans hsp₁.2 (Cfg.stk_le c)⟩ hS.scr

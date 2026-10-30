@@ -978,7 +978,7 @@ mov DWORD PTR [edi+3416], eax
 mov eax, DWORD PTR [edi+604]
 mov DWORD PTR [edi+3420], eax
 push edi
-call {vg_secp256k1_point_double}
+call {vg_secp256k1_point_double_a0}
 pop eax
 mov edi, DWORD PTR [esp+16]
 mov eax, DWORD PTR [edi+3232]
@@ -1030,7 +1030,7 @@ mov DWORD PTR [edi+3416], eax
 mov eax, DWORD PTR [edi+3324]
 mov DWORD PTR [edi+3420], eax
 push edi
-call {vg_secp256k1_point_add}
+call {vg_secp256k1_point_add_affine_a0}
 pop eax
 mov edi, DWORD PTR [esp+16]
 mov eax, edi
@@ -3237,7 +3237,7 @@ ret
         vg_secp256k1_mul_mod_p = sym super::secp256k1_mont::vg_secp256k1_mul_mod_p,
         vg_secp256k1_add_mod_p = sym super::secp256k1_mont::vg_secp256k1_add_mod_p,
         vg_secp256k1_sub_mod_p = sym super::secp256k1_mont::vg_secp256k1_sub_mod_p,
-        vg_secp256k1_point_double = sym super::secp256k1_point::vg_secp256k1_point_double,
-        vg_secp256k1_point_add = sym super::secp256k1_point::vg_secp256k1_point_add,
+        vg_secp256k1_point_double_a0 = sym super::secp256k1_point::vg_secp256k1_point_double_a0,
+        vg_secp256k1_point_add_affine_a0 = sym super::secp256k1_point::vg_secp256k1_point_add_affine_a0,
     )
 }
