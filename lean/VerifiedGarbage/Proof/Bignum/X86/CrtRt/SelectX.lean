@@ -207,6 +207,82 @@ theorem chunks_ok {t₁ : State} {W : Addr} {L x d N : Nat} (hw : Ws t₁ W L) {
       show x + 4 * (4 * j) = x + 16 * j by omega_arith, Lo, Hi, V, Xs, Ds]
     cases k <;> rfl
 
+section
+open VG.Proof.Bignum.X86.PublicRt
+
+/-- `selectLoop_ok`, with `ebp` past the source. -/
+theorem selectLoopP_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {x d N : Nat} (k : Bool) (hN : 0 < N)
+    (hx : x + 4 * N ≤ L) (hd : d + 4 * N ≤ L) (hdx : d + 4 * N ≤ x ∨ x + 4 * N ≤ d)
+    (hebp : PtrAt t₀ W .ebp x) (hebx : PtrAt t₀ W .ebx d)
+    (hedi : (t₀.gpr .edi).toNat = 4 * N) (hecx : t₀.gpr .ecx = cmask k) :
+    WP isa (.loop (.block [.mov .eax (.mem (at_ .ebx 0)), .mov .edx (.mem (at_ .ebp 0)),
+      .alu .xor .edx (.reg .eax), .alu .and .edx (.reg .ecx), .alu .xor .eax (.reg .edx),
+      .store (at_ .ebx 0) .eax, .alu .add .ebp (.imm 4), .alu .add .ebx (.imm 4),
+      .alu .sub .edi (.imm 4)]) .ne) t₀
+      fun u => Outside W d (4 * N) t₀.mem u.mem ∧
+        val32 u.mem W d N = (if k then val32 t₀.mem W x N else val32 t₀.mem W d N) ∧
+        PtrAt u W .ebx (d + 4 * N) ∧ PtrAt u W .ebp (x + 4 * N) ∧
+        Keeps [.eax, .ebx, .edx, .ebp, .edi] t₀ u := by
+  have hn := hw.nowrap
+  refine WP.mono (countLoop hN (fun j t => Keeps [.eax, .ebx, .edx, .ebp, .edi] t₀ t ∧
+      PtrAt t W .ebp (x + 4 * j) ∧ PtrAt t W .ebx (d + 4 * j) ∧ (t.gpr .edi).toNat = 4 * (N - j) ∧
+      Outside W d (4 * j) t₀.mem t.mem ∧
+      val32 t.mem W d j = (if k then val32 t₀.mem W x j else val32 t₀.mem W d j)) ?_
+    ⟨Keeps.refl _ _, by simpa using hebp, by simpa using hebx, by simpa using hedi, Outside.refl _ _ _ _,
+      by cases k <;> rfl⟩) fun u ⟨K, E, P, _, O, V⟩ => ⟨O, V, P, E, K⟩
+  rintro j t hj ⟨Kt, ebp, ebx, edi, O, V⟩
+  have ht := hw.of_keeps Kt
+  have ecx : t.gpr .ecx = cmask k := by rw [Kt.1 _ (by decide)]; exact hecx
+  have xw : w32 t.mem W (x + 4 * j) = w32 t₀.mem W (x + 4 * j) :=
+    O.w32 (by omega_using [hdx, hj]) (by omega_using [hx, hj, hn])
+  have dw : w32 t.mem W (d + 4 * j) = w32 t₀.mem W (d + 4 * j) :=
+    O.w32 (by omega_using []) (by omega_using [hd, hj, hn])
+  refine wp_movS (readSrc_ptr ht ebx (d := 0) (by omega_using [hd, hj])) fun s₁ u₁ _ => ?_
+  have ht₁ := ht.of_keeps u₁.keeps
+  have ebp₁ : PtrAt s₁ W .ebp (x + 4 * j) := by rw [PtrAt, u₁.other _ (by decide)]; exact ebp
+  refine wp_movS (readSrc_ptr ht₁ ebp₁ (d := 0) (by omega_using [hx, hj])) fun s₂ u₂ _ => ?_
+  refine wp_logicS (.inr rfl) rfl fun s₃ u₃ => ?_
+  refine wp_logicS (.inl rfl) rfl fun s₄ u₄ => ?_
+  refine wp_logicS (.inr rfl) rfl fun s₅ u₅ => ?_
+  have K₅ : Keeps [.eax, .edx] t s₅ :=
+    (((u₁.keeps.mono (by decide)).widen u₂.keeps).widen u₃.keeps |>.widen u₄.keeps).widen u₅.keeps
+  have ht₅ := ht.of_keeps K₅
+  have ebx₅ : PtrAt s₅ W .ebx (d + 4 * j) := by rw [PtrAt, K₅.1 _ (by decide)]; exact ebx
+  refine wp_storeS (ea_ptr ht₅ ebx₅ (d := 0) (by omega_using [hd, hj]))
+    (ws_write ht₅ (y := d + 4 * j + 0) (n := 4) (by omega_using [hd, hj])) fun s₆ m₆ => ?_
+  refine wp_addS rfl fun s₇ u₇ _ => wp_addS rfl fun s₈ u₈ _ => wp_subZ rfl fun s₉ u₉ z₉ => WP.block_nil ?_
+  obtain ⟨c₁, c₂⟩ := count_zf edi hj
+  have r₆ : ∀ r, r = .ebp ∨ r = .ebx ∨ r = .edi → s₆.gpr r = t.gpr r := by
+    intro r hr; rw [m₆.gpr]; apply K₅.1; rcases hr with rfl | rfl | rfl <;> decide
+  have mem₅ : s₅.mem = t.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  have ecx₃ : s₃.gpr .ecx = t.gpr .ecx := by
+    rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
+  have eax₅ : s₅.gpr .eax = t.mem.readW (off W (d + 4 * j)) 32 ^^^
+      ((t.mem.readW (off W (x + 4 * j)) 32 ^^^ t.mem.readW (off W (d + 4 * j)) 32) &&&
+        (if k then BitVec.allOnes 32 else 0)) := by
+    rw [u₅.gpr, u₄.other _ (by decide), u₄.gpr, ecx₃, ecx, u₃.other _ (by decide), u₃.gpr,
+      u₂.other _ (by decide), u₂.gpr, u₁.gpr, u₁.mem, Nat.add_zero, Nat.add_zero]
+    rfl
+  rw [select_val] at eax₅
+  refine ⟨⟨Kt.trans ((((K₅.mono (by decide)).widen (m₆.keeps [])).widen u₇.keeps |>.widen u₈.keeps).widen u₉.keeps),
+    ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  · rw [PtrAt, u₉.other _ (by decide), u₈.other _ (by decide), u₇.gpr, r₆ _ (.inl rfl)]; exact ptr4 ebp
+  · rw [PtrAt, u₉.other _ (by decide), u₈.gpr, u₇.other _ (by decide), r₆ _ (.inr (.inl rfl))]; exact ptr4 ebx
+  · rw [u₉.gpr, u₈.other _ (by decide), u₇.other _ (by decide), r₆ _ (.inr (.inr rfl))]; exact c₁
+  · rw [u₉.mem, u₈.mem, u₇.mem, m₆.mem, mem₅, Nat.add_zero]
+    exact (O.mono (Nat.le_refl _) (by omega_using [])).trans
+      ((writeW32_outside _ _ _ (by omega_using [hd, hj, hn])).mono (by omega_using []) (by omega_using []))
+  · rw [u₉.mem, u₈.mem, u₇.mem, m₆.mem, mem₅, Nat.add_zero, val32_store hn (by omega_using [hd, hj]), V, eax₅,
+      val32_succ t₀.mem W x, val32_succ t₀.mem W d]
+    have xw' : (t.mem.readW (off W (x + 4 * j)) 32).toNat = w32 t₀.mem W (x + 4 * j) := xw
+    have dw' : (t.mem.readW (off W (d + 4 * j)) 32).toNat = w32 t₀.mem W (d + 4 * j) := dw
+    cases k
+    · simp only [Bool.false_eq_true, ite_false, dw']
+    · simp only [ite_true, xw']
+  · rw [z₉, u₈.other _ (by decide), u₇.other _ (by decide), r₆ _ (.inr (.inr rfl)), c₂]
+
+end
+
 /-- `selectLoopX` does what `selectLoop` does, for at least four words. -/
 theorem selectLoopX_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {x d N : Nat} (k : Bool)
     (hN : 4 ≤ N) (hx : x + 4 * N ≤ L) (hd : d + 4 * N ≤ L) (hdx : d + 4 * N ≤ x ∨ x + 4 * N ≤ d)
@@ -215,7 +291,8 @@ theorem selectLoopX_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {x
     WP isa selectLoopX t₀ fun u =>
       Outside W d (4 * N) t₀.mem u.mem ∧
         val32 u.mem W d N = (if k then val32 t₀.mem W x N else val32 t₀.mem W d N) ∧
-        PtrAt u W .ebx (d + 4 * N) ∧ Keeps [.eax, .ebx, .edx, .ebp, .edi] t₀ u := by
+        PtrAt u W .ebx (d + 4 * N) ∧ PtrAt u W .ebp (x + 4 * N) ∧
+        Keeps [.eax, .ebx, .edx, .ebp, .edi] t₀ u := by
   have hn := hw.nowrap
   unfold selectLoopX
   refine WP.seq (wp_movS rfl fun s₁ u₁ _ => PublicRt.wp_shr (by decide) fun s₂ u₂ => ?_)
@@ -262,7 +339,8 @@ theorem selectLoopX_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {x
       fun _ => WP.block_nil ?_
     have e : 4 * (N / 4) = N := by omega_arith
     refine ⟨by rw [a₂.mem]; exact O.mono (Nat.le_refl _) (by omega_arith), by rw [a₂.mem, ← e]; exact V,
-      by rw [show d + 4 * N = d + 16 * (N / 4) by omega_arith]; exact pb₂, K₂⟩
+      by rw [show d + 4 * N = d + 16 * (N / 4) by omega_arith]; exact pb₂,
+      by rw [PtrAt, a₂.other _ (by decide), show x + 4 * N = x + 16 * (N / 4) by omega_arith]; exact pe, K₂⟩
   · have z : (t.gpr .edi &&& 15 == 0) = false := by
       rw [beq_eq_false_iff_ne]; intro h
       have := congrArg BitVec.toNat h
@@ -270,14 +348,14 @@ theorem selectLoopX_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {x
       exact r4 (by simp at this; omega_arith)
     refine WP.ite true (by change t₂.zf.map (!·) = _; rw [z₂, z]; rfl) (fun _ => ?_) fun e => nomatch e
     have ws₂ : Ws t₂ W L := ⟨by rw [a₂.wr, wrt]; exact hw.wr, hn⟩
-    refine WP.mono (selectLoop_ok ws₂ (x := x + 16 * (N / 4)) (d := d + 16 * (N / 4)) (N := N % 4) k
+    refine WP.mono (selectLoopP_ok ws₂ (x := x + 16 * (N / 4)) (d := d + 16 * (N / 4)) (N := N % 4) k
       (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
       (by rw [PtrAt, a₂.other _ (by decide)]; exact pe) pb₂ (by rw [a₂.gpr]; exact e15)
       (by rw [g₂ _ (by decide) (by decide) (by decide) (by decide)]; exact hecx))
-      fun u ⟨O', V', P', K'⟩ => ?_
+      fun u ⟨O', V', P', E', K'⟩ => ?_
     rw [a₂.mem] at O' V'
     have hN4 : N = 4 * (N / 4) + N % 4 := by omega_arith
-    refine ⟨?_, ?_, ?_, K₂.trans K'⟩
+    refine ⟨?_, ?_, ?_, ?_, K₂.trans K'⟩
     · exact (O.mono (Nat.le_refl _) (by omega_arith)).trans (O'.mono (by omega_arith) (by omega_arith))
     · have Lo : val32 u.mem W d (4 * (N / 4)) = val32 t.mem W d (4 * (N / 4)) :=
         O'.val32 (.inl (by omega_arith)) (by omega_arith)
@@ -290,5 +368,6 @@ theorem selectLoopX_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {x
         show x + 4 * (4 * (N / 4)) = x + 16 * (N / 4) by omega_arith, Lo, V, V', Xs, Ds]
       cases k <;> rfl
     · rw [show d + 4 * N = d + 16 * (N / 4) + 4 * (N % 4) by omega_arith]; exact P'
+    · rw [show x + 4 * N = x + 16 * (N / 4) + 4 * (N % 4) by omega_arith]; exact E'
 
 end VG.Proof.Bignum.X86.CrtRt

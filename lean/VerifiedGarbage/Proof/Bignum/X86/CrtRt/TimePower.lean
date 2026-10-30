@@ -185,9 +185,9 @@ abbrev wideHead (f e : Nat) : List (Prog isa) :=
   [copy (.slot .wide f) (.slot .wide 0) (one .wide), copy (.slot .wide 15) (.slot .wide 5) (one .wide),
     copy (.slot .wide e) (.slot .wide 8) (one .wide)]
 
-/-- The comparison of the factor's length with half the width. -/
-abbrev powerTest (l : Nat) : List Instr :=
-  [.mov .eax (.mem (argAt 0 l))] ++ widthC 0 .half .edx ++ [.alu .add .edx (.imm 1), .alu .cmp .eax (.reg .edx)]
+/-- The comparison of the factor's length (the header word at `lenOff`) with half the width. -/
+abbrev powerTest : List Instr :=
+  [.mov .eax (.mem (sc lenOff))] ++ widthC 0 .half .edx ++ [.alu .add .edx (.imm 1), .alu .cmp .eax (.reg .edx)]
 
 theorem narrowPower_eq (f e o : Nat) : narrowPower f e o = Prog.chain (reduceHead f)
     (.seq (prepare .wide) (.seq (CrtRt.mul .wide 5 5 4) (.seq (CrtRt.mul .wide 5 5 3)
@@ -197,13 +197,13 @@ theorem widePower_eq (f e o : Nat) : widePower f e o = Prog.chain (wideHead f e)
     (.seq (prepare .wide) (.seq (windowPower .wide) (saveResult .wide o))) := rfl
 
 /-- The taint checks of a factor's power. -/
-structure PowChecks (f e o l : Nat) : Prop where
+structure PowChecks (f e o : Nat) : Prop where
   head : ACheck (Prog.chain (reduceHead f) (.block []))
   mid : ACheck (Prog.chain (narrowMid f e o) (.block []))
   wide : ACheck (Prog.chain (wideHead f e) (.block []))
   saveH : ACheck (saveResult .half o)
   saveW : ACheck (saveResult .wide o)
-  test : ACheck (.block (powerTest l))
+  test : ACheck (.block powerTest)
   m554 : MulCheck .wide 5 5 4
   m553 : MulCheck .wide 5 5 3
 
@@ -238,13 +238,16 @@ theorem narrowMid_run {f e o : Nat} (hf9 : 9 ≤ f) (hf : f ≤ 15) (he9 : 9 ≤
   refine narrowCopies_ok R₁.1 hf9 hf he9 he ho16 ho rfl rfl rfl fun u₄ h₄ _ _ _ _ K₄ => ?_
   exact WP.block_nil ⟨h₄, R₁.2.1.keep K₄, (K₄.1 _ (by decide)).trans R₁.2.2⟩
 
-theorem powerTest_run {l : Nat} (hl : l < 18) (R : Run Ex base bytes len args sp s) :
-    WP isa (.block (powerTest l)) s fun u => Run Ex base bytes len args sp u ∧
-      isa.eval .b u = some (decide ((args l).toNat < bc len .half + 1)) := by
+theorem powerTest_run {W : Nat} (R : Run Ex base bytes len args sp s) (hW : w32 s.mem base lenOff = W) :
+    WP isa (.block powerTest) s fun u => Run Ex base bytes len args sp u ∧
+      isa.eval .b u = some (decide (W < bc len .half + 1)) := by
   have h := R.1
   have hb := bc_le h.upper' .half
+  have f0 := h.slot_fit .half (j := 0) (by decide)
+  have lo0 : numBase ≤ lo len (.slot .half 0) := by simp [lo]
   simp only [powerTest, List.cons_append]
-  refine wp_movS (h.arg hl) fun u₁ a₁ _ => ?_
+  refine wp_movS (readSrc_sc h.scratch (d := lenOff) (by simp only [lenOff, numBase] at *; omega_arith))
+    fun u₁ a₁ _ => ?_
   have h₁ := h.regs a₁.keeps a₁.mem
   refine widthC_ok (k := 0) (c := .half) (r := .edx) h₁.width h.upper' fun u₂ K₂ m₂ e₂ => ?_
   refine wp_addS rfl fun u₃ a₃ _ => wp_cmpC rfl fun u₄ f₄ c₄ => WP.block_nil ?_
@@ -252,14 +255,14 @@ theorem powerTest_run {l : Nat} (hl : l < 18) (R : Run Ex base bytes len args sp
     (((a₁.keeps.mono (by decide)).trans (K₂.mono (by decide))).trans (a₃.keeps.mono (by decide))).trans
       (f₄.keeps _)
   have m₄ : u₄.mem = s.mem := by rw [f₄.mem, a₃.mem, m₂, a₁.mem]
-  have eax : u₃.gpr .eax = args l := by rw [a₃.other _ (by decide), K₂.1 _ (by decide), a₁.gpr]
+  have eax : (u₃.gpr .eax).toNat = W := by rw [a₃.other _ (by decide), K₂.1 _ (by decide), a₁.gpr]; exact hW
   have edx : (u₃.gpr .edx).toNat = bc len .half + 1 := by
     rw [a₃.gpr, e₂, BitVec.toNat_add, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]
     omega_arith
   rw [eax, edx] at c₄
   exact ⟨R.keep K₄ (by rw [m₄]; exact Outside.refl _ _ _ _), c₄⟩
 
-theorem narrowPower_relCT {f e o l : Nat} (hc : PowChecks f e o l) (hf9 : 9 ≤ f) (hf : f ≤ 15) (he9 : 9 ≤ e)
+theorem narrowPower_relCT {f e o : Nat} (hc : PowChecks f e o) (hf9 : 9 ≤ f) (hf : f ≤ 15) (he9 : 9 ≤ e)
     (he : e ≤ 15) (ho16 : 16 ≤ o) (ho : o ≤ 17) :
     RelCT isa (Both (Run Ex base bytes len args sp)) (narrowPower f e o) (Both (Run Ex base bytes len args sp)) := by
   rw [narrowPower_eq]
@@ -276,7 +279,7 @@ theorem narrowPower_relCT {f e o l : Nat} (hc : PowChecks f e o l) (hf9 : 9 ≤ 
   refine VG.RelCT.seq (windowPower_relCT (winChecks .half)) ?_
   exact taint_both (fun _ _ W₁ W₂ => W₁.agree W₂) _ hc.saveH fun _ W => saveResult_run (by omega_arith) (by omega_arith) W
 
-theorem widePower_relCT {f e o l : Nat} (hc : PowChecks f e o l) (hf9 : 9 ≤ f) (hf : f ≤ 15) (he9 : 9 ≤ e)
+theorem widePower_relCT {f e o : Nat} (hc : PowChecks f e o) (hf9 : 9 ≤ f) (hf : f ≤ 15) (he9 : 9 ≤ e)
     (he : e ≤ 15) (ho16 : 16 ≤ o) (ho : o ≤ 17) :
     RelCT isa (Both (Run Ex base bytes len args sp)) (widePower f e o) (Both (Run Ex base bytes len args sp)) := by
   rw [widePower_eq]
@@ -286,11 +289,14 @@ theorem widePower_relCT {f e o l : Nat} (hc : PowChecks f e o l) (hf9 : 9 ≤ f)
   refine VG.RelCT.seq (windowPower_relCT (winChecks .wide)) ?_
   exact taint_both (fun _ _ W₁ W₂ => W₁.agree W₂) _ hc.saveW fun _ W => saveResult_run (by omega_arith) (by omega_arith) W
 
-theorem power_relCT {f e o l : Nat} (hc : PowChecks f e o l) (hf9 : 9 ≤ f) (hf : f ≤ 15) (he9 : 9 ≤ e)
-    (he : e ≤ 15) (ho16 : 16 ≤ o) (ho : o ≤ 17) (hl : l < 18) :
-    RelCT isa (Both (Run Ex base bytes len args sp)) (power f e o l) (Both (Run Ex base bytes len args sp)) := by
+/-- A factor's power, from runs whose factors' lengths (the header word at `lenOff`) agree. -/
+theorem power_relCT {f e o : Nat} (hc : PowChecks f e o) (hf9 : 9 ≤ f) (hf : f ≤ 15) (he9 : 9 ≤ e)
+    (he : e ≤ 15) (ho16 : 16 ≤ o) (ho : o ≤ 17) :
+    RelCT isa (fun s₁ s₂ => ∃ W, Both (fun s => Run Ex base bytes len args sp s ∧ w32 s.mem base lenOff = W) s₁ s₂)
+      (power f e o) (Both (Run Ex base bytes len args sp)) := by
+  refine VG.RelCT.exists_ fun W => ?_
   unfold power
-  refine VG.RelCT.seq (taint_both (fun _ _ R₁ R₂ => R₁.agree R₂) _ hc.test fun _ R => powerTest_run hl R) ?_
+  refine VG.RelCT.seq (taint_both (fun _ _ R₁ R₂ => R₁.1.agree R₂.1) _ hc.test fun _ R => powerTest_run R.1 R.2) ?_
   refine VG.RelCT.ite (fun _ _ h => h.1.2.trans h.2.2.symm)
     ((narrowPower_relCT hc hf9 hf he9 he ho16 ho).mono (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h)
     ((widePower_relCT hc hf9 hf he9 he ho16 ho).mono (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h)
