@@ -44,8 +44,9 @@ Everything is secret in key generation and signing but what the contracts
 declare they may leak (`Sig.contract`'s `leak`): `ρ`, the seed of the matrix
 `Â`, which is part of the public key; in key generation, which half-bytes
 `RejBoundedPoly` rejects (`rejBoundedLeak`); and in signing, the number of
-iterations of the rejection sampling loop and the commitment hash `c̃` of
-each, and the hint of the signature (`signLeak`), which `vg_mldsa*_sign_message` leaks for
+iterations of the rejection sampling loop, the commitment hash `c̃` of
+each and which validity check rejected it, and the hint of the signature
+(`signLeak`), which `vg_mldsa*_sign_message` leaks for
 the `μ` it computes (`signMessageLeak`): the contents of the message and the
 context string are secret, as `μ` is, and only their lengths are public.
 Verification's inputs are all public, and it may leak them. The working
@@ -111,28 +112,52 @@ def keyGenContract (p : Params) {M : ISA} (A : Abi M) (stack : Nat := 0) : Contr
 
 /-! ## Signing -/
 
+/-- The first of the validity checks of Algorithm 7 that rejects the
+iteration with counter `κ`, in the order of lines 23 and 28: 0 if
+`‖z‖∞ ≥ γ₁ - β`, 2 if `‖r₀‖∞ ≥ γ₂ - β`, 3 if `‖⟨⟨ct₀⟩⟩‖∞ ≥ γ₂`, and 4 if the
+hint has more than `ω` 1s (as `signIteration` computes them). It is what
+an implementation that stops an iteration at the first check that fails,
+and computes only what that check needs, reveals of a rejected iteration,
+as the reference implementation of CRYSTALS-Dilithium does. (Its value for
+an iteration that passes, or whose `SampleInBall` does not finish, is not
+used.) -/
+def signRejectTag (p : Params) (b : Bounds) (Â : List (List Poly)) (ŝ₁ ŝ₂ t₀Hat : List Poly)
+    (μ ρ'' : List Byte) (κ : Nat) : Nat :=
+  let (y, w, ctilde) := signCommit p Â μ ρ'' κ
+  match sampleInBall p.τ b.ball ctilde with
+  | none => 0
+  | some c =>
+    let ĉ := ntt (toRq c)
+    let z := addVec (y.map toRq) (ŝ₁.map fun s => nttInv (multiplyNTT ĉ s))
+    let r₀ := (subVec w (ŝ₂.map fun s => nttInv (multiplyNTT ĉ s))).map fun ri => ri.map (lowBits p.γ₂)
+    if normRq z ≥ p.γ₁ - p.β then 0
+    else if normR r₀ ≥ p.γ₂ - p.β then 2
+    else if normRq (t₀Hat.map fun t => nttInv (multiplyNTT ĉ t)) ≥ p.γ₂ then 3
+    else 4
+
 /-- What the signing loop may leak (lines 10–32 of Algorithm 7, as
 `signLoop`), from the counter `κ`, for at most `iters` more iterations: the
 commitment hash `c̃` of each iteration, each followed by how the iteration
-ended: 0 if its validity checks rejected it, and 1 then its hint `h` (as 0s
-and 1s, which the signature contains) if they passed; nothing if its
-`SampleInBall` did not finish. (The tags say where each iteration's leakage
-ends: without them, a hint of 0s and 1s would read as the `c̃`s of more
-iterations.) -/
+ended: which validity check rejected it (`signRejectTag`: 0, 2, 3 or 4) if
+one did, and 1 then its hint `h` (as 0s and 1s, which the signature
+contains) if they passed; nothing if its `SampleInBall` did not finish.
+(The tags say where each iteration's leakage ends: without them, a hint of
+0s and 1s would read as the `c̃`s of more iterations.) -/
 def signLeakLoop (p : Params) (b : Bounds) (Â : List (List Poly)) (ŝ₁ ŝ₂ t₀Hat : List Poly)
     (μ ρ'' : List Byte) : (iters κ : Nat) → List Nat
   | 0, _ => []
   | iters + 1, κ =>
     leakBytes (signCommit p Â μ ρ'' κ).2.2 ++
       match signIteration p b Â ŝ₁ ŝ₂ t₀Hat μ ρ'' κ with
-      | some (_, none) => 0 :: signLeakLoop p b Â ŝ₁ ŝ₂ t₀Hat μ ρ'' iters (κ + p.ℓ)
+      | some (_, none) =>
+        signRejectTag p b Â ŝ₁ ŝ₂ t₀Hat μ ρ'' κ :: signLeakLoop p b Â ŝ₁ ŝ₂ t₀Hat μ ρ'' iters (κ + p.ℓ)
       | some (_, some (_, h)) => 1 :: h.flatMap fun hi => hi.toList.map Bool.toNat
       | none => []
 
 /-- What `ML-DSA.Sign_internal(sk, M′, rnd)` with the message representative
 `μ` (`signMu`) may leak: `ρ`, and the commitment hash `c̃` of each iteration
-of the signing loop, whether it was rejected, and the hint of the signature
-(`signLeakLoop`), for
+of the signing loop, which check rejected it, if one did, and the hint of
+the signature (`signLeakLoop`), for
 loops bounded by `maxBounds`. The number of iterations, and their `c̃`
 (pseudorandom outputs of `H` on commitments that are never revealed),
 reveal nothing about the private key. -/
@@ -315,9 +340,9 @@ def signApi (p : Params) (module name : String) : Api where
     outcomeDoc ++ "\n\n\
     Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection \
     sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the \
-    number of iterations of the signing loop and the commitment hash of each, and on the hint \
-    of the signature (`signLeak`), but not on anything else of the key, the message \
-    representative or the randomness."
+    number of iterations of the signing loop, the commitment hash of each and which validity \
+    check rejected it, and on the hint of the signature (`signLeak`), but not on anything else \
+    of the key, the message representative or the randomness."
   safety := [
     "`sk` must have been written by `" ++ s!"vg_{module}_keygen" ++ "`.",
     "`rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic \
@@ -360,8 +385,9 @@ def signMessageApi (p : Params) (module name : String) : Api where
     contextDoc ++ ": `*sig` is then unspecified." ++ "\n\n\
     Contract: `VG.Spec.MlDsa.signMessageContract`. Constant time but for `ρ` and the rejection \
     sampling: timing may depend on the pointers, on `msg_len` and `ctx_len`, on `ρ` (the first \
-    32 bytes of `*sk`), on the number of iterations of the signing loop and the commitment \
-    hash of each, and on the hint of the signature (`signMessageLeak`), but not on anything \
+    32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash \
+    of each and which validity check rejected it, and on the hint of the signature \
+    (`signMessageLeak`), but not on anything \
     else of the key, the message, the context string or the randomness."
   safety := [
     "`sk` must have been written by `" ++ s!"vg_{module}_keygen" ++ "`.",

@@ -23,7 +23,7 @@ of signature verification, in each such test group, the first vector of
 each reason a signature is valid or not. The contracts' leakage functions
 are checked on the same vectors: signing's (`signLeak`) starts with `ρ` and
 ends with the hint of the signature, each iteration's `c̃` tagged with
-whether it was rejected. HashML-DSA has no spec, so its
+the check that rejected it, if one did. HashML-DSA has no spec, so its
 test groups are skipped. (Only these are checked here; the Rust tests run
 the implementation on every vector.)
 -/
@@ -57,7 +57,8 @@ private def leakLoopCached (p : Params) (b : Bounds) (a : List (List Poly))
   | 0, _ => []
   | iters + 1, k =>
     match signIteration p b a s1 s2 t0 mu rho k with
-    | some (ct, none) => leakBytes ct ++ 0 :: leakLoopCached p b a s1 s2 t0 mu rho iters (k + p.ℓ)
+    | some (ct, none) =>
+      leakBytes ct ++ signRejectTag p b a s1 s2 t0 mu rho k :: leakLoopCached p b a s1 s2 t0 mu rho iters (k + p.ℓ)
     | some (ct, some (_, h)) => leakBytes ct ++ 1 :: h.flatMap (fun hi => hi.toList.map Bool.toNat)
     | none => leakBytes (signCommit p a mu rho k).2.2
 
@@ -110,7 +111,8 @@ private theorem iteration_mono (p : Params) (a : List (List Poly))
 
 private abbrev SignedParts := List Byte × List Poly × List (Vector Bool n)
 
-/-- Record the exact leakage while finding the first accepted signature. -/
+/-- Record the exact leakage while finding the first accepted signature
+(each rejection's tag as the contract's bounds compute it). -/
 private def traceLoop (p : Params) (b : Bounds) (a : List (List Poly))
     (s1 s2 t0 : List Poly) (mu rho : List Byte) : Nat → Nat → Option (SignedParts × List Nat)
   | 0, _ => none
@@ -120,7 +122,7 @@ private def traceLoop (p : Params) (b : Bounds) (a : List (List Poly))
       return ((ct, z, h), leakBytes ct ++ 1 :: h.flatMap (fun hi => hi.toList.map Bool.toNat))
     | (ct, none) =>
       let (sig, leak) ← traceLoop p b a s1 s2 t0 mu rho iters (k + p.ℓ)
-      return (sig, leakBytes ct ++ 0 :: leak)
+      return (sig, leakBytes ct ++ signRejectTag p maxBounds a s1 s2 t0 mu rho k :: leak)
 
 private theorem traceLoop_sig (p : Params) (b : Bounds) (a : List (List Poly))
     (s1 s2 t0 : List Poly) (mu rho : List Byte) (iters k : Nat) :
@@ -335,14 +337,15 @@ def check (name : String) : CommandElabM Unit := do
     -- What the contract lets signing leak ends with the hint of the signature.
     let some h := (sigDecode g.params σ).2.2 | throw "the signature's hint is malformed"
 
-    -- `ρ`, then each iteration's `c̃` and 0 (rejected), then the last one's
-    -- `c̃`, 1 and hint.
+    -- `ρ`, then each iteration's `c̃` and the check that rejected it (0, 2, 3
+    -- or 4), then the last one's `c̃`, 1 and hint.
     let hint := h.flatMap (·.toList.map Bool.toNat)
     let iters := (leak.length - 32 - hint.length) / (g.params.ctildeLen + 1)
     unless leak.take 32 == leakBytes (sk.take 32) && leak.drop (leak.length - hint.length) == hint &&
         32 + iters * (g.params.ctildeLen + 1) + hint.length == leak.length &&
         (List.range iters).all (fun i =>
-          leak.getD (32 + (i + 1) * (g.params.ctildeLen + 1) - 1) 2 == if i + 1 = iters then 1 else 0) do
+          let tag := leak.getD (32 + (i + 1) * (g.params.ctildeLen + 1) - 1) 1
+          if i + 1 = iters then tag == 1 else tag ∈ [0, 2, 3, 4]) do
       throw "signLeak is wrong"
   checkGroups name "ML-DSA-sigVer-FIPS204" fun g => do
     if g.preHash == "preHash" then return
