@@ -24,6 +24,9 @@ meta import VerifiedGarbage.Proof.Sm4.X86.Lit
 meta import VerifiedGarbage.Impl.Sm4.X86.Prepared
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Sm4.X86.LayersLit
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # SM4's prepared round keys and batches on x86 (32-bit) meet their contracts
@@ -181,7 +184,7 @@ theorem prepTaint_agree {s₁ s₂ : State} (h₁ : prepX86.pre s₁) (h₂ : pr
 
 theorem prep_ct : ConstantTime isa prepX86.pre prepX86.pub prepareKeys :=
   VG.Taint.constantTime (A := VG.X86.taint) prepTaint (fun _ _ h₁ h₂ hp => prepTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+    (by native_taint_decide)
 
 /-- Memory holding the arguments `0x1000, 0, 0x4000, 179` at `0x8004`. -/
 def prepSat : State where
@@ -311,7 +314,7 @@ theorem cryptTaint_agree {s₁ s₂ : State} (h₁ : cryptX86.pre s₁) (h₂ : 
 
 theorem crypt_ct : ConstantTime isa cryptX86.pre cryptX86.pub cryptPrepared :=
   VG.Taint.constantTime (A := VG.X86.taint) cryptTaint (fun _ _ h₁ h₂ hp => cryptTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+    (by native_taint_decide)
 
 /-- Round keys of zeros, whose planes are zeros. -/
 def zeroSchedule : Spec.Sm4.Schedule := Vector.replicate 32 0

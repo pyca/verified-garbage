@@ -14,6 +14,9 @@ import VerifiedGarbage.Proof.AesGcm.X86.Loops
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
 meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # AES-GCM on x86: `vg_aes_gcm_open`
@@ -191,8 +194,8 @@ theorem open_pc (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) :
   rw [open_eq]
   -- The entry.
   refine Pc.seq (Pc.mono (oneEntry_pc 11 10 rfl (by decide) [(8, tpO), (9, tglO)] (by decide) (by decide) (by simp)
-    (fun s₀ => openPre s₀ ∧ (openRes s₀).isSome = q.2) (fun _ h => op_of_open h.1) q.1 G (by taint_decide)
-    (by taint_decide))
+    (fun s₀ => openPre s₀ ∧ (openRes s₀).isSome = q.2) (fun _ h => op_of_open h.1) q.1 G (by native_taint_decide)
+    (by native_taint_decide))
     (fun s₀ s ⟨h₁, hq, hs⟩ => ⟨⟨h₁, by rw [← hq]⟩, by rw [← hq], hs⟩) (fun _ _ h => h)) ?_
   -- The tag length.
   refine Pc.seq (Q := fun s₀ s => OEnt q.1 s₀ s ∧
@@ -211,7 +214,7 @@ theorem open_pc (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) :
   · have hf : ok = false := by simpa using hb
     refine Pc.taint [.ebp] (fun s₀ s ⟨h, _, hx, _⟩ => WP.of_runBlock ⟨_, by xrun [], ?_⟩)
       (fun _ _ s₁ s₂ ⟨h₁, _⟩ ⟨h₂, _⟩ r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; rw [h₁.o.env.ebp, h₂.o.env.ebp]) (by taint_decide)
+        simp only [List.mem_singleton] at hr; subst hr; rw [h₁.o.env.ebp, h₂.o.env.ebp]) (by native_taint_decide)
     refine ⟨h.o.frame G (by mems []; exact Frame.refl _ _) (by regs []) (by regs []) (by regs []) (by mems [])
       (by mems []), hx, ?_⟩
     simp only [PostO, oRes_bad (show Spec.Gcm.tagLenOk (q.1.2 9).toNat = false by rw [hok, hf])]
@@ -271,7 +274,7 @@ theorem open_pc (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) :
     (fun _ _ s₁ s₂ ⟨_, ⟨_, ⟨_, _, ⟨o₁, _⟩, _⟩, _, _, e₁, _⟩, _, _, e₁', _⟩
       ⟨_, ⟨_, ⟨_, _, ⟨o₂, _⟩, _⟩, _, _, e₂, _⟩, _, _, e₂', _⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [e₁', e₁, e₂', e₂, o₁.env.ebp, o₂.env.ebp])
-    (by taint_decide)) ?_
+    (by native_taint_decide)) ?_
   · obtain ⟨s₄, ⟨s₃, ⟨s₂, ⟨sA, ⟨hE, _, hx, _⟩, ⟨ha, fA⟩, _⟩, ⟨o₃, ht, fT⟩, _⟩,
       ⟨b₄, f₄, bp₄, si₄, sp₄, rd₄, wr₄⟩⟩, ⟨a₅, f₅, bp₅, si₅, sp₅, rd₅, wr₅⟩⟩ := hk
     have fo₄ : Frame (oF q.1) s₃.mem s₄.mem := f₄.sub fun r hr => by
@@ -353,7 +356,7 @@ theorem open_pc (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) :
     · rw [hd, h.data, ht, Proof.Gcm.gctr_eq]; rfl
   -- The result.
   refine Pc.taint [.ebp] (fun s₀ s h => ?_) (fun _ _ s₁ s₂ h₁ h₂ r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; rw [h₁.o.env.ebp, h₂.o.env.ebp]) (by taint_decide)
+      simp only [List.mem_singleton] at hr; subst hr; rw [h₁.o.env.ebp, h₂.o.env.ebp]) (by native_taint_decide)
   have aR := h.o.env.wIn' (d := auxO) (n := 4) (by decide)
   have hv := h.aux
   rw [slotv_eq] at hv
@@ -376,7 +379,7 @@ theorem open_pc (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) :
     exact ⟨by regs []; rfl, by mems []; simpa using this⟩
   -- The exit.
   refine Pc.taint [.ebp] (fun s₀ s ⟨o, hx, hpost⟩ => ?_) (fun _ _ s₁ s₂ ⟨o₁, _⟩ ⟨o₂, _⟩ r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; rw [o₁.env.ebp, o₂.env.ebp]) (by taint_decide)
+      simp only [List.mem_singleton] at hr; subst hr; rw [o₁.env.ebp, o₂.env.ebp]) (by native_taint_decide)
   have esp := pubSw_esp hx.pub
   refine WP.mono (exit_ok o.env.ebp (by rw [o.env.esp, esp]) (covers_left o.env.wW) L.fw o.saved
     (by rw [esp]; exact o.ret)) fun s' ⟨abi, m', ax, _, _⟩ => ⟨abi, ?_⟩
