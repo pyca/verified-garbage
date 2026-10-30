@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Rc4.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # RC4 with its working space as an argument
@@ -94,7 +95,7 @@ theorem initPost_local : ∀ vs m₁ m₂ m' r, vs.length = (initSig.words pb).l
     Curry.apply (initSig.words pb) (initPost pb) vs m₁ m' r →
       Curry.apply (initSig.words pb) (initPost pb) vs m₂ m' r
   | [key, kl, _], m₁, m₂, m', r, _, hb, h => by
-    simp only [initSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    simp only [initSig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq, Elem.size, Nat.mul_one] at hb
     have hk := agree_of hb.1
     change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (initPost pb) _ m₁ m' r at h
@@ -110,7 +111,7 @@ theorem initPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (initSig.words pb)
     Curry.apply (initSig.words pb) (initPost pb) vs m m₁ r →
       Curry.apply (initSig.words pb) (initPost pb) vs m m₂ r
   | [_, _, ctx], m, m₁, m₂, r, _, hb, h => by
-    simp only [initSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    simp only [initSig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq, Elem.size, Nat.mul_one] at hb
     have hc := agree_of hb.2
     change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (initPost pb) _ m m₁ r at h
@@ -126,7 +127,7 @@ theorem applyPost_local : ∀ vs m₁ m₂ m' r, vs.length = (applySig.words pb)
     Curry.apply (applySig.words pb) (applyPost pb) vs m₁ m' r →
       Curry.apply (applySig.words pb) (applyPost pb) vs m₂ m' r
   | [ctx, data, len], m₁, m₂, m', r, _, hb, h => by
-    simp only [applySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    simp only [applySig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq, Elem.size, Nat.mul_one] at hb
     have hc := agree_of hb.1
     have hd := agree_of hb.2
@@ -143,7 +144,7 @@ theorem applyPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (applySig.words p
     Curry.apply (applySig.words pb) (applyPost pb) vs m m₁ r →
       Curry.apply (applySig.words pb) (applyPost pb) vs m m₂ r
   | [ctx, data, len], m, m₁, m₂, r, _, hb, h => by
-    simp only [applySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    simp only [applySig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq, Elem.size, Nat.mul_one] at hb
     have hc := agree_of hb.1
     have hd := agree_of hb.2
@@ -162,7 +163,7 @@ theorem applyLeak_local : ∀ vs m₁ m₂, vs.length = (applySig.words pb).leng
     Curry.apply (applySig.words pb) (applyLeak pb) vs m₁ =
       Curry.apply (applySig.words pb) (applyLeak pb) vs m₂
   | [ctx, _, _], m₁, m₂, _, hb => by
-    simp only [applySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    simp only [applySig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq, Elem.size, Nat.mul_one] at hb
     change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int pb] (applyLeak pb) _ m₁ =
       Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int pb] (applyLeak pb) _ m₂

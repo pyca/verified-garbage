@@ -44,7 +44,7 @@ theorem ip_pre {t : Poly → Poly} {f w : BitVec 32} (g0 : x.gpr .r0 = f) (g1 : 
   -- Only the reserved stack depends on `stk`: split on it in those goals alone.
   all_goals first
     | with_reducible assumption
-    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+    | (rcases stk with _ | n <;> simp only [Sig.conj_nil, Sig.conj_single, Sig.conj_cons_cons, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
         | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
     | (have := State.sp _ |>.isLt; omega_arith)
@@ -83,7 +83,7 @@ theorem mul_pre (g0 : x.gpr .r0 = h) (g1 : x.gpr .r1 = f) (g2 : x.gpr .r2 = g)
   -- Only the reserved stack depends on `stk`: split on it in those goals alone.
   all_goals first
     | with_reducible assumption
-    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+    | (rcases stk with _ | n <;> simp only [Sig.conj_nil, Sig.conj_single, Sig.conj_cons_cons, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
         | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
     | (have := State.sp _ |>.isLt; omega_arith)
@@ -111,7 +111,7 @@ theorem mulAdd_pre (g0 : x.gpr .r0 = h) (g1 : x.gpr .r1 = f) (g2 : x.gpr .r2 = g
   -- Only the reserved stack depends on `stk`: split on it in those goals alone.
   all_goals first
     | with_reducible assumption
-    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+    | (rcases stk with _ | n <;> simp only [Sig.conj_nil, Sig.conj_single, Sig.conj_cons_cons, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
         | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
     | (have := State.sp _ |>.isLt; omega_arith)
@@ -154,7 +154,7 @@ theorem add_pre (g0 : x.gpr .r0 = f) (g1 : x.gpr .r1 = g) (hrd : x.rd = [regA g 
   -- Only the reserved stack depends on `stk`: split on it in those goals alone.
   all_goals first
     | with_reducible assumption
-    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+    | (rcases stk with _ | n <;> simp only [Sig.conj_nil, Sig.conj_single, Sig.conj_cons_cons, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
         | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
     | (have := State.sp _ |>.isLt; omega_arith)
@@ -185,7 +185,7 @@ theorem sub_pre (g0 : x.gpr .r0 = f) (g1 : x.gpr .r1 = g) (hrd : x.rd = [regA g 
   -- Only the reserved stack depends on `stk`: split on it in those goals alone.
   all_goals first
     | with_reducible assumption
-    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+    | (rcases stk with _ | n <;> simp only [Sig.conj_nil, Sig.conj_single, Sig.conj_cons_cons, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
         | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
     | (have := State.sp _ |>.isLt; omega_arith)
@@ -225,7 +225,7 @@ theorem rejNtt_pre (g0 : x.gpr .r0 = sd) (g1 : x.gpr .r1 = a) (g2 : x.gpr .r2 = 
   -- Only the reserved stack depends on `stk`: split on it in those goals alone.
   all_goals first
     | with_reducible assumption
-    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+    | (rcases stk with _ | n <;> simp only [Sig.conj_nil, Sig.conj_single, Sig.conj_cons_cons, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
         | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
     | (have := State.sp _ |>.isLt; omega_arith)
@@ -261,7 +261,7 @@ theorem rejBounded_pre (g0 : x.gpr .r0 = sd) (g1 : x.gpr .r1 = e) (g2 : x.gpr .r
   -- Only the reserved stack depends on `stk`: split on it in those goals alone.
   all_goals first
     | with_reducible assumption
-    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+    | (rcases stk with _ | n <;> simp only [Sig.conj_nil, Sig.conj_single, Sig.conj_cons_cons, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
         | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
     | (have := State.sp _ |>.isLt; omega_arith)
@@ -305,7 +305,7 @@ theorem p2r_pre (g0 : x.gpr .r0 = t) (g1 : x.gpr .r1 = t1) (g2 : x.gpr .r2 = t0)
   -- Only the reserved stack depends on `stk`: split on it in those goals alone.
   all_goals first
     | with_reducible assumption
-    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+    | (rcases stk with _ | n <;> simp only [Sig.conj_nil, Sig.conj_single, Sig.conj_cons_cons, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
         | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
     | (have := State.sp _ |>.isLt; omega_arith)
@@ -346,7 +346,7 @@ theorem sbp_pre (g0 : x.gpr .r0 = f) (g1 : x.gpr .r1 = b) (g2 : x.gpr .r2 = o) (
   -- Only the reserved stack depends on `stk`: split on it in those goals alone.
   all_goals first
     | with_reducible assumption
-    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+    | (rcases stk with _ | n <;> simp only [Sig.conj_nil, Sig.conj_single, Sig.conj_cons_cons, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
         | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
     | (have := State.sp _ |>.isLt; omega_arith)
@@ -384,7 +384,7 @@ theorem bp_pre (g0 : x.gpr .r0 = f) (g1 : x.gpr .r1 = a) (g2 : x.gpr .r2 = b) (g
   -- Only the reserved stack depends on `stk`: split on it in those goals alone.
   all_goals first
     | with_reducible assumption
-    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+    | (rcases stk with _ | n <;> simp only [Sig.conj_nil, Sig.conj_single, Sig.conj_cons_cons, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
         | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
     | (have := State.sp _ |>.isLt; omega_arith)
@@ -430,7 +430,7 @@ theorem ball_pre (g0 : x.gpr .r0 = ct) (g1 : x.gpr .r1 = len) (g2 : x.gpr .r2 = 
   -- Only the reserved stack depends on `stk`: split on it in those goals alone.
   all_goals first
     | with_reducible assumption
-    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+    | (rcases stk with _ | n <;> simp only [Sig.conj_nil, Sig.conj_single, Sig.conj_cons_cons, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
         | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
     | (have := State.sp _ |>.isLt; omega_arith)
@@ -475,7 +475,7 @@ theorem useHint_pre (g0 : x.gpr .r0 = h) (g1 : x.gpr .r1 = r) (gg : x.gpr .r2 = 
   -- Only the reserved stack depends on `stk`: split on it in those goals alone.
   all_goals first
     | with_reducible assumption
-    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+    | (rcases stk with _ | n <;> simp only [Sig.conj_nil, Sig.conj_single, Sig.conj_cons_cons, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
         | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
     | (have := State.sp _ |>.isLt; omega_arith)
@@ -519,7 +519,7 @@ theorem bu_pre (g0 : x.gpr .r0 = v) (g1 : x.gpr .r1 = len) (g2 : x.gpr .r2 = a) 
   -- Only the reserved stack depends on `stk`: split on it in those goals alone.
   all_goals first
     | with_reducible assumption
-    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+    | (rcases stk with _ | n <;> simp only [Sig.conj_nil, Sig.conj_single, Sig.conj_cons_cons, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
         | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
     | (have := State.sp _ |>.isLt; omega_arith)
@@ -553,7 +553,7 @@ theorem t1_pre (g0 : x.gpr .r0 = v) (g1 : x.gpr .r1 = f)
   -- Only the reserved stack depends on `stk`: split on it in those goals alone.
   all_goals first
     | with_reducible assumption
-    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+    | (rcases stk with _ | n <;> simp only [Sig.conj_nil, Sig.conj_single, Sig.conj_cons_cons, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
         | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
     | (have := State.sp _ |>.isLt; omega_arith)
@@ -598,7 +598,7 @@ theorem hbu_pre (g0 : x.gpr .r0 = yy) (g1 : x.gpr .r1 = len) (g2 : x.gpr .r2 = o
   -- Only the reserved stack depends on `stk`: split on it in those goals alone.
   all_goals first
     | with_reducible assumption
-    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+    | (rcases stk with _ | n <;> simp only [Sig.conj_nil, Sig.conj_single, Sig.conj_cons_cons, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
         | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
     | (have := State.sp _ |>.isLt; omega_arith)
@@ -639,7 +639,7 @@ theorem normLt_pre (g0 : x.gpr .r0 = f) (hrd : x.rd = [regA f 1024]) (hwr : x.wr
   -- Only the reserved stack depends on `stk`: split on it in those goals alone.
   all_goals first
     | with_reducible assumption
-    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+    | (rcases stk with _ | n <;> simp only [Sig.conj_nil, Sig.conj_single, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
         | with_reducible assumption | (have := State.sp _ |>.isLt; omega_arith) | omega_arith | skip)
     | (have := State.sp _ |>.isLt; omega_arith)

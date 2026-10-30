@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubFn
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PubMid
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # `vg_rsa_public_precomputed_checked` on PPC64LE: verified against the shared contract
@@ -24,7 +25,7 @@ open VG VG.PPC64LE VG.Impl.Bignum.PPC64LE.PublicChecked
 theorem stackArgs_two (s : State) : List.map (stackArg s) (List.range 2) = [stackArg s 0, stackArg s 1] := rfl
 
 theorem pairFacts_two (a b : Region) : Sig.conj (Sig.pairFacts [(a, true), (b, false)]) ↔ a.Disjoint b := by
-  simp [Sig.pairFacts, Sig.conj]
+  simp [Sig.pairFacts, Sig.conj_single]
 
 /-- A state meeting `fnContract.pre`: a 512-bit modulus, `out` at `0x1000`,
 `pre` at `0x2000`, `e` at `0x3000`, the input at `0x3100` and the working

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Blake2.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # BLAKE2's streaming postconditions read memory only within the buffers
@@ -45,7 +46,7 @@ theorem updateBPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (updat
     Curry.apply (updateBSig.words pb) (updateBPost pb) vs m₁ m' r →
       Curry.apply (updateBSig.words pb) (updateBPost pb) vs m₂ m' r
   | [st, ct, dt, ln], m₁, m₂, m', r, _, hb, h => by
-    simp only [updateBSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    simp only [updateBSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq] at hb
     have hs : ∀ i < 192, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
       (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_arith) (by omega_arith))).symm
@@ -67,7 +68,7 @@ theorem finalizeBPost_local (pb : Nat) :
       Curry.apply (finalizeBSig.words pb) (finalizeBPost pb) vs m₁ m' r →
         Curry.apply (finalizeBSig.words pb) (finalizeBPost pb) vs m₂ m' r
   | [st, ct, ot], m₁, m₂, m', r, _, hb, h => by
-    simp only [finalizeBSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    simp only [finalizeBSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq] at hb
     have hs : ∀ i < 192, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
       (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_arith) (by omega_arith))).symm
@@ -80,7 +81,7 @@ theorem updateSPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (updat
     Curry.apply (updateSSig.words pb) (updateSPost pb) vs m₁ m' r →
       Curry.apply (updateSSig.words pb) (updateSPost pb) vs m₂ m' r
   | [st, ct, dt, ln], m₁, m₂, m', r, _, hb, h => by
-    simp only [updateSSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    simp only [updateSSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq] at hb
     have hs : ∀ i < 96, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
       (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_arith) (by omega_arith))).symm
@@ -102,7 +103,7 @@ theorem finalizeSPost_local (pb : Nat) :
       Curry.apply (finalizeSSig.words pb) (finalizeSPost pb) vs m₁ m' r →
         Curry.apply (finalizeSSig.words pb) (finalizeSPost pb) vs m₂ m' r
   | [st, ct, ot], m₁, m₂, m', r, _, hb, h => by
-    simp only [finalizeSSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    simp only [finalizeSSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq] at hb
     have hs : ∀ i < 96, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
       (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega_arith) (by omega_arith))).symm

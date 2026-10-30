@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.MlDsa.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # ML-DSA on PPC64LE, `sign_message` and `verify_message`: the contracts, evaluated
@@ -137,7 +138,7 @@ theorem sign_pre {k m r g c : Addr} (g3 : x.gpr .r3 = k) (g4 : x.gpr .r4 = m) (g
   -- Only the reserved stack depends on `stk`: split on it in those goals alone.
   all_goals first
     | with_reducible assumption
-    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+    | (rcases stk with _ | n <;> simp only [Sig.conj_nil, Sig.conj_single, Sig.conj_cons_cons, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
         | with_reducible assumption | omega | skip)
     | omega
@@ -176,7 +177,7 @@ theorem verify_pre {k m g c : Addr} (g3 : x.gpr .r3 = k) (g4 : x.gpr .r4 = m) (g
   and_intros
   all_goals first
     | with_reducible assumption
-    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+    | (rcases stk with _ | n <;> simp only [Sig.conj_nil, Sig.conj_single, Sig.conj_cons_cons, List.map_cons, List.map_nil, List.flatten_cons,
         List.flatten_nil, List.append_nil] <;> and_intros <;> first
         | with_reducible assumption | omega | skip)
     | omega

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.VerifyFront
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # `vg_dsa_verify` on PPC64LE: the contract on the registers and the stack
@@ -19,7 +20,7 @@ open VG VG.PPC64LE VG.Impl.Dsa.PPC64LE
 theorem stackArgs_two (s : State) : List.map (stackArg s) (List.range 2) = [stackArg s 0, stackArg s 1] := rfl
 
 theorem pairFacts_two (a b : Region) : Sig.conj (Sig.pairFacts [(a, true), (b, false)]) ↔ a.Disjoint b := by
-  simp [Sig.pairFacts, Sig.conj]
+  simp [Sig.pairFacts, Sig.conj_single]
 
 /-- A state meeting `vContract.pre`: 1024-bit p and 160-bit q, the key at
 `0x1000`, the signature at `0x2000`, the digest at `0x3000` and the working

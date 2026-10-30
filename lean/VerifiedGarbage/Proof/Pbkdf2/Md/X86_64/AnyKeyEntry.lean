@@ -48,7 +48,7 @@ theorem initEntry_verified {I : Spec.Hmac.Instance} {short long : Prog isa} {n�
       Spec.Hmac.initPost, X86_64.abi, X86_64.argRegs]
     obtain ⟨m₁, rfl⟩ : ∃ m, n₁ = m + 1 := ⟨n₁ - 1, by omega⟩
     obtain ⟨m₂, rfl⟩ : ∃ m, n₂ = m + 1 := ⟨n₂ - 1, by omega⟩
-    simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil,
+    simp only [Sig.conj_single, Sig.conj_cons_cons, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil,
       List.append_nil] at hs ⊢
     obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, ⟨c0, c1, c2, c3⟩, n1, n2, n3⟩ := hs
     have sb := Offset.sub_below (s.gpr .rsp) (a := m₁ + 1) (n := m₁ + 1) (b := m₂ + 1) (m := m₂ + 1)

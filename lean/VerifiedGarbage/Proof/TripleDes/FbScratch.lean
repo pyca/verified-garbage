@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.TripleDes.CbcBlocks
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # Triple DES-OFB, -CFB64 and -CFB8 with their working space as an argument
@@ -123,7 +124,7 @@ theorem ofbPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (ofbSig.words pb).l
   obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [ofbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [ofbSig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hd := agree_of hb.2.2
   have hv := agree_of hb.2.1
@@ -148,7 +149,7 @@ theorem cfbEncPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (ofbSig.words pb
   obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [ofbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [ofbSig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hd := agree_of hb.2.2
   have hv := agree_of hb.2.1
@@ -173,7 +174,7 @@ theorem cfbDecPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (ofbSig.words pb
   obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [ofbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [ofbSig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hd := agree_of hb.2.2
   have hv := agree_of hb.2.1
@@ -198,7 +199,7 @@ theorem cfb8EncPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cfb8Sig.words 
   obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [cfb8Sig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [cfb8Sig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hd := agree_of hb.2.2
   have hv := agree_of hb.2.1
@@ -223,7 +224,7 @@ theorem cfb8DecPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cfb8Sig.words 
   obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [cfb8Sig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [cfb8Sig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hd := agree_of hb.2.2
   have hv := agree_of hb.2.1
@@ -248,7 +249,7 @@ theorem ofbPost_local : ∀ vs m₁ m₂ m' r, vs.length = (ofbSig.words pb).len
   obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [ofbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [ofbSig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hs := agree_of hb.1
   have hv := agree_of hb.2.1
@@ -274,7 +275,7 @@ theorem cfbEncPost_local : ∀ vs m₁ m₂ m' r, vs.length = (ofbSig.words pb).
   obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [ofbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [ofbSig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hs := agree_of hb.1
   have hv := agree_of hb.2.1
@@ -300,7 +301,7 @@ theorem cfbDecPost_local : ∀ vs m₁ m₂ m' r, vs.length = (ofbSig.words pb).
   obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [ofbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [ofbSig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hs := agree_of hb.1
   have hv := agree_of hb.2.1
@@ -326,7 +327,7 @@ theorem cfb8EncPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cfb8Sig.words pb
   obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [cfb8Sig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [cfb8Sig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hs := agree_of hb.1
   have hv := agree_of hb.2.1
@@ -352,7 +353,7 @@ theorem cfb8DecPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cfb8Sig.words pb
   obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [cfb8Sig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [cfb8Sig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hs := agree_of hb.1
   have hv := agree_of hb.2.1

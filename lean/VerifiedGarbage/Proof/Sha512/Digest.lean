@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MdStream.Prefix
 import Std.Data.DTreeMap.Internal.Operations
 import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # The truncated digests of the SHA-512 family, from the hash value in memory
@@ -135,7 +136,7 @@ theorem finalizeDigestPost_local (iv : Spec.Sha512.HashValue) (D : Nat) (digest 
   obtain ⟨ot, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [Spec.Sha512.finalizeDigestSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [Spec.Sha512.finalizeDigestSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq] at hb
   have hs : ∀ i < 192, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
     (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm

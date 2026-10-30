@@ -141,7 +141,7 @@ theorem preD_of {H G : Spec.Mgf1.Hash} {s : State}
   sig_pre [Spec.RsaOaep.decryptContract, Spec.RsaOaep.decryptSig, abi, argRegs,
     stackArgs_fifteen, List.append_eq] at h
   simp only [Sig.pairFacts, List.filterMap_cons, List.filterMap_nil, Bool.cond_true, Bool.cond_false,
-    Bool.true_or, Bool.false_or, List.cons_append, List.nil_append, Sig.conj, List.append_nil] at h
+    Bool.true_or, Bool.false_or, List.cons_append, List.nil_append, Sig.conj_single, Sig.conj_cons_cons, List.append_nil] at h
   obtain ⟨sp1, sp2, hrd, hwr, oml, on, ⟨oe, op, oq, odp, odq, oqi, ol, oct, os, oa, mln, mle, mlp, mlq, mldp, mldq,
     mlqi, mll, mlct, mls, mla, ns, es, ps, qs, dps, dqs, qis, ls, cts, sa⟩, ko, kml, kn, ke, kp, kq, kdp, kdq, kqi,
     kl, kct, ks, ka, wo, wml, wn, we, wp, wq, wdp, wdq, wqi, wl, wct, wsc, ⟨k1, k2⟩, ok, oc, e1, e2, p1, p2, q1, q2,

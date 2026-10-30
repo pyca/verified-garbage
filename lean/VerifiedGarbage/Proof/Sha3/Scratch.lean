@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Sha3.Contract
 import VerifiedGarbage.Proof.Sha3.Stream
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # The SHA-3 sponge with its working space on the stack: locality
@@ -76,7 +77,7 @@ theorem absorbPost_local : ∀ vs m₁ m₂ m' r, vs.length = (absorbSig.words p
   obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [absorbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [absorbSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hs := agree_of hb.1
   have hd := agree_of hb.2
@@ -117,7 +118,7 @@ theorem padPost_local : ∀ vs m₁ m₂ m' r, vs.length = (padSig.words pb).len
     obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
     replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [padSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
+  simp only [padSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
     Elem.size] at hb
   have hs := agree_of hb
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.int pb, ArgWord.int 32]
@@ -154,7 +155,7 @@ theorem squeezePost_local : ∀ vs m₁ m₂ m' r, vs.length = (squeezeSig.words
     obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
     replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [squeezeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [squeezeSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hs := agree_of hb.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]

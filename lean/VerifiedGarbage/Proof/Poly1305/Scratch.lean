@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # Streaming Poly1305 with its working space as an argument
@@ -95,7 +96,7 @@ theorem updatePost_local : ∀ vs m₁ m₂ m' r, vs.length = (updateSig.words p
   obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [updateSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [updateSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hs := agree_of hb.1
   have hd := agree_of hb.2
@@ -121,7 +122,7 @@ theorem finalizePost_local : ∀ vs m₁ m₂ m' r, vs.length = (finalizeSig.wor
     obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
     replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [finalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [finalizeSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hs := agree_of hb.1
   change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr] (finalizePost pb) _ m₁ m' r at h

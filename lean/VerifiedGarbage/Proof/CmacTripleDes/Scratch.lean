@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # TDEA-CMAC with its working space as an argument
@@ -151,7 +152,7 @@ theorem initPost_local : ∀ vs m₁ m₂ m' r, vs.length = (tdesInitSig.words p
   obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [tdesInitSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [tdesInitSig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hk := agree_of hb.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (tdesInitPost pb) _ m₁ m' r at h
@@ -176,7 +177,7 @@ theorem updatePost_local : ∀ vs m₁ m₂ m' r, vs.length = (tdesUpdateSig.wor
   obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [tdesUpdateSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [tdesUpdateSig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hs := agree_of hb.1
   have ht := agree_of hb.2.1
@@ -218,7 +219,7 @@ theorem finalizePost_local : ∀ vs m₁ m₂ m' r, vs.length = (tdesFinalizeSig
   obtain ⟨ll, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [tdesFinalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [tdesFinalizeSig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hk := agree_of hb.1
   have ht := agree_of hb.2.1

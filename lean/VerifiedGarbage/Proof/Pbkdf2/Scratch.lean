@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Pbkdf2.Generic
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # PBKDF2 with its working space on the stack: locality
@@ -81,7 +82,7 @@ theorem pbkdf2Post_local : ∀ vs m₁ m₂ m' r, vs.length = (pbkdf2Sig.words p
   obtain ⟨outLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [pbkdf2Sig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [pbkdf2Sig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hp := agree_of hb.1
   have hs := agree_of hb.2.1

@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # Streaming AES-CMAC with its working space as an argument
@@ -139,7 +140,7 @@ theorem initPost_local : ∀ vs m₁ m₂ m' r, vs.length = (aesInitSig.words pb
   obtain ⟨kl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [aesInitSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [aesInitSig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hk := agree_of hb.2
   change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int pb] (aesInitPost pb) _ m₁ m' r at h
@@ -178,7 +179,7 @@ theorem absorbPost_local : ∀ vs m₁ m₂ m' r, vs.length = (aesAbsorbSig.word
   obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [aesAbsorbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [aesAbsorbSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hs := agree_of hb.1
   have hd := agree_of hb.2
@@ -217,7 +218,7 @@ theorem finishPost_local : ∀ vs m₁ m₂ m' r, vs.length = (aesFinishSig.word
     obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
     replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [aesFinishSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [aesFinishSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hs := agree_of hb.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.int 64, ArgWord.addr]

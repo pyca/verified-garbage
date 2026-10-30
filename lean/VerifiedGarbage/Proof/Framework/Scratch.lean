@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # Contracts with and without a scratch buffer argument
@@ -126,22 +127,22 @@ theorem Sig.bufs_append_array (pb : Nat) (nm : String) (e : Elem) (n : Nat) (x :
   | (_, .int ..) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_1, List.length_append, List.length_cons,
       List.length_nil] at h
-    simp only [List.cons_append, Sig.bufs]
+    simp only [List.cons_append, Sig.bufs_int]
     exact Sig.bufs_append_array pb nm e n x ps vs (by omega)
   | (_, .array ..) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_2, List.length_append, List.length_cons,
       List.length_nil] at h
-    simp only [List.cons_append, Sig.bufs]
+    simp only [List.cons_append, Sig.bufs_array]
     rw [Sig.bufs_append_array pb nm e n x ps vs (by omega)]
   | (_, .slice ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_3, List.length_append, List.length_cons,
       List.length_nil] at h
-    simp only [List.cons_append, Sig.bufs]
+    simp only [List.cons_append, Sig.bufs_slice]
     rw [Sig.bufs_append_array pb nm e n x ps vs (by omega)]
   | (_, .slices ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_4, List.length_append, List.length_cons,
       List.length_nil] at h
-    simp only [List.cons_append, Sig.bufs]
+    simp only [List.cons_append, Sig.bufs_slices]
     exact Sig.bufs_append_array pb nm e n x ps vs (by omega)
   | [], _ :: _, h => by simp at h
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
@@ -163,24 +164,24 @@ theorem Sig.u64Bufs_append_array (pb : Nat) (nm : String) (e : Elem) (n : Nat) (
   | (_, .int ..) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_1, List.length_append, List.length_cons,
       List.length_nil] at h
-    simp only [List.cons_append, Sig.u64Bufs]
+    simp only [List.cons_append, Sig.u64Bufs_int]
     exact Sig.u64Bufs_append_array pb nm e n x ps vs (by omega)
   | (_, .array _ e' _) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_2, List.length_append, List.length_cons,
       List.length_nil] at h
-    simp only [List.cons_append, Sig.u64Bufs]
+    simp only [List.cons_append, Sig.u64Bufs_array]
     rw [Sig.u64Bufs_append_array pb nm e n x ps vs (by omega)]
     split <;> rfl
   | (_, .slice _ e' _) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_3, List.length_append, List.length_cons,
       List.length_nil] at h
-    simp only [List.cons_append, Sig.u64Bufs]
+    simp only [List.cons_append, Sig.u64Bufs_slice]
     rw [Sig.u64Bufs_append_array pb nm e n x ps vs (by omega)]
     split <;> rfl
   | (_, .slices ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_4, List.length_append, List.length_cons,
       List.length_nil] at h
-    simp only [List.cons_append, Sig.u64Bufs]
+    simp only [List.cons_append, Sig.u64Bufs_slices]
     exact Sig.u64Bufs_append_array pb nm e n x ps vs (by omega)
   | [], _ :: _, h => by simp at h
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
@@ -200,22 +201,22 @@ theorem Sig.lists_append_array (pb : Nat) (m : Mem) (nm : String) (e : Elem) (n 
   | (_, .int ..) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_1, List.length_append, List.length_cons,
       List.length_nil] at h
-    simp only [List.cons_append, Sig.lists]
+    simp only [List.cons_append, Sig.lists_int]
     exact Sig.lists_append_array pb m nm e n x ps vs (by omega)
   | (_, .array ..) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_2, List.length_append, List.length_cons,
       List.length_nil] at h
-    simp only [List.cons_append, Sig.lists]
+    simp only [List.cons_append, Sig.lists_array]
     exact Sig.lists_append_array pb m nm e n x ps vs (by omega)
   | (_, .slice ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_3, List.length_append, List.length_cons,
       List.length_nil] at h
-    simp only [List.cons_append, Sig.lists]
+    simp only [List.cons_append, Sig.lists_slice]
     exact Sig.lists_append_array pb m nm e n x ps vs (by omega)
   | (_, .slices ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_4, List.length_append, List.length_cons,
       List.length_nil] at h
-    simp only [List.cons_append, Sig.lists]
+    simp only [List.cons_append, Sig.lists_slices]
     rw [Sig.lists_append_array pb m nm e n x ps vs (by omega)]
   | [], _ :: _, h => by simp at h
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
@@ -235,22 +236,22 @@ theorem Sig.descs_append_array (pb : Nat) (nm : String) (e : Elem) (n : Nat) (x 
   | (_, .int ..) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_1, List.length_append, List.length_cons,
       List.length_nil] at h
-    simp only [List.cons_append, Sig.descs]
+    simp only [List.cons_append, Sig.descs_int]
     exact Sig.descs_append_array pb nm e n x ps vs (by omega)
   | (_, .array ..) :: ps, v :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_2, List.length_append, List.length_cons,
       List.length_nil] at h
-    simp only [List.cons_append, Sig.descs]
+    simp only [List.cons_append, Sig.descs_array]
     exact Sig.descs_append_array pb nm e n x ps vs (by omega)
   | (_, .slice ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_3, List.length_append, List.length_cons,
       List.length_nil] at h
-    simp only [List.cons_append, Sig.descs]
+    simp only [List.cons_append, Sig.descs_slice]
     exact Sig.descs_append_array pb nm e n x ps vs (by omega)
   | (_, .slices ..) :: ps, v :: l :: vs, h => by
     simp only [List.flatMap_cons, Param.words.eq_4, List.length_append, List.length_cons,
       List.length_nil] at h
-    simp only [List.cons_append, Sig.descs]
+    simp only [List.cons_append, Sig.descs_slices]
     rw [Sig.descs_append_array pb nm e n x ps vs (by omega)]
   | [], _ :: _, h => by simp at h
   | (_, .int ..) :: _, [], h => by simp [Param.words.eq_1] at h
@@ -299,13 +300,13 @@ theorem Sig.listed_congr (pb : Nat) {m₁ m₂ : Mem} (e : Elem) (p : Addr) (n :
 theorem Sig.descs_sub_lists (pb : Nat) (m : Mem) :
     ∀ (ps : List (String × Param)) (vs : List (BitVec 64)), ∀ r ∈ Sig.descs pb ps vs,
       r ∈ Sig.lists pb m ps vs
-  | [], _, _, h => by simp [Sig.descs] at h
+  | [], _, _, h => by simp [Sig.descs_nil] at h
   | (_, .int ..) :: ps, _ :: vs, r, h => Sig.descs_sub_lists pb m ps vs r h
   | (_, .array ..) :: ps, _ :: vs, r, h => Sig.descs_sub_lists pb m ps vs r h
   | (_, .slice ..) :: ps, _ :: _ :: vs, r, h => Sig.descs_sub_lists pb m ps vs r h
   | (_, .slices ..) :: ps, _ :: _ :: vs, r, h => by
-    simp only [Sig.descs, List.mem_cons] at h
-    simp only [Sig.lists, List.mem_cons, List.mem_append]
+    simp only [Sig.descs_slices, List.mem_cons] at h
+    simp only [Sig.lists_slices, List.mem_cons, List.mem_append]
     rcases h with h | h
     · exact Or.inl (Or.inl h)
     · exact Or.inr (Sig.descs_sub_lists pb m ps vs r h)
@@ -327,8 +328,8 @@ theorem Sig.lists_congr (pb : Nat) {m₁ m₂ : Mem} :
   | (_, .array ..) :: ps, _ :: vs, h => Sig.lists_congr pb ps vs h
   | (_, .slice ..) :: ps, _ :: _ :: vs, h => Sig.lists_congr pb ps vs h
   | (_, .slices e _) :: ps, p :: n :: vs, h => by
-    simp only [Sig.descs, List.mem_cons, forall_eq_or_imp] at h
-    simp only [Sig.lists]
+    simp only [Sig.descs_slices, List.mem_cons, forall_eq_or_imp] at h
+    simp only [Sig.lists_slices]
     rw [Sig.listed_congr pb e p n.toNat h.1, Sig.lists_congr pb ps vs h.2]
   | (_, .int ..) :: _, [], _ => rfl
   | (_, .array ..) :: _, [], _ => rfl

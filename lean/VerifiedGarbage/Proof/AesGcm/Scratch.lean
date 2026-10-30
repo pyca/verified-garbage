@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # AES-GCM's key setup and streaming start with their working space as an argument
@@ -254,7 +255,7 @@ theorem initPost_local : ∀ vs m₁ m₂ m' r, vs.length = (initSig.words pb).l
   obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [initSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [initSig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hk := agree_of hb.1
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (initPost pb) _ m₁ m' r at h
@@ -279,7 +280,7 @@ theorem streamInitPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamInitSig
   obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [streamInitSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [streamInitSig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   have hn := agree_of hb.2.1
@@ -310,7 +311,7 @@ theorem streamAadPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamAadSig.w
   obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [streamAadSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [streamAadSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   have hs := agree_of hb.2.1
@@ -360,7 +361,7 @@ theorem streamEncryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamCryp
   obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [streamCryptSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [streamCryptSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   have hs := agree_of hb.2.1
@@ -398,7 +399,7 @@ theorem streamDecryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamCryp
   obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [streamCryptSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [streamCryptSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   have hs := agree_of hb.2.1
@@ -445,7 +446,7 @@ theorem streamFinishPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamFinis
     obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
     replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [streamFinishSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [streamFinishSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   have hs := agree_of hb.2.1
@@ -492,7 +493,7 @@ theorem streamVerifyPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamVerif
   obtain ⟨tl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [streamVerifySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [streamVerifySig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   have hs := agree_of hb.2.1
@@ -550,7 +551,7 @@ theorem sealPost_local : ∀ vs m₁ m₂ m' r, vs.length = (sealSig.words pb).l
   obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [sealSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [sealSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   have hn := agree_of hb.2.1
@@ -643,7 +644,7 @@ theorem openPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openSig.words pb).l
   obtain ⟨tl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [openSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   have hN := agree_of hb.2.1
@@ -690,7 +691,7 @@ theorem openLeak_local : ∀ vs m₁ m₂, vs.length = (openSig.words pb).length
   obtain ⟨tl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [openSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (openLeak pb) _

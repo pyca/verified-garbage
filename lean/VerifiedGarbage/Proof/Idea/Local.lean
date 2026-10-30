@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # IDEA's postconditions read only the functions' buffers
@@ -58,7 +59,7 @@ theorem invertKeyPost_local : ∀ vs m₁ m₂ m' r, vs.length = (invertKeySig.w
   obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [invertKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [invertKeySig, Sig.bufs_nil, Sig.bufs_array, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hs := agree_of hb.1
   change Curry.apply [ArgWord.addr, ArgWord.addr] (invertKeyPost pb) _ m₁ m' r at h
@@ -80,7 +81,7 @@ theorem ecbPost_local : ∀ vs m₁ m₂ m' r, vs.length = (ecbSig.words pb).len
   obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [ecbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [ecbSig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hs := agree_of hb.1
   have hd := agree_of hb.2
@@ -105,7 +106,7 @@ theorem ecbPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (ecbSig.words pb).l
   obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [ecbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [ecbSig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hd := agree_of hb.2
   change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int pb] (ecbPost pb) _ m m₁ r at h

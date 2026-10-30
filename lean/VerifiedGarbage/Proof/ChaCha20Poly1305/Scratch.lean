@@ -113,7 +113,7 @@ theorem sealPost_local : ∀ vs m₁ m₂ m' r, vs.length = (sealSig.words pb).l
   obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [sealSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [sealSig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr] (sealPost pb) _ m₁ m' r at h
@@ -141,7 +141,7 @@ theorem sealPost_out : ∀ vs m m₁ m₂ r, vs.length = (sealSig.words pb).leng
   obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [sealSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [sealSig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
     ArgWord.int pb, ArgWord.addr] (sealPost pb) _ m m₁ r at h
@@ -185,7 +185,7 @@ theorem openPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openSig.words pb).l
   obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [openSig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   replace h := Eq.mp (openPost_curry pb key nonce aad al data len tag m₁ m' r) h
   refine Eq.mpr (openPost_curry pb key nonce aad al data len tag m₂ m' r) ?_
@@ -210,7 +210,7 @@ theorem openPost_out : ∀ vs m m₁ m₂ r, vs.length = (openSig.words pb).leng
     obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
     replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [openSig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   replace h := Eq.mp (openPost_curry pb _ _ _ _ data _ _ m m₁ r) h
   refine Eq.mpr (openPost_curry pb _ _ _ _ data _ _ m m₂ r) ?_

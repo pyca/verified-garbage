@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.MontFn
 public import VerifiedGarbage.Proof.Framework.Inline
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # Montgomery multiplication on PPC64LE: the shared contract
@@ -163,7 +164,7 @@ theorem pre_local : ∀ vs m₁ m₂, vs.length = (Spec.Rsa.Mont.sig.words abi.p
   rw [words_eq] at hlen
   match vs, hlen with
   | [ws, l, o, a, b], _ =>
-  simp only [Spec.Rsa.Mont.sig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
+  simp only [Spec.Rsa.Mont.sig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
     Elem.size] at hb
   change Curry.apply [ArgWord.addr, .int 64, .int 32, .int 32, .int 32] mulPre _ m₁ at h
   change Curry.apply [ArgWord.addr, .int 64, .int 32, .int 32, .int 32] mulPre _ m₂
@@ -188,7 +189,7 @@ theorem post_local : ∀ vs m₁ m₂ m' r, vs.length = (Spec.Rsa.Mont.sig.words
   rw [words_eq] at hlen
   match vs, hlen with
   | [ws, l, o, a, b], _ =>
-  simp only [Spec.Rsa.Mont.sig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
+  simp only [Spec.Rsa.Mont.sig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
     Elem.size] at hb
   change Curry.apply [ArgWord.addr, .int 64, .int 32, .int 32, .int 32] mulPre _ m₂ at hp
   change Curry.apply [ArgWord.addr, .int 64, .int 32, .int 32, .int 32] mulPost _ m₁ m' r at h
@@ -212,7 +213,7 @@ theorem leak_local : ∀ f, some mulLeak = some f → ∀ vs m₁ m₂,
   rw [words_eq] at hlen
   match vs, hlen with
   | [ws, l, o, a, b], _ =>
-  simp only [Spec.Rsa.Mont.sig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
+  simp only [Spec.Rsa.Mont.sig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
     Elem.size] at hb
   change Curry.apply [ArgWord.addr, .int 64, .int 32, .int 32, .int 32] mulPre _ m₂ at hp
   change Curry.apply [ArgWord.addr, .int 64, .int 32, .int 32, .int 32] mulLeak _ m₁ =

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Poly1305.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # `vg_poly1305_blocks` with its working space as an argument
@@ -84,7 +85,7 @@ theorem blocksPost_local (pb : Nat) : ∀ vs m₁ m₂ m' r, vs.length = (blocks
   obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [blocksSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [blocksSig, Sig.bufs_nil, Sig.bufs_array, Sig.bufs_slice, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq] at hb
   have hs := agree_of' hb.1
   have hd := agree_of' hb.2

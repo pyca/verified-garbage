@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Sign.Front
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # `vg_dsa_sign` on PPC64LE: the contract on the registers and the stack
@@ -21,7 +22,7 @@ theorem stackArgs_three (s : State) :
 
 theorem pairFacts_three (a b c : Region) :
     Sig.conj (Sig.pairFacts [(a, false), (b, true), (c, false)]) ↔ a.Disjoint b ∧ b.Disjoint c := by
-  simp [Sig.pairFacts, Sig.conj, List.filterMap_cons, List.filterMap_nil]
+  simp [Sig.pairFacts, Sig.conj_single, Sig.conj_cons_cons, List.filterMap_cons, List.filterMap_nil]
 
 /-- A state meeting `sContract.pre`: 1024-bit p and 160-bit q, `out` at
 `0x4000`, the key at `0x1000`, the nonce at `0x2000`, the digest at `0x3000`
