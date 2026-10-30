@@ -152,10 +152,11 @@ theorem ep_lay (s : State) :
 theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s) := by
   sig_pre [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, abi,
     argRegs, reduceClassify, Loc.val] at h
-  obtain ⟨hsp, hsa, hrd, hwr, oM, oN, oE, oD, oI, oP, oQ, oDP, oDQ, oQI, oS, oA,
-    mN, mE, mD, mI, mP, mQ, mDP, mDQ, mQI, mS, mA, nS, eS, dS, iS, pS, qS, dpS, dqS, qiS, sA,
-    kO, kM, kN, kE, kD, kI, kP, kQ, kDP, kDQ, kQI, kS, kA, fO, fM, fN, fE, fD, fI, fP, fQ, fDP, fDQ, fQI, fS,
-    kv, olk, ilk, el1, elK, dl1, dlK, pl1, plK, ql1, qlK, dpl, qil, dql, slK⟩ := h
+  sig_split h
+  rename_i hsp hsa hrd hwr oM oN oE oD oI oP oQ oDP oDQ oQI oS oA mN mE mD mI mP mQ mDP mDQ mQI mS mA nS eS
+    dS iS pS qS dpS dqS qiS sA kO kM kN kE kD kI kP kQ kDP kDQ kQI kS kA fO fM fN fE fD fI fP fQ fDP fDQ fQI
+    fS kv olk ilk el1 elK dl1 dlK pl1 plK ql1 qlK dpl qil dql
+  have slK := h
   have h3584 : 3584 ≤ s.sp.toNat := hsp
   have r1 : s.gpr .r1 = stackArg s 0 := BitVec.eq_of_toNat_eq olk
   have a6 : stackArg s 6 = stackArg s 0 := BitVec.eq_of_toNat_eq ilk

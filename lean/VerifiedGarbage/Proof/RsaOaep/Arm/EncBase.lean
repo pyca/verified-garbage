@@ -152,8 +152,10 @@ theorem in_of_pre {H G : Spec.Mgf1.Hash} {s : State} (h : (spec H G).pre s) :
     In H.len (ep s) (entered frameBytes s) := by
   sig_pre [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, abi, argRegs,
     reduceClassify, Loc.val] at h
-  obtain ⟨hsp, hsa, hrd, hwr, oN, oE, oL, oM, oS, oC, oP, oA, nC, eC, lC, mC, sC, cP, cA, kO, kN, kE, kL, kM, kS,
-    kC, kP, kA, fO, fN, fE, fL, fM, fS, fC, fP, kv, olk, el1, elK, scrK, rlK⟩ := h
+  sig_split h
+  rename_i hsp hsa hrd hwr oN oE oL oM oS oC oP oA nC eC lC mC sC cP cA kO kN kE kL kM kS kC kP kA fO fN fE
+    fL fM fS fC fP kv olk el1 elK scrK
+  have rlK := h
   have h240 : 240 ≤ s.sp.toNat := hsp
   have r1 : s.gpr .r1 = s.gpr .r3 := BitVec.eq_of_toNat_eq olk
   rw [olk] at hwr oN oE oL oM oS oC oP oA kO fO
