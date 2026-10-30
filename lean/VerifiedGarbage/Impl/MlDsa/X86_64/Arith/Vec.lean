@@ -83,10 +83,22 @@ def vibfly : List Instr :=
   (xmov .xmm3 .xmm1 :: xb .psubd .xmm3 .xmm0 :: xb .paddd .xmm3 .xmm15 :: xb .paddd .xmm0 .xmm1 ::
     vcsub .xmm0 .xmm2) ++ vmont .xmm3 .xmm13 .xmm12 .xmm2 .xmm4 ++ vcsub .xmm3 .xmm2
 
-/-- The `u64`s `t (2i) + 2³² · t (2i + 1)` for `i < n / 2` at `[r + 8i]`,
-through `r9`. -/
-def dwordTab (t : Nat → Nat) (n : Nat) (r : Reg) : List Instr :=
-  (List.range (n / 2)).flatMap fun i =>
-    [.movImm64 .r9 (BitVec.ofNat 64 (t (2 * i) + 2 ^ 32 * t (2 * i + 1))), .store (at_ r (8 * i)) .r9]
+/-- The `u64`s `t (2i) + 2³² · t (2i + 1)` for `i < n / 2`, the words of a static table. -/
+def tabWords (t : Nat → Nat) (n : Nat) : List (BitVec 64) :=
+  (List.range (n / 2)).map fun i => BitVec.ofNat 64 (t (2 * i) + 2 ^ 32 * t (2 * i + 1))
+
+/-- The name of the static table of `zmTab`'s 256 zetas. -/
+def zetaTbl : String := "VG_MLDSA_ZETAS"
+
+/-- The `n` `u32`s `t k` to `[r + 4k]`, from the static table `name` of
+`tabWords t n` (its address to `r9`), 16 bytes at a time through `xmm0`. -/
+def vtabFill (name : String) (t : Nat → Nat) (n : Nat) (r : Reg) : List Instr :=
+  .leaSym .r9 name :: (List.range (n / 4)).flatMap fun i =>
+    [.movdquTbl .xmm0 (at_ .r9 (16 * i)) name (tabWords t n), .movdquStore (at_ r (16 * i)) .xmm0]
+
+/-- The same, 32 bytes at a time through `ymm0`. -/
+def ytabFill (name : String) (t : Nat → Nat) (n : Nat) (r : Reg) : List Instr :=
+  .leaSym .r9 name :: (List.range (n / 8)).flatMap fun i =>
+    [.vmovdquTbl .xmm0 (at_ .r9 (32 * i)) name (tabWords t n), .vmovdquStore .l256 (at_ r (32 * i)) .xmm0]
 
 end VG.Impl.MlDsa.X86_64.Arith

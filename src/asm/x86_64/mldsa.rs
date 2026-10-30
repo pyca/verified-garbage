@@ -26,262 +26,135 @@ mov eax, 8127
 mov DWORD PTR [rsi+772], eax
 ldmxcsr DWORD PTR [rsi+772]
 lfence
-movabs r9, 111012023893504
-mov QWORD PTR [rsi], r9
-movabs r9, 33764919763013891
-mov QWORD PTR [rsi+8], r9
-movabs r9, 32652304184483396
-mov QWORD PTR [rsi+16], r9
-movabs r9, 2003464812134697
-mov QWORD PTR [rsi+24], r9
-movabs r9, 10107995079564843
-mov QWORD PTR [rsi+32], r9
-movabs r9, 27008953388524718
-mov QWORD PTR [rsi+40], r9
-movabs r9, 23603259066260085
-mov QWORD PTR [rsi+48], r9
-movabs r9, 11510954738022985
-mov QWORD PTR [rsi+56], r9
-movabs r9, 4398527550166616
-mov QWORD PTR [rsi+64], r9
-movabs r9, 15401443493111205
-mov QWORD PTR [rsi+72], r9
-movabs r9, 31185040284548497
-mov QWORD PTR [rsi+80], r9
-movabs r9, 26937467947448680
-mov QWORD PTR [rsi+88], r9
-movabs r9, 19416172761943511
-mov QWORD PTR [rsi+96], r9
-movabs r9, 21916122901808376
-mov QWORD PTR [rsi+104], r9
-movabs r9, 35910200088776757
-mov QWORD PTR [rsi+112], r9
-movabs r9, 1202612321726977
-mov QWORD PTR [rsi+120], r9
-movabs r9, 411354790447719
-mov QWORD PTR [rsi+128], r9
-movabs r9, 15163111458665677
-mov QWORD PTR [rsi+136], r9
-movabs r9, 20565458766169348
-mov QWORD PTR [rsi+144], r9
-movabs r9, 16816682460325845
-mov QWORD PTR [rsi+152], r9
-movabs r9, 22920956268049798
-mov QWORD PTR [rsi+160], r9
-movabs r9, 23677166863944342
-mov QWORD PTR [rsi+168], r9
-movabs r9, 34703121006855168
-mov QWORD PTR [rsi+176], r9
-movabs r9, 33677345376425628
-mov QWORD PTR [rsi+184], r9
-movabs r9, 28933472397947454
-mov QWORD PTR [rsi+192], r9
-movabs r9, 19579390106369566
-mov QWORD PTR [rsi+200], r9
-movabs r9, 26799599498134591
-mov QWORD PTR [rsi+208], r9
-movabs r9, 15889643835192413
-mov QWORD PTR [rsi+216], r9
-movabs r9, 2282148053410728
-mov QWORD PTR [rsi+224], r9
-movabs r9, 16668952760323958
-mov QWORD PTR [rsi+232], r9
-movabs r9, 25011900965946676
-mov QWORD PTR [rsi+240], r9
-movabs r9, 23977247637478740
-mov QWORD PTR [rsi+248], r9
-movabs r9, 29427887555995366
-mov QWORD PTR [rsi+256], r9
-movabs r9, 22931526182748624
-mov QWORD PTR [rsi+264], r9
-movabs r9, 14929091579459166
-mov QWORD PTR [rsi+272], r9
-movabs r9, 29185144592086471
-mov QWORD PTR [rsi+280], r9
-movabs r9, 8329290213797750
-mov QWORD PTR [rsi+288], r9
-movabs r9, 31697782066745459
-mov QWORD PTR [rsi+296], r9
-movabs r9, 22432987854353025
-mov QWORD PTR [rsi+304], r9
-movabs r9, 545125843890401
-mov QWORD PTR [rsi+312], r9
-movabs r9, 31769864501989618
-mov QWORD PTR [rsi+320], r9
-movabs r9, 11662103226140216
-mov QWORD PTR [rsi+328], r9
-movabs r9, 20130185304250276
-mov QWORD PTR [rsi+336], r9
-movabs r9, 25354781094156910
-mov QWORD PTR [rsi+344], r9
-movabs r9, 30717142252233347
-mov QWORD PTR [rsi+352], r9
-movabs r9, 30375073877558844
-mov QWORD PTR [rsi+360], r9
-movabs r9, 5794237307816926
-mov QWORD PTR [rsi+368], r9
-movabs r9, 29849966874477923
-mov QWORD PTR [rsi+376], r9
-movabs r9, 1137925820308458
-mov QWORD PTR [rsi+384], r9
-movabs r9, 13305774323778583
-mov QWORD PTR [rsi+392], r9
-movabs r9, 31268732009491712
-mov QWORD PTR [rsi+400], r9
-movabs r9, 17002134848261444
-mov QWORD PTR [rsi+408], r9
-movabs r9, 35956774717033419
-mov QWORD PTR [rsi+416], r9
-movabs r9, 22036141462600008
-mov QWORD PTR [rsi+424], r9
-movabs r9, 35087477629023596
-mov QWORD PTR [rsi+432], r9
-movabs r9, 30337763489061025
-mov QWORD PTR [rsi+440], r9
-movabs r9, 20732429908239468
-mov QWORD PTR [rsi+448], r9
-movabs r9, 28041905903253186
-mov QWORD PTR [rsi+456], r9
-movabs r9, 35231517950811284
-mov QWORD PTR [rsi+464], r9
-movabs r9, 5760968484459269
-mov QWORD PTR [rsi+472], r9
-movabs r9, 29186403016613413
-mov QWORD PTR [rsi+480], r9
-movabs r9, 29809972144732485
-mov QWORD PTR [rsi+488], r9
-movabs r9, 19324591173389987
-mov QWORD PTR [rsi+496], r9
-movabs r9, 16492506917666904
-mov QWORD PTR [rsi+504], r9
-movabs r9, 14635985826474643
-mov QWORD PTR [rsi+512], r9
-movabs r9, 16398082059229396
-mov QWORD PTR [rsi+520], r9
-movabs r9, 9638297459285875
-mov QWORD PTR [rsi+528], r9
-movabs r9, 20692959164533664
-mov QWORD PTR [rsi+536], r9
-movabs r9, 10455835889373941
-mov QWORD PTR [rsi+544], r9
-movabs r9, 15088997507073265
-mov QWORD PTR [rsi+552], r9
-movabs r9, 19847271512942753
-mov QWORD PTR [rsi+560], r9
-movabs r9, 22278162875259735
-mov QWORD PTR [rsi+568], r9
-movabs r9, 7984765110959710
-mov QWORD PTR [rsi+576], r9
-movabs r9, 3517724245221606
-mov QWORD PTR [rsi+584], r9
-movabs r9, 29065087369580419
-mov QWORD PTR [rsi+592], r9
-movabs r9, 33749496538019589
-mov QWORD PTR [rsi+600], r9
-movabs r9, 22582830675910690
-mov QWORD PTR [rsi+608], r9
-movabs r9, 13774157688799364
-mov QWORD PTR [rsi+616], r9
-movabs r9, 33738338209470846
-mov QWORD PTR [rsi+624], r9
-movabs r9, 20549610337740179
-mov QWORD PTR [rsi+632], r9
-movabs r9, 1232604074686745
-mov QWORD PTR [rsi+640], r9
-movabs r9, 17645078572608834
-mov QWORD PTR [rsi+648], r9
-movabs r9, 21638646536106727
-mov QWORD PTR [rsi+656], r9
-movabs r9, 872067341384903
-mov QWORD PTR [rsi+664], r9
-movabs r9, 11559822875647717
-mov QWORD PTR [rsi+672], r9
-movabs r9, 5433172289935931
-mov QWORD PTR [rsi+680], r9
-movabs r9, 5358487101890844
-mov QWORD PTR [rsi+688], r9
-movabs r9, 6854656137752657
-mov QWORD PTR [rsi+696], r9
-movabs r9, 5370830838457625
-mov QWORD PTR [rsi+704], r9
-movabs r9, 20753904747165841
-mov QWORD PTR [rsi+712], r9
-movabs r9, 8027804982718602
-mov QWORD PTR [rsi+720], r9
-movabs r9, 31479735164668747
-mov QWORD PTR [rsi+728], r9
-movabs r9, 5314055668205759
-mov QWORD PTR [rsi+736], r9
-movabs r9, 29850847345983039
-mov QWORD PTR [rsi+744], r9
-movabs r9, 5636951310400997
-mov QWORD PTR [rsi+752], r9
-movabs r9, 27564133741392515
-mov QWORD PTR [rsi+760], r9
-movabs r9, 8233800205883732
-mov QWORD PTR [rsi+768], r9
-movabs r9, 30088883024233849
-mov QWORD PTR [rsi+776], r9
-movabs r9, 3338009929245701
-mov QWORD PTR [rsi+784], r9
-movabs r9, 14628791756398056
-mov QWORD PTR [rsi+792], r9
-movabs r9, 23830870862829877
-mov QWORD PTR [rsi+800], r9
-movabs r9, 28061014216302585
-mov QWORD PTR [rsi+808], r9
-movabs r9, 19997999096164636
-mov QWORD PTR [rsi+816], r9
-movabs r9, 19771555530215640
-mov QWORD PTR [rsi+824], r9
-movabs r9, 10447056982320729
-mov QWORD PTR [rsi+832], r9
-movabs r9, 35286145636332471
-mov QWORD PTR [rsi+840], r9
-movabs r9, 14470225858518424
-mov QWORD PTR [rsi+848], r9
-movabs r9, 30807937853347003
-mov QWORD PTR [rsi+856], r9
-movabs r9, 699409659546815
-mov QWORD PTR [rsi+864], r9
-movabs r9, 12945035726727688
-mov QWORD PTR [rsi+872], r9
-movabs r9, 7098008983067813
-mov QWORD PTR [rsi+880], r9
-movabs r9, 28266511219523944
-mov QWORD PTR [rsi+888], r9
-movabs r9, 15135022374814013
-mov QWORD PTR [rsi+896], r9
-movabs r9, 1158610381635861
-mov QWORD PTR [rsi+904], r9
-movabs r9, 31802227079365879
-mov QWORD PTR [rsi+912], r9
-movabs r9, 2027559572878823
-mov QWORD PTR [rsi+920], r9
-movabs r9, 7402805639339334
-mov QWORD PTR [rsi+928], r9
-movabs r9, 8205002449640623
-mov QWORD PTR [rsi+936], r9
-movabs r9, 31250542829661849
-mov QWORD PTR [rsi+944], r9
-movabs r9, 19527171898598875
-mov QWORD PTR [rsi+952], r9
-movabs r9, 26390134497937253
-mov QWORD PTR [rsi+960], r9
-movabs r9, 26173917256840158
-mov QWORD PTR [rsi+968], r9
-movabs r9, 31797902045269139
-mov QWORD PTR [rsi+976], r9
-movabs r9, 20765007236602922
-mov QWORD PTR [rsi+984], r9
-movabs r9, 16834811519265361
-mov QWORD PTR [rsi+992], r9
-movabs r9, 30142973844857679
-mov QWORD PTR [rsi+1000], r9
-movabs r9, 6014775284471242
-mov QWORD PTR [rsi+1008], r9
-movabs r9, 8490214048855735
-mov QWORD PTR [rsi+1016], r9
+lea r9, [rip + {VG_MLDSA_ZETAS}]
+movdqu xmm0, XMMWORD PTR [r9]
+movdqu XMMWORD PTR [rsi], xmm0
+movdqu xmm0, XMMWORD PTR [r9+16]
+movdqu XMMWORD PTR [rsi+16], xmm0
+movdqu xmm0, XMMWORD PTR [r9+32]
+movdqu XMMWORD PTR [rsi+32], xmm0
+movdqu xmm0, XMMWORD PTR [r9+48]
+movdqu XMMWORD PTR [rsi+48], xmm0
+movdqu xmm0, XMMWORD PTR [r9+64]
+movdqu XMMWORD PTR [rsi+64], xmm0
+movdqu xmm0, XMMWORD PTR [r9+80]
+movdqu XMMWORD PTR [rsi+80], xmm0
+movdqu xmm0, XMMWORD PTR [r9+96]
+movdqu XMMWORD PTR [rsi+96], xmm0
+movdqu xmm0, XMMWORD PTR [r9+112]
+movdqu XMMWORD PTR [rsi+112], xmm0
+movdqu xmm0, XMMWORD PTR [r9+128]
+movdqu XMMWORD PTR [rsi+128], xmm0
+movdqu xmm0, XMMWORD PTR [r9+144]
+movdqu XMMWORD PTR [rsi+144], xmm0
+movdqu xmm0, XMMWORD PTR [r9+160]
+movdqu XMMWORD PTR [rsi+160], xmm0
+movdqu xmm0, XMMWORD PTR [r9+176]
+movdqu XMMWORD PTR [rsi+176], xmm0
+movdqu xmm0, XMMWORD PTR [r9+192]
+movdqu XMMWORD PTR [rsi+192], xmm0
+movdqu xmm0, XMMWORD PTR [r9+208]
+movdqu XMMWORD PTR [rsi+208], xmm0
+movdqu xmm0, XMMWORD PTR [r9+224]
+movdqu XMMWORD PTR [rsi+224], xmm0
+movdqu xmm0, XMMWORD PTR [r9+240]
+movdqu XMMWORD PTR [rsi+240], xmm0
+movdqu xmm0, XMMWORD PTR [r9+256]
+movdqu XMMWORD PTR [rsi+256], xmm0
+movdqu xmm0, XMMWORD PTR [r9+272]
+movdqu XMMWORD PTR [rsi+272], xmm0
+movdqu xmm0, XMMWORD PTR [r9+288]
+movdqu XMMWORD PTR [rsi+288], xmm0
+movdqu xmm0, XMMWORD PTR [r9+304]
+movdqu XMMWORD PTR [rsi+304], xmm0
+movdqu xmm0, XMMWORD PTR [r9+320]
+movdqu XMMWORD PTR [rsi+320], xmm0
+movdqu xmm0, XMMWORD PTR [r9+336]
+movdqu XMMWORD PTR [rsi+336], xmm0
+movdqu xmm0, XMMWORD PTR [r9+352]
+movdqu XMMWORD PTR [rsi+352], xmm0
+movdqu xmm0, XMMWORD PTR [r9+368]
+movdqu XMMWORD PTR [rsi+368], xmm0
+movdqu xmm0, XMMWORD PTR [r9+384]
+movdqu XMMWORD PTR [rsi+384], xmm0
+movdqu xmm0, XMMWORD PTR [r9+400]
+movdqu XMMWORD PTR [rsi+400], xmm0
+movdqu xmm0, XMMWORD PTR [r9+416]
+movdqu XMMWORD PTR [rsi+416], xmm0
+movdqu xmm0, XMMWORD PTR [r9+432]
+movdqu XMMWORD PTR [rsi+432], xmm0
+movdqu xmm0, XMMWORD PTR [r9+448]
+movdqu XMMWORD PTR [rsi+448], xmm0
+movdqu xmm0, XMMWORD PTR [r9+464]
+movdqu XMMWORD PTR [rsi+464], xmm0
+movdqu xmm0, XMMWORD PTR [r9+480]
+movdqu XMMWORD PTR [rsi+480], xmm0
+movdqu xmm0, XMMWORD PTR [r9+496]
+movdqu XMMWORD PTR [rsi+496], xmm0
+movdqu xmm0, XMMWORD PTR [r9+512]
+movdqu XMMWORD PTR [rsi+512], xmm0
+movdqu xmm0, XMMWORD PTR [r9+528]
+movdqu XMMWORD PTR [rsi+528], xmm0
+movdqu xmm0, XMMWORD PTR [r9+544]
+movdqu XMMWORD PTR [rsi+544], xmm0
+movdqu xmm0, XMMWORD PTR [r9+560]
+movdqu XMMWORD PTR [rsi+560], xmm0
+movdqu xmm0, XMMWORD PTR [r9+576]
+movdqu XMMWORD PTR [rsi+576], xmm0
+movdqu xmm0, XMMWORD PTR [r9+592]
+movdqu XMMWORD PTR [rsi+592], xmm0
+movdqu xmm0, XMMWORD PTR [r9+608]
+movdqu XMMWORD PTR [rsi+608], xmm0
+movdqu xmm0, XMMWORD PTR [r9+624]
+movdqu XMMWORD PTR [rsi+624], xmm0
+movdqu xmm0, XMMWORD PTR [r9+640]
+movdqu XMMWORD PTR [rsi+640], xmm0
+movdqu xmm0, XMMWORD PTR [r9+656]
+movdqu XMMWORD PTR [rsi+656], xmm0
+movdqu xmm0, XMMWORD PTR [r9+672]
+movdqu XMMWORD PTR [rsi+672], xmm0
+movdqu xmm0, XMMWORD PTR [r9+688]
+movdqu XMMWORD PTR [rsi+688], xmm0
+movdqu xmm0, XMMWORD PTR [r9+704]
+movdqu XMMWORD PTR [rsi+704], xmm0
+movdqu xmm0, XMMWORD PTR [r9+720]
+movdqu XMMWORD PTR [rsi+720], xmm0
+movdqu xmm0, XMMWORD PTR [r9+736]
+movdqu XMMWORD PTR [rsi+736], xmm0
+movdqu xmm0, XMMWORD PTR [r9+752]
+movdqu XMMWORD PTR [rsi+752], xmm0
+movdqu xmm0, XMMWORD PTR [r9+768]
+movdqu XMMWORD PTR [rsi+768], xmm0
+movdqu xmm0, XMMWORD PTR [r9+784]
+movdqu XMMWORD PTR [rsi+784], xmm0
+movdqu xmm0, XMMWORD PTR [r9+800]
+movdqu XMMWORD PTR [rsi+800], xmm0
+movdqu xmm0, XMMWORD PTR [r9+816]
+movdqu XMMWORD PTR [rsi+816], xmm0
+movdqu xmm0, XMMWORD PTR [r9+832]
+movdqu XMMWORD PTR [rsi+832], xmm0
+movdqu xmm0, XMMWORD PTR [r9+848]
+movdqu XMMWORD PTR [rsi+848], xmm0
+movdqu xmm0, XMMWORD PTR [r9+864]
+movdqu XMMWORD PTR [rsi+864], xmm0
+movdqu xmm0, XMMWORD PTR [r9+880]
+movdqu XMMWORD PTR [rsi+880], xmm0
+movdqu xmm0, XMMWORD PTR [r9+896]
+movdqu XMMWORD PTR [rsi+896], xmm0
+movdqu xmm0, XMMWORD PTR [r9+912]
+movdqu XMMWORD PTR [rsi+912], xmm0
+movdqu xmm0, XMMWORD PTR [r9+928]
+movdqu XMMWORD PTR [rsi+928], xmm0
+movdqu xmm0, XMMWORD PTR [r9+944]
+movdqu XMMWORD PTR [rsi+944], xmm0
+movdqu xmm0, XMMWORD PTR [r9+960]
+movdqu XMMWORD PTR [rsi+960], xmm0
+movdqu xmm0, XMMWORD PTR [r9+976]
+movdqu XMMWORD PTR [rsi+976], xmm0
+movdqu xmm0, XMMWORD PTR [r9+992]
+movdqu XMMWORD PTR [rsi+992], xmm0
+movdqu xmm0, XMMWORD PTR [r9+1008]
+movdqu XMMWORD PTR [rsi+1008], xmm0
 mov eax, 8380417
 movq xmm15, rax
 pshufd xmm15, xmm15, 0
@@ -706,6 +579,7 @@ mov DWORD PTR [rsi+768], r11d
 ldmxcsr DWORD PTR [rsi+768]
 ret
 .p2align 6",
+        VG_MLDSA_ZETAS = sym super::consts::VG_MLDSA_ZETAS,
     )
 }
 
@@ -733,262 +607,135 @@ mov eax, 8127
 mov DWORD PTR [rsi+772], eax
 ldmxcsr DWORD PTR [rsi+772]
 lfence
-movabs r9, 111012023893504
-mov QWORD PTR [rsi], r9
-movabs r9, 33764919763013891
-mov QWORD PTR [rsi+8], r9
-movabs r9, 32652304184483396
-mov QWORD PTR [rsi+16], r9
-movabs r9, 2003464812134697
-mov QWORD PTR [rsi+24], r9
-movabs r9, 10107995079564843
-mov QWORD PTR [rsi+32], r9
-movabs r9, 27008953388524718
-mov QWORD PTR [rsi+40], r9
-movabs r9, 23603259066260085
-mov QWORD PTR [rsi+48], r9
-movabs r9, 11510954738022985
-mov QWORD PTR [rsi+56], r9
-movabs r9, 4398527550166616
-mov QWORD PTR [rsi+64], r9
-movabs r9, 15401443493111205
-mov QWORD PTR [rsi+72], r9
-movabs r9, 31185040284548497
-mov QWORD PTR [rsi+80], r9
-movabs r9, 26937467947448680
-mov QWORD PTR [rsi+88], r9
-movabs r9, 19416172761943511
-mov QWORD PTR [rsi+96], r9
-movabs r9, 21916122901808376
-mov QWORD PTR [rsi+104], r9
-movabs r9, 35910200088776757
-mov QWORD PTR [rsi+112], r9
-movabs r9, 1202612321726977
-mov QWORD PTR [rsi+120], r9
-movabs r9, 411354790447719
-mov QWORD PTR [rsi+128], r9
-movabs r9, 15163111458665677
-mov QWORD PTR [rsi+136], r9
-movabs r9, 20565458766169348
-mov QWORD PTR [rsi+144], r9
-movabs r9, 16816682460325845
-mov QWORD PTR [rsi+152], r9
-movabs r9, 22920956268049798
-mov QWORD PTR [rsi+160], r9
-movabs r9, 23677166863944342
-mov QWORD PTR [rsi+168], r9
-movabs r9, 34703121006855168
-mov QWORD PTR [rsi+176], r9
-movabs r9, 33677345376425628
-mov QWORD PTR [rsi+184], r9
-movabs r9, 28933472397947454
-mov QWORD PTR [rsi+192], r9
-movabs r9, 19579390106369566
-mov QWORD PTR [rsi+200], r9
-movabs r9, 26799599498134591
-mov QWORD PTR [rsi+208], r9
-movabs r9, 15889643835192413
-mov QWORD PTR [rsi+216], r9
-movabs r9, 2282148053410728
-mov QWORD PTR [rsi+224], r9
-movabs r9, 16668952760323958
-mov QWORD PTR [rsi+232], r9
-movabs r9, 25011900965946676
-mov QWORD PTR [rsi+240], r9
-movabs r9, 23977247637478740
-mov QWORD PTR [rsi+248], r9
-movabs r9, 29427887555995366
-mov QWORD PTR [rsi+256], r9
-movabs r9, 22931526182748624
-mov QWORD PTR [rsi+264], r9
-movabs r9, 14929091579459166
-mov QWORD PTR [rsi+272], r9
-movabs r9, 29185144592086471
-mov QWORD PTR [rsi+280], r9
-movabs r9, 8329290213797750
-mov QWORD PTR [rsi+288], r9
-movabs r9, 31697782066745459
-mov QWORD PTR [rsi+296], r9
-movabs r9, 22432987854353025
-mov QWORD PTR [rsi+304], r9
-movabs r9, 545125843890401
-mov QWORD PTR [rsi+312], r9
-movabs r9, 31769864501989618
-mov QWORD PTR [rsi+320], r9
-movabs r9, 11662103226140216
-mov QWORD PTR [rsi+328], r9
-movabs r9, 20130185304250276
-mov QWORD PTR [rsi+336], r9
-movabs r9, 25354781094156910
-mov QWORD PTR [rsi+344], r9
-movabs r9, 30717142252233347
-mov QWORD PTR [rsi+352], r9
-movabs r9, 30375073877558844
-mov QWORD PTR [rsi+360], r9
-movabs r9, 5794237307816926
-mov QWORD PTR [rsi+368], r9
-movabs r9, 29849966874477923
-mov QWORD PTR [rsi+376], r9
-movabs r9, 1137925820308458
-mov QWORD PTR [rsi+384], r9
-movabs r9, 13305774323778583
-mov QWORD PTR [rsi+392], r9
-movabs r9, 31268732009491712
-mov QWORD PTR [rsi+400], r9
-movabs r9, 17002134848261444
-mov QWORD PTR [rsi+408], r9
-movabs r9, 35956774717033419
-mov QWORD PTR [rsi+416], r9
-movabs r9, 22036141462600008
-mov QWORD PTR [rsi+424], r9
-movabs r9, 35087477629023596
-mov QWORD PTR [rsi+432], r9
-movabs r9, 30337763489061025
-mov QWORD PTR [rsi+440], r9
-movabs r9, 20732429908239468
-mov QWORD PTR [rsi+448], r9
-movabs r9, 28041905903253186
-mov QWORD PTR [rsi+456], r9
-movabs r9, 35231517950811284
-mov QWORD PTR [rsi+464], r9
-movabs r9, 5760968484459269
-mov QWORD PTR [rsi+472], r9
-movabs r9, 29186403016613413
-mov QWORD PTR [rsi+480], r9
-movabs r9, 29809972144732485
-mov QWORD PTR [rsi+488], r9
-movabs r9, 19324591173389987
-mov QWORD PTR [rsi+496], r9
-movabs r9, 16492506917666904
-mov QWORD PTR [rsi+504], r9
-movabs r9, 14635985826474643
-mov QWORD PTR [rsi+512], r9
-movabs r9, 16398082059229396
-mov QWORD PTR [rsi+520], r9
-movabs r9, 9638297459285875
-mov QWORD PTR [rsi+528], r9
-movabs r9, 20692959164533664
-mov QWORD PTR [rsi+536], r9
-movabs r9, 10455835889373941
-mov QWORD PTR [rsi+544], r9
-movabs r9, 15088997507073265
-mov QWORD PTR [rsi+552], r9
-movabs r9, 19847271512942753
-mov QWORD PTR [rsi+560], r9
-movabs r9, 22278162875259735
-mov QWORD PTR [rsi+568], r9
-movabs r9, 7984765110959710
-mov QWORD PTR [rsi+576], r9
-movabs r9, 3517724245221606
-mov QWORD PTR [rsi+584], r9
-movabs r9, 29065087369580419
-mov QWORD PTR [rsi+592], r9
-movabs r9, 33749496538019589
-mov QWORD PTR [rsi+600], r9
-movabs r9, 22582830675910690
-mov QWORD PTR [rsi+608], r9
-movabs r9, 13774157688799364
-mov QWORD PTR [rsi+616], r9
-movabs r9, 33738338209470846
-mov QWORD PTR [rsi+624], r9
-movabs r9, 20549610337740179
-mov QWORD PTR [rsi+632], r9
-movabs r9, 1232604074686745
-mov QWORD PTR [rsi+640], r9
-movabs r9, 17645078572608834
-mov QWORD PTR [rsi+648], r9
-movabs r9, 21638646536106727
-mov QWORD PTR [rsi+656], r9
-movabs r9, 872067341384903
-mov QWORD PTR [rsi+664], r9
-movabs r9, 11559822875647717
-mov QWORD PTR [rsi+672], r9
-movabs r9, 5433172289935931
-mov QWORD PTR [rsi+680], r9
-movabs r9, 5358487101890844
-mov QWORD PTR [rsi+688], r9
-movabs r9, 6854656137752657
-mov QWORD PTR [rsi+696], r9
-movabs r9, 5370830838457625
-mov QWORD PTR [rsi+704], r9
-movabs r9, 20753904747165841
-mov QWORD PTR [rsi+712], r9
-movabs r9, 8027804982718602
-mov QWORD PTR [rsi+720], r9
-movabs r9, 31479735164668747
-mov QWORD PTR [rsi+728], r9
-movabs r9, 5314055668205759
-mov QWORD PTR [rsi+736], r9
-movabs r9, 29850847345983039
-mov QWORD PTR [rsi+744], r9
-movabs r9, 5636951310400997
-mov QWORD PTR [rsi+752], r9
-movabs r9, 27564133741392515
-mov QWORD PTR [rsi+760], r9
-movabs r9, 8233800205883732
-mov QWORD PTR [rsi+768], r9
-movabs r9, 30088883024233849
-mov QWORD PTR [rsi+776], r9
-movabs r9, 3338009929245701
-mov QWORD PTR [rsi+784], r9
-movabs r9, 14628791756398056
-mov QWORD PTR [rsi+792], r9
-movabs r9, 23830870862829877
-mov QWORD PTR [rsi+800], r9
-movabs r9, 28061014216302585
-mov QWORD PTR [rsi+808], r9
-movabs r9, 19997999096164636
-mov QWORD PTR [rsi+816], r9
-movabs r9, 19771555530215640
-mov QWORD PTR [rsi+824], r9
-movabs r9, 10447056982320729
-mov QWORD PTR [rsi+832], r9
-movabs r9, 35286145636332471
-mov QWORD PTR [rsi+840], r9
-movabs r9, 14470225858518424
-mov QWORD PTR [rsi+848], r9
-movabs r9, 30807937853347003
-mov QWORD PTR [rsi+856], r9
-movabs r9, 699409659546815
-mov QWORD PTR [rsi+864], r9
-movabs r9, 12945035726727688
-mov QWORD PTR [rsi+872], r9
-movabs r9, 7098008983067813
-mov QWORD PTR [rsi+880], r9
-movabs r9, 28266511219523944
-mov QWORD PTR [rsi+888], r9
-movabs r9, 15135022374814013
-mov QWORD PTR [rsi+896], r9
-movabs r9, 1158610381635861
-mov QWORD PTR [rsi+904], r9
-movabs r9, 31802227079365879
-mov QWORD PTR [rsi+912], r9
-movabs r9, 2027559572878823
-mov QWORD PTR [rsi+920], r9
-movabs r9, 7402805639339334
-mov QWORD PTR [rsi+928], r9
-movabs r9, 8205002449640623
-mov QWORD PTR [rsi+936], r9
-movabs r9, 31250542829661849
-mov QWORD PTR [rsi+944], r9
-movabs r9, 19527171898598875
-mov QWORD PTR [rsi+952], r9
-movabs r9, 26390134497937253
-mov QWORD PTR [rsi+960], r9
-movabs r9, 26173917256840158
-mov QWORD PTR [rsi+968], r9
-movabs r9, 31797902045269139
-mov QWORD PTR [rsi+976], r9
-movabs r9, 20765007236602922
-mov QWORD PTR [rsi+984], r9
-movabs r9, 16834811519265361
-mov QWORD PTR [rsi+992], r9
-movabs r9, 30142973844857679
-mov QWORD PTR [rsi+1000], r9
-movabs r9, 6014775284471242
-mov QWORD PTR [rsi+1008], r9
-movabs r9, 8490214048855735
-mov QWORD PTR [rsi+1016], r9
+lea r9, [rip + {VG_MLDSA_ZETAS}]
+movdqu xmm0, XMMWORD PTR [r9]
+movdqu XMMWORD PTR [rsi], xmm0
+movdqu xmm0, XMMWORD PTR [r9+16]
+movdqu XMMWORD PTR [rsi+16], xmm0
+movdqu xmm0, XMMWORD PTR [r9+32]
+movdqu XMMWORD PTR [rsi+32], xmm0
+movdqu xmm0, XMMWORD PTR [r9+48]
+movdqu XMMWORD PTR [rsi+48], xmm0
+movdqu xmm0, XMMWORD PTR [r9+64]
+movdqu XMMWORD PTR [rsi+64], xmm0
+movdqu xmm0, XMMWORD PTR [r9+80]
+movdqu XMMWORD PTR [rsi+80], xmm0
+movdqu xmm0, XMMWORD PTR [r9+96]
+movdqu XMMWORD PTR [rsi+96], xmm0
+movdqu xmm0, XMMWORD PTR [r9+112]
+movdqu XMMWORD PTR [rsi+112], xmm0
+movdqu xmm0, XMMWORD PTR [r9+128]
+movdqu XMMWORD PTR [rsi+128], xmm0
+movdqu xmm0, XMMWORD PTR [r9+144]
+movdqu XMMWORD PTR [rsi+144], xmm0
+movdqu xmm0, XMMWORD PTR [r9+160]
+movdqu XMMWORD PTR [rsi+160], xmm0
+movdqu xmm0, XMMWORD PTR [r9+176]
+movdqu XMMWORD PTR [rsi+176], xmm0
+movdqu xmm0, XMMWORD PTR [r9+192]
+movdqu XMMWORD PTR [rsi+192], xmm0
+movdqu xmm0, XMMWORD PTR [r9+208]
+movdqu XMMWORD PTR [rsi+208], xmm0
+movdqu xmm0, XMMWORD PTR [r9+224]
+movdqu XMMWORD PTR [rsi+224], xmm0
+movdqu xmm0, XMMWORD PTR [r9+240]
+movdqu XMMWORD PTR [rsi+240], xmm0
+movdqu xmm0, XMMWORD PTR [r9+256]
+movdqu XMMWORD PTR [rsi+256], xmm0
+movdqu xmm0, XMMWORD PTR [r9+272]
+movdqu XMMWORD PTR [rsi+272], xmm0
+movdqu xmm0, XMMWORD PTR [r9+288]
+movdqu XMMWORD PTR [rsi+288], xmm0
+movdqu xmm0, XMMWORD PTR [r9+304]
+movdqu XMMWORD PTR [rsi+304], xmm0
+movdqu xmm0, XMMWORD PTR [r9+320]
+movdqu XMMWORD PTR [rsi+320], xmm0
+movdqu xmm0, XMMWORD PTR [r9+336]
+movdqu XMMWORD PTR [rsi+336], xmm0
+movdqu xmm0, XMMWORD PTR [r9+352]
+movdqu XMMWORD PTR [rsi+352], xmm0
+movdqu xmm0, XMMWORD PTR [r9+368]
+movdqu XMMWORD PTR [rsi+368], xmm0
+movdqu xmm0, XMMWORD PTR [r9+384]
+movdqu XMMWORD PTR [rsi+384], xmm0
+movdqu xmm0, XMMWORD PTR [r9+400]
+movdqu XMMWORD PTR [rsi+400], xmm0
+movdqu xmm0, XMMWORD PTR [r9+416]
+movdqu XMMWORD PTR [rsi+416], xmm0
+movdqu xmm0, XMMWORD PTR [r9+432]
+movdqu XMMWORD PTR [rsi+432], xmm0
+movdqu xmm0, XMMWORD PTR [r9+448]
+movdqu XMMWORD PTR [rsi+448], xmm0
+movdqu xmm0, XMMWORD PTR [r9+464]
+movdqu XMMWORD PTR [rsi+464], xmm0
+movdqu xmm0, XMMWORD PTR [r9+480]
+movdqu XMMWORD PTR [rsi+480], xmm0
+movdqu xmm0, XMMWORD PTR [r9+496]
+movdqu XMMWORD PTR [rsi+496], xmm0
+movdqu xmm0, XMMWORD PTR [r9+512]
+movdqu XMMWORD PTR [rsi+512], xmm0
+movdqu xmm0, XMMWORD PTR [r9+528]
+movdqu XMMWORD PTR [rsi+528], xmm0
+movdqu xmm0, XMMWORD PTR [r9+544]
+movdqu XMMWORD PTR [rsi+544], xmm0
+movdqu xmm0, XMMWORD PTR [r9+560]
+movdqu XMMWORD PTR [rsi+560], xmm0
+movdqu xmm0, XMMWORD PTR [r9+576]
+movdqu XMMWORD PTR [rsi+576], xmm0
+movdqu xmm0, XMMWORD PTR [r9+592]
+movdqu XMMWORD PTR [rsi+592], xmm0
+movdqu xmm0, XMMWORD PTR [r9+608]
+movdqu XMMWORD PTR [rsi+608], xmm0
+movdqu xmm0, XMMWORD PTR [r9+624]
+movdqu XMMWORD PTR [rsi+624], xmm0
+movdqu xmm0, XMMWORD PTR [r9+640]
+movdqu XMMWORD PTR [rsi+640], xmm0
+movdqu xmm0, XMMWORD PTR [r9+656]
+movdqu XMMWORD PTR [rsi+656], xmm0
+movdqu xmm0, XMMWORD PTR [r9+672]
+movdqu XMMWORD PTR [rsi+672], xmm0
+movdqu xmm0, XMMWORD PTR [r9+688]
+movdqu XMMWORD PTR [rsi+688], xmm0
+movdqu xmm0, XMMWORD PTR [r9+704]
+movdqu XMMWORD PTR [rsi+704], xmm0
+movdqu xmm0, XMMWORD PTR [r9+720]
+movdqu XMMWORD PTR [rsi+720], xmm0
+movdqu xmm0, XMMWORD PTR [r9+736]
+movdqu XMMWORD PTR [rsi+736], xmm0
+movdqu xmm0, XMMWORD PTR [r9+752]
+movdqu XMMWORD PTR [rsi+752], xmm0
+movdqu xmm0, XMMWORD PTR [r9+768]
+movdqu XMMWORD PTR [rsi+768], xmm0
+movdqu xmm0, XMMWORD PTR [r9+784]
+movdqu XMMWORD PTR [rsi+784], xmm0
+movdqu xmm0, XMMWORD PTR [r9+800]
+movdqu XMMWORD PTR [rsi+800], xmm0
+movdqu xmm0, XMMWORD PTR [r9+816]
+movdqu XMMWORD PTR [rsi+816], xmm0
+movdqu xmm0, XMMWORD PTR [r9+832]
+movdqu XMMWORD PTR [rsi+832], xmm0
+movdqu xmm0, XMMWORD PTR [r9+848]
+movdqu XMMWORD PTR [rsi+848], xmm0
+movdqu xmm0, XMMWORD PTR [r9+864]
+movdqu XMMWORD PTR [rsi+864], xmm0
+movdqu xmm0, XMMWORD PTR [r9+880]
+movdqu XMMWORD PTR [rsi+880], xmm0
+movdqu xmm0, XMMWORD PTR [r9+896]
+movdqu XMMWORD PTR [rsi+896], xmm0
+movdqu xmm0, XMMWORD PTR [r9+912]
+movdqu XMMWORD PTR [rsi+912], xmm0
+movdqu xmm0, XMMWORD PTR [r9+928]
+movdqu XMMWORD PTR [rsi+928], xmm0
+movdqu xmm0, XMMWORD PTR [r9+944]
+movdqu XMMWORD PTR [rsi+944], xmm0
+movdqu xmm0, XMMWORD PTR [r9+960]
+movdqu XMMWORD PTR [rsi+960], xmm0
+movdqu xmm0, XMMWORD PTR [r9+976]
+movdqu XMMWORD PTR [rsi+976], xmm0
+movdqu xmm0, XMMWORD PTR [r9+992]
+movdqu XMMWORD PTR [rsi+992], xmm0
+movdqu xmm0, XMMWORD PTR [r9+1008]
+movdqu XMMWORD PTR [rsi+1008], xmm0
 mov eax, 8380417
 movq xmm15, rax
 pshufd xmm15, xmm15, 0
@@ -1419,6 +1166,7 @@ mov DWORD PTR [rsi+768], r11d
 ldmxcsr DWORD PTR [rsi+768]
 ret
 .p2align 6",
+        VG_MLDSA_ZETAS = sym super::consts::VG_MLDSA_ZETAS,
     )
 }
 
@@ -1788,262 +1536,71 @@ mov eax, 8127
 mov DWORD PTR [rsi+772], eax
 ldmxcsr DWORD PTR [rsi+772]
 lfence
-movabs r9, 111012023893504
-mov QWORD PTR [rsi], r9
-movabs r9, 33764919763013891
-mov QWORD PTR [rsi+8], r9
-movabs r9, 32652304184483396
-mov QWORD PTR [rsi+16], r9
-movabs r9, 2003464812134697
-mov QWORD PTR [rsi+24], r9
-movabs r9, 10107995079564843
-mov QWORD PTR [rsi+32], r9
-movabs r9, 27008953388524718
-mov QWORD PTR [rsi+40], r9
-movabs r9, 23603259066260085
-mov QWORD PTR [rsi+48], r9
-movabs r9, 11510954738022985
-mov QWORD PTR [rsi+56], r9
-movabs r9, 4398527550166616
-mov QWORD PTR [rsi+64], r9
-movabs r9, 15401443493111205
-mov QWORD PTR [rsi+72], r9
-movabs r9, 31185040284548497
-mov QWORD PTR [rsi+80], r9
-movabs r9, 26937467947448680
-mov QWORD PTR [rsi+88], r9
-movabs r9, 19416172761943511
-mov QWORD PTR [rsi+96], r9
-movabs r9, 21916122901808376
-mov QWORD PTR [rsi+104], r9
-movabs r9, 35910200088776757
-mov QWORD PTR [rsi+112], r9
-movabs r9, 1202612321726977
-mov QWORD PTR [rsi+120], r9
-movabs r9, 411354790447719
-mov QWORD PTR [rsi+128], r9
-movabs r9, 15163111458665677
-mov QWORD PTR [rsi+136], r9
-movabs r9, 20565458766169348
-mov QWORD PTR [rsi+144], r9
-movabs r9, 16816682460325845
-mov QWORD PTR [rsi+152], r9
-movabs r9, 22920956268049798
-mov QWORD PTR [rsi+160], r9
-movabs r9, 23677166863944342
-mov QWORD PTR [rsi+168], r9
-movabs r9, 34703121006855168
-mov QWORD PTR [rsi+176], r9
-movabs r9, 33677345376425628
-mov QWORD PTR [rsi+184], r9
-movabs r9, 28933472397947454
-mov QWORD PTR [rsi+192], r9
-movabs r9, 19579390106369566
-mov QWORD PTR [rsi+200], r9
-movabs r9, 26799599498134591
-mov QWORD PTR [rsi+208], r9
-movabs r9, 15889643835192413
-mov QWORD PTR [rsi+216], r9
-movabs r9, 2282148053410728
-mov QWORD PTR [rsi+224], r9
-movabs r9, 16668952760323958
-mov QWORD PTR [rsi+232], r9
-movabs r9, 25011900965946676
-mov QWORD PTR [rsi+240], r9
-movabs r9, 23977247637478740
-mov QWORD PTR [rsi+248], r9
-movabs r9, 29427887555995366
-mov QWORD PTR [rsi+256], r9
-movabs r9, 22931526182748624
-mov QWORD PTR [rsi+264], r9
-movabs r9, 14929091579459166
-mov QWORD PTR [rsi+272], r9
-movabs r9, 29185144592086471
-mov QWORD PTR [rsi+280], r9
-movabs r9, 8329290213797750
-mov QWORD PTR [rsi+288], r9
-movabs r9, 31697782066745459
-mov QWORD PTR [rsi+296], r9
-movabs r9, 22432987854353025
-mov QWORD PTR [rsi+304], r9
-movabs r9, 545125843890401
-mov QWORD PTR [rsi+312], r9
-movabs r9, 31769864501989618
-mov QWORD PTR [rsi+320], r9
-movabs r9, 11662103226140216
-mov QWORD PTR [rsi+328], r9
-movabs r9, 20130185304250276
-mov QWORD PTR [rsi+336], r9
-movabs r9, 25354781094156910
-mov QWORD PTR [rsi+344], r9
-movabs r9, 30717142252233347
-mov QWORD PTR [rsi+352], r9
-movabs r9, 30375073877558844
-mov QWORD PTR [rsi+360], r9
-movabs r9, 5794237307816926
-mov QWORD PTR [rsi+368], r9
-movabs r9, 29849966874477923
-mov QWORD PTR [rsi+376], r9
-movabs r9, 1137925820308458
-mov QWORD PTR [rsi+384], r9
-movabs r9, 13305774323778583
-mov QWORD PTR [rsi+392], r9
-movabs r9, 31268732009491712
-mov QWORD PTR [rsi+400], r9
-movabs r9, 17002134848261444
-mov QWORD PTR [rsi+408], r9
-movabs r9, 35956774717033419
-mov QWORD PTR [rsi+416], r9
-movabs r9, 22036141462600008
-mov QWORD PTR [rsi+424], r9
-movabs r9, 35087477629023596
-mov QWORD PTR [rsi+432], r9
-movabs r9, 30337763489061025
-mov QWORD PTR [rsi+440], r9
-movabs r9, 20732429908239468
-mov QWORD PTR [rsi+448], r9
-movabs r9, 28041905903253186
-mov QWORD PTR [rsi+456], r9
-movabs r9, 35231517950811284
-mov QWORD PTR [rsi+464], r9
-movabs r9, 5760968484459269
-mov QWORD PTR [rsi+472], r9
-movabs r9, 29186403016613413
-mov QWORD PTR [rsi+480], r9
-movabs r9, 29809972144732485
-mov QWORD PTR [rsi+488], r9
-movabs r9, 19324591173389987
-mov QWORD PTR [rsi+496], r9
-movabs r9, 16492506917666904
-mov QWORD PTR [rsi+504], r9
-movabs r9, 14635985826474643
-mov QWORD PTR [rsi+512], r9
-movabs r9, 16398082059229396
-mov QWORD PTR [rsi+520], r9
-movabs r9, 9638297459285875
-mov QWORD PTR [rsi+528], r9
-movabs r9, 20692959164533664
-mov QWORD PTR [rsi+536], r9
-movabs r9, 10455835889373941
-mov QWORD PTR [rsi+544], r9
-movabs r9, 15088997507073265
-mov QWORD PTR [rsi+552], r9
-movabs r9, 19847271512942753
-mov QWORD PTR [rsi+560], r9
-movabs r9, 22278162875259735
-mov QWORD PTR [rsi+568], r9
-movabs r9, 7984765110959710
-mov QWORD PTR [rsi+576], r9
-movabs r9, 3517724245221606
-mov QWORD PTR [rsi+584], r9
-movabs r9, 29065087369580419
-mov QWORD PTR [rsi+592], r9
-movabs r9, 33749496538019589
-mov QWORD PTR [rsi+600], r9
-movabs r9, 22582830675910690
-mov QWORD PTR [rsi+608], r9
-movabs r9, 13774157688799364
-mov QWORD PTR [rsi+616], r9
-movabs r9, 33738338209470846
-mov QWORD PTR [rsi+624], r9
-movabs r9, 20549610337740179
-mov QWORD PTR [rsi+632], r9
-movabs r9, 1232604074686745
-mov QWORD PTR [rsi+640], r9
-movabs r9, 17645078572608834
-mov QWORD PTR [rsi+648], r9
-movabs r9, 21638646536106727
-mov QWORD PTR [rsi+656], r9
-movabs r9, 872067341384903
-mov QWORD PTR [rsi+664], r9
-movabs r9, 11559822875647717
-mov QWORD PTR [rsi+672], r9
-movabs r9, 5433172289935931
-mov QWORD PTR [rsi+680], r9
-movabs r9, 5358487101890844
-mov QWORD PTR [rsi+688], r9
-movabs r9, 6854656137752657
-mov QWORD PTR [rsi+696], r9
-movabs r9, 5370830838457625
-mov QWORD PTR [rsi+704], r9
-movabs r9, 20753904747165841
-mov QWORD PTR [rsi+712], r9
-movabs r9, 8027804982718602
-mov QWORD PTR [rsi+720], r9
-movabs r9, 31479735164668747
-mov QWORD PTR [rsi+728], r9
-movabs r9, 5314055668205759
-mov QWORD PTR [rsi+736], r9
-movabs r9, 29850847345983039
-mov QWORD PTR [rsi+744], r9
-movabs r9, 5636951310400997
-mov QWORD PTR [rsi+752], r9
-movabs r9, 27564133741392515
-mov QWORD PTR [rsi+760], r9
-movabs r9, 8233800205883732
-mov QWORD PTR [rsi+768], r9
-movabs r9, 30088883024233849
-mov QWORD PTR [rsi+776], r9
-movabs r9, 3338009929245701
-mov QWORD PTR [rsi+784], r9
-movabs r9, 14628791756398056
-mov QWORD PTR [rsi+792], r9
-movabs r9, 23830870862829877
-mov QWORD PTR [rsi+800], r9
-movabs r9, 28061014216302585
-mov QWORD PTR [rsi+808], r9
-movabs r9, 19997999096164636
-mov QWORD PTR [rsi+816], r9
-movabs r9, 19771555530215640
-mov QWORD PTR [rsi+824], r9
-movabs r9, 10447056982320729
-mov QWORD PTR [rsi+832], r9
-movabs r9, 35286145636332471
-mov QWORD PTR [rsi+840], r9
-movabs r9, 14470225858518424
-mov QWORD PTR [rsi+848], r9
-movabs r9, 30807937853347003
-mov QWORD PTR [rsi+856], r9
-movabs r9, 699409659546815
-mov QWORD PTR [rsi+864], r9
-movabs r9, 12945035726727688
-mov QWORD PTR [rsi+872], r9
-movabs r9, 7098008983067813
-mov QWORD PTR [rsi+880], r9
-movabs r9, 28266511219523944
-mov QWORD PTR [rsi+888], r9
-movabs r9, 15135022374814013
-mov QWORD PTR [rsi+896], r9
-movabs r9, 1158610381635861
-mov QWORD PTR [rsi+904], r9
-movabs r9, 31802227079365879
-mov QWORD PTR [rsi+912], r9
-movabs r9, 2027559572878823
-mov QWORD PTR [rsi+920], r9
-movabs r9, 7402805639339334
-mov QWORD PTR [rsi+928], r9
-movabs r9, 8205002449640623
-mov QWORD PTR [rsi+936], r9
-movabs r9, 31250542829661849
-mov QWORD PTR [rsi+944], r9
-movabs r9, 19527171898598875
-mov QWORD PTR [rsi+952], r9
-movabs r9, 26390134497937253
-mov QWORD PTR [rsi+960], r9
-movabs r9, 26173917256840158
-mov QWORD PTR [rsi+968], r9
-movabs r9, 31797902045269139
-mov QWORD PTR [rsi+976], r9
-movabs r9, 20765007236602922
-mov QWORD PTR [rsi+984], r9
-movabs r9, 16834811519265361
-mov QWORD PTR [rsi+992], r9
-movabs r9, 30142973844857679
-mov QWORD PTR [rsi+1000], r9
-movabs r9, 6014775284471242
-mov QWORD PTR [rsi+1008], r9
-movabs r9, 8490214048855735
-mov QWORD PTR [rsi+1016], r9
+lea r9, [rip + {VG_MLDSA_ZETAS}]
+vmovdqu ymm0, YMMWORD PTR [r9]
+vmovdqu YMMWORD PTR [rsi], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+32]
+vmovdqu YMMWORD PTR [rsi+32], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+64]
+vmovdqu YMMWORD PTR [rsi+64], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+96]
+vmovdqu YMMWORD PTR [rsi+96], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+128]
+vmovdqu YMMWORD PTR [rsi+128], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+160]
+vmovdqu YMMWORD PTR [rsi+160], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+192]
+vmovdqu YMMWORD PTR [rsi+192], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+224]
+vmovdqu YMMWORD PTR [rsi+224], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+256]
+vmovdqu YMMWORD PTR [rsi+256], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+288]
+vmovdqu YMMWORD PTR [rsi+288], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+320]
+vmovdqu YMMWORD PTR [rsi+320], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+352]
+vmovdqu YMMWORD PTR [rsi+352], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+384]
+vmovdqu YMMWORD PTR [rsi+384], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+416]
+vmovdqu YMMWORD PTR [rsi+416], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+448]
+vmovdqu YMMWORD PTR [rsi+448], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+480]
+vmovdqu YMMWORD PTR [rsi+480], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+512]
+vmovdqu YMMWORD PTR [rsi+512], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+544]
+vmovdqu YMMWORD PTR [rsi+544], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+576]
+vmovdqu YMMWORD PTR [rsi+576], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+608]
+vmovdqu YMMWORD PTR [rsi+608], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+640]
+vmovdqu YMMWORD PTR [rsi+640], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+672]
+vmovdqu YMMWORD PTR [rsi+672], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+704]
+vmovdqu YMMWORD PTR [rsi+704], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+736]
+vmovdqu YMMWORD PTR [rsi+736], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+768]
+vmovdqu YMMWORD PTR [rsi+768], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+800]
+vmovdqu YMMWORD PTR [rsi+800], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+832]
+vmovdqu YMMWORD PTR [rsi+832], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+864]
+vmovdqu YMMWORD PTR [rsi+864], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+896]
+vmovdqu YMMWORD PTR [rsi+896], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+928]
+vmovdqu YMMWORD PTR [rsi+928], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+960]
+vmovdqu YMMWORD PTR [rsi+960], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+992]
+vmovdqu YMMWORD PTR [rsi+992], ymm0
 mov eax, 8380417
 vmovq xmm15, rax
 vpbroadcastd ymm15, xmm15
@@ -2373,6 +1930,7 @@ mov DWORD PTR [rsi+768], r11d
 ldmxcsr DWORD PTR [rsi+768]
 ret
 .p2align 6",
+        VG_MLDSA_ZETAS = sym super::consts::VG_MLDSA_ZETAS,
     )
 }
 
@@ -2404,262 +1962,71 @@ mov eax, 8127
 mov DWORD PTR [rsi+772], eax
 ldmxcsr DWORD PTR [rsi+772]
 lfence
-movabs r9, 111012023893504
-mov QWORD PTR [rsi], r9
-movabs r9, 33764919763013891
-mov QWORD PTR [rsi+8], r9
-movabs r9, 32652304184483396
-mov QWORD PTR [rsi+16], r9
-movabs r9, 2003464812134697
-mov QWORD PTR [rsi+24], r9
-movabs r9, 10107995079564843
-mov QWORD PTR [rsi+32], r9
-movabs r9, 27008953388524718
-mov QWORD PTR [rsi+40], r9
-movabs r9, 23603259066260085
-mov QWORD PTR [rsi+48], r9
-movabs r9, 11510954738022985
-mov QWORD PTR [rsi+56], r9
-movabs r9, 4398527550166616
-mov QWORD PTR [rsi+64], r9
-movabs r9, 15401443493111205
-mov QWORD PTR [rsi+72], r9
-movabs r9, 31185040284548497
-mov QWORD PTR [rsi+80], r9
-movabs r9, 26937467947448680
-mov QWORD PTR [rsi+88], r9
-movabs r9, 19416172761943511
-mov QWORD PTR [rsi+96], r9
-movabs r9, 21916122901808376
-mov QWORD PTR [rsi+104], r9
-movabs r9, 35910200088776757
-mov QWORD PTR [rsi+112], r9
-movabs r9, 1202612321726977
-mov QWORD PTR [rsi+120], r9
-movabs r9, 411354790447719
-mov QWORD PTR [rsi+128], r9
-movabs r9, 15163111458665677
-mov QWORD PTR [rsi+136], r9
-movabs r9, 20565458766169348
-mov QWORD PTR [rsi+144], r9
-movabs r9, 16816682460325845
-mov QWORD PTR [rsi+152], r9
-movabs r9, 22920956268049798
-mov QWORD PTR [rsi+160], r9
-movabs r9, 23677166863944342
-mov QWORD PTR [rsi+168], r9
-movabs r9, 34703121006855168
-mov QWORD PTR [rsi+176], r9
-movabs r9, 33677345376425628
-mov QWORD PTR [rsi+184], r9
-movabs r9, 28933472397947454
-mov QWORD PTR [rsi+192], r9
-movabs r9, 19579390106369566
-mov QWORD PTR [rsi+200], r9
-movabs r9, 26799599498134591
-mov QWORD PTR [rsi+208], r9
-movabs r9, 15889643835192413
-mov QWORD PTR [rsi+216], r9
-movabs r9, 2282148053410728
-mov QWORD PTR [rsi+224], r9
-movabs r9, 16668952760323958
-mov QWORD PTR [rsi+232], r9
-movabs r9, 25011900965946676
-mov QWORD PTR [rsi+240], r9
-movabs r9, 23977247637478740
-mov QWORD PTR [rsi+248], r9
-movabs r9, 29427887555995366
-mov QWORD PTR [rsi+256], r9
-movabs r9, 22931526182748624
-mov QWORD PTR [rsi+264], r9
-movabs r9, 14929091579459166
-mov QWORD PTR [rsi+272], r9
-movabs r9, 29185144592086471
-mov QWORD PTR [rsi+280], r9
-movabs r9, 8329290213797750
-mov QWORD PTR [rsi+288], r9
-movabs r9, 31697782066745459
-mov QWORD PTR [rsi+296], r9
-movabs r9, 22432987854353025
-mov QWORD PTR [rsi+304], r9
-movabs r9, 545125843890401
-mov QWORD PTR [rsi+312], r9
-movabs r9, 31769864501989618
-mov QWORD PTR [rsi+320], r9
-movabs r9, 11662103226140216
-mov QWORD PTR [rsi+328], r9
-movabs r9, 20130185304250276
-mov QWORD PTR [rsi+336], r9
-movabs r9, 25354781094156910
-mov QWORD PTR [rsi+344], r9
-movabs r9, 30717142252233347
-mov QWORD PTR [rsi+352], r9
-movabs r9, 30375073877558844
-mov QWORD PTR [rsi+360], r9
-movabs r9, 5794237307816926
-mov QWORD PTR [rsi+368], r9
-movabs r9, 29849966874477923
-mov QWORD PTR [rsi+376], r9
-movabs r9, 1137925820308458
-mov QWORD PTR [rsi+384], r9
-movabs r9, 13305774323778583
-mov QWORD PTR [rsi+392], r9
-movabs r9, 31268732009491712
-mov QWORD PTR [rsi+400], r9
-movabs r9, 17002134848261444
-mov QWORD PTR [rsi+408], r9
-movabs r9, 35956774717033419
-mov QWORD PTR [rsi+416], r9
-movabs r9, 22036141462600008
-mov QWORD PTR [rsi+424], r9
-movabs r9, 35087477629023596
-mov QWORD PTR [rsi+432], r9
-movabs r9, 30337763489061025
-mov QWORD PTR [rsi+440], r9
-movabs r9, 20732429908239468
-mov QWORD PTR [rsi+448], r9
-movabs r9, 28041905903253186
-mov QWORD PTR [rsi+456], r9
-movabs r9, 35231517950811284
-mov QWORD PTR [rsi+464], r9
-movabs r9, 5760968484459269
-mov QWORD PTR [rsi+472], r9
-movabs r9, 29186403016613413
-mov QWORD PTR [rsi+480], r9
-movabs r9, 29809972144732485
-mov QWORD PTR [rsi+488], r9
-movabs r9, 19324591173389987
-mov QWORD PTR [rsi+496], r9
-movabs r9, 16492506917666904
-mov QWORD PTR [rsi+504], r9
-movabs r9, 14635985826474643
-mov QWORD PTR [rsi+512], r9
-movabs r9, 16398082059229396
-mov QWORD PTR [rsi+520], r9
-movabs r9, 9638297459285875
-mov QWORD PTR [rsi+528], r9
-movabs r9, 20692959164533664
-mov QWORD PTR [rsi+536], r9
-movabs r9, 10455835889373941
-mov QWORD PTR [rsi+544], r9
-movabs r9, 15088997507073265
-mov QWORD PTR [rsi+552], r9
-movabs r9, 19847271512942753
-mov QWORD PTR [rsi+560], r9
-movabs r9, 22278162875259735
-mov QWORD PTR [rsi+568], r9
-movabs r9, 7984765110959710
-mov QWORD PTR [rsi+576], r9
-movabs r9, 3517724245221606
-mov QWORD PTR [rsi+584], r9
-movabs r9, 29065087369580419
-mov QWORD PTR [rsi+592], r9
-movabs r9, 33749496538019589
-mov QWORD PTR [rsi+600], r9
-movabs r9, 22582830675910690
-mov QWORD PTR [rsi+608], r9
-movabs r9, 13774157688799364
-mov QWORD PTR [rsi+616], r9
-movabs r9, 33738338209470846
-mov QWORD PTR [rsi+624], r9
-movabs r9, 20549610337740179
-mov QWORD PTR [rsi+632], r9
-movabs r9, 1232604074686745
-mov QWORD PTR [rsi+640], r9
-movabs r9, 17645078572608834
-mov QWORD PTR [rsi+648], r9
-movabs r9, 21638646536106727
-mov QWORD PTR [rsi+656], r9
-movabs r9, 872067341384903
-mov QWORD PTR [rsi+664], r9
-movabs r9, 11559822875647717
-mov QWORD PTR [rsi+672], r9
-movabs r9, 5433172289935931
-mov QWORD PTR [rsi+680], r9
-movabs r9, 5358487101890844
-mov QWORD PTR [rsi+688], r9
-movabs r9, 6854656137752657
-mov QWORD PTR [rsi+696], r9
-movabs r9, 5370830838457625
-mov QWORD PTR [rsi+704], r9
-movabs r9, 20753904747165841
-mov QWORD PTR [rsi+712], r9
-movabs r9, 8027804982718602
-mov QWORD PTR [rsi+720], r9
-movabs r9, 31479735164668747
-mov QWORD PTR [rsi+728], r9
-movabs r9, 5314055668205759
-mov QWORD PTR [rsi+736], r9
-movabs r9, 29850847345983039
-mov QWORD PTR [rsi+744], r9
-movabs r9, 5636951310400997
-mov QWORD PTR [rsi+752], r9
-movabs r9, 27564133741392515
-mov QWORD PTR [rsi+760], r9
-movabs r9, 8233800205883732
-mov QWORD PTR [rsi+768], r9
-movabs r9, 30088883024233849
-mov QWORD PTR [rsi+776], r9
-movabs r9, 3338009929245701
-mov QWORD PTR [rsi+784], r9
-movabs r9, 14628791756398056
-mov QWORD PTR [rsi+792], r9
-movabs r9, 23830870862829877
-mov QWORD PTR [rsi+800], r9
-movabs r9, 28061014216302585
-mov QWORD PTR [rsi+808], r9
-movabs r9, 19997999096164636
-mov QWORD PTR [rsi+816], r9
-movabs r9, 19771555530215640
-mov QWORD PTR [rsi+824], r9
-movabs r9, 10447056982320729
-mov QWORD PTR [rsi+832], r9
-movabs r9, 35286145636332471
-mov QWORD PTR [rsi+840], r9
-movabs r9, 14470225858518424
-mov QWORD PTR [rsi+848], r9
-movabs r9, 30807937853347003
-mov QWORD PTR [rsi+856], r9
-movabs r9, 699409659546815
-mov QWORD PTR [rsi+864], r9
-movabs r9, 12945035726727688
-mov QWORD PTR [rsi+872], r9
-movabs r9, 7098008983067813
-mov QWORD PTR [rsi+880], r9
-movabs r9, 28266511219523944
-mov QWORD PTR [rsi+888], r9
-movabs r9, 15135022374814013
-mov QWORD PTR [rsi+896], r9
-movabs r9, 1158610381635861
-mov QWORD PTR [rsi+904], r9
-movabs r9, 31802227079365879
-mov QWORD PTR [rsi+912], r9
-movabs r9, 2027559572878823
-mov QWORD PTR [rsi+920], r9
-movabs r9, 7402805639339334
-mov QWORD PTR [rsi+928], r9
-movabs r9, 8205002449640623
-mov QWORD PTR [rsi+936], r9
-movabs r9, 31250542829661849
-mov QWORD PTR [rsi+944], r9
-movabs r9, 19527171898598875
-mov QWORD PTR [rsi+952], r9
-movabs r9, 26390134497937253
-mov QWORD PTR [rsi+960], r9
-movabs r9, 26173917256840158
-mov QWORD PTR [rsi+968], r9
-movabs r9, 31797902045269139
-mov QWORD PTR [rsi+976], r9
-movabs r9, 20765007236602922
-mov QWORD PTR [rsi+984], r9
-movabs r9, 16834811519265361
-mov QWORD PTR [rsi+992], r9
-movabs r9, 30142973844857679
-mov QWORD PTR [rsi+1000], r9
-movabs r9, 6014775284471242
-mov QWORD PTR [rsi+1008], r9
-movabs r9, 8490214048855735
-mov QWORD PTR [rsi+1016], r9
+lea r9, [rip + {VG_MLDSA_ZETAS}]
+vmovdqu ymm0, YMMWORD PTR [r9]
+vmovdqu YMMWORD PTR [rsi], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+32]
+vmovdqu YMMWORD PTR [rsi+32], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+64]
+vmovdqu YMMWORD PTR [rsi+64], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+96]
+vmovdqu YMMWORD PTR [rsi+96], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+128]
+vmovdqu YMMWORD PTR [rsi+128], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+160]
+vmovdqu YMMWORD PTR [rsi+160], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+192]
+vmovdqu YMMWORD PTR [rsi+192], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+224]
+vmovdqu YMMWORD PTR [rsi+224], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+256]
+vmovdqu YMMWORD PTR [rsi+256], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+288]
+vmovdqu YMMWORD PTR [rsi+288], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+320]
+vmovdqu YMMWORD PTR [rsi+320], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+352]
+vmovdqu YMMWORD PTR [rsi+352], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+384]
+vmovdqu YMMWORD PTR [rsi+384], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+416]
+vmovdqu YMMWORD PTR [rsi+416], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+448]
+vmovdqu YMMWORD PTR [rsi+448], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+480]
+vmovdqu YMMWORD PTR [rsi+480], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+512]
+vmovdqu YMMWORD PTR [rsi+512], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+544]
+vmovdqu YMMWORD PTR [rsi+544], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+576]
+vmovdqu YMMWORD PTR [rsi+576], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+608]
+vmovdqu YMMWORD PTR [rsi+608], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+640]
+vmovdqu YMMWORD PTR [rsi+640], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+672]
+vmovdqu YMMWORD PTR [rsi+672], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+704]
+vmovdqu YMMWORD PTR [rsi+704], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+736]
+vmovdqu YMMWORD PTR [rsi+736], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+768]
+vmovdqu YMMWORD PTR [rsi+768], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+800]
+vmovdqu YMMWORD PTR [rsi+800], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+832]
+vmovdqu YMMWORD PTR [rsi+832], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+864]
+vmovdqu YMMWORD PTR [rsi+864], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+896]
+vmovdqu YMMWORD PTR [rsi+896], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+928]
+vmovdqu YMMWORD PTR [rsi+928], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+960]
+vmovdqu YMMWORD PTR [rsi+960], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+992]
+vmovdqu YMMWORD PTR [rsi+992], ymm0
 mov eax, 8380417
 vmovq xmm15, rax
 vpbroadcastd ymm15, xmm15
@@ -3014,6 +2381,7 @@ mov DWORD PTR [rsi+768], r11d
 ldmxcsr DWORD PTR [rsi+768]
 ret
 .p2align 6",
+        VG_MLDSA_ZETAS = sym super::consts::VG_MLDSA_ZETAS,
     )
 }
 
@@ -3425,262 +2793,135 @@ add r10, 16
 add rdx, 16
 sub rcx, 1
 jne 20b
-movabs r9, 111012023893504
-mov QWORD PTR [rsi], r9
-movabs r9, 33764919763013891
-mov QWORD PTR [rsi+8], r9
-movabs r9, 32652304184483396
-mov QWORD PTR [rsi+16], r9
-movabs r9, 2003464812134697
-mov QWORD PTR [rsi+24], r9
-movabs r9, 10107995079564843
-mov QWORD PTR [rsi+32], r9
-movabs r9, 27008953388524718
-mov QWORD PTR [rsi+40], r9
-movabs r9, 23603259066260085
-mov QWORD PTR [rsi+48], r9
-movabs r9, 11510954738022985
-mov QWORD PTR [rsi+56], r9
-movabs r9, 4398527550166616
-mov QWORD PTR [rsi+64], r9
-movabs r9, 15401443493111205
-mov QWORD PTR [rsi+72], r9
-movabs r9, 31185040284548497
-mov QWORD PTR [rsi+80], r9
-movabs r9, 26937467947448680
-mov QWORD PTR [rsi+88], r9
-movabs r9, 19416172761943511
-mov QWORD PTR [rsi+96], r9
-movabs r9, 21916122901808376
-mov QWORD PTR [rsi+104], r9
-movabs r9, 35910200088776757
-mov QWORD PTR [rsi+112], r9
-movabs r9, 1202612321726977
-mov QWORD PTR [rsi+120], r9
-movabs r9, 411354790447719
-mov QWORD PTR [rsi+128], r9
-movabs r9, 15163111458665677
-mov QWORD PTR [rsi+136], r9
-movabs r9, 20565458766169348
-mov QWORD PTR [rsi+144], r9
-movabs r9, 16816682460325845
-mov QWORD PTR [rsi+152], r9
-movabs r9, 22920956268049798
-mov QWORD PTR [rsi+160], r9
-movabs r9, 23677166863944342
-mov QWORD PTR [rsi+168], r9
-movabs r9, 34703121006855168
-mov QWORD PTR [rsi+176], r9
-movabs r9, 33677345376425628
-mov QWORD PTR [rsi+184], r9
-movabs r9, 28933472397947454
-mov QWORD PTR [rsi+192], r9
-movabs r9, 19579390106369566
-mov QWORD PTR [rsi+200], r9
-movabs r9, 26799599498134591
-mov QWORD PTR [rsi+208], r9
-movabs r9, 15889643835192413
-mov QWORD PTR [rsi+216], r9
-movabs r9, 2282148053410728
-mov QWORD PTR [rsi+224], r9
-movabs r9, 16668952760323958
-mov QWORD PTR [rsi+232], r9
-movabs r9, 25011900965946676
-mov QWORD PTR [rsi+240], r9
-movabs r9, 23977247637478740
-mov QWORD PTR [rsi+248], r9
-movabs r9, 29427887555995366
-mov QWORD PTR [rsi+256], r9
-movabs r9, 22931526182748624
-mov QWORD PTR [rsi+264], r9
-movabs r9, 14929091579459166
-mov QWORD PTR [rsi+272], r9
-movabs r9, 29185144592086471
-mov QWORD PTR [rsi+280], r9
-movabs r9, 8329290213797750
-mov QWORD PTR [rsi+288], r9
-movabs r9, 31697782066745459
-mov QWORD PTR [rsi+296], r9
-movabs r9, 22432987854353025
-mov QWORD PTR [rsi+304], r9
-movabs r9, 545125843890401
-mov QWORD PTR [rsi+312], r9
-movabs r9, 31769864501989618
-mov QWORD PTR [rsi+320], r9
-movabs r9, 11662103226140216
-mov QWORD PTR [rsi+328], r9
-movabs r9, 20130185304250276
-mov QWORD PTR [rsi+336], r9
-movabs r9, 25354781094156910
-mov QWORD PTR [rsi+344], r9
-movabs r9, 30717142252233347
-mov QWORD PTR [rsi+352], r9
-movabs r9, 30375073877558844
-mov QWORD PTR [rsi+360], r9
-movabs r9, 5794237307816926
-mov QWORD PTR [rsi+368], r9
-movabs r9, 29849966874477923
-mov QWORD PTR [rsi+376], r9
-movabs r9, 1137925820308458
-mov QWORD PTR [rsi+384], r9
-movabs r9, 13305774323778583
-mov QWORD PTR [rsi+392], r9
-movabs r9, 31268732009491712
-mov QWORD PTR [rsi+400], r9
-movabs r9, 17002134848261444
-mov QWORD PTR [rsi+408], r9
-movabs r9, 35956774717033419
-mov QWORD PTR [rsi+416], r9
-movabs r9, 22036141462600008
-mov QWORD PTR [rsi+424], r9
-movabs r9, 35087477629023596
-mov QWORD PTR [rsi+432], r9
-movabs r9, 30337763489061025
-mov QWORD PTR [rsi+440], r9
-movabs r9, 20732429908239468
-mov QWORD PTR [rsi+448], r9
-movabs r9, 28041905903253186
-mov QWORD PTR [rsi+456], r9
-movabs r9, 35231517950811284
-mov QWORD PTR [rsi+464], r9
-movabs r9, 5760968484459269
-mov QWORD PTR [rsi+472], r9
-movabs r9, 29186403016613413
-mov QWORD PTR [rsi+480], r9
-movabs r9, 29809972144732485
-mov QWORD PTR [rsi+488], r9
-movabs r9, 19324591173389987
-mov QWORD PTR [rsi+496], r9
-movabs r9, 16492506917666904
-mov QWORD PTR [rsi+504], r9
-movabs r9, 14635985826474643
-mov QWORD PTR [rsi+512], r9
-movabs r9, 16398082059229396
-mov QWORD PTR [rsi+520], r9
-movabs r9, 9638297459285875
-mov QWORD PTR [rsi+528], r9
-movabs r9, 20692959164533664
-mov QWORD PTR [rsi+536], r9
-movabs r9, 10455835889373941
-mov QWORD PTR [rsi+544], r9
-movabs r9, 15088997507073265
-mov QWORD PTR [rsi+552], r9
-movabs r9, 19847271512942753
-mov QWORD PTR [rsi+560], r9
-movabs r9, 22278162875259735
-mov QWORD PTR [rsi+568], r9
-movabs r9, 7984765110959710
-mov QWORD PTR [rsi+576], r9
-movabs r9, 3517724245221606
-mov QWORD PTR [rsi+584], r9
-movabs r9, 29065087369580419
-mov QWORD PTR [rsi+592], r9
-movabs r9, 33749496538019589
-mov QWORD PTR [rsi+600], r9
-movabs r9, 22582830675910690
-mov QWORD PTR [rsi+608], r9
-movabs r9, 13774157688799364
-mov QWORD PTR [rsi+616], r9
-movabs r9, 33738338209470846
-mov QWORD PTR [rsi+624], r9
-movabs r9, 20549610337740179
-mov QWORD PTR [rsi+632], r9
-movabs r9, 1232604074686745
-mov QWORD PTR [rsi+640], r9
-movabs r9, 17645078572608834
-mov QWORD PTR [rsi+648], r9
-movabs r9, 21638646536106727
-mov QWORD PTR [rsi+656], r9
-movabs r9, 872067341384903
-mov QWORD PTR [rsi+664], r9
-movabs r9, 11559822875647717
-mov QWORD PTR [rsi+672], r9
-movabs r9, 5433172289935931
-mov QWORD PTR [rsi+680], r9
-movabs r9, 5358487101890844
-mov QWORD PTR [rsi+688], r9
-movabs r9, 6854656137752657
-mov QWORD PTR [rsi+696], r9
-movabs r9, 5370830838457625
-mov QWORD PTR [rsi+704], r9
-movabs r9, 20753904747165841
-mov QWORD PTR [rsi+712], r9
-movabs r9, 8027804982718602
-mov QWORD PTR [rsi+720], r9
-movabs r9, 31479735164668747
-mov QWORD PTR [rsi+728], r9
-movabs r9, 5314055668205759
-mov QWORD PTR [rsi+736], r9
-movabs r9, 29850847345983039
-mov QWORD PTR [rsi+744], r9
-movabs r9, 5636951310400997
-mov QWORD PTR [rsi+752], r9
-movabs r9, 27564133741392515
-mov QWORD PTR [rsi+760], r9
-movabs r9, 8233800205883732
-mov QWORD PTR [rsi+768], r9
-movabs r9, 30088883024233849
-mov QWORD PTR [rsi+776], r9
-movabs r9, 3338009929245701
-mov QWORD PTR [rsi+784], r9
-movabs r9, 14628791756398056
-mov QWORD PTR [rsi+792], r9
-movabs r9, 23830870862829877
-mov QWORD PTR [rsi+800], r9
-movabs r9, 28061014216302585
-mov QWORD PTR [rsi+808], r9
-movabs r9, 19997999096164636
-mov QWORD PTR [rsi+816], r9
-movabs r9, 19771555530215640
-mov QWORD PTR [rsi+824], r9
-movabs r9, 10447056982320729
-mov QWORD PTR [rsi+832], r9
-movabs r9, 35286145636332471
-mov QWORD PTR [rsi+840], r9
-movabs r9, 14470225858518424
-mov QWORD PTR [rsi+848], r9
-movabs r9, 30807937853347003
-mov QWORD PTR [rsi+856], r9
-movabs r9, 699409659546815
-mov QWORD PTR [rsi+864], r9
-movabs r9, 12945035726727688
-mov QWORD PTR [rsi+872], r9
-movabs r9, 7098008983067813
-mov QWORD PTR [rsi+880], r9
-movabs r9, 28266511219523944
-mov QWORD PTR [rsi+888], r9
-movabs r9, 15135022374814013
-mov QWORD PTR [rsi+896], r9
-movabs r9, 1158610381635861
-mov QWORD PTR [rsi+904], r9
-movabs r9, 31802227079365879
-mov QWORD PTR [rsi+912], r9
-movabs r9, 2027559572878823
-mov QWORD PTR [rsi+920], r9
-movabs r9, 7402805639339334
-mov QWORD PTR [rsi+928], r9
-movabs r9, 8205002449640623
-mov QWORD PTR [rsi+936], r9
-movabs r9, 31250542829661849
-mov QWORD PTR [rsi+944], r9
-movabs r9, 19527171898598875
-mov QWORD PTR [rsi+952], r9
-movabs r9, 26390134497937253
-mov QWORD PTR [rsi+960], r9
-movabs r9, 26173917256840158
-mov QWORD PTR [rsi+968], r9
-movabs r9, 31797902045269139
-mov QWORD PTR [rsi+976], r9
-movabs r9, 20765007236602922
-mov QWORD PTR [rsi+984], r9
-movabs r9, 16834811519265361
-mov QWORD PTR [rsi+992], r9
-movabs r9, 30142973844857679
-mov QWORD PTR [rsi+1000], r9
-movabs r9, 6014775284471242
-mov QWORD PTR [rsi+1008], r9
-movabs r9, 8490214048855735
-mov QWORD PTR [rsi+1016], r9
+lea r9, [rip + {VG_MLDSA_ZETAS}]
+movdqu xmm0, XMMWORD PTR [r9]
+movdqu XMMWORD PTR [rsi], xmm0
+movdqu xmm0, XMMWORD PTR [r9+16]
+movdqu XMMWORD PTR [rsi+16], xmm0
+movdqu xmm0, XMMWORD PTR [r9+32]
+movdqu XMMWORD PTR [rsi+32], xmm0
+movdqu xmm0, XMMWORD PTR [r9+48]
+movdqu XMMWORD PTR [rsi+48], xmm0
+movdqu xmm0, XMMWORD PTR [r9+64]
+movdqu XMMWORD PTR [rsi+64], xmm0
+movdqu xmm0, XMMWORD PTR [r9+80]
+movdqu XMMWORD PTR [rsi+80], xmm0
+movdqu xmm0, XMMWORD PTR [r9+96]
+movdqu XMMWORD PTR [rsi+96], xmm0
+movdqu xmm0, XMMWORD PTR [r9+112]
+movdqu XMMWORD PTR [rsi+112], xmm0
+movdqu xmm0, XMMWORD PTR [r9+128]
+movdqu XMMWORD PTR [rsi+128], xmm0
+movdqu xmm0, XMMWORD PTR [r9+144]
+movdqu XMMWORD PTR [rsi+144], xmm0
+movdqu xmm0, XMMWORD PTR [r9+160]
+movdqu XMMWORD PTR [rsi+160], xmm0
+movdqu xmm0, XMMWORD PTR [r9+176]
+movdqu XMMWORD PTR [rsi+176], xmm0
+movdqu xmm0, XMMWORD PTR [r9+192]
+movdqu XMMWORD PTR [rsi+192], xmm0
+movdqu xmm0, XMMWORD PTR [r9+208]
+movdqu XMMWORD PTR [rsi+208], xmm0
+movdqu xmm0, XMMWORD PTR [r9+224]
+movdqu XMMWORD PTR [rsi+224], xmm0
+movdqu xmm0, XMMWORD PTR [r9+240]
+movdqu XMMWORD PTR [rsi+240], xmm0
+movdqu xmm0, XMMWORD PTR [r9+256]
+movdqu XMMWORD PTR [rsi+256], xmm0
+movdqu xmm0, XMMWORD PTR [r9+272]
+movdqu XMMWORD PTR [rsi+272], xmm0
+movdqu xmm0, XMMWORD PTR [r9+288]
+movdqu XMMWORD PTR [rsi+288], xmm0
+movdqu xmm0, XMMWORD PTR [r9+304]
+movdqu XMMWORD PTR [rsi+304], xmm0
+movdqu xmm0, XMMWORD PTR [r9+320]
+movdqu XMMWORD PTR [rsi+320], xmm0
+movdqu xmm0, XMMWORD PTR [r9+336]
+movdqu XMMWORD PTR [rsi+336], xmm0
+movdqu xmm0, XMMWORD PTR [r9+352]
+movdqu XMMWORD PTR [rsi+352], xmm0
+movdqu xmm0, XMMWORD PTR [r9+368]
+movdqu XMMWORD PTR [rsi+368], xmm0
+movdqu xmm0, XMMWORD PTR [r9+384]
+movdqu XMMWORD PTR [rsi+384], xmm0
+movdqu xmm0, XMMWORD PTR [r9+400]
+movdqu XMMWORD PTR [rsi+400], xmm0
+movdqu xmm0, XMMWORD PTR [r9+416]
+movdqu XMMWORD PTR [rsi+416], xmm0
+movdqu xmm0, XMMWORD PTR [r9+432]
+movdqu XMMWORD PTR [rsi+432], xmm0
+movdqu xmm0, XMMWORD PTR [r9+448]
+movdqu XMMWORD PTR [rsi+448], xmm0
+movdqu xmm0, XMMWORD PTR [r9+464]
+movdqu XMMWORD PTR [rsi+464], xmm0
+movdqu xmm0, XMMWORD PTR [r9+480]
+movdqu XMMWORD PTR [rsi+480], xmm0
+movdqu xmm0, XMMWORD PTR [r9+496]
+movdqu XMMWORD PTR [rsi+496], xmm0
+movdqu xmm0, XMMWORD PTR [r9+512]
+movdqu XMMWORD PTR [rsi+512], xmm0
+movdqu xmm0, XMMWORD PTR [r9+528]
+movdqu XMMWORD PTR [rsi+528], xmm0
+movdqu xmm0, XMMWORD PTR [r9+544]
+movdqu XMMWORD PTR [rsi+544], xmm0
+movdqu xmm0, XMMWORD PTR [r9+560]
+movdqu XMMWORD PTR [rsi+560], xmm0
+movdqu xmm0, XMMWORD PTR [r9+576]
+movdqu XMMWORD PTR [rsi+576], xmm0
+movdqu xmm0, XMMWORD PTR [r9+592]
+movdqu XMMWORD PTR [rsi+592], xmm0
+movdqu xmm0, XMMWORD PTR [r9+608]
+movdqu XMMWORD PTR [rsi+608], xmm0
+movdqu xmm0, XMMWORD PTR [r9+624]
+movdqu XMMWORD PTR [rsi+624], xmm0
+movdqu xmm0, XMMWORD PTR [r9+640]
+movdqu XMMWORD PTR [rsi+640], xmm0
+movdqu xmm0, XMMWORD PTR [r9+656]
+movdqu XMMWORD PTR [rsi+656], xmm0
+movdqu xmm0, XMMWORD PTR [r9+672]
+movdqu XMMWORD PTR [rsi+672], xmm0
+movdqu xmm0, XMMWORD PTR [r9+688]
+movdqu XMMWORD PTR [rsi+688], xmm0
+movdqu xmm0, XMMWORD PTR [r9+704]
+movdqu XMMWORD PTR [rsi+704], xmm0
+movdqu xmm0, XMMWORD PTR [r9+720]
+movdqu XMMWORD PTR [rsi+720], xmm0
+movdqu xmm0, XMMWORD PTR [r9+736]
+movdqu XMMWORD PTR [rsi+736], xmm0
+movdqu xmm0, XMMWORD PTR [r9+752]
+movdqu XMMWORD PTR [rsi+752], xmm0
+movdqu xmm0, XMMWORD PTR [r9+768]
+movdqu XMMWORD PTR [rsi+768], xmm0
+movdqu xmm0, XMMWORD PTR [r9+784]
+movdqu XMMWORD PTR [rsi+784], xmm0
+movdqu xmm0, XMMWORD PTR [r9+800]
+movdqu XMMWORD PTR [rsi+800], xmm0
+movdqu xmm0, XMMWORD PTR [r9+816]
+movdqu XMMWORD PTR [rsi+816], xmm0
+movdqu xmm0, XMMWORD PTR [r9+832]
+movdqu XMMWORD PTR [rsi+832], xmm0
+movdqu xmm0, XMMWORD PTR [r9+848]
+movdqu XMMWORD PTR [rsi+848], xmm0
+movdqu xmm0, XMMWORD PTR [r9+864]
+movdqu XMMWORD PTR [rsi+864], xmm0
+movdqu xmm0, XMMWORD PTR [r9+880]
+movdqu XMMWORD PTR [rsi+880], xmm0
+movdqu xmm0, XMMWORD PTR [r9+896]
+movdqu XMMWORD PTR [rsi+896], xmm0
+movdqu xmm0, XMMWORD PTR [r9+912]
+movdqu XMMWORD PTR [rsi+912], xmm0
+movdqu xmm0, XMMWORD PTR [r9+928]
+movdqu XMMWORD PTR [rsi+928], xmm0
+movdqu xmm0, XMMWORD PTR [r9+944]
+movdqu XMMWORD PTR [rsi+944], xmm0
+movdqu xmm0, XMMWORD PTR [r9+960]
+movdqu XMMWORD PTR [rsi+960], xmm0
+movdqu xmm0, XMMWORD PTR [r9+976]
+movdqu XMMWORD PTR [rsi+976], xmm0
+movdqu xmm0, XMMWORD PTR [r9+992]
+movdqu XMMWORD PTR [rsi+992], xmm0
+movdqu xmm0, XMMWORD PTR [r9+1008]
+movdqu XMMWORD PTR [rsi+1008], xmm0
 mov eax, 8380417
 movq xmm15, rax
 pshufd xmm15, xmm15, 0
@@ -4111,6 +3352,7 @@ mov DWORD PTR [rsi+768], r11d
 ldmxcsr DWORD PTR [rsi+768]
 ret
 .p2align 6",
+        VG_MLDSA_ZETAS = sym super::consts::VG_MLDSA_ZETAS,
     )
 }
 
@@ -4242,262 +3484,135 @@ add r10, 16
 add rdx, 16
 sub rcx, 1
 jne 20b
-movabs r9, 111012023893504
-mov QWORD PTR [rsi], r9
-movabs r9, 33764919763013891
-mov QWORD PTR [rsi+8], r9
-movabs r9, 32652304184483396
-mov QWORD PTR [rsi+16], r9
-movabs r9, 2003464812134697
-mov QWORD PTR [rsi+24], r9
-movabs r9, 10107995079564843
-mov QWORD PTR [rsi+32], r9
-movabs r9, 27008953388524718
-mov QWORD PTR [rsi+40], r9
-movabs r9, 23603259066260085
-mov QWORD PTR [rsi+48], r9
-movabs r9, 11510954738022985
-mov QWORD PTR [rsi+56], r9
-movabs r9, 4398527550166616
-mov QWORD PTR [rsi+64], r9
-movabs r9, 15401443493111205
-mov QWORD PTR [rsi+72], r9
-movabs r9, 31185040284548497
-mov QWORD PTR [rsi+80], r9
-movabs r9, 26937467947448680
-mov QWORD PTR [rsi+88], r9
-movabs r9, 19416172761943511
-mov QWORD PTR [rsi+96], r9
-movabs r9, 21916122901808376
-mov QWORD PTR [rsi+104], r9
-movabs r9, 35910200088776757
-mov QWORD PTR [rsi+112], r9
-movabs r9, 1202612321726977
-mov QWORD PTR [rsi+120], r9
-movabs r9, 411354790447719
-mov QWORD PTR [rsi+128], r9
-movabs r9, 15163111458665677
-mov QWORD PTR [rsi+136], r9
-movabs r9, 20565458766169348
-mov QWORD PTR [rsi+144], r9
-movabs r9, 16816682460325845
-mov QWORD PTR [rsi+152], r9
-movabs r9, 22920956268049798
-mov QWORD PTR [rsi+160], r9
-movabs r9, 23677166863944342
-mov QWORD PTR [rsi+168], r9
-movabs r9, 34703121006855168
-mov QWORD PTR [rsi+176], r9
-movabs r9, 33677345376425628
-mov QWORD PTR [rsi+184], r9
-movabs r9, 28933472397947454
-mov QWORD PTR [rsi+192], r9
-movabs r9, 19579390106369566
-mov QWORD PTR [rsi+200], r9
-movabs r9, 26799599498134591
-mov QWORD PTR [rsi+208], r9
-movabs r9, 15889643835192413
-mov QWORD PTR [rsi+216], r9
-movabs r9, 2282148053410728
-mov QWORD PTR [rsi+224], r9
-movabs r9, 16668952760323958
-mov QWORD PTR [rsi+232], r9
-movabs r9, 25011900965946676
-mov QWORD PTR [rsi+240], r9
-movabs r9, 23977247637478740
-mov QWORD PTR [rsi+248], r9
-movabs r9, 29427887555995366
-mov QWORD PTR [rsi+256], r9
-movabs r9, 22931526182748624
-mov QWORD PTR [rsi+264], r9
-movabs r9, 14929091579459166
-mov QWORD PTR [rsi+272], r9
-movabs r9, 29185144592086471
-mov QWORD PTR [rsi+280], r9
-movabs r9, 8329290213797750
-mov QWORD PTR [rsi+288], r9
-movabs r9, 31697782066745459
-mov QWORD PTR [rsi+296], r9
-movabs r9, 22432987854353025
-mov QWORD PTR [rsi+304], r9
-movabs r9, 545125843890401
-mov QWORD PTR [rsi+312], r9
-movabs r9, 31769864501989618
-mov QWORD PTR [rsi+320], r9
-movabs r9, 11662103226140216
-mov QWORD PTR [rsi+328], r9
-movabs r9, 20130185304250276
-mov QWORD PTR [rsi+336], r9
-movabs r9, 25354781094156910
-mov QWORD PTR [rsi+344], r9
-movabs r9, 30717142252233347
-mov QWORD PTR [rsi+352], r9
-movabs r9, 30375073877558844
-mov QWORD PTR [rsi+360], r9
-movabs r9, 5794237307816926
-mov QWORD PTR [rsi+368], r9
-movabs r9, 29849966874477923
-mov QWORD PTR [rsi+376], r9
-movabs r9, 1137925820308458
-mov QWORD PTR [rsi+384], r9
-movabs r9, 13305774323778583
-mov QWORD PTR [rsi+392], r9
-movabs r9, 31268732009491712
-mov QWORD PTR [rsi+400], r9
-movabs r9, 17002134848261444
-mov QWORD PTR [rsi+408], r9
-movabs r9, 35956774717033419
-mov QWORD PTR [rsi+416], r9
-movabs r9, 22036141462600008
-mov QWORD PTR [rsi+424], r9
-movabs r9, 35087477629023596
-mov QWORD PTR [rsi+432], r9
-movabs r9, 30337763489061025
-mov QWORD PTR [rsi+440], r9
-movabs r9, 20732429908239468
-mov QWORD PTR [rsi+448], r9
-movabs r9, 28041905903253186
-mov QWORD PTR [rsi+456], r9
-movabs r9, 35231517950811284
-mov QWORD PTR [rsi+464], r9
-movabs r9, 5760968484459269
-mov QWORD PTR [rsi+472], r9
-movabs r9, 29186403016613413
-mov QWORD PTR [rsi+480], r9
-movabs r9, 29809972144732485
-mov QWORD PTR [rsi+488], r9
-movabs r9, 19324591173389987
-mov QWORD PTR [rsi+496], r9
-movabs r9, 16492506917666904
-mov QWORD PTR [rsi+504], r9
-movabs r9, 14635985826474643
-mov QWORD PTR [rsi+512], r9
-movabs r9, 16398082059229396
-mov QWORD PTR [rsi+520], r9
-movabs r9, 9638297459285875
-mov QWORD PTR [rsi+528], r9
-movabs r9, 20692959164533664
-mov QWORD PTR [rsi+536], r9
-movabs r9, 10455835889373941
-mov QWORD PTR [rsi+544], r9
-movabs r9, 15088997507073265
-mov QWORD PTR [rsi+552], r9
-movabs r9, 19847271512942753
-mov QWORD PTR [rsi+560], r9
-movabs r9, 22278162875259735
-mov QWORD PTR [rsi+568], r9
-movabs r9, 7984765110959710
-mov QWORD PTR [rsi+576], r9
-movabs r9, 3517724245221606
-mov QWORD PTR [rsi+584], r9
-movabs r9, 29065087369580419
-mov QWORD PTR [rsi+592], r9
-movabs r9, 33749496538019589
-mov QWORD PTR [rsi+600], r9
-movabs r9, 22582830675910690
-mov QWORD PTR [rsi+608], r9
-movabs r9, 13774157688799364
-mov QWORD PTR [rsi+616], r9
-movabs r9, 33738338209470846
-mov QWORD PTR [rsi+624], r9
-movabs r9, 20549610337740179
-mov QWORD PTR [rsi+632], r9
-movabs r9, 1232604074686745
-mov QWORD PTR [rsi+640], r9
-movabs r9, 17645078572608834
-mov QWORD PTR [rsi+648], r9
-movabs r9, 21638646536106727
-mov QWORD PTR [rsi+656], r9
-movabs r9, 872067341384903
-mov QWORD PTR [rsi+664], r9
-movabs r9, 11559822875647717
-mov QWORD PTR [rsi+672], r9
-movabs r9, 5433172289935931
-mov QWORD PTR [rsi+680], r9
-movabs r9, 5358487101890844
-mov QWORD PTR [rsi+688], r9
-movabs r9, 6854656137752657
-mov QWORD PTR [rsi+696], r9
-movabs r9, 5370830838457625
-mov QWORD PTR [rsi+704], r9
-movabs r9, 20753904747165841
-mov QWORD PTR [rsi+712], r9
-movabs r9, 8027804982718602
-mov QWORD PTR [rsi+720], r9
-movabs r9, 31479735164668747
-mov QWORD PTR [rsi+728], r9
-movabs r9, 5314055668205759
-mov QWORD PTR [rsi+736], r9
-movabs r9, 29850847345983039
-mov QWORD PTR [rsi+744], r9
-movabs r9, 5636951310400997
-mov QWORD PTR [rsi+752], r9
-movabs r9, 27564133741392515
-mov QWORD PTR [rsi+760], r9
-movabs r9, 8233800205883732
-mov QWORD PTR [rsi+768], r9
-movabs r9, 30088883024233849
-mov QWORD PTR [rsi+776], r9
-movabs r9, 3338009929245701
-mov QWORD PTR [rsi+784], r9
-movabs r9, 14628791756398056
-mov QWORD PTR [rsi+792], r9
-movabs r9, 23830870862829877
-mov QWORD PTR [rsi+800], r9
-movabs r9, 28061014216302585
-mov QWORD PTR [rsi+808], r9
-movabs r9, 19997999096164636
-mov QWORD PTR [rsi+816], r9
-movabs r9, 19771555530215640
-mov QWORD PTR [rsi+824], r9
-movabs r9, 10447056982320729
-mov QWORD PTR [rsi+832], r9
-movabs r9, 35286145636332471
-mov QWORD PTR [rsi+840], r9
-movabs r9, 14470225858518424
-mov QWORD PTR [rsi+848], r9
-movabs r9, 30807937853347003
-mov QWORD PTR [rsi+856], r9
-movabs r9, 699409659546815
-mov QWORD PTR [rsi+864], r9
-movabs r9, 12945035726727688
-mov QWORD PTR [rsi+872], r9
-movabs r9, 7098008983067813
-mov QWORD PTR [rsi+880], r9
-movabs r9, 28266511219523944
-mov QWORD PTR [rsi+888], r9
-movabs r9, 15135022374814013
-mov QWORD PTR [rsi+896], r9
-movabs r9, 1158610381635861
-mov QWORD PTR [rsi+904], r9
-movabs r9, 31802227079365879
-mov QWORD PTR [rsi+912], r9
-movabs r9, 2027559572878823
-mov QWORD PTR [rsi+920], r9
-movabs r9, 7402805639339334
-mov QWORD PTR [rsi+928], r9
-movabs r9, 8205002449640623
-mov QWORD PTR [rsi+936], r9
-movabs r9, 31250542829661849
-mov QWORD PTR [rsi+944], r9
-movabs r9, 19527171898598875
-mov QWORD PTR [rsi+952], r9
-movabs r9, 26390134497937253
-mov QWORD PTR [rsi+960], r9
-movabs r9, 26173917256840158
-mov QWORD PTR [rsi+968], r9
-movabs r9, 31797902045269139
-mov QWORD PTR [rsi+976], r9
-movabs r9, 20765007236602922
-mov QWORD PTR [rsi+984], r9
-movabs r9, 16834811519265361
-mov QWORD PTR [rsi+992], r9
-movabs r9, 30142973844857679
-mov QWORD PTR [rsi+1000], r9
-movabs r9, 6014775284471242
-mov QWORD PTR [rsi+1008], r9
-movabs r9, 8490214048855735
-mov QWORD PTR [rsi+1016], r9
+lea r9, [rip + {VG_MLDSA_ZETAS}]
+movdqu xmm0, XMMWORD PTR [r9]
+movdqu XMMWORD PTR [rsi], xmm0
+movdqu xmm0, XMMWORD PTR [r9+16]
+movdqu XMMWORD PTR [rsi+16], xmm0
+movdqu xmm0, XMMWORD PTR [r9+32]
+movdqu XMMWORD PTR [rsi+32], xmm0
+movdqu xmm0, XMMWORD PTR [r9+48]
+movdqu XMMWORD PTR [rsi+48], xmm0
+movdqu xmm0, XMMWORD PTR [r9+64]
+movdqu XMMWORD PTR [rsi+64], xmm0
+movdqu xmm0, XMMWORD PTR [r9+80]
+movdqu XMMWORD PTR [rsi+80], xmm0
+movdqu xmm0, XMMWORD PTR [r9+96]
+movdqu XMMWORD PTR [rsi+96], xmm0
+movdqu xmm0, XMMWORD PTR [r9+112]
+movdqu XMMWORD PTR [rsi+112], xmm0
+movdqu xmm0, XMMWORD PTR [r9+128]
+movdqu XMMWORD PTR [rsi+128], xmm0
+movdqu xmm0, XMMWORD PTR [r9+144]
+movdqu XMMWORD PTR [rsi+144], xmm0
+movdqu xmm0, XMMWORD PTR [r9+160]
+movdqu XMMWORD PTR [rsi+160], xmm0
+movdqu xmm0, XMMWORD PTR [r9+176]
+movdqu XMMWORD PTR [rsi+176], xmm0
+movdqu xmm0, XMMWORD PTR [r9+192]
+movdqu XMMWORD PTR [rsi+192], xmm0
+movdqu xmm0, XMMWORD PTR [r9+208]
+movdqu XMMWORD PTR [rsi+208], xmm0
+movdqu xmm0, XMMWORD PTR [r9+224]
+movdqu XMMWORD PTR [rsi+224], xmm0
+movdqu xmm0, XMMWORD PTR [r9+240]
+movdqu XMMWORD PTR [rsi+240], xmm0
+movdqu xmm0, XMMWORD PTR [r9+256]
+movdqu XMMWORD PTR [rsi+256], xmm0
+movdqu xmm0, XMMWORD PTR [r9+272]
+movdqu XMMWORD PTR [rsi+272], xmm0
+movdqu xmm0, XMMWORD PTR [r9+288]
+movdqu XMMWORD PTR [rsi+288], xmm0
+movdqu xmm0, XMMWORD PTR [r9+304]
+movdqu XMMWORD PTR [rsi+304], xmm0
+movdqu xmm0, XMMWORD PTR [r9+320]
+movdqu XMMWORD PTR [rsi+320], xmm0
+movdqu xmm0, XMMWORD PTR [r9+336]
+movdqu XMMWORD PTR [rsi+336], xmm0
+movdqu xmm0, XMMWORD PTR [r9+352]
+movdqu XMMWORD PTR [rsi+352], xmm0
+movdqu xmm0, XMMWORD PTR [r9+368]
+movdqu XMMWORD PTR [rsi+368], xmm0
+movdqu xmm0, XMMWORD PTR [r9+384]
+movdqu XMMWORD PTR [rsi+384], xmm0
+movdqu xmm0, XMMWORD PTR [r9+400]
+movdqu XMMWORD PTR [rsi+400], xmm0
+movdqu xmm0, XMMWORD PTR [r9+416]
+movdqu XMMWORD PTR [rsi+416], xmm0
+movdqu xmm0, XMMWORD PTR [r9+432]
+movdqu XMMWORD PTR [rsi+432], xmm0
+movdqu xmm0, XMMWORD PTR [r9+448]
+movdqu XMMWORD PTR [rsi+448], xmm0
+movdqu xmm0, XMMWORD PTR [r9+464]
+movdqu XMMWORD PTR [rsi+464], xmm0
+movdqu xmm0, XMMWORD PTR [r9+480]
+movdqu XMMWORD PTR [rsi+480], xmm0
+movdqu xmm0, XMMWORD PTR [r9+496]
+movdqu XMMWORD PTR [rsi+496], xmm0
+movdqu xmm0, XMMWORD PTR [r9+512]
+movdqu XMMWORD PTR [rsi+512], xmm0
+movdqu xmm0, XMMWORD PTR [r9+528]
+movdqu XMMWORD PTR [rsi+528], xmm0
+movdqu xmm0, XMMWORD PTR [r9+544]
+movdqu XMMWORD PTR [rsi+544], xmm0
+movdqu xmm0, XMMWORD PTR [r9+560]
+movdqu XMMWORD PTR [rsi+560], xmm0
+movdqu xmm0, XMMWORD PTR [r9+576]
+movdqu XMMWORD PTR [rsi+576], xmm0
+movdqu xmm0, XMMWORD PTR [r9+592]
+movdqu XMMWORD PTR [rsi+592], xmm0
+movdqu xmm0, XMMWORD PTR [r9+608]
+movdqu XMMWORD PTR [rsi+608], xmm0
+movdqu xmm0, XMMWORD PTR [r9+624]
+movdqu XMMWORD PTR [rsi+624], xmm0
+movdqu xmm0, XMMWORD PTR [r9+640]
+movdqu XMMWORD PTR [rsi+640], xmm0
+movdqu xmm0, XMMWORD PTR [r9+656]
+movdqu XMMWORD PTR [rsi+656], xmm0
+movdqu xmm0, XMMWORD PTR [r9+672]
+movdqu XMMWORD PTR [rsi+672], xmm0
+movdqu xmm0, XMMWORD PTR [r9+688]
+movdqu XMMWORD PTR [rsi+688], xmm0
+movdqu xmm0, XMMWORD PTR [r9+704]
+movdqu XMMWORD PTR [rsi+704], xmm0
+movdqu xmm0, XMMWORD PTR [r9+720]
+movdqu XMMWORD PTR [rsi+720], xmm0
+movdqu xmm0, XMMWORD PTR [r9+736]
+movdqu XMMWORD PTR [rsi+736], xmm0
+movdqu xmm0, XMMWORD PTR [r9+752]
+movdqu XMMWORD PTR [rsi+752], xmm0
+movdqu xmm0, XMMWORD PTR [r9+768]
+movdqu XMMWORD PTR [rsi+768], xmm0
+movdqu xmm0, XMMWORD PTR [r9+784]
+movdqu XMMWORD PTR [rsi+784], xmm0
+movdqu xmm0, XMMWORD PTR [r9+800]
+movdqu XMMWORD PTR [rsi+800], xmm0
+movdqu xmm0, XMMWORD PTR [r9+816]
+movdqu XMMWORD PTR [rsi+816], xmm0
+movdqu xmm0, XMMWORD PTR [r9+832]
+movdqu XMMWORD PTR [rsi+832], xmm0
+movdqu xmm0, XMMWORD PTR [r9+848]
+movdqu XMMWORD PTR [rsi+848], xmm0
+movdqu xmm0, XMMWORD PTR [r9+864]
+movdqu XMMWORD PTR [rsi+864], xmm0
+movdqu xmm0, XMMWORD PTR [r9+880]
+movdqu XMMWORD PTR [rsi+880], xmm0
+movdqu xmm0, XMMWORD PTR [r9+896]
+movdqu XMMWORD PTR [rsi+896], xmm0
+movdqu xmm0, XMMWORD PTR [r9+912]
+movdqu XMMWORD PTR [rsi+912], xmm0
+movdqu xmm0, XMMWORD PTR [r9+928]
+movdqu XMMWORD PTR [rsi+928], xmm0
+movdqu xmm0, XMMWORD PTR [r9+944]
+movdqu XMMWORD PTR [rsi+944], xmm0
+movdqu xmm0, XMMWORD PTR [r9+960]
+movdqu XMMWORD PTR [rsi+960], xmm0
+movdqu xmm0, XMMWORD PTR [r9+976]
+movdqu XMMWORD PTR [rsi+976], xmm0
+movdqu xmm0, XMMWORD PTR [r9+992]
+movdqu XMMWORD PTR [rsi+992], xmm0
+movdqu xmm0, XMMWORD PTR [r9+1008]
+movdqu XMMWORD PTR [rsi+1008], xmm0
 mov eax, 8380417
 movq xmm15, rax
 pshufd xmm15, xmm15, 0
@@ -4928,6 +4043,7 @@ mov DWORD PTR [rsi+768], r11d
 ldmxcsr DWORD PTR [rsi+768]
 ret
 .p2align 6",
+        VG_MLDSA_ZETAS = sym super::consts::VG_MLDSA_ZETAS,
     )
 }
 
@@ -5079,262 +4195,135 @@ add r10, 16
 add rdx, 16
 sub rcx, 1
 jne 20b
-movabs r9, 111012023893504
-mov QWORD PTR [rsi], r9
-movabs r9, 33764919763013891
-mov QWORD PTR [rsi+8], r9
-movabs r9, 32652304184483396
-mov QWORD PTR [rsi+16], r9
-movabs r9, 2003464812134697
-mov QWORD PTR [rsi+24], r9
-movabs r9, 10107995079564843
-mov QWORD PTR [rsi+32], r9
-movabs r9, 27008953388524718
-mov QWORD PTR [rsi+40], r9
-movabs r9, 23603259066260085
-mov QWORD PTR [rsi+48], r9
-movabs r9, 11510954738022985
-mov QWORD PTR [rsi+56], r9
-movabs r9, 4398527550166616
-mov QWORD PTR [rsi+64], r9
-movabs r9, 15401443493111205
-mov QWORD PTR [rsi+72], r9
-movabs r9, 31185040284548497
-mov QWORD PTR [rsi+80], r9
-movabs r9, 26937467947448680
-mov QWORD PTR [rsi+88], r9
-movabs r9, 19416172761943511
-mov QWORD PTR [rsi+96], r9
-movabs r9, 21916122901808376
-mov QWORD PTR [rsi+104], r9
-movabs r9, 35910200088776757
-mov QWORD PTR [rsi+112], r9
-movabs r9, 1202612321726977
-mov QWORD PTR [rsi+120], r9
-movabs r9, 411354790447719
-mov QWORD PTR [rsi+128], r9
-movabs r9, 15163111458665677
-mov QWORD PTR [rsi+136], r9
-movabs r9, 20565458766169348
-mov QWORD PTR [rsi+144], r9
-movabs r9, 16816682460325845
-mov QWORD PTR [rsi+152], r9
-movabs r9, 22920956268049798
-mov QWORD PTR [rsi+160], r9
-movabs r9, 23677166863944342
-mov QWORD PTR [rsi+168], r9
-movabs r9, 34703121006855168
-mov QWORD PTR [rsi+176], r9
-movabs r9, 33677345376425628
-mov QWORD PTR [rsi+184], r9
-movabs r9, 28933472397947454
-mov QWORD PTR [rsi+192], r9
-movabs r9, 19579390106369566
-mov QWORD PTR [rsi+200], r9
-movabs r9, 26799599498134591
-mov QWORD PTR [rsi+208], r9
-movabs r9, 15889643835192413
-mov QWORD PTR [rsi+216], r9
-movabs r9, 2282148053410728
-mov QWORD PTR [rsi+224], r9
-movabs r9, 16668952760323958
-mov QWORD PTR [rsi+232], r9
-movabs r9, 25011900965946676
-mov QWORD PTR [rsi+240], r9
-movabs r9, 23977247637478740
-mov QWORD PTR [rsi+248], r9
-movabs r9, 29427887555995366
-mov QWORD PTR [rsi+256], r9
-movabs r9, 22931526182748624
-mov QWORD PTR [rsi+264], r9
-movabs r9, 14929091579459166
-mov QWORD PTR [rsi+272], r9
-movabs r9, 29185144592086471
-mov QWORD PTR [rsi+280], r9
-movabs r9, 8329290213797750
-mov QWORD PTR [rsi+288], r9
-movabs r9, 31697782066745459
-mov QWORD PTR [rsi+296], r9
-movabs r9, 22432987854353025
-mov QWORD PTR [rsi+304], r9
-movabs r9, 545125843890401
-mov QWORD PTR [rsi+312], r9
-movabs r9, 31769864501989618
-mov QWORD PTR [rsi+320], r9
-movabs r9, 11662103226140216
-mov QWORD PTR [rsi+328], r9
-movabs r9, 20130185304250276
-mov QWORD PTR [rsi+336], r9
-movabs r9, 25354781094156910
-mov QWORD PTR [rsi+344], r9
-movabs r9, 30717142252233347
-mov QWORD PTR [rsi+352], r9
-movabs r9, 30375073877558844
-mov QWORD PTR [rsi+360], r9
-movabs r9, 5794237307816926
-mov QWORD PTR [rsi+368], r9
-movabs r9, 29849966874477923
-mov QWORD PTR [rsi+376], r9
-movabs r9, 1137925820308458
-mov QWORD PTR [rsi+384], r9
-movabs r9, 13305774323778583
-mov QWORD PTR [rsi+392], r9
-movabs r9, 31268732009491712
-mov QWORD PTR [rsi+400], r9
-movabs r9, 17002134848261444
-mov QWORD PTR [rsi+408], r9
-movabs r9, 35956774717033419
-mov QWORD PTR [rsi+416], r9
-movabs r9, 22036141462600008
-mov QWORD PTR [rsi+424], r9
-movabs r9, 35087477629023596
-mov QWORD PTR [rsi+432], r9
-movabs r9, 30337763489061025
-mov QWORD PTR [rsi+440], r9
-movabs r9, 20732429908239468
-mov QWORD PTR [rsi+448], r9
-movabs r9, 28041905903253186
-mov QWORD PTR [rsi+456], r9
-movabs r9, 35231517950811284
-mov QWORD PTR [rsi+464], r9
-movabs r9, 5760968484459269
-mov QWORD PTR [rsi+472], r9
-movabs r9, 29186403016613413
-mov QWORD PTR [rsi+480], r9
-movabs r9, 29809972144732485
-mov QWORD PTR [rsi+488], r9
-movabs r9, 19324591173389987
-mov QWORD PTR [rsi+496], r9
-movabs r9, 16492506917666904
-mov QWORD PTR [rsi+504], r9
-movabs r9, 14635985826474643
-mov QWORD PTR [rsi+512], r9
-movabs r9, 16398082059229396
-mov QWORD PTR [rsi+520], r9
-movabs r9, 9638297459285875
-mov QWORD PTR [rsi+528], r9
-movabs r9, 20692959164533664
-mov QWORD PTR [rsi+536], r9
-movabs r9, 10455835889373941
-mov QWORD PTR [rsi+544], r9
-movabs r9, 15088997507073265
-mov QWORD PTR [rsi+552], r9
-movabs r9, 19847271512942753
-mov QWORD PTR [rsi+560], r9
-movabs r9, 22278162875259735
-mov QWORD PTR [rsi+568], r9
-movabs r9, 7984765110959710
-mov QWORD PTR [rsi+576], r9
-movabs r9, 3517724245221606
-mov QWORD PTR [rsi+584], r9
-movabs r9, 29065087369580419
-mov QWORD PTR [rsi+592], r9
-movabs r9, 33749496538019589
-mov QWORD PTR [rsi+600], r9
-movabs r9, 22582830675910690
-mov QWORD PTR [rsi+608], r9
-movabs r9, 13774157688799364
-mov QWORD PTR [rsi+616], r9
-movabs r9, 33738338209470846
-mov QWORD PTR [rsi+624], r9
-movabs r9, 20549610337740179
-mov QWORD PTR [rsi+632], r9
-movabs r9, 1232604074686745
-mov QWORD PTR [rsi+640], r9
-movabs r9, 17645078572608834
-mov QWORD PTR [rsi+648], r9
-movabs r9, 21638646536106727
-mov QWORD PTR [rsi+656], r9
-movabs r9, 872067341384903
-mov QWORD PTR [rsi+664], r9
-movabs r9, 11559822875647717
-mov QWORD PTR [rsi+672], r9
-movabs r9, 5433172289935931
-mov QWORD PTR [rsi+680], r9
-movabs r9, 5358487101890844
-mov QWORD PTR [rsi+688], r9
-movabs r9, 6854656137752657
-mov QWORD PTR [rsi+696], r9
-movabs r9, 5370830838457625
-mov QWORD PTR [rsi+704], r9
-movabs r9, 20753904747165841
-mov QWORD PTR [rsi+712], r9
-movabs r9, 8027804982718602
-mov QWORD PTR [rsi+720], r9
-movabs r9, 31479735164668747
-mov QWORD PTR [rsi+728], r9
-movabs r9, 5314055668205759
-mov QWORD PTR [rsi+736], r9
-movabs r9, 29850847345983039
-mov QWORD PTR [rsi+744], r9
-movabs r9, 5636951310400997
-mov QWORD PTR [rsi+752], r9
-movabs r9, 27564133741392515
-mov QWORD PTR [rsi+760], r9
-movabs r9, 8233800205883732
-mov QWORD PTR [rsi+768], r9
-movabs r9, 30088883024233849
-mov QWORD PTR [rsi+776], r9
-movabs r9, 3338009929245701
-mov QWORD PTR [rsi+784], r9
-movabs r9, 14628791756398056
-mov QWORD PTR [rsi+792], r9
-movabs r9, 23830870862829877
-mov QWORD PTR [rsi+800], r9
-movabs r9, 28061014216302585
-mov QWORD PTR [rsi+808], r9
-movabs r9, 19997999096164636
-mov QWORD PTR [rsi+816], r9
-movabs r9, 19771555530215640
-mov QWORD PTR [rsi+824], r9
-movabs r9, 10447056982320729
-mov QWORD PTR [rsi+832], r9
-movabs r9, 35286145636332471
-mov QWORD PTR [rsi+840], r9
-movabs r9, 14470225858518424
-mov QWORD PTR [rsi+848], r9
-movabs r9, 30807937853347003
-mov QWORD PTR [rsi+856], r9
-movabs r9, 699409659546815
-mov QWORD PTR [rsi+864], r9
-movabs r9, 12945035726727688
-mov QWORD PTR [rsi+872], r9
-movabs r9, 7098008983067813
-mov QWORD PTR [rsi+880], r9
-movabs r9, 28266511219523944
-mov QWORD PTR [rsi+888], r9
-movabs r9, 15135022374814013
-mov QWORD PTR [rsi+896], r9
-movabs r9, 1158610381635861
-mov QWORD PTR [rsi+904], r9
-movabs r9, 31802227079365879
-mov QWORD PTR [rsi+912], r9
-movabs r9, 2027559572878823
-mov QWORD PTR [rsi+920], r9
-movabs r9, 7402805639339334
-mov QWORD PTR [rsi+928], r9
-movabs r9, 8205002449640623
-mov QWORD PTR [rsi+936], r9
-movabs r9, 31250542829661849
-mov QWORD PTR [rsi+944], r9
-movabs r9, 19527171898598875
-mov QWORD PTR [rsi+952], r9
-movabs r9, 26390134497937253
-mov QWORD PTR [rsi+960], r9
-movabs r9, 26173917256840158
-mov QWORD PTR [rsi+968], r9
-movabs r9, 31797902045269139
-mov QWORD PTR [rsi+976], r9
-movabs r9, 20765007236602922
-mov QWORD PTR [rsi+984], r9
-movabs r9, 16834811519265361
-mov QWORD PTR [rsi+992], r9
-movabs r9, 30142973844857679
-mov QWORD PTR [rsi+1000], r9
-movabs r9, 6014775284471242
-mov QWORD PTR [rsi+1008], r9
-movabs r9, 8490214048855735
-mov QWORD PTR [rsi+1016], r9
+lea r9, [rip + {VG_MLDSA_ZETAS}]
+movdqu xmm0, XMMWORD PTR [r9]
+movdqu XMMWORD PTR [rsi], xmm0
+movdqu xmm0, XMMWORD PTR [r9+16]
+movdqu XMMWORD PTR [rsi+16], xmm0
+movdqu xmm0, XMMWORD PTR [r9+32]
+movdqu XMMWORD PTR [rsi+32], xmm0
+movdqu xmm0, XMMWORD PTR [r9+48]
+movdqu XMMWORD PTR [rsi+48], xmm0
+movdqu xmm0, XMMWORD PTR [r9+64]
+movdqu XMMWORD PTR [rsi+64], xmm0
+movdqu xmm0, XMMWORD PTR [r9+80]
+movdqu XMMWORD PTR [rsi+80], xmm0
+movdqu xmm0, XMMWORD PTR [r9+96]
+movdqu XMMWORD PTR [rsi+96], xmm0
+movdqu xmm0, XMMWORD PTR [r9+112]
+movdqu XMMWORD PTR [rsi+112], xmm0
+movdqu xmm0, XMMWORD PTR [r9+128]
+movdqu XMMWORD PTR [rsi+128], xmm0
+movdqu xmm0, XMMWORD PTR [r9+144]
+movdqu XMMWORD PTR [rsi+144], xmm0
+movdqu xmm0, XMMWORD PTR [r9+160]
+movdqu XMMWORD PTR [rsi+160], xmm0
+movdqu xmm0, XMMWORD PTR [r9+176]
+movdqu XMMWORD PTR [rsi+176], xmm0
+movdqu xmm0, XMMWORD PTR [r9+192]
+movdqu XMMWORD PTR [rsi+192], xmm0
+movdqu xmm0, XMMWORD PTR [r9+208]
+movdqu XMMWORD PTR [rsi+208], xmm0
+movdqu xmm0, XMMWORD PTR [r9+224]
+movdqu XMMWORD PTR [rsi+224], xmm0
+movdqu xmm0, XMMWORD PTR [r9+240]
+movdqu XMMWORD PTR [rsi+240], xmm0
+movdqu xmm0, XMMWORD PTR [r9+256]
+movdqu XMMWORD PTR [rsi+256], xmm0
+movdqu xmm0, XMMWORD PTR [r9+272]
+movdqu XMMWORD PTR [rsi+272], xmm0
+movdqu xmm0, XMMWORD PTR [r9+288]
+movdqu XMMWORD PTR [rsi+288], xmm0
+movdqu xmm0, XMMWORD PTR [r9+304]
+movdqu XMMWORD PTR [rsi+304], xmm0
+movdqu xmm0, XMMWORD PTR [r9+320]
+movdqu XMMWORD PTR [rsi+320], xmm0
+movdqu xmm0, XMMWORD PTR [r9+336]
+movdqu XMMWORD PTR [rsi+336], xmm0
+movdqu xmm0, XMMWORD PTR [r9+352]
+movdqu XMMWORD PTR [rsi+352], xmm0
+movdqu xmm0, XMMWORD PTR [r9+368]
+movdqu XMMWORD PTR [rsi+368], xmm0
+movdqu xmm0, XMMWORD PTR [r9+384]
+movdqu XMMWORD PTR [rsi+384], xmm0
+movdqu xmm0, XMMWORD PTR [r9+400]
+movdqu XMMWORD PTR [rsi+400], xmm0
+movdqu xmm0, XMMWORD PTR [r9+416]
+movdqu XMMWORD PTR [rsi+416], xmm0
+movdqu xmm0, XMMWORD PTR [r9+432]
+movdqu XMMWORD PTR [rsi+432], xmm0
+movdqu xmm0, XMMWORD PTR [r9+448]
+movdqu XMMWORD PTR [rsi+448], xmm0
+movdqu xmm0, XMMWORD PTR [r9+464]
+movdqu XMMWORD PTR [rsi+464], xmm0
+movdqu xmm0, XMMWORD PTR [r9+480]
+movdqu XMMWORD PTR [rsi+480], xmm0
+movdqu xmm0, XMMWORD PTR [r9+496]
+movdqu XMMWORD PTR [rsi+496], xmm0
+movdqu xmm0, XMMWORD PTR [r9+512]
+movdqu XMMWORD PTR [rsi+512], xmm0
+movdqu xmm0, XMMWORD PTR [r9+528]
+movdqu XMMWORD PTR [rsi+528], xmm0
+movdqu xmm0, XMMWORD PTR [r9+544]
+movdqu XMMWORD PTR [rsi+544], xmm0
+movdqu xmm0, XMMWORD PTR [r9+560]
+movdqu XMMWORD PTR [rsi+560], xmm0
+movdqu xmm0, XMMWORD PTR [r9+576]
+movdqu XMMWORD PTR [rsi+576], xmm0
+movdqu xmm0, XMMWORD PTR [r9+592]
+movdqu XMMWORD PTR [rsi+592], xmm0
+movdqu xmm0, XMMWORD PTR [r9+608]
+movdqu XMMWORD PTR [rsi+608], xmm0
+movdqu xmm0, XMMWORD PTR [r9+624]
+movdqu XMMWORD PTR [rsi+624], xmm0
+movdqu xmm0, XMMWORD PTR [r9+640]
+movdqu XMMWORD PTR [rsi+640], xmm0
+movdqu xmm0, XMMWORD PTR [r9+656]
+movdqu XMMWORD PTR [rsi+656], xmm0
+movdqu xmm0, XMMWORD PTR [r9+672]
+movdqu XMMWORD PTR [rsi+672], xmm0
+movdqu xmm0, XMMWORD PTR [r9+688]
+movdqu XMMWORD PTR [rsi+688], xmm0
+movdqu xmm0, XMMWORD PTR [r9+704]
+movdqu XMMWORD PTR [rsi+704], xmm0
+movdqu xmm0, XMMWORD PTR [r9+720]
+movdqu XMMWORD PTR [rsi+720], xmm0
+movdqu xmm0, XMMWORD PTR [r9+736]
+movdqu XMMWORD PTR [rsi+736], xmm0
+movdqu xmm0, XMMWORD PTR [r9+752]
+movdqu XMMWORD PTR [rsi+752], xmm0
+movdqu xmm0, XMMWORD PTR [r9+768]
+movdqu XMMWORD PTR [rsi+768], xmm0
+movdqu xmm0, XMMWORD PTR [r9+784]
+movdqu XMMWORD PTR [rsi+784], xmm0
+movdqu xmm0, XMMWORD PTR [r9+800]
+movdqu XMMWORD PTR [rsi+800], xmm0
+movdqu xmm0, XMMWORD PTR [r9+816]
+movdqu XMMWORD PTR [rsi+816], xmm0
+movdqu xmm0, XMMWORD PTR [r9+832]
+movdqu XMMWORD PTR [rsi+832], xmm0
+movdqu xmm0, XMMWORD PTR [r9+848]
+movdqu XMMWORD PTR [rsi+848], xmm0
+movdqu xmm0, XMMWORD PTR [r9+864]
+movdqu XMMWORD PTR [rsi+864], xmm0
+movdqu xmm0, XMMWORD PTR [r9+880]
+movdqu XMMWORD PTR [rsi+880], xmm0
+movdqu xmm0, XMMWORD PTR [r9+896]
+movdqu XMMWORD PTR [rsi+896], xmm0
+movdqu xmm0, XMMWORD PTR [r9+912]
+movdqu XMMWORD PTR [rsi+912], xmm0
+movdqu xmm0, XMMWORD PTR [r9+928]
+movdqu XMMWORD PTR [rsi+928], xmm0
+movdqu xmm0, XMMWORD PTR [r9+944]
+movdqu XMMWORD PTR [rsi+944], xmm0
+movdqu xmm0, XMMWORD PTR [r9+960]
+movdqu XMMWORD PTR [rsi+960], xmm0
+movdqu xmm0, XMMWORD PTR [r9+976]
+movdqu XMMWORD PTR [rsi+976], xmm0
+movdqu xmm0, XMMWORD PTR [r9+992]
+movdqu XMMWORD PTR [rsi+992], xmm0
+movdqu xmm0, XMMWORD PTR [r9+1008]
+movdqu XMMWORD PTR [rsi+1008], xmm0
 mov eax, 8380417
 movq xmm15, rax
 pshufd xmm15, xmm15, 0
@@ -5765,6 +4754,7 @@ mov DWORD PTR [rsi+768], r11d
 ldmxcsr DWORD PTR [rsi+768]
 ret
 .p2align 6",
+        VG_MLDSA_ZETAS = sym super::consts::VG_MLDSA_ZETAS,
     )
 }
 
@@ -5858,262 +4848,71 @@ add r10, 32
 add rdx, 32
 sub rcx, 1
 jne 20b
-movabs r9, 111012023893504
-mov QWORD PTR [rsi], r9
-movabs r9, 33764919763013891
-mov QWORD PTR [rsi+8], r9
-movabs r9, 32652304184483396
-mov QWORD PTR [rsi+16], r9
-movabs r9, 2003464812134697
-mov QWORD PTR [rsi+24], r9
-movabs r9, 10107995079564843
-mov QWORD PTR [rsi+32], r9
-movabs r9, 27008953388524718
-mov QWORD PTR [rsi+40], r9
-movabs r9, 23603259066260085
-mov QWORD PTR [rsi+48], r9
-movabs r9, 11510954738022985
-mov QWORD PTR [rsi+56], r9
-movabs r9, 4398527550166616
-mov QWORD PTR [rsi+64], r9
-movabs r9, 15401443493111205
-mov QWORD PTR [rsi+72], r9
-movabs r9, 31185040284548497
-mov QWORD PTR [rsi+80], r9
-movabs r9, 26937467947448680
-mov QWORD PTR [rsi+88], r9
-movabs r9, 19416172761943511
-mov QWORD PTR [rsi+96], r9
-movabs r9, 21916122901808376
-mov QWORD PTR [rsi+104], r9
-movabs r9, 35910200088776757
-mov QWORD PTR [rsi+112], r9
-movabs r9, 1202612321726977
-mov QWORD PTR [rsi+120], r9
-movabs r9, 411354790447719
-mov QWORD PTR [rsi+128], r9
-movabs r9, 15163111458665677
-mov QWORD PTR [rsi+136], r9
-movabs r9, 20565458766169348
-mov QWORD PTR [rsi+144], r9
-movabs r9, 16816682460325845
-mov QWORD PTR [rsi+152], r9
-movabs r9, 22920956268049798
-mov QWORD PTR [rsi+160], r9
-movabs r9, 23677166863944342
-mov QWORD PTR [rsi+168], r9
-movabs r9, 34703121006855168
-mov QWORD PTR [rsi+176], r9
-movabs r9, 33677345376425628
-mov QWORD PTR [rsi+184], r9
-movabs r9, 28933472397947454
-mov QWORD PTR [rsi+192], r9
-movabs r9, 19579390106369566
-mov QWORD PTR [rsi+200], r9
-movabs r9, 26799599498134591
-mov QWORD PTR [rsi+208], r9
-movabs r9, 15889643835192413
-mov QWORD PTR [rsi+216], r9
-movabs r9, 2282148053410728
-mov QWORD PTR [rsi+224], r9
-movabs r9, 16668952760323958
-mov QWORD PTR [rsi+232], r9
-movabs r9, 25011900965946676
-mov QWORD PTR [rsi+240], r9
-movabs r9, 23977247637478740
-mov QWORD PTR [rsi+248], r9
-movabs r9, 29427887555995366
-mov QWORD PTR [rsi+256], r9
-movabs r9, 22931526182748624
-mov QWORD PTR [rsi+264], r9
-movabs r9, 14929091579459166
-mov QWORD PTR [rsi+272], r9
-movabs r9, 29185144592086471
-mov QWORD PTR [rsi+280], r9
-movabs r9, 8329290213797750
-mov QWORD PTR [rsi+288], r9
-movabs r9, 31697782066745459
-mov QWORD PTR [rsi+296], r9
-movabs r9, 22432987854353025
-mov QWORD PTR [rsi+304], r9
-movabs r9, 545125843890401
-mov QWORD PTR [rsi+312], r9
-movabs r9, 31769864501989618
-mov QWORD PTR [rsi+320], r9
-movabs r9, 11662103226140216
-mov QWORD PTR [rsi+328], r9
-movabs r9, 20130185304250276
-mov QWORD PTR [rsi+336], r9
-movabs r9, 25354781094156910
-mov QWORD PTR [rsi+344], r9
-movabs r9, 30717142252233347
-mov QWORD PTR [rsi+352], r9
-movabs r9, 30375073877558844
-mov QWORD PTR [rsi+360], r9
-movabs r9, 5794237307816926
-mov QWORD PTR [rsi+368], r9
-movabs r9, 29849966874477923
-mov QWORD PTR [rsi+376], r9
-movabs r9, 1137925820308458
-mov QWORD PTR [rsi+384], r9
-movabs r9, 13305774323778583
-mov QWORD PTR [rsi+392], r9
-movabs r9, 31268732009491712
-mov QWORD PTR [rsi+400], r9
-movabs r9, 17002134848261444
-mov QWORD PTR [rsi+408], r9
-movabs r9, 35956774717033419
-mov QWORD PTR [rsi+416], r9
-movabs r9, 22036141462600008
-mov QWORD PTR [rsi+424], r9
-movabs r9, 35087477629023596
-mov QWORD PTR [rsi+432], r9
-movabs r9, 30337763489061025
-mov QWORD PTR [rsi+440], r9
-movabs r9, 20732429908239468
-mov QWORD PTR [rsi+448], r9
-movabs r9, 28041905903253186
-mov QWORD PTR [rsi+456], r9
-movabs r9, 35231517950811284
-mov QWORD PTR [rsi+464], r9
-movabs r9, 5760968484459269
-mov QWORD PTR [rsi+472], r9
-movabs r9, 29186403016613413
-mov QWORD PTR [rsi+480], r9
-movabs r9, 29809972144732485
-mov QWORD PTR [rsi+488], r9
-movabs r9, 19324591173389987
-mov QWORD PTR [rsi+496], r9
-movabs r9, 16492506917666904
-mov QWORD PTR [rsi+504], r9
-movabs r9, 14635985826474643
-mov QWORD PTR [rsi+512], r9
-movabs r9, 16398082059229396
-mov QWORD PTR [rsi+520], r9
-movabs r9, 9638297459285875
-mov QWORD PTR [rsi+528], r9
-movabs r9, 20692959164533664
-mov QWORD PTR [rsi+536], r9
-movabs r9, 10455835889373941
-mov QWORD PTR [rsi+544], r9
-movabs r9, 15088997507073265
-mov QWORD PTR [rsi+552], r9
-movabs r9, 19847271512942753
-mov QWORD PTR [rsi+560], r9
-movabs r9, 22278162875259735
-mov QWORD PTR [rsi+568], r9
-movabs r9, 7984765110959710
-mov QWORD PTR [rsi+576], r9
-movabs r9, 3517724245221606
-mov QWORD PTR [rsi+584], r9
-movabs r9, 29065087369580419
-mov QWORD PTR [rsi+592], r9
-movabs r9, 33749496538019589
-mov QWORD PTR [rsi+600], r9
-movabs r9, 22582830675910690
-mov QWORD PTR [rsi+608], r9
-movabs r9, 13774157688799364
-mov QWORD PTR [rsi+616], r9
-movabs r9, 33738338209470846
-mov QWORD PTR [rsi+624], r9
-movabs r9, 20549610337740179
-mov QWORD PTR [rsi+632], r9
-movabs r9, 1232604074686745
-mov QWORD PTR [rsi+640], r9
-movabs r9, 17645078572608834
-mov QWORD PTR [rsi+648], r9
-movabs r9, 21638646536106727
-mov QWORD PTR [rsi+656], r9
-movabs r9, 872067341384903
-mov QWORD PTR [rsi+664], r9
-movabs r9, 11559822875647717
-mov QWORD PTR [rsi+672], r9
-movabs r9, 5433172289935931
-mov QWORD PTR [rsi+680], r9
-movabs r9, 5358487101890844
-mov QWORD PTR [rsi+688], r9
-movabs r9, 6854656137752657
-mov QWORD PTR [rsi+696], r9
-movabs r9, 5370830838457625
-mov QWORD PTR [rsi+704], r9
-movabs r9, 20753904747165841
-mov QWORD PTR [rsi+712], r9
-movabs r9, 8027804982718602
-mov QWORD PTR [rsi+720], r9
-movabs r9, 31479735164668747
-mov QWORD PTR [rsi+728], r9
-movabs r9, 5314055668205759
-mov QWORD PTR [rsi+736], r9
-movabs r9, 29850847345983039
-mov QWORD PTR [rsi+744], r9
-movabs r9, 5636951310400997
-mov QWORD PTR [rsi+752], r9
-movabs r9, 27564133741392515
-mov QWORD PTR [rsi+760], r9
-movabs r9, 8233800205883732
-mov QWORD PTR [rsi+768], r9
-movabs r9, 30088883024233849
-mov QWORD PTR [rsi+776], r9
-movabs r9, 3338009929245701
-mov QWORD PTR [rsi+784], r9
-movabs r9, 14628791756398056
-mov QWORD PTR [rsi+792], r9
-movabs r9, 23830870862829877
-mov QWORD PTR [rsi+800], r9
-movabs r9, 28061014216302585
-mov QWORD PTR [rsi+808], r9
-movabs r9, 19997999096164636
-mov QWORD PTR [rsi+816], r9
-movabs r9, 19771555530215640
-mov QWORD PTR [rsi+824], r9
-movabs r9, 10447056982320729
-mov QWORD PTR [rsi+832], r9
-movabs r9, 35286145636332471
-mov QWORD PTR [rsi+840], r9
-movabs r9, 14470225858518424
-mov QWORD PTR [rsi+848], r9
-movabs r9, 30807937853347003
-mov QWORD PTR [rsi+856], r9
-movabs r9, 699409659546815
-mov QWORD PTR [rsi+864], r9
-movabs r9, 12945035726727688
-mov QWORD PTR [rsi+872], r9
-movabs r9, 7098008983067813
-mov QWORD PTR [rsi+880], r9
-movabs r9, 28266511219523944
-mov QWORD PTR [rsi+888], r9
-movabs r9, 15135022374814013
-mov QWORD PTR [rsi+896], r9
-movabs r9, 1158610381635861
-mov QWORD PTR [rsi+904], r9
-movabs r9, 31802227079365879
-mov QWORD PTR [rsi+912], r9
-movabs r9, 2027559572878823
-mov QWORD PTR [rsi+920], r9
-movabs r9, 7402805639339334
-mov QWORD PTR [rsi+928], r9
-movabs r9, 8205002449640623
-mov QWORD PTR [rsi+936], r9
-movabs r9, 31250542829661849
-mov QWORD PTR [rsi+944], r9
-movabs r9, 19527171898598875
-mov QWORD PTR [rsi+952], r9
-movabs r9, 26390134497937253
-mov QWORD PTR [rsi+960], r9
-movabs r9, 26173917256840158
-mov QWORD PTR [rsi+968], r9
-movabs r9, 31797902045269139
-mov QWORD PTR [rsi+976], r9
-movabs r9, 20765007236602922
-mov QWORD PTR [rsi+984], r9
-movabs r9, 16834811519265361
-mov QWORD PTR [rsi+992], r9
-movabs r9, 30142973844857679
-mov QWORD PTR [rsi+1000], r9
-movabs r9, 6014775284471242
-mov QWORD PTR [rsi+1008], r9
-movabs r9, 8490214048855735
-mov QWORD PTR [rsi+1016], r9
+lea r9, [rip + {VG_MLDSA_ZETAS}]
+vmovdqu ymm0, YMMWORD PTR [r9]
+vmovdqu YMMWORD PTR [rsi], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+32]
+vmovdqu YMMWORD PTR [rsi+32], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+64]
+vmovdqu YMMWORD PTR [rsi+64], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+96]
+vmovdqu YMMWORD PTR [rsi+96], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+128]
+vmovdqu YMMWORD PTR [rsi+128], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+160]
+vmovdqu YMMWORD PTR [rsi+160], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+192]
+vmovdqu YMMWORD PTR [rsi+192], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+224]
+vmovdqu YMMWORD PTR [rsi+224], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+256]
+vmovdqu YMMWORD PTR [rsi+256], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+288]
+vmovdqu YMMWORD PTR [rsi+288], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+320]
+vmovdqu YMMWORD PTR [rsi+320], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+352]
+vmovdqu YMMWORD PTR [rsi+352], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+384]
+vmovdqu YMMWORD PTR [rsi+384], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+416]
+vmovdqu YMMWORD PTR [rsi+416], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+448]
+vmovdqu YMMWORD PTR [rsi+448], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+480]
+vmovdqu YMMWORD PTR [rsi+480], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+512]
+vmovdqu YMMWORD PTR [rsi+512], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+544]
+vmovdqu YMMWORD PTR [rsi+544], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+576]
+vmovdqu YMMWORD PTR [rsi+576], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+608]
+vmovdqu YMMWORD PTR [rsi+608], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+640]
+vmovdqu YMMWORD PTR [rsi+640], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+672]
+vmovdqu YMMWORD PTR [rsi+672], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+704]
+vmovdqu YMMWORD PTR [rsi+704], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+736]
+vmovdqu YMMWORD PTR [rsi+736], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+768]
+vmovdqu YMMWORD PTR [rsi+768], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+800]
+vmovdqu YMMWORD PTR [rsi+800], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+832]
+vmovdqu YMMWORD PTR [rsi+832], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+864]
+vmovdqu YMMWORD PTR [rsi+864], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+896]
+vmovdqu YMMWORD PTR [rsi+896], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+928]
+vmovdqu YMMWORD PTR [rsi+928], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+960]
+vmovdqu YMMWORD PTR [rsi+960], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+992]
+vmovdqu YMMWORD PTR [rsi+992], ymm0
 mov eax, 8380417
 vmovq xmm15, rax
 vpbroadcastd ymm15, xmm15
@@ -6468,6 +5267,7 @@ mov DWORD PTR [rsi+768], r11d
 ldmxcsr DWORD PTR [rsi+768]
 ret
 .p2align 6",
+        VG_MLDSA_ZETAS = sym super::consts::VG_MLDSA_ZETAS,
     )
 }
 
@@ -6569,262 +5369,71 @@ add r10, 32
 add rdx, 32
 sub rcx, 1
 jne 20b
-movabs r9, 111012023893504
-mov QWORD PTR [rsi], r9
-movabs r9, 33764919763013891
-mov QWORD PTR [rsi+8], r9
-movabs r9, 32652304184483396
-mov QWORD PTR [rsi+16], r9
-movabs r9, 2003464812134697
-mov QWORD PTR [rsi+24], r9
-movabs r9, 10107995079564843
-mov QWORD PTR [rsi+32], r9
-movabs r9, 27008953388524718
-mov QWORD PTR [rsi+40], r9
-movabs r9, 23603259066260085
-mov QWORD PTR [rsi+48], r9
-movabs r9, 11510954738022985
-mov QWORD PTR [rsi+56], r9
-movabs r9, 4398527550166616
-mov QWORD PTR [rsi+64], r9
-movabs r9, 15401443493111205
-mov QWORD PTR [rsi+72], r9
-movabs r9, 31185040284548497
-mov QWORD PTR [rsi+80], r9
-movabs r9, 26937467947448680
-mov QWORD PTR [rsi+88], r9
-movabs r9, 19416172761943511
-mov QWORD PTR [rsi+96], r9
-movabs r9, 21916122901808376
-mov QWORD PTR [rsi+104], r9
-movabs r9, 35910200088776757
-mov QWORD PTR [rsi+112], r9
-movabs r9, 1202612321726977
-mov QWORD PTR [rsi+120], r9
-movabs r9, 411354790447719
-mov QWORD PTR [rsi+128], r9
-movabs r9, 15163111458665677
-mov QWORD PTR [rsi+136], r9
-movabs r9, 20565458766169348
-mov QWORD PTR [rsi+144], r9
-movabs r9, 16816682460325845
-mov QWORD PTR [rsi+152], r9
-movabs r9, 22920956268049798
-mov QWORD PTR [rsi+160], r9
-movabs r9, 23677166863944342
-mov QWORD PTR [rsi+168], r9
-movabs r9, 34703121006855168
-mov QWORD PTR [rsi+176], r9
-movabs r9, 33677345376425628
-mov QWORD PTR [rsi+184], r9
-movabs r9, 28933472397947454
-mov QWORD PTR [rsi+192], r9
-movabs r9, 19579390106369566
-mov QWORD PTR [rsi+200], r9
-movabs r9, 26799599498134591
-mov QWORD PTR [rsi+208], r9
-movabs r9, 15889643835192413
-mov QWORD PTR [rsi+216], r9
-movabs r9, 2282148053410728
-mov QWORD PTR [rsi+224], r9
-movabs r9, 16668952760323958
-mov QWORD PTR [rsi+232], r9
-movabs r9, 25011900965946676
-mov QWORD PTR [rsi+240], r9
-movabs r9, 23977247637478740
-mov QWORD PTR [rsi+248], r9
-movabs r9, 29427887555995366
-mov QWORD PTR [rsi+256], r9
-movabs r9, 22931526182748624
-mov QWORD PTR [rsi+264], r9
-movabs r9, 14929091579459166
-mov QWORD PTR [rsi+272], r9
-movabs r9, 29185144592086471
-mov QWORD PTR [rsi+280], r9
-movabs r9, 8329290213797750
-mov QWORD PTR [rsi+288], r9
-movabs r9, 31697782066745459
-mov QWORD PTR [rsi+296], r9
-movabs r9, 22432987854353025
-mov QWORD PTR [rsi+304], r9
-movabs r9, 545125843890401
-mov QWORD PTR [rsi+312], r9
-movabs r9, 31769864501989618
-mov QWORD PTR [rsi+320], r9
-movabs r9, 11662103226140216
-mov QWORD PTR [rsi+328], r9
-movabs r9, 20130185304250276
-mov QWORD PTR [rsi+336], r9
-movabs r9, 25354781094156910
-mov QWORD PTR [rsi+344], r9
-movabs r9, 30717142252233347
-mov QWORD PTR [rsi+352], r9
-movabs r9, 30375073877558844
-mov QWORD PTR [rsi+360], r9
-movabs r9, 5794237307816926
-mov QWORD PTR [rsi+368], r9
-movabs r9, 29849966874477923
-mov QWORD PTR [rsi+376], r9
-movabs r9, 1137925820308458
-mov QWORD PTR [rsi+384], r9
-movabs r9, 13305774323778583
-mov QWORD PTR [rsi+392], r9
-movabs r9, 31268732009491712
-mov QWORD PTR [rsi+400], r9
-movabs r9, 17002134848261444
-mov QWORD PTR [rsi+408], r9
-movabs r9, 35956774717033419
-mov QWORD PTR [rsi+416], r9
-movabs r9, 22036141462600008
-mov QWORD PTR [rsi+424], r9
-movabs r9, 35087477629023596
-mov QWORD PTR [rsi+432], r9
-movabs r9, 30337763489061025
-mov QWORD PTR [rsi+440], r9
-movabs r9, 20732429908239468
-mov QWORD PTR [rsi+448], r9
-movabs r9, 28041905903253186
-mov QWORD PTR [rsi+456], r9
-movabs r9, 35231517950811284
-mov QWORD PTR [rsi+464], r9
-movabs r9, 5760968484459269
-mov QWORD PTR [rsi+472], r9
-movabs r9, 29186403016613413
-mov QWORD PTR [rsi+480], r9
-movabs r9, 29809972144732485
-mov QWORD PTR [rsi+488], r9
-movabs r9, 19324591173389987
-mov QWORD PTR [rsi+496], r9
-movabs r9, 16492506917666904
-mov QWORD PTR [rsi+504], r9
-movabs r9, 14635985826474643
-mov QWORD PTR [rsi+512], r9
-movabs r9, 16398082059229396
-mov QWORD PTR [rsi+520], r9
-movabs r9, 9638297459285875
-mov QWORD PTR [rsi+528], r9
-movabs r9, 20692959164533664
-mov QWORD PTR [rsi+536], r9
-movabs r9, 10455835889373941
-mov QWORD PTR [rsi+544], r9
-movabs r9, 15088997507073265
-mov QWORD PTR [rsi+552], r9
-movabs r9, 19847271512942753
-mov QWORD PTR [rsi+560], r9
-movabs r9, 22278162875259735
-mov QWORD PTR [rsi+568], r9
-movabs r9, 7984765110959710
-mov QWORD PTR [rsi+576], r9
-movabs r9, 3517724245221606
-mov QWORD PTR [rsi+584], r9
-movabs r9, 29065087369580419
-mov QWORD PTR [rsi+592], r9
-movabs r9, 33749496538019589
-mov QWORD PTR [rsi+600], r9
-movabs r9, 22582830675910690
-mov QWORD PTR [rsi+608], r9
-movabs r9, 13774157688799364
-mov QWORD PTR [rsi+616], r9
-movabs r9, 33738338209470846
-mov QWORD PTR [rsi+624], r9
-movabs r9, 20549610337740179
-mov QWORD PTR [rsi+632], r9
-movabs r9, 1232604074686745
-mov QWORD PTR [rsi+640], r9
-movabs r9, 17645078572608834
-mov QWORD PTR [rsi+648], r9
-movabs r9, 21638646536106727
-mov QWORD PTR [rsi+656], r9
-movabs r9, 872067341384903
-mov QWORD PTR [rsi+664], r9
-movabs r9, 11559822875647717
-mov QWORD PTR [rsi+672], r9
-movabs r9, 5433172289935931
-mov QWORD PTR [rsi+680], r9
-movabs r9, 5358487101890844
-mov QWORD PTR [rsi+688], r9
-movabs r9, 6854656137752657
-mov QWORD PTR [rsi+696], r9
-movabs r9, 5370830838457625
-mov QWORD PTR [rsi+704], r9
-movabs r9, 20753904747165841
-mov QWORD PTR [rsi+712], r9
-movabs r9, 8027804982718602
-mov QWORD PTR [rsi+720], r9
-movabs r9, 31479735164668747
-mov QWORD PTR [rsi+728], r9
-movabs r9, 5314055668205759
-mov QWORD PTR [rsi+736], r9
-movabs r9, 29850847345983039
-mov QWORD PTR [rsi+744], r9
-movabs r9, 5636951310400997
-mov QWORD PTR [rsi+752], r9
-movabs r9, 27564133741392515
-mov QWORD PTR [rsi+760], r9
-movabs r9, 8233800205883732
-mov QWORD PTR [rsi+768], r9
-movabs r9, 30088883024233849
-mov QWORD PTR [rsi+776], r9
-movabs r9, 3338009929245701
-mov QWORD PTR [rsi+784], r9
-movabs r9, 14628791756398056
-mov QWORD PTR [rsi+792], r9
-movabs r9, 23830870862829877
-mov QWORD PTR [rsi+800], r9
-movabs r9, 28061014216302585
-mov QWORD PTR [rsi+808], r9
-movabs r9, 19997999096164636
-mov QWORD PTR [rsi+816], r9
-movabs r9, 19771555530215640
-mov QWORD PTR [rsi+824], r9
-movabs r9, 10447056982320729
-mov QWORD PTR [rsi+832], r9
-movabs r9, 35286145636332471
-mov QWORD PTR [rsi+840], r9
-movabs r9, 14470225858518424
-mov QWORD PTR [rsi+848], r9
-movabs r9, 30807937853347003
-mov QWORD PTR [rsi+856], r9
-movabs r9, 699409659546815
-mov QWORD PTR [rsi+864], r9
-movabs r9, 12945035726727688
-mov QWORD PTR [rsi+872], r9
-movabs r9, 7098008983067813
-mov QWORD PTR [rsi+880], r9
-movabs r9, 28266511219523944
-mov QWORD PTR [rsi+888], r9
-movabs r9, 15135022374814013
-mov QWORD PTR [rsi+896], r9
-movabs r9, 1158610381635861
-mov QWORD PTR [rsi+904], r9
-movabs r9, 31802227079365879
-mov QWORD PTR [rsi+912], r9
-movabs r9, 2027559572878823
-mov QWORD PTR [rsi+920], r9
-movabs r9, 7402805639339334
-mov QWORD PTR [rsi+928], r9
-movabs r9, 8205002449640623
-mov QWORD PTR [rsi+936], r9
-movabs r9, 31250542829661849
-mov QWORD PTR [rsi+944], r9
-movabs r9, 19527171898598875
-mov QWORD PTR [rsi+952], r9
-movabs r9, 26390134497937253
-mov QWORD PTR [rsi+960], r9
-movabs r9, 26173917256840158
-mov QWORD PTR [rsi+968], r9
-movabs r9, 31797902045269139
-mov QWORD PTR [rsi+976], r9
-movabs r9, 20765007236602922
-mov QWORD PTR [rsi+984], r9
-movabs r9, 16834811519265361
-mov QWORD PTR [rsi+992], r9
-movabs r9, 30142973844857679
-mov QWORD PTR [rsi+1000], r9
-movabs r9, 6014775284471242
-mov QWORD PTR [rsi+1008], r9
-movabs r9, 8490214048855735
-mov QWORD PTR [rsi+1016], r9
+lea r9, [rip + {VG_MLDSA_ZETAS}]
+vmovdqu ymm0, YMMWORD PTR [r9]
+vmovdqu YMMWORD PTR [rsi], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+32]
+vmovdqu YMMWORD PTR [rsi+32], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+64]
+vmovdqu YMMWORD PTR [rsi+64], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+96]
+vmovdqu YMMWORD PTR [rsi+96], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+128]
+vmovdqu YMMWORD PTR [rsi+128], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+160]
+vmovdqu YMMWORD PTR [rsi+160], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+192]
+vmovdqu YMMWORD PTR [rsi+192], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+224]
+vmovdqu YMMWORD PTR [rsi+224], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+256]
+vmovdqu YMMWORD PTR [rsi+256], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+288]
+vmovdqu YMMWORD PTR [rsi+288], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+320]
+vmovdqu YMMWORD PTR [rsi+320], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+352]
+vmovdqu YMMWORD PTR [rsi+352], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+384]
+vmovdqu YMMWORD PTR [rsi+384], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+416]
+vmovdqu YMMWORD PTR [rsi+416], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+448]
+vmovdqu YMMWORD PTR [rsi+448], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+480]
+vmovdqu YMMWORD PTR [rsi+480], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+512]
+vmovdqu YMMWORD PTR [rsi+512], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+544]
+vmovdqu YMMWORD PTR [rsi+544], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+576]
+vmovdqu YMMWORD PTR [rsi+576], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+608]
+vmovdqu YMMWORD PTR [rsi+608], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+640]
+vmovdqu YMMWORD PTR [rsi+640], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+672]
+vmovdqu YMMWORD PTR [rsi+672], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+704]
+vmovdqu YMMWORD PTR [rsi+704], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+736]
+vmovdqu YMMWORD PTR [rsi+736], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+768]
+vmovdqu YMMWORD PTR [rsi+768], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+800]
+vmovdqu YMMWORD PTR [rsi+800], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+832]
+vmovdqu YMMWORD PTR [rsi+832], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+864]
+vmovdqu YMMWORD PTR [rsi+864], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+896]
+vmovdqu YMMWORD PTR [rsi+896], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+928]
+vmovdqu YMMWORD PTR [rsi+928], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+960]
+vmovdqu YMMWORD PTR [rsi+960], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+992]
+vmovdqu YMMWORD PTR [rsi+992], ymm0
 mov eax, 8380417
 vmovq xmm15, rax
 vpbroadcastd ymm15, xmm15
@@ -7179,6 +5788,7 @@ mov DWORD PTR [rsi+768], r11d
 ldmxcsr DWORD PTR [rsi+768]
 ret
 .p2align 6",
+        VG_MLDSA_ZETAS = sym super::consts::VG_MLDSA_ZETAS,
     )
 }
 
@@ -7296,262 +5906,71 @@ add r10, 32
 add rdx, 32
 sub rcx, 1
 jne 20b
-movabs r9, 111012023893504
-mov QWORD PTR [rsi], r9
-movabs r9, 33764919763013891
-mov QWORD PTR [rsi+8], r9
-movabs r9, 32652304184483396
-mov QWORD PTR [rsi+16], r9
-movabs r9, 2003464812134697
-mov QWORD PTR [rsi+24], r9
-movabs r9, 10107995079564843
-mov QWORD PTR [rsi+32], r9
-movabs r9, 27008953388524718
-mov QWORD PTR [rsi+40], r9
-movabs r9, 23603259066260085
-mov QWORD PTR [rsi+48], r9
-movabs r9, 11510954738022985
-mov QWORD PTR [rsi+56], r9
-movabs r9, 4398527550166616
-mov QWORD PTR [rsi+64], r9
-movabs r9, 15401443493111205
-mov QWORD PTR [rsi+72], r9
-movabs r9, 31185040284548497
-mov QWORD PTR [rsi+80], r9
-movabs r9, 26937467947448680
-mov QWORD PTR [rsi+88], r9
-movabs r9, 19416172761943511
-mov QWORD PTR [rsi+96], r9
-movabs r9, 21916122901808376
-mov QWORD PTR [rsi+104], r9
-movabs r9, 35910200088776757
-mov QWORD PTR [rsi+112], r9
-movabs r9, 1202612321726977
-mov QWORD PTR [rsi+120], r9
-movabs r9, 411354790447719
-mov QWORD PTR [rsi+128], r9
-movabs r9, 15163111458665677
-mov QWORD PTR [rsi+136], r9
-movabs r9, 20565458766169348
-mov QWORD PTR [rsi+144], r9
-movabs r9, 16816682460325845
-mov QWORD PTR [rsi+152], r9
-movabs r9, 22920956268049798
-mov QWORD PTR [rsi+160], r9
-movabs r9, 23677166863944342
-mov QWORD PTR [rsi+168], r9
-movabs r9, 34703121006855168
-mov QWORD PTR [rsi+176], r9
-movabs r9, 33677345376425628
-mov QWORD PTR [rsi+184], r9
-movabs r9, 28933472397947454
-mov QWORD PTR [rsi+192], r9
-movabs r9, 19579390106369566
-mov QWORD PTR [rsi+200], r9
-movabs r9, 26799599498134591
-mov QWORD PTR [rsi+208], r9
-movabs r9, 15889643835192413
-mov QWORD PTR [rsi+216], r9
-movabs r9, 2282148053410728
-mov QWORD PTR [rsi+224], r9
-movabs r9, 16668952760323958
-mov QWORD PTR [rsi+232], r9
-movabs r9, 25011900965946676
-mov QWORD PTR [rsi+240], r9
-movabs r9, 23977247637478740
-mov QWORD PTR [rsi+248], r9
-movabs r9, 29427887555995366
-mov QWORD PTR [rsi+256], r9
-movabs r9, 22931526182748624
-mov QWORD PTR [rsi+264], r9
-movabs r9, 14929091579459166
-mov QWORD PTR [rsi+272], r9
-movabs r9, 29185144592086471
-mov QWORD PTR [rsi+280], r9
-movabs r9, 8329290213797750
-mov QWORD PTR [rsi+288], r9
-movabs r9, 31697782066745459
-mov QWORD PTR [rsi+296], r9
-movabs r9, 22432987854353025
-mov QWORD PTR [rsi+304], r9
-movabs r9, 545125843890401
-mov QWORD PTR [rsi+312], r9
-movabs r9, 31769864501989618
-mov QWORD PTR [rsi+320], r9
-movabs r9, 11662103226140216
-mov QWORD PTR [rsi+328], r9
-movabs r9, 20130185304250276
-mov QWORD PTR [rsi+336], r9
-movabs r9, 25354781094156910
-mov QWORD PTR [rsi+344], r9
-movabs r9, 30717142252233347
-mov QWORD PTR [rsi+352], r9
-movabs r9, 30375073877558844
-mov QWORD PTR [rsi+360], r9
-movabs r9, 5794237307816926
-mov QWORD PTR [rsi+368], r9
-movabs r9, 29849966874477923
-mov QWORD PTR [rsi+376], r9
-movabs r9, 1137925820308458
-mov QWORD PTR [rsi+384], r9
-movabs r9, 13305774323778583
-mov QWORD PTR [rsi+392], r9
-movabs r9, 31268732009491712
-mov QWORD PTR [rsi+400], r9
-movabs r9, 17002134848261444
-mov QWORD PTR [rsi+408], r9
-movabs r9, 35956774717033419
-mov QWORD PTR [rsi+416], r9
-movabs r9, 22036141462600008
-mov QWORD PTR [rsi+424], r9
-movabs r9, 35087477629023596
-mov QWORD PTR [rsi+432], r9
-movabs r9, 30337763489061025
-mov QWORD PTR [rsi+440], r9
-movabs r9, 20732429908239468
-mov QWORD PTR [rsi+448], r9
-movabs r9, 28041905903253186
-mov QWORD PTR [rsi+456], r9
-movabs r9, 35231517950811284
-mov QWORD PTR [rsi+464], r9
-movabs r9, 5760968484459269
-mov QWORD PTR [rsi+472], r9
-movabs r9, 29186403016613413
-mov QWORD PTR [rsi+480], r9
-movabs r9, 29809972144732485
-mov QWORD PTR [rsi+488], r9
-movabs r9, 19324591173389987
-mov QWORD PTR [rsi+496], r9
-movabs r9, 16492506917666904
-mov QWORD PTR [rsi+504], r9
-movabs r9, 14635985826474643
-mov QWORD PTR [rsi+512], r9
-movabs r9, 16398082059229396
-mov QWORD PTR [rsi+520], r9
-movabs r9, 9638297459285875
-mov QWORD PTR [rsi+528], r9
-movabs r9, 20692959164533664
-mov QWORD PTR [rsi+536], r9
-movabs r9, 10455835889373941
-mov QWORD PTR [rsi+544], r9
-movabs r9, 15088997507073265
-mov QWORD PTR [rsi+552], r9
-movabs r9, 19847271512942753
-mov QWORD PTR [rsi+560], r9
-movabs r9, 22278162875259735
-mov QWORD PTR [rsi+568], r9
-movabs r9, 7984765110959710
-mov QWORD PTR [rsi+576], r9
-movabs r9, 3517724245221606
-mov QWORD PTR [rsi+584], r9
-movabs r9, 29065087369580419
-mov QWORD PTR [rsi+592], r9
-movabs r9, 33749496538019589
-mov QWORD PTR [rsi+600], r9
-movabs r9, 22582830675910690
-mov QWORD PTR [rsi+608], r9
-movabs r9, 13774157688799364
-mov QWORD PTR [rsi+616], r9
-movabs r9, 33738338209470846
-mov QWORD PTR [rsi+624], r9
-movabs r9, 20549610337740179
-mov QWORD PTR [rsi+632], r9
-movabs r9, 1232604074686745
-mov QWORD PTR [rsi+640], r9
-movabs r9, 17645078572608834
-mov QWORD PTR [rsi+648], r9
-movabs r9, 21638646536106727
-mov QWORD PTR [rsi+656], r9
-movabs r9, 872067341384903
-mov QWORD PTR [rsi+664], r9
-movabs r9, 11559822875647717
-mov QWORD PTR [rsi+672], r9
-movabs r9, 5433172289935931
-mov QWORD PTR [rsi+680], r9
-movabs r9, 5358487101890844
-mov QWORD PTR [rsi+688], r9
-movabs r9, 6854656137752657
-mov QWORD PTR [rsi+696], r9
-movabs r9, 5370830838457625
-mov QWORD PTR [rsi+704], r9
-movabs r9, 20753904747165841
-mov QWORD PTR [rsi+712], r9
-movabs r9, 8027804982718602
-mov QWORD PTR [rsi+720], r9
-movabs r9, 31479735164668747
-mov QWORD PTR [rsi+728], r9
-movabs r9, 5314055668205759
-mov QWORD PTR [rsi+736], r9
-movabs r9, 29850847345983039
-mov QWORD PTR [rsi+744], r9
-movabs r9, 5636951310400997
-mov QWORD PTR [rsi+752], r9
-movabs r9, 27564133741392515
-mov QWORD PTR [rsi+760], r9
-movabs r9, 8233800205883732
-mov QWORD PTR [rsi+768], r9
-movabs r9, 30088883024233849
-mov QWORD PTR [rsi+776], r9
-movabs r9, 3338009929245701
-mov QWORD PTR [rsi+784], r9
-movabs r9, 14628791756398056
-mov QWORD PTR [rsi+792], r9
-movabs r9, 23830870862829877
-mov QWORD PTR [rsi+800], r9
-movabs r9, 28061014216302585
-mov QWORD PTR [rsi+808], r9
-movabs r9, 19997999096164636
-mov QWORD PTR [rsi+816], r9
-movabs r9, 19771555530215640
-mov QWORD PTR [rsi+824], r9
-movabs r9, 10447056982320729
-mov QWORD PTR [rsi+832], r9
-movabs r9, 35286145636332471
-mov QWORD PTR [rsi+840], r9
-movabs r9, 14470225858518424
-mov QWORD PTR [rsi+848], r9
-movabs r9, 30807937853347003
-mov QWORD PTR [rsi+856], r9
-movabs r9, 699409659546815
-mov QWORD PTR [rsi+864], r9
-movabs r9, 12945035726727688
-mov QWORD PTR [rsi+872], r9
-movabs r9, 7098008983067813
-mov QWORD PTR [rsi+880], r9
-movabs r9, 28266511219523944
-mov QWORD PTR [rsi+888], r9
-movabs r9, 15135022374814013
-mov QWORD PTR [rsi+896], r9
-movabs r9, 1158610381635861
-mov QWORD PTR [rsi+904], r9
-movabs r9, 31802227079365879
-mov QWORD PTR [rsi+912], r9
-movabs r9, 2027559572878823
-mov QWORD PTR [rsi+920], r9
-movabs r9, 7402805639339334
-mov QWORD PTR [rsi+928], r9
-movabs r9, 8205002449640623
-mov QWORD PTR [rsi+936], r9
-movabs r9, 31250542829661849
-mov QWORD PTR [rsi+944], r9
-movabs r9, 19527171898598875
-mov QWORD PTR [rsi+952], r9
-movabs r9, 26390134497937253
-mov QWORD PTR [rsi+960], r9
-movabs r9, 26173917256840158
-mov QWORD PTR [rsi+968], r9
-movabs r9, 31797902045269139
-mov QWORD PTR [rsi+976], r9
-movabs r9, 20765007236602922
-mov QWORD PTR [rsi+984], r9
-movabs r9, 16834811519265361
-mov QWORD PTR [rsi+992], r9
-movabs r9, 30142973844857679
-mov QWORD PTR [rsi+1000], r9
-movabs r9, 6014775284471242
-mov QWORD PTR [rsi+1008], r9
-movabs r9, 8490214048855735
-mov QWORD PTR [rsi+1016], r9
+lea r9, [rip + {VG_MLDSA_ZETAS}]
+vmovdqu ymm0, YMMWORD PTR [r9]
+vmovdqu YMMWORD PTR [rsi], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+32]
+vmovdqu YMMWORD PTR [rsi+32], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+64]
+vmovdqu YMMWORD PTR [rsi+64], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+96]
+vmovdqu YMMWORD PTR [rsi+96], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+128]
+vmovdqu YMMWORD PTR [rsi+128], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+160]
+vmovdqu YMMWORD PTR [rsi+160], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+192]
+vmovdqu YMMWORD PTR [rsi+192], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+224]
+vmovdqu YMMWORD PTR [rsi+224], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+256]
+vmovdqu YMMWORD PTR [rsi+256], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+288]
+vmovdqu YMMWORD PTR [rsi+288], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+320]
+vmovdqu YMMWORD PTR [rsi+320], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+352]
+vmovdqu YMMWORD PTR [rsi+352], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+384]
+vmovdqu YMMWORD PTR [rsi+384], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+416]
+vmovdqu YMMWORD PTR [rsi+416], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+448]
+vmovdqu YMMWORD PTR [rsi+448], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+480]
+vmovdqu YMMWORD PTR [rsi+480], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+512]
+vmovdqu YMMWORD PTR [rsi+512], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+544]
+vmovdqu YMMWORD PTR [rsi+544], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+576]
+vmovdqu YMMWORD PTR [rsi+576], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+608]
+vmovdqu YMMWORD PTR [rsi+608], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+640]
+vmovdqu YMMWORD PTR [rsi+640], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+672]
+vmovdqu YMMWORD PTR [rsi+672], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+704]
+vmovdqu YMMWORD PTR [rsi+704], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+736]
+vmovdqu YMMWORD PTR [rsi+736], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+768]
+vmovdqu YMMWORD PTR [rsi+768], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+800]
+vmovdqu YMMWORD PTR [rsi+800], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+832]
+vmovdqu YMMWORD PTR [rsi+832], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+864]
+vmovdqu YMMWORD PTR [rsi+864], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+896]
+vmovdqu YMMWORD PTR [rsi+896], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+928]
+vmovdqu YMMWORD PTR [rsi+928], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+960]
+vmovdqu YMMWORD PTR [rsi+960], ymm0
+vmovdqu ymm0, YMMWORD PTR [r9+992]
+vmovdqu YMMWORD PTR [rsi+992], ymm0
 mov eax, 8380417
 vmovq xmm15, rax
 vpbroadcastd ymm15, xmm15
@@ -7906,6 +6325,7 @@ mov DWORD PTR [rsi+768], r11d
 ldmxcsr DWORD PTR [rsi+768]
 ret
 .p2align 6",
+        VG_MLDSA_ZETAS = sym super::consts::VG_MLDSA_ZETAS,
     )
 }
 
