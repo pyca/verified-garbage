@@ -354,10 +354,6 @@ namespace VG.Generic.MillerRabin.AArch64.RsaKeyGen
 def artifacts (v : Proof.MillerRabin.AArch64.RoundImpl) : List Artifact := [
   Spec.RsaKeyGen.candidateApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := ["The candidate checks and RSA witness policy use the verified Montgomery \
-        arithmetic. Each prepared witness calls the shared `vg_miller_rabin_round`, using \
-        fixed four-bit windows. Branches release only the checks and witness results allowed \
-        by the RSA candidate contract."]
     code := Impl.RsaKeyGen.AArch64.Candidate.codeWith v.mont.mm v.kernel.run
     verified := Proof.RsaKeyGen.AArch64.sharedCandidate_verified v.mont v.kernel
     features := v.features }]

@@ -26,15 +26,13 @@ It is generic over secp256k1's group law `h` too, the variant
 
 namespace VG.Generic.Sha256.Secp256k1.X86.EcdsaSecp256k1Sha256
 
-open VG.Proof.Ecdsa.Rfc6979.X86 (cfgOf sign_spSafe signNotes)
+open VG.Proof.Ecdsa.Rfc6979.X86 (cfgOf sign_spSafe)
 open VG.Proof.Ecdsa.Rfc6979.X86.Secp256k1Sha256 (pack sign_verified)
 
 def artifacts (v : Proof.Sha256.X86.Variants.Backend) (h : Proof.Weierstrass.X86.Inv.HasLawInv Spec.Secp256k1.curve) :
     List Artifact := [
   Spec.Ecdsa.Rfc6979.Secp256k1Sha256.signApi.artifact X86.target {
     suffix := v.suffix
-    notes := [signNotes v.F.hiN v.F.H.updN v.F.hfN 32
-      Spec.Ecdsa.Secp256k1.signApi.name]
     code := (cfgOf (pack h.law h.inv v)).sign
     stack := 272
     verified := sign_verified h.law h.inv v

@@ -197,33 +197,11 @@ namespace VG.Generic.P256.X86.EcdsaP256
 
 def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInvOrd Spec.P256.curve) : List Artifact := [
   Spec.Ecdsa.P256.signApi.artifact X86.target {
-    notes := ["The function saves the callee-saved registers \
-      `ebx`, `esi`, `edi` and `ebp` in `scratch`. Field elements and scalars are eight 32-bit \
-      words in Montgomery form, with dedicated Comba field squaring and word-by-word Montgomery multiplication (CIOS, \
-      with `mul` and the accumulator in `scratch`, in calls of `vg_p256_mul_mod_p`, \
-      `vg_p256_mul_mod_n` and the other functions of `p256_mont`) with a final conditional \
-      subtraction. `[k]G` \
-      uses a seven-bit signed comb: 37 complete additions, no doublings, and constant-time \
-      SSE2 scans of a shared 148 KiB table. Its position-independent table address uses a \
-      balanced four-byte CALL frame. Field and scalar inversion each use 20 batches of 30 constant-time divsteps. The signature (or zeros) is selected by a mask, so \
-      the time depends only on the pointers."]
     code := Impl.Ecdsa.X86.signP256Comb
     consts := Impl.Ecdsa.X86.p256Comb.combConsts
     stack := 20
     verified := Proof.Ecdsa.X86.signComb_verified h.law h.inv },
   Spec.Ecdsa.P256.verifyApi.artifact X86.target {
-    notes := ["The function validates the public key and \
-      signature without branches. Field elements and scalars are eight 32-bit words in \
-      Montgomery form, multiplied, added and subtracted in calls of `vg_p256_mul_mod_p`, \
-      `vg_p256_mul_mod_n` and the other functions of `p256_mont`. The fixed-base product `[u]G` uses a seven-bit signed comb: 37 complete \
-      additions, no doublings, and constant-time SSE2 scans of a 148 KiB precomputed table. \
-      Its position-independent table address uses a balanced four-byte CALL frame. The \
-      variable-base product `[v]Q` uses 65 signed four-bit windows with Jacobian doublings \
-      and constant-time scans of eight projective points, followed by a complete addition of the \
-      two products. Scalar inversion uses 20 batches of 30 constant-time divsteps. \
-      The final check avoids a field inversion: it compares `X = rZ`, or `X = (r+n)Z` when \
-      `r+n < p`, and rejects `Z = 0`. Invalid inputs follow the same path and the result is selected by a mask; timing \
-      depends only on pointers and the static table address."]
     code := Proof.Ecdsa.Verify.X86.vCombCode
     consts := Impl.Ecdsa.X86.p256Comb.combConsts
     stack := 20

@@ -28,8 +28,6 @@ def artifacts : List Artifact := [
     verified := Proof.Sha512.AArch64.Shared.init Spec.Sha512.H0_512_256 },
   Spec.Sha512.compressApi.artifact AArch64.target {
     suffix := "_sha3"
-    notes := ["Uses the AArch64 SHA-512 instructions \
-      (FEAT_SHA512)."]
     code := Impl.Sha512.AArch64.Sha3.compress
     verified := Proof.Sha512.AArch64.Shared.compress_of Proof.Sha512.AArch64.Sha3.compress_verified
     features := ["sha3"] }]

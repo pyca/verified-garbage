@@ -76,25 +76,10 @@ namespace VG.Generic.P384.Arm.EcdhP384
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := [
   Spec.Ecdh.P384.exchangeApi.artifact Arm.target {
-    notes := ["The function is `vg_ecdsa_p384_sign`'s setup, \
-      field arithmetic, ladder and inversion, with the peer's point in place of `G`: it saves the \
-      callee-saved registers `r4`–`r11` and `lr` in `scratch`, and keeps `out` in `lr` (in `r10` \
-      during the calls); field elements are twelve packed 32-bit words in Montgomery form, multiplied by word-by-word \
-      Montgomery multiplication (CIOS, with four half-word `mul` products per word product and the accumulator in `scratch`, in calls of \
-      `vg_p384_mul_mod_p` and the other functions of `p384_mont`) with a final \
-      conditional subtraction. The peer's key is checked without branches (its first byte, both \
-      coordinates below `p`, and the curve's equation), and the ladder multiplies the peer's \
-      point if it is valid, else `G`, so it always runs on a point of the curve. `[d]P` is a call of `vg_p384_mul`, a \
-      double-and-add ladder over all 384 bits of `d`, with the complete addition formulas of \
-      Renes, Costello and Batina (calls of `vg_p384_point_double` and \
-      `vg_p384_point_add`) and a masked selection for each bit; `Z⁻¹` is Fermat's, by \
-      square-and-always-multiply. The result (or zeros) is selected by a mask of the checks, \
-      `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."]
     code := Impl.Ecdh.Arm.exchangeP384
     verified := Proof.Ecdh.Arm.P384.ecdh_verified h.law },
   Spec.Ecdh.P384.exchangeApi.artifact Arm.target {
     suffix := "_umaal"
-    notes := ["`vg_ecdh_p384`'s code, but for its call of `vg_p384_mul_umaal`. Field multiplications are calls of `vg_p384_mul_mod_p_umaal` (and `vg_p384_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`)."]
     code := Impl.Ecdh.Arm.exchangeP384U
     verified := Proof.Ecdh.Arm.P384.ecdhU_verified h.law
     features := ["umaal"] }]

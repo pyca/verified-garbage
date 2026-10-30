@@ -64,35 +64,6 @@ def spongeArtifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
     stack := 16
     verified := Proof.MlKem1024.AArch64.Decaps.decaps_verifiedWith (keccak := v) }]
 
-def hybridNote : String :=
-  "Computes `H(ek)` in the third state of `vg_keccak_f1600_x3_sha3`, one block of `ek` per main \
-  squeeze of the matrix's first pairs, while the vector unit runs their SHAKE128 states."
-
-def prfNote : String :=
-  "Computes `G(m ‖ H(ek))` right after the pairs hashing `ek`, then `PRF₂(r, N)` for the first noise \
-  polynomials in the third state of the pairs after it and the second state of the singleton, one per \
-  main squeeze, while the vector unit runs their SHAKE128 states."
-
-def hybridKgNote : String :=
-  "Computes `H(ek)` in the third state of `vg_keccak_f1600_x3_sha3`, one block of `ek` per main \
-  squeeze of the matrix's pairs once the rows of `t̂` before them have encoded it; the noise and `ŝ` \
-  come after the first two pairs, each row of `t̂` right after its entries, and the blocks left after \
-  the last row are absorbed with the single-state permutation."
-
-def prfKgNote : String :=
-  "Computes `PRF₂(σ, N)` for the first six noise polynomials in the third state of the matrix's first \
-  two pairs, which absorb no block of `ek`, one per main squeeze, while the vector unit runs their \
-  SHAKE128 states."
-
-def hybridJNote : String :=
-  "Computes `J(z ‖ c)` in the third state of `vg_keccak_f1600_x3_sha3`, one block of a copy of `z ‖ c` \
-  per main squeeze of the matrix's first pairs, while the vector unit runs their SHAKE128 states."
-
-def prfJNote : String :=
-  "Computes `PRF₂(r', N)` for the first noise polynomials of the re-encryption in the third state of the \
-  pairs after those hashing `z ‖ c` and the second state of the singleton, one per main squeeze, while the \
-  vector unit runs their SHAKE128 states."
-
 /-- Paired sampling and fused arithmetic, calling `vg_keccak_f1600_x2_sha3`
 (and, in `encaps` and `decaps`, `vg_keccak_f1600_x3_sha3`) and the single-state
 permutation of `v` rather than the sponge functions. -/
@@ -101,7 +72,6 @@ def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArc
   Spec.MlKem.keyGenApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
-    notes := [hybridKgNote, prfKgNote]
     consts := Proof.MlKem.AArch64.Optimized.constants
     code := Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem.AArch64.lay768
     stack := 128
@@ -109,7 +79,6 @@ def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArc
   Spec.MlKem.encapsApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
-    notes := [hybridNote, prfNote]
     consts := Proof.MlKem.AArch64.Optimized.constants
     code := Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768
     stack := 128
@@ -117,7 +86,6 @@ def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArc
   Spec.MlKem.decapsApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
-    notes := [hybridJNote, prfJNote]
     consts := Proof.MlKem.AArch64.Optimized.constants
     code := Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768
     stack := 128
@@ -125,7 +93,6 @@ def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArc
   Spec.MlKem1024.keyGenApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
-    notes := [hybridKgNote, prfKgNote]
     consts := Proof.MlKem.AArch64.Optimized.constants
     code := Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024
     stack := 128
@@ -133,7 +100,6 @@ def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArc
   Spec.MlKem1024.encapsApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
-    notes := [hybridNote, prfNote]
     consts := Proof.MlKem.AArch64.Optimized.constants
     code := Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024
     stack := 128
@@ -141,7 +107,6 @@ def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArc
   Spec.MlKem1024.decapsApi.artifact AArch64.target {
     suffix := Emit.qualifiedName "" (parts x2 v)
     features := features x2 v
-    notes := [hybridJNote, prfJNote]
     consts := Proof.MlKem.AArch64.Optimized.constants
     code := Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024
     stack := 128

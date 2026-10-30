@@ -26,13 +26,6 @@ namespace VG.Artifacts.Ed448ScalarBase.RISCV64
 
 def artifacts : List Artifact := [
   Spec.Ed448.scalarBaseApi.artifact RISCV64.target {
-    notes := ["Uses only caller-saved registers and no stack. The function expands the scalar's 456 bits \
-      into bytes, then runs two iterations of the same code for each bit from the top: RFC 8032's \
-      projective addition of `R` and a point selected with a mask, `R` itself in the first (a \
-      doubling) and the base point in the second, and the sum swapped into `R` with a mask, \
-      always in the first and when the bit is set in the second. Field elements are fourteen \
-      32-bit limbs in `scratch` (rounded up to a multiple of 8), with `vg_x448`'s multiplication, \
-      addition and subtraction; `Z` is inverted with X448's addition chain for `p - 2`."]
     code := Impl.Ed448.RISCV64.scalarBase
     verified := Proof.Ed448.RISCV64.scalarBase_verified Proof.Ed448.baseLadder2_ok }]
 

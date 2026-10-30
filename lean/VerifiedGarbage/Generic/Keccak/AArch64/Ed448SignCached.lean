@@ -31,18 +31,6 @@ def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   Spec.Ed448.signCachedApi.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features
-    notes := ["Uses baseline integer instructions, and \
-      those of the Keccak permutation it calls. Hashes with `vg_keccak_absorb_scratch`, \
-      `vg_keccak_pad_scratch` and `vg_keccak_squeeze_scratch` (SHAKE256, into its stack frame, \
-      with the Keccak state and the sponge functions' working space in `scratch`): the private \
-      key, whose first half, pruned, \
-      is the secret scalar s, kept in the frame; then dom4(0, C), the prefix and the message, \
-      reduced modulo L with `vg_ed448_scalar_reduce` into the second half of `out` (r); \
-      R = [r]B with `vg_ed448_scalar_base` into the first half of `out`; then dom4(0, C), R, \
-      the public key and the message, reduced into the frame (k); and \
-      S = (r + k s) mod L with `vg_ed448_scalar_mul_add` over r. Clears the frame's hash, k \
-      and s; the callees' working values are left in `scratch`. The function saves `x30` and \
-      its arguments on the stack, and the functions it calls use 16 bytes below its frame."]
     consts := Impl.X448.AArch64.Base.combConsts
     code := Impl.Ed448.AArch64.SignCached.signCachedWith v.callee
     stack := 352

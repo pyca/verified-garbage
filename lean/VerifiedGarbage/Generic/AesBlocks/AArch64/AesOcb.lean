@@ -75,31 +75,21 @@ namespace VG.Generic.AesBlocks.AArch64.AesOcb
 
 open VG.Proof.AesOcb.AArch64
 
-/-- Which functions an instance calls. -/
-def callNote (v : Proof.Aes.AArch64.BlocksImpl) (dec : Bool) : String :=
-  "This implementation enciphers with `" ++ v.enc.name ++ "`" ++
-    (if dec then ", and deciphers with `" ++ v.dec.name ++ "`." else ".")
-
 def artifacts (v : Proof.Aes.AArch64.BlocksImpl) : List Artifact := [
   Spec.Ocb.initApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := ["This implementation expands the key with `" ++ v.expand.name ++
-      "`, and enciphers `L_*` with `" ++ v.enc.name ++ "`."]
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x3 (Impl.AesOcb.AArch64.init (callees v))
     stack := 2560
     verified := init_framed v
     features := v.features },
   Spec.Ocb.sealApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := [callNote v false]
     code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (Impl.AesOcb.AArch64.seal (callees v))
     stack := 2592
     verified := seal_framed v
     features := v.features },
   Spec.Ocb.openApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := [callNote v true,
-      "It compares the tags and overwrites the data with zeros without a branch on the result."]
     code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (Impl.AesOcb.AArch64.open (callees v))
     stack := 2592
     verified := open_framed v

@@ -45,9 +45,8 @@ instructions in an ISA model) go in their own PR before either.
    A registration states only what the implementation chooses: the Rust
    module, name, signature, `writeArgs`, documentation and contract come
    from the `Api`, so never restate them. Give a variant's name its
-   `suffix` (`suffix := "_avx2"`), any notes on the implementation in
-   `notes` (`notes := […]`), the stack its calls and frames use in `stack`,
-   the tables of constants it reads in `consts`, and, where a caller wipes a
+   `suffix` (`suffix := "_avx2"`), the stack its calls and frames use in
+   `stack`, the tables of constants it reads in `consts`, and, where a caller wipes a
    writable array the function uses as working space, how much of it the
    function writes in `written` (`written := [("scratch", 1024)]`, proven by
    `writtenOk`), which the emitter exports as `<NAME>_<PARAM>_WRITTEN` for
@@ -89,7 +88,7 @@ instructions in an ISA model) go in their own PR before either.
    Registration files (`Artifacts/`, `Generic/`) and variant files
    (`Variants/`) are reviewed by hand, so they only bind: no theorems, no
    tactic proofs beyond the defaults (not even a `(by decide)` argument),
-   and no definitions but the artifacts, the variant and notes. A lemma
+   and no definitions but the artifacts and the variant. A lemma
    whose side conditions a registration would decide takes them as
    `autoParam`s (`(hd : stackUse c ≤ 48 := by lit_decide)`), or the
    algorithm's proofs state the instance as a theorem

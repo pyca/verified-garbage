@@ -20,14 +20,11 @@ A generic file (see `TCB/Emit.lean`) over brainpoolP512r1's group law `h`, the v
 
 namespace VG.Generic.BrainpoolP512r1.X86.EcdsaBrainpoolP512r1Sha512
 
-open VG.Proof.Ecdsa.Rfc6979.X86 (cfgOf sign_spSafe signNotes)
+open VG.Proof.Ecdsa.Rfc6979.X86 (cfgOf sign_spSafe)
 open VG.Proof.Ecdsa.Rfc6979.X86.BrainpoolP512r1Sha512 (pack sign_verified)
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP512r1.curve) : List Artifact := [
   Spec.Ecdsa.Rfc6979.BrainpoolP512r1Sha512.signApi.artifact X86.target {
-    notes := [signNotes
-      Proof.Pbkdf2.Whole.X86.sha512F.hiN Proof.Pbkdf2.Whole.X86.sha512F.H.updN
-      Proof.Pbkdf2.Whole.X86.sha512F.hfN 64 Spec.Ecdsa.BrainpoolP512r1.signApi.name 260]
     code := (cfgOf (pack h.law)).sign
     stack := 336
     verified := sign_verified h.law

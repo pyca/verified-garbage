@@ -12,40 +12,14 @@ namespace VG.Artifacts.Ed25519R32.X86
 
 open VG.Spec.Ed25519.Point32 VG.Impl.Ed25519.X86.Point32 VG.Proof.Ed25519.X86.Point32
 
-/-- How the function works. -/
-def notes : List String := ["Uses baseline integer instructions. The function saves `ebx`, `ebp` \
-  and `edi` in its own working space and runs the addition as the x86 Ed25519 code inlined it: \
-  nine products of eight-word field elements, by X25519's x86 product (product scanning, folded \
-  with `2^256 = 38`), and additions and subtractions (`a - b + 4p`, so that every word is a \
-  natural number), with the temporaries in bytes 320 to 575. It then restores the registers."]
-
-/-- How the affine addition works. -/
-def affNotes : List String := ["Uses baseline integer instructions. The function saves `ebx`, \
-  `ebp` and `edi` in its own working space and runs the addition of the affine point as the x86 \
-  comb of `vg_ed25519_scalar_base` inlined it: seven products of eight-word field elements, `2Z₁` \
-  by an addition, by X25519's x86 product (product scanning, folded with `2^256 = 38`), and \
-  additions and subtractions (`a - b + 4p`, so that every word is a natural number), with the \
-  temporaries in bytes 320 to 575. It then restores the registers."]
-
-/-- How the doubling works. -/
-def doubleNotes : List String := ["Uses baseline integer instructions. The function saves `ebx`, \
-  `ebp` and `edi` in its own working space and runs RFC 8032's doubling with `-E = 2XY` from one \
-  product and `F`, `G` and `H` negated: eight products of eight-word field elements, by X25519's \
-  x86 product (product scanning, folded with `2^256 = 38`), and additions and subtractions \
-  (`a - b + 4p`, so that every word is a natural number), with the temporaries in bytes 320 to \
-  575. It then restores the registers."]
-
 def artifacts : List Artifact := [
   addApi.artifact X86.target {
-    notes := notes
     code := addFn
     verified := addFn_verified },
   addAffineApi.artifact X86.target {
-    notes := affNotes
     code := affFn
     verified := affFn_verified },
   doubleApi.artifact X86.target {
-    notes := doubleNotes
     code := doubleFn
     verified := doubleFn_verified }]
 

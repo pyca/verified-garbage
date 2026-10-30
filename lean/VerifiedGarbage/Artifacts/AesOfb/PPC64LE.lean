@@ -18,8 +18,6 @@ namespace VG.Artifacts.AesOfb.PPC64LE
 
 def artifacts : List Artifact := [
   Spec.Ofb.aesApi.artifact PPC64LE.target {
-    notes := [
-      "This implementation enciphers one block at a time with `vg_aes_encrypt_blocks`."]
     code := Impl.AesOfb.PPC64LE.crypt
     verified := Proof.AesOfb.PPC64LE.crypt_verified }]
 

@@ -30,21 +30,12 @@ open VG.Proof.RsaPss.AArch64 (encOf chkOf)
 def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact := [
   (Spec.RsaPss.encodeApi v.mgf.G v.mgf.G).artifact AArch64.target {
     suffix := v.suffix
-    notes := ["This implementation builds the encoding in its working space: `M'` is hashed over \
-      the blocks its length needs and `DB` is masked with MGF1, then the encoding is copied to \
-      `em`. Only the lengths decide a branch or an address."]
     code := (encOf v).code
     stack := (encOf v).stack
     verified := (encOf v).verified
     features := v.features },
   (Spec.RsaPss.checkEncodingApi v.mgf.G v.mgf.G).artifact AArch64.target {
     suffix := v.suffix
-    notes := ["This implementation copies the encoding to its working space, unmasks `DB` with \
-      MGF1 and checks every byte without branching on it: the position of `0x01` and the salt \
-      are found by a scan over all of `DB`. A specified salt length copies that many trailing \
-      bytes into `M'` and hashes only the blocks needed; an unknown salt length keeps the \
-      oblivious shift and the maximum block count. Only the lengths and the salt-length mode \
-      decide a branch or an address."]
     code := (chkOf v).code
     stack := (chkOf v).stack
     verified := (chkOf v).verified

@@ -20,14 +20,11 @@ def artifacts : List Artifact := [
     verified := Proof.Sha256.X86_64.Shared.init },
   Spec.Sha256.compressApi.artifact X86_64.target {
     suffix := "_shani"
-    notes := ["This implementation uses the SHA extensions."]
     code := Impl.Sha256.X86_64.ShaNi.compress
     verified := Proof.Sha256.X86_64.Shared.compress_shani
     features := ["sha", "ssse3"] },
   Spec.Sha256.compressApi.artifact X86_64.target {
     suffix := "_avx2"
-    notes := ["This implementation computes the message schedules of two blocks at a time in \
-        the two lanes of the AVX2 registers, and the rounds with BMI1 and BMI2."]
     code := Impl.Sha256.X86_64.Avx2.compress
     verified := Proof.Sha256.X86_64.Shared.compress_avx2
     features := ["avx", "avx2", "bmi1", "bmi2"] }]

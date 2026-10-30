@@ -114,8 +114,6 @@ def helper (ix : Spec.Rsa.MontMulFixed.Indices)
     (v : Verified target (Proof.Bignum.AArch64.Mont.productEight.mm ix.o ix.a ix.b)
       (Spec.Rsa.MontMulFixed.mulContract ix abi)) : Artifact :=
   (Spec.Rsa.MontMulFixed.mulApi ix).artifact target {
-    notes := ["Baseline AArch64: the eight-limb product kernel with blocked reduction when the \
-        width is a multiple of eight limbs; other widths retain the row-wise multiplication."]
     code := Proof.Bignum.AArch64.Mont.productEight.mm ix.o ix.a ix.b
     verified := v }
 

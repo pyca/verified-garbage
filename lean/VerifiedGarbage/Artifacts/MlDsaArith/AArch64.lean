@@ -28,11 +28,9 @@ def artifacts : List Artifact := [
     code := Impl.MlDsa.AArch64.Optimized.Ntt.outNtt
     verified := Proof.MlDsa.AArch64.Optimized.positiveNttOut_verified },
   Spec.MlDsa.nttApi.artifact AArch64.target {
-    notes := ["Four butterflies per NEON vector; the 256 Montgomery zetas are stored in `scratch`."]
     code := Impl.MlDsa.AArch64.Arith.Neon.ntt
     verified := Proof.MlDsa.AArch64.Arith.Neon.ntt_verified },
   Spec.MlDsa.nttInvApi.artifact AArch64.target {
-    notes := ["Four butterflies per NEON vector; the 256 negated Montgomery zetas are stored in `scratch`."]
     code := Impl.MlDsa.AArch64.Arith.Neon.nttInv
     verified := Proof.MlDsa.AArch64.Arith.Neon.nttInv_verified },
   Spec.MlDsa.mulApi.artifact AArch64.target {

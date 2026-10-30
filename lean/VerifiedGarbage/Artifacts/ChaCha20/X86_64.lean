@@ -22,36 +22,23 @@ def artifacts : List Artifact := [
     code := Impl.ChaCha20.X86_64.block
     verified := Proof.ChaCha20.X86_64.block_verified },
   Spec.ChaCha20.xorApi.artifact X86_64.target {
-    notes := ["Calls `vg_chacha20_block` for each 64 bytes."]
     code := Impl.ChaCha20.X86_64.Xor.xor
     stack := 8
     verified := Proof.ChaCha20.X86_64.Xor.xor_verified },
   Spec.ChaCha20.xorApi.artifact X86_64.target {
     suffix := "_avx2"
-    notes := ["Uses AVX2: eight blocks at a time while at least 512 bytes remain, then \
-        at most two computations of four or two blocks, two to a set of `ymm` registers, for \
-        the rest, or `vg_chacha20_xor` for at most 64 bytes."]
     code := Impl.ChaCha20.X86_64.Avx2.xor
     stack := 16
     verified := Proof.ChaCha20.X86_64.Avx2.xor_verified
     features := ["avx", "avx2"] },
   Spec.ChaCha20.xorApi.artifact X86_64.target {
     suffix := "_avx512"
-    notes := ["Uses AVX-512: sixteen blocks at a time while at least 1024 bytes remain; then \
-        twelve blocks in three sets of `zmm` registers, four blocks to a set, for 513 to 768 \
-        bytes left, one more pass of sixteen for 769 to 1023, and at most two computations of \
-        eight or four blocks for fewer."]
     code := Impl.ChaCha20.X86_64.Avx512.xor
     stack := 16
     verified := Proof.ChaCha20.X86_64.Avx512.xor_verified
     features := ["avx", "avx512f"] },
   Spec.ChaCha20.xorApi.artifact X86_64.target {
     suffix := "_avx512vl"
-    notes := ["For CPUs with AVX-512 whose clock a 512-bit instruction lowers for a while \
-        (Skylake-SP, Cascade Lake): fewer than 513 bytes on `ymm` registers, as \
-        `vg_chacha20_xor_avx2` does but with AVX-512VL's `vprold` for every rotation (eight \
-        blocks with every word in a register, or at most six), so that the code after a short \
-        call keeps its speed; more as `vg_chacha20_xor_avx512` does."]
     code := Impl.ChaCha20.X86_64.Avx512VL.xorBy
     stack := 16
     verified := Proof.ChaCha20.X86_64.Avx512VL.xor_verified

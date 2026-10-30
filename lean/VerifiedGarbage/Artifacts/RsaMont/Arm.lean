@@ -13,20 +13,11 @@ open VG.Proof.Variants.RsaMont.Arm
 
 def artifacts : List Artifact := [
   Spec.Rsa.Mont.mulApi.artifact target {
-    notes := ["Baseline ARMv7: the public operand indices select the specialized Montgomery \
-        square when they agree, and coarsely integrated operand scanning otherwise. A shared \
-        callable body keeps the arithmetic outside its callers' instruction working sets. \
-        The workspace pointer and procedure-call registers occupy a 40-byte stack frame."]
     code := Base.variant.mul
     stack := 40
     verified := Base.variant.verified },
   Spec.Rsa.Mont.mulApi.artifact target {
     suffix := "_umaal"
-    notes := ["One shared callable UMAAL kernel handles both Montgomery products and squares. \
-        Each pass does the rows of two words of the first operand: one scan of the accumulator \
-        loads and stores each word once for both rows, with the products and cancellations of \
-        each row on their own carry chains (four in all), preserving the 40-byte frame and the \
-        baseline's arithmetic and constant-time contracts."]
     code := Umaal.variant.mul
     stack := 40
     verified := Umaal.variant.verified

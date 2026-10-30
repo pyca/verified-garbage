@@ -22,19 +22,12 @@ namespace VG.Artifacts.AesCcm.PPC64LE
 
 open VG.Proof.AesCcm.PPC64LE
 
-/-- Which functions `seal` and `open` call. -/
-def callNote : String :=
-  "This implementation computes the CBC-MAC with `vg_cmac_aes_update`, and encrypts with `vg_aes_ctr32`."
-
 def artifacts : List Artifact := [
   Spec.Ccm.sealApi.artifact PPC64LE.target {
-    notes := [callNote]
     code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 Impl.AesCcm.PPC64LE.«seal»
     stack := 2688
     verified := seal_framed },
   Spec.Ccm.openApi.artifact PPC64LE.target {
-    notes := [callNote,
-      "It compares the tags and overwrites the data with zeros without a branch on the result."]
     code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 Impl.AesCcm.PPC64LE.«open»
     stack := 2688
     verified := open_framed }]

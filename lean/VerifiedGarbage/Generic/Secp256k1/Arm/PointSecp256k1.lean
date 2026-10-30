@@ -59,29 +59,14 @@ namespace VG.Generic.Secp256k1.Arm.PointSecp256k1
 
 open VG.Proof.Weierstrass.Arm.Point
 
-/-- How the functions work. -/
-def notes : List String := ["The function saves `lr` in its own working space and keeps `ws` in \
-  `r12`, and computes Renes, Costello and Batina's 40 steps by calls of `vg_secp256k1_mul_mod_p`, \
-  `vg_secp256k1_add_mod_p` and `vg_secp256k1_sub_mod_p` on fixed offsets of `ws`, `movw` immediates in \
-  `r1`–`r3`. It writes no register but `r0`–`r3`, `r12` and `lr`."]
-
-/-- How the functions for `a = 0` work: Algorithm `alg`'s steps. -/
-def notes0 (alg : Nat) : List String := [s!"The function saves `lr` in its own working space and \
-  keeps `ws` in `r12`, and computes Renes, Costello and Batina's Algorithm {alg} for `a = 0` by calls \
-  of `vg_secp256k1_mul_mod_p`, `vg_secp256k1_add_mod_p` and `vg_secp256k1_sub_mod_p` on fixed offsets \
-  of `ws`, `movw` immediates in `r1`–`r3`. It writes no register but `r0`–`r3`, `r12` and `lr`."]
-
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.Secp256k1.curve) : List Artifact := [
   Impl.Secp256k1.point.addApi.artifact Arm.target {
-    notes := notes
     code := Impl.Weierstrass.Arm.Point.pointAdd Impl.Secp256k1.point
     verified := secp256k1_add_verified (fermat_of_law h.law) },
   Impl.Secp256k1.point.double0Api.artifact Arm.target {
-    notes := notes0 9
     code := Impl.Weierstrass.Arm.Point.pointDouble0 Impl.Secp256k1.point
     verified := secp256k1_double0_verified (fermat_of_law h.law) },
   Impl.Secp256k1.point.add0mApi.artifact Arm.target {
-    notes := notes0 8
     code := Impl.Weierstrass.Arm.Point.pointAdd0m Impl.Secp256k1.point
     verified := secp256k1_add0m_verified (fermat_of_law h.law) }]
 

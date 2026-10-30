@@ -31,11 +31,6 @@ open VG VG.X86 VG.Proof.MillerRabin.X86
 def artifacts (v : RoundImpl) : List Artifact := [
   Spec.RsaKeyGen.candidateApi.artifact target {
     suffix := v.suffix
-    notes := ["Native paired 32-bit arithmetic with a prepared small-prime inverse table, \
-      a whole-word 65537 filter, and a fixed-step general public-exponent filter. \
-      Montgomery constants and the four-bit Miller–Rabin window are reused across blinded witnesses. \
-      One private call frame supplies the prepared multiplication capacity for the entire test. \
-      Distance checks, witness selection, and retry behavior satisfy the shared candidate contract."]
     code := Impl.RsaKeyGen.X86.Candidate.code montName montCode v.name v.code
     stack := 152
     consts := Impl.RsaKeyGen.TrialTable32.consts

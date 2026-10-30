@@ -13,28 +13,18 @@ namespace VG.Artifacts.Poly1305.RISCV64
 
 def artifacts : List Artifact := [
   Spec.Poly1305.initApi.artifact RISCV64.target {
-    notes := ["The key is copied into the state a byte at a time, since the contract states no \
-      alignment for either."]
     code := Impl.Poly1305.RISCV64.init
     verified := Proof.Poly1305.RISCV64.Shared.init },
   Spec.Poly1305.blocksApi.artifact RISCV64.target {
-    notes := ["The arithmetic is in radix 2^64, with `mul` and `mulhu` for the products and \
-      `sltu` for the carries; the state and the blocks are read and written a byte at a time, \
-      since the contract states no alignment for them."]
     code := Impl.Poly1305.RISCV64.blocks
     verified := Proof.Poly1305.RISCV64.Shared.blocks },
   Spec.Poly1305.updateApi.artifact RISCV64.target {
-    notes := ["The arithmetic is in radix 2^64, with `mul` and `mulhu` for the products and \
-      `sltu` for the carries; the state and the data are read and written a byte at a time, \
-      since the contract states no alignment for them. No stack is used."]
     code := Impl.Poly1305.RISCV64.update
     verified := Proof.Poly1305.RISCV64.Shared.update },
   Spec.Poly1305.finalizeApi.artifact RISCV64.target {
-    notes := ["No stack is used."]
     code := Impl.Poly1305.RISCV64.finalize
     verified := Proof.Poly1305.RISCV64.Shared.finalize },
   Spec.Poly1305.finalizeScratchApi.artifact RISCV64.target {
-    notes := ["The same code as `vg_poly1305_finalize`: it does not use `scratch`."]
     code := Impl.Poly1305.RISCV64.finalize
     verified := Proof.Poly1305.RISCV64.Shared.finalizeScratch }]
 

@@ -19,84 +19,32 @@ namespace VG.Artifacts.Ffdh.PPC64LE
 
 def artifacts : List Artifact := [
   Spec.Ffdh.parameterInitApi.artifact PPC64LE.target {
-    notes := ["`bits` is first checked to be below `2^14` (a branch on a public value), and the \
-        bounds are then sign bits of 64-bit differences, without the carry bit."]
     code := Impl.Ffdh.PPC64LE.Generation.init
     verified := Proof.Ffdh.PPC64LE.Generation.init_verified },
   Spec.Ffdh.keyInitApi.artifact PPC64LE.target {
-    notes := ["`p_len` is first checked to be below `2^11` (a branch on a public value), and the \
-        bounds are then sign bits of 64-bit differences, without the carry bit."]
     code := Impl.Ffdh.PPC64LE.KeyGeneration.init
     verified := Proof.Ffdh.PPC64LE.KeyGeneration.init_verified },
   Spec.Ffdh.checkPublicApi.artifact PPC64LE.target {
-    notes := ["p is loaded and checked as `vg_rsa_public_precompute` checks a modulus, in RSA's public \
-        working space of `w = ⌈p_len / 8⌉` words; y is compared with p by a subtraction's borrow and \
-        with 0, 1 and p − 1 by equality masks over all the words; with q, `y^q mod p` is computed by \
-        RSA's bit-serial exponentiation (`R² mod p` by doublings) and compared with 1. The \
-        nonvolatile registers are saved in the working space's header."]
     code := Impl.Ffdh.PPC64LE.Domain.checkPublic
     verified := Proof.Ffdh.PPC64LE.Domain.cp_verified },
   Spec.Ffdh.checkDomainApi.artifact PPC64LE.target {
     consts := Impl.Ffdh.PPC64LE.VettedValidation.tableConsts
-    notes := ["An exact full-domain comparison recognizes the ten certified MODP/FFDHE groups, preserving \
-        the link register and original arguments without scratch or stack writes. Every miss falls \
-        back to the complete validator: p is loaded and checked as `vg_rsa_public_precompute` checks a modulus, in RSA's public \
-        working space of `w = ⌈p_len / 8⌉` words; g and q are compared with p by a subtraction's borrow \
-        and with 0, 1 and p − 1 by equality masks over all the words, and q's oddness is its last \
-        octet's; `q ∣ p − 1` is `p mod q = 1`, p's octets reduced modulo q by doublings; `g^q mod p` is \
-        computed by RSA's bit-serial exponentiation (`R² mod p` by doublings) and compared with 1. The \
-        nonvolatile registers are saved in the working space's header."]
     code := Impl.Ffdh.PPC64LE.VettedValidation.code
     verified := Proof.Ffdh.PPC64LE.VettedValidation.verified },
   Spec.Ffdh.exchangeApi.artifact PPC64LE.target {
-    notes := ["p is loaded and checked as `vg_rsa_public_precompute` checks a modulus, in RSA's public \
-        working space of `w = ⌈p_len / 8⌉` words, whose address is the second argument on the stack; \
-        `z = y^x mod p` is computed by a Montgomery square and a multiplication selected by a mask for \
-        every bit of all `x_len` octets of x (`R² mod p` by doublings), compared with 0, 1 and p − 1 by equality masks over all the words, and \
-        written to `out` or replaced by zeros under the mask. The nonvolatile registers, and x's and \
-        `out`'s addresses and x's length, are saved in the working space's header."]
     code := Impl.Ffdh.PPC64LE.Domain.exchange
     verified := Proof.Ffdh.PPC64LE.Domain.ex_verified },
   Spec.Ffdh.derivePublicApi.artifact PPC64LE.target {
-    notes := ["p is loaded and checked as `vg_rsa_public_precompute` checks a modulus, in RSA's public \
-        working space of `w = ⌈p_len / 8⌉` words; x's range is a comparison with q (`p − 1` without q) \
-        by a subtraction's borrow and with 0 by an equality mask over all the words, and the only branch \
-        on x is on its range. `g^x mod p` is computed as `vg_ffdh_exchange` computes the shared value, by \
-        a Montgomery square and a multiplication selected by a mask for every bit of all `x_len` octets \
-        of x, compared with 0, 1 and p − 1 by equality masks over all the words, and written to `y` or \
-        replaced by zeros under the mask. Powers of a checked generator remain in its q subgroup, so y \
-        needs only its range check. The nonvolatile registers, and x's and `y`'s addresses and x's \
-        length, are saved in the working space's header."]
     code := Impl.Ffdh.PPC64LE.Derive.derivePublic
     verified := Proof.Ffdh.PPC64LE.Derive.dp_verified },
   Spec.Ffdh.checkPrivateApi.artifact PPC64LE.target {
-    notes := ["p is loaded and checked as `vg_rsa_public_precompute` checks a modulus, in RSA's public \
-        working space of `w = ⌈p_len / 8⌉` words; x's range is checked as `vg_ffdh_derive_public` checks \
-        it, and the only branch on x is on its range. `g^x mod p` is computed as `vg_ffdh_exchange` \
-        computes the shared value, over all `x_len` octets of x, and compared with 0, 1, p − 1 and y by \
-        equality masks over all the words: for x in range, y is valid and `y = g^x mod p` exactly when \
-        `g^x mod p` is in `2..p − 2` and equals y, since powers of a checked generator remain in its q \
-        subgroup. The nonvolatile registers, and x's and y's addresses and x's length, are saved in the \
-        working space's header."]
     code := Impl.Ffdh.PPC64LE.CheckPrivate.checkPrivate
     verified := Proof.Ffdh.PPC64LE.CheckPrivate.kp_verified },
   Spec.Ffdh.generateKeyApi.artifact PPC64LE.target {
-    notes := ["x is `rand`'s `p_len` octets cut, without a branch, at the first nonzero octet of q (of p \
-        without q, whose bit length is `p − 1`'s), found by a scan of all its octets: zeros before it, \
-        the bits up to its top bit at it. Then as `vg_ffdh_derive_public`: p's check, x's range, whose \
-        branch the status reveals, and `y = g^x mod p` or zeros under the mask of its range. x is \
-        masked by the status being 1, without a branch. The nonvolatile registers, and x's, `y`'s and \
-        `rand`'s addresses and x's length, are saved in the working space's header."]
     code := Impl.Ffdh.PPC64LE.GenerateKey.generateKey
     verified := Proof.Ffdh.PPC64LE.GenerateKey.gk_verified },
   Spec.Ffdh.keySearchApi.artifact PPC64LE.target {
     stack := 176
-    notes := ["The whole key search runs in verified code: both rejection budgets, the octets each \
-        attempt consumes, and the next entropy request. Each attempt calls `vg_ffdh_generate_key`, in \
-        a frame of 128 bytes holding its stack arguments at offset 96, within a frame saving the link \
-        register. Without the carry bit, the tape is short when `len − p_len` is negative and \
-        `len` is below `2^63`. Timing depends on the domain, the controller's public words and the \
-        attempts' statuses."]
     code := Proof.Ffdh.PPC64LE.KeyGeneration.keyCode
     verified := Proof.Ffdh.PPC64LE.KeyGeneration.key_verified }]
 

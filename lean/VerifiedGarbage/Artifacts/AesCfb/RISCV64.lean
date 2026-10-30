@@ -20,17 +20,9 @@ open VG.Proof.AesCfb.RISCV64
 
 def artifacts : List Artifact := [
   Spec.Cfb.aesEncryptApi.artifact RISCV64.target {
-    notes := [
-      "This implementation enciphers one block at a time with `vg_aes_encrypt_blocks`. The IV \
-        and the data are accessed a byte at a time, since the contract states no alignment for \
-        them."]
     code := Impl.AesCfb.RISCV64.encrypt
     verified := encrypt_verified },
   Spec.Cfb.aesDecryptApi.artifact RISCV64.target {
-    notes := [
-      "This implementation enciphers one block at a time with `vg_aes_encrypt_blocks`. The IV \
-        and the data are accessed a byte at a time, since the contract states no alignment for \
-        them."]
     code := Impl.AesCfb.RISCV64.decrypt
     verified := decrypt_verified }]
 

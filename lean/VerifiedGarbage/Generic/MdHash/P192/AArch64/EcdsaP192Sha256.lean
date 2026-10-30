@@ -27,7 +27,7 @@ It is generic over p192's group law and inversions `h` too, the variant
 
 namespace VG.Generic.MdHash.P192.AArch64.EcdsaP192Sha256
 
-open VG.Proof.Ecdsa.Rfc6979.AArch64 (cfgOf signNotes)
+open VG.Proof.Ecdsa.Rfc6979.AArch64 (cfgOf)
 open VG.Proof.Ecdsa.Rfc6979.AArch64.P192Sha256 (pack sign_verified)
 
 def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P192.curve) :
@@ -37,8 +37,6 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch6
   | some c => [
     Spec.Ecdsa.Rfc6979.P192Sha256.signApi.artifact AArch64.target {
       suffix := c.suffix
-      notes := [signNotes (cfgOf (pack h.law h.inv c)).H 32
-          Spec.Ecdsa.P192.signApi.name]
       code := (cfgOf (pack h.law h.inv c)).sign
       stack := 256
       verified := sign_verified h.law h.inv c

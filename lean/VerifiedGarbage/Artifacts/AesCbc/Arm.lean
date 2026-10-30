@@ -23,14 +23,10 @@ open VG.Proof.AesCbc.Arm
 
 def artifacts : List Artifact := [
   Spec.Cbc.aesEncryptApi.artifact Arm.target {
-    notes := [
-      "This implementation enciphers one block at a time with `vg_aes_encrypt_blocks`."]
     code := Impl.AesCbc.Arm.encrypt
     stack := 8
     verified := encrypt_verified },
   Spec.Cbc.aesDecryptApi.artifact Arm.target {
-    notes := [
-      "This implementation deciphers one block at a time with `vg_aes_decrypt_blocks`."]
     code := Impl.AesCbc.Arm.decrypt
     stack := 8
     verified := decrypt_verified }]

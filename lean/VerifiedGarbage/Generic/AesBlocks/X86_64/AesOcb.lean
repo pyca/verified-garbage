@@ -135,16 +135,9 @@ namespace VG.Generic.AesBlocks.X86_64.AesOcb
 
 open VG.Proof.AesOcb.X86_64
 
-/-- Which functions an instance calls. -/
-def callNote (v : Proof.Aes.X86_64.BlocksImpl) (dec : Bool) : String :=
-  "This implementation enciphers with `" ++ v.enc.name ++ "`" ++
-    (if dec then ", and deciphers with `" ++ v.dec.name ++ "`." else ".")
-
 def artifacts (v : Proof.Aes.X86_64.BlocksImpl) : List Artifact := [
   Spec.Ocb.initApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := ["This implementation expands the key with `" ++ v.expand.name ++
-      "`, and enciphers `L_*` with `" ++ v.enc.name ++ "`."]
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesOcb.X86_64.init (callees v))
     stack := 2576
     verified := init_framed v
@@ -152,7 +145,6 @@ def artifacts (v : Proof.Aes.X86_64.BlocksImpl) : List Artifact := [
     features := v.features },
   Spec.Ocb.sealApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [callNote v false]
     code := Impl.StackScratch.X86_64.withStackArgScratch 3632 4 (Impl.AesOcb.X86_64.seal (callees v))
     stack := 3640
     verified := seal_framed v
@@ -160,8 +152,6 @@ def artifacts (v : Proof.Aes.X86_64.BlocksImpl) : List Artifact := [
     features := v.features },
   Spec.Ocb.openApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [callNote v true,
-      "It compares the tags and overwrites the data with zeros without a branch on the result."]
     code := Impl.StackScratch.X86_64.withStackArgScratch 3632 4 (Impl.AesOcb.X86_64.open (callees v))
     stack := 3640
     verified := open_framed v

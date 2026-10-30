@@ -21,11 +21,6 @@ on them there.
 
 namespace VG.Artifacts.ChaCha20Poly1305.Arm
 
-/-- What `vg_chacha20_poly1305_seal_gather` does: it calls `vg_chacha20_poly1305_seal`. -/
-def gatherNote : String :=
-  "This implementation copies the slices, a word at a time, one after the other to `dst`, and \
-    encrypts them there in place with `vg_chacha20_poly1305_seal`."
-
 def artifacts : List Artifact := [
   Spec.ChaCha20Poly1305.sealApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 656 3 158 Impl.ChaCha20Poly1305.Arm.«seal»
@@ -36,7 +31,6 @@ def artifacts : List Artifact := [
     stack := 664
     verified := Proof.ChaCha20Poly1305.Arm.open_framed },
   Spec.ChaCha20Poly1305.sealGatherApi.artifact Arm.target {
-    notes := [gatherNote]
     code := Impl.ChaCha20Poly1305.Arm.SealGather.sealGather Proof.ChaCha20Poly1305.Arm.Gather.sealFn.name
       Proof.ChaCha20Poly1305.Arm.Gather.sealFn.code
     stack := 696

@@ -14,9 +14,9 @@ implementation (`Variants/ChaCha20Xor/X86/`), named with its suffix (e.g.
 note**: `sig` and `doc` are trusted, as they tie the Rust caller to the
 contract; check them against the contract's `pre`/`post`. An artifact made
 from a function's `Api` (in `Spec/`, reviewed with the contract) takes them
-from there, and this file adds only notes on the implementation. The emitter
-adds the `# Safety` items that depend on the target (`Sig.layoutDoc`), from
-`stack` and `writeArgs`, which `ofSig` checks against the contract.
+from there. The emitter adds the `# Safety` items that depend on the target
+(`Sig.layoutDoc`), from `stack` and `writeArgs`, which `ofSig` checks against
+the contract.
 
 The code uses 32 bytes of stack for every implementation. Each function
 keeps its working space (704 bytes, `work`) in a frame of 740 bytes on the
@@ -31,19 +31,9 @@ all.
 
 namespace VG.Generic.ChaCha20Xor.X86.ChaCha20Poly1305
 
-/-- Which implementation of `vg_chacha20_xor` an instance calls. -/
-def xorNote (v : Proof.ChaCha20.X86.XorImpl) : String :=
-  "This implementation encrypts with `" ++ v.callee.name ++ "`."
-
-/-- What `vg_chacha20_poly1305_seal_gather` does: it calls `vg_chacha20_poly1305_seal`. -/
-def gatherNote (fn : String) : String :=
-  "This implementation copies the slices, a word at a time, one after the other to `dst`, and \
-    encrypts them there in place with `" ++ fn ++ "`."
-
 def artifacts (v : Proof.ChaCha20.X86.XorImpl) : List Artifact := [
   Spec.ChaCha20Poly1305.sealApi.artifact X86.target {
     suffix := v.suffix
-    notes := [xorNote v]
     code := Impl.StackScratch.X86.withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«seal» v.callee)
     stack := 772
     verified := Proof.ChaCha20Poly1305.X86.seal_framed v
@@ -52,7 +42,6 @@ def artifacts (v : Proof.ChaCha20.X86.XorImpl) : List Artifact := [
     features := v.features },
   Spec.ChaCha20Poly1305.openApi.artifact X86.target {
     suffix := v.suffix
-    notes := [xorNote v]
     code := Impl.StackScratch.X86.withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«open» v.callee)
     stack := 772
     verified := Proof.ChaCha20Poly1305.X86.open_framed v
@@ -61,7 +50,6 @@ def artifacts (v : Proof.ChaCha20.X86.XorImpl) : List Artifact := [
     features := v.features },
   Spec.ChaCha20Poly1305.sealGatherApi.artifact X86.target {
     suffix := v.suffix
-    notes := [gatherNote (Proof.ChaCha20Poly1305.X86.Gather.sealFn v).name]
     code := Impl.ChaCha20Poly1305.X86.SealGather.sealGather (Proof.ChaCha20Poly1305.X86.Gather.sealFn v).name
       (Proof.ChaCha20Poly1305.X86.Gather.sealFn v).code
     stack := 824

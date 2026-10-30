@@ -13,39 +13,23 @@ namespace VG.Artifacts.WeierstrassMontBrainpoolP512r1.PPC64LE
 
 open VG.Spec.Weierstrass.Mont VG.Impl.Weierstrass.PPC64LE.Mont VG.Proof.Weierstrass.PPC64LE.Mont
 
-/-- How the functions work. -/
-def notes : List String := ["The function zero-extends the offsets, stores the modulus in its own \
-  working space, and reads `[a]` and `[b]` and writes `[o]` through pointers, using only the volatile \
-  registers `r0` and `r4`–`r12` (no frame, nothing saved). The numbers are 64-bit words: `mulld` and \
-  `mulhdu` give the low and high words of a product, and `addc`, `adde`, `addze`, `subfc` and `subfe` \
-  add and subtract with XER's carry. The product is word-by-word Montgomery multiplication (CIOS, with \
-  the accumulator in the own working space, one row of `[b]` and one of the modulus for each word of \
-  `[a]`, counted down in a loop), and every result is reduced by a conditional subtraction selected by \
-  a mask, a word at a time."]
-
 def artifacts : List Artifact := [
   brainpoolp512r1p.mulApi.artifact PPC64LE.target {
-    notes := notes
     code := mulFn brainpoolp512r1p.k brainpoolp512r1p.m
     verified := brainpoolp512r1p_mul_verified },
   brainpoolp512r1p.addApi.artifact PPC64LE.target {
-    notes := notes
     code := addFn brainpoolp512r1p.k brainpoolp512r1p.m
     verified := brainpoolp512r1p_add_verified },
   brainpoolp512r1p.subApi.artifact PPC64LE.target {
-    notes := notes
     code := subFn brainpoolp512r1p.k brainpoolp512r1p.m
     verified := brainpoolp512r1p_sub_verified },
   brainpoolp512r1n.mulApi.artifact PPC64LE.target {
-    notes := notes
     code := mulFn brainpoolp512r1n.k brainpoolp512r1n.m
     verified := brainpoolp512r1n_mul_verified },
   brainpoolp512r1n.addApi.artifact PPC64LE.target {
-    notes := notes
     code := addFn brainpoolp512r1n.k brainpoolp512r1n.m
     verified := brainpoolp512r1n_add_verified },
   brainpoolp512r1n.subApi.artifact PPC64LE.target {
-    notes := notes
     code := subFn brainpoolp512r1n.k brainpoolp512r1n.m
     verified := brainpoolp512r1n_sub_verified }]
 

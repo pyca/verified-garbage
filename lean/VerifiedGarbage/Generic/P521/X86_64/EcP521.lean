@@ -129,23 +129,6 @@ def publicKey (adx : Bool) (code : Prog X86_64.isa)
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
   Spec.EcKey.P521.publicKeyApi.artifact X86_64.target {
     suffix := (if adx then "_adx" else "")
-    notes := ["The function is `vg_ecdsa_p521_sign" ++
-      (if adx then "_adx" else "") ++ "`'s \
-      code up to the inversion of `Z`, with `d` as both the key and the secret number: it \
-      saves its caller's callee-saved registers in `scratch`; field elements are nine 64-bit \
-      words in Montgomery form, " ++ Proof.Ecdsa.X86_64.P521.mulNote adx ++ "; `[d]G` is the \
-      signature's comb over the 7-bit windows of `d`, from the static `VG_P521_COMB`, each entry \
-      selected by loading every entry of its table, " ++ Proof.Ecdsa.X86_64.P521.selNote adx ++ " \
-      the one of the digit's magnitude; and `Z⁻¹` is \
-      by divsteps (Bernstein and Yang's safegcd, half-delta form): 23 \
-      batches of 59 divsteps on the low 64-bit words of `f` and `g` (from `f = p`, `g = Z`), each \
-      giving a matrix of 64-bit entries that updates `f`, `g` (divided by 2⁵⁹) and the \
-      coefficients `a`, `b` (divided by 2⁶⁴ modulo `p`, as in Montgomery reduction), 1357 \
-      divsteps in all, enough for 576-bit moduli by Bernstein and Yang's bound (which the proof \
-      checks); then `f = ±1`, and `Z⁻¹` is `a` times a constant or its negation by `f`'s sign. \
-      The number of steps is fixed, so the time does not depend on `Z`. The result (or zeros) is \
-      selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the \
-      pointers."]
     consts := Impl.Ecdsa.X86_64.p521.combConsts
     code
     stack := 8

@@ -16,9 +16,6 @@ def artifacts (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
   Spec.X448.x448Api.artifact X86_64.target {
     suffix := v.suffix
     features := v.features
-    notes := ["Uses the selected Curve448 field backend \
-      throughout the ladder and inversion. The shared exponentiation chain is a call to the \
-      matching `vg_gf448_r64_pow223` variant. Callee-saved registers are kept in `scratch`."]
     code := Proof.X448.X86_64.code v
     stack := 8
     verified := Proof.X448.X86_64.code_verified v }]

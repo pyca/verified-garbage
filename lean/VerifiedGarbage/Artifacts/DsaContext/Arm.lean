@@ -53,9 +53,6 @@ def helper (n : Nat)
     (v : Verified Arm.target (Impl.Dsa.Arm.Context.body n)
       (Spec.Dsa.MontContext.setupContract (Impl.Dsa.Arm.Context.layout n) Arm.abi)) : Artifact :=
   (Spec.Dsa.MontContext.api (Impl.Dsa.Arm.Context.layout n)).artifact Arm.target {
-    notes := ["Computes the radix-2^16 negative inverse, one, and R² modulo the modulus. \
-      Callee-saved registers reside in the unused result slot, apart from the arithmetic \
-      helpers' register saves in the header."]
     code := Impl.Dsa.Arm.Context.body n
     verified := v }
 

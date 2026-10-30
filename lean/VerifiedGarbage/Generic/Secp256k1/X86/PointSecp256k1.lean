@@ -102,21 +102,12 @@ namespace VG.Generic.Secp256k1.X86.PointSecp256k1
 
 open VG.Proof.Weierstrass.X86.Point VG.Proof.Weierstrass.Point
 
-/-- How the functions for `a = 0` work: Algorithm `alg`'s steps. -/
-def notes0 (alg : Nat) : List String := [s!"The function saves `edi` in its own working space, and \
-  computes Renes, Costello and Batina's Algorithm {alg} for `a = 0` by calls of \
-  `vg_secp256k1_mul_mod_p`, `vg_secp256k1_add_mod_p` and `vg_secp256k1_sub_mod_p` on fixed offsets of \
-  `ws`, pushing `ws` and the offsets as the callee's arguments. It writes no register but `eax`, \
-  `ecx` and `edx` (and `edi`, which it restores)."]
-
 def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInv Spec.Secp256k1.curve) : List Artifact := [
   Impl.Secp256k1.point.double0Api.artifact X86.target {
-    notes := notes0 9
     code := Impl.Weierstrass.X86.Point.pointDouble0 Impl.Secp256k1.point
     stack := 20
     verified := secp256k1_double0_verified (fermat_of_law h.law) },
   Impl.Secp256k1.point.add0mApi.artifact X86.target {
-    notes := notes0 8
     code := Impl.Weierstrass.X86.Point.pointAdd0m Impl.Secp256k1.point
     stack := 20
     verified := secp256k1_add0m_verified (fermat_of_law h.law) }]

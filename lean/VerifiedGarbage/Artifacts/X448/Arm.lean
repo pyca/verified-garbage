@@ -11,10 +11,6 @@ namespace VG.Artifacts.X448.Arm
 
 def artifacts : List Artifact := [
   Spec.X448.x448Api.artifact Arm.target {
-    notes := ["The function saves its caller's callee-saved \
-      registers in `scratch`. Field elements are twenty-eight 16-bit limbs; multiplications, \
-      additions, subtractions and the multiplication by a24 are calls of the `vg_gf448_r16_*` \
-      functions on `scratch`. Inversion uses an addition chain for `p - 2`."]
     code := Impl.X448.Arm.x448
     verified := Proof.X448.Arm.x448_verified }]
 

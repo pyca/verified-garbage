@@ -68,7 +68,6 @@ namespace VG.Generic.MdHash.AArch64.Pbkdf2
 def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact := [
   v.I.iterateApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := ["The function uses no stack: it saves its return address in `scratch`."]
     code := v.H.iterate
     verified := v.iterate
     features := v.features },

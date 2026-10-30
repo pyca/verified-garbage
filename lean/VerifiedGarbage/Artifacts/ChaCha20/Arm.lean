@@ -15,7 +15,6 @@ def artifacts : List Artifact := [
     code := Impl.ChaCha20.Arm.block
     verified := Proof.ChaCha20.Arm.block_verified },
   Spec.ChaCha20.xorApi.artifact Arm.target {
-    notes := ["Calls `vg_chacha20_block` for each 64 bytes."]
     code := Impl.ChaCha20.Arm.Xor.xor
     verified := Proof.ChaCha20.Arm.Xor.xor_verified },
   Spec.ChaCha20.initApi.artifact Arm.target {

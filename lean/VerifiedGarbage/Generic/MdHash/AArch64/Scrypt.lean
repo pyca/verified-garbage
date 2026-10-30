@@ -28,11 +28,6 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
   | some c => [
     Spec.Scrypt.scryptApi.artifact AArch64.target {
       suffix := c.suffix
-      notes := ["Derives both keys with `" ++ pbkName c ++ "` and \
-        runs scryptROMix on each block with `vg_scrypt_romix`, using the start of `scratch` as the \
-        working space of each. The return address is saved in a 16-byte stack frame, and the \
-        password, its length, `r`, `b`, `blen`, `v` and the next block in a 64-byte one below it; \
-        the calls use the 16 bytes below that."]
       code := Impl.Scrypt.AArch64.scrypt (pbkName c) (pbkOf c)
       stack := 96
       verified := scrypt_verified c

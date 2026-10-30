@@ -69,9 +69,6 @@ open VG.Proof.AesSiv.AArch64
 def artifacts (v : Proof.Aes.AArch64.Ctr32Impl) : List Artifact := [
   Spec.Siv.initApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := [
-      "This implementation expands the keys with `" ++ v.expand.name ++ "` and computes the CMAC subkeys \
-      with `" ++ Spec.Cmac.aesSubkeysApi.name ++ v.suffix ++ "`."]
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x3
       (Impl.AesSiv.AArch64.init v.expand v.callee v.suffix)
     stack := 2560

@@ -148,30 +148,6 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
   Spec.Ecdsa.P384.signApi.artifact X86_64.target {
     suffix := (if adx then "_adx" else "")
-    notes := ["The function saves its caller's callee-saved \
-      registers in `scratch`. Field elements and scalars are six 64-bit words in Montgomery form, \
-      " ++ Proof.Ecdsa.X86_64.P384.mulNote adx ++ ". `[k]G` is a call of `vg_p384_mul_base" ++ (if adx then "_adx" else "") ++ "`, which \
-      expands `k` into a table of its bits and runs a fixed-base comb of 7-bit signed digits, its \
-      products written out: the 55 windows of `k`'s bits as Booth's digits from `-64` to `64`, \
-      `[k]G = Σ [d_j 2^(7j)]G`, from 55 tables of `[m 2^(7j)]G` (`m = 1 … 64`, affine, in \
-      Montgomery form) in the static `VG_P384_COMB` (330 KB), with no doublings: each entry is \
-      selected in constant time by loading every entry of its table, " ++ Proof.Ecdsa.X86_64.P384.selNote adx ++ " the one \
-      of the digit's magnitude (or the point at infinity for a zero digit), negated by a mask of \
-      its sign, and added to a Jacobian accumulator by the mixed addition formulas \
-      madd-2004-hmv, which never meet equal points here (`n` is prime, and the kernel checks \
-      that the partial sums are never the next digit's term), the sum replacing the accumulator \
-      unless the digit is zero; the \
-      inversion modulo `p` is a call of `vg_p384_inv_mod_p" ++ (if adx then "_adx" else "") ++ "`, \
-      by divsteps (Bernstein and Yang's safegcd, half-delta form): 15 \
-      batches of 59 divsteps on the low 64-bit words of `f` and `g` (from `f = p`, `g = Z`), each \
-      giving a matrix of 64-bit entries that updates `f`, `g` (divided by 2⁵⁹) and the \
-      coefficients `a`, `b` (divided by 2⁶⁴ modulo `p`, as in Montgomery reduction), 885 \
-      divsteps in all, enough for 384-bit moduli by Bernstein and Yang's bound (which the proof \
-      checks); then `f = ±1`, and `Z⁻¹` is `a` times a constant or its negation by `f`'s sign. \
-      The number of steps is fixed, so the time does not depend on `Z`. `k⁻¹` modulo `n` is by \
-      the same divsteps, from `f = n`, `g = k`, a call of `vg_p384_inv_mod_n" ++
-      (if adx then "_adx" else "") ++ "`. The signature (or zeros) \
-      is selected by a mask, so the time depends only on the pointers."]
     consts := Impl.Ecdsa.X86_64.p384.combConsts
     code
     stack := 8
@@ -188,34 +164,6 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
   Spec.Ecdsa.P384.verifyApi.artifact X86_64.target {
     suffix := (if adx then "_adx" else "")
-    notes := ["The function saves its caller's callee-saved \
-      registers in `scratch`. Field elements and scalars are six 64-bit words in Montgomery form, \
-      " ++ Proof.Ecdsa.X86_64.P384.mulNote adx ++ ". The public key is checked without branches \
-      (its first byte, both coordinates below `p`, and the curve's equation); an invalid key is \
-      replaced with `G` for the point operations and rejected by the final validity flag. \
-      Divsteps computes `s⁻¹` modulo `n` (a call of `vg_p384_inv_mod_n" ++
-      (if adx then "_adx" else "") ++ "`), then `u = e/s` and `v = r/s`. Both public 384-bit \
-      scalars are recoded as non-adjacent signed digits, width nine for `u` (sixteen bits each) \
-      and width five for `v`. A single Jacobian accumulator computes `[u]G + [v]Q` with 384 \
-      doublings, adding only nonzero digits. Generator digits directly index the affine odd \
-      multiples `[m]G`, `m ≤ 255`, in the static `VG_P384_GTAB` of `[m]G` for `m = 1 … 256` \
-      (24 KB, in Montgomery form), added by mixed additions; peer digits index eight odd multiples of `Q` in `scratch`, with cached \
-      squares and cubes of their Z coordinates, built by co-Z arithmetic (Goundar, Joye, Miyaji, \
-      Rivain and Venelli): DBLU of the affine `Q` gives `2Q` and `Q` at one `Z`, then seven ZADDU \
-      (5 multiplications and 2 squarings each) add `2Q` and leave it at the sum's `Z`; the \
-      operands are never equal or opposite, since `n` is prime. The digits' additions are calls of \
-      `vg_p384_jac_add_cached` (the peer's digits) and `vg_p384_jac_add_affine` (the generator's)" ++
-      (if adx then ", their `_adx` forms," else "") ++ " which cover infinity, equal points and \
-      opposite points; the doubling and the table of odd multiples are inline. Doubling is Jacobian, for \
-      `a = -3`, with `Z' = 2YZ` as a direct product, in place: each coordinate of the accumulator is \
-      read for the last time before it is written, so no copy" ++
-      (if adx then ", and its small multiples are fused into three steps `C a - D b mod p` \
-        (s2n-bignum's sequence)" else "") ++ "; on six words no register values are forwarded \
-      between field operations. The final comparison squares the Jacobian Z \
-      coordinate and checks `X = rZ²`, or `X = (r+n)Z²` when `r+n < p` (P-384 has \
-      `n < p ≤ 2n`), without a field inversion. It rejects infinity and returns the \
-      conjunction of the key, scalar-range and coordinate checks as 0 or 1. Timing may depend \
-      on the public verification inputs, as permitted by the contract."]
     consts := Impl.P384.X86_64.p384v.combConsts
     code
     stack := 8

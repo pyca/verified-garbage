@@ -21,14 +21,11 @@ A generic file (see `TCB/Emit.lean`) over P-192's group law `h`, the variant
 
 namespace VG.Generic.P192.Arm.EcdsaP192Sha256
 
-open VG.Proof.Ecdsa.Rfc6979.Arm (cfgOf signNotes)
+open VG.Proof.Ecdsa.Rfc6979.Arm (cfgOf)
 open VG.Proof.Ecdsa.Rfc6979.Arm.P192Sha256 (pack sign_verified)
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P192.curve) : List Artifact := [
   Spec.Ecdsa.Rfc6979.P192Sha256.signApi.artifact Arm.target {
-    notes := [signNotes
-      Proof.Pbkdf2.Whole.Arm.sha256F.hiN Proof.Pbkdf2.Whole.Arm.sha256F.H.updN
-      Proof.Pbkdf2.Whole.Arm.sha256F.hfN 32 Spec.Ecdsa.P192.signApi.name]
     code := (cfgOf (pack h.law)).sign
     stack := 240
     verified := sign_verified h.law }]

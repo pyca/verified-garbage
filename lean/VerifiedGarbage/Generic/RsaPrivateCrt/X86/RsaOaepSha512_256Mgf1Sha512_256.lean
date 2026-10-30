@@ -27,11 +27,6 @@ open VG.Proof.Rsa.X86.PrivChecked (CrtImpl)
 def artifacts (c : CrtImpl) : List Artifact := [
   (Spec.RsaOaep.decryptApi Spec.Mgf1.sha512_256 Spec.Mgf1.sha512_256).artifact X86.target {
     suffix := c.suffix
-    notes := ["This implementation calls `" ++ Proof.RsaOaep.X86.Dec.privName c ++ "`, hashes the label with \
-      `vg_sha512_update` and unmasks the seed and `DB` with MGF1 calling `vg_sha512_update`. The checks of `Y`, \
-      `lHash'` and the separator, the scan for it and the shift of the message to the start of `out` \
-      are masks computed without branches, reading every byte of `EM` whatever the outcome; only the \
-      lengths and the public key decide a branch or an address."]
     code := Proof.RsaOaep.X86.Dec.decCode Proof.RsaOaep.X86.sha512_256 Proof.RsaOaep.X86.sha512_256 c
     stack := Proof.RsaOaep.X86.Dec.stackBytes
     verified := Proof.RsaOaep.X86.Dec.dec_verified Proof.RsaOaep.X86.sha512_256 Proof.RsaOaep.X86.sha512_256 (Proof.RsaOaep.X86.Dec.dec_sat _ _) c

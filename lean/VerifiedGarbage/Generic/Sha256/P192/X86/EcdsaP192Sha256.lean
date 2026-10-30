@@ -24,15 +24,13 @@ It is generic over P-192's group law `h` too, the variant
 
 namespace VG.Generic.Sha256.P192.X86.EcdsaP192Sha256
 
-open VG.Proof.Ecdsa.Rfc6979.X86 (cfgOf sign_spSafe signNotes)
+open VG.Proof.Ecdsa.Rfc6979.X86 (cfgOf sign_spSafe)
 open VG.Proof.Ecdsa.Rfc6979.X86.P192Sha256 (pack sign_verified)
 
 def artifacts (v : Proof.Sha256.X86.Variants.Backend) (h : Proof.Weierstrass.HasLaw Spec.P192.curve) :
     List Artifact := [
   Spec.Ecdsa.Rfc6979.P192Sha256.signApi.artifact X86.target {
     suffix := v.suffix
-    notes := [signNotes v.F.hiN v.F.H.updN v.F.hfN 32
-      Spec.Ecdsa.P192.signApi.name]
     code := (cfgOf (pack h.law v)).sign
     stack := 272
     verified := sign_verified h.law v

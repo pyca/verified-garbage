@@ -31,9 +31,6 @@ open VG.Proof.RsaPss.X86_64 (encStack chkStack encOf chkOf)
 def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact := [
   (Spec.RsaPss.encodeApi v.mgf.G v.mgf.G).artifact X86_64.target {
     suffix := v.suffix
-    notes := ["This implementation builds the encoding in its working space: `M'` is hashed over \
-      the blocks its length needs and `DB` is masked with MGF1, then the encoding is copied to \
-      `em`. Only the lengths decide a branch or an address."]
     code := (encOf v).code
     stack := encStack
     verified := Proof.RsaPss.X86_64.Enc.enc_verified v.ok v.K v.mgf v.pss
@@ -41,9 +38,6 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact := [
     features := v.features },
   (Spec.RsaPss.checkEncodingApi v.mgf.G v.mgf.G).artifact X86_64.target {
     suffix := v.suffix
-    notes := ["This implementation copies the encoding to its working space, unmasks `DB` with \
-      MGF1 and checks every byte without branching on it: the position of `0x01` and the salt \
-      are found by a scan over all of `DB`. Only the lengths decide a branch or an address."]
     code := (chkOf v).code
     stack := chkStack
     verified := Proof.RsaPss.X86_64.Chk.chk_verified v.ok v.K v.mgf v.pss

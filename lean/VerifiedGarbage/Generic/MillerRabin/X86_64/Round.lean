@@ -14,8 +14,6 @@ open VG.Proof.MillerRabin.X86_64
 def artifacts (v : RoundImpl) : List Artifact := [
   (Spec.MillerRabin.roundApi Spec.MillerRabin.extended).artifact X86_64.target {
     suffix := v.suffix
-    notes := ["Fixed four-bit windows with the verified Montgomery kernel. The saved frame \
-        restores the caller's bookkeeping without making it public. Shared by RSA and FFDH."]
     code := v.code
     stack := 120
     verified := v.verified

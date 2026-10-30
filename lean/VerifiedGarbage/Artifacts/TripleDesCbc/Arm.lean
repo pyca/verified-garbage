@@ -11,12 +11,10 @@ namespace VG.Artifacts.TripleDesCbc.Arm
 
 def artifacts : List Artifact := [
   Spec.TripleDes.cbcEncryptChainedApi.artifact Arm.target {
-    notes := ["Baseline ARMv7: the generic CBC encryption of `Impl/Modes/Arm/`, one block at a time (CBC encryption is sequential), calling the verified `vg_triple_des_ecb_encrypt` on each block in a 56-byte working space on the stack, zeroed on return. The chaining value, the last ciphertext block, goes back to the IV at the end."]
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cbcEncryptChained
     stack := 1088
     verified := Proof.TripleDes.Arm.cbcEncryptChained_framed },
   Spec.TripleDes.cbcDecryptChainedApi.artifact Arm.target {
-    notes := ["Baseline ARMv7: the generic CBC decryption of `Impl/Modes/Arm/`, one block at a time, calling the verified `vg_triple_des_ecb_decrypt` on each block in place, with the chaining value in a 56-byte working space on the stack, zeroed on return. The chaining value, the last ciphertext block, goes back to the IV at the end."]
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.cbcDecryptChained
     stack := 1088
     verified := Proof.TripleDes.Arm.cbcDecryptChained_framed }]

@@ -96,28 +96,6 @@ def exchange (adx : Bool) (code : Prog X86_64.isa)
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
   Spec.Ecdh.P384.exchangeApi.artifact X86_64.target {
     suffix := (if adx then "_adx" else "")
-    notes := ["The function is `vg_ecdsa_p384_sign" ++ (if adx then "_adx" else "") ++ "`'s setup, \
-      field arithmetic and inversion, with the peer's point in place of `G`: it saves its \
-      caller's callee-saved registers in `scratch`; field elements are six 64-bit words in \
-      Montgomery form, " ++ Proof.Ecdsa.X86_64.P384.mulNote adx ++ ". The peer's key is checked without branches (its first byte, both \
-      coordinates below `p`, and the curve's equation), and `[d]P` is computed for the peer's \
-      point if it is valid, else `G`, so it always runs on a point of the curve. `[d]P` is by \
-      signed 5-bit windows in Jacobian coordinates, P-384 having prime order: `d` is recoded as \
-      `d + 16 Σ_{j<78} 32^j`, whose 78 5-bit windows less 16 are digits in `[-16, 15]`; a table \
-      of `[1 … 16]P`, each entry with its `Z²` and `Z³`, is built in `scratch` by a co-Z \
-      doubling and co-Z additions (each keeping `P` with the new entry's `Z`); then, from the \
-      top digit's entry (the point at infinity for the digit zero), for each further digit, five \
-      doublings in place in Jacobian coordinates (dbl-2001-b, for `a = -3`, with the product \
-      `2YZ`) and the addition of the digit's entry, selected in constant time by loading all \
-      sixteen entries, " ++
-      (if adx then "32 bytes at a time with AVX2" else "16 bytes at a time, in two passes") ++
-      ", and keeping (by masks) the one of the digit's magnitude, its `y` negated by a mask of its \
-      sign, by Jacobian addition with the entry's `Z²` and `Z³`, whose exceptional cases (equal \
-      or opposite points) do not arise for `d < n`; the sum is kept, by masks, unless the digit \
-      is zero, and the entry in its place where the accumulator is the point at infinity; \
-      `Z⁻¹` is the signature's call of `vg_p384_inv_mod_p" ++
-      (if adx then "_adx" else "") ++ "`. The result (or zeros) is selected by a mask of the \
-      checks, `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."]
     code
     stack := 8
     verified := hv

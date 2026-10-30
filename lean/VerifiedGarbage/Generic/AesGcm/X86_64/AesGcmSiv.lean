@@ -55,16 +55,10 @@ namespace VG.Generic.AesGcm.X86_64.AesGcmSiv
 open VG.Proof.AesGcm.X86_64 (GcmImpl GcmVariant)
 open VG.Proof.AesGcmSiv.X86_64
 
-/-- Which implementations an instance calls. -/
-def note (v : GcmImpl) : String :=
-  "This implementation encrypts with `" ++ (ecbOf v).enc.name ++ "` and `" ++ v.ctr.callee.name ++
-    "` (and expands keys with `" ++ v.key.fn.name ++ "`) and computes POLYVAL with `" ++ v.gh.fn.name ++ "`."
-
 /-- The artifacts calling the implementations `v`. -/
 def artifactsOf (v : GcmImpl) : List Artifact := [
   Spec.GcmSiv.sealApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [note v]
     code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (sealCode v)
     stack := 3856
     verified := sealCode_framed v
@@ -72,8 +66,6 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     features := features v },
   Spec.GcmSiv.openApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [note v,
-      "It compares the tags and overwrites the data with zeros without a branch on the result."]
     code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (openCode v)
     stack := 3856
     verified := openCode_framed v

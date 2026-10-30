@@ -17,15 +17,14 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 # AES-GCM (NIST SP 800-38D) on x86-64
 
 A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling the
-implementations `v` of `vg_aes_expand_key_scratch`, `vg_aes_ctr32` and `vg_ghash`,
-are emitted once for each combination (`Variants/AesGcm/X86_64/`), named with
-its suffix (e.g. `vg_aes_gcm_seal_aesni_pclmul`), and need its CPU features.
-**Review note**: `sig` and `doc` are trusted, as they tie the Rust caller to
-the contract; these artifacts are made from each function's `Api` (in
-`Spec/`, reviewed with the contract), and this file adds only notes on the
-implementation. The emitter adds the `# Safety` items that depend on the
-target (`Sig.layoutDoc`), from `stack` and `writeArgs`, which `ofSig` checks
-against the contract.
+implementations `v` of `vg_aes_expand_key_scratch`, `vg_aes_ctr32` and
+`vg_ghash`, are emitted once for each combination (`Variants/AesGcm/X86_64/`),
+named with its suffix (e.g. `vg_aes_gcm_seal_aesni_pclmul`), and need its CPU
+features. **Review note**: `sig` and `doc` are trusted, as they tie the Rust
+caller to the contract; these artifacts are made from each function's `Api`
+(in `Spec/`, reviewed with the contract). The emitter adds the `# Safety`
+items that depend on the target (`Sig.layoutDoc`), from `stack` and
+`writeArgs`, which `ofSig` checks against the contract.
 
 Each function needs the CPU features of the implementations it calls:
 `init` calls only AES's, `stream_init` and `stream_aad` only GHASH's (so
@@ -96,59 +95,10 @@ namespace VG.Generic.AesGcm.X86_64.AesGcm
 
 open VG.Proof.AesGcm.X86_64
 
-/-- Which implementations an instance calls. -/
-def note (v : GcmImpl) : String :=
-  "This implementation encrypts with `" ++ v.ctr.callee.name ++ "` (and expands keys with `" ++
-    v.key.fn.name ++ "`) and hashes with `" ++ v.gh.fn.name ++ "`."
-
-/-- How an instance of `seal` or `open` works, besides `note`. -/
-def shortNote (v : GcmImpl) : List String :=
-  if v.short then
-    ["For a 12-byte nonce and fewer than 32 blocks of additional data and text, with some text or \
-      more than 16 bytes of additional data, this implementation computes just the powers of the hash \
-      subkey and the keystream they need, on 512-bit registers, without calls."]
-  else []
-
-/-- How an instance of `seal_prepared` or `open_prepared` works, besides `note`. -/
-def shortNoteP (v : GcmImpl) : List String :=
-  if v.short then
-    ["For a 12-byte nonce and fewer than 32 blocks of additional data and text, with some text or \
-      more than 16 bytes of additional data, this implementation copies the powers of the hash subkey \
-      from the key context and computes just the keystream it needs, on 512-bit registers, without calls."]
-  else []
-
-/-- How an instance of `open_prepared` works, besides `note` and `shortNoteP`. -/
-def openFastNote (v : GcmImpl) : List String :=
-  if v.short then
-    ["For a 12-byte nonce, at most 16 bytes of additional data and at least 256 bytes of text, this \
-      implementation multiplies the additional data by the prepared power of the hash subkey in the key \
-      context, and computes the tag from the prepared powers in the key context, without calls."]
-  else []
-
-/-- How an instance of `seal` ends, besides `note` and `shortNote`. -/
-def finNote (v : GcmImpl) : List String :=
-  if v.fin then
-    ["After the whole blocks, this implementation encrypts the bytes left and computes the tag without \
-      calls, with AES-NI and PCLMULQDQ."]
-  else []
-
-/-- How an instance of `vg_aes_gcm_encrypt_blocks` or `_decrypt_blocks` works. -/
-def blocksNote (v : GcmImpl) (enc : Bool := false) : String :=
-  if v.stitch.isSome then
-    "This implementation interleaves the AES rounds of 16 blocks at a time with GHASH's \
-      multiplications of the 16 blocks before them, from the powers of the hash subkey it \
-      computes in `scratch`, and handles the rest" ++
-      (if enc && v.stitch.any (·.full) then " in the same pass when there are at least 16 blocks, \
-        and otherwise" else "") ++ " with `" ++ v.ctr.callee.name ++ "` and `" ++
-      v.gh.fn.name ++ "`."
-  else
-    "This implementation calls `" ++ v.ctr.callee.name ++ "` and `" ++ v.gh.fn.name ++ "`."
-
 /-- The artifacts calling the implementations `v`. -/
 def artifactsOf (v : GcmImpl) : List Artifact := [
   Spec.Gcm.encryptBlocksApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [blocksNote v true]
     code := v.callees.enc.code
     stack := 8
     verified := encryptBlocks_verified v v.stitch
@@ -156,7 +106,6 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     features := v.features },
   Spec.Gcm.decryptBlocksApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [blocksNote v]
     code := v.callees.dec.code
     stack := 8
     verified := decryptBlocks_verified v v.stitch
@@ -164,7 +113,6 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     features := v.features },
   Spec.Gcm.initApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [note v]
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesGcm.X86_64.init v.callees)
     stack := 2576
     verified := init_framed v
@@ -172,7 +120,6 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     features := (v.ctr.features ++ v.key.features).dedup },
   Spec.Gcm.sealApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := note v :: shortNote v ++ finNote v
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCode v.callees)
     stack := 2624
     verified := sealSel_framed v Short.shortFacts
@@ -180,7 +127,6 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     features := v.features },
   Spec.Gcm.openApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := note v :: shortNote v
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCode v.callees)
     stack := 2632
     verified := openSel_framed v Short.shortFacts
@@ -188,7 +134,6 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     features := v.features },
   Spec.Gcm.streamInitApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [note v]
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .r8
       (Impl.AesGcm.X86_64.streamInit v.callees)
     stack := 2576
@@ -197,7 +142,6 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     features := v.gh.features },
   Spec.Gcm.streamAadApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [note v]
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .r9
       (Impl.AesGcm.X86_64.streamAad v.callees)
     stack := 2576
@@ -206,7 +150,6 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     features := v.gh.features },
   Spec.Gcm.streamEncryptApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [note v]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt v.callees)
     stack := 2608
     verified := streamEncrypt_framed v
@@ -214,7 +157,6 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     features := v.features },
   Spec.Gcm.streamDecryptApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [note v]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecrypt v.callees)
     stack := 2608
     verified := streamDecrypt_framed v
@@ -222,7 +164,6 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     features := v.features },
   Spec.Gcm.streamFinishApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [note v]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (Impl.AesGcm.X86_64.streamFinish v.callees)
     stack := 2584
     verified := streamFinish_framed v
@@ -230,30 +171,16 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     features := (v.ctr.features ++ v.gh.features).dedup },
   Spec.Gcm.streamVerifyApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [note v]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamVerify v.callees)
     stack := 2592
     verified := streamVerify_framed v
     spSafe := X86_64.withStackArgScratch_spSafe (streamVerify_spSafe v)
     features := (v.ctr.features ++ v.gh.features).dedup }]
 
-/-- How an instance of `vg_aes_gcm_encrypt_blocks_precomputed` or
-`_decrypt_blocks_precomputed` works. -/
-def blocksNoteP (v : GcmImpl) : String :=
-  "This implementation interleaves the AES rounds of 16 blocks at a time with GHASH's \
-    multiplications of the 16 blocks before them, from the powers of the hash subkey it \
-    reads from the key context, and handles the rest with `" ++ v.ctr.callee.name ++ "` and `" ++
-    v.gh.fn.name ++ "`."
-
-/-- How an instance of `vg_aes_gcm_init_precomputed` works. -/
-def initNoteP (v : GcmImpl) : String :=
-  note v ++ " It computes the powers of the hash subkey with `" ++ v.gh.fn.name ++ "`, one at a time."
-
 /-- The `_precomputed` artifacts calling the implementations `v`. -/
 def artifactsP (v : GcmImpl) : List Artifact := [
   Spec.Gcm.initPrecomputedApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [initNoteP v]
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesGcm.X86_64.initPrecomputed v.callees)
     stack := 2576
     verified := initP_framed v
@@ -261,7 +188,6 @@ def artifactsP (v : GcmImpl) : List Artifact := [
     features := (v.ctr.features ++ v.key.features ++ v.gh.features).dedup },
   Spec.Gcm.encryptBlocksPrecomputedApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [blocksNoteP v]
     code := v.blkP.enc.code
     stack := 8
     verified := encryptBlocksP_verified v v.stitchP
@@ -269,7 +195,6 @@ def artifactsP (v : GcmImpl) : List Artifact := [
     features := v.features },
   Spec.Gcm.decryptBlocksPrecomputedApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [blocksNoteP v]
     code := v.blkP.dec.code
     stack := 8
     verified := decryptBlocksP_verified v v.stitchP
@@ -277,7 +202,6 @@ def artifactsP (v : GcmImpl) : List Artifact := [
     features := v.features },
   Spec.Gcm.sealPrecomputedApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := note v :: shortNote v ++ finNote v
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCode (v.withBlk v.blkP))
     stack := 2624
     verified := sealSelP_framed v Short.shortFacts
@@ -285,7 +209,6 @@ def artifactsP (v : GcmImpl) : List Artifact := [
     features := v.features },
   Spec.Gcm.openPrecomputedApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := note v :: shortNote v
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCode (v.withBlk v.blkP))
     stack := 2632
     verified := openSelP_framed v Short.shortFacts
@@ -293,7 +216,6 @@ def artifactsP (v : GcmImpl) : List Artifact := [
     features := v.features },
   Spec.Gcm.streamEncryptPrecomputedApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [note v]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
       (Impl.AesGcm.X86_64.streamEncrypt (v.withBlk v.blkP))
     stack := 2608
@@ -302,7 +224,6 @@ def artifactsP (v : GcmImpl) : List Artifact := [
     features := v.features },
   Spec.Gcm.streamDecryptPrecomputedApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [note v]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
       (Impl.AesGcm.X86_64.streamDecrypt (v.withBlk v.blkP))
     stack := 2608
@@ -310,31 +231,12 @@ def artifactsP (v : GcmImpl) : List Artifact := [
     spSafe := X86_64.withStackArgScratch_spSafe (streamDecryptM_spSafe v v.blkP)
     features := v.features }]
 
-/-- How an instance of `vg_aes_gcm_encrypt_blocks_to` works. -/
-def blocksToNote (loops : Bool) (blk : String) : String :=
-  if loops then
-    "This implementation encrypts the first `16 ⌊n / 16⌋` blocks from `src` to `dst` with \
-      AES rounds of 16 blocks at a time interleaved with GHASH's multiplications of the 16 \
-      blocks before them, from the powers of the hash subkey it computes in `scratch`; it \
-      copies the rest to `dst` and encrypts them there with `" ++ blk ++ "`."
-  else
-    "This implementation copies the blocks to `dst` and encrypts them there with `" ++ blk ++
-      "`."
-
-/-- How an instance of `vg_aes_gcm_stream_encrypt_to` works. -/
-def streamToNote (blk enc : String) : String :=
-  "If the text so far ends inside a block, this implementation first copies the bytes of the \
-    input that end it to `dst` and encrypts them there with `" ++ enc ++ "`; then it encrypts the \
-    whole blocks of the rest of the input from `src` to `dst` with `" ++ blk ++ "`; it copies what \
-    is left to `dst` and encrypts it there with `" ++ enc ++ "`."
-
 /-- `vg_aes_gcm_encrypt_blocks_to` and `vg_aes_gcm_stream_encrypt_to` calling
 the implementations `v`, and the `_precomputed` ones if its loops read the
 powers from the key context. -/
 def artifactsTo (v : GcmVariant) : List Artifact :=
   [Spec.Gcm.encryptBlocksToApi.artifact X86_64.target {
     suffix := v.impl.suffix
-    notes := [blocksToNote v.stitchTo.isSome v.impl.blkB.enc.name]
     code := Impl.AesGcm.X86_64.BlocksTo.encrypt v.impl.blkB.enc (v.stitchTo.map (·.enc)) false (encFullTo v.stitchTo)
     stack := 24
     verified := encryptBlocksTo_verified v.impl.blkB v.stitchTo
@@ -342,7 +244,6 @@ def artifactsTo (v : GcmVariant) : List Artifact :=
     features := v.impl.features },
   Spec.Gcm.streamEncryptToApi.artifact X86_64.target {
     suffix := v.impl.suffix
-    notes := [streamToNote (blkTo v).fn.name (encFn v.impl).fn.name]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2232 3
       (Impl.AesGcm.X86_64.StreamTo.encrypt (blkTo v).fn (encFn v.impl).fn)
     stack := 4856
@@ -352,7 +253,6 @@ def artifactsTo (v : GcmVariant) : List Artifact :=
   if v.impl.stitchP.isSome && v.stitchR.isNone then
     [Spec.Gcm.encryptBlocksToPrecomputedApi.artifact X86_64.target {
       suffix := v.impl.suffix
-      notes := [blocksToNote v.stitchToP.isSome v.impl.blkP.enc.name]
       code := Impl.AesGcm.X86_64.BlocksTo.encrypt v.impl.blkP.enc (v.stitchToP.map (·.enc)) false (encFullTo v.stitchToP)
       stack := 24
       verified := encryptBlocksToP_verified v.impl.blkP v.stitchToP
@@ -360,7 +260,6 @@ def artifactsTo (v : GcmVariant) : List Artifact :=
       features := v.impl.features },
     Spec.Gcm.streamEncryptToPrecomputedApi.artifact X86_64.target {
       suffix := v.impl.suffix
-      notes := [streamToNote (blkToP v).fn.name (encFnP v.impl).fn.name]
       code := Impl.StackScratch.X86_64.withStackArgScratch 2232 3
         (Impl.AesGcm.X86_64.StreamTo.encrypt (blkToP v).fn (encFnP v.impl).fn)
       stack := 4856
@@ -369,37 +268,11 @@ def artifactsTo (v : GcmVariant) : List Artifact :=
       features := v.impl.features }]
   else []
 
-/-- How an instance of `vg_aes_gcm_seal_gather` works: below `t` bytes, or
-when its first slice holds all the whole blocks, it takes the short path:
-`splitName` (`vg_aes_gcm_seal_split`) if that slice also holds at least `ts`
-bytes, and otherwise `sealName` (`vg_aes_gcm_seal`) on the whole text
-copied; otherwise `enc`. -/
-def gatherNote (t ts : Nat) (sealName splitName enc : String) : String :=
-  "When the text is shorter than " ++ toString t ++ " bytes, or its first slice holds all its whole \
-    blocks, this implementation takes a short path. If that slice holds all the whole blocks and at least " ++
-    toString ts ++ " bytes, it copies the slices after it to the output after its length and encrypts the \
-    text with `" ++ splitName ++ "`, from the first slice where it is and the rest in the output; \
-    otherwise it copies all the slices to the output and encrypts the text there with `" ++ sealName ++
-    "`. Otherwise, it runs the streaming functions on a state of its own: it absorbs the additional data, \
-    padded with zeros to a whole block (as GHASH pads it), and encrypts each slice from where it is to the \
-    output with `" ++ enc ++ "`."
-
-/-- How `vg_aes_gcm_seal_gather_prepared` takes a TLS record's text, before
-`gatherNote`'s paths. -/
-def tlsNote (splitName : String) (long : Bool) : String :=
-  "A text of a TLS record (a 12-byte nonce, at most 16 bytes of additional data, and one or two slices, \
-    the second ending at most 16 bytes after the first's whole blocks) is sealed first, from the entry: the \
-    second slice, if any, is copied to the output after the first, and the text is encrypted with `" ++
-    splitName ++ "` from the first slice where it is" ++
-    (if long then ", if that slice holds at least 256 bytes"
-      else ", unless the text is at least 256 bytes long and that slice shorter") ++ "."
-
 /-- `vg_aes_gcm_seal_gather` calling the implementations `v`, and the
 `_precomputed` one if its loops read the powers from the key context. -/
 def artifactsGather (v : GcmVariant) : List Artifact :=
   [Spec.Gcm.sealGatherApi.artifact X86_64.target {
     suffix := v.impl.suffix
-    notes := [gatherNote (copyBelow v) (splitFrom v) (sealFn v.impl).fn.name (splitFn v).fn.name (toFn v).fn.name]
     code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
       (Impl.AesGcm.X86_64.SealGather.sealGather (shortFn v).quick (shortFn v).fast (shortFn v).test
         (shortFn v).code (initFn v.impl).fn
@@ -414,7 +287,6 @@ def artifactsGather (v : GcmVariant) : List Artifact :=
   if v.impl.stitchP.isSome && v.stitchR.isNone then
     [Spec.Gcm.sealGatherPrecomputedApi.artifact X86_64.target {
       suffix := v.impl.suffix
-      notes := [gatherNote (copyBelow v) (splitFrom v) (sealFnP v.impl).fn.name (splitFnP v).fn.name (toFnP v).fn.name]
       code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
         (Impl.AesGcm.X86_64.SealGather.sealGather (shortFnP v).quick (shortFnP v).fast (shortFnP v).test
         (shortFnP v).code (initFn v.impl).fn
@@ -431,7 +303,6 @@ def artifactsGather (v : GcmVariant) : List Artifact :=
 def artifactsR (v : GcmVariant) : List Artifact := [
   Spec.Gcm.encryptBlocksPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
-    notes := [blocksNoteP v.impl]
     code := (blkR v).enc.code
     stack := 8
     verified := encryptBlocksPrepared_verified v.impl v.stitchR
@@ -439,7 +310,6 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     features := v.impl.features },
   Spec.Gcm.decryptBlocksPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
-    notes := [blocksNoteP v.impl]
     code := (blkR v).dec.code
     stack := 8
     verified := decryptBlocksPrepared_verified v.impl v.stitchR
@@ -447,7 +317,6 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     features := v.impl.features },
   Spec.Gcm.sealPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
-    notes := note v.impl :: shortNoteP v.impl ++ finNote v.impl
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCodeP (v.impl.withBlk (blkR v)))
     stack := 2624
     verified := sealSelPrepared_framed v.impl (blkR v) Short.shortFacts
@@ -455,7 +324,6 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     features := v.impl.features },
   Spec.Gcm.openPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
-    notes := note v.impl :: shortNoteP v.impl ++ openFastNote v.impl
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCodeP (v.impl.withBlk (blkR v)))
     stack := 2632
     verified := openSelPrepared_framed v.impl (blkR v) Short.shortFacts
@@ -463,7 +331,6 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     features := v.impl.features },
   Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
-    notes := [note v.impl]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
       (Impl.AesGcm.X86_64.streamEncrypt (v.impl.withBlk (blkR v)))
     stack := 2608
@@ -472,7 +339,6 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     features := v.impl.features },
   Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
-    notes := [note v.impl]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
       (Impl.AesGcm.X86_64.streamDecrypt (v.impl.withBlk (blkR v)))
     stack := 2608
@@ -483,7 +349,6 @@ def artifactsR (v : GcmVariant) : List Artifact := [
 def artifactsToR (v : GcmVariant) : List Artifact :=
   [Spec.Gcm.encryptBlocksToPreparedApi.artifact X86_64.target {
       suffix := v.impl.suffix
-      notes := [blocksToNote v.stitchToR.isSome (blkR v).enc.name]
       code := Impl.AesGcm.X86_64.BlocksTo.encrypt (blkR v).enc (v.stitchToR.map (·.enc)) true (encFullTo v.stitchToR)
       stack := 24
       verified := encryptBlocksToPrepared_verified (blkR v) v.stitchToR
@@ -491,7 +356,6 @@ def artifactsToR (v : GcmVariant) : List Artifact :=
       features := v.impl.features },
     Spec.Gcm.streamEncryptToPreparedApi.artifact X86_64.target {
       suffix := v.impl.suffix
-      notes := [streamToNote (blkToR v).fn.name (encFnR v).fn.name]
       code := Impl.StackScratch.X86_64.withStackArgScratch 2232 3
         (Impl.AesGcm.X86_64.StreamTo.encrypt (blkToR v).fn (encFnR v).fn)
       stack := 4856
@@ -502,8 +366,6 @@ def artifactsToR (v : GcmVariant) : List Artifact :=
 def artifactsGatherR (v : GcmVariant) : List Artifact :=
   [Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
       suffix := v.impl.suffix
-      notes := [tlsNote (splitFnR v).fn.name (tlsLong v),
-        gatherNote (copyBelow v) (splitFrom v) (sealFnR v).fn.name (splitFnR v).fn.name (toFnR v).fn.name]
       code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
         (Impl.AesGcm.X86_64.SealGather.withFront (tlsLong v) (splitFnR v).fn
           (Impl.AesGcm.X86_64.SealGather.sealGather (shortFnR v).quick (shortFnR v).fast (shortFnR v).test
@@ -519,7 +381,6 @@ def artifactsGatherR (v : GcmVariant) : List Artifact :=
 def artifactsR16 (v : GcmVariant) (r : R16 v) : List Artifact := [
   Spec.Gcm.encryptBlocksPrepared16Api.artifact X86_64.target {
     suffix := v.impl.suffix
-    notes := [blocksNoteP v.impl]
     code := (blkR16 v).enc.code
     stack := 8
     verified := encryptBlocksPrepared16_verified v.impl v.stitchR16
@@ -527,7 +388,6 @@ def artifactsR16 (v : GcmVariant) (r : R16 v) : List Artifact := [
     features := v.impl.features },
   Spec.Gcm.decryptBlocksPrepared16Api.artifact X86_64.target {
     suffix := v.impl.suffix
-    notes := [blocksNoteP v.impl]
     code := (blkR16 v).dec.code
     stack := 8
     verified := decryptBlocksPrepared16_verified v.impl v.stitchR16
@@ -535,7 +395,6 @@ def artifactsR16 (v : GcmVariant) (r : R16 v) : List Artifact := [
     features := v.impl.features },
   Spec.Gcm.sealPrepared16Api.artifact X86_64.target {
     suffix := v.impl.suffix
-    notes := note v.impl :: shortNoteP v.impl ++ finNote v.impl
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCodeP (v.impl.withBlk (blkR16 v)))
     stack := 2624
     verified := sealSelPrepared16_framed v.impl (blkR16 v) Short.shortFacts r.short
@@ -543,7 +402,6 @@ def artifactsR16 (v : GcmVariant) (r : R16 v) : List Artifact := [
     features := v.impl.features },
   Spec.Gcm.openPrepared16Api.artifact X86_64.target {
     suffix := v.impl.suffix
-    notes := note v.impl :: shortNoteP v.impl ++ openFastNote v.impl
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCodeP (v.impl.withBlk (blkR16 v)))
     stack := 2632
     verified := openSelPrepared16_framed v.impl (blkR16 v) Short.shortFacts r.short
@@ -551,7 +409,6 @@ def artifactsR16 (v : GcmVariant) (r : R16 v) : List Artifact := [
     features := v.impl.features },
   Spec.Gcm.streamEncryptPrepared16Api.artifact X86_64.target {
     suffix := v.impl.suffix
-    notes := [note v.impl]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
       (Impl.AesGcm.X86_64.streamEncrypt (v.impl.withBlk (blkR16 v)))
     stack := 2608
@@ -560,7 +417,6 @@ def artifactsR16 (v : GcmVariant) (r : R16 v) : List Artifact := [
     features := v.impl.features },
   Spec.Gcm.streamDecryptPrepared16Api.artifact X86_64.target {
     suffix := v.impl.suffix
-    notes := [note v.impl]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
       (Impl.AesGcm.X86_64.streamDecrypt (v.impl.withBlk (blkR16 v)))
     stack := 2608
@@ -571,7 +427,6 @@ def artifactsR16 (v : GcmVariant) (r : R16 v) : List Artifact := [
 def artifactsToR16 (v : GcmVariant) : List Artifact :=
   [Spec.Gcm.encryptBlocksToPrepared16Api.artifact X86_64.target {
       suffix := v.impl.suffix
-      notes := [blocksToNote v.stitchToR16.isSome (blkR16 v).enc.name]
       code := Impl.AesGcm.X86_64.BlocksTo.encrypt (blkR16 v).enc (v.stitchToR16.map (·.enc)) true (encFullTo v.stitchToR16)
       stack := 24
       verified := encryptBlocksToPrepared16_verified (blkR16 v) v.stitchToR16
@@ -579,7 +434,6 @@ def artifactsToR16 (v : GcmVariant) : List Artifact :=
       features := v.impl.features },
     Spec.Gcm.streamEncryptToPrepared16Api.artifact X86_64.target {
       suffix := v.impl.suffix
-      notes := [streamToNote (blkToR16 v).fn.name (encFnR16 v).fn.name]
       code := Impl.StackScratch.X86_64.withStackArgScratch 2232 3
         (Impl.AesGcm.X86_64.StreamTo.encrypt (blkToR16 v).fn (encFnR16 v).fn)
       stack := 4856
@@ -590,8 +444,6 @@ def artifactsToR16 (v : GcmVariant) : List Artifact :=
 def artifactsGatherR16 (v : GcmVariant) (r : R16 v) : List Artifact :=
   [Spec.Gcm.sealGatherPrepared16Api.artifact X86_64.target {
       suffix := v.impl.suffix
-      notes := [tlsNote (splitFnR16 v r.onePass).fn.name (tlsLong v),
-        gatherNote (copyBelow v) (splitFrom v) (sealFnR16 v r.short).fn.name (splitFnR16 v r.onePass).fn.name (toFnR16 v).fn.name]
       code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
         (Impl.AesGcm.X86_64.SealGather.withFront (tlsLong v) (splitFnR16 v r.onePass).fn
           (Impl.AesGcm.X86_64.SealGather.sealGather (shortFnR16 v r.short r.onePass).quick (shortFnR16 v r.short r.onePass).fast (shortFnR16 v r.short r.onePass).test
@@ -604,26 +456,11 @@ def artifactsGatherR16 (v : GcmVariant) (r : R16 v) : List Artifact :=
           (finFn v.impl) (splitFnR16 v r.onePass) (tlsLong v) true)
       features := v.impl.features }]
 
-/-- How an instance of `vg_aes_gcm_seal_split` works. -/
-def splitNote (blk : String) : String :=
-  "This implementation encrypts the whole blocks at `src` straight to `dst` with `" ++ blk ++ "`, copies \
-    the bytes of `src` left after them to `dst`, and goes on as `vg_aes_gcm_seal` does from there: it \
-    encrypts the rest in place, then the bytes left after its whole blocks, and computes the tag."
-
-/-- How an instance of `seal_split_prepared` works, besides `note` and `splitNote`. -/
-def fastNote (v : GcmImpl) : List String :=
-  if v.short then
-    ["For a 12-byte nonce, at most 16 bytes of additional data and at least 256 bytes of text, this \
-      implementation multiplies the additional data by the prepared power of the hash subkey in the key \
-      context, without calls."]
-  else []
-
 /-- `vg_aes_gcm_seal_split` of a variant, and the `_precomputed` or
 `_prepared` one for the key context its loops read the powers from. -/
 def artifactsSplit (v : GcmVariant) : List Artifact :=
   [Spec.Gcm.sealSplitApi.artifact X86_64.target {
     suffix := v.impl.suffix
-    notes := [note v.impl, splitNote (blkTo v).fn.name]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2616 5
       (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMid (v.impl.withBlk v.impl.blkB) (blkTo v).fn))
     stack := 2672
@@ -633,7 +470,6 @@ def artifactsSplit (v : GcmVariant) : List Artifact :=
   (if v.impl.stitchP.isSome && v.stitchR.isNone then
     [Spec.Gcm.sealSplitPrecomputedApi.artifact X86_64.target {
       suffix := v.impl.suffix
-      notes := [note v.impl, splitNote (blkToP v).fn.name]
       code := Impl.StackScratch.X86_64.withStackArgScratch 2616 5
         (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMid (v.impl.withBlk v.impl.blkP) (blkToP v).fn))
       stack := 2672
@@ -644,7 +480,6 @@ def artifactsSplit (v : GcmVariant) : List Artifact :=
   (if v.stitchR.isSome && v.r16.isNone then
     [Spec.Gcm.sealSplitPreparedApi.artifact X86_64.target {
       suffix := v.impl.suffix
-      notes := [note v.impl, splitNote (blkToR v).fn.name] ++ fastNote v.impl
       code := Impl.StackScratch.X86_64.withStackArgScratch 2616 5
         (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMidR (v.impl.withBlk (blkR v)) (blkToR v).fn))
       stack := 2672
@@ -658,7 +493,6 @@ first 16 powers. -/
 def artifactsSplitR16 (v : GcmVariant) (r : R16 v) : List Artifact :=
   [Spec.Gcm.sealSplitPrepared16Api.artifact X86_64.target {
     suffix := v.impl.suffix
-    notes := [note v.impl, splitNote (blkToR16 v).fn.name] ++ fastNote v.impl
     code := Impl.StackScratch.X86_64.withStackArgScratch 2616 5
       (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMidR (v.impl.withBlk (blkR16 v)) (blkToR16 v).fn))
     stack := 2672

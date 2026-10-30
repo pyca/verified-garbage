@@ -64,7 +64,6 @@ open VG VG.AArch64
 def scalar : XorImpl where
   callee := .scalar
   features := []
-  notes := ["Calls `vg_chacha20_block` for each 64 bytes."]
   ok := Xor.xor_correct BlockImpl.scalar
   ct := Xor.xor_ct BlockImpl.scalar
   noFrames := BlockImpl.scalar.xorNoFrames
@@ -76,7 +75,6 @@ def scalar : XorImpl where
 def neon : XorImpl where
   callee := .neon
   features := []
-  notes := ["Interleaves six NEON blocks with two integer blocks, processing 512 bytes at a time."]
   ok := Mixed8.xor_correct
   ct := Mixed8.xor_ct
   noFrames := Mixed8.xor_noFrames
@@ -89,8 +87,6 @@ vector blocks is one XAR. -/
 def sve2 : XorImpl where
   callee := .sve2
   features := ["sve2"]
-  notes := ["Interleaves six NEON blocks with two integer blocks, processing 512 bytes at a time; " ++
-    "each XOR and rotation of the NEON blocks is one SVE2 XAR."]
   ok := Mixed8.xor_correct
   ct := Mixed8.xor_ct
   noFrames := Mixed8.xor_noFrames

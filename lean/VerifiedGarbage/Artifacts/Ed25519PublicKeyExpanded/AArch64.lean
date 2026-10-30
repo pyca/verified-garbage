@@ -19,8 +19,6 @@ namespace VG.Artifacts.Ed25519PublicKeyExpanded.AArch64
 
 def artifacts : List Artifact := [
   Spec.Ed25519.publicKeyExpandedApi.artifact AArch64.target {
-    notes := ["Copies the seed's SHA-512 digest to the frame and encodes `[s]B` with \
-      `vg_ed25519_scalar_base`, as `vg_ed25519_public_key` does after hashing the seed."]
     code := Impl.Ed25519.AArch64.PublicKey.codeExpanded
     consts := Impl.Ed25519.AArch64.combConsts
     stack := 352

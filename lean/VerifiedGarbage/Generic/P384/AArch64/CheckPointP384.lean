@@ -25,11 +25,6 @@ open VG.Impl.Ecdsa.AArch64 VG.Proof.Ecdh.AArch64.P384.Check
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P384.curve) : List Artifact := [
   C.checkApi.artifact AArch64.target {
-    notes := ["The function compares `x` and `y` with `p` by chains of \
-      subtractions with borrow (`subs`, `sbcs`), multiplies them by `R² mod p` by calls of the curve's Montgomery multiplication function (`Spec/Weierstrass/Mont.lean`), computes \
-      `y² - (x³ + a x + b)` by the same products and additions and subtractions modulo `p`, \
-      ANDs the masks of the comparisons and of that number being zero into the flag, and \
-      selects the point by masks; nothing depends on the numbers but through masks."]
     code := Impl.Ecdh.AArch64.Cfg.checkFn p384
     verified := verified h.inv }]
 

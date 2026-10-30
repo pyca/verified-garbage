@@ -22,23 +22,11 @@ namespace VG.Generic.BrainpoolP384r1.AArch64.InverseBrainpoolP384r1
 
 open VG.Impl.Ecdsa.AArch64 VG.Proof.Ecdsa.AArch64.BrainpoolP384r1.Inverse
 
-/-- What the functions run. -/
-def note (mod : String) : String :=
-  "The function keeps `x19` in bytes 3832 to 3839 of `ws` while it runs, and computes the \
-  inverse modulo `" ++ mod ++ "` by Bernstein and Yang's divsteps, in batches of 59 (15 batches \
-  for six words), each run on the low words of `f` and `g` and applied to `f`, `g` and the \
-  numbers `d`, `e` by the batch's matrix, in its working area at bytes 3400 to 3831, then \
-  multiplies by a constant (`2^(5 B) R³ mod " ++ mod ++ "`) to return to Montgomery form, by \
-  word-by-word Montgomery multiplication with `mul` and `umulh`, its temporary area at bytes \
-  4048 to 4095; nothing depends on the numbers but through masks and `csel`."
-
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.BrainpoolP384r1.curve) : List Artifact := [
   C.invPApi.artifact AArch64.target {
-    notes := [note "p"]
     code := brainpoolp384r1.invFn brainpoolp384r1.pPowI
     verified := p_verified h.inv },
   C.invNApi.artifact AArch64.target {
-    notes := [note "n"]
     code := brainpoolp384r1.invFn brainpoolp384r1.nPowI
     verified := n_verified h.inv }]
 

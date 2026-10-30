@@ -129,17 +129,6 @@ def publicKey (adx : Bool) (code : Prog X86_64.isa)
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
   Spec.EcKey.P384.publicKeyApi.artifact X86_64.target {
     suffix := (if adx then "_adx" else "")
-    notes := ["The function is `vg_ecdsa_p384_sign" ++
-      (if adx then "_adx" else "") ++ "`'s \
-      code up to the inversion of `Z`, with `d` as both the key and the secret number: it saves \
-      its caller's callee-saved registers in `scratch`; field elements are six 64-bit words in \
-      Montgomery form, " ++ Proof.Ecdsa.X86_64.P384.mulNote adx ++ "; `[d]G` is the \
-      signature's call of `vg_p384_mul_base" ++ (if adx then "_adx" else "") ++ "`, a comb over \
-      the 7-bit windows of `d`, from the static `VG_P384_COMB`, each entry selected by loading \
-      every entry of its table, " ++ Proof.Ecdsa.X86_64.P384.selNote adx ++ " the one of the \
-      digit's magnitude; and `Z⁻¹` is the signature's call of `vg_p384_inv_mod_p" ++
-      (if adx then "_adx" else "") ++ "`. The result (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, \
-      so the time depends only on the pointers."]
     consts := Impl.Ecdsa.X86_64.p384.combConsts
     code
     stack := 8

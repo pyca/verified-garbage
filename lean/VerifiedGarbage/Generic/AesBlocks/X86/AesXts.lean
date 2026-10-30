@@ -30,8 +30,6 @@ open VG.Proof.AesXts.X86
 def artifacts (v : Proof.Aes.X86.BlocksImpl) : List Artifact := [
   Spec.Xts.aesEncryptApi.artifact X86.target {
     suffix := v.suffix
-    notes := ["This implementation enciphers one block at a time with `" ++
-      v.enc.name ++ "`."]
     code := Impl.AesXts.X86.encrypt v.enc
     stack := 24
     verified := encrypt_verified v
@@ -39,8 +37,6 @@ def artifacts (v : Proof.Aes.X86.BlocksImpl) : List Artifact := [
     features := v.features },
   Spec.Xts.aesDecryptApi.artifact X86.target {
     suffix := v.suffix
-    notes := ["This implementation deciphers one block at a time with `" ++
-      v.dec.name ++ "`."]
     code := Impl.AesXts.X86.decrypt v.dec
     stack := 24
     verified := decrypt_verified v
@@ -48,9 +44,6 @@ def artifacts (v : Proof.Aes.X86.BlocksImpl) : List Artifact := [
     features := v.features },
   Spec.Xts.aesEncryptUnitApi.artifact X86.target {
     suffix := v.suffix
-    notes := ["This implementation enciphers the tweak value and the data with `" ++ (Unit.xtsE v).name ++
-      "` (the tweak value as one block from a zero tweak), and steals ciphertext by swapping bytes of the " ++
-      "last two blocks in place."]
     code := Impl.AesXts.X86Unit.encrypt (Unit.xtsE v)
     stack := 52
     verified := Unit.encrypt_verified v
@@ -58,9 +51,6 @@ def artifacts (v : Proof.Aes.X86.BlocksImpl) : List Artifact := [
     features := v.features },
   Spec.Xts.aesDecryptUnitApi.artifact X86.target {
     suffix := v.suffix
-    notes := ["This implementation enciphers the tweak value with `" ++ (Unit.xtsE v).name ++
-      "` (as one block from a zero tweak), deciphers the data with `" ++ (Unit.xtsD v).name ++
-      "`, and steals ciphertext by swapping bytes of the last two blocks in place."]
     code := Impl.AesXts.X86Unit.decrypt (Unit.xtsE v) (Unit.xtsD v)
     stack := 52
     verified := Unit.decrypt_verified v

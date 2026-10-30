@@ -25,17 +25,11 @@ open VG.Proof.AesXts.AArch64.Unit
 def artifacts (v : Proof.AesXts.AArch64.XtsImpl) : List Artifact := [
   Spec.Xts.aesEncryptUnitApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := ["This implementation enciphers the tweak value and the data with `" ++ v.enc.name ++
-      "` (the tweak value as one block from a zero tweak), and steals ciphertext by swapping bytes of the " ++
-      "last two blocks in place."]
     code := Impl.AesXts.AArch64Unit.encrypt v.enc
     verified := encrypt_verified v
     features := v.features },
   Spec.Xts.aesDecryptUnitApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := ["This implementation enciphers the tweak value with `" ++ v.enc.name ++
-      "` (as one block from a zero tweak), deciphers the data with `" ++ v.dec.name ++
-      "`, and steals ciphertext by swapping bytes of the last two blocks in place."]
     code := Impl.AesXts.AArch64Unit.decrypt v.enc v.dec
     verified := decrypt_verified v
     features := v.features }]

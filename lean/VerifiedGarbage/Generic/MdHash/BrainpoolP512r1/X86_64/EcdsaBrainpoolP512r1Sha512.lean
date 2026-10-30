@@ -29,7 +29,7 @@ It is generic over brainpoolP512r1's group law and inversions `h` too, the varia
 
 namespace VG.Generic.MdHash.BrainpoolP512r1.X86_64.EcdsaBrainpoolP512r1Sha512
 
-open VG.Proof.Ecdsa.Rfc6979.X86_64 (cfgOf sign_spSafe signNotes)
+open VG.Proof.Ecdsa.Rfc6979.X86_64 (cfgOf sign_spSafe)
 open VG.Proof.Ecdsa.Rfc6979.X86_64.BrainpoolP512r1Sha512 (pack sign_verified)
 
 def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (h : Proof.Weierstrass.X86_64.HasLawInv Spec.BrainpoolP512r1.curve) :
@@ -39,8 +39,6 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (h : Proof.Weierstrass.X86_64.
   | some c => [
     Spec.Ecdsa.Rfc6979.BrainpoolP512r1Sha512.signApi.artifact X86_64.target {
       suffix := c.suffix
-      notes := [signNotes (cfgOf (pack h.law h.inv c)).H 64
-          Spec.Ecdsa.BrainpoolP512r1.signApi.name 280]
       code := (cfgOf (pack h.law h.inv c)).sign
       stack := 304
       verified := sign_verified h.law h.inv c

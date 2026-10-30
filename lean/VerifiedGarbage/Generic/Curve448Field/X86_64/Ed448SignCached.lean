@@ -140,15 +140,6 @@ def artifacts (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
   Spec.Ed448.signCachedApi.artifact X86_64.target {
     suffix := v.suffix
     features := v.features
-    notes := ["Uses the selected field backend and baseline integer instructions elsewhere. \
-      Hashes the private key, `dom4(0, C) || prefix || M` and `dom4(0, C) || R || A || M` with \
-      `vg_keccak_absorb`, `vg_keccak_pad` and `vg_keccak_squeeze` (SHAKE256, with the Keccak \
-      state and the sponge functions' working space in `scratch`) into a stack frame; prunes \
-      the scalar `s` there; reduces the nonce `r` and the challenge `k` with \
-      `vg_ed448_scalar_reduce`; writes `R = [r]B` with `vg_ed448_scalar_base` and \
-      `S = (r + k s) mod L` with `vg_ed448_scalar_mul_add` into `out`; and clears `s` and `r` \
-      from the frame. The hashes, and the scalar operations' working values, are left in \
-      `scratch`."]
     code := Impl.Ed448.X86_64.SignCached.signCachedFor v
     stack := 464
     verified := Proof.Ed448.X86_64.SignCached.signCached_verified

@@ -145,32 +145,6 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
   Spec.Ecdsa.P521.signApi.artifact X86_64.target {
     suffix := (if adx then "_adx" else "")
-    notes := ["The function saves its caller's callee-saved \
-      registers in `scratch`. Field elements and scalars are nine 64-bit words in Montgomery \
-      form, " ++ Proof.Ecdsa.X86_64.P521.mulNote adx ++ ", and \
-      modulo `n` by columns too (finely integrated product scanning: each column also adds the \
-      reduction's products by `n`'s words, and each of the first nine computes its multiplier \
-      `u = t₀ (-n⁻¹) mod 2⁶⁴`), each with a final conditional subtraction; the 66-byte encodings are read and \
-      written a word at a time, the top word's two bytes from the first eight or a byte at a \
-      time, and the hash's integer is shifted right by its last 7 bits. `[k]G` is a fixed-base \
-      comb of 7-bit signed digits: the 83 windows `k_j` of `k`'s bits as digits `k_j - 64` from \
-      `-64` to `63`, `[k]G = [64 Σ 2^(7j)]G + Σ [(k_j - 64) 2^(7j)]G`, from 83 tables of \
-      `[m 2^(7j)]G` (`m = 1 … 64`, affine, in Montgomery form) in the static `VG_P521_COMB` \
-      (747 KB), with no doublings: each entry is selected in constant time by loading every \
-      entry of its table, " ++ Proof.Ecdsa.X86_64.P521.selNote adx ++ " the one of the digit's \
-      magnitude (or the point at infinity for a zero digit), negated by a mask of its sign, and \
-      added by the mixed complete addition formulas of Renes, Costello and Batina \
-      for `a = -3` (Algorithm 5: the entry's `Z` is 1), the sum replacing the accumulator \
-      unless the digit is zero; the \
-      inversion modulo `p` is by divsteps (Bernstein and Yang's safegcd, half-delta form): 23 \
-      batches of 59 divsteps on the low 64-bit words of `f` and `g` (from `f = p`, `g = Z`), each \
-      giving a matrix of 64-bit entries that updates `f`, `g` (divided by 2⁵⁹) and the \
-      coefficients `a`, `b` (divided by 2⁶⁴ modulo `p`, as in Montgomery reduction), 1357 \
-      divsteps in all, enough for 576-bit moduli by Bernstein and Yang's bound (which the proof \
-      checks); then `f = ±1`, and `Z⁻¹` is `a` times a constant or its negation by `f`'s sign. \
-      The number of steps is fixed, so the time does not depend on `Z`. `k⁻¹` modulo `n` is by \
-      the same divsteps, from `f = n`, `g = k`. The signature (or \
-      zeros) is selected by a mask, so the time depends only on the pointers."]
     consts := Impl.Ecdsa.X86_64.p521.combConsts
     code
     stack := 8
@@ -187,31 +161,6 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
   Spec.Ecdsa.P521.verifyApi.artifact X86_64.target {
     suffix := (if adx then "_adx" else "")
-    notes := ["The function saves its caller's callee-saved \
-      registers in `scratch`. Field elements and scalars are nine 64-bit words in Montgomery \
-      form, " ++ Proof.Ecdsa.X86_64.P521.mulNote adx ++ ", and modulo `n` by columns too (finely \
-      integrated product scanning: each column also adds the reduction's products by `n`'s words, \
-      and each of the first nine computes its multiplier `u = t₀ (-n⁻¹) mod 2⁶⁴`), each with a \
-      final conditional subtraction, and the hash's integer is shifted right by its last 7 bits. \
-      The public key is checked without branches (its first byte, both coordinates below `p`, \
-      and the curve's equation); an invalid key is replaced with `G` for the point operations \
-      and rejected by the final validity flag. Divsteps computes `s⁻¹` modulo `n`, then \
-      `u = e/s` and `v = r/s`. Both public scalars are recoded, over the 576 bits of their nine \
-      words (the top 55 bits zero), as 577 non-adjacent signed digits, width seven for `u` and \
-      width five for `v`, the scalar's ten registers including `rbp` and `rsi`. A single \
-      Jacobian accumulator computes `[u]G + [v]Q` with 576 doublings, adding only nonzero \
-      digits. Generator digits directly index odd multiples among the 64 affine entries of the \
-      first row of the existing static `VG_P521_COMB`, added by mixed additions; peer digits \
-      index eight odd multiples of `Q` in `scratch` (216-byte Jacobian entries, copied in \
-      fourteen 16-byte pieces, the last overlapping the one before it by a word), with cached \
-      squares and cubes of their Z coordinates. Complete point operations cover infinity, equal \
-      points and opposite points. Doubling is Jacobian, for `a = -3`, with `Z' = 2YZ` as a \
-      direct product, into a temporary point copied back to the accumulator; on nine words no \
-      register values are forwarded between field operations. The final comparison squares the \
-      Jacobian Z coordinate and checks `X = rZ²`, or `X = (r+n)Z²` when `r+n < p` (P-521 has \
-      `n < p ≤ 2n`), without a field inversion. It rejects infinity and returns the \
-      conjunction of the key, scalar-range and coordinate checks as 0 or 1. Timing may depend \
-      on the public verification inputs, as permitted by the contract."]
     consts := Impl.Ecdsa.X86_64.p521.combConsts
     code
     stack := 8

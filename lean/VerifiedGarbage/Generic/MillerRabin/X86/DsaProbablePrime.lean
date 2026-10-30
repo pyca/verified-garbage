@@ -28,11 +28,6 @@ def helper (v : RoundImpl) (bits : Nat)
       (Proof.Dsa.X86.ProbablePrime.contract bits)) : Artifact :=
   (Spec.Dsa.ProbablePrime.api (Impl.Dsa.X86.ProbablePrime.layout bits)).artifact target {
     suffix := v.suffix
-    notes := ["RSA's i686 candidate machinery on a given candidate: its big-endian octets are \
-      imported into a Montgomery workspace of at least four 64-bit words, sieved with the prepared \
-      small-prime inverse table, and tested by the blinded loop with the shared Miller–Rabin round, \
-      witnesses cut to the candidate's width. One private call frame supplies the prepared \
-      multiplication capacity for the entire test."]
     code := Impl.Dsa.X86.ProbablePrime.code bits montName montCode v.name v.code
     stack := 152
     consts := Impl.RsaKeyGen.TrialTable32.consts

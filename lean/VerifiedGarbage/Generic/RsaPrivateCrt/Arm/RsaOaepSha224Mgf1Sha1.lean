@@ -189,11 +189,6 @@ open VG.Proof.Rsa.Arm (CrtImpl)
 def artifacts (v : CrtImpl) : List Artifact := [
   (Spec.RsaOaep.decryptApi Spec.Mgf1.sha224 Spec.Mgf1.sha1).artifact Arm.target {
     suffix := v.suffix
-    notes := ["This implementation calls `" ++ Proof.Rsa.Arm.privName v ++ "`, hashes the label with \
-      `vg_sha256_update` and unmasks the seed and `DB` with MGF1 calling `vg_sha1_update`. The checks of `Y`, \
-      `lHash'` and the separator, the scan for it and the shift of the message to the start of `out` \
-      are masks computed without branches, reading every byte of `EM` whatever the outcome; only the \
-      lengths and the public key decide a branch or an address."]
     code := Proof.RsaOaep.Arm.Dec.decCode (.ofPss Proof.RsaPss.Arm.sha224) (.ofPss Proof.RsaPss.Arm.sha1) v
     stack := 3624
     verified := (Proof.RsaOaep.Arm.Dec.dec_verified (.ofPss Proof.RsaPss.Arm.sha224) (.ofPss Proof.RsaPss.Arm.sha1)
@@ -201,10 +196,6 @@ def artifacts (v : CrtImpl) : List Artifact := [
     features := v.features },
   (Spec.RsaOaep.encryptPrecomputedApi Spec.Mgf1.sha224 Spec.Mgf1.sha1).artifact Arm.target {
     suffix := v.suffix
-    notes := ["ARMv7 with the selected RSA public implementation. This implementation hashes the label with `vg_sha256_update`, masks `DB` \
-        and the seed with MGF1 calling `vg_sha1_update`, and calls `vg_rsa_public_precomputed_checked` \
-        with the cached modulus values. The message's length is public; its bytes, the label's and \
-        the seed's are only copied, hashed and masked."]
     code := Proof.RsaOaep.Arm.Enc.encryptCode (.ofPss Proof.RsaPss.Arm.sha224) (.ofPss Proof.RsaPss.Arm.sha1)
       (Proof.Rsa.Arm.pdOfCrt v)
     stack := 240

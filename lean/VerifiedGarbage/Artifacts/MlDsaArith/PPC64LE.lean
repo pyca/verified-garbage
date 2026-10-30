@@ -14,14 +14,10 @@ namespace VG.Artifacts.MlDsaArith.PPC64LE
 
 def artifacts : List Artifact := [
   Spec.MlDsa.nttApi.artifact PPC64LE.target {
-    notes := ["The function saves `r14` and `r15` in a frame each on the stack (96 bytes), and stores a \
-        table of the 256 zetas in `scratch`."]
     code := Impl.MlDsa.PPC64LE.Arith.ntt
     stack := 96
     verified := Proof.MlDsa.PPC64LE.Arith.Ntt.verified },
   Spec.MlDsa.nttInvApi.artifact PPC64LE.target {
-    notes := ["The function saves `r14` and `r15` in a frame each on the stack (96 bytes), and stores a \
-        table of the 256 negated zetas in `scratch`."]
     code := Impl.MlDsa.PPC64LE.Arith.nttInv
     stack := 96
     verified := Proof.MlDsa.PPC64LE.Arith.NttInv.verified },

@@ -24,56 +24,9 @@ namespace VG.Generic.MlKemSample4.X86_64.MlKem
 
 open VG.Proof.MlKem.X86_64 (Sample4Impl)
 
-/-- What an instance calls, sampling the matrix with `sampler`, and its use of the stack. -/
-def callNotes (v : Sample4Impl) (sampler : String) : List String :=
-  ["The function saves its caller's callee-saved registers in `scratch`; its calls use the 32 bytes of \
-    stack below its return address. It samples the matrix four entries at a time with `" ++
-    sampler ++ "`, and computes the outputs of `PRF` " ++ v.prfsDoc ++ "."]
-
-/-- What an instance with polynomials of `u32`s calls. -/
-def notes (v : Sample4Impl) : List String := callNotes v v.callee.name
-
-/-- What an instance calls that computes with 16-bit polynomials if `v`
-has a 16-bit sampler, calling the K-PKE functions `kpke`. -/
-def notes16 (v : Sample4Impl) (kpke : List String) : List String :=
-  match v.callee.s16 with
-  | none => notes v
-  | some (n, _) => callNotes v n ++ ["Its polynomials are 16-bit words: it samples the noise with \
-      `vg_mlkem16_cbd2_avx2`, and computes the rest of K-PKE with " ++
-      ", ".intercalate (kpke.map (s!"`{·}`")) ++ "."]
-
-/-- How an instance of encapsulation (hashing the key) computes `H(ek)`, sampling the matrix with `sampler`. -/
-def hashNote (sampler : String) : String :=
-  "It computes `H(ek)` while it samples the matrix: it samples its first entries three at a time with the \
-    code of `" ++ sampler ++ "` inlined, whose fourth Keccak state absorbs the padded key, three blocks of \
-    136 bytes at a time."
-
-/-- What an instance of encapsulation (hashing the key) calls, calling the
-K-PKE function `kpke` with 16-bit polynomials, and how it computes `H(ek)`. -/
-def encapsNotes (v : Sample4Impl) (kpke : String) : List String :=
-  match v.callee.s16, v.callee.batchH16 with
-  | some (n, _), some _ => notes16 v [kpke] ++ [hashNote n]
-  | _, _ => notes v ++ ["It computes `H(ek)` with the sponge functions of SHA3-256 first."]
-
-/-- What an instance of ML-KEM-768's key generation calls, and how it computes
-`H(ek)`: hashing `ek` in the rows if `v` has the fragments for it
-(`Callee4.batchHM16`, `Callee4.batchP16`). -/
-def keyGenNotes (v : Sample4Impl) : List String :=
-  match v.callee.s16, v.callee.batchHM16, v.callee.batchP16 with
-  | some (n, _), some _, some _ => ["The function saves its caller's callee-saved registers in `scratch`; its calls \
-      use the 32 bytes of stack below its return address. It computes `PRF(σ, 0)` and `PRF(σ, 1)` in the fourth \
-      Keccak state of the first row of the matrix (below), and the other outputs of `PRF` " ++ v.prfsDoc ++ ".",
-    "Its polynomials are 16-bit words: it samples the noise with `vg_mlkem16_cbd2_avx2`, and computes the rest of \
-      K-PKE with `vg_mlkem768_kpke_keygen_ntt` and `vg_mlkem768_kpke_keygen_row`, a row of `t̂` at a time.",
-    "It computes `H(ek)` while it samples the matrix: it samples a row of the matrix at a time with the code of `" ++
-      n ++ "` inlined, whose fourth Keccak state absorbs the blocks of the padded key that the rows before it \
-      wrote, 136 bytes at a time."]
-  | _, _, _ => notes16 v ["vg_mlkem768_kpke_keygen"]
-
 def artifacts (v : Sample4Impl) : List Artifact := [
   Spec.MlKem.keyGenApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := keyGenNotes v
     code := Impl.MlKem.X86_64.keyGen v.callee
     stack := 32
     verified := Proof.MlKem.X86_64.keyGen_verified v
@@ -81,7 +34,6 @@ def artifacts (v : Sample4Impl) : List Artifact := [
     features := v.features },
   Spec.MlKem.encapsHApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := notes16 v ["vg_mlkem768_kpke_encrypt"]
     code := Impl.MlKem.X86_64.encapsH v.callee
     stack := 32
     verified := Proof.MlKem.X86_64.encapsH_verified v
@@ -89,7 +41,6 @@ def artifacts (v : Sample4Impl) : List Artifact := [
     features := v.features },
   Spec.MlKem.encapsApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := encapsNotes v "vg_mlkem768_kpke_encrypt"
     code := Impl.MlKem.X86_64.encaps v.callee
     stack := 32
     verified := Proof.MlKem.X86_64.encaps_verified v
@@ -97,7 +48,6 @@ def artifacts (v : Sample4Impl) : List Artifact := [
     features := v.features },
   Spec.MlKem.decapsApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := notes16 v ["vg_mlkem768_kpke_decrypt", "vg_mlkem768_kpke_encrypt"]
     code := Impl.MlKem.X86_64.decaps v.callee
     stack := 32
     verified := Proof.MlKem.X86_64.decaps_verified v
@@ -105,7 +55,6 @@ def artifacts (v : Sample4Impl) : List Artifact := [
     features := v.features },
   Spec.MlKem1024.keyGenApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := notes16 v ["vg_mlkem1024_kpke_keygen"]
     code := Impl.MlKem1024.X86_64.keyGen1024 v.callee
     stack := 32
     verified := Proof.MlKem1024.X86_64.keyGen1024_verified v
@@ -115,7 +64,6 @@ def artifacts (v : Sample4Impl) : List Artifact := [
     features := v.features },
   Spec.MlKem1024.encapsHApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := notes16 v ["vg_mlkem1024_kpke_encrypt"]
     code := Impl.MlKem1024.X86_64.encapsH1024 v.callee
     stack := 32
     verified := Proof.MlKem1024.X86_64.encapsH1024_verified v
@@ -125,7 +73,6 @@ def artifacts (v : Sample4Impl) : List Artifact := [
     features := v.features },
   Spec.MlKem1024.encapsApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := encapsNotes v "vg_mlkem1024_kpke_encrypt"
     code := Impl.MlKem1024.X86_64.encaps1024 v.callee
     stack := 32
     verified := Proof.MlKem1024.X86_64.encaps1024_verified v
@@ -135,7 +82,6 @@ def artifacts (v : Sample4Impl) : List Artifact := [
     features := v.features },
   Spec.MlKem1024.decapsApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := notes16 v ["vg_mlkem1024_kpke_decrypt", "vg_mlkem1024_kpke_encrypt"]
     code := Impl.MlKem1024.X86_64.decaps1024 v.callee
     stack := 32
     verified := Proof.MlKem1024.X86_64.decaps1024_verified v

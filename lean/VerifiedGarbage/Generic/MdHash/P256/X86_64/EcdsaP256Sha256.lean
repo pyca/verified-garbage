@@ -32,7 +32,7 @@ It is generic over P-256's group law, inversions and prime order `h` too, the va
 
 namespace VG.Generic.MdHash.P256.X86_64.EcdsaP256Sha256
 
-open VG.Proof.Ecdsa.Rfc6979.X86_64 (cfgOf sign_spSafe signNotes)
+open VG.Proof.Ecdsa.Rfc6979.X86_64 (cfgOf sign_spSafe)
 open VG.Proof.Ecdsa.Rfc6979.X86_64.Sha256 (pack sign_verified)
 
 /-- The signature with the hash's compression function `c`, and P-256's
@@ -43,8 +43,6 @@ def withMul (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P256.curve) (c : Pro
     Artifact :=
   Spec.Ecdsa.Rfc6979.P256Sha256.signApi.artifact X86_64.target {
     suffix := c.suffix ++ (if adx then "_adx" else "")
-    notes := [signNotes (cfgOf (pack adx h.law (Proof.P256.combOk7 h.law) h.inv c)).H 32
-        (Spec.Ecdsa.P256.signApi.name ++ (if adx then "_adx" else ""))]
     code := (cfgOf (pack adx h.law (Proof.P256.combOk7 h.law) h.inv c)).sign
     consts := Impl.Ecdsa.X86_64.p256.combConsts
     stack := 240

@@ -16,21 +16,16 @@ namespace VG.Artifacts.MlKem.Arm
 
 def artifacts : List Artifact := [
   Spec.MlKem.sampleNTTApi.artifact Arm.target {
-    notes := ["The function saves `r4`–`r11` and its return address in `scratch`; the 8 bytes of stack \
-        below the stack pointer hold the stack arguments of the SHA-3 functions it calls."]
     code := Impl.MlKem.Arm.sampleNTT
     stack := 8
     verified := Proof.MlKem.Arm.Sample.verified },
   Spec.MlKem.nttApi.artifact Arm.target {
-    notes := ["The function uses no stack: it saves `r4`–`r11` in `scratch`."]
     code := Impl.MlKem.Arm.ntt
     verified := Proof.MlKem.Arm.Ntt.verified },
   Spec.MlKem.nttInvApi.artifact Arm.target {
-    notes := ["The function uses no stack: it saves `r4`–`r11` in `scratch`."]
     code := Impl.MlKem.Arm.nttInv
     verified := Proof.MlKem.Arm.NttInv.verified },
   Spec.MlKem.mulApi.artifact Arm.target {
-    notes := ["The function uses no stack: it saves `r4`–`r11` in `scratch`."]
     code := Impl.MlKem.Arm.multiplyNTTs
     verified := Proof.MlKem.Arm.Mul.verified },
   Spec.MlKem.addApi.artifact Arm.target {
@@ -55,21 +50,14 @@ def artifacts : List Artifact := [
     code := Impl.MlKem.Arm.decodeDecompress
     verified := Proof.MlKem.Arm.Decompress.verified },
   Spec.MlKem.keyGenApi.artifact Arm.target {
-    notes := ["The function saves `r4`–`r11` and its return address in `scratch`; the 8 bytes of stack \
-        below the stack pointer hold the stack arguments of the SHA-3 functions it calls."]
     code := Impl.MlKem.Arm.keygen
     stack := 8
     verified := Proof.MlKem.Arm.KeyGen.verified },
   Spec.MlKem.encapsApi.artifact Arm.target {
-    notes := ["The function saves `r4`–`r11` and its return address in `scratch`, and copies `m` into it; \
-        the 8 bytes of stack below the stack pointer hold the stack arguments of the SHA-3 functions it calls."]
     code := Impl.MlKem.Arm.encaps
     stack := 8
     verified := Proof.MlKem.Arm.Encaps.verified },
   Spec.MlKem.decapsApi.artifact Arm.target {
-    notes := ["The function saves `r4`–`r11`, its return address and `key` in `scratch`, and copies `ct` \
-        into it; the 8 bytes of stack below the stack pointer hold the stack arguments of the SHA-3 functions it \
-        calls."]
     code := Impl.MlKem.Arm.decaps
     stack := 8
     verified := Proof.MlKem.Arm.Decaps.verified },

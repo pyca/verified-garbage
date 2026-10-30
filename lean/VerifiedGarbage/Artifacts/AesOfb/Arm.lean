@@ -22,8 +22,6 @@ open VG.Proof.AesOfb.Arm
 
 def artifacts : List Artifact := [
   Spec.Ofb.aesApi.artifact Arm.target {
-    notes := [
-      "This implementation enciphers one block at a time with `vg_aes_encrypt_blocks`."]
     code := Impl.AesOfb.Arm.crypt
     stack := 8
     verified := crypt_verified }]

@@ -17,11 +17,6 @@ def artifacts (v : Proof.MillerRabin.AArch64.RoundImpl) : List Artifact :=
   ([160, 256, 1024, 2048, 3072] : List Nat).attach.map fun (b : { n : Nat // n ∈ ([160, 256, 1024, 2048, 3072] : List Nat) }) =>
     (Spec.Dsa.ProbablePrime.api (Impl.Dsa.AArch64.ProbablePrime.layout b.val)).artifact AArch64.target {
       suffix := v.suffix
-      notes := ["Parameter generation's test on the candidate at its offset of the generation's scratch \
-        space: trial division, then the blinded Miller–Rabin loop calling the shared round, with the \
-        arithmetic of the round's implementation. Its 272-byte frame holds the test's arguments \
-        in the slots where the generation keeps them; the test keeps every callee-saved \
-        register."]
       stack := 272
       code := testCode v b.val
       verified := verified v (Supported.of_mem b.property)

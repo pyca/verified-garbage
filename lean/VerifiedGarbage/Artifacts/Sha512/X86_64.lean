@@ -20,21 +20,15 @@ namespace VG.Artifacts.Sha512.X86_64
 
 def artifacts : List Artifact := [
   Spec.Sha512.compressApi.artifact X86_64.target {
-    notes := ["This implementation runs rounds 16–79 sixteen to an iteration of a loop, adding the \
-        round constants from a table."]
     code := Impl.Sha512.X86_64.Rolled.compress
     verified := Proof.Sha512.X86_64.Shared.compress },
   Spec.Sha512.compressApi.artifact X86_64.target {
     suffix := "_avx2"
-    notes := ["This implementation computes the message schedules of two blocks at a time in \
-        the two lanes of the AVX2 registers, and the rounds with BMI1 and BMI2, sixteen to an \
-        iteration of a loop, adding the round constants from a table."]
     code := Impl.Sha512.X86_64.Avx2Rolled.compress
     verified := Proof.Sha512.X86_64.Shared.compress_avx2
     features := ["avx", "avx2", "bmi1", "bmi2"] },
   Spec.Sha512.compressApi.artifact X86_64.target {
     suffix := "_shani"
-    notes := ["This implementation uses the SHA512 extension."]
     code := Impl.Sha512.X86_64.ShaNi.compress
     verified := Proof.Sha512.X86_64.Shared.compress_shani
     features := ["avx", "avx2", "sha512"] },

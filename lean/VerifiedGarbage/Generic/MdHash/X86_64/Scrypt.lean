@@ -28,10 +28,6 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   | some c => [
     Spec.Scrypt.scryptApi.artifact X86_64.target {
       suffix := c.suffix
-      notes := ["Derives both keys with `" ++ pbkName c ++ "` and \
-        runs scryptROMix on each block with `vg_scrypt_romix`, using the start of `scratch` as the \
-        working space of each. The password, its length, `r` and `b`, PBKDF2's stack arguments and \
-        the next block are kept in a 56-byte stack frame; the calls use the 32 bytes below it."]
       code := Impl.Scrypt.X86_64.scrypt (pbkName c) (pbkOf c)
       stack := 88
       verified := scrypt_verified c

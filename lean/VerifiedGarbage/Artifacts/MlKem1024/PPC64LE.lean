@@ -25,22 +25,14 @@ def artifacts : List Artifact := [
     code := Impl.MlKem1024.PPC64LE.checkEk1024
     verified := Proof.MlKem1024.PPC64LE.CheckEk.verified },
   Spec.MlKem1024.keyGenApi.artifact PPC64LE.target {
-    notes := ["The function has no stack frame of its own: it saves `r24`–`r31` and its return address in \
-        `scratch`; the functions it calls use the 48 bytes of stack below the stack pointer."]
     code := Impl.MlKem1024.PPC64LE.keygen1024
     stack := 48
     verified := Proof.MlKem1024.PPC64LE.KeyGen.verified },
   Spec.MlKem1024.encapsApi.artifact PPC64LE.target {
-    notes := ["The function has no stack frame of its own: it saves `r24`–`r31` and its return address in \
-        `scratch`, and copies `m` into it; the functions it calls use the 48 bytes of stack below the stack \
-        pointer."]
     code := Impl.MlKem1024.PPC64LE.encaps1024
     stack := 48
     verified := Proof.MlKem1024.PPC64LE.Encaps.verified },
   Spec.MlKem1024.decapsApi.artifact PPC64LE.target {
-    notes := ["The function has no stack frame of its own: it saves `r24`–`r31`, its return address and \
-        `key` in `scratch`, and copies `ct` into it; the functions it calls use the 48 bytes of stack below \
-        the stack pointer."]
     code := Impl.MlKem1024.PPC64LE.decaps1024
     stack := 48
     verified := Proof.MlKem1024.PPC64LE.Decaps.verified }]

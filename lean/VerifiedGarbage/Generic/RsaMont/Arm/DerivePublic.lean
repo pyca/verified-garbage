@@ -15,11 +15,6 @@ def artifacts (b : Proof.Bignum.Arm.MontBackend) : List Artifact :=
     features := b.features
     stack := 176
     code := Proof.Ffdh.Arm.SharedDerive.calledCode b
-    verified := Proof.Ffdh.Arm.SharedDerive.called_verified b
-    notes := ["ARMv7: the scalar's range is checked as `vg_ffdh_check_private` checks it, the \
-      one branch on x. The power of g uses RSA's fixed three-bit windows over every supplied \
-      scalar byte, as the exchange does; y's range is the acceptance mask, which clears the \
-      output. Powers of a checked generator remain in its q subgroup, so y needs only its \
-      range check. Products and squares call the shared RSA arithmetic helper."] }]
+    verified := Proof.Ffdh.Arm.SharedDerive.called_verified b }]
 
 end VG.Generic.RsaMont.Arm.DerivePublic

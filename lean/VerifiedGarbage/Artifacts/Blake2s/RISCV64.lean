@@ -10,9 +10,8 @@ import VerifiedGarbage.Proof.Blake2.RISCV64.Stream.Lit
 /-!
 # BLAKE2s (RFC 7693) on RISC-V
 
-A registration file (see `TCB/Emit.lean`): the artifacts it lists are
-emitted, each made from its function's `Api` (in `Spec/`, reviewed with the
-contract), with the notes on the implementation added here.
+A registration file (see `TCB/Emit.lean`): the artifacts it lists are emitted,
+each made from its function's `Api` (in `Spec/`, reviewed with the contract).
 -/
 
 @[expose] public section
@@ -21,27 +20,16 @@ namespace VG.Artifacts.Blake2s.RISCV64
 
 def artifacts : List Artifact := [
   Spec.Blake2.compressSApi.artifact RISCV64.target {
-    notes := ["The state and the blocks are accessed a byte at a time, since the contract states no \
-        alignment for them: the hash value and each block are copied to `scratch`, rounded up to a \
-        multiple of 8, where the rounds read and write them as aligned words."]
     code := Impl.Blake2.RISCV64.compress Spec.Blake2.s
     verified := Proof.Blake2.RISCV64.compressS_verified },
   Spec.Blake2.initSApi.artifact RISCV64.target {
-    notes := ["The state and the key are accessed a byte at a time, since the contract states no \
-        alignment for them."]
     code := Impl.Blake2.RISCV64.Stream.init Spec.Blake2.s
     verified := Proof.Blake2.RISCV64.Stream.initS_verified },
   Spec.Blake2.updateSApi.artifact RISCV64.target {
-    notes := ["The state and the data are accessed a byte at a time, since the contract states no \
-        alignment for them. A frame of 576 bytes on the stack holds the compression function's \
-        scratch space, then the return address and the registers saved."]
     code := Impl.Blake2.RISCV64.Stream.update Spec.Blake2.s
     stack := 576
     verified := Proof.Blake2.RISCV64.Stream.updateS_verified },
   Spec.Blake2.finalizeSApi.artifact RISCV64.target {
-    notes := ["The state and the output are accessed a byte at a time, since the contract states no \
-        alignment for them. A frame of 576 bytes on the stack holds the compression function's \
-        scratch space, then the return address and the registers saved."]
     code := Impl.Blake2.RISCV64.Stream.finalize Spec.Blake2.s
     stack := 576
     verified := Proof.Blake2.RISCV64.Stream.finalizeS_verified }]

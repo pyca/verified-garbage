@@ -25,18 +25,6 @@ namespace VG.Artifacts.Ed448SignCached.RISCV64
 
 def artifacts : List Artifact := [
   Spec.Ed448.signCachedApi.artifact RISCV64.target {
-    notes := ["Uses baseline integer instructions. Hashes with `vg_keccak_absorb`, `vg_keccak_pad` and \
-      `vg_keccak_squeeze` (SHAKE256, into its stack frame, with the Keccak state in `scratch` and \
-      the sponge functions' frames on the stack below this function's): the private \
-      key, whose first half, pruned in place, is the secret scalar s; then dom4(0, C), the \
-      prefix and the message, reduced modulo L with `vg_ed448_scalar_reduce` into the second \
-      half of `out` (r); R = [r]B with `vg_ed448_scalar_base` into the first half of `out`; \
-      then dom4(0, C), R, the public key (copied into the frame) and the message, reduced into \
-      the frame (k); and S = (r + k s) mod L with `vg_ed448_scalar_mul_add` over r. The hashes, \
-      s, k, the saved callee-saved registers and `ra` are in a frame of 528 bytes on the stack, \
-      which also holds the frame argument's copy; the hashes, s \
-      and k are cleared before returning, and the callees' working values are left in \
-      `scratch`."]
     code := Impl.Ed448.RISCV64.Whole.signCachedCode
     stack := 1696
     verified := Proof.Ed448.RISCV64.Whole.signCached_framed Proof.Ed448.baseLadder2_ok }]

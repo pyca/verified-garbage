@@ -24,12 +24,10 @@ namespace VG.Artifacts.Sm4Gcm.X86_64
 
 def artifacts : List Artifact := [
   Spec.Sm4.ctr32Api.artifact X86_64.target {
-    notes := ["Baseline x86-64: `vg_sm4_ctr`'s code (sixteen counter blocks at a time, encrypted bitsliced in general-purpose registers through the AES S-box circuit, with no table lookups; the round keys' table built once per call, inline, and each batch a call of `vg_sm4_crypt_prepared`) with GCM's `inc₃₂` on the counter: the low 32 bits of the counter block's low half incremented in a 32-bit register and added back to its high 32 bits."]
     code := Impl.StackScratch.X86_64.withStackScratchWiped 3208 .r8 400 Impl.Sm4.X86_64.ctr32
     stack := 3216
     verified := Proof.Sm4.X86_64.ctr32_framed },
   Spec.Sm4.Gcm.initApi.artifact X86_64.target {
-    notes := ["This implementation expands the key with `vg_sm4_expand_key` and computes the hash subkey with `vg_sm4_ctr32`."]
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .rdx Impl.Sm4Gcm.X86_64.init
     stack := 5792
     verified := Proof.Sm4Gcm.X86_64.init_framed

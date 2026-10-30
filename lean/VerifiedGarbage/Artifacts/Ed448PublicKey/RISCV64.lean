@@ -25,13 +25,6 @@ namespace VG.Artifacts.Ed448PublicKey.RISCV64
 
 def artifacts : List Artifact := [
   Spec.Ed448.publicKeyApi.artifact RISCV64.target {
-    notes := ["Uses baseline integer instructions. Hashes the private key with \
-      `vg_keccak_absorb`, `vg_keccak_pad` and `vg_keccak_squeeze` (SHAKE256, the Keccak state \
-      in `scratch`, the sponge functions' frames on the stack below this function's) into a \
-      frame of 160 bytes on the stack, prunes the first 57 bytes of the hash there, and encodes \
-      `[s]B` with `vg_ed448_scalar_base`. The hash, the scalar, the saved callee-saved registers \
-      and `ra` are in the frame, whose first 120 bytes are cleared before returning; the Keccak \
-      state, and the base-point multiplication's working values, are left in `scratch`."]
     code := Impl.Ed448.RISCV64.Whole.publicKeyCode
     stack := 1328
     verified := Proof.Ed448.RISCV64.Whole.publicKey_framed Proof.Ed448.baseLadder2_ok }]

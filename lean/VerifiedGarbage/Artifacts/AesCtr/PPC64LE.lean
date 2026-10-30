@@ -18,9 +18,6 @@ namespace VG.Artifacts.AesCtr.PPC64LE
 
 def artifacts : List Artifact := [
   Spec.Ctr.aesApi.artifact PPC64LE.target {
-    notes := [
-      "This implementation calls `vg_aes_ctr32` on as many blocks at once as the counter's \
-        last 32 bits allow, as OpenSSL's `CRYPTO_ctr128_encrypt_ctr32` does."]
     code := Impl.AesCtr.PPC64LE.crypt
     verified := Proof.AesCtr.PPC64LE.crypt_verified }]
 

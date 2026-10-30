@@ -41,11 +41,6 @@ namespace VG.Generic.P192.AArch64.EcP192
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P192.curve) : List Artifact := [
   Spec.EcKey.P192.publicKeyApi.artifact AArch64.target {
-    notes := ["Field elements are four 64-bit words in Montgomery form. \
-      Scalar multiplication uses a fixed 256-iteration ladder with the general complete addition \
-      formulas of Renes, Costello and Batina (Algorithm 1). \
-      The inversion is a call of `vg_p192_inv_mod_p`, by divsteps. \
-      Branches and memory addresses depend only on pointers and loop counters."]
     code := Impl.EcKey.AArch64.publicKeyP192
     verified := Proof.EcKey.AArch64.P192.pk_verified h.law h.inv }]
 

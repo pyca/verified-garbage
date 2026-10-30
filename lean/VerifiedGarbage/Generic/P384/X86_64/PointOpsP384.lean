@@ -32,25 +32,16 @@ def common (adx : Bool) : String := "The function keeps `rbp` and `r12`–`r15` 
   " and reduced by six rounds of `u p` for `u = t₀ (2³² + 1) mod 2⁶⁴`, the products' temporary area \
   bytes 4048 to 4095."
 
-/-- What the additions run. -/
-def addWhat (cached : Bool) : String :=
-  "Branches on the coordinates, which are public: `Q` copied if `P`'s `Z` is zero, " ++
-  (if cached then "`P` kept if `Q`'s, " else "") ++
-  "else `H` and `r` from " ++ (if cached then "six" else "four") ++ " products; the doubling of `P` \
-  if both are zero, `(0 : 1 : 0)` if only `H` is, else the sum's tail, eight products."
-
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P384.curve) : List Artifact :=
   let hFe : Proof.Weierstrass.Point.Fermat C.p := Proof.Weierstrass.Point.fermat_of_law h.law
   [false, true].flatMap fun adx => [
     C.addCachedApi.artifact X86_64.target {
       suffix := if adx then "_adx" else ""
-      notes := [common adx, addWhat true]
       code := addCachedFn adx
       verified := addCached_verified hFe adx
       features := if adx then ["bmi2", "adx"] else [] },
     C.addAffineApi.artifact X86_64.target {
       suffix := if adx then "_adx" else ""
-      notes := [common adx, addWhat false]
       code := addAffineFn adx
       verified := addAffine_verified hFe adx
       features := if adx then ["bmi2", "adx"] else [] }]

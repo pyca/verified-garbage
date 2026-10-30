@@ -252,9 +252,9 @@ abbrev Contracts : Type 1 := {M : ISA} → Abi M → Nat → Contract M
 whether its contract lets it overwrite its arguments in memory
 (`Sig.contract`'s `writeArgs`), its contract on every target (`contracts`),
 and its documentation. A registration file makes an `Artifact` of it on each
-target (`{ api with target := …, doc := api.doc, … }`), adding any notes on
-the implementation; the emitter adds the obligations the signature implies
-(`Sig.validDoc`, and `Sig.layoutDoc`, which depends on the target).
+target (`{ api with target := …, doc := api.doc, … }`); the emitter adds the
+obligations the signature implies (`Sig.validDoc`, and `Sig.layoutDoc`,
+which depends on the target).
 
 The `Artifact` takes `contracts` from the `Api` with its name and signature,
 and must be proven against `contracts` on its target (`Artifact.ofApi`): so
@@ -276,10 +276,10 @@ structure Api where
   it may be). -/
   safety : List String
 
-/-- The documentation of `api` on a target: its summary, then the paragraphs
-`notes`, then its `# Safety` section. -/
-def Api.doc (api : Api) (notes : List String := []) : String :=
-  api.summary ++ String.join (notes.map ("\n\n" ++ ·)) ++ "\n\n# Safety\n\n" ++
+/-- The documentation of `api` on a target: its summary, then its `# Safety`
+section. -/
+def Api.doc (api : Api) : String :=
+  api.summary ++ "\n\n# Safety\n\n" ++
     "\n".intercalate (api.safety.map ("* " ++ ·))
 
 /-- A verified function, ready to be emitted into the Rust crate. -/

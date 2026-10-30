@@ -25,48 +25,26 @@ open VG
 def artifacts : List Artifact := [
   Spec.Ffdh.checkDomainApi.artifact X86.target {
     consts := Impl.Ffdh.X86.VettedValidation.tableConsts
-    notes := ["An exact full-domain comparison recognizes the ten certified MODP/FFDHE groups first. \
-      Every miss retains the complete validator, which runs on private CRT RSA's operations at p's width, reading \
-      their arguments from a frame of synthetic arguments; every Montgomery multiplication calls \
-      `vg_rsa_mont_mul_at`. The subgroup check is a fixed four-bit-window power. The domain's \
-      bytes choose the branches. Callee-saved registers reside in scratch."]
     code := Impl.Ffdh.X86.VettedValidation.code
     verified := Proof.Ffdh.X86.VettedValidation.verified
     spSafe := Proof.Ffdh.X86.VettedValidation.spSafe
     stack := 172 },
   Spec.Ffdh.checkPublicApi.artifact X86.target {
-    notes := ["Runs on private CRT RSA's operations at p's width, as `vg_ffdh_check_domain` does. \
-      The subgroup check is a fixed four-bit-window power. The domain's and y's bytes choose the \
-      branches. Callee-saved registers reside in scratch."]
     code := Impl.Ffdh.X86.CheckPublic.code
     verified := Proof.Ffdh.X86.CheckPublic.verified
     spSafe := Proof.Ffdh.X86.Shape.checkPublic_spSafe
     stack := 172 },
   Spec.Ffdh.checkPrivateApi.artifact X86.target {
-    notes := ["Runs on private CRT RSA's operations at p's width, as `vg_ffdh_check_domain` does. \
-      The scalar's range is the one branch on x; the power of g is a fixed four-bit-window power \
-      over all of p's width, and its comparison with y is masked. Powers of a checked generator \
-      remain in its q subgroup, so the generated power needs only its range check. Callee-saved \
-      registers reside in scratch."]
     code := Impl.Ffdh.X86.CheckPrivate.code
     verified := Proof.Ffdh.X86.CheckPrivate.verified
     spSafe := Proof.Ffdh.X86.Shape.checkPrivate_spSafe
     stack := 172 },
   Spec.Ffdh.exchangeApi.artifact X86.target {
-    notes := ["Runs on private CRT RSA's operations at p's width, as `vg_ffdh_check_domain` does. \
-      The power is a fixed four-bit-window power over all of p's width, scanning the whole table \
-      for each window; z's range is the acceptance mask, which clears the output, and the code has \
-      no branch. Callee-saved registers reside in scratch."]
     code := Impl.Ffdh.X86.Exchange.code
     verified := Proof.Ffdh.X86.Exchange.verified
     spSafe := Proof.Ffdh.X86.Shape.exchange_spSafe
     stack := 172 },
   Spec.Ffdh.derivePublicApi.artifact X86.target {
-    notes := ["Runs on private CRT RSA's operations at p's width, as `vg_ffdh_check_domain` does. \
-      The scalar's range is the one branch on x; the power of g is a fixed four-bit-window power \
-      over x's `x_len` bytes, loaded at the top of the exponent, and y's range is the acceptance \
-      mask, which clears the output. Powers of a checked generator remain in its q subgroup, so y \
-      needs only its range check. Callee-saved registers reside in scratch."]
     code := Impl.Ffdh.X86.DerivePublic.code
     verified := Proof.Ffdh.X86.Derive.verified
     spSafe := Proof.Ffdh.X86.Shape.derivePublic_spSafe
@@ -75,20 +53,11 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.X86.KeyInit.code
     verified := Proof.Ffdh.X86.KeyInit.verified },
   Spec.Ffdh.generateKeyApi.artifact X86.target {
-    notes := ["Runs on private CRT RSA's operations at p's width, as `vg_ffdh_check_domain` does. \
-      The bound's octets are scanned and `rand`'s cut to its bit length without a branch; the \
-      scalar's range is the one branch on x. The power of g is a fixed four-bit-window power over \
-      all of p's width; y's range and, with q, its subgroup membership are the acceptance mask, \
-      which clears both outputs. Callee-saved registers reside in scratch."]
     code := Impl.Ffdh.X86.GenerateKey.code
     verified := Proof.Ffdh.X86.KeyGen.verified
     spSafe := Proof.Ffdh.X86.Shape.generateKey_spSafe
     stack := 172 },
   Spec.Ffdh.keySearchApi.artifact X86.target {
-    notes := ["The whole key search runs in verified code: both rejection budgets, the octets each attempt \
-      consumes, and the next entropy request. Each attempt calls `vg_ffdh_generate_key` with its eleven \
-      arguments in a 44-byte frame. The controller's words live in the state; timing depends on the domain, \
-      the controller's public words and the attempts' statuses."]
     code := Impl.Ffdh.X86.KeySearch.code
     verified := Proof.Ffdh.X86.KeySearch.verified
     spSafe := Proof.Ffdh.X86.Shape.keySearch_spSafe
@@ -97,22 +66,12 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.X86.ParamInit.code
     verified := Proof.Ffdh.X86.ParamInit.verified },
   Spec.Ffdh.sievedParameterCandidateApi.artifact X86.target {
-    notes := ["Runs on private CRT RSA's operations at p's width, as `vg_ffdh_check_domain` does. \
-      Candidate shaping, the generator congruences, RSA's small-prime sieve (512 primes through 1024 \
-      bits, 1024 above) of p and q, the witnesses' rejection sampling and every Miller–Rabin round run \
-      inline; each round is a four-bit-window power and its squarings. Timing depends on the tape. \
-      Callee-saved registers reside in scratch."]
     code := Impl.Ffdh.X86.Candidate.code
     verified := Proof.Ffdh.X86.Cand.verified
     spSafe := Proof.Ffdh.X86.Shape.candidate_spSafe
     consts := VG.Impl.RsaKeyGen.TrialTable32.consts
     stack := 172 },
   Spec.Ffdh.sievedParameterSearchApi.artifact X86.target {
-    notes := ["The whole parameter search runs in verified code: candidate retries, the 64-bit attempt \
-      count, the octets each candidate consumes, and the next entropy request, computed without a branch. \
-      Each attempt calls `vg_ffdh_parameter_candidate_sieved` with its nine arguments in a 36-byte frame; \
-      the candidate writes its `used` into the state. Timing depends on the tape and the controller's \
-      public words."]
     code := Impl.Ffdh.X86.ParamSearch.code
     verified := Proof.Ffdh.X86.PSearch.verified
     spSafe := Proof.Ffdh.X86.Shape.paramSearch_spSafe

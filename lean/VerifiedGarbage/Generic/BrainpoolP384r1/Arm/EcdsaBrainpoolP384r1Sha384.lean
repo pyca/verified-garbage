@@ -21,14 +21,11 @@ A generic file (see `TCB/Emit.lean`) over brainpoolP384r1's group law `h`, the v
 
 namespace VG.Generic.BrainpoolP384r1.Arm.EcdsaBrainpoolP384r1Sha384
 
-open VG.Proof.Ecdsa.Rfc6979.Arm (cfgOf signNotes)
+open VG.Proof.Ecdsa.Rfc6979.Arm (cfgOf)
 open VG.Proof.Ecdsa.Rfc6979.Arm.BrainpoolP384r1Sha384 (pack sign_verified)
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP384r1.curve) : List Artifact := [
   Spec.Ecdsa.Rfc6979.BrainpoolP384r1Sha384.signApi.artifact Arm.target {
-    notes := [signNotes
-      Proof.Pbkdf2.Whole.Arm.sha384F.hiN Proof.Pbkdf2.Whole.Arm.sha384F.H.updN
-      Proof.Pbkdf2.Whole.Arm.sha384F.hfN 48 Spec.Ecdsa.BrainpoolP384r1.signApi.name]
     code := (cfgOf (pack h.law)).sign
     stack := 240
     verified := sign_verified h.law }]

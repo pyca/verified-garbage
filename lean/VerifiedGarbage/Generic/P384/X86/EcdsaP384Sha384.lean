@@ -20,14 +20,11 @@ A generic file (see `TCB/Emit.lean`) over P-384's group law `h`, the variant
 
 namespace VG.Generic.P384.X86.EcdsaP384Sha384
 
-open VG.Proof.Ecdsa.Rfc6979.X86 (cfgOf sign_spSafe signNotes)
+open VG.Proof.Ecdsa.Rfc6979.X86 (cfgOf sign_spSafe)
 open VG.Proof.Ecdsa.Rfc6979.X86.P384Sha384 (pack sign_verified)
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := [
   Spec.Ecdsa.Rfc6979.P384Sha384.signApi.artifact X86.target {
-    notes := [signNotes
-      Proof.Pbkdf2.Whole.X86.sha384F.hiN Proof.Pbkdf2.Whole.X86.sha384F.H.updN
-      Proof.Pbkdf2.Whole.X86.sha384F.hfN 48 Spec.Ecdsa.P384.signApi.name]
     code := (cfgOf (pack h.law)).sign
     stack := 272
     verified := sign_verified h.law

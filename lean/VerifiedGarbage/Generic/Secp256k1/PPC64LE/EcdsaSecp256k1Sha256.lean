@@ -22,13 +22,11 @@ A generic file (see `TCB/Emit.lean`) over secp256k1's group law `h`, the variant
 
 namespace VG.Generic.Secp256k1.PPC64LE.EcdsaSecp256k1Sha256
 
-open VG.Proof.Ecdsa.Rfc6979.PPC64LE (signNotes sha256K)
+open VG.Proof.Ecdsa.Rfc6979.PPC64LE (sha256K)
 open VG.Proof.Ecdsa.Rfc6979.PPC64LE.Secp256k1Sha256 (pack sign_verified)
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.Secp256k1.curve) : List Artifact := [
   Spec.Ecdsa.Rfc6979.Secp256k1Sha256.signApi.artifact PPC64LE.target {
-    notes := [signNotes Spec.Hmac.sha256I.initScratchApi.name sha256K.H.updN
-      Spec.Hmac.sha256I.finalizeScratchApi.name 32 Spec.Ecdsa.Secp256k1.signApi.name]
     code := (pack h.law).c.sign
     stack := 400
     verified := sign_verified h.law }]

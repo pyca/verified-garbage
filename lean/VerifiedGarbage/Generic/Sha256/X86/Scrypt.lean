@@ -24,11 +24,6 @@ open VG.Proof.Scrypt.X86.Whole (pbkName pbkOf scrypt_verified scrypt_spSafe)
 def artifacts (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
   Spec.Scrypt.scryptApi.artifact X86.target {
     suffix := v.suffix
-    notes := ["Derives both keys with `" ++ pbkName v ++ "` and runs \
-      scryptROMix on each block with `vg_scrypt_romix`, using the start of `scratch` as the working \
-      space of each. The arguments of each call and the next block are kept in a 36-byte stack \
-      frame; our own arguments are read from the stack whenever they are needed, and the calls use \
-      the 80 bytes below the frame."]
     code := Impl.Scrypt.X86.scrypt (pbkName v) (pbkOf v)
     stack := 116
     verified := scrypt_verified v

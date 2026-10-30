@@ -162,31 +162,6 @@ def exchange (adx : Bool) (code : Prog X86_64.isa)
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
   Spec.Ecdh.P256.exchangeApi.artifact X86_64.target {
     suffix := (if adx then "_adx" else "")
-    notes := ["The function is `vg_ecdsa_p256_sign" ++ (if adx then "_adx" else "") ++ "`'s setup, \
-      field arithmetic and inversion, with the peer's point in place of `G`: it saves its \
-      caller's callee-saved registers in `scratch`; field elements are four 64-bit words in \
-      Montgomery form, " ++ Proof.Ecdsa.X86_64.mulNote adx ++ ". The peer's key is checked without branches (its first byte, both \
-      coordinates below `p`, and the curve's equation), and `[d]P` is computed for the peer's \
-      point if it is valid, else `G`, so it always runs on a point of the curve. `[d]P` is by odd signed 5-bit windows in Jacobian coordinates, \
-      P-256 having prime order `n` with `n ≡ 17 (mod 64)`: `k = d` if `d` is odd, else `n - d` \
-      (as `[n - d]P = -[d]P`), chosen by a mask, is recoded as `(k + 32^52 - 1) / 2`, whose 52 \
-      5-bit windows `e` give the odd digits `2e - 31` in `[-31, 31]`, the top one 1; a table of \
-      the odd multiples `[1]P, [3]P, …, [31]P`, each entry with its `Z²` and `Z³`, is built in \
-      `scratch` by a co-Z doubling and co-Z additions (each keeping `[2]P` with the new entry's \
-      `Z`); then, from `P`, for each further digit, five doublings in Jacobian coordinates for \
-      `a = -3` (with a halving modulo `p` in place of multiplications by small constants) and the \
-      addition in place of the digit's entry, selected in constant time by loading all sixteen \
-      entries, " ++
-      (if adx then "32 bytes at a time with AVX2" else "16 bytes at a time with SSE2") ++
-      ", and keeping (by masks of a counter's equality to the digit's magnitude) the one of the \
-      magnitude, its `y` negated by a mask of its sign; each digit's entry is selected while the \
-      addition before it runs, its loads spread among the addition's field operations and kept \
-      in vector registers until the addition has read the previous entry; the addition is \
-      Jacobian, with the entry's `Z²` and `Z³`, and its exceptional cases (an \
-      operand at infinity, equal or opposite points) do not arise for `d < n`, the digits being \
-      odd and the partial sums odd, nonzero and below `n`; the result's `y` is negated, by a \
-      mask, for an even `d`; `Z⁻¹` is by the signature's divsteps. The result (or zeros) is selected by a mask of the \
-      checks, `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."]
     code
     stack := 8
     verified := hv

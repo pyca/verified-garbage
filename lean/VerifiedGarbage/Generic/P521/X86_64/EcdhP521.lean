@@ -77,26 +77,6 @@ def exchange (adx : Bool) (code : Prog X86_64.isa)
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
   Spec.Ecdh.P521.exchangeApi.artifact X86_64.target {
     suffix := (if adx then "_adx" else "")
-    notes := ["The function is `vg_ecdsa_p521_sign" ++ (if adx then "_adx" else "") ++ "`'s setup, \
-      field arithmetic and inversion, with the peer's point in place of `G`: it saves its \
-      caller's callee-saved registers in `scratch`; field elements are nine 64-bit words in \
-      Montgomery form, " ++ Proof.Ecdsa.X86_64.P521.mulNote adx ++ ". The peer's key is checked without branches (its first byte, both \
-      coordinates below `p`, and the curve's equation), and `[d]P` is computed for the peer's \
-      point if it is valid, else `G`, so it always runs on a point of the curve. `[d]P` is by \
-      signed 4-bit windows: `d` (below `2^521`) is recoded as `d + 8 Σ_{j<131} 16^j`, whose 131 \
-      nibbles less 8 are digits in `[-8, 7]`; a table of `[1 … 8]P` is built in `scratch` by \
-      complete additions and stored in Jacobian coordinates; then, from the point at infinity, \
-      for each digit from the top, four doublings in Jacobian coordinates (dbl-2001-b, for \
-      `a = -3`) and the addition of the digit's entry, selected in constant time by loading all \
-      eight entries, 16 bytes at a time (each entry's 27 words as 14 pieces, the last two \
-      overlapping by a word), and keeping (`pand`, `por`) the one of the digit's magnitude, and \
-      negated by a mask of its sign. For every digit but the last the addition is in Jacobian \
-      coordinates (add-1998-cmo-2), whose result is kept unless the accumulator or the entry is \
-      the point at infinity (selected by masks of their `Z`): every point of P-521 has order \
-      `n`, so the operands are never equal or opposite otherwise; the last digit's is by the \
-      complete addition formulas of Renes, Costello and Batina for `a = -3` (Algorithm 4), in \
-      projective coordinates. `Z⁻¹` is by the signature's divsteps. The result (or zeros) is selected by a mask of the checks, `d` \
-      in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."]
     code
     stack := 8
     verified := hv

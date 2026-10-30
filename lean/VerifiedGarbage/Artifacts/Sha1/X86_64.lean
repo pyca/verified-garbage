@@ -18,7 +18,6 @@ def artifacts : List Artifact := [
     verified := Proof.Sha1.X86_64.Shared.init },
   Spec.Sha1.compressApi.artifact X86_64.target {
     suffix := "_shani"
-    notes := ["This implementation uses the SHA extensions."]
     code := Impl.Sha1.X86_64.ShaNi.compress
     verified := Proof.Sha1.X86_64.Shared.compress_shani
     features := ["sha", "ssse3"] }]

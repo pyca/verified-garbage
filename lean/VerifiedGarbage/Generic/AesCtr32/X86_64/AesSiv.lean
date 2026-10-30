@@ -101,9 +101,6 @@ open VG.Proof.AesSiv.X86_64
 def artifacts (v : Proof.Aes.X86_64.Ctr32Impl) : List Artifact := [
   Spec.Siv.initApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [
-      "This implementation expands the keys with `" ++ v.expand.name ++ "` and computes the CMAC subkeys \
-      with `" ++ Spec.Cmac.aesSubkeysApi.name ++ v.suffix ++ "`."]
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx
       (Impl.AesSiv.X86_64.init v.expand v.callee v.suffix)
     stack := 2584

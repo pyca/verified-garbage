@@ -30,7 +30,7 @@ It is generic over P-256's group law `h` too, the variant
 
 namespace VG.Generic.MdHash.P256.AArch64.EcdsaP256Sha384
 
-open VG.Proof.Ecdsa.Rfc6979.AArch64 (cfgOf signNotes)
+open VG.Proof.Ecdsa.Rfc6979.AArch64 (cfgOf)
 open VG.Proof.Ecdsa.Rfc6979.AArch64.Sha384 (pack sign_verified)
 
 def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch64.HasLawInvToMOrd Spec.P256.curve) :
@@ -40,7 +40,6 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch6
   | some c => [
     Spec.Ecdsa.Rfc6979.P256Sha384.signApi.artifact AArch64.target {
       suffix := c.suffix
-      notes := [signNotes (cfgOf (pack h.law h.inv (Proof.P256.combOk7 h.law) c)).H 32 Spec.Ecdsa.P256.signApi.name]
       code := (cfgOf (pack h.law h.inv (Proof.P256.combOk7 h.law) c)).sign
       consts := Impl.Ecdsa.AArch64.p256.combConsts
       stack := 256

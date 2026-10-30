@@ -21,17 +21,9 @@ open VG.Proof.AesCfb8.RISCV64
 
 def artifacts : List Artifact := [
   Spec.Cfb8.aesEncryptApi.artifact RISCV64.target {
-    notes := [
-      "This implementation enciphers one block for each byte with `vg_aes_encrypt_blocks`. The \
-        input block is copied and shifted a byte at a time, since the contract states no alignment \
-        for it."]
     code := Impl.AesCfb8.RISCV64.encrypt
     verified := encrypt_verified },
   Spec.Cfb8.aesDecryptApi.artifact RISCV64.target {
-    notes := [
-      "This implementation enciphers one block for each byte with `vg_aes_encrypt_blocks`. The \
-        input block is copied and shifted a byte at a time, since the contract states no alignment \
-        for it."]
     code := Impl.AesCfb8.RISCV64.decrypt
     verified := decrypt_verified }]
 

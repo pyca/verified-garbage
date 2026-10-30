@@ -41,15 +41,6 @@ namespace VG.Proof.Ecdsa.X86_64
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Impl.Ecdsa.X86_64
 open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
 
-/-- How P-256's field elements and scalars are multiplied, for the notes of
-its functions: with BMI2 and ADX (`adx`) or not. -/
-def mulNote (adx : Bool) : String :=
-  "multiplied by word-by-word Montgomery multiplication (CIOS; as `p ≡ -1 (mod 2⁶⁴)`, each \
-  reduction step modulo `p` adds `t₀ (p + 1) / 2⁶⁴` to the words above the low word `t₀`, two \
-  products" ++ (if adx then "; each row of products by BMI2's `mulx`, its low halves added \
-  through OF (`adox`) and its high halves through CF (`adcx`), two carry chains that do not wait \
-  for each other" else "") ++ ") with a final conditional subtraction"
-
 theorem p256x_ok (hI : InvSounds) : CfgOk p256x :=
   have h := p256_ok hI
   { h with

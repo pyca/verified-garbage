@@ -43,11 +43,6 @@ def verifyWith (c : Proof.Sha512.X86_64.Compress) (fld : Impl.Ed25519.X86_64.Ari
     Artifact :=
   Spec.Ed25519.verifyApi.artifact X86_64.target {
     suffix := c.suffix ++ fs
-    notes := ["Hashes R, the public key and the message with \
-      the selected SHA-512 backend, reduces the challenge modulo L, and calls \
-      `vg_ed25519_verify_equation" ++ fs ++ "`. The digest and zero-extended reduced challenge \
-      occupy separate buffers in a 168-byte stack frame; calls, and the point functions' calls from \
-      `vg_ed25519_verify_equation" ++ fs ++ "`, use another 16 bytes below it."]
     consts := Impl.Ed25519.X86_64.baseOddConsts
     code := Impl.Ed25519.X86_64.VerifyMessage.code fld win fs c.callee c.suffix
     stack := 184
@@ -62,12 +57,6 @@ def signExpandedWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
     [Proof.Ed25519.X86_64.EdBase bs] (fs : String) (ff : List String) : Artifact :=
   Spec.Ed25519.signExpandedApi.artifact X86_64.target {
     suffix := c.suffix ++ fs
-    notes := ["Copies the seed's cached SHA-512 digest, computes the nonce and challenge \
-      hashes with the selected backend, reduces them, encodes the nonce point \
-      with `vg_ed25519_scalar_base" ++ fs ++ "`, and computes the final scalar. \
-      The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest \
-      and saved arguments; its secret buffers are cleared before return. Calls use another 16 \
-      bytes below the frame."]
     consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.Ed25519.X86_64.SignCached.codeExpanded bs fs c.callee c.suffix
     stack := 264

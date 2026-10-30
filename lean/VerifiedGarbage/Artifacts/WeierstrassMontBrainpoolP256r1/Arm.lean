@@ -14,36 +14,23 @@ namespace VG.Artifacts.WeierstrassMontBrainpoolP256r1.Arm
 
 open VG.Spec.Weierstrass.Mont VG.Impl.Weierstrass.Arm.Mont VG.Proof.Weierstrass.Arm.Mont
 
-/-- How the functions work. -/
-def notes : List String := ["The function saves `r4`–`r11` in its own working space, stores the \
-  modulus there, and reads `[a]` and `[b]` and writes `[o]` through pointers. The numbers are \
-  16-bit digits, each in a word: the product is digit-by-digit Montgomery multiplication (CIOS, \
-  with `mul` and the accumulator in the own working space), and every result is reduced by a \
-  conditional subtraction selected by a mask."]
-
 def artifacts : List Artifact := [
   brainpoolp256r1p.mulApi.artifact Arm.target {
-    notes := notes
     code := mulFn brainpoolp256r1p.k brainpoolp256r1p.m
     verified := brainpoolp256r1p_mul_verified },
   brainpoolp256r1p.addApi.artifact Arm.target {
-    notes := notes
     code := addFn brainpoolp256r1p.k brainpoolp256r1p.m
     verified := brainpoolp256r1p_add_verified },
   brainpoolp256r1p.subApi.artifact Arm.target {
-    notes := notes
     code := subFn brainpoolp256r1p.k brainpoolp256r1p.m
     verified := brainpoolp256r1p_sub_verified },
   brainpoolp256r1n.mulApi.artifact Arm.target {
-    notes := notes
     code := mulFn brainpoolp256r1n.k brainpoolp256r1n.m
     verified := brainpoolp256r1n_mul_verified },
   brainpoolp256r1n.addApi.artifact Arm.target {
-    notes := notes
     code := addFn brainpoolp256r1n.k brainpoolp256r1n.m
     verified := brainpoolp256r1n_add_verified },
   brainpoolp256r1n.subApi.artifact Arm.target {
-    notes := notes
     code := subFn brainpoolp256r1n.k brainpoolp256r1n.m
     verified := brainpoolp256r1n_sub_verified }]
 
