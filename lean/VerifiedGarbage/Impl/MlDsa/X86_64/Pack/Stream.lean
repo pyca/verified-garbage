@@ -18,12 +18,14 @@ through the accumulator `r10`, in a schedule that depends only on `d`:
   above the `d·j mod 8` bits `r10` holds (shifted left by rotating it right:
   its top bits are zero), and then each byte it completes, the low byte of
   `r10`, is stored and shifted out.
-* `unpackBody fin d c nb` (bytes at `rdi`, coefficients to `rsi`): before
-  coefficient `j`, the bytes it needs are added to `r10` above the bits it
-  holds; the field is then the low `d` bits of `r10` (into `rax`, `r10`
-  shifted right by `d`), which `fin j` turns into the coefficient and stores.
+* `unpackBody fin d c nb` (bytes at `rdi`, coefficients to `rsi`): field
+  `j` is loaded with one load of `w` bytes (4, or 2 in a group of fewer than
+  4 bytes) at the byte `o` it starts in, or at the last `w` bytes of the
+  group if those would run past its end, so that no load leaves the group;
+  shifted right by its offset `d·j - 8·o` and masked to `d` bits (into
+  `rax`), `fin j` turns it into the coefficient and stores it.
 
-`r10` never holds more than `d + 7` bits. Every address and branch depends
+In packing, `r10` never holds more than `d + 7` bits. Every address and branch depends
 only on the pointers and `d`.
 -/
 
@@ -65,21 +67,24 @@ def packLoop (ld : Nat → List Instr) (d c nb : Nat) : Prog isa :=
 
 /-! ## Unpacking -/
 
-/-- The number of bytes of the group that the first `j` fields need. -/
-def need (d j : Nat) : Nat := (d * j + 7) / 8
+/-- The bytes of the load of a field in a group of `nb` bytes. -/
+def ldW (nb : Nat) : Nat := if 4 ≤ nb then 4 else 2
 
-/-- Byte `t` of the group into `r10`, above the `8t - d·j` bits it holds. -/
-def unpackByte (d j t : Nat) : List Instr := ([.movzx8 .rax (at_ .rdi t)] : List Instr) ++ shiftAdd (8 * t - d * j)
+/-- The byte of the group the load of field `j` starts at: the one the field
+starts in, unless the load would then run past the group's end. -/
+def ldOff (d nb j : Nat) : Nat := min (d * j / 8) (nb - ldW nb)
 
-/-- Field `j` of the group: the bytes it needs into `r10`, then its value
-into `rax`, and `fin j`. -/
-def unpackCoef (fin : Nat → List Instr) (d j : Nat) : List Instr :=
-  (List.range (need d (j + 1) - need d j)).flatMap (fun u => unpackByte d j (need d j + u)) ++
-    ([.mov .rax (.reg .r10), .alu32 .and .rax (.imm (BitVec.ofNat 32 (2 ^ d - 1))), .shift .shr .r10 d] : List Instr) ++
-    fin j
+/-- Field `j` of the group into `rax`. -/
+def ldField (d nb j : Nat) : List Instr :=
+  (if 4 ≤ nb then [.mov32 .rax (.mem (at_ .rdi (ldOff d nb j)))] else [.movzx16 .rax (at_ .rdi (ldOff d nb j))]) ++
+    ((if d * j - 8 * ldOff d nb j = 0 then [] else [.shift32 .shr .rax (d * j - 8 * ldOff d nb j)]) ++
+      ([.alu32 .and .rax (.imm (BitVec.ofNat 32 (2 ^ d - 1)))] : List Instr))
+
+/-- Field `j` of the group: its value into `rax`, and `fin j`. -/
+def unpackCoef (fin : Nat → List Instr) (d nb j : Nat) : List Instr := ldField d nb j ++ fin j
 
 def unpackBody (fin : Nat → List Instr) (d c nb : Nat) : List Instr :=
-  ([.mov32 .r10 (.imm 0)] : List Instr) ++ (List.range c).flatMap (unpackCoef fin d) ++
+  (List.range c).flatMap (unpackCoef fin d nb) ++
     ([.alu .add .rdi (.imm (BitVec.ofNat 32 nb)), .alu .add .rsi (.imm (BitVec.ofNat 32 (4 * c))),
       .alu .sub .rcx (.imm 1)] : List Instr)
 

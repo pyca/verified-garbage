@@ -3711,33 +3711,17 @@ cmp ecx, 131072
 je 26f
 mov ecx, 128
 28:
-mov r10d, 0
-movzx eax, BYTE PTR [rdi]
-add r10, rax
-movzx eax, BYTE PTR [rdi+1]
-ror rax, 56
-add r10, rax
-movzx eax, BYTE PTR [rdi+2]
-ror rax, 48
-add r10, rax
-mov rax, r10
+mov eax, DWORD PTR [rdi]
 and eax, 1048575
-shr r10, 20
 mov r11d, 524288
 sub r11d, eax
 sbb eax, eax
 and eax, 8380417
 add r11d, eax
 mov DWORD PTR [rsi], r11d
-movzx eax, BYTE PTR [rdi+3]
-ror rax, 60
-add r10, rax
-movzx eax, BYTE PTR [rdi+4]
-ror rax, 52
-add r10, rax
-mov rax, r10
+mov eax, DWORD PTR [rdi+1]
+shr eax, 12
 and eax, 1048575
-shr r10, 20
 mov r11d, 524288
 sub r11d, eax
 sbb eax, eax
@@ -3752,63 +3736,35 @@ jmp 27f
 26:
 mov ecx, 64
 29:
-mov r10d, 0
-movzx eax, BYTE PTR [rdi]
-add r10, rax
-movzx eax, BYTE PTR [rdi+1]
-ror rax, 56
-add r10, rax
-movzx eax, BYTE PTR [rdi+2]
-ror rax, 48
-add r10, rax
-mov rax, r10
+mov eax, DWORD PTR [rdi]
 and eax, 262143
-shr r10, 18
 mov r11d, 131072
 sub r11d, eax
 sbb eax, eax
 and eax, 8380417
 add r11d, eax
 mov DWORD PTR [rsi], r11d
-movzx eax, BYTE PTR [rdi+3]
-ror rax, 58
-add r10, rax
-movzx eax, BYTE PTR [rdi+4]
-ror rax, 50
-add r10, rax
-mov rax, r10
+mov eax, DWORD PTR [rdi+2]
+shr eax, 2
 and eax, 262143
-shr r10, 18
 mov r11d, 131072
 sub r11d, eax
 sbb eax, eax
 and eax, 8380417
 add r11d, eax
 mov DWORD PTR [rsi+4], r11d
-movzx eax, BYTE PTR [rdi+5]
-ror rax, 60
-add r10, rax
-movzx eax, BYTE PTR [rdi+6]
-ror rax, 52
-add r10, rax
-mov rax, r10
+mov eax, DWORD PTR [rdi+4]
+shr eax, 4
 and eax, 262143
-shr r10, 18
 mov r11d, 131072
 sub r11d, eax
 sbb eax, eax
 and eax, 8380417
 add r11d, eax
 mov DWORD PTR [rsi+8], r11d
-movzx eax, BYTE PTR [rdi+7]
-ror rax, 62
-add r10, rax
-movzx eax, BYTE PTR [rdi+8]
-ror rax, 54
-add r10, rax
-mov rax, r10
+mov eax, DWORD PTR [rdi+5]
+shr eax, 14
 and eax, 262143
-shr r10, 18
 mov r11d, 131072
 sub r11d, eax
 sbb eax, eax
@@ -3824,111 +3780,71 @@ jmp 25f
 24:
 mov ecx, 32
 210:
-mov r10d, 0
-movzx eax, BYTE PTR [rdi]
-add r10, rax
-movzx eax, BYTE PTR [rdi+1]
-ror rax, 56
-add r10, rax
-mov rax, r10
+mov eax, DWORD PTR [rdi]
 and eax, 8191
-shr r10, 13
 mov r11d, 4096
 sub r11d, eax
 sbb eax, eax
 and eax, 8380417
 add r11d, eax
 mov DWORD PTR [rsi], r11d
-movzx eax, BYTE PTR [rdi+2]
-ror rax, 61
-add r10, rax
-movzx eax, BYTE PTR [rdi+3]
-ror rax, 53
-add r10, rax
-mov rax, r10
+mov eax, DWORD PTR [rdi+1]
+shr eax, 5
 and eax, 8191
-shr r10, 13
 mov r11d, 4096
 sub r11d, eax
 sbb eax, eax
 and eax, 8380417
 add r11d, eax
 mov DWORD PTR [rsi+4], r11d
-movzx eax, BYTE PTR [rdi+4]
-ror rax, 58
-add r10, rax
-mov rax, r10
+mov eax, DWORD PTR [rdi+3]
+shr eax, 2
 and eax, 8191
-shr r10, 13
 mov r11d, 4096
 sub r11d, eax
 sbb eax, eax
 and eax, 8380417
 add r11d, eax
 mov DWORD PTR [rsi+8], r11d
-movzx eax, BYTE PTR [rdi+5]
-ror rax, 63
-add r10, rax
-movzx eax, BYTE PTR [rdi+6]
-ror rax, 55
-add r10, rax
-mov rax, r10
+mov eax, DWORD PTR [rdi+4]
+shr eax, 7
 and eax, 8191
-shr r10, 13
 mov r11d, 4096
 sub r11d, eax
 sbb eax, eax
 and eax, 8380417
 add r11d, eax
 mov DWORD PTR [rsi+12], r11d
-movzx eax, BYTE PTR [rdi+7]
-ror rax, 60
-add r10, rax
-movzx eax, BYTE PTR [rdi+8]
-ror rax, 52
-add r10, rax
-mov rax, r10
+mov eax, DWORD PTR [rdi+6]
+shr eax, 4
 and eax, 8191
-shr r10, 13
 mov r11d, 4096
 sub r11d, eax
 sbb eax, eax
 and eax, 8380417
 add r11d, eax
 mov DWORD PTR [rsi+16], r11d
-movzx eax, BYTE PTR [rdi+9]
-ror rax, 57
-add r10, rax
-mov rax, r10
+mov eax, DWORD PTR [rdi+8]
+shr eax, 1
 and eax, 8191
-shr r10, 13
 mov r11d, 4096
 sub r11d, eax
 sbb eax, eax
 and eax, 8380417
 add r11d, eax
 mov DWORD PTR [rsi+20], r11d
-movzx eax, BYTE PTR [rdi+10]
-ror rax, 62
-add r10, rax
-movzx eax, BYTE PTR [rdi+11]
-ror rax, 54
-add r10, rax
-mov rax, r10
+mov eax, DWORD PTR [rdi+9]
+shr eax, 6
 and eax, 8191
-shr r10, 13
 mov r11d, 4096
 sub r11d, eax
 sbb eax, eax
 and eax, 8380417
 add r11d, eax
 mov DWORD PTR [rsi+24], r11d
-movzx eax, BYTE PTR [rdi+12]
-ror rax, 59
-add r10, rax
-mov rax, r10
+mov eax, DWORD PTR [rdi+9]
+shr eax, 19
 and eax, 8191
-shr r10, 13
 mov r11d, 4096
 sub r11d, eax
 sbb eax, eax
@@ -3942,31 +3858,45 @@ jne 210b
 25:
 jmp 23f
 22:
-mov ecx, 128
+mov ecx, 64
 211:
-mov r10d, 0
-movzx eax, BYTE PTR [rdi]
-add r10, rax
-mov rax, r10
+movzx eax, WORD PTR [rdi]
 and eax, 15
-shr r10, 4
 mov r11d, 4
 sub r11d, eax
 sbb eax, eax
 and eax, 8380417
 add r11d, eax
 mov DWORD PTR [rsi], r11d
-mov rax, r10
+movzx eax, WORD PTR [rdi]
+shr eax, 4
 and eax, 15
-shr r10, 4
 mov r11d, 4
 sub r11d, eax
 sbb eax, eax
 and eax, 8380417
 add r11d, eax
 mov DWORD PTR [rsi+4], r11d
-add rdi, 1
-add rsi, 8
+movzx eax, WORD PTR [rdi]
+shr eax, 8
+and eax, 15
+mov r11d, 4
+sub r11d, eax
+sbb eax, eax
+and eax, 8380417
+add r11d, eax
+mov DWORD PTR [rsi+8], r11d
+movzx eax, WORD PTR [rdi]
+shr eax, 12
+and eax, 15
+mov r11d, 4
+sub r11d, eax
+sbb eax, eax
+and eax, 8380417
+add r11d, eax
+mov DWORD PTR [rsi+12], r11d
+add rdi, 2
+add rsi, 16
 sub rcx, 1
 jne 211b
 23:
@@ -3974,81 +3904,71 @@ jmp 21f
 20:
 mov ecx, 32
 212:
-mov r10d, 0
-movzx eax, BYTE PTR [rdi]
-add r10, rax
-mov rax, r10
+movzx eax, WORD PTR [rdi]
 and eax, 7
-shr r10, 3
 mov r11d, 2
 sub r11d, eax
 sbb eax, eax
 and eax, 8380417
 add r11d, eax
 mov DWORD PTR [rsi], r11d
-mov rax, r10
+movzx eax, WORD PTR [rdi]
+shr eax, 3
 and eax, 7
-shr r10, 3
 mov r11d, 2
 sub r11d, eax
 sbb eax, eax
 and eax, 8380417
 add r11d, eax
 mov DWORD PTR [rsi+4], r11d
-movzx eax, BYTE PTR [rdi+1]
-ror rax, 62
-add r10, rax
-mov rax, r10
+movzx eax, WORD PTR [rdi]
+shr eax, 6
 and eax, 7
-shr r10, 3
 mov r11d, 2
 sub r11d, eax
 sbb eax, eax
 and eax, 8380417
 add r11d, eax
 mov DWORD PTR [rsi+8], r11d
-mov rax, r10
+movzx eax, WORD PTR [rdi+1]
+shr eax, 1
 and eax, 7
-shr r10, 3
 mov r11d, 2
 sub r11d, eax
 sbb eax, eax
 and eax, 8380417
 add r11d, eax
 mov DWORD PTR [rsi+12], r11d
-mov rax, r10
+movzx eax, WORD PTR [rdi+1]
+shr eax, 4
 and eax, 7
-shr r10, 3
 mov r11d, 2
 sub r11d, eax
 sbb eax, eax
 and eax, 8380417
 add r11d, eax
 mov DWORD PTR [rsi+16], r11d
-movzx eax, BYTE PTR [rdi+2]
-ror rax, 63
-add r10, rax
-mov rax, r10
+movzx eax, WORD PTR [rdi+1]
+shr eax, 7
 and eax, 7
-shr r10, 3
 mov r11d, 2
 sub r11d, eax
 sbb eax, eax
 and eax, 8380417
 add r11d, eax
 mov DWORD PTR [rsi+20], r11d
-mov rax, r10
+movzx eax, WORD PTR [rdi+1]
+shr eax, 10
 and eax, 7
-shr r10, 3
 mov r11d, 2
 sub r11d, eax
 sbb eax, eax
 and eax, 8380417
 add r11d, eax
 mov DWORD PTR [rsi+24], r11d
-mov rax, r10
+movzx eax, WORD PTR [rdi+1]
+shr eax, 13
 and eax, 7
-shr r10, 3
 mov r11d, 2
 sub r11d, eax
 sbb eax, eax
@@ -4080,39 +4000,23 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa_unpack_t1(v: *const [u8; 320], f: 
     core::arch::naked_asm!(
         r"mov ecx, 64
 20:
-mov r10d, 0
-movzx eax, BYTE PTR [rdi]
-add r10, rax
-movzx eax, BYTE PTR [rdi+1]
-ror rax, 56
-add r10, rax
-mov rax, r10
+mov eax, DWORD PTR [rdi]
 and eax, 1023
-shr r10, 10
 ror eax, 19
 mov DWORD PTR [rsi], eax
-movzx eax, BYTE PTR [rdi+2]
-ror rax, 58
-add r10, rax
-mov rax, r10
+mov eax, DWORD PTR [rdi+1]
+shr eax, 2
 and eax, 1023
-shr r10, 10
 ror eax, 19
 mov DWORD PTR [rsi+4], eax
-movzx eax, BYTE PTR [rdi+3]
-ror rax, 60
-add r10, rax
-mov rax, r10
+mov eax, DWORD PTR [rdi+1]
+shr eax, 12
 and eax, 1023
-shr r10, 10
 ror eax, 19
 mov DWORD PTR [rsi+8], eax
-movzx eax, BYTE PTR [rdi+4]
-ror rax, 62
-add r10, rax
-mov rax, r10
+mov eax, DWORD PTR [rdi+1]
+shr eax, 22
 and eax, 1023
-shr r10, 10
 ror eax, 19
 mov DWORD PTR [rsi+12], eax
 add rdi, 5

@@ -7,7 +7,8 @@ public import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Stream
 
 Each branches on its public width argument to a loop of `Stream.lean` for
 that width `d`, with groups of `c` coefficients and `nb` bytes: `(d, c, nb)`
-is `(3, 8, 3)`, `(4, 2, 1)`, `(6, 4, 3)`, `(10, 4, 5)`, `(13, 8, 13)`,
+is `(3, 8, 3)`, `(4, 2, 1)` (`(4, 4, 2)` when unpacking, so that each load
+of a field stays in its group), `(6, 4, 3)`, `(10, 4, 5)`, `(13, 8, 13)`,
 `(18, 4, 9)` or `(20, 2, 5)`.
 
 * `simpleBitPack(f = rdi, b = esi, out = rdx, len = rcx)` (`out` moved to
@@ -70,7 +71,7 @@ def buFin (B : Nat) (j : Nat) : List Instr :=
 def bitUnpack : Prog isa :=
   .seq (.block [.mov32 .rcx (.reg .rcx), .mov .rsi (.reg .r8)])
     (sel .rcx 2 (unpackLoop (buFin 2) 3 8 3)
-      (sel .rcx 4 (unpackLoop (buFin 4) 4 2 1)
+      (sel .rcx 4 (unpackLoop (buFin 4) 4 4 2)
         (sel .rcx 4096 (unpackLoop (buFin 4096) 13 8 13)
           (sel .rcx 131072 (unpackLoop (buFin 131072) 18 4 9) (unpackLoop (buFin 524288) 20 2 5)))))
 
