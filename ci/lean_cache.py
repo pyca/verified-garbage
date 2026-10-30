@@ -23,8 +23,9 @@ tenths of the traces' bytes) to `.lake/ltar/logs.json.gz`, so that the archive
 keeps the trace as just its hashes, and unpacking writes a few bytes for it
 (archives packed before `logs.json.gz` are packed again). It writes every
 other file in the directories (the outputs' `.hash` files, native
-libraries, Lake's checkouts of the dependencies) to `.lake/ltar/files.tar`,
-then a tar of `.lake/ltar`, `files.tar` first, to stdout.
+libraries, Lake's checkouts of the dependencies, but not the dependencies'
+executables) to `.lake/ltar/files.tar.gz`, then, as `bundle` does, a tar
+of the archives with `files.tar` (decompressed) first, to stdout.
 
 It packs with `leantar-batch` (`--leantar`), leantar with digama0/leangz#13
 (`.github/actions/leantar`), which packs every module in one process at zstd
@@ -33,7 +34,7 @@ CPU-second for each module.
 
 `store` does the same but for the tar to stdout, so that `.lake/ltar`
 alone holds the build: CI's Actions cache keeps it, and each job that
-restores it runs `restore`, which extracts `files.tar` and unpacks every
+restores it runs `restore`, which extracts `files.tar.gz` and unpacks every
 archive, keeping them, so that the build's next `store` packs only what
 changed. A shard needs only the modules its targets import: `restore
 --modules` unpacks only theirs, and `--except` the others, before the
@@ -41,13 +42,14 @@ shard assembles the build.
 
 `store` and `restore` accept `--archive-dir` to keep Mathlib's Actions cache
 in `.lake/mathlib-ltar`, independently of the project's `.lake/ltar` (each
-has its own index and `files.tar`). `pack --reuse .lake/mathlib-ltar` copies
+has its own index and `files.tar.gz`). `pack --reuse .lake/mathlib-ltar` copies
 matching module archives into the published cache, repacking missing or
 changed modules. The published format stays `.lake/ltar`.
 
 `bundle lean .lake/ltar .lake/mathlib-ltar` publishes those existing caches
 without installing Lean or expanding module outputs: it combines their
-indexes, `logs.json.gz` and `files.tar` archives, and streams the indexed
+indexes, `logs.json.gz` and `files.tar.gz` (decompressed: `files.tar` of an
+archive directory from before it also works), and streams the indexed
 `.ltar` files in one tar, with `files.tar` first. Inputs must have disjoint, nonempty indexes
 and all indexed archives. It leaves both source caches unchanged.
 
@@ -86,6 +88,11 @@ OUTPUTS = [(0, ".olean"), (0, ".olean.server"), (0, ".olean.private"), (0, ".ile
 LTAR = Path(".lake/ltar")
 # `store`'s tar of the files not in an archive.
 FILES = "files.tar"
+# `FILES` as `store` keeps it, compressed: `.hash` files are most of its
+# entries, each 16 bytes in 1 KiB of tar, and every CI job that restores an
+# archive directory writes it to disk before extracting it. The published
+# cache holds `FILES` itself, which `unpack` stages in memory.
+STORED = "files.tar.gz"
 # The key of each archive's module (`key`), by archive, so `pack` repacks only what changed.
 INDEX = "index.json"
 # The build's messages (the `log` of each module's `.trace`, with the profile
@@ -226,12 +233,18 @@ def update(lean, roots, jobs, level, tool, archive_dir=LTAR, reuse=None):
 
 
 def other_files(lean, roots, packed):
-    """The entries under `roots` that are not in a module's archive."""
+    """The entries under `roots` that are not in a module's archive, but for
+    the dependencies' executables (`.lake/packages/<name>/.lake/build/bin`,
+    Mathlib's `cache`, 114 MiB): only CI's setup runs one, on a miss of
+    Mathlib's Actions cache, where Lake builds it anyway."""
     paths = []
     for root in roots:
         for dirpath, dirnames, filenames in os.walk(lean / root):
             dirnames.sort()
             rel = Path(dirpath).relative_to(lean)
+            if rel.parts[:2] == (".lake", "packages") and rel.parts[3:6] == (".lake", "build", "bin"):
+                dirnames.clear()
+                continue
             paths.append(str(rel))
             paths += [str(rel / f) for f in sorted(filenames) if rel / f not in packed]
             # Symbolic links to directories are entries, not walked.
@@ -241,18 +254,20 @@ def other_files(lean, roots, packed):
 
 def pack(lean, roots, jobs, level, tool, out, reuse=None):
     store(lean, roots, jobs, level, tool, reuse=reuse)
-    out.flush()
-    # `files.tar` first, so that `unpack` extracts it while the archives
-    # unpack.
-    subprocess.run(["tar", "-C", str(lean), "-cf", "-", str(LTAR / FILES), f"--exclude={LTAR / FILES}",
-                    str(LTAR)], stdout=out, check=True)
+    bundle(lean, [LTAR], out)
+
+
+def stored_files(source):
+    """The `files.tar` of an archive directory: `STORED`, or `FILES` from
+    before it."""
+    return source / STORED if (source / STORED).is_file() else source / FILES
 
 
 def bundle(lean, archive_dirs, out):
     """Publish existing caches without unpacking or repacking any module.
 
     The caches must cover disjoint modules. GNU tar concatenates their
-    uncompressed files.tar archives without extracting the small files.
+    files.tar archives, decompressed, without extracting the small files.
     Only indexed modules are included; leftover archives are ignored.
     """
     index, logs, archives = {}, {}, []
@@ -264,8 +279,8 @@ def bundle(lean, archive_dirs, out):
                         if rel in entries)
         if not entries:
             raise ValueError(f"Empty module cache: {directory}")
-        if not (source / FILES).is_file():
-            raise FileNotFoundError(source / FILES)
+        if not stored_files(source).is_file():
+            raise FileNotFoundError(source / STORED)
         for rel, key in entries.items():
             if Path(rel).is_absolute() or ".." in Path(rel).parts:
                 raise ValueError(f"Invalid module archive path: {rel}")
@@ -280,10 +295,16 @@ def bundle(lean, archive_dirs, out):
     # file holds only miscellaneous files, never expanded module outputs.
     with tempfile.TemporaryDirectory(prefix="lean-cache-bundle-") as tmp:
         files = Path(tmp) / FILES
-        shutil.copyfile(lean / archive_dirs[0] / FILES, files)
-        for directory in archive_dirs[1:]:
-            subprocess.run(["tar", "--concatenate", "--file", str(files),
-                            str(lean / directory / FILES)], check=True)
+        for i, directory in enumerate(archive_dirs):
+            part = files if i == 0 else Path(tmp) / f"{i}.tar"
+            source = stored_files(lean / directory)
+            if source.name == STORED:
+                with gzip.open(source) as f, open(part, "wb") as g:
+                    shutil.copyfileobj(f, g)
+            else:
+                shutil.copyfile(source, part)
+            if i:
+                subprocess.run(["tar", "--concatenate", "--file", str(files), str(part)], check=True)
         with tarfile.open(fileobj=out, mode="w|", dereference=True) as tar:
             tar.add(files, arcname=str(LTAR / FILES))
             for name, data in ((INDEX, json.dumps(index, sort_keys=True).encode()), (LOGS, logs_bytes(logs))):
@@ -297,7 +318,8 @@ def bundle(lean, archive_dirs, out):
 
 def store(lean, roots, jobs, level, tool, archive_dir=LTAR, reuse=None):
     paths = other_files(lean, roots, update(lean, roots, jobs, level, tool, archive_dir, reuse))
-    subprocess.run(["tar", "-C", str(lean), "-cf", str(lean / archive_dir / FILES), "--no-recursion",
+    (lean / archive_dir / FILES).unlink(missing_ok=True)
+    subprocess.run(["tar", "-C", str(lean), "-czf", str(lean / archive_dir / STORED), "--no-recursion",
                     "--null", "-T", "-"], input="\0".join(paths).encode(), check=True)
 
 
@@ -309,7 +331,8 @@ def restore(lean, jobs, tool, archive_dir=LTAR, modules=None, others=None):
     have changed its `.hash` files."""
     ltars = lean / archive_dir
     chosen = set((modules or others).read_text().split()) if modules or others else set()
-    files = extract(lean, ltars / FILES) if (ltars / FILES).is_file() and not others else None
+    stored = stored_files(ltars)
+    files = extract(lean, stored) if stored.is_file() and not others else None
     try:
         records = []
         for ltar in sorted(ltars.rglob("*.ltar")):
@@ -340,7 +363,8 @@ def extract(lean, files):
     extracting them as root (as in a container) would keep that owner. Git
     would then refuse the dependencies' checkouts, so Lake would clone them
     again and build Mathlib from source."""
-    return subprocess.Popen(["tar", "--no-same-owner", "-xf", str(files), "-C", str(lean)])
+    return subprocess.Popen(["tar", "--no-same-owner", "-xf", str(files), "-C", str(lean)]
+                            + (["-z"] if files.name == STORED else []))
 
 
 def finish(files):

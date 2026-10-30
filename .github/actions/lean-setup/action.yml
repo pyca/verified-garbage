@@ -60,14 +60,14 @@ runs:
     # Mathlib and its dependencies, with the prebuilt files for those
     # modules: they change only with the toolchain, the manifest or the
     # list, so a hit skips the clones, building Mathlib's `cache` tool and
-    # the download. Archives have their own directory, index and files.tar,
+    # the download. Archives have their own directory, index and files.tar.gz,
     # separate from the project build.
     - name: Restore Mathlib and its dependencies
       id: lake-packages
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: lean/.lake/mathlib-ltar
-        key: lake-packages-ltar-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-${{ steps.mods.outputs.hash }}
+        key: lake-packages-ltar-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-${{ steps.mods.outputs.hash }}
     - name: Unpack Mathlib and its dependencies
       if: ${{ steps.lake-packages.outputs.cache-hit == 'true' }}
       shell: bash
