@@ -86,32 +86,28 @@ theorem copy_tr {dst src : Ptr} {n : Nat} (hok : ∀ a ∈ copyArgs dst src n, a
   · rw [hx.1.1 _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))),
       hy.1.1 _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))]; rfl
 
-theorem maskPre_wp {a : Ptr} (hok : (Arg.ptr a).Ok) (hb : a.1 ∈ bases) {N : Nat} (hN : N < 2 ^ 31) (s : State) :
-    WP isa (.block (([.mov32 .rdx (.imm 0), .alu32 .sub .rdx (.reg .rax)] : List Instr) ++
-      glue [(.rdi, .ptr a), (.rcx, .imm N)])) s
-      fun s' => s'.gpr .rdi = (Arg.ptr a).val s ∧ s'.gpr .rcx = BitVec.ofNat 64 N := by
-  have hok' : ∀ x ∈ ([(.rdi, .ptr a), (.rcx, .imm N)] : List (Reg × Arg)), x.2.Ok ∧ x.1 ∈ argRegs := by
+theorem maskPre_wp {a : Ptr} (hok : (Arg.ptr a).Ok) {N : Nat} (hN : N < 2 ^ 31) (s : State) :
+    WP isa (.block (glue [(.rdi, .ptr a), (.rcx, .imm (N / 4))] ++ ([.mov32 .rdx (.imm 0), .alu32 .sub .rdx (.reg .rax),
+      .xop (.movq .xmm0 .rdx), .xop (.pshufd .xmm0 .xmm0 0)] : List Instr))) s
+      fun s' => s'.gpr .rdi = (Arg.ptr a).val s ∧ s'.gpr .rcx = BitVec.ofNat 64 (N / 4) := by
+  have hok' : ∀ x ∈ ([(.rdi, .ptr a), (.rcx, .imm (N / 4))] : List (Reg × Arg)), x.2.Ok ∧ x.1 ∈ argRegs := by
     simp only [List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
-    exact ⟨⟨hok, by decide⟩, ⟨hN, by decide⟩⟩
+    exact ⟨⟨hok, by decide⟩, ⟨show N / 4 < 2 ^ 31 by omega, by decide⟩⟩
   rw [WP.block_append_iff]
-  refine WP.mono (maskPre_ok s) fun s₀ ⟨_, k₀⟩ => ?_
-  refine WP.mono (glue_ok _ hok' (by simp only [List.map_cons, List.map_nil]; decide) s₀) fun s1 ⟨⟨hv1, _⟩, _⟩ =>
-    ⟨?_, hv1 _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))⟩
-  have nb : a.1 ∉ [Reg.rdx] := by
-    simp only [List.mem_singleton]; intro h; rw [h] at hb; exact absurd hb (by decide)
-  rw [hv1 _ (List.mem_cons_self ..)]
-  simp only [Arg.val, pa]
-  rw [k₀.gpr nb]
+  refine WP.mono (glue_ok' hok' (by simp only [List.map_cons, List.map_nil]; decide) s) fun s1 h1 => ?_
+  refine WP.mono (maskPre_ok s1) fun s2 ⟨_, k2⟩ => ⟨?_, ?_⟩
+  · rw [k2.gpr (by decide)]; exact h1.1.1 _ (List.mem_cons_self ..)
+  · rw [k2.gpr (by decide)]; exact h1.1.1 _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
 
 theorem mask_tr {a : Ptr} (hok : (Arg.ptr a).Ok) (hb : a.1 ∈ bases) {N : Nat} (hN : N < 2 ^ 31)
     {P : State → State → Prop} (hP : ∀ x y, P x y → SameB x y) : RelCT isa P (mask a N) fun _ _ => True := by
   unfold mask
-  refine blockLoop_tr (fun i hi s => ?_) (fun x y _ => ⟨maskPre_wp hok hb hN x, maskPre_wp hok hb hN y⟩)
+  refine blockLoop_tr (fun i hi s => ?_) (fun x y _ => ⟨maskPre_wp hok hN x, maskPre_wp hok hN y⟩)
     [.rdi, .rcx]
     (fun x y x' y' hp hx hy r hr => ?_) (by taint_decide)
   · rcases List.mem_append.mp hi with h | h
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at h; rcases h with rfl | rfl <;> rfl
     · exact glue_nomem _ i h s
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at h; rcases h with rfl | rfl | rfl | rfl <;> rfl
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · rw [hx.1, hy.1]; exact (hP x y hp).arg hb

@@ -4912,16 +4912,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4_avx2}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 28672
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 29:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 29b
 mov eax, 4
@@ -4948,16 +4950,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4_avx2}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 32768
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 210:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 210b
 mov eax, 1
@@ -4984,16 +4988,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4_avx2}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 36864
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 211:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 211b
 mov eax, 5
@@ -5020,16 +5026,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4_avx2}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 40960
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 212:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 212b
 mov eax, 2
@@ -5056,16 +5064,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4_avx2}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 45056
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 213:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 213b
 mov eax, 6
@@ -5092,16 +5102,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4_avx2}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 49152
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 214:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 214b
 mov eax, 3
@@ -5128,16 +5140,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4_avx2}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 53248
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 215:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 215b
 mov eax, 0
@@ -5164,16 +5178,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4_avx2}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 57344
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 216:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 216b
 mov eax, 4
@@ -5200,16 +5216,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4_avx2}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 61440
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 217:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 217b
 mov eax, 1
@@ -5236,16 +5254,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4_avx2}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 65536
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 218:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 218b
 mov eax, 5
@@ -5272,16 +5292,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4_avx2}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 69632
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 219:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 219b
 mov eax, 2
@@ -5308,16 +5330,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4_avx2}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 73728
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 220:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 220b
 mov eax, 6
@@ -5344,16 +5368,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4_avx2}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 77824
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 221:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 221b
 mov eax, 3
@@ -5380,16 +5406,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4_avx2}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 81920
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 222:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 222b
 mov rdi, r13
@@ -5402,16 +5430,18 @@ mov r8, rbx
 add r8, 4096
 call {vg_mldsa_sample_in_ball}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 23552
-mov ecx, 256
+mov ecx, 64
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 223:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 223b
 mov rdi, rbx
@@ -11391,16 +11421,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 28672
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 29:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 29b
 mov eax, 4
@@ -11427,16 +11459,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 32768
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 210:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 210b
 mov eax, 1
@@ -11463,16 +11497,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 36864
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 211:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 211b
 mov eax, 5
@@ -11499,16 +11535,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 40960
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 212:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 212b
 mov eax, 2
@@ -11535,16 +11573,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 45056
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 213:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 213b
 mov eax, 6
@@ -11571,16 +11611,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 49152
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 214:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 214b
 mov eax, 3
@@ -11607,16 +11649,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 53248
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 215:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 215b
 mov eax, 0
@@ -11643,16 +11687,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 57344
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 216:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 216b
 mov eax, 4
@@ -11679,16 +11725,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 61440
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 217:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 217b
 mov eax, 1
@@ -11715,16 +11763,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 65536
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 218:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 218b
 mov eax, 5
@@ -11751,16 +11801,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 69632
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 219:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 219b
 mov eax, 2
@@ -11787,16 +11839,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 73728
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 220:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 220b
 mov eax, 6
@@ -11823,16 +11877,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 77824
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 221:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 221b
 mov eax, 3
@@ -11859,16 +11915,18 @@ mov rdx, rbx
 add rdx, 94208
 call {vg_mldsa_rej_ntt_poly4}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 81920
-mov ecx, 1024
+mov ecx, 256
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 222:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 222b
 mov rdi, r13
@@ -11881,16 +11939,18 @@ mov r8, rbx
 add r8, 4096
 call {vg_mldsa_sample_in_ball}
 and r15d, eax
-mov edx, 0
-sub edx, eax
 mov rdi, rbx
 add rdi, 23552
-mov ecx, 256
+mov ecx, 64
+mov edx, 0
+sub edx, eax
+movq xmm0, rdx
+pshufd xmm0, xmm0, 0
 223:
-mov eax, DWORD PTR [rdi]
-and eax, edx
-mov DWORD PTR [rdi], eax
-add rdi, 4
+movdqu xmm1, XMMWORD PTR [rdi]
+pand xmm1, xmm0
+movdqu XMMWORD PTR [rdi], xmm1
+add rdi, 16
 sub rcx, 1
 jne 223b
 mov rdi, rbx
