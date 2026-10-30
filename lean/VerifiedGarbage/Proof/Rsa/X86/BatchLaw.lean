@@ -1,9 +1,8 @@
 module
-import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.FrameBase
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvClob
 public import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Impl.Rsa.X86.GcdBatch
+public import VerifiedGarbage.Proof.Rsa.X86.GcdBatchRt.Writes
 public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import Aesop.BuiltinRules
@@ -18,13 +17,18 @@ namespace VG.Proof.Rsa.X86
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Weierstrass VG.Proof.Rsa.X86.Keys
 open VG.Proof.Weierstrass.X86.Inv (wordClob)
 class BatchLaw : Prop where
-  gcd_ok {s : State} {base : Addr} {size n : Nat}
-      (hs : Scr s base size) (hn : 16 ≤ n) (hnMax : n ≤ 1024) (hz : VG.Impl.Rsa.X86.GcdBatch.offset n 15 ≤ size)
-      (hm : val32 s.mem base (VG.Impl.Rsa.X86.GcdBatch.offset n 8) n % 2=1) :
-      WP isa (VG.Impl.Rsa.X86.GcdBatch.body n) s fun z =>
-        val32 z.mem base (VG.Impl.Rsa.X86.GcdBatch.offset n 1) n =
-          Nat.gcd (val32 s.mem base (VG.Impl.Rsa.X86.GcdBatch.offset n 8) n) (val32 s.mem base (VG.Impl.Rsa.X86.GcdBatch.offset n 0) n) ∧
-        Keeps wordClob s z ∧ Keep base n invArrs invSlots s.mem z.mem
+  gcd_ok {L : VG.Impl.Rsa.X86.KeyRt.Lay} {s : State} {B : Addr} {Z len N : Nat}
+      (h : VG.Proof.Rsa.X86.KeyRt.RtWs L s B Z len N) (room : 16 ≤ N) (hodd : InvBatchRt.nw len % 2 = 1)
+      (h3 : 3 ≤ InvBatchRt.nw len) (hmax : InvBatchRt.nw len ≤ 1024) {m x : Nat}
+      (hm : val32 s.mem B (InvBatchRt.rv (KeyRt.kw len) (VG.Impl.Rsa.X86.InvBatchRt.a 4)) (InvBatchRt.nw len - 1) = m)
+      (hx : val32 s.mem B (InvBatchRt.rv (KeyRt.kw len) (VG.Impl.Rsa.X86.InvBatchRt.a 0)) (InvBatchRt.nw len - 1) = x)
+      (odd : m % 2 = 1) :
+      WP isa (VG.Impl.Rsa.X86.GcdBatchRt.body L) s fun z =>
+        InvBatchRt.Bx L z B Z len N ∧
+        val32 z.mem B (InvBatchRt.rv (KeyRt.kw len) VG.Impl.Rsa.X86.GcdBatchRt.res) (InvBatchRt.nw len - 1) =
+          Nat.gcd m x ∧
+        val32 z.mem B (InvBatchRt.rv (KeyRt.kw len) (VG.Impl.Rsa.X86.InvBatchRt.a 5)) (InvBatchRt.nw len - 1) = 0 ∧
+        Keeps wordClob s z ∧ Unch B (GcdBatchRt.gcdWrites len) s.mem z.mem
   inv_ok {L : VG.Impl.Rsa.X86.KeyRt.Lay} {s : State} {B : Addr} {Z len N : Nat}
       (h : VG.Proof.Rsa.X86.KeyRt.RtWs L s B Z len N) (room : 16 ≤ N) (hn2 : 2 ≤ InvBatchRt.nw len)
       (he : InvBatchRt.nw len % 2 = 0) {m x : Nat}

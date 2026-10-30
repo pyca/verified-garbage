@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.X86.Recover
 public import VerifiedGarbage.Impl.Rsa.X86.KeyRt
-public import VerifiedGarbage.Impl.Rsa.X86.GcdDispatch
+public import VerifiedGarbage.Impl.Rsa.X86.GcdBatchRt
 import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 public import VerifiedGarbage.Impl.Mont.X86.Sse2
 public import VerifiedGarbage.Impl.Bignum.X86.CrtRt
@@ -230,7 +230,7 @@ def stores : Prog isa := seqs [store 0 5, store 2 6, .block [.mov .eax (.mem (sc
 
 def factorTail : Prog isa := seqs [divSet, div nar aQ aRm aDv aDt, order]
 
-def factors : Prog isa := seqs [gcdSet, GcdBatch.dispatch (gcd nar), factorTail]
+def factors : Prog isa := seqs [gcdSet, GcdBatchRt.body wid, factorTail]
 
 def fin : Prog isa := seqs [finY, factors, stores]
 

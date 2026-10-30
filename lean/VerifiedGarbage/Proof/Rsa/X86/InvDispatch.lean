@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 public import VerifiedGarbage.Proof.Rsa.X86.InvGate
 public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
 public import VerifiedGarbage.Proof.Rsa.X86.InvStep
-import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.FrameBase
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.InvLoop

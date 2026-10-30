@@ -32,23 +32,23 @@ theorem relInit (F : Fits Z len) :
   have h41 := rv_half1' len 4; have h51 := rv_half1' len 5
   unfold init
   simp only [VG.Impl.Rsa.X86.Keys.seqs]
-  refine RelCT.seq (relSlots rfl (by taint_decide)) ?_
-  refine RelCT.seq (relCopy rfl (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relVirtualize rfl (stable_true _) F2 F1 (by taint_decide)) ?_
-  refine RelCT.seq (relCopy rfl (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relZeroWord rfl (stable_true _) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relCopy rfl (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relZeroWord rfl (stable_true _) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relZeros rfl (stable_true _) (fun _ hb => countN hb) (by omega) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relEvenMask rfl (stable_true _) (by taint_decide)) ?_
-  refine RelCT.seq (relSelIn rfl (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relChainAdd (X := fun _ => True) rfl (stable_true _) (fun _ _ => trivial) (by decide) rfl
+  refine RelCT.seq (relSlots (by taint_decide)) ?_
+  refine RelCT.seq (relCopy (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
+  refine RelCT.seq (relVirtualize (stable_true _) F2 F1 (by taint_decide)) ?_
+  refine RelCT.seq (relCopy (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
+  refine RelCT.seq (relZeroWord (stable_true _) (by omega) (by taint_decide)) ?_
+  refine RelCT.seq (relCopy (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
+  refine RelCT.seq (relZeroWord (stable_true _) (by omega) (by taint_decide)) ?_
+  refine RelCT.seq (relZeros (stable_true _) (fun _ hb => countN hb) (by omega) (by omega) (by taint_decide)) ?_
+  refine RelCT.seq (relEvenMask (stable_true _) (by taint_decide)) ?_
+  refine RelCT.seq (relSelIn (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
+  refine RelCT.seq (relChainAdd (X := fun _ => True) (stable_true _) (fun _ _ => trivial) (by decide) rfl
     (by omega) (by omega) (by omega) (.inl (Nat.le_refl _)) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relWinOne rfl (stable_true _) F1 (by taint_decide)) ?_
-  refine RelCT.seq (relZeros rfl (stable_true _) (fun _ hb => countN hb) (by omega) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relZeros rfl (stable_true _) (fun _ hb => countN hb) (by omega) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relA7One rfl (stable_true _) F1 (by taint_decide)) ?_
-  refine RelCT.seq (relInverse rfl (stable_true _) F1 (by taint_decide)) ?_
-  exact relBatches rfl (stable_true _) (by taint_decide)
+  refine RelCT.seq (relWinOne (stable_true _) F1 (by taint_decide)) ?_
+  refine RelCT.seq (relZeros (stable_true _) (fun _ hb => countN hb) (by omega) (by omega) (by taint_decide)) ?_
+  refine RelCT.seq (relZeros (stable_true _) (fun _ hb => countN hb) (by omega) (by omega) (by taint_decide)) ?_
+  refine RelCT.seq (relA7One (stable_true _) F1 (by taint_decide)) ?_
+  refine RelCT.seq (relInverse (stable_true _) F1 (by taint_decide)) ?_
+  exact relBatches (stable_true _) (by taint_decide)
 
 end VG.Proof.Rsa.X86.InvBatchRt.Time

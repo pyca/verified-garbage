@@ -39,13 +39,13 @@ theorem unch_w32 {B : Addr} {ws : List (Nat × Nat)} {m m' : Mem} (h : Unch B ws
 variable {L : Lay} {B : Addr} {Z len N : Nat} {args : Nat → BitVec 32} {sp : BitVec 32}
 
 theorem relOp {c : Prog isa} {rs : List Reg} {ws : List (Nat × Nat)} {C : Nat → Prop}
-    {G H X : (Reg → BitVec 32) → Prop} (hL : L.ws = 14) (hesp : Reg.esp ∉ rs) (hG : Stable rs G)
+    {G H X : (Reg → BitVec 32) → Prop} (hesp : Reg.esp ∉ rs) (hG : Stable rs G)
     (hws : ∀ w ∈ ws, (104 ≤ w.1 ∨ w.1 + w.2 ≤ 100) ∧ w.1 + w.2 ≤ Z)
     (hf : ∀ s, Bx L s B Z len N → H s.gpr → WP isa c s fun t =>
       Bx L t B Z len N ∧ Keeps rs s t ∧ Unch B ws s.mem t.mem ∧ X t.gpr)
-    {hc : VG.Taint.Hint VG.X86.Taint.T} (h : (VG.Taint.check sseTaint τS c hc).isSome = true) :
+    {hc : VG.Taint.Hint VG.X86.Taint.T} (h : (VG.Taint.check sseTaint (τS L) c hc).isSome = true) :
     RelCT isa (Both L B Z len N args sp C fun g => G g ∧ H g) c (Both L B Z len N args sp C fun g => G g ∧ X g) :=
-  leafU hL (fun s ps => WP.mono (hf s ps.1 ps.2.2.2.2) fun t ⟨hb, K, U, hx⟩ =>
+  leafU (fun s ps => WP.mono (hf s ps.1 ps.2.2.2.2) fun t ⟨hb, K, U, hx⟩ =>
     ⟨hb, ps.2.1.keep K hesp (U.outside fun w hw => ⟨Nat.zero_le _, by rw [Nat.zero_add]; exact (hws w hw).2⟩),
       by rw [unch_w32 U (fun w hw => (hws w hw).1) (by decide)]; exact ps.2.2.1, hG _ _ K.1 ps.2.2.2.1, hx⟩) h
 

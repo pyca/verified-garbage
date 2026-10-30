@@ -126,7 +126,7 @@ theorem factors_ok {g : Geo} {s0 s : State} {A V : Nat → Nat} {m y : Nat}
   unfold VG.Impl.Rsa.X86.RecoverRt.factors
   simp only [seqs, VG.Impl.Rsa.X86.RecoverRt.factorTail]
   refine WP.seq (WP.mono (gcdSet_ok h modulus value zero one) fun s1 h1 => ?_)
-  refine WP.seq (WP.mono (batchGcd_ok h1 odd hm) fun s2 h2 => ?_)
+  refine WP.seq (WP.mono (batchGcd_ok h1 odd) fun s2 h2 => ?_)
   refine WP.seq (WP.mono (divSet_ok h2) fun s3 ⟨h3, top⟩ => ?_)
   refine WP.seq (WP.mono (divide_ok h3 top (Nat.gcd_pos_of_pos_right _ (by omega))) fun s4 h4 => ?_)
   exact order_ok h4

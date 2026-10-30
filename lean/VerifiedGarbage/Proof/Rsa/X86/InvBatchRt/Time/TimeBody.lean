@@ -35,9 +35,9 @@ theorem relBatch {k : Nat} (F : Fits Z len) (hk : 1 ≤ k) (hk32 : k < 2 ^ 32) :
       (fun s t => Both lay B Z len N args sp (· = k - 1) (fun _ => True ∧ True) s t ∧
         s.zf = some (decide (k - 1 = 0)) ∧ t.zf = some (decide (k - 1 = 0))) := by
   simp only [VG.Impl.Rsa.X86.Keys.seqs]
-  exact RelCT.seq (relStart rfl (stable_true _) F.fit (by taint_decide))
-    (RelCT.seq (relWordSteps rfl (stable_true _) F.fit (by taint_decide))
-      (RelCT.seq (relUpdate F) (relCountDown rfl hk hk32 (by taint_decide))))
+  exact RelCT.seq (relStart (stable_true _) F.fit (by taint_decide))
+    (RelCT.seq (relWordSteps (stable_true _) F.fit (by taint_decide))
+      (RelCT.seq (relUpdate F) (relCountDown hk hk32 (by taint_decide))))
 
 /-- The batches, from the count `K`. -/
 theorem relBatchLoop (F : Fits Z len) (K : Nat) :
@@ -73,7 +73,7 @@ theorem relBody (F : Fits Z len) :
   refine RelCT.seq ((relBatchLoop F (3 * (nw len + 1))).mono (fun _ _ h => ⟨h, by omega, by omega⟩)
     fun _ _ h => h) ?_
   refine RelCT.seq (relNormalize F) ?_
-  refine RelCT.seq (relDoublings rfl (by taint_decide)) ?_
+  refine RelCT.seq (relDoublings (by taint_decide)) ?_
   refine RelCT.seq ((relDoubleLoop F (6 * (nw len + 1))).mono (fun _ _ h => ⟨h, by omega, by omega⟩)
     fun _ _ h => h) ?_
   exact relFinish F

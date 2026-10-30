@@ -29,6 +29,9 @@ def AG (w m y : Nat) : Nat → Nat :=
     2 1) 3 0) aZero 0) aNM (sub32 w 0 m)
 abbrev liveG : List Nat := [aNM, aZero, 3, 2, aM, 1, 0, aN]
 
+/-- The arrays after the GCD: `p` in array 1, `m` and zero. -/
+def AP (m p : Nat) : Nat → Nat := upd (upd (fun _ => m) aZero 0) 1 p
+
 theorem gcdSet_ok {g : Geo} {s0 s : State} {A V : Nat → Nat} {m y : Nat}
     (h : KS g s0 A [mY, aN, aZ, aOne] (fun _ => 0) [] V [sMask] s)
     (modulus : A aN = m) (value : A mY = y) (zero : A aZ = 0) (one : A aOne = 1) :
