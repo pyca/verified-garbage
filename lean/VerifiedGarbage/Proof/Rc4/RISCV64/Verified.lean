@@ -77,9 +77,12 @@ theorem init_correct (s : State) (hs : initX.pre s) :
   have hk : InRegions (s.rd ++ s.wr) (s.gpr .a0) (s.gpr .a1).toNat :=
     ⟨⟨s.gpr .a0, (s.gpr .a1).toNat⟩,
       by rw [hrd]; exact List.mem_append_left _ (List.mem_singleton_self _), Region.contains_self _ _⟩
+  -- The separations elaborated first: unifying them with `init_ok`'s
+  -- arguments while the regions are unknown unfolds `Mem.Sep` (seconds).
+  have hks := sep_symm (sep_of_disjoint hsk)
+  have hcs := sep_of_disjoint hsc
   obtain ⟨tr, t, he, hpost, hkeep⟩ :=
-    WP.keep written (init_ok s hal hsp hp hk (sep_symm (sep_of_disjoint hsk))
-      (sep_of_disjoint hsc)) (by lit_decide) (by lit_decide)
+    WP.keep written (init_ok s hal hsp hp hk hks hcs) (by lit_decide) (by lit_decide)
   refine ⟨tr, t, he, abiPreserved_of_keep he hkeep (by decide) (by decide), ?_⟩
   unfold initX
   dsimp only
@@ -139,9 +142,12 @@ theorem apply_correct (s : State) (hs : applyX.pre s) :
   have hd : InRegions s.wr (s.gpr .a1) (s.gpr .a2).toNat :=
     ⟨⟨s.gpr .a1, (s.gpr .a2).toNat⟩, by rw [hwr]; exact List.mem_cons_of_mem _ List.mem_cons_self,
       Region.contains_self _ _⟩
+  -- As in `init_correct`.
+  have hcds := sep_of_disjoint hcd
+  have hcs := sep_of_disjoint hsc
+  have hds := sep_of_disjoint hsd
   obtain ⟨tr, t, he, hpost, hkeep⟩ :=
-    WP.keep written (apply_ok s hal hsp hp hd (sep_of_disjoint hcd) (sep_of_disjoint hsc)
-      (sep_of_disjoint hsd)) (by lit_decide) (by lit_decide)
+    WP.keep written (apply_ok s hal hsp hp hd hcds hcs hds) (by lit_decide) (by lit_decide)
   exact ⟨tr, t, he, abiPreserved_of_keep he hkeep (by decide) (by decide), hpost⟩
 
 structure EntryAgree (a b : State) : Prop where
