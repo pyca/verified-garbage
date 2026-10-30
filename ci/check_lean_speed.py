@@ -335,7 +335,7 @@ def native_hints(module: str, text: str) -> list[tuple[int, str]]:
     """The calls of the native taint hint search in `module` (outside
     `Proof/Framework/`, which defines it) that would fall back to the
     interpreted search: its target's hint data is not imported, or the
-    target has none. As (offset in `text`, message)."""
+    target has none. As (line, message)."""
     if "native_taint_decide" not in text or module.startswith("VerifiedGarbage.Proof.Framework."):
         return []
     code = strip_comments(text)
@@ -344,13 +344,13 @@ def native_hints(module: str, text: str) -> list[tuple[int, str]]:
         return []
     targets = [t for t in NATIVE_TARGETS if t in module.split(".")]
     if not targets:
-        return [(m.start(), f"`{m.group(0)}` on a target without a native taint domain "
+        return [(line_of(code, m.start()), f"`{m.group(0)}` on a target without a native taint domain "
                  f"(only {', '.join(NATIVE_TARGETS)}); use `{m.group(0).removeprefix('native_')}`")
                 for m in calls[:1]]
     data = f"VerifiedGarbage.Proof.Framework.{targets[0]}.NativeHintData"
     if re.search(rf"^(?:public\s+)?meta\s+import\s+{re.escape(data)}\s*$", text, re.M):
         return []
-    return [(calls[0].start(), f"`{calls[0].group(0)}` without `meta import {data}`, so it searches its "
+    return [(line_of(code, calls[0].start()), f"`{calls[0].group(0)}` without `meta import {data}`, so it searches its "
              "hints interpreted, many times slower; import it")]
 
 
@@ -466,8 +466,8 @@ def main() -> int:
                 f"{rel}: uses `#guard_msgs` with the profiler on; add `set_option profiler false` "
                 "so that its expected messages do not include the profile"
             )
-        for pos, what in native_hints(module, text):
-            errors.append(f"{rel}:{line_of(text, pos)}: {what}")
+        for line, what in native_hints(module, text):
+            errors.append(f"{rel}:{line}: {what}")
         for m in after_word(TAUTO, code, NAME_CHAR):
             errors.append(f"{rel}:{line_of(code, m.start())}: `tauto` runs interpreted; use `grind`, `simp` or `decide`")
         if uncompiled_meta(module, text, globs):

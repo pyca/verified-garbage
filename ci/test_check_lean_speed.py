@@ -42,6 +42,12 @@ class NativeHints(unittest.TestCase):
         self.assertEqual(self.problems("VerifiedGarbage.Proof.Ecdh.X86.P521.Verified", commented), [])
         self.assertEqual(self.problems("VerifiedGarbage.Proof.Framework.NativeTaintCore", CALL), [])
 
+    def test_the_line_counts_comments(self):
+        # Line comments are removed, not blanked: the line is still the source's.
+        text = "-- a comment\n-- another\n" + DATA.replace("meta import", "-- meta import") + CALL
+        [(line, _)] = check_lean_speed.native_hints("VerifiedGarbage.Proof.Ecdh.X86.P521.Verified", text)
+        self.assertEqual(line, 4)
+
     def test_a_longer_name_is_not_a_call(self):
         self.assertEqual(self.problems("VerifiedGarbage.Proof.Ecdh.X86.P521.Verified",
                                        "theorem t := VG.native_taint_decide_lemma\n"), [])
