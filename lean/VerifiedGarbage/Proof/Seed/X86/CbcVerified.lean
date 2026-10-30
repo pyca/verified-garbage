@@ -16,6 +16,7 @@ meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Seed.X86.CbcLit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Seed.SboxLit
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # SEED-CBC on x86 (32-bit) meets its contracts

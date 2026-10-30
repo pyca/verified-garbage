@@ -18,6 +18,7 @@ meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Ring
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-! Merged from `Proof.Ed25519.X86.ScalarBaseCT`. -/
 

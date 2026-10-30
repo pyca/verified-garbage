@@ -8,6 +8,7 @@ meta import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Hash
 meta import VerifiedGarbage.Proof.MlKem.Arm.CmpSel
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Control
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 
 /-!
 # ML-DSA verification on 32-bit ARM: `c̃′ = c̃`

@@ -22,6 +22,7 @@ meta import VerifiedGarbage.Proof.Seed.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 
 /-!
 # SEED key expansion on ARMv7 meets its contracts

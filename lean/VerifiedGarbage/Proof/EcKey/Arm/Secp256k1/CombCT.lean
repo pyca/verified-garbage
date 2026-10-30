@@ -9,6 +9,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.CombLit
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Impl.Ecdsa.Secp256k1.ArmComb
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 
 /-! Key generation's comb depends only on public pointers and counters. -/
 

@@ -18,6 +18,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86.PointCurves
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # `vg_p384_mul` on x86 (32-bit): `Verified`

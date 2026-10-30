@@ -18,6 +18,7 @@ meta import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
 meta import VerifiedGarbage.Proof.Ed25519.Bytes
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 @[expose] public section
 

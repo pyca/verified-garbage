@@ -26,6 +26,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 
 /-!
 # P-521 public keys on 32-bit ARM: `Verified`

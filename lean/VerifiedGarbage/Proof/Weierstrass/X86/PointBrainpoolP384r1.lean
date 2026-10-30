@@ -26,6 +26,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P192
 meta import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P224
 meta import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P256
 meta import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P384
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # Complete point addition and doubling as functions, on x86 (32-bit): brainpoolP384r1

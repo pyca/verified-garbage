@@ -20,6 +20,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 
 /-!
 # `vg_ed25519_r16_point_add` and `vg_ed25519_r16_point_double` on ARMv7, verified

@@ -20,6 +20,7 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Weierstrass.Layout
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): constant time, up to the number of candidates

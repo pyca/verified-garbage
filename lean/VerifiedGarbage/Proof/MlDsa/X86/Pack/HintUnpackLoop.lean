@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpack
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpack
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_hint_bit_unpack`, the coefficients of a polynomial

@@ -12,6 +12,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha3.X86.Permute
 meta import VerifiedGarbage.Proof.Sha3.X86.Permute
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: the check, the entry and the leaf

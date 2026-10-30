@@ -18,6 +18,7 @@ meta import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message`: the call of the signing function on `μ`

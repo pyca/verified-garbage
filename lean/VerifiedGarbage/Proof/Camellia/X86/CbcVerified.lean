@@ -14,6 +14,7 @@ meta import VerifiedGarbage.Proof.Camellia.CbcScratch
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Camellia.X86.CbcLit
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # Camellia-CBC on x86 (32-bit) meets its contracts

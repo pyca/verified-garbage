@@ -12,6 +12,7 @@ meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.MlKem.X86.TopKem
 import VerifiedGarbage.Proof.MlKem.X86.TopLocal
 meta import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # ML-DSA verification on x86 (32-bit): `Â` and `c`

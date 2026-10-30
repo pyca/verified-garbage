@@ -22,6 +22,7 @@ meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarLit
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-! Merged from `Proof.Ed25519.X86.ScalarMain`. -/
 

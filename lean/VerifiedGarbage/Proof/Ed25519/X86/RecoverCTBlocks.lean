@@ -24,6 +24,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.X25519.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-! Fixed-trace arithmetic blocks used in point recovery. -/
 

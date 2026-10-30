@@ -8,6 +8,7 @@ meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.Top
 meta import VerifiedGarbage.Impl.MlDsa.X86.Pack.Encode
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_simple_bit_pack`

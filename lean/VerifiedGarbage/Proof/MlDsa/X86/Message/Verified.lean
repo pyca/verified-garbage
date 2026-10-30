@@ -22,6 +22,7 @@ meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.MlDsa.DecideAt
 meta import VerifiedGarbage.Proof.MlKem.X86.TopKem
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: the functions

@@ -66,6 +66,12 @@ without building. Exits non-zero on violations.
     arrays and vectors across modules, and `import all` of
     `Init.Data.Array.Basic` and the like made the modules that had it 11%
     slower to build, up to 25% for contracts' proofs.
+  * A module that calls the native taint hint search (`native_taint_decide`,
+    `native_taint_decide_sum`, …) imports its target's hint data itself
+    (`meta import VerifiedGarbage.Proof.Framework.<X86|Arm>.NativeHintData`):
+    without it the tactic falls back, silently, to the interpreted search,
+    which cost ECDSA P-521's x86 `sign_ct` 7 of its 25 s (#3726). The native
+    search exists only for those two targets' taint domains.
   * A module with `#guard_msgs` turns the profiler off
     (`set_option profiler false`, on a line of its own): the lakefile turns
     it on for every module (`ci/lean_profile.py`), and `#guard_msgs` would
@@ -105,6 +111,8 @@ IMPORT = re.compile(r"^(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?([\w.]+)", 
 TAUTO = re.compile(r"tauto(?![\w.])")  # not after `[\w.]`
 # `set_option profiler false` on a line of its own (for the whole module).
 PROFILER_OFF = re.compile(r"^set_option profiler false[ \t]*$", re.M)
+NATIVE_TAINT = re.compile(r"native_taint_decide\w*")  # not after `[\w.]`
+NATIVE_TARGETS = ("X86", "Arm")
 HEAVY_MATHLIB = (
     "Mathlib.Algebra", "Mathlib.RingTheory", "Mathlib.FieldTheory", "Mathlib.NumberTheory",
     "Mathlib.Data.ZMod", "Mathlib.Data.List.Dedup", "Mathlib.Data.Nat.ModEq",
@@ -323,6 +331,29 @@ def strip_comments(text: str) -> str:
     return re.sub(r"--[^\n]*", "", text)
 
 
+def native_hints(module: str, text: str) -> list[tuple[int, str]]:
+    """The calls of the native taint hint search in `module` (outside
+    `Proof/Framework/`, which defines it) that would fall back to the
+    interpreted search: its target's hint data is not imported, or the
+    target has none. As (offset in `text`, message)."""
+    if "native_taint_decide" not in text or module.startswith("VerifiedGarbage.Proof.Framework."):
+        return []
+    code = strip_comments(text)
+    calls = list(after_word(NATIVE_TAINT, code, NAME_CHAR))
+    if not calls:
+        return []
+    targets = [t for t in NATIVE_TARGETS if t in module.split(".")]
+    if not targets:
+        return [(m.start(), f"`{m.group(0)}` on a target without a native taint domain "
+                 f"(only {', '.join(NATIVE_TARGETS)}); use `{m.group(0).removeprefix('native_')}`")
+                for m in calls[:1]]
+    data = f"VerifiedGarbage.Proof.Framework.{targets[0]}.NativeHintData"
+    if re.search(rf"^(?:public\s+)?meta\s+import\s+{re.escape(data)}\s*$", text, re.M):
+        return []
+    return [(calls[0].start(), f"`{calls[0].group(0)}` without `meta import {data}`, so it searches its "
+             "hints interpreted, many times slower; import it")]
+
+
 def heavy_hubs(imports: dict[str, list[str]]) -> list[tuple[str, list[str], int]]:
     """The modules that import heavy Mathlib algebra and are imported, directly
     or not, by more than `HEAVY_IMPORTERS` modules: (module, heavy imports, importers)."""
@@ -435,6 +466,8 @@ def main() -> int:
                 f"{rel}: uses `#guard_msgs` with the profiler on; add `set_option profiler false` "
                 "so that its expected messages do not include the profile"
             )
+        for pos, what in native_hints(module, text):
+            errors.append(f"{rel}:{line_of(text, pos)}: {what}")
         for m in after_word(TAUTO, code, NAME_CHAR):
             errors.append(f"{rel}:{line_of(code, m.start())}: `tauto` runs interpreted; use `grind`, `simp` or `decide`")
         if uncompiled_meta(module, text, globs):

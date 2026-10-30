@@ -22,6 +22,7 @@ import VerifiedGarbage.Proof.MlKem.X86.TopHash
 import VerifiedGarbage.Proof.Sha3.Spec
 meta import VerifiedGarbage.Proof.MlKem.X86.TopHash
 meta import VerifiedGarbage.Proof.Sha3.Spec
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # ML-DSA key generation on x86 (32-bit): the seeds

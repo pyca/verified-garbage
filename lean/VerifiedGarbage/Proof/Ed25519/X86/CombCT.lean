@@ -16,6 +16,7 @@ meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-! The comb has a public trace: its loops' counters (`esi`) are public, and every address is
 the workspace pointer `edi` plus a constant or `8 esi`, or the tables' address plus

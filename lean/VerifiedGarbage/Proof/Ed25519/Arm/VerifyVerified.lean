@@ -26,6 +26,7 @@ import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 
 /-! Merged from `Proof.Ed25519.Arm.VerifyCT`. -/
 

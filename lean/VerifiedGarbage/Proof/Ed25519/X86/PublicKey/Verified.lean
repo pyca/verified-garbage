@@ -26,6 +26,7 @@ meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-! Merged from `Proof.Ed25519.X86.PublicKey.CT`. -/
 

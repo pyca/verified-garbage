@@ -12,6 +12,7 @@ meta import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
 meta import VerifiedGarbage.Impl.Ed25519.Arm.RecoverSign
 meta import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 
 /-! Straight-line and fixed-loop pieces of public point decoding. -/
 

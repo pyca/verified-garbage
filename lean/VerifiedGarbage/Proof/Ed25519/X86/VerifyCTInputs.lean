@@ -20,6 +20,7 @@ meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
 meta import VerifiedGarbage.Impl.Ed25519.X86.Verify
 meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-! Merged from `Proof.Ed25519.X86.RecoverCTRoot`. -/
 

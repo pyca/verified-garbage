@@ -12,6 +12,7 @@ meta import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 
 /-!
 # ML-DSA signing on ARMv7: copies leak only their addresses
