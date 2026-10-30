@@ -31,16 +31,18 @@ def artifacts : List Artifact := [
     stack := 96 },
   Spec.Rsa.checkKeyApi.artifact X86.target {
     notes := ["The modulus's length gives the numbers' width at run time: every operation computes \
-      its arrays' addresses from it. The length is public; only the checks of the modulus and the public \
-      exponent select a branch. Callee-saved registers reside in scratch."]
+      its arrays' addresses from it. The three checks of `e dP`, `e dQ` and `q qInv` share one loop, \
+      its index and the product's steps in `esi`. The length is public; only the checks of the modulus \
+      and the public exponent select a branch. Callee-saved registers reside in scratch."]
     code := Impl.Rsa.X86.KeyCheckRt.code true
     verified := Proof.Rsa.X86.KeyCheck.verified true
     spSafe := Proof.Rsa.X86.RtShape.check_spSafe true
     stack := 20 },
   Spec.Rsa.checkCrtKeyApi.artifact X86.target {
     notes := ["The modulus's length gives the numbers' width at run time: every operation computes \
-      its arrays' addresses from it. The length is public; only the checks of the modulus and the public \
-      exponent select a branch. Callee-saved registers reside in scratch."]
+      its arrays' addresses from it. The three checks of `e dP`, `e dQ` and `q qInv` share one loop, \
+      its index and the product's steps in `esi`. The length is public; only the checks of the modulus \
+      and the public exponent select a branch. Callee-saved registers reside in scratch."]
     code := Impl.Rsa.X86.KeyCheckRt.code false
     verified := Proof.Rsa.X86.KeyCheck.verified false
     spSafe := Proof.Rsa.X86.RtShape.check_spSafe false
