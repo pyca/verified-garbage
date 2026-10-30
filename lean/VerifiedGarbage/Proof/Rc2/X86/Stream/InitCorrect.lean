@@ -35,31 +35,31 @@ theorem ofNat_toNat (x : BitVec 32) : BitVec.ofNat 32 x.toNat = x := by simp
 section
 variable (s₀ : State)
 
-abbrev E : BitVec 32 := s₀.gpr .esp
-abbrev key : BitVec 32 := arg s₀ 0
-abbrev kl : Nat := (arg s₀ 1).toNat
-abbrev eb : Nat := (arg s₀ 2).toNat
-abbrev iv : BitVec 32 := arg s₀ 3
-abbrev il : Nat := (arg s₀ 4).toNat
-abbrev ctx : BitVec 32 := arg s₀ 5
-abbrev scr : BitVec 32 := arg s₀ 6
-abbrev kA : Addr := (key s₀).setWidth 64
-abbrev ivA : Addr := (iv s₀).setWidth 64
-abbrev cA : Addr := (ctx s₀).setWidth 64
-abbrev sA : Addr := (scr s₀).setWidth 64
-abbrev keyR : Region := ⟨kA s₀, kl s₀⟩
-abbrev ivR : Region := ⟨ivA s₀, il s₀⟩
-abbrev ctxR : Region := ⟨cA s₀, 144⟩
-abbrev scR : Region := ⟨sA s₀, 576⟩
-abbrev argR : Region := ⟨argAddr s₀ 0, 28⟩
-abbrev retR : Region := ⟨(E s₀).setWidth 64, 4⟩
-abbrev stkR : Region := below (E s₀) 24
+noncomputable abbrev E : BitVec 32 := s₀.gpr .esp
+noncomputable abbrev key : BitVec 32 := arg s₀ 0
+noncomputable abbrev kl : Nat := (arg s₀ 1).toNat
+noncomputable abbrev eb : Nat := (arg s₀ 2).toNat
+noncomputable abbrev iv : BitVec 32 := arg s₀ 3
+noncomputable abbrev il : Nat := (arg s₀ 4).toNat
+noncomputable abbrev ctx : BitVec 32 := arg s₀ 5
+noncomputable abbrev scr : BitVec 32 := arg s₀ 6
+noncomputable abbrev kA : Addr := (key s₀).setWidth 64
+noncomputable abbrev ivA : Addr := (iv s₀).setWidth 64
+noncomputable abbrev cA : Addr := (ctx s₀).setWidth 64
+noncomputable abbrev sA : Addr := (scr s₀).setWidth 64
+noncomputable abbrev keyR : Region := ⟨kA s₀, kl s₀⟩
+noncomputable abbrev ivR : Region := ⟨ivA s₀, il s₀⟩
+noncomputable abbrev ctxR : Region := ⟨cA s₀, 144⟩
+noncomputable abbrev scR : Region := ⟨sA s₀, 576⟩
+noncomputable abbrev argR : Region := ⟨argAddr s₀ 0, 28⟩
+noncomputable abbrev retR : Region := ⟨(E s₀).setWidth 64, 4⟩
+noncomputable abbrev stkR : Region := below (E s₀) 24
 /-- Where the chaining value goes. -/
-abbrev cvR : Region := ⟨cA s₀ + BitVec.ofNat 64 128, 8⟩
-abbrev schR : Region := ⟨cA s₀, 128⟩
+noncomputable abbrev cvR : Region := ⟨cA s₀ + BitVec.ofNat 64 128, 8⟩
+noncomputable abbrev schR : Region := ⟨cA s₀, 128⟩
 
 /-- The value `init` returns. -/
-def code : Nat :=
+noncomputable def code : Nat :=
   if ¬(1 ≤ kl s₀ ∧ kl s₀ ≤ 128) then 1 else if ¬(1 ≤ eb s₀ ∧ eb s₀ ≤ 1024) then 2
   else if il s₀ ≠ 8 then 3 else 0
 
@@ -397,14 +397,14 @@ namespace VG.Proof.Rc2.X86.Stream.Init
 
 open VG VG.X86 VG.X86.Wp VG.Impl.Rc2.X86.Stream
 
-abbrev rs5 : List Reg := [.ebx, .esi, .edx, .ecx, .eax]
+noncomputable abbrev rs5 : List Reg := [.ebx, .esi, .edx, .ecx, .eax]
 
 theorem key_nosp : NoSp Impl.Rc2.X86.expandKey := NoSp.of_all (by lit_decide)
 
 theorem key_stack : stackUse Impl.Rc2.X86.expandKey = 0 := by decide
 
-def callRd (s₀ s : State) : List Region := [keyR s₀, ⟨argAddr (pushed rs5 s).callEntry 0, 20⟩]
-def callWr (s₀ : State) : List Region := [schR s₀, ⟨sA s₀, 512⟩]
+noncomputable def callRd (s₀ s : State) : List Region := [keyR s₀, ⟨argAddr (pushed rs5 s).callEntry 0, 20⟩]
+noncomputable def callWr (s₀ : State) : List Region := [schR s₀, ⟨sA s₀, 512⟩]
 
 theorem setWidth_append (a b : BitVec 32) : BitVec.setWidth 32 (a ++ b) = b := by
   apply BitVec.eq_of_toNat_eq

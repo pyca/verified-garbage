@@ -23,9 +23,9 @@ namespace VG.Proof.Rc2.Arm.Cbc
 
 open VG VG.Arm VG.Impl.Rc2.Arm
 
-def EqKept (s₁ s₂ : State) : Prop := ∀ r ∈ kept, s₁.gpr r = s₂.gpr r
+noncomputable def EqKept (s₁ s₂ : State) : Prop := ∀ r ∈ kept, s₁.gpr r = s₂.gpr r
 
-def StepRel (s₁ s₂ : State) : Prop := StepPre s₁ ∧ StepPre s₂ ∧ EqKept s₁ s₂
+noncomputable def StepRel (s₁ s₂ : State) : Prop := StepPre s₁ ∧ StepPre s₂ ∧ EqKept s₁ s₂
 
 theorem agreeKept {s₁ s₂ : State} (h : EqKept s₁ s₂) :
     VG.Arm.Taint.Agree (Taint.ofRegs kept) s₁ s₂ := Taint.agree_ofRegs h

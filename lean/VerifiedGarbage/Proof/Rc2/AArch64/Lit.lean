@@ -22,6 +22,7 @@ namespace VG.Impl.Rc2.AArch64
 open VG.AArch64 VG.Impl.Tbl.AArch64
 
 /-- `piLookup`, reading PITABLE from its packed table (`Rc2.piTable_getD`). -/
+-- computable: evaluated by `materialize_*`
 def piLookupLit : List Instr :=
   loadTable (fun k => BitVec.ofNat 8 (VG.Rc2.piNat k)) ++ [.vop (.dup .b16 .v0 .x8)] ++
     quarters true ++ select true ++ [.umov .w .x8 .v0 0] ++ mask .x8 8

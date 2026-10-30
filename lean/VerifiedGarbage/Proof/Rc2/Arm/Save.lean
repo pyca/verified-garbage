@@ -20,7 +20,7 @@ open VG VG.Arm VG.Impl.Rc2.Arm
 
 /-- What a step of the rounds needs of its state: the key schedule at `r0`,
 readable and within the address space. -/
-def KeyAt (s : State) : Prop :=
+noncomputable def KeyAt (s : State) : Prop :=
   (s.gpr .r0).toNat + 128 ≤ 2 ^ 32 ∧ InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0)) 128
 
 theorem KeyAt.keep {s s' : State} (h : KeyAt s) (k : Keep roundWrites s s') : KeyAt s' := by
@@ -30,7 +30,7 @@ theorem KeyAt.keep {s s' : State} (h : KeyAt s) (k : Keep roundWrites s s') : Ke
 
 /-- A step of the rounds, from any state with words `v`: the words of `step`
 on `v`, with the key schedule in memory. -/
-def RoundStep (c : Prog isa) (step : Spec.Rc2.Schedule → Spec.Rc2.State → Spec.Rc2.State) : Prop :=
+noncomputable def RoundStep (c : Prog isa) (step : Spec.Rc2.Schedule → Spec.Rc2.State → Spec.Rc2.State) : Prop :=
   ∀ (s : State) (v : Spec.Rc2.State), Words s v → KeyAt s →
     WP isa c s (fun s' =>
       Words s' (step (Spec.Rc2.scheduleAt s.mem (State.addr (s.gpr .r0))) v) ∧ Keep roundWrites s s')
@@ -100,7 +100,7 @@ theorem reverseMixRound_ok (j : Nat) (hj : j < 16) :
   apply WP.mono (reverseMix_ok s v hv i (4 * j + i) bound (by omega) key.1 key.2)
   exact fun _ h => ⟨h.1, h.2.round⟩
 
-def mashRoundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
+noncomputable def mashRoundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
     (v : Spec.Rc2.State) : Spec.Rc2.State :=
   match d with
   | .encrypt => Spec.Rc2.mashRound k v
@@ -122,14 +122,14 @@ theorem mashRound_ok (d : Spec.Rc2.Direction) :
   apply WP.mono (mash_ok d s v hv i bound key.1 key.2)
   exact fun _ h => ⟨h.1, h.2.round⟩
 
-def roundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (j : Nat)
+noncomputable def roundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (j : Nat)
     (v : Spec.Rc2.State) : Spec.Rc2.State :=
   let v := match d with
     | .encrypt => Spec.Rc2.mixRound k j v
     | .decrypt => Spec.Rc2.reverseMixRound k (15 - j) v
   if j = 4 ∨ j = 10 then mashRoundSpec d k v else v
 
-def mixSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (j : Nat)
+noncomputable def mixSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (j : Nat)
     (v : Spec.Rc2.State) : Spec.Rc2.State :=
   match d with
   | .encrypt => Spec.Rc2.mixRound k j v
@@ -393,6 +393,6 @@ namespace VG.Proof.Rc2.Arm
 open VG VG.Arm
 
 /-- Each register of `regs`, the `i`th at byte `4 * i`. -/
-def slotsOf (regs : List Reg) : List (Reg × Nat) := regs.zipIdx.map fun (r, i) => (r, 4 * i)
+noncomputable def slotsOf (regs : List Reg) : List (Reg × Nat) := regs.zipIdx.map fun (r, i) => (r, 4 * i)
 
 end VG.Proof.Rc2.Arm

@@ -519,7 +519,7 @@ namespace VG.Proof.Rc2.X86_64
 
 open VG VG.X86_64 VG.Impl.Rc2.X86_64
 
-def coreRegs : List Reg := [.r8, .rsp, .r14]
+noncomputable def coreRegs : List Reg := [.r8, .rsp, .r14]
 
 structure CoreFrame (s₀ s : State) : Prop where
   reg : ∀ r ∈ coreRegs, s.gpr r = s₀.gpr r
@@ -642,7 +642,7 @@ namespace VG.Proof.Rc2.X86_64
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.Rc2.X86_64
 
-def savedReg (i : Nat) : Reg := saved.getD i .rbx
+noncomputable def savedReg (i : Nat) : Reg := saved.getD i .rbx
 
 theorem keySave_eq : save .r8 0 = saveCode .r8 savedReg 6 := by rfl
 
@@ -687,7 +687,7 @@ namespace VG.Proof.Rc2.X86_64
 
 open VG VG.X86_64 VG.Impl.Rc2.X86_64
 
-def keyContract : Contract isa where
+noncomputable def keyContract : Contract isa where
   pre s :=
     let key : Region := ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
     let out : Region := ⟨s.gpr .rcx, 128⟩
@@ -809,7 +809,7 @@ theorem key_body_correct (s : State) (hs : keyContract.pre s) :
     rw [h₅.2.mem]
     exact scheduleAt_expanded expanded
 
-def keySatState : State where
+noncomputable def keySatState : State where
   gpr r := match r with
     | .rdi => 0x1000 | .rsi => 1 | .rdx => 8 | .rcx => 0x2000 | .r8 => 0x3000 | .rsp => 0x4000 | _ => 0
   cf := none

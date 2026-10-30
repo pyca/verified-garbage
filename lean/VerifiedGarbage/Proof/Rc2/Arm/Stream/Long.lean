@@ -56,7 +56,7 @@ structure Mid (s t : State) : Prop where
       (((s.gpr .r1).toNat + (s.gpr .r3).toNat) % 8)
 
 /-- The code before the call, followed by `tail`. -/
-def longWith (tail : Prog isa) : Prog isa :=
+noncomputable def longWith (tail : Prog isa) : Prog isa :=
   .seq (.block toOut) (.seq (copy .r0 136 .lr 0 .r1) (.seq (.block middle) (.seq (copy .r2 0 .lr 0 .r1)
     (.seq (.block toPending) (.seq (copy .r2 0 .lr 136 .r3) (.seq (.block cbcArgs) tail))))))
 

@@ -28,7 +28,7 @@ open VG VG.AArch64 VG.AArch64.RegUpd VG.AArch64.Tbl VG.Impl.Tbl.AArch64 VG.Impl.
   VG.Impl.Rc2.AArch64.Vec VG.Proof.Rc2
 
 /-- The block before block `b` of the group at `q`: the chaining value `X` before the first. -/
-def prevBlock (X : BitVec 64) (m : Mem) (q : Addr) (b : Nat) : Spec.Rc2.Block :=
+noncomputable def prevBlock (X : BitVec 64) (m : Mem) (q : Addr) (b : Nat) : Spec.Rc2.Block :=
   if b = 0 then wordBlock X else Spec.Rc2.blockAt m (q + BitVec.ofNat 64 (8 * (b - 1)))
 
 structure GroupPost (m : Mem) (p : Addr) (t t' : State) : Prop where

@@ -17,7 +17,7 @@ namespace VG.Proof.Rc2.AArch64.Cbc
 
 open VG VG.AArch64 VG.Impl.Rc2.AArch64
 
-abbrev stashR (s : State) : Region := ⟨s.gpr .x2 + BitVec.ofNat 64 256, 8⟩
+noncomputable abbrev stashR (s : State) : Region := ⟨s.gpr .x2 + BitVec.ofNat 64 256, 8⟩
 
 theorem stash_sub (s : State) : Region.Sub (stashR s) (bufR s) :=
   Offset.sub_base _ (by decide)

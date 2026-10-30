@@ -19,7 +19,7 @@ namespace VG.Proof.Rc2.Arm
 
 open VG VG.Arm VG.Impl.Rc2.Arm
 
-def PublicRegs (rs : List Reg) (s₁ s₂ : State) : Prop :=
+noncomputable def PublicRegs (rs : List Reg) (s₁ s₂ : State) : Prop :=
   s₁.sp = s₂.sp ∧ ∀ r ∈ rs, s₁.gpr r = s₂.gpr r
 
 theorem encryptBlock_constantTime (pre : State → Prop) :

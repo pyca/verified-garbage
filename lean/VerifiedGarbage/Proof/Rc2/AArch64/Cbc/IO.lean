@@ -18,10 +18,10 @@ namespace VG.Proof.Rc2.AArch64.Cbc
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Rc2.AArch64
 
 /-- The registers the code saves in `buf`, and where. -/
-abbrev saved : List (Reg × Nat) := [(.x23, 264), (.x24, 272), (.x30, 280)]
+noncomputable abbrev saved : List (Reg × Nat) := [(.x23, 264), (.x24, 272), (.x30, 280)]
 
 /-- The memory after the saves. -/
-abbrev savedMem (s : State) : Mem := Spill.saveMem s.mem (s.gpr .x4) s.gpr saved
+noncomputable abbrev savedMem (s : State) : Mem := Spill.saveMem s.mem (s.gpr .x4) s.gpr saved
 
 theorem save_eq : Impl.Rc2.AArch64.Cbc.save = Spill.saveCode .x4 saved := rfl
 

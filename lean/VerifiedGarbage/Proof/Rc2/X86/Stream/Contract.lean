@@ -245,7 +245,7 @@ namespace VG.Proof.Rc2.X86.Stream
 
 open VG VG.X86
 
-def initContract : Contract isa where
+noncomputable def initContract : Contract isa where
   pre s :=
     let key : Region := ⟨(arg s 0).setWidth 64, (arg s 1).toNat⟩
     let iv : Region := ⟨(arg s 3).setWidth 64, (arg s 4).toNat⟩
@@ -269,7 +269,7 @@ def initContract : Contract isa where
       | .error e => (BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax)).toNat = e.code
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 7, arg s₁ i = arg s₂ i
 
-def updateContract (d : Spec.Rc2.Direction) : Contract isa where
+noncomputable def updateContract (d : Spec.Rc2.Direction) : Contract isa where
   pre s :=
     let ctx : Region := ⟨(arg s 0).setWidth 64, 144⟩
     let data : Region := ⟨(arg s 2).setWidth 64, (arg s 3).toNat⟩

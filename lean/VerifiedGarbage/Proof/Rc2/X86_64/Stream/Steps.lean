@@ -155,7 +155,7 @@ open VG VG.X86_64
 
 /-- `vg_rc2_cbc_init(key = rdi, key_len = rsi, effective_bits = rdx, iv = rcx,
 iv_len = r8, ctx = r9, scratch = [rsp + 8])`, which calls key expansion. -/
-def initContract : Contract isa where
+noncomputable def initContract : Contract isa where
   pre s :=
     let key : Region := ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
     let iv : Region := ⟨s.gpr .rcx, (s.gpr .r8).toNat⟩
@@ -181,7 +181,7 @@ def initContract : Contract isa where
 
 /-- The update functions (`ctx = rdi, pending_len = rsi, data = rdx,
 len = rcx, out = r8, out_len = r9, scratch = [rsp + 8]`), which call CBC. -/
-def updateContract (d : Spec.Rc2.Direction) : Contract isa where
+noncomputable def updateContract (d : Spec.Rc2.Direction) : Contract isa where
   pre s :=
     let ctx : Region := ⟨s.gpr .rdi, 144⟩
     let data : Region := ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
@@ -206,7 +206,7 @@ def updateContract (d : Spec.Rc2.Direction) : Contract isa where
       Spec.Rc2.bytesAt s'.mem (s.gpr .r8) (s.gpr .r9).toNat = result.2
   pub s₁ s₂ := PublicRegs [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp] s₁ s₂ ∧ stackArg s₁ 0 = stackArg s₂ 0
 
-def updateSatState : State where
+noncomputable def updateSatState : State where
   gpr r := match r with
     | .rdi => 0x1000 | .rdx => 0x2000 | .r8 => 0x3000 | .rsp => 0x6000 | _ => 0
   cf := none
@@ -217,7 +217,7 @@ def updateSatState : State where
   rd := [⟨0x2000, 0⟩, ⟨0x6008, 8⟩]
   wr := [⟨0x1000, 144⟩, ⟨0x3000, 0⟩, ⟨0x4000, 576⟩]
 
-def initSatState : State where
+noncomputable def initSatState : State where
   gpr r := match r with
     | .rdi => 0x1000 | .rcx => 0x2000 | .r9 => 0x3000 | .rsp => 0x6000 | _ => 0
   cf := none

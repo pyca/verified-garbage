@@ -11,10 +11,10 @@ namespace VG.Proof.Rc2.RISCV64
 open VG VG.RISCV64 VG.Impl.Rc2.RISCV64
 
 /-- The registers the rounds write. -/
-abbrev roundRegs : List Reg := [.a7, .t3, .a3, .a4, .a5, .a6, .t0, .t1, .t2]
+noncomputable abbrev roundRegs : List Reg := [.a7, .t3, .a3, .a4, .a5, .a6, .t0, .t1, .t2]
 
 /-- `c` maps the words to `g` of them, on memory `m` with the schedule at `T`. -/
-def RunsTo (T : Addr) (m : Mem) (c : Prog isa) (g : Spec.Rc2.State → Spec.Rc2.State) : Prop :=
+noncomputable def RunsTo (T : Addr) (m : Mem) (c : Prog isa) (g : Spec.Rc2.State → Spec.Rc2.State) : Prop :=
   ∀ u, KeyEnv T u → u.mem = m → ∀ v, Holds v u →
     WP isa c u fun t => Holds (g v) t ∧ t.mem = m ∧ Keep roundRegs u t
 
@@ -74,18 +74,18 @@ theorem mash_runsTo {T : Addr} {m : Mem} (d : Spec.Rc2.Direction) {i : Nat} (hi 
     RunsTo T m (mash d i) (mashSpec d (Spec.Rc2.scheduleAt m T) i) := fun u E hm _ H =>
   WP.mono (mash_run u E H d hi) fun _ ⟨a, b, k⟩ => ⟨hm ▸ a, b.trans hm, k.mono (mash_regs i hi)⟩
 
-def mixRoundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (j : Nat) (v : Spec.Rc2.State) :
+noncomputable def mixRoundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (j : Nat) (v : Spec.Rc2.State) :
     Spec.Rc2.State :=
   match d with
   | .encrypt => Spec.Rc2.mixRound k j v
   | .decrypt => Spec.Rc2.reverseMixRound k (15 - j) v
 
-def mashRoundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (v : Spec.Rc2.State) : Spec.Rc2.State :=
+noncomputable def mashRoundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (v : Spec.Rc2.State) : Spec.Rc2.State :=
   match d with
   | .encrypt => Spec.Rc2.mashRound k v
   | .decrypt => Spec.Rc2.reverseMashRound k v
 
-def roundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (j : Nat) (v : Spec.Rc2.State) :
+noncomputable def roundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (j : Nat) (v : Spec.Rc2.State) :
     Spec.Rc2.State :=
   if j = 4 ∨ j = 10 then mashRoundSpec d k (mixRoundSpec d k j v) else mixRoundSpec d k j v
 
@@ -125,7 +125,7 @@ theorem rounds_runsTo {T : Addr} {m : Mem} (d : Spec.Rc2.Direction) :
     RunsTo T m (rounds d) (fun v => (List.range 16).foldl (fun v j => roundSpec d (Spec.Rc2.scheduleAt m T) j v) v) :=
   RunsTo.foldr _ _ _ fun _ hj => round_runsTo d (List.mem_range.1 hj)
 
-def cipher (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (b : Spec.Rc2.Block) : Spec.Rc2.Block :=
+noncomputable def cipher (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (b : Spec.Rc2.Block) : Spec.Rc2.Block :=
   match d with
   | .encrypt => Spec.Rc2.encryptBlock k b
   | .decrypt => Spec.Rc2.decryptBlock k b

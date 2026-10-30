@@ -31,27 +31,27 @@ namespace VG.Proof.Rc2
 open VG.Spec.Rc2
 
 /-- `vg_rc2_cbc_init` with `scratch: *mut [u64; 72]`. -/
-def cbcInitScratchSig : Sig where
+noncomputable def cbcInitScratchSig : Sig where
   params := [("key", .slice false .u8 "key_len"), ("effective_bits", .int .usize true),
     ("iv", .slice false .u8 "iv_len"), ("ctx", .array true .u8 144),
     ("scratch", .array true .u64 72)]
   ret := some .u32
 
 /-- `cbcInitContract`, whatever `scratch` is. -/
-def cbcInitScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+noncomputable def cbcInitScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   cbcInitScratchSig.contract A
     (post := fun key keyLen effectiveBits iv ivLen ctx _scratch =>
       cbcInitPost A.ptrBits key keyLen effectiveBits iv ivLen ctx)
     (writeArgs := true) (stack := stack)
 
 /-- The update functions with `scratch: *mut [u64; 72]`. -/
-def cbcUpdateScratchSig : Sig where
+noncomputable def cbcUpdateScratchSig : Sig where
   params := [("ctx", .array true .u8 144), ("pending_len", .int .usize true),
     ("data", .slice false .u8 "len"), ("out", .slice true .u8 "out_len"),
     ("scratch", .array true .u64 72)]
 
 /-- `cbcUpdateContract`, whatever `scratch` is. -/
-def cbcUpdateScratchContract {M : ISA} (A : Abi M) (direction : Direction) (stack : Nat := 0) :
+noncomputable def cbcUpdateScratchContract {M : ISA} (A : Abi M) (direction : Direction) (stack : Nat := 0) :
     Contract M :=
   cbcUpdateScratchSig.contract A
     (pre := fun ctx pendingLen data len out outLen _scratch =>
@@ -60,10 +60,10 @@ def cbcUpdateScratchContract {M : ISA} (A : Abi M) (direction : Direction) (stac
       cbcUpdatePost direction A.ptrBits ctx pendingLen data len out outLen)
     (writeArgs := true) (stack := stack)
 
-def cbcEncryptUpdateScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+noncomputable def cbcEncryptUpdateScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   cbcUpdateScratchContract A .encrypt stack
 
-def cbcDecryptUpdateScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+noncomputable def cbcDecryptUpdateScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   cbcUpdateScratchContract A .decrypt stack
 
 /-! ## Locality -/

@@ -190,7 +190,7 @@ theorem condShift_run (u : State) {c : Nat} (hc : c < 3) :
   rw [bitMask_eq _ (by omega_arith), select_eq]
 
 /-- The shift the lanes `ls` select for `q`. -/
-def shiftSum (q : BitVec 64) : List Nat → Nat
+noncomputable def shiftSum (q : BitVec 64) : List Nat → Nat
   | [] => 0
   | c :: ls => (if q.getLsbD c then 8 * 2 ^ c else 0) + shiftSum q ls
 

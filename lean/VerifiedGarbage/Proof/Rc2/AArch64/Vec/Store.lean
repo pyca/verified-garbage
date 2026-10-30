@@ -30,7 +30,7 @@ open VG VG.AArch64 VG.AArch64.RegUpd VG.AArch64.Tbl VG.Impl.Tbl.AArch64 VG.Impl.
   VG.Impl.Rc2.AArch64.Vec
 
 /-- Byte `j` of a block with words `r` (`Spec.Rc2.encodeBlock`). -/
-def encByte (r : Spec.Rc2.State) (j : Nat) : BitVec 8 :=
+noncomputable def encByte (r : Spec.Rc2.State) (j : Nat) : BitVec 8 :=
   ((r.getD (j / 2) 0) >>> (8 * (j % 2))).setWidth 8
 
 theorem encodeBlock_getElem (r : Spec.Rc2.State) {j : Nat} (hj : j < 8) :
@@ -75,14 +75,14 @@ theorem scatter_byte {v : VReg → BitVec 128} {h k : Nat} (hh : h < 2) (hk : k 
     show e % 8 % 2 = e % 2 by omega_arith]
 
 /-- The scattering: the blocks into `v0`–`v3`. -/
-def scatterCode : List Instr :=
+noncomputable def scatterCode : List Instr :=
   const128 .v4 (outIndex 0) ++
   [.vop (.tblN false 4 .v0 (wreg 0 0) .v4), .vop (.tblN false 4 .v2 (wreg 1 0) .v4)] ++
   const128 .v4 (outIndex 1) ++
   [.vop (.tblN false 4 .v1 (wreg 0 0) .v4), .vop (.tblN false 4 .v3 (wreg 1 0) .v4)]
 
 /-- The XOR with the ciphertext blocks, and the stores. -/
-def xorCode : List Instr :=
+noncomputable def xorCode : List Instr :=
   [.ldr .x .x9 .x1 0, .vop (.ins .d2 .v4 0 .x11), .vop (.ins .d2 .v4 1 .x9),
    .addImm .x .x12 .x1 8, .ldrq .v5 .x12 0,
    .vop (.logic .eor .v0 .v0 .v4), .vop (.logic .eor .v1 .v1 .v5),
@@ -95,7 +95,7 @@ theorem storeGroup_eq : storeGroup = scatterCode ++ xorCode := by
   simp only [storeGroup, scatterCode, xorCode, List.append_assoc, List.cons_append, List.nil_append]
 
 /-- Byte `e` of `v0`–`v3` after the scattering: byte `16 c + e` of the eight blocks. -/
-def Scattered (v : VReg → BitVec 128) (R : Nat → Spec.Rc2.State) : Prop :=
+noncomputable def Scattered (v : VReg → BitVec 128) (R : Nat → Spec.Rc2.State) : Prop :=
   ∀ e < 16, vbyte (v .v0) e = encByte (R (e / 8)) (e % 8) ∧
     vbyte (v .v1) e = encByte (R (2 + e / 8)) (e % 8) ∧
     vbyte (v .v2) e = encByte (R (4 + e / 8)) (e % 8) ∧
@@ -223,7 +223,7 @@ theorem vbyte_ofVDwords (a b : BitVec 64) {e : Nat} (he : e < 16) :
 
 /-- The ciphertext byte before byte `o` of the group: the chaining value's
 in the first block. -/
-def prevByte (X : BitVec 64) (m : Mem) (q : Addr) (o : Nat) : BitVec 8 :=
+noncomputable def prevByte (X : BitVec 64) (m : Mem) (q : Addr) (o : Nat) : BitVec 8 :=
   if o < 8 then X.extractLsb' (8 * o) 8 else m (q + BitVec.ofNat 64 (o - 8))
 
 theorem xorStore_ok (t : State) {R : Nat → Spec.Rc2.State} (hsc : Scattered t.v R)

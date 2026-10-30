@@ -38,7 +38,7 @@ theorem main_eq (W : Window) (M : Mont) (S : Selector) :
   rfl
 
 /-- The public data of a state. -/
-def exOf (s : State) : ExP :=
+noncomputable def exOf (s : State) : ExP :=
   ⟨stackArg s 1, (stackArg s 2).toNat * 8, (s.gpr .x4).toNat, (s.gpr .x3).toNat, s.gpr .x2, exDom s, s.gpr .x0,
     s.gpr .x5, (s.gpr .x6).toNat, s.gpr .x7, exY s, s.sp⟩
 

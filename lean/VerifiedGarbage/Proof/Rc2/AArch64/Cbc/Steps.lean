@@ -64,7 +64,7 @@ theorem xor64_ok (s : State) (dst iv : Reg) (hd : dst ≠ .x8) (hi : iv ≠ .x8)
   · rfl
   · rfl
 
-def zeroCount (s : State) : Option Bool := some (s.gpr .x24 == 0)
+noncomputable def zeroCount (s : State) : Option Bool := some (s.gpr .x24 == 0)
 
 theorem eval_zeroCount (s : State) : eval (.zero .x .x24) s = zeroCount s := rfl
 

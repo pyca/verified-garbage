@@ -17,7 +17,7 @@ open VG VG.AArch64
 
 /-- `init(key = x0, key_len = x1, effective_bits = x2, iv = x3, iv_len = x4,
 ctx = x5, scratch = x6)`. -/
-def initContract : Contract isa where
+noncomputable def initContract : Contract isa where
   pre s :=
     let key : Region := ⟨s.gpr .x0, (s.gpr .x1).toNat⟩
     let iv : Region := ⟨s.gpr .x3, (s.gpr .x4).toNat⟩
@@ -38,7 +38,7 @@ def initContract : Contract isa where
 
 /-- `update(ctx = x0, pending_len = x1, data = x2, len = x3, out = x4,
 out_len = x5, scratch = x6)` in the direction `d`. -/
-def updateContract (d : Spec.Rc2.Direction) : Contract isa where
+noncomputable def updateContract (d : Spec.Rc2.Direction) : Contract isa where
   pre s :=
     let ctx : Region := ⟨s.gpr .x0, 144⟩
     let data : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩

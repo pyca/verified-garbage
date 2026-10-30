@@ -19,18 +19,18 @@ open VG.Proof.Poly1305.Radix26
 open VG.Spec.Poly1305 (P)
 
 /-- The coefficient of `hi` in `dk`: `r(k-i)` or `5 r(k+5-i)`, for the limbs of `R`. -/
-def cval (R k i : Nat) : Nat := if i ≤ k then lim R (k - i) else 5 * lim R (k + 5 - i)
+noncomputable def cval (R k i : Nat) : Nat := if i ≤ k then lim R (k - i) else 5 * lim R (k + 5 - i)
 
 /-- The coefficients stored in the state at `st`, for the clamped `R`. -/
-def Coefs (m : Mem) (st : Addr) (R : Nat) : Prop :=
+noncomputable def Coefs (m : Mem) (st : Addr) (R : Nat) : Prop :=
   ∀ k < 5, ∀ i < 5, (m.readW (st + BitVec.ofNat 64 (coef k i)) 32).toNat = cval R k i
 
 /-- The coefficient words may be read. -/
-def CoefIn (s : State) : Prop :=
+noncomputable def CoefIn (s : State) : Prop :=
   ∀ off, 72 ≤ off → off + 4 ≤ 108 → InRegions (s.rd ++ s.wr) (s.gpr .r3 + BitVec.ofNat 64 off) 4
 
 /-- `dk`, from the limbs of `h` in `s`. -/
-def dform (s : State) (R k : Nat) : Nat :=
+noncomputable def dform (s : State) (R k : Nat) : Nat :=
   v s .r7 * cval R k 0 + ((List.range 4).map fun i => v s (H.getD (i + 1) .r7) * cval R k (i + 1)).sum
 
 theorem dreg_facts : ∀ k < 5, ∀ j < 5, j ≠ k → D.getD j .r12 ≠ D.getD k .r12 ∧ D.getD j .r12 ≠ .r18 := by
@@ -115,18 +115,18 @@ theorem padOpt_ok (s : State) (pad : Bool) :
     exact WP.mono (padBit_ok s) fun s' ⟨e, k⟩ => ⟨by rw [e]; rfl, k⟩
 
 /-- The limbs of `h` between blocks. -/
-def Bounds (s : State) : Prop :=
+noncomputable def Bounds (s : State) : Prop :=
   v s .r7 < 2 ^ 26 ∧ v s .r8 < 2 ^ 27 ∧ v s .r9 < 2 ^ 26 ∧ v s .r10 < 2 ^ 26 ∧ v s .r11 < 2 ^ 26
 
 /-- `h`, from its limbs. -/
-abbrev hv (s : State) : Nat := val5 (v s .r7) (v s .r8) (v s .r9) (v s .r10) (v s .r11)
+noncomputable abbrev hv (s : State) : Nat := val5 (v s .r7) (v s .r8) (v s .r9) (v s .r10) (v s .r11)
 
 /-- The registers `absorb` writes. -/
-abbrev absorbRegs : List Reg :=
+noncomputable abbrev absorbRegs : List Reg :=
   [.r7, .r8, .r9, .r10, .r11, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r0]
 
 /-- The 64-bit word at `p + d`, as a number. -/
-abbrev w64 (m : Mem) (p : Addr) (d : Nat) : Nat := (m.readW (p + BitVec.ofNat 64 d) 64).toNat
+noncomputable abbrev w64 (m : Mem) (p : Addr) (d : Nat) : Nat := (m.readW (p + BitVec.ofNat 64 d) 64).toNat
 
 theorem absorb_eq (pad : Bool) : absorb pad = load2 .r4 0 ++ (split ++ (addLimbs ++
     ((if pad then padBit else []) ++ (products ++ carry)))) := by

@@ -29,7 +29,7 @@ open VG VG.X86 VG.X86.Lanes VG.X86.RegUpd VG.Impl.Rc2.X86
 /-! ## The values -/
 
 /-- Dword `j` of the schedule at `p`. -/
-def sdword (m : Mem) (p : BitVec 32) (j : Nat) : BitVec 32 :=
+noncomputable def sdword (m : Mem) (p : BitVec 32) (j : Nat) : BitVec 32 :=
   m.readW (p.setWidth 64 + BitVec.ofNat 64 (4 * j)) 32
 
 /-- The state of the lookup with chunks `0 … c - 1` visited, from `s₀`, for

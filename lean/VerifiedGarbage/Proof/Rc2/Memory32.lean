@@ -12,7 +12,7 @@ namespace VG.Proof.Rc2.Word32
 
 open VG VG.WriteBytes
 
-def outputBytes (v : Spec.Rc2.State) (n : Nat) : List Byte :=
+noncomputable def outputBytes (v : Spec.Rc2.State) (n : Nat) : List Byte :=
   (List.range (2 * n)).map fun i => (Spec.Rc2.encodeBlock v).getD i 0
 
 theorem outputBytes_length (v : Spec.Rc2.State) (n : Nat) : (outputBytes v n).length = 2 * n := by

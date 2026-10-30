@@ -22,19 +22,23 @@ namespace VG.Rc2
 
 /-- The rows that `Spec.Rc2.piTable` flattens (the value of its `let`), found
 by unification, with the proof that it flattens them. -/
+-- computable: evaluated by `materialize_*`
 def piRowsEq : { r : Vector (Vector Byte 16) 16 // Spec.Rc2.piTable = r.flatten } := ⟨_, rfl⟩
 
 /-- The rows of `Spec.Rc2.piTable`. -/
+-- computable: evaluated by `materialize_*`
 def piRows : Vector (Vector Byte 16) 16 := piRowsEq.1
 
 theorem piTable_eq : Spec.Rc2.piTable = piRows.flatten := piRowsEq.2
 
 /-- Entry `j` of row `i` of PITABLE, as a number. -/
+-- computable: evaluated by `materialize_*`
 def piRowNat (i j : Nat) : Nat := ((piRows.toArray.getD i default).toArray.getD j 0).toNat
 
 materialize_table piRowNat 16 16
 
 /-- PITABLE's entry `i`, as a number. -/
+-- computable: evaluated by `materialize_*`
 def piNat (i : Nat) : Nat := if i < 256 then piRowNat (i / 16) (i % 16) else 0
 
 theorem piTable_getD (i : Nat) : Spec.Rc2.piTable.getD i 0 = BitVec.ofNat 8 (piNat i) := by

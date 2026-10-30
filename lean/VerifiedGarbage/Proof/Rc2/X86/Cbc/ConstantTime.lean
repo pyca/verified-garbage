@@ -31,9 +31,9 @@ namespace VG.Proof.Rc2.X86.Cbc
 
 open VG VG.X86 VG.Impl.Rc2.X86
 
-def EqKept (s₁ s₂ : State) : Prop := ∀ r ∈ kept, s₁.gpr r = s₂.gpr r
+noncomputable def EqKept (s₁ s₂ : State) : Prop := ∀ r ∈ kept, s₁.gpr r = s₂.gpr r
 
-def StepRel (s₁ s₂ : State) : Prop := StepPre s₁ ∧ StepPre s₂ ∧ EqKept s₁ s₂
+noncomputable def StepRel (s₁ s₂ : State) : Prop := StepPre s₁ ∧ StepPre s₂ ∧ EqKept s₁ s₂
 
 theorem agreeKept {s₁ s₂ : State} (h : EqKept s₁ s₂) :
     VG.X86.Taint.Agree (τr kept) s₁ s₂ := agree_regs h
@@ -68,9 +68,9 @@ theorem before_ct (d : Spec.Rc2.Direction) :
   cases d <;> apply RelCT.taint (A := taint) (τr kept) (fun _ _ h => agreeKept h.2.2)
   all_goals taint_decide
 
-def callRd (s : State) : List Region :=
+noncomputable def callRd (s : State) : List Region :=
   [⟨addr32 (s.gpr .ebx), 128⟩, ⟨argAddr (pushed [.ebp, .esi, .ebx] s).callEntry 0, 12⟩]
-def callWr (s : State) : List Region := [⟨addr32 (s.gpr .esi), 8⟩, ⟨addr32 (s.gpr .ebp), 256⟩]
+noncomputable def callWr (s : State) : List Region := [⟨addr32 (s.gpr .esi), 8⟩, ⟨addr32 (s.gpr .ebp), 256⟩]
 
 theorem callPre_ok (d : Spec.Rc2.Direction) (s : State) (hp : CallPre s) :
     VG.X86.CallPre (blockContract d) [.ebp, .esi, .ebx] (callRd s) (callWr s) s := by
@@ -181,7 +181,7 @@ namespace VG.Proof.Rc2.X86.Cbc
 
 open VG VG.X86 VG.Impl.Rc2.X86
 
-def LoopRel (n : Nat) (s₁ s₂ : State) : Prop :=
+noncomputable def LoopRel (n : Nat) (s₁ s₂ : State) : Prop :=
   StepPre s₁ n ∧ StepPre s₂ n ∧ EqKept s₁ s₂ ∧
     s₁.gpr .edi = BitVec.ofNat 32 n ∧ s₂.gpr .edi = BitVec.ofNat 32 n ∧ 1 ≤ n
 
@@ -227,7 +227,7 @@ theorem loop_ct (d : Spec.Rc2.Direction) (n : Nat) :
   intro m
   exact (bodyRel d m).mono (fun _ _ h => h) (fun _ _ h => ⟨h.2.1, fun _ => h.1, h.2.2⟩)
 
-def MaybeRel (s₁ s₂ : State) : Prop :=
+noncomputable def MaybeRel (s₁ s₂ : State) : Prop :=
   ∃ n, StepPre s₁ n ∧ StepPre s₂ n ∧ EqKept s₁ s₂ ∧
     s₁.gpr .edi = BitVec.ofNat 32 n ∧ s₂.gpr .edi = BitVec.ofNat 32 n ∧
     zeroCount s₁ = some (decide (n = 0)) ∧ zeroCount s₂ = some (decide (n = 0))
@@ -257,6 +257,7 @@ end
 namespace VG.Proof.Rc2.X86.Cbc
 open VG VG.X86 VG.Impl.Rc2.X86
 
+-- computable: read by `taint_decide`
 def startCode : Prog isa := .seq (.block [.mov .eax (.mem (memOp .esp 20))])
   (.block (Impl.Rc2.X86.Cbc.save ++ Impl.Rc2.X86.Cbc.setup))
 
@@ -336,9 +337,10 @@ theorem start_ok (d : Spec.Rc2.Direction) (s : State) (hs : (contract d).pre s) 
     · simpa only [stackR, bufR, sp₂, buf₂] using stackBuf
   exact ⟨hp₂, key₂, iv₂, data₂, buf₂, count₂, flag₂, sp₂⟩
 
-def InitialRel (d : Spec.Rc2.Direction) (s₁ s₂ : State) : Prop :=
+noncomputable def InitialRel (d : Spec.Rc2.Direction) (s₁ s₂ : State) : Prop :=
   (contract d).pre s₁ ∧ (contract d).pre s₂ ∧ (contract d).pub s₁ s₂
 
+-- computable: read by `taint_decide`
 def startTaint : VG.X86.Taint.T := { regs := .ofList [.esp], flags := false, argLen := 24 }
 
 theorem startTaint_wf {d : Spec.Rc2.Direction} {s : State} (h : (contract d).pre s) : VG.X86.Taint.Wf startTaint s := by

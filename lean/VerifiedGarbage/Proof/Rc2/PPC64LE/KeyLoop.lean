@@ -24,7 +24,7 @@ namespace VG.Proof.Rc2.PPC64LE
 open VG VG.PPC64LE VG.Impl.Rc2.PPC64LE
 
 /-- Our caller's registers kept in the working space. -/
-def keySaved : List (Reg × Nat) := [(.r14, 256), (.r15, 264)]
+noncomputable def keySaved : List (Reg × Nat) := [(.r14, 256), (.r15, 264)]
 
 /-- What the loops keep. -/
 structure KEnv (K S W : Addr) (len bits : Nat) (key : List Byte) (g : Reg → BitVec 64) (s : State) : Prop where

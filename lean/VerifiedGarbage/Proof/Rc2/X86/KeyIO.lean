@@ -518,7 +518,7 @@ namespace VG.Proof.Rc2.X86
 
 open VG VG.X86 VG.Impl.Rc2.X86
 
-def coreRegs : List Reg := [.esp, .edi]
+noncomputable def coreRegs : List Reg := [.esp, .edi]
 
 structure CoreFrame (s₀ s : State) : Prop where
   reg : ∀ r ∈ coreRegs, s.gpr r = s₀.gpr r
@@ -649,7 +649,7 @@ namespace VG.Proof.Rc2.X86
 
 open VG VG.X86 VG.X86.RegUpd VG.Impl.Rc2.X86
 
-def savedReg (i : Nat) : Reg := saved.getD i .eax
+noncomputable def savedReg (i : Nat) : Reg := saved.getD i .eax
 
 theorem keySave_eq : save = saveCode .eax savedReg 4 := rfl
 

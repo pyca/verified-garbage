@@ -21,7 +21,7 @@ public import VerifiedGarbage.TCB.Arm.Isa
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm
 
-private def keySat : State where
+private noncomputable def keySat : State where
   gpr r := match r with | .r0 => 0x1000 | .r1 => 64 | .r2 => 0x1100 | .r3 => 64 | _ => 0
   sp := 0x8000
   n := false

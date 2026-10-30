@@ -41,10 +41,10 @@ theorem PiTab.keep {T : BitVec 32} {rs : List Reg} {s s' : State} (h : PiTab T s
     PiTab T s' := ⟨h.fit, by rw [k.rd]; exact h.rd, by rw [k.mem]; exact h.held⟩
 
 /-- The registers a lookup writes. -/
-def piRegs : List Reg := [.r12, .r3, .r9, .r10, .r11, .lr]
+noncomputable def piRegs : List Reg := [.r12, .r3, .r9, .r10, .r11, .lr]
 
 /-- The registers the loop of a lookup writes. -/
-def piLoopRegs : List Reg := [.r3, .r9, .r10, .r11, .lr]
+noncomputable def piLoopRegs : List Reg := [.r3, .r9, .r10, .r11, .lr]
 
 theorem and_zero32 (v : BitVec 32) : v &&& 0 = 0 := BitVec.eq_of_getLsbD_eq (by simp)
 
@@ -137,10 +137,10 @@ theorem piBody_ok (s : State) (x : Byte) {j : Nat} (hj : j < 64)
     · rfl
 
 /-- Word `q` of the table at `T` in the memory `m`: entries `4 q … 4 q + 3`. -/
-def tw (m : Mem) (T : BitVec 32) (q : Nat) : BitVec 32 := m.readW (State.addr T + BitVec.ofNat 64 (4 * q)) 32
+noncomputable def tw (m : Mem) (T : BitVec 32) (q : Nat) : BitVec 32 := m.readW (State.addr T + BitVec.ofNat 64 (4 * q)) 32
 
 /-- The value of the scan once words `0 … j - 1` are visited. -/
-def wAcc (m : Mem) (T : BitVec 32) (x : Byte) (j : Nat) : BitVec 32 :=
+noncomputable def wAcc (m : Mem) (T : BitVec 32) (x : Byte) (j : Nat) : BitVec 32 :=
   if x.toNat / 4 < j then tw m T (x.toNat / 4) else 0
 
 theorem wAcc_succ (m : Mem) (T : BitVec 32) (x : Byte) {j : Nat} :

@@ -57,16 +57,16 @@ namespace VG.Proof.Rc2.X86
 
 open VG VG.X86 VG.X86.RegUpd VG.Impl.Rc2.X86 VG.Proof.Rc2.Word32
 
-def addr32 (x : BitVec 32) : Addr := x.setWidth 64
+noncomputable def addr32 (x : BitVec 32) : Addr := x.setWidth 64
 
 theorem addr_add {x : BitVec 32} {k : Nat} (h : x.toNat + k < 2 ^ 32) :
     addr32 (x + BitVec.ofNat 32 k) = addr32 x + BitVec.ofNat 64 k :=
   VG.X86.addr_eq h
 
-def keyTemps : List Reg := [.eax, .ecx, .ebx, .edx]
+noncomputable def keyTemps : List Reg := [.eax, .ecx, .ebx, .edx]
 
 /-- The public zero flag controls the key-expansion loops. -/
-def zeroFlag (s : State) : Option Bool := s.zf
+noncomputable def zeroFlag (s : State) : Option Bool := s.zf
 
 theorem eval_zero (s : State) : eval .e s = zeroFlag s := rfl
 

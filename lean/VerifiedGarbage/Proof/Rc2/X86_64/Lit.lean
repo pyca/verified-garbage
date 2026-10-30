@@ -26,13 +26,16 @@ namespace VG.Impl.Rc2.X86_64.Sse2
 open VG.X86_64 VG.Impl.Rc2.X86_64
 
 /-- `piValues`, reading PITABLE from its packed table (`Rc2.piTable_getD`). -/
+-- computable: evaluated by `materialize_*`
 def piValuesLit (n : Nat) : BitVec 128 :=
   ofWords fun j => (BitVec.ofNat 8 (VG.Rc2.piNat (8 * n + j))).setWidth 16
 
 /-- `piStep`, reading PITABLE from its packed table. -/
+-- computable: evaluated by `materialize_*`
 def piStepLit (n : Nat) : List Instr := loadConst .xmm4 (piValuesLit n) ++ select
 
 /-- `piLookup`, reading PITABLE from its packed table. -/
+-- computable: evaluated by `materialize_*`
 def piLookupLit : List Instr :=
   start 255 ++ (List.range 32).flatMap piStepLit ++ finish
 

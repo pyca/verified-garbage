@@ -15,26 +15,26 @@ namespace VG.Proof.Rc2
 
 open VG
 
-abbrev KeyBytes := Vector Byte 128
+noncomputable abbrev KeyBytes := Vector Byte 128
 
-def fillStep (t j : Nat) (l : KeyBytes) : KeyBytes :=
+noncomputable def fillStep (t j : Nat) (l : KeyBytes) : KeyBytes :=
   let i := t + j
   l.set! i (Spec.Rc2.pi (l.getD (i - 1) 0 + l.getD (i - t) 0))
 
-def fill (key : List Byte) (n : Nat) : KeyBytes :=
+noncomputable def fill (key : List Byte) (n : Nat) : KeyBytes :=
   (List.range n).foldl (fun l j => fillStep key.length j l)
     (Vector.ofFn fun i => key.getD i 0)
 
-def descendStep (t8 j : Nat) (l : KeyBytes) : KeyBytes :=
+noncomputable def descendStep (t8 j : Nat) (l : KeyBytes) : KeyBytes :=
   let i := 127 - t8 - j
   l.set! i (Spec.Rc2.pi (l.getD (i + 1) 0 ^^^ l.getD (i + t8) 0))
 
-def reduce (l : KeyBytes) (bits : Nat) : KeyBytes :=
+noncomputable def reduce (l : KeyBytes) (bits : Nat) : KeyBytes :=
   let t8 := (bits + 7) / 8
   let tm := BitVec.ofNat 8 (255 % 2 ^ (8 + bits - 8 * t8))
   l.set! (128 - t8) (Spec.Rc2.pi (l.getD (128 - t8) 0 &&& tm))
 
-def descend (l : KeyBytes) (t8 n : Nat) : KeyBytes :=
+noncomputable def descend (l : KeyBytes) (t8 n : Nat) : KeyBytes :=
   (List.range n).foldl (fun l j => descendStep t8 j l) l
 
 theorem fill_succ (key : List Byte) (n : Nat) :
@@ -54,7 +54,7 @@ theorem expandBytes_eq (key : List Byte) (bits : Nat) :
 
 /-- Only the prefix below `n` has been initialized during copying and
 forward expansion; the remaining bytes are unconstrained. -/
-def BytesPrefix (m : Mem) (p : Addr) (l : KeyBytes) (n : Nat) : Prop :=
+noncomputable def BytesPrefix (m : Mem) (p : Addr) (l : KeyBytes) (n : Nat) : Prop :=
   ∀ i < n, m (p + BitVec.ofNat 64 i) = l.getD i 0
 
 theorem getD_set (l : KeyBytes) (i j : Nat) (hj : j < 128) (b : Byte) :

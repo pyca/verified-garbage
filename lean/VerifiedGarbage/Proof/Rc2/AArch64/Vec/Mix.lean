@@ -24,7 +24,7 @@ namespace VG.Proof.Rc2.AArch64.Vec
 open VG VG.AArch64 VG.AArch64.RegUpd VG.AArch64.Tbl VG.Impl.Tbl.AArch64 VG.Impl.Rc2.AArch64.Vec
 
 /-- `0xffff` in every lane. -/
-def mask16 : BitVec 128 := ofVWords 65535 65535 65535 65535
+noncomputable def mask16 : BitVec 128 := ofVWords 65535 65535 65535 65535
 
 theorem vword_mask16 {b : Nat} (hb : b < 4) : vword mask16 b = 65535 := by
   rw [mask16, vword_ofVWords _ _ _ _ hb]
@@ -32,7 +32,7 @@ theorem vword_mask16 {b : Nat} (hb : b < 4) : vword mask16 b = 65535 := by
 
 /-- A reverse mix, on registers given as variables: the word `w`, the words
 before it `a3`, `a2`, `a1`, the temporaries `t`, `u`, `v`. -/
-def rmixCode (w a1 a2 a3 t u v : VReg) (s : Nat) : List Instr :=
+noncomputable def rmixCode (w a1 a2 a3 t u v : VReg) (s : Nat) : List Instr :=
   [.vop (.logic .and w w m16),
    .vop (.shift .ushr .s4 t w s),
    .vop (.shift .sli .s4 t w (16 - s)),

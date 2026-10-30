@@ -22,6 +22,7 @@ namespace VG.Impl.Rc2.X86
 open VG.X86
 
 /-- `piWord`, reading PITABLE from its packed table (`Rc2.piTable_getD`). -/
+-- computable: evaluated by `materialize_*`
 def piWordLit (j : Nat) : BitVec 32 :=
   (BitVec.ofNat 8 (VG.Rc2.piNat (4 * j))).setWidth 32 |||
     (BitVec.ofNat 8 (VG.Rc2.piNat (4 * j + 1))).setWidth 32 <<< 8 |||
@@ -29,6 +30,7 @@ def piWordLit (j : Nat) : BitVec 32 :=
     (BitVec.ofNat 8 (VG.Rc2.piNat (4 * j + 3))).setWidth 32 <<< 24
 
 /-- `piLookup`, reading PITABLE from its packed table. -/
+-- computable: evaluated by `materialize_*`
 def piLookupLit : List Instr := piLookupWith piWordLit
 
 materialize_value piLookupLit

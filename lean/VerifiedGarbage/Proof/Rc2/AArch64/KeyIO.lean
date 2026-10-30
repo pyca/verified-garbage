@@ -17,7 +17,7 @@ namespace VG.Proof.Rc2.AArch64
 
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Rc2.AArch64
 
-def savedReg (i : Nat) : Reg := saved.getD i .x23
+noncomputable def savedReg (i : Nat) : Reg := saved.getD i .x23
 
 theorem keySave_eq : save .x4 0 = Spill.saveCode .x4 (Spill.slots savedReg 6) := by rfl
 

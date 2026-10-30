@@ -35,7 +35,7 @@ namespace VG.Proof.Rc2.Arm.Cbc
 
 open VG VG.Arm
 
-def loopWrites (s : State) (n : Nat) : List Region := [ivR s, dataR s n, ⟨State.addr (s.gpr .r2), 264⟩]
+noncomputable def loopWrites (s : State) (n : Nat) : List Region := [ivR s, dataR s n, ⟨State.addr (s.gpr .r2), 264⟩]
 
 theorem loopFrame_slice {s s' : State} {n m i : Nat} {a b : Mem}
     (h : Frame (loopWrites s' m) a b) (bound : i + m ≤ n)
@@ -223,9 +223,9 @@ namespace VG.Proof.Rc2.Arm.Cbc
 
 open VG VG.Arm VG.Arm.RegUpd VG.Impl.Rc2.Arm
 
-def callerSaved : List Reg := [.r4, .r5, .r6, .r7, .lr]
+noncomputable def callerSaved : List Reg := [.r4, .r5, .r6, .r7, .lr]
 
-def savedMem (s : State) : Mem :=
+noncomputable def savedMem (s : State) : Mem :=
   (((((s.mem.writeW (State.addr (s.gpr .r12) + BitVec.ofNat 64 264) (s.gpr .r4)).writeW (State.addr (s.gpr .r12) + BitVec.ofNat 64 268) (s.gpr .r5)).writeW (State.addr (s.gpr .r12) + BitVec.ofNat 64 272) (s.gpr .r6)).writeW (State.addr (s.gpr .r12) + BitVec.ofNat 64 276) (s.gpr .r7)).writeW (State.addr (s.gpr .r12) + BitVec.ofNat 64 280) (s.gpr .lr))
 
 theorem save_ok (s : State)
@@ -342,7 +342,7 @@ namespace VG.Proof.Rc2.Arm.Cbc
 
 open VG VG.Arm VG.Impl.Rc2.Arm
 
-def LoopRel (n : Nat) (s₁ s₂ : State) : Prop :=
+noncomputable def LoopRel (n : Nat) (s₁ s₂ : State) : Prop :=
   StepPre s₁ n ∧ StepPre s₂ n ∧ EqKept s₁ s₂ ∧
     s₁.gpr .r5 = BitVec.ofNat 32 n ∧ s₂.gpr .r5 = BitVec.ofNat 32 n ∧ 1 ≤ n
 
@@ -388,7 +388,7 @@ theorem loop_ct (d : Spec.Rc2.Direction) (n : Nat) :
   intro m
   exact (bodyRel d m).mono (fun _ _ h => h) (fun _ _ h => ⟨h.2.1, fun _ => h.1, h.2.2⟩)
 
-def MaybeRel (s₁ s₂ : State) : Prop :=
+noncomputable def MaybeRel (s₁ s₂ : State) : Prop :=
   ∃ n, StepPre s₁ n ∧ StepPre s₂ n ∧ EqKept s₁ s₂ ∧
     s₁.gpr .r5 = BitVec.ofNat 32 n ∧ s₂.gpr .r5 = BitVec.ofNat 32 n ∧
     zeroCount s₁ = some (decide (n = 0)) ∧ zeroCount s₂ = some (decide (n = 0))
@@ -423,7 +423,7 @@ namespace VG.Proof.Rc2.Arm.Cbc
 
 open VG VG.Arm
 
-def contract (d : Spec.Rc2.Direction) : Contract isa where
+noncomputable def contract (d : Spec.Rc2.Direction) : Contract isa where
   pre s :=
     let key : Region := ⟨State.addr (s.gpr .r0), 128⟩
     let iv : Region := ⟨State.addr (s.gpr .r1), 8⟩
@@ -453,6 +453,7 @@ namespace VG.Proof.Rc2.Arm.Cbc
 
 open VG VG.Arm VG.Impl.Rc2.Arm
 
+-- computable: read by `taint_decide`
 def startCode : Prog isa := .seq (.block [.ldrSp .r12 0])
   (.block (Impl.Rc2.Arm.Cbc.save ++ Impl.Rc2.Arm.Cbc.setup))
 
@@ -517,10 +518,10 @@ theorem start_ok (d : Spec.Rc2.Direction) (s : State) (hs : (contract d).pre s) 
     · simpa only [dataR, bufR, data₂, buf₂] using dataBuf
   exact ⟨hp₂, key₂, iv₂, data₂, buf₂, count₂, flag₂⟩
 
-def InitialRel (d : Spec.Rc2.Direction) (s₁ s₂ : State) : Prop :=
+noncomputable def InitialRel (d : Spec.Rc2.Direction) (s₁ s₂ : State) : Prop :=
   (contract d).pre s₁ ∧ (contract d).pre s₂ ∧ (contract d).pub s₁ s₂
 
-def EqArgs (s₁ s₂ : State) : Prop := ∀ r ∈ ([.r0, .r1, .r2, .r3, .r12] : List Reg), s₁.gpr r = s₂.gpr r
+noncomputable def EqArgs (s₁ s₂ : State) : Prop := ∀ r ∈ ([.r0, .r1, .r2, .r3, .r12] : List Reg), s₁.gpr r = s₂.gpr r
 
 theorem load_trace {s s' : State} {t : List Leak} (h : Exec isa (.block [.ldrSp .r12 0]) s t s') :
     t = [.addr (State.addr s.sp)] := by
@@ -742,7 +743,7 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
     · rw [keep₄.mem]; exact out
     · rw [keep₄.mem]; exact iv
 
-def satState : State where
+noncomputable def satState : State where
   gpr r := match r with
     | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x3000 | _ => 0
   sp := 0x6000

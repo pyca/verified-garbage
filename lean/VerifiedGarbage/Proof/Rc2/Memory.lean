@@ -56,7 +56,7 @@ theorem decode_read64 (m : Mem) (p : Addr) (i : Nat) (hi : i < 4) :
   exact extractWord _ i
 
 /-- Concatenation of RC2's four little-endian words. -/
-def pack (v : Spec.Rc2.State) : BitVec 64 :=
+noncomputable def pack (v : Spec.Rc2.State) : BitVec 64 :=
   ((v.getD 3 0 ++ v.getD 2 0) ++ v.getD 1 0) ++ v.getD 0 0
 
 theorem pack_word (v : Spec.Rc2.State) (i : Nat) (hi : i < 4) :

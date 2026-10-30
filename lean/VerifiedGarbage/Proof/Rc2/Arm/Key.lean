@@ -46,7 +46,7 @@ namespace VG.Proof.Rc2.Arm
 open VG VG.Arm VG.Impl.Rc2.Arm
 open VG.Impl.Rc2 (piSym piQuads piConsts)
 
-def keyContract : Contract isa where
+noncomputable def keyContract : Contract isa where
   pre s :=
     let key : Region := ⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩
     let out : Region := ⟨State.addr (s.gpr .r3), 128⟩
@@ -212,7 +212,7 @@ theorem key_body_correct (s : State) (hs : keyContract.pre (stripConsts piConsts
     rw [h₆.2.2.1, keep₅.mem]
     exact scheduleAt_expanded expanded
 
-def keySatState : State where
+noncomputable def keySatState : State where
   gpr r := match r with
     | .r0 => 0x1000 | .r1 => 1 | .r2 => 8 | .r3 => 0x2000 | _ => 0
   sp := 0x4000
@@ -225,7 +225,7 @@ def keySatState : State where
   wr := [⟨0x2000, 128⟩, ⟨0x3000, 512⟩]
 
 /-- Key expansion's contract with the table, as the proof states it. -/
-def keyContractC : Contract isa where
+noncomputable def keyContractC : Contract isa where
   pre s := keyContract.pre (stripConsts piConsts s) ∧ ConstsOk piConsts 0 s
   post := keyContract.post
   pub s₁ s₂ := keyContract.pub s₁ s₂ ∧ s₁.syms piSym = s₂.syms piSym
@@ -235,6 +235,7 @@ theorem key_correct (s : State) (hs : keyContractC.pre s) :
   obtain ⟨t, s', he, ha, hp⟩ := key_body_correct s hs.1 hs.2
   exact ⟨t, s', he, ⟨ha, VG.Arm.Exec.sp he⟩, hp⟩
 
+-- computable: read by `taint_decide`
 def keyTaint : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2, .r3], flags := false, argLen := 4 }
 
 theorem keyTaint_wf {s : State} (h : keyContract.pre (stripConsts piConsts s)) : VG.Arm.Taint.Wf keyTaint s := by
@@ -279,7 +280,7 @@ theorem key_implies : keyContract.Implies (Spec.Rc2.expandKeyContract abi) := by
 /-- The memory of the witness with the table: the table at `0x100000`, zero
 elsewhere (irreducible: unfolding it in a definitional check would evaluate
 the table). -/
-@[irreducible] def keySatMem : Mem := constMem 0x100000 piQuads
+@[irreducible] noncomputable def keySatMem : Mem := constMem 0x100000 piQuads
 
 theorem keySatMem_held : ∀ i < piQuads.length,
     keySatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = piQuads.getD i 0 := by
@@ -298,7 +299,7 @@ theorem keySatMem_readW (a : Addr) (ha : ∀ i < 4, ¬ (a + BitVec.ofNat 64 i - 
   decide
 
 /-- A state satisfying the precondition with the table: the working space at 0. -/
-def keySatC : State :=
+noncomputable def keySatC : State :=
   { keySatState with
     mem := keySatMem, rd := [⟨0x1000, 1⟩, ⟨0x4000, 4⟩, ⟨0x100000, 256⟩], wr := [⟨0x2000, 128⟩, ⟨0, 512⟩],
     syms := fun _ => 0x100000 }

@@ -23,7 +23,7 @@ open VG VG.X86_64 VG.Impl.Rc2.X86_64
 
 /-- Only argument pointers and explicitly public integer parameters agree;
 all memory contents, including the key, schedule, and data, may differ. -/
-def PublicRegs (rs : List Reg) (s₁ s₂ : State) : Prop :=
+noncomputable def PublicRegs (rs : List Reg) (s₁ s₂ : State) : Prop :=
   ∀ r ∈ rs, s₁.gpr r = s₂.gpr r
 
 theorem encryptBlock_constantTime (pre : State → Prop) :

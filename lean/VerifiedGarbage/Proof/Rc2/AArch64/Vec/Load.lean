@@ -78,7 +78,7 @@ theorem wreg_inj {h i h' i' : Nat} (hh : h < 2) (hi : i < 4) (hh' : h' < 2) (hi'
   omega_arith
 
 /-- The words the gathers of `is` leave: block `b` of the eight at `q`. -/
-def Gathered (t : State) (m : Mem) (q : Addr) (i : Nat) : Prop :=
+noncomputable def Gathered (t : State) (m : Mem) (q : Addr) (i : Nat) : Prop :=
   ∀ h < 2, ∀ b < 4, lw (t.v (wreg h i)) b =
     (Spec.Rc2.decodeBlock (Spec.Rc2.blockAt m (q + BitVec.ofNat 64 (8 * (4 * h + b))))).getD i 0
 

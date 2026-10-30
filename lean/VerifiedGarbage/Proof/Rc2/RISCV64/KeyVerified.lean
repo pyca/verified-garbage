@@ -31,7 +31,7 @@ namespace VG.Proof.Rc2.RISCV64
 open VG VG.RISCV64 VG.Impl.Rc2.RISCV64
 
 /-- The key expansion contract as the code sees it. -/
-def keyC : Contract isa where
+noncomputable def keyC : Contract isa where
   pre s :=
     let key : Region := ⟨s.gpr .a0, (s.gpr .a1).toNat⟩
     let sch : Region := ⟨s.gpr .a3, 128⟩
@@ -44,7 +44,7 @@ def keyC : Contract isa where
     s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.gpr .a4 = s₂.gpr .a4 ∧ s₁.sp = s₂.sp
 
 /-- The registers key expansion writes: no preserved register, nor `ra`. -/
-def keyWrites : List Reg := [.a5, .a6, .a7, .t0, .t1, .t2, .t3, .t4]
+noncomputable def keyWrites : List Reg := [.a5, .a6, .a7, .t0, .t1, .t2, .t3, .t4]
 
 theorem expandKey_ok (hw : writesOnly keyWrites expandKey = true) (hn : callFree expandKey = true)
     (s : State) (hs : keyC.pre s) :
@@ -68,7 +68,7 @@ theorem key_agree : ∀ s₁ s₂, keyC.pre s₁ → keyC.pre s₂ → keyC.pub 
 theorem expandKey_ct : ConstantTime isa keyC.pre keyC.pub expandKey :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4]) key_agree (by taint_decide)
 
-def keySat : State where
+noncomputable def keySat : State where
   gpr r := match r with
     | .a0 => 0x1000 | .a1 => 16 | .a2 => 128 | .a3 => 0x2000 | .a4 => 0x4000 | _ => 0
   sp := 0x8000

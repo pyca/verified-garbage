@@ -26,12 +26,12 @@ theorem blockRestore_eq : blockRestore = (slotsOf blockSaved).map (fun p => Inst
 
 theorem blockSlots_ok : Spill.Slots 0 36 (slotsOf blockSaved) := by decide
 
-def cipher (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (b : Spec.Rc2.Block) : Spec.Rc2.Block :=
+noncomputable def cipher (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (b : Spec.Rc2.Block) : Spec.Rc2.Block :=
   match d with
   | .encrypt => Spec.Rc2.encryptBlock k b
   | .decrypt => Spec.Rc2.decryptBlock k b
 
-def blockContract (d : Spec.Rc2.Direction) : Contract isa where
+noncomputable def blockContract (d : Spec.Rc2.Direction) : Contract isa where
   pre s :=
     let key : Region := ⟨State.addr (s.gpr .r0), 128⟩
     let data : Region := ⟨State.addr (s.gpr .r1), 8⟩
@@ -127,7 +127,7 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
   · change Spec.Rc2.blockAt s₅.mem (State.addr (s.gpr .r1)) = _
     rw [finalMem, blockAt_write64, cipher_rounds]
 
-def satState : State where
+noncomputable def satState : State where
   gpr r := match r with
     | .r0 => 0x1000 | .r1 => 0x2000 | .r2 => 0x3000 | _ => 0
   sp := 0x4000

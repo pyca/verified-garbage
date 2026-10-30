@@ -14,10 +14,10 @@ namespace VG.Proof.Rc2.AArch64.Cbc
 
 open VG VG.AArch64
 
-abbrev keyR (s : State) : Region := ⟨s.gpr .x0, 128⟩
-abbrev ivR (s : State) : Region := ⟨s.gpr .x23, 8⟩
-abbrev dataR (s : State) (n : Nat := 1) : Region := ⟨s.gpr .x1, 8 * n⟩
-abbrev bufR (s : State) : Region := ⟨s.gpr .x2, 512⟩
+noncomputable abbrev keyR (s : State) : Region := ⟨s.gpr .x0, 128⟩
+noncomputable abbrev ivR (s : State) : Region := ⟨s.gpr .x23, 8⟩
+noncomputable abbrev dataR (s : State) (n : Nat := 1) : Region := ⟨s.gpr .x1, 8 * n⟩
+noncomputable abbrev bufR (s : State) : Region := ⟨s.gpr .x2, 512⟩
 
 structure StepPre (s : State) (n : Nat := 1) : Prop where
   reads : Covers [keyR s, ivR s, dataR s n, bufR s] (s.rd ++ s.wr)

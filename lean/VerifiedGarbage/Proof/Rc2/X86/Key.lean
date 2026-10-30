@@ -27,6 +27,7 @@ namespace VG.Proof.Rc2.X86
 
 open VG VG.X86 VG.Impl.Rc2.X86
 
+-- computable: read by `taint_decide`
 def keyTaint : VG.X86.Taint.T := { regs := .ofList [.esp], flags := false, argLen := 24 }
 
 theorem keyTaint_wf {s : State} (h : keyContract.pre s) : VG.X86.Taint.Wf keyTaint s := by
@@ -60,7 +61,7 @@ theorem expandKey_constantTime : ConstantTime isa keyContract.pre keyContract.pu
   exact VG.Taint.constantTime (A := VG.X86.sseTaint) keyTaint (fun _ _ h₁ h₂ hp => keyTaint_agree h₁ h₂ hp)
     (by taint_decide)
 
-def keySatState : State where
+noncomputable def keySatState : State where
   gpr r := if r = .esp then 0x4000 else 0
   cf := none
   zf := none

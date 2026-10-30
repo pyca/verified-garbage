@@ -197,7 +197,7 @@ theorem ror_ror (x : BitVec 64) {a b : Nat} (h : a + b < 64) :
     | (rw [d _ (by omega_arith), Bool.true_and, d _ (by omega_arith), Bool.true_and]; congr 1; omega_arith)
 
 /-- The rotation the lanes `ls` select for `q`. -/
-def rotSum (q : BitVec 64) : List Nat → Nat
+noncomputable def rotSum (q : BitVec 64) : List Nat → Nat
   | [] => 0
   | c :: ls => (if q.getLsbD c then 8 * 2 ^ c else 0) + rotSum q ls
 

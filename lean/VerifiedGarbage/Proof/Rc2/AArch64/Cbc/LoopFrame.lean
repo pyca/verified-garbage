@@ -16,7 +16,7 @@ namespace VG.Proof.Rc2.AArch64.Cbc
 
 open VG VG.AArch64
 
-def loopWrites (s : State) (n : Nat) : List Region := [ivR s, dataR s n, ⟨s.gpr .x2, 264⟩]
+noncomputable def loopWrites (s : State) (n : Nat) : List Region := [ivR s, dataR s n, ⟨s.gpr .x2, 264⟩]
 
 theorem loopFrame_slice {s s' : State} {n m i : Nat} {a b : Mem}
     (h : Frame (loopWrites s' m) a b) (bound : i + m ≤ n)

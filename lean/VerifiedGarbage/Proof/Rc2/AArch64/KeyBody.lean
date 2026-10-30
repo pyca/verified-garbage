@@ -18,7 +18,7 @@ namespace VG.Proof.Rc2.AArch64
 
 open VG VG.AArch64 VG.Impl.Rc2.AArch64
 
-def coreRegs : List Reg := [.x4, .x21, .x25, .x26, .x27, .x28, .x30]
+noncomputable def coreRegs : List Reg := [.x4, .x21, .x25, .x26, .x27, .x28, .x30]
 
 structure CoreFrame (s₀ s : State) : Prop where
   reg : ∀ r ∈ coreRegs, s.gpr r = s₀.gpr r

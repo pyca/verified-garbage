@@ -291,7 +291,7 @@ namespace VG.Proof.TripleDes.X86.Key
 open VG VG.X86 VG.X86.Straight
 open VG.Proof.Rc2.X86 (addr32)
 
-def scheduleRegion (base : BitVec 32) : Region := ⟨addr32 base, 128⟩
+noncomputable def scheduleRegion (base : BitVec 32) : Region := ⟨addr32 base, 128⟩
 
 theorem pointer_fit (base : BitVec 32) (fit : base.toNat + 128 ≤ 2 ^ 32)
     (j : Nat) (hj : j < 16) : (base + BitVec.ofNat 32 (8 * j)).toNat + 8 ≤ 2 ^ 32 := by

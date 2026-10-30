@@ -115,7 +115,7 @@ theorem call_ok (d : Spec.Rc2.Direction) {s : State} {c dp op b : Addr} {len ol 
 /-! ## The postcondition -/
 
 /-- The update's postcondition, for the arguments of `Lay`. -/
-def UPost (d : Spec.Rc2.Direction) (σ : State) (c dp op : Addr) (p len ol : Nat) (s' : State) : Prop :=
+noncomputable def UPost (d : Spec.Rc2.Direction) (σ : State) (c dp op : Addr) (p len ol : Nat) (s' : State) : Prop :=
   Spec.Rc2.contextAt s'.mem c d ((p + len) % 8) =
       (Spec.Rc2.update (Spec.Rc2.contextAt σ.mem c d p) (Spec.Rc2.bytesAt σ.mem dp len)).1 ∧
     Spec.Rc2.bytesAt s'.mem op ol =

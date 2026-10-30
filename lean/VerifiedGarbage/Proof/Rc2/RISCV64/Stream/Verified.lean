@@ -42,7 +42,7 @@ namespace VG.Proof.Rc2.RISCV64.Stream
 open VG VG.RISCV64 VG.Impl.Rc2.RISCV64.Stream
 
 /-- `init`'s contract as the code sees it. -/
-def initC : Contract isa where
+noncomputable def initC : Contract isa where
   pre s :=
     let key : Region := ⟨s.gpr .a0, (s.gpr .a1).toNat⟩
     let iv : Region := ⟨s.gpr .a3, (s.gpr .a4).toNat⟩
@@ -56,7 +56,7 @@ def initC : Contract isa where
     s₁.sp = s₂.sp
 
 /-- The updates' contract as the code sees it. -/
-def updateC (d : Spec.Rc2.Direction) : Contract isa where
+noncomputable def updateC (d : Spec.Rc2.Direction) : Contract isa where
   pre s :=
     let ctx : Region := ⟨s.gpr .a0, 144⟩
     let data : Region := ⟨s.gpr .a2, (s.gpr .a3).toNat⟩
@@ -109,7 +109,7 @@ theorem decryptUpdate_ct : ConstantTime isa (updateC .decrypt).pre (updateC .dec
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5, .a6])
     (agree fun _ _ h => h) (by taint_decide)
 
-def initSat : State where
+noncomputable def initSat : State where
   gpr r := match r with
     | .a0 => 0x1000 | .a3 => 0x2000 | .a5 => 0x3000 | .a6 => 0x4000 | _ => 0
   sp := 0x8000
@@ -117,7 +117,7 @@ def initSat : State where
   rd := [⟨0x1000, 0⟩, ⟨0x2000, 0⟩]
   wr := [⟨0x3000, 144⟩, ⟨0x4000, 576⟩]
 
-def updateSat : State where
+noncomputable def updateSat : State where
   gpr r := match r with
     | .a0 => 0x1000 | .a2 => 0x2000 | .a4 => 0x3000 | .a6 => 0x4000 | _ => 0
   sp := 0x8000

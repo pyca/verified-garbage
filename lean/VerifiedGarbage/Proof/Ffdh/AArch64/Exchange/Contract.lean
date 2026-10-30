@@ -23,7 +23,7 @@ namespace VG.Proof.Ffdh.AArch64.Exchange
 open VG VG.AArch64 VG.Spec.Ffdh
 open VG.Spec.Rsa (bytesAt os2ip written)
 
-def exPre (s : State) : Prop :=
+noncomputable def exPre (s : State) : Prop :=
   let out : Region := ⟨s.gpr .x0, (s.gpr .x1).toNat⟩
   let dom : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
   let xr : Region := ⟨s.gpr .x5, (s.gpr .x6).toNat⟩
@@ -41,29 +41,29 @@ def exPre (s : State) : Prop :=
     (s.gpr .x6).toNat ≤ (s.gpr .x4).toNat ∧ Spec.Rsa.scratchWords (s.gpr .x4).toNat ≤ (stackArg s 2).toNat
 
 /-- The domain on entry. -/
-abbrev exDom (s : State) : List Byte := bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat
+noncomputable abbrev exDom (s : State) : List Byte := bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat
 
 /-- The peer's value on entry. -/
-abbrev exY (s : State) : List Byte := bytesAt s.mem (s.gpr .x7) (stackArg s 0).toNat
+noncomputable abbrev exY (s : State) : List Byte := bytesAt s.mem (s.gpr .x7) (stackArg s 0).toNat
 
 /-- The scalar on entry. -/
-abbrev exX (s : State) : List Byte := bytesAt s.mem (s.gpr .x5) (s.gpr .x6).toNat
+noncomputable abbrev exX (s : State) : List Byte := bytesAt s.mem (s.gpr .x5) (s.gpr .x6).toNat
 
-def exPost (s s' : State) : Prop :=
+noncomputable def exPost (s s' : State) : Prop :=
   domainValid (s.gpr .x4).toNat (exDom s) → publicValid ⟨domainOf (s.gpr .x4).toNat (exDom s), os2ip (exY s)⟩ →
     written s'.mem (s.gpr .x0) (s.gpr .x1).toNat ((s'.gpr .x0).setWidth 32)
       (exchangeOp (domainOf (s.gpr .x4).toNat (exDom s)) (os2ip (exX s)) (os2ip (exY s)))
 
 /-- What timing may depend on, beyond the arguments. -/
-def exLeak (s : State) : List Nat :=
+noncomputable def exLeak (s : State) : List Nat :=
   (exDom s).map (·.toNat) ++ (exY s).map (·.toNat) ++
     [if (exchangeOp (domainOf (s.gpr .x4).toNat (exDom s)) (os2ip (exX s)) (os2ip (exY s))).isSome then 1 else 0]
 
-def exPub (s₁ s₂ : State) : Prop :=
+noncomputable def exPub (s₁ s₂ : State) : Prop :=
   (∀ r ∈ argRegs, s₁.gpr r = s₂.gpr r) ∧ s₁.sp = s₂.sp ∧
     (List.range 3).map (stackArg s₁) = (List.range 3).map (stackArg s₂) ∧ exLeak s₁ = exLeak s₂
 
-def exContract : Contract isa where
+noncomputable def exContract : Contract isa where
   pre := exPre
   post := exPost
   pub := exPub
@@ -72,7 +72,7 @@ theorem stackArgs_three (s : State) :
     List.map (stackArg s) (List.range 3) = [stackArg s 0, stackArg s 1, stackArg s 2] := rfl
 
 /-- A state meeting the precondition: a 64-byte p, no q. -/
-def exSat : State where
+noncomputable def exSat : State where
   gpr r := match r with
     | .x0 => 0x1000 | .x1 => 64 | .x2 => 0x2000 | .x3 => 128 | .x4 => 64 | .x5 => 0x3000 | .x6 => 1
     | .x7 => 0x3100 | _ => 0

@@ -43,7 +43,7 @@ namespace VG.Proof.Rc2.PPC64LE.Cbc
 open VG VG.PPC64LE VG.Impl.Rc2.PPC64LE VG.Impl.Rc2.PPC64LE.Cbc
 
 /-- The CBC contract as the code sees it. -/
-def cbcC (d : Spec.Rc2.Direction) : Contract isa where
+noncomputable def cbcC (d : Spec.Rc2.Direction) : Contract isa where
   pre s :=
     let key : Region := ⟨s.gpr .r3, 128⟩
     let iv : Region := ⟨s.gpr .r4, 8⟩
@@ -155,7 +155,7 @@ theorem encrypt_ct : ConstantTime isa (cbcC .encrypt).pre (cbcC .encrypt).pub en
 theorem decrypt_ct : ConstantTime isa (cbcC .decrypt).pre (cbcC .decrypt).pub decrypt :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7]) (cbc_agree .decrypt) (by taint_decide)
 
-def cbcSat : State where
+noncomputable def cbcSat : State where
   gpr r := match r with
     | .r3 => 0x1000 | .r4 => 0x2000 | .r5 => 0x3000 | .r7 => 0x4000 | _ => 0
   lr := 0

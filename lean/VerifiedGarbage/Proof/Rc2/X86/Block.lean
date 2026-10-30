@@ -31,18 +31,18 @@ namespace VG.Proof.Rc2.X86
 
 open VG VG.X86 VG.Impl.Rc2.X86
 
-def blockSavedReg (i : Nat) : Reg := blockSaved.getD i .eax
+noncomputable def blockSavedReg (i : Nat) : Reg := blockSaved.getD i .eax
 
 theorem blockSave_eq : blockSave = saveCode .eax blockSavedReg 5 := rfl
 
 theorem blockRestore_eq : blockRestore = restoreCode .eax blockSavedReg (List.range 5) := rfl
 
-def cipher (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (b : Spec.Rc2.Block) : Spec.Rc2.Block :=
+noncomputable def cipher (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (b : Spec.Rc2.Block) : Spec.Rc2.Block :=
   match d with
   | .encrypt => Spec.Rc2.encryptBlock k b
   | .decrypt => Spec.Rc2.decryptBlock k b
 
-def blockContract (d : Spec.Rc2.Direction) : Contract isa where
+noncomputable def blockContract (d : Spec.Rc2.Direction) : Contract isa where
   pre s :=
     let key : Region := ⟨addr32 (arg s 0), 128⟩
     let data : Region := ⟨addr32 (arg s 1), 8⟩
@@ -231,6 +231,7 @@ namespace VG.Proof.Rc2.X86
 
 open VG VG.X86 VG.Impl.Rc2.X86
 
+-- computable: read by `taint_decide`
 def blockTaint : VG.X86.Taint.T := { regs := .ofList [.esp], flags := false, argLen := 16 }
 
 theorem blockTaint_wf {d : Spec.Rc2.Direction} {s : State} (h : (blockContract d).pre s) : VG.X86.Taint.Wf blockTaint s := by
@@ -268,7 +269,7 @@ theorem decryptBlock_constantTime : ConstantTime isa (blockContract .decrypt).pr
   exact VG.Taint.constantTime (A := VG.X86.sseTaint) blockTaint (fun _ _ h₁ h₂ hp => blockTaint_agree h₁ h₂ hp)
     (by taint_decide)
 
-def blockSatState : State where
+noncomputable def blockSatState : State where
   gpr r := if r = .esp then 0x4000 else 0
   cf := none
   zf := none

@@ -15,7 +15,7 @@ namespace VG.Proof.Rc2.AArch64.Cbc
 
 open VG VG.AArch64
 
-def contract (d : Spec.Rc2.Direction) : Contract isa where
+noncomputable def contract (d : Spec.Rc2.Direction) : Contract isa where
   pre s :=
     let key : Region := ⟨s.gpr .x0, 128⟩
     let iv : Region := ⟨s.gpr .x1, 8⟩

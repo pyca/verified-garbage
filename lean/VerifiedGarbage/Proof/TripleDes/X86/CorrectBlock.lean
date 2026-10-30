@@ -124,7 +124,7 @@ theorem blockResult_core (keys : Schedule) (d : Direction) (b : Spec.TripleDes.B
   · exact (VG.Proof.TripleDes.encryptBlock_eq_cores keys b).symm
   · exact (VG.Proof.TripleDes.decryptBlock_eq_cores keys b).symm
 
-def blockRegions (s : State) : List Region :=
+noncomputable def blockRegions (s : State) : List Region :=
   [⟨addr32 (dataArg s), 8⟩, ⟨addr32 (scratchArg s 3), 512⟩]
 
 structure BlockPost (keys : Schedule) (d : Direction) (original s : State) : Prop where

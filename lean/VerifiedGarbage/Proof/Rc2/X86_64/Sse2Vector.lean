@@ -97,7 +97,7 @@ theorem loadConst_ok (s : State) (dst : XReg) (hd : dst ≠ .xmm5) (v : BitVec 1
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       simp only [xmm_setXmm_of_ne _ _ hr.1, xmm_setXmm_of_ne _ _ hr.2, xmm_setReg]
 
-def selectValue (a b c v : BitVec 128) : BitVec 128 :=
+noncomputable def selectValue (a b c v : BitVec 128) : BitVec 128 :=
   XBinOp.eval .pand
     (XShiftOp.eval .psraw (XBinOp.eval .psubw (a ^^^ b) c) 15) v
 
@@ -157,7 +157,7 @@ theorem word_por (a b : BitVec 128) (i : Nat) :
   intro j hj
   simp only [getLsbD_word, BitVec.getLsbD_or, decide_eq_true hj, Bool.true_and]
 
-def broadcast (x : Byte) : BitVec 128 := ofWords fun _ => x.setWidth 16
+noncomputable def broadcast (x : Byte) : BitVec 128 := ofWords fun _ => x.setWidth 16
 
 theorem broadcast_word (x : Byte) (i : Nat) (hi : i < 8) :
     word (shufDwords (XBinOp.eval .punpcklwd
@@ -190,7 +190,7 @@ theorem broadcast_word (x : Byte) (i : Nat) (hi : i < 8) :
       BitVec.extractLsb'_append_eq_of_le, BitVec.extractLsb'_eq_self]
 
 
-def acc (f : Nat → BitVec 16) (x n : Nat) : BitVec 128 :=
+noncomputable def acc (f : Nat → BitVec 16) (x n : Nat) : BitVec 128 :=
   ofWords fun j => if x < 8 * n ∧ x % 8 = j then f x else 0#16
 
 theorem acc_zero (f : Nat → BitVec 16) (x : Nat) : acc f x 0 = 0#128 := by
@@ -237,7 +237,7 @@ theorem acc_step (f : Nat → BitVec 16) (x : Byte) (n : Nat) (hn : n < 32)
         (x.toNat < 8 * (n + 1) ∧ x.toNat % 8 = j) := by omega
     simp only [heq]
 
-def reduceValue (v : BitVec 128) : BitVec 128 :=
+noncomputable def reduceValue (v : BitVec 128) : BitVec 128 :=
   let a := v ||| (v >>> 64)
   let b := a ||| (a >>> 32)
   b ||| (b >>> 16)

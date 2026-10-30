@@ -15,9 +15,9 @@ section
 namespace VG.Proof.Rc2.X86.Cbc
 open VG VG.X86 VG.X86.RegUpd VG.Impl.Rc2.X86
 
-def callerSaved : List Reg := [.ebp, .ebx, .esi, .edi]
+noncomputable def callerSaved : List Reg := [.ebp, .ebx, .esi, .edi]
 
-def savedMem (s : State) : Mem :=
+noncomputable def savedMem (s : State) : Mem :=
   ((((s.mem.writeW (addr32 (s.gpr .eax) + BitVec.ofNat 64 264) (s.gpr .ebp)).writeW (addr32 (s.gpr .eax) + BitVec.ofNat 64 268) (s.gpr .ebx)).writeW (addr32 (s.gpr .eax) + BitVec.ofNat 64 272) (s.gpr .esi)).writeW (addr32 (s.gpr .eax) + BitVec.ofNat 64 276) (s.gpr .edi))
 
 theorem save_ok (s : State)
@@ -126,7 +126,7 @@ end
 namespace VG.Proof.Rc2.X86.Cbc
 open VG VG.X86
 
-def contract (d : Spec.Rc2.Direction) : Contract isa where
+noncomputable def contract (d : Spec.Rc2.Direction) : Contract isa where
   pre s :=
     let key : Region := ⟨addr32 (arg s 0), 128⟩
     let iv : Region := ⟨addr32 (arg s 1), 8⟩

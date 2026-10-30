@@ -359,7 +359,7 @@ namespace VG.Proof.TripleDes.X86
 open VG VG.X86 VG.X86.Straight VG.Impl.TripleDes.X86
 open VG.Proof.Rc2.X86 (addr32)
 
-def workRegion (s : State) : Region := ⟨addr32 (s.gpr .ebp) + BitVec.ofNat 64 16, 432⟩
+noncomputable def workRegion (s : State) : Region := ⟨addr32 (s.gpr .ebp) + BitVec.ofNat 64 16, 432⟩
 
 theorem spill_sub_work (s : State) : Region.Sub (spillRegion s) (workRegion s) :=
   Offset.sub _ (by decide) (by decide)

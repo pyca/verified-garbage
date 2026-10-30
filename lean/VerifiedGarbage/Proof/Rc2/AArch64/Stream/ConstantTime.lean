@@ -22,6 +22,7 @@ namespace VG.Proof.Rc2.AArch64.Stream
 open VG VG.AArch64 VG.Impl.Rc2.AArch64.Stream
 
 /-- The public registers: all seven arguments. -/
+-- computable: read by `taint_decide`
 abbrev args : List Reg := [.x0, .x1, .x2, .x3, .x4, .x5, .x6]
 
 theorem init_constantTime (pre : State → Prop) :

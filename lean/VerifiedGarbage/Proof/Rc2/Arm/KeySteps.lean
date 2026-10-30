@@ -16,10 +16,10 @@ namespace VG.Proof.Rc2.Arm
 
 open VG VG.Arm VG.Arm.RegUpd VG.Impl.Rc2.Arm VG.Proof.Rc2.Word32
 
-def keyTemps : List Reg := [.r12, .r0, .r3, .r9, .r10, .r11, .lr]
+noncomputable def keyTemps : List Reg := [.r12, .r0, .r3, .r9, .r10, .r11, .lr]
 
 /-- The public zero flag controls the key-expansion loops. -/
-def zeroFlag (s : State) : Option Bool := some s.z
+noncomputable def zeroFlag (s : State) : Option Bool := some s.z
 
 theorem eval_zero (s : State) : eval .eq s = zeroFlag s := rfl
 

@@ -25,6 +25,7 @@ namespace VG.Proof.Rc2.X86.Cbc
 
 open VG VG.X86 VG.Impl.Rc2.X86
 
+-- computable: read by `taint_decide`
 def kept : List Reg := [.ebx, .ecx, .esi, .edi, .ebp, .esp]
 
 theorem block_nosp (d : Spec.Rc2.Direction) : NoSp (.block (blockCode d)) := by
@@ -198,7 +199,7 @@ namespace VG.Proof.Rc2.X86.Cbc
 
 open VG VG.X86 VG.X86.RegUpd VG.Impl.Rc2.X86 VG.Proof.Rc2.Word32
 
-def temps : List Reg := [.eax, .edx]
+noncomputable def temps : List Reg := [.eax, .edx]
 
 theorem copy64_ok (s : State) (src dst : Reg) (a b : Nat)
     (srcSep : src ≠ .eax) (dstSep : dst ≠ .eax ∧ dst ≠ .edx)
@@ -290,7 +291,7 @@ theorem xor64_ok (s : State) (dst iv : Reg)
   simp only [Nat.zero_add, BitVec.add_zero]
   rw [pair_xor, ← read64_pair, ← read64_pair]
 
-def zeroCount (s : State) : Option Bool := s.zf
+noncomputable def zeroCount (s : State) : Option Bool := s.zf
 
 theorem eval_zeroCount (s : State) : eval .e s = zeroCount s := rfl
 
@@ -329,12 +330,12 @@ namespace VG.Proof.Rc2.X86.Cbc
 
 open VG VG.X86
 
-abbrev keyR (s : State) : Region := ⟨addr32 (s.gpr .ebx), 128⟩
-abbrev ivR (s : State) : Region := ⟨addr32 (s.gpr .ecx), 8⟩
-abbrev dataR (s : State) (n : Nat := 1) : Region := ⟨addr32 (s.gpr .esi), 8 * n⟩
-abbrev bufR (s : State) : Region := ⟨addr32 (s.gpr .ebp), 512⟩
+noncomputable abbrev keyR (s : State) : Region := ⟨addr32 (s.gpr .ebx), 128⟩
+noncomputable abbrev ivR (s : State) : Region := ⟨addr32 (s.gpr .ecx), 8⟩
+noncomputable abbrev dataR (s : State) (n : Nat := 1) : Region := ⟨addr32 (s.gpr .esi), 8 * n⟩
+noncomputable abbrev bufR (s : State) : Region := ⟨addr32 (s.gpr .ebp), 512⟩
 
-abbrev stackR (s : State) : Region := below (s.gpr .esp) 16
+noncomputable abbrev stackR (s : State) : Region := below (s.gpr .esp) 16
 
 structure StepPre (s : State) (n : Nat := 1) : Prop where
   keyFit : (s.gpr .ebx).toNat + 128 ≤ 2 ^ 32
@@ -448,7 +449,7 @@ namespace VG.Proof.Rc2.X86.Cbc
 
 open VG VG.X86
 
-def stepWrites (s : State) : List Region := [ivR s, dataR s, ⟨addr32 (s.gpr .ebp), 264⟩, stackR s]
+noncomputable def stepWrites (s : State) : List Region := [ivR s, dataR s, ⟨addr32 (s.gpr .ebp), 264⟩, stackR s]
 
 structure Pinned (s s' : State) : Prop where
   reg : ∀ r ∈ kept, s'.gpr r = s.gpr r
@@ -520,7 +521,7 @@ namespace VG.Proof.Rc2.X86.Cbc
 
 open VG VG.X86 VG.Impl.Rc2.X86
 
-abbrev stashR (s : State) : Region := ⟨addr32 (s.gpr .ebp) + BitVec.ofNat 64 256, 8⟩
+noncomputable abbrev stashR (s : State) : Region := ⟨addr32 (s.gpr .ebp) + BitVec.ofNat 64 256, 8⟩
 
 theorem stash_sub (s : State) : Region.Sub (stashR s) (bufR s) :=
   Offset.sub_base _ (by decide)

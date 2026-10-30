@@ -32,7 +32,7 @@ namespace VG.Proof.Rc2.PPC64LE
 open VG VG.PPC64LE VG.Impl.Rc2.PPC64LE
 
 /-- The block contract as the code sees it. -/
-def blockC (d : Spec.Rc2.Direction) : Contract isa where
+noncomputable def blockC (d : Spec.Rc2.Direction) : Contract isa where
   pre s :=
     s.rd = [⟨s.gpr .r3, 128⟩] ∧ s.wr = [⟨s.gpr .r4, 8⟩, ⟨s.gpr .r5, 256⟩]
   post s s' := Spec.Rc2.blockAt s'.mem (s.gpr .r4) =
@@ -58,7 +58,7 @@ theorem block_wp (d : Spec.Rc2.Direction) (s : State) (hs : (blockC d).pre s) :
   rw [m₃, p4, m₂, Proof.Rc2.blockAt_write64, cipher_rounds, m₁]
 
 /-- The registers the block functions write. -/
-def blockRegs : List Reg := [.r0, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12]
+noncomputable def blockRegs : List Reg := [.r0, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12]
 
 theorem block_ok (d : Spec.Rc2.Direction) (hw : writesOnly blockRegs (blockCode d) = true)
     (hn : (blockCode d).noCalls = true) (hl : (instrs (blockCode d)).all (fun i => !i.writesLr) = true)
@@ -83,7 +83,7 @@ theorem encrypt_ct : ConstantTime isa (blockC .encrypt).pre (blockC .encrypt).pu
 theorem decrypt_ct : ConstantTime isa (blockC .decrypt).pre (blockC .decrypt).pub decryptBlock :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5]) (block_agree .decrypt) (by taint_decide)
 
-def blockSat : State where
+noncomputable def blockSat : State where
   gpr r := match r with
     | .r3 => 0x1000 | .r4 => 0x2000 | .r5 => 0x3000 | _ => 0
   lr := 0

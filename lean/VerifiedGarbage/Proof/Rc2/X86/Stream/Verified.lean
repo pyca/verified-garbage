@@ -195,12 +195,12 @@ namespace VG.Proof.Rc2.X86.Stream.Update
 
 open VG VG.X86 VG.X86.Wp VG.Impl.Rc2.X86.Stream
 
-def cbcName : Spec.Rc2.Direction → String
+noncomputable def cbcName : Spec.Rc2.Direction → String
   | .encrypt => "vg_rc2_cbc_encrypt"
   | .decrypt => "vg_rc2_cbc_decrypt"
 
 /-- The registers pushed as the callee's arguments. -/
-abbrev rs5 : List Reg := [.ebx, .esi, .edx, .ecx, .eax]
+noncomputable abbrev rs5 : List Reg := [.ebx, .esi, .edx, .ecx, .eax]
 
 theorem cbcCall_eq (d : Spec.Rc2.Direction) :
     cbcCall d = .frame (.push rs5) (.call (cbcName d) (Impl.Rc2.X86.Cbc.cbc d)) (.pop .eax 5) := by
@@ -218,9 +218,9 @@ theorem cbc_stack (d : Spec.Rc2.Direction) : stackUse (Impl.Rc2.X86.Cbc.cbc d) =
   cases d <;> rfl
 
 /-- The regions the CBC function reads (beyond those it writes), and writes. -/
-def callRd (s₀ s : State) : List Region :=
+noncomputable def callRd (s₀ s : State) : List Region :=
   [⟨(ctx s₀).setWidth 64, 128⟩, ⟨argAddr (pushed rs5 s).callEntry 0, 20⟩]
-def callWr (s₀ : State) : List Region :=
+noncomputable def callWr (s₀ : State) : List Region :=
   [⟨(ctx s₀ + 128).setWidth 64, 8⟩, ⟨oA s₀, 8 * (O s₀ / 8)⟩, ⟨sA s₀, 512⟩]
 
 theorem iv_eq {s₀ : State} (hp : Pre s₀) : (ctx s₀ + 128).setWidth 64 = cA s₀ + BitVec.ofNat 64 128 :=
@@ -544,6 +544,7 @@ namespace VG.Proof.Rc2.X86.Stream
 open VG VG.X86
 
 /-- The arguments on the stack are public, and only read. -/
+-- computable: read by `taint_decide`
 def τ0 : VG.X86.Taint.T := { regs := .ofList [.esp], flags := false, argLen := 32 }
 
 theorem τ0_wf {s : State} (f : (s.gpr .esp).toNat + 32 ≤ 2 ^ 32)
@@ -575,7 +576,7 @@ namespace Update
 
 open VG.Impl.Rc2.X86.Stream
 
-def Rel (d : Spec.Rc2.Direction) (s₁ s₂ : State) : Prop :=
+noncomputable def Rel (d : Spec.Rc2.Direction) (s₁ s₂ : State) : Prop :=
   (updateContract d).pre s₁ ∧ (updateContract d).pre s₂ ∧ (updateContract d).pub s₁ s₂
 
 theorem Pre.disj {s : State} (hp : Pre s) :
@@ -590,7 +591,7 @@ theorem rel_agree {d : Spec.Rc2.Direction} {s₁ s₂ : State} (h : Rel d s₁ s
   τ0_agree (pre_of h.1).sp_fit (pre_of h.2.1).sp_fit (pre_of h.1).disj (pre_of h.2.1).disj h.2.2.1 h.2.2.2
 
 /-- After `head`, in both runs. -/
-def MidRel (d : Spec.Rc2.Direction) (s₁ s₂ : State) : Prop :=
+noncomputable def MidRel (d : Spec.Rc2.Direction) (s₁ s₂ : State) : Prop :=
   ∃ σ₁ σ₂, Rel d σ₁ σ₂ ∧ Mid σ₁ s₁ ∧ Mid σ₂ s₂
 
 theorem call_ct (d : Spec.Rc2.Direction) :
@@ -674,7 +675,7 @@ namespace VG.Proof.Rc2.X86.Stream
 open VG VG.X86
 
 /-- `initContract`, with the arguments writable. -/
-def wideInit : Contract isa :=
+noncomputable def wideInit : Contract isa :=
   { initContract with
     pre := fun s =>
       let key : Region := ⟨(arg s 0).setWidth 64, (arg s 1).toNat⟩
@@ -693,7 +694,7 @@ def wideInit : Contract isa :=
         24 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 32 ≤ 2 ^ 32 }
 
 /-- `updateContract d`, with the arguments writable. -/
-def wideUpdate (d : Spec.Rc2.Direction) : Contract isa :=
+noncomputable def wideUpdate (d : Spec.Rc2.Direction) : Contract isa :=
   { updateContract d with
     pre := fun s =>
       let ctx : Region := ⟨(arg s 0).setWidth 64, 144⟩
@@ -715,7 +716,7 @@ def wideUpdate (d : Spec.Rc2.Direction) : Contract isa :=
         (arg s 1).toNat < 8 ∧ (arg s 5).toNat = ((arg s 1).toNat + (arg s 3).toNat) / 8 * 8 }
 
 /-- `init(0x1000, 1, 8, 0x2000, 8, 0x3000, 0x4000)`. -/
-def initSat : State where
+noncomputable def initSat : State where
   gpr r := if r = .esp then 0x6000 else 0
   cf := none
   zf := none
@@ -728,7 +729,7 @@ def initSat : State where
   wr := [⟨0x3000, 144⟩, ⟨0x4000, 576⟩, ⟨0x6004, 28⟩]
 
 /-- `update(0x1000, 0, 0x2000, 0, 0x3000, 0, 0x4000)`. -/
-def updateSat : State where
+noncomputable def updateSat : State where
   gpr r := if r = .esp then 0x6000 else 0
   cf := none
   zf := none
@@ -803,7 +804,7 @@ namespace VG.Proof.Rc2.X86.Stream.Init
 
 open VG VG.X86 VG.X86.Wp VG.Impl.Rc2.X86.Stream
 
-def Rel (s₁ s₂ : State) : Prop := initContract.pre s₁ ∧ initContract.pre s₂ ∧ initContract.pub s₁ s₂
+noncomputable def Rel (s₁ s₂ : State) : Prop := initContract.pre s₁ ∧ initContract.pre s₂ ∧ initContract.pub s₁ s₂
 
 theorem Pre.disj {s₀ s : State} (hp : Pre s₀) (hc : Common s₀ s) :
     ∀ r ∈ s.wr, Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ r ∧ Region.Disjoint ⟨argAddr s 0, 28⟩ r := by
@@ -851,9 +852,9 @@ structure Args (s₀ s : State) : Prop where
   esi : s.gpr .esi = ctx s₀
   ebx : s.gpr .ebx = scr s₀
 
-def CheckedRel (s₁ s₂ : State) : Prop := ∃ σ₁ σ₂, Rel σ₁ σ₂ ∧ Checked σ₁ s₁ ∧ Checked σ₂ s₂
+noncomputable def CheckedRel (s₁ s₂ : State) : Prop := ∃ σ₁ σ₂, Rel σ₁ σ₂ ∧ Checked σ₁ s₁ ∧ Checked σ₂ s₂
 
-def ArgsRel (s₁ s₂ : State) : Prop := ∃ σ₁ σ₂, Rel σ₁ σ₂ ∧ code σ₁ = 0 ∧ Args σ₁ s₁ ∧ Args σ₂ s₂
+noncomputable def ArgsRel (s₁ s₂ : State) : Prop := ∃ σ₁ σ₂, Rel σ₁ σ₂ ∧ code σ₁ = 0 ∧ Args σ₁ s₁ ∧ Args σ₂ s₂
 
 theorem args_ct :
     RelCT isa (fun s₁ s₂ => CheckedRel s₁ s₂ ∧ isa.eval .ne s₁ = some false) (.block initArgs) ArgsRel := by
@@ -965,12 +966,12 @@ open VG VG.X86
 
 /-! ## `init` -/
 
-def initRd (s : State) : List Region :=
+noncomputable def initRd (s : State) : List Region :=
   [⟨(arg s 0).setWidth 64, (arg s 1).toNat⟩, ⟨(arg s 3).setWidth 64, (arg s 4).toNat⟩, ⟨argAddr s 0, 28⟩]
-def initWr (s : State) : List Region := [⟨(arg s 5).setWidth 64, 144⟩, ⟨(arg s 6).setWidth 64, 576⟩]
+noncomputable def initWr (s : State) : List Region := [⟨(arg s 5).setWidth 64, 144⟩, ⟨(arg s 6).setWidth 64, 576⟩]
 
-def updateRd (s : State) : List Region := [⟨(arg s 2).setWidth 64, (arg s 3).toNat⟩, ⟨argAddr s 0, 28⟩]
-def updateWr (s : State) : List Region :=
+noncomputable def updateRd (s : State) : List Region := [⟨(arg s 2).setWidth 64, (arg s 3).toNat⟩, ⟨argAddr s 0, 28⟩]
+noncomputable def updateWr (s : State) : List Region :=
   [⟨(arg s 0).setWidth 64, 144⟩, ⟨(arg s 4).setWidth 64, (arg s 5).toNat⟩, ⟨(arg s 6).setWidth 64, 576⟩]
 
 tactic_template "rc2_stream_narrow" loc:Lean.Parser.Tactic.location : tactic =>

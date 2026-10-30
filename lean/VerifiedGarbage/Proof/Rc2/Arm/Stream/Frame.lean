@@ -27,11 +27,11 @@ open VG.Impl.Rc2 (piSym piQuads piConsts)
 
 /-- A state satisfying `vg_rc2_cbc_init`'s precondition, without the working
 space. -/
-def initFrameSat : State :=
+noncomputable def initFrameSat : State :=
   { initSatState with rd := [⟨0x1000, 0⟩, ⟨0x2000, 0⟩, ⟨0x6000, 8⟩], wr := [⟨0x3000, 144⟩] }
 
 /-- `initFrameSat` with the table. -/
-def initFrameSatC : State :=
+noncomputable def initFrameSatC : State :=
   { initFrameSat with
     mem := initSatMem, rd := [⟨0x1000, 0⟩, ⟨0x2000, 0⟩, ⟨0x6000, 8⟩, ⟨0x100000, 256⟩], syms := fun _ => 0x100000 }
 
@@ -81,7 +81,7 @@ theorem init_framed :
 
 /-- A state satisfying the update functions' precondition, without the
 working space. -/
-def updateFrameSat : State :=
+noncomputable def updateFrameSat : State :=
   { updateSatState with rd := [⟨0x2000, 0⟩, ⟨0x6000, 8⟩], wr := [⟨0x1000, 144⟩, ⟨0x3000, 0⟩] }
 
 theorem updateFrameSat_pre (d : Spec.Rc2.Direction) :

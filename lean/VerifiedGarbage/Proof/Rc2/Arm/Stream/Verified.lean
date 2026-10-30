@@ -49,7 +49,7 @@ open VG VG.Arm VG.WriteBytes VG.Impl.Rc2.Arm VG.Impl.Rc2.Arm.Stream
 open VG.Proof.MdStream.Arm (Upd Mupd Fupd op2_imm op2_reg wp_add wp_ldr wp_ldrSp wp_cmp eval_eq cmp0)
 
 /-- The postcondition of `update`: the callee-saved registers and the contract's. -/
-abbrev UpdPost (d : Spec.Rc2.Direction) (s s' : State) : Prop :=
+noncomputable abbrev UpdPost (d : Spec.Rc2.Direction) (s s' : State) : Prop :=
   (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ (updateContract d).post s s'
 
 /-- With `out_len = 0` (so `pending_len + len < 8`). -/
@@ -376,12 +376,12 @@ theorem wp_mov_imm {is : List Instr} {s : State} {Q : State → Prop} {d : Reg} 
   VG.Proof.MdStream.Arm.WP.cons (by simp [exec, Op2.eval, he]) k
 
 /-- The lengths are valid. -/
-abbrev IValid (s : State) : Prop :=
+noncomputable abbrev IValid (s : State) : Prop :=
   (1 ≤ (s.gpr .r1).toNat ∧ (s.gpr .r1).toNat ≤ 128) ∧ (1 ≤ (s.gpr .r2).toNat ∧ (s.gpr .r2).toNat ≤ 1024) ∧
     (stackArg s 0).toNat = 8
 
 /-- The error code for invalid lengths. -/
-abbrev ICode (s : State) : Nat :=
+noncomputable abbrev ICode (s : State) : Nat :=
   if ¬(1 ≤ (s.gpr .r1).toNat ∧ (s.gpr .r1).toNat ≤ 128) then 1
   else if ¬(1 ≤ (s.gpr .r2).toNat ∧ (s.gpr .r2).toNat ≤ 1024) then 2 else 3
 
@@ -635,6 +635,7 @@ theorem agree12 {rs : List Reg} {s₁ s₂ : State} (h : ∀ r ∈ rs, s₁.gpr 
     (argMem_of (j := 3) hsp fit ha)
 
 /-- The code before the call, its pieces associated to the left. -/
+-- computable: read by `taint_decide`
 def prefixL : Prog isa :=
   .seq (.seq (.seq (.seq (.seq (.seq (.block toOut) (copy .r0 136 .lr 0 .r1)) (.block middle))
     (copy .r2 0 .lr 0 .r1)) (.block toPending)) (copy .r2 0 .lr 136 .r3)) (.block cbcArgs)
@@ -774,7 +775,7 @@ open VG VG.Arm VG.Arm.RegUpd VG.Impl.Rc2.Arm VG.Impl.Rc2.Arm.Stream
 open VG.Proof.MdStream.Arm (Upd Mupd op2_reg wp_ldr wp_ldrSp eval_ne)
 
 /-- The postcondition of `init`: the callee-saved registers and the contract's. -/
-abbrev InitPost (s s' : State) : Prop := (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ initContract.post s s'
+noncomputable abbrev InitPost (s s' : State) : Prop := (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ initContract.post s s'
 
 theorem key_pre (s : State) (hs : initContract.pre s) (ht : InitTab s) (hv : IValid s) (u : State)
     (hu : ArgsPost s u) (hsy : u.syms = s.syms) :

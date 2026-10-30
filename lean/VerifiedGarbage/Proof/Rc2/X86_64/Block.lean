@@ -20,12 +20,12 @@ namespace VG.Proof.Rc2.X86_64
 
 open VG VG.X86_64 VG.Impl.Rc2.X86_64
 
-def cipher (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (b : Spec.Rc2.Block) : Spec.Rc2.Block :=
+noncomputable def cipher (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (b : Spec.Rc2.Block) : Spec.Rc2.Block :=
   match d with
   | .encrypt => Spec.Rc2.encryptBlock k b
   | .decrypt => Spec.Rc2.decryptBlock k b
 
-def blockContract (d : Spec.Rc2.Direction) : Contract isa where
+noncomputable def blockContract (d : Spec.Rc2.Direction) : Contract isa where
   pre s :=
     let key : Region := ⟨s.gpr .rdi, 128⟩
     let data : Region := ⟨s.gpr .rsi, 8⟩
@@ -146,7 +146,7 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
   · change Spec.Rc2.blockAt s₅.mem (s.gpr .rsi) = _
     rw [finalMem, blockAt_write64, cipher_rounds]
 
-def satState : State where
+noncomputable def satState : State where
   gpr r := match r with
     | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x3000 | .rsp => 0x4000 | _ => 0
   cf := none

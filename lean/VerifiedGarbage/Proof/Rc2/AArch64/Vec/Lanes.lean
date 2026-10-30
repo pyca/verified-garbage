@@ -26,10 +26,10 @@ namespace VG.Proof.Rc2.AArch64.Vec
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Tbl.AArch64 VG.Impl.Rc2.AArch64.Vec
 
 /-- The low 16 bits of lane `b`. -/
-abbrev lw (x : BitVec 128) (b : Nat) : BitVec 16 := (vword x b).setWidth 16
+noncomputable abbrev lw (x : BitVec 128) (b : Nat) : BitVec 16 := (vword x b).setWidth 16
 
 /-- The words of set `h`: word `i` of block `b` is `vs b`'s. -/
-def VWords (s : State) (h : Nat) (vs : Nat → Spec.Rc2.State) : Prop :=
+noncomputable def VWords (s : State) (h : Nat) (vs : Nat → Spec.Rc2.State) : Prop :=
   ∀ i < 4, ∀ b < 4, lw (s.v (wreg h i)) b = (vs b).getD i 0
 
 theorem vword_and (x y : BitVec 128) (c : Nat) : vword (x &&& y) c = vword x c &&& vword y c := by

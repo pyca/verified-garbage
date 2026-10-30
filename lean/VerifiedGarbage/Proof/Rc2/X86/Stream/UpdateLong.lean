@@ -29,30 +29,30 @@ theorem ofNat_toNat (x : BitVec 32) : BitVec.ofNat 32 x.toNat = x := by simp
 section
 variable (s₀ : State)
 
-abbrev E : BitVec 32 := s₀.gpr .esp
-abbrev ctx : BitVec 32 := arg s₀ 0
-abbrev p : Nat := (arg s₀ 1).toNat
-abbrev dp : BitVec 32 := arg s₀ 2
-abbrev len : Nat := (arg s₀ 3).toNat
-abbrev op : BitVec 32 := arg s₀ 4
-abbrev O : Nat := (arg s₀ 5).toNat
-abbrev scr : BitVec 32 := arg s₀ 6
-abbrev cA : Addr := (ctx s₀).setWidth 64
-abbrev dA : Addr := (dp s₀).setWidth 64
-abbrev oA : Addr := (op s₀).setWidth 64
-abbrev sA : Addr := (scr s₀).setWidth 64
-abbrev ctxR : Region := ⟨cA s₀, 144⟩
-abbrev dR : Region := ⟨dA s₀, len s₀⟩
-abbrev oR : Region := ⟨oA s₀, O s₀⟩
-abbrev scR : Region := ⟨sA s₀, 576⟩
-abbrev argR : Region := ⟨argAddr s₀ 0, 28⟩
-abbrev retR : Region := ⟨(E s₀).setWidth 64, 4⟩
-abbrev stkR : Region := below (E s₀) 40
+noncomputable abbrev E : BitVec 32 := s₀.gpr .esp
+noncomputable abbrev ctx : BitVec 32 := arg s₀ 0
+noncomputable abbrev p : Nat := (arg s₀ 1).toNat
+noncomputable abbrev dp : BitVec 32 := arg s₀ 2
+noncomputable abbrev len : Nat := (arg s₀ 3).toNat
+noncomputable abbrev op : BitVec 32 := arg s₀ 4
+noncomputable abbrev O : Nat := (arg s₀ 5).toNat
+noncomputable abbrev scr : BitVec 32 := arg s₀ 6
+noncomputable abbrev cA : Addr := (ctx s₀).setWidth 64
+noncomputable abbrev dA : Addr := (dp s₀).setWidth 64
+noncomputable abbrev oA : Addr := (op s₀).setWidth 64
+noncomputable abbrev sA : Addr := (scr s₀).setWidth 64
+noncomputable abbrev ctxR : Region := ⟨cA s₀, 144⟩
+noncomputable abbrev dR : Region := ⟨dA s₀, len s₀⟩
+noncomputable abbrev oR : Region := ⟨oA s₀, O s₀⟩
+noncomputable abbrev scR : Region := ⟨sA s₀, 576⟩
+noncomputable abbrev argR : Region := ⟨argAddr s₀ 0, 28⟩
+noncomputable abbrev retR : Region := ⟨(E s₀).setWidth 64, 4⟩
+noncomputable abbrev stkR : Region := below (E s₀) 40
 /-- The pending block. -/
-abbrev pendR : Region := ⟨cA s₀ + BitVec.ofNat 64 136, 8⟩
+noncomputable abbrev pendR : Region := ⟨cA s₀ + BitVec.ofNat 64 136, 8⟩
 /-- The schedule and the chaining value. -/
-abbrev schR : Region := ⟨cA s₀, 128⟩
-abbrev ivR : Region := ⟨cA s₀ + BitVec.ofNat 64 128, 8⟩
+noncomputable abbrev schR : Region := ⟨cA s₀, 128⟩
+noncomputable abbrev ivR : Region := ⟨cA s₀ + BitVec.ofNat 64 128, 8⟩
 
 end
 

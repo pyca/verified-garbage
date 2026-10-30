@@ -249,7 +249,7 @@ structure ScanMemory (s : State) : Prop where
   vectors : ∀ i < 8, InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVec.ofNat 64 (16 * i)) 16
   scratch : InRegions s.wr (s.gpr .rdx + BitVec.ofNat 64 64) 16
 
-instance (s : State) : CoeFun (ScanMemory s)
+noncomputable instance (s : State) : CoeFun (ScanMemory s)
     (fun _ => ∀ i, i < 128 → InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVec.ofNat 64 i) 1) where
   coe := fun h => h.bytes
 
@@ -356,11 +356,11 @@ theorem mixInputs_ok (s : State) (i j : Nat) (hj : j < 64)
     · simp only [wr_setReg, wr_arithFlags, wr_setFlags]
 
 /-- Current RC2 words in the four dedicated registers. -/
-def Words (s : State) (v : Spec.Rc2.State) : Prop :=
+noncomputable def Words (s : State) (v : Spec.Rc2.State) : Prop :=
   ∀ i < 4, s.gpr (wordReg i) = (v.getD i 0).setWidth 64
 
-def temps : List Reg := [.rax, .rcx, .r8, .r9, .r10, .r11]
-def roundWrites : List Reg := temps ++ [.r12, .r13, .r14, .r15]
+noncomputable def temps : List Reg := [.rax, .rcx, .r8, .r9, .r10, .r11]
+noncomputable def roundWrites : List Reg := temps ++ [.r12, .r13, .r14, .r15]
 
 theorem wordReg_not_temps (i : Nat) : wordReg i ∉ temps := by
   have h := wordReg_separate i
@@ -597,7 +597,7 @@ theorem indexWord (x : BitVec 16) :
   change x.toNat % 18446744073709551616 % 64 = x.toNat &&& (2 ^ 6 - 1)
   rw [Nat.and_two_pow_sub_one_eq_mod, Nat.mod_eq_of_lt (show x.toNat < 18446744073709551616 by have := x.isLt; omega)]
 
-def mashSpec (direction : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
+noncomputable def mashSpec (direction : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
     (i : Nat) (v : Spec.Rc2.State) : Spec.Rc2.State :=
   match direction with
   | .encrypt => Spec.Rc2.mash k i v
@@ -717,13 +717,13 @@ theorem reverseMixRound_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
   apply WP.mono (reverseMix_ok s v hv i (4 * j + i) bound (by omega) readable.bytes)
   exact fun _ h => ⟨h.1, h.2.round⟩
 
-def mashRoundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
+noncomputable def mashRoundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
     (v : Spec.Rc2.State) : Spec.Rc2.State :=
   match d with
   | .encrypt => Spec.Rc2.mashRound k v
   | .decrypt => Spec.Rc2.reverseMashRound k v
 
-def order (d : Spec.Rc2.Direction) : List Nat :=
+noncomputable def order (d : Spec.Rc2.Direction) : List Nat :=
   match d with
   | .encrypt => List.range 4
   | .decrypt => [3, 2, 1, 0]
@@ -747,7 +747,7 @@ theorem mashRound_ok (d : Spec.Rc2.Direction) (s : State) (v : Spec.Rc2.State) (
   apply WP.mono (mash_ok d s v hv i bound readable)
   exact fun _ h => ⟨h.1, h.2.round⟩
 
-def roundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (j : Nat)
+noncomputable def roundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (j : Nat)
     (v : Spec.Rc2.State) : Spec.Rc2.State :=
   let v := match d with
     | .encrypt => Spec.Rc2.mixRound k j v
@@ -1006,7 +1006,7 @@ namespace VG.Proof.Rc2.X86_64
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.Rc2.X86_64
 
-def saveMem (m : Mem) (p : Addr) (v : Nat → BitVec 64) (n : Nat) : Mem :=
+noncomputable def saveMem (m : Mem) (p : Addr) (v : Nat → BitVec 64) (n : Nat) : Mem :=
   (List.range n).foldl (fun m i => m.writeW (p + BitVec.ofNat 64 (8 * i)) (v i)) m
 
 theorem saveMem_succ (m : Mem) (p : Addr) (v : Nat → BitVec 64) (n : Nat) :
@@ -1042,7 +1042,7 @@ theorem saveMem_frame (m : Mem) (p : Addr) (v : Nat → BitVec 64) (n : Nat) (hn
       omega
     exact prev.writeW List.mem_cons_self _ (Offset.contains_base p (by omega) (by omega))
 
-def saveCode (base : Reg) (regs : Nat → Reg) (n : Nat) : List Instr :=
+noncomputable def saveCode (base : Reg) (regs : Nat → Reg) (n : Nat) : List Instr :=
   (List.range n).map fun i => .store (memOp base (8 * i)) (regs i)
 
 theorem saveCode_ok (s : State) (base : Reg) (regs : Nat → Reg) (n : Nat)
@@ -1066,7 +1066,7 @@ theorem saveCode_ok (s : State) (base : Reg) (regs : Nat → Reg) (n : Nat)
         State.ea, offset_nat, valid₁, ite_true]
     · exact ⟨h₁.1, h₁.2.1, h₁.2.2.1, by rw [h₁.2.2.2, h₁.1, saveMem_succ]⟩
 
-def restoreCode (base : Reg) (regs : Nat → Reg) (is : List Nat) : List Instr :=
+noncomputable def restoreCode (base : Reg) (regs : Nat → Reg) (is : List Nat) : List Instr :=
   is.map fun i => .mov (regs i) (.mem (memOp base (8 * i)))
 
 theorem restoreCode_ok (s : State) (base : Reg) (regs : Nat → Reg) (is : List Nat)

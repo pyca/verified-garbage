@@ -20,7 +20,7 @@ namespace VG.Proof.Rc2.AArch64
 
 open VG VG.AArch64 VG.Impl.Rc2.AArch64
 
-def keyContract : Contract isa where
+noncomputable def keyContract : Contract isa where
   pre s :=
     let key : Region := ⟨s.gpr .x0, (s.gpr .x1).toNat⟩
     let out : Region := ⟨s.gpr .x3, 128⟩
@@ -132,7 +132,7 @@ theorem key_body_correct (s : State) (hs : keyContract.pre s) :
     rw [h₅.mem]
     exact scheduleAt_expanded expanded
 
-def keySatState : State where
+noncomputable def keySatState : State where
   gpr r := match r with
     | .x0 => 0x1000 | .x1 => 1 | .x2 => 8 | .x3 => 0x2000 | .x4 => 0x3000 | _ => 0
   sp := 0x4000

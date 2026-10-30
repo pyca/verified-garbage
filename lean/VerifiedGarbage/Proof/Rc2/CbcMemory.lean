@@ -16,7 +16,7 @@ namespace VG.Proof.Rc2
 
 open VG
 
-def wordBlock (x : BitVec 64) : Spec.Rc2.Block := Vector.ofFn fun i => x.extractLsb' (8 * i.val) 8
+noncomputable def wordBlock (x : BitVec 64) : Spec.Rc2.Block := Vector.ofFn fun i => x.extractLsb' (8 * i.val) 8
 
 theorem blockAt_read64 (m : Mem) (p : Addr) : Spec.Rc2.blockAt m p = wordBlock (m.readW p 64) := by
   apply Vector.ext

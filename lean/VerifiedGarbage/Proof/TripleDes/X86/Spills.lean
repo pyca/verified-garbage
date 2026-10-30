@@ -14,9 +14,9 @@ namespace VG.Proof.TripleDes.X86
 open VG VG.X86 VG.X86.RegUpd VG.Impl.TripleDes.X86
 open VG.Proof.Rc2.X86 (addr32)
 
-def spillRegion (s : State) : Region := ⟨addr32 (s.gpr .ebp) + BitVec.ofNat 64 64, 384⟩
+noncomputable def spillRegion (s : State) : Region := ⟨addr32 (s.gpr .ebp) + BitVec.ofNat 64 64, 384⟩
 
-def spillSafe : Instr → Bool
+noncomputable def spillSafe : Instr → Bool
   | .mov d _ | .shift _ d _ => d != .ebp
   | .alu .and d _ | .alu .xor d _ => d != .ebp
   | .store m _ => decide (m.base = .ebp ∧

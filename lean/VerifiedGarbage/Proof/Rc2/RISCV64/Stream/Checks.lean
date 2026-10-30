@@ -38,13 +38,13 @@ theorem range_bne {x b : Nat} (hx : x < 2 ^ 64) (hb : b < 64) :
   · rw [show (2 ^ 64 - 1 % 2 ^ 64 + x) % 2 ^ 64 = x - 1 by omega]; omega
 
 /-- The code `checks` leaves in `a0` for invalid lengths. -/
-def errCode (keyLen bits : Nat) : Nat :=
+noncomputable def errCode (keyLen bits : Nat) : Nat :=
   if ¬(1 ≤ keyLen ∧ keyLen ≤ 128) then 1 else if ¬(1 ≤ bits ∧ bits ≤ 1024) then 2 else 3
 
 /-- Valid lengths. -/
-def valid (keyLen bits ivLen : Nat) : Prop := (1 ≤ keyLen ∧ keyLen ≤ 128) ∧ (1 ≤ bits ∧ bits ≤ 1024) ∧ ivLen = 8
+noncomputable def valid (keyLen bits ivLen : Nat) : Prop := (1 ≤ keyLen ∧ keyLen ≤ 128) ∧ (1 ≤ bits ∧ bits ≤ 1024) ∧ ivLen = 8
 
-instance (a b c : Nat) : Decidable (valid a b c) := by unfold valid; infer_instance
+noncomputable instance (a b c : Nat) : Decidable (valid a b c) := by unfold valid; infer_instance
 
 theorem checks_run (s : State) :
     WP isa checks s fun t => t.mem = s.mem ∧ Keep [.a0, .t0] s t ∧

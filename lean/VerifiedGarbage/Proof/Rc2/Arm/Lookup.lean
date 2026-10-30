@@ -68,19 +68,19 @@ theorem key_in {rs : List Region} {a : Addr} (h : InRegions rs a 128) {d n : Nat
   omega_arith
 
 /-- The registers a key lookup writes. -/
-def lookupRegs : List Reg := [.r12, .r3, .r8, .r9, .r10, .r11, .lr]
+noncomputable def lookupRegs : List Reg := [.r12, .r3, .r8, .r9, .r10, .r11, .lr]
 
 /-- The registers the loop of a key lookup writes. -/
-def scanRegs : List Reg := [.r3, .r8, .r9, .r10, .r11, .lr]
+noncomputable def scanRegs : List Reg := [.r3, .r8, .r9, .r10, .r11, .lr]
 
 /-- Word `q` of the key schedule at `K` in `m`: entries `2 q` and `2 q + 1`. -/
-def kw (m : Mem) (K : BitVec 32) (q : Nat) : BitVec 32 :=
+noncomputable def kw (m : Mem) (K : BitVec 32) (q : Nat) : BitVec 32 :=
   m.readW (State.addr K + BitVec.ofNat 64 (4 * q)) 32
 
 /-- Accumulator `k` once the entries from `8 lim` on are visited: word
 `2 (x / 4) + k`, of the four entries of the index `x`, if they are among
 them. -/
-def kAcc (m : Mem) (K : BitVec 32) (x lim k : Nat) : BitVec 32 :=
+noncomputable def kAcc (m : Mem) (K : BitVec 32) (x lim k : Nat) : BitVec 32 :=
   if lim ≤ x / 8 then kw m K (2 * (x / 4) + k) else 0
 
 /-- The bits of a pair of words: with `z` the index plus 8 XOR the counter

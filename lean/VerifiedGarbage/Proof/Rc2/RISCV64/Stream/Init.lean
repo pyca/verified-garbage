@@ -204,7 +204,7 @@ theorem initBody_wp (s : State) (h : InitPre s)
     rw [m₅, m₄, hiv, m₂, Proof.Rc2.blockAt_store64, ← Proof.Rc2.blockAt_read64, hV₁]
 
 /-- `init`'s postcondition. -/
-def initPost (s s' : State) : Prop :=
+noncomputable def initPost (s s' : State) : Prop :=
   ∀ direction, match Spec.Rc2.initWithEffectiveBits
       (Spec.Rc2.bytesAt s.mem (s.gpr .a0) (s.gpr .a1).toNat)
       (Spec.Rc2.bytesAt s.mem (s.gpr .a3) (s.gpr .a4).toNat) direction (s.gpr .a2).toNat with

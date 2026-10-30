@@ -37,7 +37,7 @@ namespace VG.Proof.Rc2.X86_64.Stream
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.WriteBytes VG.Impl.Rc2.X86_64 VG.Impl.Rc2.X86_64.Stream
 
-def cbcName : Spec.Rc2.Direction → String
+noncomputable def cbcName : Spec.Rc2.Direction → String
   | .encrypt => "vg_rc2_cbc_encrypt"
   | .decrypt => "vg_rc2_cbc_decrypt"
 
@@ -65,8 +65,8 @@ theorem cbc_depth (d : Spec.Rc2.Direction) : (Cbc.cbc d).depth = 1 := by
 
 /-- The regions the CBC function is given: the schedule, and the chaining
 value, `out` and its scratch space. -/
-def callRd (s : State) : List Region := [⟨s.gpr .rdi, 128⟩]
-def callWr (s : State) : List Region :=
+noncomputable def callRd (s : State) : List Region := [⟨s.gpr .rdi, 128⟩]
+noncomputable def callWr (s : State) : List Region :=
   [⟨s.gpr .rdi + 128, 8⟩, ⟨s.gpr .r8, 8 * ((s.gpr .r9).toNat / 8)⟩, ⟨stackArg s 0, 512⟩]
 
 /-- The CBC function's precondition at the call, and its regions within ours. -/
@@ -249,7 +249,7 @@ open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.Rc2.X86_64 VG.Impl.Rc2.X86_64.Stream
 
 /-- What `init` returns for invalid lengths, in `initWithEffectiveBits`'s
 order, and 0 for valid ones. -/
-def code (keyLen effectiveBits ivLen : Nat) : Nat :=
+noncomputable def code (keyLen effectiveBits ivLen : Nat) : Nat :=
   if ¬(1 ≤ keyLen ∧ keyLen ≤ 128) then 1
   else if ¬(1 ≤ effectiveBits ∧ effectiveBits ≤ 1024) then 2 else if ivLen ≠ 8 then 3 else 0
 
@@ -388,7 +388,7 @@ structure KeyPre (σ t : State) : Prop where
   mem : t.mem = σ.mem.writeW (σ.gpr .r9 + BitVec.ofNat 64 128) (σ.mem.readW (σ.gpr .rcx) 64)
 
 /-- Valid lengths. -/
-def Valid (σ : State) : Prop :=
+noncomputable def Valid (σ : State) : Prop :=
   (1 ≤ (σ.gpr .rsi).toNat ∧ (σ.gpr .rsi).toNat ≤ 128) ∧ (1 ≤ (σ.gpr .rdx).toNat ∧ (σ.gpr .rdx).toNat ≤ 1024) ∧
     (σ.gpr .r8).toNat = 8
 
@@ -434,8 +434,8 @@ theorem initArgs_pre (σ : State) (hs : initContract.pre σ) (hv : Valid σ) (t 
   · have h : r ≠ .rax ∧ r ≠ .rcx ∧ r ≠ .r8 ∧ r ∉ [Reg.rax, .r10] := by revert hr; revert r; decide
     rw [g' _ h.1 h.2.1 h.2.2.1, ht.reg _ h.2.2.2]
 
-def keyRd (σ : State) : List Region := [⟨σ.gpr .rdi, (σ.gpr .rsi).toNat⟩]
-def keyWr (σ : State) : List Region := [⟨σ.gpr .r9, 128⟩, ⟨stackArg σ 0, 512⟩]
+noncomputable def keyRd (σ : State) : List Region := [⟨σ.gpr .rdi, (σ.gpr .rsi).toNat⟩]
+noncomputable def keyWr (σ : State) : List Region := [⟨σ.gpr .r9, 128⟩, ⟨stackArg σ 0, 512⟩]
 
 /-- Key expansion's precondition at the call, and its regions within ours. -/
 theorem key_pre (σ : State) (hs : initContract.pre σ) (hv : Valid σ) (t : State) (ht : KeyPre σ t) :
@@ -477,7 +477,7 @@ theorem expandKey_noSp : NoSp expandKey := by
 theorem expandKey_depth : expandKey.depth = 0 := rfl
 
 /-- The postcondition of `init`, spelled out. -/
-def InitPost (σ s' : State) : Prop :=
+noncomputable def InitPost (σ s' : State) : Prop :=
   ((∀ r ∈ calleeSaved, s'.gpr r = σ.gpr r) ∧ s'.mem.readW (σ.gpr .rsp) 64 = σ.mem.readW (σ.gpr .rsp) 64) ∧
   ∀ direction, match Spec.Rc2.initWithEffectiveBits (Spec.Rc2.bytesAt σ.mem (σ.gpr .rdi) (σ.gpr .rsi).toNat)
       (Spec.Rc2.bytesAt σ.mem (σ.gpr .rcx) (σ.gpr .r8).toNat) direction (σ.gpr .rdx).toNat with
@@ -578,13 +578,14 @@ namespace VG.Proof.Rc2.X86_64.Stream
 
 open VG VG.X86_64 VG.Impl.Rc2.X86_64 VG.Impl.Rc2.X86_64.Stream
 
+-- computable: read by `taint_decide`
 def args : List Reg := [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp]
 
-def InitRel (d : Spec.Rc2.Direction) (s₁ s₂ : State) : Prop :=
+noncomputable def InitRel (d : Spec.Rc2.Direction) (s₁ s₂ : State) : Prop :=
   (updateContract d).pre s₁ ∧ (updateContract d).pre s₂ ∧ (updateContract d).pub s₁ s₂
 
 /-- After the test of `out_len`, from related entry states. -/
-def TestRel (d : Spec.Rc2.Direction) (σ₁ σ₂ s₁ s₂ : State) : Prop :=
+noncomputable def TestRel (d : Spec.Rc2.Direction) (σ₁ σ₂ s₁ s₂ : State) : Prop :=
   InitRel d σ₁ σ₂ ∧ Keep [] σ₁ s₁ ∧ Keep [] σ₂ s₂ ∧ s₁.zf = some (decide ((σ₁.gpr .r9).toNat = 0)) ∧
     s₂.zf = some (decide ((σ₂.gpr .r9).toNat = 0))
 
@@ -674,10 +675,10 @@ namespace VG.Proof.Rc2.X86_64.Stream
 
 open VG VG.X86_64 VG.Impl.Rc2.X86_64 VG.Impl.Rc2.X86_64.Stream
 
-def InitRelI (s₁ s₂ : State) : Prop := initContract.pre s₁ ∧ initContract.pre s₂ ∧ initContract.pub s₁ s₂
+noncomputable def InitRelI (s₁ s₂ : State) : Prop := initContract.pre s₁ ∧ initContract.pre s₂ ∧ initContract.pub s₁ s₂
 
 /-- After the checks, from related entry states. -/
-def ChecksRel (σ₁ σ₂ s₁ s₂ : State) : Prop :=
+noncomputable def ChecksRel (σ₁ σ₂ s₁ s₂ : State) : Prop :=
   InitRelI σ₁ σ₂ ∧ Keep [.rax, .r10] σ₁ s₁ ∧ Keep [.rax, .r10] σ₂ s₂ ∧
     s₁.zf = some (decide (code (σ₁.gpr .rsi).toNat (σ₁.gpr .rdx).toNat (σ₁.gpr .r8).toNat = 0)) ∧
     s₂.zf = some (decide (code (σ₂.gpr .rsi).toNat (σ₂.gpr .rdx).toNat (σ₂.gpr .r8).toNat = 0))

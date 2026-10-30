@@ -15,7 +15,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 namespace VG.Proof.Rc2.X86.Cbc
 open VG VG.X86
 
-def wideContract (d : Spec.Rc2.Direction) : Contract isa :=
+noncomputable def wideContract (d : Spec.Rc2.Direction) : Contract isa :=
   { contract d with
     pre := fun s =>
     let key : Region := ⟨addr32 (arg s 0), 128⟩
@@ -34,9 +34,9 @@ def wideContract (d : Spec.Rc2.Direction) : Contract isa :=
       (arg s 4).toNat + 512 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 24 ≤ 2 ^ 32 ∧
       16 ≤ (s.gpr .esp).toNat ∧ (arg s 2).toNat + 8 * (arg s 3).toNat ≤ 2 ^ 32 }
 
-def narrowRd (s : State) : List Region :=
+noncomputable def narrowRd (s : State) : List Region :=
   [⟨addr32 (arg s 0), 128⟩, ⟨argAddr s 0, 20⟩]
-def narrowWr (s : State) : List Region :=
+noncomputable def narrowWr (s : State) : List Region :=
   [⟨addr32 (arg s 1), 8⟩, ⟨addr32 (arg s 2), 8 * (arg s 3).toNat⟩, ⟨addr32 (arg s 4), 512⟩]
 
 tactic_template "rc2_cbc_narrow" loc:Lean.Parser.Tactic.location : tactic =>
@@ -52,7 +52,7 @@ theorem wide_pre (d : Spec.Rc2.Direction) (s : State) (h : (wideContract d).pre 
   rc2_cbc_narrow
   exact ⟨trivial, trivial, h⟩
 
-def satState : State where
+noncomputable def satState : State where
   gpr r := if r = .esp then 0x6000 else 0
   cf := none
   zf := none

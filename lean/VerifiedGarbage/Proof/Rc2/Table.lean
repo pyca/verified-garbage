@@ -28,7 +28,7 @@ theorem piQuads_getD {q : Nat} (hq : q < 32) : piQuads.getD q 0 = piQuad q := by
     Option.map_some, Option.getD_some]
 
 /-- `piQuad`, reading PITABLE from its packed table (`Rc2.piTable_getD`). -/
-def piQuadNat (q : Nat) : BitVec 64 :=
+noncomputable def piQuadNat (q : Nat) : BitVec 64 :=
   (List.range 8).foldr (fun j acc => acc ||| (BitVec.ofNat 8 (VG.Rc2.piNat (8 * q + j))).setWidth 64 <<< (8 * j)) 0
 
 theorem piQuad_eq : piQuad = piQuadNat := by
@@ -45,7 +45,7 @@ theorem piQuad_byte {i : Nat} (hi : i < 256) :
   exact piQuadNat_byte i hi
 
 /-- Memory holding the table at `T`. -/
-def PiHeld (m : Mem) (T : Addr) : Prop :=
+noncomputable def PiHeld (m : Mem) (T : Addr) : Prop :=
   ∀ i < piQuads.length, m.readW (T + BitVec.ofNat 64 (8 * i)) 64 = piQuads.getD i 0
 
 /-- PITABLE's byte `i`, at `T + i`. -/

@@ -174,8 +174,8 @@ open VG.Proof.Rc2.X86 (addr32)
 open VG.Proof.TripleDes (componentKeys componentOffset)
 
 def keyLength (s : State) : Nat := (arg s 1).toNat
-abbrev keyR (s : State) : Region := ⟨addr32 (keyArg s), keyLength s⟩
-abbrev outputR (s : State) : Region := ⟨addr32 (scheduleArg s), 384⟩
+noncomputable abbrev keyR (s : State) : Region := ⟨addr32 (keyArg s), keyLength s⟩
+noncomputable abbrev outputR (s : State) : Region := ⟨addr32 (scheduleArg s), 384⟩
 def slot (base : Addr) (c j : Nat) : Addr := base + BitVec.ofNat 64 (128 * c + 8 * j)
 
 structure Components (origin s : State) (done : Nat) : Prop where
@@ -509,8 +509,8 @@ open VG VG.X86 VG.X86.Straight VG.X86.RegUpd
 open VG.Proof.Rc2.X86 (addr32)
 
 def preparedKey (s : State) : State := s.setReg .ebp (scratchArg s 4)
-abbrev scratchR (s : State) : Region := ⟨addr32 (scratchArg s 4), 512⟩
-abbrev savedR (s : State) : Region := ⟨addr32 (scratchArg s 4), 16⟩
+noncomputable abbrev scratchR (s : State) : Region := ⟨addr32 (scratchArg s 4), 512⟩
+noncomputable abbrev savedR (s : State) : Region := ⟨addr32 (scratchArg s 4), 16⟩
 
 structure HeadPre (s : State) : Prop where
   permissions : Permissions (preparedKey s)

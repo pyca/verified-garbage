@@ -25,7 +25,7 @@ namespace VG.Proof.Rc2.RISCV64
 open VG VG.RISCV64 VG.Impl.Rc2.RISCV64
 
 /-- The four words are in `a3`–`a6`, zero-extended. -/
-def Holds (v : Spec.Rc2.State) (s : State) : Prop :=
+noncomputable def Holds (v : Spec.Rc2.State) (s : State) : Prop :=
   ∀ i < 4, s.gpr (wordReg i) = (v.getD i 0).setWidth 64
 
 /-- What the rounds need: the schedule's copy at `a2`, `T`, aligned to 8

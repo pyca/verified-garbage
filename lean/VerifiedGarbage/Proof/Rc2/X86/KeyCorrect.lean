@@ -14,7 +14,7 @@ namespace VG.Proof.Rc2.X86
 
 open VG VG.X86 VG.Impl.Rc2.X86
 
-def keyContract : Contract isa where
+noncomputable def keyContract : Contract isa where
   pre s :=
     let key : Region := ⟨addr32 (arg s 0), (arg s 1).toNat⟩
     let out : Region := ⟨addr32 (arg s 3), 128⟩

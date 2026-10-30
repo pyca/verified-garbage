@@ -16,7 +16,7 @@ open VG.Spec.TripleDes (Direction DesSchedule)
 open VG.Proof.Rc2.X86 (addr32)
 
 def prepared (s : State) : State := s.setReg .ebp (scratchArg s 3)
-def saveRegion (s : State) : Region := ⟨addr32 (scratchArg s 3), 16⟩
+noncomputable def saveRegion (s : State) : Region := ⟨addr32 (scratchArg s 3), 16⟩
 
 structure HeadPre (keys : Nat → DesSchedule) (base : BitVec 32) (s : State) : Prop where
   ready : Ready keys base (prepared s)

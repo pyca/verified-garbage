@@ -23,17 +23,17 @@ namespace VG.Proof.Rc2.X86
 
 open VG VG.X86 VG.X86.RegUpd VG.Impl.Rc2.X86
 
-def wordBase (s : State) : Addr := addr32 (s.gpr .ebp) + 64
+noncomputable def wordBase (s : State) : Addr := addr32 (s.gpr .ebp) + 64
 
-def MemWords (m : Mem) (p : Addr) (v : Spec.Rc2.State) : Prop :=
+noncomputable def MemWords (m : Mem) (p : Addr) (v : Spec.Rc2.State) : Prop :=
   ∀ i < 4, m.readW (p + BitVec.ofNat 64 (4 * i)) 32 = (v.getD i 0).setWidth 32
 
-def Words (s : State) (v : Spec.Rc2.State) : Prop :=
+noncomputable def Words (s : State) (v : Spec.Rc2.State) : Prop :=
   ∀ i < 4, s.gpr (wordReg i) = (v.getD i 0).setWidth 32
 
-def temps : List Reg := [.esi, .edi]
-def wordRegs : List Reg := [.eax, .ebx, .ecx, .edx]
-def roundWrites : List Reg := [.eax, .ebx, .ecx, .edx, .esi, .edi]
+noncomputable def temps : List Reg := [.esi, .edi]
+noncomputable def wordRegs : List Reg := [.eax, .ebx, .ecx, .edx]
+noncomputable def roundWrites : List Reg := [.eax, .ebx, .ecx, .edx, .esi, .edi]
 
 theorem wordReg_mem (i : Nat) : wordReg i ∈ wordRegs := by
   have fact : ∀ i < 4, wordReg i ∈ wordRegs := by decide
@@ -85,7 +85,7 @@ theorem Words.update {s s' : State} {v : Spec.Rc2.State} (h : Words s v)
       exact ⟨fun e => he ((wordReg_injective j hj i hi).mp e), wordReg_not_temps j⟩), h j hj]
     rw [vector_getD _ j hj, vector_getD _ j hj, Vector.getElem_set!_ne hj (Ne.symm he)]
 
-def wordIndex : Reg → Nat
+noncomputable def wordIndex : Reg → Nat
   | .eax => 0 | .ebx => 1 | .ecx => 2 | .edx => 3 | _ => 0
 
 theorem wordIndex_reg : ∀ i < 4, wordIndex (wordReg i) = i := by decide
@@ -150,7 +150,7 @@ theorem argAddr_keep {s s' : State} {rs : List Reg} (h : Keep rs s s')
     (sp : .esp ∉ rs) (i : Nat) : argAddr s' i = argAddr s i := by
   unfold argAddr; rw [h.reg .esp sp]
 
-def mixValue (sub : Bool) (x c k : BitVec 32) : BitVec 16 :=
+noncomputable def mixValue (sub : Bool) (x c k : BitVec 32) : BitVec 16 :=
   (if sub then x - c - k else x + c + k).setWidth 16
 
 theorem mixArithmetic_ok (sub : Bool) (s : State) (i j : Nat) (hj : j < 64)
@@ -227,7 +227,7 @@ namespace VG.Proof.Rc2.X86
 
 open VG VG.X86 VG.Impl.Rc2.X86
 
-def mixResult (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (j i : Nat)
+noncomputable def mixResult (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (j i : Nat)
     (v : Spec.Rc2.State) : BitVec 16 :=
   let x := v.getD i 0
   let a := v.getD ((i + 3) % 4) 0
@@ -317,7 +317,7 @@ open VG VG.X86 VG.Impl.Rc2.X86
 
 /-- The 32 bytes of scratch the rounds write: the schedule lookup's lanes
 (`keyLookup`, at 48), then the words (at 64). -/
-def areaBase (s : State) : Addr := addr32 (s.gpr .ebp) + BitVec.ofNat 64 48
+noncomputable def areaBase (s : State) : Addr := addr32 (s.gpr .ebp) + BitVec.ofNat 64 48
 
 theorem wordBase_eq (s : State) : wordBase s = areaBase s + BitVec.ofNat 64 16 := by
   unfold wordBase areaBase
@@ -439,7 +439,7 @@ namespace VG.Proof.Rc2.X86
 
 open VG VG.X86 VG.Impl.Rc2.X86
 
-def mixSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (j i : Nat)
+noncomputable def mixSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (j i : Nat)
     (v : Spec.Rc2.State) : Spec.Rc2.State :=
   match d with
   | .encrypt => Spec.Rc2.mix k j i v
@@ -518,7 +518,7 @@ theorem mashInput_ok (s : State) (v : Spec.Rc2.State) (hv : MemWords s.mem (word
   · exact out₂.trans (arg_keep keep₁ (by decide) 0)
   · exact (keep₁.weaken (by simp)).trans (keep₂.weaken (by simp))
 
-def mashResult (d : Spec.Rc2.Direction) (x k : BitVec 16) : BitVec 16 :=
+noncomputable def mashResult (d : Spec.Rc2.Direction) (x k : BitVec 16) : BitVec 16 :=
   match d with
   | .encrypt => x + k
   | .decrypt => x - k
@@ -577,7 +577,7 @@ theorem indexWord (x : BitVec 16) :
   change x.toNat % 4294967296 % 64 = x.toNat &&& (2 ^ 6 - 1)
   rw [Nat.and_two_pow_sub_one_eq_mod, Nat.mod_eq_of_lt (show x.toNat < 4294967296 by have := x.isLt; omega_arith)]
 
-def mashSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
+noncomputable def mashSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
     (i : Nat) (v : Spec.Rc2.State) : Spec.Rc2.State :=
   match d with
   | .encrypt => Spec.Rc2.mash k i v
@@ -693,13 +693,13 @@ theorem reverseMixRound_ok (s : State) (v : Spec.Rc2.State) (hv : MemWords s.mem
     omega_arith
   exact mixStep_ok .decrypt s v hv env i (4 * j + i) bound (by omega_arith)
 
-def mashRoundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
+noncomputable def mashRoundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
     (v : Spec.Rc2.State) : Spec.Rc2.State :=
   match d with
   | .encrypt => Spec.Rc2.mashRound k v
   | .decrypt => Spec.Rc2.reverseMashRound k v
 
-def order (d : Spec.Rc2.Direction) : List Nat :=
+noncomputable def order (d : Spec.Rc2.Direction) : List Nat :=
   match d with
   | .encrypt => List.range 4
   | .decrypt => [3, 2, 1, 0]
@@ -722,7 +722,7 @@ theorem mashRound_ok (d : Spec.Rc2.Direction) (s : State) (v : Spec.Rc2.State) (
       omega_arith
   exact mash_ok d s v hv env i bound
 
-def roundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (j : Nat)
+noncomputable def roundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (j : Nat)
     (v : Spec.Rc2.State) : Spec.Rc2.State :=
   let v := match d with
     | .encrypt => Spec.Rc2.mixRound k j v

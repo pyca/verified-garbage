@@ -48,7 +48,7 @@ structure UpdatePre (s : State) : Prop where
   out : (s.gpr .a5).toNat = ((s.gpr .a1).toNat + (s.gpr .a3).toNat) / 8 * 8
 
 /-- `update`'s postcondition. -/
-def updatePost (d : Spec.Rc2.Direction) (s s' : State) : Prop :=
+noncomputable def updatePost (d : Spec.Rc2.Direction) (s s' : State) : Prop :=
   let result := Spec.Rc2.update (Spec.Rc2.contextAt s.mem (s.gpr .a0) d (s.gpr .a1).toNat)
     (Spec.Rc2.bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat)
   Spec.Rc2.contextAt s'.mem (s.gpr .a0) d (((s.gpr .a1).toNat + (s.gpr .a3).toNat) % 8) = result.1 ∧

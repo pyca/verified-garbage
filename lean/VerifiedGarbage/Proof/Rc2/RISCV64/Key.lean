@@ -101,7 +101,7 @@ structure KeyPre (s : State) : Prop where
   SW : (⟨s.gpr .a3, 128⟩ : Region).Disjoint ⟨s.gpr .a4, 512⟩
 
 /-- What key expansion guarantees. -/
-def KeyPost (s s' : State) : Prop :=
+noncomputable def KeyPost (s s' : State) : Prop :=
   Spec.Rc2.scheduleAt s'.mem (s.gpr .a3) =
     Spec.Rc2.expandKey (Spec.Rc2.bytesAt s.mem (s.gpr .a0) (s.gpr .a1).toNat) (s.gpr .a2).toNat
 

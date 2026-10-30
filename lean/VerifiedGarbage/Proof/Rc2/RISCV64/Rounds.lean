@@ -64,7 +64,7 @@ theorem rmix_val (X K A B C : BitVec 16) (k : BitVec 64) (hk : k.setWidth 16 = K
   simp only [lo16_sub, lo16_and, lo16_xor, lo16_ext, hk, andNot_xor]
 
 /-- The first three instructions of a mix's inputs. -/
-def andInputs (i : Nat) : List Instr :=
+noncomputable def andInputs (i : Nat) : List Instr :=
   [.logic .and .t0 (wordReg (i + 3)) (wordReg (i + 2)), .logic .and .t1 (wordReg (i + 3)) (wordReg (i + 1)),
    .logic .xor .t1 (wordReg (i + 1)) .t1]
 
@@ -222,7 +222,7 @@ theorem idx_val (w : BitVec 16) :
   omega
 
 /-- A mash of word `i`, in the direction `d`. -/
-def mashSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (i : Nat) (v : Spec.Rc2.State) : Spec.Rc2.State :=
+noncomputable def mashSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (i : Nat) (v : Spec.Rc2.State) : Spec.Rc2.State :=
   match d with
   | .encrypt => Spec.Rc2.mash k i v
   | .decrypt => Spec.Rc2.reverseMash k i v

@@ -26,7 +26,7 @@ open VG VG.X86_64
 
 /-- A state satisfying `vg_rc2_cbc_init`'s precondition, without the working
 space. -/
-def initFrameSat : State :=
+noncomputable def initFrameSat : State :=
   { initSatState with rd := [⟨0x1000, 0⟩, ⟨0x2000, 0⟩], wr := [⟨0x3000, 144⟩] }
 
 theorem initFrameSat_pre : ∃ s, (Spec.Rc2.cbcInitContract X86_64.abi 600).pre s := by
@@ -46,7 +46,7 @@ theorem init_framed :
 
 /-- A state satisfying the update functions' precondition, without the
 working space. -/
-def updateFrameSat : State :=
+noncomputable def updateFrameSat : State :=
   { updateSatState with rd := [⟨0x2000, 0⟩], wr := [⟨0x1000, 144⟩, ⟨0x3000, 0⟩] }
 
 theorem updateFrameSat_pre (d : Spec.Rc2.Direction) :

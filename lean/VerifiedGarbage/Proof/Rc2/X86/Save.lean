@@ -43,7 +43,7 @@ namespace VG.Proof.Rc2.X86
 
 open VG VG.X86 VG.X86.RegUpd VG.Impl.Rc2.X86 VG.Proof.Rc2.Word32
 
-def saveMem (m : Mem) (p : Addr) (v : Nat → BitVec 32) (n : Nat) : Mem :=
+noncomputable def saveMem (m : Mem) (p : Addr) (v : Nat → BitVec 32) (n : Nat) : Mem :=
   (List.range n).foldl (fun m i => m.writeW (p + BitVec.ofNat 64 (4 * i)) (v i)) m
 
 theorem saveMem_succ (m : Mem) (p : Addr) (v : Nat → BitVec 32) (n : Nat) :
@@ -79,7 +79,7 @@ theorem saveMem_frame (m : Mem) (p : Addr) (v : Nat → BitVec 32) (n : Nat) (hn
       omega
     exact prev.writeW List.mem_cons_self _ (Offset.contains_base p (by omega) (by omega))
 
-def saveCode (base : Reg) (regs : Nat → Reg) (n : Nat) : List Instr :=
+noncomputable def saveCode (base : Reg) (regs : Nat → Reg) (n : Nat) : List Instr :=
   (List.range n).map fun i => .store (memOp base (4 * i)) (regs i)
 
 theorem saveCode_ok (s : State) (base : Reg) (regs : Nat → Reg) (n : Nat) (hn : n ≤ 64)
@@ -105,7 +105,7 @@ theorem saveCode_ok (s : State) (base : Reg) (regs : Nat → Reg) (n : Nat) (hn 
         runStep_some, runBlock_nil]
     · exact ⟨h₁.1, h₁.2.1, h₁.2.2.1, by rw [h₁.2.2.2, h₁.1, saveMem_succ]⟩
 
-def restoreCode (base : Reg) (regs : Nat → Reg) (is : List Nat) : List Instr :=
+noncomputable def restoreCode (base : Reg) (regs : Nat → Reg) (is : List Nat) : List Instr :=
   is.map fun i => .mov (regs i) (.mem (memOp base (4 * i)))
 
 theorem restoreCode_ok (s : State) (base : Reg) (regs : Nat → Reg) (is : List Nat)

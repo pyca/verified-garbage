@@ -17,8 +17,9 @@ namespace VG.Proof.Rc2.AArch64.Cbc
 
 open VG VG.AArch64 VG.Impl.Rc2.AArch64
 
-def savedAcrossCall : List Reg := [.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28]
+noncomputable def savedAcrossCall : List Reg := [.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28]
 
+-- computable: read by `taint_decide`
 def kept : List Reg := [.x0, .x1, .x2, .x23, .x24]
 
 theorem block_keeps (d : Spec.Rc2.Direction) :

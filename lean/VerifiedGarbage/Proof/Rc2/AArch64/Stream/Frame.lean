@@ -21,7 +21,7 @@ open VG VG.AArch64 VG.Impl.Rc2.AArch64.Stream
 
 /-- A state satisfying `vg_rc2_cbc_init`'s precondition, without the working
 space. -/
-def initFrameSat : State := { initSat with wr := [⟨0x3000, 144⟩] }
+noncomputable def initFrameSat : State := { initSat with wr := [⟨0x3000, 144⟩] }
 
 theorem initFrameSat_pre : ∃ s, (Spec.Rc2.cbcInitContract AArch64.abi 592).pre s := by
   implies_sat [Spec.Rc2.cbcInitContract, Spec.Rc2.cbcInitSig, Spec.Rc2.cbcInitPost, AArch64.abi,
@@ -37,7 +37,7 @@ theorem init_framed :
 
 /-- A state satisfying the update functions' precondition, without the
 working space. -/
-def updateFrameSat : State := { updateSat with wr := [⟨0x1000, 144⟩, ⟨0x3000, 0⟩] }
+noncomputable def updateFrameSat : State := { updateSat with wr := [⟨0x1000, 144⟩, ⟨0x3000, 0⟩] }
 
 theorem updateFrameSat_pre (d : Spec.Rc2.Direction) :
     ∃ s, (Spec.Rc2.cbcUpdateContract AArch64.abi d 592).pre s := by

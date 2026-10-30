@@ -70,7 +70,7 @@ namespace VG.Proof.Rc2.X86_64.Sse2
 
 open VG VG.X86_64 VG.Impl.Rc2.X86_64
 
-def piWord (i : Nat) : BitVec 16 := (Spec.Rc2.piTable.getD i 0).setWidth 16
+noncomputable def piWord (i : Nat) : BitVec 16 := (Spec.Rc2.piTable.getD i 0).setWidth 16
 
 structure ScanInv (x : Byte) (n : Nat) (s : State) : Prop where
   input : s.xmm .xmm0 = broadcast x
@@ -174,7 +174,7 @@ namespace VG.Proof.Rc2.X86_64
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.Rc2.X86_64
 
-def keyTemps : List Reg := [.rax, .rbx, .rcx, .r9, .r10, .r11]
+noncomputable def keyTemps : List Reg := [.rax, .rbx, .rcx, .r9, .r10, .r11]
 
 theorem copyKey_ok (s : State)
     (readable : InRegions (s.rd ++ s.wr) (s.gpr .r12 + s.gpr .rbx) 1)

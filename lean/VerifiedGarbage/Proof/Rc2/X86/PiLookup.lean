@@ -59,11 +59,11 @@ tactic_template "lrun" : tactic => `(tactic| lrun [])
 /-! ## Lanes -/
 
 /-- `n` in every lane. -/
-def splat (n : Nat) : Nat → BitVec 32 := fun _ => BitVec.ofNat 32 n
+noncomputable def splat (n : Nat) : Nat → BitVec 32 := fun _ => BitVec.ofNat 32 n
 
 /-- Lane `k` once the groups `0 … c - 1` of the dwords `tab` are visited, for
 dword `d`. -/
-def found (tab : Nat → BitVec 32) (d c k : Nat) : BitVec 32 :=
+noncomputable def found (tab : Nat → BitVec 32) (d c k : Nat) : BitVec 32 :=
   if d < 4 * c ∧ d % 4 = k then tab d else 0
 
 theorem found_succ (tab : Nat → BitVec 32) {d c k : Nat} (hd : d < 64) (hc : c < 16) (hk : k < 4) :

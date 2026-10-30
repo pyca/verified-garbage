@@ -59,11 +59,11 @@ namespace VG.Proof.Rc2.X86_64.Cbc
 
 open VG VG.X86_64
 
-abbrev keyR (s : State) : Region := ⟨s.gpr .rdi, 128⟩
-abbrev ivR (s : State) : Region := ⟨s.gpr .rbx, 8⟩
-abbrev dataR (s : State) (n : Nat := 1) : Region := ⟨s.gpr .rsi, 8 * n⟩
-abbrev bufR (s : State) : Region := ⟨s.gpr .rdx, 512⟩
-abbrev stackR (s : State) : Region := below (s.gpr .rsp) 8
+noncomputable abbrev keyR (s : State) : Region := ⟨s.gpr .rdi, 128⟩
+noncomputable abbrev ivR (s : State) : Region := ⟨s.gpr .rbx, 8⟩
+noncomputable abbrev dataR (s : State) (n : Nat := 1) : Region := ⟨s.gpr .rsi, 8 * n⟩
+noncomputable abbrev bufR (s : State) : Region := ⟨s.gpr .rdx, 512⟩
+noncomputable abbrev stackR (s : State) : Region := below (s.gpr .rsp) 8
 
 structure StepPre (s : State) (n : Nat := 1) : Prop where
   reads : Covers [keyR s, ivR s, dataR s n, bufR s] (s.rd ++ s.wr)
@@ -161,7 +161,7 @@ namespace VG.Proof.Rc2.X86_64.Cbc
 
 open VG VG.X86_64
 
-def stepWrites (s : State) : List Region := [ivR s, dataR s, ⟨s.gpr .rdx, 264⟩, stackR s]
+noncomputable def stepWrites (s : State) : List Region := [ivR s, dataR s, ⟨s.gpr .rdx, 264⟩, stackR s]
 
 structure Pinned (s s' : State) : Prop where
   reg : ∀ r ∈ kept, s'.gpr r = s.gpr r
@@ -237,7 +237,7 @@ namespace VG.Proof.Rc2.X86_64.Cbc
 
 open VG VG.X86_64 VG.Impl.Rc2.X86_64
 
-abbrev stashR (s : State) : Region := ⟨s.gpr .rdx + BitVec.ofNat 64 256, 8⟩
+noncomputable abbrev stashR (s : State) : Region := ⟨s.gpr .rdx + BitVec.ofNat 64 256, 8⟩
 
 theorem stash_sub (s : State) : Region.Sub (stashR s) (bufR s) :=
   Offset.sub_base _ (by decide)
@@ -517,7 +517,7 @@ namespace VG.Proof.Rc2.X86_64.Cbc
 
 open VG VG.X86_64
 
-def loopWrites (s : State) (n : Nat) : List Region := [ivR s, dataR s n, ⟨s.gpr .rdx, 264⟩, stackR s]
+noncomputable def loopWrites (s : State) (n : Nat) : List Region := [ivR s, dataR s n, ⟨s.gpr .rdx, 264⟩, stackR s]
 
 theorem loopFrame_slice {s s' : State} {n m i : Nat} {a b : Mem}
     (h : Frame (loopWrites s' m) a b) (bound : i + m ≤ n)
@@ -706,7 +706,7 @@ namespace VG.Proof.Rc2.X86_64.Cbc
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.Rc2.X86_64
 
-def savedMem (s : State) : Mem :=
+noncomputable def savedMem (s : State) : Mem :=
   (s.mem.writeW (s.gpr .r8 + BitVec.ofNat 64 264) (s.gpr .rbx)).writeW
     (s.gpr .r8 + BitVec.ofNat 64 272) (s.gpr .rbp)
 
@@ -790,7 +790,7 @@ namespace VG.Proof.Rc2.X86_64.Cbc
 
 open VG VG.X86_64
 
-def contract (d : Spec.Rc2.Direction) : Contract isa where
+noncomputable def contract (d : Spec.Rc2.Direction) : Contract isa where
   pre s :=
     let key : Region := ⟨s.gpr .rdi, 128⟩
     let iv : Region := ⟨s.gpr .rsi, 8⟩
@@ -923,7 +923,7 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
     · rw [keep₄.mem]; exact out
     · rw [keep₄.mem]; exact iv
 
-def satState : State where
+noncomputable def satState : State where
   gpr r := match r with
     | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x3000 | .r8 => 0x4000 | .rsp => 0x6000 | _ => 0
   cf := none

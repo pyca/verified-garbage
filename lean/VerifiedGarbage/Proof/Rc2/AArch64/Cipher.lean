@@ -68,13 +68,13 @@ theorem reverseMixRound_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
   apply WP.mono (reverseMix_ok s v hv i (4 * j + i) bound (by omega) readable)
   exact fun _ h => ⟨h.1, h.2.round⟩
 
-def mashRoundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
+noncomputable def mashRoundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
     (v : Spec.Rc2.State) : Spec.Rc2.State :=
   match d with
   | .encrypt => Spec.Rc2.mashRound k v
   | .decrypt => Spec.Rc2.reverseMashRound k v
 
-def order (d : Spec.Rc2.Direction) : List Nat :=
+noncomputable def order (d : Spec.Rc2.Direction) : List Nat :=
   match d with
   | .encrypt => List.range 4
   | .decrypt => [3, 2, 1, 0]
@@ -98,7 +98,7 @@ theorem mashRound_ok (d : Spec.Rc2.Direction) (s : State) (v : Spec.Rc2.State) (
   apply WP.mono (mash_ok d s v hv i bound readable)
   exact fun _ h => ⟨h.1, h.2.round⟩
 
-def roundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (j : Nat)
+noncomputable def roundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (j : Nat)
     (v : Spec.Rc2.State) : Spec.Rc2.State :=
   let v := match d with
     | .encrypt => Spec.Rc2.mixRound k j v

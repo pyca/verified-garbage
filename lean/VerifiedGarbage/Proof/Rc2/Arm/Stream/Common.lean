@@ -53,13 +53,13 @@ theorem storeWords_two (m : Mem) (a : BitVec 32) (x y : BitVec 32) :
     storeWords m a [x, y] = (m.writeW (State.addr a) x).writeW (State.addr (a + 4)) y := rfl
 
 /-- The 8 bytes below the stack pointer, where the frame pushes `S` and `lr`. -/
-abbrev below (s : State) : Region := ⟨State.addr s.sp - 8, 8⟩
+noncomputable abbrev below (s : State) : Region := ⟨State.addr s.sp - 8, 8⟩
 
 /-- The callee's stack argument. -/
-abbrev argR (s : State) : Region := ⟨State.addr s.sp - 8, 4⟩
+noncomputable abbrev argR (s : State) : Region := ⟨State.addr s.sp - 8, 4⟩
 
 /-- The state the callee runs from, with the permissions it is given. -/
-abbrev view (s : State) (rd wr : List Region) : State :=
+noncomputable abbrev view (s : State) (rd wr : List Region) : State :=
   (pushed [.r12, .lr] s).callEntry.withRegions rd wr
 
 theorem e8 : BitVec.ofNat 32 (4 * [Reg.r12, Reg.lr].length) = 8 := rfl
@@ -134,7 +134,7 @@ theorem view_gpr (s : State) (rd wr : List Region) (r : Reg) (hr : r ∉ linkReg
 /-! ## `vg_rc2_expand_key` -/
 
 /-- The region of PITABLE's table, at the address of `VG_RC2_PITABLE`. -/
-abbrev tbl (s : State) : Region := ⟨State.addr (s.syms piSym), 256⟩
+noncomputable abbrev tbl (s : State) : Region := ⟨State.addr (s.syms piSym), 256⟩
 
 /-- What the call of `vg_rc2_expand_key` needs: its arguments and regions,
 and the table, readable, held, and apart from what the call writes. -/
@@ -175,11 +175,11 @@ structure KeyPost (s : State) (K KL E O S : BitVec 32) (s' : State) : Prop where
   sched : Spec.Rc2.scheduleAt s'.mem (State.addr O) =
     Spec.Rc2.expandKey (Spec.Rc2.bytesAt s.mem (State.addr K) KL.toNat) E.toNat
 
-abbrev keyRd (s : State) (K KL : BitVec 32) : List Region := [⟨State.addr K, KL.toNat⟩, argR s]
-abbrev keyWr (O S : BitVec 32) : List Region := [⟨State.addr O, 128⟩, ⟨State.addr S, 512⟩]
+noncomputable abbrev keyRd (s : State) (K KL : BitVec 32) : List Region := [⟨State.addr K, KL.toNat⟩, argR s]
+noncomputable abbrev keyWr (O S : BitVec 32) : List Region := [⟨State.addr O, 128⟩, ⟨State.addr S, 512⟩]
 
 /-- The callee's readable regions: the key, its stack argument and the table. -/
-abbrev keyRdC (s : State) (K KL : BitVec 32) : List Region := keyRd s K KL ++ [tbl s]
+noncomputable abbrev keyRdC (s : State) (K KL : BitVec 32) : List Region := keyRd s K KL ++ [tbl s]
 
 theorem KeyPre.pre0 {s : State} {K KL E O S : BitVec 32} (h : KeyPre s K KL E O S) :
     keyContract.pre (view s (keyRd s K KL) (keyWr O S)) := by
@@ -325,7 +325,7 @@ theorem cbc_noFrames (d : Spec.Rc2.Direction) : (Impl.Rc2.Arm.Cbc.cbc d).noFrame
   cases d <;> decide +kernel
 
 /-- The name of the CBC function. -/
-def cbcName : Spec.Rc2.Direction → String
+noncomputable def cbcName : Spec.Rc2.Direction → String
   | .encrypt => "vg_rc2_cbc_encrypt"
   | .decrypt => "vg_rc2_cbc_decrypt"
 
@@ -372,8 +372,8 @@ structure CbcPost (d : Spec.Rc2.Direction) (s : State) (K I D N S : BitVec 32) (
     (Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (State.addr K)) d (Spec.Rc2.blockAt s.mem (State.addr I))
       (Spec.Rc2.blocksAt s.mem (State.addr D) N.toNat)).2
 
-abbrev cbcRd (s : State) (K : BitVec 32) : List Region := [⟨State.addr K, 128⟩, argR s]
-abbrev cbcWr (I D N S : BitVec 32) : List Region :=
+noncomputable abbrev cbcRd (s : State) (K : BitVec 32) : List Region := [⟨State.addr K, 128⟩, argR s]
+noncomputable abbrev cbcWr (I D N S : BitVec 32) : List Region :=
   [⟨State.addr I, 8⟩, ⟨State.addr D, 8 * N.toNat⟩, ⟨State.addr S, 512⟩]
 
 theorem CbcPre.pre {d : Spec.Rc2.Direction} {s : State} {K I D N S : BitVec 32} (h : CbcPre s K I D N S) :
@@ -608,7 +608,7 @@ open VG VG.Arm
 open VG.Impl.Rc2 (piSym piQuads piConsts)
 
 /-- `vg_rc2_cbc_init`'s contract under `abi`, spelled out. -/
-def initContract0 : Contract isa where
+noncomputable def initContract0 : Contract isa where
   pre s :=
     let key : Region := ⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩
     let iv : Region := ⟨State.addr (s.gpr .r3), (stackArg s 0).toNat⟩
@@ -634,7 +634,7 @@ def initContract0 : Contract isa where
     s₁.gpr .r2 = s₂.gpr .r2 ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧
     stackArg s₁ 1 = stackArg s₂ 1 ∧ stackArg s₁ 2 = stackArg s₂ 2
 
-def updateContract (d : Spec.Rc2.Direction) : Contract isa where
+noncomputable def updateContract (d : Spec.Rc2.Direction) : Contract isa where
   pre s :=
     let ctx : Region := ⟨State.addr (s.gpr .r0), 144⟩
     let data : Region := ⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩
@@ -660,7 +660,7 @@ def updateContract (d : Spec.Rc2.Direction) : Contract isa where
     s₁.gpr .r2 = s₂.gpr .r2 ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧
     stackArg s₁ 1 = stackArg s₂ 1 ∧ stackArg s₁ 2 = stackArg s₂ 2
 
-def initSatState : State where
+noncomputable def initSatState : State where
   gpr r := match r with
     | .r0 => 0x1000 | .r3 => 0x2000 | _ => 0
   sp := 0x6000
@@ -672,7 +672,7 @@ def initSatState : State where
   rd := [⟨0x1000, 0⟩, ⟨0x2000, 0⟩, ⟨0x6000, 12⟩]
   wr := [⟨0x3000, 144⟩, ⟨0x4000, 576⟩]
 
-def updateSatState : State where
+noncomputable def updateSatState : State where
   gpr r := match r with
     | .r0 => 0x1000 | .r2 => 0x2000 | _ => 0
   sp := 0x6000
@@ -691,7 +691,7 @@ theorem init_implies0 : initContract0.Implies (Proof.Rc2.cbcInitScratchContract 
 
 /-- `initContract0` with the table's region last among the readable ones, as
 the proofs state it. -/
-def initContract : Contract isa :=
+noncomputable def initContract : Contract isa :=
   { initContract0 with
     pre s :=
       let key : Region := ⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩
@@ -717,7 +717,7 @@ structure InitTab (s : State) : Prop where
 
 /-- `vg_rc2_cbc_init`'s contract under `abi.withConsts piConsts`, as the
 proofs state it. -/
-def initContractC : Contract isa where
+noncomputable def initContractC : Contract isa where
   pre s := initContract.pre s ∧ InitTab s
   post := initContract.post
   pub s₁ s₂ := initContract.pub s₁ s₂ ∧ s₁.syms piSym = s₂.syms piSym
@@ -740,7 +740,7 @@ theorem initC_pre {s : State} (h : initContract0.pre (stripConsts piConsts s)) (
 /-- The memory of the witness with the table: the table at `0x100000`, and
 `initSatState`'s elsewhere (irreducible: unfolding it in a definitional check
 would evaluate the table). -/
-@[irreducible] def initSatMem : Mem := fun a =>
+@[irreducible] noncomputable def initSatMem : Mem := fun a =>
   if (a - 0x100000).toNat < 256 then constMem 0x100000 piQuads a else initSatState.mem a
 
 theorem initSatMem_held : ∀ i < piQuads.length,
@@ -761,7 +761,7 @@ theorem initSatMem_eq (a : Addr) (ha : ¬ (a - 0x100000).toNat < 256) : initSatM
   exact ite_eq_right ha
 
 /-- `initSatState` with the table. -/
-def initSatC : State :=
+noncomputable def initSatC : State :=
   { initSatState with
     mem := initSatMem, rd := [⟨0x1000, 0⟩, ⟨0x2000, 0⟩, ⟨0x6000, 12⟩, ⟨0x100000, 256⟩], syms := fun _ => 0x100000 }
 

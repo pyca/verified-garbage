@@ -78,7 +78,7 @@ theorem rmashRound_ok {m : Mem} {p : Addr} {s : State} (hs : SchedV s m p)
 
 /-- A reverse round of `Spec.Rc2.decryptBlock`: the mixing round `15 - j`,
 then the mashing round after the fifth and the eleventh. -/
-def revRound (k : Spec.Rc2.Schedule) (r : Spec.Rc2.State) (j : Nat) : Spec.Rc2.State :=
+noncomputable def revRound (k : Spec.Rc2.Schedule) (r : Spec.Rc2.State) (j : Nat) : Spec.Rc2.State :=
   if j = 4 ∨ j = 10 then Spec.Rc2.reverseMashRound k (Spec.Rc2.reverseMixRound k (15 - j) r)
   else Spec.Rc2.reverseMixRound k (15 - j) r
 

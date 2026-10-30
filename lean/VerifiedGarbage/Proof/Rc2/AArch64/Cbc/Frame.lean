@@ -14,7 +14,7 @@ namespace VG.Proof.Rc2.AArch64.Cbc
 
 open VG VG.AArch64
 
-def stepWrites (s : State) : List Region := [ivR s, dataR s, ⟨s.gpr .x2, 264⟩]
+noncomputable def stepWrites (s : State) : List Region := [ivR s, dataR s, ⟨s.gpr .x2, 264⟩]
 
 structure Pinned (s s' : State) : Prop where
   reg : ∀ r ∈ kept, s'.gpr r = s.gpr r

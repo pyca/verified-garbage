@@ -17,7 +17,7 @@ namespace VG.Proof.Rc2.X86.Cbc
 
 open VG VG.X86
 
-def loopWrites (s : State) (n : Nat) : List Region := [ivR s, dataR s n, ⟨addr32 (s.gpr .ebp), 264⟩, stackR s]
+noncomputable def loopWrites (s : State) (n : Nat) : List Region := [ivR s, dataR s n, ⟨addr32 (s.gpr .ebp), 264⟩, stackR s]
 
 theorem loopFrame_slice {s s' : State} {n m i : Nat} {a b : Mem}
     (h : Frame (loopWrites s' m) a b) (bound : i + m ≤ n)

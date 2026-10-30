@@ -170,9 +170,9 @@ namespace VG.Proof.TripleDes.X86.Ecb
 open VG VG.X86
 open VG.Proof.Rc2.X86 (addr32 addr_add)
 
-abbrev keyR (s : State) : Region := ⟨addr32 (s.gpr .ebx), 384⟩
-abbrev dataR (s : State) (n : Nat := 1) : Region := ⟨addr32 (s.gpr .esi), 8 * n⟩
-abbrev bufR (s : State) : Region := ⟨addr32 (s.gpr .ebp), 1024⟩
+noncomputable abbrev keyR (s : State) : Region := ⟨addr32 (s.gpr .ebx), 384⟩
+noncomputable abbrev dataR (s : State) (n : Nat := 1) : Region := ⟨addr32 (s.gpr .esi), 8 * n⟩
+noncomputable abbrev bufR (s : State) : Region := ⟨addr32 (s.gpr .ebp), 1024⟩
 
 structure StepPre (s : State) (n : Nat := 1) : Prop where
   reads : Covers [keyR s, dataR s n, bufR s] (s.rd ++ s.wr)
@@ -409,9 +409,9 @@ namespace VG.Proof.TripleDes.X86.Ecb
 open VG VG.X86
 open VG.Proof.Rc2.X86 (addr32 addr_add)
 
-def stepWrites (s : State) : List Region := [dataR s, ⟨addr32 (s.gpr .ebp), 512⟩, below (s.gpr .esp) 16]
+noncomputable def stepWrites (s : State) : List Region := [dataR s, ⟨addr32 (s.gpr .ebp), 512⟩, below (s.gpr .esp) 16]
 
-def loopWrites (s : State) (n : Nat) : List Region := [dataR s n, ⟨addr32 (s.gpr .ebp), 512⟩, below (s.gpr .esp) 16]
+noncomputable def loopWrites (s : State) (n : Nat) : List Region := [dataR s n, ⟨addr32 (s.gpr .ebp), 512⟩, below (s.gpr .esp) 16]
 
 theorem loopFrame_slice {s s' : State} {n m i : Nat} {a b : Mem}
     (h : Frame (loopWrites s' m) a b) (bound : i + m ≤ n) (fit : (s.gpr .esi).toNat + 8 * i < 2 ^ 32)
@@ -586,7 +586,7 @@ open VG.Proof.Rc2.X86 (Keep addr32)
 
 theorem subtract_zero (x : BitVec 32) : x - (0 : BitVec 32) = x := by bv_omega
 
-def savedMem (s : State) : Mem :=
+noncomputable def savedMem (s : State) : Mem :=
   (((s.mem.writeW (addr32 (s.gpr .eax) + BitVec.ofNat 64 512) (s.gpr .ebp)).writeW
     (addr32 (s.gpr .eax) + BitVec.ofNat 64 516) (s.gpr .ebx)).writeW
     (addr32 (s.gpr .eax) + BitVec.ofNat 64 520) (s.gpr .esi)).writeW
@@ -1002,8 +1002,8 @@ def wideContract (d : Spec.TripleDes.Direction) : Contract isa :=
       (arg s 3).toNat + 1024 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
       16 ≤ (s.gpr .esp).toNat ∧ (arg s 1).toNat + 8 * (arg s 2).toNat ≤ 2 ^ 32 }
 
-def narrowRd (s : State) : List Region := [⟨addr32 (arg s 0), 384⟩, ⟨argAddr s 0, 16⟩]
-def narrowWr (s : State) : List Region :=
+noncomputable def narrowRd (s : State) : List Region := [⟨addr32 (arg s 0), 384⟩, ⟨argAddr s 0, 16⟩]
+noncomputable def narrowWr (s : State) : List Region :=
   [⟨addr32 (arg s 1), 8 * (arg s 2).toNat⟩, ⟨addr32 (arg s 3), 1024⟩]
 
 tactic_template "tdes_ecb_narrow" : tactic =>

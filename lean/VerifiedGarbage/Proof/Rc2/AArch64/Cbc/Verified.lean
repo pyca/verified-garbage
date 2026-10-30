@@ -97,7 +97,7 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (mid : Prog isa)
     · rw [h₄.mem]; exact out
     · rw [h₄.mem]; exact iv
 
-def satState : State where
+noncomputable def satState : State where
   gpr r := match r with
     | .x0 => 0x1000 | .x1 => 0x2000 | .x2 => 0x3000 | .x4 => 0x4000 | _ => 0
   sp := 0x6000

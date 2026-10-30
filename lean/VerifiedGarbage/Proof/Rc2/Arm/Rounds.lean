@@ -110,11 +110,11 @@ theorem mixInputs_ok (s : State) (i j : Nat) (hj : j < 64)
     · simp only [wr_setReg]
 
 /-- Current RC2 words in the four dedicated registers. -/
-def Words (s : State) (v : Spec.Rc2.State) : Prop :=
+noncomputable def Words (s : State) (v : Spec.Rc2.State) : Prop :=
   ∀ i < 4, s.gpr (wordReg i) = (v.getD i 0).setWidth 32
 
-def temps : List Reg := [.r12, .r3, .r8, .r9, .r10, .r11, .lr]
-def roundWrites : List Reg := temps ++ [.r4, .r5, .r6, .r7]
+noncomputable def temps : List Reg := [.r12, .r3, .r8, .r9, .r10, .r11, .lr]
+noncomputable def roundWrites : List Reg := temps ++ [.r4, .r5, .r6, .r7]
 
 theorem wordReg_not_temps (i : Nat) : wordReg i ∉ temps := by
   have h := wordReg_separate i
@@ -351,7 +351,7 @@ theorem indexWord (x : BitVec 16) :
   change x.toNat % 4294967296 % 64 = x.toNat &&& (2 ^ 6 - 1)
   rw [Nat.and_two_pow_sub_one_eq_mod, Nat.mod_eq_of_lt (show x.toNat < 4294967296 by have := x.isLt; omega)]
 
-def mashSpec (direction : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
+noncomputable def mashSpec (direction : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
     (i : Nat) (v : Spec.Rc2.State) : Spec.Rc2.State :=
   match direction with
   | .encrypt => Spec.Rc2.mash k i v

@@ -40,7 +40,7 @@ namespace VG.Proof.Rc2.AArch64.Stream
 
 open VG VG.AArch64 VG.Impl.Rc2.AArch64.Stream
 
-def initSat : State where
+noncomputable def initSat : State where
   gpr r := match r with
     | .x0 => 0x1000 | .x3 => 0x2000 | .x5 => 0x3000 | .x6 => 0x4000 | _ => 0
   sp := 0x6000
@@ -48,7 +48,7 @@ def initSat : State where
   rd := [⟨0x1000, 0⟩, ⟨0x2000, 0⟩]
   wr := [⟨0x3000, 144⟩, ⟨0x4000, 576⟩]
 
-def updateSat : State where
+noncomputable def updateSat : State where
   gpr r := match r with
     | .x0 => 0x1000 | .x2 => 0x2000 | .x4 => 0x3000 | .x6 => 0x4000 | _ => 0
   sp := 0x6000

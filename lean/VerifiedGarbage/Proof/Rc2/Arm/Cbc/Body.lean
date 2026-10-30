@@ -30,10 +30,12 @@ namespace VG.Proof.Rc2.Arm.Cbc
 
 open VG VG.Arm VG.Impl.Rc2.Arm
 
-def savedAcrossCall : List Reg := [.r8, .r9, .r10, .r11]
+noncomputable def savedAcrossCall : List Reg := [.r8, .r9, .r10, .r11]
 
+-- computable: read by `taint_decide`
 def args : List Reg := [.r0, .r1, .r2]
 
+-- computable: read by `taint_decide`
 def kept : List Reg := [.r0, .r1, .r2, .r4, .r5]
 
 theorem block_keeps (d : Spec.Rc2.Direction) :
@@ -181,7 +183,7 @@ namespace VG.Proof.Rc2.Arm.Cbc
 
 open VG VG.Arm VG.Arm.RegUpd VG.Impl.Rc2.Arm VG.Proof.Rc2.Word32
 
-def temps : List Reg := [.r12, .r3, .r6, .r7]
+noncomputable def temps : List Reg := [.r12, .r3, .r6, .r7]
 
 theorem copy64_ok (s : State) (src dst : Reg) (a b : Nat)
     (srcSep : src ≠ .r12) (dstSep : dst ≠ .r12 ∧ dst ≠ .r3)
@@ -268,7 +270,7 @@ theorem xor64_ok (s : State) (dst iv : Reg)
   simp only [Nat.zero_add, BitVec.add_zero]
   rw [pair_xor, ← read64_pair, ← read64_pair]
 
-def zeroCount (s : State) : Option Bool := some s.z
+noncomputable def zeroCount (s : State) : Option Bool := some s.z
 
 theorem eval_zeroCount (s : State) : eval .eq s = zeroCount s := rfl
 
@@ -304,10 +306,10 @@ namespace VG.Proof.Rc2.Arm.Cbc
 
 open VG VG.Arm
 
-abbrev keyR (s : State) : Region := ⟨State.addr (s.gpr .r0), 128⟩
-abbrev ivR (s : State) : Region := ⟨State.addr (s.gpr .r4), 8⟩
-abbrev dataR (s : State) (n : Nat := 1) : Region := ⟨State.addr (s.gpr .r1), 8 * n⟩
-abbrev bufR (s : State) : Region := ⟨State.addr (s.gpr .r2), 512⟩
+noncomputable abbrev keyR (s : State) : Region := ⟨State.addr (s.gpr .r0), 128⟩
+noncomputable abbrev ivR (s : State) : Region := ⟨State.addr (s.gpr .r4), 8⟩
+noncomputable abbrev dataR (s : State) (n : Nat := 1) : Region := ⟨State.addr (s.gpr .r1), 8 * n⟩
+noncomputable abbrev bufR (s : State) : Region := ⟨State.addr (s.gpr .r2), 512⟩
 
 structure StepPre (s : State) (n : Nat := 1) : Prop where
   keyFit : (s.gpr .r0).toNat + 128 ≤ 2 ^ 32
@@ -404,7 +406,7 @@ namespace VG.Proof.Rc2.Arm.Cbc
 
 open VG VG.Arm
 
-def stepWrites (s : State) : List Region := [ivR s, dataR s, ⟨State.addr (s.gpr .r2), 264⟩]
+noncomputable def stepWrites (s : State) : List Region := [ivR s, dataR s, ⟨State.addr (s.gpr .r2), 264⟩]
 
 structure Pinned (s s' : State) : Prop where
   reg : ∀ r ∈ kept, s'.gpr r = s.gpr r
@@ -474,7 +476,7 @@ namespace VG.Proof.Rc2.Arm.Cbc
 
 open VG VG.Arm VG.Impl.Rc2.Arm
 
-abbrev stashR (s : State) : Region := ⟨State.addr (s.gpr .r2) + BitVec.ofNat 64 256, 8⟩
+noncomputable abbrev stashR (s : State) : Region := ⟨State.addr (s.gpr .r2) + BitVec.ofNat 64 256, 8⟩
 
 theorem stash_sub (s : State) : Region.Sub (stashR s) (bufR s) :=
   Offset.sub_base _ (by decide)

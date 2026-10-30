@@ -27,7 +27,7 @@ open VG VG.PPC64LE VG.Impl.Poly1305.PPC64LE
 open VG.Proof.Poly1305.Radix26
 
 /-- Two states agree except on the registers `rs`, in memory and regions. -/
-def Keeps (rs : List Reg) (s s' : State) : Prop :=
+noncomputable def Keeps (rs : List Reg) (s s' : State) : Prop :=
   (∀ r, r ∉ rs → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr
 
 theorem Keeps.gpr' {rs : List Reg} {s s' : State} (h : Keeps rs s s') {r : Reg}
@@ -50,7 +50,7 @@ theorem not_mem2 {a b c : Reg} (h₁ : a ≠ b) (h₂ : a ≠ c) : a ∉ [b, c] 
 theorem Keeps.refl (rs : List Reg) (s : State) : Keeps rs s s := ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
 
 /-- The value of a register, as a number. -/
-abbrev v (s : State) (r : Reg) : Nat := (s.gpr r).toNat
+noncomputable abbrev v (s : State) (r : Reg) : Nat := (s.gpr r).toNat
 
 theorem write_gpr (s : State) (d : Reg) (x : BitVec 64) (r : Reg) :
     (s.write d x).gpr r = if r = d then x else s.gpr r := rfl
@@ -58,7 +58,7 @@ theorem write_gpr (s : State) (d : Reg) (x : BitVec 64) (r : Reg) :
 /-! ## Numbers -/
 
 /-- The mask `2²⁶ - 1`. -/
-abbrev M26 : BitVec 64 := 0x3ffffff
+noncomputable abbrev M26 : BitVec 64 := 0x3ffffff
 
 theorem and_mask (a : BitVec 64) : (a &&& M26).toNat = a.toNat % 2 ^ 26 := by
   rw [BitVec.toNat_and, show M26.toNat = 2 ^ 26 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
@@ -130,7 +130,7 @@ theorem split_ok (s : State) (hm : s.gpr .r20 = M26) :
 /-! ## Sums of products -/
 
 /-- The 32-bit word at `[r3 + off]`, as a number. -/
-abbrev word (s : State) (off : Nat) : Nat := (s.mem.readW (s.gpr .r3 + BitVec.ofNat 64 off) 32).toNat
+noncomputable abbrev word (s : State) (off : Nat) : Nat := (s.mem.readW (s.gpr .r3 + BitVec.ofNat 64 off) 32).toNat
 
 theorem lwz_toNat (m : Mem) (a : Addr) : ((m.readW a 32).setWidth 64).toNat = (m.readW a 32).toNat := by
   rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans (m.readW a 32).isLt (by decide))]
@@ -307,7 +307,7 @@ theorem padBit_ok (s : State) :
     simp only [write_gpr, hr.1, hr.2, ite_false]
 
 /-- Normalized limbs of `h mod p`. -/
-def Norm (V a0 a1 a2 a3 a4 : Nat) : Prop :=
+noncomputable def Norm (V a0 a1 a2 a3 a4 : Nat) : Prop :=
   val5 a0 a1 a2 a3 a4 = V % Spec.Poly1305.P ∧
     a0 < 2 ^ 26 ∧ a1 < 2 ^ 26 ∧ a2 < 2 ^ 26 ∧ a3 < 2 ^ 26 ∧ a4 < 2 ^ 26
 

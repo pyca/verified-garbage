@@ -30,7 +30,7 @@ do, and imply those; `Verified.lean` narrows them back.
 namespace VG.Proof.Rc4.X86
 open VG VG.X86 VG.Spec.Rc4 VG.Proof.Rc4
 
-def initC : Contract isa where
+noncomputable def initC : Contract isa where
   pre s :=
     let key : Region := ⟨(arg s 0).setWidth 64, (arg s 1).toNat⟩
     let ctx : Region := ⟨(arg s 2).setWidth 64, 258⟩
@@ -49,7 +49,7 @@ def initC : Contract isa where
     | .error .invalidKeyLength => BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = 1
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 4, arg s₁ i = arg s₂ i
 
-def applyC : Contract isa where
+noncomputable def applyC : Contract isa where
   pre s :=
     let ctx : Region := ⟨(arg s 0).setWidth 64, 258⟩
     let data : Region := ⟨(arg s 1).setWidth 64, (arg s 2).toNat⟩
@@ -71,7 +71,7 @@ def applyC : Contract isa where
       [(contextAt s₂.mem ((arg s₂ 0).setWidth 64)).i.toNat]
 
 /-- `initC`, with the arguments writable. -/
-def wideInit : Contract isa :=
+noncomputable def wideInit : Contract isa :=
   { initC with
     pre := fun s =>
       let key : Region := ⟨(arg s 0).setWidth 64, (arg s 1).toNat⟩
@@ -86,7 +86,7 @@ def wideInit : Contract isa :=
         (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 }
 
 /-- `applyC`, with the arguments writable. -/
-def wideApply : Contract isa :=
+noncomputable def wideApply : Contract isa :=
   { applyC with
     pre := fun s =>
       let ctx : Region := ⟨(arg s 0).setWidth 64, 258⟩
@@ -101,7 +101,7 @@ def wideApply : Contract isa :=
         (arg s 3).toNat + 64 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 }
 
 /-- `init(0x1000, 1, 0x2000, 0x3000)`. -/
-def initSat : State where
+noncomputable def initSat : State where
   gpr r := if r = .esp then 0x6000 else 0
   cf := none
   zf := none
@@ -113,7 +113,7 @@ def initSat : State where
   wr := [⟨0x2000, 258⟩, ⟨0x3000, 64⟩, ⟨0x6004, 16⟩]
 
 /-- `apply(0x1000, 0x2000, 1, 0x3000)`. -/
-def applySat : State where
+noncomputable def applySat : State where
   gpr r := if r = .esp then 0x6000 else 0
   cf := none
   zf := none

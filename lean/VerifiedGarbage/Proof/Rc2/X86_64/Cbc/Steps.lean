@@ -20,6 +20,7 @@ namespace VG.Proof.Rc2.X86_64.Cbc
 
 open VG VG.X86_64 VG.Impl.Rc2.X86_64
 
+-- computable: read by `taint_decide`
 def kept : List Reg := [.rdi, .rsi, .rdx, .rbx, .rbp, .rsp]
 
 theorem block_keeps (d : Spec.Rc2.Direction) :

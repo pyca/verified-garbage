@@ -27,7 +27,7 @@ open VG VG.AArch64 VG.AArch64.RegUpd VG.AArch64.Tbl VG.Impl.Tbl.AArch64 VG.Impl.
   VG.Impl.Rc2.AArch64.Vec
 
 /-- The schedule at `p` in `v16`–`v23`. -/
-def SchedV (s : State) (m : Mem) (p : Addr) : Prop :=
+noncomputable def SchedV (s : State) (m : Mem) (p : Addr) : Prop :=
   ∀ r < 8, s.v (treg r) = m.read (p + BitVec.ofNat 64 (16 * r)) 16
 
 /-- A lane's low 16 bits are its first two bytes. -/
@@ -166,7 +166,7 @@ theorem rmix_ok {s : State} {h i : Nat} (hh : h < 2) (hi : i < 4) {vs : Nat → 
 /-! ## A reverse mixing round on both sets -/
 
 /-- The words of both sets: block `b` of the eight is `vs b`. -/
-def Sets (s : State) (vs : Nat → Spec.Rc2.State) : Prop :=
+noncomputable def Sets (s : State) (vs : Nat → Spec.Rc2.State) : Prop :=
   ∀ h < 2, VWords s h (fun b => vs (4 * h + b))
 
 /-- What the rounds keep: the general registers but `x9` and `x6`, memory,

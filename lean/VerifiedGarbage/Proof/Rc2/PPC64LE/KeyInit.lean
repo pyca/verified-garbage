@@ -86,7 +86,7 @@ theorem piInit_run (u : State) {W : Addr} (hW : u.gpr .r7 = W)
     ⟨fun i hi => by rw [Proof.Rc2.piQuads_length] at hi; rw [held i hi, Proof.Rc2.piQuads_getD hi], F, k⟩
 
 /-- `TM` for `c = effective_bits mod 8`. -/
-def maskVal (c : Nat) : Nat := if c = 0 then 255 else 2 ^ c - 1
+noncomputable def maskVal (c : Nat) : Nat := if c = 0 then 255 else 2 ^ c - 1
 
 theorem sub_beq_zero {c k : Nat} (hc : c < 8) (hk : k < 8) :
     (BitVec.ofNat 64 c - BitVec.ofNat 64 k == 0#64) = decide (c = k) := by

@@ -23,7 +23,7 @@ namespace VG.Proof.Rc2.PPC64LE
 open VG VG.PPC64LE VG.Impl.Rc2.PPC64LE
 
 /-- The four words are in `r6`–`r9`, zero-extended. -/
-def Holds (v : Spec.Rc2.State) (s : State) : Prop :=
+noncomputable def Holds (v : Spec.Rc2.State) (s : State) : Prop :=
   ∀ i < 4, s.gpr (wordReg i) = (v.getD i 0).setWidth 64
 
 /-- What the rounds need: the schedule at `r3`, `T`, readable a doubleword at

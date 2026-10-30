@@ -158,7 +158,7 @@ theorem fdepth_of_noFrames {c : Prog isa} (h : c.noFrames = true) : c.aarch64Dep
   induction c <;> simp_all [Code.noFrames, Code.aarch64Depth]
 
 /-- The state the frame's body starts in. -/
-def inner (s₀ : State) : State :=
+noncomputable def inner (s₀ : State) : State :=
   { s₀ with sp := s₀.sp - 16, mem := s₀.mem.write (s₀.sp - 16) 8 (s₀.gpr .x30) }
 
 theorem inner_mem (s₀ : State) : (inner s₀).mem = s₀.mem.write (s₀.sp - 16) 8 (s₀.gpr .x30) := rfl

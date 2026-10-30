@@ -81,7 +81,7 @@ theorem ext_add (a b : BitVec 8) : ((a.setWidth 64 + b.setWidth 64) <<< 56) >>> 
   omega
 
 /-- The registers the steps of key expansion write. -/
-abbrev keyTemps : List Reg := [.r0, .r8, .r9, .r10, .r11, .r12, .r15]
+noncomputable abbrev keyTemps : List Reg := [.r0, .r8, .r9, .r10, .r11, .r12, .r15]
 
 /-- The scan's environment: PITABLE at `W` in the working space at `r7`. -/
 structure PiEnv (W : Addr) (s : State) : Prop where

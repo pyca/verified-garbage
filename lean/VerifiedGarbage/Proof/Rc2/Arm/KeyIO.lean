@@ -533,7 +533,7 @@ namespace VG.Proof.Rc2.Arm
 
 open VG VG.Arm VG.Impl.Rc2.Arm
 
-def coreRegs : List Reg := [.r8, .r6]
+noncomputable def coreRegs : List Reg := [.r8, .r6]
 
 structure CoreFrame (s₀ s : State) : Prop where
   reg : ∀ r ∈ coreRegs, s.gpr r = s₀.gpr r
