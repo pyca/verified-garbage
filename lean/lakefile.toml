@@ -10,10 +10,11 @@ defaultTargets = ["NativeTCB", "NativeTCBX86_64", "NativeTCBX86", "NativeTCBAArc
 #
 # With `profiler`, every step over `profiler.threshold` (1 ms) reports its
 # time, as a message at its declaration, which Lake keeps in the module's
-# `.trace` and the CI build cache ships: `ci/lean_profile.py` reads them to
-# rank the declarations the build spends the most on, with no profiling run.
-# It does not change what is built (measured byte-identical), costs about
-# 1-2% of the build, and adds about 8 MiB to the compressed cache. Lake
+# `.trace` and the CI build cache ships, in one file that `unpack --logs`
+# writes (`ci/lean_cache.py`): `ci/lean_profile.py` reads them to rank the
+# declarations the build spends the most on, with no profiling run. It does
+# not change what is built (measured byte-identical), costs about 1-2% of
+# the build, and adds about 30 MiB to the compressed cache. Lake
 # replays a module's messages whenever it finds it up to date: build with
 # `--log-level=warning` (or `-q`) to leave them out of the output. A module
 # with `#guard_msgs` turns it off (`ci/check_lean_speed.py`). Here, not in

@@ -1,6 +1,7 @@
 """How `lean_profile.py` reads the build's stored profiles; no builds."""
 
 import contextlib
+import gzip
 import io
 import json
 import pathlib
@@ -28,6 +29,10 @@ class Steps(unittest.TestCase):
         log = [info(4, 8, "simp took 2.5ms", "type checking took 1.5s")]
         self.assertEqual(list(profile.steps(log)),
                          [(4, 8, "elab", 0.0025), (4, 8, "kernel", 1.5)])
+
+    def test_a_time_just_under_a_second(self):
+        log = [info(4, 8, "type checking took 1e+03ms")]
+        self.assertEqual(list(profile.steps(log)), [(4, 8, "kernel", 1.0)])
 
     def test_blocked_is_apart(self):
         log = [info(4, 8, "blocked took 3ms", "blocked (unaccounted) took 1ms")]
@@ -204,6 +209,43 @@ class Main(unittest.TestCase):
     def test_no_profile_at_all(self):
         with self.assertRaises(SystemExit):
             self.run_main("--module", "VerifiedGarbage.Spec")
+
+
+class StoredLogs(unittest.TestCase):
+    """The messages `lean_cache.py unpack --logs` writes, beside traces without them."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.build = pathlib.Path(tmp.name) / "lean/.lake/build/lib/lean"
+        self.logs = {}
+
+    def write(self, mod, trace, stored=None):
+        path = self.build / mod
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.with_suffix(".trace").write_text(json.dumps(trace))
+        path.with_suffix(".ilean").write_text(json.dumps({"decls": DECLS}))
+        if stored is not None:
+            self.logs["build/" + mod] = stored
+        ltar = self.build.parents[2] / "ltar"
+        ltar.mkdir(exist_ok=True)
+        (ltar / "logs.json.gz").write_bytes(gzip.compress(json.dumps(self.logs).encode()))
+
+    def test_read_for_traces_without_messages(self):
+        log = [info(4, 8, "simp took 2s")]
+        self.write("VerifiedGarbage/Proof/A", {"depHash": "1"}, {"depHash": "1", "log": log})
+        # Built since: its trace's messages, not the stored ones.
+        self.write("VerifiedGarbage/Proof/B", {"depHash": "2", "log": [info(4, 8, "simp took 3s")]},
+                   {"depHash": "1", "log": log})
+        # Changed since, without messages: the stored ones are another build's.
+        self.write("VerifiedGarbage/Proof/C", {"depHash": "2"}, {"depHash": "1", "log": log})
+        rows, unprofiled, _ = profile.collect(self.build, [])
+        self.assertEqual({(r["module"], r["elab"]) for r in rows},
+                         {("VerifiedGarbage.Proof.A", 2.0), ("VerifiedGarbage.Proof.B", 3.0)})
+        self.assertEqual(unprofiled, 1)
+
+    def test_none_outside_a_lake_build(self):
+        self.assertEqual(profile.stored_logs(pathlib.Path("elsewhere/build")), {})
 
 
 if __name__ == "__main__":

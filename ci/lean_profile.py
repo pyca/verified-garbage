@@ -6,8 +6,10 @@ Every module is built with Lean's `profiler` on (`lean/lakefile.toml`), which
 reports each step over `profiler.threshold` (1 ms) as a message at the
 declaration it belongs to (`type checking took 609ms`, `simp took 890ms`).
 Lake keeps a module's messages in its `.trace` file, next to its `.olean`,
-and the CI build cache (`lean/README.md`) ships those files: after restoring
-the cache, this reads the profile of every module CI built, attributing each
+and the CI build cache (`lean/README.md`) ships them in one file, which
+`ci/lean_cache.py unpack --logs` writes (`lean/.lake/ltar/logs.json.gz`; a
+trace's own messages, of a module built since, come first): after restoring
+the cache so, this reads the profile of every module CI built, attributing each
 step to the declaration whose source range (from the module's `.ilean`, of
 the same build) contains it. A step outside every declaration (a command
 that generates declarations, such as `materialize_code`, `taint_summary` or
@@ -43,6 +45,7 @@ prints every row, sorted, with no limit: a row outside declarations has a
 """
 
 import argparse
+import gzip
 import json
 import pathlib
 import re
@@ -55,9 +58,9 @@ TESTS = "VerifiedGarbageTest"
 LABEL_WIDTH = 80
 KINDS = ("kernel", "elab", "blocked")
 # A stored message: `<file>:<line>:<column>: <text>`, the text one step per
-# line (`<what> took <n>ms`).
+# line (`<what> took <n>ms`, `<n>` as Lean prints it: `1e+03ms` just under a second).
 MESSAGE = re.compile(r"^(.+?):(\d+):(\d+): (.*)$", re.S)
-TOOK = re.compile(r"^(.*) took ([0-9.]+)(ms|s)$")
+TOOK = re.compile(r"^(.*) took ([0-9.]+(?:e[+-]?[0-9]+)?)(ms|s)$")
 
 
 def kind(what):
@@ -127,6 +130,31 @@ def module_name(path, build):
     return ".".join(path.relative_to(build).with_suffix("").parts)
 
 
+def stored_logs(build):
+    """The messages of the build `unpack --logs` restored (`ci/lean_cache.py`'s
+    `logs.json.gz`, next to the build's `.lake`), by module name, with the
+    dependency hash of the build that wrote them; empty without them."""
+    if build.parts[-4:] != (".lake", "build", "lib", "lean"):
+        return {}
+    path = build.parents[2] / "ltar/logs.json.gz"
+    if not path.is_file():
+        return {}
+    return {rel[len("build/"):].replace("/", "."): entry
+            for rel, entry in json.loads(gzip.decompress(path.read_bytes())).items()
+            if rel.startswith("build/")}
+
+
+def trace_log(trace, stored):
+    """A module's messages: its `.trace`'s (a module built here, or restored
+    with them in it), or else `stored`'s (an entry of `stored_logs`) if they
+    are of the build that wrote the trace."""
+    if trace.get("log"):
+        return trace["log"]
+    if stored and stored.get("depHash") == trace.get("depHash"):
+        return stored["log"]
+    return []
+
+
 def is_test(mod):
     return mod.split(".")[0] == TESTS
 
@@ -173,6 +201,7 @@ def collect(build, prefixes, source=SOURCE, tests=False):
     them)."""
     tests = tests or any(is_test(p) for p in prefixes)
     rows, unprofiled, skipped = [], 0, [0, 0.0]
+    stored = stored_logs(build)
     for trace_path in sorted(build.rglob("*.trace")):
         mod = module_name(trace_path, build)
         if prefixes and not mod.startswith(tuple(prefixes)):
@@ -180,7 +209,8 @@ def collect(build, prefixes, source=SOURCE, tests=False):
         ilean_path = trace_path.with_suffix(".ilean")
         if not ilean_path.exists():
             continue
-        prof = module_profile(json.loads(trace_path.read_text()),
+        trace = json.loads(trace_path.read_text())
+        prof = module_profile({"log": trace_log(trace, stored.get(mod))},
                               lambda: json.loads(ilean_path.read_text()))
         if not prof:
             unprofiled += 1
@@ -232,8 +262,8 @@ def main(argv=None):
     rows, unprofiled, (skipped, skipped_secs) = collect(
         args.build, args.module, args.source, args.tests)
     if not rows:
-        sys.exit(f"no profiles under {args.build}: restore the CI cache, or build "
-                 "with the lakefile's `profiler` options")
+        sys.exit(f"no profiles under {args.build}: restore the CI cache with "
+                 "`lean_cache.py unpack --logs`, or build with the lakefile's `profiler` options")
     if args.by == "module":
         rows = by_module(rows)
     key = total if args.sort == "total" else (lambda r: r[args.sort])
@@ -252,8 +282,8 @@ def main(argv=None):
         print(f"{total(r):8.2f} {r['kernel']:8.2f} {r['elab']:8.2f} "
               f"{r['blocked']:8.2f}  {what}")
     if unprofiled:
-        print(f"({unprofiled} modules' logs held no profile: built before the "
-              "profiler was on, or with every step under its threshold)",
+        print(f"({unprofiled} modules' logs held no profile: restored without "
+              "`lean_cache.py unpack --logs`, or with every step under its threshold)",
               file=sys.stderr)
 
 
