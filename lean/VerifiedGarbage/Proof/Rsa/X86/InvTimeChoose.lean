@@ -45,7 +45,7 @@ theorem fits {args : Nat → BitVec 32} {base : Addr} {size len P Q : Nat} {s : 
     h.ws.ws.fits
   have ke := VG.Proof.Rsa.X86.InvBatchRt.kw_eq len
   simp only [VG.Impl.Rsa.X86.Keys.hdr, VG.Impl.Rsa.X86.CrtValues.nArr, VG.Proof.Rsa.X86.Keys.S] at hf
-  exact ⟨by omega, by omega, by omega, by omega⟩
+  exact ⟨⟨by omega, by omega⟩, by omega, by omega⟩
 
 theorem dispatch_relCT {args : Nat → BitVec 32} {base : Addr} {size len P Q P' Q' : Nat} {sp : BitVec 32} :
     RelCT isa (Pair args base size len P Q P' Q' sp) VG.Impl.Rsa.X86.CrtValuesRt.inverseChoice (fun _ _ => True) := by
@@ -68,7 +68,8 @@ theorem dispatch_relCT {args : Nat → BitVec 32} {base : Addr} {size len P Q P'
       rw [hs.2.2] at yes
       exact of_decide_eq_true (Option.some.inj yes)
     refine ⟨(VG.Proof.Rsa.X86.InvBatchRt.Time.relBody (fits hs.1 good) _ _ _ _ _ _
-      ⟨⟨hs.1.ws, by decide, hs.2.1⟩, ⟨ht.1.ws, by decide, ht.2.1⟩⟩ es et).1, trivial⟩
+      ⟨⟨hs.1.ws, by decide, ⟨hs.2.1.argsOk, hs.2.1.stack, hs.2.1.arguments⟩⟩,
+        ⟨ht.1.ws, by decide, ⟨ht.2.1.argsOk, ht.2.1.stack, ht.2.1.arguments⟩⟩⟩ es et).1, trivial⟩
   · exact (RelCT.taint (A := sseTaint) τ (fun _ _ h => agree h.1.1.1.ws.ws.workspace h.1.2.1.ws.ws.workspace
       h.1.1.2.1 h.1.2.2.1) fallback_check.choose_spec).mono (fun _ _ h => h) (fun _ _ _ => trivial)
 

@@ -32,14 +32,38 @@ namespace VG.Proof.Rsa.X86.InvBatchRt.Time
 
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Rsa.X86.KeyRt VG.Impl.Rsa.X86.InvBatchRt
 open VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Rsa.X86.KeyRt VG.Proof.Rsa.X86.InvBatchRt
-open VG.Proof.Rsa.X86.InvTiming (Public)
 open VG.Proof.Weierstrass.X86.Inv (wordClob)
 
+/-- The bytes of the return address and the arguments the operations may read: those up to
+the working space's length, the argument after the working space's (`L.ws`). -/
+def argBytes (L : Lay) : Nat := 4 + 4 * (L.ws + 2)
+
+/-- The return address and those arguments lie apart from every writable region. -/
+def ArgsOk (L : Lay) (s : State) : Prop :=
+  (s.gpr .esp).toNat + argBytes L ≤ 2 ^ 32 ∧ ∀ r ∈ s.wr, Region.Disjoint ⟨(s.gpr .esp).setWidth 64, argBytes L⟩ r
+
+/-- The call's public data: those arguments, and the stack pointer. -/
+structure Public (L : Lay) (args : Nat → BitVec 32) (base : Addr) (size : Nat) (sp : BitVec 32) (s : State) :
+    Prop where
+  argsOk : ArgsOk L s
+  stack : s.gpr .esp = sp
+  arguments : ∀ i, i < L.ws + 2 → VG.Proof.Bignum.X86.CallArgument s base size i (args i)
+
+theorem Public.keep {L : Lay} {args : Nat → BitVec 32} {base : Addr} {size : Nat} {sp : BitVec 32} {s t : State}
+    {regs : List Reg} (h : Public L args base size sp s) (K : Keeps regs s t) (keepSp : .esp ∉ regs)
+    (O : Outside base 0 size s.mem t.mem) : Public L args base size sp t := by
+  have esp := K.1 .esp keepSp
+  refine ⟨⟨?_, ?_⟩, esp.trans h.stack, fun i hi => (h.arguments i hi).keep K keepSp O⟩
+  · rw [esp]; exact h.argsOk.1
+  · intro r hr
+    rw [esp]
+    exact h.argsOk.2 r (K.2.2 ▸ hr)
+
 /-- What each operation's check starts from: `edi` the working space, the slots and the count
-public, the arguments public, the workspace's address the 15th. -/
-def τS : VG.X86.Taint.T :=
+public, the arguments public, the workspace's address the argument `L.ws`. -/
+def τS (L : Lay) : VG.X86.Taint.T :=
   { regs := .ofList [.edi, .esp], flags := false, lens := [160], bases := [(.edi, 0, 0)],
-    slots := VG.Slots.ofList [(0, 52, 48)], argLen := 68, argBases := [(60, 0)] }
+    slots := VG.Slots.ofList [(0, 52, 48)], argLen := argBytes L, argBases := [(4 + 4 * L.ws, 0)] }
 
 /-- The state with every region readable and only the working space writable. -/
 def view (s : State) (B : Addr) (Z : Nat) : State := s.withRegions (s.rd ++ s.wr) [⟨B, Z⟩]
@@ -89,12 +113,12 @@ theorem slot_words {s t : State} (hs : Bx L s B Z len N) (ht : Bx L t B Z len N)
 structure Rel (L : Lay) (B : Addr) (Z len N : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (s t : State) : Prop where
   bs : Bx L s B Z len N
   bt : Bx L t B Z len N
-  ps : Public args B Z sp s
-  pt : Public args B Z sp t
+  ps : Public L args B Z sp s
+  pt : Public L args B Z sp t
 
-/-- The view is well formed for the analysis: `edi` and the 15th argument the working space. -/
-theorem wfS {u : State} {args : Nat → BitVec 32} {sp : BitVec 32} (hL : L.ws = 14) (hu : RtWs L u B Z len N)
-    (hz : 160 ≤ Z) (pu : Public args B Z sp u) : VG.X86.Taint.Wf τS (view u B Z) := by
+/-- The view is well formed for the analysis: `edi` and the argument `L.ws` the working space. -/
+theorem wfS {u : State} {args : Nat → BitVec 32} {sp : BitVec 32} (hu : RtWs L u B Z len N)
+    (hz : 160 ≤ Z) (pu : Public L args B Z sp u) : VG.X86.Taint.Wf (τS L) (view u B Z) := by
   have hn := hu.ws.workspace.nowrap
   refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨List.Forall₂.cons (show 160 ≤ Z by omega) List.Forall₂.nil,
     List.pairwise_singleton _ _, fun r hr => by
@@ -113,12 +137,10 @@ theorem wfS {u : State} {args : Nat → BitVec 32} {sp : BitVec 32} (hL : L.ws =
   · intro p hp
     simp only [τS, List.mem_singleton] at hp
     subst p
-    refine ⟨by decide, ?_⟩
+    refine ⟨by simp only [τS, argBytes]; omega, ?_⟩
     have v := hu.wsArg.value
-    rw [hL] at v
-    show addr (u.mem.readW (addr (u.gpr .esp) 60) 32) 0 = B
-    change u.mem.readW (addr (u.gpr .esp) (4 + 4 * 14)) 32 = _ at v
-    rw [show (4 + 4 * 14 : Nat) = 60 from rfl] at v
+    change u.mem.readW (addr (u.gpr .esp) (4 + 4 * L.ws)) 32 = _ at v
+    show addr (u.mem.readW (addr (u.gpr .esp) (4 + 4 * L.ws)) 32) 0 = B
     rw [v]
     simp only [addr, BitVec.add_zero]
     apply BitVec.eq_of_toNat_eq
@@ -126,15 +148,16 @@ theorem wfS {u : State} {args : Nat → BitVec 32} {sp : BitVec 32} (hL : L.ws =
     have := B.isLt
     rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
 
-theorem agreeS {s t : State} {args : Nat → BitVec 32} {sp : BitVec 32} (hL : L.ws = 14)
-    (h : Rel L B Z len N args sp s t) : VG.X86.Taint.Agree τS (view s B Z) (view t B Z) := by
+theorem agreeS {s t : State} {args : Nat → BitVec 32} {sp : BitVec 32}
+    (h : Rel L B Z len N args sp s t) : VG.X86.Taint.Agree (τS L) (view s B Z) (view t B Z) := by
   have hn := h.bs.nowrap
   have hf := h.bs.fits
   simp only [VG.Impl.Rsa.X86.InvBatchRt.offset] at hf
-  have wf : ∀ {u : State}, Bx L u B Z len N → Public args B Z sp u → VG.X86.Taint.Wf τS (view u B Z) :=
-    fun hu pu => wfS hL hu.ws (by omega) pu
+  have wf : ∀ {u : State}, Bx L u B Z len N → Public L args B Z sp u → VG.X86.Taint.Wf (τS L) (view u B Z) :=
+    fun hu pu => wfS hu.ws (by omega) pu
   refine ⟨⟨?_, fun h => nomatch h⟩, fun _ => rfl, wf h.bs h.ps, wf h.bt h.pt,
-    VG.X86.Taint.slotsOk_of_list rfl (by decide), ?_, fun _ => h.ps.stack.trans h.pt.stack.symm, ?_⟩
+    VG.X86.Taint.slotsOk_of_list rfl (fun sl hsl => by
+      simp only [List.mem_singleton] at hsl; subst hsl; change 52 + 48 ≤ ([160] : List Nat).getD 0 0; decide), ?_, fun _ => h.ps.stack.trans h.pt.stack.symm, ?_⟩
   · intro r hr
     simp only [τS, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -152,12 +175,13 @@ theorem agreeS {s t : State} {args : Nat → BitVec 32} {sp : BitVec 32} (hL : L
     exact congrArg _ (BitVec.eq_of_toNat_eq W)
   · intro k h4 hk
     simp only [τS] at hk
-    change s.mem (VG.X86.Taint.argByte s (VG.X86.Taint.depth τS.stk + k)) =
-      t.mem (VG.X86.Taint.argByte t (VG.X86.Taint.depth τS.stk + k))
-    rw [show VG.X86.Taint.depth τS.stk = 0 from rfl, Nat.zero_add,
+    change s.mem (VG.X86.Taint.argByte s (VG.X86.Taint.depth (τS L).stk + k)) =
+      t.mem (VG.X86.Taint.argByte t (VG.X86.Taint.depth (τS L).stk + k))
+    rw [show VG.X86.Taint.depth (τS L).stk = 0 from rfl, Nat.zero_add,
       VG.X86.Taint.argByte_eq h.ps.argsOk.1 h4 hk, VG.X86.Taint.argByte_eq h.pt.argsOk.1 h4 hk,
       Mem.readW_byte s.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte t.mem _ (Nat.mod_lt _ (by decide))]
-    exact congrArg _ ((h.ps.arguments _ (by omega)).value.trans (h.pt.arguments _ (by omega)).value.symm)
+    exact congrArg _ ((h.ps.arguments _ (by simp only [argBytes] at hk; omega)).value.trans
+      (h.pt.arguments _ (by simp only [argBytes] at hk; omega)).value.symm)
 
 /-- An operation the taint analysis checks on the views of two runs leaks the same trace in
 both: each view runs it (by the operation's correctness), and its run is the state's, widened. -/
@@ -175,8 +199,8 @@ theorem leaf {P : State → State → Prop} {c : Prog isa} (τ : VG.X86.Taint.T)
   rw [← (Exec.det (lift_exec w₁ v₁) e₁).1, ← (Exec.det (lift_exec w₂ v₂) e₂).1]
   exact T.1
 
-theorem Public.view {args : Nat → BitVec 32} {sp : BitVec 32} {s : State} (h : Public args B Z sp s)
-    (hb : (⟨B, Z⟩ : Region) ∈ s.wr) : Public args B Z sp (view s B Z) := by
+theorem Public.view {args : Nat → BitVec 32} {sp : BitVec 32} {s : State} (h : Public L args B Z sp s)
+    (hb : (⟨B, Z⟩ : Region) ∈ s.wr) : Public L args B Z sp (view s B Z) := by
   refine ⟨⟨h.argsOk.1, fun r hr => ?_⟩, h.stack, fun i hi => callArg_view (h.arguments i hi)⟩
   cases hr with
   | head => exact h.argsOk.2 _ hb
@@ -186,7 +210,7 @@ theorem Public.view {args : Nat → BitVec 32} {sp : BitVec 32} {s : State} (h :
 about the registers and memory, which hold of the view too. -/
 def Pre (L : Lay) (B : Addr) (Z len N : Nat) (args : Nat → BitVec 32) (sp : BitVec 32)
     (E : (Reg → BitVec 32) → Mem → Prop) (s : State) : Prop :=
-  Bx L s B Z len N ∧ Public args B Z sp s ∧ E s.gpr s.mem
+  Bx L s B Z len N ∧ Public L args B Z sp s ∧ E s.gpr s.mem
 
 theorem Pre.view {args : Nat → BitVec 32} {sp : BitVec 32} {E : (Reg → BitVec 32) → Mem → Prop} {s : State}
     (h : Pre L B Z len N args sp E s) : Pre L B Z len N args sp E (view s B Z) :=
@@ -195,16 +219,16 @@ theorem Pre.view {args : Nat → BitVec 32} {sp : BitVec 32} {E : (Reg → BitVe
 /-- An operation that the analysis checks from `τS`, run from `Pre`: each run satisfies what the
 operation's correctness says of it. -/
 theorem leafU {args : Nat → BitVec 32} {sp : BitVec 32} {E : (Reg → BitVec 32) → Mem → Prop}
-    {Q : State → Prop} {c : Prog isa} (hL : L.ws = 14)
+    {Q : State → Prop} {c : Prog isa}
     (hf : ∀ s, Pre L B Z len N args sp E s → WP isa c s Q) {hc : VG.Taint.Hint VG.X86.Taint.T}
-    (h : (VG.Taint.check sseTaint τS c hc).isSome = true) :
+    (h : (VG.Taint.check sseTaint (τS L) c hc).isSome = true) :
     RelCT isa (fun s t => Pre L B Z len N args sp E s ∧ Pre L B Z len N args sp E t) c
       (fun s t => Q s ∧ Q t) := by
   have ex : ∀ s, Pre L B Z len N args sp E s → ∃ tr z, Exec isa c (view s B Z) tr z := fun s ps =>
     let ⟨tr, z, e, _⟩ := hf _ ps.view
     ⟨tr, z, e⟩
-  have R := leaf (P := fun s t => Pre L B Z len N args sp E s ∧ Pre L B Z len N args sp E t) τS
-    (fun _ _ ⟨ps, pt⟩ => agreeS hL ⟨ps.1, pt.1, ps.2.1, pt.2.1⟩)
+  have R := leaf (P := fun s t => Pre L B Z len N args sp E s ∧ Pre L B Z len N args sp E t) (τS L)
+    (fun _ _ ⟨ps, pt⟩ => agreeS ⟨ps.1, pt.1, ps.2.1, pt.2.1⟩)
     (fun _ _ ⟨ps, pt⟩ => ⟨ps.1.ws.ws.workspace.wr, pt.1.ws.ws.workspace.wr⟩)
     (fun _ _ ⟨ps, pt⟩ => ⟨ex _ ps, ex _ pt⟩) h
   exact (RelCT.wp R (fun s t ⟨ps, pt⟩ => ⟨hf s ps, hf t pt⟩)).mono (fun _ _ h => h)
@@ -213,21 +237,21 @@ theorem leafU {args : Nat → BitVec 32} {sp : BitVec 32} {E : (Reg → BitVec 3
 /-! ## Before the slots -/
 
 /-- `τS` before the slots are written. -/
-def τ0 : VG.X86.Taint.T :=
+def τ0 (L : Lay) : VG.X86.Taint.T :=
   { regs := .ofList [.edi, .esp], flags := false, lens := [160], bases := [(.edi, 0, 0)],
-    argLen := 68, argBases := [(60, 0)] }
+    argLen := argBytes L, argBases := [(4 + 4 * L.ws, 0)] }
 
 /-- The runs' start: the working space before its slots, and the call's public data. -/
 def Pre0 (L : Lay) (B : Addr) (Z len N : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (s : State) : Prop :=
-  RtWs L s B Z len N ∧ 16 ≤ N ∧ Public args B Z sp s
+  RtWs L s B Z len N ∧ 16 ≤ N ∧ Public L args B Z sp s
 
-theorem agree0 {s t : State} {args : Nat → BitVec 32} {sp : BitVec 32} (hL : L.ws = 14)
+theorem agree0 {s t : State} {args : Nat → BitVec 32} {sp : BitVec 32}
     (hs : Pre0 L B Z len N args sp s) (ht : Pre0 L B Z len N args sp t) :
-    VG.X86.Taint.Agree τ0 (view s B Z) (view t B Z) := by
+    VG.X86.Taint.Agree (τ0 L) (view s B Z) (view t B Z) := by
   have hf : VG.Impl.Rsa.X86.Keys.hdr + N * VG.Proof.Rsa.X86.Keys.S (kw len) ≤ Z := hs.1.ws.fits
   rw [show VG.Impl.Rsa.X86.Keys.hdr = 160 from rfl] at hf
-  have wf : ∀ {u : State}, Pre0 L B Z len N args sp u → VG.X86.Taint.Wf τ0 (view u B Z) := fun hu =>
-    let w := wfS hL hu.1 (by omega) hu.2.2
+  have wf : ∀ {u : State}, Pre0 L B Z len N args sp u → VG.X86.Taint.Wf (τ0 L) (view u B Z) := fun hu =>
+    let w := wfS hu.1 (by omega) hu.2.2
     ⟨w.lens, w.bases, w.wbases, w.args, w.argBases, w.stk, w.frames, w.room⟩
   refine ⟨⟨?_, fun h => nomatch h⟩, fun _ => rfl, wf hs, wf ht, VG.X86.Taint.slotsOk_empty,
     VG.X86.Taint.slotsAgree_empty, fun _ => hs.2.2.stack.trans ht.2.2.stack.symm, ?_⟩
@@ -238,27 +262,28 @@ theorem agree0 {s t : State} {args : Nat → BitVec 32} {sp : BitVec 32} (hL : L
     · exact hs.2.2.stack.trans ht.2.2.stack.symm
   · intro k h4 hk
     simp only [τ0] at hk
-    change s.mem (VG.X86.Taint.argByte s (VG.X86.Taint.depth τ0.stk + k)) =
-      t.mem (VG.X86.Taint.argByte t (VG.X86.Taint.depth τ0.stk + k))
-    rw [show VG.X86.Taint.depth τ0.stk = 0 from rfl, Nat.zero_add,
+    change s.mem (VG.X86.Taint.argByte s (VG.X86.Taint.depth (τ0 L).stk + k)) =
+      t.mem (VG.X86.Taint.argByte t (VG.X86.Taint.depth (τ0 L).stk + k))
+    rw [show VG.X86.Taint.depth (τ0 L).stk = 0 from rfl, Nat.zero_add,
       VG.X86.Taint.argByte_eq hs.2.2.argsOk.1 h4 hk, VG.X86.Taint.argByte_eq ht.2.2.argsOk.1 h4 hk,
       Mem.readW_byte s.mem _ (Nat.mod_lt _ (by decide)), Mem.readW_byte t.mem _ (Nat.mod_lt _ (by decide))]
-    exact congrArg _ ((hs.2.2.arguments _ (by omega)).value.trans (ht.2.2.arguments _ (by omega)).value.symm)
+    exact congrArg _ ((hs.2.2.arguments _ (by simp only [argBytes] at hk; omega)).value.trans
+      (ht.2.2.arguments _ (by simp only [argBytes] at hk; omega)).value.symm)
 
 theorem Pre0.view {args : Nat → BitVec 32} {sp : BitVec 32} {s : State} (h : Pre0 L B Z len N args sp s) :
     Pre0 L B Z len N args sp (view s B Z) :=
   ⟨RtWs.view h.1, h.2.1, Public.view h.2.2 h.1.ws.workspace.wr⟩
 
 /-- `leafU` from `Pre0`, checked from `τ0`. -/
-theorem leaf0 {args : Nat → BitVec 32} {sp : BitVec 32} {Q : State → Prop} {c : Prog isa} (hL : L.ws = 14)
+theorem leaf0 {args : Nat → BitVec 32} {sp : BitVec 32} {Q : State → Prop} {c : Prog isa}
     (hf : ∀ s, Pre0 L B Z len N args sp s → WP isa c s Q) {hc : VG.Taint.Hint VG.X86.Taint.T}
-    (h : (VG.Taint.check sseTaint τ0 c hc).isSome = true) :
+    (h : (VG.Taint.check sseTaint (τ0 L) c hc).isSome = true) :
     RelCT isa (fun s t => Pre0 L B Z len N args sp s ∧ Pre0 L B Z len N args sp t) c (fun s t => Q s ∧ Q t) := by
   have ex : ∀ s, Pre0 L B Z len N args sp s → ∃ tr z, Exec isa c (view s B Z) tr z := fun s ps =>
     let ⟨tr, z, e, _⟩ := hf _ ps.view
     ⟨tr, z, e⟩
-  have R := leaf (P := fun s t => Pre0 L B Z len N args sp s ∧ Pre0 L B Z len N args sp t) τ0
-    (fun _ _ ⟨ps, pt⟩ => agree0 hL ps pt)
+  have R := leaf (P := fun s t => Pre0 L B Z len N args sp s ∧ Pre0 L B Z len N args sp t) (τ0 L)
+    (fun _ _ ⟨ps, pt⟩ => agree0 ps pt)
     (fun _ _ ⟨ps, pt⟩ => ⟨ps.1.ws.workspace.wr, pt.1.ws.workspace.wr⟩)
     (fun _ _ ⟨ps, pt⟩ => ⟨ex _ ps, ex _ pt⟩) h
   exact (RelCT.wp R (fun s t ⟨ps, pt⟩ => ⟨hf s ps, hf t pt⟩)).mono (fun _ _ h => h)

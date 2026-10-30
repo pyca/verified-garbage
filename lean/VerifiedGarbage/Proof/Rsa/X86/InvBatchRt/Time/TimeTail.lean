@@ -35,12 +35,12 @@ theorem relNormalize (F : Fits Z len) :
   have rt : rv (kw len) tmp = rv (kw len) (a 12) := rfl
   unfold normalize
   simp only [VG.Impl.Rsa.X86.Keys.seqs]
-  refine RelCT.seq (relCopy rfl (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relChainSub (X := fun _ => True) rfl (stable_true _) (fun _ _ => trivial) (by decide) rfl
+  refine RelCT.seq (relCopy (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
+  refine RelCT.seq (relChainSub (X := fun _ => True) (stable_true _) (fun _ _ => trivial) (by decide) rfl
     (by omega) (by omega) (by omega) (.inl (Nat.le_refl _)) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relMaskAt rfl (stable_true _) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relSelIn rfl (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
-  exact relCsub rfl (stable_true _) F rfl rfl (by omega) (by omega) (by omega) (fun h => absurd rfl h) (by omega)
+  refine RelCT.seq (relMaskAt (stable_true _) (by omega) (by taint_decide)) ?_
+  refine RelCT.seq (relSelIn (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
+  exact relCsub (stable_true _) F.toRoom rfl rfl (by omega) (by omega) (by omega) (fun h => absurd rfl h) (by omega)
     ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩
 
 /-- One doubling, then the count down by one. -/
@@ -55,12 +55,12 @@ theorem relDouble {k : Nat} (F : Fits Z len) (hk : 1 ≤ k) (hk32 : k < 2 ^ 32) 
   have rt : rv (kw len) tmp = rv (kw len) (a 12) := rfl
   unfold twice
   simp only [VG.Impl.Rsa.X86.Keys.seqs]
-  refine RelCT.seq (RelCT.seq (relChainAdd (X := fun _ => True) rfl (stable_esi (by decide) _) (fun _ _ => trivial)
+  refine RelCT.seq (RelCT.seq (relChainAdd (X := fun _ => True) (stable_esi (by decide) _) (fun _ _ => trivial)
     (by decide) rfl (by omega) (by omega) (by omega) (.inl (Nat.le_refl _)) (.inl (Nat.le_refl _))
-    (by taint_decide)) (RelCT.seq (relCsub rfl (stable_esi (by decide) _) F rfl rfl (by omega) (by omega)
+    (by taint_decide)) (RelCT.seq (relCsub (stable_esi (by decide) _) F.toRoom rfl rfl (by omega) (by omega)
       (by omega) (fun h => absurd rfl h) (by omega) ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩)
-    (relZeroWord rfl (stable_esi (by decide) _) (by omega) (by taint_decide)))) ?_
-  exact relDecTest rfl hk hk32 (by taint_decide)
+    (relZeroWord (stable_esi (by decide) _) (by omega) (by taint_decide)))) ?_
+  exact relDecTest hk hk32 (by taint_decide)
 
 /-- The doublings, from the count `esi = K`. -/
 theorem relDoubleLoop (F : Fits Z len) (K : Nat) :
@@ -93,12 +93,12 @@ theorem relFinish (F : Fits Z len) :
   have F2 := F.two
   unfold finish
   simp only [VG.Impl.Rsa.X86.Keys.seqs]
-  refine RelCT.seq (relZeros rfl (stable_true _) (fun _ hb => countW hb) (by omega) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relChainSub (X := fun _ => True) rfl (stable_true _) (fun _ _ => trivial) (by decide) rfl
+  refine RelCT.seq (relZeros (stable_true _) (fun _ hb => countW hb) (by omega) (by omega) (by taint_decide)) ?_
+  refine RelCT.seq (relChainSub (X := fun _ => True) (stable_true _) (fun _ _ => trivial) (by decide) rfl
     (by omega) (by omega) (by omega) (.inl (Nat.le_refl _)) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relMaskAtNot rfl (stable_true _) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relSelIn rfl (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relZeros rfl (stable_true _) (fun _ hb => countW hb) (by omega) (by omega) (by taint_decide)) ?_
-  exact relCopy rfl (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)
+  refine RelCT.seq (relMaskAtNot (stable_true _) (by omega) (by taint_decide)) ?_
+  refine RelCT.seq (relSelIn (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
+  refine RelCT.seq (relZeros (stable_true _) (fun _ hb => countW hb) (by omega) (by omega) (by taint_decide)) ?_
+  exact relCopy (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)
 
 end VG.Proof.Rsa.X86.InvBatchRt.Time

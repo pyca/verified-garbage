@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
-import VerifiedGarbage.Proof.Rsa.X86.GcdBatch.Shape
 import VerifiedGarbage.Proof.Rsa.X86.StackTactic
 meta import VerifiedGarbage.Proof.Rsa.X86.StackTactic
 public import VerifiedGarbage.Impl.Rsa.X86.RecoverRt
@@ -20,7 +19,7 @@ namespace VG.Proof.Rsa.X86.RtShape
 open VG VG.X86 VG.Proof.Mont.X86.StaticSquare
 
  theorem recover_all : Impl.Rsa.X86.RecoverRt.code.allInstrs noSp=true := by
-  rsa_stack_shape [VG.Proof.Rsa.X86.BatchShape.gcd_body_noSp]
+  rsa_stack_shape
 
  theorem privateCrt_all : (Impl.Bignum.X86.CrtRt.code).allInstrs noSp=true := by
   rsa_stack_shape

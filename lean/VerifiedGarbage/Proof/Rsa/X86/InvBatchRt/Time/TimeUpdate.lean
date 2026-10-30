@@ -29,29 +29,29 @@ theorem relUpdate (F : Fits Z len) :
   have r14 := rv_a len 14
   unfold update
   simp only [VG.Impl.Rsa.X86.Keys.seqs]
-  refine RelCT.seq (relLinear rfl F (by decide) (by decide) (by decide) (by decide) (by decide)
+  refine RelCT.seq (relLinear F.toRoom (by decide) (by decide) (by decide) (by decide) (by decide)
     ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩
     ⟨_, by taint_decide⟩) ?_
-  refine RelCT.seq (relShr30 rfl (stable_true _) rfl F.even (by omega) (by omega) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relLinear rfl F (by decide) (by decide) (by decide) (by decide) (by decide)
+  refine RelCT.seq (relShr30 (stable_true _) rfl F.even (by omega) (by omega) (by omega) (by taint_decide)) ?_
+  refine RelCT.seq (relLinear F.toRoom (by decide) (by decide) (by decide) (by decide) (by decide)
     ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩
     ⟨_, by taint_decide⟩) ?_
-  refine RelCT.seq (relShr30 rfl (stable_true _) rfl F.even (by omega) (by omega) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relLinear rfl F (by decide) (by decide) (by decide) (by decide) (by decide)
+  refine RelCT.seq (relShr30 (stable_true _) rfl F.even (by omega) (by omega) (by omega) (by taint_decide)) ?_
+  refine RelCT.seq (relLinear F.toRoom (by decide) (by decide) (by decide) (by decide) (by decide)
     ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩
     ⟨_, by taint_decide⟩) ?_
-  refine RelCT.seq (relReduce rfl F (by decide) (by decide) ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩
+  refine RelCT.seq (relReduce F.toRoom (by decide) (by decide) ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩
     ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩
     ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩) ?_
-  refine RelCT.seq (relLinear rfl F (by decide) (by decide) (by decide) (by decide) (by decide)
+  refine RelCT.seq (relLinear F.toRoom (by decide) (by decide) (by decide) (by decide) (by decide)
     ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩
     ⟨_, by taint_decide⟩) ?_
-  refine RelCT.seq (relReduce rfl F (by decide) (by decide) ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩
+  refine RelCT.seq (relReduce F.toRoom (by decide) (by decide) ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩
     ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩
     ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩) ?_
-  refine RelCT.seq (relCopy rfl (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relCopy rfl (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
-  refine RelCT.seq (relCopy rfl (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
-  exact relCopy rfl (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)
+  refine RelCT.seq (relCopy (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
+  refine RelCT.seq (relCopy (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
+  refine RelCT.seq (relCopy (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)) ?_
+  exact relCopy (stable_true _) (by decide) (by omega) (by omega) (by omega) (by taint_decide)
 
 end VG.Proof.Rsa.X86.InvBatchRt.Time

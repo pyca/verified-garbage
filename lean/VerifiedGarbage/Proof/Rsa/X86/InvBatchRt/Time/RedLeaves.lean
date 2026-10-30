@@ -99,36 +99,36 @@ theorem redTail_frame {s : State} (h : Bx L s B Z len N) {acc : Ref} (hah : acc.
     rw [Uz.mem, V₃.mem, V₂.mem, m₁']; exact writeW32_outside _ _ _ (by omega)
   exact ⟨h.keep Kz (by decide) (by decide) Oz (by omega) (by omega), Kz, Oz.unch⟩
 
-theorem relRedHead {acc : Ref} (hL : L.ws = 14) (hG : Stable [.eax, .ebx, .ecx, .edx, .esi] G)
+theorem relRedHead {acc : Ref} (hG : Stable [.eax, .ebx, .ecx, .edx, .esi] G)
     (hah : acc.half = 0) (hab : acc.byte = 0) (haz : rv (kw len) acc + 4 * (nw len + 2) ≤ Z)
-    {hc : VG.Taint.Hint VG.X86.Taint.T} (h : (VG.Taint.check sseTaint τS (.block (redHead L acc)) hc).isSome = true) :
+    {hc : VG.Taint.Hint VG.X86.Taint.T} (h : (VG.Taint.check sseTaint (τS L) (.block (redHead L acc)) hc).isSome = true) :
     RelCT isa (Both L B Z len N args sp C fun g => G g ∧ True) (.block (redHead L acc))
       (Both L B Z len N args sp C fun g => G g ∧ True) := by
   have ra := rv_ge (kw len) acc
-  refine relOp hL (by decide) hG (fun w hw => ?_)
+  refine relOp (by decide) hG (fun w hw => ?_)
     (fun s hb _ => WP.mono (redHead_frame hb hah hab haz) fun _ ⟨H, K, U⟩ => ⟨H, K, U, trivial⟩) h
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl
   · exact ⟨.inl (by omega), by omega⟩
   · exact ⟨.inr (by decide), by simp only [signSlot]; omega⟩
 
-theorem relMulRow {acc src : Ref} {e : Nat} (hL : L.ws = 14) (hG : Stable [.eax, .ebx, .edx, .ebp, .esi] G)
+theorem relMulRow {acc src : Ref} {e : Nat} (hG : Stable [.eax, .ebx, .edx, .ebp, .esi] G)
     (he : e ≤ 4) (hsh : src.half = 0)
     (haz : rv (kw len) acc + 4 * (nw len + e + 2) ≤ Z) (hsz : rv (kw len) src + 4 * (nw len + e) ≤ Z)
     (sep : rv (kw len) src + 4 * (nw len + e) ≤ rv (kw len) acc ∨
       rv (kw len) acc + 4 * (nw len + e + 2) ≤ rv (kw len) src) {hc : VG.Taint.Hint VG.X86.Taint.T}
-    (h : (VG.Taint.check sseTaint τS (mulRow L false acc src (nBytes .esi e)) hc).isSome = true) :
+    (h : (VG.Taint.check sseTaint (τS L) (mulRow L false acc src (nBytes .esi e)) hc).isSome = true) :
     RelCT isa (Both L B Z len N args sp C fun g => G g ∧ True) (mulRow L false acc src (nBytes .esi e))
       (Both L B Z len N args sp C fun g => G g ∧ True) :=
-  relOp hL (by decide) hG (ws1 (by have := rv_ge (kw len) acc; omega) haz)
+  relOp (by decide) hG (ws1 (by have := rv_ge (kw len) acc; omega) haz)
     (fun s hb _ => WP.mono (mulRow_gen hb he hsh haz hsz sep) fun _ ⟨H, O, _, K⟩ => ⟨H, K, O.unch, trivial⟩) h
 
-theorem relRedTail {acc : Ref} (hL : L.ws = 14) (hG : Stable [.eax, .ebx, .edx] G)
+theorem relRedTail {acc : Ref} (hG : Stable [.eax, .ebx, .edx] G)
     (hah : acc.half = 0) (hab : acc.byte = 0) (haz : rv (kw len) acc + 4 * (nw len + 2) ≤ Z)
-    {hc : VG.Taint.Hint VG.X86.Taint.T} (h : (VG.Taint.check sseTaint τS (.block (redTail L acc)) hc).isSome = true) :
+    {hc : VG.Taint.Hint VG.X86.Taint.T} (h : (VG.Taint.check sseTaint (τS L) (.block (redTail L acc)) hc).isSome = true) :
     RelCT isa (Both L B Z len N args sp C fun g => G g ∧ True) (.block (redTail L acc))
       (Both L B Z len N args sp C fun g => G g ∧ True) :=
-  relOp hL (by decide) hG (ws1 (by have := rv_ge (kw len) acc; omega) (by omega))
+  relOp (by decide) hG (ws1 (by have := rv_ge (kw len) acc; omega) (by omega))
     (fun s hb _ => WP.mono (redTail_frame hb hah hab haz) fun _ ⟨H, K, U⟩ => ⟨H, K, U, trivial⟩) h
 
 end VG.Proof.Rsa.X86.InvBatchRt.Time
