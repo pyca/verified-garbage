@@ -123,13 +123,15 @@ def discover(mods: list[str], shaken: dict, graph: check.Graph, uses) -> dict:
 def profile_cost(mods: list[str]) -> dict[str, float]:
     """Recorded profiled work, excluding blocked time; not elapsed build time."""
     result = {}
+    build = check.LEAN / ".lake/build/lib/lean"
+    stored = lean_profile.stored_logs(build)
     for mod in mods:
-        path = check.LEAN / ".lake/build/lib/lean" / pathlib.Path(*mod.split(".")).with_suffix(".trace")
+        path = build / pathlib.Path(*mod.split(".")).with_suffix(".trace")
         try:
             trace = json.loads(path.read_text())
         except (OSError, ValueError):
             continue
-        steps = list(lean_profile.steps(trace.get("log", [])))
+        steps = list(lean_profile.steps(lean_profile.trace_log(trace, stored.get(mod))))
         if steps:
             result[mod] = sum(seconds for _, _, kind, seconds in steps if kind != "blocked")
     return result

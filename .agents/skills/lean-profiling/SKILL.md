@@ -8,8 +8,10 @@ description: "Use when making Lean proofs or the CI Lean build faster, choosing 
 Start from the build's own profile, not from a profiling build. Every
 module is built with Lean's `profiler` on (`moreLeanArgs` in
 `lean/lakefile.toml`): each step over a millisecond is recorded, at its
-declaration, in the module's `.trace`, which the CI build cache ships. After
-restoring the cache (`lean/README.md`), from the repository root:
+declaration, in the module's `.trace`. The CI build cache ships them in one
+file, which `unpack` writes only with `--logs`
+(`… | python3 ci/lean_cache.py unpack --logs lean`; `lean/README.md`). After
+restoring the cache so, from the repository root:
 
 ```sh
 python3 ci/lean_profile.py                        # the 30 costliest declarations

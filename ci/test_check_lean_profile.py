@@ -210,5 +210,42 @@ class Main(unittest.TestCase):
             self.run_main("--module", "VerifiedGarbage.Spec")
 
 
+class StoredLogs(unittest.TestCase):
+    """The messages `lean_cache.py unpack --logs` writes, beside traces without them."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.build = pathlib.Path(tmp.name) / "lean/.lake/build/lib/lean"
+        self.logs = {}
+
+    def write(self, mod, trace, stored=None):
+        path = self.build / mod
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.with_suffix(".trace").write_text(json.dumps(trace))
+        path.with_suffix(".ilean").write_text(json.dumps({"decls": DECLS}))
+        if stored is not None:
+            self.logs["build/" + mod] = stored
+        ltar = self.build.parents[2] / "ltar"
+        ltar.mkdir(exist_ok=True)
+        (ltar / "logs.json").write_text(json.dumps(self.logs))
+
+    def test_read_for_traces_without_messages(self):
+        log = [info(4, 8, "simp took 2s")]
+        self.write("VerifiedGarbage/Proof/A", {"depHash": "1"}, {"depHash": "1", "log": log})
+        # Built since: its trace's messages, not the stored ones.
+        self.write("VerifiedGarbage/Proof/B", {"depHash": "2", "log": [info(4, 8, "simp took 3s")]},
+                   {"depHash": "1", "log": log})
+        # Changed since, without messages: the stored ones are another build's.
+        self.write("VerifiedGarbage/Proof/C", {"depHash": "2"}, {"depHash": "1", "log": log})
+        rows, unprofiled, _ = profile.collect(self.build, [])
+        self.assertEqual({(r["module"], r["elab"]) for r in rows},
+                         {("VerifiedGarbage.Proof.A", 2.0), ("VerifiedGarbage.Proof.B", 3.0)})
+        self.assertEqual(unprofiled, 1)
+
+    def test_none_outside_a_lake_build(self):
+        self.assertEqual(profile.stored_logs(pathlib.Path("elsewhere/build")), {})
+
+
 if __name__ == "__main__":
     unittest.main()

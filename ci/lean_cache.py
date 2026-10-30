@@ -17,7 +17,11 @@ archive is `.lake/ltar/<build>/<Module>.ltar`, where `<build>` is its build
 directory relative to `.lake/` (`build`, or `packages/mathlib/.lake/build`).
 `.lake/ltar/index.json` records the dependency hash and output hashes of
 each archive's module: `pack` packs only the modules that changed since,
-and removes the archives of modules that no longer exist. It writes every
+and removes the archives of modules that no longer exist. Before packing a
+module, it moves the messages of its `.trace` (the build's profile, nine
+tenths of the traces' bytes) to `.lake/ltar/logs.json`, so that the archive
+keeps the trace as just its hashes, and unpacking writes a few bytes for it
+(archives packed before `logs.json` are packed again). It writes every
 other file in the directories (the outputs' `.hash` files, native
 libraries, Lake's checkouts of the dependencies) to `.lake/ltar/files.tar`,
 then a tar of `.lake/ltar`, `files.tar` first, to stdout.
@@ -43,8 +47,8 @@ changed modules. The published format stays `.lake/ltar`.
 
 `bundle lean .lake/ltar .lake/mathlib-ltar` publishes those existing caches
 without installing Lean or expanding module outputs: it combines their
-indexes and `files.tar` archives, and streams the indexed `.ltar` files in
-one tar, with `files.tar` first. Inputs must have disjoint, nonempty indexes
+indexes, `logs.json` and `files.tar` archives, and streams the indexed
+`.ltar` files in one tar, with `files.tar` first. Inputs must have disjoint, nonempty indexes
 and all indexed archives. It leaves both source caches unchanged.
 
 `unpack` extracts such a tar from stdin into the Lean project. `tar`
@@ -53,10 +57,11 @@ most of the files, each small, and `tarfile` would create them one at a
 time, as long as `leantar` takes for all the archives. The archives go to
 the toolchain's `leantar` in batches of `--batch` bytes, each unpacked while
 the next arrives. The outputs come out byte for byte as they were packed;
-the `.trace` keeps everything Lake reads (the dependency hash,
-the outputs' hashes and the build's messages, with the profile
-`ci/lean_profile.py` reads), without the record of the build's inputs that
-Lake writes only for people to read.
+the `.trace` keeps what Lake needs (the dependency hash and the outputs'
+hashes), without the build's messages or the record of its inputs that
+Lake writes only for people to read. The messages, with the profile
+`ci/lean_profile.py` reads, are written only with `--logs`: one file,
+`.lake/ltar/logs.json`.
 
 It stages `files.tar` and each batch in `--tmp` (default: `/dev/shm`, a
 tmpfs, when there is one), so they never reach the disk, and removes them.
@@ -82,6 +87,13 @@ LTAR = Path(".lake/ltar")
 FILES = "files.tar"
 # The key of each archive's module (`key`), by archive, so `pack` repacks only what changed.
 INDEX = "index.json"
+# The build's messages (the `log` of each module's `.trace`, with the profile
+# `lean_profile.py` reads), by archive, with the dependency hash of the build
+# that wrote them: `pack` moves them out of the traces before packing them, so
+# that each archive keeps its trace as just its hashes, and `unpack` writes
+# them, one file, only if asked. Its presence says that every archive of its
+# index was packed so.
+LOGS = "logs.json"
 
 
 def leantar(lean):
@@ -117,18 +129,39 @@ def key(trace):
     return json.dumps([t["depHash"], t["outputs"]], sort_keys=True)
 
 
+def take_log(trace, rel, logs, old_logs):
+    """Moves the messages of the module's `.trace` to `logs[rel]`, with the
+    trace's dependency hash, and rewrites the trace without them. A trace
+    without messages (the module unpacked from an archive, not built) keeps
+    the entry of `old_logs` for the same dependency hash."""
+    t = json.loads(trace.read_text())
+    if t.get("log"):
+        logs[rel] = {"depHash": t["depHash"], "log": t.pop("log")}
+        trace.write_text(json.dumps(t))
+    elif rel in old_logs and old_logs[rel]["depHash"] == t["depHash"]:
+        logs[rel] = old_logs[rel]
+    else:
+        logs.pop(rel, None)
+
+
 def update(lean, roots, jobs, level, tool, archive_dir=LTAR, reuse=None):
     """Brings the archives of `archive_dir` up to date with the builds under
     `roots`, and returns the files they hold."""
     ltars = lean / archive_dir
     old = json.loads((ltars / INDEX).read_text()) if (ltars / INDEX).is_file() else {}
-    reused = {}
-    if reuse is not None and (lean / reuse / INDEX).is_file():
+    # Archives packed with their messages in them (before `LOGS`) are packed again.
+    old_logs = json.loads((ltars / LOGS).read_text()) if (ltars / LOGS).is_file() else None
+    if old_logs is None:
+        old = {}
+    reused, reused_logs = {}, {}
+    if reuse is not None and (lean / reuse / INDEX).is_file() and (lean / reuse / LOGS).is_file():
         reused = json.loads((lean / reuse / INDEX).read_text())
+        reused_logs = json.loads((lean / reuse / LOGS).read_text())
     builds = list(build_dirs(lean, roots))
     # Entries of builds not packed now stay.
     index = {rel: k for rel, k in old.items()
              if not any(build_of(rel) == build for build in builds)}
+    logs = {rel: entry for rel, entry in (old_logs or {}).items() if rel in index}
     packed = set()
     tasks = []
     kept = 0
@@ -137,6 +170,7 @@ def update(lean, roots, jobs, level, tool, archive_dir=LTAR, reuse=None):
             rel = str(build.relative_to(".lake") / name)
             ltar = archive_dir / (rel + ".ltar")
             index[rel] = key(trace)
+            take_log(trace, rel, logs, old_logs or {})
             # The outputs' `.hash` files stay: without them Lake would read
             # every output again to hash it.
             packed.add(trace.relative_to(lean))
@@ -149,6 +183,8 @@ def update(lean, roots, jobs, level, tool, archive_dir=LTAR, reuse=None):
             # archives. Missing or changed entries are packed normally.
             if reused.get(rel) == index[rel] and (lean / reuse / (rel + ".ltar")).is_file():
                 shutil.copyfile(lean / reuse / (rel + ".ltar"), lean / ltar)
+                if rel not in logs and rel in reused_logs:
+                    logs[rel] = reused_logs[rel]
                 kept += 1
                 continue
             # Without `-s`, the archive keeps the trace's dependency hash, so
@@ -160,6 +196,7 @@ def update(lean, roots, jobs, level, tool, archive_dir=LTAR, reuse=None):
                           "base": [str(build / "lib/lean"), str(build / "ir")]})
     # Until the archives are packed, the index must not vouch for them.
     (ltars / INDEX).unlink(missing_ok=True)
+    (ltars / LOGS).unlink(missing_ok=True)
     if tasks:
         subprocess.run([tool, "--jobs", str(jobs), "--level", str(level), "-p", "-"], cwd=lean,
                        input=json.dumps(tasks).encode(), check=True)
@@ -170,6 +207,7 @@ def update(lean, roots, jobs, level, tool, archive_dir=LTAR, reuse=None):
             ltar.unlink()
             removed += 1
     ltars.mkdir(parents=True, exist_ok=True)
+    (ltars / LOGS).write_text(json.dumps(logs, sort_keys=True, separators=(",", ":")))
     (ltars / INDEX).write_text(json.dumps(index, sort_keys=True))
     print(f"Packed {len(tasks)} modules, kept {kept}, removed {removed}", file=sys.stderr)
     return packed
@@ -205,10 +243,13 @@ def bundle(lean, archive_dirs, out):
     uncompressed files.tar archives without extracting the small files.
     Only indexed modules are included; leftover archives are ignored.
     """
-    index, archives = {}, []
+    index, logs, archives = {}, {}, []
     for directory in archive_dirs:
         source = lean / directory
         entries = json.loads((source / INDEX).read_text())
+        if (source / LOGS).is_file():
+            logs.update((rel, entry) for rel, entry in json.loads((source / LOGS).read_text()).items()
+                        if rel in entries)
         if not entries:
             raise ValueError(f"Empty module cache: {directory}")
         if not (source / FILES).is_file():
@@ -233,10 +274,11 @@ def bundle(lean, archive_dirs, out):
                             str(lean / directory / FILES)], check=True)
         with tarfile.open(fileobj=out, mode="w|", dereference=True) as tar:
             tar.add(files, arcname=str(LTAR / FILES))
-            data = json.dumps(index, sort_keys=True).encode()
-            member = tarfile.TarInfo(str(LTAR / INDEX))
-            member.size = len(data)
-            tar.addfile(member, io.BytesIO(data))
+            for name, value in ((INDEX, index), (LOGS, logs)):
+                data = json.dumps(value, sort_keys=True, separators=(",", ":") if name == LOGS else None)
+                member = tarfile.TarInfo(str(LTAR / name))
+                member.size = len(data.encode())
+                tar.addfile(member, io.BytesIO(data.encode()))
             for rel, archive in sorted(archives):
                 tar.add(archive, arcname=str(LTAR / (rel + ".ltar")))
     print(f"Bundled {len(archives)} modules", file=sys.stderr)
@@ -312,7 +354,7 @@ def build_of(rel):
     return Path(".lake", *parts[:end])
 
 
-def unpack(lean, jobs, tmp, batch, tool, stream):
+def unpack(lean, jobs, tmp, batch, tool, stream, logs=False):
     tool = tool or str(leantar(lean))
     stage = Path(tempfile.mkdtemp(prefix="lean-cache-", dir=tmp))
     running = None
@@ -346,6 +388,12 @@ def unpack(lean, jobs, tmp, batch, tool, stream):
                     with open(stage / FILES, "wb") as f:
                         shutil.copyfileobj(tar.extractfile(member), f)
                     files = extract(lean, stage / FILES)
+                    continue
+                if rel == LTAR / LOGS and member.isfile():
+                    if logs:
+                        (lean / LTAR).mkdir(parents=True, exist_ok=True)
+                        with open(lean / LTAR / LOGS, "wb") as f:
+                            shutil.copyfileobj(tar.extractfile(member), f)
                     continue
                 if not member.isfile() or rel.suffix != ".ltar":
                     continue  # the index, and directories
@@ -409,6 +457,8 @@ def main(argv=None):
     u.add_argument("--batch", type=int, default=256 << 20,
                    help="bytes of archives to stage before unpacking them (default: 256 MiB)")
     u.add_argument("--leantar", help="the leantar to unpack with (default: the toolchain's)")
+    u.add_argument("--logs", action="store_true",
+                   help=f"also write the build's messages, with its profile, to {LTAR / LOGS} (`lean_profile.py`)")
     u.add_argument("--tmp", default=tmp_dir(),
                    help="where to stage the archives (default: /dev/shm, if there is one)")
     for q in (st, r):
@@ -430,7 +480,8 @@ def main(argv=None):
     elif args.command == "restore":
         restore(args.lean.resolve(), args.jobs, args.leantar, args.archive_dir, args.modules, args.others)
     else:
-        unpack(args.lean.resolve(), args.jobs, args.tmp, args.batch, args.leantar, sys.stdin.buffer)
+        unpack(args.lean.resolve(), args.jobs, args.tmp, args.batch, args.leantar, sys.stdin.buffer,
+               args.logs)
 
 
 if __name__ == "__main__":
