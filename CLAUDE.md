@@ -125,6 +125,21 @@ own changes are rebuilt either way, on top of the restored build.
   `extern` or `export`, and nothing in `lean/VerifiedGarbage/` may declare a
   `csimp` theorem or an `initialize`. Only `Spec/` declares definitions in
   the namespace `VG.Spec`. The emitter refuses both (`TCB/Audit.lean`).
+* The emitter emits each target from a program that is a module, and relies
+  on that target's audit, a file that is not a module, which `lake build`
+  builds and caches ("Drivers as modules" in `TCB/Emit.lean`). The program
+  emits only if the audit's digest is of exactly the modules it imported
+  (`#record_audit_digest`, `#check_audit_digest`, `TCB/Audit.lean`), and
+  `Emit.lean` otherwise builds that audit, which audits what is there now or
+  fails: never weaken that check, or let a program emit without it.
+  `ci/emit_sources.py` writes the same files without Lean, for CI's jobs
+  that plan or build before the trusted base is built; it is not trusted, and
+  CI fails unless it writes byte for byte what `VG.Emit.prepare` does
+  (`emit_sources.py --check`). A change to those files' text or to the
+  modules they list (`moduleDriver`, `auditFile`, `runnerFile`, `parts`, the
+  discovery of registration, generic and variant files) changes
+  `ci/emit_sources.py` the same way in the same PR, with the golden tests in
+  `VerifiedGarbageTest/Emit.lean`.
 * Never add instructions with operand-dependent timing (e.g. `div`) to an ISA
   model.
 * On x86-64, `pmuludq`, `pmullw`, `pmulhw`, `pmaddwd`, `pmulhrsw`, their VEX
