@@ -83,29 +83,26 @@ own changes are rebuilt either way, on top of the restored build.
   next to OpenSSL's equivalent, and aws-lc-rs's if it has one. The
   Benchmarks workflow runs only by hand, never on pull requests: a change
   that could make code slower, or claims to make it faster, is measured by
-  a manual run scoped to what it changed (see "Measuring a change's
-  speed"), and its pull request links the run.
+  a manual run scoped to what it changed (the `benchmarking` skill),
+  and its pull request links the run. Its runners are the ones CI waits
+  for: never run every benchmark unless the change truly needs it, never
+  run one for a change that cannot affect speed, and never rerun one to
+  get a better number.
 * **An optimized implementation reaches everything built on it.** An
   implementation of a function for CPU features (or any other faster
   version) is a *variant*: named `<function>_<suffix>` (`_shani`, `_avx2`),
   with the same signature and contract. Every function that calls a
-  function with variants is generic over them (step 4 of "Adding a
-  primitive"), so a new variant is emitted for its callers too, and their
-  callers, without anyone listing it. The Rust code that chooses among
-  implementations matches exhaustively on the primitive's backend enum
-  (`streaming_hash!`'s, which `streaming_hmac!` and `whole_pbkdf2!`
+  function with variants is generic over them (step 4 of the
+  `adding-a-primitive` skill), so a new variant is emitted for its callers
+  too, and their callers, without anyone listing it. The Rust code that
+  chooses among implementations matches exhaustively on the primitive's
+  backend enum (`streaming_hash!`'s, which `streaming_hmac!` and `whole_pbkdf2!`
   follow; `chacha20::Backend`, which ChaCha20-Poly1305 follows; a caller of
   several, like Argon2, matches on each of their enums together): a new
   backend does not compile until everything built on it handles it.
-  `ci/check_variants.py` checks the generated code: each caller of a
-  function with a variant has that variant, which calls it or does its work
-  itself but never calls the baseline (a helper needs none if its callers'
-  variants all do its work themselves), some implementation of each caller
-  calls every implementation of its callee whose features the caller has
-  but the one it calls lacks (a variant chosen by hand, such as a field
-  naming the callee, still follows the features), and each variant is used by the
-  Rust code outside its tests (never emit one only a test calls). There are
-  no exceptions: never add a caller that calls only the baseline
+  `ci/check_variants.py` checks the generated code for this (the
+  `adding-a-primitive` skill says what it checks). There are no
+  exceptions: never add a caller that calls only the baseline
   implementation, or a way to excuse one.
   A variant is chosen by the CPU's features; only when no feature tells
   apart the CPUs it is faster on may the choice also depend on the
@@ -143,115 +140,47 @@ own changes are rebuilt either way, on top of the restored build.
   `Proof/`. `Spec/` and `Impl/` never import `Proof/`.
   `ci/check_lean_imports.py` checks both.
 
+## Skills
+
+Guidance for particular tasks is in skills, `.agents/skills/<name>/SKILL.md`
+(`.claude/skills` links to the same directory). Before starting one of these
+tasks, read its skill, whether or not your tool loads it for you:
+
+* `adding-a-primitive`: before adding a primitive, a new target for one, a
+  CPU-feature variant, or a file under `Artifacts/`, `Generic/` or
+  `Variants/`.
+* `proof-performance`: before writing or editing a proof, or when one is
+  slow. The rules in "Keeping proofs fast" below are its summary: change
+  the two together.
+* `lean-profiling`: before making proofs or the CI Lean build faster, or
+  measuring such a change.
+* `lean-modules`: before adding a Lean module or changing imports, when
+  `ci/check_lean_public_imports.py` reports something, before narrowing the
+  imports of many modules (`ci/trim_lean_imports.py`), or before writing a
+  Lean file that is not a module.
+* `benchmarking`: before measuring a change's speed, locally or with the
+  Benchmarks workflow.
+* `cpu-feature-tests`: before changing what CPU features choose, its tests,
+  `ci/rust_matrix.toml` or the groups in `ci/cpu_tests.py`.
+* `ci-metrics`: when asked to check or analyze CI.
+
+Each skill is a section that used to be in this file; keep its text there,
+not here, and keep this list in step with `.agents/skills/`
+(`ci/check_skills.py` checks it). A skill's frontmatter has only `name`
+and `description`, which every tool reads, and its links are relative to
+its own file.
+
 ## Adding a primitive
 
-This takes at least two PRs (see "One kind of change per PR"): step 1 alone,
-then steps 2–5 together. Any TCB additions the primitive needs (e.g. new
-instructions in an ISA model) go in their own PR before either.
-
-1. `Spec/<Alg>.lean`: the algorithm, transcribed from the standard, with no
-   target-specific imports; and `Spec/<Alg>/Contract.lean`: for each function,
-   its Rust signature (`Sig`) and its `Contract` on every target, built with
-   `Sig.contract` from a postcondition and any precondition the signature does
-   not imply, and its `Api`: its Rust module (the file under
-   `src/asm/<target>/`) and name, its signature, its contract on every target
-   (`contracts := some fun A stack => fooContract A stack`, or
-   `fun A _ => fooContract A` for a contract without `stack`), its
-   contract's `writeArgs`, and its documentation: what it does, and the `# Safety` items but for what
-   the emitter generates (what memory each buffer must be valid for:
-   `Sig.validDoc`; which buffers may not overlap each other, the stack or
-   the arguments on it, and that none wraps around the address space:
-   `Sig.layoutDoc`). Choose
-   `pub` honestly: only lengths and pointers are public unless the algorithm
-   says otherwise.
-2. `Impl/<Alg>/<Target>.lean`: the code.
-3. `Proof/<Alg>/…`: the proof of `Verified`. A proof may be written against a
-   simpler per-target contract of its own and moved to the shared one with
-   `Verified.of_implies` (see `Proof/Framework/Contract.lean`).
-4. An `Artifact` in the registration file `Artifacts/<Alg>/<Target>.lean`,
-   which defines `VG.Artifacts.<Alg>.<Target>.artifacts` (a new file for a
-   new algorithm or target; see `Artifacts/Selftest/X86_64.lean`), made
-   from the function's `Api` by `Api.artifact` (`TCB/Registration.lean`),
-   with the file importing
-   `Proof/Framework/Registration.lean` for its default proofs:
-
-   ```lean
-     Spec.<Alg>.fooApi.artifact X86_64.target {
-       stack := 8
-       code := Impl.<Alg>.X86_64.foo
-       verified := Proof.<Alg>.X86_64.foo_verified },
-   ```
-
-   A registration states only what the implementation chooses: the Rust
-   module, name, signature, `writeArgs`, documentation and contract come
-   from the `Api`, so never restate them. Give a variant's name its
-   `suffix` (`suffix := "_avx2"`), any notes on the implementation in
-   `notes` (`notes := […]`), the stack its calls and frames use in `stack`,
-   the tables of constants it reads in `consts`, and, where a caller wipes a
-   writable array the function uses as working space, how much of it the
-   function writes in `written` (`written := [("scratch", 1024)]`, proven by
-   `writtenOk`), which the emitter exports as `<NAME>_<PARAM>_WRITTEN` for
-   the caller to wipe only that much. Its contract is found
-   from `verified`'s type, and must be the `Api`'s on the target for
-   `consts` and `stack` (`ofApi`, by `rfl`): give `contract` only when
-   `verified`'s type does not determine it. `of_sig` proves `ofSig`, and
-   `sp_safe` proves `spSafe`: by `Code.all_of_forall` on ARMv7, AArch64 and
-   PPC64LE,
-   which evaluates nothing, and by `Code.all_of_allInstrs (by lit_decide)`
-   on x86 and x86-64 (see "Code the kernel evaluates" below), falling back
-   to `decide +kernel` where `lit_decide` exceeds the recursion limit, and
-   for code that depends on a `Bool` or an enumeration (`adx`, a field
-   variant), by cases on it. Never set
-   `contracts` outside `Spec/` (the emitter refuses an artifact without
-   them). If its code uses instructions outside
-   the target's baseline ISA, list the CPU features they require in
-   `features` (the emitter rejects anything but the exact set).
-   A function that calls another one with several implementations (e.g.
-   scalar and SHA-NI compression) is proven once for any of them and
-   registered in `Generic/<Iface>/<Target>/<Alg>.lean`, which the emitter
-   applies to every implementation in `Variants/<Iface>/<Target>/` (see
-   `TCB/Emit.lean`), and so is a function that calls a generic caller
-   (e.g. HMAC's `init`, calling SHA-256's `update`). A function that calls
-   functions of several such interfaces is generic over all of them, in
-   `Generic/<Iface₁>/…/<Ifaceₙ>/<Target>/<Alg>.lean`, whose `artifacts`
-   takes a variant of each, in path order: the emitter applies it to every
-   combination (e.g. Argon2's x86-64 derivation,
-   `Generic/Blake2b/Argon2Compress/X86_64/Argon2.lean`, calling BLAKE2b's
-   streaming functions and Argon2's `G`). Its instances are named by
-   `Emit.qualifiedName`: the function's name, then a tag and the suffix of
-   each interface whose variant is not the baseline, in path order
-   (`vg_argon2_blake2b_avx2_g_avx512`; `vg_argon2` for the baseline),
-   since variants of different interfaces may share a suffix; callers of one
-   interface append the suffix alone. Never list the
-   implementations in the caller: a new implementation is a new variant
-   file, and its callers follow.
-   Registration files (`Artifacts/`, `Generic/`) and variant files
-   (`Variants/`) are reviewed by hand, so they only bind: no theorems, no
-   tactic proofs beyond the defaults (not even a `(by decide)` argument),
-   and no definitions but the artifacts, the variant and notes. A lemma
-   whose side conditions a registration would decide takes them as
-   `autoParam`s (`(hd : stackUse c ≤ 48 := by lit_decide)`), or the
-   algorithm's proofs state the instance as a theorem
-   (`Proof/Rsa/X86_64/Instances.lean`); `ci/check_registrations.py` checks
-   it. Build a variant with its proofs under `Proof/`
-   (`Proof/Variants/<Iface>/<Target>/<Name>.lean`, as the variant file's
-   path) and bind it in the variant file
-   (`def variant : … := Proof.Variants.<Iface>.<Target>.<Name>.variant`);
-   put what a generic caller's artifacts are built from (instances of the
-   functions it calls, lemmas about its code) in a module of the
-   algorithm's proofs, as `Proof/AesGcm/X86_64/Instances.lean` does.
-   A function whose proof takes a Weierstrass curve's group law (`Law`,
-   `Proof/Weierstrass/Law.lean`) is registered generic over it the same
-   way: the law is the one variant of the interface `<Curve>` on each target
-   (`Variants/<Curve>/<Target>/Law.lean`, the only files that import the
-   Mathlib algebra of its proof), and the registration file is
-   `Generic/<Curve>/<Target>/<Alg>.lean` (`Generic/<Iface>/<Curve>/<Target>/`
-   when it is generic over an implementation too). The law has no suffix.
-5. Regenerate `src/asm/`, build the public Rust API on top of the primitive,
-   and test it against the Wycheproof vectors in `tests/wycheproof/` (set
-   `WYCHEPROOF_ROOT` to a checkout of C2SP/wycheproof). Benchmark the new
-   API in `bench/benches/primitives/<alg>.rs`, next to the same operation in
-   OpenSSL, at the sizes the others use.
+This takes at least two PRs (see "One kind of change per PR"): the spec
+(`Spec/<Alg>.lean` and `Spec/<Alg>/Contract.lean`) alone, then the
+implementation, its proof, its registration, the regenerated `src/asm/`,
+the Rust API, its tests and its benchmark together. Any TCB additions the
+primitive needs (e.g. new instructions in an ISA model) go in their own PR
+before either. Registration files (`Artifacts/`, `Generic/`) and variant
+files (`Variants/`) are reviewed by hand, so they only bind
+(`ci/check_registrations.py` checks it). The `adding-a-primitive` skill has
+the steps.
 
 ## Keeping parallel PRs from conflicting
 
@@ -303,70 +232,19 @@ namespace VG.Proof.Md5.X86_64
 …
 ```
 
-* Add a proof to the module that uses it, not to a new module of its own.
-  Every module is a `lean` process that first imports its whole closure,
-  about a second of CI's time, more than many modules' own work; the
-  per-declaration limits (`maxHeartbeats`, "Keeping proofs fast") apply to
-  declarations, not files, so splitting a file never helps them. A new proof
-  module is for code that several modules import, or for proofs that cost
-  more than their imports (`ci/lean_profile.py`), which a separate module
-  spares from re-checking when its importer changes. A module that only
-  one other proof module imports says why in a line
-  `-- separate module: <why>`; `ci/check_lean_single_importer.py` fails a
-  change that adds one without it (the modules of `Proof/Framework/` and
-  `Proof/Variants/`, `*Lit` and `Instances` modules, `meta` files and
-  those that `materialize_*` or `taint_summary` are exempt).
-* `public import` only what the file's statements and definitions mention
-  (importers see it too); a plain `import` gives the file something for its
-  proofs only, and importers do not see it. `@[expose] public section`
-  keeps every definition unfoldable by importers, as the proofs need.
-  Import privately whatever only proofs use: it is what keeps builds short.
-  Lake rebuilds a module when a module it reads changes its `.olean`, and a
-  module reads its imports and what they `public import`, transitively
-  (`ci/lean_shards.py`'s `reads`). A change to a lemma's statement rebuilds
-  the modules importing it, but those that import it privately produce the
-  `.olean` they did, and nothing beyond them rebuilds; through a
-  `public import` it rebuilds everything above it. (A change to a proof
-  alone changes no `.olean` but its own module's private part, and rebuilds
-  nothing else.) So import what a file uses directly, not through another
-  module that happens to pass it on. Before pushing, after building the
-  modules you edited, run `ci/check_lean_public_imports.py` on them (see
-  "Checks to run before pushing"; CI does not run it, since `lake shake`
-  alone takes most of a minute): it names each `public import` you added of
-  a module of the project that the file uses only privately, with the
-  modules importing it that used what it passed on (they must import that
-  themselves), and each import you added that the file does not use at all;
-  `--fix` makes those changes, after which build and run it again. It counts
-  as public what Lean does: statements, and the bodies of exposed
-  definitions with the proofs inside them (a structure value's proof
-  fields), which `lake shake` alone counts as private. It never asks to
-  make private or remove a module whose effect no declaration records (an
-  `attribute [...]`, a `macro_rules`, a `seal`, an instance priority, a
-  `materialize_*` literal: its `SIDE_EFFECTS`), nor a dependency's, and when
-  making an import private would stop passing such a module on, it names
-  the `public import`s that keep doing so. With `--dependencies Mathlib`
-  (both scripts) it also removes the imports of Mathlib's modules that
-  shake finds unused, adding a narrower Mathlib module where shake names
-  one; `--fix` keeps each only if the module and everything importing it
-  still build. Mark an import that must stay as
-  it is for another reason `-- shake: keep`, saying why. Shake does not see
-  uses that leave nothing in the `.olean` (an `open` of a namespace, what
-  `#guard`, `materialize_*` or `taint_decide` evaluate): import what those
-  need directly. For a change the check does not cover (more than 3,000
-  modules, a refactor of many headers) or a sweep of the library,
-  `ci/trim_lean_imports.py` (`-m`, `--base REV` or `--all`) does the same
-  for every import of those modules, in rounds until nothing is left: it
-  never edits registrations or variants, keeps what it found by Lake's hash
-  of each module's build, and avoids retrying unchanged rejected trials
-  (`lean/.lake/trim-imports.json`); relevant context changes or
-  `--retry-rejected` reopen them. For fast iteration, use `--capture` once
-  and `--replay` while changing Python planning logic, then verify a small
-  scope with `--max-affected` and `--verify-batch`. Replays remain unverified;
-  changing the Lean reader requires a fresh capture. `--discover --no-shake`
-  generates independent hypotheses without shake. `--batch` bounds shake's
-  memory (about 3 GB per 1,000 modules), and `--read-batch` separately bounds
-  declaration-reader roots. See [Iterating on import narrowing](lean/README.md#iterating-on-import-narrowing)
-  and [the evidence and verification guide](ci/IMPORT_NARROWING.md).
+* Add a proof to the module that uses it, not to a new module of its own:
+  every module costs CI about a second before its own work, and splitting
+  a file never helps the per-declaration limits. A module that only one
+  other proof module imports says why in a line `-- separate module: <why>`
+  (`ci/check_lean_single_importer.py`).
+* `public import` only what the file's statements and definitions mention,
+  and import privately whatever only its proofs use, so that a change
+  rebuilds as few modules as it can; import what a file uses directly, not
+  through another module that happens to pass it on. `@[expose] public
+  section` keeps every definition unfoldable by importers, as the proofs
+  need. Before pushing, after building the modules you edited, run
+  `ci/check_lean_public_imports.py` on them (see "Checks to run before
+  pushing").
 * A file that only defines tactics, elaborators or commands is a
   `public meta section`, and imports each module both ways
   (`public import X` and `public meta import X`; `Lean` only as
@@ -385,19 +263,17 @@ namespace VG.Proof.Md5.X86_64
   unfolds `Nat.isPowerOfTwo`. The kernel evaluates core's arrays and
   vectors without `import all`, which makes a module up to a quarter slower
   to build (`ci/check_lean_speed.py` checks it).
-* The audits (`#assert_standard_axioms`, `#assert_no_compiler_overrides`,
-  `#assert_spec_origin`) run only in files that are not modules (the
-  emitter's drivers, `VerifiedGarbageTest/`), and refuse
-  to run in a module: a module sees the theorems it imports as axioms,
-  without their proofs. A file that is not a module sees every module's
-  private imports too.
 * In a structure instance, a field proven by a tactic inside a term
   (`ofSig := ⟨_, _, _, by …⟩`) is elaborated after the other fields, and
   a tactic run before its goal is known is stuck: write the field
   `by exact (…)`.
+* `lake build` turns off Mathlib's style and tactic-analysis linters (the
+  lakefile's `weak.` options), 5–8% of the build: never turn them back on
+  in a module.
 * An exposed definition may not refer to a private declaration of its file,
   and the auxiliary declarations of a theorem's proof are private to it:
   a lemma another file uses is a top-level theorem, not a `where` lemma.
+
 
 ## Stacking PRs
 
@@ -427,369 +303,50 @@ it faster.
 `ci/check_lean_speed.py` enforces this, and the rules below that can be
 checked without building.
 
-Avoid these patterns (each has cost tens of seconds in one proof):
+The `proof-performance` skill explains each of these rules, with the
+lemmas and tactics to use; read it before writing a proof:
 
-* **Constant time:** use `VG.Taint.constantTime … (by taint_decide)`, never
-  `decide +kernel` on a taint check: `taint_decide` precomputes loop
-  invariants so the kernel does not search for them.
+* **Constant time:** `VG.Taint.constantTime … (by taint_decide)`, never
+  `decide +kernel`. A callee that many callers share gets a taint summary
+  (`taint_summary`, `Proof/Framework/TaintSum.lean`).
 * **Symbolic execution:** step blocks with the ISA's `runBlock_cons`,
-  `runStep_some` and `runBlock_nil` (`Proof/Framework/<ISA>/Exec.lean`), never
-  `simp [runBlock]`, which runs the rest of the block from an unknown state
-  after every instruction.
-* **One symbolic execution per code shape:** don't case-split (e.g.
-  `interval_cases` on a register rotation) and run the same block once per
-  case; generalize what differs (see `round_ok` and `round_nodup`). Memory
-  offsets generalize too: pass their bounds and separation from a lemma
-  proved once (`round_sep`, x86), stating each pair in both orders, since
-  `simp` won't match `a ∨ b` against `b ∨ a`.
-* **Short symbolic executions:** don't run a long block of loads and stores
-  in one `simp`; the states grow with every access. Prove one step for any
-  index (`ld_ok k`, `upd_ok k`) and compose the steps by induction with
-  `WP.block_append_iff`.
-* **Kernel-evaluated data:** anything the kernel evaluates (a taint domain,
-  a `decide +kernel` check) should use `Nat` arithmetic, which the kernel
-  runs natively, not lists it searches element by element: sets of
-  registers are `RegSet`s (`Proof/Framework/RegSet.lean`), not `List Reg`.
-* **Finite facts:** prove a fact about a few small numbers with one `decide`
-  on the bounded statement (`∀ j < 16, ∀ k < 16, wreg j = wreg k → j = k`),
-  not `interval_cases j <;> interval_cases k <;> simp`. For a nested `if`
-  on the same index on both sides, split the index into ranges once with
-  `omega` and resolve each `if` with
-  `simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]`, not `split_ifs`.
-* **Nested `if`s under a discharger:** give `simp` the lemmas that resolve
-  an `if` (`ite_eq_left`, `ite_eq_right`, a family's `ifp`/`ifn`) as
-  pre-rewrites, `↓ite_eq_left`. Otherwise `simp` simplifies both branches of
-  an `if` before the `if` itself, so its discharger (`omega`) runs, and
-  usually fails twice, on the conditions of branches the outer `if` then
-  discards; a failing `omega` is its slowest case (6–46% of a module's
-  heartbeats in #2374). Lemmas that only rewrote inside those branches then
-  show up as unused simp arguments: remove them.
-* **Instruction lists under `++`:** in a theorem statement, ascribe each
-  instruction-list literal next to `++`: `.block (absorb 1 ++
-  ([.alu .add .esi (.imm 16)] : List Instr))`, not `absorb 1 ++ [.alu …]`.
-  `++` elaborates its operands without an expected type, so every `.op`
-  fails once and is elaborated again (up to seconds per statement).
-* **Imports:** never import `Mathlib.Tactic` or all of Mathlib, which costs
-  seconds in every module that (transitively) imports it: import the
-  module of each tactic or lemma you use (e.g. `Mathlib.Tactic.IntervalCases`),
-  and prefer core lemmas. The framework (`Proof/Framework/`) provides no
-  Mathlib tactics, only Batteries' light ones (`by_contra`, `absurd`,
-  `exacts`, `swap`, `<;> [t₁; t₂]`). `IntervalCases`, `NormNum`, `Ring` and
-  `Mathlib.Data.List.*` each add about half a second to every module that
-  imports them, even indirectly: keep them out of modules that many others
-  import (a framework file, an algorithm's `Spec` or `Stream` lemmas).
-  `ci/check_lean_speed.py` fails when a module importing heavy algebra
-  (`HEAVY_MATHLIB`: `Ring`, `ZMod`, `NormNum`, `Linarith`, polynomials, …)
-  is imported by more than 40 others; core `grind` proves the ring
-  identities `ring` is used for.
-* **Imports across targets:** a module of one target (a path with a
-  directory of `TCB/`, e.g. `Proof/Sha256/Arm/…`) never imports a module of
-  another target, even for a lemma that mentions no ISA: a change to one
-  target (e.g. its ISA model) would then rebuild the other's proofs too, and
-  a CI shard (`ci/lean_shards.py`), which builds a proof with everything it
-  imports, would check both. Put what more than one target uses in
-  a target-independent module (`Proof/<Alg>/…`, `Proof/Framework/…`);
-  `ci/check_lean_imports.py` checks it. For the same reason `TCB/` is
-  compiled as a precompiled library per target (`NativeTCB<Target>` in
-  `lean/lakefile.toml`) and one for the rest (`NativeTCB`): a native module
-  depends on the whole shared library of each library it imports from, so
-  a new target gets its own, and a new file directly in `TCB/` is listed
-  in `NativeTCB` (the same script checks both).
-* **Properties of every instruction:** prove `(instrs c).all p` with
-  `rw [← Code.allInstrs_eq]; decide +kernel`, not `decide +kernel` directly.
-* **Code the kernel evaluates:** code built by functions (unrolled
-  compression functions, and the functions calling them) is rebuilt by the
-  kernel in every check that evaluates it (constant time, `spSafe`, …), in
-  every module. Give it a literal: `materialize_code foo`
-  (`Proof/Framework/Lit.lean`), in a `Lit.lean` next to its proofs, defines
-  `foo.lit` and checks `foo.lit_eq` once; then `taint_decide` and
-  `lit_decide` (not `decide +kernel`) evaluate the literal, and the
-  registration file's `spSafe := Code.all_of_allInstrs (by lit_decide)`.
-  Functions that build code or tables (a register allocator, spec
-  tables) get literals too: `materialize_table f n` (for `f : Nat → α`;
-  `Nat`-valued tables are packed into one number, read by a shift),
-  `materialize_value c` (any value with `ToExpr`). `materialize_code`,
-  `lit_decide` and `taint_decide` unfold the definitions that lead to any
-  constant with a literal and read it, so a generator runs once, in its own
-  `lit_eq`, if every module that evaluates code using it imports the module
-  with its literal (a literal module imports the literal modules of the
-  code it contains). Materializing code checked only once does not pay.
-* **Constant time of many callers of the same function:** prove the
-  callee's taint once as a summary (`taint_summary`, `taint_decide_sum`,
-  `Proof/Framework/TaintSum.lean`) rather than analysing its body in every
-  caller's `taint_decide`; this needs a `Taint.Frame` instance for the ISA's
-  taint domain (so far `AArch64.VectorTaint`, `Framework/AArch64/TaintMono.lean`).
-  A summary pays when declarations or modules share it: within one
-  `taint_decide`, the kernel already analyses identical code from the same
-  taint once, so splitting one check into summaries makes it slower. Give a
-  summary the smallest taint its callers need (public slots that are never
-  read back as addresses cost the kernel at every store). Code that differs
-  only in immediates (table selections) has the same taint: check one copy
-  (`Proof/Framework/AArch64/TaintErase.lean`, `constantTime_eraseImm_of_eq`).
-* **Tactics run compiled:** a module defining tactics, elaborators,
-  simprocs or `MetaM` functions that imports only Lean core and precompiled
-  modules goes in `NativeTactics` (lakefile); the interpreter runs it an
-  order of magnitude slower in every module that uses it
-  (`ci/check_lean_speed.py` checks it). Mathlib tactics run interpreted:
-  keep `tauto` and similar out of hot proofs.
-* **Register reads after writes:** in symbolic execution never unfold
-  `State.setReg` (`write`, `setFlags`, `arithFlags`, `setV`): the registers
-  become a function that `simp` re-simplifies under a binder at every
-  instruction, quadratic in the block's length. Read through the writes
-  with `Proof/Framework/<ISA>/RegUpd.lean`: `gpr_setReg` (an `if`, decided
-  for literal registers) or `gpr_setReg_self` and `gpr_setReg_of_ne` (for
-  variables), and `mem_setReg`, `gpr_setFlags`, … for the other fields.
-  Keep writes folded throughout the block; expand the final state once only
-  if the postcondition needs it. Preserve this behavior in shared symbolic
-  execution tactics so every caller benefits.
-* **Frame facts through writes:** prove `s'.mem = s.mem` (and the other
-  fields a frame keeps) for a state `s'` built by writes with the `RegUpd`
-  lemmas given their arguments, or `simp only [mem_setV, …]` (`upd_frame` on
-  AArch64), never `rfl` or a `.trans` chain of the lemmas with `_`
-  arguments: unification unfolds the writes into structure literals and
-  first tries to unify the states (seconds for a few vector instructions).
-  On AArch64, `Proof/Framework/AArch64/Seal.lean` makes `State.setV`
-  irreducible for elaboration in the modules that import it, which rules
-  this out; import it once a module's proofs no longer unfold `setV`.
-* **Addresses at offsets:** don't prove that ranges at `p + BitVec.ofNat 64 d`
-  are separate, disjoint or contained, or their distances, with `bv_omega`
-  (a second or more each, and a large term for the kernel): use `VG.Offset`
-  (`Proof/Framework/Offset.lean`: `sep`, `disjoint`, `sub`, `contains_base`,
-  …), whose hypotheses are about the offsets alone, closed by `omega` or,
-  for literals, `decide`. Its identities (`add_add`, `add_sub_cancel_left`,
-  `ofNat_sub_ofNat`, `sub_sub_eq`, …) are in `AddrArith.lean`, which `Mem`
-  imports. A local lemma for a family's own ranges is one application of
-  one of these, never a proof of its own.
-* **`omega` in a large context:** `omega` and `bv_omega` look at every
-  hypothesis, a tenth of a second or more each call in a long proof about
-  states. Clear what they cannot use: `omega_arith`, `bv_omega_arith`
-  (arithmetic hypotheses only) or `omega_using [h₁, …]`,
-  `bv_omega_using [h₁, …]` (those facts only), `Proof/Framework/Omega.lean`.
-* **Index bounds:** `xs[i]` proves `i < xs.length` with `get_elem_tactic`,
-  whose core rules rewrite every hypothesis and run `omega`.
-  `Proof/Framework/GetElem.lean` (which `Mem` imports) tries `decide`
-  first, for literal indices; for any other index give the bound, `xs[i]'h`.
-* **Satisfiability witnesses:** the regions of a concrete witness state are
-  disjoint by `Region.disjoint_of_sep (by decide)`, not `bv_omega`.
-* **`decide := true` in `simp`:** `simp (config := {decide := true})` runs
-  `decide` on every closed proposition it visits: cheap for small facts
-  (register equalities, small `Nat` comparisons, where simprocs measured
-  slower), seconds per block when those facts evaluate expensive
-  definitions. There, reduce them with simprocs (`reduceCtorEq`,
-  `↓reduceIte`, `Nat.reduceLT`, `Nat.reduceEqDiff`, `and_self`, …) or
-  discharge side conditions with `(disch := decide)`. Measure both;
-  `ci/check_lean_speed.py` counts the uses per file
-  (`ci/lean_speed_allowed.py`). `set_option simprocs false` turns off every
-  simproc, even those listed in `simp only [...]`.
-* **`assumption` among facts about states:** `assumption` tries every
-  hypothesis at default transparency, unfolding states and registers before
-  each failed match; use `with_reducible assumption`, or name the hypothesis
-  (`ci/check_lean_speed.py` rejects a bare `assumption` after `<;>` or in
-  `first`).
-* **Numeral exponents:** `2 ^ 64` elaborates in time quadratic in the number
-  of numeral exponents in a statement; `Proof/Framework/PowLit.lean`'s macro
-  elaborates it as `2 ^ (64 : Nat)` (the same term). A module with numeral
-  exponents imports it, directly or through `Framework/GetElem.lean`
-  (`ci/check_lean_speed.py` checks it).
-* **Failing unfolding:** `rfl`, `trivial`, `congr 1`, `exact` and `simpa` on
-  goals about symbolic memory or hash values can unfold definitions (down
-  to `BitVec` internals) for seconds before failing or succeeding. Close
-  such goals with explicit lemmas (`congrArg`, `rw`), and try the tactic
-  that works first rather than in `first | rfl | …`. For example, on
-  `compress H (blockAt m p) = compress H (parseBlock f)` or
-  `bytesAt m p n ++ [0x80] = xs ++ [0x80]`, use
-  `refine congrArg (compress _) ?_` or `refine congrArg (· ++ [0x80]) ?_`,
-  not `congr 1`, which first tries to unify both sides. A lemma proved
-  `:= rfl` is one `simp` uses by definitional unfolding, which the kernel
-  then repeats; where a profile shows that (e.g. `exec` of an instruction,
-  `Proof/Blake2/X86_64/Avx/Round.lean`), prove it `:= (rfl)`. Keep the
-  framework's `RegUpd` lemmas `rfl`: as propositional rewrites they measured
-  slower.
-* **Concrete data under `rfl`:** never close a goal holding a large concrete
-  value (a key schedule read from memory, a table) by `rfl`, `decide` or
-  `change`, nor split a case on an index (`rcases … with rfl | rfl`) in a
-  context that holds one: the kernel may evaluate the value to compare the
-  two sides (Blowfish's `step_run`: a minute in the kernel, after an
-  unrelated upgrade of Lean). Prove the step once with the value a
-  variable, and apply it (`fAcc_step`, `Proof/Blowfish/F.lean`), or
-  `generalize` the value before `rfl`.
-* **Tables of constants:** the kernel evaluates a table's whole length
-  (seconds for a comb's tables) when it compares `8 * words.length` with
-  another form of it, such as a `Region`'s `len` projection. Never unfold
-  `Abi.constRegions` with `List.map_cons` or substitute a table's region
-  into a goal: rewrite with `Abi.constRegions_cons`, `Abi.constRegions_nil`
-  and `Sig.forall_mem_const_single` (`Proof/Framework/Sig.lean`, which
-  `sig_pre` already uses), before `List.forall_mem_cons` or `forall_eq` can
-  take the region apart. A definition the kernel unfolds (a witness's
-  memory) states a table's size as a literal, not as `8 * words.length`. A
-  table's shape (`<curve>Comb7_length`, `_rows`) is proven once, in
-  `Proof/<Curve>/Comb7Shape.lean`, not by `decide` on each target.
-* **Code without its literal:** `lit_decide` and `taint_decide` read the
-  literal of code only if the module imports the module that materializes
-  it, or a module that `public import`s it; otherwise the kernel builds the
-  code again (seconds for unrolled code). Import the code's `Lit` module
-  wherever its code is evaluated: registration files too, whose default
-  `sp_safe` evaluates their code. `decide +kernel` reads no literal at all:
-  use `lit_decide`. `python3 ci/check_lit_imports.py` lists the checks that
-  evaluate code without a literal they could import (see "Finding what to
-  optimize").
-* **Unfolding recursive definitions:** `simp`/`dsimp` unfolding a recursive
-  definition that uses a recursive call's result twice (`let r := f …;
-  (… r.1, r.2)`) duplicates the call at every level. Evaluate it in one
-  step with a `dsimproc` instead (`Arm.reduceClassify`,
-  `Proof/Framework/Arm/Contract.lean`).
-
-### Finding what to optimize
-
-Start from the build's own profile, not from a profiling build. Every
-module is built with Lean's `profiler` on (`moreLeanArgs` in
-`lean/lakefile.toml`): each step over a millisecond is recorded, at its
-declaration, in the module's `.trace`, which the CI build cache ships. After
-restoring the cache (`lean/README.md`), from the repository root:
-
-```sh
-python3 ci/lean_profile.py                        # the 30 costliest declarations
-python3 ci/lean_profile.py --sort kernel          # by kernel time alone
-python3 ci/lean_profile.py --by module --top 50   # the costliest modules
-python3 ci/lean_profile.py --module VerifiedGarbage.Proof.Sha256 --json
-python3 ci/lean_profile.py --tests                # with the known-answer tests
-python3 ci/check_lit_imports.py                   # checks evaluating code without its literal
-python3 ci/lean_closure.py rank                   # modules by what CI spends building them
-python3 ci/lean_closure.py rank --by decl         # declarations, likewise
-```
-
-A proof's own time is not what CI spends on it: a module that the shards
-of a full rebuild share is built by each of them, and one that many changes
-reach is rebuilt by each run. `rank` weighs each module's (or declaration's)
-time by the times CI builds it per commit, replaying the last 200 commits
-of `main` through CI's plan (`--commits`), with its builds in a full
-rebuild beside it (two minutes; no builds): prefer its top rows to
-`lean_profile.py`'s when choosing what to make faster.
-
-A command that generates declarations (`materialize_code`, `taint_summary`,
-`run_cmd`) has no declaration range: its row is its line and the start of
-that line of the source, `[line 70] taint_summary winBuildSum : …`. The
-known-answer tests in `VerifiedGarbageTest`, which cost spec evaluation
-rather than proofs, are left out unless `--tests` (or `--module` naming
-them) is given.
-
-Each declaration's time is `kernel` (the kernel checking it: large proof
-terms, `decide +kernel`, `taint_decide`, `lit_decide`) and `elab`
-(everything else: tactics, `simp`, `omega`, instances, compilation), which
-point at different patterns above (kernel: literals, taint summaries,
-`Nat` data; elaboration: symbolic execution, `omega`, unfolding). `blocked`
-is time its task waited for another, such as the kernel checking a lemma it
-uses: look at that lemma, not at the declaration. The times are wall-clock
-times of one CI build, good for ranking. Pick targets from them, then study
-a declaration with the per-file profiles below, and measure a change by
-instructions or heartbeats, as below, never by this table. Modules you
-rebuild locally record your machine's times in place of CI's.
-
-What a module costs CI depends on its imports too: each shard
-(`ci/lean_shards.py`) builds its sinks' whole import closures, so a module
-two shards need is built twice. `ci/lean_closure.py` shows where (after
-`python3 ci/ci_metrics.py fetch .ci-metrics 30`, and `profile` once the cache
-is restored): `sinks` ranks the sinks by closure time, `dominators SINK`
-gives the time each module brings into SINK's closure alone, and `score`
-replays CI's plan of a full rebuild and of the recent runs with the imports
-of `origin/main` and of the working tree (or `--drop A:B`; `--merge NEW=A,B`
-for merged modules; `--profile-branch`, after building the branch, for
-proofs it makes faster). Judge an import
-cut by `score`, not by a closure's size: a subtree a sink drags in is often
-built in its shard anyway, and the greedy plan moves by a few seconds with
-any change.
-
-Lake replays a module's recorded messages, the profile included, whenever
-it finds the module built: build with `lake build --log-level=warning` (or
-`-q`), as every command here does, to see only warnings and errors. A
-module with `#guard_msgs`, which would compare the profile of its command
-with the expected messages, turns the profiler off
-(`set_option profiler false`; `ci/check_lean_speed.py` checks it).
-
-To see where one declaration spends its time, profile its file (time under
-`[Kernel]` is the kernel checking the term):
-
-```sh
-lake env lean -DElab.async=false -Dtrace.profiler=true -Dtrace.profiler.threshold=1000 \
-  VerifiedGarbage/Proof/….lean
-```
-
-To compare two versions of a file, count its instructions, which (unlike
-time) do not depend on the load of the machine; pass the lakefile's options,
-as `lake build` does (it turns off Mathlib's style and tactic-analysis
-linters, 5–8% of the build: never turn them back on in a module), but not
-its profiler:
-
-```sh
-lake setup-file --log-level=warning VerifiedGarbage/Proof/….lean > .lake/setup.json
-opts=$(grep -oE "^weak\.[A-Za-z_.]+ = (true|false)" lakefile.toml | sed -E 's/ = /=/; s/^/-D/' | tr '\n' ' ')
-perf stat -e instructions:u -x, lake env lean --setup .lake/setup.json $opts -Dprofiler=false VerifiedGarbage/Proof/….lean
-perf stat -e instructions:u -x, lake env true   # Lake's own startup: subtract it
-```
-
-`--setup` loads the precompiled libraries (`Native*` in the lakefile) as
-`lake build` does; without it the interpreter runs their tactics, many
-times slower. The setup file serves edited copies of the module too.
-`lake env` starts Lake for every command (about 3.5e9 instructions), which
-a build does once: subtract it before quoting a relative change.
-
-`set_option diagnostics true in` before a slow theorem lists the
-definitions unfolded while elaborating it, which finds failing unfoldings.
-`#count_heartbeats in` (from `Mathlib.Util.CountHeartbeats`, imported only
-while measuring) before a declaration prints the heartbeats it uses
-against the 200000 budget.
-
-For allocation-based work comparisons without adding an import, use Lean's
-heartbeat profiler. From `lean/`, write the module's setup file, which
-supplies the same options and imports as Lake (`lake setup-file` builds the
-module's imports, not the module, and prints it; the build cache keeps none):
-
-```sh
-lake setup-file --log-level=warning VerifiedGarbage/Proof/MlKem/Arm/Mul.lean > .lake/setup.json
-lake env lean --setup .lake/setup.json \
-  -j1 -DElab.async=false -Dtrace.profiler=true \
-  -Dtrace.profiler.useHeartbeats=true -Dtrace.profiler.threshold=1000000000 \
-  -Dtrace.Elab.command=true -Dtrace.Kernel=true \
-  VerifiedGarbage/Proof/MlKem/Arm/Mul.lean
-```
-
-Traces are inclusive: report the command and kernel counts separately, not
-added up. Run elapsed-time benchmarks without tracing.
-
-When changing proof or build performance, compare representative callers of
-a shared helper (large proofs, different postcondition shapes), not one;
-compare baseline and candidate on the same revision, toolchain, hardware and
-cache state; and back a claim of an overall speedup with a clean full build,
-audits and golden tests included. Keep the two compiler threads and six Lake
-workers measured in [PR #367](https://github.com/pyca/verified-garbage/pull/367)
-unless a controlled build comparison on the intended runner supports
-changing them.
-
-## Measuring CI
-
-When asked to check or analyze CI metrics, follow
-[Collecting and analyzing CI metrics](ci/metrics-analysis.md). Start with the
-retained artifacts and their coverage, not a local build. The guide covers
-time-window downloads with uv, splitting/reassembling uploads with checksums,
-and streaming analysis of large bundles.
-
-Every CI run keeps a `ci-metrics` artifact (`ci/ci_metrics.py`, the last
-steps of `all-green`), for 30 days: every
-job's and step's queue and run times, the Lean build's plan, and what each
-shard and assembly restored and built (each module and its time). The plan
-and the shards' outputs last a day; these do not. To analyse CI (shard balance,
-duplicate work, failed restores, slow jobs), download them rather than
-scraping logs:
-
-```sh
-python3 ci/ci_metrics.py fetch .ci-metrics 200   # the last 200 runs', as .ci-metrics/<run>.json
-```
-
-The metrics embed the full planning snapshot (including the import graph,
-historical timing inputs, stale set, candidates and assignments), so a future
-planner can replay it after the working plan artifact expires. Native facets
-are separate from Lean module builds. See [the metrics schema and retention
-limits](ci/README.md) before comparing runs or interpreting missing data.
+  `runStep_some` and `runBlock_nil`, never `simp [runBlock]`. Run each
+  code shape once (generalize what differs rather than case-split), and
+  compose short steps by induction (`WP.block_append_iff`) rather than
+  running a long block in one `simp`.
+* **Registers and frames:** never unfold `State.setReg` (`write`,
+  `setFlags`, `setV`, …); read through writes, and prove frame facts, with
+  the lemmas of `Proof/Framework/<ISA>/RegUpd.lean` given their arguments,
+  never `rfl`.
+* **What the kernel evaluates:** use `Nat` arithmetic (`RegSet`, not
+  `List Reg`). Code, tables and values it evaluates get a literal
+  (`materialize_code`, `materialize_table`, `materialize_value`), checked
+  with `lit_decide` or `taint_decide`, never `decide +kernel`, and every
+  module that evaluates the code imports its `Lit` module
+  (`ci/check_lit_imports.py`), registration files too.
+* **Arithmetic side conditions:** finite facts by one `decide` on the
+  bounded statement, not `interval_cases`; nested `if`s with
+  `↓ite_eq_left`/`↓ite_eq_right`; ranges at offsets with `VG.Offset`, not
+  `bv_omega`; `omega_arith`/`omega_using` in a large context; `xs[i]'h` for
+  a non-literal index; witnesses' regions by
+  `Region.disjoint_of_sep (by decide)`.
+* **Unfolding:** close goals about symbolic memory or hash values with
+  explicit lemmas (`congrArg`, `rw`), not `rfl`, `congr 1` or
+  `first | rfl | …`; never `rfl`, `decide` or `change` on a goal holding a
+  large concrete value; rewrite tables' regions with
+  `Abi.constRegions_cons`; evaluate a recursive definition that reuses a
+  recursive result with a `dsimproc`.
+* **Elaboration:** ascribe instruction-list literals next to `++`; use
+  `with_reducible assumption`; import `Proof/Framework/PowLit.lean` for
+  numeral exponents; prefer simprocs to `simp (config := {decide := true})`
+  on expensive facts; put tactic modules that import only core in
+  `NativeTactics`, and keep Mathlib's interpreted tactics (`tauto`) out of
+  hot proofs.
+* **Imports:** never `Mathlib.Tactic` or all of Mathlib; keep
+  `IntervalCases`, `NormNum`, `Ring` and heavy algebra out of modules many
+  others import; a module of one target never imports another target's,
+  and a new file directly in `TCB/` is listed in `NativeTCB`
+  (`ci/check_lean_imports.py`).
 
 ## Iterating on one proof
 
@@ -798,7 +355,7 @@ targets are every module (over 8,000), and the emitter imports every
 registration file. From `lean/`, build the module you're working on, which
 builds only it and what it imports, and after that only what changed
 (`--log-level=warning` leaves out the profile Lake replays for every module:
-see "Finding what to optimize"):
+see the `lean-profiling` skill):
 
 ```sh
 lake build --log-level=warning +VerifiedGarbage.Proof.Md5.X86_64.Compress
@@ -822,71 +379,6 @@ refuses a file that is new or that other registration files also emit into
 writes like any other); the full emitter handles those, and the checks below
 still run everything before pushing.
 
-## Measuring a change's speed
-
-Measure only what the change affects. `python3 ci/bench_arches.py --choices`
-lists the architectures, each one's `VG_CPU_FEATURES` configurations and the
-features `src/cpu.rs` detects there, and the library modules with the
-benchmarks that use each (a benchmark's `USES`). On this machine, for the
-features its CPU has (`/proc/cpuinfo`):
-
-```sh
-VG_CPU_FEATURES=avx,avx2 python3 ci/bench_compare.py --modules chacha20 path/to/main-checkout .
-(cd bench && VG_CPU_FEATURES=none VG_BENCH_MODULES=chacha20 cargo bench -- '^chacha20/verified-garbage/')
-```
-
-A benchmark whose code reads a comb's table of hundreds of kilobytes
-(P-521's) is up to about 7% faster or slower depending on which physical
-pages the kernel gives the table when it first reads the binary, a draw
-fixed for each binary file: comparing one run of each side compares two
-draws, not the code. So `ci/bench_compare.py` runs those groups
-(`FRESH_COPIES`) from `--copies` fresh copies of each side's binary and
-compares the fastest of each; add a group there when its code reads such a
-table.
-
-For another architecture, or features this CPU lacks, run the Benchmarks
-workflow by hand: it never runs on its own (not on pull requests, not on
-`main`). Its runners are the ones CI waits for, so scope every run as
-narrowly as the change allows. First ask which jobs the change needs:
-
-```sh
-git diff --name-only origin/main HEAD | python3 ci/bench_arches.py --base origin/main
-```
-
-prints a JSON list, one entry per job, each with its `arch`, `cpu-features`
-and `modules` (empty: every benchmark; such architectures it leaves out,
-naming them on stderr). Then run the workflow on the pushed branch with
-those values, one run per architecture when they differ between
-architectures:
-
-```sh
-gh workflow run bench.yml --ref my-branch -f base_commit=$(git rev-parse origin/main) \
-  -f arches=aarch64 -f cpu_features='- none sha3' -f modules=ecdsa_p256
-```
-
-`--ref` is the branch (or tag) measured, at its tip; `base_commit` is any
-commit to compare it with, as a full or abbreviated SHA, a branch or a tag,
-which the workflow resolves to the full SHA (empty to run the branch alone,
-next to OpenSSL and aws-lc-rs). `arches`, `cpu_features` (space-separated configurations,
-`-` for none; empty for those choosing among the modules' implementations)
-and `modules` narrow the run (`python3 ci/bench_arches.py --choices` lists
-their values); `openssl=true` adds OpenSSL's and aws-lc-rs's times to a
-comparison, which only costs time: leave it off. To measure a commit that
-is no branch's tip, push a branch at it
-(`git push origin <sha>:refs/heads/bench/<name>`) and delete it after. The
-results are in each job's summary.
-
-Never run every benchmark (`modules` empty: leaving `arches`,
-`cpu_features` and `modules` all empty runs every benchmark of every
-architecture in about thirty jobs, and `arches` alone every benchmark of
-that architecture) unless the change truly needs it and cannot be measured
-otherwise: a change to the benchmarks' shared code or `bench/Cargo.lock`,
-whose architectures `bench_arches.py` names on stderr. Even then, run only
-the architectures it names, and prefer a module or two that show the
-change's effect over all of them. Never rerun a benchmark to get a better
-number, and never run one for a change that cannot affect speed (Lean
-proofs that leave `src/asm/` as it was, tests, docs, CI).
-
 ## Checks to run before pushing
 
 ```sh
@@ -902,6 +394,7 @@ python3 ci/check_vectors.py
 python3 ci/check_arch_gates.py
 python3 ci/check_variants.py
 python3 ci/check_mcdt.py
+python3 ci/check_skills.py
 python3 ci/cpu_tests.py lint ci/rust_matrix.toml
 cargo fmt --check && cargo clippy --all-targets -- -D warnings
 WYCHEPROOF_ROOT=/path/to/wycheproof cargo test
@@ -910,28 +403,8 @@ WYCHEPROOF_ROOT=/path/to/wycheproof cargo test
 A primitive with implementations for different CPU features is tested (and
 benchmarked) end to end in each configuration, never through a special API:
 the `cpu-features-env` Cargo feature lets `VG_CPU_FEATURES` restrict the
-features detected (see `src/cpu.rs`). CI tests each configuration that
-chooses differently on a CPU that has those features: the runner's, or one
-Intel SDE presents (`rust-cpu-features` in `ci.yml`, whose CPUs are the
-`cpu` entries of `ci/rust_matrix.toml`; SDE runs the SHA
-extensions' code very slowly, so the chips that have them run only the
-tests that need them); and benchmarks each with
-`VG_CPU_FEATURES` (`CPU_FEATURES` in `ci/bench_arches.py`). A configuration
-to test is a line of a CPU's `runs` in `ci/rust_matrix.toml`
-(`<VG_CPU_FEATURES> | <groups>`), never a step or job of its own, and
-each CPU has one line per value of `VG_CPU_FEATURES` (CI checks both), so
-a run never repeats another: add groups to a CPU's line for those features.
-A group (`GROUPS` in `ci/cpu_tests.py`) names its tests explicitly, by the
-path of each test or of the module around it, in the library's unit tests
-and in `tests/main.rs`; a line runs exactly those tests, so a new test of a
-primitive that varies by CPU feature goes into its group (or a new group),
-never into a line by matching part of its name. CI fails a path that
-selects no test on any CPU, and a group that selects none on a line's CPU.
-A CPU whose lines take long runs as shards (its `shards = n`: n jobs, each
-with a `shard` of `i/n`), which deal out its
-lines by the CPU time each took on `main` (`ci/cpu_shards.py`): to speed
-one up, add a shard, never split its lines by hand.
-To test the baseline ISA's implementations:
+features detected (see `src/cpu.rs`); the `cpu-feature-tests` skill says how
+CI tests each configuration. To test the baseline ISA's implementations:
 
 ```sh
 VG_CPU_FEATURES=none WYCHEPROOF_ROOT=/path/to/wycheproof cargo test --features cpu-features-env

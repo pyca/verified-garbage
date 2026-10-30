@@ -166,8 +166,8 @@ Every module records a profile of its build, kept in its `.trace` file
 (`moreLeanArgs` in `lakefile.toml`), which Lake prints again for each module
 it finds already built: `--log-level=warning` (or `-q`) leaves it out and
 shows only warnings and errors. `python3 ../ci/lean_profile.py` reads it, to
-list the declarations the build spends the most on (CLAUDE.md, "Finding what
-to optimize").
+list the declarations the build spends the most on (the `lean-profiling` skill,
+`.agents/skills/lean-profiling/SKILL.md`).
 
 ## Iterating on import narrowing
 

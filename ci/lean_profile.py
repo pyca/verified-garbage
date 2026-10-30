@@ -26,7 +26,8 @@ Each declaration's time is split into:
            of its own, and not counted in `total`
 
 Times are wall-clock times of one build on one CI runner: rank by them, but
-measure a change as CLAUDE.md ("Keeping proofs fast") says, not by them.
+measure a change as .agents/skills/lean-profiling/SKILL.md says, not by
+them.
 
   lean_profile.py [--top N] [--sort kernel|elab|total] [--by decl|module]
                   [--module PREFIX ...] [--tests] [--json] [--build DIR]

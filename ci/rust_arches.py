@@ -58,12 +58,14 @@ ARCHES = {
 
 # Paths that no Rust test reads or runs: the Lean sources (whose output is
 # `src/asm/`), the benchmarks (a crate of their own, which only `rust-lint`
-# builds, for every target: see `output`), documentation, and the workflows
-# and actions of the Lean build and the benchmarks.
+# builds, for every target: see `output`), documentation (agents' skills
+# too), and the workflows and actions of the Lean build and the benchmarks.
 NOT_RUST_PREFIXES = (
     "lean/",
     "bench/",
     "docs/",
+    ".agents/",
+    ".claude/",
     ".github/actions/lean-",
 )
 NOT_RUST_FILES = {

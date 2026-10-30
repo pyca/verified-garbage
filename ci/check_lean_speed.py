@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Checks the rules in CLAUDE.md ("Keeping proofs fast") that can be checked
-without building. Exits non-zero on violations.
+"""Checks the rules in CLAUDE.md ("Keeping proofs fast", explained in
+.agents/skills/proof-performance/SKILL.md) that can be checked without
+building. Exits non-zero on violations.
 
   * No option changes a resource limit (`maxHeartbeats`, `maxRecDepth`,
     `synthInstance.maxHeartbeats`, `synthInstance.maxSize`), in a source file
@@ -135,7 +136,8 @@ HEAVY_HUBS_ALLOWED = {
     "VerifiedGarbage.Proof.Ed25519.Group.Extended",
 }
 # A Weierstrass curve's group law on a target, `Variants/<Curve>/<Target>/Law.lean`:
-# by design the only files that import the algebra of its proof (CLAUDE.md),
+# by design the only files that import the algebra of its proof
+# (.agents/skills/adding-a-primitive/SKILL.md),
 # one per curve and target, and imported by nothing (the emitter takes them as
 # variants). Each pays the import once, for itself, so they are not counted
 # among a heavy module's importers.

@@ -68,6 +68,8 @@ class Arches(unittest.TestCase):
                     "docs/algorithms/md5.toml",
                     "README.md",
                     "CLAUDE.md",
+                    ".agents/skills/benchmarking/SKILL.md",
+                    ".claude/skills",
                     "ci/lean_speed_allowed.py",
                     "ci/test_check_lean_shards.py",
                     ".github/actions/lean-assemble/action.yml",
