@@ -141,6 +141,73 @@ theorem mask4_tr {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {g : Nat}
         (fun _ _ _ h => yhR_ok hP (hyh r h1 hr) (by omega) h) (yhR_trL hP (hyh r h1 hr) (by omega)))
       (fun x y h => h) fun x y h => h.mono (fun _ _ h => h) fun _ _ h => ⟨h.l, h.y, h.yh⟩
 
+/-! ## The last three polynomials of `y`, four at a time -/
+
+theorem tailR_trL {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {t r : Nat} (hc : tChk p r = true)
+    (h1 : 4 * (p.ℓ / 4) ≤ r) (h2 : r < 4 * (p.ℓ / 4) + 3) :
+    RelCT isa (fun x y => LRel D (sgR p) (sgW p) x y ∧ (∃ σ, ICT p D σ t r x) ∧ ∃ σ, ICT p D σ t r y)
+      (tailR P p r) fun _ _ => True := by
+  simp only [tChk, Bool.and_eq_true] at hc
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨c0, _⟩, _⟩, cc⟩, _⟩, _⟩, _⟩, ci⟩, _⟩, _⟩, _⟩ := hc
+  have hc0 := copyChk_spec c0
+  have hcc := copyChk_spec cc
+  unfold tailR yhR
+  exact seqL (J := fun s => Reduced s.mem (pa s (yP p r)))
+    (RelCT.mono (copy_tr hc0.2.2.2.1 hc0.2.2.2.2.1 hc0.2.2.2.2.2.1 hc0.2.2.2.2.2.2.1 hc0.2.2.2.2.2.2.2
+      fun x y h => ⟨lrel_rbx h.1 _ (List.mem_singleton_self _), lrel_rbx h.1 _ (List.mem_singleton_self _)⟩)
+      (fun _ _ h => h) fun _ _ h => h)
+    (fun x L ⟨_, I⟩ => WP.mono (copy_okB L c0) fun x' ⟨hP', _, hb⟩ => ⟨⟨_, hP'⟩, by
+      rw [hP'.pa (pS_bases _)]
+      have := I.tmp (r - 4 * (p.ℓ / 4)) (by omega) (by omega)
+      exact reduced_congr₂ (bytes_of_bytesAt hb) this.1⟩)
+    (seqL (J := fun s => Reduced s.mem (pa s (yhP p r)))
+      (RelCT.mono (copy_tr hcc.2.2.2.1 hcc.2.2.2.2.1 hcc.2.2.2.2.2.1 hcc.2.2.2.2.2.2.1 hcc.2.2.2.2.2.2.2
+        fun x y h => ⟨lrel_rbx h.1 _ (List.mem_singleton_self _), lrel_rbx h.1 _ (List.mem_singleton_self _)⟩)
+        (fun _ _ h => h) fun _ _ h => h)
+      (fun x L hy => WP.mono (copy_okB L cc) fun x' ⟨hP', _, hb⟩ =>
+        ⟨⟨_, hP'⟩, by rw [hP'.pa (pS_bases _)]; exact reduced_congr₂ (bytes_of_bytesAt hb) hy⟩)
+      (ipAt_tr (t := ntt) hP.ntt ci))
+
+theorem maskTail_tr {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hl : p.ℓ % 4 = 3)
+    (hc : tailChk p = true) {E : State → State → Prop} {t : Nat} :
+    RelCT isa (RS p D E fun σ s => ICm p D σ t (4 * (p.ℓ / 4)) s) (maskTail P p)
+      (RS p D E fun σ s => ICm p D σ t p.ℓ s) := by
+  have hc' := hc
+  simp only [tailChk, Bool.and_eq_true, List.all_eq_true, List.mem_range, decide_eq_true_eq] at hc'
+  obtain ⟨⟨⟨⟨hcp, cm⟩, c2⟩, ht⟩, hγ⟩ := hc'
+  have htr : ∀ r, 4 * (p.ℓ / 4) ≤ r → r < 4 * (p.ℓ / 4) + 3 → tChk p r = true := fun r h1 h2 => by
+    have := ht (r - 4 * (p.ℓ / 4)) (by omega)
+    rwa [show 4 * (p.ℓ / 4) + (r - 4 * (p.ℓ / 4)) = r by omega] at this
+  unfold maskTail
+  refine RelCT.seq (R := RS p D E fun σ s => SD p D σ t (p.ℓ / 4) 4 s) ?_
+    (RelCT.seq (R := RS p D E fun σ s => ICT p D σ t (4 * (p.ℓ / 4)) s) ?_ ?_)
+  · refine RelCT.mono (seqR_tr (R := fun k => RS p D E fun σ s => SD p D σ t (p.ℓ / 4) k s) 4 0 fun k _ hk =>
+      liftT (fun _ _ h => h.m.l.st) (fun _ _ _ h => ms4_ok (hcp k (by omega)) h) (ms4_trL (hcp k (by omega))))
+      (fun x y h => h.mono (fun _ _ h => h) fun _ _ h => ⟨h, fun _ h => absurd h (Nat.not_lt_zero _)⟩)
+      fun x y h => by rwa [Nat.zero_add] at h
+  · exact liftT (fun _ _ h => h.m.l.st) (fun _ _ _ h => maskTailCall_ok hP hc h) (mask4Call_tr hP hγ cm)
+  · exact RelCT.mono (seqR_tr (R := fun r => RS p D E fun σ s => ICT p D σ t r s) 3 (4 * (p.ℓ / 4))
+      fun r h1 hr => liftL (T := fun s => ∃ σ, ICT p D σ t r s) (fun σ s h => ⟨h.m.l.st, σ, h⟩)
+        (fun _ _ _ h => tailR_ok hP (htr r h1 hr) h1 hr h) (tailR_trL hP (htr r h1 hr) h1 hr))
+      (fun x y h => h) fun x y h => h.mono (fun _ _ h => h) fun _ _ h => by
+        rw [show 4 * (p.ℓ / 4) + 3 = p.ℓ by omega] at h; exact h.m
+
+theorem maskRest_tr {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : restChk p = true)
+    (hm : ∀ r < p.ℓ, mChk p r = true) {E : State → State → Prop} {t : Nat} :
+    RelCT isa (RS p D E fun σ s => ICm p D σ t (4 * (p.ℓ / 4)) s) (maskRest P p)
+      (RS p D E fun σ s => ICm p D σ t p.ℓ s) := by
+  unfold maskRest
+  unfold restChk at hc
+  cases e : p.ℓ % 4 == 3
+  · rw [Bool.cond_false]
+    exact RelCT.mono (seqR_tr (R := fun r => RS p D E fun σ s => ICm p D σ t r s) (p.ℓ % 4) (4 * (p.ℓ / 4))
+      fun r _ hr =>
+      liftT (fun _ _ h => h.l.st) (fun _ _ _ h => maskR_ok hP (hm r (by omega)) h) (maskR_trL hP (hm r (by omega))))
+      (fun x y h => h) fun x y h => by rwa [Nat.div_add_mod] at h
+  · rw [Bool.cond_true]
+    rw [e, Bool.cond_true] at hc
+    exact maskTail_tr hP (beq_iff_eq.mp e) hc
+
 /-! ## `w` -/
 
 /-- `w[i]` from runs in iteration `t` with `y`, `ŷ` and the first `i` polynomials of `w`. -/
@@ -218,7 +285,7 @@ theorem commit_tr {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : cC
     RelCT isa (RS p D E fun σ s => IL p D σ t s) (commit P p) (RS p D E fun σ s => IC p D σ t s) := by
   have hc' := hc
   simp only [cChk, Bool.and_eq_true, List.all_eq_true, List.mem_range] at hc'
-  obtain ⟨⟨⟨⟨⟨hm4, hm⟩, hw⟩, hh⟩, hs⟩, _⟩ := hc'
+  obtain ⟨⟨⟨⟨⟨⟨hm4, hm⟩, hrest⟩, hw⟩, hh⟩, hs⟩, _⟩ := hc'
   unfold commit
   refine RelCT.seq (R := RS p D E fun σ s => ICm p D σ t (4 * (p.ℓ / 4)) s) ?_
     (RelCT.seq (R := RS p D E fun σ s => ICw p D σ t 0 s) ?_ (RelCT.seq (R := RS p D E fun σ s => ICh p D σ t 0 s)
@@ -228,12 +295,8 @@ theorem commit_tr {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hc : cC
       (fun x y h => h.mono (fun _ _ h => h) fun _ _ h =>
         ⟨h, fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _)⟩)
       fun x y h => by rwa [Nat.zero_add] at h
-  · refine RelCT.mono (seqR_tr (R := fun r => RS p D E fun σ s => ICm p D σ t r s) (p.ℓ % 4) (4 * (p.ℓ / 4))
-      fun r _ hr =>
-      liftT (fun _ _ h => h.l.st) (fun _ _ _ h => maskR_ok hP (hm r (by omega)) h) (maskR_trL hP (hm r (by omega))))
-      (fun x y h => h)
-      fun x y h => by rw [Nat.div_add_mod] at h; exact h.mono (fun _ _ h => h) fun _ _ h =>
-        ⟨h.l, h.y, h.yh, fun _ h => absurd h (Nat.not_lt_zero _)⟩
+  · exact RelCT.mono (maskRest_tr hP hrest hm) (fun x y h => h) fun x y h => h.mono (fun _ _ h => h) fun _ _ h =>
+      ⟨h.l, h.y, h.yh, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   · refine RelCT.mono (seqR_tr (R := fun i => RS p D E fun σ s => ICw p D σ t i s) p.k 0 fun i _ hi =>
       liftL (T := fun s => ∃ σ, ICw p D σ t i s) (fun σ s h => ⟨h.l.st, σ, h⟩)
         (fun _ _ _ h => rowW_ok hP (hw i (by omega)) (by omega) h) (rowW_trL hP (hw i (by omega)) (by omega)))
