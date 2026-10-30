@@ -35,7 +35,12 @@
 #[cfg(target_arch = "aarch64")]
 use crate::arch::x25519::VG_X25519_BASE_SCRATCH_WRITTEN;
 use crate::arch::x25519::vg_x25519;
-#[cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(any(
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86",
+    target_arch = "x86_64"
+))]
 use crate::arch::x25519::vg_x25519_base;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::x25519::{
@@ -139,7 +144,12 @@ pub fn x25519(scalar: &[u8; 32], u: &[u8; 32]) -> [u8; 32] {
 }
 
 /// `X25519(scalar, 9)`, by `vg_x25519_base`.
-#[cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(any(
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86",
+    target_arch = "x86_64"
+))]
 fn base(scalar: &[u8; 32]) -> [u8; 32] {
     let mut out = [0u8; 32];
     // Uninitialized, as in `x25519`.
@@ -173,7 +183,6 @@ fn base(scalar: &[u8; 32]) -> [u8; 32] {
 
 /// `X25519(scalar, 9)`, with the ladder.
 #[cfg(any(
-    target_arch = "arm",
     target_arch = "riscv64",
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
