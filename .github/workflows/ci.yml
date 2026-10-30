@@ -196,6 +196,9 @@ jobs:
         env:
           SHARD: ${{ matrix.shard }}
         run: |
+          # The emitter's module drivers and audits, which the plan may give
+          # this shard: `closure` reads their imports.
+          python3 ../ci/emit_sources.py
           python3 ../ci/lean_shards.py closure "$RUNNER_TEMP/lean-plan.json" "$SHARD" > "$RUNNER_TEMP/lean-modules"
           echo "The shard needs $(wc -l < "$RUNNER_TEMP/lean-modules") of the project's modules."
       # The build the plan is for (or, if it has none, the last build main
@@ -214,8 +217,7 @@ jobs:
         run: |
           set -o pipefail
           touch "$RUNNER_TEMP/before-build"
-          # The emitter's module drivers and audits, which the plan may give
-          # this shard (see the `lean` job's plan).
+          # Again, in case restoring the build above replaced `.lake/emit`.
           python3 ../ci/emit_sources.py
           # Warnings and errors only: not the profile every module records
           # (lean/lakefile.toml), which Lake replays for each one it finds
