@@ -139,13 +139,6 @@ theorem finalMask_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32)
   refine ⟨ht, Fb.join Ot (js := [aT1, aT2]) (ds := [kFlag, kOk]), ?_,
     (Ku.mono (by decide)).trans ((Kv.mono (by decide)).trans ((Kw.mono (by decide)).trans
       ((Ka.mono (by decide)).trans ((Kb.mono (by decide)).trans Kt))))⟩
-  generalize slot s.mem B kOk = initialMask at Mt ⊢
-  generalize num s.mem B n aN = modulus at Mt ⊢
-  generalize num s.mem B n aPa = primeP at Mt ⊢
-  generalize num s.mem B n aQa = primeQ at Mt ⊢
-  generalize val32 s.mem B kEv 2 = exponent at Mt ⊢
-  generalize slot t.mem B kOk = finalMaskValue at Mt ⊢
-  simpa only [mask_ite_one, Spec.Rsa.exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq,
-    and_assoc, and_comm, and_left_comm] using Mt
+  exact Mt.trans (Key.finalMask_cond _ _ _ _ _ _)
 
 end VG.Proof.RsaKeyGen.X86.KeyRuntime
