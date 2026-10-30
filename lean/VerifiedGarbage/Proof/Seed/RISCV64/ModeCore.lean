@@ -107,10 +107,10 @@ theorem dirCipher_bytes (d : Direction) (k : Spec.Seed.Schedule) (m : Mem) (p : 
 /-- An 8-byte aligned offset in the frame. -/
 theorem frame_al {B : Addr} (hal : B.toNat % 16 = 0) (hfit : B.toNat + 1104 ≤ 2 ^ 64) {k : Nat}
     (hk : k % 8 = 0) (hk' : k < 1104) : (B + BitVec.ofNat 64 k).toNat % 8 = 0 := by
-  have h₁ : k < 2 ^ 64 := by omega
-  have h₂ : B.toNat + k < 2 ^ 64 := by omega
+  have h₁ : k < 2 ^ 64 := by omega_arith
+  have h₂ : B.toNat + k < 2 ^ 64 := by omega_arith
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h₁, Nat.mod_eq_of_lt h₂]
-  omega
+  omega_arith
 
 theorem coreIn_eq (d : Direction) : coreIn d =
     ([.addi t0 Impl.Modes.RISCV64.sb (ecbOff : Int)] : List Instr) ++ prologue t0 ++ park ++ copyFrom d := rfl
@@ -139,10 +139,10 @@ theorem crypt_ok (d : Direction) {s : State} {B : Addr} (hB : s.gpr .s4 = B)
   have hW : (⟨B, 1104⟩ : Region) ∈ s.wr := hS.whole (by decide)
   have hEk : ∀ k, E + BitVec.ofNat 64 k = B + BitVec.ofNat 64 (48 + k) := fun k => Offset.add_add _ _ _
   have hin : ∀ k n, k + n ≤ 1056 → InRegions s.wr (E + BitVec.ofNat 64 k) n := fun k n h =>
-    ⟨_, hW, by rw [hEk]; exact Offset.contains_base B (by omega) (by omega)⟩
+    ⟨_, hW, by rw [hEk]; exact Offset.contains_base B (by omega_arith) (by omega_arith)⟩
   have hEal : E.toNat % 8 = 0 := frame_al hal hfit (by decide) (by decide)
   have hEsub : ∀ k n, k + n ≤ 1056 → Region.Sub ⟨E + BitVec.ofNat 64 k, n⟩ ⟨B, 1104⟩ :=
-    fun k n h => by rw [hEk]; exact Offset.sub_base B (by omega)
+    fun k n h => by rw [hEk]; exact Offset.sub_base B (by omega_arith)
   have hP : P = E + BitVec.ofNat 64 1032 := rfl
   have hRA : raA B = E + BitVec.ofNat 64 1048 := rfl
   have hscr : ∀ t : State, t.gpr sb = E → scratchR t = ⟨E, 8 * scratchSlots⟩ := fun t ht => by
@@ -225,28 +225,28 @@ theorem crypt_ok (d : Direction) {s : State} {B : Addr} (hB : s.gpr .s4 = B)
   have sp₉ : s₉.sp = s.sp := by rw [u₉.sp, u₈.sp, u₇.sp, u₆.sp, sp₅]
   have room₉ : Room s₉ := room_congr P₁.room (by rw [sb₉, sb₁]) (by rw [wr₉, wr₁])
   have Pdat : ∀ w < 4, InRegions s.wr (P + BitVec.ofNat 64 (16 * 0 + 4 * w)) 4 := fun w hw => by
-    rw [hP, Offset.add_add]; exact hin _ _ (by omega)
+    rw [hP, Offset.add_add]; exact hin _ _ (by omega_arith)
   have Parr : ∀ t : State, t.gpr sb = E → Region.Disjoint ⟨P, 16 * 1⟩ (arraysR t) := fun t ht => by
-    rw [harr t ht, hP]; exact Offset.disjoint E (by omega) (by omega) (by omega)
+    rw [harr t ht, hP]; exact Offset.disjoint E (by omega_arith) (by omega_arith) (by omega_arith)
   have pre₉ : CopyPre s₉ P 1 := by
-    refine ⟨room₉, by omega, fun b hb w hw => ?_, Parr s₉ sb₉⟩
-    obtain rfl : b = 0 := by omega
+    refine ⟨room₉, by omega_arith, fun b hb w hw => ?_, Parr s₉ sb₉⟩
+    obtain rfl : b = 0 := by omega_arith
     obtain ⟨r, hr, hc⟩ := Pdat w hw
     exact ⟨r, by rw [rd₉, wr₉]; exact List.mem_append_right _ hr, hc⟩
   have inv₉ : CopyInInv s₉ P 1 (1 - 1) s₉ := by
-    refine ⟨by omega, by rw [t3₉]; simp, by rw [t4₉, sb₉]; simp, by rw [t2₉], fun w _ b hb => by omega,
+    refine ⟨by omega_arith, by rw [t3₉]; simp, by rw [t4₉, sb₉]; simp, by rw [t2₉], fun w _ b hb => by omega_arith,
       Frame.refl _ _, fun _ _ => rfl, rfl, rfl, rfl⟩
-  refine WP.seq (WP.mono (copyIn_loop pre₉ 1 s₉ inv₉ (by omega) (by omega)) fun s₁₀ i₁₀ => ?_)
+  refine WP.seq (WP.mono (copyIn_loop pre₉ 1 s₉ inv₉ (by omega_arith) (by omega_arith)) fun s₁₀ i₁₀ => ?_)
   have sb₁₀ : s₁₀.gpr sb = E := (i₁₀.regs _ sb_copyRegs).trans sb₉
   have room₁₀ : Room s₁₀ := room_congr room₉ (by rw [sb₁₀, sb₉]) i₁₀.wr
   have f₁₀ : Frame [arraysR s₉] s₅.mem s₁₀.mem := by rw [← mem₉]; exact i₁₀.frame
   have hq₁₀ : quad s₁₀ 0 = decodeQ (Spec.Seed.blockAt s.mem P) := by
-    rw [quad_of_lanes (m := s₉.mem) (p := P) fun w hw => i₁₀.lanes w hw 0 (by omega)]
+    rw [quad_of_lanes (m := s₉.mem) (p := P) fun w hw => i₁₀.lanes w hw 0 (by omega_arith)]
     rw [show P + BitVec.ofNat 64 (16 * 0) = P by simp, mem₉, blockAt_frame FA fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact Offset.disjoint_base E (by unfold scratchSlots; omega) (by omega)
-      · exact Offset.disjoint E (by omega) (by omega) (by omega)]
+      · exact Offset.disjoint_base E (by unfold scratchSlots; omega_arith) (by omega_arith)
+      · exact Offset.disjoint E (by omega_arith) (by omega_arith) (by omega_arith)]
   -- The masks, and the keys.
   have masks₁₀ : Masks s₁₀ := by
     refine P₁.masks.frame' (rs := [⟨raA B, 8⟩, arraysR s₉]) (by rw [sb₁₀, sb₁])
@@ -257,8 +257,8 @@ theorem crypt_ok (d : Direction) {s : State} {B : Addr} (hB : s.gpr .s4 = B)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rw [hm]
     rcases hr with rfl | rfl
-    · exact Offset.disjoint E (by omega) (by omega) (by omega)
-    · rw [harr s₉ sb₉]; exact Offset.disjoint E (by omega) (by omega) (by omega)
+    · exact Offset.disjoint E (by omega_arith) (by omega_arith) (by omega_arith)
+    · rw [harr s₉ sb₉]; exact Offset.disjoint E (by omega_arith) (by omega_arith) (by omega_arith)
   have a0₁₀ : s₁₀.gpr .a0 = s.gpr .a0 + BitVec.ofNat 64 (keyStart d) := (i₁₀.regs _ cr_a0).trans a0₉
   have hkB : ∀ j < 16, Region.Disjoint ⟨s.gpr .a0 + BitVec.ofNat 64 (keyOff d j), 8⟩ ⟨B, 1104⟩ :=
     fun j hj => hk.sub_left (Offset.sub_base _ (keyOff_le d hj))
@@ -268,9 +268,9 @@ theorem crypt_ok (d : Direction) {s : State} {B : Addr} (hB : s.gpr .s4 = B)
     have hle := keyOff_le d hj
     have hkin' : keyR s ∈ s₁₀.rd ++ s₁₀.wr := by rw [i₁₀.rd, i₁₀.wr, rd₉, wr₉]; exact hkin
     rw [a0₁₀, hscr s₁₀ sb₁₀, kp_start _ _ hj]
-    refine ⟨⟨_, hkin', Offset.contains_base _ (by omega) (by omega)⟩, ?_, (hkB j hj).sub_right hEB⟩
+    refine ⟨⟨_, hkin', Offset.contains_base _ (by omega_arith) (by omega_arith)⟩, ?_, (hkB j hj).sub_right hEB⟩
     rw [show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl, Offset.add_add]
-    exact ⟨_, hkin', Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨_, hkin', Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
   have FB : ∀ {m : Mem}, Frame [⟨E, 8 * scratchSlots⟩, ⟨raA B, 8⟩] s.mem m → Frame [⟨B, 1104⟩] s.mem m :=
     fun h => h.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -293,7 +293,7 @@ theorem crypt_ok (d : Direction) {s : State} {B : Addr} (hB : s.gpr .s4 = B)
   refine WP.seq (WP.mono (rounds_ok d room₁₀ masks₁₀ keys₁₀) fun s₁₁ ⟨q₁₁, room₁₁, _masks₁₁, rd₁₁, wr₁₁, sp₁₁, g₁₁, f₁₁⟩ => ?_)
   have hq₁₁ : quad s₁₁ 0 = roundsN (keysAt d s.mem (s.gpr .a0 + BitVec.ofNat 64 (keyStart d))) 16
       (decodeQ (Spec.Seed.blockAt s.mem P)) := by
-    rw [q₁₁ 0 (by omega), roundsN_congr 16 _ hkeys, hq₁₀]
+    rw [q₁₁ 0 (by omega_arith), roundsN_congr 16 _ hkeys, hq₁₀]
   have sb₁₁ : s₁₁.gpr sb = E := (g₁₁ _ (by simp [sb])).trans sb₁₀
   -- One block to copy out.
   apply WP.seq
@@ -311,16 +311,16 @@ theorem crypt_ok (d : Direction) {s : State} {B : Addr} (hB : s.gpr .s4 = B)
   have rd₁₄ : s₁₄.rd = s.rd := by rw [u₁₄.rd, u₁₃.rd, u₁₂.rd, rd₁₁, i₁₀.rd, rd₉]
   have quad₁₄ : quad s₁₄ 0 = quad s₁₁ 0 := by simp only [quad, lv, laneA, mem₁₄, sb₁₄, sb₁₁]
   have pre₁₄ : CopyOutPre s₁₄ P 1 := by
-    refine ⟨room_congr room₉ (by rw [sb₁₄, sb₉]) (by rw [wr₁₄, wr₉]), by omega, fun b hb w hw => ?_,
+    refine ⟨room_congr room₉ (by rw [sb₁₄, sb₉]) (by rw [wr₁₄, wr₉]), by omega_arith, fun b hb w hw => ?_,
       Parr s₁₄ sb₁₄⟩
-    obtain rfl : b = 0 := by omega
+    obtain rfl : b = 0 := by omega_arith
     rw [wr₁₄]; exact Pdat w hw
   have inv₁₄ : CopyOutInv s₁₄ P 1 (1 - 1) s₁₄ := by
-    refine ⟨by omega, ?_, ?_, ?_, fun b hb => by omega, Frame.refl _ _, fun _ _ => rfl, rfl, rfl, rfl⟩
+    refine ⟨by omega_arith, ?_, ?_, ?_, fun b hb => by omega_arith, Frame.refl _ _, fun _ _ => rfl, rfl, rfl, rfl⟩
     · rw [u₁₄.other _ (by decide), u₁₃.gpr, u₁₂.other _ (by decide), sb₁₁]; simp; rfl
     · rw [u₁₄.gpr, u₁₃.other _ (by decide), u₁₂.other _ (by decide), sb₁₄, sb₁₁]; simp
     · rw [u₁₄.other _ (by decide), u₁₃.other _ (by decide)]; exact u₁₂.gpr
-  refine WP.seq (WP.mono (copyOut_loop pre₁₄ 1 s₁₄ inv₁₄ (by omega) (by omega)) fun s₁₅ i₁₅ => ?_)
+  refine WP.seq (WP.mono (copyOut_loop pre₁₄ 1 s₁₄ inv₁₄ (by omega_arith) (by omega_arith)) fun s₁₅ i₁₅ => ?_)
   -- The registers so far.
   have K₁₅ : ∀ r ∈ [Reg.ra, .a0, .a1, .a2, .a3, .a5], s₁₅.gpr r = s₉.gpr r := by
     intro r hr
@@ -344,7 +344,7 @@ theorem crypt_ok (d : Direction) {s : State} {B : Addr} (hB : s.gpr .s4 = B)
     exact (a.trans b).trans c
   -- The key pointer back, the caller's registers restored.
   rw [coreOut_eq, WP.block_append_iff (M := isa), WP.block_append_iff (M := isa)]
-  refine wp_subi (by have := keyStart_lt d; omega) fun s₁₆ u₁₆ => WP.block_nil ?_
+  refine wp_subi (by have := keyStart_lt d; omega_arith) fun s₁₆ u₁₆ => WP.block_nil ?_
   have sb₁₆ : s₁₆.gpr sb = E := by rw [u₁₆.other _ (by decide), sb₁₅]
   have wr₁₆ : s₁₆.wr = s.wr := by rw [u₁₆.wr, i₁₅.wr, wr₁₄]
   have rd₁₆ : s₁₆.rd = s.rd := by rw [u₁₆.rd, i₁₅.rd, rd₁₄]
@@ -358,15 +358,15 @@ theorem crypt_ok (d : Direction) {s : State} {B : Addr} (hB : s.gpr .s4 = B)
         Frame [⟨raA B, 8⟩, ⟨E, 832⟩, ⟨P, 16⟩] s₁.mem s₁₅.mem) fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact Offset.disjoint E (by omega) (by omega) (by omega)
-    · exact Offset.disjoint_base E (by omega) (by omega)
-    · exact Offset.disjoint E (by omega) (by omega) (by omega)
+    · exact Offset.disjoint E (by omega_arith) (by omega_arith) (by omega_arith)
+    · exact Offset.disjoint_base E (by omega_arith) (by omega_arith)
+    · exact Offset.disjoint E (by omega_arith) (by omega_arith) (by omega_arith)
   rw [seedRestore_eq]
   refine WP.mono (Spill.restore_wp (B := E) hEal sb₁₆ savedOffs_ho savedOffs_restorable
     (fun q hq => room₁₆.rw ?_) sv₁₆) fun s₁₇ R => ?_
   · rw [hscr s₁₆ sb₁₆]
     have := savedOffs_range q hq
-    exact Offset.contains_base E (by unfold scratchSlots; omega) (by omega)
+    exact Offset.contains_base E (by unfold scratchSlots; omega_arith) (by omega_arith)
   -- The modes' state, `ra` and the frame's base back.
   refine wp_mv fun s₁₈ u₁₈ => wp_mv fun s₁₉ u₁₉ => wp_mv fun s₂₀ u₂₀ => ?_
   have T₂₀ : ∀ r, r ≠ .s1 → r ≠ .s2 → r ≠ .s3 → s₂₀.gpr r = s₁₇.gpr r := fun r a b c => by
@@ -396,8 +396,8 @@ theorem crypt_ok (d : Direction) {s : State} {B : Addr} (hB : s.gpr .s4 = B)
       (fun r hr => ?_) (by decide), mem₅, Mem.readW_writeW_self64]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact Offset.disjoint_base E (by omega) (by omega)
-    · exact Offset.disjoint E (by omega) (by omega) (by omega)
+    · exact Offset.disjoint_base E (by omega_arith) (by omega_arith)
+    · exact Offset.disjoint E (by omega_arith) (by omega_arith) (by omega_arith)
   refine ⟨s4', fun r hr => ?_, ?_, ?_, ?_, ?_⟩
   · simp only [kept, RISCV64.preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
     have pres : ∀ r, r ∈ savedOffs.map Prod.fst → r ≠ .s1 → r ≠ .s2 → r ≠ .s3 → r ≠ .s4 →
@@ -436,7 +436,7 @@ theorem crypt_ok (d : Direction) {s : State} {B : Addr} (hB : s.gpr .s4 = B)
     refine congrArg Vector.toList ?_
     rw [← crypt_keysAt, crypt_eq, ← hq₁₁, ← quad₁₄]
     refine blockAt_of_bytes fun i hi => ?_
-    have e := i₁₅.done 0 (by omega) i hi
+    have e := i₁₅.done 0 (by omega_arith) i hi
     rw [show P + BitVec.ofNat 64 (16 * 0 + i) = P + BitVec.ofNat 64 i by simp] at e
     rw [e, encodeSwapped_get _ _ hi]
   · rw [u'.rd, u₂₁.rd, rd₂₀]
