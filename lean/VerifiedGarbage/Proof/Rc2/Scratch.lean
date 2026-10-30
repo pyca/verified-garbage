@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import Std.Data.DTreeMap.Internal.Operations
 import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # RC2-CBC's streaming functions with their working space as an argument
@@ -122,7 +123,8 @@ theorem cbcInitPost_local : ∀ vs m₁ m₂ m' r, vs.length = (cbcInitSig.words
   obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [cbcInitSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [cbcInitSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice,
+    List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hk := agree_of hb.1
   have hi := agree_of hb.2.1
@@ -152,7 +154,8 @@ theorem cbcInitPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (cbcInitSig.wor
   obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [cbcInitSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+  simp only [cbcInitSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice,
+    List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
     forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.2.2
   change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.int pb, ArgWord.addr, ArgWord.int pb,
@@ -198,7 +201,8 @@ theorem cbcUpdatePost_local (d : Direction) : ∀ vs m₁ m₂ m' r,
     obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
     replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [cbcUpdateSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [cbcUpdateSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice,
+    List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   have hd := agree_of hb.2.1
@@ -229,7 +233,8 @@ theorem cbcUpdatePostOut_local (d : Direction) : ∀ vs m m₁ m₂ r,
   obtain ⟨ol, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
   replace hlen := Nat.succ.inj hlen
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
-  simp only [cbcUpdateSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+  simp only [cbcUpdateSig, Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice,
+    List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
   have hc := agree_of hb.1
   have ho := agree_of hb.2.2

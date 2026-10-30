@@ -85,6 +85,11 @@ def Sig.conj : List Prop → Prop
   | [p] => p
   | p :: q :: l => p ∧ Sig.conj (q :: l)
 
+theorem Sig.conj_nil : Sig.conj [] = True := rfl
+theorem Sig.conj_single {p : Prop} : Sig.conj [p] = p := rfl
+theorem Sig.conj_cons_cons {p q : Prop} {l : List Prop} : Sig.conj (p :: q :: l) = (p ∧ Sig.conj (q :: l)) :=
+  rfl
+
 theorem Sig.conj_cons {p : Prop} {l : List Prop} : Sig.conj (p :: l) ↔ p ∧ Sig.conj l := by
   cases l with
   | nil => exact ⟨fun h => ⟨h, trivial⟩, fun h => h.1⟩
@@ -288,6 +293,73 @@ theorem Sig.forall_mem_const_single {b : Addr} {n k : Nat} {W : List Region} :
       b.toNat + n ≤ 2 ^ k ∧ ∀ r ∈ W, Region.Disjoint ⟨b, n⟩ r :=
   List.forall_mem_singleton
 
+/-! ## The lists of a signature, one parameter at a time
+
+`sig_eval` and proofs about a concrete signature rewrite with these rather
+than unfolding `Sig.bufs`, `Sig.u64Bufs`, `Elem.isU64`, `Sig.lists` and
+`Sig.descs` in `simp` (and with `Sig.conj_nil`, `Sig.conj_single` and
+`Sig.conj_cons_cons` rather than unfolding `Sig.conj`). Unfolding a
+definition in `simp` realizes its equation lemmas, and those of its `match`
+(for the overlapping last case, a statement that no earlier case matched, up
+to 200 KB) are private to the module that realizes them: every module
+evaluating a contract would carry its own copy. Each lemma
+here holds by `rfl`, which realizes nothing. -/
+
+section
+variable {n : String} {ps : List (String × Param)} {vs : List (BitVec 64)} {v p l : BitVec 64}
+
+theorem Sig.bufs_nil : Sig.bufs [] vs = [] := rfl
+theorem Sig.bufs_int {t : IntTy} {b : Bool} : Sig.bufs ((n, .int t b) :: ps) (v :: vs) = Sig.bufs ps vs :=
+  rfl
+theorem Sig.bufs_array {m : Bool} {e : Elem} {k : Nat} :
+    Sig.bufs ((n, .array m e k) :: ps) (p :: vs) = (⟨p, k * e.size⟩, m) :: Sig.bufs ps vs := rfl
+theorem Sig.bufs_slice {m : Bool} {e : Elem} {len : String} :
+    Sig.bufs ((n, .slice m e len) :: ps) (p :: l :: vs) = (⟨p, l.toNat * e.size⟩, m) :: Sig.bufs ps vs :=
+  rfl
+theorem Sig.bufs_slices {e : Elem} {c : String} :
+    Sig.bufs ((n, .slices e c) :: ps) (p :: l :: vs) = Sig.bufs ps vs := rfl
+
+theorem Elem.isU64_u8 : Elem.u8.isU64 = false := rfl
+theorem Elem.isU64_u16 : Elem.u16.isU64 = false := rfl
+theorem Elem.isU64_u32 : Elem.u32.isU64 = false := rfl
+theorem Elem.isU64_u64 : Elem.u64.isU64 = true := rfl
+theorem Elem.isU64_array {e : Elem} {k : Nat} : (Elem.array e k).isU64 = e.isU64 := rfl
+
+theorem Sig.u64Bufs_nil : Sig.u64Bufs [] vs = [] := rfl
+theorem Sig.u64Bufs_int {t : IntTy} {b : Bool} :
+    Sig.u64Bufs ((n, .int t b) :: ps) (v :: vs) = Sig.u64Bufs ps vs := rfl
+theorem Sig.u64Bufs_array {m : Bool} {e : Elem} {k : Nat} : Sig.u64Bufs ((n, .array m e k) :: ps) (p :: vs) =
+    if e.isU64 then p :: Sig.u64Bufs ps vs else Sig.u64Bufs ps vs := rfl
+theorem Sig.u64Bufs_slice {m : Bool} {e : Elem} {len : String} :
+    Sig.u64Bufs ((n, .slice m e len) :: ps) (p :: l :: vs) =
+      if e.isU64 then p :: Sig.u64Bufs ps vs else Sig.u64Bufs ps vs := rfl
+theorem Sig.u64Bufs_slices {e : Elem} {c : String} :
+    Sig.u64Bufs ((n, .slices e c) :: ps) (p :: l :: vs) = Sig.u64Bufs ps vs := rfl
+
+theorem Sig.lists_nil {pb : Nat} {m : Mem} : Sig.lists pb m [] vs = [] := rfl
+theorem Sig.lists_int {pb : Nat} {m : Mem} {t : IntTy} {b : Bool} :
+    Sig.lists pb m ((n, .int t b) :: ps) (v :: vs) = Sig.lists pb m ps vs := rfl
+theorem Sig.lists_array {pb : Nat} {m : Mem} {w : Bool} {e : Elem} {k : Nat} :
+    Sig.lists pb m ((n, .array w e k) :: ps) (p :: vs) = Sig.lists pb m ps vs := rfl
+theorem Sig.lists_slice {pb : Nat} {m : Mem} {w : Bool} {e : Elem} {len : String} :
+    Sig.lists pb m ((n, .slice w e len) :: ps) (p :: l :: vs) = Sig.lists pb m ps vs := rfl
+theorem Sig.lists_slices {pb : Nat} {m : Mem} {e : Elem} {c : String} :
+    Sig.lists pb m ((n, .slices e c) :: ps) (p :: l :: vs) =
+      Sig.descRegion pb p l.toNat :: Sig.listed pb m e p l.toNat ++ Sig.lists pb m ps vs := rfl
+
+theorem Sig.descs_nil {pb : Nat} : Sig.descs pb [] vs = [] := rfl
+theorem Sig.descs_int {pb : Nat} {t : IntTy} {b : Bool} :
+    Sig.descs pb ((n, .int t b) :: ps) (v :: vs) = Sig.descs pb ps vs := rfl
+theorem Sig.descs_array {pb : Nat} {w : Bool} {e : Elem} {k : Nat} :
+    Sig.descs pb ((n, .array w e k) :: ps) (p :: vs) = Sig.descs pb ps vs := rfl
+theorem Sig.descs_slice {pb : Nat} {w : Bool} {e : Elem} {len : String} :
+    Sig.descs pb ((n, .slice w e len) :: ps) (p :: l :: vs) = Sig.descs pb ps vs := rfl
+theorem Sig.descs_slices {pb : Nat} {e : Elem} {c : String} :
+    Sig.descs pb ((n, .slices e c) :: ps) (p :: l :: vs) = Sig.descRegion pb p l.toNat :: Sig.descs pb ps vs :=
+  rfl
+
+end
+
 /-! ## Evaluation
 
 The signature and the calling convention are data: evaluating them (the
@@ -355,7 +427,13 @@ macro_rules
       -- against the filtered list by evaluation, and evaluates the symbolic
       -- values in it (the stack arguments' memory reads) as far as it can:
       -- seconds for some contracts.
-      sig_simp [$ls,*] [Sig.bufs, Sig.u64Bufs, Elem.isU64, Bool.cond_true, Bool.cond_false, Sig.lists, Sig.descs, List.append_nil, List.map_nil, Sig.conj, Curry.apply, Curry.const, Curry.apply_const, ArgWord.ofRaw, Elem.size, List.filter_cons, List.filter_nil, List.map, List.cons_append, List.nil_append, List.all_cons, List.all_nil, Bool.not_true, Bool.not_false, Bool.and_true, Bool.and_false, Bool.true_and, Bool.false_and, Bool.and_self, Bool.or_true, Bool.true_or, Bool.or_false, Bool.false_or, Bool.false_eq_true, decide_true, decide_false, Nat.mul_one, Nat.one_mul, List.pairwise_cons, List.forall_mem_cons, List.not_mem_nil, List.Pairwise.nil, List.mem_cons, List.mem_nil_iff, forall_eq_or_imp, forall_eq, forall_false, implies_true, true_implies, false_implies, and_true, true_and, and_self, or_self, or_true, true_or, false_or, or_false, and_assoc, Nat.add_zero, List.zip_cons_cons, List.zip_nil_left, List.zip_nil_right, List.sum_cons, List.sum_nil, BitVec.setWidth_eq, BitVec.setWidth_32_64_32, BitVec.toNat_setWidth_32_64, BitVec.setWidth_setWidth_of_le, Sig.forall_pubs_cons, Sig.forall_pubs_nil, Nat.reduceAdd, Nat.reduceSub, Nat.reduceMul, Nat.reduceDiv,
+      sig_simp [$ls,*] [Sig.bufs_nil, Sig.bufs_int, Sig.bufs_array, Sig.bufs_slice, Sig.bufs_slices,
+        Sig.u64Bufs_nil, Sig.u64Bufs_int, Sig.u64Bufs_array, Sig.u64Bufs_slice, Sig.u64Bufs_slices,
+        Elem.isU64_u8, Elem.isU64_u16, Elem.isU64_u32, Elem.isU64_u64, Elem.isU64_array,
+        Sig.lists_nil, Sig.lists_int, Sig.lists_array, Sig.lists_slice, Sig.lists_slices,
+        Sig.descs_nil, Sig.descs_int, Sig.descs_array, Sig.descs_slice, Sig.descs_slices,
+        Sig.conj_nil, Sig.conj_single, Sig.conj_cons_cons,
+        Bool.cond_true, Bool.cond_false, List.append_nil, List.map_nil, Curry.apply, Curry.const, Curry.apply_const, ArgWord.ofRaw, Elem.size, List.filter_cons, List.filter_nil, List.map, List.cons_append, List.nil_append, List.all_cons, List.all_nil, Bool.not_true, Bool.not_false, Bool.and_true, Bool.and_false, Bool.true_and, Bool.false_and, Bool.and_self, Bool.or_true, Bool.true_or, Bool.or_false, Bool.false_or, Bool.false_eq_true, decide_true, decide_false, Nat.mul_one, Nat.one_mul, List.pairwise_cons, List.forall_mem_cons, List.not_mem_nil, List.Pairwise.nil, List.mem_cons, List.mem_nil_iff, forall_eq_or_imp, forall_eq, forall_false, implies_true, true_implies, false_implies, and_true, true_and, and_self, or_self, or_true, true_or, false_or, or_false, and_assoc, Nat.add_zero, List.zip_cons_cons, List.zip_nil_left, List.zip_nil_right, List.sum_cons, List.sum_nil, BitVec.setWidth_eq, BitVec.setWidth_32_64_32, BitVec.toNat_setWidth_32_64, BitVec.setWidth_setWidth_of_le, Sig.forall_pubs_cons, Sig.forall_pubs_nil, Nat.reduceAdd, Nat.reduceSub, Nat.reduceMul, Nat.reduceDiv,
         Nat.reduceLeDiff, Nat.reduceEqDiff, ↓reduceIte] $[$loc]?))
 
 /-- Evaluates the precondition of a contract built with `Sig.contract` into
