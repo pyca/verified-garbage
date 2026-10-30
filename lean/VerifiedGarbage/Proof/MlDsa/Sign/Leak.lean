@@ -169,6 +169,20 @@ theorem leakT_step {n κ : Nat}
           | none => intro hr; exact absurd (List.cons.inj hr).1.symm (signRejectTag_ne_one _ _ _ _ _ _ _ _ _)
           | some zh' => intro hr; simp only [outTag]; exact hr
 
+/-- Two runs that agree on what an iteration leaks, and both reject it,
+agree on which check rejected it. -/
+theorem leakT_tag {n κ : Nat}
+    (h : signLeakLoopT p b Â₁ s₁ s₁' t₁ μ₁ ρ₁ (n + 1) κ = signLeakLoopT p b Â₂ s₂ s₂' t₂ μ₂ ρ₂ (n + 1) κ)
+    {ct₁ ct₂ : List Byte} (e₁ : signIteration p b Â₁ s₁ s₁' t₁ μ₁ ρ₁ κ = some (ct₁, none))
+    (e₂ : signIteration p b Â₂ s₂ s₂' t₂ μ₂ ρ₂ κ = some (ct₂, none)) :
+    signRejectTag p b Â₁ s₁ s₁' t₁ μ₁ ρ₁ κ = signRejectTag p b Â₂ s₂ s₂' t₂ μ₂ ρ₂ κ := by
+  simp only [signLeakLoopT] at h
+  have hl : (leakBytes (signCommit p Â₁ μ₁ ρ₁ κ).2.2).length = (leakBytes (signCommit p Â₂ μ₂ ρ₂ κ).2.2).length := by
+    rw [leakBytes_length, leakBytes_length, signCommit_length, signCommit_length]
+  have hr := (List.append_inj h hl).2
+  rw [e₁, e₂] at hr
+  exact (List.cons.inj hr).1
+
 end
 
 theorem signLeakLoopT_succ (p : Params) (b : Bounds) (Â : List (List Poly)) (ŝ₁ ŝ₂ t₀Hat : List Poly)

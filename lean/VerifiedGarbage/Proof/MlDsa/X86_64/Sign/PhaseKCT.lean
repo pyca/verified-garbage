@@ -169,37 +169,81 @@ theorem ifOk_rbx {E I : State → State → Prop} (hI : ∀ σ s, I σ s → St 
   rw [hx.bs _ (by decide), hy.bs _ (by decide)]
   exact lrel_rbx (R.lrel hI) _ (List.mem_singleton_self _)
 
-theorem checks_tr (hc : ksChk p = true) {E : State → State → Prop} {t : Nat}
+omit hP in
+/-- `ifOkElse` on runs related by `RS`, whose `r15` agree: each branch from
+the states its entry gives (`hIt`, `hIe`). -/
+theorem ifOkElse_RS {E I It Ie Q : State → State → Prop} {t e : Prog isa}
+    (hq : ∀ σ₁ σ₂ x y, (signK p D).pre σ₁ → (signK p D).pre σ₂ → (signK p D).pub σ₁ σ₂ → E σ₁ σ₂ →
+      I σ₁ x → I σ₂ y → (x.gpr .r15).setWidth 32 = (y.gpr .r15).setWidth 32)
+    (hIt : ∀ σ x x₁, I σ x → PPostB D x x₁ [] → (∀ r ∈ calleeSaved, x₁.gpr r = x.gpr r) → x₁.mem = x.mem →
+      (x.gpr .r15).setWidth 32 ≠ 0 → It σ x₁)
+    (hIe : ∀ σ x x₁, I σ x → PPostB D x x₁ [] → (∀ r ∈ calleeSaved, x₁.gpr r = x.gpr r) → x₁.mem = x.mem →
+      (x.gpr .r15).setWidth 32 = 0 → Ie σ x₁)
+    (ht : RelCT isa (RS p D E It) t Q) (he : RelCT isa (RS p D E Ie) e Q) :
+    RelCT isa (RS p D E I) (ifOkElse t e) Q := by
+  refine ifOkElse_tr (D := D) (fun x y ⟨σ₁, σ₂, p₁, p₂, hpub, hE, i₁, i₂⟩ => hq σ₁ σ₂ x y p₁ p₂ hpub hE i₁ i₂)
+    (RelCT.mono ht (fun x y ⟨x₀, y₀, ⟨σ₁, σ₂, p₁, p₂, hpub, hE, i₁, i₂⟩, ⟨hx, cx, mx⟩, ⟨hy, cy, my⟩, hne⟩ =>
+      ⟨σ₁, σ₂, p₁, p₂, hpub, hE, hIt _ _ _ i₁ hx cx mx hne,
+        hIt _ _ _ i₂ hy cy my (by rw [← hq σ₁ σ₂ x₀ y₀ p₁ p₂ hpub hE i₁ i₂]; exact hne)⟩) fun _ _ h => h)
+    (RelCT.mono he (fun x y ⟨x₀, y₀, ⟨σ₁, σ₂, p₁, p₂, hpub, hE, i₁, i₂⟩, ⟨hx, cx, mx⟩, ⟨hy, cy, my⟩, he⟩ =>
+      ⟨σ₁, σ₂, p₁, p₂, hpub, hE, hIe _ _ _ i₁ hx cx mx he,
+        hIe _ _ _ i₂ hy cy my (by rw [← hq σ₁ σ₂ x₀ y₀ p₁ p₂ hpub hE i₁ i₂]; exact he)⟩) fun _ _ h => h)
+
+theorem checksR0_tr (hc : ksChk p = true) (hc2 : ksChk2 p = true) {E : State → State → Prop} {t : Nat}
     (hE : ∀ σ₁ σ₂, E σ₁ σ₂ → (sampleInBall p.τ maxBounds.ball (CTv p σ₁ (p.ℓ * t))).isSome →
-      (sampleInBall p.τ maxBounds.ball (CTv p σ₂ (p.ℓ * t))).isSome → (PassV p σ₁ (p.ℓ * t) ↔ PassV p σ₂ (p.ℓ * t))) :
+      (sampleInBall p.τ maxBounds.ball (CTv p σ₂ (p.ℓ * t))).isSome → ChecksAgree p t σ₁ σ₂) :
+    RelCT isa (RS p D E fun σ s => IR p D σ t 0 s) (checksR0 P p) (RS p D E fun σ s => KO p D σ t s) := by
+  refine ksChk_spec hc fun _ _ _ _ _ _ _ _ hr hh _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => ?_
+  have hc2' := hc2
+  simp only [ksChk2, Bool.and_eq_true] at hc2'
+  obtain ⟨⟨⟨_, _⟩, d3⟩, d4⟩ := hc2'
+  unfold checksR0
+  refine RelCT.seq (R := RS p D E fun σ s => IR p D σ t p.k s) (RelCT.mono (seqR_tr (R := fun i => RS p D E
+    fun σ s => IR p D σ t i s) p.k 0 fun i _ hi => liftL (T := fun s => ∃ σ, IR p D σ t i s)
+      (fun σ s h => ⟨h.1.b.l.st, σ, h⟩) (fun _ _ _ h => r0R_ok hP (hr i (by omega)) h) (r0R_trL hP (hr i (by omega))))
+    (fun _ _ h => h) fun x y h => by rwa [Nat.zero_add] at h) ?_
+  refine ifOkElse_RS (It := fun σ s => IH p D σ t 0 s) (Ie := fun σ s => KO p D σ t s)
+    (fun σ₁ σ₂ x y _ _ _ he i₁ i₂ => by
+      rw [i₁.2, i₂.2, bit_congr (hE σ₁ σ₂ he i₁.1.b.some i₂.1.b.some).2.1])
+    (fun σ x x₁ i hP hcs _ _ => IR.ih (⟨i.1.step hP d3 d4, by rw [hcs _ (by decide), i.2]⟩ : IR p D σ t p.k x₁))
+    (fun σ x x₁ i hP hcs _ he => kFail_ko hc i.1.b i.2 (fun hp => ⟨hp.1, hp.2.1⟩) hP hcs he) ?_ nil_tr
+  refine RelCT.seq (R := RS p D E fun σ s => IH p D σ t p.k s) (RelCT.mono (seqR_tr (R := fun i => RS p D E
+    fun σ s => IH p D σ t i s) p.k 0 fun i _ hi => liftL (T := fun s => ∃ σ, IH p D σ t i s)
+      (fun σ s h => ⟨h.1.b.l.st, σ, h⟩) (fun _ _ _ h => hR_ok hP (hh i (by omega)) h) (hR_trL hP (hh i (by omega))))
+    (fun _ _ h => h) fun x y h => by rwa [Nat.zero_add] at h) ?_
+  exact liftT (fun _ _ h => h.1.b.l.st) (fun _ _ _ h => onesOk_ok hc h) (block_tr rfl fun x y h => lrel_rbx h)
+
+theorem checks_tr (hc : ksChk p = true) (hc2 : ksChk2 p = true) {E : State → State → Prop} {t : Nat}
+    (hE : ∀ σ₁ σ₂, E σ₁ σ₂ → (sampleInBall p.τ maxBounds.ball (CTv p σ₁ (p.ℓ * t))).isSome →
+      (sampleInBall p.τ maxBounds.ball (CTv p σ₂ (p.ℓ * t))).isSome → ChecksAgree p t σ₁ σ₂) :
     RelCT isa (RS p D E fun σ s => KA p D σ t s) (checks P p)
       (RS p D E fun σ s => EP p D σ t s ∨ EF p D σ t s) := by
-  refine ksChk_spec hc fun c1 _ _ _ _ _ _ hz hr hh _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => ?_
+  refine ksChk_spec hc fun c1 _ _ _ _ _ _ hz _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => ?_
+  have hc2' := hc2
+  simp only [ksChk2, Bool.and_eq_true] at hc2'
+  obtain ⟨⟨⟨d1, d2⟩, _⟩, _⟩ := hc2'
   unfold checks
   refine RelCT.seq (R := RS p D E fun σ s => KN p D σ t s)
     (liftL (T := fun s => Reduced s.mem (pa s cP)) (fun σ s h => ⟨h.c.l.st, h.cc.1⟩)
       (fun _ _ _ h => cntt_ok hP hc h) (ipAt_tr (t := ntt) hP.ntt c1)) ?_
   refine RelCT.seq (R := RS p D E fun σ s => IZ p D σ t 0 s)
     (liftT (fun _ _ h => h.b.l.st) (fun _ _ _ h => kInit_ok hc h) (block_tr rfl fun x y h => lrel_rbx h)) ?_
-  refine RelCT.seq (R := RS p D E fun σ s => IR p D σ t 0 s) (RelCT.mono (seqR_tr (R := fun r => RS p D E
+  refine RelCT.seq (R := RS p D E fun σ s => IZ p D σ t p.ℓ s) (RelCT.mono (seqR_tr (R := fun r => RS p D E
     fun σ s => IZ p D σ t r s) p.ℓ 0 fun r _ hr => liftL (T := fun s => ∃ σ, IZ p D σ t r s)
       (fun σ s h => ⟨h.1.b.l.st, σ, h⟩) (fun _ _ _ h => zR_ok hP (hz r (by omega)) h) (zR_trL hP (hz r (by omega))))
-    (fun _ _ h => h) fun x y h => by rw [Nat.zero_add] at h; exact h.mono (fun _ _ h => h) fun _ _ h => h.ir) ?_
-  refine RelCT.seq (R := RS p D E fun σ s => IH p D σ t 0 s) (RelCT.mono (seqR_tr (R := fun i => RS p D E
-    fun σ s => IR p D σ t i s) p.k 0 fun i _ hi => liftL (T := fun s => ∃ σ, IR p D σ t i s)
-      (fun σ s h => ⟨h.1.b.l.st, σ, h⟩) (fun _ _ _ h => r0R_ok hP (hr i (by omega)) h) (r0R_trL hP (hr i (by omega))))
-    (fun _ _ h => h) fun x y h => by rw [Nat.zero_add] at h; exact h.mono (fun _ _ h => h) fun _ _ h => h.ih) ?_
-  refine RelCT.seq (R := RS p D E fun σ s => IH p D σ t p.k s) (RelCT.mono (seqR_tr (R := fun i => RS p D E
-    fun σ s => IH p D σ t i s) p.k 0 fun i _ hi => liftL (T := fun s => ∃ σ, IH p D σ t i s)
-      (fun σ s h => ⟨h.1.b.l.st, σ, h⟩) (fun _ _ _ h => hR_ok hP (hh i (by omega)) h) (hR_trL hP (hh i (by omega))))
     (fun _ _ h => h) fun x y h => by rwa [Nat.zero_add] at h) ?_
   refine RelCT.seq (R := RS p D E fun σ s => KO p D σ t s)
-    (liftT (fun _ _ h => h.1.b.l.st) (fun _ _ _ h => onesOk_ok hc h) (block_tr rfl fun x y h => lrel_rbx h)) ?_
+    (ifOkElse_RS (It := fun σ s => IR p D σ t 0 s) (Ie := fun σ s => KO p D σ t s)
+      (fun σ₁ σ₂ x y _ _ _ he i₁ i₂ => by
+        rw [i₁.2, i₂.2, bit_congr (hE σ₁ σ₂ he i₁.1.b.some i₂.1.b.some).1])
+      (fun σ x x₁ i hP hcs _ _ => IZ.ir (⟨i.1.step hP d1 d2, by rw [hcs _ (by decide), i.2]⟩ : IZ p D σ t p.ℓ x₁))
+      (fun σ x x₁ i hP hcs _ he => kFail_ko hc i.1.b i.2 (fun hp => hp.1) hP hcs he)
+      (checksR0_tr hP hc hc2 hE) nil_tr) ?_
   refine liftR (fun _ _ _ h => kBranch_ok hc h) (ifOkElse_tr (D := D) (fun x y h => ?_)
     (block_tr rfl fun x y h => ifOk_rbx (I := fun σ s => KO p D σ t s) (fun _ _ h => h.b.l.st) h)
     (block_tr rfl fun x y h => ifOk_rbx (I := fun σ s => KO p D σ t s) (fun _ _ h => h.b.l.st) h))
   obtain ⟨σ₁, σ₂, _, _, _, he, k₁, k₂⟩ := h
-  rw [k₁.r15, k₂.r15, bit_congr (hE σ₁ σ₂ he k₁.b.some k₂.b.some)]
+  rw [k₁.r15, k₂.r15, bit_congr (hE σ₁ σ₂ he k₁.b.some k₂.b.some).2.2]
 
 end
 

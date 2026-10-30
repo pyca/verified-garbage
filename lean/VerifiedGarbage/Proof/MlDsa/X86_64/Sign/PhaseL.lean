@@ -226,7 +226,7 @@ theorem decF {D : Nat} {p : Params} (hc : lChk p = true) {σ : State} {s : State
   exact ⟨hz, hcs _ (by decide), L.keepBytes hP k3, fun f h => HFam.keep L hP f2 h⟩
 
 theorem iter_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hp : ParamsOk p) (hc1 : cChk p = true)
-    (hc2 : bChk p = true) (hc3 : ksChk p = true) (hc4 : lChk p = true) {σ : State} {t : Nat} {s : State}
+    (hc2 : bChk p = true) (hc3 : ksChk p = true) (hc3' : ksChk2 p = true) (hc4 : lChk p = true) {σ : State} {t : Nat} {s : State}
     (h : IL p D σ t s) : WP isa (iter P p) s (LP p D σ t) := by
   unfold iter
   refine WP.seq (WP.mono (commit_ok hP hc1 h) fun s1 h1 => ?_)
@@ -238,7 +238,7 @@ theorem iter_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hp : Para
       rcases I3.r01 with e | e
       · rw [e] at hb; exact absurd hb (by decide)
       · exact e
-    exact WP.mono (checks_ok hP hc3 (I3.ka h1)) fun s' h' => dec_end hp hc4 (h'.elim .inl (fun h => .inr (.inl h)))
+    exact WP.mono (checks_ok hP hc3 hc3' (I3.ka h1)) fun s' h' => dec_end hp hc4 (h'.elim .inl (fun h => .inr (.inl h)))
   · exact WP.mono (else_ok hc4 I3 (by simpa using hb)) fun s' h' => dec_end hp hc4 (.inr (.inr h'))
 
 /-! ## The loop -/
@@ -258,13 +258,13 @@ theorem loopInit_ok {D : Nat} {p : Params} (hc4 : lChk p = true) {σ : State} {s
     by rw [hP2.pa (by decide), hm2, Mem.readW_writeW_self64], by decide, fun _ h => absurd h (Nat.not_lt_zero _)⟩
 
 theorem signLoop_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (hp : ParamsOk p) (hc1 : cChk p = true)
-    (hc2 : bChk p = true) (hc3 : ksChk p = true) (hc4 : lChk p = true) {σ : State} {s : State}
+    (hc2 : bChk p = true) (hc3 : ksChk p = true) (hc3' : ksChk2 p = true) (hc4 : lChk p = true) {σ : State} {s : State}
     (h : IK p D σ s) : WP isa (Impl.MlDsa.X86_64.Sign.signLoop P p) s (XS p D σ) := by
   unfold Impl.MlDsa.X86_64.Sign.signLoop
   refine WP.seq (WP.mono (loopInit_ok hc4 h) fun s2 I0 => ?_)
   refine WP.loop (M := isa) (fun n s => ∃ t, n = 814 - t ∧ IL p D σ t s) (fun n s ⟨t, hn, hs⟩ => ?_) 814 s2
     ⟨0, rfl, I0⟩
-  refine WP.mono (iter_ok hP hp hc1 hc2 hc3 hc4 hs) fun s' h' => ?_
+  refine WP.mono (iter_ok hP hp hc1 hc2 hc3 hc3' hc4 hs) fun s' h' => ?_
   have hev : ∀ s : State, isa.eval .ne s = s.zf.map (!·) := fun _ => rfl
   rcases h' with ⟨hz, hI⟩ | ⟨hz, hX⟩
   · exact .inr ⟨by rw [hev, hz]; rfl, 814 - (t + 1), by have := hs.t_lt; omega, t + 1, rfl, hI⟩

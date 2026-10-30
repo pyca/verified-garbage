@@ -27,10 +27,11 @@ keeps `scratch` in `rbx`, `sk` in `rbp`, `mu` in `r12`, `rnd` in `r13` and
    four polynomials at a time (`vg_mldsa_expand_mask_poly4`, from the seeds
    `ρ″ ‖ κ + r` at `MS4`), then the last `ℓ mod 4` one at a time;
    `ŷ = NTT(y)`, `w = NTT⁻¹(Â ŷ)`, and `c̃ = H(μ ‖ w1Encode(HighBits(w)), λ/4)`
-   at `CT`), then `c = SampleInBall(c̃)` and, if it succeeded, every validity
-   check of the iteration, combined without a branch into `r15`: the norms
-   of `z = y + NTT⁻¹(ĉ ŝ₁)`, of `r₀ = LowBits(w - NTT⁻¹(ĉ ŝ₂))` and of
-   `ct₀ = NTT⁻¹(ĉ t̂₀)`, and the number of 1s of the hint
+   at `CT`), then `c = SampleInBall(c̃)` and, if it succeeded, the validity
+   checks of the iteration in three groups, each combined without a branch
+   into `r15` and run only if the groups before it passed: the norms of
+   `z = y + NTT⁻¹(ĉ ŝ₁)`; those of `r₀ = LowBits(w - NTT⁻¹(ĉ ŝ₂))`; and those
+   of `ct₀ = NTT⁻¹(ĉ t̂₀)` with the number of 1s of the hint
    `h = MakeHint(-ct₀, w - cs₂ + ct₀)`. The loop ends when `SampleInBall`
    fails (with `r15 = 0`), when the checks pass (`r15 = 1`), or after 814
    iterations.
@@ -39,7 +40,8 @@ keeps `scratch` in `rbx`, `sk` in `rbp`, `mu` in `r12`, `rnd` in `r13` and
 Only the calls of `vg_mldsa_rej_ntt_poly` and `vg_mldsa_rej_ntt_poly4`
 (whose seeds are `ρ` and two indices), and the branch on their results, depend on `ρ`; only the calls of
 `vg_mldsa_sample_in_ball`, and the branch on their results, on `c̃`; only
-the branch on the validity checks on whether they passed, and only the call
+the branches on the validity checks on which group of them rejected the
+iteration, if one did (`signRejectTag`), and only the call
 of `vg_mldsa_hint_bit_pack` on the hint of the signature. Every other
 address and branch depends only on the pointers.
 -/
@@ -210,14 +212,21 @@ def onesOk : List Instr :=
   [.mov32 .rax (.mem (at_ .rbx oONES)), .alu .sub .rax (.imm (BitVec.ofNat 32 (p.ω + 1))), .shift .shr .rax 63,
     .alu32 .and .r15 (.reg .rax)]
 
-/-- The validity checks of an iteration, combined into `r15`; then, if they
-passed, `CNT ← 1` (the loop ends with `r15 = 1`), and otherwise `κ ← κ + ℓ`. -/
+/-- The checks of `r₀`, and if they pass, those of `ct₀` and the hint. -/
+def checksR0 : Prog isa :=
+  .seq (seqR (r0R P p) 0 p.k) (ifOk (.seq (seqR (hR P p) 0 p.k) (.block (onesOk p))))
+
+/-- The validity checks of an iteration in the order of Algorithm 7, each
+group combined into `r15` and run only if those before it passed: the norms
+of `z`, then those of `r₀`, then those of `ct₀` and the number of 1s of the
+hint; then, if they passed, `CNT ← 1` (the loop ends with `r15 = 1`), and
+otherwise `κ ← κ + ℓ`. -/
 def checks : Prog isa :=
   .seq (nttAt P cP) (.seq (.block (([.mov32 .r15 (.imm 1)] : List Instr) ++ setQ (sc oONES) 0))
-    (.seq (seqR (zR P p) 0 p.ℓ) (.seq (seqR (r0R P p) 0 p.k) (.seq (seqR (hR P p) 0 p.k)
-      (.seq (.block (onesOk p)) (ifOkElse (.block (setQ (sc oCNT) 1))
+    (.seq (seqR (zR P p) 0 p.ℓ) (.seq (ifOk (checksR0 P p))
+      (ifOkElse (.block (setQ (sc oCNT) 1))
         (.block [.mov .rax (.mem (at_ .rbx oKAP)), .alu .add .rax (.imm (BitVec.ofNat 32 p.ℓ)),
-          .store (at_ .rbx oKAP) .rax])))))))
+          .store (at_ .rbx oKAP) .rax])))))
 
 /-- An iteration: the commitment, `SampleInBall`, and the checks if it
 succeeded (and otherwise `r15 ← 0`, `CNT ← 1`); then `CNT ← CNT - 1`, which

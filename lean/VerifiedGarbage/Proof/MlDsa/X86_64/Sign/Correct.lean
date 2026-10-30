@@ -126,7 +126,7 @@ theorem rest_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} (h3 : Ok3 
   have hA := expandA_max h.ok
   unfold rest
   refine WP.seq (WP.mono (decode_ok hP hd h) fun s1 h1 => ?_)
-  refine WP.seq (WP.mono (signLoop_ok hP hp hc1 hb hks hl h1) fun s2 h2 => ?_)
+  refine WP.seq (WP.mono (signLoop_ok hP hp hc1 hb hks (ksChk2_ok h3) hl h1) fun s2 h2 => ?_)
   have L2 := h2.k.d.im.st.lay
   unfold ifOk
   refine ifOkElse_ok (D := D) (fun s3 hP3 hcs3 hm3 hne => ?_) fun s3 hP3 hcs3 hm3 he => ?_

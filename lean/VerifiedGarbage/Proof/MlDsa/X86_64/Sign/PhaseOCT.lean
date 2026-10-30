@@ -116,7 +116,7 @@ theorem rest_tr {P : Prims} (hP : PrimsOk P D) (h3 : Ok3 p) :
   obtain ⟨⟨⟨⟨⟨⟨⟨-, -⟩, -⟩, -⟩, f5⟩, -⟩, -⟩, -⟩ := hf'
   have hp := paramsOk h3
   unfold rest
-  refine RelCT.seq (decode_tr hP hd) (RelCT.seq (signLoop_tr hP hp hc1 hb hks hl) ?_)
+  refine RelCT.seq (decode_tr hP hd) (RelCT.seq (signLoop_tr hP hp hc1 hb hks (ksChk2_ok h3) hl) ?_)
   unfold ifOk
   refine ifOkElse_tr (D := D) (fun x y h => by rw [h.2.1]) (RelCT.mono (output_tr hP ho (E := fun _ _ => True))
     (fun x y ⟨x₀, y₀, ⟨⟨σ₁, σ₂, p₁, p₂, hpub, _, s₁, s₂⟩, h15, hj⟩, ⟨hPx, hcx, _⟩, ⟨hPy, hcy, _⟩, hne⟩ => ?_)
