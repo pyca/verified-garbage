@@ -6046,14 +6046,14 @@ ret
     )
 }
 
-/// The CPU features `vg_mldsa87_verify_message_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA87_VERIFY_MESSAGE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
+/// The CPU features `vg_mldsa87_verify_message_cached_avx2` requires (`Artifact.features`).
+pub(crate) const VG_MLDSA87_VERIFY_MESSAGE_CACHED_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
 
-/// ML-DSA-87 verification, `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3): with the public key `*pk`, the `msg_len` bytes of the message at `msg`, the `ctx_len` bytes of the context string at `ctx` and the signature `*sig`, returns 1 if the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 5) is valid, `ML-DSA.Verify_internal(pk, M′, σ)` (Algorithm 8), and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less). Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`).
+/// ML-DSA-87 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. The message formatting and verification semantics match `vg_mldsa87_verify_message`.
 ///
-/// Contract: `VG.Spec.MlDsa.verifyMessageContract`. Not constant time: timing may depend on the public key, the message, the context string and the signature.
+/// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
 ///
-/// The function keeps its arguments in a frame of 72 bytes on the stack, and its calls use the 40 bytes of stack below the frame. It computes `tr = H(pk, 64)` and then the message representative with the SHAKE256 sponge (`vg_keccak_absorb`, `vg_keccak_pad`, `vg_keccak_squeeze`) in the last 1 KiB of `scratch`, and calls the verification function on it, which uses the rest of `scratch`.
+/// The function keeps its arguments in a frame of 72 bytes on the stack, and its calls use the 40 bytes of stack below the frame. It reads the cached `tr = H(pk, 64)` and computes the message representative with the SHAKE256 sponge (`vg_keccak_absorb`, `vg_keccak_pad`, `vg_keccak_squeeze`) in the last 1 KiB of `scratch`, and calls the verification function on it, which uses the rest of `scratch`.
 ///
 /// # Safety
 ///
@@ -6062,12 +6062,14 @@ pub(crate) const VG_MLDSA87_VERIFY_MESSAGE_AVX2_FEATURES: crate::cpu::Features =
 /// * `ctx` must be valid for reads of `ctx_len` bytes.
 /// * `sig` must be valid for reads of 4627 bytes.
 /// * `scratch` must be valid for reads and writes of 145408 bytes.
+/// * `tr` must be valid for reads of 64 bytes.
+/// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_message_avx2(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_message_cached_avx2(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
         r"cmp r8, 256
 jb 20f
@@ -6075,6 +6077,7 @@ mov eax, 2
 jmp 21f
 20:
 mov r11, QWORD PTR [rsp+8]
+mov r10, QWORD PTR [rsp+16]
 mov eax, 0
 push rdi
 push rsi
@@ -6082,7 +6085,7 @@ push rdx
 push rcx
 push r8
 push r9
-push rax
+push r10
 push r11
 push rax
 mov BYTE PTR [rsp+1], r8b
@@ -6118,63 +6121,7 @@ mov rdi, QWORD PTR [rsp+8]
 add rdi, 144384
 mov esi, 136
 mov edx, 0
-mov rcx, QWORD PTR [rsp+64]
-mov r8d, 2592
-mov r9, QWORD PTR [rsp+8]
-add r9, 144584
-call {vg_keccak_absorb_scratch}
-mov rdi, QWORD PTR [rsp+8]
-add rdi, 144384
-mov esi, 136
-mov edx, 8
-mov ecx, 31
-mov r8, QWORD PTR [rsp+8]
-add r8, 144584
-call {vg_keccak_pad_scratch}
-mov rdi, QWORD PTR [rsp+8]
-add rdi, 144384
-mov esi, 136
-mov edx, 0
-mov rcx, QWORD PTR [rsp+8]
-add rcx, 145224
-mov r8d, 64
-mov r9, QWORD PTR [rsp+8]
-add r9, 144584
-call {vg_keccak_squeeze_scratch}
-mov rdi, QWORD PTR [rsp+8]
-add rdi, 144384
-mov eax, 0
-mov QWORD PTR [rdi], rax
-mov QWORD PTR [rdi+8], rax
-mov QWORD PTR [rdi+16], rax
-mov QWORD PTR [rdi+24], rax
-mov QWORD PTR [rdi+32], rax
-mov QWORD PTR [rdi+40], rax
-mov QWORD PTR [rdi+48], rax
-mov QWORD PTR [rdi+56], rax
-mov QWORD PTR [rdi+64], rax
-mov QWORD PTR [rdi+72], rax
-mov QWORD PTR [rdi+80], rax
-mov QWORD PTR [rdi+88], rax
-mov QWORD PTR [rdi+96], rax
-mov QWORD PTR [rdi+104], rax
-mov QWORD PTR [rdi+112], rax
-mov QWORD PTR [rdi+120], rax
-mov QWORD PTR [rdi+128], rax
-mov QWORD PTR [rdi+136], rax
-mov QWORD PTR [rdi+144], rax
-mov QWORD PTR [rdi+152], rax
-mov QWORD PTR [rdi+160], rax
-mov QWORD PTR [rdi+168], rax
-mov QWORD PTR [rdi+176], rax
-mov QWORD PTR [rdi+184], rax
-mov QWORD PTR [rdi+192], rax
-mov rdi, QWORD PTR [rsp+8]
-add rdi, 144384
-mov esi, 136
-mov edx, 0
-mov rcx, QWORD PTR [rsp+8]
-add rcx, 145224
+mov rcx, QWORD PTR [rsp+16]
 mov r8d, 64
 mov r9, QWORD PTR [rsp+8]
 add r9, 144584
@@ -12277,11 +12224,11 @@ ret
     )
 }
 
-/// ML-DSA-87 verification, `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3): with the public key `*pk`, the `msg_len` bytes of the message at `msg`, the `ctx_len` bytes of the context string at `ctx` and the signature `*sig`, returns 1 if the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 5) is valid, `ML-DSA.Verify_internal(pk, M′, σ)` (Algorithm 8), and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less). Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`).
+/// ML-DSA-87 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. The message formatting and verification semantics match `vg_mldsa87_verify_message`.
 ///
-/// Contract: `VG.Spec.MlDsa.verifyMessageContract`. Not constant time: timing may depend on the public key, the message, the context string and the signature.
+/// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
 ///
-/// The function keeps its arguments in a frame of 72 bytes on the stack, and its calls use the 40 bytes of stack below the frame. It computes `tr = H(pk, 64)` and then the message representative with the SHAKE256 sponge (`vg_keccak_absorb`, `vg_keccak_pad`, `vg_keccak_squeeze`) in the last 1 KiB of `scratch`, and calls the verification function on it, which uses the rest of `scratch`.
+/// The function keeps its arguments in a frame of 72 bytes on the stack, and its calls use the 40 bytes of stack below the frame. It reads the cached `tr = H(pk, 64)` and computes the message representative with the SHAKE256 sponge (`vg_keccak_absorb`, `vg_keccak_pad`, `vg_keccak_squeeze`) in the last 1 KiB of `scratch`, and calls the verification function on it, which uses the rest of `scratch`.
 ///
 /// # Safety
 ///
@@ -12290,11 +12237,13 @@ ret
 /// * `ctx` must be valid for reads of `ctx_len` bytes.
 /// * `sig` must be valid for reads of 4627 bytes.
 /// * `scratch` must be valid for reads and writes of 145408 bytes.
+/// * `tr` must be valid for reads of 64 bytes.
+/// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_message(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa87_verify_message_cached(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
         r"cmp r8, 256
 jb 20f
@@ -12302,6 +12251,7 @@ mov eax, 2
 jmp 21f
 20:
 mov r11, QWORD PTR [rsp+8]
+mov r10, QWORD PTR [rsp+16]
 mov eax, 0
 push rdi
 push rsi
@@ -12309,7 +12259,7 @@ push rdx
 push rcx
 push r8
 push r9
-push rax
+push r10
 push r11
 push rax
 mov BYTE PTR [rsp+1], r8b
@@ -12345,63 +12295,7 @@ mov rdi, QWORD PTR [rsp+8]
 add rdi, 144384
 mov esi, 136
 mov edx, 0
-mov rcx, QWORD PTR [rsp+64]
-mov r8d, 2592
-mov r9, QWORD PTR [rsp+8]
-add r9, 144584
-call {vg_keccak_absorb_scratch}
-mov rdi, QWORD PTR [rsp+8]
-add rdi, 144384
-mov esi, 136
-mov edx, 8
-mov ecx, 31
-mov r8, QWORD PTR [rsp+8]
-add r8, 144584
-call {vg_keccak_pad_scratch}
-mov rdi, QWORD PTR [rsp+8]
-add rdi, 144384
-mov esi, 136
-mov edx, 0
-mov rcx, QWORD PTR [rsp+8]
-add rcx, 145224
-mov r8d, 64
-mov r9, QWORD PTR [rsp+8]
-add r9, 144584
-call {vg_keccak_squeeze_scratch}
-mov rdi, QWORD PTR [rsp+8]
-add rdi, 144384
-mov eax, 0
-mov QWORD PTR [rdi], rax
-mov QWORD PTR [rdi+8], rax
-mov QWORD PTR [rdi+16], rax
-mov QWORD PTR [rdi+24], rax
-mov QWORD PTR [rdi+32], rax
-mov QWORD PTR [rdi+40], rax
-mov QWORD PTR [rdi+48], rax
-mov QWORD PTR [rdi+56], rax
-mov QWORD PTR [rdi+64], rax
-mov QWORD PTR [rdi+72], rax
-mov QWORD PTR [rdi+80], rax
-mov QWORD PTR [rdi+88], rax
-mov QWORD PTR [rdi+96], rax
-mov QWORD PTR [rdi+104], rax
-mov QWORD PTR [rdi+112], rax
-mov QWORD PTR [rdi+120], rax
-mov QWORD PTR [rdi+128], rax
-mov QWORD PTR [rdi+136], rax
-mov QWORD PTR [rdi+144], rax
-mov QWORD PTR [rdi+152], rax
-mov QWORD PTR [rdi+160], rax
-mov QWORD PTR [rdi+168], rax
-mov QWORD PTR [rdi+176], rax
-mov QWORD PTR [rdi+184], rax
-mov QWORD PTR [rdi+192], rax
-mov rdi, QWORD PTR [rsp+8]
-add rdi, 144384
-mov esi, 136
-mov edx, 0
-mov rcx, QWORD PTR [rsp+8]
-add rcx, 145224
+mov rcx, QWORD PTR [rsp+16]
 mov r8d, 64
 mov r9, QWORD PTR [rsp+8]
 add r9, 144584

@@ -20,13 +20,14 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
-# ML-DSA on x86-64, `sign_message` and `verify_message`: SHAKE256 leaks only the layout
+# ML-DSA on x86-64, `sign_message` and `verify_message_cached`: SHAKE256 leaks only the layout
 
 Untrusted: everything here is checked by Lean. Two runs (`Two`) of the
 zeroing of the Keccak state and of the calls of the sponge functions, whose
 arguments are the same in both runs (functions of the layout), leak the
-same (`zeroSt_tr`, `kabs_tr`, `kpad_tr`, `ksqz_tr`); and so do `muHash` and
-`trHash` (`muHash_tr`, `trHash_tr`).
+same (`zeroSt_tr`, `kabs_tr`, `kpad_tr`, `ksqz_tr`); and so does `muHash`
+(`muHash_tr`, or `muHash_tr_of` when where `tr` is follows from what the runs
+keep rather than from the layout alone).
 -/
 
 @[expose] public section
@@ -86,11 +87,12 @@ theorem kabsArgs {L : Lay} (hL : L.Ok) (hE : EOk p L) {g mx m₀} {t t1 : State}
 
 /-- Two runs of a call of `vg_keccak_absorb` whose arguments are the same
 functions of the layout in both. -/
-theorem kabs_tr {Φ : Lay → Mem → State → Prop} (hΦ : ∀ L m t, Φ L m t → EOk p L) {src len pos : Arg}
+theorem kabs_tr_of {Φ : Lay → Mem → State → Prop} (hΦ : ∀ L m t, Φ L m t → EOk p L) {src len pos : Arg}
     (hok : (absArgs p src len pos).all Arg.ok = true) (dp : Lay → Addr) (n q : Lay → Nat)
     (hv : ∀ (L : Lay) g mx m (t : State), L.Ok → Ctx L g mx m t → Φ L m t →
       src.val t = dp L ∧ len.val t = BitVec.ofNat 64 (n L) ∧ pos.val t = BitVec.ofNat 64 (q L))
-    (hs : ∀ L : Lay, L.Ok → q L < 136 ∧ n L < 2 ^ 64 ∧ (∃ R ∈ L.rd ++ L.FR :: L.wr, Within ⟨dp L, n L⟩ R) ∧
+    (hs : ∀ (L : Lay) m (t : State), L.Ok → Φ L m t →
+      q L < 136 ∧ n L < 2 ^ 64 ∧ (∃ R ∈ L.rd ++ L.FR :: L.wr, Within ⟨dp L, n L⟩ R) ∧
       Region.Disjoint ⟨dp L, n L⟩ ⟨L.ST, 200⟩ ∧ Region.Disjoint ⟨dp L, n L⟩ ⟨L.KS, 640⟩ ∧
       Region.Disjoint ⟨L.B, 40⟩ ⟨dp L, n L⟩) :
     RelCT isa (Two I Φ) (kabs p src len pos) fun _ _ => True := by
@@ -98,12 +100,12 @@ theorem kabs_tr {Φ : Lay → Mem → State → Prop} (hΦ : ∀ L m t, Φ L m t
       Moved (absArgs p src len pos) t t1 → AbsorbArgs t1 L.ST (dp L) L.KS 136 (q L) (n L) :=
     fun L g mx m₀ t t1 hL hc hφ hm => by
       obtain ⟨h1, h2, h3⟩ := hv L g mx m₀ t hL hc hφ
-      obtain ⟨s1, s2, _, s4, s5, s6⟩ := hs L hL
+      obtain ⟨s1, s2, _, s4, s5, s6⟩ := hs L m₀ t hL hφ
       exact kabsArgs hL (hΦ L m₀ t hφ) hc hm h1 h2 h3 s1 s2 s4 s5 s6
   refine call_tr hok Proof.Sha3.X86_64.Stream.Absorb.absorb_correct
     Proof.Sha3.X86_64.Stream.Absorb.absorb_ct (fun L => [⟨dp L, n L⟩]) (fun L => [⟨L.ST, 200⟩, ⟨L.KS, 640⟩])
     (fun L g mx m₀ t t1 hL hc hφ hm => absorb_pre (args L g mx m₀ t t1 hL hc hφ hm))
-    (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL _ c₁ c₂ φ₁ φ₂ f₁ f₂ => ?_) fun L _ _ _ _ hL _ _ => ?_
+    (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL _ c₁ c₂ φ₁ φ₂ f₁ f₂ => ?_) fun L _ _ m₀ t hL _ hφ => ?_
   · have x := args L g₁ mx₁ m₁ a a1 hL c₁ φ₁ f₁
     have y := args L g₂ mx₂ m₂ b b1 hL c₂ φ₂ f₂
     simp only [Proof.Sha3.absorbX86_64, gpr_ce _ _ _ (by decide : Reg.rdi ≠ .rsp),
@@ -112,13 +114,23 @@ theorem kabs_tr {Φ : Lay → Mem → State → Prop} (hΦ : ∀ L m t, Φ L m t
       gpr_ce _ _ _ (by decide : Reg.r9 ≠ .rsp), rsp_ce, x.rdi, x.rsi, x.rdx, x.rcx, x.r8, x.r9, y.rdi, y.rsi,
       y.rdx, y.rcx, y.r8, y.r9, f₁.2.gpr (by decide : Reg.rsp ∉ argRegs), f₂.2.gpr (by decide : Reg.rsp ∉ argRegs),
       c₁.rsp, c₂.rsp, and_self]
-  · obtain ⟨_, _, hin, _, _, _⟩ := hs L hL
+  · obtain ⟨_, _, hin, _, _, _⟩ := hs L m₀ t hL hφ
     obtain ⟨R, hR, hX⟩ := hL.inX
     refine ⟨fun r hr => ?_, fun r hr => ?_⟩
     · simp only [List.mem_singleton] at hr; subst hr; exact hin
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       exacts [⟨R, hR, w_st.trans hX⟩, ⟨R, hR, w_ks.trans hX⟩]
+
+theorem kabs_tr {Φ : Lay → Mem → State → Prop} (hΦ : ∀ L m t, Φ L m t → EOk p L) {src len pos : Arg}
+    (hok : (absArgs p src len pos).all Arg.ok = true) (dp : Lay → Addr) (n q : Lay → Nat)
+    (hv : ∀ (L : Lay) g mx m (t : State), L.Ok → Ctx L g mx m t → Φ L m t →
+      src.val t = dp L ∧ len.val t = BitVec.ofNat 64 (n L) ∧ pos.val t = BitVec.ofNat 64 (q L))
+    (hs : ∀ L : Lay, L.Ok → q L < 136 ∧ n L < 2 ^ 64 ∧ (∃ R ∈ L.rd ++ L.FR :: L.wr, Within ⟨dp L, n L⟩ R) ∧
+      Region.Disjoint ⟨dp L, n L⟩ ⟨L.ST, 200⟩ ∧ Region.Disjoint ⟨dp L, n L⟩ ⟨L.KS, 640⟩ ∧
+      Region.Disjoint ⟨L.B, 40⟩ ⟨dp L, n L⟩) :
+    RelCT isa (Two I Φ) (kabs p src len pos) fun _ _ => True :=
+  kabs_tr_of hΦ hok dp n q hv fun L _ _ hL _ => hs L hL
 
 theorem kpad_tr {Φ : Lay → Mem → State → Prop} (hΦ : ∀ L m t, Φ L m t → EOk p L) {pos : Arg}
     (hok : (padArgs p pos).all Arg.ok = true) (q : Lay → Nat)
@@ -138,7 +150,7 @@ theorem kpad_tr {Φ : Lay → Mem → State → Prop} (hΦ : ∀ L m t, Φ L m t
   refine call_tr hok Proof.Sha3.X86_64.Stream.Pad.pad_correct Proof.Sha3.X86_64.Stream.Pad.pad_ct
     (fun _ => []) (fun L => [⟨L.ST, 200⟩, ⟨L.KS, 640⟩])
     (fun L g mx m₀ t t1 hL hc hφ hm => pad_pre (args L g mx m₀ t t1 hL hc hφ hm))
-    (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL _ c₁ c₂ φ₁ φ₂ f₁ f₂ => ?_) fun L _ _ _ _ hL _ _ => ?_
+    (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL _ c₁ c₂ φ₁ φ₂ f₁ f₂ => ?_) fun L _ _ m₀ t hL _ hφ => ?_
   · have x := args L g₁ mx₁ m₁ a a1 hL c₁ φ₁ f₁
     have y := args L g₂ mx₂ m₂ b b1 hL c₂ φ₂ f₂
     simp only [Proof.Sha3.padX86_64, gpr_ce _ _ _ (by decide : Reg.rdi ≠ .rsp),
@@ -169,7 +181,7 @@ theorem ksqz_tr {Φ : Lay → Mem → State → Prop} (hΦ : ∀ L m t, Φ L m t
   refine call_tr hok Proof.Sha3.X86_64.Stream.Squeeze.squeeze_correct
     Proof.Sha3.X86_64.Stream.Squeeze.squeeze_ct (fun _ => []) (fun L => [⟨L.ST, 200⟩, ⟨L.MU, 64⟩, ⟨L.KS, 640⟩])
     (fun L g mx m₀ t t1 hL hc hφ hm => squeeze_pre (args L g mx m₀ t t1 hL hc hφ hm))
-    (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL _ c₁ c₂ φ₁ φ₂ f₁ f₂ => ?_) fun L _ _ _ _ hL _ _ => ?_
+    (fun L g₁ g₂ mx₁ mx₂ m₁ m₂ a b a1 b1 hL _ c₁ c₂ φ₁ φ₂ f₁ f₂ => ?_) fun L _ _ m₀ t hL _ hφ => ?_
   · have x := args L g₁ mx₁ m₁ a a1 hL c₁ φ₁ f₁
     have y := args L g₂ mx₂ m₂ b b1 hL c₂ φ₂ f₂
     simp only [Proof.Sha3.squeezeX86_64, gpr_ce _ _ _ (by decide : Reg.rdi ≠ .rsp),
@@ -226,26 +238,30 @@ abbrev qCtx (L : Lay) : Nat := (66 + L.ctxLen.toNat) % 136
 /-- The position after the message. -/
 abbrev qMsg (L : Lay) : Nat := (qCtx L + L.len.toNat) % 136
 
-theorem muHash_tr (hE : oE p + 1024 < 2 ^ 31) {Φ : Lay → Mem → State → Prop}
-    (hΦ : ∀ L m t, Φ L m t → EOk p L) {tr : Arg} (hok : tr.ok = true) (trp : Lay → Addr)
+/-- `muHash`, with `tr` where a property `G` of the layout, which the runs
+keep, says it is. -/
+theorem muHash_tr_of (hE : oE p + 1024 < 2 ^ 31) {Φ : Lay → Mem → State → Prop} {G : Lay → Prop}
+    (hΦ : ∀ L m t, Φ L m t → EOk p L ∧ G L) {tr : Arg} (hok : tr.ok = true) (trp : Lay → Addr)
     (htr : ∀ (L : Lay) g mx m (t : State), Ctx L g mx m t → EOk p L → tr.val t = trp L)
-    (hs : ∀ L : Lay, L.Ok → (∃ R ∈ L.rd ++ L.FR :: L.wr, Within ⟨trp L, 64⟩ R) ∧
+    (hs : ∀ L : Lay, L.Ok → G L → (∃ R ∈ L.rd ++ L.FR :: L.wr, Within ⟨trp L, 64⟩ R) ∧
       Region.Disjoint ⟨trp L, 64⟩ ⟨L.ST, 200⟩ ∧ Region.Disjoint ⟨trp L, 64⟩ ⟨L.KS, 640⟩ ∧
       Region.Disjoint ⟨L.B, 40⟩ ⟨trp L, 64⟩) :
     RelCT isa (Two I Φ) (muHash p tr) fun _ _ => True := by
   -- The relation keeps only `EOk` and the position in `rax`.
   let Ψ : (Lay → Nat) → Lay → Mem → State → Prop := fun q L _ t => EOk p L ∧ (t.gpr .rax).toNat = q L
-  have z := two_wp (I := I) (Ψ := fun L _ _ => EOk p L) (zeroSt_tr hΦ)
-    fun L g mx m₀ t hL hc hφ => WP.mono (zeroSt_ok hL (hΦ L m₀ t hφ) hc) fun t' ⟨hc', _⟩ => ⟨hc', hΦ L m₀ t hφ⟩
+  have z := two_wp (I := I) (Ψ := fun L _ _ => EOk p L ∧ G L) (zeroSt_tr fun L m t h => (hΦ L m t h).1)
+    fun L g mx m₀ t hL hc hφ => WP.mono (zeroSt_ok hL (hΦ L m₀ t hφ).1 hc) fun t' ⟨hc', _⟩ =>
+      ⟨hc', hΦ L m₀ t hφ⟩
   have a1 := two_wp (I := I) (Ψ := Ψ fun _ => 64)
-    (kabs_tr (Φ := fun L _ _ => EOk p L) (fun _ _ _ h => h) (absOk' hE hok rfl rfl) trp (fun _ => 64)
-      (fun _ => 0) (fun L g mx m t _ hc hφ => ⟨htr L g mx m t hc hφ, rfl, rfl⟩)
-      fun L hL => ⟨by decide, by decide, (hs L hL).1, (hs L hL).2.1, (hs L hL).2.2.1, (hs L hL).2.2.2⟩)
+    (kabs_tr_of (Φ := fun L _ _ => EOk p L ∧ G L) (fun _ _ _ h => h.1) (absOk' hE hok rfl rfl) trp (fun _ => 64)
+      (fun _ => 0) (fun L g mx m t _ hc hφ => ⟨htr L g mx m t hc hφ.1, rfl, rfl⟩)
+      fun L _ _ hL hG => ⟨by decide, by decide, (hs L hL hG.2).1, (hs L hL hG.2).2.1, (hs L hL hG.2).2.2.1,
+        (hs L hL hG.2).2.2.2⟩)
     fun L g mx m₀ t hL hc hφ => by
-      obtain ⟨a, b, c, d⟩ := hs L hL
-      exact WP.mono (kabs_ok hL hφ hc (src := tr) (len := .imm 64) (pos := .imm 0) (n := 64) (q := 0)
-        (absOk' hE hok rfl rfl) (htr L g mx m₀ t hc hφ) rfl rfl (by decide)
-        (by decide) a b c d) fun t' ⟨hc', _, _, hx⟩ => ⟨hc', hφ, hx⟩
+      obtain ⟨a, b, c, d⟩ := hs L hL hφ.2
+      exact WP.mono (kabs_ok hL hφ.1 hc (src := tr) (len := .imm 64) (pos := .imm 0) (n := 64) (q := 0)
+        (absOk' hE hok rfl rfl) (htr L g mx m₀ t hc hφ.1) rfl rfl (by decide)
+        (by decide) a b c d) fun t' ⟨hc', _, _, hx⟩ => ⟨hc', hφ.1, hx⟩
   have a2 := two_wp (I := I) (Φ := Ψ fun _ => 64) (Ψ := Ψ fun _ => 66)
     (kabs_tr (src := .sp) (len := .imm 2) (pos := .imm 64) (fun _ _ _ h => h.1) (absOk' hE rfl rfl rfl) (fun L => L.SP) (fun _ => 2) (fun _ => 64)
       (fun L g mx m t _ hc _ => ⟨hc.rsp, rfl, rfl⟩) fun L hL => hdrSide hL)
@@ -296,45 +312,14 @@ theorem muHash_tr (hE : oE p + 1024 < 2 ^ 31) {Φ : Lay → Mem → State → Pr
   exact RelCT.seq (RelCT.mono z (fun a b h => h) fun _ _ h => h)
     (a1.seq (a2.seq (a3.seq (a4.seq (pd'.seq sq)))))
 
-theorem trHash_tr (hE : oE p + 1024 < 2 ^ 31) (hk : p.pkLen < 2 ^ 31) {Φ : Lay → Mem → State → Prop}
-    (hΦ : ∀ L m t, Φ L m t → EOk p L ∧ L.keyLen = p.pkLen) :
-    RelCT isa (Two I Φ) (trHash p) fun _ _ => True := by
-  have keySide : ∀ L : Lay, L.Ok → 0 < 136 ∧ L.keyLen < 2 ^ 64 ∧
-      (∃ R ∈ L.rd ++ L.FR :: L.wr, Within ⟨L.key, L.keyLen⟩ R) ∧
-      Region.Disjoint ⟨L.key, L.keyLen⟩ ⟨L.ST, 200⟩ ∧ Region.Disjoint ⟨L.key, L.keyLen⟩ ⟨L.KS, 640⟩ ∧
-      Region.Disjoint ⟨L.B, 40⟩ ⟨L.key, L.keyLen⟩ := fun L hL =>
-    ⟨by decide, by have := hL.hKey.2; omega_arith, ⟨L.KEY, List.mem_append_left _ hL.inKey, within_self _⟩,
-      by have := hL.x_r hL.xKey (e := 0) (k := 200) (by decide); simpa only [x0] using this.symm,
-      (hL.x_r hL.xKey (e := 200) (k := 640) (by decide)).symm,
-      hL.kKey.sub_left (Region.sub_prefix (by decide))⟩
-  have z := two_wp (I := I) (Ψ := fun L _ _ => EOk p L ∧ L.keyLen = p.pkLen)
-    (zeroSt_tr fun L m t h => (hΦ L m t h).1)
-    fun L g mx m₀ t hL hc hφ => WP.mono (zeroSt_ok hL (hΦ L m₀ t hφ).1 hc) fun t' ⟨hc', _⟩ => ⟨hc', hΦ L m₀ t hφ⟩
-  have a1 := two_wp (I := I) (Φ := fun L _ _ => EOk p L ∧ L.keyLen = p.pkLen) (Ψ := fun L _ _ => EOk p L)
-    (kabs_tr (src := .slot fKey) (len := .imm p.pkLen) (pos := .imm 0) (fun _ _ _ h => h.1)
-      (absOk' hE (by decide) (by simp [Arg.ok]; omega_arith) rfl) (fun L => L.key) (fun L => L.keyLen) (fun _ => 0)
-      (fun L g mx m t _ hc hφ => ⟨by rw [hc.slot, fKey, hc.pKey], by rw [hφ.2]; rfl, rfl⟩) keySide)
-    fun L g mx m₀ t hL hc hφ => by
-      obtain ⟨a, b, c, d, e, f⟩ := keySide L hL
-      exact WP.mono (kabs_ok hL hφ.1 hc (src := .slot fKey) (len := .imm p.pkLen) (pos := .imm 0)
-        (n := L.keyLen) (q := 0) (absOk' hE (by decide) (by simp [Arg.ok]; omega_arith) rfl)
-        (by rw [hc.slot, fKey, hc.pKey]) (by rw [hφ.2]; rfl) rfl a b c d e f)
-        fun t' ⟨hc', _⟩ => ⟨hc', hφ.1⟩
-  have pd := kpad_tr (I := I) (Φ := fun L _ _ => EOk p L) (fun _ _ _ h => h) (pos := .imm (p.pkLen % 136)) (by
-      simp only [padArgs, Impl.MlDsa.X86_64.Message.aSt, Impl.MlDsa.X86_64.Message.aKs, List.all_cons,
-        List.all_nil, Arg.ok, fScr, Bool.and_true, Bool.and_eq_true, decide_eq_true_eq]
-      omega_arith) (fun _ => p.pkLen % 136) (fun _ _ _ _ _ _ _ _ => rfl) fun _ _ => Nat.mod_lt _ (by decide)
-  have pd' := two_wp (I := I) (Φ := fun L _ _ => EOk p L) (Ψ := fun L _ _ => EOk p L) pd
-    fun L g mx m₀ t hL hc hφ => WP.mono (kpad_ok hL hφ hc (pos := .imm (p.pkLen % 136)) (by
-      simp only [padArgs, Impl.MlDsa.X86_64.Message.aSt, Impl.MlDsa.X86_64.Message.aKs, List.all_cons,
-        List.all_nil, Arg.ok, fScr, Bool.and_true, Bool.and_eq_true, decide_eq_true_eq]
-      omega_arith) rfl (Nat.mod_lt _ (by decide))) fun t' ⟨hc', _⟩ => ⟨hc', hφ⟩
-  have sq := ksqz_tr (I := I) (Φ := fun L _ _ => EOk p L) (fun _ _ _ h => h) (by
-    simp only [sqzArgs, Impl.MlDsa.X86_64.Message.aSt, Impl.MlDsa.X86_64.Message.aMu,
-      Impl.MlDsa.X86_64.Message.aKs, List.all_cons, List.all_nil, Arg.ok, fScr, Bool.and_true,
-      Bool.and_eq_true, decide_eq_true_eq]
-    omega_arith)
-  exact RelCT.seq (RelCT.mono z (fun a b h => h) fun _ _ h => h) (a1.seq (pd'.seq sq))
+theorem muHash_tr (hE : oE p + 1024 < 2 ^ 31) {Φ : Lay → Mem → State → Prop}
+    (hΦ : ∀ L m t, Φ L m t → EOk p L) {tr : Arg} (hok : tr.ok = true) (trp : Lay → Addr)
+    (htr : ∀ (L : Lay) g mx m (t : State), Ctx L g mx m t → EOk p L → tr.val t = trp L)
+    (hs : ∀ L : Lay, L.Ok → (∃ R ∈ L.rd ++ L.FR :: L.wr, Within ⟨trp L, 64⟩ R) ∧
+      Region.Disjoint ⟨trp L, 64⟩ ⟨L.ST, 200⟩ ∧ Region.Disjoint ⟨trp L, 64⟩ ⟨L.KS, 640⟩ ∧
+      Region.Disjoint ⟨L.B, 40⟩ ⟨trp L, 64⟩) :
+    RelCT isa (Two I Φ) (muHash p tr) fun _ _ => True :=
+  muHash_tr_of hE (G := fun _ => True) (fun L m t h => ⟨hΦ L m t h, trivial⟩) hok trp htr fun L hL _ => hs L hL
 
 end
 
