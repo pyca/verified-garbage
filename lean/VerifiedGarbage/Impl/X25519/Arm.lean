@@ -41,6 +41,14 @@ The arithmetic (registers `r1`–`r9`; `r6` = `0xffff`, `r8` = 38):
   (`x < 2²⁵⁵ + 19`), then `x + 19 - 2²⁵⁵` selected with a mask if it is not
   negative.
 
+`vg_x25519_umaal` is the same code but for its multiplications (`mulUAt`),
+which use `umaal` (`hi:lo := n m + hi + lo`, the CPU feature `umaal`): the
+limbs of `[a]` and `[b]` are packed in pairs into eight 32-bit words each, at
+`acc + 64` and `acc + 96`; their 16-word product is computed row by row at
+`acc`, one `umaal` a word; `lo + 38 hi` takes eight more `umaal`s, by 38,
+leaving eight words and a carry `c ≤ 38`; and the limbs of those words' halves
+plus `38 c` are stored at `o` by `pass` and `tail`, as `mul` stores its own.
+
 The ladder follows RFC 7748 §5 operation by operation (with `a24 · E` a
 multiplication by the constant element `A24`), over the bits of the scalar
 from 254 down to 0 (the counter `r11`, which indexes `BITS`; `swap` in
@@ -156,6 +164,57 @@ def mulAt (acc o a b : Nat) : Prog isa :=
 /-- `[o] = [a] · [b]`, with the product in `ACC`. -/
 abbrev mul (o a b : Nat) : Prog isa := mulAt ACC o a b
 
+/-! ### Multiplication with `umaal`
+
+The product's 16 words are at `acc`, and the packed operands at `acc + 64`
+and `acc + 96`. -/
+
+/-- Limbs `2k` and `2k + 1` of `[a]` as word `k` of `[d]`. -/
+def uPackStep (d a k : Nat) : List Instr :=
+  [.ldr .r3 .r0 (a + 8 * k), .ldr .r4 .r0 (a + 8 * k + 4), .dp .add .r3 .r3 (.shifted .r4 .lsl 16),
+    .str .r3 .r0 (d + 4 * k)]
+
+/-- The limbs of `[a]` packed into eight words at `[d]`. -/
+def uPack (d a : Nat) : List Instr := (List.range 8).flatMap (uPackStep d a)
+
+/-- Word `j` of row `i` (`r7` = the base plus `4 i`, word `i` of `[a]` in
+`r1`, the carry in `r5`): `r5:acc[i + j] = a_i b_j + acc[i + j] + r5`. -/
+def uRowStep (acc j : Nat) : List Instr :=
+  [.ldr .r2 .r0 (acc + 96 + 4 * j), .ldr .r3 .r7 (acc + 4 * j), .umaal .r3 .r5 .r1 .r2,
+    .str .r3 .r7 (acc + 4 * j)]
+
+/-- Row `i` of the product: `acc[i, i + 9) = acc[i, i + 8) + a_i · b`. -/
+def uRow (acc : Nat) : List Instr :=
+  [.ldr .r1 .r7 (acc + 64), .mov .r5 (.imm 0)] ++ (List.range 8).flatMap (uRowStep acc) ++
+    [.str .r5 .r7 (acc + 32), .dp .add .r7 .r7 (.imm 4), .subs .r9 .r9 (.imm 1)]
+
+/-- Word `k` of `lo + 38 hi`: `r5:acc[k] = 38 acc[8 + k] + acc[k] + r5`. -/
+def uFoldStep (acc k : Nat) : List Instr :=
+  [.ldr .r3 .r0 (acc + 4 * k), .ldr .r2 .r0 (acc + 32 + 4 * k), .umaal .r3 .r5 .r2 .r8,
+    .str .r3 .r0 (acc + 4 * k)]
+
+/-- `lo + 38 hi` into `acc[0, 8)` and the carry `c` in `r5`, then `38 c` into
+`r9` and no carry in `r5`. -/
+def uFold (acc : Nat) : List Instr :=
+  .mov .r5 (.imm 0) :: (List.range 8).flatMap (uFoldStep acc) ++ [.mul .r9 .r5 .r8, .mov .r5 (.imm 0)]
+
+/-- Limb `k` of the folded words (half `k % 2` of `acc[k / 2]`), plus `38 c`
+for limb 0, into `r3`. -/
+def uHalf (acc k : Nat) : List Instr :=
+  .ldr .r3 .r0 (acc + 4 * (k / 2)) ::
+    (if k % 2 = 0 then [.dp .and .r3 .r3 (.reg .r6)] else [.mov .r3 (.shifted .r3 .lsr 16)]) ++
+    (if k = 0 then [.dp .add .r3 .r3 (.reg .r9)] else [])
+
+/-- `[o] = [a] · [b]` (`o` may be `a` or `b`) with `umaal`, in `acc`. -/
+def mulUAt (acc o a b : Nat) : Prog isa :=
+  .seq (.block (prologue ++ zeroAcc acc ++ uPack (acc + 64) a ++ uPack (acc + 96) b ++
+      [.mov .r7 (.reg .r0), .mov .r9 (.imm 8)]))
+    (.seq (.loop (.block (uRow acc)) .ne)
+      (.block (uFold acc ++ pass .r0 o (uHalf acc) ++ tail o)))
+
+/-- `[o] = [a] · [b]` with `umaal`, in `ACC`. -/
+abbrev mulU (o a b : Nat) : Prog isa := mulUAt ACC o a b
+
 /-- Swaps limb `k` of `[x]` and `[y]` if the mask `r9` is all ones (and not
 if it is zero): `d = r9 ∧ (x ⊕ y)`, `x ⊕= d`, `y ⊕= d`. -/
 def cswapStep (x y k : Nat) : List Instr :=
@@ -176,9 +235,9 @@ def stepHead : List Instr :=
   [.dp .sub .r11 .r11 (.imm 1), .dp .add .r1 .r0 (.reg .r11), .ldrb .r1 .r1 BITS,
     .dp .eor .r10 .r10 (.reg .r1)] ++ mask ++ cswap X2 X3 ++ cswap Z2 Z3 ++ [.mov .r10 (.reg .r1)]
 
-/-- One iteration of the ladder: `stepHead`, then the formulas of RFC 7748 §5
-in order. -/
-def step : Prog isa :=
+/-- One iteration of the ladder, with the multiplication `mul`: `stepHead`,
+then the formulas of RFC 7748 §5 in order. -/
+def stepWith (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
   .seq (.block stepHead) <|
   .seq (.block (add A X2 Z2)) <| .seq (mul AA A A) <| .seq (.block (sub B X2 Z2)) <|
   .seq (mul BB B B) <| .seq (.block (sub E AA BB)) <| .seq (.block (add C X3 Z3)) <|
@@ -188,8 +247,8 @@ def step : Prog isa :=
   .seq (.block (add Z2 AA Z2)) <| .seq (mul Z2 E Z2) (.block [.cmp .r11 (.imm 0)])
 
 /-- The 255 iterations, for `t` from 254 down to 0, with `swap = 0`. -/
-def ladder : Prog isa :=
-  .seq (.block [.mov .r11 (.imm 255), .mov .r10 (.imm 0)]) (.loop step .ne)
+def ladderWith (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq (.block [.mov .r11 (.imm 255), .mov .r10 (.imm 0)]) (.loop (stepWith mul) .ne)
 
 /-- The swap after the loop. -/
 def lastSwap : List Instr := mask ++ cswap X2 X3 ++ cswap Z2 Z3
@@ -203,13 +262,14 @@ down to 0 (`t = r10 - 1`): `R = R²`, then `R = R · Z2` unless `t` is 4 or 2. -
 def one : List Instr :=
   [.mov .r1 (.imm 1), .mov .r2 (.imm 0), .str .r1 .r0 R] ++ storeN .r2 (R + 4) 15
 
-def invStep : Prog isa :=
+def invStepWith (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
   .seq (.block [.dp .sub .r10 .r10 (.imm 1)]) <| .seq (mul R R R) <|
   .seq (.block [.cmp .r10 (.imm 4)]) <|
   .seq (.ite .eq (.block []) (.seq (.block [.cmp .r10 (.imm 2)]) (.ite .eq (.block []) (mul R R Z2))))
     (.block [.cmp .r10 (.imm 0)])
 
-def invert : Prog isa := .seq (.block (one ++ [.mov .r10 (.imm 255)])) (.loop invStep .ne)
+def invertWith (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq (.block (one ++ [.mov .r10 (.imm 255)])) (.loop (invStepWith mul) .ne)
 
 /-! ## Encoding and decoding -/
 
@@ -283,8 +343,15 @@ def bits : Prog isa :=
 
 def restore : List Instr := (List.range 8).flatMap fun i => [.ldr (savedReg i) .r0 (4 * i)]
 
-def x25519 : Prog isa :=
-  .seq (.block setup) <| .seq bits <| .seq ladder <| .seq (.block lastSwap) <|
-    .seq invert <| .seq (mul X2 X2 R) (.block (freeze ++ restore))
+/-- The function, with the multiplication `mul`. -/
+def x25519With (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq (.block setup) <| .seq bits <| .seq (ladderWith mul) <| .seq (.block lastSwap) <|
+    .seq (invertWith mul) <| .seq (mul X2 X2 R) (.block (freeze ++ restore))
+
+/-- `vg_x25519`. -/
+def x25519 : Prog isa := x25519With mul
+
+/-- `vg_x25519_umaal`. -/
+def x25519Umaal : Prog isa := x25519With mulU
 
 end VG.Impl.X25519.Arm

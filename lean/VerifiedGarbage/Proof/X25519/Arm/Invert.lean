@@ -108,14 +108,18 @@ theorem Cur.congr {s0 s : State} {a c : BitVec 32} {qs qs' : List Nat} {v w : Na
     (h : Cur b s0 a c qs v s) (hq : ∀ q ∈ qs', q ∈ qs) (hv : ∀ q ∈ qs', v q = w q) : Cur b s0 a c qs' w s :=
   ⟨h.ctx, h.stp, h.r10, h.r11, (h.slots.mono hq).congr hv⟩
 
+section
+variable {M : Nat → Nat → Nat → Prog isa} (hM : MulOk ACC M)
+include hM
+
 theorem invStep_ok {sI : State} {c : BitVec 32} {v : Nat → Fe} {n : Nat} (hn : 1 ≤ n) (hn' : n ≤ 255)
     {s : State} (h : InvInv b sI c v n s) :
-    WP isa invStep s fun s' => InvInv b sI c v (n - 1) s' ∧ s'.z = decide (n - 1 = 0) := by
+    WP isa (invStepWith M) s fun s' => InvInv b sI c v (n - 1) s' ∧ s'.z = decide (n - 1 = 0) := by
   obtain ⟨hcur⟩ := h
   have hb := pbits (n - 1) (by omega_using [hn'])
   have he := shr_step (P - 2) (n - 1)
   rw [Nat.sub_add_cancel hn] at he
-  unfold invStep
+  unfold invStepWith
   refine WP.seq (wp_dp (op2_imm (by decide)) fun s1 u1 => WP.block_nil ?_)
   have h1 : Cur b sI (BitVec.ofNat 32 (n - 1)) c IQ (invV v n) s1 := by
     refine ⟨hcur.ctx.of_rest (u1.rest (ws := [.r10]) (by decide)) (by decide),
@@ -126,7 +130,7 @@ theorem invStep_ok {sI : State} {c : BitVec 32} {v : Nat → Fe} {n : Nat} (hn :
     apply BitVec.eq_of_toNat_eq
     have t1 : (1 : BitVec 32).toNat = 1 := rfl
     rw [toNat_sub_le (by rw [toNat_imm (by omega_using [hn']), t1]; omega_using [hn]), toNat_imm (by omega_using [hn']), toNat_imm (by omega_using [hn']), t1]
-  refine WP.seq (WP.mono (opMul (o := R) (x := R) (y := R) (by decide) (by decide) (by decide) (by decide) h1)
+  refine WP.seq (WP.mono (opMul hM (o := R) (x := R) (y := R) (by decide) (by decide) (by decide) (by decide) h1)
     fun s2 h2 => ?_)
   -- After the square.
   have hsq : ∀ q ∈ IQ, upd (invV v n) R (invV v n R * invV v n R) q =
@@ -161,7 +165,7 @@ theorem invStep_ok {sI : State} {c : BitVec 32} {v : Nat → Fe} {n : Nat} (hn :
         · subst hq; rw [upd_self, invV, upd_self, he, hb, iteT (.inr h2), Nat.add_zero]
         · rw [upd_of_ne _ _ hq, invV, upd_of_ne _ _ hq]
       · have h2 : n - 1 ≠ 2 := by rw [hz4'] at hf; simpa using hf
-        refine WP.mono (opMul (o := R) (x := R) (y := Z2) (by decide) (by decide) (by decide) (by decide) h4')
+        refine WP.mono (opMul hM (o := R) (x := R) (y := Z2) (by decide) (by decide) (by decide) (by decide) h4')
           fun s5 h5 => h5.congr (by decide) fun q _ => ?_
         by_cases hq : q = R
         · subst hq
@@ -173,9 +177,9 @@ theorem invStep_ok {sI : State} {c : BitVec 32} {v : Nat → Fe} {n : Nat} (hn :
 
 theorem invert_ok {c : BitVec 32} {v : Nat → Fe} {s : State} (hc : Ctx b s)
     (hS : SlotsOk s.mem (State.addr b) [Z2, X2] v) (h11 : s.gpr .r11 = c) :
-    WP isa Impl.X25519.Arm.invert s fun s' => Stp b s s' ∧ Ctx b s' ∧
+    WP isa (invertWith M) s fun s' => Stp b s s' ∧ Ctx b s' ∧
       SlotsOk s'.mem (State.addr b) IQ (upd v R (VG.Proof.X25519.pw (v Z2) (P - 2))) := by
-  unfold Impl.X25519.Arm.invert
+  unfold invertWith
   refine WP.seq ?_
   simp only [one, List.cons_append, List.nil_append]
   refine wp_mov (op2_imm (by decide)) fun s1 u1 => wp_mov (op2_imm (by decide)) fun s2 u2 => ?_
@@ -235,10 +239,12 @@ theorem invert_ok {c : BitVec 32} {v : Nat → Fe} {s : State} (hc : Ctx b s)
     fun s' ⟨h'⟩ => ⟨hst5.trans h'.stp, h'.ctx, h'.slots.congr fun q _ => by
       simp only [invV, Nat.shiftRight_zero]⟩
   rintro m s' ⟨h1, h2, hl⟩
-  refine WP.mono (invStep_ok h1 h2 hl) fun s'' ⟨hl', hz⟩ => ?_
+  refine WP.mono (invStep_ok hM h1 h2 hl) fun s'' ⟨hl', hz⟩ => ?_
   by_cases hm : m - 1 = 0
   · exact .inl ⟨by rw [eval_ne, hz]; simp [hm], by rw [hm] at hl'; exact hl'⟩
   · exact .inr ⟨by rw [eval_ne, hz]; simp [hm], m - 1, by omega_using [hm], by omega_using [hm], by omega_using [h2], hl'⟩
+
+end
 
 end
 

@@ -83,13 +83,28 @@ theorem frame_FA (_hA : acc + 128 ≤ 4096) {o : Nat} (ho : 64 ≤ o ∧ o + 64 
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl <;> exact Offset.sub _ (by omega_using [ho]) (by omega)
 
-theorem mulS (hA : acc + 128 ≤ 4096) {o x y : Nat} {qs : List Nat} {v : Nat → Fe}
-    (hq : Sep1 acc o qs = true)
+/-- `mul o x y` is a multiplication with its product at `acc`: `mul_ok`'s
+statement, which `mulAt acc` (`mulAt_mulOk`) and `vg_x25519_umaal`'s `mulUAt acc`
+meet. -/
+def MulOk (acc : Nat) (mul : Nat → Nat → Nat → Prog isa) : Prop :=
+  ∀ {e : Nat} {b : BitVec 32} {o x y : Nat}, o + 64 ≤ acc → x + 64 ≤ acc → y + 64 ≤ acc →
+    ∀ {s : State}, CtxN e b s → Lim s.mem (State.addr b) x → Lim s.mem (State.addr b) y →
+    WP isa (mul o x y) s fun s' =>
+      Rest clob s s' ∧
+      Frame [⟨State.addr b + BitVec.ofNat 64 o, 64⟩, ⟨State.addr b + BitVec.ofNat 64 acc, 128⟩] s.mem s'.mem ∧
+      Lim s'.mem (State.addr b) o ∧
+      V s'.mem (State.addr b) o % P = (V s.mem (State.addr b) x * V s.mem (State.addr b) y) % P
+
+theorem mulAt_mulOk (hA : acc + 128 ≤ 4096) : MulOk acc (mulAt acc) :=
+  fun ho hx hy _ hc hlx hly => mul_ok hA ho hx hy hc hlx hly
+
+theorem mulS (hA : acc + 128 ≤ 4096) {M : Nat → Nat → Nat → Prog isa} (hM : MulOk acc M) {o x y : Nat}
+    {qs : List Nat} {v : Nat → Fe} (hq : Sep1 acc o qs = true)
     (ho : 64 ≤ o ∧ o + 64 ≤ acc) (hx : x ∈ qs) (hy : y ∈ qs) {s : State} (hc : CtxN e b s)
     (hS : SlotsOk s.mem (State.addr b) qs v) :
-    WP isa (mulAt acc o x y) s fun s' => Rest clob s s' ∧ Frame [FA acc b] s.mem s'.mem ∧
+    WP isa (M o x y) s fun s' => Rest clob s s' ∧ Frame [FA acc b] s.mem s'.mem ∧
       SlotsOk s'.mem (State.addr b) (o :: qs) (upd v o (v x * v y)) := by
-  refine WP.mono (mul_ok hA ho.2 (sep1_get hq hx).2.2 (sep1_get hq hy).2.2 hc (hS x hx).1 (hS y hy).1)
+  refine WP.mono (hM ho.2 (sep1_get hq hx).2.2 (sep1_get hq hy).2.2 hc (hS x hx).1 (hS y hy).1)
     fun s' ⟨hr, hf, hl, hv⟩ => ⟨hr, frame_FA hA ho hf, fun q hq' => ?_⟩
   by_cases hqo : q = o
   · subst hqo

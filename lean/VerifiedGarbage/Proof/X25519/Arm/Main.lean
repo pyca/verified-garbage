@@ -12,8 +12,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # X25519 on 32-bit ARM: the whole function
 
-`vg_x25519` writes `X25519(k, u)` to `out` (`x25519_correct`), restoring the
-callee-saved registers.
+`vg_x25519`, and `vg_x25519_umaal`, write `X25519(k, u)` to `out`
+(`x25519_correct`, for any multiplication that meets `mul_ok`'s statement,
+`MulOk`), restoring the callee-saved registers.
 -/
 
 @[expose] public section
@@ -117,21 +118,22 @@ theorem bytesAt_frame {m m' : Mem} {rs : List Region} (hf : Frame rs m m') {p : 
   have hi := List.mem_range.mp hi
   exact hf _ fun r hr hc => hd r hr _ (Offset.contains_base _ (by omega) (by omega)) hc
 
-theorem x25519_correct {s : State} (hp : XPre s) :
-    WP isa x25519 s fun s' => abiPreserved s s' ∧ x25519Arm.post s s' := by
+/-- `x25519With M`, for a multiplication `M`, writes `X25519(k, u)` to `out`. -/
+theorem x25519_correct {M : Nat → Nat → Nat → Prog isa} (hM : MulOk ACC M) {s : State} (hp : XPre s) :
+    WP isa (x25519With M) s fun s' => abiPreserved s s' ∧ x25519Arm.post s s' := by
   have hfit := hp.f3
   have hB : BITS = 1280 := rfl
   have hsc_in : (⟨State.addr (s.gpr .r1), 32⟩ : Region) ∈ s.rd ++ s.wr := by rw [hp.rd]; simp
-  unfold x25519
+  unfold x25519With
   refine WP.seq (WP.mono (setup_ok hp) fun s1 ⟨hc1, h12, h1, hsv1, hf1, hS1, hr1⟩ => ?_)
   refine WP.seq (WP.mono (bits_ok hc1 h1 hp.f1 (by rw [hr1.rd, hr1.wr]; exact hsc_in) hp.sc_ws)
     fun s2 ⟨hc2, hr2, hf2, hb2⟩ => ?_)
   have hS2 := hS1.bits (by decide) hf2
-  refine WP.seq (WP.mono (ladder_ok hc2 hb2 hS2) fun s3 ⟨hst3, hc3, h10, hS3⟩ => ?_)
+  refine WP.seq (WP.mono (ladder_ok hM hc2 hb2 hS2) fun s3 ⟨hst3, hc3, h10, hS3⟩ => ?_)
   refine WP.seq (WP.mono (lastSwap_ok hc3 (ladderAfter_swap_le _ _ (by decide)) h10 hS3)
     fun s4 ⟨hst4, hc4, hS4⟩ => ?_)
-  refine WP.seq (WP.mono (invert_ok hc4 (hS4.mono (by decide)) rfl) fun s5 ⟨hst5, hc5, hS5⟩ => ?_)
-  refine WP.seq (WP.mono (mulS (acc := ACC) (o := X2) (x := X2) (y := R) (by decide) (by decide) (by decide)
+  refine WP.seq (WP.mono (invert_ok hM hc4 (hS4.mono (by decide)) rfl) fun s5 ⟨hst5, hc5, hS5⟩ => ?_)
+  refine WP.seq (WP.mono (mulS (acc := ACC) (o := X2) (x := X2) (y := R) (by decide) hM (by decide) (by decide)
     (by decide) (by decide) hc5 hS5)
     fun s6 ⟨hr6, hf6, hS6⟩ => ?_)
   -- The registers and regions along the way.

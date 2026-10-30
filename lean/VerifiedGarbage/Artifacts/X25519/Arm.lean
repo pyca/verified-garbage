@@ -18,6 +18,16 @@ def artifacts : List Artifact := [
       square-and-multiply over the public bits of `p - 2`."]
     code := Impl.X25519.Arm.x25519
     verified := Proof.X25519.Arm.x25519_verified },
+  Spec.X25519.x25519Api.artifact Arm.target {
+    suffix := "_umaal"
+    notes := ["The same code as `vg_x25519` but for \
+      its field multiplications, which pack the sixteen 16-bit limbs of each operand into eight \
+      32-bit words, multiply them with one `umaal` per pair of words (`hi:lo = n * m + hi + lo`), \
+      reduce the 16-word product with eight more `umaal`s by 38 (`2^256 = 38` mod p), and store \
+      the result's halves as limbs again. The function saves `r4`–`r11` in `scratch`."]
+    code := Impl.X25519.Arm.x25519Umaal
+    verified := Proof.X25519.Arm.x25519Umaal_verified
+    features := ["umaal"] },
   Spec.X25519.x25519BaseApi.artifact Arm.target {
     notes := ["`X25519(k, 9)` is the u-coordinate \
       `(1 + y) / (1 - y)` of `[k] B` on edwards25519, `B` Ed25519's base point (RFC 7748 §4.1's \
