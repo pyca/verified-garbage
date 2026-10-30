@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.GetElem
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.Proof.Framework.X86.Call
 
 /-! # Public prime lengths and their bounds survive scratch arithmetic -/
 
@@ -20,17 +21,24 @@ public import VerifiedGarbage.Spec.Weierstrass
 namespace VG.Proof.Rsa.X86.CrtValuesRt
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Bignum.X86
 
+ /-- Room below `sp` for a call of `vg_rsa_keygen_inverse`: its twelve bytes of arguments, its
+ return address and the 36 bytes its contract keeps apart from the working space; and the
+ arguments below `2^32`. -/
+ def Room (sp : BitVec 32) (B : Addr) (Z : Nat) : Prop :=
+  52 ≤ sp.toNat ∧ sp.toNat + 68 ≤ 2 ^ 32 ∧ (⟨B, Z⟩ : Region).Disjoint (below sp 52)
+
  structure InvGate (args : Nat → BitVec 32) (base : Addr) (size P Q : Nat) (s : State) : Prop where
   nArg : CallArgument s base size 7 (args 7)
   pArg : CallArgument s base size 9 (args 9)
   qArg : CallArgument s base size 11 (args 11)
   pBound : P<256^(args 9).toNat
   qBound : Q<256^(args 11).toNat
+  room : Room (s.gpr .esp) base size
 
  theorem InvGate.keep {args : Nat → BitVec 32} {base : Addr} {size P Q : Nat} {s t : State} {regs : List Reg}
     (h : InvGate args base size P Q s) (K : Keeps regs s t) (sp : .esp∉regs)
     (O : Outside base 0 size s.mem t.mem) : InvGate args base size P Q t :=
-    ⟨h.nArg.keep K sp O,h.pArg.keep K sp O,h.qArg.keep K sp O,h.pBound,h.qBound⟩
+    ⟨h.nArg.keep K sp O,h.pArg.keep K sp O,h.qArg.keep K sp O,h.pBound,h.qBound,(K.1 .esp sp) ▸ h.room⟩
 
  theorem prime_bound {x bytes n : Nat} (hx : x<256^bytes) (hb : bytes≤4*n) : x<2^(32*n) := by
   have hp : 256^bytes≤256^(4*n) := Nat.pow_le_pow_right (by decide) hb

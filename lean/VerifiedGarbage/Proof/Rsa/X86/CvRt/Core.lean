@@ -2,12 +2,17 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.BatchLaw
 
 public import VerifiedGarbage.Proof.Rsa.X86.CvRt.Checks
+import VerifiedGarbage.Proof.Rsa.X86.CvInverseCall
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Div
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Word
+public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
+public import VerifiedGarbage.Proof.Rsa.X86.InvGate
+public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
+public import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.StackRange
 
 /-! # CRT parameter calculation at a run-time width: the divisions
 
@@ -166,7 +171,8 @@ def coreSlots : List Nat := [sOdd, sB, sC, sT, sPodd, sE1, sE2, sE3, sMask, sCy,
 theorem core_ok [VG.Proof.Rsa.X86.BatchLaw] {g : Geometry} {len : Nat} {s : State} (h : Start g len s) {args : Nat → BitVec 32}
     (gate : InvGate args g.base g.size g.P g.Q s) :
     WP isa core s fun t =>
-      Keep g.base (kw len) coreArrays coreSlots s.mem t.mem ∧
+      VG.Proof.RsaKeyGen.X86.KeyRuntime.OutsS g.base (s.gpr .esp)
+        (VG.Proof.Rsa.X86.Keys.ranges (kw len) coreArrays coreSlots) s.mem t.mem ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t ∧
       num t.mem g.base (kw len) aZero = 0 ∧
       ∃ X₁ X₂, (0 < g.P → X₁ = g.N / g.P ∧ X₂ = g.N % g.P) ∧ Computed g len X₁ X₂ t := by
@@ -181,11 +187,17 @@ theorem core_ok [VG.Proof.Rsa.X86.BatchLaw] {g : Geometry} {len : Nat} {s : Stat
   refine WP.mono (checksB_ok hb gb) fun c ⟨hc, kc, rc⟩ => ?_
   refine WP.seq (WP.mono (divP_ok hc) fun d ⟨hd, kd, rd⟩ => ?_)
   refine WP.mono (divQ_ok hd) fun t ⟨ht, kt, rt⟩ => ?_
-  have K : Keep g.base (kw len) coreArrays coreSlots s.mem t.mem :=
-    (ka.mono (by decide) (by decide)).trans ((kb.mono (by decide) (by decide)).trans
-      ((kc.mono (by decide) (by decide)).trans ((kd.mono (by decide) (by decide)).trans
-        (kt.mono (by decide) (by decide)))))
+  have spb : b.gpr .esp = s.gpr .esp := (rb.1 .esp (by decide)).trans (ra.1 .esp (by decide))
+  rw [spb] at kc
+  have K : VG.Proof.RsaKeyGen.X86.KeyRuntime.OutsS g.base (s.gpr .esp)
+      (VG.Proof.Rsa.X86.Keys.ranges (kw len) coreArrays coreSlots) s.mem t.mem :=
+    (VG.Proof.RsaKeyGen.X86.KeyRuntime.OutsS.of_outs
+      ((ka.mono (by decide) (by decide)).trans (kb.mono (by decide) (by decide)))).trans
+      ((kc.mono (ranges_sub (by decide) (by decide))).trans (VG.Proof.RsaKeyGen.X86.KeyRuntime.OutsS.of_outs
+        ((kd.mono (by decide) (by decide)).trans (kt.mono (by decide) (by decide)))))
   refine ⟨K, ra.trans ((rb.mono (by decide)).trans (rc.trans (rd.trans rt))), ?_, _, _, ha.division, ht⟩
-  rw [K.num (by decide) (by decide) (h.ws.ws.fit64 (by decide))]
+  rw [outsS_num K gate.room (by decide) (by decide)
+    (Nat.le_trans (VG.Proof.Rsa.X86.Keys.arr_end (by decide)) h.ws.ws.fits)
+    (by have := h.ws.ws.workspace.nowrap; omega)]
   exact h.zeros aZero (by decide)
 end VG.Proof.Rsa.X86.CrtValuesRt

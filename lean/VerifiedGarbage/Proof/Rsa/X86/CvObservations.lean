@@ -10,7 +10,7 @@ namespace VG.Proof.Rsa.X86.CrtValues
 open VG VG.X86
 open VG.Proof.Dsa.X86 (argumentPointer)
 
-theorem arguments_eq {s t : State} (h : (Spec.Rsa.crtValuesContract abi 20).pub s t) :
+theorem arguments_eq {s t : State} (h : (Spec.Rsa.crtValuesContract abi 52).pub s t) :
     s.gpr .esp = t.gpr .esp ∧ ∀ i < 16, arg s i = arg t i := by
   sig_pub [Spec.Rsa.crtValuesContract, Spec.Rsa.crtValuesSig, abi, argSlots, argVal, argBytes] at h
   sig_split h
@@ -22,7 +22,7 @@ theorem arguments_eq {s t : State} (h : (Spec.Rsa.crtValuesContract abi 20).pub 
     rcases cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-theorem modulus_eq {s t : State} (h : (Spec.Rsa.crtValuesContract abi 20).pub s t) :
+theorem modulus_eq {s t : State} (h : (Spec.Rsa.crtValuesContract abi 52).pub s t) :
     inputBytes (caller s) s.mem 0 = inputBytes (caller t) t.mem 0 := by
   have leak : (Spec.Rsa.bytesAt s.mem (argumentPointer s 6) (arg s 7).toNat).map (·.toNat) =
       (Spec.Rsa.bytesAt t.mem (argumentPointer t 6) (arg t 7).toNat).map (·.toNat) := by

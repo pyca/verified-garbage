@@ -7,7 +7,8 @@ public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
 public import VerifiedGarbage.Proof.Rsa.X86.InvStep
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Arrays
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.InvLoop
+public import VerifiedGarbage.Proof.Rsa.X86.CvInverseCall
+import VerifiedGarbage.Proof.RsaKeyGen.X86.KeyRuntime.InverseCall
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 public import VerifiedGarbage.Impl.Rsa.X86.GcdBatch
@@ -37,8 +38,16 @@ open VG.Proof.Weierstrass.X86.Inv (wordClob)
   zero : num s.mem base (kw len) aZero=0
   bank : bank s.mem base (kw len) 0=(Q,inverseM P,1,0)
 
+ /-- The arrays the inverse may change: its own, and the modulus `m` and `2^(32 w) - m`, which the
+ general inverse sets to 3 and `2^(32 w) - 3` where `m` is 1. -/
+ abbrev invOut : List Nat := invArrs ++ [aM, aNM]
+
+ /-- What the inverse leaves: its frame lets the stack below `esp` that the general inverse's call
+ uses change too. -/
  def InvPost (base : Addr) (size len P Q : Nat) (s t : State) : Prop :=
-  RtWs lay t base size len nArr ∧ Keep base (kw len) invArrs (invSlots ++ rtSlots) s.mem t.mem ∧
+  RtWs lay t base size len nArr ∧
+  VG.Proof.RsaKeyGen.X86.KeyRuntime.OutsS base (s.gpr .esp) (ranges (kw len) invOut (invSlots ++ rtSlots))
+    s.mem t.mem ∧
   Keeps wordClob s t ∧
   (1<inverseM P → num t.mem base (kw len) 1=Nat.gcd Q (inverseM P) ∧
    (inverseM P : Int)∣(num t.mem base (kw len) 3 : Int)*Q-num t.mem base (kw len) 1 ∧
@@ -50,15 +59,63 @@ open VG.Proof.Weierstrass.X86.Inv (wordClob)
   have O : Outside base 0 size s.mem t.mem := by rw [mem]; exact Outside.refl _ _ _ _
   exact ⟨h.ws.keep K di sp O,h.gate.keep K sp O,mem ▸ h.u,mem ▸ h.m,mem ▸ h.nm,mem ▸ h.zero,mem ▸ h.bank⟩
 
+ /-- What the call's setup leaves: the call's input, with the modulus 3 where it was 1. -/
+ theorem callSetup_ok {args : Nat → BitVec 32} {base : Addr} {size len P Q : Nat} {s : State}
+    (h : InvInput args base size len P Q s) :
+    WP isa VG.Impl.Rsa.X86.CrtValuesRt.callSetup s fun v =>
+      CallAt base size len (args 7).toNat v ∧ v.gpr .esp = s.gpr .esp ∧
+      Keep base (kw len) [1, aM, aNM] [VG.Impl.Rsa.X86.CrtValuesRt.sOne] s.mem v.mem ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp] s v ∧
+      num v.mem base (kw len) aM = (if inverseM P = 1 then 3 else inverseM P) ∧
+      num v.mem base (kw len) 0 = Q := by
+  have fit := fun j (hj : j < nArr) => h.ws.ws.fit64 (j := j) hj
+  have b := h.bank
+  simp only [bank, Prod.mk.injEq] at b
+  obtain ⟨b0, -, b2, b3⟩ := b
+  have odd : num s.mem base (kw len) aM % 2 = 1 := by rw [h.m]; unfold inverseM; omega
+  unfold VG.Impl.Rsa.X86.CrtValuesRt.callSetup
+  refine WP.seq (WP.mono (modulusAbove_ok h.ws (by decide) odd b2 h.zero) fun u ⟨hu, ku, ru, mu, vu, nu⟩ => ?_)
+  obtain ⟨a, ha, hka, LA⟩ := hu.lenArg
+  change kw a = kw len at hka
+  have ga : a = (args 7).toNat := by
+    have nArg := h.gate.nArg.keep ru (by decide) (VG.Proof.Rsa.X86.KeyRt.keep_outside h.ws.ws ku (by decide) (by decide))
+    have eq : BitVec.ofNat 32 a = args 7 := Option.some.inj (LA.readSrc.symm.trans nArg.readSrc)
+    have ae := congrArg BitVec.toNat eq
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at ae
+    exact ae
+  subst ga
+  unfold VG.Impl.Rsa.X86.CrtValuesRt.inverseArgs
+  refine VG.Proof.RsaKeyGen.X86.KeyRuntime.callSetup_ok (L := lay) LA.readSrc ha fun v Kv mv eax ecx => ?_
+  have hv : RtWs lay v base size len nArr :=
+    hu.keep Kv (by decide) (by decide) (by rw [mv]; exact Outside.refl _ _ _ _)
+  have espV : v.gpr .esp = s.gpr .esp := (Kv.1 .esp (by decide)).trans (ru.1 .esp (by decide))
+  have kept {j : Nat} (hj : j < nArr) (out : j ∉ [1, aM, aNM]) :
+      num v.mem base (kw len) j = num s.mem base (kw len) j := by
+    rw [mv]
+    exact ku.num (fun k hk e => out (e ▸ hk)) (by decide) (fit j hj)
+  have mV : num v.mem base (kw len) aM = (if inverseM P = 1 then 3 else inverseM P) := by rw [mv, mu, h.m]
+  refine ⟨⟨hv, espV ▸ h.gate.room, ha, hka, eax, ecx, ?_, ?_, by rw [mv]; exact vu,
+      by rw [kept (by decide) (by decide), b2], by rw [kept (by decide) (by decide), b3], by rw [mv]; exact nu,
+      by rw [kept (by decide) (by decide), h.zero]⟩, espV, mv ▸ ku, ru.trans (Kv.mono (by decide)), mV,
+    by rw [kept (by decide) (by decide), b0]⟩
+  · rw [mV]; unfold inverseM; split <;> omega
+  · rw [mV]; unfold inverseM; split <;> omega
+
  theorem inverseFallback_ok {args : Nat → BitVec 32} {base : Addr} {size len P Q : Nat} {s : State}
     (h : InvInput args base size len P Q s) :
-    WP isa (VG.Impl.Rsa.X86.KeyRt.inverse lay) s (InvPost base size len P Q s) := by
-  refine WP.mono (VG.Proof.Rsa.X86.KeyRt.inverse_ok h.ws (by decide)) fun t ⟨ht,K,R,I⟩ => ?_
-  refine ⟨ht,K.mono (by decide) (by decide),R.mono (by decide),?_⟩
-  intro large
-  have v := I (by rw [h.m,h.nm]) h.zero (by rw [h.m]; unfold inverseM; omega)
-    (by rw [h.m]; exact large) (by rw [h.bank,h.u,h.m])
-  simpa only [h.m,h.u] using v
+    WP isa VG.Impl.Rsa.X86.CrtValuesRt.fallback s (InvPost base size len P Q s) := by
+  unfold VG.Impl.Rsa.X86.CrtValuesRt.fallback
+  refine WP.seq (WP.mono (callSetup_ok h) fun v ⟨C, espV, kv, rv, mV, qV⟩ => ?_)
+  refine WP.mono (call_ok C) fun t ⟨ht, O, G, Bz, Lt, Kt⟩ => ?_
+  rw [espV] at O
+  refine ⟨ht, ?_, (rv.mono (by decide)).trans (Kt.mono (by decide)), ?_⟩
+  · exact (VG.Proof.RsaKeyGen.X86.KeyRuntime.OutsS.of_outs kv).mono (ranges_sub (by decide) (by decide)) |>.trans
+      (O.mono (ranges_sub (by decide) (by decide)))
+  · intro large
+    have mM : num v.mem base (kw len) aM = inverseM P := by rw [mV, ite_eq_right_iff.mpr (by omega)]
+    rw [mM, qV] at G Bz
+    rw [mM] at Lt
+    exact ⟨G, Bz, Lt⟩
 
  /-- The body's writes are within the inverse's arrays and the header words from 16 on. -/
  theorem body_keep {base : Addr} {len : Nat} {m m' : Mem} (hpos : 0 < kw len)
@@ -144,7 +201,8 @@ open VG.Proof.Weierstrass.X86.Inv (wordClob)
     fun t ⟨_, G, A, small, R, O⟩ => ?_
   have bankKeep := body_keep h.ws.ws.wpos O
   have outside := keep_outside h.ws.ws bankKeep (by decide) (by decide)
-  refine ⟨h.ws.keep R (by decide) (by decide) outside, bankKeep, R, ?_⟩
+  refine ⟨h.ws.keep R (by decide) (by decide) outside,
+    VG.Proof.RsaKeyGen.X86.KeyRuntime.OutsS.of_outs (bankKeep.mono (by decide) (by decide)), R, ?_⟩
   intro large
   have vm : VG.Proof.Rsa.X86.InvBatchRt.virtualMod (inverseM P) = inverseM P := by
     unfold VG.Proof.Rsa.X86.InvBatchRt.virtualMod; rw [ite_eq_right (by omega)]

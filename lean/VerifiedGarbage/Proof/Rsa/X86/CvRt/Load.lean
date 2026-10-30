@@ -51,8 +51,8 @@ structure Lengths (g : CallGeometry) : Prop where
   qiLen : g.args 5 = g.args 9
   scratch : g.args 14 = BitVec.ofNat 32 g.base.toNat
 
-theorem scratchFrame {g : CallGeometry} {s : State} {m : Mem} (h : Inputs g s)
-    (frame : Outside g.base 0 g.size s.mem m) : Frame g.writes s.mem m := by
+theorem scratchFrame {g : CallGeometry} {s : State} {m₀ m : Mem} (h : Inputs g s)
+    (frame : Outside g.base 0 g.size m₀ m) : Frame g.writes m₀ m := by
   have fit := h.ws.workspace.nowrap
   have f := outside_frame frame (by omega_arith)
   simpa only [off, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using
@@ -177,7 +177,7 @@ def arithmeticGeometry (g : CallGeometry) (m : Mem) : Geometry :=
 
 theorem inputsGate {g : CallGeometry} {s : State} (h : Inputs g s) (m : Mem) :
     InvGate g.args g.base g.size (arithmeticGeometry g m).P (arithmeticGeometry g m).Q s := by
-  refine ⟨h.arguments 7 (by decide),h.arguments 9 (by decide),h.arguments 11 (by decide),?_,?_⟩
+  refine ⟨h.arguments 7 (by decide),h.arguments 9 (by decide),h.arguments 11 (by decide),?_,?_,h.room⟩
   · have b := VG.Proof.Rsa.lt_of_os2ip (inputBytes g m 1)
     simpa [arithmeticGeometry,inputBytes,Spec.Rsa.bytesAt,CallGeometry.buffer] using b
   · have b := VG.Proof.Rsa.lt_of_os2ip (inputBytes g m 2)

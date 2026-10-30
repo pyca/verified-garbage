@@ -78,8 +78,8 @@ theorem operation_trace [VG.Proof.Rsa.X86.BatchLaw] {s t : State} (a : ABI s) (b
           have eq3 := (publicRestore_relCT _ _ _ _ _ _ next.workspace e3 f3).1
           rw [eq1, eq2, eq3]
 
-theorem constantTime [VG.Proof.Rsa.X86.BatchLaw] : ConstantTime isa (Spec.Rsa.crtValuesContract abi 20).pre
-    (Spec.Rsa.crtValuesContract abi 20).pub code := by
+theorem constantTime [VG.Proof.Rsa.X86.BatchLaw] : ConstantTime isa (Spec.Rsa.crtValuesContract abi 52).pre
+    (Spec.Rsa.crtValuesContract abi 52).pub code := by
   intro s t tr ur sf tf hs ht h es et
   have args := arguments_eq h
   exact operation_trace (abi_of hs) (abi_of ht) args.2 args.1 (modulus_eq h) es et

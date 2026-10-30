@@ -2,12 +2,15 @@ module
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Rsa.X86.InvTimeBase
 meta import VerifiedGarbage.Impl.Rsa.X86.InvBatchRt
+meta import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Rsa.X86.InvDispatch
+import VerifiedGarbage.Proof.Rsa.X86.CvInverseCall
 public import VerifiedGarbage.Proof.Rsa.X86.InvTimeCompare
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
-import VerifiedGarbage.Proof.Rsa.X86.InvTimeCheck
 public import VerifiedGarbage.Proof.Rsa.X86.InvGuard
 public import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.Comp
 import VerifiedGarbage.Proof.Rsa.X86.InvBatchRt.Time.TimeBody
@@ -47,6 +50,29 @@ theorem fits {args : Nat → BitVec 32} {base : Addr} {size len P Q : Nat} {s : 
   simp only [VG.Impl.Rsa.X86.Keys.hdr, VG.Impl.Rsa.X86.CrtValues.nArr, VG.Proof.Rsa.X86.Keys.S] at hf
   exact ⟨⟨by omega, by omega⟩, by omega, by omega⟩
 
+theorem setup_check :
+    ∃ hint, (VG.Taint.check sseTaint τ VG.Impl.Rsa.X86.CrtValuesRt.callSetup hint).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+/-- The general inverse: its setup by the taint analysis, the call by the callee's contract, from
+the same length argument in both runs. -/
+theorem fallback_relCT {args : Nat → BitVec 32} {base : Addr} {size len P Q P' Q' : Nat} {sp : BitVec 32} :
+    RelCT isa (fun s t => (InvInput args base size len P Q s ∧ Public args base size sp s) ∧
+      InvInput args base size len P' Q' t ∧ Public args base size sp t)
+      VG.Impl.Rsa.X86.CrtValuesRt.fallback (fun _ _ => True) := by
+  let F (v : State) : Prop := CallAt base size len (args 7).toNat v ∧ v.gpr .esp = sp
+  have setup : RelCT isa (fun s t => (InvInput args base size len P Q s ∧ Public args base size sp s) ∧
+      InvInput args base size len P' Q' t ∧ Public args base size sp t)
+      VG.Impl.Rsa.X86.CrtValuesRt.callSetup (fun _ _ => True) :=
+    RelCT.taint (A := sseTaint) τ (fun _ _ h => agree h.1.1.ws.ws.workspace h.2.1.ws.ws.workspace h.1.2 h.2.2)
+      setup_check.choose_spec
+  have ready {p q : Nat} {s : State} (h : InvInput args base size len p q s) (pub : Public args base size sp s) :
+      WP isa VG.Impl.Rsa.X86.CrtValuesRt.callSetup s F :=
+    WP.mono (callSetup_ok h) fun v ⟨C, e, _⟩ => ⟨C, e.trans pub.stack⟩
+  unfold VG.Impl.Rsa.X86.CrtValuesRt.fallback
+  refine RelCT.seq ((setup.wp (F₁ := F) (F₂ := F) (fun _ _ h => ⟨ready h.1.1 h.1.2, ready h.2.1 h.2.2⟩)).mono
+    (fun _ _ h => h) (fun _ _ h => h.2)) (call_trace base size len (args 7).toNat sp)
+
 theorem dispatch_relCT {args : Nat → BitVec 32} {base : Addr} {size len P Q P' Q' : Nat} {sp : BitVec 32} :
     RelCT isa (Pair args base size len P Q P' Q' sp) VG.Impl.Rsa.X86.CrtValuesRt.inverseChoice (fun _ _ => True) := by
   let F (p q : Nat) (u : State) := InvInput args base size len p q u ∧ Public args base size sp u ∧
@@ -70,7 +96,7 @@ theorem dispatch_relCT {args : Nat → BitVec 32} {base : Addr} {size len P Q P'
     refine ⟨(VG.Proof.Rsa.X86.InvBatchRt.Time.relBody (fits hs.1 good) _ _ _ _ _ _
       ⟨⟨hs.1.ws, by decide, ⟨hs.2.1.argsOk, hs.2.1.stack, hs.2.1.arguments⟩⟩,
         ⟨ht.1.ws, by decide, ⟨ht.2.1.argsOk, ht.2.1.stack, ht.2.1.arguments⟩⟩⟩ es et).1, trivial⟩
-  · exact (RelCT.taint (A := sseTaint) τ (fun _ _ h => agree h.1.1.1.ws.ws.workspace h.1.2.1.ws.ws.workspace
-      h.1.1.2.1 h.1.2.2.1) fallback_check.choose_spec).mono (fun _ _ h => h) (fun _ _ _ => trivial)
+  · exact (fallback_relCT (args := args) (base := base) (size := size) (len := len) (sp := sp)).mono
+      (fun _ _ h => ⟨⟨h.1.1.1, h.1.1.2.1⟩, h.1.2.1, h.1.2.2.1⟩) (fun _ _ h => h)
 
 end VG.Proof.Rsa.X86.InvTiming

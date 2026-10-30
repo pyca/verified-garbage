@@ -37,17 +37,18 @@ open VG VG.X86 VG.X86.Spill VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Bignum hiding off Outside
 open VG.Proof.Bignum.X86 VG.Impl.Bignum.X86
 
-theorem bodyFrame_full {g : CallGeometry} {m m' : Mem} (low : 16 ≤ g.size)
-    (f : Frame (bodyWrites g) m m') : Frame g.writes m m' := by
+theorem bodyFrame_full {g : CallGeometry} {m m' : Mem} {b : Region} (low : 16 ≤ g.size)
+    (f : Frame (bodyWrites g ++ [b]) m m') : Frame (g.writes ++ [b]) m m' := by
   apply f.sub
   intro r hr
-  simp only [bodyWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  simp only [bodyWrites, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+    or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact ⟨⟨g.base, g.size⟩, by simp [CallGeometry.writes], Offset.sub_base _ (by omega)⟩
   all_goals exact ⟨_, by simp [CallGeometry.writes], fun _ h => h⟩
 
 theorem bodyFrame_saved {g : CallGeometry} {s : State} {m m' : Mem} {regs : Reg → BitVec 32}
-    (h : Inputs g s) (f : Frame (bodyWrites g) m m')
+    (h : Inputs g s) (f : Frame (bodyWrites g ++ [below (s.gpr .esp) 52]) m m')
     (saved : Saved m (off g.base) regs PublicFn.savedRegisters) :
     Saved m' (off g.base) regs PublicFn.savedRegisters := by
   have low : 16 ≤ g.size := by have := h.ws.hdr_le; unfold VG.Impl.Rsa.X86.Keys.hdr at this; omega
@@ -58,12 +59,14 @@ theorem bodyFrame_saved {g : CallGeometry} {s : State} {m m' : Mem} {regs : Reg 
     rcases hp with rfl | rfl | rfl | rfl <;> decide
   refine (f.readW (r := ⟨g.base, 16⟩) (Offset.contains_base _ bound (by omega)) ?_ (by decide)).trans (saved p hp)
   intro r hr
-  simp only [bodyWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  simp only [bodyWrites, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+    or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact Offset.base_disjoint g.base (Nat.le_refl 16) (by omega)
   · exact (h.outputScratch 0).symm.sub_left (Region.sub_prefix low)
   · exact (h.outputScratch 1).symm.sub_left (Region.sub_prefix low)
   · exact (h.outputScratch 2).symm.sub_left (Region.sub_prefix low)
+  · exact h.room.2.2.sub_left (Region.sub_prefix low)
 
 theorem calculated_entry {s t : State} (a : ABI s)
     (o : Outside (caller s).base 0 (caller s).size s.mem t.mem) :
@@ -99,12 +102,18 @@ theorem operation_ok [VG.Proof.Rsa.X86.BatchLaw] {s : State} (a : ABI s) :
   refine WP.seq (WP.mono (installed_ok a) fun u ⟨inputs, saved, k, o⟩ => ?_)
   refine WP.seq (WP.mono (body_ok inputs a.lengths_ok) fun v ⟨iv, written, frame, kv⟩ => ?_)
   have saveV := bodyFrame_saved inputs frame saved
-  have whole : Frame (caller s).writes s.mem v.mem := by
+  have espU : u.gpr .esp = s.gpr .esp := k.1 .esp (by decide)
+  rw [espU] at frame
+  have whole : Frame ((caller s).writes ++ [below (s.gpr .esp) 52]) s.mem v.mem := by
     have start := outside_frame o (by omega)
     simp only [off, BitVec.add_zero] at start
     exact (start.mono (by simp [CallGeometry.writes])).trans (bodyFrame_full low frame)
-  have ret : v.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 :=
-    whole.readW (Region.contains_self _ 4) a.retApart (by decide)
+  have ret : v.mem.readW ((s.gpr .esp).setWidth 64) 32 = s.mem.readW ((s.gpr .esp).setWidth 64) 32 := by
+    refine whole.readW (Region.contains_self _ 4) (fun r hr => ?_) (by decide)
+    rcases List.mem_append.mp hr with hr | hr
+    · exact a.retApart r hr
+    · obtain rfl := List.mem_singleton.mp hr
+      exact a.retAbove
   refine WP.mono (entryRestore_ok iv.ws.workspace low saveV) fun t restored => ?_
   refine ⟨?_, publicRestored_abi restored ((kv.1 _ (by decide)).trans (k.1 _ (by decide))) ret⟩
   unfold Written at written ⊢
@@ -112,9 +121,9 @@ theorem operation_ok [VG.Proof.Rsa.X86.BatchLaw] {s : State} (a : ABI s) :
   rw [restored.mem, restored.other .eax (by decide)]
   exact written
 
-theorem correct [VG.Proof.Rsa.X86.BatchLaw] (s : State) (h : (Spec.Rsa.crtValuesContract abi 20).pre s) :
+theorem correct [VG.Proof.Rsa.X86.BatchLaw] (s : State) (h : (Spec.Rsa.crtValuesContract abi 52).pre s) :
     ∃ trace t, Exec isa code s trace t ∧ abiPreserved s t ∧
-      (Spec.Rsa.crtValuesContract abi 20).post s t := by
+      (Spec.Rsa.crtValuesContract abi 52).post s t := by
   have a := abi_of h
   obtain ⟨trace, t, run, written, preserved⟩ := operation_ok a
   refine ⟨trace, t, run, preserved, ?_⟩
@@ -165,7 +174,7 @@ def satState : State where
   rd := [⟨0x4000, 64⟩, ⟨0x5000, 32⟩, ⟨0x6000, 32⟩, ⟨0x7000, 64⟩]
   wr := [⟨0x1000, 32⟩, ⟨0x2000, 32⟩, ⟨0x3000, 32⟩, ⟨0x10000, 8448⟩, ⟨0x20004, 64⟩]
 
-theorem satisfiable : ∃ s, (Spec.Rsa.crtValuesContract abi 20).pre s := by
+theorem satisfiable : ∃ s, (Spec.Rsa.crtValuesContract abi 52).pre s := by
   have a0 : arg satState 0 = 4096 := by decide
   have a1 : arg satState 1 = 32 := by decide
   have a2 : arg satState 2 = 8192 := by decide
@@ -187,7 +196,7 @@ theorem satisfiable : ∃ s, (Spec.Rsa.crtValuesContract abi 20).pre s := by
   sig_implies_sat [Spec.Rsa.crtValuesContract, Spec.Rsa.crtValuesSig, abi, argSlots, argVal, argBytes, stackBelow]
     [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, e, esp, satState, Spec.Rsa.lenValid, Spec.Rsa.scratchWords] using satState
 
-theorem verified [VG.Proof.Rsa.X86.BatchLaw] : Verified target code (Spec.Rsa.crtValuesContract abi 20) :=
+theorem verified [VG.Proof.Rsa.X86.BatchLaw] : Verified target code (Spec.Rsa.crtValuesContract abi 52) :=
   ⟨correct, constantTime, satisfiable⟩
 
 end VG.Proof.Rsa.X86.CrtValues

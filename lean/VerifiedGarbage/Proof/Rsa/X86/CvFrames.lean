@@ -22,10 +22,10 @@ theorem Inputs.keepOutside {g : CallGeometry} {s : State} {m : Mem} {js ds : Lis
   apply keep.out (fun j hj' => h.ws.arr_fit (hj j hj')) (fun d hd' => Nat.le_trans (hd d hd') h.ws.hdr_le)
   omega
 
-theorem Inputs.keepBody {g : CallGeometry} {s : State} {m : Mem} {js ds : List Nat}
-    (h : Inputs g s) (keep : Keep g.base (2 * g.n) js ds s.mem m)
+theorem Inputs.keepBody {g : CallGeometry} {s : State} {m₀ m : Mem} {js ds : List Nat}
+    (h : Inputs g s) (keep : Keep g.base (2 * g.n) js ds m₀ m)
     (hj : ∀ j ∈ js, j < nArr) (hd : ∀ d ∈ ds, 16 ≤ d ∧ d + 4 ≤ hdr) :
-    Outside g.base 16 (g.size - 16) s.mem m := by
+    Outside g.base 16 (g.size - 16) m₀ m := by
   have header := h.ws.hdr_le
   intro a ha
   apply keep a

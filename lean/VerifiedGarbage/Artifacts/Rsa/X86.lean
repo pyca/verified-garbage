@@ -49,14 +49,15 @@ def artifacts : List Artifact := [
     stack := 20 },
   Spec.Rsa.crtValuesApi.artifact X86.target {
     notes := ["The modulus and prime lengths are public. Balanced 2048/3072/4096-bit keys use \
-      thirty-step batched inversion at the prime width; other lengths use the general inverse. \
+      thirty-step batched inversion at the prime width; other lengths call \
+      `vg_rsa_keygen_inverse`, the general binary inverse, at the modulus's width. \
       Each batch updates signed GCD rows and Montgomery-reduced coefficient rows. The shared \
       key-workspace carry chains process eight words per iteration, then scalar tails, preserving \
       carry between words. Private values select no branch. Callee-saved registers reside in scratch."]
     code := Impl.Rsa.X86.CrtValuesRt.code
     verified := Proof.Rsa.X86.CrtValues.verified
     spSafe := Proof.Rsa.X86.RtShape.crtValues_spSafe
-    stack := 20 },
+    stack := 52 },
   Spec.Rsa.privateCrtApi.artifact X86.target {
     notes := ["The modulus's length gives the numbers' width at run time; every Montgomery \
       multiplication calls `vg_rsa_mont_mul_at`. Each factor whose length (`p_len`, `q_len`) fits half \

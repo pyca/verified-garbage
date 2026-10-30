@@ -17,7 +17,7 @@ open VG.Impl.Rsa.X86.CrtValuesRt (lay)
 
  theorem inverseDispatch_ok [VG.Proof.Rsa.X86.BatchLaw] {args : Nat → BitVec 32} {base : Addr} {size len P Q : Nat} {s : State}
     (h : InvInput args base size len P Q s) :
-    WP isa (VG.Impl.Rsa.X86.InvBatchRt.dispatch lay (VG.Impl.Rsa.X86.KeyRt.inverse lay)) s
+    WP isa (VG.Impl.Rsa.X86.InvBatchRt.dispatch lay VG.Impl.Rsa.X86.CrtValuesRt.fallback) s
       (InvPost base size len P Q s) := by
   unfold VG.Impl.Rsa.X86.InvBatchRt.dispatch
   refine WP.seq (WP.mono (guard_ok h) fun u g => ?_)
