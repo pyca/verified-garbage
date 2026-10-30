@@ -6,7 +6,8 @@ what they cost the build: a tool for speeding up proofs, not a CI check.
 literal of code (`materialize_code`, `Proof/Framework/Lit.lean`) only if the
 module sees it: imports it, or imports a module that `public import`s it.
 Otherwise the kernel builds the code again, from the functions that build
-it, in every check (CLAUDE.md, "Code without its literal").
+it, in every check (.agents/skills/proof-performance/SKILL.md, "Code
+without its literal").
 
 For each target, this runs `lean/CheckLitImports.lean` over the target's
 registration files (`Artifacts/`, `Generic/`, `Variants/`), which lists each
@@ -30,8 +31,8 @@ without, each with its `lit_eq` time and module:
           does not find (nested in code without a literal, or written with
           other arguments than the literal's).
 
-Measure every change as CLAUDE.md says ("Keeping proofs fast"); the times
-here only rank.
+Measure every change as .agents/skills/lean-profiling/SKILL.md says; the
+times here only rank.
 
   check_lit_imports.py [--target T ...] [-j N] [--min-kernel S]
                        [--min-literal S] [--top N] [--raw FILE]

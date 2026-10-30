@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Checks that the files reviewed by hand only bind (CLAUDE.md, "Adding a
-primitive", step 4). Exits non-zero on violations, naming each.
+"""Checks that the files reviewed by hand only bind (step 4 of
+.agents/skills/adding-a-primitive/SKILL.md). Exits non-zero on violations,
+naming each.
 
 Registration files (`Artifacts/`, `Generic/`) and variant files
 (`Variants/`) under lean/VerifiedGarbage/ state what an implementation
@@ -111,13 +112,13 @@ def problems(lean: pathlib.Path) -> list[str]:
             line = lambda i: code.count("\n", 0, i) + 1
             for m in THEOREM.finditer(code):
                 out.append(f"lean/{rel}:{line(m.start())}: a {m.group(1)} in a file reviewed by hand; "
-                           "prove it under `Proof/` (CLAUDE.md, \"Adding a primitive\")")
+                           "prove it under `Proof/` (.agents/skills/adding-a-primitive/SKILL.md)")
             for m in BY.finditer(code):
                 if m.group(1) in DEFAULTS and not rest_of_block(code, m.start(), m.end()):
                     continue
                 out.append(f"lean/{rel}:{line(m.start())}: a tactic proof in a file reviewed by hand; "
                            "make the side condition an `autoParam` of the lemma, or prove the "
-                           "instance under `Proof/` (CLAUDE.md, \"Adding a primitive\")")
+                           "instance under `Proof/` (.agents/skills/adding-a-primitive/SKILL.md)")
     return out
 
 
