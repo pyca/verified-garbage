@@ -640,6 +640,8 @@ mod tests {
         assert_eq!(new(&n, &[3], &[0, 0], &p, &q), bad);
         assert_eq!(new(&n, &[3], &[1; 65], &p, &q), bad);
         assert_eq!(new(&n, &[3], &[1], &[0; 3], &q), bad);
+        // `p = 1`, whose inverse modulus the general inverse makes 3.
+        assert_eq!(new(&n, &[3], &[1], &[0, 1], &q), bad);
         assert_eq!(new(&n, &[3], &[1], &n, &q), bad);
         assert_eq!(new(&n, &[3], &[1], &p, &[]), bad);
         assert_eq!(new(&n, &[3], &[1], &p, &n), bad);
