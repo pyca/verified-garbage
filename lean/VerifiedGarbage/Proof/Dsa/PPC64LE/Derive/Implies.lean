@@ -38,7 +38,7 @@ theorem deriveKey_implies : dContract.Implies (Spec.Dsa.deriveKeyContract abi) :
   sig_implies [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argRegs, dContract, dRes, stackArgs_one,
     List.append_eq, List.getD_cons_succ, List.getD_cons_zero, Sig.pairFacts, List.filterMap_cons,
     List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false, List.cons_append,
-    List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, pairFacts_two]
+    List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, pairFacts_two, List.range, List.range.loop]
     [deriveSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using deriveSatState
 
 end VG.Proof.Dsa.PPC64LE

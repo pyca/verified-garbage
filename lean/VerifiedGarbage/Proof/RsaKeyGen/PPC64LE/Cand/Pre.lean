@@ -81,9 +81,9 @@ theorem stackArgs_three (s : State) :
 
 theorem cin_of_pre (s : State) (h : (Spec.RsaKeyGen.candidateContract abi 400).pre s) : CIn s := by
   sig_pre [Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig, abi, argRegs, stackArgs_three,
-    List.append_eq] at h
+    List.append_eq, List.range, List.range.loop] at h
   sig_pre [Spec.RsaKeyGen.candidateContract, Spec.RsaKeyGen.candidateSig, abi, argRegs, stackArgs_three,
-    List.append_eq] at h
+    List.append_eq, List.range, List.range.loop] at h
   obtain ⟨spLo, spHi, rd, wr, oU, oE, oP, oR, oS, oA, uE, uP, uR, uS, uA, eS, pS, rS, SA, Fo, Fu, Fe, Fp, Fr, FS, FA,
     fo, fu, fe, fp, fr, fS, valid, el1, el2, plv, scr⟩ := h
   exact ⟨spLo, spHi, by rw [rd]; simp, by rw [rd]; simp, by rw [rd]; simp, by rw [rd]; simp, wr, oU, oE, oP, oR, oS, oA, uE, uP, uR, uS, uA, eS, pS, rS, SA, Fo, Fu, Fe, Fp, Fr, FS, FA,

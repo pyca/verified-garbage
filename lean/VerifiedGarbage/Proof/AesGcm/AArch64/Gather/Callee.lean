@@ -77,8 +77,8 @@ theorem sealSpec_pre {s : State} (h : callPre .plain s) : (Spec.Gcm.sealContract
   have a₂₅ := h
   clear h
   sig_pre [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, AArch64.abi, AArch64.argRegs,
-    stackArgs_one, List.append_eq]
-  sig_reduce [Spec.Gcm.sealContract, Spec.Gcm.sealSig, AArch64.abi, AArch64.argRegs, List.getD]
+    stackArgs_one, List.append_eq, List.range, List.range.loop]
+  sig_reduce [Spec.Gcm.sealContract, Spec.Gcm.sealSig, AArch64.abi, AArch64.argRegs, List.getD, List.range, List.range.loop]
   sig_and_intros
   all_goals first
     | with_reducible assumption
@@ -93,7 +93,7 @@ theorem sealSpec_post {s s' : State} (h : (Spec.Gcm.sealContract AArch64.abi 257
         (bytesAt s.mem (s.gpr .x4) (s.gpr .x5).toNat) =
       (bytesAt s'.mem (s.gpr .x6) (s.gpr .x7).toNat, bytesAt s'.mem (stackArg s 0) 16) := by
   sig_post [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPost, AArch64.abi, AArch64.argRegs,
-    stackArgs_one, List.append_eq] at h
+    stackArgs_one, List.append_eq, List.range, List.range.loop] at h
   exact h hR
 
 theorem sealSpec_pub {s₁ s₂ : State} (h : s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧
@@ -101,8 +101,8 @@ theorem sealSpec_pub {s₁ s₂ : State} (h : s₁.gpr .x0 = s₂.gpr .x0 ∧ s�
     s₁.gpr .x5 = s₂.gpr .x5 ∧ s₁.gpr .x6 = s₂.gpr .x6 ∧ s₁.gpr .x7 = s₂.gpr .x7 ∧ s₁.sp = s₂.sp ∧
     stackArg s₁ 0 = stackArg s₂ 0) : (Spec.Gcm.sealContract AArch64.abi 2576).pub s₁ s₂ := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀⟩ := h
-  sig_pub [Spec.Gcm.sealContract, Spec.Gcm.sealSig, AArch64.abi, AArch64.argRegs, stackArgs_one, List.append_eq]
-  sig_reduce [Spec.Gcm.sealContract, Spec.Gcm.sealSig, AArch64.abi, AArch64.argRegs]
+  sig_pub [Spec.Gcm.sealContract, Spec.Gcm.sealSig, AArch64.abi, AArch64.argRegs, stackArgs_one, List.append_eq, List.range, List.range.loop]
+  sig_reduce [Spec.Gcm.sealContract, Spec.Gcm.sealSig, AArch64.abi, AArch64.argRegs, List.range, List.range.loop]
   sig_and_intros
   all_goals first | with_reducible assumption | trivial
 

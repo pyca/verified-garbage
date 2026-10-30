@@ -63,8 +63,8 @@ structure RandomSignABI (extra : Nat) (s : State) : Prop where
 theorem randomSignABI_of {extra : Nat} {s : State}
     (h : (Spec.Dsa.randomSignContract abi (extra + 256)).pre s) : RandomSignABI extra s := by
   sig_pre [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argRegs, stackArgs_seven,
-    show extra + 256 = (extra + 255) + 1 from rfl] at h
-  sig_pre [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argRegs, stackArgs_seven] at h
+    show extra + 256 = (extra + 255) + 1 from rfl, List.range, List.range.loop] at h
+  sig_pre [Spec.Dsa.randomSignContract, Spec.Dsa.randomSignSig, abi, argRegs, stackArgs_seven, List.range, List.range.loop] at h
   sig_split h
   constructor <;> with_reducible assumption
 

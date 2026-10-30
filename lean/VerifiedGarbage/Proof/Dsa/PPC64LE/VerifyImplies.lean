@@ -38,7 +38,7 @@ theorem verify_implies : vContract.Implies (Spec.Dsa.verifyContract abi) := by
   sig_implies [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, vContract, stackArgs_two,
     List.append_eq, List.getD_cons_succ, List.getD_cons_zero, Sig.pairFacts, List.filterMap_cons,
     List.filterMap_nil, Bool.cond_true, Bool.cond_false, Bool.or_true, Bool.or_false, List.cons_append,
-    List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, pairFacts_two]
+    List.nil_append, List.append_nil, Sig.conj_cons, Sig.conj_append, pairFacts_two, List.range, List.range.loop]
     [satState, stackArg, stackArgAddr, Mem.readW, Mem.read] using satState
 
 end VG.Proof.Dsa.PPC64LE

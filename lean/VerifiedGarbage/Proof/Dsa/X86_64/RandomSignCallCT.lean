@@ -43,7 +43,7 @@ theorem random_call_public {extra : Nat} {s t a b : State}
   have hB (i : Nat) (hi : i < 5) :
       stackArg (b.callEntry.withRegions (randomCallRd t) (randomCallWr t)) i = randomCallArg t i :=
     (random_call_stackArg hb.sp _ _ hi).trans (hb.args i hi)
-  sig_pub [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five]
+  sig_pub [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five, List.range, List.range.loop]
   simp only [ha.sp, hb.sp, ha.di, hb.di, ha.si, hb.si, ha.dx, hb.dx, ha.cx, hb.cx, ha.r8, hb.r8, ha.r9, hb.r9,
     hA 0 (by decide), hA 1 (by decide), hA 2 (by decide), hA 3 (by decide), hA 4 (by decide),
     hB 0 (by decide), hB 1 (by decide), hB 2 (by decide), hB 3 (by decide), hB 4 (by decide), randomCallArg]

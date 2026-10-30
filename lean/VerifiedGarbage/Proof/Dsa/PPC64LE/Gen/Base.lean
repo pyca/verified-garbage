@@ -123,9 +123,9 @@ structure CIn0 (STK : Nat) (s : State) : Prop where
 theorem cin0_of_pre {n : Nat} (s : State) (h : (Spec.Dsa.generateParametersContract abi (n + 1)).pre s) :
     CIn0 (n + 1) s := by
   sig_pre [Spec.Dsa.generateParametersContract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_four,
-    List.append_eq] at h
+    List.append_eq, List.range, List.range.loop] at h
   sig_pre [Spec.Dsa.generateParametersContract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_four,
-    List.append_eq] at h
+    List.append_eq, List.range, List.range.loop] at h
   obtain ⟨spLo, spHi, rd, wr, oS, oH, oW, oC, oA, sC, hC, wC, cA, bO, bS, bH, bW, bC, bA, nO, nS, nH, nW, nC,
     lens, outLen, seedsMod, hsMod, scrLen⟩ := h
   exact ⟨spLo, spHi, rd, wr, oS, oH, oW, oC, oA, sC, hC, wC, cA, bO, bS, bH, bW, bC, bA, nO, nS, nH, nW, nC,

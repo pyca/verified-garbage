@@ -60,9 +60,9 @@ theorem stackArgs_one (s : State) : List.map (stackArg s) (List.range 1) = [stac
 theorem sealSpec_pre {s : State} (h : callPre s) : (Spec.Gcm.sealContract PPC64LE.abi 2672).pre s := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂,
     a₂₃, a₂₄, a₂₅⟩ := h
-  sig_pre [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, PPC64LE.abi, PPC64LE.argRegs, stackArgs_one]
+  sig_pre [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, PPC64LE.abi, PPC64LE.argRegs, stackArgs_one, List.range, List.range.loop]
   sig_reduce [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, PPC64LE.abi, PPC64LE.argRegs, List.getD,
-    stackArgs_one]
+    stackArgs_one, List.range, List.range.loop]
   sig_and_intros
   all_goals first
     | with_reducible assumption
@@ -77,7 +77,7 @@ theorem sealSpec_post {s s' : State} (h : (Spec.Gcm.sealContract PPC64LE.abi 267
         (bytesAt s.mem (s.gpr .r7) (s.gpr .r8).toNat) =
       (bytesAt s'.mem (s.gpr .r9) (s.gpr .r10).toNat, bytesAt s'.mem (stackArg s 0) 16) := by
   sig_post [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPost, PPC64LE.abi, PPC64LE.argRegs,
-    stackArgs_one] at h
+    stackArgs_one, List.range, List.range.loop] at h
   exact h hR
 
 theorem sealSpec_pub {s₁ s₂ : State} (h : s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧
@@ -86,8 +86,8 @@ theorem sealSpec_pub {s₁ s₂ : State} (h : s₁.gpr .r3 = s₂.gpr .r3 ∧ s�
     stackArg s₁ 0 = stackArg s₂ 0) :
     (Spec.Gcm.sealContract PPC64LE.abi 2672).pub s₁ s₂ := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀⟩ := h
-  sig_pub [Spec.Gcm.sealContract, Spec.Gcm.sealSig, PPC64LE.abi, PPC64LE.argRegs, stackArgs_one]
-  sig_reduce [Spec.Gcm.sealContract, Spec.Gcm.sealSig, PPC64LE.abi, PPC64LE.argRegs, stackArgs_one]
+  sig_pub [Spec.Gcm.sealContract, Spec.Gcm.sealSig, PPC64LE.abi, PPC64LE.argRegs, stackArgs_one, List.range, List.range.loop]
+  sig_reduce [Spec.Gcm.sealContract, Spec.Gcm.sealSig, PPC64LE.abi, PPC64LE.argRegs, stackArgs_one, List.range, List.range.loop]
   sig_and_intros
   all_goals first | with_reducible assumption | trivial
 

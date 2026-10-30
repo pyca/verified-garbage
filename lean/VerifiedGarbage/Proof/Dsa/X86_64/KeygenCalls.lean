@@ -24,38 +24,38 @@ theorem parameters_implies8 :
     (Spec.Dsa.checkParametersContract abi).Implies (Spec.Dsa.checkParametersContract abi 8) where
   pre := by
     intro s h
-    sig_pre [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero] at h
+    sig_pre [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero, List.range, List.range.loop] at h
     sig_split h
-    sig_pre [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero]
+    sig_pre [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero, List.range, List.range.loop]
     sig_and_intros
     sig_close
   post := by sig_implies_post [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argRegs,
-    stackArgs_zero]
+    stackArgs_zero, List.range, List.range.loop]
   pub := by intro s t _ _ h; exact h
   sat := by
-    sig_implies_sat [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero]
+    sig_implies_sat [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero, List.range, List.range.loop]
       [parametersSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using parametersSatState
 
 theorem derive_implies8 : (Spec.Dsa.deriveKeyContract abi).Implies (Spec.Dsa.deriveKeyContract abi 8) where
   pre := by
     intro s h
-    sig_pre [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three] at h
-    sig_pre [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three] at h
+    sig_pre [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three, List.range, List.range.loop] at h
+    sig_pre [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three, List.range, List.range.loop] at h
     sig_split h
-    sig_pre [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three]
-    sig_pre [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three]
+    sig_pre [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three, List.range, List.range.loop]
+    sig_pre [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three, List.range, List.range.loop]
     sig_and_intros
     sig_close
-  post := by sig_implies_post [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three]
+  post := by sig_implies_post [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three, List.range, List.range.loop]
   pub := by intro s t _ _ h; exact h
   sat := by
-    sig_implies_sat [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three]
+    sig_implies_sat [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three, List.range, List.range.loop]
       [deriveSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using deriveSatState
 
 theorem parameters_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
     (hp : (Spec.Dsa.checkParametersContract abi).post s b) :
     (Spec.Dsa.checkParametersContract abi).post s (b.patch (hole (s.gpr .rsp)) hv u) := by
-  sig_post [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero] at hp ⊢
+  sig_post [Spec.Dsa.checkParametersContract, Spec.Dsa.checkParametersSig, abi, argRegs, stackArgs_zero, List.range, List.range.loop] at hp ⊢
   simpa only [State.patch_gpr] using hp
 
 theorem derive_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
@@ -64,7 +64,7 @@ theorem derive_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
     (Spec.Dsa.deriveKeyContract abi).post s (b.patch (hole (s.gpr .rsp)) hv u) := by
   have ha := deriveABI_of hs
   have hm := Clear.miss_wr hc (by rw [ha.wr]; exact List.mem_cons_self) ha.outBound (Nat.le_refl _)
-  sig_post [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three] at hp ⊢
+  sig_post [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three, List.range, List.range.loop] at hp ⊢
   simpa only [State.patch_gpr, patch_mem, bytesAt_overlay hm] using hp
 
 theorem parameters_call_verified (M : Mont) (Sq : MontS) {c : Prog isa}

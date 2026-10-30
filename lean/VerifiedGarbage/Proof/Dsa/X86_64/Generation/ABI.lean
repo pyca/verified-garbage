@@ -63,8 +63,8 @@ structure GenerationABI (s : State) : Prop where
 
 theorem generationABI_of {s : State}
     (h : (Spec.Dsa.generateParametersContract abi 536).pre s) : GenerationABI s := by
-  sig_pre [Spec.Dsa.generateParametersContract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six] at h
-  sig_pre [Spec.Dsa.generateParametersContract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six] at h
+  sig_pre [Spec.Dsa.generateParametersContract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six, List.range, List.range.loop] at h
+  sig_pre [Spec.Dsa.generateParametersContract, Spec.Dsa.generateParametersSig, abi, argRegs, stackArgs_six, List.range, List.range.loop] at h
   sig_split h
   constructor <;> with_reducible assumption
 
