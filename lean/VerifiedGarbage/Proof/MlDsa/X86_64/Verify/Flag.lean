@@ -149,7 +149,7 @@ theorem sampled4_ok {call : Prog isa} {rbs wbs : List (Reg × Nat)} {s : State} 
   have L₂ := L₁.post hP₂
   have e₂ : pa s₂ a = pa s₁ a := hP₂.pa hab
   have hax : (s₂.gpr .rax).setWidth 32 = res s₁ := by rw [k₂.gpr (by decide)]
-  refine WP.mono (maskN_ok L₂ (N := 1024) (by decide) (by decide) hi hw) fun s₃ ⟨hP₃, h15₃, hc₃⟩ => ?_
+  refine WP.mono (maskN_ok L₂ (N := 1024) (by decide) (by decide) (by decide) hi hw) fun s₃ ⟨hP₃, h15₃, hc₃⟩ => ?_
   have hsub : ∀ w ∈ [(a, 4 * 1024)], w ∈ ws := by simp only [List.mem_singleton, forall_eq]; exact haw
   have hcs : ∀ w ∈ [(a, 4 * 1024)], w.1.1 ∈ bases := by simp only [List.mem_singleton, forall_eq]; exact hab
   have hP₁₂ : PPostB s s₂ ws := PPostB.trans hP₁ hP₂ (fun _ h => absurd h List.not_mem_nil) (fun w hw => hw)

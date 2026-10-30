@@ -9,6 +9,11 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha3.X86_64.Round
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.MlKem.X86_64.VLay
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLanes
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ML-DSA verification on x86-64: the blocks between the calls
@@ -116,19 +121,30 @@ theorem copy_ok {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay rbs wbs s) {d
 /-! ## The mask -/
 
 theorem maskPre_ok (s : State) :
-    WP isa (.block [.mov32 .rdx (.imm 0), .alu32 .sub .rdx (.reg .rax)]) s fun s' =>
-      (s'.mem = s.mem ∧ (s'.gpr .rdx).setWidth 32 = 0 - (s.gpr .rax).setWidth 32) ∧ Keep [.rdx] s s' := by
+    WP isa (.block [.mov32 .rdx (.imm 0), .alu32 .sub .rdx (.reg .rax), .xop (.movq .xmm0 .rdx),
+      .xop (.pshufd .xmm0 .xmm0 0)]) s fun s' =>
+      (s'.mem = s.mem ∧ ∀ j < 4, dword (s'.xmm .xmm0) j = 0 - (s.gpr .rax).setWidth 32) ∧ Keep [.rdx] s s' := by
   refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
-  xrun
+  vrunm
+  intro j hj
+  rw [show (0 : BitVec 8) = BitVec.ofNat 8 (0x55 * 0) from rfl, dword_shufDwords_bcast _ (by decide) hj]
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [dword, BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and]
+  rw [BitVec.getLsbD_append, ifp (by omega), BitVec.getLsbD_setWidth]
+  simp [hi, show i < 64 by omega]
 
-theorem maskBody_ok (s : State) (h0 : InRegions (s.rd ++ s.wr) (s.gpr .rdi) 4) (h1 : InRegions s.wr (s.gpr .rdi) 4) :
-    WP isa (.block [.mov32 .rax (.mem (at_ .rdi 0)), .alu32 .and .rax (.reg .rdx), .store32 (at_ .rdi 0) .rax,
-      .alu .add .rdi (.imm 4), .alu .sub .rcx (.imm 1)]) s fun s' =>
-      (s'.mem = s.mem.writeW (s.gpr .rdi) (s.mem.readW (s.gpr .rdi) 32 &&& (s.gpr .rdx).setWidth 32) ∧
-        s'.gpr .rdi = s.gpr .rdi + 4 ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.gpr .rdx = s.gpr .rdx ∧
-        s'.zf = some (s.gpr .rcx - 1 == 0)) ∧ Keep [.rax, .rdi, .rcx] s s' := by
+theorem maskBody_ok (s : State) (h0 : InRegions (s.rd ++ s.wr) (s.gpr .rdi) 16) (h1 : InRegions s.wr (s.gpr .rdi) 16) :
+    WP isa (.block [.movdquLoad .xmm1 (at_ .rdi 0), .xop (.bin .pand .xmm1 .xmm0), .movdquStore (at_ .rdi 0) .xmm1,
+      .alu .add .rdi (.imm 16), .alu .sub .rcx (.imm 1)]) s fun s' =>
+      (s'.mem = s.mem.writeW (s.gpr .rdi) (s.mem.readW (s.gpr .rdi) 128 &&& s.xmm .xmm0) ∧
+        s'.gpr .rdi = s.gpr .rdi + 16 ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.xmm .xmm0 = s.xmm .xmm0 ∧
+        s'.zf = some (s.gpr .rcx - 1 == 0)) ∧ Keep [.rdi, .rcx] s s' := by
   refine WP.keep _ ?_ (Proof.MlKem.X86_64.writesOnly_of (by decide))
-  xrun [h0, h1]
+  vrunm [h0, h1]
+  rfl
+
+theorem dword_and (a b : BitVec 128) (i : Nat) : dword (a &&& b) i = dword a i &&& dword b i :=
+  VG.Proof.MlDsa.X86_64.Arith.dword_pand a b i
 
 theorem coeffAt_writeW' (m : Mem) (p : Addr) {N i j : Nat} (hN : 4 * N ≤ 2 ^ 64) (hi : i < N) (hj : j < N)
     (v : BitVec 32) :
@@ -137,60 +153,80 @@ theorem coeffAt_writeW' (m : Mem) (p : Addr) {N i j : Nat} (hN : 4 * N ≤ 2 ^ 6
   · subst j; exact Mem.readW_writeW_self32 m _ v
   · exact Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide)
 
+theorem coeffAt_def (m : Mem) (p : Addr) (i : Nat) : m.readW (p + BitVec.ofNat 64 (4 * i)) 32 = coeffAt m p i :=
+  rfl
+
+/-- A coefficient after a write of the 16 bytes at coefficient `4 k`. -/
+theorem coeffAt_writeW16 (m : Mem) (p : Addr) {N i k : Nat} (hN : 4 * N < 2 ^ 63) (hi : i < N) (hk : 4 * k + 4 ≤ N)
+    (v : BitVec 128) :
+    coeffAt (m.writeW (p + BitVec.ofNat 64 (16 * k)) v) p i =
+      if 4 * k ≤ i ∧ i < 4 * k + 4 then dword v (i - 4 * k) else coeffAt m p i := by
+  unfold coeffAt
+  split
+  · rename_i h
+    have e := readW_writeW_inside m (p + BitVec.ofNat 64 (16 * k)) v (k := 4 * (i - 4 * k)) (n := 4) (by omega)
+      (by decide)
+    rw [VG.Offset.add_add, show 16 * k + 4 * (i - 4 * k) = 4 * i by omega] at e
+    refine e.trans ?_
+    rw [dword_eq, show 8 * (4 * (i - 4 * k)) = 32 * (i - 4 * k) by omega]
+  · rename_i h
+    exact readW_writeW_off m p v (d := 4 * i) (e := 16 * k) (n := 4) (by omega) (by omega) (by omega)
+
 /-- The mask of the `N` coefficients from `a` by `eax`: each `∧ -eax`. -/
 theorem maskN_ok {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay rbs wbs s) {a : Ptr} {N : Nat} (hN0 : 0 < N)
-    (hN : N < 2 ^ 29) (hi : inB (rbs ++ wbs) a (4 * N) = true) (hw : inB wbs a (4 * N) = true) :
+    (hN4 : N % 4 = 0) (hN : N < 2 ^ 29) (hi : inB (rbs ++ wbs) a (4 * N) = true) (hw : inB wbs a (4 * N) = true) :
     WP isa (mask a N) s fun s' => PPostB s s' [(a, 4 * N)] ∧ s'.gpr .r15 = s.gpr .r15 ∧
       ∀ i < N, coeffAt s'.mem (pa s a) i = coeffAt s.mem (pa s a) i &&& (0 - (s.gpr .rax).setWidth 32) := by
   have hS := L.ok
-  have hok : ∀ x ∈ ([(.rdi, .ptr a), (.rcx, .imm N)] : List (Reg × Arg)), x.2.Ok ∧ x.1 ∈ argRegs := by
+  have hok : ∀ x ∈ ([(.rdi, .ptr a), (.rcx, .imm (N / 4))] : List (Reg × Arg)), x.2.Ok ∧ x.1 ∈ argRegs := by
     simp only [List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
-    exact ⟨⟨ptr_ok hS hi, by decide⟩, ⟨show N < 2 ^ 31 by omega, by decide⟩⟩
+    exact ⟨⟨ptr_ok hS hi, by decide⟩, ⟨show N / 4 < 2 ^ 31 by omega, by decide⟩⟩
   have hrd := L.inR hi
   have hwr := L.inW hw
   unfold mask
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (maskPre_ok s) fun s₀ ⟨⟨hm₀, hd₀⟩, k₀⟩ => ?_
-  refine WP.mono (glue_ok _ hok (by simp only [List.map_cons, List.map_nil]; decide) s₀)
-    fun s1 ⟨⟨hv1, hm1⟩, k1⟩ => ?_
-  have hb := ptr_bs hS hi
-  have nb : a.1 ∉ [Reg.rdx] := by
-    simp only [List.mem_singleton]; intro h; rw [h] at hb; exact absurd hb (by decide)
+  refine WP.mono (glue_ok _ hok (by simp only [List.map_cons, List.map_nil]; decide) s)
+    fun s₀ ⟨⟨hv1, hm1⟩, k1⟩ => ?_
+  refine WP.mono (maskPre_ok s₀) fun s1 ⟨⟨hm₀, hd₀⟩, k₀⟩ => ?_
   have e1 : s1.gpr .rdi = pa s a := by
-    rw [hv1 _ (List.mem_cons_self ..)]; simp only [Arg.val, pa]; rw [k₀.gpr nb]
-  have e2 : s1.gpr .rcx = BitVec.ofNat 64 N := hv1 _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
-  have hd1 : (s1.gpr .rdx).setWidth 32 = 0 - (s.gpr .rax).setWidth 32 := by rw [k1.gpr (by simp), hd₀]
-  have k01 : Keep [.rdx, .rdi, .rcx] s s1 := (k₀.trans k1).mono (by simp)
-  have hm01 : s1.mem = s.mem := hm1.trans hm₀
-  refine WP.mono (wp_countdown (cnt := .rcx) (N := N) (by omega) hN0 (fun k s' =>
-      s'.gpr .rdi = pa s a + BitVec.ofNat 64 (4 * k) ∧ (s'.gpr .rdx).setWidth 32 = 0 - (s.gpr .rax).setWidth 32 ∧
+    rw [k₀.gpr (by decide), hv1 _ (List.mem_cons_self ..)]; simp only [Arg.val, pa]
+  have e2 : s1.gpr .rcx = BitVec.ofNat 64 (N / 4) := by
+    rw [k₀.gpr (by decide)]; exact hv1 _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
+  have hx1 : ∀ j < 4, dword (s1.xmm .xmm0) j = 0 - (s.gpr .rax).setWidth 32 := fun j hj => by
+    rw [hd₀ j hj, k1.gpr (by simp)]
+  have k01 : Keep [.rdx, .rdi, .rcx] s s1 := (k1.trans k₀).mono (by simp)
+  have hm01 : s1.mem = s.mem := hm₀.trans hm1
+  refine WP.mono (wp_countdown (cnt := .rcx) (N := N / 4) (by omega) (by omega) (fun k s' =>
+      s'.gpr .rdi = pa s a + BitVec.ofNat 64 (16 * k) ∧
+      (∀ j < 4, dword (s'.xmm .xmm0) j = 0 - (s.gpr .rax).setWidth 32) ∧
       Frame [⟨pa s a, 4 * N⟩] s.mem s'.mem ∧
       (∀ i < N, coeffAt s'.mem (pa s a) i =
-        if i < k then coeffAt s.mem (pa s a) i &&& (0 - (s.gpr .rax).setWidth 32) else coeffAt s.mem (pa s a) i) ∧
-      Keep [.rdx, .rdi, .rcx, .rax] s s')
+        if i < 4 * k then coeffAt s.mem (pa s a) i &&& (0 - (s.gpr .rax).setWidth 32) else coeffAt s.mem (pa s a) i) ∧
+      Keep [.rdx, .rdi, .rcx] s s')
     (fun k hk s' ⟨hdi, hdx, hf, hc, kk⟩ _ => ?_) (fun _ h => h)
-    ⟨by rw [e1]; simp, hd1, by rw [hm01]; exact Frame.refl _ _, fun i _ => by rw [hm01, ifn (Nat.not_lt_zero _)],
-      k01.mono (by simp)⟩ e2)
+    ⟨by rw [e1]; simp, hx1, by rw [hm01]; exact Frame.refl _ _, fun i _ => by rw [hm01, ifn (Nat.not_lt_zero _)],
+      k01⟩ e2)
     fun s' ⟨_, _, hf, hc, kk⟩ => ⟨postB_of_keep kk (by decide) (by simpa using hf),
-      kk.gpr (by decide), fun i hi => by rw [hc i hi, ifp hi]⟩
+      kk.gpr (by decide), fun i hi => by rw [hc i hi, ifp (by omega)]⟩
   refine WP.mono (maskBody_ok s' (by rw [kk.2.1, kk.2.2, hdi]; exact inRegions_sub hrd (by omega) (by omega))
       (by rw [kk.2.2, hdi]; exact inRegions_sub hwr (by omega) (by omega)))
-    fun s'' ⟨⟨hm, hdi', hcx, hdx', hz⟩, k'⟩ => ⟨⟨?_, by rw [hdx', hdx], ?_, fun i hi => ?_,
+    fun s'' ⟨⟨hm, hdi', hcx, hx', hz⟩, k'⟩ => ⟨⟨?_, by rw [hx']; exact hdx, ?_, fun i hi => ?_,
       (kk.trans k').mono (by simp)⟩, hcx, hz⟩
-  · rw [hdi', hdi, show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl, BitVec.add_assoc, ← BitVec.ofNat_add,
-      show 4 * k + 4 = 4 * (k + 1) by omega]
+  · rw [hdi', hdi, show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl, BitVec.add_assoc, ← BitVec.ofNat_add,
+      show 16 * k + 16 = 16 * (k + 1) by omega]
   · rw [hm, hdi]
     exact hf.writeW (List.mem_singleton_self _) _ (contains_offset' (by omega) (by omega))
-  · have hck : s'.mem.readW (pa s a + BitVec.ofNat 64 (4 * k)) 32 = coeffAt s.mem (pa s a) k := by
-      have := hc k (by omega)
-      rw [ifn (Nat.lt_irrefl _)] at this
-      exact this
-    rw [hm, hdi, hck, hdx, coeffAt_writeW' _ _ (N := N) (by omega) hi (by omega)]
-    by_cases e : k = i
-    · subst e; rw [ifp rfl, ifp (Nat.lt_succ_self _)]
-    · rw [ifn e, hc i hi]
-      by_cases h' : i < k
+  · rw [hm, hdi, coeffAt_writeW16 _ _ (N := N) (by omega) hi (by omega)]
+    split
+    · rename_i h
+      rw [dword_and, hdx _ (by omega), dword_readW _ _ (by omega), VG.Offset.add_add,
+        show 16 * k + 4 * (i - 4 * k) = 4 * i by omega]
+      refine (congrArg (· &&& _) ((coeffAt_def _ _ _).trans (hc i hi))).trans ?_
+      rw [ifn (by omega), ifp (by omega)]
+    · rename_i h
+      rw [hc i hi]
+      by_cases h' : i < 4 * k
       · rw [ifp h', ifp (by omega)]
       · rw [ifn h', ifn (by omega)]
 
@@ -199,6 +235,6 @@ theorem mask_ok {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay rbs wbs s) {a
     (hi : inB (rbs ++ wbs) a 1024 = true) (hw : inB wbs a 1024 = true) :
     WP isa (mask a) s fun s' => PPostB s s' [(a, 1024)] ∧ s'.gpr .r15 = s.gpr .r15 ∧
       ∀ i < n, coeffAt s'.mem (pa s a) i = coeffAt s.mem (pa s a) i &&& (0 - (s.gpr .rax).setWidth 32) :=
-  maskN_ok L (N := 256) (by decide) (by decide) hi hw
+  maskN_ok L (N := 256) (by decide) (by decide) (by decide) hi hw
 
 end VG.Proof.MlDsa.X86_64.Verify

@@ -204,15 +204,16 @@ end
 /-- `r15 ← r15 ∧ eax`. -/
 def and15 : List Instr := [.alu32 .and .r15 (.reg .rax)]
 
-/-- The polynomial at `a` (or the `N` coefficients from `a`) masked by the
-result `eax` (0 or 1) of the sampler that wrote it: unchanged if 1, and zero
-if 0, so that it is reduced either way, without a branch. `edx ← -eax`, then
-each coefficient `∧ edx`. -/
+/-- The polynomial at `a` (or the `N` coefficients from `a`, `N` a multiple of
+4) masked by the result `eax` (0 or 1) of the sampler that wrote it:
+unchanged if 1, and zero if 0, so that it is reduced either way, without a
+branch. The pointer and the count, `edx ← -eax` in each doubleword of `xmm0`, then each 16 bytes
+`∧ xmm0`. -/
 def mask (a : Ptr) (N : Nat := 256) : Prog isa :=
-  .seq (.block (([.mov32 .rdx (.imm 0), .alu32 .sub .rdx (.reg .rax)] : List Instr) ++
-      glue [(.rdi, .ptr a), (.rcx, .imm N)]))
-    (.loop (.block [.mov32 .rax (.mem (at_ .rdi 0)), .alu32 .and .rax (.reg .rdx), .store32 (at_ .rdi 0) .rax,
-      .alu .add .rdi (.imm 4), .alu .sub .rcx (.imm 1)]) .ne)
+  .seq (.block (glue [(.rdi, .ptr a), (.rcx, .imm (N / 4))] ++ ([.mov32 .rdx (.imm 0), .alu32 .sub .rdx (.reg .rax),
+      .xop (.movq .xmm0 .rdx), .xop (.pshufd .xmm0 .xmm0 0)] : List Instr)))
+    (.loop (.block [.movdquLoad .xmm1 (at_ .rdi 0), .xop (.bin .pand .xmm1 .xmm0), .movdquStore (at_ .rdi 0) .xmm1,
+      .alu .add .rdi (.imm 16), .alu .sub .rcx (.imm 1)]) .ne)
 
 /-- A sampler's call, its result ANDed into `r15`, and its output masked. -/
 def sampled (call : Prog isa) (a : Ptr) : Prog isa :=
