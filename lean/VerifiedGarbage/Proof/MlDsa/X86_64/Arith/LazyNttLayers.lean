@@ -58,38 +58,4 @@ theorem yfwdLay_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) (len k : Nat)
       rcases hlen with rfl | rfl | rfl | rfl | rfl <;> omega)
     (fun c _ => step_fwd _ _ 1 (by decide)) hc hdi hsi hS hT hwf hw hd
 
-theorem yfwdLay4_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : Poly} (s : State) (hc : YConsts s)
-    (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP) (hS : PolyIs s.mem fP F) (hT : Tab zmTab s.mem sP 256)
-    (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr) :
-    WP isa (ylay4 lazyBfly 32 0x00 0x55 8) s fun s' => PolyIs s'.mem fP (layer F 4) ∧ BInvY fP s s' := by
-  have h0 : ∀ e < 4, sel 0x00 e = 0 := by decide
-  have h5 : ∀ e < 4, sel 0x55 e = 1 := by decide
-  rw [layer, show 128 / 4 = 32 from rfl]
-  exact ylay4_ok bfly_ok lane_lazyBfly (block_ok op) 32 0x00 0x55 8 (fun c => 32 + c) (fun m => 32 + 2 * m) rfl
-    (fun m _ => by omega) (fun m _ e he => ⟨by rw [h0 e he]; omega, by rw [h5 e he]; omega⟩)
-    (fun m _ => (step_fwd _ _ 2 (by decide)).trans (congrArg _ (by omega))) hc hdi hsi hS hT hwf hw hd
-
-theorem yfwdLay2_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : Poly} (s : State) (hc : YConsts s)
-    (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP) (hS : PolyIs s.mem fP F) (hT : Tab zmTab s.mem sP 256)
-    (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr) :
-    WP isa (ylay2 lazyBfly 64 0xA0 0xF5 16) s fun s' => PolyIs s'.mem fP (layer F 2) ∧ BInvY fP s s' := by
-  have hA : ∀ e < 4, sel 0xA0 e = 2 * (e / 2) := by decide
-  have hF : ∀ e < 4, sel 0xF5 e = 1 + 2 * (e / 2) := by decide
-  rw [layer, show 128 / 2 = 64 from rfl]
-  exact ylay2_ok (block_ok op) bfly_ok lane_core2f 64 0xA0 0xF5 16 (fun c => 64 + c) (fun i => 64 + 4 * i) rfl
-    (fun i _ => by omega) (fun i _ e he => ⟨by rw [hA e he]; omega, by rw [hF e he]; omega⟩)
-    (fun i _ => (step_fwd _ _ 4 (by decide)).trans (congrArg _ (by omega))) hc hdi hsi hS hT hwf hw hd
-
-theorem yfwdLay1_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : Poly} (s : State) (hc : YConsts s)
-    (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP) (hS : PolyIs s.mem fP F) (hT : Tab zmTab s.mem sP 256)
-    (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr) :
-    WP isa (ylay1 lazyBfly 128 yzeta8 32) s fun s' => PolyIs s'.mem fP (layer F 1) ∧ BInvY fP s s' := by
-  rw [layer, show 128 / 1 = 128 from rfl]
-  exact ylay1_ok (block_ok op) bfly_ok lane_core1f 128 yzeta8 32 (fun c => 128 + c) (fun i => 128 + 8 * i) rfl
-    (fun i _ => by omega)
-    (fun i hi s h8 hin hT => WP.mono (yzeta8_ok (by omega) h8 hin hT) fun _ ⟨z, o⟩ =>
-      ⟨fun l hl => ⟨(z l hl).1.congr fun e he => congrArg zetas (by omega), (z l hl).2⟩, o⟩)
-    (fun i _ => (step_fwd _ _ 8 (by decide)).trans (congrArg _ (by omega))) hc hdi hsi hS hT hwf hw hd
-
-
 end VG.Proof.MlDsa.X86_64.Arith.Lazy

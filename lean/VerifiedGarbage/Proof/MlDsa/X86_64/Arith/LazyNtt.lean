@@ -3,7 +3,7 @@ public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Lazy
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyBase
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyInvariant
 
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNormalize
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyFused
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNttLayers
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Lazy
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyBase
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyInvariant
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNormalize
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyFused
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNttLayers
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
@@ -68,12 +68,10 @@ theorem correct (s : State) (hs : (inPlaceK ntt).pre s) :
   refine fun _ hI => LIY.seq hdi hsi hwf hw hd (yfwdLay_ok hd 32 4 (by decide) (by decide)) ?_ hI
   refine fun _ hI => LIY.seq hdi hsi hwf hw hd (yfwdLay_ok hd 16 8 (by decide) (by decide)) ?_ hI
   refine fun _ hI => LIY.seq hdi hsi hwf hw hd (yfwdLay_ok hd 8 16 (by decide) (by decide)) ?_ hI
-  refine fun _ hI => LIY.seq hdi hsi hwf hw hd (yfwdLay4_ok hd) ?_ hI
-  refine fun _ hI => LIY.seq hdi hsi hwf hw hd (yfwdLay2_ok hd) ?_ hI
-  refine fun _ hI => LIY.seq hdi hsi hwf hw hd (yfwdLay1_ok hd) ?_ hI
   intro u hu
-  refine WP.seq (WP.mono (normalize_ok (transform_rel _) u hu.c
-    (by rw [hu.keep.gpr (by decide), hdi]) hu.P (by rw [hu.keep.2.2]; exact hwf)) fun v ⟨hv, hb⟩ => ?_)
+  refine WP.seq (WP.mono (fusedLast_ok hd (transform_rel _) u hu.c (by rw [hu.keep.gpr (by decide), hdi])
+    (by rw [hu.keep.gpr (by decide), hsi]) hu.P hu.T (by rw [hu.keep.2.2]; exact hwf) (by rw [hu.keep.2.2]; exact hw))
+    fun v ⟨hv, hb⟩ => ?_)
   refine WP.mono (Q := fun (u' : State) => u'.mem = v.mem) (by simp only [yepi]; vrund; rfl) fun u' hm => ?_
   rw [hm]
   exact ⟨hv, hu.frame.trans hb.frame⟩
