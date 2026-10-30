@@ -8,8 +8,7 @@ public import VerifiedGarbage.TCB.Rust
 **Trusted.** What `Emit.lean` runs: which artifacts are emitted, and how the
 generated files are written or checked.
 
-The artifacts emitted are those of `Artifacts.lean` and of every
-*registration file*: each `.lean` file under `VerifiedGarbage/Artifacts/`,
+The artifacts emitted are those of every *registration file*: each `.lean` file under `VerifiedGarbage/Artifacts/`,
 say `VerifiedGarbage/Artifacts/Sha3/X86_64.lean`, must define the list
 `VG.Artifacts.Sha3.X86_64.artifacts : List Artifact`. Adding functions for
 an algorithm or a target adds such a file, so that parallel changes don't
@@ -183,8 +182,7 @@ def instances (gens : List String) (vars : List (List String)) : String :=
 /-- The program that emits every artifact: those of each registration
 module `mods`, in order, then each generic function of `gens` applied to
 each variant of its interface and target in `vars` (each combination of
-variants of its interfaces), then those of
-`Artifacts.lean`. It fails to elaborate unless each module defines its list
+variants of its interfaces). It fails to elaborate unless each module defines its list
 (or variant), with types that agree, unless everything emitted depends
 only on the standard axioms (`#assert_standard_axioms`), unless the compiled
 code of everything emitted and of `run` is what the kernel checked
@@ -198,14 +196,13 @@ def driver (mods : List String) (gens : List (List String × List String) := [])
   "import VerifiedGarbage.TCB.Audit\n" ++
   "import VerifiedGarbage.TCB.Axioms\n" ++
   "import VerifiedGarbage.TCB.Emit\n" ++
-  "import VerifiedGarbage.Artifacts\n" ++
   String.join ((mods ++ gens.flatMap (·.2) ++ vars.flatMap (·.2)).map fun m =>
     s!"import {m}\n") ++
   "\nnamespace VG.Emit\n\n" ++
   "def all : List Artifact := List.flatten [\n" ++
   String.join (mods.map fun m => s!"  {listOf m},\n") ++
   String.join (groups.map fun (gs, vs) => s!"  {instances gs vs},\n") ++
-  "  VG.artifacts]\n\n" ++
+  "  []]\n\n" ++
   "#assert_standard_axioms all\n" ++
   "#assert_no_compiler_overrides all run\n" ++
   "#assert_spec_origin\n\n" ++

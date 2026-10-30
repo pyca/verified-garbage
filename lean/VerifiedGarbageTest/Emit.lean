@@ -47,14 +47,13 @@ open VG.Emit
   import VerifiedGarbage.TCB.Audit\n\
   import VerifiedGarbage.TCB.Axioms\n\
   import VerifiedGarbage.TCB.Emit\n\
-  import VerifiedGarbage.Artifacts\n\
   import VerifiedGarbage.Artifacts.Sha3.X86_64\n\
   \n\
   namespace VG.Emit\n\
   \n\
   def all : List Artifact := List.flatten [\n  \
     VG.Artifacts.Sha3.X86_64.artifacts,\n  \
-    VG.artifacts]\n\
+    []]\n\
   \n\
   #assert_standard_axioms all\n\
   #assert_no_compiler_overrides all run\n\
@@ -74,7 +73,6 @@ open VG.Emit
   import VerifiedGarbage.TCB.Audit\n\
   import VerifiedGarbage.TCB.Axioms\n\
   import VerifiedGarbage.TCB.Emit\n\
-  import VerifiedGarbage.Artifacts\n\
   import VerifiedGarbage.Artifacts.Sha256.X86_64\n\
   import VerifiedGarbage.Generic.I.X86_64.A\n\
   import VerifiedGarbage.Generic.I.X86_64.B\n\
@@ -89,7 +87,7 @@ open VG.Emit
     (List.flatMap (fun v => List.flatten [VG.Generic.I.X86_64.A.artifacts v, \
       VG.Generic.I.X86_64.B.artifacts v]) \
       [VG.Variants.I.X86_64.P.variant, VG.Variants.I.X86_64.Q.variant]),\n  \
-    VG.artifacts]\n\
+    []]\n\
   \n\
   #assert_standard_axioms all\n\
   #assert_no_compiler_overrides all run\n\
@@ -109,7 +107,6 @@ open VG.Emit
   import VerifiedGarbage.TCB.Audit\n\
   import VerifiedGarbage.TCB.Axioms\n\
   import VerifiedGarbage.TCB.Emit\n\
-  import VerifiedGarbage.Artifacts\n\
   import VerifiedGarbage.Generic.I.J.X86_64.A\n\
   import VerifiedGarbage.Variants.I.X86_64.P\n\
   import VerifiedGarbage.Variants.I.X86_64.Q\n\
@@ -123,7 +120,7 @@ open VG.Emit
       List.flatten [VG.Generic.I.J.X86_64.A.artifacts v v2]) \
       [VG.Variants.J.X86_64.R.variant, VG.Variants.J.X86_64.S.variant])) \
       [VG.Variants.I.X86_64.P.variant, VG.Variants.I.X86_64.Q.variant]),\n  \
-    VG.artifacts]\n\
+    []]\n\
   \n\
   #assert_standard_axioms all\n\
   #assert_no_compiler_overrides all run\n\

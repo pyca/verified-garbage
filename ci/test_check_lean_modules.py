@@ -19,8 +19,7 @@ def tree(files: dict) -> tempfile.TemporaryDirectory:
 class Modules(unittest.TestCase):
     def test_a_library_of_modules(self):
         with tree({"VerifiedGarbage/A.lean": "/- Copyright. -/\nmodule\n\npublic import VerifiedGarbage.B\n",
-                   "VerifiedGarbage/B.lean": "-- A comment.\nmodule\n",
-                   "VerifiedGarbage/Artifacts.lean": "import VerifiedGarbage.A\n"}) as d:
+                   "VerifiedGarbage/B.lean": "-- A comment.\nmodule\n"}) as d:
             self.assertEqual(check_lean_modules.problems(pathlib.Path(d)), [])
 
     def test_a_file_that_is_not_a_module(self):

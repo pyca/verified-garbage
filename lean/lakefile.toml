@@ -63,8 +63,8 @@ rev = "v4.35.0"
 
 [[lean_lib]]
 name = "VerifiedGarbage"
-# Build every file, not only those reachable from `Artifacts.lean`.
-globs = ["VerifiedGarbage.*"]
+# Every module under `VerifiedGarbage/` (the library has no root module).
+globs = ["VerifiedGarbage.+"]
 # A module importing a module of a precompiled library below (`NativeTCB`,
 # `NativeSpec`, `NativeTactics`) loads that whole library's shared library,
 # and Lake would add the shared library to the module's trace: editing any

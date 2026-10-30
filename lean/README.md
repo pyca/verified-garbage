@@ -28,8 +28,8 @@ VerifiedGarbage/
     Audit.lean      `#assert_no_compiler_overrides` (the compiled code the emitter
                     runs is what the kernel checked) and `#assert_spec_origin`
                     (`VG.Spec` definitions are declared in `Spec/`)
-    Emit.lean       what is emitted (`Artifacts.lean`, every registration file
-                    under `Artifacts/`, and every generic function under `Generic/`
+    Emit.lean       what is emitted (every registration file under
+                    `Artifacts/`, and every generic function under `Generic/`
                     for every variant of its interface under `Variants/`), and
                     writing or checking `src/asm/`
     X86_64/         ISA model, printer, System V ABI target
@@ -51,7 +51,6 @@ VerifiedGarbage/
                   `Generic/<Iface₁>/<Iface₂>/<Target>/<Alg>.lean`, each instance
                   named by `Emit.qualifiedName` (a tag and the suffix of each
                   interface's non-baseline variant: `vg_argon2_blake2b_avx2_g_avx512`)
-  Artifacts.lean  An empty list, which the emitter still reads; add nothing to it
 VerifiedGarbageTest/  Golden tests for the (unverified) printers and calling conventions
 Emit.lean       Renders every artifact into `../src/asm/` (see `TCB/Emit.lean`)
 EmitOne.lean    The same, for the registration files named, while iterating

@@ -5,7 +5,7 @@ module
 
 **Trusted** (as every file in `Spec/`). Not a cryptographic algorithm: a
 deliberately trivial function that exercises the whole pipeline (spec →
-implementation → proof → `Artifacts.lean` → Rust) so that the pipeline is
+implementation → proof → registration file → Rust) so that the pipeline is
 tested before any real primitive exists.
 -/
 
