@@ -6,10 +6,8 @@ public import VerifiedGarbage.Proof.Weierstrass.Arm.TCombLayout
 public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Impl.Ecdsa.P256.ArmComb
-import VerifiedGarbage.Proof.Weierstrass.Arm.TCombCorrect
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
 import VerifiedGarbage.Proof.P256.Comb7
-import VerifiedGarbage.Proof.P256.Point
 import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PlainSimp
