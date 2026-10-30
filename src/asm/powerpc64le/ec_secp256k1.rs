@@ -614,7 +614,7 @@ ld %r4, 592(%r3)
 std %r4, 3408(%r3)
 ld %r4, 600(%r3)
 std %r4, 3416(%r3)
-bl {vg_secp256k1_point_double}
+bl {vg_secp256k1_point_double_a0}
 ld %r4, 3232(%r3)
 std %r4, 3328(%r3)
 ld %r4, 3240(%r3)
@@ -639,7 +639,7 @@ ld %r4, 3312(%r3)
 std %r4, 3408(%r3)
 ld %r4, 3320(%r3)
 std %r4, 3416(%r3)
-bl {vg_secp256k1_point_add}
+bl {vg_secp256k1_point_add_affine_a0}
 add %r4, %r3, %r31
 lbz %r4, 4096(%r4)
 li %r5, 0
@@ -914,8 +914,8 @@ ld %r14, 0(%r3)
 ld %r31, 8(%r3)
 or %r3, %r4, %r4
 blr",
-        vg_secp256k1_point_double = sym super::secp256k1_point::vg_secp256k1_point_double,
-        vg_secp256k1_point_add = sym super::secp256k1_point::vg_secp256k1_point_add,
+        vg_secp256k1_point_double_a0 = sym super::secp256k1_point::vg_secp256k1_point_double_a0,
+        vg_secp256k1_point_add_affine_a0 = sym super::secp256k1_point::vg_secp256k1_point_add_affine_a0,
         vg_secp256k1_mul_mod_p = sym super::secp256k1_mont::vg_secp256k1_mul_mod_p,
     )
 }
