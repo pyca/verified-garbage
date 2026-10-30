@@ -7,7 +7,7 @@ reports each step over `profiler.threshold` (1 ms) as a message at the
 declaration it belongs to (`type checking took 609ms`, `simp took 890ms`).
 Lake keeps a module's messages in its `.trace` file, next to its `.olean`,
 and the CI build cache (`lean/README.md`) ships them in one file, which
-`ci/lean_cache.py unpack --logs` writes (`lean/.lake/ltar/logs.json`; a
+`ci/lean_cache.py unpack --logs` writes (`lean/.lake/ltar/logs.json.gz`; a
 trace's own messages, of a module built since, come first): after restoring
 the cache so, this reads the profile of every module CI built, attributing each
 step to the declaration whose source range (from the module's `.ilean`, of
@@ -45,6 +45,7 @@ prints every row, sorted, with no limit: a row outside declarations has a
 """
 
 import argparse
+import gzip
 import json
 import pathlib
 import re
@@ -131,15 +132,16 @@ def module_name(path, build):
 
 def stored_logs(build):
     """The messages of the build `unpack --logs` restored (`ci/lean_cache.py`'s
-    `logs.json`, next to the build's `.lake`), by module name, with the
+    `logs.json.gz`, next to the build's `.lake`), by module name, with the
     dependency hash of the build that wrote them; empty without them."""
     if build.parts[-4:] != (".lake", "build", "lib", "lean"):
         return {}
-    path = build.parents[2] / "ltar/logs.json"
+    path = build.parents[2] / "ltar/logs.json.gz"
     if not path.is_file():
         return {}
     return {rel[len("build/"):].replace("/", "."): entry
-            for rel, entry in json.loads(path.read_text()).items() if rel.startswith("build/")}
+            for rel, entry in json.loads(gzip.decompress(path.read_bytes())).items()
+            if rel.startswith("build/")}
 
 
 def trace_log(trace, stored):

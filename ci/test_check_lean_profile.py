@@ -1,6 +1,7 @@
 """How `lean_profile.py` reads the build's stored profiles; no builds."""
 
 import contextlib
+import gzip
 import io
 import json
 import pathlib
@@ -228,7 +229,7 @@ class StoredLogs(unittest.TestCase):
             self.logs["build/" + mod] = stored
         ltar = self.build.parents[2] / "ltar"
         ltar.mkdir(exist_ok=True)
-        (ltar / "logs.json").write_text(json.dumps(self.logs))
+        (ltar / "logs.json.gz").write_bytes(gzip.compress(json.dumps(self.logs).encode()))
 
     def test_read_for_traces_without_messages(self):
         log = [info(4, 8, "simp took 2s")]

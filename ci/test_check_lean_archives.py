@@ -1,5 +1,6 @@
 """Pack a fake Lean build into module archives and restore it, with a stub leantar."""
 
+import gzip
 import io
 import json
 import os
@@ -141,34 +142,34 @@ class LeanArchiveTests(unittest.TestCase):
         module(build, "A/B", log=log)
         data, packed = self.pack()
         self.assertEqual(len(packed), 3)
-        # The archive's trace is just its hashes; the messages are in `logs.json`.
+        # The archive's trace is just its hashes; the messages are in `logs.json.gz`.
         trace = build / "lib/lean/A/B.trace"
         self.assertEqual(json.loads(trace.read_text()), {"depHash": "1", "outputs": {"o": "x"}})
         logs = {"build/A/B": {"depHash": "1", "log": log}}
-        self.assertEqual(json.loads((self.lean / ".lake/ltar/logs.json").read_text()), logs)
+        self.assertEqual(lean_cache.read_logs(self.lean / ".lake/ltar/logs.json.gz"), logs)
         for keep in (False, True):
             target = self.root / f"restored-{keep}"
             target.mkdir()
             with tempfile.TemporaryDirectory() as tmp:
                 lean_cache.unpack(target, 2, tmp, 1, str(self.stub), io.BytesIO(data), keep)
             self.assertEqual((target / ".lake/build/lib/lean/A/B.trace").read_bytes(), trace.read_bytes())
-            written = target / ".lake/ltar/logs.json"
-            self.assertEqual(json.loads(written.read_text()) if keep else None,
+            written = target / ".lake/ltar/logs.json.gz"
+            self.assertEqual(lean_cache.read_logs(written) if keep else None,
                              logs if keep else None)
             self.assertEqual(written.exists(), keep)
-        # Unchanged, a module keeps its messages, from `logs.json`.
+        # Unchanged, a module keeps its messages, from `logs.json.gz`.
         _, packed = self.pack()
         self.assertEqual(packed, [])
-        self.assertEqual(json.loads((self.lean / ".lake/ltar/logs.json").read_text()), logs)
+        self.assertEqual(lean_cache.read_logs(self.lean / ".lake/ltar/logs.json.gz"), logs)
         # Rebuilt (here without messages), it drops the old build's.
         module(build, "A/B", dep="2")
         _, packed = self.pack()
         self.assertEqual(packed, [".lake/ltar/build/A/B.ltar"])
-        self.assertEqual(json.loads((self.lean / ".lake/ltar/logs.json").read_text()), {})
+        self.assertEqual(lean_cache.read_logs(self.lean / ".lake/ltar/logs.json.gz"), {})
 
     def test_archives_from_before_logs_are_packed_again(self):
         self.pack()
-        (self.lean / ".lake/ltar/logs.json").unlink()
+        (self.lean / ".lake/ltar/logs.json.gz").unlink()
         _, packed = self.pack()
         self.assertEqual(len(packed), 3)
 
@@ -180,7 +181,7 @@ class LeanArchiveTests(unittest.TestCase):
         out = io.BytesIO()
         lean_cache.bundle(self.lean, directories, out)
         with tarfile.open(fileobj=io.BytesIO(out.getvalue())) as tar:
-            self.assertEqual(json.load(tar.extractfile(".lake/ltar/logs.json")),
+            self.assertEqual(json.loads(gzip.decompress(tar.extractfile(".lake/ltar/logs.json.gz").read())),
                              {"build/A/B": {"depHash": "1", "log": log},
                               "packages/mathlib/.lake/build/Mathlib/Order": {"depHash": "1", "log": log}})
 
