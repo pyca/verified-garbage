@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
 ///
-/// The function is `vg_ecdsa_secp256k1_sign`'s code up to the inversion of `Z`, with `d` as both the key and the secret number: it saves the callee-saved registers `ebx`, `esi`, `edi` and `ebp` in `scratch`; field elements are eight 32-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_secp256k1_mul_mod_p` and the other functions of `secp256k1_mont`) with a final conditional subtraction; `[d]G` is a double-and-add ladder over all 256 bits of `d`, with the complete addition formulas of Renes, Costello and Batina for every addition and doubling (calls of `vg_secp256k1_point_double_a0` and `vg_secp256k1_point_add_affine_a0`, Algorithms 9 and 8 for `a = 0`) and a masked selection for each bit; and `Z⁻¹` is computed by constant-time divsteps. The result (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers.
+/// The function is `vg_ecdsa_secp256k1_sign`'s code up to the inversion of `Z`, with `d` as both the key and the secret number: it saves the callee-saved registers `ebx`, `esi`, `edi` and `ebp` in `scratch`; field elements are eight 32-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_secp256k1_mul_mod_p` and the other functions of `secp256k1_mont`) with a final conditional subtraction; `[d]G` is a double-and-add ladder over all 256 bits of `d`, with the complete addition formulas of Renes, Costello and Batina for every addition and doubling (calls of `vg_secp256k1_point_a0_double` and `vg_secp256k1_point_a0_add_affine`, Algorithms 9 and 8 for `a = 0`) and a masked selection for each bit; and `Z⁻¹` is computed by constant-time divsteps. The result (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -624,7 +624,7 @@ mov DWORD PTR [edi+3416], eax
 mov eax, DWORD PTR [edi+604]
 mov DWORD PTR [edi+3420], eax
 push edi
-call {vg_secp256k1_point_double_a0}
+call {vg_secp256k1_point_a0_double}
 pop eax
 mov edi, DWORD PTR [esp+12]
 mov eax, DWORD PTR [edi+3232]
@@ -676,7 +676,7 @@ mov DWORD PTR [edi+3416], eax
 mov eax, DWORD PTR [edi+3324]
 mov DWORD PTR [edi+3420], eax
 push edi
-call {vg_secp256k1_point_add_affine_a0}
+call {vg_secp256k1_point_a0_add_affine}
 pop eax
 mov edi, DWORD PTR [esp+12]
 mov eax, edi
@@ -2939,8 +2939,8 @@ mov ebp, DWORD PTR [edx+12]
 mov edi, DWORD PTR [edx+8]
 ret
 .p2align 6",
-        vg_secp256k1_point_double_a0 = sym super::secp256k1_point::vg_secp256k1_point_double_a0,
-        vg_secp256k1_point_add_affine_a0 = sym super::secp256k1_point::vg_secp256k1_point_add_affine_a0,
+        vg_secp256k1_point_a0_double = sym super::secp256k1_point::vg_secp256k1_point_a0_double,
+        vg_secp256k1_point_a0_add_affine = sym super::secp256k1_point::vg_secp256k1_point_a0_add_affine,
         vg_secp256k1_mul_mod_p = sym super::secp256k1_mont::vg_secp256k1_mul_mod_p,
     )
 }

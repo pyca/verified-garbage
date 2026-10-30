@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.signContract`. Constant time: only the pointers may affect timing, not the key, the hash or `k`.
 ///
-/// The function saves the callee-saved registers `ebx`, `esi`, `edi` and `ebp` in `scratch`. Field elements and scalars are eight 32-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_secp256k1_mul_mod_p` and the other functions of `secp256k1_mont`) with a final conditional subtraction. `[k]G` is a double-and-add ladder over all 256 bits of `k`, with the complete addition formulas of Renes, Costello and Batina for every addition and doubling (calls of `vg_secp256k1_point_double_a0` and `vg_secp256k1_point_add_affine_a0`, Algorithms 9 and 8 for `a = 0`) and a masked selection for each bit; the inversions modulo `p` and `n` use constant-time divsteps. The signature (or zeros) is selected by a mask, so the time depends only on the pointers.
+/// The function saves the callee-saved registers `ebx`, `esi`, `edi` and `ebp` in `scratch`. Field elements and scalars are eight 32-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_secp256k1_mul_mod_p` and the other functions of `secp256k1_mont`) with a final conditional subtraction. `[k]G` is a double-and-add ladder over all 256 bits of `k`, with the complete addition formulas of Renes, Costello and Batina for every addition and doubling (calls of `vg_secp256k1_point_a0_double` and `vg_secp256k1_point_a0_add_affine`, Algorithms 9 and 8 for `a = 0`) and a masked selection for each bit; the inversions modulo `p` and `n` use constant-time divsteps. The signature (or zeros) is selected by a mask, so the time depends only on the pointers.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -627,7 +627,7 @@ mov DWORD PTR [edi+3416], eax
 mov eax, DWORD PTR [edi+604]
 mov DWORD PTR [edi+3420], eax
 push edi
-call {vg_secp256k1_point_double_a0}
+call {vg_secp256k1_point_a0_double}
 pop eax
 mov edi, DWORD PTR [esp+20]
 mov eax, DWORD PTR [edi+3232]
@@ -679,7 +679,7 @@ mov DWORD PTR [edi+3416], eax
 mov eax, DWORD PTR [edi+3324]
 mov DWORD PTR [edi+3420], eax
 push edi
-call {vg_secp256k1_point_add_affine_a0}
+call {vg_secp256k1_point_a0_add_affine}
 pop eax
 mov edi, DWORD PTR [esp+20]
 mov eax, edi
@@ -5006,8 +5006,8 @@ mov ebp, DWORD PTR [edx+12]
 mov edi, DWORD PTR [edx+8]
 ret
 .p2align 6",
-        vg_secp256k1_point_double_a0 = sym super::secp256k1_point::vg_secp256k1_point_double_a0,
-        vg_secp256k1_point_add_affine_a0 = sym super::secp256k1_point::vg_secp256k1_point_add_affine_a0,
+        vg_secp256k1_point_a0_double = sym super::secp256k1_point::vg_secp256k1_point_a0_double,
+        vg_secp256k1_point_a0_add_affine = sym super::secp256k1_point::vg_secp256k1_point_a0_add_affine,
         vg_secp256k1_mul_mod_p = sym super::secp256k1_mont::vg_secp256k1_mul_mod_p,
         vg_secp256k1_add_mod_n = sym super::secp256k1_mont::vg_secp256k1_add_mod_n,
         vg_secp256k1_mul_mod_n = sym super::secp256k1_mont::vg_secp256k1_mul_mod_n,
@@ -5018,7 +5018,7 @@ ret
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
 ///
-/// The function is `vg_ecdsa_secp256k1_sign`'s setup, field arithmetic, ladder and inversions, with `vg_ecdh_secp256k1`'s checks of the public key: it saves the callee-saved registers `ebx`, `esi`, `edi` and `ebp` in `scratch`; field elements and scalars are eight 32-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_secp256k1_mul_mod_p` and the other functions of `secp256k1_mont`) with a final conditional subtraction. The key is checked without branches (its first byte, both coordinates below `p`, and the curve's equation), and the second ladder multiplies the key's point if it is valid, else `G`, so it always runs on a point of the curve. `s⁻¹` modulo `n` and `Z⁻¹` are computed by constant-time divsteps; `[u]G` and `[v]Q` are double-and-add ladders over all 256 bits of `u` and `v`, with the complete addition formulas of Renes, Costello and Batina (calls of `vg_secp256k1_point_double_a0` and `vg_secp256k1_point_add_affine_a0`, Algorithms 9 and 8 for `a = 0` in the ladders), which also add the two. The result is the conjunction of the checks (the key, `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `x ≡ r` modulo `n`) as a mask, so the time depends only on the pointers, although the contract would let every input affect it.
+/// The function is `vg_ecdsa_secp256k1_sign`'s setup, field arithmetic, ladder and inversions, with `vg_ecdh_secp256k1`'s checks of the public key: it saves the callee-saved registers `ebx`, `esi`, `edi` and `ebp` in `scratch`; field elements and scalars are eight 32-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_secp256k1_mul_mod_p` and the other functions of `secp256k1_mont`) with a final conditional subtraction. The key is checked without branches (its first byte, both coordinates below `p`, and the curve's equation), and the second ladder multiplies the key's point if it is valid, else `G`, so it always runs on a point of the curve. `s⁻¹` modulo `n` and `Z⁻¹` are computed by constant-time divsteps; `[u]G` and `[v]Q` are double-and-add ladders over all 256 bits of `u` and `v`, with the complete addition formulas of Renes, Costello and Batina (calls of `vg_secp256k1_point_a0_double` and `vg_secp256k1_point_a0_add_affine`, Algorithms 9 and 8 for `a = 0` in the ladders), which also add the two. The result is the conjunction of the checks (the key, `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `x ≡ r` modulo `n`) as a mask, so the time depends only on the pointers, although the contract would let every input affect it.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -8146,7 +8146,7 @@ mov DWORD PTR [edi+3416], eax
 mov eax, DWORD PTR [edi+604]
 mov DWORD PTR [edi+3420], eax
 push edi
-call {vg_secp256k1_point_double_a0}
+call {vg_secp256k1_point_a0_double}
 pop eax
 mov edi, DWORD PTR [esp+16]
 mov eax, DWORD PTR [edi+3232]
@@ -8198,7 +8198,7 @@ mov DWORD PTR [edi+3416], eax
 mov eax, DWORD PTR [edi+3324]
 mov DWORD PTR [edi+3420], eax
 push edi
-call {vg_secp256k1_point_add_affine_a0}
+call {vg_secp256k1_point_a0_add_affine}
 pop eax
 mov edi, DWORD PTR [esp+16]
 mov eax, edi
@@ -8624,7 +8624,7 @@ mov DWORD PTR [edi+3416], eax
 mov eax, DWORD PTR [edi+604]
 mov DWORD PTR [edi+3420], eax
 push edi
-call {vg_secp256k1_point_double_a0}
+call {vg_secp256k1_point_a0_double}
 pop eax
 mov edi, DWORD PTR [esp+16]
 mov eax, DWORD PTR [edi+3232]
@@ -8676,7 +8676,7 @@ mov DWORD PTR [edi+3416], eax
 mov eax, DWORD PTR [edi+3324]
 mov DWORD PTR [edi+3420], eax
 push edi
-call {vg_secp256k1_point_add_affine_a0}
+call {vg_secp256k1_point_a0_add_affine}
 pop eax
 mov edi, DWORD PTR [esp+16]
 mov eax, edi
@@ -11385,8 +11385,8 @@ ret
         vg_secp256k1_add_mod_p = sym super::secp256k1_mont::vg_secp256k1_add_mod_p,
         vg_secp256k1_sub_mod_p = sym super::secp256k1_mont::vg_secp256k1_sub_mod_p,
         vg_secp256k1_mul_mod_n = sym super::secp256k1_mont::vg_secp256k1_mul_mod_n,
-        vg_secp256k1_point_double_a0 = sym super::secp256k1_point::vg_secp256k1_point_double_a0,
-        vg_secp256k1_point_add_affine_a0 = sym super::secp256k1_point::vg_secp256k1_point_add_affine_a0,
+        vg_secp256k1_point_a0_double = sym super::secp256k1_point::vg_secp256k1_point_a0_double,
+        vg_secp256k1_point_a0_add_affine = sym super::secp256k1_point::vg_secp256k1_point_a0_add_affine,
         vg_secp256k1_sub_mod_n = sym super::secp256k1_mont::vg_secp256k1_sub_mod_n,
     )
 }
