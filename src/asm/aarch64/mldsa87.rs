@@ -5499,6 +5499,9 @@ movk x2, #0, lsl #32
 movk x2, #0, lsl #48
 bl {vg_mldsa_signed_add_norm}
 and w24, w24, w0
+cbnz w24, 233f
+b 234f
+233:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #48128, lsl #0
@@ -5579,6 +5582,9 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_r0}
 and w24, w24, w0
+cbnz w24, 235f
+b 236f
+235:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #56320, lsl #0
@@ -5679,23 +5685,25 @@ ldr x9, [x28, #912]
 sub x9, x9, #76
 lsr x9, x9, #63
 and w24, w24, w9
-cbnz w24, 233f
+236:
+234:
+cbnz w24, 237f
 ldr x9, [x28, #904]
 add x9, x9, #7
 str x9, [x28, #904]
-b 234f
-233:
+b 238f
+237:
 movz x9, #1, lsl #0
 str x9, [x28, #896]
-234:
+238:
 232:
 ldr x9, [x28, #896]
 sub x9, x9, #1
 str x9, [x28, #896]
 cbnz x9, 22b
-cbnz w24, 235f
-b 236f
-235:
+cbnz w24, 239f
+b 240f
+239:
 movz x0, #18432, lsl #0
 add x0, x28, x0
 bl {vg_mldsa_canonicalize_signed}
@@ -5720,13 +5728,13 @@ bl {vg_mldsa_canonicalize_signed}
 add x0, x23, #0
 add x1, x28, #1040
 movz x2, #64, lsl #0
-237:
+241:
 ldrb w9, [x1, #0]
 strb w9, [x0, #0]
 add x0, x0, #1
 add x1, x1, #1
 sub x2, x2, #1
-cbnz x2, 237b
+cbnz x2, 241b
 movz x0, #18432, lsl #0
 add x0, x28, x0
 movz x1, #65535, lsl #0
@@ -5826,7 +5834,7 @@ movz x3, #4544, lsl #0
 add x3, x23, x3
 movz x4, #83, lsl #0
 bl {vg_mldsa_hint_bit_pack}
-236:
+240:
 21:
 add x0, x24, #0
 ldr x23, [x28, #840]
@@ -12592,6 +12600,9 @@ movk x2, #0, lsl #32
 movk x2, #0, lsl #48
 bl {vg_mldsa_signed_add_norm}
 and w24, w24, w0
+cbnz w24, 28f
+b 29f
+28:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #48128, lsl #0
@@ -12672,6 +12683,9 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_r0}
 and w24, w24, w0
+cbnz w24, 210f
+b 211f
+210:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #56320, lsl #0
@@ -12772,23 +12786,25 @@ ldr x9, [x28, #912]
 sub x9, x9, #76
 lsr x9, x9, #63
 and w24, w24, w9
-cbnz w24, 28f
+211:
+29:
+cbnz w24, 212f
 ldr x9, [x28, #904]
 add x9, x9, #7
 str x9, [x28, #904]
-b 29f
-28:
+b 213f
+212:
 movz x9, #1, lsl #0
 str x9, [x28, #896]
-29:
+213:
 27:
 ldr x9, [x28, #896]
 sub x9, x9, #1
 str x9, [x28, #896]
 cbnz x9, 22b
-cbnz w24, 210f
-b 211f
-210:
+cbnz w24, 214f
+b 215f
+214:
 movz x0, #18432, lsl #0
 add x0, x28, x0
 bl {vg_mldsa_canonicalize_signed}
@@ -12813,13 +12829,13 @@ bl {vg_mldsa_canonicalize_signed}
 add x0, x23, #0
 add x1, x28, #1040
 movz x2, #64, lsl #0
-212:
+216:
 ldrb w9, [x1, #0]
 strb w9, [x0, #0]
 add x0, x0, #1
 add x1, x1, #1
 sub x2, x2, #1
-cbnz x2, 212b
+cbnz x2, 216b
 movz x0, #18432, lsl #0
 add x0, x28, x0
 movz x1, #65535, lsl #0
@@ -12919,7 +12935,7 @@ movz x3, #4544, lsl #0
 add x3, x23, x3
 movz x4, #83, lsl #0
 bl {vg_mldsa_hint_bit_pack}
-211:
+215:
 21:
 add x0, x24, #0
 ldr x23, [x28, #840]
