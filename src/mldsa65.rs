@@ -13,7 +13,7 @@
 //! module supplies the randomness and working space, and destroys the
 //! intermediate values (§3.6.3).
 //!
-//! On AArch64, verification is `vg_mldsa65_verify_message_cached`
+//! On x86-64 and AArch64, verification is `vg_mldsa65_verify_message_cached`
 //! (`verifyMessageCachedContract`), which takes the hash `tr = H(pk, 64)`
 //! of the public key (FIPS 204 Algorithm 8) rather than computing it each
 //! time: a [`VerifyingKey65`] keeps it, computed when the key is made from
@@ -60,7 +60,7 @@ crate::mldsa_common::ml_dsa! {
     sign_avx2: (crate::arch::mldsa65::vg_mldsa65_sign_avx2, crate::arch::mldsa65::VG_MLDSA65_SIGN_AVX2_FEATURES),
     verify_avx2: (crate::arch::mldsa65::vg_mldsa65_verify_avx2, crate::arch::mldsa65::VG_MLDSA65_VERIFY_AVX2_FEATURES),
     sign_message_avx2: (crate::arch::mldsa65::vg_mldsa65_sign_message_avx2, crate::arch::mldsa65::VG_MLDSA65_SIGN_MESSAGE_AVX2_FEATURES),
-    verify_message_avx2: (crate::arch::mldsa65::vg_mldsa65_verify_message_avx2, crate::arch::mldsa65::VG_MLDSA65_VERIFY_MESSAGE_AVX2_FEATURES),
+    verify_message_cached_avx2: (crate::arch::mldsa65::vg_mldsa65_verify_message_cached_avx2, crate::arch::mldsa65::VG_MLDSA65_VERIFY_MESSAGE_CACHED_AVX2_FEATURES),
     pk: 1952,
     sk: 4032,
     sig: 3309,

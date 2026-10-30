@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
-# ML-DSA on x86-64, `verify_message`: the call of the verification function on `μ`
+# ML-DSA on x86-64, `verify_message_cached`: the call of the verification function on `μ`
 
 Untrusted: everything here is checked by Lean. Any code that meets the
 contract the proof of `vg_mldsa*_verify` is written against (`verifyK p`),
@@ -28,7 +28,7 @@ open VG.Proof.MlDsa.X86_64.Verify (verifyK)
 open VG.Spec.MlDsa
 open VG.Spec.Sha3 (bytesAt)
 
-/-- A verification function on `μ` that `verify_message` can call. -/
+/-- A verification function on `μ` that `verify_message_cached` can call. -/
 structure VerifyFn (p : Params) (c : Prog isa) : Prop where
   ok : ∀ s, (verifyK p).pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (verifyK p).post s s'
   ct : ConstantTime isa (verifyK p).pre (verifyK p).pub c
@@ -51,7 +51,7 @@ abbrev rScrV (p : Params) (L : Lay) : Region := ⟨L.scr, Verify.scrLen p⟩
 abbrev verifyRd (p : Params) (L : Lay) : List Region := [⟨L.key, p.pkLen⟩, ⟨L.MU, 64⟩, ⟨L.sig, p.sigLen⟩]
 abbrev verifyWr (p : Params) (L : Lay) : List Region := [rScrV p L]
 
-/-- What a layout of `verify_message` says of `sig` and `scratch`. -/
+/-- What a layout of `verify_message_cached` says of `sig`, `scratch` and `tr`. -/
 structure VFacts (p : Params) (L : Lay) : Prop where
   key : L.keyLen = p.pkLen
   e : oE p = L.E
@@ -64,8 +64,11 @@ structure VFacts (p : Params) (L : Lay) : Prop where
   kScr : L.STK.Disjoint ⟨L.scr, mScrLen p⟩
   nSig : L.sig.toNat + p.sigLen ≤ 2 ^ 64
   nScr : L.scr.toNat + mScrLen p ≤ 2 ^ 64
+  inTr : (⟨L.rnd, 64⟩ : Region) ∈ L.rd
+  xTr : L.XS.Disjoint ⟨L.rnd, 64⟩
+  kTr : L.STK.Disjoint ⟨L.rnd, 64⟩
 
-/-- The layout is that of a run of `verify_message` from a state with the
+/-- The layout is that of a run of `verify_message_cached` from a state with the
 memory `m`, past the branch on `ctx_len`. -/
 def VOk (p : Params) (L : Lay) (m : Mem) : Prop :=
   ∃ σ, VPre p σ ∧ (σ.gpr .r8).toNat < 256 ∧ vlay p σ = L ∧ σ.mem = m
@@ -79,7 +82,14 @@ theorem VOk.facts {p : Params} {L : Lay} {m : Mem} (h : VOk p L m) : VFacts p L 
     ⟨vScr p σ, by simp [vlay, hσ.wr], within_base _ (by rw [mScr_eq]; simp only [Verify.scrLen, oE]; omega)⟩,
     ⟨vScr p σ, by simp [vlay, hσ.wr],
       (within_off (vlay p σ).X (d := 840) (n := 64) (k := 1024) (by omega)).trans (vlay_X p σ)⟩,
-    hσ.sigScr, hσ.pkScr, hσ.stkSig, hσ.stkScr, hσ.nSig, hσ.nScr⟩
+    hσ.sigScr, hσ.pkScr, hσ.stkSig, hσ.stkScr, hσ.nSig, hσ.nScr, by simp [vlay, hσ.rd],
+    hσ.scrTr.sub_left (vlay_X p σ).sub, hσ.stkTr⟩
+
+/-- `tr = H(pk, 64)`, in the memory of the run. -/
+theorem VOk.tr {p : Params} {L : Lay} {m : Mem} (h : VOk p L m) :
+    bytesAt m L.rnd 64 = pkTr (bytesAt m L.key p.pkLen) := by
+  obtain ⟨σ, hσ, _, rfl, rfl⟩ := h
+  exact hσ.tr
 
 /-- The registers after the moves of the arguments of the verification function on `μ`. -/
 theorem verifyRegsL {p : Params} {L : Lay} (hE : oE p = L.E) {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem}

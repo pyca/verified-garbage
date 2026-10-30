@@ -1,18 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignPre
+public import VerifiedGarbage.Spec.MlDsa.CachedVerify
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Bitslice.Anf
 import VerifiedGarbage.Proof.Sha3.X86_64.Permute
 
 /-!
-# ML-DSA on x86-64, `verify_message`: the precondition and the layout
+# ML-DSA on x86-64, `verify_message_cached`: the precondition and the layout
 
 Untrusted: everything here is checked by Lean. The precondition of
-`verifyMessageContract p X86_64.abi 112`, spelled out (`VPre`), and the
-layout of a run from a state satisfying it (`vlay`): the key is `pk`, there
-is no `rnd` (its slot holds 0) and `scratch` is the only argument on the
-stack.
+`verifyMessageCachedContract p X86_64.abi 112`, spelled out (`VPre`), and
+the layout of a run from a state satisfying it (`vlay`): the key is `pk`,
+`scratch` and `tr` are the arguments on the stack, and the slot of `rnd`
+holds `tr`.
 -/
 
 @[expose] public section
@@ -29,46 +30,56 @@ variable (p : Params) (s : State)
 
 abbrev vPk : Region := ⟨s.gpr .rdi, p.pkLen⟩
 abbrev vSigR : Region := ⟨s.gpr .r9, p.sigLen⟩
-abbrev vArgs : Region := ⟨stackArgAddr s 0, 8⟩
+abbrev vArgs : Region := ⟨stackArgAddr s 0, 16⟩
 abbrev vScr : Region := ⟨stackArg s 0, mScrLen p⟩
+abbrev vTr : Region := ⟨stackArg s 1, 64⟩
 
 end
 
-/-- The precondition of `verifyMessageContract p X86_64.abi 112`. -/
+/-- The precondition of `verifyMessageCachedContract p X86_64.abi 112`. -/
 structure VPre (p : Params) (s : State) : Prop where
   sp : 112 ≤ (s.gpr .rsp).toNat
-  sp2 : (s.gpr .rsp).toNat + 16 ≤ 2 ^ 64
-  rd : s.rd = [vPk p s, rMsg s, rCtx s, vSigR p s, vArgs s]
+  sp2 : (s.gpr .rsp).toNat + 24 ≤ 2 ^ 64
+  rd : s.rd = [vPk p s, rMsg s, rCtx s, vSigR p s, vTr s, vArgs s]
   wr : s.wr = [vScr p s]
   pkScr : (vPk p s).Disjoint (vScr p s)
   msgScr : (rMsg s).Disjoint (vScr p s)
   ctxScr : (rCtx s).Disjoint (vScr p s)
   sigScr : (vSigR p s).Disjoint (vScr p s)
+  scrTr : (vScr p s).Disjoint (vTr s)
   scrArgs : (vScr p s).Disjoint (vArgs s)
   retPk : (rRet s).Disjoint (vPk p s)
   retMsg : (rRet s).Disjoint (rMsg s)
   retCtx : (rRet s).Disjoint (rCtx s)
   retSig : (rRet s).Disjoint (vSigR p s)
   retScr : (rRet s).Disjoint (vScr p s)
+  retTr : (rRet s).Disjoint (vTr s)
   retArgs : (rRet s).Disjoint (vArgs s)
   stkPk : (rStk s).Disjoint (vPk p s)
   stkMsg : (rStk s).Disjoint (rMsg s)
   stkCtx : (rStk s).Disjoint (rCtx s)
   stkSig : (rStk s).Disjoint (vSigR p s)
   stkScr : (rStk s).Disjoint (vScr p s)
+  stkTr : (rStk s).Disjoint (vTr s)
   stkArgs : (rStk s).Disjoint (vArgs s)
   nPk : (s.gpr .rdi).toNat + p.pkLen ≤ 2 ^ 64
   nMsg : (s.gpr .rsi).toNat + (s.gpr .rdx).toNat ≤ 2 ^ 64
   nCtx : (s.gpr .rcx).toNat + (s.gpr .r8).toNat ≤ 2 ^ 64
   nSig : (s.gpr .r9).toNat + p.sigLen ≤ 2 ^ 64
   nScr : (stackArg s 0).toNat + mScrLen p ≤ 2 ^ 64
+  nTr : (stackArg s 1).toNat + 64 ≤ 2 ^ 64
+  tr : bytesAt s.mem (stackArg s 1) 64 = pkTr (bytesAt s.mem (s.gpr .rdi) p.pkLen)
 
-theorem vPre_of {p : Params} {s : State} (h : (verifyMessageContract p X86_64.abi 112).pre s) : VPre p s := by
-  sig_pre [verifyMessageContract, verifyMessageSig, X86_64.abi, X86_64.argRegs, List.range, List.range.loop] at h
-  obtain ⟨sp, sp2, rd, wr, pkScr, msgScr, ctxScr, sigScr, scrArgs, retPk, retMsg, retCtx, retSig, retScr,
-    retArgs, stkPk, stkMsg, stkCtx, stkSig, stkScr, stkArgs, nPk, nMsg, nCtx, nSig, nScr⟩ := h
-  exact ⟨sp, sp2, rd, wr, pkScr, msgScr, ctxScr, sigScr, scrArgs, retPk, retMsg, retCtx, retSig, retScr,
-    retArgs, stkPk, stkMsg, stkCtx, stkSig, stkScr, stkArgs, nPk, nMsg, nCtx, nSig, nScr⟩
+theorem vPre_of {p : Params} {s : State} (h : (verifyMessageCachedContract p X86_64.abi 112).pre s) :
+    VPre p s := by
+  sig_pre [verifyMessageCachedContract, verifyMessageCachedSig, X86_64.abi, X86_64.argRegs, List.range,
+    List.range.loop] at h
+  obtain ⟨sp, sp2, rd, wr, pkScr, msgScr, ctxScr, sigScr, scrTr, scrArgs, retPk, retMsg, retCtx, retSig,
+    retScr, retTr, retArgs, stkPk, stkMsg, stkCtx, stkSig, stkScr, stkTr, stkArgs, nPk, nMsg, nCtx, nSig,
+    nScr, nTr, tr⟩ := h
+  exact ⟨sp, sp2, rd, wr, pkScr, msgScr, ctxScr, sigScr, scrTr, scrArgs, retPk, retMsg, retCtx, retSig,
+    retScr, retTr, retArgs, stkPk, stkMsg, stkCtx, stkSig, stkScr, stkTr, stkArgs, nPk, nMsg, nCtx, nSig,
+    nScr, nTr, tr⟩
 
 theorem pkLen_ge {p : Params} (hp : p ∈ params) : 128 ≤ p.pkLen ∧ p.pkLen < 2 ^ 31 := by
   simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp
@@ -83,7 +94,7 @@ def vlay (p : Params) (s : State) : Lay where
   len := s.gpr .rdx
   ctx := s.gpr .rcx
   ctxLen := s.gpr .r8
-  rnd := 0
+  rnd := stackArg s 1
   sig := s.gpr .r9
   scr := stackArg s 0
   E := oE p

@@ -9,11 +9,11 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Correct
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inv
 
 /-!
-# ML-DSA on x86-64, `verify_message`: the verification functions on `μ` it calls
+# ML-DSA on x86-64, `verify_message_cached`: the verification functions on `μ` it calls
 
 Untrusted: everything here is checked by Lean. `vg_mldsa*_verify`, with any
 implementation `v` of the polynomial arithmetic, is a function
-`verify_message` can call (`verifyFn`): its proofs give its contract, it
+`verify_message_cached` can call (`verifyFn`): its proofs give its contract, it
 never writes `rsp`, and its calls nest at most four deep, which, as whether
 it writes `rsp`, is checked on the code with its primitives empty
 (`verify_same`), given that theirs nest at most three deep.
@@ -119,15 +119,15 @@ theorem verifyFn (v : ArithImpl) {p : Params} (hp : p ∈ params) :
       (verify0_depth h3))⟩
 
 theorem verifyMessage_spSafe {p : Params} {n : String} {c : Prog isa} (hc : c.all (fun i => !isa.writesSp i) = true) :
-    (Impl.MlDsa.X86_64.Message.verifyMessage n c p).all (fun i => !isa.writesSp i) = true := by
+    (Impl.MlDsa.X86_64.Message.verifyMessageCached n c p).all (fun i => !isa.writesSp i) = true := by
   generalize hq : (fun i => !isa.writesSp i) = q at hc ⊢
   have ha : Impl.Sha3.X86_64.Stream.absorb.all q = true := hq ▸ kabs_spSafe
   have hp' : Impl.Sha3.X86_64.Stream.pad.all q = true := hq ▸ kpad_spSafe
   have hs : Impl.Sha3.X86_64.Stream.squeeze.all q = true := hq ▸ ksqz_spSafe
   have hsa : ∀ as, (setArgs as).all q = true := fun as => hq ▸ setArgs_wsp as
   have hmv : ∀ a, (Arg.mov .rdi a).all q = true := fun a => hq ▸ arg_wsp .rdi (by decide) a
-  simp only [Impl.MlDsa.X86_64.Message.verifyMessage, Impl.MlDsa.X86_64.Message.top,
-    Impl.MlDsa.X86_64.Message.muHash, Impl.MlDsa.X86_64.Message.trHash, Impl.MlDsa.X86_64.Message.zeroSt,
+  simp only [Impl.MlDsa.X86_64.Message.verifyMessageCached, Impl.MlDsa.X86_64.Message.top,
+    Impl.MlDsa.X86_64.Message.muHash, Impl.MlDsa.X86_64.Message.zeroSt,
     Impl.MlDsa.X86_64.Message.kabs, Impl.MlDsa.X86_64.Message.kpad, Impl.MlDsa.X86_64.Message.ksqz,
     Impl.MlDsa.X86_64.Message.callA, Code.all, hc, ha, hp', hs, hsa, hmv, Bool.and_true, Bool.true_and]
   subst hq

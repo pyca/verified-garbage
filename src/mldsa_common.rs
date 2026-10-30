@@ -48,8 +48,8 @@ impl Backend {
 
 /// Defines the API of one ML-DSA parameter set: its `Error`, `SigningKey`
 /// and `VerifyingKey`, over its verified `keygen`, `sign_message` and
-/// `verify_message` functions (on AArch64, `verify_message_cached`, which
-/// takes the hash `tr` of the public key the `VerifyingKey` keeps), its
+/// `verify_message` functions (on x86-64 and AArch64, `verify_message_cached`,
+/// which takes the hash `tr` of the public key the `VerifyingKey` keeps), its
 /// `sign` and `verify` functions (which take a precomputed `μ`)
 /// and its sizes.
 macro_rules! ml_dsa {
@@ -72,7 +72,7 @@ macro_rules! ml_dsa {
         sign_avx2: ($sign_avx2:path, $sign_avx2_features:path),
         verify_avx2: ($verify_avx2:path, $verify_avx2_features:path),
         sign_message_avx2: ($sign_message_avx2:path, $sign_message_avx2_features:path),
-        verify_message_avx2: ($verify_message_avx2:path, $verify_message_avx2_features:path),
+        verify_message_cached_avx2: ($verify_message_cached_avx2:path, $verify_message_cached_avx2_features:path),
         pk: $pk:literal,
         sk: $sk:literal,
         sig: $sig:literal,
@@ -98,7 +98,7 @@ macro_rules! ml_dsa {
                 $sign_avx2_features,
                 $verify_avx2_features,
                 $sign_message_avx2_features,
-                $verify_message_avx2_features,
+                $verify_message_cached_avx2_features,
             ];
             #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
             const REQUIRED: &[$crate::cpu::Features] = &[];
@@ -143,7 +143,7 @@ macro_rules! ml_dsa {
         pub struct $VerifyingKey {
             bytes: [u8; $pk],
             // Constructors maintain tr = SHAKE256(bytes, 64).
-            #[cfg(target_arch = "aarch64")]
+            #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
             tr: [u8; 64],
         }
 
@@ -164,7 +164,7 @@ macro_rules! ml_dsa {
             pub fn from_bytes(bytes: &[u8; $pk]) -> Self {
                 $VerifyingKey {
                     bytes: *bytes,
-                    #[cfg(target_arch = "aarch64")]
+                    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
                     tr: {
                         let mut tr = [0; 64];
                         $crate::hashes::sha3::Shake256::digest(bytes, &mut tr);
@@ -196,16 +196,16 @@ macro_rules! ml_dsa {
                 // Backend selection checks the generated CPU feature requirements.
                 let r = unsafe {
                     match backend() {
-                        #[cfg(not(target_arch = "aarch64"))]
+                        #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
                         Backend::Scalar => $verify_message(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr()),
                         // Both constructors establish tr = SHAKE256(bytes, 64);
                         // the key and digest remain private and immutable.
-                        #[cfg(target_arch = "aarch64")]
+                        #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
                         Backend::Scalar => $verify_message_cached(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
                         #[cfg(target_arch = "aarch64")]
                         Backend::Sha3 => $verify_message_cached_sha3(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $verify_message_avx2(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr()),
+                        Backend::Avx2 => $verify_message_cached_avx2(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
                     }
                 };
                 match r {
@@ -281,7 +281,7 @@ macro_rules! ml_dsa {
                     seed: *seed,
                     vk: $VerifyingKey {
                         bytes: [0; $pk],
-                        #[cfg(target_arch = "aarch64")]
+                        #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
                         tr: [0; 64],
                     },
                     sk: [0; $sk],
@@ -316,7 +316,7 @@ macro_rules! ml_dsa {
                 }
                 // keyGenInternal encodes SHAKE256(pk, 64) at sk[64..128].
                 // Initialize the cache only after successful key generation.
-                #[cfg(target_arch = "aarch64")]
+                #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
                 key.vk.tr.copy_from_slice(&key.sk[64..128]);
                 Ok(key)
             }
