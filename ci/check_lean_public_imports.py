@@ -53,9 +53,8 @@ from lean_import_graph import VisibilityGraph
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 LEAN = ROOT / "lean"
-# The library the check covers, and its one file that is not a module.
+# The library the check covers.
 LIBRARY = "VerifiedGarbage"
-NOT_MODULES = {"VerifiedGarbage.Artifacts"}
 DECLARATION_VIEWS = ("public", "private", "meta_public", "meta_private")
 # More edited modules than this (a missing manifest, which makes every module
 # edited) would take `lake shake` minutes: the check then covers none.
@@ -1590,7 +1589,7 @@ def library_modules(names) -> list[str]:
     out = []
     for m in names:
         p = LEAN / pathlib.Path(*m.split(".")).with_suffix(".lean")
-        if m.split(".")[0] == LIBRARY and m not in NOT_MODULES and p.is_file() and is_module(p.read_text()):
+        if m.split(".")[0] == LIBRARY and p.is_file() and is_module(p.read_text()):
             out.append(m)
     return sorted(out)
 

@@ -3,8 +3,7 @@ import VerifiedGarbage.TCB.Emit
 /-!
 # The emitter
 
-Renders every artifact (those of `VerifiedGarbage/Artifacts.lean`, of
-each registration file under `VerifiedGarbage/Artifacts/`, and of each
+Renders every artifact (those of each registration file under `VerifiedGarbage/Artifacts/`, and of each
 generic file under `VerifiedGarbage/Generic/` for each variant under
 `VerifiedGarbage/Variants/`, see `VerifiedGarbage/TCB/Emit.lean`) into Rust, under `src/asm/` of the crate
 (by default `../src/asm`, relative to `lean/`). Run it from `lean/` after

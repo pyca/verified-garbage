@@ -150,9 +150,9 @@ instructions in an ISA model) go in their own PR before either.
    `Verified.of_implies` (see `Proof/Framework/Contract.lean`).
 4. An `Artifact` in the registration file `Artifacts/<Alg>/<Target>.lean`,
    which defines `VG.Artifacts.<Alg>.<Target>.artifacts` (a new file for a
-   new algorithm or target; see `Artifacts/Selftest/X86_64.lean`; never
-   `Artifacts.lean`, whose list is empty), made from the function's `Api`
-   by `Api.artifact` (`TCB/Registration.lean`), with the file importing
+   new algorithm or target; see `Artifacts/Selftest/X86_64.lean`), made
+   from the function's `Api` by `Api.artifact` (`TCB/Registration.lean`),
+   with the file importing
    `Proof/Framework/Registration.lean` for its default proofs:
 
    ```lean
@@ -266,8 +266,7 @@ should add files, not edit lists that every other PR edits too.
 ## Lean modules
 
 Every file under `lean/VerifiedGarbage/` is a module of Lean's module
-system, except `Artifacts.lean`; `python3 ci/check_lean_modules.py` checks
-it. Write a new file's header by hand:
+system; `python3 ci/check_lean_modules.py` checks it. Write a new file's header by hand:
 
 ```lean
 /- Copyright notice, if any. -/
@@ -368,7 +367,7 @@ namespace VG.Proof.Md5.X86_64
   to build (`ci/check_lean_speed.py` checks it).
 * The audits (`#assert_standard_axioms`, `#assert_no_compiler_overrides`,
   `#assert_spec_origin`) run only in files that are not modules (the
-  emitter's drivers, `Artifacts.lean`, `VerifiedGarbageTest/`), and refuse
+  emitter's drivers, `VerifiedGarbageTest/`), and refuse
   to run in a module: a module sees the theorems it imports as axioms,
   without their proofs. A file that is not a module sees every module's
   private imports too.

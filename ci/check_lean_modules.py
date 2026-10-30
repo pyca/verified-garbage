@@ -3,11 +3,13 @@
 modules"). Exits non-zero on violations, naming each.
 
   * Every file under lean/VerifiedGarbage/ is a module (it starts with
-    `module`, after any leading comment), except `Artifacts.lean`.
+    `module`, after any leading comment).
 
 Lean checks the rest itself: a module may not import a file that is not
-one ("cannot import non-`module`"), and the audits that `Artifacts.lean`
-runs refuse to run in a module (`TCB/Axioms.lean`, `TCB/Audit.lean`).
+one ("cannot import non-`module`"), and the audits refuse to run in a
+module (`TCB/Axioms.lean`, `TCB/Audit.lean`), so they run in the files
+that are not, outside lean/VerifiedGarbage/ (the emitter's drivers,
+`VerifiedGarbageTest/`).
 """
 
 import pathlib
@@ -16,9 +18,6 @@ from collections.abc import Iterable
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 LEAN = ROOT / "lean"
-
-# The one file of the library that is not a module.
-NOT_MODULES = ["VerifiedGarbage/Artifacts.lean"]
 
 
 def is_module(lines: Iterable[str]) -> bool:
@@ -46,12 +45,10 @@ def problems(lean: pathlib.Path) -> list[str]:
     out = []
     for f in sorted((lean / "VerifiedGarbage").rglob("*.lean")):
         rel = f.relative_to(lean).as_posix()
-        if rel in NOT_MODULES:
-            continue
         with f.open(encoding="utf-8") as lines:
             if not is_module(lines):
-                out.append(f"lean/{rel}: not a module; every file under lean/VerifiedGarbage/ but "
-                           f"{', '.join(NOT_MODULES)} starts with `module` (CLAUDE.md, \"Lean modules\")")
+                out.append(f"lean/{rel}: not a module; every file under lean/VerifiedGarbage/ "
+                           "starts with `module` (CLAUDE.md, \"Lean modules\")")
     return out
 
 

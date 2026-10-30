@@ -96,8 +96,9 @@ import time
 import tomllib
 
 LEAN = pathlib.Path(__file__).resolve().parent.parent / "lean"
-# The libraries of `lean/lakefile.toml`: `VerifiedGarbage.*` (the root module
-# and every module under it) and `VerifiedGarbageTest.+` (every module under it).
+# The libraries of `lean/lakefile.toml`: `VerifiedGarbage.+` and
+# `VerifiedGarbageTest.+` (every module under each); `True` reads a root
+# module as well, `lean/<library>.lean`, if there is one (there is none).
 LIBRARIES = {"VerifiedGarbage": True, "VerifiedGarbageTest": False}
 # Files any change of which rebuilds every module (the lakefile's but for
 # which modules each library has: see `lakefile_inputs`).
