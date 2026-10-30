@@ -1,0 +1,40 @@
+name: Full CI
+
+# Starts a full CI run of main (ci.yml's `workflow_dispatch`: every job,
+# whatever changed) every six hours, when main has moved since the last one.
+# The merge queue tests only the architectures each group's changes reach
+# (ci/rust_arches.py); these runs test what that leaves out, which changes
+# outside the repository (runners, Rust's releases, Wycheproof). A failure opens
+# an issue (ci.yml's `full-run-failed`).
+#
+# "Moved" is main's tip being a commit no full run has started on, not a
+# commit in the last six hours: GitHub delays scheduled runs, sometimes by
+# an hour or more, and drops some, so a window would miss commits.
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+
+permissions: {}
+
+jobs:
+  start:
+    runs-on: ubuntu-26.04
+    permissions:
+      # To list ci.yml's runs, and start one.
+      actions: write
+      contents: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - run: |
+          head=$(gh api "repos/$GH_REPO/commits/main" --jq .sha)
+          # Every full run of main, started by this workflow or by hand,
+          # finished or not.
+          if gh run list --workflow ci.yml --event workflow_dispatch --branch main --limit 100 \
+              --json headSha --jq '.[].headSha' | grep -qx "$head"; then
+            echo "A full run of $head has started already."
+          else
+            echo "Starting a full run of $head."
+            gh workflow run ci.yml --ref main
+          fi

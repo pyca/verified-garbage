@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
   merge_group:
+  # A full run: every job, whatever changed (ci/rust_arches.py). The Full CI
+  # workflow starts one on main every few hours when main has moved.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -332,10 +335,16 @@ jobs:
   # The Rust jobs' matrices (ci/rust_matrix.toml), narrowed to the
   # architectures whose tests run: a pull request starts only the jobs of
   # those its changes can affect (ci/rust_arches.py): an architecture's own
-  # `src/asm/<target>/`, or the shared code, which is every architecture's.
-  # Each architecture's tests cover every line it builds (`coverage`), so
-  # those that run are checked alone. The merge queue runs every job, so that
-  # everything is checked before anything lands. A push to main is the commit the
+  # `src/asm/<target>/`, a module of the library or the tests, which is the
+  # architectures' its `cfg`s let compile it, or the other shared code, which
+  # is every architecture's. Each architecture's tests cover every line it
+  # builds (`coverage`), so those that run are checked alone. The merge queue
+  # narrows them the same way, by what its group changes from the group's
+  # base, which passed: an architecture none of its changes reach builds and
+  # runs exactly what passed there. `rust-lint` still lints every target when
+  # some are tested, and a full run (`workflow_dispatch`, which the Full CI
+  # workflow starts on main every six hours when main has moved) runs every
+  # job, for what changes outside the repository. A push to main is the commit the
   # merge queue tested (see the `lean` job's `reuse`): its Rust jobs only
   # build (each entry's `tests`, the jobs' `TESTS`), for main's caches, which
   # only main saves, and so run once per cache: every `rust` and `thumb` job,
@@ -358,13 +367,27 @@ jobs:
           fetch-depth: 2
           # Only ci/rust_arches.py and its matrix: the diff reads trees, not files.
           sparse-checkout: ci
+      # A merge group's base: main, or the group ahead of it in the queue,
+      # whose changes it contains too (as many commits back as PRs ahead).
+      - if: ${{ github.event_name == 'merge_group' }}
+        env:
+          BASE: ${{ github.event.merge_group.base_sha }}
+        run: git fetch --no-tags --depth=1 origin "$BASE"
       - id: arches
         env:
           EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.merge_group.base_sha }}
         run: |
-          if [ "$EVENT" = pull_request ]; then
-            git diff --name-only --no-renames HEAD^1 HEAD
-          fi | python3 ci/rust_arches.py "$EVENT" | tee -a "$GITHUB_OUTPUT"
+          # The commits whose files ci/rust_arches.py reads, for the
+          # modules' `cfg`s (fetched at once: the clone has no file contents).
+          case "$EVENT" in
+            pull_request) revs="HEAD^1 HEAD" ;;
+            merge_group) revs="$BASE HEAD" ;;
+            *) revs= ;;
+          esac
+          if [ -n "$revs" ]; then
+            git diff --name-only --no-renames $revs
+          fi | python3 ci/rust_arches.py "$EVENT" $revs | tee -a "$GITHUB_OUTPUT"
 
   # Every test, with coverage, on each platform of ci/rust_matrix.toml's
   # `rust` (the lints are `rust-lint`'s).
@@ -608,8 +631,10 @@ jobs:
                  END { print n " verified function symbols"; exit (n == 0 || bad > 0) }'
 
   # rustfmt and Clippy, for each target the jobs above build
-  # (ci/rust_matrix.toml's `lint`, those of the architectures `rust-arches`
-  # selected, or all of them when the benchmarks changed), on one x86-64
+  # (ci/rust_matrix.toml's `lint`: every one when `rust-arches` selected some
+  # architecture, so that what it leaves out is still built and linted, the
+  # benchmarks only for those it selected, or every one when the benchmarks
+  # changed), on one x86-64
   # runner (ci/rust_lint.py): Clippy only checks, which needs the target's
   # standard library and no linker or runner, so the slow platforms (RISC-V's
   # and PPC64LE's runners, x86 and ARMv7 in their containers) only build and
@@ -1156,3 +1181,31 @@ jobs:
           # The metrics embed the complete lean-plan, whose working
           # artifact lasts one day.
           retention-days: 30
+
+  # A full run of main that failed (see `workflow_dispatch`) opens an issue,
+  # or comments on the one still open: no pull request waits on these runs,
+  # so nobody would see it otherwise. Each failure since the issue opened is
+  # a comment, until someone fixes main and closes it.
+  full-run-failed:
+    name: Report the failed full run
+    needs: all-green
+    if: ${{ failure() && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-26.04
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TITLE: The full CI run of main fails
+      BODY: "The full CI run of ${{ github.sha }} failed: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+    steps:
+      - run: |
+          number=$(gh issue list --state open --search "\"$TITLE\" in:title" --json number,title \
+            --jq "[.[] | select(.title == env.TITLE)][0].number // empty")
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY
+
+          Merge queue runs test only the architectures their changes reach (ci/rust_arches.py), so main can fail here alone: through a change outside the repository (a runner, a new Rust release, new Wycheproof vectors), or a change that reached an architecture ci/rust_arches.py did not count it as reaching."
+          fi
