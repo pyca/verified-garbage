@@ -100,7 +100,7 @@ theorem fallback_ok {s s₀ : State} (h : Batch σ 2 0 112 4 s₀)
     (by xrun) (by decide)) fun s' ⟨⟨hm', hr⟩, hk'⟩ => ?_)
   have hb := h.restore (hm'.trans hm) ((hk.trans hk').mono (by simp)) hr
   exact WP.seq (WP.mono (squeeze_last_ok hp hb) fun _ h₁ =>
-    WP.seq (WP.mono (batch_ok hp (by decide) (by decide) (by decide) (by decide) h₁)
+    WP.seq (WP.mono (batch_ok hp (by decide) (by decide) (by decide) (by decide) (by decide) h₁)
       fun _ h₂ => last_flags_ok hp h₂))
 
 omit hp in
@@ -143,16 +143,17 @@ theorem finish_ok {s : State} (h : Batch σ 2 0 112 4 s) :
 /-- Everything after the prologue, the round constants and the padded seeds. -/
 theorem body_ok {s : State} (h : SqInv σ 0 s) :
     WP isa (.seq (squeezes 0 3) (.seq (.block zeroJ)
-      (.seq (first 0) (.seq (first 1) (.seq (first 2) (.seq (first 3)
+      (.seq (VG.Impl.MlDsa.X86_64.Sample.Rej5.segment 0 0 168) (.seq (VG.Impl.MlDsa.X86_64.Sample.Rej5.segment 1 0 168)
+        (.seq (VG.Impl.MlDsa.X86_64.Sample.Rej5.segment 2 0 168) (.seq (VG.Impl.MlDsa.X86_64.Sample.Rej5.segment 3 0 168)
         (.seq (squeezes 0 2) (.seq (VG.Impl.MlDsa.X86_64.Sample.Rej5.batch 0 112) finish)))))))) s
       fun s' => r4K.post σ s' ∧ gprPreserved σ s' := by
   refine WP.seq (WP.mono (sqTs_ok hp (by decide) (by decide) (sqT_of h)) fun s₃ ⟨q₃, _⟩ =>
       WP.seq (WP.mono (zeroJ_ok hp q₃) fun s₄ p₀ => ?_))
-  refine WP.seq (WP.mono (first_ok hp (by decide) p₀) fun _ p₁ => WP.seq (WP.mono (first_ok hp (by decide) p₁)
-    fun _ p₂ => WP.seq (WP.mono (first_ok hp (by decide) p₂) fun _ p₃ =>
-      WP.seq (WP.mono (first_ok hp (by decide) p₃) fun _ p₄ => ?_))))
+  refine WP.seq (WP.mono (segment0_ok hp (by decide) p₀) fun _ p₁ => WP.seq (WP.mono (segment0_ok hp (by decide) p₁)
+    fun _ p₂ => WP.seq (WP.mono (segment0_ok hp (by decide) p₂) fun _ p₃ =>
+      WP.seq (WP.mono (segment0_ok hp (by decide) p₃) fun _ p₄ => ?_))))
   exact WP.seq (WP.mono (sqM_ok hp (by decide) (by decide) (m2_of p₄)) fun _ m₂ =>
-      WP.seq (WP.mono (batch_ok hp (by decide) (by decide) (by decide) (by decide) (batch_of_m2 m₂))
+      WP.seq (WP.mono (batch_ok hp (by decide) (by decide) (by decide) (by decide) (by decide) (batch_of_m2 m₂))
         fun _ b => finish_ok hp b))
 
 end
