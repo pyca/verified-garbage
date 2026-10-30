@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Inline
 public import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.PPC64LE.Reduce
 
 /-!
 # Constant time of code that leaks memory both runs agree on (PPC64LE)
@@ -50,7 +51,7 @@ def mstep (τ : T) : Instr → Option T
 
 theorem exec_regOp {i : Instr} (hi : regOp i = true) {s s' : State} (h : exec i s = some s') :
     s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  cases i <;> simp [regOp] at hi <;> simp only [exec] at h <;>
+  cases i <;> simp [regOp] at hi <;> simp only [reduceExec] at h <;>
     first
     | (simp only [Option.some.injEq] at h; subst h; exact ⟨rfl, rfl, rfl⟩)
     | (split at h <;> [skip; cases h]
@@ -122,7 +123,7 @@ theorem mstep_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
     split at hs <;> [rename_i hn; cases hs]
     cases hs
     refine ⟨by simp [addrs, ha.1.reg hn], ?_⟩
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at e₁ e₂
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨a₁, h₁, v₁, l₁, rfl⟩ := e₁; obtain ⟨a₂, h₂, v₂, l₂, rfl⟩ := e₂
     have hv := load_sound ha hn _ off h₁ h₂ l₁ l₂ (by cases sz <;> decide)
     subst hv
@@ -132,7 +133,7 @@ theorem mstep_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
     split at hs <;> [rename_i hn; cases hs]
     cases hs
     refine ⟨by simp [addrs, ha.1.reg hn], ?_⟩
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at e₁ e₂
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨a₁, h₁, v₁, l₁, rfl⟩ := e₁; obtain ⟨a₂, h₂, v₂, l₂, rfl⟩ := e₂
     have hv := load_sound ha hn _ off h₁ h₂ l₁ l₂ (by decide)
     subst hv
@@ -143,7 +144,7 @@ theorem mstep_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
     cases hs
     simp only [Bool.and_eq_true] at hn
     refine ⟨by simp [addrs, ha.1.reg hn.1], ?_⟩
-    simp only [exec, Option.bind_eq_some_iff] at e₁ e₂
+    simp only [reduceExec, Option.bind_eq_some_iff] at e₁ e₂
     obtain ⟨a₁, h₁, e₁⟩ := e₁; obtain ⟨a₂, h₂, e₂⟩ := e₂
     rw [ha.1.reg hn.2] at e₁
     exact store_sound ha hn.1 _ off h₁ h₂ e₁ e₂
@@ -153,7 +154,7 @@ theorem mstep_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
     cases hs
     simp only [Bool.and_eq_true] at hn
     refine ⟨by simp [addrs, ha.1.reg hn.1], ?_⟩
-    simp only [exec, Option.bind_eq_some_iff] at e₁ e₂
+    simp only [reduceExec, Option.bind_eq_some_iff] at e₁ e₂
     obtain ⟨a₁, h₁, e₁⟩ := e₁; obtain ⟨a₂, h₂, e₂⟩ := e₂
     rw [ha.1.reg hn.2] at e₁
     exact store_sound ha hn.1 _ off h₁ h₂ e₁ e₂

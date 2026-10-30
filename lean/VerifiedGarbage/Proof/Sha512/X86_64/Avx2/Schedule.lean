@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # SHA-512 with AVX2 on x86-64: the message schedule of one lane
@@ -50,11 +51,11 @@ theorem psllq_eq (hi lo : Word) (n : BitVec 8) (h : n.toNat < 64) :
 
 theorem pxor_eq (a b c d : Word) : XBinOp.eval .pxor (a ++ b) (c ++ d) = (a ^^^ c) ++ (b ^^^ d) := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [XBinOp.eval, BitVec.getLsbD_xor, BitVec.getLsbD_append]
+  simp only [reduceXBinOpEval, BitVec.getLsbD_xor, BitVec.getLsbD_append]
   split <;> rfl
 
 theorem paddq_eq (a b c d : Word) : XBinOp.eval .paddq (a ++ b) (c ++ d) = (a + c) ++ (b + d) := by
-  simp only [XBinOp.eval, qword_append_0, qword_append_1]
+  simp only [reduceXBinOpEval, qword_append_0, qword_append_1]
 
 theorem alignRight_8 (a b c d : Word) : alignRight (a ++ b) (c ++ d) 8 = b ++ c := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
@@ -215,7 +216,7 @@ theorem schedule_ok (i : Nat) (s : State) (a b c d e a' b' c' d' e' : BitVec 128
   simp only [t0, t1, t2, t3, mBswap, tmp, List.nodup_cons, List.mem_cons, List.not_mem_nil,
     or_false, not_or, List.nodup_nil, and_true, List.reverse_cons, List.reverse_nil, List.nil_append,
     List.cons_append] at hn hn' ⊢
-  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceAdd, and_self, runBlock_cons, runStep_some, runBlock_nil, exec, VOp.exec,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceAdd, and_self, runBlock_cons, runStep_some, runBlock_nil, reduceExec, reduceVOpExec,
     isa, RegUpd.xmm_setV, RegUpd.ymmHi_setV_256, RegUpd.gpr_setV, RegUpd.mem_setV,
     RegUpd.rd_setV, RegUpd.wr_setV, State.lane, State.ymm, State.store256, ea_at, hout, hn, hn',
     ha, hb, hc, hd, he, ha', hb', hc', hd', he', Option.some.injEq, exists_eq_left']

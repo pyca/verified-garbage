@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 public import VerifiedGarbage.Proof.Framework.X86.SseLanes
 import VerifiedGarbage.Proof.Framework.X86.SseDword
 import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 /-!
 # RC2 on x86: PITABLE in SSE2 registers
@@ -40,7 +41,7 @@ tactic_template "lrun" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(
                        rotate_left
                        · set_option linter.unusedSimpArgs false in
                          simp only [runBlock_cons, runStep_some, runBlock_nil, imm, rr,
-                         exec, readSrc, ea_memOp, State.load32, State.store32, State.load128, State.store128, execAlu, execShift,
+                         reduceExec, readSrc, ea_memOp, State.load32, State.store32, State.load128, State.store128, execAlu, execShift,
                          XOp.exec, Option.map_some, Option.bind_some,
                          gpr_setReg, mem_setReg, rd_setReg, wr_setReg, xmm_setReg,
                          gpr_setFlags, mem_setFlags, rd_setFlags, wr_setFlags, xmm_setFlags,

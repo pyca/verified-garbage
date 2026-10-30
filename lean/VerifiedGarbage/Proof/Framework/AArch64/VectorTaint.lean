@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # Public scalar values held in vector registers
@@ -53,7 +54,7 @@ private theorem scalar_vectors {i : Instr} {s s' : State}
   case ldp => obtain ⟨_, _, rfl⟩ := exec_ldp_eq he; rfl
   case stp => obtain ⟨_, rfl⟩ := exec_stp_eq he; rfl
   all_goals
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at he
+    simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at he
   all_goals
     repeat' first
       | split at he
@@ -103,14 +104,14 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State}
     cases op <;> try exact ordinary_sound ha hs e₁ e₂
     case dup a d n =>
       simp only [step, Option.some.injEq] at hs; subst hs
-      cases a <;> simp only [exec, VOp.eval, Option.map_some, Option.some.injEq] at e₁ e₂
+      cases a <;> simp only [reduceExec, reduceVOpEval, Option.map_some, Option.some.injEq] at e₁ e₂
       all_goals
         subst e₁; subst e₂
         refine ⟨rfl, ⟨ha.1.1, ha.1.2⟩, vectors_set ha.2 d ?_⟩
         intro hp; rw [ha.1.reg hp]
     case add a d n m =>
       simp only [step, Option.some.injEq] at hs; subst hs
-      simp only [exec, VOp.eval, Option.map_some, Option.some.injEq] at e₁ e₂
+      simp only [reduceExec, reduceVOpEval, Option.map_some, Option.some.injEq] at e₁ e₂
       subst e₁; subst e₂
       refine ⟨rfl, ⟨ha.1.1, ha.1.2⟩, vectors_set ha.2 d ?_⟩
       intro hp
@@ -118,7 +119,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State}
       rw [ha.2 n hp.1, ha.2 m hp.2]
     case sub a d n m =>
       simp only [step, Option.some.injEq] at hs; subst hs
-      simp only [exec, VOp.eval, Option.map_some, Option.some.injEq] at e₁ e₂
+      simp only [reduceExec, reduceVOpEval, Option.map_some, Option.some.injEq] at e₁ e₂
       subst e₁; subst e₂
       refine ⟨rfl, ⟨ha.1.1, ha.1.2⟩, vectors_set ha.2 d ?_⟩
       intro hp
@@ -126,7 +127,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State}
       rw [ha.2 n hp.1, ha.2 m hp.2]
   | umov sz d n k =>
     simp only [step, Option.some.injEq] at hs; subst hs
-    simp only [exec] at e₁ e₂
+    simp only [reduceExec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i hk
     simp only [hk, ite_true, Option.some.injEq] at e₁ e₂
@@ -135,7 +136,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State}
     rw [ha.2 n hp]
   | ldrqTbl t n off name ws =>
     simp only [step, Option.some.injEq] at hs; subst hs
-    simp only [exec] at e₁ e₂
+    simp only [reduceExec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     split at e₂ <;> [skip; cases e₂]
     cases e₁; cases e₂

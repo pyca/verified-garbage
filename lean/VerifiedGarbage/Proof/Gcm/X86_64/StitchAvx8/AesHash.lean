@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! ## Aes -/
 
@@ -288,7 +289,7 @@ private theorem prefix_ok (s : State) (d k : Nat)
     simp only [loadInputs, hk, ite_true, ite_false, List.append_nil, List.cons_append, List.nil_append,
       runBlock_cons, runStep_some, runBlock_nil, exec, isa, State.load128, hp, hx, hm,
       State.setV_rd, State.setV_wr, State.setV_ea, State.setV_mem, Option.map_some,
-      VOp.exec, VBinOp.sse, XBinOp.eval, State.lane, xmm_setV,
+      VOp.exec, reduceVBinOpSse, XBinOp.eval, State.lane, xmm_setV,
       reduceCtorEq, ite_true, ite_false, Option.some.injEq, exists_eq_left',
       inputs, input, dataIn, power] <;>
     simp (config := { contextual := true }) [State.setV]
@@ -533,8 +534,8 @@ private theorem incs_ok (C : BitVec 128) (k : Nat) (hk : k ≤ 7) (s : State)
     rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil ?_⟩
     have hm : aregs.getD (k + 1) .xmm3 ∈ aregs := aregs_member (k + 1) (by omega)
     refine ⟨?_, fun i hi => ?_, ?_, ?_, ?_, ?_⟩
-    · simp only [lane_vbin128, Ne.symm n11, ite_false, ite_true, VBinOp.sse, t11, t12, paddd_one]; rfl
-    · simp only [lane_vbin128, VBinOp.sse]
+    · simp only [lane_vbin128, Ne.symm n11, ite_false, ite_true, reduceVBinOpSse, t11, t12, paddd_one]; rfl
+    · simp only [lane_vbin128, reduceVBinOpSse]
       by_cases he : i = k
       · subst he
         simp only [ite_true, t11, t12, t0, paddd_one]; rfl
@@ -569,7 +570,7 @@ theorem regCounters_ok (s : State) (h0 : s.lane .xmm0 0 = revMask) :
       else if r = .xmm11 then (if l = 0 then C else 0) else s.lane r l := by
     intro r l
     rw [← hs₁]
-    simp only [VOp.exec, State.lane_setV128, hL, gpr_setReg, ite_true, VBinOp.sse, ← hC, h0]
+    simp only [VOp.exec, State.lane_setV128, hL, gpr_setReg, ite_true, reduceVBinOpSse, ← hC, h0]
   have f₁ : LdFrame s s₁ := by
     refine ⟨fun r hr => ?_, by rw [← hs₁]; rfl, by rw [← hs₁]; rfl, by rw [← hs₁]; rfl, fun r hr l' _ => ?_⟩
     · rw [← hs₁]
@@ -588,7 +589,7 @@ theorem regCounters_ok (s : State) (h0 : s.lane .xmm0 0 = revMask) :
     rw [← hC, pshufb_rev_rev]
   refine ⟨fun i hi => ?_, f₁.trans (tf.trans ⟨fun _ _ => rfl, rfl, rfl, rfl, fun r hr l hl => ?_⟩)⟩
   · rcases i with _ | i
-    · simp only [lane_vbin128, ite_true, VBinOp.sse, x7]
+    · simp only [lane_vbin128, ite_true, reduceVBinOpSse, x7]
       show XBinOp.eval .por _ _ = _
       simp only [XBinOp.eval, BitVec.or_self]; rfl
     · have hne := (aregs_succ_ne i (by omega)).1

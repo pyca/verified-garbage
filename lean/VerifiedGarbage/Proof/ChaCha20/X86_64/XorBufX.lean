@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.ChaCha20.X86_64.XorBuf
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # ChaCha20 on x86-64: XORing keystream from a buffer, `2 ^ w` bytes at a time
@@ -104,7 +105,7 @@ theorem xData_ok {w : Nat} (hw : w = 4 ∨ w = 5 ∨ w = 6) {d : Reg} {D B : Add
     have e₂ : B + BitVec.ofNat 64 i * BitVec.ofNat 64 1 + BitVec.ofInt 64 0 = B + BitVec.ofNat 64 i := by simp
     apply WP.of_runBlock
     simp only [reduceCtorEq, ↓reduceIte, xData, idx, runBlock_cons, runStep_some, runBlock_nil, exec,
-      State.ea, State.load128, State.store128, State.setXmm, XOp.exec, XBinOp.eval, hD, hB, hrcx, e₁, e₂,
+      State.ea, State.load128, State.store128, State.setXmm, XOp.exec, reduceXBinOpEval, hD, hB, hrcx, e₁, e₂,
       i₁, i₂, o₁, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
     exact ⟨trivial, trivial, trivial, trivial⟩
   · apply WP.of_runBlock
@@ -113,7 +114,7 @@ theorem xData_ok {w : Nat} (hw : w = 4 ∨ w = 5 ∨ w = 6) {d : Reg} {D B : Add
       exists_eq_left', ite_true, VOp.exec_gpr, VOp.exec_mem, VOp.exec_rd, VOp.exec_wr, VOp.exec_ea,
       State.setV_gpr, State.setV_mem, State.setV_rd, State.setV_wr, State.setV_ea, State.setMem_gpr,
       State.setMem_mem, State.setMem_rd, State.setMem_wr, State.ymm_eq, lane_vbin256, State.lane_setV256,
-      reduceCtorEq, ↓reduceIte, Nat.reduceEqDiff, VBinOp.sse, XBinOp.eval, halves256]
+      reduceCtorEq, ↓reduceIte, Nat.reduceEqDiff, reduceVBinOpSse, reduceXBinOpEval, halves256]
     exact ⟨trivial, trivial, trivial, trivial⟩
   · apply WP.of_runBlock
     simp only [xData, runBlock_cons, runStep_some, runBlock_nil, exec, ea₁, ea₂, State.load512,
@@ -125,7 +126,7 @@ theorem xData_ok {w : Nat} (hw : w = 4 ∨ w = 5 ∨ w = 6) {d : Reg} {D B : Add
     simp only [ZOp.exec, zmm_setZ, State.zlane_setZ _ _ _ _ _ _ _ (show 0 < 4 by decide),
       State.zlane_setZ _ _ _ _ _ _ _ (show 1 < 4 by decide), State.zlane_setZ _ _ _ _ _ _ _ (show 2 < 4 by decide),
       State.zlane_setZ _ _ _ _ _ _ _ (show 3 < 4 by decide), pick4, ite_true, reduceCtorEq, ↓reduceIte,
-      Nat.reduceEqDiff, ZBinOp.sse, XBinOp.eval, quarters512]
+      Nat.reduceEqDiff, ZBinOp.sse, reduceXBinOpEval, quarters512]
 
 /-! ## The loop -/
 

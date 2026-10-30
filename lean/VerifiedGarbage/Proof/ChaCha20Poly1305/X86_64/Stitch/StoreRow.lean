@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.Stitch
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Finish
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the keystream stored
@@ -53,7 +54,7 @@ theorem st16_ok (x : XReg) {off : Nat} (ho : off + 16 ≤ 512) {buf : Addr} {s :
   have c := kR_contains buf ho
   have o1 : InRegions s.wr (kA buf + BitVec.ofNat 64 off) 16 := ⟨kR buf, hk, c⟩
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, ea_at, hrcx, e, State.store128_eq, o1,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, ea_at, hrcx, e, State.store128_eq, o1,
     ite_true, Option.some.injEq, exists_eq_left', State.setMem_gpr, State.setMem_mem, State.setMem_rd,
     State.setMem_wr, State.xmm_lane]
   refine ⟨fun k hk => ?_, (Frame.refl _ _).writeW (List.mem_singleton_self _) _ c,
@@ -77,7 +78,7 @@ theorem stP_ok {row i : Nat} (hrow : row < 4) (hi : i < 4) {x : XReg} (_hx13 : x
     fun s₁ ⟨m₁, f₁, l₁, g₁, r₁, w₁⟩ => ?_)
   refine WP.block_append ?_
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, Option.some.injEq, exists_eq_left']
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, Option.some.injEq, exists_eq_left']
   refine WP.mono (st16_ok .xmm13 (off := 64 * (i + 4) + 16 * row) (buf := buf) (by lit_omega)
     (by rw [VOp.exec_gpr, g₁, hrcx]) (by rw [VOp.exec_wr, w₁]; exact hk))
     fun s₃ ⟨m₃, f₃, l₃, g₃, r₃, w₃⟩ => ?_

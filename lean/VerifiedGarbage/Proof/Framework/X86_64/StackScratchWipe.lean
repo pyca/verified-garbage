@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # A scratch buffer on the stack, wiped after use (x86-64)
@@ -69,7 +70,7 @@ theorem wipe_run (R : Region) (u : State) (words : Nat) (hR : R ∈ u.wr)
   simp [addrs, srcAddrs]
 
 theorem wipe_spSafe (words : Nat) : (wipe words).all (fun i => !isa.writesSp i) = true := by
-  simp [wipe, wipeStores, Instr.dst]
+  simp [wipe, wipeStores, reduceInstrDst]
 
 section
 variable {sig : Sig} {nm : String} {e : Elem} {n : Nat}

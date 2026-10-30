@@ -16,6 +16,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.OmegaLit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Weierstrass.Layout
+import VerifiedGarbage.Proof.Framework.Arm.Reduce
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: constant time, up to the number of candidates
@@ -600,7 +601,7 @@ theorem start_blk : RelCT isa (Entered P) (.block Cfg.prologue) fun _ _ => True 
   refine block_cons_ct (R := fun a b => ∀ r ∈ [Reg.r0, .r1, .r2, .r3, .r12], a.gpr r = b.gpr r)
     (fun a b a' b' ⟨s₁, s₂, ⟨_, _, hsp, h0, h1, h2, h3, _⟩, ea, eb⟩ ha hb => ?_) ?_
   · subst ea eb
-    simp only [exec, show (0 : Nat) < 256 by decide, ↓reduceIte, Option.some.injEq] at ha hb
+    simp only [reduceExec, show (0 : Nat) < 256 by decide, ↓reduceIte, Option.some.injEq] at ha hb
     subst ha hb
     refine ⟨rfl, fun r hr => ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

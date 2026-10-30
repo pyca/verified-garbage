@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 /-!
 # ML-DSA on x86 (32-bit): writing a table of constants
@@ -61,7 +62,7 @@ theorem tableN_spec (t : List Nat) {p : Addr} :
       rw [← hea n (by omega)]; simp only [State.ea, at_, o₁.gpr .eax (by decide)]
     have hn' : n < Spec.MlDsa.n := by rw [n_eq]; omega
     refine wp_cons (s' := s₁.setReg .edx (BitVec.ofNat 32 (t.getD n 0)))
-      (by simp only [exec, readSrc, Option.map_some]) ?_
+      (by simp only [reduceExec, readSrc, Option.map_some]) ?_
     have hin' : InRegions (s₁.setReg .edx (BitVec.ofNat 32 (t.getD n 0))).wr
         ((s₁.setReg .edx (BitVec.ofNat 32 (t.getD n 0))).ea (at_ .eax (4 * n))) 4 := by
       simp only [State.ea, at_, State.setReg, show Reg.eax ≠ Reg.edx by decide, ite_false]

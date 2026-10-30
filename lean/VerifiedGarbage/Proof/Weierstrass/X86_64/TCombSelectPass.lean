@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # The comb from tables in memory on x86-64: the selection's pass
@@ -74,7 +75,7 @@ theorem selStep_ok (s : State) {X : Addr} (hx : s.gpr .rdx = X) {d c : Nat} (hc 
   have h14 := (selAcc_ne c hc).1
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, ea_tblAt, hx, State.load128, hr,
-    ite_true, Option.map_some, XOp.exec, XBinOp.eval, RegUpd.xmm_setXmm_self,
+    ite_true, Option.map_some, XOp.exec, reduceXBinOpEval, RegUpd.xmm_setXmm_self,
     RegUpd.xmm_setXmm_of_ne _ _ h14, Option.some.injEq,
     exists_eq_left', RegUpd.xmm_setXmm_of_ne _ _ (show XReg.xmm15 ≠ XReg.xmm14 from by decide)]
   refine ⟨trivial, fun _ _ => rfl, rfl, rfl, rfl, fun r hr => ?_⟩
@@ -208,7 +209,7 @@ theorem clearAcc_ok : ∀ k ≤ 14, ∀ (s : State),
     rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
     refine WP.mono (clearAcc_ok k (by omega_arith) s) fun s₁ ⟨a₁, k₁⟩ => ?_
     apply WP.of_runBlock
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, XBinOp.eval, BitVec.xor_self,
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, reduceXBinOpEval, BitVec.xor_self,
       Option.some.injEq, exists_eq_left']
     refine ⟨fun c hc => ?_, ⟨fun r hr => k₁.gpr r hr, k₁.mem, k₁.rd, k₁.wr, fun r hr => ?_⟩⟩
     · by_cases hck : c = k

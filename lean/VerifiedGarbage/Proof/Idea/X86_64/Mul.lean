@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # IDEA on x86-64: ⊙ without branches
@@ -68,7 +69,7 @@ theorem lowProduct (a b : BitVec 64) :
 theorem mul_run (s : State) : ∃ s', runBlock isa mulCode s = some s' ∧
     s'.gpr .rdx = (Spec.Idea.mul ((s.gpr .rax).setWidth 16) ((s.gpr .rdx).setWidth 16)).setWidth 64 ∧
     Keep [.rax, .rdx] s s' := by
-  simp only [mulCode, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execShift, execImul,
+  simp only [mulCode, runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu, execShift, execImul,
     readSrc, isa, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags,
     ↓reduceIte, reduceCtorEq, Nat.reduceLeDiff, and_self, Option.map_some, signExtend_one,
     signExtend_mask, BitVec.ofInt_mul, BitVec.ofInt_toInt,

@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # BLAKE2s on x86-64 with AVX: a round
@@ -252,7 +253,7 @@ theorem half_cols {mask : XReg} {R n : Nat} (hn : 0 < n) (hn' : n < 32) {s : Sta
   have e2 : (BitVec.ofNat 8 (32 - n)).toNat = 32 - n := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
   simp only [halfOps, run, cols, dw, xmm_vbin, xmm_vshift, ↓reduceIte, reduceCtorEq, h0, h3,
-    VBinOp.sse]
+    reduceVBinOpSse]
   simp only [dword_paddd _ _ hq, dword_pxor, dword_por, hm _ q hq,
     dword_psrld _ (BitVec.ofNat 8 n) (by rw [e1]; omega) hq,
     dword_pslld _ (BitVec.ofNat 8 (32 - n)) (by rw [e2]; omega) hq, e1, e2, rotr_shifts _ hn', H]
@@ -381,7 +382,7 @@ theorem ldw_ok {d : XReg} {j p : Nat} (hj : j < 16) (hp : p < 4) {s : State} {pa
   have hea : s.ea (at_ .rsi (4 * b)) = pa + BitVec.ofNat 64 (4 * b) := by rw [ea_at, hb.rsi]
   cases sw <;> simp only [Bool.false_eq_true, ite_true, ite_false] at he ⊢ <;>
   apply WP.of_runBlock <;>
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.load128, hea, ld, ite_true,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, State.load128, hea, ld, ite_true,
     Option.map_some, Option.some.injEq, exists_eq_left']
   · refine ⟨?_, ⟨rfl, rfl, rfl, rfl, fun r hr => ?_⟩⟩
     · simp only [dw, RegUpd.xmm_setV, ↓reduceIte]
@@ -416,7 +417,7 @@ theorem pair_ok {d a b : XReg} (hab : a ≠ b) {j j' : Nat} (hj : j < 16)
   apply WP.block_append
   refine (ldw_ok (d := b) hj' (pairPos_lt j j') (hb.of_xf f1)).mono fun t2 ⟨l2, f2⟩ => ?_
   apply WP.of_runBlock
-  simp only [v, runBlock_cons, runStep_some, runBlock_nil, exec, Option.some.injEq, exists_eq_left']
+  simp only [v, runBlock_cons, runStep_some, runBlock_nil, reduceExec, Option.some.injEq, exists_eq_left']
   have a2 : dw t2 a (pairPos j j') = mw s.mem pa j := by
     rw [dw_of_xf f2 (by simpa using hab), l1]
   rw [f1.mem] at l2
@@ -451,7 +452,7 @@ theorem msg_ok (r k : Nat) {s : State} {pa : Addr} (hb : Blk pa s) :
   refine (pair_ok (d := .xmm8) (a := .xmm8) (b := .xmm9) (by decide)
     (msgWord_lt r k 2) (msgWord_lt r k 3) (hb.of_xf f1)).mono fun t2 ⟨p2, p3, f2⟩ => ?_
   apply WP.of_runBlock
-  simp only [v, runBlock_cons, runStep_some, runBlock_nil, exec, Option.some.injEq, exists_eq_left']
+  simp only [v, runBlock_cons, runStep_some, runBlock_nil, reduceExec, Option.some.injEq, exists_eq_left']
   rw [f1.mem] at p2 p3
   have x50 : dw t2 .xmm5 0 = mw s.mem pa (msgWord r k 0) := by
     rw [dw_of_xf f2 (by decide), p0]
@@ -460,7 +461,7 @@ theorem msg_ok (r k : Nat) {s : State} {pa : Addr} (hb : Blk pa s) :
   refine ⟨fun q hq => ?_, ⟨by simp [f2.gpr, f1.gpr], by simp [f2.mem, f1.mem],
     by simp [f2.rd, f1.rd], by simp [f2.wr, f1.wr], fun r hr => ?_⟩⟩
   · rcases cases4 hq with rfl | rfl | rfl | rfl <;>
-      simp only [dw, xmm_vbin, ↓reduceIte, VBinOp.sse, dword_punpcklqdq _ _ hq, Nat.reduceLT,
+      simp only [dw, xmm_vbin, ↓reduceIte, reduceVBinOpSse, dword_punpcklqdq _ _ hq, Nat.reduceLT,
         Nat.reduceSub]
     exacts [x50, x51, p2, p3]
   · simp only [msgRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr

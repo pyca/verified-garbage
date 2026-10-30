@@ -19,6 +19,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # The AEADs on x86-64: masking the data (`maskTail`)
@@ -73,8 +74,8 @@ theorem maskV_eq (c : Bool) :
 
 theorem mask_block (v : BitVec 128) (c : Bool) : XBinOp.eval .pand v (maskV c) = if c then v else 0 := by
   cases c
-  · simp [maskV, XBinOp.eval]
-  · simp only [maskV, XBinOp.eval, ite_true, BitVec.and_allOnes]
+  · simp [maskV, reduceXBinOpEval]
+  · simp only [maskV, reduceXBinOpEval, ite_true, BitVec.and_allOnes]
 
 theorem xmm_setXmm' (s : State) (r : XReg) (v : BitVec 128) (r' : XReg) :
     (s.setXmm r v).xmm r' = if r' = r then v else s.xmm r' := rfl

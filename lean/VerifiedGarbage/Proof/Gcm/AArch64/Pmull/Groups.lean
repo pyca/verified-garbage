@@ -9,6 +9,7 @@ public import VerifiedGarbage.Spec.Gcm
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # GHASH with PMULL: the instruction groups
@@ -341,7 +342,7 @@ theorem exec_dup_d2 (d : VReg) (n : Reg) (s : State) :
 
 theorem exec_ins_d2 {d : VReg} {i : Nat} {n : Reg} (h : i < 2) (s : State) :
     exec (.vop (.ins .d2 d i n)) s = some (s.setV d (setLane (s.v d) 64 i (s.gpr n))) := by
-  simp only [exec, VOp.eval, h, ite_true, Option.map_some]
+  simp only [exec, reduceVOpEval, h, ite_true, Option.map_some]
 
 theorem setLane_pair (v : BitVec 128) (a b : BitVec 64) :
     setLane (setLane v 64 0 a) 64 1 b = b ++ a := by

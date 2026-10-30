@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Weierstrass.Arm.Const
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Arm.Reduce
 
 /-!
 # ECDSA on 32-bit ARM: the setup
@@ -34,7 +35,7 @@ theorem wp_ldrSp {s : State} {is : List Instr} {Q : State → Prop} {t : Reg} {o
     (hin : InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 off)) 4)
     (k : ∀ s', Upd s s' t (s.mem.readW (State.addr (s.sp + BitVec.ofNat 32 off)) 32) → WP isa (.block is) s' Q) :
     WP isa (.block (.ldrSp t off :: is)) s Q :=
-  VG.Proof.X25519.Arm.WP.cons (by simp only [exec, ho, ite_true, State.load32, hin, Option.map_some])
+  VG.Proof.X25519.Arm.WP.cons (by simp only [reduceExec, ho, ite_true, State.load32, hin, Option.map_some])
     (k _ (Upd.setReg _ _ _))
 
 /-! ## Reading `k`, `d` and the hash -/

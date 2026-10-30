@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # RSAES-OAEP on x86-64: the stack its pieces use
@@ -50,7 +51,7 @@ theorem wp_frame {c : Prog isa} (hc : SpSafe c) (hd : c.x86_64Depth < 2 ^ 64) {s
 /-- Code that never writes `rsp` writes it only in its (no) frames. -/
 theorem SpSafe.of_noSp {c : Prog isa} (h : NoSp c) : SpSafe c := fun i hi => by
   have := h i hi
-  cases i <;> simp_all [Taint.clobbers, Taint.dstOf, isa, Instr.dst]
+  cases i <;> simp_all [Taint.clobbers, Taint.dstOf, isa, reduceInstrDst]
   all_goals (constructor <;> intro e <;> subst e <;> simp_all)
 
 /-! ## Pieces that keep `rsp`, MXCSR and the stack shallow -/

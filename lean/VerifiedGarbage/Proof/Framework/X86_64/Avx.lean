@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.InstancePriority
 public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # x86-64: AVX registers lane by lane
@@ -39,13 +40,13 @@ namespace VG.X86_64
   cases s; rfl
 
 @[simp] theorem VOp.exec_gpr (o : VOp) (s : State) : (o.exec s).gpr = s.gpr := by
-  cases o <;> simp only [VOp.exec] <;> (try split) <;> rfl
+  cases o <;> simp only [reduceVOpExec] <;> (try split) <;> rfl
 @[simp] theorem VOp.exec_mem (o : VOp) (s : State) : (o.exec s).mem = s.mem := by
-  cases o <;> simp only [VOp.exec] <;> (try split) <;> rfl
+  cases o <;> simp only [reduceVOpExec] <;> (try split) <;> rfl
 @[simp] theorem VOp.exec_rd (o : VOp) (s : State) : (o.exec s).rd = s.rd := by
-  cases o <;> simp only [VOp.exec] <;> (try split) <;> rfl
+  cases o <;> simp only [reduceVOpExec] <;> (try split) <;> rfl
 @[simp] theorem VOp.exec_wr (o : VOp) (s : State) : (o.exec s).wr = s.wr := by
-  cases o <;> simp only [VOp.exec] <;> (try split) <;> rfl
+  cases o <;> simp only [reduceVOpExec] <;> (try split) <;> rfl
 @[simp] theorem VOp.exec_ea (o : VOp) (s : State) (m : MemOp) : (o.exec s).ea m = s.ea m := by
   simp only [State.ea, VOp.exec_gpr]
 
@@ -97,31 +98,31 @@ theorem State.lane_setV128 (s : State) (d r : XReg) (lo hi : BitVec 128) (l : Na
 @[simp] theorem lane_vbin256 (op : VBinOp) (d a b : XReg) (s : State) (r : XReg) (l : Nat) :
     ((VOp.vbin op .l256 d a b).exec s).lane r l =
       if r = d then op.sse.eval (s.lane a l) (s.lane b l) else s.lane r l := by
-  simp only [VOp.exec, State.lane, State.setV]
+  simp only [reduceVOpExec, State.lane, State.setV]
   by_cases h : r = d <;> by_cases hl : l = 0 <;> simp [h, hl]
 
 @[simp] theorem lane_vshift256 (op : XShiftOp) (d a : XReg) (n : BitVec 8) (s : State) (r : XReg)
     (l : Nat) : ((VOp.vshift op .l256 d a n).exec s).lane r l =
       if r = d then op.eval (s.lane a l) n else s.lane r l := by
-  simp only [VOp.exec, State.lane, State.setV]
+  simp only [reduceVOpExec, State.lane, State.setV]
   by_cases h : r = d <;> by_cases hl : l = 0 <;> simp [h, hl]
 
 @[simp] theorem lane_vpshufd256 (d a : XReg) (o : BitVec 8) (s : State) (r : XReg) (l : Nat) :
     ((VOp.vpshufd .l256 d a o).exec s).lane r l =
       if r = d then shufDwords (s.lane a l) o else s.lane r l := by
-  simp only [VOp.exec, State.lane, State.setV]
+  simp only [reduceVOpExec, State.lane, State.setV]
   by_cases h : r = d <;> by_cases hl : l = 0 <;> simp [h, hl]
 
 @[simp] theorem lane_vbin128 (op : VBinOp) (d a b : XReg) (s : State) (r : XReg) (l : Nat) :
     ((VOp.vbin op .l128 d a b).exec s).lane r l =
       if r = d then (if l = 0 then op.sse.eval (s.lane a 0) (s.lane b 0) else 0) else s.lane r l := by
-  simp only [VOp.exec, State.lane, State.setV]
+  simp only [reduceVOpExec, State.lane, State.setV]
   by_cases h : r = d <;> by_cases hl : l = 0 <;> simp [h, hl]
 
 @[simp] theorem lane_vextracti128_1 (d a : XReg) (s : State) (r : XReg) (l : Nat) :
     ((VOp.vextracti128 d a 1).exec s).lane r l =
       if r = d then (if l = 0 then s.lane a 1 else 0) else s.lane r l := by
-  simp only [VOp.exec, State.lane, State.setV]
+  simp only [reduceVOpExec, State.lane, State.setV]
   by_cases h : r = d <;> by_cases hl : l = 0 <;> simp [h, hl]
 
 theorem State.ymm_eq (s : State) (r : XReg) : s.ymm r = s.lane r 1 ++ s.lane r 0 := rfl

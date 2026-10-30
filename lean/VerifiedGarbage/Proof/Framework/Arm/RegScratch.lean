@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Reduce
 
 /-!
 # A scratch buffer in a register, on the stack (ARMv7)
@@ -230,7 +231,7 @@ theorem withRegScratch_run {c : Prog isa} (hcl : ScratchInReg sig r) (hb : FitsR
     simp only [isa, push]
     exact ite_eq_left ⟨hb0, hb1, hb2, hb3, by omega_using [hsb]⟩
   have hblk : Exec isa (.block [.addSp r 0]) (allocState bytes s) [] (regState bytes r s) :=
-    .block (by simp only [execBlock, isa, exec, show (0 : Nat) < 256 by decide, ite_true,
+    .block (by simp only [execBlock, isa, reduceExec, show (0 : Nat) < 256 by decide, ite_true,
       Option.map_some, addrs, List.map_nil, List.append_nil, regState])
   have hcov : Covers (s.wr ++ [⟨State.addr (s.sp - BitVec.ofNat 32 bytes), n * e.size⟩])
       (⟨State.addr (s.sp - BitVec.ofNat 32 bytes), bytes⟩ :: s.wr) :=

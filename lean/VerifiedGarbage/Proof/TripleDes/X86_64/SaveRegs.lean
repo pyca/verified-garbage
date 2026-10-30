@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # Storing and reloading registers, one instruction at a time
@@ -25,13 +26,13 @@ theorem store_run {s : State} {m : MemOp} {r : Reg} (h : InRegions s.wr (s.ea m)
     runBlock isa (.store m r :: rest) s =
       runBlock isa rest { s with mem := s.mem.writeW (s.ea m) (s.gpr r) } := by
   rw [runBlock_cons]
-  simp only [exec, State.store64, h, ite_true, runStep_some]
+  simp only [reduceExec, State.store64, h, ite_true, runStep_some]
 
 theorem load_run {s : State} {m : MemOp} {r : Reg} {v : BitVec 64} (h : InRegions (s.rd ++ s.wr) (s.ea m) 8)
     (hv : s.mem.readW (s.ea m) 64 = v) (rest : List Instr) :
     runBlock isa (.mov r (.mem m) :: rest) s = runBlock isa rest (s.setReg r v) := by
   rw [runBlock_cons]
-  simp only [exec, readSrc, State.load64, h, ite_true, Option.map_some, runStep_some, hv]
+  simp only [reduceExec, readSrc, State.load64, h, ite_true, Option.map_some, runStep_some, hv]
 
 theorem store3_run {s : State} {m₁ m₂ m₃ : MemOp} {r₁ r₂ r₃ : Reg} (h₁ : InRegions s.wr (s.ea m₁) 8)
     (h₂ : InRegions s.wr (s.ea m₂) 8) (h₃ : InRegions s.wr (s.ea m₃) 8) :

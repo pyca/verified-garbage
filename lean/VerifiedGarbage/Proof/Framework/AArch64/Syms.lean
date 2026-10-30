@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # AArch64: the addresses of statics never change
@@ -27,7 +28,7 @@ theorem exec_syms {i : Instr} {s s' : State} (h : exec i s = some s') : s'.syms 
     simp only [Option.bind_eq_some_iff, State.store] at h
     obtain ⟨_, h₁, h₂⟩ := h
     split at h₁ <;> cases h₁; split at h₂ <;> cases h₂; rfl
-  all_goals simp only [exec] at h <;> (repeat' split at h) <;>
+  all_goals simp only [reduceExec] at h <;> (repeat' split at h) <;>
     simp_all [State.write, State.addWithCarry, State.store, State.setV, Option.bind_eq_some_iff,
       Option.map_eq_some_iff] <;> (try subst h) <;> (try rfl) <;>
     (obtain ⟨_, _, _, _, rfl⟩ := h; rfl)

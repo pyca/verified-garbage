@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # The table of bitsliced subkeys on x86-64
@@ -100,7 +101,7 @@ theorem keyOne_step {s : State} {b : Addr} {d e : Nat} (hd : d = 0 ∨ d = 8)
     (fun j hj => by simp [entryCfg] at hj)
   simp only [entryCfg] at hb₂ hso₂ f₂
   have hall₂ : ∀ r, (keyStore.all fun i => i.dst != some r) = true := fun r => by
-    simp [keyStore, Instr.dst]
+    simp [keyStore, reduceInstrDst]
   have k₂ : ∀ r, s₂.gpr r = s₁.gpr r := fun r => o₂ r (hall₂ r)
   obtain ⟨s₃, e₃, kp₃, o₃, m₃, rd₃, wr₃⟩ := addKp_ok s₂ 64 (by decide)
   have he₂ : ∀ j < 8, entryW s₂.mem b e j = Qs s₁ j := fun j hj => BitVec.eq_of_getLsbD_eq fun p hp => by

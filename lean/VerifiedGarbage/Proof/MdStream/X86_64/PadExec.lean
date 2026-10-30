@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # Streaming Merkle–Damgård hash functions on x86-64: running the padding
@@ -398,7 +399,7 @@ theorem pslldq8 (w : BitVec 64) : XShiftOp.pslldq.eval ((0 : BitVec 64) ++ w) 8 
 
 theorem punpck0 (hi lo : BitVec 64) :
     XBinOp.punpcklqdq.eval ((0 : BitVec 64) ++ hi) ((0 : BitVec 64) ++ lo) = lo ++ hi := by
-  simp (disch := decide) only [XBinOp.eval, qword, Nat.mul_zero, BitVec.extractLsb'_append_eq_of_add_le,
+  simp (disch := decide) only [reduceXBinOpEval, qword, Nat.mul_zero, BitVec.extractLsb'_append_eq_of_add_le,
     BitVec.extractLsb'_eq_self]
 
 theorem bytes_zero64 : (List.range 8).map (fun j => (0 : BitVec 64).extractLsb' (8 * j) 8) = List.replicate 8 0 := by

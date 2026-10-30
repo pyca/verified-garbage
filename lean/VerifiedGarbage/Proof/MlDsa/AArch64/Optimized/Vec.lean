@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Arithmetic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Word
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 @[expose] public section
 
@@ -47,7 +48,7 @@ theorem reciprocal_eval {s : State} {d a b : VReg} {z : Nat → Int}
       some (BitVec.ofInt 32 ((vword (s.v a) e).toInt * reciprocal (z e) / 2147483648)) := by
     rw [hb e he]
     exact sqdmulh_reciprocal _ (hz e he).1 (hz e he).2
-  simp only [VOp.eval, h 0 (by decide), h 1 (by decide), h 2 (by decide), h 3 (by decide)]
+  simp only [reduceVOpEval, h 0 (by decide), h 1 (by decide), h 2 (by decide), h 3 (by decide)]
 
 /-- The exact three-instruction reciprocal butterfly multiplier, permitting
 signed input words and preserving all registers outside its two destinations. -/

@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 @[expose] public section
 
@@ -22,7 +23,7 @@ theorem exec_ldr_x (s : State) (t n : Reg) (off : Nat)
     (h : InRegions (s.rd ++ s.wr) (s.gpr n + BitVec.ofNat 64 off) 8) :
     exec (.ldr .x t n off) s =
       some (s.write .x t (s.mem.readW (s.gpr n + BitVec.ofNat 64 off) 64)) := by
-  simp only [exec, addr, Size.bytes, ho, and_self, ite_true, Option.bind_some,
+  simp only [reduceExec, addr, Size.bytes, ho, and_self, ite_true, Option.bind_some,
     State.load, h, Option.map_some, Mem.readW]
 
 theorem exec_str_x (s : State) (t n : Reg) (off : Nat)
@@ -30,7 +31,7 @@ theorem exec_str_x (s : State) (t n : Reg) (off : Nat)
     (h : InRegions s.wr (s.gpr n + BitVec.ofNat 64 off) 8) :
     exec (.str .x t n off) s =
       some { s with mem := s.mem.writeW (s.gpr n + BitVec.ofNat 64 off) (s.gpr t) } := by
-  simp only [exec, addr, Size.bytes, ho, and_self, ite_true, Option.bind_some,
+  simp only [reduceExec, addr, Size.bytes, ho, and_self, ite_true, Option.bind_some,
     State.store, h, State.read, BitVec.setWidth_eq, Mem.writeW]
 
 end VG.Proof.Rc2.AArch64

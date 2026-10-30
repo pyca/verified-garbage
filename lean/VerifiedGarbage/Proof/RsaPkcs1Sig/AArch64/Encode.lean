@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # EMSA-PKCS1-v1_5 encoding on AArch64: correctness
@@ -179,7 +180,7 @@ theorem subImm_w_ok {t : Reg} {i : Nat} (hi : i < 4096) (s : State) :
       isa.eval (.zero .w t) u = some ((s.gpr .x10).setWidth 32 == BitVec.ofNat 32 i) := by
   refine VG.Proof.MlKem.AArch64.WP.cons (s' := s.write .w t ((s.gpr .x10).setWidth 32 - BitVec.ofNat 32 i)) ?_
     (wp_nil ⟨VG.Proof.MlKem.AArch64.only_write _ _ _ _, ?_⟩)
-  · simp [exec, hi, State.read]
+  · simp [reduceExec, hi, State.read]
   · simp only [eval, State.read, State.write, ite_true, Size.bits]
     rw [BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
     congr 1

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # A scratch buffer on the stack (x86-64)
@@ -178,7 +179,7 @@ theorem withStackScratch_spSafe {bytes : Nat} {r : Reg} {c : Prog isa} (hr : r â
     (h : c.all (fun i => !isa.writesSp i) = true) :
     (withStackScratch bytes r c).all (fun i => !isa.writesSp i) = true := by
   simp only [withStackScratch, Code.all, List.all_cons, List.all_nil, h]
-  simp [Instr.dst, hr]
+  simp [reduceInstrDst, hr]
 
 section
 variable {sig : Sig} {nm : String} {e : Elem} {n n' : Nat}

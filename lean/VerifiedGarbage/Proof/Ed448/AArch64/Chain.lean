@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Ed25519.Word64
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # Ed448 on AArch64: carry chains along registers
@@ -92,7 +93,7 @@ theorem adcs_ok : ∀ (ts : List (Reg × Reg × Reg)) (s : State), ChainOk ts = 
     obtain ⟨hd, hok⟩ := h
     rw [adcsOf, List.map_cons, WP.block_cons_iff]
     let s1 := s.addWithCarry .x d (s.gpr n) (s.gpr m) s.c
-    refine ⟨s1, by simp only [exec, read_x]; rfl, ?_⟩
+    refine ⟨s1, by simp only [reduceExec, read_x]; rfl, ?_⟩
     refine WP.mono (adcs_ok ts s1 hok) fun t ⟨e, k⟩ => ?_
     have hdd : d ∉ dsts ts := fun hm => not_mem_map (fun u hu => (hd u hu).1.1) d hm rfl
     have g1 : t.gpr d = s1.gpr d := k.gpr d hdd

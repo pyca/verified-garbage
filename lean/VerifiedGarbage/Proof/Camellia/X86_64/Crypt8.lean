@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Camellia.Common
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # The head and tail of eight blocks of bitsliced Camellia on x86-64
@@ -145,7 +146,7 @@ theorem storeWords_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp 
     (fun j hj => by simp [dataCfg] at hj)
   simp only [dataCfg] at hb' hkp hso f'
   have hall : ∀ r, ((storeWords h).all fun i => i.dst != some r) = true := fun r => by
-    rcases hh with rfl | rfl <;> simp [storeWords, Instr.dst]
+    rcases hh with rfl | rfl <;> simp [storeWords, reduceInstrDst]
   have hg : s'.gpr = s.gpr := funext fun r => o' r (hall r)
   have hf : Frame [⟨s.gpr .rdx, 128⟩] s.mem s'.mem := by
     simpa only [slotRegion, dataCfg] using f'

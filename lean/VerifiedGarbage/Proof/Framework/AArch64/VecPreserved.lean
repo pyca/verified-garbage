@@ -5,6 +5,7 @@ public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-! Vector register preservation, including through calls and stack frames. -/
 
@@ -38,12 +39,12 @@ theorem VOp.eval_dst {op : VOp} {s : State} {d : VReg} {v : BitVec 128}
     (h : op.eval s = some (d, v)) : d = op.dst := by
   cases op
   case dup a _ _ =>
-    cases a <;> simp only [VOp.eval] at h <;> exact (Prod.mk.inj (Option.some.inj h)).1.symm
+    cases a <;> simp only [reduceVOpEval] at h <;> exact (Prod.mk.inj (Option.some.inj h)).1.symm
   case ins a _ _ _ =>
-    cases a <;> simp only [VOp.eval] at h <;>
+    cases a <;> simp only [reduceVOpEval] at h <;>
     exact (Prod.mk.inj (Option.some.inj (Option.ite_none_right_eq_some.mp h).2)).1.symm
   case sqdmulh =>
-    simp only [VOp.eval] at h
+    simp only [reduceVOpEval] at h
     split at h <;> simp only [Option.some.injEq, Prod.mk.injEq, reduceCtorEq] at h
     exact h.1.symm
   case dupS | dupE | insE | shift | ext | tblN | xar | xarS | mulH | mulHE | addv | uaddlv =>

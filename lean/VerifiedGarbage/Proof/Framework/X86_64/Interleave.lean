@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Interleave
 public import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # x86-64: interleaving independent code
@@ -411,13 +412,13 @@ theorem frame {i : Instr} {F : Fp} (hf : fp b ix sc i = some F) {s s' : State} (
   case mov d src =>
     cases src <;> simp only [Option.some.injEq, Option.map_eq_some_iff] at hf
     · subst hf
-      simp only [exec, readSrc, Option.map_some, Option.some.injEq] at he
+      simp only [reduceExec, readSrc, Option.map_some, Option.some.injEq] at he
       subst he; exact Frame.setReg _ _ (by simp [regFp])
     · subst hf
-      simp only [exec, readSrc, Option.map_some, Option.some.injEq] at he
+      simp only [reduceExec, readSrc, Option.map_some, Option.some.injEq] at he
       subst he; exact Frame.setReg _ _ (by simp [regFp])
     · obtain ⟨o, _, rfl⟩ := hf
-      simp only [exec, readSrc, Option.map_eq_some_iff] at he
+      simp only [reduceExec, readSrc, Option.map_eq_some_iff] at he
       obtain ⟨_, _, rfl⟩ := he
       exact Frame.setReg _ _ (by simp)
   case alu op d src =>
@@ -438,7 +439,7 @@ theorem frame {i : Instr} {F : Fp} (hf : fp b ix sc i = some F) {s s' : State} (
     · cases he
   case aluTbl op d m name ws =>
     cases hf
-    simp only [exec] at he
+    simp only [reduceExec] at he
     split at he
     · exact execAluW_frame (by simp) rfl he
     · cases he
@@ -577,16 +578,16 @@ theorem VOp.det {op : VOp} {F : Fp} (hf : VOp.fp op = some F) {s t : State} (h :
   case vbin op len d x y =>
     obtain ⟨x0, x1⟩ := lanes_eq h (r := x) (by simp [vecFp, Nat.testBit_or])
     obtain ⟨y0, y1⟩ := lanes_eq h (r := y) (by simp [vecFp, Nat.testBit_or])
-    simp only [VOp.exec, x0, x1, y0, y1]
+    simp only [reduceVOpExec, x0, x1, y0, y1]
     exact Writes.setV _ _ _ _ (fun r hr => only_xbit hr) rfl rfl rfl
   case vshift op len d x n =>
     obtain ⟨x0, x1⟩ := lanes_eq h (r := x) (by simp [vecFp])
-    simp only [VOp.exec, x0, x1]
+    simp only [reduceVOpExec, x0, x1]
     exact Writes.setV _ _ _ _ (fun r hr => only_xbit hr) rfl rfl rfl
   case vpalignr len d x y n =>
     obtain ⟨x0, x1⟩ := lanes_eq h (r := x) (by simp [vecFp, Nat.testBit_or])
     obtain ⟨y0, y1⟩ := lanes_eq h (r := y) (by simp [vecFp, Nat.testBit_or])
-    simp only [VOp.exec, x0, x1, y0, y1]
+    simp only [reduceVOpExec, x0, x1, y0, y1]
     exact Writes.setV _ _ _ _ (fun r hr => only_xbit hr) rfl rfl rfl
 
 theorem store_writes {F : Fp} {s t : State} {o : Nat} {w : Nat} (v : BitVec w) (hw8 : w / 8 < 2 ^ 64)
@@ -613,19 +614,19 @@ theorem det {i : Instr} {F : Fp} (hf : fp b ix sc i = some F) : Det b ix sc i F 
   case mov d src =>
     cases src <;> simp only [Option.some.injEq, Option.map_eq_some_iff] at hf
     · subst hf
-      simp only [exec, readSrc, Option.map_some, Option.some.injEq] at he ⊢
+      simp only [reduceExec, readSrc, Option.map_some, Option.some.injEq] at he ⊢
       subst he
       rw [h.gpr _ (by simp [regFp])]
       exact ⟨_, rfl, Writes.setReg _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
     · subst hf
-      simp only [exec, readSrc, Option.map_some, Option.some.injEq] at he ⊢
+      simp only [reduceExec, readSrc, Option.map_some, Option.some.injEq] at he ⊢
       subst he
       exact ⟨_, rfl, Writes.setReg _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
     · rename_i m
       obtain ⟨o, ho, rfl⟩ := hf
       have e := readSrc_det (src := .mem m) h (g := baseMask b ix) (mr := range o 8)
         (by simp [srcFp, ho]) (fun _ h => h) (fun _ h => h)
-      simp only [exec] at he ⊢
+      simp only [reduceExec] at he ⊢
       rw [← e]
       simp only [Option.map_eq_some_iff] at he
       obtain ⟨v, hv, rfl⟩ := he
@@ -634,7 +635,7 @@ theorem det {i : Instr} {F : Fp} (hf : fp b ix sc i = some F) : Det b ix sc i F 
     simp only [Option.map_eq_some_iff, Prod.exists] at hf
     obtain ⟨g, mr, hs, rfl⟩ := hf
     have e := readSrc_det h hs (fun _ hi => testBit_or_right hi) (fun _ hi => hi)
-    simp only [exec, execAlu_eq, Option.bind_eq_some_iff] at he ⊢
+    simp only [reduceExec, execAlu_eq, Option.bind_eq_some_iff] at he ⊢
     obtain ⟨v, hv, he⟩ := he
     obtain ⟨t', ht, hw⟩ := execAluW_det (F := ⟨gbit d ||| g, gbit d, 0, 0, readsCf op, true, mr, 0⟩)
       (fun r hr => only_gbit hr) rfl rfl (h.gpr d (testBit_or_left (by simp)))
@@ -642,14 +643,14 @@ theorem det {i : Instr} {F : Fp} (hf : fp b ix sc i = some F) : Det b ix sc i F 
     exact ⟨t', ⟨v, by rw [← e]; exact hv, ht⟩, hw⟩
   case andn d x y =>
     cases hf
-    simp only [exec, execAndn, Option.some.injEq] at he ⊢
+    simp only [reduceExec, execAndn, Option.some.injEq] at he ⊢
     subst he
     rw [h.gpr x (by simp [Nat.testBit_or]), h.gpr y (by simp [Nat.testBit_or])]
     exact ⟨_, rfl, Writes.of (fun r hr => by rw [only_gbit hr]; simp only [State.setReg, ite_true]) rfl
       (fun _ => rfl) rfl⟩
   case rorx d r n =>
     cases hf
-    simp only [exec, execRorx] at he ⊢
+    simp only [reduceExec, execRorx] at he ⊢
     rw [← h.gpr r (by simp [regFp])]
     split at he
     · rename_i hn
@@ -662,7 +663,7 @@ theorem det {i : Instr} {F : Fp} (hf : fp b ix sc i = some F) : Det b ix sc i F 
     cases hf
     have em := ea_congr (s := s) (t := t) (m := m) fun r hr => h.gpr r (testBit_or_right hr)
     have eb := h.gpr m.base (testBit_or_right (by simp [memIx, Nat.testBit_or]))
-    simp only [exec] at he ⊢
+    simp only [reduceExec] at he ⊢
     split at he
     · rename_i hcond
       have hc' : t.gpr m.base = t.syms name ∧ (t.ea m - t.gpr m.base).toNat % 8 = 0 ∧
@@ -676,7 +677,7 @@ theorem det {i : Instr} {F : Fp} (hf : fp b ix sc i = some F) : Det b ix sc i F 
       exact ht
     · cases he
   case vop op =>
-    simp only [exec, Option.some.injEq] at he ⊢
+    simp only [reduceExec, Option.some.injEq] at he ⊢
     subst he
     exact ⟨_, rfl, VOp.det hf h⟩
   case vmovdquLoad len d m =>
@@ -688,7 +689,7 @@ theorem det {i : Instr} {F : Fp} (hf : fp b ix sc i = some F) : Det b ix sc i F 
       rw [es, et, h.base, h.rd, h.wr]
     have e : ∀ w, w / 8 ≤ lenBytes len → s.mem.readW (s.ea m) w = t.mem.readW (t.ea m) w := fun w hw => by
       rw [es, et]; exact readW_eq h fun k hk => testBit_range_add (by omega)
-    cases len <;> simp only [exec, State.load128, State.load256] at he ⊢ <;> split at he <;>
+    cases len <;> simp only [reduceExec, State.load128, State.load256] at he ⊢ <;> split at he <;>
       first
       | (rename_i hs
          simp only [Option.map_some, Option.some.injEq] at he
@@ -706,7 +707,7 @@ theorem det {i : Instr} {F : Fp} (hf : fp b ix sc i = some F) : Det b ix sc i F 
     have hin : ∀ n, InRegions s.wr (bAddr b ix sc s + BitVec.ofNat 64 o) n →
         InRegions t.wr (bAddr b ix sc t + BitVec.ofNat 64 o) n := fun n hn => by
       rw [← h.base, ← h.wr]; exact hn
-    cases len <;> simp only [exec, State.store128, State.store256, State.ymm, es, et, x0, x1] at he ⊢ <;>
+    cases len <;> simp only [reduceExec, State.store128, State.store256, State.ymm, es, et, x0, x1] at he ⊢ <;>
       split at he <;>
       first
       | (rename_i hs

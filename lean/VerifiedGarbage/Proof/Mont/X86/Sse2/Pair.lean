@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.X86.SseDword
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 public import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 /-! # The products of the `pmuludq` kernel
 
@@ -110,7 +111,7 @@ theorem quadLastMul_run (s : State) (hm : 0 < s.mcdt)
         (pmuludq (s.mem.readW (s.ea (at_ .esi 0)) 128) (s.mem.readW (s.ea (at_ .edi 0)) 128)) 32))
         (XShiftOp.eval .psrlq (pmuludq (shufDwords (s.mem.readW (s.ea (at_ .esi 0)) 128) 0x31)
           (shufDwords (s.mem.readW (s.ea (at_ .edi 0)) 128) 0x31)) 32) := by
-  simp only [quadLastMul, acc, List.cons_append, List.nil_append, runBlock_cons, exec, State.load128, h1, h2,
+  simp only [quadLastMul, acc, List.cons_append, List.nil_append, runBlock_cons, reduceExec, State.load128, h1, h2,
     Option.map_some, runStep_some, XOp.exec, ↓reduceIte, Option.some.injEq, exists_eq_left',
     rd_setXmm, wr_setXmm, mem_setXmm, ea_setXmm, mcdt_setXmm, hm, xmm_setXmm, reduceCtorEq, runBlock_nil]
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩ <;>
@@ -165,7 +166,7 @@ theorem pairMul_run (s : State) (hm : 0 < s.mcdt)
             ((0 : BitVec 64) ++ s.mem.readW (s.ea (at_ .esi 0)) 64))
           (XBinOp.eval .punpckldq ((0 : BitVec 64) ++ s.mem.readW (s.ea (at_ .edi 0)) 64)
             ((0 : BitVec 64) ++ s.mem.readW (s.ea (at_ .edi 0)) 64))) 32) := by
-  simp only [pairMul, acc, List.cons_append, List.nil_append, runBlock_cons, exec, State.load64, h1, h2,
+  simp only [pairMul, acc, List.cons_append, List.nil_append, runBlock_cons, reduceExec, State.load64, h1, h2,
     Option.map_some, runStep_some, XOp.exec, ↓reduceIte, Option.some.injEq, exists_eq_left',
     rd_setXmm, wr_setXmm, mem_setXmm, ea_setXmm, mcdt_setXmm, hm, xmm_setXmm, reduceCtorEq, runBlock_nil]
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩ <;>
@@ -221,7 +222,7 @@ theorem single_run (s : State) (hm : 0 < s.mcdt)
   have ea2 : ∀ v : BitVec 32, (s.setReg .eax v).ea (at_ .edi 0) = s.ea (at_ .edi 0) := fun _ => rfl
   have ea2' : ∀ (v : BitVec 32) (x : BitVec 128),
       ((s.setReg .eax v).setXmm .xmm2 x).ea (at_ .edi 0) = s.ea (at_ .edi 0) := fun _ _ => rfl
-  simp only [single, acc, List.cons_append, List.nil_append, runBlock_cons, exec, readSrc, State.load32, h1,
+  simp only [single, acc, List.cons_append, List.nil_append, runBlock_cons, reduceExec, readSrc, State.load32, h1,
     Option.map_some, runStep_some, XOp.exec, ↓reduceIte, Option.some.injEq, exists_eq_left',
     rd_setXmm, wr_setXmm, mem_setXmm, rd_setReg, wr_setReg, mem_setReg, ea2', h2, mcdt_setXmm, mcdt_setReg, hm,
     xmm_setXmm, xmm_setReg, reduceCtorEq, runBlock_nil, gpr_setXmm, gpr_setReg_self]

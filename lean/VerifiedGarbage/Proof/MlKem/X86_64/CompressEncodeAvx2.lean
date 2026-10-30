@@ -20,6 +20,7 @@ meta import VerifiedGarbage.Proof.MlKem.Encode
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # ML-KEM on x86-64: `ByteEncode_d ∘ Compress_d` with AVX2, which the K-PKE functions inline
@@ -782,7 +783,7 @@ theorem grp1_ok {g : Nat} (hg : g < 4) {sh : XReg} (hs0 : sh ≠ .xmm0) (hs1 : s
       have hv := dword_sh (a := s2.lane .xmm1 l) (g := g) (by omega_arith) hl hj (by rw [hb l hl j hj]; exact cv1_le _)
       rw [hb l hl j hj] at hv
       rw [u4.val l hl, u3.other _ (by decide) l hl, u3.val l hl, hsh2 l hl]
-      simp only [VBinOp.sse]
+      simp only [reduceVBinOpSse]
       rw [dword_paddd _ _ hj, BitVec.toNat_add, h4, hv, itF h0]
       have := hAb l hl j hj; have := cv1_le (x (4 * l + j))
       have : 2 ^ (8 * g + 4 * l + j) ≤ 2 ^ 31 := Nat.pow_le_pow_right (by decide) (by omega_arith)
@@ -879,7 +880,7 @@ theorem sum1_ok {D : Nat → Nat → Nat} (hD : ∀ l < 2, ∀ j < 4, (dword (s.
     rw [u7.gpr, show s6.xmm .xmm4 = s6.lane .xmm4 0 from rfl, setWidth_ext64, u6.val 0 (by decide), itT rfl,
       u5.other _ (by decide) 0 (by decide), u5.val 0 (by decide), itT rfl]
     apply BitVec.eq_of_toNat_eq
-    simp only [VBinOp.sse]
+    simp only [reduceVBinOpSse]
     rw [dword_paddd _ _ (by decide), BitVec.toNat_add, hr 0 (by decide), hr 1 (by decide), BitVec.toNat_ofNat]
   refine k s8 (by rw [m8, hv, u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]) (fun r a b l hl => ?_)
     (fun g hg => by rw [g8, u7.other g hg, hg6]) (by rw [r8, u7.rd, u6.rd, u5.rd, u4.rd, u3.rd, u2.rd, u1.rd])

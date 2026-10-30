@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: straight-line vector code, lane by lane
@@ -33,7 +34,7 @@ open VG.Proof.Poly1305.X86_64.Avx2 (xr xi xr_xi xi_inj qw qword_app0 qword_app1 
 
 theorem qword_psubq (x y : BitVec 128) {i : Nat} (hi : i < 2) :
     qword (XBinOp.eval .psubq x y) i = qword x i - qword y i := by
-  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;> simp [XBinOp.eval]
+  rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl <;> simp [reduceXBinOpEval]
 
 theorem qword_xor (x y : BitVec 128) (i : Nat) : qword (x ^^^ y) i = qword x i ^^^ qword y i := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
@@ -620,7 +621,7 @@ theorem sstep_ok {s₀ : State} (hc : Ctx s₀) {σ σ' : Sym} {s : State}
         cases e
         refine ⟨h.setV d _ fun k hk => ?_, by cases d <;> exact hs⟩
         rw [qword256_lanes _ _ _ hk]
-        simp only [EBinOp.sse, XBinOp.eval, BitVec.or_self]
+        simp only [EBinOp.sse, reduceXBinOpEval, BitVec.or_self]
         rw [qword256_lane _ hk, h.get a hk]
       · cases e
     · rename_i d a b
@@ -630,7 +631,7 @@ theorem sstep_ok {s₀ : State} (hc : Ctx s₀) {σ σ' : Sym} {s : State}
         cases e
         refine ⟨h.setV d _ fun k hk => ?_, by cases d <;> exact hs⟩
         rw [qword256_lanes _ _ _ hk]
-        simp [EBinOp.sse, XBinOp.eval, T.eval, qword]
+        simp [EBinOp.sse, reduceXBinOpEval, T.eval, qword]
       · cases e
     · rename_i d a o
       cases e

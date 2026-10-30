@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # RSA signatures on AArch64: the instructions on the stack
@@ -26,7 +27,7 @@ variable {is : List Instr} {s : State} {Q : State → Prop}
 theorem wp_addSp {d : Reg} {imm : Nat} (h : imm < 4096)
     (k : ∀ s', Only [d] s s' → s'.gpr d = s.sp + BitVec.ofNat 64 imm → WP isa (.block is) s' Q) :
     WP isa (.block (.addSp d imm :: is)) s Q :=
-  VG.Proof.MlKem.AArch64.wp_x (by simp [exec, h]) k
+  VG.Proof.MlKem.AArch64.wp_x (by simp [reduceExec, h]) k
 
 theorem wp_ldrSp {t : Reg} {off : Nat} (ho : off % 8 = 0 ∧ off < 32768)
     (hin : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 off) 8)
@@ -34,7 +35,7 @@ theorem wp_ldrSp {t : Reg} {off : Nat} (ho : off % 8 = 0 ∧ off < 32768)
       WP isa (.block is) s' Q) :
     WP isa (.block (.ldrSp t off :: is)) s Q :=
   VG.Proof.MlKem.AArch64.wp_x (by
-    simp only [exec, ho, and_self, ite_true, State.load, hin, Option.map_some, Mem.readW]) k
+    simp only [reduceExec, ho, and_self, ite_true, State.load, hin, Option.map_some, Mem.readW]) k
 
 theorem wp_mov {d n : Reg}
     (k : ∀ s', Only [d] s s' → s'.gpr d = s.gpr n → WP isa (.block is) s' Q) :
@@ -44,7 +45,7 @@ theorem wp_mov {d n : Reg}
 theorem wp_movw {d n : Reg}
     (k : ∀ s', Only [d] s s' → s'.gpr d = ((s.gpr n).setWidth 32).setWidth 64 → WP isa (.block is) s' Q) :
     WP isa (.block (.addImm .w d n 0 :: is)) s Q :=
-  VG.Proof.MlKem.AArch64.WP.cons (s' := s.write .w d ((s.gpr n).setWidth 32)) (by simp [exec, State.read])
+  VG.Proof.MlKem.AArch64.WP.cons (s' := s.write .w d ((s.gpr n).setWidth 32)) (by simp [reduceExec, State.read])
     (k _ (only_write _ _ _ _) (by simp [State.write]))
 
 end

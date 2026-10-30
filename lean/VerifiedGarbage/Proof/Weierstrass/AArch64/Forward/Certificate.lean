@@ -10,6 +10,7 @@ import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.TCB.AArch64.Isa
 import VerifiedGarbage.Proof.Mont.AArch64.Words
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 @[expose] public section
 
@@ -50,7 +51,7 @@ theorem findNode_eq {nodes : Certificate} {key : Node} {i : Nat}
 
 theorem eval_copy (a : BitVec 64) (c d : BitVec 64) (f : Bool) :
     (Op.logic .orr).eval a a c d f=(a,false) := by
-  simp [Op.eval,Op.useA,Op.useB,Op.useC,Op.useD,Op.useCarry,scalarState,Op.instr,exec,
+  simp [Op.eval,Op.useA,Op.useB,Op.useC,Op.useD,Op.useCarry,scalarState,Op.instr,reduceExec,
     State.read,State.write,Size.bits,BitVec.setWidth_eq]
 
 theorem certDom_sound {nodes : Certificate} (hv : CertValid nodes) (input : Nat → BitVec 64) :

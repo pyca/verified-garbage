@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Inline
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Arm.Reduce
 
 /-!
 # Inlining verified code (ARMv7)
@@ -115,7 +116,7 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     (h : exec i s = some s') : exec i (s.withRegions rd wr) = some (s'.withRegions rd wr) := by
   cases i with
   | ldr t n off | ldrb t n off | ldrSp t off =>
-    simp only [exec, State.load32, State.load8] at h ⊢
+    simp only [reduceExec, State.load32, State.load8] at h ⊢
     split at h <;> [skip; cases h]
     rename_i hoff
     simp only [hoff, ite_true] at h ⊢
@@ -126,7 +127,7 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
       State.withRegions_sp, hc _ _ hi, ite_true, Option.map_some]
     rfl
   | str t n off | strb t n off =>
-    simp only [exec, State.store32, State.store8] at h ⊢
+    simp only [reduceExec, State.store32, State.store8] at h ⊢
     split at h <;> [skip; cases h]
     rename_i hoff
     simp only [hoff, ite_true] at h ⊢
@@ -136,19 +137,19 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     simp only [State.withRegions_wr, State.withRegions_gpr, hw _ _ hi, ite_true]
     rfl
   | addSp d imm =>
-    simp only [exec] at h ⊢
+    simp only [reduceExec] at h ⊢
     split at h <;> [skip; cases h]
     rename_i hi
     simp only [hi, ite_true, Option.some.injEq] at h ⊢
     subst h; rfl
-  | push _ | pop _ _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
+  | push _ | pop _ _ | alloc _ | free _ => simp only [reduceExec, reduceCtorEq] at h
   | umaal lo hi n m =>
-    simp only [exec] at h ⊢
+    simp only [reduceExec] at h ⊢
     split at h <;> [cases h; rename_i hne]
     simp only [hne, ite_false, Option.some.injEq] at h ⊢
     subst h; rfl
   | _ =>
-    simp only [exec, op2_withRegions, Option.map_eq_some_iff] at h ⊢
+    simp only [reduceExec, op2_withRegions, Option.map_eq_some_iff] at h ⊢
     first
     | (obtain ⟨y, hy, rfl⟩ := h; exact ⟨y, hy, rfl⟩)
     | (simp only [Option.some.injEq] at h ⊢; subst h; rfl)
@@ -161,7 +162,7 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
     s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ Frame s.wr s.mem s'.mem := by
   cases i with
   | str t n off | strb t n off =>
-    simp only [exec, State.store32, State.store8] at h
+    simp only [reduceExec, State.store32, State.store8] at h
     split at h <;> [skip; cases h]
     split at h <;> [rename_i hi; cases h]
     simp only [Option.some.injEq] at h
@@ -169,12 +170,12 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
     obtain ⟨r, hr, hc⟩ := hi
     exact ⟨rfl, rfl, rfl, (Frame.refl _ _).writeW hr _ hc⟩
   | umaal lo hi n m =>
-    simp only [exec] at h
+    simp only [reduceExec] at h
     split at h <;> [cases h; skip]
     simp only [Option.some.injEq] at h
     subst h; exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩
   | _ =>
-    simp only [exec, State.load32, State.load8, Option.map_eq_some_iff] at h
+    simp only [reduceExec, State.load32, State.load8, Option.map_eq_some_iff] at h
     (repeat' split at h) <;>
     (try simp only [Option.some.injEq, reduceCtorEq] at h) <;>
     first
@@ -189,13 +190,13 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : clobbers i r = false) (h : exec i s
   cases i
   case umaal lo hi' n m =>
     simp only [clobbers, Bool.or_eq_false_iff, beq_eq_false_iff_ne] at hi
-    simp only [exec] at h
+    simp only [reduceExec] at h
     split at h <;> [cases h; skip]
     simp only [Option.some.injEq] at h; subst h
     rw [hs _ _ _ (Ne.symm hi.2), hs _ _ _ (Ne.symm hi.1)]
   all_goals
     replace hi := dstOf_ne_of_clobbers hi
-    simp only [exec, State.load32, State.load8, State.store32, State.store8, Option.map_eq_some_iff] at h <;>
+    simp only [reduceExec, State.load32, State.load8, State.store32, State.store8, Option.map_eq_some_iff] at h <;>
     (repeat' split at h) <;>
     (try simp only [Option.some.injEq, reduceCtorEq] at h) <;>
     first

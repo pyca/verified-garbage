@@ -13,6 +13,7 @@ public import Aesop.BuiltinRules
 import Mathlib.Tactic.ToDual
 import Mathlib.Tactic.ToAdditive
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Lower
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 @[expose] public section
 
@@ -43,7 +44,7 @@ theorem vector_step_ok (op : ScalarOp) (hg : Good op) (f : File) (s : VG.AArch64
     have hk := hg.1
     refine ⟨s.setV (slotV k) (ofVDwords (s.gpr a) (s.gpr a)), ?_, ⟨?_, ?_⟩,
       rfl, rfl, rfl, rfl, ?_⟩
-    · simp only [lowerVector, runBlock_cons, exec, VOp.eval, Option.map_some, runStep_some, runBlock_nil]
+    · simp only [lowerVector, runBlock_cons, exec, reduceVOpEval, Option.map_some, runStep_some, runBlock_nil]
     · intro r; exact hr.regs r
     · intro j hj
       simp only [step, RegUpd.v_setV]

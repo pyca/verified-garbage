@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 @[expose] public section
 
@@ -23,7 +24,7 @@ theorem packHalves_ok (s : State) :
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) := by
   refine ⟨_, by
-    simp only [rr, runBlock_cons, runStep_some, exec, execShift,
+    simp only [rr, runBlock_cons, runStep_some, reduceExec, execShift,
       readSrc, Option.map_some, gpr_setReg, ite_true]
     rfl, ?_, ?_, ?_, ?_, ?_⟩
   · exact gpr_setReg_self _ _ _
@@ -39,7 +40,7 @@ theorem storeTail_ok (s : State) :
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (∀ r, r ≠ .rax → r ≠ .rbx → s'.gpr r = s.gpr r) := by
   refine ⟨_, by
-    simp only [rr, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+    simp only [rr, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc,
       Option.map_some, gpr_setReg_self]
     rfl, ?_, ?_, ?_, ?_, ?_⟩
   · exact gpr_setReg_self _ _ _
@@ -104,7 +105,7 @@ theorem writeData_ok (s : State) (hwrite : InRegions s.wr (s.gpr .rsi) 8) :
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have haddr : s.gpr .rsi + BitVec.ofInt 64 (Int.ofNat 0) = s.gpr .rsi := BitVec.add_zero _
   refine ⟨{ s with mem := s.mem.writeW (s.gpr .rsi) (s.gpr .rax) }, by
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.store64,
+    simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, State.store64,
       State.ea, memOp, haddr, hwrite, ite_true], rfl, rfl, rfl, rfl⟩
 
 end VG.Proof.TripleDes.X86_64

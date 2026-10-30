@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.TripleDes.X86.Word
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 @[expose] public section
 
@@ -23,7 +24,7 @@ theorem rotate28_ok (s : State) (r : Reg) (hr : r ≠ .eax)
   have hright : 1 ≤ 28 - n ∧ 28 - n ≤ 31 := by omega
   refine ⟨_, by
     simp only [hleft, hright, and_self, rotate28, rr, runBlock_cons, runStep_some, runBlock_nil,
-      exec, execAlu, execShift, readSrc, Option.bind_some, Option.map_some,
+      reduceExec, execAlu, execShift, readSrc, Option.bind_some, Option.map_some,
       gpr_setReg, gpr_arithFlags, gpr_setFlags, hr, Ne.symm hr, ite_true, ite_false]
     rfl, ?_⟩
   constructor

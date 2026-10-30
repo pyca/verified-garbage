@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Sha512.Arm.Rounds
 public import VerifiedGarbage.Proof.Blake2.Spec
 public import VerifiedGarbage.Impl.Blake2.Arm.CompressS
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Reduce
 
 @[expose] public section
 
@@ -28,7 +29,7 @@ variable {s : State} {is : List Instr} {Q : State → Prop}
 theorem wp_eor {d n : Reg} {o : Op2} {y : BitVec 32} (ho : o.eval s = some y)
     (k : ∀ s', Upd s s' d (s.gpr n ^^^ y) → WP isa (.block is) s' Q) :
     WP isa (.block (.dp .eor d n o :: is)) s Q :=
-  MdStream.Arm.WP.cons (s' := s.setReg d (s.gpr n ^^^ y)) (by simp [exec, ho]) (k _ (Upd.setReg _ _ _))
+  MdStream.Arm.WP.cons (s' := s.setReg d (s.gpr n ^^^ y)) (by simp [reduceExec, ho]) (k _ (Upd.setReg _ _ _))
 
 theorem wp_movw {d : Reg} {imm : BitVec 16}
     (k : ∀ s', Upd s s' d (imm.setWidth 32) → WP isa (.block is) s' Q) :

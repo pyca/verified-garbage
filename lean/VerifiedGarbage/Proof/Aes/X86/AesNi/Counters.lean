@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 @[expose] public section
 
@@ -105,7 +106,7 @@ theorem counter_one (b : XReg) (s : State) (hb : b ≠ .xmm7) :
   apply WP.of_runBlock
   simp only [ctrs, List.append_nil]
   simp only [reduceCtorEq, ↓reduceIte, Nat.reduceAdd, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil,
-    exec, isa, readSrc, XOp.exec, execAlu, counterLane, gpr_setReg,
+    reduceExec, isa, readSrc, XOp.exec, execAlu, counterLane, gpr_setReg,
     gpr_setXmm, xmm_setReg, xmm_setXmm, xmm_arithFlags, mem_setReg, rd_setReg,
     wr_setReg, Ne.symm hb, Option.map_some, Option.bind_some,
     Option.some.injEq, exists_eq_left']

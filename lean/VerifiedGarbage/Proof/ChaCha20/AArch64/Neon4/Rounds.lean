@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 @[expose] public section
 
@@ -58,7 +59,7 @@ theorem op_ok (op : Op) {vs : Nat → CState} {s : State} (h : Holds vs s) (ht :
   cases op with
   | add d a b =>
     apply WP.of_runBlock
-    simp only [Op.code, runBlock_cons, runBlock_nil, exec, VOp.eval, isa, runStep_some,
+    simp only [Op.code, runBlock_cons, runBlock_nil, exec, reduceVOpEval, isa, runStep_some,
       Option.map_some, Option.some.injEq, exists_eq_left']
     refine ⟨fun k j hj => ?_, ⟨⟨rfl, rfl, rfl, rfl, rfl⟩, by simp only [↓reduceIte, RegUpd.v_setV, Ne.symm (vreg_ne30 d)]⟩⟩
     simp only [RegUpd.v_setV, step, get_set, vreg_inj]
@@ -69,7 +70,7 @@ theorem op_ok (op : Op) {vs : Nat → CState} {s : State} (h : Holds vs s) (ht :
     by_cases h16 : n.val = 16
     · apply WP.of_runBlock
       simp only [Op.code, h16, ite_true, List.cons_append, List.nil_append,
-        runBlock_cons, runBlock_nil, exec, VOp.eval, isa, runStep_some,
+        runBlock_cons, runBlock_nil, exec, reduceVOpEval, isa, runStep_some,
         Option.map_some, Option.some.injEq, exists_eq_left', RegUpd.v_setV]
       refine ⟨fun k j hj => ?_, ⟨⟨rfl, rfl, rfl, rfl, rfl⟩, by simp only [reduceCtorEq, ↓reduceIte, RegUpd.v_setV, Ne.symm (vreg_ne30 d)]⟩⟩
       simp only [RegUpd.v_setV, vreg_ne, ite_false, step, get_set, vreg_inj]
@@ -79,7 +80,7 @@ theorem op_ok (op : Op) {vs : Nat → CState} {s : State} (h : Holds vs s) (ht :
     by_cases h8 : n.val = 8
     · apply WP.of_runBlock
       simp only [reduceCtorEq, ↓reduceIte, Nat.reduceEqDiff, Op.code, h8, List.cons_append, List.nil_append,
-        runBlock_cons, runBlock_nil, exec, VOp.eval, isa, runStep_some,
+        runBlock_cons, runBlock_nil, exec, reduceVOpEval, isa, runStep_some,
         Option.map_some, Option.some.injEq, exists_eq_left', RegUpd.v_setV]
       refine ⟨fun k j hj => ?_, ⟨⟨rfl, rfl, rfl, rfl, rfl⟩,
         by simp only [reduceCtorEq, ↓reduceIte, RegUpd.v_setV, Ne.symm (vreg_ne30 d)]⟩⟩
@@ -94,7 +95,7 @@ theorem op_ok (op : Op) {vs : Nat → CState} {s : State} (h : Holds vs s) (ht :
       simp only [VShiftOp.ok, VArr.esize, decide_eq_true_eq]; exact hn
     apply WP.of_runBlock
     simp only [Op.code, h16, h8, ite_false, List.cons_append, List.nil_append,
-      runBlock_cons, runBlock_nil, exec, VOp.eval, isa, runStep_some,
+      runBlock_cons, runBlock_nil, exec, reduceVOpEval, isa, runStep_some,
       hsh, hsl, ite_true, Option.map_some, Option.some.injEq, exists_eq_left',
       RegUpd.v_setV, vreg_ne, Ne.symm (vreg_ne d), ite_false]
     refine ⟨fun k j hj => ?_, ⟨⟨rfl, rfl, rfl, rfl, rfl⟩, by simp only [reduceCtorEq, ↓reduceIte, RegUpd.v_setV, Ne.symm (vreg_ne30 d)]⟩⟩

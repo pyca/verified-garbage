@@ -18,6 +18,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # ML-KEM on x86-64: the key check with AVX2
@@ -177,7 +178,7 @@ theorem step {i : Nat} (hi : i < 32 * p.k) {s : State} (hI : Inv p s₀ i s) :
       show BitVec.signExtend 64 (12 : BitVec 32) = BitVec.ofNat 64 12 by decide, BitVec.add_assoc,
       ← BitVec.ofNat_add, show 12 * i + 12 = 12 * (i + 1) by omega_arith]
   · rw [u8.lane, u7.lane, u6.val l hl, h2 l hl, h5 l hl]
-    simp only [VBinOp.sse]
+    simp only [reduceVBinOpSse]
     rw [dword_pand, dword_psubd _ _ hj, dword_qV4 hj, cand_dword L hl hj, BitVec.msb_and, hI.sg l hl j hj,
       msb_sub_q (candN_lt _ (fun t => (byte L t).isLt) _), candN_congr (b' := fun t => ((E p s₀).getD (12 * i + t) 0).toNat)
         hb (by omega_arith)]

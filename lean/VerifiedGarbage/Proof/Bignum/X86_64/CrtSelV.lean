@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Bignum.CrtExp
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # RSA with the CRT on x86-64: gathering a table entry with AVX2
@@ -96,7 +97,7 @@ theorem gOrV_ok (L : VLen) {s : State} {B : Addr} {Z e c : Nat} (hs : Scr s B Z)
     refine ⟨fun l hl q hq => ?_, fun y h0 h1 l => ?_, rfl, rfl, rfl, rfl⟩
     · simp only [nl] at hl
       simp only [lane_vbin256, State.lane_setV256, ↓reduceIte, show XReg.xmm0 ≠ XReg.xmm1 by decide,
-        VBinOp.sse, XBinOp.eval]
+        reduceVBinOpSse, XBinOp.eval]
       rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl
       · simp only [↓reduceIte]
         rw [q128_or, q128_and, show (s.mem.readW (off B (e + 8 * c)) 256).extractLsb' 0 128 =
@@ -118,7 +119,7 @@ theorem gOrV_ok (L : VLen) {s : State} {B : Addr} {Z e c : Nat} (hs : Scr s B Z)
     · simp only [nl] at hl
       obtain rfl : l = 0 := by omega_arith
       simp only [lane_vbin128, State.lane_setV128, ↓reduceIte, show XReg.xmm0 ≠ XReg.xmm1 by decide,
-        VBinOp.sse, XBinOp.eval]
+        reduceVBinOpSse, XBinOp.eval]
       rw [q128_or, q128_and, q_read128 _ _ hq, off_add_eq]
       simp only [Nat.mul_zero, Nat.add_zero]
     · simp only [lane_vbin128, State.lane_setV128, h0, h1, ↓reduceIte]
@@ -156,7 +157,7 @@ theorem gFirstV_ok (L : VLen) {s : State} {B : Addr} {Z e c : Nat} (hs : Scr s B
       Option.map_some, Option.some.injEq, exists_eq_left']
     refine ⟨fun l hl q hq => ?_, fun y h0 _ l => ?_, rfl, rfl, rfl, rfl⟩
     · simp only [nl] at hl
-      simp only [State.lane_setV256, ↓reduceIte, VBinOp.sse, XBinOp.eval]
+      simp only [State.lane_setV256, ↓reduceIte, reduceVBinOpSse, XBinOp.eval]
       rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl
       · simp only [↓reduceIte]
         rw [q128_and, show (s.mem.readW (off B (e + 8 * c)) 256).extractLsb' 0 128 =
@@ -177,7 +178,7 @@ theorem gFirstV_ok (L : VLen) {s : State} {B : Addr} {Z e c : Nat} (hs : Scr s B
     refine ⟨fun l hl q hq => ?_, fun y h0 _ l => ?_, rfl, rfl, rfl, rfl⟩
     · simp only [nl] at hl
       obtain rfl : l = 0 := by omega_arith
-      simp only [State.lane_setV128, ↓reduceIte, VBinOp.sse, XBinOp.eval]
+      simp only [State.lane_setV128, ↓reduceIte, reduceVBinOpSse, XBinOp.eval]
       rw [q128_and, q_read128 _ _ hq, off_add_eq]
       simp only [Nat.mul_zero, Nat.add_zero]
     · simp only [State.lane_setV128, h0, ↓reduceIte]

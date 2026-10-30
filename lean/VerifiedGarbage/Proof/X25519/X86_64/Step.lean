@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.X25519.X86_64
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # X25519 on x86-64: the steps of the field arithmetic
@@ -75,8 +76,8 @@ theorem mulStep_ok (s : State) {t c ai : Reg} {src : Src} {v : BitVec 64}
         (s.gpr t).toNat + (s.gpr c).toNat + (s.gpr ai).toNat * v.toNat ∧
       Keeps [t, c, .rax, .rdx] s s' := by
   apply WP.of_runBlock
-  simp only [mulStep, runBlock_cons, exec, hsrc, Option.map_some, runStep_some]
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execMul,
+  simp only [mulStep, runBlock_cons, reduceExec, hsrc, Option.map_some, runStep_some]
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, execMul,
     execAlu, Option.map_some, Option.bind_some, RegUpd.gpr_setReg, RegUpd.gpr_setFlags,
     RegUpd.gpr_arithFlags, RegUpd.cf_arithFlags, RegUpd.cf_setReg, ite_true, ha, hc, ht, htc, hc', ht',
     Ne.symm htc, Ne.symm ht', ite_false, reduceCtorEq, Option.some.injEq, exists_eq_left', se0]
@@ -196,7 +197,7 @@ theorem carry38_ok (s : State) (hx : (s.gpr .rax).toNat < 2 ^ 58) :
         (val4 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) + (s.gpr .rax).toNat) % P ∧
       Keeps [.r8, .r9, .r10, .r11, .rax] s s' := by
   apply WP.of_runBlock
-  simp only [carry38, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
+  simp only [carry38, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, execAlu,
     Option.map_some, Option.bind_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags,
     RegUpd.cf_arithFlags, RegUpd.cf_setReg, ite_true, ite_false, reduceCtorEq, Option.some.injEq,
     exists_eq_left', se0]
@@ -253,7 +254,7 @@ theorem carry19_ok (s : State) {m : Reg} (h8 : m ≠ .r8) (h9 : m ≠ .r9) (h10 
       val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) ≤ 2 * P ∧
       Keeps [.r8, .r9, .r10, .r11, .rax, m] s s' := by
   apply WP.of_runBlock
-  simp only [carry19, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, execShift,
+  simp only [carry19, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, execAlu, execShift,
     Option.map_some, Option.bind_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags,
     RegUpd.gpr_setFlags, RegUpd.cf_arithFlags, RegUpd.cf_setReg, RegUpd.cf_setFlags, ite_true,
     ite_false, reduceCtorEq, Option.some.injEq, exists_eq_left', se0, h11,

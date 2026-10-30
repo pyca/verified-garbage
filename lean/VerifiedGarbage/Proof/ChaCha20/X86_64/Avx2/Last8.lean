@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # ChaCha20 on x86-64 with AVX2: the last 385 to 511 bytes
@@ -60,7 +61,7 @@ theorem xor16_3_ok {x : XReg} (_hx : x ≠ .xmm12) {off : Nat} (ho : off + 16 �
     exists_eq_left', State.setV_gpr,
     State.setV_mem, State.setV_rd, State.setV_wr, State.setMem_gpr, State.setMem_mem,
     State.setMem_rd, State.setMem_wr, State.xmm_lane, State.lane_setV128,
-    VBinOp.sse, XBinOp.eval]
+    VBinOp.sse, reduceXBinOpEval]
   refine ⟨fun k hk => ?_, (Frame.refl _ _).writeW (List.mem_singleton_self _) _ c,
     fun r l hr => ?_, trivial, trivial, trivial⟩
   · rw [byte_write16 _ _ _ (by lit_omega) hk]

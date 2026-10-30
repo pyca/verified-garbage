@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Interleave
 public import VerifiedGarbage.TCB.AArch64.Isa
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # AArch64: vector-only and scalar-only instructions commute
@@ -38,27 +39,27 @@ def scalarOnly : Instr → Bool
 
 theorem VOp.eval_congr {op : VOp} (h : vopVecOnly op = true) {s t : State} (hv : s.v = t.v) :
     op.eval s = op.eval t := by
-  cases op <;> simp only [vopVecOnly, reduceCtorEq] at h <;> simp only [VOp.eval, hv]
+  cases op <;> simp only [vopVecOnly, reduceCtorEq] at h <;> simp only [reduceVOpEval, hv]
 
 theorem exec_setV {y : Instr} (h : scalarOnly y = true) (s : State) (d : VReg) (x : BitVec 128) :
     exec y (s.setV d x) = (exec y s).map (·.setV d x) := by
   cases y <;> simp only [scalarOnly, reduceCtorEq] at h
   case ldrSp t off =>
-    simp only [exec, State.load]
+    simp only [reduceExec, State.load]
     by_cases ho : off % 8 = 0 ∧ off < 32768
     · by_cases hi : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 off) 8
       · simp only [ho, hi, and_self, ite_true, Option.map_some, State.setV, State.write]
       · simp [ho, hi, State.setV]
     · simp only [ho, ite_false, Option.map_none]
   case strSp t off =>
-    simp only [exec, State.store]
+    simp only [reduceExec, State.store]
     by_cases ho : off % 8 = 0 ∧ off < 32768
     · by_cases hi : InRegions s.wr (s.sp + BitVec.ofNat 64 off) 8
       · simp only [ho, hi, and_self, ite_true, Option.map_some, State.setV, State.read]
       · simp [ho, hi, State.setV]
     · simp only [ho, ite_false, Option.map_none]
   all_goals
-    simp only [exec]
+    simp only [reduceExec]
     first
     | (split <;> simp only [Option.map_some, Option.map_none, State.setV, State.write, State.read])
     | simp only [Option.map_some, State.setV, State.write, State.read]
@@ -66,7 +67,7 @@ theorem exec_setV {y : Instr} (h : scalarOnly y = true) (s : State) (d : VReg) (
 theorem exec_v {y : Instr} (h : scalarOnly y = true) {s s' : State} (e : exec y s = some s') :
     s'.v = s.v := by
   cases y <;> simp only [scalarOnly, reduceCtorEq] at h <;>
-    simp only [exec, State.load, State.store] at e <;> (try split_ifs at e) <;>
+    simp only [reduceExec, State.load, State.store] at e <;> (try split_ifs at e) <;>
     (try simp only [Option.some.injEq, Option.map_some] at e) <;> (try cases e) <;> (try subst e) <;> rfl
 
 private theorem exec_vop (op : VOp) (s : State) :

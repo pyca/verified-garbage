@@ -7,6 +7,7 @@ public import VerifiedGarbage.Impl.Sha1.X86.ShaNi
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 /-!
 # SHA-1 with the SHA extensions on x86: the 80 rounds of a block
@@ -73,7 +74,7 @@ theorem rounds4_ok (n : Nat) (s : State) (a x q : BitVec 128)
   generalize (if n = 0 then XBinOp.paddd else XBinOp.sha1nexte) = op
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
     List.nodup_nil, and_true] at hd
-  simp only [and_self, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+  simp only [and_self, runBlock_cons, runStep_some, runBlock_nil, reduceExec, XOp.exec,
     isa, RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, RegUpd.gpr_setXmm, RegUpd.mem_setXmm,
     RegUpd.rd_setXmm, RegUpd.wr_setXmm, not_false_eq_true, reduceCtorEq, hd, h0, h1, hq,
     eval_movdqa, Option.some.injEq, exists_eq_left']
@@ -98,7 +99,7 @@ theorem schedule_hi (n : Nat) (hn : 4 ≤ n) (s : State) (a b c d : BitVec 128)
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
     List.nodup_nil, and_true, List.reverse_cons, List.reverse_nil, List.nil_append,
     List.cons_append] at hd hd''
-  simp only [and_self, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+  simp only [and_self, runBlock_cons, runStep_some, runBlock_nil, reduceExec, XOp.exec,
     isa, RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, RegUpd.gpr_setXmm, RegUpd.mem_setXmm,
     RegUpd.rd_setXmm, RegUpd.wr_setXmm, not_false_eq_true, hd'', ha, hb, hc, hd',
     Option.some.injEq, exists_eq_left']
@@ -116,7 +117,7 @@ theorem schedule_lo (n : Nat) (hn : n < 4) (s : State)
   apply WP.of_runBlock
   simp only [schedule, hn, ite_true]
   generalize msg n = x₀ at *
-  simp only [↓reduceIte, and_self, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+  simp only [↓reduceIte, and_self, runBlock_cons, runStep_some, runBlock_nil, reduceExec, XOp.exec,
     isa, RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, RegUpd.gpr_setXmm, RegUpd.mem_setXmm,
     RegUpd.rd_setXmm, RegUpd.wr_setXmm, not_false_eq_true, State.load128, ea_at, hin,
     h7, Option.map_some, Option.some.injEq, exists_eq_left']

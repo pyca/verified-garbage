@@ -335,7 +335,10 @@ lemmas and tactics to use; read it before writing a proof:
   `first | rfl | …`; never `rfl`, `decide` or `change` on a goal holding a
   large concrete value; rewrite tables' regions with
   `Abi.constRegions_cons`; evaluate a recursive definition that reuses a
-  recursive result with a `dsimproc`.
+  recursive result with a `dsimproc`; unfold a model's function on an
+  instruction with its `dsimproc` (`reduceExec`, `Proof/Framework/<ISA>/Reduce.lean`),
+  not by naming it in `simp`, which copies its `match`'s equation lemmas into
+  every module.
 * **Elaboration:** ascribe instruction-list literals next to `++`; use
   `with_reducible assumption`; import `Proof/Framework/PowLit.lean` for
   numeral exponents; prefer simprocs to `simp (config := {decide := true})`

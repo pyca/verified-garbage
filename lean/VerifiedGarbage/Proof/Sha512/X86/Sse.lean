@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Sha512.Shifts
 public import VerifiedGarbage.Impl.Sha512.X86
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 /-!
 # SHA-512 on x86 (32-bit) with SSE2: a round and two steps of the message schedule
@@ -167,7 +168,7 @@ theorem roundW_ok (a b d e f g h w : Nat) (k : BitVec 64) (A E BC T NE AB : XReg
   simp only [roundW, bigSig, ldq, stq, xb, xs, X, Y, List.cons_append, List.nil_append] at hn hn' ⊢
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or, List.nodup_nil, and_true,
     List.reverse_cons, List.reverse_nil, List.nil_append, List.cons_append] at hn hn'
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, readSrc, isa,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, XOp.exec, readSrc, isa,
     State.load64, State.store64, ea_at, extractLsb'_qword, eval_movdqa,
     RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, RegUpd.gpr_setXmm, RegUpd.mem_setXmm,
     RegUpd.rd_setXmm, RegUpd.wr_setXmm, RegUpd.xmm_setReg, RegUpd.gpr_setReg,
@@ -200,7 +201,7 @@ theorem scheduleW_ok (o2 o7 o15 o16 : Nat) (P Q : XReg) (hn : [P, Q, X, Y].Nodup
   simp only [scheduleW, sig5, ldo, sto, xb, xs, X, Y, List.cons_append, List.nil_append] at hn hn' ⊢
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or, List.nodup_nil, and_true,
     List.reverse_cons, List.reverse_nil, List.nil_append, List.cons_append] at hn hn'
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, isa,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, XOp.exec, isa,
     State.load128, State.store128, ea_at, eval_movdqa, eval_paddq,
     RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, RegUpd.gpr_setXmm, RegUpd.mem_setXmm,
     RegUpd.rd_setXmm, RegUpd.wr_setXmm, not_false_eq_true,

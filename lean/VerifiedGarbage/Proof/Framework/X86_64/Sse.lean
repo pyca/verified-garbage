@@ -5,6 +5,7 @@ public import VerifiedGarbage.TCB.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # x86-64: SSE values as doublewords
@@ -78,7 +79,7 @@ theorem eval_sha256msg2 (a b : BitVec 128) : XBinOp.eval .sha256msg2 a b = sha25
 theorem punpcklqdq_eq (a b : BitVec 128) :
     XBinOp.eval .punpcklqdq a b = ofDwords (dword a 0) (dword a 1) (dword b 0) (dword b 1) := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [XBinOp.eval, qword, getLsbD_ofDwords, getLsbD_dword, BitVec.getLsbD_append,
+  simp only [reduceXBinOpEval, qword, getLsbD_ofDwords, getLsbD_dword, BitVec.getLsbD_append,
     BitVec.getLsbD_extractLsb']
   by_cases h1 : i < 32
   · simp only [h1, ite_true, decide_true, Bool.true_and, show i < 64 by omega_arith] <;> exact congrArg _ (by omega_arith)
@@ -95,7 +96,7 @@ theorem punpcklqdq_eq (a b : BitVec 128) :
 theorem punpckhqdq_eq (a b : BitVec 128) :
     XBinOp.eval .punpckhqdq a b = ofDwords (dword a 2) (dword a 3) (dword b 2) (dword b 3) := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [XBinOp.eval, qword, getLsbD_ofDwords, getLsbD_dword, BitVec.getLsbD_append,
+  simp only [reduceXBinOpEval, qword, getLsbD_ofDwords, getLsbD_dword, BitVec.getLsbD_append,
     BitVec.getLsbD_extractLsb']
   by_cases h1 : i < 32
   · simp only [h1, ite_true, decide_true, Bool.true_and, show i < 64 by omega_arith] <;> exact congrArg _ (by omega_arith)
@@ -138,7 +139,7 @@ theorem movq_const (c : BitVec 128) :
     XBinOp.eval .punpcklqdq ((0 : BitVec 64) ++ c.extractLsb' 0 64)
       ((0 : BitVec 64) ++ c.extractLsb' 64 64) = c := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [XBinOp.eval, qword, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
+  simp only [reduceXBinOpEval, qword, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
   rcases (by omega_arith : i < 64 ∨ 64 ≤ i) with h | h <;>
   simp (disch := omega_arith) only [ite_eq_left, ite_eq_right, decide_eq_true, Bool.true_and] <;>
   exact congrArg _ (by omega_arith)
@@ -181,7 +182,7 @@ theorem getLsbD_ofBytes (f : Nat → BitVec 8) {k r : Nat} (hk : k < 16) (hr : r
 theorem pshufb_bswap_bytes (a : BitVec 128) :
     XBinOp.eval .pshufb a 0x0c0d0e0f08090a0b0405060700010203#128 =
       ofBytes fun j => byte a (4 * (j / 4) + 3 - j % 4) := by
-  simp only [XBinOp.eval, ofBytes]
+  simp only [reduceXBinOpEval, ofBytes]
   rfl
 theorem getLsbD_bswap32 (x : BitVec 32) (i : Nat) :
     (bswap32 x).getLsbD i = if i < 8 then x.getLsbD (24 + i) else if i - 8 < 8 then x.getLsbD (16 + (i - 8))

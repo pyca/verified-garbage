@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! # Fixed public scaling by powers of two using baseline additions -/
 
@@ -27,7 +28,7 @@ theorem double_ok (s : State) (r : Reg) :
       t.gpr r = s.gpr r + s.gpr r ∧ (∀ q, q ≠ r → t.gpr q = s.gpr q) ∧
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, execAlu,
     Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨?_, fun q hr => ?_, rfl, rfl, rfl⟩
   · simp only [RegUpd.gpr_arithFlags, RegUpd.gpr_setReg, ite_true]

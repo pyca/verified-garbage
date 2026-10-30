@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 @[expose] public section
 
@@ -73,7 +74,7 @@ theorem qr_ok {a b c d : XReg} (hab : a ≠ b) (hac : a ≠ c) (had : a ≠ d) (
     exists_eq_left']
   refine ⟨fun l i hi => ?_, fun r l h₁ h₂ h₃ h₄ h₅ => ?_, ?_, ?_, ?_, ?_⟩
   · simp only [↓reduceIte, vw, lane_vbin256, lane_vshift256, State.lane_setV256,
-      VBinOp.sse, hab, hac, had, hbc, hbd, hcd, hab.symm, hac.symm, had.symm, hbc.symm, hbd.symm,
+      reduceVBinOpSse, hab, hac, had, hbc, hbd, hcd, hab.symm, hac.symm, had.symm, hbc.symm, hbd.symm,
       hcd.symm, ha, hb, hc, hd, hb.symm, ha'.symm, hd'.symm, hm.lo8, hm.hi8, hm.m16, ite_self,
       ]
     simp only [dword_paddd _ _ hi, dword_pxor, dword_por, psrld_20 _ hi, pslld_12 _ hi,
@@ -517,7 +518,7 @@ theorem incs_ok {buf : Addr} {s : State} (hrcx : s.gpr .rcx = buf) (hb : bufR bu
     ite_true, Option.map_some, Option.some.injEq, exists_eq_left', VOp.exec_gpr, VOp.exec_mem,
     VOp.exec_rd, VOp.exec_wr, State.setV_gpr, State.setV_mem, State.setV_rd, State.setV_wr]
   refine ⟨fun l q hl hq => ?_, fun r l n8 n13 => ?_, trivial, trivial, trivial, trivial⟩
-  · simp only [vw, lane_vbin256, State.lane_setV256, reduceCtorEq, ite_true, ite_false, VBinOp.sse,
+  · simp only [vw, lane_vbin256, State.lane_setV256, reduceCtorEq, ite_true, ite_false, reduceVBinOpSse,
       dword_paddd _ _ hq, dword_load256 _ _ hl hq]
     rw [add_ofNat]; exact congrArg _ (hc.inc l q hl hq)
   · simp only [lane_vbin256, State.lane_setV256, n8, n13, ite_false]
@@ -902,7 +903,7 @@ theorem addT_ok {row : Nat} {x0 x1 x2 x3 : XReg} (e01 : x0 ≠ x1) (e02 : x0 ≠
     ite_true, Option.map_some, Option.some.injEq, exists_eq_left', VOp.exec_gpr, VOp.exec_mem,
     VOp.exec_rd, VOp.exec_wr, State.setV_gpr, State.setV_mem, State.setV_rd, State.setV_wr]
   refine ⟨fun l q hq => ?_, fun r l n0 n1 n2 n3 n14 => ?_, trivial, trivial, trivial, trivial⟩
-  · simp only [vw, lane_vbin256, State.lane_setV256, VBinOp.sse, e01, e02, e03,
+  · simp only [vw, lane_vbin256, State.lane_setV256, reduceVBinOpSse, e01, e02, e03,
       e12, e13, e23, e01.symm, e02.symm, e03.symm, e12.symm, e13.symm, e23.symm, h0, h1, h2, h3,
       h0.symm, h1.symm, h2.symm, ite_true, ite_false, ite_self, dword_paddd _ _ hq,
       true_and]
@@ -931,7 +932,7 @@ theorem transpose_ok {x0 x1 x2 x3 : XReg} (e01 : x0 ≠ x1) (e02 : x0 ≠ x2) (e
   simp only [transpose, v, runBlock_cons, runStep_some, runBlock_nil, exec, Option.some.injEq,
     exists_eq_left', VOp.exec_gpr, VOp.exec_mem, VOp.exec_rd, VOp.exec_wr]
   refine ⟨fun l => ?_, fun r l n0 n1 n2 n3 n12 n13 n14 n15 => ?_, trivial, trivial, trivial, trivial⟩
-  · simp only [vw, lane_vbin256, VBinOp.sse, e01, e02, e03, e12, e13, e23, e01.symm, e02.symm,
+  · simp only [vw, lane_vbin256, reduceVBinOpSse, e01, e02, e03, e12, e13, e23, e01.symm, e02.symm,
       e03.symm, e12.symm, e13.symm, e23.symm, a0, b0, c0, d0, a1, b1, c1, d1, a2, b2, c2, d2, a3, b3,
       c3, d3, a0.symm, b0.symm, c0.symm, d0.symm, b1.symm, d1.symm,
       b2.symm, d2.symm, reduceCtorEq, ite_true,
@@ -987,7 +988,7 @@ theorem xor16_ok {x : XReg} (_hx : x ≠ .xmm12) {off : Nat} (ho : off + 16 ≤ 
     exists_eq_left', State.setV_gpr,
     State.setV_mem, State.setV_rd, State.setV_wr, State.setMem_gpr, State.setMem_mem,
     State.setMem_rd, State.setMem_wr, State.xmm_lane, State.lane_setV128,
-    VBinOp.sse, XBinOp.eval]
+    reduceVBinOpSse, XBinOp.eval]
   refine ⟨fun k hk => ?_, (Frame.refl _ _).writeW (List.mem_singleton_self _) _ c,
     fun r l hr => ?_, trivial, trivial, trivial⟩
   · rw [byte_write16 _ _ _ ho hk]
@@ -1328,7 +1329,7 @@ theorem incAdd_ok {buf : Addr} {s : State} (hrcx : s.gpr .rcx = buf) (hb : bufR 
     ite_true, Option.map_some, Option.some.injEq, exists_eq_left', VOp.exec_gpr, VOp.exec_mem,
     VOp.exec_rd, VOp.exec_wr, State.setV_gpr, State.setV_mem, State.setV_rd, State.setV_wr]
   refine ⟨fun l q hl hq => ?_, fun r l n8 n15 => ?_, trivial, trivial, trivial, trivial⟩
-  · simp only [vw, lane_vbin256, State.lane_setV256, reduceCtorEq, ite_true, ite_false, VBinOp.sse,
+  · simp only [vw, lane_vbin256, State.lane_setV256, reduceCtorEq, ite_true, ite_false, reduceVBinOpSse,
       dword_paddd _ _ hq, dword_load256 _ _ hl hq]
     rw [add_ofNat]; exact congrArg _ (hc l q hl hq)
   · simp only [lane_vbin256, State.lane_setV256, n8, n15, ite_false]

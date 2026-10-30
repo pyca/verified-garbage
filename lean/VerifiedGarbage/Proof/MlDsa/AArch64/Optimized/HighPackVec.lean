@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.HighPack
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 @[expose] public section
 
@@ -31,7 +32,7 @@ theorem hf_ok {g : Nat} (hg : IsG g) {d a : VReg}
     rcases hg with rfl | rfl <;> rfl
   refine wp_vop (d := d) rfl fun s1 h1 => wp_vop (d := d) rfl fun s2 h2 =>
     wp_vop (d := d) rfl fun s3 h3 => wp_vop (d := d) rfl fun s4 h4 =>
-    wp_vop (d := d) (by simp only [VOp.eval, hsh, ite_true]; rfl) fun t h5 => ?_
+    wp_vop (d := d) (by simp only [reduceVOpEval, hsh, ite_true]; rfl) fun t h5 => ?_
   have keep := (((h1.chg.trans h2.chg).trans h3.chg).trans h4.chg).trans h5.chg
   refine k t (keep.mono (by intro r hr; simpa only [List.mem_append, List.mem_singleton, or_self] using hr)) ?_
   intro e he

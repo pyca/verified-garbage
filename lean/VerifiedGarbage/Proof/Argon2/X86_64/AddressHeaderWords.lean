@@ -6,6 +6,7 @@ public import VerifiedGarbage.Spec.Argon2.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! Merged from `Proof.Argon2.X86_64.BlockStore`. -/
 
@@ -52,7 +53,7 @@ theorem registerWord_ok (s : State) (i : Nat) (r : Reg)
       t.mem = s.mem.writeW (off (s.gpr .rdi) (8 * i)) (s.gpr r) ∧
       t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.mxcsr = s.mxcsr := by
   apply WP.of_runBlock
-  simp only [registerWord, runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [registerWord, runBlock_cons, runStep_some, runBlock_nil, reduceExec,
     State.store64, ea_at, hw, ite_true, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, trivial, trivial, trivial, trivial⟩
 
@@ -65,7 +66,7 @@ theorem frameWord_ok (s : State) (i offset : Nat)
       (∀ r, r ≠ .rax → t.gpr r = s.gpr r) ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.mxcsr = s.mxcsr := by
   apply WP.of_runBlock
-  simp only [frameWord, runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [frameWord, runBlock_cons, runStep_some, runBlock_nil, reduceExec,
     readSrc, State.load64, State.store64, ea_at, hr, hw,
     RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
     reduceCtorEq, ite_true, ite_false, Option.map_some, Option.some.injEq, exists_eq_left']

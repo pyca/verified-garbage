@@ -7,6 +7,7 @@ public import VerifiedGarbage.Impl.Aes.X86.AesNi
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 /-! AES-NI round execution on IA-32. Register updates stay folded; the same
 proof applies to any distinct block registers other than the key temporary. -/
@@ -69,7 +70,7 @@ theorem keyOp_ok (regs : List XReg) (op : XBinOp) (off : Nat) (s : State)
         (s.mem.readW (s.ea (at_ .eax off)) 128)) ∧ XFrame (.xmm6 :: regs) s s' := by
   rw [keyOp, WP.block_cons_iff]
   refine ⟨s.setXmm .xmm6 (s.mem.readW (s.ea (at_ .eax off)) 128), by
-    simp only [isa, exec, State.load128, hin, ite_true, Option.map_some], ?_⟩
+    simp only [isa, reduceExec, State.load128, hin, ite_true, Option.map_some], ?_⟩
   refine WP.mono (map_ok op regs _ hnd h6) fun s' ⟨hv, hf⟩ => ⟨fun b hb => ?_, ?_⟩
   · have hb6 : b ≠ .xmm6 := fun h => h6 (h ▸ hb)
     rw [hv b hb, xmm_setXmm_of_ne _ _ hb6, xmm_setXmm_self]
@@ -138,7 +139,7 @@ theorem cmpEcx_ok (s : State) (c : BitVec 32) :
     WP isa (.block [.alu .cmp .ecx (.imm c)]) s fun s' =>
       s'.zf = some (s.gpr .ecx - c == 0) ∧ XFrame [] s s' := by
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu, readSrc,
     isa, Option.bind_some, Option.some.injEq, exists_eq_left']
   exact ⟨rfl, gpr_arithFlags .., mem_arithFlags .., rd_arithFlags ..,
     wr_arithFlags .., fun _ _ => congrFun (xmm_arithFlags ..) _⟩

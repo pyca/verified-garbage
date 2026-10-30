@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # GHASH with PCLMULQDQ: what the instruction groups compute, as bits
@@ -98,7 +99,7 @@ theorem zero_ok (s : State) :
       prod s' = Prod.zero ∧ Only [.xmm8, .xmm9, .xmm10] s s' := by
   apply WP.of_runBlock
   simp only [Impl.Gcm.X86_64.Pclmul.zero]
-  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, reduceExec, XOp.exec,
     isa, State.setXmm, eval_pxor, BitVec.xor_self, Option.some.injEq,
     exists_eq_left']
   refine ⟨rfl, fun r _ => rfl, rfl, rfl, rfl, fun r hr => ?_⟩
@@ -111,7 +112,7 @@ theorem acc_ok (a b : XReg) (s : State) (ha8 : a ≠ .xmm8) (ha9 : a ≠ .xmm9) 
       prod s' = (prod s).acc (s.xmm a) (s.xmm b) ∧ Only [.xmm8, .xmm9, .xmm10, .xmm11] s s' := by
   apply WP.of_runBlock
   simp only [Impl.Gcm.X86_64.Pclmul.acc]
-  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, reduceExec, XOp.exec,
     isa, State.setXmm, eval_pxor, eval_movdqa, ha8, ha9, ha10, ha11, hb8, hb9,
     hb10, hb11, Option.some.injEq, exists_eq_left']
   refine ⟨?_, fun r _ => rfl, rfl, rfl, rfl, fun r hr => ?_⟩
@@ -126,7 +127,7 @@ theorem reduce_ok (d : XReg) (s : State) (hd8 : d ≠ .xmm8) (hd9 : d ≠ .xmm9)
   apply WP.of_runBlock
   simp only [Impl.Gcm.X86_64.Pclmul.reduce, Impl.Gcm.X86_64.Pclmul.fold, List.cons_append,
     List.nil_append]
-  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, reduceExec, XOp.exec,
     isa, State.setXmm, eval_pxor, eval_movdqa, hd8, hd9, hd10, hd11, h1,
     Ne.symm hd8,
     Option.some.injEq, exists_eq_left']
@@ -142,7 +143,7 @@ theorem ldrev_ok (x : XReg) (b : Reg) (d : Nat) (s : State) (hx : x ≠ .xmm0)
     WP isa (.block [.movdquLoad x (at_ b d), .xop (.bin .pshufb x .xmm0)]) s fun s' =>
       s'.xmm x = Spec.Gcm.blockAt s.mem (s.gpr b + BitVec.ofInt 64 (d : Int)) ∧ Only [x] s s' := by
   apply WP.of_runBlock
-  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, reduceExec, XOp.exec,
     isa, State.setXmm, State.load128, ea_at, hin, Ne.symm hx, h0,
     Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨?_, fun r _ => rfl, rfl, rfl, rfl, fun r hr => ?_⟩
@@ -180,7 +181,7 @@ theorem const_ok (x : XReg) (c : BitVec 128) (s : State) (_hx : x ≠ .xmm12)
       Impl.Gcm.X86_64.Pclmul.constsTable) t =
       some (t.setXmm x (Impl.Gcm.X86_64.Pclmul.constsTable.getD (16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) / 8 + 1) 0 ++
         Impl.Gcm.X86_64.Pclmul.constsTable.getD (16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) / 8) 0)) := by
-    simp only [exec, hoff, hb, hlen, show 16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) % 8 = 0 by omega, show 16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) / 8 + 2 ≤ 6 by omega,
+    simp only [reduceExec, hoff, hb, hlen, show 16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) % 8 = 0 by omega, show 16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) / 8 + 2 ≤ 6 by omega,
       and_self, ite_true, Nat.add_zero]
   rw [show 16 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) / 8 = 2 * (Impl.Gcm.X86_64.Pclmul.consts.idxOf c) by omega, consts_words hc] at hx8
   show WP isa (.block [.leaSym .rax Impl.Gcm.X86_64.Pclmul.constsName, .movdquTbl x
@@ -198,7 +199,7 @@ theorem constImm_ok (x : XReg) (c : BitVec 128) (s : State) (hx : x ≠ .xmm12) 
       s'.xmm x = c ∧ Only [x, .xmm12] s s' := by
   apply WP.of_runBlock
   simp only [Impl.Gcm.X86_64.Pclmul.constImm]
-  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, reduceExec, XOp.exec,
     isa, State.setXmm, State.setReg, hx, movq_const, Option.some.injEq,
     exists_eq_left']
   refine ⟨trivial, fun r hr => by simp only [hr, ↓reduceIte], rfl, rfl, rfl, fun r hr => ?_⟩
@@ -210,7 +211,7 @@ theorem pxor72_ok (s : State) :
     WP isa (.block [.xop (.bin .pxor .xmm7 .xmm2)]) s fun s' =>
       s'.xmm .xmm7 = s.xmm .xmm2 ^^^ s.xmm .xmm7 ∧ Only [.xmm7] s s' := by
   apply WP.of_runBlock
-  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, reduceExec, XOp.exec,
     isa, State.setXmm, eval_pxor, Option.some.injEq, exists_eq_left']
   refine ⟨?_, fun r _ => rfl, rfl, rfl, rfl, fun r hr => ?_⟩
   · rw [BitVec.xor_comm]

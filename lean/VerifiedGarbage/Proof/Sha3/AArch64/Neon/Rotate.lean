@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 @[expose] public section
 
@@ -34,10 +35,10 @@ theorem rol_ok {s : State} {d n : VReg} (hdn : d ≠ n) {k : Nat} (hk0 : 0 < k) 
   unfold rol
   refine wp_vop (op := .shift .ushr .d2 d n (64-k)) (d := d)
     (x := VArr.d2.map2 (fun w a b => VShiftOp.ushr.eval (64-k) w a b) (s.v d) (s.v n))
-    (by simp [VOp.eval,VShiftOp.ok,show 1 ≤ 64-k by omega,show 64-k ≤ 64 by omega]) fun s₁ h1 => ?_
+    (by simp [reduceVOpEval,VShiftOp.ok,show 1 ≤ 64-k by omega,show 64-k ≤ 64 by omega]) fun s₁ h1 => ?_
   refine wp_vop (op := .shift .sli .d2 d n k) (d := d)
     (x := VArr.d2.map2 (fun w a b => VShiftOp.sli.eval k w a b) (s₁.v d) (s₁.v n))
-    (by simp [VOp.eval,VShiftOp.ok,hk]) fun s₂ h2 => WP.block_nil_iff.mpr ⟨(h1.chg.trans h2.chg).mono (by intro r hr; simpa using hr),?_⟩
+    (by simp [reduceVOpEval,VShiftOp.ok,hk]) fun s₂ h2 => WP.block_nil_iff.mpr ⟨(h1.chg.trans h2.chg).mono (by intro r hr; simpa using hr),?_⟩
   rw [h2.v,h1.v,h1.get n (Ne.symm hdn)]
   simp only [VArr.map2,vdword_ofVDwords_0,vdword_ofVDwords_1,VShiftOp.eval]
   change ofVDwords (VShiftOp.sli.eval k 64 ((vdword (s.v n) 0) >>> (64-k)) (vdword (s.v n) 0))

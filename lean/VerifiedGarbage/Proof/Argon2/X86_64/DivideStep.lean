@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Argon2.X86_64.Divide
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! # One bit of Argon2's fixed-time index division -/
 
@@ -46,7 +47,7 @@ theorem subtract_ok (s : State) (j : Nat) (hj : j < 32) :
       Keeps [.rcx, .r8, .r10, .rax] s t := by
   intro v
   apply WP.of_runBlock
-  simp only [subtract, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+  simp only [subtract, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc,
     execShift, execAlu, RegUpd.gpr_setReg, RegUpd.gpr_setFlags,
     RegUpd.gpr_arithFlags, RegUpd.cf_setReg, RegUpd.cf_setFlags,
     RegUpd.cf_arithFlags, show 1 ≤ j + 1 ∧ j + 1 ≤ 63 by omega,
@@ -77,7 +78,7 @@ theorem select_ok (s : State) (b : Bool) (hm : s.gpr .rax = mask b) :
       t.gpr .r9 = (s.gpr .r9 + s.gpr .r9) + (if b then 0 else 1) ∧
       Keeps [.r10, .r8, .rax, .r9] s t := by
   apply WP.of_runBlock
-  simp only [select, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+  simp only [select, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc,
     execAlu, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags,
     ite_true, ite_false, reduceCtorEq, Option.bind_some,
     Option.some.injEq, exists_eq_left', hm, select_value,

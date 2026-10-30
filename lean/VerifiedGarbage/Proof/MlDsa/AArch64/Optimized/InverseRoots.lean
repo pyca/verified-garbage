@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableConstants
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-! ## From `InverseTableDecode.lean` -/
 
@@ -95,7 +96,7 @@ theorem rootDup_ok (src recip : VReg) (i : Nat) (hi : i<4) (hr : recip≠.v20)
     WP isa (.block (.vop (.dupE .s4 .v20 src i) :: .vop (.dupE .s4 .v21 recip i) :: rest)) s Q := by
   have he (t : State) (d a : VReg) : (VOp.dupE .s4 d a i).eval t=some (d,
       VArr.s4.map2 (fun w _ _ => (t.v a).extractLsb' (w*i) w) 0 0) := by
-    simp only [VOp.eval,VArr.esize,show 128/32=4 by decide,hi,ite_true]
+    simp only [reduceVOpEval,VArr.esize,show 128/32=4 by decide,hi,ite_true]
   refine wp_vop (he s .v20 src) fun a h₁ => wp_vop (he a .v21 recip) fun t h₂ => ?_
   refine k t (h₁.chg.trans h₂.chg) ?_ ?_
   · intro e h4
