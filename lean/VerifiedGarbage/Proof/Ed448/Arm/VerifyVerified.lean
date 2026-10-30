@@ -20,6 +20,7 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 
 /-!
 # Ed448 verification's equation on ARMv7: `Verified`

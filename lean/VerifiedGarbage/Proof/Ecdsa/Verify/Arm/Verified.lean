@@ -26,6 +26,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 
 /-!
 # ECDSA verification over P-256 on 32-bit ARM: `Verified`
