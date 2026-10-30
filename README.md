@@ -2151,7 +2151,7 @@ yours to keep:
 
 <td>✅ s2n-bignum's <code>_alt</code> ladder; public keys by a fixed-base comb on edwards25519</td>
 
-<td>✅</td>
+<td>✅ umaal</td>
 
 <td>✅</td>
 

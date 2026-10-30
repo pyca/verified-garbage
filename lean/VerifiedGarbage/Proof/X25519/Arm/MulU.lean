@@ -566,8 +566,7 @@ theorem mulU_ok {acc : Nat} (hA : acc + 128 ≤ 4096) {o x y : Nat} (ho : o + 64
     · refine .inl ⟨by rw [eval_ne, hz]; simp [h8], ?_⟩
       rw [h8] at hr'; exact hr'
     · exact .inr ⟨by rw [eval_ne, hz]; simp; omega_arith, 8 - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, hr'⟩
-  · have B := State.addr b
-    rw [List.append_assoc]
+  · rw [List.append_assoc]
     refine WP.append (uFold_ok hA h2.ctx h2.r8) fun s3 ⟨hr3, hf3, h53, hcl, h93, hw3⟩ => ?_
     have hc3 : CtxN e b s3 := h2.ctx.of_rest hr3 (by decide)
     -- The folded words, and their carry.
