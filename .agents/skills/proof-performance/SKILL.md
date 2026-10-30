@@ -5,6 +5,9 @@ description: "Use before writing or editing a Lean proof (symbolic execution, co
 
 # Keeping proofs fast
 
+"Keeping proofs fast" in `AGENTS.md` sums up each rule here in a line:
+change the two together.
+
 Lean's kernel re-checks every proof term, and it is a slow evaluator: most
 of the build time used to be the kernel, not tactics.
 

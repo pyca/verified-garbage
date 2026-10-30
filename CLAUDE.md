@@ -84,7 +84,10 @@ own changes are rebuilt either way, on top of the restored build.
   Benchmarks workflow runs only by hand, never on pull requests: a change
   that could make code slower, or claims to make it faster, is measured by
   a manual run scoped to what it changed (the `benchmarking` skill),
-  and its pull request links the run.
+  and its pull request links the run. Its runners are the ones CI waits
+  for: never run every benchmark unless the change truly needs it, never
+  run one for a change that cannot affect speed, and never rerun one to
+  get a better number.
 * **An optimized implementation reaches everything built on it.** An
   implementation of a function for CPU features (or any other faster
   version) is a *variant*: named `<function>_<suffix>` (`_shani`, `_avx2`),
@@ -147,11 +150,14 @@ tasks, read its skill, whether or not your tool loads it for you:
   CPU-feature variant, or a file under `Artifacts/`, `Generic/` or
   `Variants/`.
 * `proof-performance`: before writing or editing a proof, or when one is
-  slow. The rules in "Keeping proofs fast" below are its summary.
+  slow. The rules in "Keeping proofs fast" below are its summary: change
+  the two together.
 * `lean-profiling`: before making proofs or the CI Lean build faster, or
   measuring such a change.
-* `lean-imports`: when `ci/check_lean_public_imports.py` reports something,
-  or before narrowing the imports of many modules (`ci/trim_lean_imports.py`).
+* `lean-modules`: before adding a Lean module or changing imports, when
+  `ci/check_lean_public_imports.py` reports something, before narrowing the
+  imports of many modules (`ci/trim_lean_imports.py`), or before writing a
+  Lean file that is not a module.
 * `benchmarking`: before measuring a change's speed, locally or with the
   Benchmarks workflow.
 * `cpu-feature-tests`: before changing what CPU features choose, its tests,
@@ -159,7 +165,10 @@ tasks, read its skill, whether or not your tool loads it for you:
 * `ci-metrics`: when asked to check or analyze CI.
 
 Each skill is a section that used to be in this file; keep its text there,
-not here, and keep this list in step with `.agents/skills/`.
+not here, and keep this list in step with `.agents/skills/`
+(`ci/check_skills.py` checks it). A skill's frontmatter has only `name`
+and `description`, which every tool reads, and its links are relative to
+its own file.
 
 ## Adding a primitive
 
@@ -223,36 +232,19 @@ namespace VG.Proof.Md5.X86_64
 …
 ```
 
-* Add a proof to the module that uses it, not to a new module of its own.
-  Every module is a `lean` process that first imports its whole closure,
-  about a second of CI's time, more than many modules' own work; the
-  per-declaration limits (`maxHeartbeats`, "Keeping proofs fast") apply to
-  declarations, not files, so splitting a file never helps them. A new proof
-  module is for code that several modules import, or for proofs that cost
-  more than their imports (`ci/lean_profile.py`), which a separate module
-  spares from re-checking when its importer changes. A module that only
-  one other proof module imports says why in a line
-  `-- separate module: <why>`; `ci/check_lean_single_importer.py` fails a
-  change that adds one without it (the modules of `Proof/Framework/` and
-  `Proof/Variants/`, `*Lit` and `Instances` modules, `meta` files and
-  those that `materialize_*` or `taint_summary` are exempt).
-* `public import` only what the file's statements and definitions mention
-  (importers see it too); a plain `import` gives the file something for its
-  proofs only, and importers do not see it. `@[expose] public section`
-  keeps every definition unfoldable by importers, as the proofs need.
-  Import privately whatever only proofs use: it is what keeps builds short.
-  Lake rebuilds a module when a module it reads changes its `.olean`, and a
-  module reads its imports and what they `public import`, transitively
-  (`ci/lean_shards.py`'s `reads`). A change to a lemma's statement rebuilds
-  the modules importing it, but those that import it privately produce the
-  `.olean` they did, and nothing beyond them rebuilds; through a
-  `public import` it rebuilds everything above it. (A change to a proof
-  alone changes no `.olean` but its own module's private part, and rebuilds
-  nothing else.) So import what a file uses directly, not through another
-  module that happens to pass it on. Before pushing, after building the
-  modules you edited, run `ci/check_lean_public_imports.py` on them (see
-  "Checks to run before pushing", and the `lean-imports` skill for what it
-  reports and for `ci/trim_lean_imports.py`).
+* Add a proof to the module that uses it, not to a new module of its own:
+  every module costs CI about a second before its own work, and splitting
+  a file never helps the per-declaration limits. A module that only one
+  other proof module imports says why in a line `-- separate module: <why>`
+  (`ci/check_lean_single_importer.py`).
+* `public import` only what the file's statements and definitions mention,
+  and import privately whatever only its proofs use, so that a change
+  rebuilds as few modules as it can; import what a file uses directly, not
+  through another module that happens to pass it on. `@[expose] public
+  section` keeps every definition unfoldable by importers, as the proofs
+  need. Before pushing, after building the modules you edited, run
+  `ci/check_lean_public_imports.py` on them (see "Checks to run before
+  pushing").
 * A file that only defines tactics, elaborators or commands is a
   `public meta section`, and imports each module both ways
   (`public import X` and `public meta import X`; `Lean` only as
@@ -271,16 +263,13 @@ namespace VG.Proof.Md5.X86_64
   unfolds `Nat.isPowerOfTwo`. The kernel evaluates core's arrays and
   vectors without `import all`, which makes a module up to a quarter slower
   to build (`ci/check_lean_speed.py` checks it).
-* The audits (`#assert_standard_axioms`, `#assert_no_compiler_overrides`,
-  `#assert_spec_origin`) run only in files that are not modules (the
-  emitter's drivers, `VerifiedGarbageTest/`), and refuse
-  to run in a module: a module sees the theorems it imports as axioms,
-  without their proofs. A file that is not a module sees every module's
-  private imports too.
 * In a structure instance, a field proven by a tactic inside a term
   (`ofSig := ⟨_, _, _, by …⟩`) is elaborated after the other fields, and
   a tactic run before its goal is known is stuck: write the field
   `by exact (…)`.
+* `lake build` turns off Mathlib's style and tactic-analysis linters (the
+  lakefile's `weak.` options), 5–8% of the build: never turn them back on
+  in a module.
 * An exposed definition may not refer to a private declaration of its file,
   and the auxiliary declarations of a theorem's proof are private to it:
   a lemma another file uses is a top-level theorem, not a `where` lemma.
@@ -405,6 +394,7 @@ python3 ci/check_vectors.py
 python3 ci/check_arch_gates.py
 python3 ci/check_variants.py
 python3 ci/check_mcdt.py
+python3 ci/check_skills.py
 python3 ci/cpu_tests.py lint ci/rust_matrix.toml
 cargo fmt --check && cargo clippy --all-targets -- -D warnings
 WYCHEPROOF_ROOT=/path/to/wycheproof cargo test
