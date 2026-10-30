@@ -23,10 +23,11 @@ constant-time obligation for them (they exist, as far as anyone can tell,
 though no one can find them).
 
 `signLeakLoopT` is the same list with a number after each `c̃` that says
-how the iteration ended (0: rejected, 1: passed, nothing: `SampleInBall`
-did not finish), which determines the structure of the loop: two runs that
-agree on it agree on each `c̃`, on the outcome of each iteration and on the
-hint of the one that passes (`leakT_step`).
+how the iteration ended (the check that rejected it, `signRejectTag`, which
+is never 1; 1: passed; nothing: `SampleInBall` did not finish), which
+determines the structure of the loop: two runs that agree on it agree on
+each `c̃`, on the outcome of each iteration and on the hint of the one that
+passes (`leakT_step`).
 -/
 
 @[expose] public section
@@ -35,17 +36,31 @@ namespace VG.Proof.MlDsa.Sign
 
 open VG.Spec.MlDsa
 
-/-- `signLeakLoop`, with the outcome of each iteration after its `c̃`: 0 if
-it is rejected, 1 (then its hint) if it passes. -/
+/-- `signLeakLoop`, with the outcome of each iteration after its `c̃`: the
+check that rejected it if one did, 1 (then its hint) if it passes. -/
 def signLeakLoopT (p : Params) (b : Bounds) (Â : List (List Poly)) (ŝ₁ ŝ₂ t₀Hat : List Poly)
     (μ ρ'' : List Byte) : (iters κ : Nat) → List Nat
   | 0, _ => []
   | iters + 1, κ =>
     leakBytes (signCommit p Â μ ρ'' κ).2.2 ++
       match signIteration p b Â ŝ₁ ŝ₂ t₀Hat μ ρ'' κ with
-      | some (_, none) => 0 :: signLeakLoopT p b Â ŝ₁ ŝ₂ t₀Hat μ ρ'' iters (κ + p.ℓ)
+      | some (_, none) =>
+        signRejectTag p b Â ŝ₁ ŝ₂ t₀Hat μ ρ'' κ :: signLeakLoopT p b Â ŝ₁ ŝ₂ t₀Hat μ ρ'' iters (κ + p.ℓ)
       | some (_, some (_, h)) => 1 :: h.flatMap fun hi => hi.toList.map Bool.toNat
       | none => []
+
+/-- The tag of a rejected iteration is never that of one that passes. -/
+theorem signRejectTag_ne_one (p : Params) (b : Bounds) (Â : List (List Poly)) (ŝ₁ ŝ₂ t₀Hat : List Poly)
+    (μ ρ'' : List Byte) (κ : Nat) : signRejectTag p b Â ŝ₁ ŝ₂ t₀Hat μ ρ'' κ ≠ 1 := by
+  unfold signRejectTag
+  dsimp only
+  split
+  · decide
+  · split
+    · decide
+    · split
+      · decide
+      · split <;> decide
 
 /-- `signLeak`, with `signLeakLoopT` for `signLeakLoop`. -/
 def signLeakT (p : Params) (sk μ rnd : List Byte) : List Nat :=
@@ -70,7 +85,7 @@ theorem signLeakLoopT_eq_signLeakLoop (p : Params) (b : Bounds) (Â : List (List
     | none => rfl
     | some r =>
       rcases r with ⟨_, _ | _⟩
-      · exact congrArg (_ ++ 0 :: ·) ih
+      · exact congrArg (_ ++ _ :: ·) ih
       · rfl
 
 /-- `signLeakT` is the contract's `signLeak`. -/
@@ -131,7 +146,7 @@ theorem leakT_step {n κ : Nat}
       rw [e₂] at hr
       cases o with
       | none => exact ⟨⟨ct', rfl⟩, List.cons.inj hr |>.2⟩
-      | some zh => cases (List.cons.inj hr).1
+      | some zh => exact absurd (List.cons.inj hr).1 (signRejectTag_ne_one _ _ _ _ _ _ _ _ _)
   · revert hr
     cases signIteration p b Â₁ s₁ s₁' t₁ μ₁ ρ₁ κ with
     | none =>
@@ -148,10 +163,10 @@ theorem leakT_step {n κ : Nat}
         | none =>
           cases o' with
           | none => intro; rfl
-          | some _ => intro hr; cases (List.cons.inj hr).1
+          | some _ => intro hr; exact absurd (List.cons.inj hr).1 (signRejectTag_ne_one _ _ _ _ _ _ _ _ _)
         | some zh =>
           cases o' with
-          | none => intro hr; cases (List.cons.inj hr).1
+          | none => intro hr; exact absurd (List.cons.inj hr).1.symm (signRejectTag_ne_one _ _ _ _ _ _ _ _ _)
           | some zh' => intro hr; simp only [outTag]; exact hr
 
 end
@@ -161,7 +176,8 @@ theorem signLeakLoopT_succ (p : Params) (b : Bounds) (Â : List (List Poly)) (ŝ
     signLeakLoopT p b Â ŝ₁ ŝ₂ t₀Hat μ ρ'' (n + 1) κ =
       leakBytes (signCommit p Â μ ρ'' κ).2.2 ++
         match signIteration p b Â ŝ₁ ŝ₂ t₀Hat μ ρ'' κ with
-        | some (_, none) => 0 :: signLeakLoopT p b Â ŝ₁ ŝ₂ t₀Hat μ ρ'' n (κ + p.ℓ)
+        | some (_, none) =>
+          signRejectTag p b Â ŝ₁ ŝ₂ t₀Hat μ ρ'' κ :: signLeakLoopT p b Â ŝ₁ ŝ₂ t₀Hat μ ρ'' n (κ + p.ℓ)
         | some (_, some (_, h)) => 1 :: h.flatMap fun hi => hi.toList.map Bool.toNat
         | none => [] := rfl
 
