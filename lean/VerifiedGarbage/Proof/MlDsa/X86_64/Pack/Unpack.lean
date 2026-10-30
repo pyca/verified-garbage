@@ -64,15 +64,15 @@ theorem bu_wp {s₀ : State} (hp : bitUnpackK.pre s₀) :
     WP isa Impl.MlDsa.X86_64.Pack.bitUnpack s₀ fun s' =>
       bitUnpackK.post s₀ s' ∧ Frame [pR (s₀.gpr .r8)] s₀.mem s'.mem := by
   obtain ⟨hrd, hwr, hsep, -, -, hab, hlen⟩ := hp
-  have go : ∀ {d c nb B : Nat}, Shape d c nb → dArg s₀ .rcx = B → B ≤ 2 ^ 19 →
+  have go : ∀ {d c nb B : Nat}, Shape d c nb → 2 ≤ nb ∧ (nb < 4 → d ≤ 9) → dArg s₀ .rcx = B → B ≤ 2 ^ 19 →
       bitlen (dArg s₀ .rdx + B) = d → ∀ s : State,
       s.gpr .rdi = s₀.gpr .rdi → s.gpr .rsi = s₀.gpr .r8 → s.rd = s₀.rd → s.wr = s₀.wr → s.mem = s₀.mem →
       WP isa (unpackLoop (buFin B) d c nb) s fun s' =>
         bitUnpackK.post s₀ s' ∧ Frame [pR (s₀.gpr .r8)] s₀.mem s'.mem := by
-    intro d c nb B hs hB hB19 hd s h1 h2 h3 h4 h5
+    intro d c nb B hs hu hB hB19 hd s h1 h2 h3 h4 h5
     rw [hB, hd] at hlen
     have hq : q = 8380417 := rfl
-    refine WP.mono (unpackLoop_ok (buFin_ok B d) hs (v := s₀.gpr .rdi) (p := s₀.gpr .r8) (s₀ := s₀)
+    refine WP.mono (unpackLoop_ok (buFin_ok B d) hs hu (v := s₀.gpr .rdi) (p := s₀.gpr .r8) (s₀ := s₀)
       (by rw [hrd, hlen]; exact List.mem_append_left _ (List.mem_singleton_self _))
       (by rw [hwr]; exact List.mem_singleton_self _) (by rw [← hlen]; exact hsep) h1 h2 h3 h4 h5)
       fun s' ⟨hc, hf, _⟩ => ⟨?_, hf⟩
@@ -92,7 +92,7 @@ theorem bu_wp {s₀ : State} (hp : bitUnpackK.pre s₀) :
   refine sel_ok .rcx 2 _ _ s₁ (fun s₂ ⟨g₂, m₂, rd₂, wr₂⟩ h => ?_) (fun s₂ ⟨g₂, m₂, rd₂, wr₂⟩ h => ?_)
   · have e : dArg s₀ .rcx = 2 := by rw [← cx₁, lo_of_eq h]
     have ea : dArg s₀ .rdx = 2 := by omega_using [cases, e]
-    exact go (d := 3) (c := 8) (nb := 3) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩ e
+    exact go (d := 3) (c := 8) (nb := 3) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩ (by decide) e
       (by decide) (by rw [ea]; decide) s₂ (by rw [g₂, di₁]) (by rw [g₂, si₁]) (by rw [rd₂, k₁.2.1])
       (by rw [wr₂, k₁.2.2]) (by rw [m₂, m₁])
   have n2 : dArg s₀ .rcx ≠ 2 := by rw [← cx₁]; exact lo_ne h
@@ -100,7 +100,7 @@ theorem bu_wp {s₀ : State} (hp : bitUnpackK.pre s₀) :
   refine sel_ok .rcx 4 _ _ s₂ (fun s₃ ⟨g₃, m₃, rd₃, wr₃⟩ h => ?_) (fun s₃ ⟨g₃, m₃, rd₃, wr₃⟩ h => ?_)
   · have e : dArg s₀ .rcx = 4 := by rw [← ds₂, lo_of_eq h]
     have ea : dArg s₀ .rdx = 4 := by omega_using [cases, e]
-    exact go (d := 4) (c := 2) (nb := 1) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩ e
+    exact go (d := 4) (c := 4) (nb := 2) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩ (by decide) e
       (by decide) (by rw [ea]; decide) s₃ (by rw [g₃, g₂, di₁]) (by rw [g₃, g₂, si₁])
       (by rw [rd₃, rd₂, k₁.2.1]) (by rw [wr₃, wr₂, k₁.2.2]) (by rw [m₃, m₂, m₁])
   have n4 : dArg s₀ .rcx ≠ 4 := by rw [← ds₂]; exact lo_ne h
@@ -108,7 +108,7 @@ theorem bu_wp {s₀ : State} (hp : bitUnpackK.pre s₀) :
   refine sel_ok .rcx 4096 _ _ s₃ (fun s₄ ⟨g₄, m₄, rd₄, wr₄⟩ h => ?_) (fun s₄ ⟨g₄, m₄, rd₄, wr₄⟩ h => ?_)
   · have e : dArg s₀ .rcx = 4096 := by rw [← ds₃, lo_of_eq h]
     have ea : dArg s₀ .rdx = 4095 := by omega_using [cases, e]
-    exact go (d := 13) (c := 8) (nb := 13) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩ e
+    exact go (d := 13) (c := 8) (nb := 13) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩ (by decide) e
       (by decide) (by rw [ea]; decide) s₄ (by rw [g₄, g₃, g₂, di₁]) (by rw [g₄, g₃, g₂, si₁])
       (by rw [rd₄, rd₃, rd₂, k₁.2.1]) (by rw [wr₄, wr₃, wr₂, k₁.2.2]) (by rw [m₄, m₃, m₂, m₁])
   have n4096 : dArg s₀ .rcx ≠ 4096 := by rw [← ds₃]; exact lo_ne h
@@ -116,13 +116,13 @@ theorem bu_wp {s₀ : State} (hp : bitUnpackK.pre s₀) :
   refine sel_ok .rcx 131072 _ _ s₄ (fun s₅ ⟨g₅, m₅, rd₅, wr₅⟩ h => ?_) (fun s₅ ⟨g₅, m₅, rd₅, wr₅⟩ h => ?_)
   · have e : dArg s₀ .rcx = 131072 := by rw [← ds₄, lo_of_eq h]
     have ea : dArg s₀ .rdx = 131071 := by omega_using [cases, e]
-    exact go (d := 18) (c := 4) (nb := 9) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩ e
+    exact go (d := 18) (c := 4) (nb := 9) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩ (by decide) e
       (by decide) (by rw [ea]; decide) s₅ (by rw [g₅, g₄, g₃, g₂, di₁]) (by rw [g₅, g₄, g₃, g₂, si₁])
       (by rw [rd₅, rd₄, rd₃, rd₂, k₁.2.1]) (by rw [wr₅, wr₄, wr₃, wr₂, k₁.2.2]) (by rw [m₅, m₄, m₃, m₂, m₁])
   · have n131072 : dArg s₀ .rcx ≠ 131072 := by rw [← ds₄]; exact lo_ne h
     have e : dArg s₀ .rcx = 524288 := by omega_using [cases, n2, n4, n4096, n131072]
     have ea : dArg s₀ .rdx = 524287 := by omega_using [cases, e]
-    exact go (d := 20) (c := 2) (nb := 5) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩ e
+    exact go (d := 20) (c := 2) (nb := 5) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩ (by decide) e
       (by decide) (by rw [ea]; decide) s₅ (by rw [g₅, g₄, g₃, g₂, di₁]) (by rw [g₅, g₄, g₃, g₂, si₁])
       (by rw [rd₅, rd₄, rd₃, rd₂, k₁.2.1]) (by rw [wr₅, wr₄, wr₃, wr₂, k₁.2.2]) (by rw [m₅, m₄, m₃, m₂, m₁])
 
@@ -179,7 +179,7 @@ theorem t1_wp {s₀ : State} (hp : unpackT1K.pre s₀) :
     WP isa Impl.MlDsa.X86_64.Pack.unpackT1 s₀ fun s' =>
       unpackT1K.post s₀ s' ∧ Frame [pR (s₀.gpr .rsi)] s₀.mem s'.mem := by
   obtain ⟨hrd, hwr, hsep, -, -⟩ := hp
-  refine WP.mono (unpackLoop_ok t1Fin_ok (c := 4) (nb := 5) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩
+  refine WP.mono (unpackLoop_ok t1Fin_ok (c := 4) (nb := 5) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩ (by decide)
     (v := s₀.gpr .rdi) (p := s₀.gpr .rsi) (s₀ := s₀)
     (by rw [hrd]; exact List.mem_append_left _ (List.mem_singleton_self _))
     (by rw [hwr]; exact List.mem_singleton_self _) hsep rfl rfl rfl rfl rfl) fun s' ⟨hc, hf, _⟩ => ⟨?_, hf⟩

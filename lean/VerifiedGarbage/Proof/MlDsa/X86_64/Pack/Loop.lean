@@ -162,9 +162,10 @@ end
 
 section
 variable {fin : Nat → List Instr} {W : Nat → BitVec 32} {d c nb : Nat} (hfin : FinOk fin d W)
-  (hs : Shape d c nb) {v p : Addr} {s₀ sE : State} (hin : (⟨v, 32 * d⟩ : Region) ∈ s₀.rd ++ s₀.wr)
+  (hs : Shape d c nb) (hu : 2 ≤ nb ∧ (nb < 4 → d ≤ 9)) {v p : Addr} {s₀ sE : State}
+  (hin : (⟨v, 32 * d⟩ : Region) ∈ s₀.rd ++ s₀.wr)
   (hout : polyRegion p ∈ s₀.wr) (hsep : Region.Disjoint ⟨v, 32 * d⟩ (polyRegion p))
-include hfin hs hin hout hsep
+include hfin hs hu hin hout hsep
 
 /-- The number whose bytes are the input. -/
 abbrev inNum (m : Mem) (v : Addr) (d : Nat) : Nat := digits 8 ((bytesAt m v (32 * d)).map (·.toNat))
@@ -193,8 +194,8 @@ theorem unpackStep {i : Nat} (hi : i < 256 / c) {s : State}
     rw [hI.rdi, off_add]
   have hsub : Region.Sub ⟨s.gpr .rsi, 4 * c⟩ (polyRegion p) := by
     rw [hI.rsi]; exact Offset.sub_base p (by rw [Nat.mul_assoc]; omega_arith)
-  refine WP.mono (unpackBody_ok hfin hs.d1 hs.d20 hs.dc hs.c8 s
-    (fun t ht => by rw [hb, hI.rd, hI.wr]; exact inRegions_of hin (Offset.contains_base v (by omega_arith) (by omega_arith)))
+  refine WP.mono (unpackBody_ok hfin hs.d1 hs.d20 hs.dc hs.c8 hu.1 hu.2 s
+    (fun t n ht => by rw [hb, hI.rd, hI.wr]; exact inRegions_of hin (Offset.contains_base v (by omega_arith) (by omega_arith)))
     (fun j hj => by rw [ha, hI.wr]; exact inRegions_of hout (coeff_contains p (by omega_arith)))
     (fun t ht => by
       rw [hb]
@@ -245,7 +246,7 @@ theorem unpackLoop_ok {s : State} (hdi : s.gpr .rdi = v) (hsi : s.gpr .rsi = p) 
     (v := BitVec.ofNat 32 (256 / c)) (by rw [BitVec.toNat_ofNat]; omega_arith) hN0
     (UInv (v := v) (p := p) (s₀ := s₀) (sE := s) (W := W) (d := d) (c := c) (nb := nb))
     (fun s₂ m₂ k₂ => ⟨?_, ?_, ?_, ?_, ?_, fun k hk => absurd hk (by omega_arith), k₂.mono (by decide)⟩)
-    fun i hi s hI => unpackStep hfin hs hin hout hsep hi hI)
+    fun i hi s hI => unpackStep hfin hs hu hin hout hsep hi hI)
     fun s' hI => ⟨fun k hk' => hI.done k (by rw [hs.cN]; exact hk'), hI.frame, hI.keep⟩
   · rw [k₂.gpr (by decide), hdi]; simp
   · rw [k₂.gpr (by decide), hsi]; simp
