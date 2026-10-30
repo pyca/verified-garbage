@@ -73,10 +73,10 @@ theorem consts_tmv (hc : CfgOk c) {base : Addr} {g : Reg → BitVec 32} {s : Sta
 /-- `vg_ecdsa_<curve>_verify` returns whether the specification's
 verification holds, and restores the callee-saved registers. -/
 theorem verifyWith_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List Region}
-    (hp : VPre c s₀ extra) {generator : Prog isa}
+    (hp : VPre c s₀ extra) {generator : Prog isa} {a0₁ : Bool} (ha₁ : a0₁ = true → c.qA0 = true)
     (hMul : ∀ s, Mid c s₀ (ptr s₀ .r3) s → s.syms=s₀.syms →
       GeneratorWP c generator s₀ (ptr s₀ .r3) (sv c (ptr s₀ .r3) s U)
-        (fun j X Y Z => Rep c.C X Y Z (mul (sv c (ptr s₀ .r3) s U >>> j) (G c.C))) s.syms) :
+        (fun j X Y Z => Rep c.C X Y Z (mul (sv c (ptr s₀ .r3) s U >>> j) (G c.C))) s.syms a0₁) :
     WP isa (Impl.Ecdsa.Verify.Arm.Cfg.verifyWith c generator) s₀ fun s' => VKeep s₀ s' ∧ VPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have setupRun := front_ok hc hp (rest := .seq (Impl.Ecdsa.Verify.Arm.Cfg.scalars c)
@@ -106,13 +106,16 @@ theorem verifyWith_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List
       exact peerPt_rep hC _ _ _ hM.px hM.py
     have hu : sv c (ptr s₀ .r3) s₂ U < 2 ^ (8 * c.C.len) := Nat.lt_trans hM.u_lt hc.n_enc
     have hv : sv c (ptr s₀ .r3) s₂ V < 2 ^ (8 * c.C.len) := Nat.lt_trans hM.v_lt hc.n_enc
+    have h0 : c.qA0 = true → (Fin.ofNat c.C.p c.C.a : Fe c.C) = 0 ∧
+        tmv c.C c.n (ptr s₀ .r3) s₂ (c.sl ONEP) = 1 := fun h =>
+      ⟨by simp only [Impl.Ecdsa.Arm.Cfg.qA0, Bool.and_eq_true, beq_iff_eq] at h; rw [h.2.1]; rfl, h1⟩
     refine pointsWith_ok hc hM
       (Q₁ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (ptr s₀ .r3) s₂ U >>> j) (G c.C)))
       (Q₂ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (ptr s₀ .r3) s₂ V >>> j) P))
       (hMul s₂ hM syms₂)
-      (step_rep hC hc.onG ha hb hG)
+      (step_rep' hC hc.onG ha hb hG fun h => h0 (ha₁ h))
       (by rw [shiftRight_eq_zero hu, mul_zero_pt]; exact rep_infinity' hC)
-      (step_rep hC hPc ha hb hQ)
+      (step_rep' hC hPc ha hb hQ h0)
       (by rw [shiftRight_eq_zero hv, mul_zero_pt]; exact rep_infinity' hC)
       fun s₃ hP => ?_
     refine WP.mono (vtail_ok hc hP) fun s' ⟨saved, sp, frame, xo, hxo, hx, ret⟩ =>
@@ -170,7 +173,7 @@ theorem verifyWith_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List
 /-- The existing implementation is an instance of the generic verification pipeline. -/
 theorem verify_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : VPre c s₀) :
     WP isa (Impl.Ecdsa.Verify.Arm.Cfg.verify c) s₀ fun s' => VKeep s₀ s' ∧ VPost c s₀ s' :=
-  verifyWith_ok hc hC hp (fun _ M _ => generatorWP_gen hc (by
+  verifyWith_ok hc hC hp id (fun _ M _ => generatorWP_gen hc (by
     rw [shiftRight_eq_zero (Nat.lt_trans M.u_lt hc.n_enc), mul_zero_pt]; exact rep_infinity' hC))
 
 end VG.Proof.Ecdsa.Verify.Arm

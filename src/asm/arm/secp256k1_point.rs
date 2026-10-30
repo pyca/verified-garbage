@@ -227,11 +227,11 @@ bx lr",
     )
 }
 
-/// The doubling `O = P + P` of a point on secp256k1, by the complete addition (Renes, Costello and Batina's Algorithm 1). A point is three projective coordinates `X, Y, Z` in Montgomery's form modulo the curve's prime, each 4 64-bit words (`32` bytes), little-endian, at consecutive byte offsets of the working space `ws`: `O` at byte 3232, `P` at 3328 and `Q` at 3424. The curve's `a` and `3b`, in the same form, are read at bytes 3520 and 3552. Every byte of `ws` but `O`'s and the function's own working space (bytes 3584 to 4095) keeps its value.
+/// The doubling `O = P + P` of a point on secp256k1, whose `a` is zero, by Renes, Costello and Batina's complete doubling for `a = 0` (Algorithm 9). A point is three projective coordinates `X, Y, Z` in Montgomery's form modulo the curve's prime, each 4 64-bit words (`32` bytes), little-endian, at consecutive byte offsets of the working space `ws`: `O` at byte 3232, `P` at 3328 and `Q` at 3424. The curve's `a` and `3b`, in the same form, are at bytes 3520 and 3552; `a` is not read. Every byte of `ws` but `O`'s and the function's own working space (bytes 3584 to 4095) keeps its value.
 ///
-/// Contract: `addContract` or `doubleContract` of `VG.Spec.Weierstrass.Point.Curve`. Constant time: only the pointer may affect timing.
+/// Contract: `double0Contract` or `add0mContract` of `VG.Spec.Weierstrass.Point.Curve`. Constant time: only the pointer may affect timing.
 ///
-/// The function saves `lr` in its own working space and keeps `ws` in `r12`, and computes Renes, Costello and Batina's 40 steps by calls of `vg_secp256k1_mul_mod_p`, `vg_secp256k1_add_mod_p` and `vg_secp256k1_sub_mod_p` on fixed offsets of `ws`, `movw` immediates in `r1`–`r3`. It writes no register but `r0`–`r3`, `r12` and `lr`.
+/// The function saves `lr` in its own working space and keeps `ws` in `r12`, and computes Renes, Costello and Batina's Algorithm 9 for `a = 0` by calls of `vg_secp256k1_mul_mod_p`, `vg_secp256k1_add_mod_p` and `vg_secp256k1_sub_mod_p` on fixed offsets of `ws`, `movw` immediates in `r1`–`r3`. It writes no register but `r0`–`r3`, `r12` and `lr`.
 ///
 /// # Safety
 ///
@@ -240,19 +240,34 @@ bx lr",
 /// * Bytes 3584 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_secp256k1_point_double(ws: *mut [u64; 1024]) {
+pub(crate) unsafe extern "C" fn vg_secp256k1_point_double_a0(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov r12, r0
 str lr, [r12, #3584]
 mov r0, r12
 movw r1, #3648
-movw r2, #3328
-movw r3, #3328
+movw r2, #3360
+movw r3, #3360
 bl {vg_secp256k1_mul_mod_p}
+mov r0, r12
+movw r1, #3296
+movw r2, #3648
+movw r3, #3648
+bl {vg_secp256k1_add_mod_p}
+mov r0, r12
+movw r1, #3296
+movw r2, #3296
+movw r3, #3296
+bl {vg_secp256k1_add_mod_p}
+mov r0, r12
+movw r1, #3296
+movw r2, #3296
+movw r3, #3296
+bl {vg_secp256k1_add_mod_p}
 mov r0, r12
 movw r1, #3680
 movw r2, #3360
-movw r3, #3360
+movw r3, #3392
 bl {vg_secp256k1_mul_mod_p}
 mov r0, r12
 movw r1, #3712
@@ -260,9 +275,104 @@ movw r2, #3392
 movw r3, #3392
 bl {vg_secp256k1_mul_mod_p}
 mov r0, r12
-movw r1, #3744
+movw r1, #3712
+movw r2, #3552
+movw r3, #3712
+bl {vg_secp256k1_mul_mod_p}
+mov r0, r12
+movw r1, #3232
+movw r2, #3712
+movw r3, #3296
+bl {vg_secp256k1_mul_mod_p}
+mov r0, r12
+movw r1, #3264
+movw r2, #3648
+movw r3, #3712
+bl {vg_secp256k1_add_mod_p}
+mov r0, r12
+movw r1, #3296
+movw r2, #3680
+movw r3, #3296
+bl {vg_secp256k1_mul_mod_p}
+mov r0, r12
+movw r1, #3680
+movw r2, #3712
+movw r3, #3712
+bl {vg_secp256k1_add_mod_p}
+mov r0, r12
+movw r1, #3712
+movw r2, #3680
+movw r3, #3712
+bl {vg_secp256k1_add_mod_p}
+mov r0, r12
+movw r1, #3648
+movw r2, #3648
+movw r3, #3712
+bl {vg_secp256k1_sub_mod_p}
+mov r0, r12
+movw r1, #3264
+movw r2, #3648
+movw r3, #3264
+bl {vg_secp256k1_mul_mod_p}
+mov r0, r12
+movw r1, #3264
+movw r2, #3232
+movw r3, #3264
+bl {vg_secp256k1_add_mod_p}
+mov r0, r12
+movw r1, #3680
 movw r2, #3328
 movw r3, #3360
+bl {vg_secp256k1_mul_mod_p}
+mov r0, r12
+movw r1, #3232
+movw r2, #3648
+movw r3, #3680
+bl {vg_secp256k1_mul_mod_p}
+mov r0, r12
+movw r1, #3232
+movw r2, #3232
+movw r3, #3232
+bl {vg_secp256k1_add_mod_p}
+ldr lr, [r12, #3584]
+bx lr",
+        vg_secp256k1_mul_mod_p = sym super::secp256k1_mont::vg_secp256k1_mul_mod_p,
+        vg_secp256k1_add_mod_p = sym super::secp256k1_mont::vg_secp256k1_add_mod_p,
+        vg_secp256k1_sub_mod_p = sym super::secp256k1_mont::vg_secp256k1_sub_mod_p,
+    )
+}
+
+/// The addition `O = P + Q` of points on secp256k1, whose `a` is zero, for `Q = (X : Y : 1)`, by Renes, Costello and Batina's complete mixed addition for `a = 0` (Algorithm 8): `Q`'s `Z` is not read. A point is three projective coordinates `X, Y, Z` in Montgomery's form modulo the curve's prime, each 4 64-bit words (`32` bytes), little-endian, at consecutive byte offsets of the working space `ws`: `O` at byte 3232, `P` at 3328 and `Q` at 3424. The curve's `a` and `3b`, in the same form, are at bytes 3520 and 3552; `a` is not read. Every byte of `ws` but `O`'s and the function's own working space (bytes 3584 to 4095) keeps its value.
+///
+/// Contract: `double0Contract` or `add0mContract` of `VG.Spec.Weierstrass.Point.Curve`. Constant time: only the pointer may affect timing.
+///
+/// The function saves `lr` in its own working space and keeps `ws` in `r12`, and computes Renes, Costello and Batina's Algorithm 8 for `a = 0` by calls of `vg_secp256k1_mul_mod_p`, `vg_secp256k1_add_mod_p` and `vg_secp256k1_sub_mod_p` on fixed offsets of `ws`, `movw` immediates in `r1`–`r3`. It writes no register but `r0`–`r3`, `r12` and `lr`.
+///
+/// # Safety
+///
+/// * `ws` must be valid for reads and writes of 8192 bytes.
+/// * Every coordinate of the points `P` and `Q`, and the numbers at bytes 3520 and 3552, must be below secp256k1's prime.
+/// * Bytes 3584 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
+/// * `ws` must not wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_secp256k1_point_add_affine_a0(ws: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r"mov r12, r0
+str lr, [r12, #3584]
+mov r0, r12
+movw r1, #3648
+movw r2, #3328
+movw r3, #3424
+bl {vg_secp256k1_mul_mod_p}
+mov r0, r12
+movw r1, #3680
+movw r2, #3360
+movw r3, #3456
+bl {vg_secp256k1_mul_mod_p}
+mov r0, r12
+movw r1, #3744
+movw r2, #3424
+movw r3, #3456
 bl {vg_secp256k1_add_mod_p}
 mov r0, r12
 movw r1, #3776
@@ -286,158 +396,93 @@ movw r3, #3776
 bl {vg_secp256k1_sub_mod_p}
 mov r0, r12
 movw r1, #3776
-movw r2, #3328
+movw r2, #3456
 movw r3, #3392
-bl {vg_secp256k1_add_mod_p}
-mov r0, r12
-movw r1, #3808
-movw r2, #3328
-movw r3, #3392
-bl {vg_secp256k1_add_mod_p}
+bl {vg_secp256k1_mul_mod_p}
 mov r0, r12
 movw r1, #3776
 movw r2, #3776
-movw r3, #3808
-bl {vg_secp256k1_mul_mod_p}
-mov r0, r12
-movw r1, #3808
-movw r2, #3648
-movw r3, #3712
-bl {vg_secp256k1_add_mod_p}
-mov r0, r12
-movw r1, #3776
-movw r2, #3776
-movw r3, #3808
-bl {vg_secp256k1_sub_mod_p}
-mov r0, r12
-movw r1, #3808
-movw r2, #3360
-movw r3, #3392
-bl {vg_secp256k1_add_mod_p}
-mov r0, r12
-movw r1, #3232
-movw r2, #3360
-movw r3, #3392
-bl {vg_secp256k1_add_mod_p}
-mov r0, r12
-movw r1, #3808
-movw r2, #3808
-movw r3, #3232
-bl {vg_secp256k1_mul_mod_p}
-mov r0, r12
-movw r1, #3232
-movw r2, #3680
-movw r3, #3712
-bl {vg_secp256k1_add_mod_p}
-mov r0, r12
-movw r1, #3808
-movw r2, #3808
-movw r3, #3232
-bl {vg_secp256k1_sub_mod_p}
-mov r0, r12
-movw r1, #3296
-movw r2, #3520
-movw r3, #3776
-bl {vg_secp256k1_mul_mod_p}
-mov r0, r12
-movw r1, #3232
-movw r2, #3552
-movw r3, #3712
-bl {vg_secp256k1_mul_mod_p}
-mov r0, r12
-movw r1, #3296
-movw r2, #3232
-movw r3, #3296
-bl {vg_secp256k1_add_mod_p}
-mov r0, r12
-movw r1, #3232
-movw r2, #3680
-movw r3, #3296
-bl {vg_secp256k1_sub_mod_p}
-mov r0, r12
-movw r1, #3296
-movw r2, #3680
-movw r3, #3296
+movw r3, #3360
 bl {vg_secp256k1_add_mod_p}
 mov r0, r12
 movw r1, #3264
-movw r2, #3232
-movw r3, #3296
-bl {vg_secp256k1_mul_mod_p}
-mov r0, r12
-movw r1, #3680
-movw r2, #3648
-movw r3, #3648
-bl {vg_secp256k1_add_mod_p}
-mov r0, r12
-movw r1, #3680
-movw r2, #3680
-movw r3, #3648
-bl {vg_secp256k1_add_mod_p}
-mov r0, r12
-movw r1, #3712
-movw r2, #3520
-movw r3, #3712
-bl {vg_secp256k1_mul_mod_p}
-mov r0, r12
-movw r1, #3776
-movw r2, #3552
-movw r3, #3776
-bl {vg_secp256k1_mul_mod_p}
-mov r0, r12
-movw r1, #3680
-movw r2, #3680
-movw r3, #3712
-bl {vg_secp256k1_add_mod_p}
-mov r0, r12
-movw r1, #3712
-movw r2, #3648
-movw r3, #3712
-bl {vg_secp256k1_sub_mod_p}
-mov r0, r12
-movw r1, #3712
-movw r2, #3520
-movw r3, #3712
-bl {vg_secp256k1_mul_mod_p}
-mov r0, r12
-movw r1, #3776
-movw r2, #3776
-movw r3, #3712
-bl {vg_secp256k1_add_mod_p}
-mov r0, r12
-movw r1, #3648
-movw r2, #3680
-movw r3, #3776
+movw r2, #3424
+movw r3, #3392
 bl {vg_secp256k1_mul_mod_p}
 mov r0, r12
 movw r1, #3264
 movw r2, #3264
+movw r3, #3328
+bl {vg_secp256k1_add_mod_p}
+mov r0, r12
+movw r1, #3232
+movw r2, #3648
 movw r3, #3648
 bl {vg_secp256k1_add_mod_p}
 mov r0, r12
 movw r1, #3648
-movw r2, #3808
-movw r3, #3776
-bl {vg_secp256k1_mul_mod_p}
-mov r0, r12
-movw r1, #3232
-movw r2, #3744
-movw r3, #3232
-bl {vg_secp256k1_mul_mod_p}
-mov r0, r12
-movw r1, #3232
 movw r2, #3232
 movw r3, #3648
+bl {vg_secp256k1_add_mod_p}
+mov r0, r12
+movw r1, #3712
+movw r2, #3552
+movw r3, #3392
+bl {vg_secp256k1_mul_mod_p}
+mov r0, r12
+movw r1, #3296
+movw r2, #3680
+movw r3, #3712
+bl {vg_secp256k1_add_mod_p}
+mov r0, r12
+movw r1, #3680
+movw r2, #3680
+movw r3, #3712
 bl {vg_secp256k1_sub_mod_p}
 mov r0, r12
-movw r1, #3648
+movw r1, #3264
+movw r2, #3552
+movw r3, #3264
+bl {vg_secp256k1_mul_mod_p}
+mov r0, r12
+movw r1, #3232
+movw r2, #3776
+movw r3, #3264
+bl {vg_secp256k1_mul_mod_p}
+mov r0, r12
+movw r1, #3712
 movw r2, #3744
 movw r3, #3680
 bl {vg_secp256k1_mul_mod_p}
 mov r0, r12
-movw r1, #3296
-movw r2, #3808
+movw r1, #3232
+movw r2, #3712
+movw r3, #3232
+bl {vg_secp256k1_sub_mod_p}
+mov r0, r12
+movw r1, #3264
+movw r2, #3264
+movw r3, #3648
+bl {vg_secp256k1_mul_mod_p}
+mov r0, r12
+movw r1, #3680
+movw r2, #3680
 movw r3, #3296
+bl {vg_secp256k1_mul_mod_p}
+mov r0, r12
+movw r1, #3264
+movw r2, #3680
+movw r3, #3264
+bl {vg_secp256k1_add_mod_p}
+mov r0, r12
+movw r1, #3648
+movw r2, #3648
+movw r3, #3744
+bl {vg_secp256k1_mul_mod_p}
+mov r0, r12
+movw r1, #3296
+movw r2, #3296
+movw r3, #3776
 bl {vg_secp256k1_mul_mod_p}
 mov r0, r12
 movw r1, #3296

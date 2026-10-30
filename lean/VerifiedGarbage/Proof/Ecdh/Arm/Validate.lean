@@ -410,7 +410,7 @@ whose bits are the table (the ladder). -/
 theorem ladPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) (hf : Far s base 8192)
     {g : Reg → BitVec 32}
     (F : Fixed c base g s.mem) {k : Nat} {Q : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
-    (hstep : Step (Impl.Ecdh.Arm.Cfg.ladderQ c) c.C base s k Q) (hO : Q (8 * c.C.len) 0 1 0)
+    (hstep : Step (Impl.Ecdh.Arm.Cfg.ladderQ c) c.C base s k Q c.qA0) (hO : Q (8 * c.C.len) 0 1 0)
     (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
     (hrx : sv c base s RX = 0) (hry : sv c base s RY = c.mont 1) (hrz : sv c base s RZ = 0)
     (hk : c.mul.isSome → sv c base s K = k)
