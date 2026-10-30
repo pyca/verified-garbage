@@ -115,8 +115,7 @@ def τ₀ : VG.Arm.Taint.T :=
   { regs := .ofList [.r0, .r1, .r2, .r3], flags := false, lens := [64, 8192], argLen := 4,
     argBases := [(0, 1)] }
 
-theorem wf₀ {s : State} (h : signArm.pre s) : VG.Arm.Taint.Wf τ₀ s := by
-  have hp := pre_of h
+theorem wf₀_pre {s : State} {extra : List Region} (hp : Pre brainpoolp256r1 s extra) : VG.Arm.Taint.Wf τ₀ s := by
   refine ⟨fun _ => ⟨by simp [hp.wr, τ₀, brainpoolp256r1, show Spec.BrainpoolP256r1.curve.len = 32 from rfl], ?_, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ => ⟨hp.sp_fit, ?_⟩, ?_⟩
   · simp only [hp.wr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
@@ -137,14 +136,17 @@ theorem wf₀ {s : State} (h : signArm.pre s) : VG.Arm.Taint.Wf τ₀ s := by
     simp only [VG.Arm.Taint.region, hp.wr]
     rfl
 
+theorem wf₀ {s : State} (h : signArm.pre s) : VG.Arm.Taint.Wf τ₀ s := wf₀_pre (pre_of h)
+
 theorem argByte_eq (s : State) (k : Nat) :
     VG.Arm.Taint.argByte s k = stackArgAddr s 0 + BitVec.ofNat 64 k := by
   simp [VG.Arm.Taint.argByte, stackArgAddr]
 
-theorem sign_ct : ConstantTime isa signArm.pre signArm.pub signBrainpoolP256r1 := by
-  refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by native_taint_decide)
-  intro s t hs ht ⟨hsp, h0, h1, h2, h3, ha⟩
-  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀ hs, wf₀ ht,
+theorem agree₀ {s t : State} {extraS extraT : List Region}
+    (hs : Pre brainpoolp256r1 s extraS) (ht : Pre brainpoolp256r1 t extraT) (pub : signArm.pub s t) :
+    VG.Arm.Taint.Agree τ₀ s t := by
+  obtain ⟨hsp, h0, h1, h2, h3, ha⟩ := pub
+  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀_pre hs, wf₀_pre ht,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
     fun _ => hsp, fun k hk => ?_⟩
   · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -153,9 +155,13 @@ theorem sign_ct : ConstantTime isa signArm.pre signArm.pub signBrainpoolP256r1 :
     · exact h1
     · exact h2
     · exact h3
-  · rw [(pre_of hs).wr, (pre_of ht).wr]; simp only [outR, scR, ptr, scPtr, h0, ha]
+  · rw [hs.wr, ht.wr]; simp only [outR, scR, ptr, scPtr, h0, ha]
   · rw [argByte_eq, argByte_eq, Mem.readW_byte s.mem _ hk, Mem.readW_byte t.mem _ hk]
     exact congrArg (fun v : BitVec 32 => v.extractLsb' (8 * k) 8) ha
+
+theorem sign_ct : ConstantTime isa signArm.pre signArm.pub signBrainpoolP256r1 :=
+  VG.Taint.constantTime (A := taint) τ₀
+    (fun _ _ hs ht pub => agree₀ (pre_of hs) (pre_of ht) pub) (by native_taint_decide)
 
 /-- A state satisfying the precondition. -/
 def satState : State where
