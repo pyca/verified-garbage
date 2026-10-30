@@ -18,6 +18,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # Montgomery arithmetic modulo P-192's `p` and `n`, as functions, on x86 (32-bit): verified

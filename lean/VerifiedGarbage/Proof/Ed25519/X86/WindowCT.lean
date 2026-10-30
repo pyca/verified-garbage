@@ -20,6 +20,7 @@ meta import VerifiedGarbage.Proof.Ed25519.ScalarBytes
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit
 meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # Verification's windows: what their traces depend on

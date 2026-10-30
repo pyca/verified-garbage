@@ -18,6 +18,7 @@ meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Ed25519.X86.Point32.Lit
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # `vg_ed25519_r32_point_add` on x86 (32-bit): its `Verified`

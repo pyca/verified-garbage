@@ -7,6 +7,7 @@ meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintBase
 meta import VerifiedGarbage.Impl.MlDsa.X86.Pack.Hint
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_hint_bit_pack`

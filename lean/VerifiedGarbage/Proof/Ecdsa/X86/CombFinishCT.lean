@@ -18,6 +18,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # ECDSA over P-256 on x86 (32-bit): the constant time of the comb's last step

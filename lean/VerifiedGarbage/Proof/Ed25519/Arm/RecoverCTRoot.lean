@@ -24,6 +24,7 @@ meta import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
 meta import VerifiedGarbage.Impl.Ed25519.Arm.RecoverSign
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 
 /-! Merged from `Proof.Ed25519.Arm.RecoverCTSign`. -/
 

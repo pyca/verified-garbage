@@ -14,6 +14,7 @@ meta import VerifiedGarbage.Proof.Ed448.Arm.BaseLit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 
 /-!
 # Ed448 base-point multiplication on ARMv7: `Verified`

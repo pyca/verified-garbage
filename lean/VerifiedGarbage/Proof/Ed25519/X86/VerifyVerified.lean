@@ -38,6 +38,7 @@ meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyLit
 import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-! Merged from `Proof.Ed25519.X86.VerifyMain`. -/
 

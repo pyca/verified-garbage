@@ -18,6 +18,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.Arm.P224.MulLit
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 
 /-!
 # `vg_p224_mul` on 32-bit ARM: `Verified`

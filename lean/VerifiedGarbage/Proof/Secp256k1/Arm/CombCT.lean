@@ -12,6 +12,7 @@ public import Init.Prelude
 meta import Init.Prelude
 public import VerifiedGarbage.TCB.Arm.Isa
 meta import VerifiedGarbage.TCB.Arm.Isa
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 
 /-! The comb's scalar and table contents remain secret throughout the scan. -/
 

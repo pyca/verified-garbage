@@ -66,6 +66,12 @@ without building. Exits non-zero on violations.
     arrays and vectors across modules, and `import all` of
     `Init.Data.Array.Basic` and the like made the modules that had it 11%
     slower to build, up to 25% for contracts' proofs.
+  * A module that calls the native taint hint search (`native_taint_decide`,
+    `native_taint_decide_sum`, …) imports its target's hint data itself
+    (`meta import VerifiedGarbage.Proof.Framework.<X86|Arm>.NativeHintData`):
+    without it the tactic falls back, silently, to the interpreted search,
+    which cost ECDSA P-521's x86 `sign_ct` 7 of its 25 s (#3726). The native
+    search exists only for those two targets' taint domains.
   * A module with `#guard_msgs` turns the profiler off
     (`set_option profiler false`, on a line of its own): the lakefile turns
     it on for every module (`ci/lean_profile.py`), and `#guard_msgs` would
@@ -73,6 +79,10 @@ without building. Exits non-zero on violations.
     expected messages.
 """
 
+import concurrent.futures
+import itertools
+import multiprocessing
+import os
 import pathlib
 import re
 import sys
@@ -105,6 +115,8 @@ IMPORT = re.compile(r"^(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?([\w.]+)", 
 TAUTO = re.compile(r"tauto(?![\w.])")  # not after `[\w.]`
 # `set_option profiler false` on a line of its own (for the whole module).
 PROFILER_OFF = re.compile(r"^set_option profiler false[ \t]*$", re.M)
+NATIVE_TAINT = re.compile(r"native_taint_decide\w*")  # not after `[\w.]`
+NATIVE_TARGETS = ("X86", "Arm")
 HEAVY_MATHLIB = (
     "Mathlib.Algebra", "Mathlib.RingTheory", "Mathlib.FieldTheory", "Mathlib.NumberTheory",
     "Mathlib.Data.ZMod", "Mathlib.Data.List.Dedup", "Mathlib.Data.Nat.ModEq",
@@ -323,6 +335,29 @@ def strip_comments(text: str) -> str:
     return re.sub(r"--[^\n]*", "", text)
 
 
+def native_hints(module: str, text: str) -> list[tuple[int, str]]:
+    """The calls of the native taint hint search in `module` (outside
+    `Proof/Framework/`, which defines it) that would fall back to the
+    interpreted search: its target's hint data is not imported, or the
+    target has none. As (line, message)."""
+    if "native_taint_decide" not in text or module.startswith("VerifiedGarbage.Proof.Framework."):
+        return []
+    code = strip_comments(text)
+    calls = list(after_word(NATIVE_TAINT, code, NAME_CHAR))
+    if not calls:
+        return []
+    targets = [t for t in NATIVE_TARGETS if t in module.split(".")]
+    if not targets:
+        return [(line_of(code, m.start()), f"`{m.group(0)}` on a target without a native taint domain "
+                 f"(only {', '.join(NATIVE_TARGETS)}); use `{m.group(0).removeprefix('native_')}`")
+                for m in calls[:1]]
+    data = f"VerifiedGarbage.Proof.Framework.{targets[0]}.NativeHintData"
+    if re.search(rf"^(?:public\s+)?meta\s+import\s+{re.escape(data)}\s*$", text, re.M):
+        return []
+    return [(line_of(code, calls[0].start()), f"`{calls[0].group(0)}` without `meta import {data}`, so it searches its "
+             "hints interpreted, many times slower; import it")]
+
+
 def heavy_hubs(imports: dict[str, list[str]]) -> list[tuple[str, list[str], int]]:
     """The modules that import heavy Mathlib algebra and are imported, directly
     or not, by more than `HEAVY_IMPORTERS` modules: (module, heavy imports, importers)."""
@@ -356,116 +391,143 @@ def imports_pow_lit(module: str, imports: dict[str, list[str]], memo: dict[str, 
     return memo[module]
 
 
-def main() -> int:
-    errors = []
-    imports: dict[str, list[str]] = {}
-    paths: dict[str, pathlib.Path] = {}
-    globs = precompiled_globs((LEAN / "lakefile.toml").read_text())
-    sources = [f for f in LEAN.rglob("*.lean") if ".lake" not in f.parts]
-    texts = {f: f.read_text() for f in sources}
-    lean_prefix = len(str(LEAN)) + 1
-    keys = {f: str(f)[lean_prefix:] for f in sources}
-    modules = {f: keys[f][: -len(".lean")].replace("/", ".") for f in sources}
-    for f, text in texts.items():
-        imports[modules[f]] = IMPORT.findall(text)
-    pow_memo: dict[str, bool] = {}
-    for f in sorted(sources):
-        text = texts[f]
-        rel = pathlib.Path("lean") / keys[f]
-        module = modules[f]
-        paths[module] = rel
-        depth = ("omega" in text and "max_le" not in text
-                 and any(k in text for k in ("stackUse", "Depth", "depth ", "depth,", "depth]")))
-        code = (strip_comments(text) if depth or any(k in text for k in ("^", "tauto", "decide", "assumption", "reservedV", "_set"))
-                else "")
-        if "^" in code and module.startswith(POW_PREFIXES) and module != POW_LIT:
-            m = NUM_EXP.search(code)
-            if m and not imports_pow_lit(module, imports, pow_memo):
+def check_file(key: str, globs: list[str]) -> tuple[str, pathlib.Path, list[str], int | None, list[str]]:
+    """The rules about one file, `key` (relative to `lean/`): its module, its
+    path, its imports, the line of a numeral exponent if its module must
+    import `PowLit` (which needs every module's imports to decide), and the
+    other violations."""
+    text = (LEAN / key).read_text()
+    rel = pathlib.Path("lean") / key
+    module = key[: -len(".lean")].replace("/", ".")
+    errors: list[str] = []
+    pow_line = None
+    depth = ("omega" in text and "max_le" not in text
+             and any(k in text for k in ("stackUse", "Depth", "depth ", "depth,", "depth]")))
+    code = (strip_comments(text) if depth or any(k in text for k in ("^", "tauto", "decide", "assumption", "reservedV", "_set"))
+            else "")
+    if "^" in code and module.startswith(POW_PREFIXES) and module != POW_LIT:
+        m = NUM_EXP.search(code)
+        if m:
+            pow_line = line_of(code, m.start())
+    decide_uses = []
+    if "decide" in code:
+        decide_uses = list(after_word(DECIDE_CONFIG, code))
+        if "+decide" in code:
+            decide_uses += DECIDE_FLAG.finditer(code)
+    assumption_uses = list(BARE_ASSUMPTION.finditer(code)) if "assumption" in code else []
+    chain_uses = list(PLACEHOLDER_CHAIN.finditer(code)) if "_set" in code else []
+    for found, allowed, what in (
+        (decide_uses, DECIDE_SIMP_ALLOWED, "`decide := true` in simp; measure it against simprocs (`reduceCtorEq`, `↓reduceIte`, `Nat.reduce*`) and raise the count in ci/lean_speed_allowed.py only if it is cheaper"),
+        (assumption_uses, BARE_ASSUMPTION_ALLOWED,
+         "bare `assumption` after `<;>` or in `first`; use `with_reducible assumption`"),
+        (chain_uses, PLACEHOLDER_CHAIN_ALLOWED,
+         "`.trans` chain of state-update lemmas with `_` arguments; give them their arguments or use `simp only`"),
+    ):
+        n = allowed.get(key, 0)
+        if len(found) > n:
+            for m in found:
+                errors.append(f"{rel}:{line_of(code, m.start())}: {what} ({len(found)} uses, {n} allowed)")
+        elif len(found) < n:
+            errors.append(f"{rel}: {len(found)} uses of {what.split(';')[0]}, fewer than the {n} allowed; lower the count")
+    if "reservedV" in code and str(rel) != CERT_HELPER_HOME:
+        found = [m for m in CERT_HELPER.finditer(code) if default_cert(code, m)]
+        n = DEFAULT_CERT_ALLOWED.get(key, 0)
+        if len(found) > n:
+            for m in found:
                 errors.append(
-                    f"{rel}:{line_of(code, m.start())}: numeral exponent in a module that does not import "
-                    f"{POW_LIT}; import it (or a module that does)"
+                    f"{rel}:{line_of(code, m.start())}: `{m.group(1)}` checks every instruction by "
+                    f"`decide +kernel`; pass the check: `(by lit_decide)` or a lemma ({len(found)} uses, {n} allowed)"
                 )
-        key = keys[f]
-        decide_uses = []
-        if "decide" in code:
-            decide_uses = list(after_word(DECIDE_CONFIG, code))
-            if "+decide" in code:
-                decide_uses += DECIDE_FLAG.finditer(code)
-        assumption_uses = list(BARE_ASSUMPTION.finditer(code)) if "assumption" in code else []
-        chain_uses = list(PLACEHOLDER_CHAIN.finditer(code)) if "_set" in code else []
-        for found, allowed, what in (
-            (decide_uses, DECIDE_SIMP_ALLOWED, "`decide := true` in simp; measure it against simprocs (`reduceCtorEq`, `↓reduceIte`, `Nat.reduce*`) and raise the count in ci/lean_speed_allowed.py only if it is cheaper"),
-            (assumption_uses, BARE_ASSUMPTION_ALLOWED,
-             "bare `assumption` after `<;>` or in `first`; use `with_reducible assumption`"),
-            (chain_uses, PLACEHOLDER_CHAIN_ALLOWED,
-             "`.trans` chain of state-update lemmas with `_` arguments; give them their arguments or use `simp only`"),
-        ):
-            n = allowed.get(key, 0)
-            if len(found) > n:
-                for m in found:
-                    errors.append(f"{rel}:{line_of(code, m.start())}: {what} ({len(found)} uses, {n} allowed)")
-            elif len(found) < n:
-                errors.append(f"{rel}: {len(found)} uses of {what.split(';')[0]}, fewer than the {n} allowed; lower the count")
-        if "reservedV" in code and str(rel) != CERT_HELPER_HOME:
-            found = [m for m in CERT_HELPER.finditer(code) if default_cert(code, m)]
-            n = DEFAULT_CERT_ALLOWED.get(key, 0)
-            if len(found) > n:
-                for m in found:
-                    errors.append(
-                        f"{rel}:{line_of(code, m.start())}: `{m.group(1)}` checks every instruction by "
-                        f"`decide +kernel`; pass the check: `(by lit_decide)` or a lemma ({len(found)} uses, {n} allowed)"
-                    )
-            elif len(found) < n:
-                errors.append(f"{rel}: {len(found)} uses of a default instruction check, fewer than the {n} allowed; "
-                              "lower the count")
-        if depth and module.startswith("VerifiedGarbage.Proof.") and not module.startswith("VerifiedGarbage.Proof.Framework."):
-            found = depth_omega(code)
-            n = DEPTH_OMEGA_ALLOWED.get(key, 0)
-            if len(found) > n:
-                for a in found:
-                    errors.append(
-                        f"{rel}:{line_of(code, a)}: `omega` on an unfolded stack depth; simp with `Nat.max_le` "
-                        f"first, so that it does not split cases on each `max` ({len(found)} uses, {n} allowed)"
-                    )
-            elif len(found) < n:
-                errors.append(f"{rel}: {len(found)} uses of `omega` on an unfolded stack depth, fewer than the "
-                              f"{n} allowed; lower the count")
-        if "#guard_msgs" in text and not PROFILER_OFF.search(text):
-            errors.append(
-                f"{rel}: uses `#guard_msgs` with the profiler on; add `set_option profiler false` "
-                "so that its expected messages do not include the profile"
-            )
-        for m in after_word(TAUTO, code, NAME_CHAR):
-            errors.append(f"{rel}:{line_of(code, m.start())}: `tauto` runs interpreted; use `grind`, `simp` or `decide`")
-        if uncompiled_meta(module, text, globs):
-            errors.append(
-                f"{rel}: defines meta code and imports only Lean core and precompiled modules; "
-                "add it to `NativeTactics` in lean/lakefile.toml so that it runs compiled"
-            )
-        for m in (SET_LIMIT.finditer(text) if any(k in text for k in ("maxHeartbeats", "maxRecDepth", "synthInstance.max")) else ()):
-            errors.append(f"{rel}:{line_of(text, m.start())}: changes a resource limit; make the proof faster instead")
-        for m in (IMPORT_ALL_CORE.finditer(text) if "import all" in text else ()):
-            if m.group(1) not in IMPORT_ALL_CORE_ALLOWED:
-                errors.append(f"{rel}:{line_of(text, m.start())}: `import all {m.group(1)}` makes the module "
-                              "slower to build; the kernel reduces core's definitions without it")
-        for m in (BIG_IMPORT.finditer(text) if "import Mathlib" in text else ()):
-            errors.append(f"{rel}:{line_of(text, m.start())}: imports {m.group(1)}; import the modules you use")
-        if module.startswith("VerifiedGarbage.Proof."):
-            for i in (unascribed_lists(text) if "++" in text else ()):
+        elif len(found) < n:
+            errors.append(f"{rel}: {len(found)} uses of a default instruction check, fewer than the {n} allowed; "
+                          "lower the count")
+    if depth and module.startswith("VerifiedGarbage.Proof.") and not module.startswith("VerifiedGarbage.Proof.Framework."):
+        found = depth_omega(code)
+        n = DEPTH_OMEGA_ALLOWED.get(key, 0)
+        if len(found) > n:
+            for a in found:
                 errors.append(
-                    f"{rel}:{line_of(text, i)}: instruction list next to `++` in a theorem statement; "
-                    "ascribe it: `([.op …] : List Instr)`"
+                    f"{rel}:{line_of(code, a)}: `omega` on an unfolded stack depth; simp with `Nat.max_le` "
+                    f"first, so that it does not split cases on each `max` ({len(found)} uses, {n} allowed)"
                 )
-        if module.startswith("VerifiedGarbage.Proof.Framework."):
-            continue
-        if "runBlock" not in text and "runStep" not in text:
-            continue
+        elif len(found) < n:
+            errors.append(f"{rel}: {len(found)} uses of `omega` on an unfolded stack depth, fewer than the "
+                          f"{n} allowed; lower the count")
+    if "#guard_msgs" in text and not PROFILER_OFF.search(text):
+        errors.append(
+            f"{rel}: uses `#guard_msgs` with the profiler on; add `set_option profiler false` "
+            "so that its expected messages do not include the profile"
+        )
+    for line, what in native_hints(module, text):
+        errors.append(f"{rel}:{line}: {what}")
+    for m in after_word(TAUTO, code, NAME_CHAR):
+        errors.append(f"{rel}:{line_of(code, m.start())}: `tauto` runs interpreted; use `grind`, `simp` or `decide`")
+    if uncompiled_meta(module, text, globs):
+        errors.append(
+            f"{rel}: defines meta code and imports only Lean core and precompiled modules; "
+            "add it to `NativeTactics` in lean/lakefile.toml so that it runs compiled"
+        )
+    for m in (SET_LIMIT.finditer(text) if any(k in text for k in ("maxHeartbeats", "maxRecDepth", "synthInstance.max")) else ()):
+        errors.append(f"{rel}:{line_of(text, m.start())}: changes a resource limit; make the proof faster instead")
+    for m in (IMPORT_ALL_CORE.finditer(text) if "import all" in text else ()):
+        if m.group(1) not in IMPORT_ALL_CORE_ALLOWED:
+            errors.append(f"{rel}:{line_of(text, m.start())}: `import all {m.group(1)}` makes the module "
+                          "slower to build; the kernel reduces core's definitions without it")
+    for m in (BIG_IMPORT.finditer(text) if "import Mathlib" in text else ()):
+        errors.append(f"{rel}:{line_of(text, m.start())}: imports {m.group(1)}; import the modules you use")
+    if module.startswith("VerifiedGarbage.Proof."):
+        for i in (unascribed_lists(text) if "++" in text else ()):
+            errors.append(
+                f"{rel}:{line_of(text, i)}: instruction list next to `++` in a theorem statement; "
+                "ascribe it: `([.op …] : List Instr)`"
+            )
+    if not module.startswith("VerifiedGarbage.Proof.Framework.") and ("runBlock" in text or "runStep" in text):
         for m in after_word(SIMP_ARGS, text):
             for u in UNFOLD.finditer(m.group(1)):
                 errors.append(
                     f"{rel}:{line_of(text, m.start(1) + u.start())}: simp unfolds {u.group(1)}; "
                     "step with runBlock_cons, runStep_some and runBlock_nil"
                 )
+    return module, rel, IMPORT.findall(text), pow_line, errors
+
+
+def lean_sources() -> list[str]:
+    """The `.lean` files under `lean/` but `.lake/` (not even walked: a build
+    holds thousands of dependencies' sources), relative to it, in the order of
+    their paths' parts."""
+    keys = []
+    for d, dirs, files in os.walk(LEAN):
+        dirs[:] = [x for x in dirs if x != ".lake"]
+        rel = os.path.relpath(d, LEAN)
+        keys += [f if rel == "." else f"{rel}/{f}" for f in files if f.endswith(".lean")]
+    return sorted(keys, key=lambda k: k.split("/"))
+
+
+def check_files(keys: list[str], globs: list[str]) -> list:
+    """`check_file` of each key, in their order, on every core: the files are
+    independent, and reading and matching 25,000 of them takes seconds."""
+    jobs = int(os.environ.get("CHECK_LEAN_SPEED_JOBS", os.cpu_count() or 1))
+    if jobs <= 1:
+        return [check_file(k, globs) for k in keys]
+    ctx = multiprocessing.get_context("fork")
+    with concurrent.futures.ProcessPoolExecutor(jobs, mp_context=ctx) as pool:
+        return list(pool.map(check_file, keys, itertools.repeat(globs), chunksize=128))
+
+
+def main() -> int:
+    errors = []
+    globs = precompiled_globs((LEAN / "lakefile.toml").read_text())
+    results = check_files(lean_sources(), globs)
+    imports = {module: found for module, _, found, _, _ in results}
+    paths = {module: rel for module, rel, _, _, _ in results}
+    pow_memo: dict[str, bool] = {}
+    for module, rel, _, pow_line, found in results:
+        if pow_line is not None and not imports_pow_lit(module, imports, pow_memo):
+            errors.append(
+                f"{rel}:{pow_line}: numeral exponent in a module that does not import "
+                f"{POW_LIT}; import it (or a module that does)"
+            )
+        errors += found
     for m, heavy, n in heavy_hubs(imports):
         errors.append(
             f"{paths[m]}: imports {', '.join(heavy)} and {n} modules import it (more than "

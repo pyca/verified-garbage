@@ -16,6 +16,7 @@ meta import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 
 /-! Merged from `Proof.Ed25519.Arm.PointEqualCT`. -/
 

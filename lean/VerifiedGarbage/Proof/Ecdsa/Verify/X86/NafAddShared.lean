@@ -29,6 +29,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86.Flags
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Weierstrass.X86.FieldTiming
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # ECDSA verification on x86 (32-bit): the checks shared by the NAF's additions

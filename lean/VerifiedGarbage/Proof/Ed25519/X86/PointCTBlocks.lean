@@ -22,6 +22,7 @@ meta import VerifiedGarbage.Impl.Ed25519.X86.PointAccumulate
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # Constant time of the point arithmetic blocks

@@ -26,6 +26,7 @@ public import VerifiedGarbage.Proof.Ed25519.X86.PointTable
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointTable
 import VerifiedGarbage.Proof.X25519.X86.Lit
 meta import VerifiedGarbage.Proof.X25519.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 /-!
 # Verification's equation: what its traces depend on
