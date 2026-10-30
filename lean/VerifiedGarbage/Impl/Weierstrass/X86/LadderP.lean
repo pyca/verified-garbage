@@ -43,10 +43,10 @@ def copyPt (n : Nat) (o a : Pt) : List Instr :=
   copy (2 * n) o.x a.x ++ copy (2 * n) o.y a.y ++ copy (2 * n) o.z a.z
 
 /-- The point function a call doubles (`dbl`) or adds with: for `a0`, the
-one for `a = 0` (`vg_<curve>_point_double_a0`, `vg_<curve>_point_add_affine_a0`),
+one for `a = 0` (`vg_<curve>_point_a0_double`, `vg_<curve>_point_a0_add_affine`),
 else `vg_<curve>_point_double` or `vg_<curve>_point_add`. -/
 def ptName (S : Spec.Weierstrass.Mont.Modulus) (a0 dbl : Bool) : String :=
-  s!"vg_{S.curve}_point_{if dbl then "double" else "add"}{if a0 then (if dbl then "_a0" else "_affine_a0") else ""}"
+  s!"vg_{S.curve}_point_{if a0 then "a0_" else ""}{if dbl then "double" else "add"}{if a0 && !dbl then "_affine" else ""}"
 
 /-- Its field operations. -/
 def ptOps (a0 dbl : Bool) : List FOp := if a0 then ops0 dbl else rcb sId pId qId oId

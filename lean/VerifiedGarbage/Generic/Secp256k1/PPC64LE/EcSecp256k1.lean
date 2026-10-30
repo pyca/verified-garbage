@@ -28,8 +28,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.Secp256k1.curve) : List Artifac
       word-by-word Montgomery multiplication (CIOS, in calls of `vg_secp256k1_mul_mod_p` and the other \
       functions of `secp256k1_mont`) with a final conditional subtraction; `[d]G` is a double-and-add \
       ladder over all 256 bits of `d`, with the complete addition formulas of Renes, Costello and \
-      Batina for every addition and doubling (calls of `vg_secp256k1_point_double_a0` and \
-      `vg_secp256k1_point_add_affine_a0`, Algorithms 9 and 8 for `a = 0`) and a masked selection for each bit; and `Z⁻¹` is Fermat's, \
+      Batina for every addition and doubling (calls of `vg_secp256k1_point_a0_double` and \
+      `vg_secp256k1_point_a0_add_affine`, Algorithms 9 and 8 for `a = 0`) and a masked selection for each bit; and `Z⁻¹` is Fermat's, \
       by square-and-always-multiply over the bits of `p - 2`. The result (or zeros) is selected \
       by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."]
     code := Impl.EcKey.PPC64LE.publicKeySecp256k1

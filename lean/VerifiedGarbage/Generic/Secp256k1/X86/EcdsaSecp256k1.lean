@@ -131,8 +131,8 @@ def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInv Spec.Secp256k1.curve) : L
       with `mul` and the accumulator in `scratch`, in calls of `vg_secp256k1_mul_mod_p` and the other \
       functions of `secp256k1_mont`) with a final conditional subtraction. `[k]G` \
       is a double-and-add ladder over all 256 bits of `k`, with the complete addition formulas \
-      of Renes, Costello and Batina for every addition and doubling (calls of `vg_secp256k1_point_double_a0` and \
-      `vg_secp256k1_point_add_affine_a0`, Algorithms 9 and 8 for `a = 0`) and a masked selection for \
+      of Renes, Costello and Batina for every addition and doubling (calls of `vg_secp256k1_point_a0_double` and \
+      `vg_secp256k1_point_a0_add_affine`, Algorithms 9 and 8 for `a = 0`) and a masked selection for \
       each bit; the inversions modulo `p` and `n` use constant-time divsteps. The signature (or zeros) is selected by a mask, so \
       the time depends only on the pointers."]
     code := Impl.Ecdsa.X86.signSecp256k1
@@ -150,8 +150,8 @@ def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInv Spec.Secp256k1.curve) : L
       valid, else `G`, so it always runs on a point of the curve. `s⁻¹` modulo `n` and `Z⁻¹` are \
       computed by constant-time divsteps; `[u]G` and `[v]Q` are double-and-add ladders over \
       all 256 bits of `u` and `v`, with the complete addition formulas of Renes, Costello and \
-      Batina (calls of `vg_secp256k1_point_double_a0` and \
-      `vg_secp256k1_point_add_affine_a0`, Algorithms 9 and 8 for `a = 0` in the ladders), which also add the two. The result is the conjunction of the checks (the key, `r` \
+      Batina (calls of `vg_secp256k1_point_a0_double` and \
+      `vg_secp256k1_point_a0_add_affine`, Algorithms 9 and 8 for `a = 0` in the ladders), which also add the two. The result is the conjunction of the checks (the key, `r` \
       and `s` in `[1, n-1]`, the sum not the point at infinity, and `x ≡ r` modulo `n`) as a \
       mask, so the time depends only on the pointers, although the contract would let every \
       input affect it."]

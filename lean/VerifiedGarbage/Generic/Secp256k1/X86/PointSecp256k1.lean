@@ -87,7 +87,7 @@ import VerifiedGarbage.Proof.X25519.X86.Fold
 /-!
 # secp256k1's point doubling and affine addition on x86 (32-bit)
 
-`vg_secp256k1_point_double_a0` and `vg_secp256k1_point_add_affine_a0`
+`vg_secp256k1_point_a0_double` and `vg_secp256k1_point_a0_add_affine`
 (`Spec/Weierstrass/Point0.lean`), which secp256k1's ladders call (its `a` is
 zero, so it needs no `vg_secp256k1_point_add` or `vg_secp256k1_point_double`
 here), calling the Montgomery functions of
