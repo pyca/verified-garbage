@@ -58,6 +58,7 @@ RUN printf '%s\n' \
 #   can run;
 # * in armv7-cross, the armhf cross-compiler, libc and OpenSSL, and qemu-arm
 #   (see ci/arm32-run);
+# * in riscv64, mold, which links the tests (see ci/gcc-mold);
 # * in lint, the cross-compiler, libc and OpenSSL of each other Linux
 #   target's architecture;
 # * gcc and libc6-dev, rustc's linker (with binutils' readelf), but in
@@ -82,7 +83,7 @@ RUN bench="libssl-dev pkg-config" && \
         i386) foreign=amd64; packages="libc6:amd64 libstdc++6:amd64" ;; \
         arm64) foreign=armhf; packages="gcc-arm-linux-gnueabihf libc6-dev:armhf libssl-dev:armhf qemu-user" ;; \
         ppc64el) foreign=; packages= ;; \
-        riscv64) foreign=; packages=; bench=; \
+        riscv64) foreign=; packages=mold; bench=; \
             printf '%s\n' \
                 'path-exclude=/usr/libexec/gcc/*/*/cc1' \
                 'path-exclude=/usr/libexec/gcc/*/*/cc1plus' \
@@ -209,12 +210,15 @@ RUN components=llvm-tools && \
 # TARGETARCH and TARGETVARIANT): armv7-cross's Cargo builds for ARMv7 unless
 # told otherwise (the Thumb job sets CARGO_BUILD_TARGET), links with the
 # cross-compiler, and runs the 32-bit programs through ci/arm32-run;
-# pkg-config finds the armhf OpenSSL for openssl-sys (the benchmarks). In
+# pkg-config finds the armhf OpenSSL for openssl-sys (the benchmarks).
+# riscv64's links with mold, through ci/gcc-mold. In
 # lint, pkg-config finds each Linux target's OpenSSL, for openssl-sys's
 # build script, which only reads its headers there: Clippy links nothing.
 FROM base AS image-386
 FROM base AS image-ppc64le
 FROM base AS image-riscv64
+COPY gcc-mold /usr/local/bin/gcc-mold
+ENV CARGO_TARGET_RISCV64GC_UNKNOWN_LINUX_GNU_LINKER=/usr/local/bin/gcc-mold
 FROM base AS image-arm64
 COPY arm32-run /usr/local/bin/arm32-run
 ENV CARGO_BUILD_TARGET=armv7-unknown-linux-gnueabihf \
