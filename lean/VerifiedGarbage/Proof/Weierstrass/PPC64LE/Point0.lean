@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.PointVerified
+import VerifiedGarbage.Proof.Weierstrass.PPC64LE.PointVerified
 public import VerifiedGarbage.Spec.Weierstrass.Point0
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.PointContract
 
 /-!
 # Doubling and affine addition for `a = 0` as functions, on PPC64LE

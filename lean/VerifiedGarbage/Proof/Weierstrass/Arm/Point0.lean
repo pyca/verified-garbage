@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.Arm.PointVerified
+import VerifiedGarbage.Proof.Weierstrass.Arm.PointVerified
 public import VerifiedGarbage.Spec.Weierstrass.Point0
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Weierstrass.Arm.PointContract
 
 /-!
 # Doubling and affine addition for `a = 0` as functions, on 32-bit ARM

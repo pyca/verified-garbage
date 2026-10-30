@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.PointVerified
+import VerifiedGarbage.Proof.Weierstrass.X86.PointVerified
 public import VerifiedGarbage.Spec.Weierstrass.Point0
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Weierstrass.X86.MontVerified
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointContract
 
 /-!
 # Doubling and affine addition for `a = 0` as functions, on x86 (32-bit)
