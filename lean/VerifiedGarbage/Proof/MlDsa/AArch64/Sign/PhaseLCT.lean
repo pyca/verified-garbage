@@ -117,6 +117,45 @@ theorem leq_pass (hp : ParamsOk p) (h : LeakEq p t σ₁ σ₂) (ht : t < 814)
   · rw [ifn h1, ifp h2] at e; cases e
   · exact iff_of_false h1 h2
 
+/-- Agreement on the whole-vector checks whose outcomes may branch. -/
+abbrev ChecksAgree (p : Params) (t : Nat) (σ₁ σ₂ : State) : Prop :=
+  (ZOk p σ₁ (p.ℓ*t) ↔ ZOk p σ₂ (p.ℓ*t)) ∧
+    ((ZOk p σ₁ (p.ℓ*t) ∧ R0Ok p σ₁ (p.ℓ*t)) ↔
+      (ZOk p σ₂ (p.ℓ*t) ∧ R0Ok p σ₂ (p.ℓ*t))) ∧
+    (PassV p σ₁ (p.ℓ*t) ↔ PassV p σ₂ (p.ℓ*t))
+
+def tagFn (a b c : Prop) [Decidable a] [Decidable b] [Decidable c] : Nat :=
+  if ¬ a then 0 else if ¬ b then 2 else if ¬ c then 3 else 4
+
+theorem tagFn_eq {a b c a' b' c' : Prop} [Decidable a] [Decidable b] [Decidable c] [Decidable a'] [Decidable b']
+    [Decidable c'] (h : tagFn a b c = tagFn a' b' c') : (a ↔ a') ∧ (a ∧ b ↔ a' ∧ b') := by
+  unfold tagFn at h
+  by_cases ha : a <;> by_cases hb : b <;> by_cases hc : c <;> by_cases ha' : a' <;> by_cases hb' : b' <;>
+    by_cases hc' : c' <;> simp only [ha, hb, hc, ha', hb', hc', not_true_eq_false, not_false_eq_true,
+      ite_true, ite_false] at h <;> first | (exact absurd h (by decide)) | simp_all
+
+theorem tag_eq (hp : ParamsOk p) {σ : State} {κ : Nat}
+    (hs : (sampleInBall p.τ maxBounds.ball (CTv p σ κ)).isSome) :
+    signRejectTag p maxBounds (amat p (Am p σ)) ((List.range p.ℓ).map (S1v p σ)) ((List.range p.k).map (S2v p σ))
+      ((List.range p.k).map (T0v p σ)) (muOf σ) (rppOf p σ) κ =
+      tagFn (ZOk p σ κ) (R0Ok p σ κ) (∀ j < p.k, normRq [CT0v p σ κ j] < p.γ₂) := by
+  rw [signRejectTag_eqF hp, show ctF p (Am p σ) (muOf σ) (rppOf p σ) κ = CTv p σ κ from rfl, cV_eq hs]
+  rfl
+
+/-- Two runs that agree on what the iterations from `t` leak agree on the
+groups of checks of iteration `t` that pass. -/
+theorem leq_agree (hp : ParamsOk p) (h : LeakEq p t σ₁ σ₂) (ht : t < 814)
+    (hs₁ : (sampleInBall p.τ maxBounds.ball (CTv p σ₁ (p.ℓ * t))).isSome)
+    (hs₂ : (sampleInBall p.τ maxBounds.ball (CTv p σ₂ (p.ℓ * t))).isSome) : ChecksAgree p t σ₁ σ₂ := by
+  have hpass := leq_pass hp h ht hs₁ hs₂
+  by_cases h1 : PassV p σ₁ (p.ℓ * t)
+  · have h2 := hpass.mp h1
+    exact ⟨iff_of_true h1.1 h2.1, iff_of_true ⟨h1.1, h1.2.1⟩ ⟨h2.1, h2.2.1⟩, hpass⟩
+  · have h2 : ¬ PassV p σ₂ (p.ℓ * t) := fun h2 => h1 (hpass.mpr h2)
+    have e := leakT_tag (leq_step h ht) (iter_rej hp hs₁ h1) (iter_rej hp hs₂ h2)
+    rw [tag_eq hp hs₁, tag_eq hp hs₂] at e
+    exact ⟨(tagFn_eq e).1, (tagFn_eq e).2, hpass⟩
+
 theorem leq_hints (hp : ParamsOk p) (h : LeakEq p t σ₁ σ₂) (ht : t < 814)
     (hs₁ : (sampleInBall p.τ maxBounds.ball (CTv p σ₁ (p.ℓ * t))).isSome)
     (hs₂ : (sampleInBall p.τ maxBounds.ball (CTv p σ₂ (p.ℓ * t))).isSome)

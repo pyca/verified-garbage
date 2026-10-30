@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedChecksCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTrace
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopEndTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintEnd
@@ -268,15 +269,30 @@ theorem positivePairedKBranch_tr {p : Params} {S : Nat} (hp : Ok3 p) (hc : ksChk
 theorem positivePairedChecks_tr {p : Params} {S : Nat} (hp : Ok3 p) (hc : ksChk p=true)
     (h16 : 16≤S) (hS : S<2^64) {t : Nat} {E : State → State → Prop}
     (hE : ∀σ τ,E σ τ → (sampleInBall p.τ maxBounds.ball (CTv p σ (p.ℓ*t))).isSome →
-      (sampleInBall p.τ maxBounds.ball (CTv p τ (p.ℓ*t))).isSome →
-      (PassV p σ (p.ℓ*t) ↔ PassV p τ (p.ℓ*t))) :
+      (sampleInBall p.τ maxBounds.ball (CTv p τ (p.ℓ*t))).isSome → ChecksAgree p t σ τ) :
     RelCT isa (PairedRS p S E fun σ s=>PositiveIB p S σ t s ∧ (s.gpr .x0).setWidth 32=1)
       (Impl.MlDsa.AArch64.Sign.Optimized.pairedChecks p)
       (PairedRS p S E fun σ s=>PositiveEP p S σ t s ∨ PositiveEF p S σ t s) := by
+  refine liftPairedR (fun _ _ _ h roots=>positivePairedChecks_ok hp hc h16 hS roots h.1 h.2) ?_
   unfold Impl.MlDsa.AArch64.Sign.Optimized.pairedChecks
-  exact RelCT.seq (positivePairedChecksPrefix_tr hp hc h16)
-    (RelCT.seq (optimizedHint_paired_vector_tr hp)
-      (RelCT.seq (positivePairedOnesOk_tr hc hS) (positivePairedKBranch_tr hp hc hS hE)))
+  refine RelCT.seq (RelCT.seq (positivePairedChallenge_tr hp h16)
+    (RelCT.seq (positivePairedChecksInit_tr hp hc) (optimizedZ_paired_vector_tr hp))) ?_
+  refine ifOkElse_tr (fun x y h=>?_) ?_ ?_
+  · obtain ⟨σ,τ,_,_,_,he,hx,hy⟩ := h.1.1
+    rw [hx.1.2,hy.1.2]
+    exact congrArg (BitVec.setWidth 32) (bit_congr (hE σ τ he hx.1.1.b.sampled hy.1.1.b.sampled).1)
+  · refine RelCT.mono (RelCT.seq (optimizedR0_paired_vector_tr hp) ?_)
+      (fun _ _ h=>h.1.mono (fun _ _ hz=>positiveIR_of_IZ hz)) (fun _ _ h=>h)
+    refine ifOkElse_tr (fun x y h=>?_) ?_ ?_
+    · obtain ⟨σ,τ,_,_,_,he,hx,hy⟩ := h.1.1
+      rw [hx.1.2,hy.1.2]
+      exact congrArg (BitVec.setWidth 32) (bit_congr (hE σ τ he hx.1.1.b.sampled hy.1.1.b.sampled).2.1)
+    · refine RelCT.mono (RelCT.seq (optimizedHint_paired_vector_tr hp)
+        (RelCT.seq (positivePairedOnesOk_tr hc hS) (positivePairedKBranch_tr hp hc hS
+          (fun σ τ he hs ht=>(hE σ τ he hs ht).2.2))))
+        (fun _ _ h=>h.1.mono (fun _ _ hr=>positiveIH_of_IR hr)) (fun _ _ _=>trivial)
+    · exact lrel_tr (fun _ _ h=>h.1.root.1.lrel (fun _ _ hr=>hr.1.b.l.st)) (kapAdd_taint p)
+  · exact lrel_tr (fun _ _ h=>h.1.root.1.lrel (fun _ _ hz=>hz.1.b.l.st)) (kapAdd_taint p)
 
 end VG.Proof.MlDsa.AArch64.Sign
 

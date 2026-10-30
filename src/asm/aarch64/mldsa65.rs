@@ -1705,7 +1705,7 @@ ret
 ///
 /// The function saves its caller's callee-saved registers and its return address in `scratch`; the frames of its calls use the 16 bytes of stack below the stack pointer.
 ///
-/// The signing loop runs at most 814 iterations (FIPS 204 Appendix C). Each iteration computes every validity check and combines them without branching: the one branch on their result is the only place an iteration's outcome affects timing.
+/// The signing loop runs at most 814 iterations (FIPS 204 Appendix C). Each iteration stops after a complete response or low-part vector norm check rejects it. Branches reveal only the rejection phase already allowed by the signing contract; individual polynomial and coefficient norm results do not affect control flow.
 ///
 /// # Safety
 ///
@@ -3648,6 +3648,12 @@ movk x2, #0, lsl #32
 movk x2, #0, lsl #48
 bl {vg_mldsa_signed_add_norm}
 and w24, w24, w0
+cbnz w24, 233f
+ldr x9, [x28, #904]
+add x9, x9, #5
+str x9, [x28, #904]
+b 234f
+233:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #37888, lsl #0
@@ -3708,6 +3714,12 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_r0}
 and w24, w24, w0
+cbnz w24, 235f
+ldr x9, [x28, #904]
+add x9, x9, #5
+str x9, [x28, #904]
+b 236f
+235:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #44032, lsl #0
@@ -3784,23 +3796,25 @@ ldr x9, [x28, #912]
 sub x9, x9, #56
 lsr x9, x9, #63
 and w24, w24, w9
-cbnz w24, 233f
+cbnz w24, 237f
 ldr x9, [x28, #904]
 add x9, x9, #5
 str x9, [x28, #904]
-b 234f
-233:
+b 238f
+237:
 movz x9, #1, lsl #0
 str x9, [x28, #896]
+238:
+236:
 234:
 232:
 ldr x9, [x28, #896]
 sub x9, x9, #1
 str x9, [x28, #896]
 cbnz x9, 210b
-cbnz w24, 235f
-b 236f
-235:
+cbnz w24, 239f
+b 240f
+239:
 movz x0, #16384, lsl #0
 add x0, x28, x0
 bl {vg_mldsa_canonicalize_signed}
@@ -3819,13 +3833,13 @@ bl {vg_mldsa_canonicalize_signed}
 add x0, x23, #0
 add x1, x28, #1040
 movz x2, #48, lsl #0
-237:
+241:
 ldrb w9, [x1, #0]
 strb w9, [x0, #0]
 add x0, x0, #1
 add x1, x1, #1
 sub x2, x2, #1
-cbnz x2, 237b
+cbnz x2, 241b
 movz x0, #16384, lsl #0
 add x0, x28, x0
 movz x1, #65535, lsl #0
@@ -3898,7 +3912,7 @@ movz x2, #55, lsl #0
 add x3, x23, #3248
 movz x4, #61, lsl #0
 bl {vg_mldsa_hint_bit_pack}
-236:
+240:
 29:
 add x0, x24, #0
 ldr x23, [x28, #840]
@@ -6867,7 +6881,7 @@ pub(crate) const VG_MLDSA65_SIGN_SHA3_FEATURES: crate::cpu::Features = crate::cp
 ///
 /// The function saves its caller's callee-saved registers and its return address in `scratch`; the frames of its calls use the 16 bytes of stack below the stack pointer.
 ///
-/// The signing loop runs at most 814 iterations (FIPS 204 Appendix C). Each iteration computes every validity check and combines them without branching: the one branch on their result is the only place an iteration's outcome affects timing.
+/// The signing loop runs at most 814 iterations (FIPS 204 Appendix C). Each iteration stops after a complete response or low-part vector norm check rejects it. Branches reveal only the rejection phase already allowed by the signing contract; individual polynomial and coefficient norm results do not affect control flow.
 ///
 /// # Safety
 ///
@@ -7976,6 +7990,12 @@ movk x2, #0, lsl #32
 movk x2, #0, lsl #48
 bl {vg_mldsa_signed_add_norm}
 and w24, w24, w0
+cbnz w24, 28f
+ldr x9, [x28, #904]
+add x9, x9, #5
+str x9, [x28, #904]
+b 29f
+28:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #37888, lsl #0
@@ -8036,6 +8056,12 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_r0}
 and w24, w24, w0
+cbnz w24, 210f
+ldr x9, [x28, #904]
+add x9, x9, #5
+str x9, [x28, #904]
+b 211f
+210:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #44032, lsl #0
@@ -8112,23 +8138,25 @@ ldr x9, [x28, #912]
 sub x9, x9, #56
 lsr x9, x9, #63
 and w24, w24, w9
-cbnz w24, 28f
+cbnz w24, 212f
 ldr x9, [x28, #904]
 add x9, x9, #5
 str x9, [x28, #904]
-b 29f
-28:
+b 213f
+212:
 movz x9, #1, lsl #0
 str x9, [x28, #896]
+213:
+211:
 29:
 27:
 ldr x9, [x28, #896]
 sub x9, x9, #1
 str x9, [x28, #896]
 cbnz x9, 22b
-cbnz w24, 210f
-b 211f
-210:
+cbnz w24, 214f
+b 215f
+214:
 movz x0, #16384, lsl #0
 add x0, x28, x0
 bl {vg_mldsa_canonicalize_signed}
@@ -8147,13 +8175,13 @@ bl {vg_mldsa_canonicalize_signed}
 add x0, x23, #0
 add x1, x28, #1040
 movz x2, #48, lsl #0
-212:
+216:
 ldrb w9, [x1, #0]
 strb w9, [x0, #0]
 add x0, x0, #1
 add x1, x1, #1
 sub x2, x2, #1
-cbnz x2, 212b
+cbnz x2, 216b
 movz x0, #16384, lsl #0
 add x0, x28, x0
 movz x1, #65535, lsl #0
@@ -8226,7 +8254,7 @@ movz x2, #55, lsl #0
 add x3, x23, #3248
 movz x4, #61, lsl #0
 bl {vg_mldsa_hint_bit_pack}
-211:
+215:
 21:
 add x0, x24, #0
 ldr x23, [x28, #840]

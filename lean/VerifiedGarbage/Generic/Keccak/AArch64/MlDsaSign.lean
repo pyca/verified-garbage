@@ -542,9 +542,10 @@ open VG.Proof.MlDsa.AArch64.Sign (primsWith)
 def notes : List String :=
   ["The function saves its caller's callee-saved registers and its return address in `scratch`; \
     the frames of its calls use the 16 bytes of stack below the stack pointer.",
-   "The signing loop runs at most 814 iterations (FIPS 204 Appendix C). Each iteration computes \
-    every validity check and combines them without branching: the one branch on their result \
-    is the only place an iteration's outcome affects timing."]
+   "The signing loop runs at most 814 iterations (FIPS 204 Appendix C). Each iteration \
+    stops after a complete response or low-part vector norm check rejects it. \
+    Branches reveal only the rejection phase already allowed by the signing contract; \
+    individual polynomial and coefficient norm results do not affect control flow."]
 
 def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   Spec.MlDsa.sign44Api.artifact AArch64.target {

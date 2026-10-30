@@ -88,4 +88,22 @@ theorem branch_ok {p : Params} {S : Nat} {σ s : State} {t : Nat}
     exact roots.step_layout L hpu hy
       (by rcases hp with rfl|rfl|rfl <;> decide) (by rcases hp with rfl|rfl|rfl <;> decide)
 
+/-- Early rejection preserves the look-ahead mask just like the final
+rejection branch. -/
+theorem reject_ok {p : Params} {S : Nat} {σ s : State} {t : Nat}
+    (hp : Ok3 p) (hc : ksChk p=true) (roots : Roots p S f s)
+    (h : PositiveIL p S σ t s)
+    (sampled : (sampleInBall p.τ maxBounds.ball (CTv p σ (p.ℓ*t))).isSome)
+    (fail : ¬ PassV p σ (p.ℓ*t)) (flag : s.gpr .x24=0) :
+    WP isa (.block (kapAdd p)) s fun u=>PositiveEF p S σ t u ∧ Roots p S f u := by
+  refine both (positiveReject_ok hp hc h sampled fail flag) ?_
+  refine ksChk_spec hc fun _ _ _ _ _ _ _ _ _ _ _ _ c10 _ _ _ _ _ _ _ _ _ _ hl _ _ _ c23=>?_
+  have L := h.st.lay
+  refine WP.mono_syms (kapAdd_ok p hl s (L.inW c10) (L.inR c23)) fun u ⟨hm,k⟩ hy=>?_
+  have hf : Frame [⟨pa s (sc oKAP),8⟩] s.mem u.mem := by
+    rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  have hpu : PPostB S s u [(sc oKAP,8)] := postB_of_keep k (by decide) hf
+  exact roots.step_layout L hpu hy
+    (by rcases hp with rfl|rfl|rfl <;> decide) (by rcases hp with rfl|rfl|rfl <;> decide)
+
 end VG.Proof.MlDsa.AArch64.Sign.CachedChecks
