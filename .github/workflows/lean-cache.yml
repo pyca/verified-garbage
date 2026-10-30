@@ -44,7 +44,7 @@ jobs:
       # The commit CI checked (GITHUB_SHA is main's head when this started).
       HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
       # Bump if the archive format or compression settings change.
-      CACHE_FORMAT: ltar5-oras-v5
+      CACHE_FORMAT: ltar5-oras-v6
       ORAS_VERSION: 1.3.2
       ORAS_SHA256: 9229ccc6d17bb282039ad4a69abb16dcb887a5bce567c075d731d9b3c7ad8eaf
     steps:
