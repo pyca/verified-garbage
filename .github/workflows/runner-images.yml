@@ -14,12 +14,14 @@ on:
       - .github/workflows/runner-images.yml
       - .github/actions/runner-node/**
       - ci/runner.Dockerfile
+      - ci/gcc-mold
   push:
     branches: [main]
     paths:
       - .github/workflows/runner-images.yml
       - .github/actions/runner-node/**
       - ci/runner.Dockerfile
+      - ci/gcc-mold
 
 permissions: {}
 

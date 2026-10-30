@@ -88,6 +88,7 @@ RUST_CI = {
     "ci/cpu_shards.py",
     "ci/cpu_tests.py",
     "ci/export_rust_coverage.py",
+    "ci/gcc-mold",
     "ci/merge_rust_coverage.py",
     "ci/requirements-coverage.txt",
     "ci/runner.Dockerfile",
