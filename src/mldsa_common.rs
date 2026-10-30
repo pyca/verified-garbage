@@ -185,7 +185,8 @@ macro_rules! ml_dsa {
             /// about 2⁻²⁵⁶ or less, if a loop reaches its bound), and
             /// [`Error::ContextTooLong`] if `ctx` is longer than 255 bytes.
             pub fn verify(&self, msg: &[u8], ctx: &[u8], sig: &[u8; $sig]) -> Result<(), Error> {
-                let mut scratch: MessageScratch = [0; $message_scratch];
+                // The verified contracts accept arbitrary initial scratch bytes.
+                let mut scratch = core::mem::MaybeUninit::<MessageScratch>::uninit();
                 let (m, m_len, c, c_len) = (msg.as_ptr(), msg.len(), ctx.as_ptr(), ctx.len());
                 // SAFETY: `self.bytes`, `sig` and `scratch` are valid for
                 // reads (and, for `scratch`, writes) of their sizes, and
@@ -196,15 +197,15 @@ macro_rules! ml_dsa {
                 let r = unsafe {
                     match backend() {
                         #[cfg(not(target_arch = "aarch64"))]
-                        Backend::Scalar => $verify_message(&self.bytes, m, m_len, c, c_len, sig, &mut scratch),
+                        Backend::Scalar => $verify_message(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr()),
                         // Both constructors establish tr = SHAKE256(bytes, 64);
                         // the key and digest remain private and immutable.
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Scalar => $verify_message_cached(&self.bytes, m, m_len, c, c_len, sig, &mut scratch, &self.tr),
+                        Backend::Scalar => $verify_message_cached(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $verify_message_cached_sha3(&self.bytes, m, m_len, c, c_len, sig, &mut scratch, &self.tr),
+                        Backend::Sha3 => $verify_message_cached_sha3(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr(), &self.tr),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $verify_message_avx2(&self.bytes, m, m_len, c, c_len, sig, &mut scratch),
+                        Backend::Avx2 => $verify_message_avx2(&self.bytes, m, m_len, c, c_len, sig, scratch.as_mut_ptr()),
                     }
                 };
                 match r {
@@ -222,7 +223,8 @@ macro_rules! ml_dsa {
             /// not hash the message or apply context formatting.
             /// Returns [`Error::InvalidSignature`] if verification fails.
             pub fn verify_mu(&self, mu: &[u8; 64], sig: &[u8; $sig]) -> Result<(), Error> {
-                let mut scratch: Scratch = [0; $scratch];
+                // The verified contracts accept arbitrary initial scratch bytes.
+                let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
                 // SAFETY: `self.bytes`, `mu`, `sig` and `scratch` are valid
                 // for reads (and, for `scratch`, writes) of their sizes; they
                 // are distinct Rust objects, so they do not overlap each other
@@ -231,11 +233,11 @@ macro_rules! ml_dsa {
                 // has.
                 let r = unsafe {
                     match backend() {
-                        Backend::Scalar => $verify(&self.bytes, mu, sig, &mut scratch),
+                        Backend::Scalar => $verify(&self.bytes, mu, sig, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $verify_sha3(&self.bytes, mu, sig, &mut scratch),
+                        Backend::Sha3 => $verify_sha3(&self.bytes, mu, sig, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $verify_avx2(&self.bytes, mu, sig, &mut scratch),
+                        Backend::Avx2 => $verify_avx2(&self.bytes, mu, sig, scratch.as_mut_ptr()),
                     }
                 };
                 if r == 1 { Ok(()) } else { Err(Error::InvalidSignature) }
@@ -284,7 +286,8 @@ macro_rules! ml_dsa {
                     },
                     sk: [0; $sk],
                 };
-                let mut scratch: Scratch = [0; $scratch];
+                // The verified contracts accept arbitrary initial scratch bytes.
+                let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
                 // SAFETY: `seed`, `key.vk.bytes`, `key.sk` and `scratch` are
                 // valid for reads (and, for the last three, writes) of their
                 // sizes; they are distinct Rust objects, so they do not
@@ -294,14 +297,16 @@ macro_rules! ml_dsa {
                 // has.
                 let r = unsafe {
                     match backend() {
-                        Backend::Scalar => $keygen(seed, &mut key.vk.bytes, &mut key.sk, &mut scratch),
+                        Backend::Scalar => $keygen(seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $keygen_sha3(seed, &mut key.vk.bytes, &mut key.sk, &mut scratch),
+                        Backend::Sha3 => $keygen_sha3(seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $keygen_avx2(seed, &mut key.vk.bytes, &mut key.sk, &mut scratch),
+                        Backend::Avx2 => $keygen_avx2(seed, &mut key.vk.bytes, &mut key.sk, scratch.as_mut_ptr()),
                     }
                 };
-                zeroize(&mut scratch);
+                // SAFETY: the entire scratch allocation is writable, including
+                // bytes the operation may not have initialized.
+                unsafe { $crate::zeroize::zeroize_raw(scratch.as_mut_ptr().cast(), core::mem::size_of_val(&scratch)) };
                 if r != 1 {
                     // A loop reaches its bound with probability about 2^-256
                     // or less; dropping `key` destroys it.
@@ -349,7 +354,8 @@ macro_rules! ml_dsa {
 
             fn sign_with(&self, msg: &[u8], ctx: &[u8], rnd: &[u8; 32]) -> Result<[u8; $sig], Error> {
                 let mut sig = [0u8; $sig];
-                let mut scratch: MessageScratch = [0; $message_scratch];
+                // The verified contracts accept arbitrary initial scratch bytes.
+                let mut scratch = core::mem::MaybeUninit::<MessageScratch>::uninit();
                 let (m, m_len, c, c_len) = (msg.as_ptr(), msg.len(), ctx.as_ptr(), ctx.len());
                 // SAFETY: `self.sk`, `rnd`, `sig` and `scratch` are valid for
                 // reads (and, for the last two, writes) of their sizes, and
@@ -361,19 +367,21 @@ macro_rules! ml_dsa {
                 let r = unsafe {
                     match backend() {
                         Backend::Scalar => {
-                            $sign_message(&self.sk, m, m_len, c, c_len, rnd, &mut sig, &mut scratch)
+                            $sign_message(&self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
                         }
                         #[cfg(target_arch = "aarch64")]
                         Backend::Sha3 => {
-                            $sign_message_sha3(&self.sk, m, m_len, c, c_len, rnd, &mut sig, &mut scratch)
+                            $sign_message_sha3(&self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
                         }
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx2 => {
-                            $sign_message_avx2(&self.sk, m, m_len, c, c_len, rnd, &mut sig, &mut scratch)
+                            $sign_message_avx2(&self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.as_mut_ptr())
                         }
                     }
                 };
-                zeroize(&mut scratch);
+                // SAFETY: the entire scratch allocation is writable, including
+                // bytes the operation may not have initialized.
+                unsafe { $crate::zeroize::zeroize_raw(scratch.as_mut_ptr().cast(), core::mem::size_of_val(&scratch)) };
                 match r {
                     1 => Ok(sig),
                     2 => Err(Error::ContextTooLong),
@@ -402,7 +410,8 @@ macro_rules! ml_dsa {
             /// its bound.
             pub fn sign_mu(&self, mu: &[u8; 64], rnd: &[u8; 32]) -> Result<[u8; $sig], Error> {
                 let mut sig = [0u8; $sig];
-                let mut scratch: Scratch = [0; $scratch];
+                // The verified contracts accept arbitrary initial scratch bytes.
+                let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
                 // SAFETY: `self.sk`, `mu`, `rnd`, `sig` and `scratch` are
                 // valid for reads (and, for the last two, writes) of their
                 // sizes; they are distinct Rust objects, so they do not
@@ -413,14 +422,16 @@ macro_rules! ml_dsa {
                 // has.
                 let r = unsafe {
                     match backend() {
-                        Backend::Scalar => $sign(&self.sk, mu, rnd, &mut sig, &mut scratch),
+                        Backend::Scalar => $sign(&self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "aarch64")]
-                        Backend::Sha3 => $sign_sha3(&self.sk, mu, rnd, &mut sig, &mut scratch),
+                        Backend::Sha3 => $sign_sha3(&self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $sign_avx2(&self.sk, mu, rnd, &mut sig, &mut scratch),
+                        Backend::Avx2 => $sign_avx2(&self.sk, mu, rnd, &mut sig, scratch.as_mut_ptr()),
                     }
                 };
-                zeroize(&mut scratch);
+                // SAFETY: the entire scratch allocation is writable, including
+                // bytes the operation may not have initialized.
+                unsafe { $crate::zeroize::zeroize_raw(scratch.as_mut_ptr().cast(), core::mem::size_of_val(&scratch)) };
                 if r != 1 {
                     // A loop reaches its bound with probability about 2^-256
                     // or less.
