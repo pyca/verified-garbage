@@ -72,4 +72,14 @@ theorem combOk7 (hL : Law Spec.P224.curve) :
     CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start :=
   combOkW_of_check hL onCurve_G (by decide) combChecks7_p224
 
+theorem combChecks7x32_p224 : combChecksW Spec.P224.curve.p Spec.P224.curve.a
+    (Spec.P224.curve.gx, Spec.P224.curve.gy) (2 ^ (7 - 1)) 32 Impl.P224.p224Comb7x32
+    (p224Comb7Sums.take 32) Impl.P224.p224Comb7Start32 = true :=
+  combChecksW_of_fast (by decide +kernel)
+
+/-- The first 32 tables, which 32-bit ARM's comb reads, from `[64 Σ_{j < 32} 2^(7j)]G`. -/
+theorem combOk7x32 (hL : Law Spec.P224.curve) :
+    CombOkW Spec.P224.curve 7 32 Impl.P224.p224Comb7x32 Impl.P224.p224Comb7Start32 :=
+  combOkW_of_check hL onCurve_G (by decide) combChecks7x32_p224
+
 end VG.Proof.P224
