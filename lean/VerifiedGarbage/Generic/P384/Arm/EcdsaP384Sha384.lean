@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P384Sha384
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P384Sha384Comb
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -22,7 +22,7 @@ A generic file (see `TCB/Emit.lean`) over P-384's group law `h`, the variant
 namespace VG.Generic.P384.Arm.EcdsaP384Sha384
 
 open VG.Proof.Ecdsa.Rfc6979.Arm (cfgOf signNotes)
-open VG.Proof.Ecdsa.Rfc6979.Arm.P384Sha384 (pack sign_verified)
+open VG.Proof.Ecdsa.Rfc6979.Arm.P384Sha384Comb (pack sign_verified)
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := [
   Spec.Ecdsa.Rfc6979.P384Sha384.signApi.artifact Arm.target {
@@ -30,6 +30,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := 
       Proof.Pbkdf2.Whole.Arm.sha384F.hiN Proof.Pbkdf2.Whole.Arm.sha384F.H.updN
       Proof.Pbkdf2.Whole.Arm.sha384F.hfN 48 Spec.Ecdsa.P384.signApi.name]
     code := (cfgOf (pack h.law)).sign
+    consts := Impl.Weierstrass.Arm.p384CombConsts
     stack := 240
     verified := sign_verified h.law }]
 

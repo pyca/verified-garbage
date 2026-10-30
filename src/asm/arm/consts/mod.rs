@@ -23,6 +23,10 @@ mod vg_ffdh_vetted_groups;
 pub(crate) use vg_ffdh_vetted_groups::VG_FFDH_VETTED_GROUPS;
 
 #[rustfmt::skip]
+mod vg_p384_comb;
+pub(crate) use vg_p384_comb::VG_P384_COMB;
+
+#[rustfmt::skip]
 mod vg_rc2_pitable;
 pub(crate) use vg_rc2_pitable::VG_RC2_PITABLE;
 
