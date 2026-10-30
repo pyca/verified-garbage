@@ -15,10 +15,13 @@ both theorems, and checks that `EmitOne.lean --check Selftest.X86_64` fails
 with the audit's `depends on non-standard axioms: [...]`, listing both
 `VG.Spec.Selftest.vg_bad` and `VG.Proof.Selftest.AuditPrivate.vg_bad`: the
 audit lists every axiom it finds, so one build checks both ways of hiding one.
-It checks the same of the audit `Emit.lean` relies on, `VGEmit.Audit.X86_64`
-(see "Drivers as modules" in `TCB/Emit.lean`), which `lake build` builds: it
-imports the module driver, a module, so this also checks that Lake rebuilds
-it when a proof behind a private import changes.
+It checks the same of `Emit.lean --check`, which relies on the audit
+`VGEmit.Audit.X86_64` that `lake build` built before the edits (see "Drivers
+as modules" in `TCB/Emit.lean`): `EmitOne.lean` has built the self-test's
+modules again from the edited files, but not that audit, so the X86-64
+program must find its audit stale (`STALE`) and emit nothing, and
+`Emit.lean` must then build the audit, which Lake rebuilds as a proof
+behind a private import changed, and which rejects both axioms.
 
 It edits the files in place, after copying them to a temporary directory,
 and restores them from there (and deletes the module it added) whatever
@@ -152,11 +155,13 @@ def audits_refused(proc: subprocess.Popen) -> bool:
 
 # The audit `Emit.lean` relies on for the self-test's target directory.
 BUILD_AUDIT = "VGEmit.Audit.X86_64"
+# What the X86-64 program says when its audit is not of what it imported.
+STALE = f"X86_64: the audit {BUILD_AUDIT} is not of the modules this program imported"
 
 
 def emit_check(edits: dict, added: pathlib.Path | None = None) -> list[tuple[str, str | None]]:
     """Writes `edits` (file: new text) and `added` (with `PRIVATE_TEXT`), runs
-    `EmitOne.lean --check` on the self-test and builds `BUILD_AUDIT`,
+    `EmitOne.lean --check` on the self-test and then `Emit.lean --check`,
     restores the files and deletes `added` (and its build), and returns, for
     each, what ran and its output if it failed, else `None`."""
     with tempfile.TemporaryDirectory() as tmp:
@@ -170,14 +175,9 @@ def emit_check(edits: dict, added: pathlib.Path | None = None) -> list[tuple[str
                 p.write_text(text)
             runs = []
             for cmd in (["lake", "env", "lean", "--run", "EmitOne.lean", "--check", TARGET],
-                        ["lake", "env", "lean", "--run", "Emit.lean", "--prepare"],
-                        ["lake", "build", "--log-level=warning", BUILD_AUDIT]):
+                        ["lake", "env", "lean", "--run", "Emit.lean", "--check"]):
                 r = subprocess.run(cmd, cwd=LEAN, capture_output=True, text=True)
-                if cmd[-1] == "--prepare":
-                    if r.returncode != 0:
-                        raise SystemExit(f"{' '.join(cmd)} failed:\n{r.stdout}{r.stderr}")
-                    continue
-                runs.append((" ".join(cmd[-3:]) if "EmitOne.lean" in cmd else f"lake build {BUILD_AUDIT}",
+                runs.append((" ".join(cmd[-3:]) if "EmitOne.lean" in cmd else "Emit.lean --check",
                              None if r.returncode == 0 else r.stdout + r.stderr))
         finally:
             for p, copy in saved.items():
@@ -233,6 +233,12 @@ def main() -> int:
         print(f"{MODULE} or {PROOF} was not restored, or {PRIVATE} not deleted", file=sys.stderr)
         return 1
     results = [rejected(what, out) for what, out in runs]
+    emit_out = runs[-1][1] or ""
+    if STALE in emit_out:
+        print(f"Emit.lean's X86-64 program found {BUILD_AUDIT} stale and emitted nothing")
+    else:
+        print(f"Emit.lean's X86-64 program did not find {BUILD_AUDIT} stale", file=sys.stderr)
+        results.append(False)
     return 0 if all(results) and refused else 1
 
 

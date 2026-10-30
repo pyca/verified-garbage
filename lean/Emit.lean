@@ -19,13 +19,15 @@ For each target directory (`VG.Emit.parts`) it writes the files of
 `VG.Emit.prepare` (see "Drivers as modules" in `TCB/Emit.lean`): a module
 that defines the target's artifacts, an audit of them, which `lake build`
 builds (the library `VGEmit`, `lakefile.toml`), and a program that emits
-them. It trusts the `lake build` before it to have built the audits of the
-module drivers on disk, as it trusts it for every proof, but builds the
-audits of the targets whose files it changed, or that were never built, with
-`lake build` itself. Then it runs the programs at once, as processes with the
-same arguments, each emitting the artifacts of its targets (`VG.Emit.run`'s
-`--part`); and then, if they all pass, checks that no target is in two of
-them and writes or checks the root module (`VG.Emit.finish`). (They are run
+them if the audit is of exactly what the program imported (and otherwise
+exits with `VG.Emit.staleCode`). It builds the audits of the targets whose
+files it changed, or that were never built, with `lake build`. Then it runs
+the programs at once, as processes with the same arguments, each emitting
+the artifacts of its targets (`VG.Emit.run`'s `--part`); builds the audits
+of those whose program found its audit stale, which either audits what is
+there now or fails, and runs those again; and then, if they all pass, checks
+that no target is in two of them and writes or checks the root module
+(`VG.Emit.finish`). (They are run
 by the interpreter rather than as a `lean_exe` so that CI does not have to
 compile Mathlib to native code.) The interpreter runs the trusted base, which
 does the printing and checking, as the compiled code of the `NativeTCB`
@@ -94,6 +96,32 @@ def oleanOf (mod : String) : System.FilePath :=
   (mod.splitOn ".").foldl (· / ·) (".lake" / "build" / "lib" / "lean" : System.FilePath)
     |>.addExtension "olean"
 
+/-- The file a part's program writes its targets to (`VG.Emit.run`'s `--part`). -/
+def targetsOf (t : String) : System.FilePath := ".lake" / "emit" / s!"{t}.targets"
+
+/-- Builds the audits of the target directories `ts`, if any (`lake build`,
+reporting warnings and errors); whether they built. -/
+def buildAudits (ts : Array String) : IO Bool := do
+  if ts.isEmpty then return true
+  let mods := ts.map VG.Emit.auditModule
+  IO.println s!"building {", ".intercalate mods.toList}"
+  let child ← IO.Process.spawn { cmd := "lake", args := #["build", "--log-level=warning"] ++ mods }
+  return (← child.wait) == 0
+
+/-- Runs the programs of the target directories `ts` at once, with the
+shared libraries `libs` and each one's arguments; each one's exit code. -/
+def runAll (libs : List System.FilePath) (partArgs : String → Array String)
+    (ts : Array String) : IO (Array (String × UInt32)) := do
+  let lean ← IO.appPath
+  let mut children : Array (String × IO.Process.Child {}) := #[]
+  for t in ts do
+    if ← (targetsOf t).pathExists then IO.FS.removeFile (targetsOf t)
+    children := children.push (t, ← IO.Process.spawn
+      { cmd := lean.toString,
+        args := (libs.map fun l => s!"--load-dynlib={l}").toArray ++
+          #["--run", (VG.Emit.runnerPath t).toString] ++ partArgs t })
+  children.mapM fun (t, child) => return (t, ← child.wait)
+
 def main (args : List String) : IO UInt32 := do
   let parts ← match VG.Emit.parts (← VG.Emit.registrations)
       (← VG.Emit.genericGroups VG.Emit.genericDir) (← VG.Emit.grouped VG.Emit.variantDir) with
@@ -118,30 +146,24 @@ def main (args : List String) : IO UInt32 := do
   let mut stale := #[]
   for (t, _) in parts do
     if changed.contains t || !(← (oleanOf (VG.Emit.auditModule t)).pathExists) then
-      stale := stale.push (VG.Emit.auditModule t)
-  unless stale.isEmpty do
-    IO.println s!"building {", ".intercalate stale.toList}"
-    let child ← IO.Process.spawn { cmd := "lake", args := #["build", "--log-level=warning"] ++ stale }
-    let code ← child.wait
-    unless code == 0 do return code
-  let lean ← IO.appPath
-  -- Each part's program, run at once.
-  let mut children : Array (System.FilePath × IO.Process.Child {}) := #[]
-  for (t, _) in parts do
-    let targets : System.FilePath := ".lake" / "emit" / s!"{t}.targets"
-    if ← targets.pathExists then IO.FS.removeFile targets
-    let partArgs := (if check then ["--check"] else []) ++ ["--part", targets.toString] ++
-      (if check then args.drop 1 else args)
-    children := children.push (targets, ← IO.Process.spawn
-      { cmd := lean.toString,
-        args := (libs.map fun l => s!"--load-dynlib={l}").toArray ++
-          #["--run", (VG.Emit.runnerPath t).toString] ++ partArgs.toArray })
-  let mut code := 0
-  for (_, child) in children do
-    let c ← child.wait
-    if code == 0 then code := c
-  unless code == 0 do return code
-  let targets ← children.toList.mapM fun (f, _) => do
+      stale := stale.push t
+  unless ← buildAudits stale do return 1
+  let partArgs (t : String) : Array String :=
+    ((if check then ["--check"] else []) ++ ["--part", (targetsOf t).toString] ++
+      (if check then args.drop 1 else args)).toArray
+  let ts := parts.map (·.1)
+  let mut codes ← runAll libs partArgs ts.toArray
+  -- A program whose audit is not of what it imported emits nothing: build
+  -- those audits, which either audit what is there now or fail, and run
+  -- those programs again.
+  let staleNow := codes.filterMap fun (t, c) => if c == VG.Emit.staleCode then some t else none
+  unless staleNow.isEmpty do
+    unless ← buildAudits staleNow do return 1
+    let again ← runAll libs partArgs staleNow
+    codes := codes.map fun (t, c) => (t, ((again.find? (·.1 == t)).map (·.2)).getD c)
+  if let some (_, c) := codes.find? (·.2 != 0) then return c
+  let targets ← ts.mapM fun t => do
+    let f := targetsOf t
     let lines := ((← IO.FS.readFile f).splitOn "\n").filter fun (l : String) => !l.isEmpty
     return lines.map fun (l : String) =>
       match l.splitOn "\t" with

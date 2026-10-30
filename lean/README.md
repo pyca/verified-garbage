@@ -161,11 +161,14 @@ lake env lean --run EmitOne.lean [--check] Rc2.AArch64   # one registration file
 `TCB/Emit.lean`), which imports far less than a file that is not a module,
 and relies on the audits of those lists, `VGEmit.Audit.<Target>`, which
 `lake build` builds and caches (the library `VGEmit` of `lakefile.toml`,
-whose files `Emit.lean --prepare` writes under `.lake/emit/src`). It trusts
-the `lake build` before it to have built them, as it trusts it for every
-proof, and builds only those of the targets whose files it changed or that
-were never built: after building some modules alone (`lake build +Module`,
-or `ci/audit_negative.py`), run `lake build` before it.
+whose files `Emit.lean --prepare` writes under `.lake/emit/src`). Each audit
+records a digest of the modules it imported, with Lake's hashes of their
+outputs, and each program emits only if the digest of what it imported is
+the same (`#record_audit_digest`, `#check_audit_digest`, `TCB/Audit.lean`).
+When it is not, as after building some modules alone (`lake build +Module`,
+or `ci/audit_negative.py`), `Emit.lean` builds that audit, which either
+audits what is there now or fails, and runs the program again: a `lake build`
+first only saves it that.
 
 On Linux, `Emit.lean` needs `vm.max_map_count` above the default of many
 distributions (65,530): an audit is not a module, so it maps every module it
