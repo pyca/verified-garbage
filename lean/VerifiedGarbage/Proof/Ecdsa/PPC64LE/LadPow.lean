@@ -64,12 +64,17 @@ theorem ladPow_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {gx gy : Nat} (
   have hp3 := hc.p_ge
   have F' := S.fixed
   have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega_arith)
-  have hstep := step_rep (L := ladderAt c gx gy) (k := k) hC hP (by
+  have hstep := step_rep' (L := ladderAt c gx gy) (k := k) (a0 := c.qA0) hC hP (by
       show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl AP) c.n) = _
       rw [F'.ap]; exact toM_cmont hc _)
     (by
       show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl B3P) c.n) = _
       rw [F'.b3p]; exact toM_cmont hc _) hG
+    (fun h => ⟨by
+      simp only [Impl.Ecdsa.PPC64LE.Cfg.qA0, Bool.and_eq_true, beq_iff_eq] at h
+      rw [h.2.1]; rfl, by
+      show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl ONEP) c.n) = 1
+      rw [F'.onep]; exact toM_one (unitMod_pow_two hc.p_odd _)⟩)
   have hR : Rep c.C (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY))
       (tmv c.C c.n base s (c.sl RZ)) (mul (k >>> (8 * c.C.len)) P) := by
     show Rep c.C (toM _ _ (sv c base s RX)) (toM _ _ (sv c base s RY)) (toM _ _ (sv c base s RZ)) _
