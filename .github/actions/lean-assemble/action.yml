@@ -46,6 +46,9 @@ runs:
       run: |
         set -o pipefail
         touch "$RUNNER_TEMP/before-assembly"
+        # The emitter's module drivers and audits (lean/lakefile.toml's
+        # `VGEmit`): the build audits each target's artifacts.
+        python3 ../ci/emit_sources.py
         # Warnings and errors only: not the profile every module records
         # (lean/lakefile.toml), which Lake replays for each one it finds built.
         lake build --log-level=warning 2>&1 | tee "$RUNNER_TEMP/assembly.log"
@@ -148,10 +151,17 @@ runs:
       run: |
         sudo sysctl -w vm.max_map_count=262144
         echo "vm.max_map_count=$(cat /proc/sys/vm/max_map_count)"
+    # `Emit.lean` writes its module drivers and audits again from the
+    # trusted base before emitting (and builds the audits of any target
+    # whose files changed): check first that they are what the build above
+    # audited, which ci/emit_sources.py wrote, so the two never drift apart.
     - name: Check the generated Rust is up to date
       shell: bash
       working-directory: lean
-      run: lake env lean --run Emit.lean --check
+      run: |
+        lake env lean --run Emit.lean --prepare
+        python3 ../ci/emit_sources.py --check
+        lake env lean --run Emit.lean --check
     # Last, after the build is saved: it edits two files of the self-test,
     # restores them, and leaves their modules built from the edited files.
     - name: Check that the axiom audit sees through modules

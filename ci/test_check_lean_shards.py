@@ -42,6 +42,17 @@ class LakefileInputs(unittest.TestCase):
         self.assertEqual(libraries["NativeSpec"], ["globs:VerifiedGarbage.Spec.A"])
         self.assertEqual(libraries2["NativeSpec"], ["globs:VerifiedGarbage.Spec.A", "globs:VerifiedGarbage.Spec.B"])
 
+    def test_generated_library_is_not_a_setting(self):
+        # Adding the emitter's generated library, or changing its settings,
+        # rebuilds no other module; its module lists are kept.
+        settings = shards.lakefile_inputs(LAKEFILE)[0]
+        lib = '\n[[lean_lib]]\nname = "VGEmit"\nsrcDir = ".lake/emit/src"\nglobs = ["VGEmit.+"]\n'
+        for added in (LAKEFILE + lib, LAKEFILE + lib + "platformIndependent = true\n"):
+            with self.subTest(added=added):
+                settings2, libraries2 = shards.lakefile_inputs(added)
+                self.assertEqual(settings2, settings)
+                self.assertEqual(libraries2["VGEmit"], ["globs:VGEmit.+"])
+
     def test_settings(self):
         settings = shards.lakefile_inputs(LAKEFILE)[0]
         for old, new in [
