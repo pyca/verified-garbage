@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.Pow
+public import VerifiedGarbage.Proof.Weierstrass.Rcb0
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
 import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
@@ -73,13 +74,13 @@ theorem ladLay_apart_wx {L : LadderCfg} {size len wk : Nat} (hL : LadLay L size 
 /-- That an iteration keeps the invariant `Q`: from `(X : Y : Z)` that
 `Q (j + 1)` accepts, `Q j` accepts `T = D + G` if bit `j` of `k` is set, else
 `D = (X : Y : Z) + (X : Y : Z)`, by the complete addition with the curve's
-`a`, `3b` and `G` as the slots `L.S.a`, `L.S.b3` and `L.G` hold them. -/
+`a`, `3b` and `G` as the slots `L.S.a`, `L.S.b3` and `L.G` hold them (for
+`a0`, by the formulas for `a = 0`). -/
 def Step (L : LadderCfg) (C : Curve) (base : Addr) (s : State) (k : Nat)
-    (Q : Nat → Fe C → Fe C → Fe C → Prop) : Prop :=
+    (Q : Nat → Fe C → Fe C → Fe C → Prop) (a0 : Bool := false) : Prop :=
   ∀ j < L.nbits, ∀ X Y Z X2 Y2 Z2 X3 Y3 Z3 : Fe C, Q (j + 1) X Y Z →
-    VG.Proof.Weierstrass.rcbAdd (tmv C L.M.n base s L.S.a) (tmv C L.M.n base s L.S.b3) X Y Z X Y Z =
-      (X2, Y2, Z2) →
-    VG.Proof.Weierstrass.rcbAdd (tmv C L.M.n base s L.S.a) (tmv C L.M.n base s L.S.b3) X2 Y2 Z2
+    ladDbl a0 (tmv C L.M.n base s L.S.a) (tmv C L.M.n base s L.S.b3) X Y Z = (X2, Y2, Z2) →
+    ladAdd a0 (tmv C L.M.n base s L.S.a) (tmv C L.M.n base s L.S.b3) X2 Y2 Z2
       (tmv C L.M.n base s L.G.x) (tmv C L.M.n base s L.G.y) (tmv C L.M.n base s L.G.z) =
       (X3, Y3, Z3) →
     Q j (if k.testBit j then X3 else X2) (if k.testBit j then Y3 else Y2)

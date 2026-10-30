@@ -229,14 +229,31 @@ theorem cover_pt {W : List (Nat × Nat)} {n : Nat}
   · exact ⟨_, List.mem_append_left _ ho, Nat.le_refl _, Nat.le_refl _⟩
   · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), h1, by dsimp only; omega_arith⟩
 
+/-- A doubling's result as `Step` has it: for `dbl` the second operand's
+slots are the first's. -/
+theorem ptVal_dbl {m : Nat} [NeZero m] (a0 : Bool) {E : Nat → Fin m} (h6 : E 6 = E 3) (h7 : E 7 = E 4)
+    (h8 : E 8 = E 5) : ptVal a0 true E = ladDbl a0 (E 9) (E 10) (E 3) (E 4) (E 5) := by
+  cases a0
+  · simp only [ptVal, ladDbl, Bool.false_eq_true, ↓reduceIte, h6, h7, h8]
+  · rfl
+
+theorem ptVal_add {m : Nat} [NeZero m] (a0 : Bool) (E : Nat → Fin m) :
+    ptVal a0 false E = ladAdd a0 (E 9) (E 10) (E 3) (E 4) (E 5) (E 6) (E 7) (E 8) := by
+  cases a0 <;> rfl
+
+theorem Eb_dbl {k m : Nat} [NeZero m] (mem : Mem) (base : Addr) :
+    Eb k m true mem base 6 = Eb k m true mem base 3 ∧ Eb k m true mem base 7 = Eb k m true mem base 4 ∧
+      Eb k m true mem base 8 = Eb k m true mem base 5 := by
+  simp only [Eb, enc_3, enc_4, enc_5, enc_6, enc_7, enc_8, ↓reduceIte, and_self]
+
 /-- An iteration. -/
 theorem ladderPBody_ok {k : Nat} {Q : Nat → Spec.Weierstrass.Fe C → Spec.Weierstrass.Fe C → Spec.Weierstrass.Fe C → Prop}
     (hL : LadLay L size) (hW : LadWk L F C.p size wk) (hk6 : L.M.n ≤ 6) (hP : LadPt L)
     {s₀ : State} (hlt₀ : ∀ x ∈ ladRo L, wordsVal s₀.mem base x L.M.n < C.p)
-    (hstep : Step L C base s₀ k Q)
+    {a0 : Bool} (hstep : Step L C base s₀ k Q a0)
     (hbits : ∀ t < L.nbits, s₀.mem (off base (L.bits + t)) = if k.testBit t then 1 else 0)
     {j : Nat} {s : State} (hj : 1 ≤ j) (hjn : j ≤ L.nbits) (hI : LadInvP L wk C base size ao Q s₀ s j) :
-    WP isa (ladderPBody L F ao) s fun s' =>
+    WP isa (ladderPBody L F ao a0) s fun s' =>
       LadInvP L wk C base size ao Q s₀ s' (j - 1) ∧ s'.zf = some (decide (j - 1 = 0)) := by
   have hFn := hW.fn
   have hk : F.k = L.M.n := hW.k
@@ -298,7 +315,9 @@ theorem ladderPBody_ok {k : Nat} {Q : Nat → Spec.Weierstrass.Fe C → Spec.Wei
       · rw [pz₂]; exact lrz
       · rw [ga₂]; exact la
       · rw [gb₂]; exact lb)) fun s₃ ⟨k₃, O₃, F₃, L₃, E₃⟩ => ?_)
-  simp only [Eb, enc_0, enc_1, enc_2, enc_3, enc_4, enc_5, enc_6, enc_7, enc_8, enc_9, enc_10, ↓reduceIte] at E₃
+  obtain ⟨d6, d7, d8⟩ := Eb_dbl (k := L.M.n) (m := C.p) s₂.mem base
+  rw [ptVal_dbl a0 d6 d7 d8] at E₃
+  simp only [Eb, enc_0, enc_1, enc_2, enc_3, enc_4, enc_5, enc_9, enc_10] at E₃
   rw [ga₂, gb₂, px₂, py₂, pz₂] at E₃
   have l3x := L₃ 0 (by decide)
   have l3y := L₃ 1 (by decide)
@@ -336,6 +355,7 @@ theorem ladderPBody_ok {k : Nat} {Q : Nat → Spec.Weierstrass.Fe C → Spec.Wei
       · rw [gz₄]; exact lgz
       · rw [ga₄]; exact la
       · rw [gb₄]; exact lb)) fun s₅ ⟨k₅, O₅, F₅, L₅, E₅⟩ => ?_)
+  rw [ptVal_add] at E₅
   simp only [Eb, enc_0, enc_1, enc_2, enc_3, enc_4, enc_5, enc_6, enc_7, enc_8, enc_9, enc_10,
     Bool.false_eq_true, ↓reduceIte] at E₅
   rw [ga₄, gb₄, px₄, py₄, pz₄, gx₄, gy₄, gz₄] at E₅
@@ -480,10 +500,11 @@ theorem ladderP_ok {k : Nat} {Q : Nat → Spec.Weierstrass.Fe C → Spec.Weierst
     (hL : LadLay L size) (hW : LadWk L F C.p size wk) (hP : 3 ≤ L.M.n ∧ L.M.n ≤ 6 → LadPt L)
     (hp : UnitMod C.p (2 ^ (64 * L.M.n))) {s : State} (hs : Scr s base size)
     (hA : 3 ≤ L.M.n ∧ L.M.n ≤ 6 → LadArg s base ao) (hM : ModOkW L.M size C.p s.mem base)
-    (hlt : ∀ x ∈ ladR L, wordsVal s.mem base x L.M.n < C.p) (hstep : Step L C base s k Q)
+    (hlt : ∀ x ∈ ladR L, wordsVal s.mem base x L.M.n < C.p) {a0 : Bool}
+    (ha0 : a0 = true → 3 ≤ L.M.n ∧ L.M.n ≤ 6) (hstep : Step L C base s k Q a0)
     (hR : Q L.nbits (tmv C L.M.n base s L.R.x) (tmv C L.M.n base s L.R.y) (tmv C L.M.n base s L.R.z))
     (hbits : ∀ t < L.nbits, s.mem (off base (L.bits + t)) = if k.testBit t then 1 else 0) :
-    WP isa (ladderP L F ao) s fun s' => Keeps powClob s s' ∧ Unch base (ladWp L wk) s.mem s'.mem ∧
+    WP isa (ladderP L F ao a0) s fun s' => Keeps powClob s s' ∧ Unch base (ladWp L wk) s.mem s'.mem ∧
       ModOkW L.M size C.p s'.mem base ∧
       (∀ x ∈ [L.R.x, L.R.y, L.R.z], wordsVal s'.mem base x L.M.n < C.p) ∧
       Q 0 (tmv C L.M.n base s' L.R.x) (tmv C L.M.n base s' L.R.y) (tmv C L.M.n base s' L.R.z) ∧
@@ -492,6 +513,8 @@ theorem ladderP_ok {k : Nat} {Q : Nat → Spec.Weierstrass.Fe C → Spec.Weierst
   by_cases hk : 3 ≤ L.M.n ∧ L.M.n ≤ 6
   swap
   · simp only [hk, ↓reduceIte, List.append_nil]
+    cases a0
+    swap; · exact absurd (ha0 rfl) hk
     exact WP.mono (ladder_ok hL hW hp hs hM hlt hstep hR hbits) fun _ ⟨a, b, c, d, e⟩ =>
       ⟨a, b, c, d, e, fun h => h.elim⟩
   simp only [hk]

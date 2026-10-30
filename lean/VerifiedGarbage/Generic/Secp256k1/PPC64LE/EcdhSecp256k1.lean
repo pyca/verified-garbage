@@ -30,8 +30,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.Secp256k1.curve) : List Artifac
       without branches (its first byte, both coordinates below `p`, and the curve's equation), \
       and the ladder multiplies the peer's point if it is valid, else `G`, so it always runs on a \
       point of the curve. `[d]P` is a double-and-add ladder over all 256 bits of `d`, with the \
-      complete addition formulas of Renes, Costello and Batina (calls of `vg_secp256k1_point_double` \
-      and `vg_secp256k1_point_add`) and a masked selection for each bit; `Z⁻¹` is Fermat's, by \
+      complete addition formulas of Renes, Costello and Batina (calls of `vg_secp256k1_point_a0_double` \
+      and `vg_secp256k1_point_a0_add_affine`, Algorithms 9 and 8 for `a = 0`) and a masked selection for each bit; `Z⁻¹` is Fermat's, by \
       square-and-always-multiply. The result (or zeros) is selected by a mask of the checks, \
       `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."]
     code := Impl.Ecdh.PPC64LE.exchangeSecp256k1

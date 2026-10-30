@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.signContract`. Constant time: only the pointers may affect timing, not the key, the hash or `k`.
 ///
-/// The function saves `r14`, `r31` and `lr` in `scratch` (in `r3` during the function), and keeps `out` in `r14`. Field elements and scalars are four 64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, in calls of `vg_secp256k1_mul_mod_p` and the other functions of `secp256k1_mont`) with a final conditional subtraction. `[k]G` is a double-and-add ladder over all 256 bits of `k`, with the complete addition formulas of Renes, Costello and Batina for every addition and doubling (calls of `vg_secp256k1_point_double` and `vg_secp256k1_point_add`) and a masked selection for each bit; the inversions modulo `p` and `n` are Fermat's, by square-and-always-multiply over the bits of `p - 2` and `n - 2`. The signature (or zeros) is selected by a mask, so the time depends only on the pointers.
+/// The function saves `r14`, `r31` and `lr` in `scratch` (in `r3` during the function), and keeps `out` in `r14`. Field elements and scalars are four 64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, in calls of `vg_secp256k1_mul_mod_p` and the other functions of `secp256k1_mont`) with a final conditional subtraction. `[k]G` is a double-and-add ladder over all 256 bits of `k`, with the complete addition formulas of Renes, Costello and Batina for every addition and doubling (calls of `vg_secp256k1_point_a0_double` and `vg_secp256k1_point_a0_add_affine`, Algorithms 9 and 8 for `a = 0`) and a masked selection for each bit; the inversions modulo `p` and `n` are Fermat's, by square-and-always-multiply over the bits of `p - 2` and `n - 2`. The signature (or zeros) is selected by a mask, so the time depends only on the pointers.
 ///
 /// # Safety
 ///
@@ -617,7 +617,7 @@ ld %r4, 592(%r3)
 std %r4, 3408(%r3)
 ld %r4, 600(%r3)
 std %r4, 3416(%r3)
-bl {vg_secp256k1_point_double}
+bl {vg_secp256k1_point_a0_double}
 ld %r4, 3232(%r3)
 std %r4, 3328(%r3)
 ld %r4, 3240(%r3)
@@ -642,7 +642,7 @@ ld %r4, 3312(%r3)
 std %r4, 3408(%r3)
 ld %r4, 3320(%r3)
 std %r4, 3416(%r3)
-bl {vg_secp256k1_point_add}
+bl {vg_secp256k1_point_a0_add_affine}
 add %r4, %r3, %r31
 lbz %r4, 4096(%r4)
 li %r5, 0
@@ -1078,8 +1078,8 @@ ld %r14, 0(%r3)
 ld %r31, 8(%r3)
 or %r3, %r4, %r4
 blr",
-        vg_secp256k1_point_double = sym super::secp256k1_point::vg_secp256k1_point_double,
-        vg_secp256k1_point_add = sym super::secp256k1_point::vg_secp256k1_point_add,
+        vg_secp256k1_point_a0_double = sym super::secp256k1_point::vg_secp256k1_point_a0_double,
+        vg_secp256k1_point_a0_add_affine = sym super::secp256k1_point::vg_secp256k1_point_a0_add_affine,
         vg_secp256k1_mul_mod_p = sym super::secp256k1_mont::vg_secp256k1_mul_mod_p,
         vg_secp256k1_add_mod_n = sym super::secp256k1_mont::vg_secp256k1_add_mod_n,
         vg_secp256k1_mul_mod_n = sym super::secp256k1_mont::vg_secp256k1_mul_mod_n,
@@ -1090,7 +1090,7 @@ blr",
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
 ///
-/// The function is `vg_ecdsa_secp256k1_sign`'s setup, field arithmetic, ladder and inversions, with `vg_ecdh_secp256k1`'s checks of the public key: it saves `r14`, `r31` and `lr` in `scratch` (in `r3` during the function); field elements and scalars are four 64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, in calls of `vg_secp256k1_mul_mod_p` and the other functions of `secp256k1_mont`) with a final conditional subtraction. The key is checked without branches (its first byte, both coordinates below `p`, and the curve's equation), and the second ladder multiplies the key's point if it is valid, else `G`, so it always runs on a point of the curve. `s⁻¹` modulo `n` and `Z⁻¹` are Fermat's, by square-and-always-multiply; `[u]G` and `[v]Q` are double-and-add ladders over all 256 bits of `u` and `v`, with the complete addition formulas of Renes, Costello and Batina (calls of `vg_secp256k1_point_double` and `vg_secp256k1_point_add` in the ladders), which also add the two. The result is the conjunction of the checks (the key, `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `x ≡ r` modulo `n`) as a mask, so the time depends only on the pointers, although the contract would let every input affect it.
+/// The function is `vg_ecdsa_secp256k1_sign`'s setup, field arithmetic, ladder and inversions, with `vg_ecdh_secp256k1`'s checks of the public key: it saves `r14`, `r31` and `lr` in `scratch` (in `r3` during the function); field elements and scalars are four 64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, in calls of `vg_secp256k1_mul_mod_p` and the other functions of `secp256k1_mont`) with a final conditional subtraction. The key is checked without branches (its first byte, both coordinates below `p`, and the curve's equation), and the second ladder multiplies the key's point if it is valid, else `G`, so it always runs on a point of the curve. `s⁻¹` modulo `n` and `Z⁻¹` are Fermat's, by square-and-always-multiply; `[u]G` and `[v]Q` are double-and-add ladders over all 256 bits of `u` and `v`, with the complete addition formulas of Renes, Costello and Batina (calls of `vg_secp256k1_point_a0_double` and `vg_secp256k1_point_a0_add_affine`, Algorithms 9 and 8 for `a = 0` in the ladders), which also add the two. The result is the conjunction of the checks (the key, `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `x ≡ r` modulo `n`) as a mask, so the time depends only on the pointers, although the contract would let every input affect it.
 ///
 /// # Safety
 ///
@@ -2265,7 +2265,7 @@ ld %r4, 592(%r3)
 std %r4, 3408(%r3)
 ld %r4, 600(%r3)
 std %r4, 3416(%r3)
-bl {vg_secp256k1_point_double}
+bl {vg_secp256k1_point_a0_double}
 ld %r4, 3232(%r3)
 std %r4, 3328(%r3)
 ld %r4, 3240(%r3)
@@ -2290,7 +2290,7 @@ ld %r4, 3312(%r3)
 std %r4, 3408(%r3)
 ld %r4, 3320(%r3)
 std %r4, 3416(%r3)
-bl {vg_secp256k1_point_add}
+bl {vg_secp256k1_point_a0_add_affine}
 add %r4, %r3, %r31
 lbz %r4, 4096(%r4)
 li %r5, 0
@@ -2565,7 +2565,7 @@ ld %r4, 592(%r3)
 std %r4, 3408(%r3)
 ld %r4, 600(%r3)
 std %r4, 3416(%r3)
-bl {vg_secp256k1_point_double}
+bl {vg_secp256k1_point_a0_double}
 ld %r4, 3232(%r3)
 std %r4, 3328(%r3)
 ld %r4, 3240(%r3)
@@ -2590,7 +2590,7 @@ ld %r4, 3312(%r3)
 std %r4, 3408(%r3)
 ld %r4, 3320(%r3)
 std %r4, 3416(%r3)
-bl {vg_secp256k1_point_add}
+bl {vg_secp256k1_point_a0_add_affine}
 add %r4, %r3, %r31
 lbz %r4, 4096(%r4)
 li %r5, 0
@@ -2966,8 +2966,8 @@ blr",
         vg_secp256k1_add_mod_p = sym super::secp256k1_mont::vg_secp256k1_add_mod_p,
         vg_secp256k1_sub_mod_p = sym super::secp256k1_mont::vg_secp256k1_sub_mod_p,
         vg_secp256k1_mul_mod_n = sym super::secp256k1_mont::vg_secp256k1_mul_mod_n,
-        vg_secp256k1_point_double = sym super::secp256k1_point::vg_secp256k1_point_double,
-        vg_secp256k1_point_add = sym super::secp256k1_point::vg_secp256k1_point_add,
+        vg_secp256k1_point_a0_double = sym super::secp256k1_point::vg_secp256k1_point_a0_double,
+        vg_secp256k1_point_a0_add_affine = sym super::secp256k1_point::vg_secp256k1_point_a0_add_affine,
         vg_secp256k1_sub_mod_n = sym super::secp256k1_mont::vg_secp256k1_sub_mod_n,
     )
 }

@@ -216,7 +216,7 @@ theorem generator_ladder_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base :
       rw [F.b3p]; exact toM_cmont hc _) hG
   have henc := scalarBits_enc hc
   refine WP.mono (VG.Proof.Weierstrass.Arm.Point.ladderP_ok (ladLay hc) (ladWk hc) hc.fp ladPt hpR
-    (bitsAt_lt hc (j := 0) (by decide)) hS.scr hS.far (modP_of hc F.mp) hlt hstep hR
+    (bitsAt_lt hc (j := 0) (by decide)) hS.scr hS.far (modP_of hc F.mp) hlt nofun hstep hR
       (fun t ht => hS.t₀ t (Nat.lt_of_lt_of_le ht (scalarBits_le hc))) henc)
     fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_
   rw [Nat.shiftRight_zero] at R₅
@@ -494,12 +494,17 @@ theorem generator_gen_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Ad
       (toM _ _ (wordsVal s.mem base (c.sl ONEP) c.n)) (G c.C)
     rw [F.gx, F.gy, F.onep, toM_cmont hc, toM_cmont hc, toM_one hpR]
     exact rep_affine' hC _ _
-  have hstep := step_rep (L := pLadder c GX GY) (k := kv c A s₀) hC hc.onG (by
+  have hstep := step_rep' (L := pLadder c GX GY) (k := kv c A s₀) (a0 := c.qA0) hC hc.onG (by
       show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl AP) c.n) = _
       rw [F.ap]; exact toM_cmont hc _)
     (by
       show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl B3P) c.n) = _
       rw [F.b3p]; exact toM_cmont hc _) hG
+    (fun h => ⟨by
+      simp only [Impl.Ecdsa.Arm.Cfg.qA0, Bool.and_eq_true, beq_iff_eq] at h
+      rw [h.2.1]; rfl, by
+      show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl ONEP) c.n) = 1
+      rw [F.onep]; exact toM_one hpR⟩)
   refine WP.mono (qMul_ok hc hS.scr hS.far F (px := GX) (py := GY) (by decide)
     (lt_of_eq_of_lt F.gx (hmont _)) (lt_of_eq_of_lt F.gy (hmont _)) hS.rx hS.ry hS.rz hstep
     (by rw [shiftRight_eq_zero hkl, mul_zero_pt]; exact rep_infinity' hC) (fun _ => hS.k)

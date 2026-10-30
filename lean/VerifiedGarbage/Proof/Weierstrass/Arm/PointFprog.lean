@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.PointCall
+public import VerifiedGarbage.Spec.Weierstrass.Point0
 public import VerifiedGarbage.Proof.Weierstrass.Env
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
@@ -188,6 +189,27 @@ def wIds : List Nat := [0, 1, 2, 11, 12, 13, 14, 15, 16]
 /-- The slots it reads first: `p`, `q`, `a` and `3b`. -/
 def rIds : List Nat := [3, 4, 5, 6, 7, 8, 9, 10]
 
+/-- A formula on the function's slots: it writes only `wIds`, names only
+slots below 17, reads only `rIds` or what it wrote, and writes the
+result's three slots. -/
+structure OpsOk (ops : List FOp) : Prop where
+  slots : ∀ op ∈ ops, op.out ∈ wIds ∧ ∀ x ∈ op.out :: op.ins, x < 17
+  reads : readsOk ops rIds = true
+  outs : ∀ j < 3, j ∈ validAfter ops rIds
+
+/-- A formula on the slots numbered as the function numbers them, from a
+state holding `E` in the slots it reads. -/
+theorem opsR_ok {k : Nat} {σ : Nat → Nat} {base : Addr} {S : Spec.Weierstrass.Mont.Modulus}
+    [NeZero S.m] (hM : ModOk S.k S.m) (hk : S.k = k) (hL : LayR k 17 wIds σ)
+    (hm : UnitMod S.m (2 ^ (64 * k))) {ops : List FOp} (hO : OpsOk ops)
+    {E : Nat → Fin S.m} {s : State} (hI : InvR k 17 σ base S.m rIds E s) :
+    WP isa (fprogR σ S ops) s fun s' => KeepR k σ base wIds s s' ∧
+      InvR k 17 σ base S.m (validAfter ops rIds) (runOps ops E) s' := by
+  refine WP.mono (fprogR_ok hM hk hL hm _ hI hO.slots hO.reads) fun s' ⟨hk', hI'⟩ =>
+    ⟨hk'.mono fun w hw => ?_, hI'⟩
+  obtain ⟨op, hop, rfl⟩ := List.mem_map.mp hw
+  exact (hO.slots op hop).1
+
 theorem rcbIds_ok : ∀ op ∈ rcb sId pId qId oId, op.out ∈ wIds ∧ ∀ x ∈ op.out :: op.ins, x < 17 := by
   decide
 
@@ -210,5 +232,25 @@ theorem rcbR_ok {k : Nat} {σ : Nat → Nat} {base : Addr} {S : Spec.Weierstrass
     ⟨hk'.mono fun w hw => ?_, hI', rcb_run rcbIds_apart E⟩
   obtain ⟨op, hop, rfl⟩ := List.mem_map.mp hw
   exact (rcbIds_ok op hop).1
+
+/-! ## The formulas for `a = 0` -/
+
+theorem dbl0_opsOk : OpsOk (dbl0 sId pId oId) := ⟨by decide, by decide, by decide⟩
+
+theorem rcb0m_opsOk : OpsOk (rcb0m sId pId qId oId) := ⟨by decide, by decide, by decide⟩
+
+theorem rcbIds_opsOk : OpsOk (rcb sId pId qId oId) := ⟨rcbIds_ok, rcbIds_reads, by decide⟩
+
+theorem ops0_opsOk (dbl : Bool) : OpsOk (ops0 dbl) := by
+  cases dbl
+  · exact rcb0m_opsOk
+  · exact dbl0_opsOk
+
+/-- What the formulas compute on the slots. -/
+theorem ops0_run {m : Nat} [NeZero m] (E : Nat → Fin m) (dbl : Bool) :
+    (runOps (ops0 dbl) E 0, runOps (ops0 dbl) E 1, runOps (ops0 dbl) E 2) =
+      if dbl then Spec.Weierstrass.Point.rcbDbl0 (E 10) (E 3) (E 4) (E 5)
+      else Spec.Weierstrass.Point.rcbAdd0m (E 10) (E 3) (E 4) (E 5) (E 6) (E 7) := by
+  cases dbl <;> rfl
 
 end VG.Proof.Weierstrass.Arm.Point

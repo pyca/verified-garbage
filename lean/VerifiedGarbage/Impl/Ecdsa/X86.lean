@@ -421,13 +421,20 @@ def mulAt (C : Spec.Weierstrass.Mul.Curve) (px py ao : Nat) : Prog isa :=
   .seq (.block (copy (2 * c.n) (c.sl RX) (c.sl px) ++ copy (2 * c.n) (c.sl RY) (c.sl py))) <|
   .seq (.frame (.push [.edi]) (.call C.mulApi.name c.mulFn) (.pop .eax 1)) (.block [.mov .edi (.mem (at_ .esp ao))])
 
+/-- Whether `qMul`'s inline ladder doubles and adds by the point functions
+for `a = 0` (`vg_<curve>_point_a0_double`, `vg_<curve>_point_a0_add_affine`):
+for a curve without `vg_<curve>_mul` whose `a` is zero and whose
+coordinates fit the point functions' slots. -/
+def qA0 : Bool := c.mul.isNone && (c.C.a == 0 && decide (3 ≤ c.n ∧ c.n ≤ 6))
+
 /-- `R = [k]P` for the point `P` at `px`, `py`, `ONEP` and the number `k` at
 `K`'s slot: a call of `vg_<curve>_mul` if the curve has it (`Cfg.mul`), else
-the ladder of `ladderP` inline, from the table of `k`'s bits. -/
+the ladder of `ladderP` inline, from the table of `k`'s bits (by the point
+functions for `a = 0` if `qA0`: `P` is affine). -/
 def qMul (px py ao : Nat) : Prog isa :=
   match c.mul with
   | some C => c.mulAt C px py ao
-  | none => Point.ladderP { c.ladderCfg with G := c.pt px py ONEP } c.SP ao
+  | none => Point.ladderP { c.ladderCfg with G := c.pt px py ONEP } c.SP ao c.qA0
 
 /-- `R = [k]G`: `qMul` from `G`. -/
 def gen (ao : Nat) : Prog isa := c.qMul GX GY ao

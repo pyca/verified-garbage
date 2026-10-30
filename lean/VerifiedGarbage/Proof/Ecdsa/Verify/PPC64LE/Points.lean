@@ -340,7 +340,12 @@ theorem points_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State} 
     (lt_of_eq_of_lt K₁.fixed.gx (hmont _)) (lt_of_eq_of_lt K₁.fixed.gy (hmont _))
     (by rw [v₁ (by decide) (by decide), hM.rx]; omega_arith) (by rw [v₁ (by decide) (by decide), hM.ry]; exact hmont _)
     (by rw [v₁ (by decide) (by decide), hM.rz]; omega_arith) (k := sv c base s U)
-    (step_rep hC hc.onG (ha K₁.fixed) (hb K₁.fixed) hG₁)
+    (step_rep' hC hc.onG (ha K₁.fixed) (hb K₁.fixed) hG₁
+      (fun h => ⟨by
+        simp only [Impl.Ecdsa.PPC64LE.Cfg.qA0, Bool.and_eq_true, beq_iff_eq] at h
+        rw [h.2.1]; rfl, by
+        show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₁.mem base (c.sl ONEP) c.n) = 1
+        rw [K₁.fixed.onep]; exact toM_one (unitMod_pow_two hc.p_odd _)⟩))
     (by
       show Rep c.C (toM c.C.p (2 ^ (64 * c.n)) (sv c base s₁ RX)) (toM c.C.p (2 ^ (64 * c.n)) (sv c base s₁ RY))
         (toM c.C.p (2 ^ (64 * c.n)) (sv c base s₁ RZ)) (mul (sv c base s U >>> (8 * c.C.len)) (G c.C))
@@ -378,7 +383,12 @@ theorem points_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State} 
     (by rw [v₄ (by decide) (by decide), W₃ (by decide) (by decide)]; exact hM.py_lt)
     (by rw [v₄ (by decide) (by decide), rx₃]; omega_arith) (by rw [v₄ (by decide) (by decide), ry₃]; exact hmont _)
     (by rw [v₄ (by decide) (by decide), rz₃]; omega_arith) (k := sv c base s V)
-    (step_rep hC hP (ha K₄.fixed) (hb K₄.fixed) hQ₄)
+    (step_rep' hC hP (ha K₄.fixed) (hb K₄.fixed) hQ₄
+      (fun h => ⟨by
+        simp only [Impl.Ecdsa.PPC64LE.Cfg.qA0, Bool.and_eq_true, beq_iff_eq] at h
+        rw [h.2.1]; rfl, by
+        show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₄.mem base (c.sl ONEP) c.n) = 1
+        rw [K₄.fixed.onep]; exact toM_one (unitMod_pow_two hc.p_odd _)⟩))
     (by
       show Rep c.C (toM c.C.p (2 ^ (64 * c.n)) (sv c base s₄ RX)) (toM c.C.p (2 ^ (64 * c.n)) (sv c base s₄ RY))
         (toM c.C.p (2 ^ (64 * c.n)) (sv c base s₄ RZ)) (mul (sv c base s V >>> (8 * c.C.len)) P)

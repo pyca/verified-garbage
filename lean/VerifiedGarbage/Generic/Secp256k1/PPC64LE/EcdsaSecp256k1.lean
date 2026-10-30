@@ -31,7 +31,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.Secp256k1.curve) : List Artifac
       multiplication (CIOS, in calls of `vg_secp256k1_mul_mod_p` and the other functions of \
       `secp256k1_mont`) with a final conditional subtraction. `[k]G` is a double-and-add ladder over \
       all 256 bits of `k`, with the complete addition formulas of Renes, Costello and Batina for \
-      every addition and doubling (calls of `vg_secp256k1_point_double` and `vg_secp256k1_point_add`) and a \
+      every addition and doubling (calls of `vg_secp256k1_point_a0_double` and `vg_secp256k1_point_a0_add_affine`, Algorithms 9 and 8 for `a = 0`) and a \
       masked selection for each bit; the inversions modulo `p` and `n` are Fermat's, by \
       square-and-always-multiply over the bits of `p - 2` and `n - 2`. The signature (or zeros) is \
       selected by a mask, so the time depends only on the pointers."]
@@ -48,8 +48,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.Secp256k1.curve) : List Artifac
       multiplies the key's point if it is valid, else `G`, so it always runs on a point of the \
       curve. `s⁻¹` modulo `n` and `Z⁻¹` are Fermat's, by square-and-always-multiply; `[u]G` and \
       `[v]Q` are double-and-add ladders over all 256 bits of `u` and `v`, with the complete \
-      addition formulas of Renes, Costello and Batina (calls of `vg_secp256k1_point_double` and \
-      `vg_secp256k1_point_add` in the ladders), which also add the two. The result is the conjunction \
+      addition formulas of Renes, Costello and Batina (calls of `vg_secp256k1_point_a0_double` and \
+      `vg_secp256k1_point_a0_add_affine`, Algorithms 9 and 8 for `a = 0` in the ladders), which also add the two. The result is the conjunction \
       of the checks (the key, `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and \
       `x ≡ r` modulo `n`) as a mask, so the time depends only on the pointers, although the \
       contract would let every input affect it."]

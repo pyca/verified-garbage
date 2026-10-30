@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86
+public import VerifiedGarbage.Impl.Weierstrass.Rcb0
 public import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-!
@@ -29,6 +30,11 @@ whose working space is in `edi` loads it again from its own arguments
 32-bit ARM (`Impl/Weierstrass/Arm/Point.lean`): every address is `ws` or
 `esp` plus a constant, so only the pointer may affect timing. A call's
 frame and return address use 20 bytes of stack.
+
+For a curve with `a = 0`, `vg_<curve>_point_a0_double` and
+`vg_<curve>_point_a0_add_affine` (`Spec/Weierstrass/Point0.lean`) are the
+same function with Algorithm 9 (`dbl0`) or Algorithm 8 (`rcb0m`) in place
+of `rcb` (`fnOps`).
 -/
 
 @[expose] public section
@@ -87,10 +93,15 @@ def entry (k : Nat) : List Instr :=
 /-- `edi` restored. -/
 def restore (k : Nat) : List Instr := [.mov .edi (.mem (at_ .edi (saveAt k)))]
 
+/-- A function computing the field operations `ops` on the slots, calling the
+Montgomery functions of `S` (the second operand's slots `P`'s if `dbl`). -/
+def fnOps (S : Spec.Weierstrass.Mont.Modulus) (dbl : Bool) (ops : List FOp) : Prog isa :=
+  .seq (.block (entry S.k)) <| .seq (fprogB (enc S.k dbl) S ops) <| .block (restore S.k)
+
 /-- The function's code, calling the Montgomery functions of `S`: `O = P + Q`,
 or `P + P` if `dbl`. -/
 def fn (S : Spec.Weierstrass.Mont.Modulus) (dbl : Bool) : Prog isa :=
-  .seq (.block (entry S.k)) <| .seq (fprogB (enc S.k dbl) S (rcb sId pId qId oId)) <| .block (restore S.k)
+  fnOps S dbl (rcb sId pId qId oId)
 
 /-- The curve's prime as a modulus of `Spec/Weierstrass/Mont.lean`, whose
 functions (`vg_<curve>_<op>_mod_p`) the point functions call. -/
@@ -102,5 +113,17 @@ def pointAdd (C : Spec.Weierstrass.Point.Curve) : Prog isa := fn (modP C) false
 
 /-- `vg_<curve>_point_double`. -/
 def pointDouble (C : Spec.Weierstrass.Point.Curve) : Prog isa := fn (modP C) true
+
+/-- The formulas for `a = 0`: Algorithm 9 doubles (`dbl`), Algorithm 8 adds. -/
+def ops0 (dbl : Bool) : List FOp := if dbl then dbl0 sId pId oId else rcb0m sId pId qId oId
+
+/-- `O = P + P` (`dbl`) or `P + Q` by the formulas for `a = 0`. -/
+def fn0 (S : Spec.Weierstrass.Mont.Modulus) (dbl : Bool) : Prog isa := fnOps S dbl (ops0 dbl)
+
+/-- `vg_<curve>_point_a0_double`: `O = P + P` by Algorithm 9. -/
+def pointDouble0 (C : Spec.Weierstrass.Point.Curve) : Prog isa := fn0 (modP C) true
+
+/-- `vg_<curve>_point_a0_add_affine`: `O = P + Q` by Algorithm 8. -/
+def pointAdd0m (C : Spec.Weierstrass.Point.Curve) : Prog isa := fn0 (modP C) false
 
 end VG.Impl.Weierstrass.X86.Point

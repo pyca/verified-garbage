@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Secp256k1.Point
 import VerifiedGarbage.Proof.Weierstrass.X86.PointCurves
 import VerifiedGarbage.Proof.Weierstrass.X86.MontSecp256k1
 public import VerifiedGarbage.Proof.Weierstrass.X86.PointContract
+public import VerifiedGarbage.Proof.Weierstrass.X86.Point0
 import VerifiedGarbage.Proof.Weierstrass.X86.PointVerified
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.Secp256k1
@@ -19,6 +20,7 @@ meta import VerifiedGarbage.Impl.Secp256k1.Point
 meta import VerifiedGarbage.Proof.Weierstrass.X86.PointCurves
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontSecp256k1
 meta import VerifiedGarbage.Proof.Weierstrass.X86.PointContract
+meta import VerifiedGarbage.Proof.Weierstrass.X86.Point0
 meta import VerifiedGarbage.Proof.Weierstrass.X86.PointVerified
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.Secp256k1
@@ -36,8 +38,9 @@ meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
 
 secp256k1 is a curve the functions support, as the curves of
 `PointCurves.lean` are: its prime's Montgomery functions (`FnOk`), and the
-functions' constant time by taint tracking (`τP`). Apart from the other
-curves', so that adding it rebuilds none of their proofs.
+functions' constant time by taint tracking (`τP`), and so are the functions
+for `a = 0` (`Point0.lean`). Apart from the other curves', so that adding it
+rebuilds none of their proofs.
 -/
 
 @[expose] public section
@@ -52,24 +55,22 @@ open VG.Proof.Weierstrass.Point (Fermat)
 theorem secp256k1_fn : FnOk (modP point) :=
   FnOk.of_eq secp256k1p_ok rfl (by simp only [Spec.Weierstrass.Mont.secp256k1p, point])
 
-theorem secp256k1_add_ct :
-    ConstantTime isa (sumX86 point false).pre (sumX86 point false).pub
-      (fn (modP point) false) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by native_taint_decide)
+theorem secp256k1_double0_ct :
+    ConstantTime isa (pt0X86 point true).pre (pt0X86 point true).pub (fn0 (modP point) true) :=
+  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP (C := point) (dbl := true) h₁ h₂ hp) (by native_taint_decide)
 
-theorem secp256k1_double_ct :
-    ConstantTime isa (sumX86 point true).pre (sumX86 point true).pub
-      (fn (modP point) true) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by native_taint_decide)
+theorem secp256k1_add0m_ct :
+    ConstantTime isa (pt0X86 point false).pre (pt0X86 point false).pub (fn0 (modP point) false) :=
+  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP (C := point) (dbl := false) h₁ h₂ hp) (by native_taint_decide)
 
-theorem secp256k1_add_verified (hF : Fermat point.p) :
-    Verified X86.target (pointAdd point) (point.addContract X86.abi 20) :=
-  sum_verified point secp256k1_fn (by decide) (by decide) (by decide +kernel) (by decide +kernel) hF
-    false secp256k1_add_ct
+theorem secp256k1_double0_verified (hF : Fermat point.p) :
+    Verified X86.target (pointDouble0 point) (point.double0Contract X86.abi 20) :=
+  pt0_verified point secp256k1_fn (by decide) (by decide) (by decide +kernel) (by decide +kernel) hF
+    true secp256k1_double0_ct
 
-theorem secp256k1_double_verified (hF : Fermat point.p) :
-    Verified X86.target (pointDouble point) (point.doubleContract X86.abi 20) :=
-  sum_verified point secp256k1_fn (by decide) (by decide) (by decide +kernel) (by decide +kernel) hF
-    true secp256k1_double_ct
+theorem secp256k1_add0m_verified (hF : Fermat point.p) :
+    Verified X86.target (pointAdd0m point) (point.add0mContract X86.abi 20) :=
+  pt0_verified point secp256k1_fn (by decide) (by decide) (by decide +kernel) (by decide +kernel) hF
+    false secp256k1_add0m_ct
 
 end VG.Proof.Weierstrass.X86.Point

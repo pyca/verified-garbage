@@ -373,7 +373,7 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
   have hpk : sv c (ptr s₀ .r3) s₂ K < 2 ^ (8 * c.C.len) := by
     rw [S₂.k]; exact ofBytes_bytesAt_lt _ _ _
   -- `[d]P`, then `Z^(p-2)`.
-  have hstep := step_rep (L := Impl.Ecdh.Arm.Cfg.ladderQ c) (k := sv c (ptr s₀ .r3) s₂ K) hC
+  have hstep := step_rep' (L := Impl.Ecdh.Arm.Cfg.ladderQ c) (k := sv c (ptr s₀ .r3) s₂ K) (a0 := c.qA0) hC
     (peerPt_onCurve hc _ _ _)
     (by
       show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₄.mem _ (c.sl AP) c.n) = _
@@ -386,6 +386,11 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
         (toM c.C.p (2 ^ (64 * c.n)) (sv c (ptr s₀ .r3) s₄ PY))
         (toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₄.mem (ptr s₀ .r3) (c.sl ONEP) c.n)) _
       rw [F₄.onep, toM_one hpR]; exact h)
+    (fun h => ⟨by
+      simp only [Impl.Ecdsa.Arm.Cfg.qA0, Bool.and_eq_true, beq_iff_eq] at h
+      rw [h.2.1]; rfl, by
+      show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₄.mem (ptr s₀ .r3) (c.sl ONEP) c.n) = 1
+      rw [F₄.onep]; exact toM_one hpR⟩)
   refine ladPow_ok hc hs₄ ((S₂.far.of_rest k₃).of_rest g₄) F₄ hstep
     (by rw [shiftRight_eq_zero hpk, mul_zero_pt]; exact rep_infinity' hC)
     px_lt py_lt

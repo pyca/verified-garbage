@@ -323,13 +323,20 @@ def mulAt (C : Spec.Weierstrass.Mul.Curve) (px py : Nat) : Prog isa :=
   .seq (.block (copy c.n (c.sl RX) (c.sl px) ++ copy c.n (c.sl RY) (c.sl py)))
     (.call C.mulApi.name c.mulFn)
 
+/-- Whether `qMul`'s inline ladder doubles and adds by the point functions
+for `a = 0` (`vg_<curve>_point_a0_double`, `vg_<curve>_point_a0_add_affine`):
+for a curve without `vg_<curve>_mul` whose `a` is zero and whose
+coordinates fit the point functions' slots. -/
+def qA0 : Bool := c.mul.isNone && (c.C.a == 0 && decide (c.n ≤ 6))
+
 /-- `R = [k]P` for the point `P` at `px`, `py`, `ONEP` and the number `k` at
 `K`'s slot: a call of `vg_<curve>_mul` if the curve has it (`Cfg.mul`), else
-the ladder inline, from the table of `k`'s bits. -/
+the ladder inline, from the table of `k`'s bits (by the point functions for
+`a = 0` if `qA0`: `P` is affine). -/
 def qMul (px py : Nat) : Prog isa :=
   match c.mul with
   | some C => c.mulAt C px py
-  | none => Point.ladderP { c.ladderCfg with G := c.pt px py ONEP } c.SP
+  | none => Point.ladderP { c.ladderCfg with G := c.pt px py ONEP } c.SP c.qA0
 
 /-- `R = [k]G`: `qMul` from `G`. -/
 def gen : Prog isa := c.qMul GX GY
