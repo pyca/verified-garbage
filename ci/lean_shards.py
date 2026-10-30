@@ -100,6 +100,13 @@ LEAN = pathlib.Path(__file__).resolve().parent.parent / "lean"
 # `VerifiedGarbageTest.+` (every module under each); `True` reads a root
 # module as well, `lean/<library>.lean`, if there is one (there is none).
 LIBRARIES = {"VerifiedGarbage": True, "VerifiedGarbageTest": False}
+# Libraries whose sources are generated, by their `srcDir`: `VGEmit`, the
+# emitter's module drivers and audits, which `ci/emit_sources.py` (or
+# `Emit.lean --prepare`) writes before anything plans or builds them. Nothing
+# imports them, so their settings never change another module's build: they
+# are left out of the settings whose change rebuilds every module
+# (`lakefile_inputs`), but their module lists are kept, as any library's.
+GENERATED = {"VGEmit": pathlib.Path(".lake") / "emit" / "src"}
 # Files any change of which rebuilds every module (the lakefile's but for
 # which modules each library has: see `lakefile_inputs`).
 INPUTS = ["lakefile.toml", "lean-toolchain", "lake-manifest.json"]
@@ -153,6 +160,10 @@ def modules() -> dict[str, pathlib.Path]:
             # rglob supplies paths below LEAN; slicing their components
             # avoids pathlib's repeated ancestor checks for every file.
             mods[".".join(f.parts[depth:])[:-5]] = f
+    for lib, src in GENERATED.items():
+        base = LEAN / src
+        for f in (base / lib).rglob("*.lean"):
+            mods[".".join(f.parts[len(base.parts):])[:-5]] = f
     return dict(sorted(mods.items()))
 
 
@@ -169,6 +180,9 @@ def lakefile_inputs(text: str) -> tuple[str, dict[str, list[str]]]:
         libraries[lib["name"]] = sorted(f"{k}:{e}" for k in MODULE_LISTS for e in lib.get(k, []))
         for k in MODULE_LISTS:
             lib.pop(k, None)
+    config["lean_lib"] = [lib for lib in config.get("lean_lib", []) if lib["name"] not in GENERATED]
+    if "defaultTargets" in config:
+        config["defaultTargets"] = [t for t in config["defaultTargets"] if t not in GENERATED]
     settings = hashlib.sha256(json.dumps(config, sort_keys=True).encode()).hexdigest()
     return settings, libraries
 
@@ -1127,7 +1141,7 @@ def stale_outputs(build: pathlib.Path) -> list[pathlib.Path]:
         if not f.is_file() or rel.split("/")[0] not in ("lib", "ir"):
             continue
         m = module_of_output(rel)
-        if any(m == lib or m.startswith(f"{lib}.") for lib in LIBRARIES) and m not in mods:
+        if any(m == lib or m.startswith(f"{lib}.") for lib in (*LIBRARIES, *GENERATED)) and m not in mods:
             stale.append(f)
     return stale
 
