@@ -104,6 +104,39 @@ theorem leq_pass (hp : ParamsOk p) (h : LeakEq p t σ₁ σ₂) (ht : t < 814)
   · rw [ifn h1, ifp h2] at e; cases e
   · exact iff_of_false h1 h2
 
+/-- `signRejectTag`'s value, in three propositions. -/
+def tagFn (a b c : Prop) [Decidable a] [Decidable b] [Decidable c] : Nat :=
+  if ¬ a then 0 else if ¬ b then 2 else if ¬ c then 3 else 4
+
+theorem tagFn_eq {a b c a' b' c' : Prop} [Decidable a] [Decidable b] [Decidable c] [Decidable a'] [Decidable b']
+    [Decidable c'] (h : tagFn a b c = tagFn a' b' c') : (a ↔ a') ∧ (a ∧ b ↔ a' ∧ b') := by
+  unfold tagFn at h
+  by_cases ha : a <;> by_cases hb : b <;> by_cases hc : c <;> by_cases ha' : a' <;> by_cases hb' : b' <;>
+    by_cases hc' : c' <;> simp only [ha, hb, hc, ha', hb', hc', not_true_eq_false, not_false_eq_true,
+      ite_true, ite_false] at h <;> first | (exact absurd h (by decide)) | simp_all
+
+theorem tag_eq (hp : ParamsOk p) {σ : State} {κ : Nat}
+    (hs : (sampleInBall p.τ maxBounds.ball (CTv p σ κ)).isSome) :
+    signRejectTag p maxBounds (amat p (Am p σ)) ((List.range p.ℓ).map (S1v p σ)) ((List.range p.k).map (S2v p σ))
+      ((List.range p.k).map (T0v p σ)) (muOf σ) (rppOf p σ) κ =
+      tagFn (ZOk p σ κ) (R0Ok p σ κ) (∀ j < p.k, normRq [CT0v p σ κ j] < p.γ₂) := by
+  rw [signRejectTag_eqF hp, show ctF p (Am p σ) (muOf σ) (rppOf p σ) κ = CTv p σ κ from rfl, cV_eq hs]
+  rfl
+
+/-- Two runs that agree on what the iterations from `t` leak agree on the
+groups of checks of iteration `t` that pass. -/
+theorem leq_agree (hp : ParamsOk p) (h : LeakEq p t σ₁ σ₂) (ht : t < 814)
+    (hs₁ : (sampleInBall p.τ maxBounds.ball (CTv p σ₁ (p.ℓ * t))).isSome)
+    (hs₂ : (sampleInBall p.τ maxBounds.ball (CTv p σ₂ (p.ℓ * t))).isSome) : ChecksAgree p t σ₁ σ₂ := by
+  have hpass := leq_pass hp h ht hs₁ hs₂
+  by_cases h1 : PassV p σ₁ (p.ℓ * t)
+  · have h2 := hpass.mp h1
+    exact ⟨iff_of_true h1.1 h2.1, iff_of_true ⟨h1.1, h1.2.1⟩ ⟨h2.1, h2.2.1⟩, hpass⟩
+  · have h2 : ¬ PassV p σ₂ (p.ℓ * t) := fun h2 => h1 (hpass.mpr h2)
+    have e := leakT_tag (leq_step h ht) (iter_rej hp hs₁ h1) (iter_rej hp hs₂ h2)
+    rw [tag_eq hp hs₁, tag_eq hp hs₂] at e
+    exact ⟨(tagFn_eq e).1, (tagFn_eq e).2, hpass⟩
+
 theorem leq_hints (hp : ParamsOk p) (h : LeakEq p t σ₁ σ₂) (ht : t < 814)
     (hs₁ : (sampleInBall p.τ maxBounds.ball (CTv p σ₁ (p.ℓ * t))).isSome)
     (hs₂ : (sampleInBall p.τ maxBounds.ball (CTv p σ₂ (p.ℓ * t))).isSome)
@@ -231,7 +264,7 @@ theorem ax_zero {s : State} (hz : s.zf = some ((s.gpr .rax).setWidth 32 == 0)) (
   simpa using e
 
 theorem iter_tr {P : Prims} (hP : PrimsOk P D) (hp : ParamsOk p) (hc1 : cChk p = true) (hc2 : bChk p = true)
-    (hc3 : ksChk p = true) (hc4 : lChk p = true) {t : Nat} (ht : t < 814) :
+    (hc3 : ksChk p = true) (hc3' : ksChk2 p = true) (hc4 : lChk p = true) {t : Nat} (ht : t < 814) :
     RelCT isa (RS p D (LeakEq p t) fun σ s => IL p D σ t s) (iter P p) (IX p D t) := by
   have hc2' := hc2
   simp only [bChk, Bool.and_eq_true, decide_eq_true_eq] at hc2'
@@ -261,7 +294,7 @@ theorem iter_tr {P : Prims} (hP : PrimsOk P D) (hp : ParamsOk p) (hc1 : cChk p =
     (relOr (endPF_tr hp hc4) (endB_tr hp hc4))
   · rintro x y ⟨⟨σ₁, σ₂, _, _, _, _, ⟨_, z₁⟩, ⟨_, z₂⟩⟩, hg⟩
     rw [hev, hev, z₁, z₂, hg]
-  · refine RelCT.mono (checks_tr hP hc3 fun σ₁ σ₂ he s₁ s₂ => leq_pass hp he ht s₁ s₂)
+  · refine RelCT.mono (checks_tr hP hc3 hc3' fun σ₁ σ₂ he s₁ s₂ => leq_agree hp he ht s₁ s₂)
       (fun x y ⟨⟨⟨σ₁, σ₂, p₁, p₂, hpub, he, ⟨i₁, z₁⟩, ⟨i₂, z₂⟩⟩, hg⟩, hb⟩ => ?_) fun _ _ h => .inl ⟨h, trivial⟩
     have h1 := ax_one z₁ i₁.r01 hb
     exact ⟨σ₁, σ₂, p₁, p₂, hpub, he, i₁.ka h1, i₂.ka (hg.symm.trans h1)⟩
@@ -275,7 +308,7 @@ theorem iter_tr {P : Prims} (hP : PrimsOk P D) (hp : ParamsOk p) (hc1 : cChk p =
 /-! ## The loop -/
 
 theorem signLoop_tr {P : Prims} (hP : PrimsOk P D) (hp : ParamsOk p) (hc1 : cChk p = true) (hc2 : bChk p = true)
-    (hc3 : ksChk p = true) (hc4 : lChk p = true) :
+    (hc3 : ksChk p = true) (hc3' : ksChk2 p = true) (hc4 : lChk p = true) :
     RelCT isa (RS p D (LeakEq p 0) fun σ s => IK p D σ s) (Impl.MlDsa.X86_64.Sign.signLoop P p) (OX p D) := by
   unfold Impl.MlDsa.X86_64.Sign.signLoop
   refine RelCT.seq (liftT (J := fun σ s => IL p D σ 0 s) (fun _ _ h => h.d.im.st) (fun _ _ _ h => loopInit_ok hc4 h)
@@ -286,7 +319,7 @@ theorem signLoop_tr {P : Prims} (hP : PrimsOk P D) (hp : ParamsOk p) (hc1 : cChk
     (fun x y h => ⟨0, rfl, h⟩) fun _ _ h => h
   intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨t, hn, hr⟩ e₁ e₂
   have ht : t < 814 := by obtain ⟨_, _, _, _, _, _, i₁, _⟩ := hr; exact i₁.t_lt
-  obtain ⟨htr, hz, hc, ho⟩ := iter_tr hP hp hc1 hc2 hc3 hc4 ht _ _ _ _ _ _ hr e₁ e₂
+  obtain ⟨htr, hz, hc, ho⟩ := iter_tr hP hp hc1 hc2 hc3 hc3' hc4 ht _ _ _ _ _ _ hr e₁ e₂
   refine ⟨htr, by rw [hev, hev, hz], fun h => ho (zf_of_eval h), fun h =>
     ⟨814 - (t + 1), by omega, t + 1, rfl, hc (zf_of_eval h)⟩⟩
 
