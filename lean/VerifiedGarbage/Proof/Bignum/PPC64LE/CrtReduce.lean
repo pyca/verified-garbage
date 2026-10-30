@@ -297,57 +297,57 @@ theorem chunkStep_ok {s t : State} {BX : Addr} {Z oA w wX K Pv R2 i : Nat}
   have k12 := k1.trans k2
   refine WP.seq (WP.mono (copyAdv_ok (a := slot wX 6 + 8 * (w * i)) (b := oA + slot w 6) (w := w) (I.scr.congr k12.wr)
     (by rw [a15, (k1.gpr _ (by decide)).trans I.r30]) (by rw [k2.gpr _ (by decide), a14, off_off])
-    ((k12.gpr _ (by decide)).trans I.r11) (by omega) hw' (by omega) (by omega) (by omega))
+    ((k12.gpr _ (by decide)).trans I.r11) (by omega_arith) hw' (by omega_arith) (by omega_arith) (by omega_arith))
     fun t₃ ⟨⟨c3, o3, a15'⟩, k3⟩ => ?_)
   refine WP.seq (WP.mono (mv30_ok t₃) fun t₄ ⟨⟨a30, m4⟩, k4⟩ => ?_)
   have k14 := (k12.trans k3).trans k4
   have hm2 : t₂.mem = t.mem := by rw [m2, m1]
   rw [hm2] at c3 o3
   have o3' : Mont.Outside (off BX oA) (slot w 6) (8 * w) t.mem t₄.mem := by
-    rw [m4]; exact out_rebase o3 (by omega)
-  have W4 : Mont.Outside (off BX oA) (slot w 2) (6 * (8 * (w + 2))) t.mem t₄.mem := o3'.mono (by omega) (by omega)
+    rw [m4]; exact out_rebase o3 (by omega_arith)
+  have W4 : Mont.Outside (off BX oA) (slot w 2) (6 * (8 * (w + 2))) t.mem t₄.mem := o3'.mono (by omega_arith) (by omega_arith)
   -- The chunk's value.
   let C := wv s.mem BX (slot wX 6 + 8 * (w * i)) w
   have v6 : val32 t₄.mem (off BX oA) (slot w 6) (2 * w) = C := by
     rw [Pre.val32_eq_wv, wv_off, m4, wv_congr2 fun j hj => c3 j hj]
-    exact I.out.wv (Or.inl (by omega)) (by omega)
+    exact I.out.wv (Or.inl (by omega_arith)) (by omega_arith)
   have v0 : val32 t₄.mem (off BX oA) (slot w 0) (2 * w) = Pv := by
-    rw [W4.val32 (Or.inl (by omega)) (by omega), I.p0]
+    rw [W4.val32 (Or.inl (by omega_arith)) (by omega_arith), I.p0]
   have v1 : val32 t₄.mem (off BX oA) (slot w 1) (2 * w) = R2 := by
-    rw [W4.val32 (Or.inl (by omega)) (by omega), I.p1]
+    rw [W4.val32 (Or.inl (by omega_arith)) (by omega_arith), I.p1]
   have v8 : val32 t₄.mem (off BX oA) (slot w 8) (2 * w) = Pv - 1 := by
-    rw [W4.val32 (Or.inr (by omega)) (by omega), I.p8]
+    rw [W4.val32 (Or.inr (by omega_arith)) (by omega_arith), I.p8]
   have v5 : val32 t₄.mem (off BX oA) (slot w 5) (2 * w) = val32 t.mem (off BX oA) (slot w 5) (2 * w) :=
-    o3'.val32 (Or.inl (by omega)) (by omega)
+    o3'.val32 (Or.inl (by omega_arith)) (by omega_arith)
   have v4 : val32 t₄.mem (off BX oA) (slot w 4) (2 * w) = val32 t.mem (off BX oA) (slot w 4) (2 * w) :=
-    o3'.val32 (Or.inl (by omega)) (by omega)
+    o3'.val32 (Or.inl (by omega_arith)) (by omega_arith)
   have w0 : w32 t₄.mem (off BX oA) (slot w 0) = w32 t.mem (off BX oA) (slot w 0) :=
-    W4.w32 (Or.inl (by omega)) (by omega)
+    W4.w32 (Or.inl (by omega_arith)) (by omega_arith)
   have g : ∀ r ∈ [Reg.r10, .r11, .r12, .r21, .r23, .r29, .r31], t₄.gpr r = t.gpr r := fun r hr =>
     k14.gpr r (by revert r hr; decide)
   -- `T := C q R⁻¹`.
   refine WP.seq (WP.mono (Pub.montOpN_ok (n := 9) (o := 7) (a := 6) (b := 5) (hsA.congr k14.wr) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hw2 hw' (by omega)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hw2 hw' (by omega_arith)
     ((g .r10 (by decide)).trans I.r10) ((g .r29 (by decide)).trans I.r29) ((g .r11 (by decide)).trans I.r11)
     (by rw [g .r12 (by decide)]; exact I.r12) (by rw [g .r12 (by decide), w0]; exact I.inv)
     (by rw [v5, v0]; exact I.qlt)) fun t₅ ⟨⟨T5, T5e, o5⟩, k5⟩ => ?_)
   rw [v0, v6, v5] at T5e
   rw [v0] at T5
   have W5 : Mont.Outside (off BX oA) (slot w 2) (6 * (8 * (w + 2))) t₄.mem t₅.mem :=
-    outs_work o5 (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl | rfl) <;> simp only [e] <;> omega)
+    outs_work o5 (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl | rfl) <;> simp only [e] <;> omega_arith)
   have u5 : ∀ j, j = 0 ∨ j = 1 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 8 →
       val32 t₅.mem (off BX oA) (slot w j) (2 * w) = val32 t₄.mem (off BX oA) (slot w j) (2 * w) := fun j hj =>
     outs_val32 o5 (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
-      rintro r (rfl | rfl | rfl) <;> rcases hj with rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [e] <;> omega)
-      (by rcases hj with rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [e] <;> omega)
+      rintro r (rfl | rfl | rfl) <;> rcases hj with rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [e] <;> omega_arith)
+      (by rcases hj with rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [e] <;> omega_arith)
   have w0' : w32 t₅.mem (off BX oA) (slot w 0) = w32 t.mem (off BX oA) (slot w 0) := by
-    rw [W5.w32 (Or.inl (by omega)) (by omega), w0]
+    rw [W5.w32 (Or.inl (by omega_arith)) (by omega_arith), w0]
   have g5 : ∀ r ∈ [Reg.r10, .r11, .r12, .r21, .r23, .r29, .r30, .r31], t₅.gpr r = t₄.gpr r := fun r hr =>
     k5.gpr r (by revert r hr; decide)
   -- `q := q R² R⁻¹`.
   refine WP.seq (WP.mono (Pub.montOpN_ok (n := 9) (o := 5) (a := 5) (b := 1) (hsA.congr (k14.trans k5).wr) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hw2 hw' (by omega)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hw2 hw' (by omega_arith)
     ((g5 .r10 (by decide)).trans ((g .r10 (by decide)).trans I.r10))
     ((g5 .r29 (by decide)).trans ((g .r29 (by decide)).trans I.r29))
     ((g5 .r11 (by decide)).trans ((g .r11 (by decide)).trans I.r11))
@@ -357,13 +357,13 @@ theorem chunkStep_ok {s t : State} {BX : Addr} {Z oA w wX K Pv R2 i : Nat}
   rw [u5 0 (by decide), v0, u5 5 (by decide), v5, u5 1 (by decide), v1] at Q6e
   rw [u5 0 (by decide), v0] at Q6
   have W6 : Mont.Outside (off BX oA) (slot w 2) (6 * (8 * (w + 2))) t₅.mem t₆.mem :=
-    outs_work o6 (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl | rfl) <;> simp only [e] <;> omega)
+    outs_work o6 (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl | rfl) <;> simp only [e] <;> omega_arith)
   have u6 : ∀ j, j = 0 ∨ j = 1 ∨ j = 4 ∨ j = 6 ∨ j = 7 ∨ j = 8 →
       val32 t₆.mem (off BX oA) (slot w j) (2 * w) = val32 t₅.mem (off BX oA) (slot w j) (2 * w) := fun j hj =>
     outs_val32 o6 (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
-      rintro r (rfl | rfl | rfl) <;> rcases hj with rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [e] <;> omega)
-      (by rcases hj with rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [e] <;> omega)
+      rintro r (rfl | rfl | rfl) <;> rcases hj with rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [e] <;> omega_arith)
+      (by rcases hj with rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [e] <;> omega_arith)
   have g6 : ∀ r ∈ [Reg.r10, .r11, .r12, .r21, .r23, .r29, .r31], t₆.gpr r = t.gpr r := fun r hr => by
     rw [k6.gpr r (by revert r hr; decide), g5 r (by revert r hr; decide), g r (by revert r hr; decide)]
   have k16 := (k14.trans k5).trans k6
@@ -374,13 +374,13 @@ theorem chunkStep_ok {s t : State} {BX : Addr} {Z oA w wX K Pv R2 i : Nat}
   have hT6 : val32 t₆.mem (off BX oA) (slot w 7) (2 * w) = val32 t₅.mem (off BX oA) (slot w 7) (2 * w) :=
     u6 7 (by decide)
   -- `S - T mod p` into array 3.
-  refine recP2a_ok (bj := 7) (hsA.congr k16.wr) (by omega) (by decide) (by decide) (by decide) hw2 hw'
+  refine recP2a_ok (bj := 7) (hsA.congr k16.wr) (by omega_arith) (by decide) (by decide) (by decide) hw2 hw'
     ((g6 .r10 (by decide)).trans I.r10) ((g6 .r21 (by decide)).trans I.r21) ((g6 .r29 (by decide)).trans I.r29)
     ((g6 .r11 (by decide)).trans I.r11) (by rw [u6 0 (by decide), u5 0 (by decide), v0]) hT6 hS6 T5 I.slt
     fun t₇ v3 o7 a10 k7 => ?_
   have hsA7 := hsA.congr (k16.trans k7).wr
   have W7 : Mont.Outside (off BX oA) (slot w 2) (6 * (8 * (w + 2))) t₆.mem t₇.mem :=
-    outs_work o7 (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl) <;> simp only [e] <;> omega)
+    outs_work o7 (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl) <;> simp only [e] <;> omega_arith)
   -- Back into array 4.
   refine WP.seq ?_
   rw [WP.block_append_iff]
@@ -393,14 +393,14 @@ theorem chunkStep_ok {s t : State} {BX : Addr} {Z oA w wX K Pv R2 i : Nat}
   have r11_9 : t₉.gpr .r11 = BitVec.ofNat 64 (2 * w) := by
     rw [k79.gpr .r11 (by decide), g6 .r11 (by decide), I.r11]
   refine WP.seq (WP.mono (copySub_ok (a := slot w 3) (b := slot w 4) (w := w) (hsA7.congr (k8.trans k9).wr) a15''
-    ((k9.gpr _ (by decide)).trans a14') r11_9 (by omega) hw' (by omega) (by omega) (by omega))
+    ((k9.gpr _ (by decide)).trans a14') r11_9 (by omega_arith) hw' (by omega_arith) (by omega_arith) (by omega_arith))
     fun t₁₀ ⟨⟨c10, o10⟩, k10⟩ => ?_)
   have hm9 : t₉.mem = t₇.mem := by rw [m9, m8]
   rw [hm9] at c10 o10
-  refine WP.mono (tick_ok (t := t₁₀) ((k10.gpr _ (by decide)).trans r11_9) (by omega)) fun u ⟨⟨b31, b3, mu⟩, ku⟩ => ?_
+  refine WP.mono (tick_ok (t := t₁₀) ((k10.gpr _ (by decide)).trans r11_9) (by omega_arith)) fun u ⟨⟨b31, b3, mu⟩, ku⟩ => ?_
   have kall := (((k16.trans k79).trans k10).trans ku)
   have o10' : Mont.Outside (off BX oA) (slot w 4) (8 * w) t₇.mem u.mem := by rw [mu]; exact o10
-  have W10 : Mont.Outside (off BX oA) (slot w 2) (6 * (8 * (w + 2))) t₇.mem u.mem := o10'.mono (by omega) (by omega)
+  have W10 : Mont.Outside (off BX oA) (slot w 2) (6 * (8 * (w + 2))) t₇.mem u.mem := o10'.mono (by omega_arith) (by omega_arith)
   have Wt : Mont.Outside (off BX oA) (slot w 2) (6 * (8 * (w + 2))) t.mem u.mem :=
     ((W4.trans W5).trans (W6.trans W7)).trans W10
   have gu : ∀ r ∈ [Reg.r11, .r12, .r21, .r23, .r29], u.gpr r = t.gpr r := fun r hr => by
@@ -411,22 +411,22 @@ theorem chunkStep_ok {s t : State} {BX : Addr} {Z oA w wX K Pv R2 i : Nat}
       val32 t₅.mem (off BX oA) (slot w 7) (2 * w)) % Pv := by
     rw [mu, Pre.val32_eq_wv, wv_congr2 fun j hj => c10 j hj, ← Pre.val32_eq_wv, v3]
   have q5 : val32 u.mem (off BX oA) (slot w 5) (2 * w) = val32 t₆.mem (off BX oA) (slot w 5) (2 * w) := by
-    rw [o10'.val32 (Or.inr (by omega)) (by omega)]
-    exact outs_val32 o7 (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl) <;> simp only [e] <;> omega)
-      (by omega)
+    rw [o10'.val32 (Or.inr (by omega_arith)) (by omega_arith)]
+    exact outs_val32 o7 (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl) <;> simp only [e] <;> omega_arith)
+      (by omega_arith)
   have hTC := chunk_t hR T5e I.q
   have hwi1 : w * (i + 1) = w * i + w := Nat.mul_succ _ _
   have hpow : (2 ^ (64 * w)) ^ i = 2 ^ (64 * (w * i)) := by rw [← Nat.pow_mul, Nat.mul_assoc]
   refine ⟨⟨I.scr.congr kall.wr, ?_, by rw [gu .r21 (by decide)]; exact I.r21,
     by rw [gu .r29 (by decide)]; exact I.r29, by rw [gu .r11 (by decide)]; exact I.r11,
     by rw [gu .r12 (by decide)]; exact I.r12,
-    by rw [gu .r12 (by decide), Wt.w32 (Or.inl (by omega)) (by omega)]; exact I.inv, ?_, ?_,
-    by rw [Wt.val32 (Or.inl (by omega)) (by omega)]; exact I.p0,
-    by rw [Wt.val32 (Or.inl (by omega)) (by omega)]; exact I.p1,
-    by rw [Wt.val32 (Or.inr (by omega)) (by omega)]; exact I.p8,
+    by rw [gu .r12 (by decide), Wt.w32 (Or.inl (by omega_arith)) (by omega_arith)]; exact I.inv, ?_, ?_,
+    by rw [Wt.val32 (Or.inl (by omega_arith)) (by omega_arith)]; exact I.p0,
+    by rw [Wt.val32 (Or.inl (by omega_arith)) (by omega_arith)]; exact I.p1,
+    by rw [Wt.val32 (Or.inr (by omega_arith)) (by omega_arith)]; exact I.p8,
     by rw [q5]; exact Q6, by rw [q5]; exact chunk_q hR Q6e hR2' I.q,
-    by rw [s4]; exact Nat.mod_lt _ (by omega), ?_,
-    I.out.trans (out_sub (fun x hx => Wt x hx) (by omega) (by omega) (by omega)),
+    by rw [s4]; exact Nat.mod_lt _ (by omega_arith), ?_,
+    I.out.trans (out_sub (fun x hx => Wt x hx) (by omega_arith) (by omega_arith) (by omega_arith)),
     (I.keep.trans kall).mono (by decide +kernel)⟩, ?_⟩
   · rw [ku.gpr .r10 (by decide), k10.gpr .r10 (by decide), k9.gpr .r10 (by decide), k8.gpr .r10 (by decide), a10]
   · rw [ku.gpr .r30 (by decide), k10.gpr .r30 (by decide), k79.gpr .r30 (by decide), b30, hwi1, Nat.mul_add,
@@ -434,7 +434,7 @@ theorem chunkStep_ok {s t : State} {BX : Addr} {Z oA w wX K Pv R2 i : Nat}
   · rw [b31, k10.gpr .r31 (by decide), k79.gpr .r31 (by decide), g6 .r31 (by decide), I.r31, hwi1]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   · rw [s4]
     refine (chunk_s T5 I.sv hTC rfl).trans ?_
     rw [hwi1, wv_add, ← hpow]
@@ -442,9 +442,9 @@ theorem chunkStep_ok {s t : State} {BX : Addr} {Z oA w wX K Pv R2 i : Nat}
       rw [k10.gpr .r31 (by decide), k79.gpr .r31 (by decide), g6 .r31 (by decide), I.r31, hwi1]
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
-      omega
+      omega_arith
     rw [b3, flag_ne_zero, hx]
-    exact flag_iff (by omega) hK hK' (by omega) hi
+    exact flag_iff (by omega_arith) hK hK' (by omega_arith) hi
 
 /-- `p - 1` from `p` in array 8: its low word, odd, less 1. -/
 theorem pm1_ok {t : State} {B : Addr} {Z w Pv : Nat} (hs : Scr t B Z) (hZ : slot w 9 ≤ Z) (hw : 1 ≤ w)
@@ -504,9 +504,9 @@ theorem reduceIn_ok {s : State} {BX : Addr} {Z oA w wX k Pv Cv : Nat}
   have hR := VG.Proof.Bignum.coprime_pow2 hodd (64 * w)
   have hsA := hs.sub hA
   generalize hKd : (k + 7) / 8 = K at hn hC
-  have hK1 : 1 ≤ K := by omega
-  have hK' : K < 2 ^ 40 := by omega
-  have hX : slot wX 6 + 8 * (w * nChunks K w) ≤ oA := by omega
+  have hK1 : 1 ≤ K := by omega_arith
+  have hK' : K < 2 ^ 40 := by omega_arith
+  have hX : slot wX 6 + 8 * (w * nChunks K w) ≤ oA := by omega_arith
   -- `p` into array 8.
   refine WP.seq ?_
   rw [WP.block_append_iff]
@@ -515,8 +515,8 @@ theorem reduceIn_ok {s : State} {BX : Addr} {Z oA w wX k Pv Cv : Nat}
     (by prun [(k1.gpr .r10 (by decide)).trans h10, BitVec.add_zero]) (by decide)) fun s₂ ⟨⟨a15, m2⟩, k2⟩ => ?_
   have k12 := k1.trans k2
   refine WP.seq (WP.mono (copySub_ok (a := slot w 0) (b := slot w 8) (w := w) (hsA.congr k12.wr) a15
-    ((k2.gpr _ (by decide)).trans a14) ((k12.gpr _ (by decide)).trans h11) (by omega) hw' (by omega) (by omega)
-    (by omega)) fun s₃ ⟨⟨c3, o3⟩, k3⟩ => ?_)
+    ((k2.gpr _ (by decide)).trans a14) ((k12.gpr _ (by decide)).trans h11) (by omega_arith) hw' (by omega_arith) (by omega_arith)
+    (by omega_arith)) fun s₃ ⟨⟨c3, o3⟩, k3⟩ => ?_)
   have hm2 : s₂.mem = s.mem := by rw [m2, m1]
   rw [hm2] at c3 o3
   have k13 := k12.trans k3
@@ -529,53 +529,53 @@ theorem reduceIn_ok {s : State} {BX : Addr} {Z oA w wX k Pv Cv : Nat}
   rw [WP.block_append_iff]
   refine WP.mono (Pub.base_ok (rd := .r14) (by decide) (by decide) ((g3 .r10 (by decide)).trans h10)
     ((g3 .r29 (by decide)).trans h29) 8) fun s₄ ⟨⟨b14, m4⟩, k4⟩ => ?_
-  refine WP.mono (pm1_ok (hsA.congr (k13.trans k4).wr) (by omega) (by omega) b14 (by rw [m4]; exact v8) hodd)
+  refine WP.mono (pm1_ok (hsA.congr (k13.trans k4).wr) (by omega_arith) (by omega_arith) b14 (by rw [m4]; exact v8) hodd)
     fun s₅ ⟨⟨v8', o5⟩, k5⟩ => ?_
   have k15 := (k13.trans k4).trans k5
   have O5 : Mont.Outside (off BX oA) (slot w 8) (8 * w) s.mem s₅.mem :=
-    fun x hx => (o5 x (by omega)).trans ((by rw [m4] : s₄.mem x = s₃.mem x).trans (o3 x hx))
+    fun x hx => (o5 x (by omega_arith)).trans ((by rw [m4] : s₄.mem x = s₃.mem x).trans (o3 x hx))
   have g5 : ∀ r ∈ [Reg.r10, .r11, .r12, .r21, .r23, .r27, .r28, .r29], s₅.gpr r = s.gpr r := fun r hr =>
     k15.gpr r (by revert r hr; decide)
-  have u0 : val32 s₅.mem (off BX oA) (slot w 0) (2 * w) = Pv := by rw [O5.val32 (Or.inl (by omega)) (by omega), hP]
+  have u0 : val32 s₅.mem (off BX oA) (slot w 0) (2 * w) = Pv := by rw [O5.val32 (Or.inl (by omega_arith)) (by omega_arith), hP]
   have u1 : val32 s₅.mem (off BX oA) (slot w 1) (2 * w) = 2 ^ (128 * w) % Pv := by
-    rw [O5.val32 (Or.inl (by omega)) (by omega), hR2]
+    rw [O5.val32 (Or.inl (by omega_arith)) (by omega_arith), hR2]
   have uw : w32 s₅.mem (off BX oA) (slot w 0) = w32 s.mem (off BX oA) (slot w 0) :=
-    O5.w32 (Or.inl (by omega)) (by omega)
+    O5.w32 (Or.inl (by omega_arith)) (by omega_arith)
   have hR2' : 2 ^ (128 * w) % Pv % Pv = 2 ^ (64 * w) * 2 ^ (64 * w) % Pv := by
-    rw [Nat.mod_mod, ← Nat.pow_add]; congr 2; omega
+    rw [Nat.mod_mod, ← Nat.pow_add]; congr 2; omega_arith
   -- `q := (p - 1) R² R⁻¹`.
   refine WP.seq (WP.mono (Pub.montOpN_ok (n := 9) (o := 5) (a := 1) (b := 8) (hsA.congr k15.wr) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hw2 hw' (by omega)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hw2 hw' (by omega_arith)
     ((g5 .r10 (by decide)).trans h10) ((g5 .r29 (by decide)).trans h29) ((g5 .r11 (by decide)).trans h11)
     (by rw [g5 .r12 (by decide)]; exact h12) (by rw [g5 .r12 (by decide), uw]; exact hinv)
-    (by rw [v8', u0]; omega)) fun s₆ ⟨⟨Q6, Q6e, o6⟩, k6⟩ => ?_)
+    (by rw [v8', u0]; omega_arith)) fun s₆ ⟨⟨Q6, Q6e, o6⟩, k6⟩ => ?_)
   rw [u0, u1, v8'] at Q6e
   rw [u0] at Q6
-  have hq0 := chunk_q0 hR (by omega) Q6e hR2'
+  have hq0 := chunk_q0 hR (by omega_arith) Q6e hR2'
   have k16 := k15.trans k6
   have u6 : ∀ j, j = 0 ∨ j = 1 ∨ j = 8 →
       val32 s₆.mem (off BX oA) (slot w j) (2 * w) = val32 s₅.mem (off BX oA) (slot w j) (2 * w) := fun j hj =>
     outs_val32 o6 (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
-      rintro r (rfl | rfl | rfl) <;> rcases hj with rfl | rfl | rfl <;> simp only [e] <;> omega)
-      (by rcases hj with rfl | rfl | rfl <;> simp only [e] <;> omega)
+      rintro r (rfl | rfl | rfl) <;> rcases hj with rfl | rfl | rfl <;> simp only [e] <;> omega_arith)
+      (by rcases hj with rfl | rfl | rfl <;> simp only [e] <;> omega_arith)
   have W6 : Mont.Outside (off BX oA) (slot w 2) (6 * (8 * (w + 2))) s₅.mem s₆.mem :=
-    outs_work o6 (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl | rfl) <;> simp only [e] <;> omega)
+    outs_work o6 (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl | rfl) <;> simp only [e] <;> omega_arith)
   have g6 : ∀ r ∈ [Reg.r10, .r11, .r12, .r21, .r23, .r27, .r28, .r29], s₆.gpr r = s.gpr r := fun r hr =>
     k16.gpr r (by revert r hr; decide)
   -- `S := 0`.
   refine WP.seq (WP.mono (Pub.base_ok (rd := .r14) (by decide) (by decide) ((g6 .r10 (by decide)).trans h10)
     ((g6 .r29 (by decide)).trans h29) 4) fun s₇ ⟨⟨c14, m7⟩, k7⟩ => ?_)
   refine WP.seq (WP.mono (zeroWords_ok (hsA.congr (k16.trans k7).wr) c14 ((k7.gpr _ (by decide)).trans
-    ((g6 .r11 (by decide)).trans h11)) (by omega) hw' (by omega)) fun s₈ ⟨⟨_, z8, o8⟩, k8⟩ => ?_)
+    ((g6 .r11 (by decide)).trans h11)) (by omega_arith) hw' (by omega_arith)) fun s₈ ⟨⟨_, z8, o8⟩, k8⟩ => ?_)
   have k18 := (k16.trans k7).trans k8
   rw [m7] at o8
   have v4 : val32 s₈.mem (off BX oA) (slot w 4) (2 * w) = 0 := by
     rw [Pre.val32_eq_wv]; exact (wv_eq_zero_iff _ _ _ _).mpr z8
   have o8' : Mont.Outside (off BX oA) (slot w 4) (8 * w) s₆.mem s₈.mem := o8
   have Wall : Mont.Outside (off BX oA) (slot w 2) (7 * (8 * (w + 2))) s.mem s₈.mem :=
-    ((O5.mono (by omega) (by omega)).trans (W6.mono (by omega) (by omega))).trans (o8'.mono (by omega) (by omega))
-  have Oall : Outside BX oA (slot w 24) s.mem s₈.mem := out_sub (fun x hx => Wall x hx) (by omega) (by omega) (by omega)
+    ((O5.mono (by omega_arith) (by omega_arith)).trans (W6.mono (by omega_arith) (by omega_arith))).trans (o8'.mono (by omega_arith) (by omega_arith))
+  have Oall : Outside BX oA (slot w 24) s.mem s₈.mem := out_sub (fun x hx => Wall x hx) (by omega_arith) (by omega_arith) (by omega_arith)
   have g8 : ∀ r ∈ [Reg.r10, .r11, .r12, .r21, .r27, .r28, .r29], s₈.gpr r = s.gpr r := fun r hr =>
     k18.gpr r (by revert r hr; decide)
   -- `r30` and `r31`.
@@ -588,11 +588,11 @@ theorem reduceIn_ok {s : State} {BX : Addr} {Z oA w wX k Pv Cv : Nat}
       rw [← hKd]
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-      omega) (by decide)) fun s₁₀ ⟨⟨a31, m10⟩, k10⟩ => ?_
+      omega_arith) (by decide)) fun s₁₀ ⟨⟨a31, m10⟩, k10⟩ => ?_
   have k110 := (k18.trans k9).trans k10
   have hm10 : s₁₀.mem = s₈.mem := by rw [m10, m9]
   have v5 : val32 s₈.mem (off BX oA) (slot w 5) (2 * w) = val32 s₆.mem (off BX oA) (slot w 5) (2 * w) :=
-    o8'.val32 (Or.inr (by omega)) (by omega)
+    o8'.val32 (Or.inr (by omega_arith)) (by omega_arith)
   have I0 : ChunkI s BX Z oA w wX K Pv (2 ^ (128 * w) % Pv) 0 s₁₀ := by
     refine ⟨hs.congr k110.wr, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, by rw [hm10]; exact Oall,
       k110.mono (by decide +kernel)⟩
@@ -602,19 +602,19 @@ theorem reduceIn_ok {s : State} {BX : Addr} {Z oA w wX k Pv Cv : Nat}
     · rw [k10.gpr .r11 (by decide), k9.gpr .r11 (by decide), g8 .r11 (by decide), h11]
     · rw [k10.gpr .r12 (by decide), k9.gpr .r12 (by decide), g8 .r12 (by decide)]; exact h12
     · rw [k10.gpr .r12 (by decide), k9.gpr .r12 (by decide), g8 .r12 (by decide), hm10,
-        Wall.w32 (Or.inl (by omega)) (by omega)]; exact hinv
+        Wall.w32 (Or.inl (by omega_arith)) (by omega_arith)]; exact hinv
     · rw [k10.gpr .r30 (by decide), a30, Nat.mul_zero, Nat.mul_zero, Nat.add_zero]
     · rw [a31, Nat.mul_zero]; exact (BitVec.sub_zero _).symm
-    · rw [hm10, Wall.val32 (Or.inl (by omega)) (by omega), hP]
-    · rw [hm10, Wall.val32 (Or.inl (by omega)) (by omega), hR2]
-    · rw [hm10, o8'.val32 (Or.inr (by omega)) (by omega), W6.val32 (Or.inr (by omega)) (by omega), v8']
+    · rw [hm10, Wall.val32 (Or.inl (by omega_arith)) (by omega_arith), hP]
+    · rw [hm10, Wall.val32 (Or.inl (by omega_arith)) (by omega_arith), hR2]
+    · rw [hm10, o8'.val32 (Or.inr (by omega_arith)) (by omega_arith), W6.val32 (Or.inr (by omega_arith)) (by omega_arith), v8']
     · rw [hm10, v5]; exact Q6
     · rw [hm10, v5]; exact hq0
-    · rw [hm10, v4]; omega
+    · rw [hm10, v4]; omega_arith
     · rw [hm10, v4, Nat.mul_zero]; rfl
-  refine WP.mono (count_loop (cr := .r3) (nChunks_pos (by omega) hK1)
+  refine WP.mono (count_loop (cr := .r3) (nChunks_pos (by omega_arith) hK1)
     (fun j u => ChunkI s BX Z oA w wX K Pv (2 ^ (128 * w) % Pv) j u)
-    (fun j hj u I => chunkStep_ok hA hX hw2 hw' hK1 hK' hP2 hodd (Nat.mod_lt _ (by omega)) hR2' hj I) I0)
+    (fun j hj u I => chunkStep_ok hA hX hw2 hw' hK1 hK' hP2 hodd (Nat.mod_lt _ (by omega_arith)) hR2' hj I) I0)
     fun t I => ⟨⟨?_, I.p0, I.p1, I.r12, I.inv, I.out, I.r10⟩, I.keep⟩
   rw [← Nat.mod_eq_of_lt I.slt, I.sv, hC]
 
