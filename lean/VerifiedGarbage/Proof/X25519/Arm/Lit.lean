@@ -15,7 +15,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 /-!
 # X25519 on 32-bit ARM: the code as a literal
 
-The code of `vg_x25519` as a literal (`materialize_code`,
+The code of `vg_x25519` and `vg_x25519_umaal` as literals (`materialize_code`,
 `Proof/Framework/Lit.lean`).
 -/
 
@@ -24,5 +24,6 @@ The code of `vg_x25519` as a literal (`materialize_code`,
 namespace VG
 
 materialize_code Impl.X25519.Arm.x25519
+materialize_code Impl.X25519.Arm.x25519Umaal
 
 end VG

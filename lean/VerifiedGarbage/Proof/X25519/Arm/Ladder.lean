@@ -58,10 +58,10 @@ theorem Cur.next {s s' : State} (h : Cur b s0 a c qs v s) (hr : Rest clob s s')
   ⟨h.ctx.of_rest hr (by decide), h.stp.trans ⟨hr.mono (by decide), hf⟩,
     by rw [hr.gpr _ (by decide), h.r10], by rw [hr.gpr _ (by decide), h.r11], hS⟩
 
-theorem opMul {o x y : Nat} (hq : Sep1 ACC o qs = true) (ho : 64 ≤ o ∧ o + 64 ≤ ACC) (hx : x ∈ qs)
-    (hy : y ∈ qs) {s : State} (h : Cur b s0 a c qs v s) :
-    WP isa (mul o x y) s (Cur b s0 a c (o :: qs) (upd v o (v x * v y))) :=
-  WP.mono (mulS (by decide) hq ho hx hy h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
+theorem opMul {M : Nat → Nat → Nat → Prog isa} (hM : MulOk ACC M) {o x y : Nat} (hq : Sep1 ACC o qs = true)
+    (ho : 64 ≤ o ∧ o + 64 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs) {s : State} (h : Cur b s0 a c qs v s) :
+    WP isa (M o x y) s (Cur b s0 a c (o :: qs) (upd v o (v x * v y))) :=
+  WP.mono (mulS (by decide) hM hq ho hx hy h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
 
 theorem opAdd {o x y : Nat} (hq : Sep1 ACC o qs = true) (ho : 64 ≤ o ∧ o + 64 ≤ ACC) (hx : x ∈ qs)
     (hy : y ∈ qs) {s : State} (h : Cur b s0 a c qs v s) :
@@ -83,8 +83,9 @@ inductive FOp
   | add (o x y : Nat)
   | sub (o x y : Nat)
 
-def FOp.code : FOp → Prog isa
-  | .mul o x y => Impl.X25519.Arm.mul o x y
+/-- The code of an operation, with the multiplication `M`. -/
+def FOp.code (M : Nat → Nat → Nat → Prog isa) : FOp → Prog isa
+  | .mul o x y => M o x y
   | .add o x y => .block (Impl.X25519.Arm.add o x y)
   | .sub o x y => .block (Impl.X25519.Arm.sub o x y)
 
@@ -103,9 +104,9 @@ def FOp.val : FOp → (Nat → Fe) → Fe
   | .sub _ x y, v => v x - v y
 
 /-- The operations `ops`, then `k`. -/
-def opsCode : List FOp → Prog isa → Prog isa
+def opsCode (M : Nat → Nat → Nat → Prog isa) : List FOp → Prog isa → Prog isa
   | [], k => k
-  | op :: ops, k => .seq op.code (opsCode ops k)
+  | op :: ops, k => .seq (op.code M) (opsCode M ops k)
 
 /-- Each operation's slots are separate or equal, below `ACC`, and its inputs
 known. -/
@@ -124,24 +125,26 @@ def outsQ : List FOp → List Nat → List Nat
   | [], qs => qs
   | op :: ops, qs => outsQ ops (op.out :: qs)
 
-theorem op_ok {b : BitVec 32} {s0 : State} {a c : BitVec 32} {qs : List Nat} {v : Nat → Fe} (op : FOp)
+theorem op_ok {M : Nat → Nat → Nat → Prog isa} (hM : MulOk ACC M) {b : BitVec 32} {s0 : State}
+    {a c : BitVec 32} {qs : List Nat} {v : Nat → Fe} (op : FOp)
     (hq : Sep1 ACC op.out qs = true) (ho : 64 ≤ op.out ∧ op.out + 64 ≤ ACC) (hx : op.x ∈ qs) (hy : op.y ∈ qs)
     {s : State} (h : Cur b s0 a c qs v s) :
-    WP isa op.code s (Cur b s0 a c (op.out :: qs) (upd v op.out (op.val v))) := by
+    WP isa (op.code M) s (Cur b s0 a c (op.out :: qs) (upd v op.out (op.val v))) := by
   cases op with
-  | mul o x y => exact opMul hq ho hx hy h
+  | mul o x y => exact opMul hM hq ho hx hy h
   | add o x y => exact opAdd hq ho hx hy h
   | sub o x y => exact opSub hq ho hx hy h
 
-theorem ops_ok {b : BitVec 32} {s0 : State} {a c : BitVec 32} {k : Prog isa} {Q : State → Prop} :
+theorem ops_ok {M : Nat → Nat → Nat → Prog isa} (hM : MulOk ACC M) {b : BitVec 32} {s0 : State}
+    {a c : BitVec 32} {k : Prog isa} {Q : State → Prop} :
     ∀ (ops : List FOp) (qs : List Nat) (v : Nat → Fe) (s : State), opsOk ops qs = true →
       Cur b s0 a c qs v s → (∀ s', Cur b s0 a c (outsQ ops qs) (runOps ops v) s' → WP isa k s' Q) →
-      WP isa (opsCode ops k) s Q
+      WP isa (opsCode M ops k) s Q
   | [], _, _, s, _, h, hk => hk s h
   | op :: ops, qs, v, s, hok, h, hk => by
     simp only [opsOk, Bool.and_eq_true, decide_eq_true_eq, List.contains_iff_mem] at hok
     obtain ⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩ := hok
-    exact WP.seq (WP.mono (op_ok op h1 ⟨h2, h3⟩ h4 h5 h) fun s' h' => ops_ok ops _ _ s' h6 h' hk)
+    exact WP.seq (WP.mono (op_ok hM op h1 ⟨h2, h3⟩ h4 h5 h) fun s' h' => ops_ok hM ops _ _ s' h6 h' hk)
 
 /-! ## One iteration -/
 
@@ -273,14 +276,19 @@ theorem head_ok {b : BitVec 32} {k : Nat} {x1 : Fe} {sL : State} (hbits : Bits b
 
 theorem sub0 (x : BitVec 32) : x - 0 = x := by simp
 
-theorem step_eq : step = .seq (.block stepHead) (opsCode ladOps (.block [.cmp .r11 (.imm 0)])) := rfl
+theorem step_eq (M : Nat → Nat → Nat → Prog isa) :
+    stepWith M = .seq (.block stepHead) (opsCode M ladOps (.block [.cmp .r11 (.imm 0)])) := rfl
+
+section
+variable {M : Nat → Nat → Nat → Prog isa} (hM : MulOk ACC M)
+include hM
 
 theorem step_ok {b : BitVec 32} {k : Nat} {x1 : Fe} {sL : State} (hbits : Bits b k sL.mem)
     {n : Nat} (hn : 1 ≤ n) (hn' : n ≤ 255) {s : State} (h : LadInv b k x1 sL n s) :
-    WP isa step s fun s' => LadInv b k x1 sL (n - 1) s' ∧ s'.z = decide (n - 1 = 0) := by
+    WP isa (stepWith M) s fun s' => LadInv b k x1 sL (n - 1) s' ∧ s'.z = decide (n - 1 = 0) := by
   rw [step_eq]
   refine WP.seq (WP.mono (head_ok hbits hn hn' h) fun s1 h1 =>
-    ops_ok ladOps LQ _ s1 ladOps_ok h1 fun s2 h2 => ?_)
+    ops_ok hM ladOps LQ _ s1 ladOps_ok h1 fun s2 h2 => ?_)
   refine wp_cmp (op2_imm (by decide)) fun s3 u3 hz => WP.block_nil ⟨⟨?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · exact h2.ctx.of_rest (u3.rest []) (by decide)
   · exact h2.stp.trans (Stp.of_rest (u3.rest []) (by decide) u3.mem)
@@ -297,10 +305,10 @@ theorem step_ok {b : BitVec 32} {k : Nat} {x1 : Fe} {sL : State} (hbits : Bits b
 initial elements in `LQ`. -/
 theorem ladder_ok {b : BitVec 32} {k : Nat} {x1 : Fe} {s : State} (hc : Ctx b s) (hbits : Bits b k s.mem)
     (hS : SlotsOk s.mem (State.addr b) LQ (ladV x1 (VG.Proof.X25519.init x1))) :
-    WP isa ladder s fun s' => Stp b s s' ∧ Ctx b s' ∧
+    WP isa (ladderWith M) s fun s' => Stp b s s' ∧ Ctx b s' ∧
       s'.gpr .r10 = BitVec.ofNat 32 (ladderAfter k x1 0).swap ∧
       SlotsOk s'.mem (State.addr b) LQ (ladV x1 (ladderAfter k x1 0)) := by
-  unfold ladder
+  unfold ladderWith
   refine WP.seq (wp_mov (op2_imm (by decide)) fun s1 u1 => wp_mov (op2_imm (by decide)) fun s2 u2 =>
     WP.block_nil ?_)
   have hr2 : Rest [.r10, .r11] s s2 := (u1.rest (by decide)).trans (u2.rest (by decide))
@@ -314,9 +322,11 @@ theorem ladder_ok {b : BitVec 32} {k : Nat} {x1 : Fe} {s : State} (hc : Ctx b s)
     (fun m s' => 1 ≤ m ∧ m ≤ 255 ∧ LadInv b k x1 s2 m s') ?_ 255 s2 ⟨by decide, Nat.le_refl _, h255⟩)
     fun s' ⟨h'⟩ => ⟨hst.trans h'.stp, h'.ctx, h'.r10, h'.slots⟩
   rintro m s' ⟨h1, h2, hl⟩
-  refine WP.mono (step_ok hbits2 h1 h2 hl) fun s'' ⟨hl', hz⟩ => ?_
+  refine WP.mono (step_ok hM hbits2 h1 h2 hl) fun s'' ⟨hl', hz⟩ => ?_
   by_cases hm : m - 1 = 0
   · exact .inl ⟨by rw [eval_ne, hz]; simp [hm], by rw [hm] at hl'; exact hl'⟩
   · exact .inr ⟨by rw [eval_ne, hz]; simp [hm], m - 1, by omega_arith, by omega_arith, by omega_arith, hl'⟩
+
+end
 
 end VG.Proof.X25519.Arm

@@ -6,7 +6,8 @@
 //! specifies, in constant time. On x86-64 CPUs with BMI2 and ADX it is
 //! `vg_x25519_adx`, with the same contract and faster field multiplications,
 //! and on those that also have AVX512_IFMA and AVX512VL `vg_x25519_ifma`,
-//! whose ladder does four field multiplications at once.
+//! whose ladder does four field multiplications at once. On ARMv7 cores with
+//! `umaal` it is `vg_x25519_umaal`, whose field multiplications use it.
 //! This module gives it working space, and destroys what it leaves there.
 //!
 //! On AArch64, x86 and x86-64, [`public_key`](PrivateKey::public_key) is the verified
@@ -48,6 +49,8 @@ use crate::arch::x25519::{
     VG_X25519_IFMA_FEATURES, vg_x25519_adx, vg_x25519_base_adx, vg_x25519_base_ifma,
     vg_x25519_ifma,
 };
+#[cfg(target_arch = "arm")]
+use crate::arch::x25519::{VG_X25519_UMAAL_FEATURES, vg_x25519_umaal};
 use crate::cpu::{Features, detected};
 use crate::zeroize::{zeroize, zeroize_raw};
 use core::mem::{MaybeUninit, size_of};
@@ -67,6 +70,9 @@ enum Backend {
     /// AVX512F), and `Adx`'s multiplications for the inversion.
     #[cfg(target_arch = "x86_64")]
     Ifma,
+    /// ARMv7's `umaal` for the ladder's field multiplications.
+    #[cfg(target_arch = "arm")]
+    Umaal,
 }
 
 impl Backend {
@@ -86,9 +92,19 @@ impl Backend {
         }
     }
 
+    /// The best implementation a CPU with the features `f` can run.
+    #[cfg(target_arch = "arm")]
+    fn select(f: Features) -> Backend {
+        if f.contains(VG_X25519_UMAAL_FEATURES) {
+            Backend::Umaal
+        } else {
+            Backend::Baseline
+        }
+    }
+
     /// The best implementation a CPU with the features `f` can run: there
     /// is only one here.
-    #[cfg(not(target_arch = "x86_64"))]
+    #[cfg(not(any(target_arch = "x86_64", target_arch = "arm")))]
     fn select(_: Features) -> Backend {
         Backend::Baseline
     }
@@ -131,6 +147,8 @@ pub fn x25519(scalar: &[u8; 32], u: &[u8; 32]) -> [u8; 32] {
         Backend::Adx => vg_x25519_adx,
         #[cfg(target_arch = "x86_64")]
         Backend::Ifma => vg_x25519_ifma,
+        #[cfg(target_arch = "arm")]
+        Backend::Umaal => vg_x25519_umaal,
     };
     // SAFETY: `out` and `scratch` are valid for reads and writes of 32 and
     // 4096 bytes, and `scalar` and `u` for reads of 32 bytes; they are
@@ -316,6 +334,8 @@ mod tests {
                 Backend::Adx
             );
         }
+        #[cfg(target_arch = "arm")]
+        assert_eq!(Backend::select(VG_X25519_UMAAL_FEATURES), Backend::Umaal);
     }
 
     /// The point 0 has small order: the shared secret is zero.
