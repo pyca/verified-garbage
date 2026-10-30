@@ -41,5 +41,5 @@ scope with `--max-affected` and `--verify-batch`. Replays remain unverified;
 changing the Lean reader requires a fresh capture. `--discover --no-shake`
 generates independent hypotheses without shake. `--batch` bounds shake's
 memory (about 3 GB per 1,000 modules), and `--read-batch` separately bounds
-declaration-reader roots. See [Iterating on import narrowing](lean/README.md#iterating-on-import-narrowing)
-and [the evidence and verification guide](ci/IMPORT_NARROWING.md).
+declaration-reader roots. See [Iterating on import narrowing](../../../lean/README.md#iterating-on-import-narrowing)
+and [the evidence and verification guide](../../../ci/IMPORT_NARROWING.md).
