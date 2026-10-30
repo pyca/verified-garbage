@@ -27,6 +27,10 @@ mod vg_ffdh_vetted_groups;
 pub(crate) use vg_ffdh_vetted_groups::VG_FFDH_VETTED_GROUPS;
 
 #[rustfmt::skip]
+mod vg_p256_comb;
+pub(crate) use vg_p256_comb::VG_P256_COMB;
+
+#[rustfmt::skip]
 mod vg_p384_comb;
 pub(crate) use vg_p384_comb::VG_P384_COMB;
 
