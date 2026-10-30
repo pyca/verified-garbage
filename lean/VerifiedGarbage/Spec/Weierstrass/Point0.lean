@@ -22,8 +22,9 @@ coordinates as elements of `GF(p)` (`rcbDbl0`, `rcbAdd0m`: the algorithms'
 formulas, in their stated order), whatever the points stand for; that the
 formulas are the group law, for points on a curve with `a = 0`, is a theorem
 of the proofs that use them. They read `3b` (`b3At`) and not `a`. Their
-working space, offsets, representation and what they keep are those of
-`Spec/Weierstrass/Point.lean`'s functions.
+working space, offsets, representation, precondition (`sumPre`: every
+coordinate of the operands and both constants below `p`) and what they keep
+are those of `Spec/Weierstrass/Point.lean`'s functions.
 -/
 
 @[expose] public section
@@ -108,19 +109,16 @@ every byte of `ws` but `O`'s and the own working space kept. -/
 def resultPost (v : Fin C.p × Fin C.p × Fin C.p) (ws : Addr) (m m' : Mem) : Prop :=
   C.Below (C.pointAt m' ws (oAt C.k)) ∧ C.decPt (C.pointAt m' ws (oAt C.k)) = v ∧ Keeps C.k ws m m'
 
-/-- `double_a0`: `O = P + P` by Algorithm 9, for `P`'s coordinates and `3b`
-below `p`. -/
+/-- `double_a0`: `O = P + P` by Algorithm 9, under `doubleContract`'s
+precondition. -/
 def double0Contract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
-  sig.contract A
-    (pre := fun ws m => C.Below (C.pointAt m ws (pAt C.k)) ∧ C.coordAt m ws (b3At C.k) < C.p)
+  sig.contract A (pre := fun ws m => C.sumPre (pAt C.k) (pAt C.k) ws m)
     (post := fun ws m m' _ => C.resultPost (C.dbl0 ws m) ws m m') (stack := stack)
 
-/-- `add_affine_a0`: `O = P + (X₂ : Y₂ : 1)` by Algorithm 8, for `P`'s
-coordinates, `Q`'s `X` and `Y` and `3b` below `p`. -/
+/-- `add_affine_a0`: `O = P + (X₂ : Y₂ : 1)` by Algorithm 8, under
+`addContract`'s precondition. -/
 def add0mContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
-  sig.contract A
-    (pre := fun ws m => C.Below (C.pointAt m ws (pAt C.k)) ∧ C.coordAt m ws (qAt C.k) < C.p ∧
-      C.coordAt m ws (qAt C.k + elemBytes C.k) < C.p ∧ C.coordAt m ws (b3At C.k) < C.p)
+  sig.contract A (pre := fun ws m => C.sumPre (pAt C.k) (qAt C.k) ws m)
     (post := fun ws m m' _ => C.resultPost (C.add0m ws m) ws m m') (stack := stack)
 
 /-- What the documentation says of both functions. -/
@@ -128,19 +126,12 @@ def common0 : String :=
   s!"A point is three projective coordinates `X, Y, Z` in Montgomery's form modulo the curve's \
     prime, each {C.k} 64-bit words (`{elemBytes C.k}` bytes), little-endian, at consecutive byte \
     offsets of the working space `ws`: `O` at byte {oAt C.k}, `P` at {pAt C.k} and `Q` at \
-    {qAt C.k}. The curve's `3b`, in the same form, is read at byte {b3At C.k}; `a` is not read. \
+    {qAt C.k}. The curve's `a` and `3b`, in the same form, are at bytes {aAt C.k} and {b3At C.k}; \
+    `a` is not read. \
     Every byte of `ws` but `O`'s and the function's own working space (bytes {ownAt C.k} to \
     4095) keeps its value.\n\n\
     Contract: `double0Contract` or `add0mContract` of `VG.Spec.Weierstrass.Point.Curve`. \
     Constant time: only the pointer may affect timing."
-
-/-- The `# Safety` items but for what the signature gives, after `reads`,
-the coordinates the function reads. -/
-def safety0 (reads : String) : List String :=
-  [s!"Every coordinate of {reads}, and the number at byte {b3At C.k}, must be below \
-      {C.desc}'s prime.",
-    s!"Bytes {ownAt C.k} to 4095 of `ws` are unspecified on return and may hold intermediate \
-      values, which the caller must destroy if they are secret."]
 
 /-- `vg_<curve>_point_double_a0` on every target. -/
 def double0Api : Api where
@@ -150,7 +141,7 @@ def double0Api : Api where
   contracts := some fun A stack => C.double0Contract A stack
   summary := s!"The doubling `O = P + P` of a point on {C.desc}, whose `a` is zero, by Renes, \
     Costello and Batina's complete doubling for `a = 0` (Algorithm 9). " ++ C.common0
-  safety := C.safety0 "the point `P`"
+  safety := C.safety "the point `P`"
 
 /-- `vg_<curve>_point_add_affine_a0` on every target. -/
 def add0mApi : Api where
@@ -161,7 +152,7 @@ def add0mApi : Api where
   summary := s!"The addition `O = P + Q` of points on {C.desc}, whose `a` is zero, for \
     `Q = (X : Y : 1)`, by Renes, Costello and Batina's complete mixed addition for `a = 0` \
     (Algorithm 8): `Q`'s `Z` is not read. " ++ C.common0
-  safety := C.safety0 "the point `P` and `Q`'s `X` and `Y`"
+  safety := C.safety "the points `P` and `Q`"
 
 end Curve
 
