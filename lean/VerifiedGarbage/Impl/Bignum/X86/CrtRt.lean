@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Mont.X86.Sse2
 public import VerifiedGarbage.Impl.Bignum.X86.PublicRt
 public import VerifiedGarbage.Impl.Bignum.X86.ModulusCheck
 public import VerifiedGarbage.Impl.Mont.X86.RepeatSquares
+public import VerifiedGarbage.Impl.Mont.X86.Window
 
 /-! # Private CRT RSA at a width read at run time (i686 cdecl)
 
@@ -312,23 +313,20 @@ def nextWindow (c : Ctx) : Prog isa :=
         .shift .shr .eax 28, .store (sc winOff) .eax]))
     (.seq (.block (ptrTo (.slot c 8) .ebp .edx ++ cntTo (one c) .edx ++ [.mov .ecx (.imm 0)])) shiftLoop)
 
-/-- Entry `j` into slot 7 when the window is `j`. -/
-def selectEntry (c : Ctx) (j : Nat) : Prog isa :=
-  .seq (.block ([.mov .eax (.mem (sc winOff)), .alu .xor .eax (.imm (BitVec.ofNat 32 j)),
-      .alu .sub .eax (.imm 1), .shift .shr .eax 31, .mov .ecx (.imm 0), .alu .sub .ecx (.reg .eax)] ++
-      entryPtr c .ebp j .edx ++ ptrTo (.slot c 7) .ebx .edx ++ cntTo (one c) .edi))
-    (.seq selectLoopX (.block restoreEdi))
+/-- The table's entry at `ebp` into slot 7 when the window word, sixteen
+above the window and down one per entry, is sixteen; the word down one, `ebp`
+past the entry, and ZF at the table's end. -/
+def selectStep (c : Ctx) : Prog isa :=
+  .seq (.block (VG.Impl.Mont.X86.Dynamic.windowMask 16 ++
+      [.mov .eax (.mem (sc winOff)), .alu .sub .eax (.imm 1), .store (sc winOff) .eax] ++
+      ptrTo (.slot c 7) .ebx .edx ++ cntTo (one c) .edi)) <|
+  .seq (.seq selectLoopX (.block restoreEdi)) (.block (entryPtr c .edx 16 .eax ++ [.alu .cmp .ebp (.reg .edx)]))
 
-/-- Entries `1` to `k`, each when the window names it. -/
-def selectEntries (c : Ctx) : Nat → Prog isa
-  | 0 => .block []
-  | k + 1 => .seq (selectEntries c k) (selectEntry c (k + 1))
-
-/-- The window's entry into slot 7, by a scan of the whole table. -/
+/-- The window's entry into slot 7, by a scan of the whole table under masks:
+the window word raised by sixteen, then counted down to the window. -/
 def selectWindow (c : Ctx) : Prog isa :=
-  .seq (.block ([.mov .ecx (.imm (BitVec.allOnes 32))] ++ entryPtr c .ebp 0 .edx ++ ptrTo (.slot c 7) .ebx .edx ++
-    cntTo (one c) .edi)) <|
-  .seq (.seq selectLoop (.block restoreEdi)) (selectEntries c 15)
+  .seq (.block ([.mov .eax (.mem (sc winOff)), .alu .add .eax (.imm 16), .store (sc winOff) .eax] ++
+    entryPtr c .ebp 0 .edx)) (.loop (selectStep c) .ne)
 
 def square (c : Ctx) : Prog isa := mul c 6 6 6
 
