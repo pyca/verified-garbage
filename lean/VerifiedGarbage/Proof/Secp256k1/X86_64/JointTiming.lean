@@ -7,6 +7,8 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNaf16Timing
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
 public import VerifiedGarbage.Impl.Secp256k1.X86_64.Joint
+public import VerifiedGarbage.Impl.Secp256k1.X86_64.PointOps
+import VerifiedGarbage.Proof.Secp256k1.X86_64.PointOpsLit
 meta import VerifiedGarbage.Proof.Secp256k1.X86_64.JacTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
@@ -14,6 +16,8 @@ meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNaf16Timing
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
 meta import VerifiedGarbage.Impl.Secp256k1.X86_64.Joint
+meta import VerifiedGarbage.Impl.Secp256k1.X86_64.PointOps
+meta import VerifiedGarbage.Proof.Secp256k1.X86_64.PointOpsLit
 
 /-! Taint checks of the rest of secp256k1's joint loop: its digits' reads and
 entries, the cache of `Z²`, `Z³`, the seed, the counter, the recoders and the
@@ -65,7 +69,14 @@ theorem fastGenerator16_checks : FastPrepChecks16 4 (secp256k1v.sl U) 6000 := by
   · exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs (nafPrepPublicN 4))
       (fun _ _ _ _ h => h) (by taint_decide)
 
-theorem jointDouble_ct : ScratchCT (jointDouble publicJoint.K).inline :=
+/-- The doubling of `vg_secp256k1_jac_double`'s body, into `D`. -/
+theorem jointDouble_ct :
+    ScratchCT (fprogB publicJoint.K.M (dblJ0 publicJoint.K.S publicJoint.K.R publicJoint.K.D)).inline :=
+  VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
+
+/-- `vg_secp256k1_jac_double`: its timing depends only on `rdi`, a straight
+line of field operations at `rdi` plus constants (checked on its literal). -/
+theorem doubleFn_ct : ScratchCT Impl.Secp256k1.X86_64.PointOps.doubleFn :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
 
 end VG.Proof.Secp256k1.X86_64

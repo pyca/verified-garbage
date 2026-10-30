@@ -5,7 +5,8 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
 import VerifiedGarbage.Proof.Secp256k1.X86_64.JointTiming
 import VerifiedGarbage.Proof.Secp256k1.X86_64.NafTableTiming
 import VerifiedGarbage.Proof.Secp256k1.X86_64.JointLayout
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubleIn
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubler
+public import VerifiedGarbage.Proof.Weierstrass.JacDbl0
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 public import VerifiedGarbage.Impl.Secp256k1.X86_64.Joint
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Secp256k1Literals
@@ -15,7 +16,6 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
 meta import VerifiedGarbage.Proof.Secp256k1.X86_64.JointTiming
 meta import VerifiedGarbage.Proof.Secp256k1.X86_64.NafTableTiming
 meta import VerifiedGarbage.Proof.Secp256k1.X86_64.JointLayout
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubleIn
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Impl.Secp256k1.X86_64.Joint
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.Secp256k1Literals
@@ -42,8 +42,9 @@ theorem secp256k1_a0 : Weierstrass.A0 Spec.Secp256k1.curve := rfl
 
 theorem joint_doubler (hc : BaseCfgOk secp256k1v) (hC : Weierstrass.Law secp256k1v.C) :
     JointDoubler publicJoint secp256k1v.C size (jointDouble publicJoint.K) :=
-  doubleIn0_doubler joint_add_layout (Weierstrass.unitMod_pow_two hc.p_odd _) hC secp256k1_a0
-    (by decide) jointDouble_ct
+  call_doubler (doubleBody_doubler joint_add_layout (Weierstrass.unitMod_pow_two hc.p_odd _)
+    (Weierstrass.jdblOk_dblJ0 hC secp256k1_a0) jointDouble_ct joint_cached_checks.copy) (by decide +kernel)
+    (by decide) _
 
 /-- `jointPrefix secp256k1v` without its displacements, as a literal of shared
 blocks (`materialize_shared`): what its constant-time check analyses

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.X86_64
 public import VerifiedGarbage.Impl.Secp256k1.GTable9
 public import VerifiedGarbage.Impl.Ecdh.X86_64
-public import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleIn
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Joint
 
 /-! The x86-64 secp256k1 joint multiplication layout, for public verification. -/
@@ -35,8 +34,7 @@ def publicJoint : Joint.Cfg :=
     gBits := 6000, tsym := "VG_SECP256K1_GTAB", cache := 4000, selected := 5408,
     pts := some Spec.Weierstrass.PointOps.secp256k1, gw := 9, dbl := dblJ0 }
 
-/-- The joint loop's doubler: in place (`doubleIn0`), with no copy from a
-temporary point. -/
-def jointDouble (K : WinCfg) : Prog isa := doubleIn0 K.M K.S K.R
+/-- The joint loop's doubler: a call of `vg_secp256k1_jac_double`. -/
+def jointDouble (K : WinCfg) : Prog isa := PointOps.doubleCall Spec.Weierstrass.PointOps.secp256k1 K dblJ0
 
 end VG.Impl.Secp256k1.X86_64

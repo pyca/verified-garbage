@@ -5,9 +5,9 @@ public import VerifiedGarbage.Impl.Secp256k1.X86_64.Joint
 
 /-! # ECDSA verification over secp256k1 on x86-64: four-word field elements and scalars
 
-By the public joint method (`Cfg.jointVerify`), with the accumulator doubled
-in place for `a = 0` (`jointDouble`) and the digits' additions calls of
-`vg_secp256k1_jac_add_cached` and `vg_secp256k1_jac_add_affine`. -/
+By the public joint method (`Cfg.jointVerify`), its doublings and additions
+calls of `vg_secp256k1_jac_double`, `vg_secp256k1_jac_add_cached` and
+`vg_secp256k1_jac_add_affine` (for `a = 0`). -/
 
 @[expose] public section
 

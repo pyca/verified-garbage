@@ -158,7 +158,7 @@ namespace VG.Proof.Secp256k1.X86_64.PointOps
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64 VG.Impl.Secp256k1.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86_64
 open VG.Proof.Weierstrass.X86_64.PointOps
-open VG.Impl.Secp256k1.X86_64.PointOps (addCachedFn addAffineFn)
+open VG.Impl.Secp256k1.X86_64.PointOps (doubleFn addCachedFn addAffineFn)
 
 /-- secp256k1's curve of `Spec/Weierstrass/PointOps.lean`. -/
 abbrev C : Spec.Weierstrass.PointOps.Curve := Spec.Weierstrass.PointOps.secp256k1
@@ -214,6 +214,13 @@ def addCachedK : Contract isa where
     C.Result C.pAt (Spec.Weierstrass.PointOps.jacAddCached P.1 P.2.1 P.2.2 Q.1 Q.2.1 Q.2.2
       (C.el (s.gpr .rdi) s.mem C.zzAt) (C.el (s.gpr .rdi) s.mem C.zzzAt) C.dbl) (s.gpr .rdi) s.mem s'.mem
   pub s₁ s₂ := fnPub s₁ s₂ ∧ C.reads true (s₁.gpr .rdi) s₁.mem = C.reads true (s₂.gpr .rdi) s₂.mem
+
+/-- The doubling's contract on x86-64. -/
+def doubleK : Contract isa where
+  pre s := fnPre s ∧ C.ModOk (s.gpr .rdi) s.mem ∧ C.Below (C.pointAt s.mem (s.gpr .rdi) C.pAt)
+  post s s' := let P := C.pt (s.gpr .rdi) s.mem C.pAt
+    C.Result C.pAt (C.dbl P.1 P.2.1 P.2.2) (s.gpr .rdi) s.mem s'.mem
+  pub s₁ s₂ := fnPub s₁ s₂
 
 /-- The mixed addition's contract on x86-64. -/
 def addAffineK : Contract isa where
@@ -280,6 +287,31 @@ theorem addCached_correct (hFe : Point.Fermat C.p)
     fnCfg.ez, hsel, K_n]
   rfl
 
+theorem double_correct (hFe : Point.Fermat C.p)
+    (hok : wrapOk doubleFn = true) (s : State) (hs : doubleK.pre s) :
+    ∃ t s', Exec isa doubleFn s t s' ∧ abiPreserved s s' ∧ doubleK.post s s' := by
+  obtain ⟨hp, hmod, hbp⟩ := hs
+  have lp := below_lt (by decide) hbp
+  obtain ⟨t, s', he, ha, hB, hv, hK⟩ := fn_ok fnCfg
+    (body := Impl.Weierstrass.X86_64.PointOps.doubleBody K dblJ0)
+    (V := jacCoords K.R)
+    (r := fun E => Spec.Weierstrass.PointOps.jacDouble0 (E K.R.x) (E K.R.y) (E K.R.z))
+    hok (by decide +kernel) rV
+    (fun s E hI => WP.mono (doubleBody_val doubleLay (unitMod_pow_two p_odd _) hI jdblSpec_dblJ0)
+      fun t ⟨kt, E', it, et⟩ => ⟨kt, E', it, et⟩) s hp hmod (by
+      intro x hx
+      rw [K_n]
+      simp only [jacCoords, List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with rfl | rfl | rfl
+      · exact fnCfg.rx ▸ lp.1
+      · exact fnCfg.ry ▸ lp.2.1
+      · exact fnCfg.rz ▸ lp.2.2)
+  refine ⟨t, s', he, ha, hB, ?_, hK⟩
+  rw [pt_eq hFe _ _ (by decide), pt_eq hFe _ _ (by decide)]
+  rw [show C.k = 4 from rfl] at hv
+  rw [hv, fnCfg.rx, fnCfg.ry, fnCfg.rz, K_n]
+  rfl
+
 theorem addAffine_correct (hFe : Point.Fermat C.p)
     (hok : wrapOk addAffineFn = true) (s : State) (hs : addAffineK.pre s) :
     ∃ t s', Exec isa addAffineFn s t s' ∧ abiPreserved s s' ∧ addAffineK.post s s' := by
@@ -315,6 +347,15 @@ theorem addAffine_correct (hFe : Point.Fermat C.p)
   rfl
 
 /-! ## Constant time -/
+
+/-- The doubling's timing depends only on `rdi`: its code branches on nothing
+and addresses only `rdi` plus constants (checked on the literal). -/
+theorem double_ct : ConstantTime isa doubleK.pre doubleK.pub doubleFn := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' _ _ hp e₁ e₂
+  exact doubleFn_ct s₁ s₂ t₁ t₂ s₁' s₂' trivial trivial (Taint.agree_ofRegs fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    subst hr
+    exact hp.2) e₁ e₂
 
 theorem cachedChecks : CachedJacChecks K K.R K.E K.D sel dblJ0 := nafCachedJac_checks
 
@@ -496,6 +537,21 @@ theorem addCachedK_implies : addCachedK.Implies (C.addCachedContract X86_64.abi)
       X86_64.abi, X86_64.argRegs]
     exact ⟨sat_ret, by decide, sat_mod, sat_p, sat_q, sat_c2, sat_c3⟩⟩
 
+theorem doubleK_implies : doubleK.Implies (C.doubleContract X86_64.abi) where
+  pre s h := by
+    sig_pre [Spec.Weierstrass.PointOps.Curve.doubleContract, Spec.Weierstrass.PointOps.sig,
+      X86_64.abi, X86_64.argRegs] at h
+    exact ⟨⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩, h.2.2.2.2.1, h.2.2.2.2.2⟩
+  post _ _ _ h := h
+  pub s₁ s₂ _ _ h := by
+    sig_pub [Spec.Weierstrass.PointOps.Curve.doubleContract, Spec.Weierstrass.PointOps.sig,
+      X86_64.abi, X86_64.argRegs] at h
+    exact ⟨h.1, h.2⟩
+  sat := ⟨fnSat, by
+    sig_pre [Spec.Weierstrass.PointOps.Curve.doubleContract, Spec.Weierstrass.PointOps.sig,
+      X86_64.abi, X86_64.argRegs]
+    exact ⟨sat_ret, by decide, sat_mod, sat_p⟩⟩
+
 theorem addAffineK_implies : addAffineK.Implies (C.addAffineContract X86_64.abi) where
   pre s h := by
     sig_pre [Spec.Weierstrass.PointOps.Curve.addAffineContract, Spec.Weierstrass.PointOps.sig,
@@ -514,11 +570,18 @@ theorem addAffineK_implies : addAffineK.Implies (C.addAffineContract X86_64.abi)
 /-! ## `Verified` -/
 
 /-- The functions' code passes `wrapOk` (checked on the literals). -/
+theorem double_ok : wrapOk doubleFn = true := by
+  rw [doubleLit.lit_eq]; decide +kernel
+
 theorem addCached_ok : wrapOk addCachedFn = true := by
   rw [addCachedLit.lit_eq]; decide +kernel
 
 theorem addAffine_ok : wrapOk addAffineFn = true := by
   rw [addAffineLit.lit_eq]; decide +kernel
+
+theorem double_verified (hFe : Proof.Weierstrass.Point.Fermat C.p) :
+    Verified X86_64.target doubleFn (C.doubleContract X86_64.abi) :=
+  Verified.of_correct (double_correct hFe double_ok) double_ct doubleK_implies
 
 theorem addCached_verified (hFe : Proof.Weierstrass.Point.Fermat C.p) :
     Verified X86_64.target addCachedFn (C.addCachedContract X86_64.abi) :=

@@ -19,6 +19,7 @@ their checks read rather than build each field operation again. -/
 
 namespace VG.Impl.Secp256k1.X86_64.PointOps
 
+materialize_code doubleLit := doubleFn
 materialize_code addCachedLit := addCachedFn
 materialize_code addAffineLit := addAffineFn
 
