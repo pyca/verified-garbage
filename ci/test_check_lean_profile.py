@@ -29,6 +29,10 @@ class Steps(unittest.TestCase):
         self.assertEqual(list(profile.steps(log)),
                          [(4, 8, "elab", 0.0025), (4, 8, "kernel", 1.5)])
 
+    def test_a_time_just_under_a_second(self):
+        log = [info(4, 8, "type checking took 1e+03ms")]
+        self.assertEqual(list(profile.steps(log)), [(4, 8, "kernel", 1.0)])
+
     def test_blocked_is_apart(self):
         log = [info(4, 8, "blocked took 3ms", "blocked (unaccounted) took 1ms")]
         self.assertEqual([k for _, _, k, _ in profile.steps(log)], ["blocked", "blocked"])

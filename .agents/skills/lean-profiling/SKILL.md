@@ -9,7 +9,10 @@ Start from the build's own profile, not from a profiling build. Every
 module is built with Lean's `profiler` on (`moreLeanArgs` in
 `lean/lakefile.toml`): each step over a millisecond is recorded, at its
 declaration, in the module's `.trace`, which the CI build cache ships. After
-restoring the cache (`lean/README.md`), from the repository root:
+restoring the cache with its profile (`lean/README.md`; `unpack` leaves it
+out unless given `--profile`:
+`… | python3 ci/lean_cache.py unpack --profile lean`), from the repository
+root:
 
 ```sh
 python3 ci/lean_profile.py                        # the 30 costliest declarations

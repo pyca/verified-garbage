@@ -54,9 +54,11 @@ time, as long as `leantar` takes for all the archives. The archives go to
 the toolchain's `leantar` in batches of `--batch` bytes, each unpacked while
 the next arrives. The outputs come out byte for byte as they were packed;
 the `.trace` keeps everything Lake reads (the dependency hash,
-the outputs' hashes and the build's messages, with the profile
-`ci/lean_profile.py` reads), without the record of the build's inputs that
-Lake writes only for people to read.
+the outputs' hashes and the build's messages), without the record of the
+build's inputs that Lake writes only for people to read. As each batch is
+unpacked, `unpack` removes the build's profile from its traces, nine tenths
+of their bytes, which only `ci/lean_profile.py` and the tools built on it
+read (not Lake, nor CI): `--profile` keeps it.
 
 It stages `files.tar` and each batch in `--tmp` (default: `/dev/shm`, a
 tmpfs, when there is one), so they never reach the disk, and removes them.
@@ -66,12 +68,15 @@ import argparse
 import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
 import tarfile
 import tempfile
 from pathlib import Path
+
+import lean_profile
 
 # A module's outputs in its build directory's `lib/lean` (base 0) and `ir`
 # (base 1), in the order `leantar` wants them: the `.olean`'s parts first.
@@ -312,15 +317,55 @@ def build_of(rel):
     return Path(".lake", *parts[:end])
 
 
-def unpack(lean, jobs, tmp, batch, tool, stream):
+# The profiler's lines in a module's standard error: steps (`<what> took <n>ms`,
+# `lean_profile.TOOK`), then their sums.
+SUMS = re.compile(r"^(cumulative profiling times:|\t.* [0-9.]+(?:e[+-]?[0-9]+)?(ms|s))$")
+
+
+def is_profile(entry):
+    """Whether a `.trace`'s stored message is only the build's profile: an
+    `info` at a position (`<file>:<line>:<column>: `), which `lean_profile.py`
+    reads, or of the module's standard error (`stderr:`), of steps that took
+    some time and their sums."""
+    text = entry.get("message", "")
+    if entry.get("level") != "info":
+        return False
+    if text.startswith("stderr:\n"):
+        lines = text.split("\n")[1:]
+    else:
+        m = lean_profile.MESSAGE.match(text)
+        if not m:
+            return False
+        lines = m.group(4).split("\n")
+    lines = [line for line in lines if line.strip()]
+    return bool(lines) and all(lean_profile.TOOK.match(line.strip()) or SUMS.match(line) for line in lines)
+
+
+def strip_profile(trace):
+    """Removes the build's profile from the `.trace` at `trace`, keeping what
+    Lake reads (the dependency hash, the outputs' hashes and any other
+    message). A trace without a profile is left as it is."""
+    t = json.loads(trace.read_text())
+    log = t.get("log", [])
+    kept = [entry for entry in log if not is_profile(entry)]
+    if len(kept) != len(log):
+        t["log"] = kept
+        trace.write_text(json.dumps(t, separators=(",", ":")))
+
+
+def unpack(lean, jobs, tmp, batch, tool, stream, profile=False):
     tool = tool or str(leantar(lean))
     stage = Path(tempfile.mkdtemp(prefix="lean-cache-", dir=tmp))
     running = None
+    unpacking = []  # the traces of the batch `running` unpacks
     count = 0
 
     def wait():
         if running is not None and running.wait():
             raise SystemExit(f"leantar failed ({running.returncode})")
+        if not profile:
+            for trace in unpacking:
+                strip_profile(lean / trace)
 
     def start(records):
         # `-f`: a trace already there (from a build of other sources) would
@@ -336,7 +381,7 @@ def unpack(lean, jobs, tmp, batch, tool, stream):
         # The archives go to the staging directory, a batch at a time, and
         # `leantar` unpacks each batch while the next arrives; `files.tar`
         # goes there too, for `tar`.
-        records, size, n = [], 0, 0
+        records, traces, size, n = [], [], 0, 0
         with tarfile.open(fileobj=stream, mode="r|") as tar:
             for member in tar:
                 rel = Path(member.name)
@@ -355,16 +400,18 @@ def unpack(lean, jobs, tmp, batch, tool, stream):
                     shutil.copyfileobj(tar.extractfile(member), f)
                 build = build_of(rel.relative_to(LTAR))
                 records.append({"file": str(file), "base": [str(build / "lib/lean"), str(build / "ir")]})
+                name = str(rel.relative_to(LTAR).relative_to(build.relative_to(".lake")))
+                traces.append(build / "lib/lean" / (name[:-len(".ltar")] + ".trace"))
                 size += member.size
                 if size >= batch:
                     wait()
-                    running = start(records)
+                    running, unpacking = start(records), traces
                     count += len(records)
-                    records, size = [], 0
+                    records, traces, size = [], [], 0
         wait()
-        running = None
+        running, unpacking = None, []
         if records:
-            running = start(records)
+            running, unpacking = start(records), traces
             count += len(records)
             wait()
     finally:
@@ -409,6 +456,8 @@ def main(argv=None):
     u.add_argument("--batch", type=int, default=256 << 20,
                    help="bytes of archives to stage before unpacking them (default: 256 MiB)")
     u.add_argument("--leantar", help="the leantar to unpack with (default: the toolchain's)")
+    u.add_argument("--profile", action="store_true",
+                   help="keep the build's profile in the modules' `.trace` files (for `lean_profile.py`)")
     u.add_argument("--tmp", default=tmp_dir(),
                    help="where to stage the archives (default: /dev/shm, if there is one)")
     for q in (st, r):
@@ -430,7 +479,8 @@ def main(argv=None):
     elif args.command == "restore":
         restore(args.lean.resolve(), args.jobs, args.leantar, args.archive_dir, args.modules, args.others)
     else:
-        unpack(args.lean.resolve(), args.jobs, args.tmp, args.batch, args.leantar, sys.stdin.buffer)
+        unpack(args.lean.resolve(), args.jobs, args.tmp, args.batch, args.leantar, sys.stdin.buffer,
+               args.profile)
 
 
 if __name__ == "__main__":
