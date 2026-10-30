@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P224Sha224
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P224Sha224Comb
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -22,7 +22,7 @@ A generic file (see `TCB/Emit.lean`) over P-224's group law `h`, the variant
 namespace VG.Generic.P224.Arm.EcdsaP224Sha224
 
 open VG.Proof.Ecdsa.Rfc6979.Arm (cfgOf signNotes)
-open VG.Proof.Ecdsa.Rfc6979.Arm.P224Sha224 (pack sign_verified)
+open VG.Proof.Ecdsa.Rfc6979.Arm.P224Sha224Comb (pack sign_verified)
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P224.curve) : List Artifact := [
   Spec.Ecdsa.Rfc6979.P224Sha224.signApi.artifact Arm.target {
@@ -30,6 +30,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P224.curve) : List Artifact := 
       Proof.Pbkdf2.Whole.Arm.sha224F.hiN Proof.Pbkdf2.Whole.Arm.sha224F.H.updN
       Proof.Pbkdf2.Whole.Arm.sha224F.hfN 28 Spec.Ecdsa.P224.signApi.name]
     code := (cfgOf (pack h.law)).sign
+    consts := Impl.Weierstrass.Arm.p224CombConsts
     stack := 240
     verified := sign_verified h.law }]
 
