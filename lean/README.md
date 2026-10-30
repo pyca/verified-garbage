@@ -170,14 +170,16 @@ or `ci/audit_negative.py`), `Emit.lean` builds that audit, which either
 audits what is there now or fails, and runs the program again: a `lake build`
 first only saves it that.
 
-On Linux, `Emit.lean` needs `vm.max_map_count` above the default of many
-distributions (65,530): an audit is not a module, so it maps every module it
-imports with its `.olean.server` and `.olean.private` parts, about six
-regions of memory per `.olean`, and the programs, though modules, still map
-every part of each module whose data they import. It refuses to start below
-eight per `.olean` and names the command to raise the limit, `sudo sysctl -w
-vm.max_map_count=262144`, which CI runs (`EmitOne.lean` loads far fewer).
-Past the limit Lean would fail with `failed to read file '….olean.private'`.
+On Linux, a process may map at most `vm.max_map_count` regions of memory,
+and Lean maps each module it imports with its parts: a file that is not a
+module (an audit, `EmitOne.lean`'s driver) maps those of everything it
+imports. On X86-64, the largest target, the audit maps about 54,000 regions
+and the emitter's program about 46,600, under the 65,530 of many
+distributions' default, which leaves `lake build` and `Emit.lean` working
+without a change; CI raises the limit to 262,144 before it builds anything,
+so that it keeps working as the library grows. Past the limit Lean fails
+with `failed to read file '….olean.private'`, after which `Emit.lean` names
+the command to raise it, `sudo sysctl -w vm.max_map_count=262144`.
 
 Every module records a profile of its build, kept in its `.trace` file
 (`moreLeanArgs` in `lakefile.toml`), which Lake prints again for each module

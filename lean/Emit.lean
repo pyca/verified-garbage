@@ -57,39 +57,29 @@ def nativeTCB : IO (List System.FilePath) := do
   return (sharedLib "VerifiedGarbage_NativeTCB") ::
     (targets.qsort (· < ·)).toList.map fun t => sharedLib s!"VerifiedGarbage_NativeTCB{t}"
 
-/-- How many `.olean` files the driver may load: those of this project and
-of its packages. -/
-partial def oleanCount (dir : System.FilePath) : IO Nat := do
-  if !(← dir.isDir) then return 0
-  let mut n := 0
-  for e in ← dir.readDir do
-    if ← e.path.isDir then n := n + (← oleanCount e.path)
-    else if e.path.extension == some "olean" then n := n + 1
-  return n
-
 /-- On Linux, a process may map at most `vm.max_map_count` regions of memory,
-and an audit (which this may build) maps each module it imports, with its
-`.olean.server` and `.olean.private` parts, since it is not a module and sees
-every module's private part; the programs, which are modules, map fewer, but
-still every part of each module whose data they import. Past the limit, Lean
-fails with `failed to read file '….olean.private'`, naming whichever module
-it was loading. The old driver, which was not a module, needed about six
-regions per `.olean` (80,144 for 13,700); require eight.
-`none` if the limit is high enough, or not Linux. -/
-def mapCountProblem : IO (Option String) := do
+and Lean maps each module it imports with its parts (`.olean.server`,
+`.olean.private`, `.ir`): an audit, which is not a module, maps those of
+everything it imports, and the programs, which are modules, fewer. Past the
+limit, Lean fails with `failed to read file '….olean.private'`, naming
+whichever module it was loading. Measured on X86-64, the largest target
+(at 27,959 `.olean` files in the build): the audit maps about 54,000
+regions and the program about 46,600, under the 65,530 of many
+distributions' default. Rather than refuse to start below a guess, this
+names the fix after a failure: a hint if the limit is under 262,144 (what
+CI sets), `none` otherwise or off Linux. -/
+def mapCountHint : IO (Option String) := do
   let limitFile : System.FilePath := "/proc/sys/vm/max_map_count"
   unless System.Platform.isLinux && (← limitFile.pathExists) do return none
   let some limit := (← IO.FS.readFile limitFile).trimAscii.toString.toNat? | return none
-  let mut oleans ← oleanCount (".lake" / "build" / "lib" / "lean")
-  let packages : System.FilePath := ".lake" / "packages"
-  if ← packages.isDir then
-    for e in ← packages.readDir do
-      oleans := oleans + (← oleanCount (e.path / ".lake" / "build" / "lib" / "lean"))
-  let needed := 8 * oleans
-  if limit ≥ needed then return none
-  return some s!"vm.max_map_count is {limit}, and the driver may map about {needed} \
-    regions of memory ({oleans} .olean files): raise it, e.g. \
+  if limit ≥ 262144 then return none
+  return some s!"if Lean failed above with `failed to read file '….olean.private'`, \
+    vm.max_map_count ({limit}) is too low for it: raise it, e.g. \
     `sudo sysctl -w vm.max_map_count=262144` (see lean/README.md)"
+
+/-- Prints `mapCountHint`, if any, after a failure. -/
+def hintMapCount : IO Unit := do
+  if let some h ← mapCountHint then IO.eprintln h
 
 /-- The `.olean` of the module `mod` of `VGEmit`, relative to `lean/`. -/
 def oleanOf (mod : String) : System.FilePath :=
@@ -135,9 +125,6 @@ def main (args : List String) : IO UInt32 := do
     unless ← lib.pathExists do
       IO.eprintln s!"{lib} is missing: run `lake build` first"
       return 1
-  if let some problem ← mapCountProblem then
-    IO.eprintln problem
-    return 1
   let some (check, none, _) := VG.Emit.parseArgs args
     | IO.eprintln VG.Emit.usage; return 2
   let changed ← VG.Emit.prepare parts
@@ -147,7 +134,7 @@ def main (args : List String) : IO UInt32 := do
   for (t, _) in parts do
     if changed.contains t || !(← (oleanOf (VG.Emit.auditModule t)).pathExists) then
       stale := stale.push t
-  unless ← buildAudits stale do return 1
+  unless ← buildAudits stale do hintMapCount; return 1
   let partArgs (t : String) : Array String :=
     ((if check then ["--check"] else []) ++ ["--part", (targetsOf t).toString] ++
       (if check then args.drop 1 else args)).toArray
@@ -158,10 +145,12 @@ def main (args : List String) : IO UInt32 := do
   -- those programs again.
   let staleNow := codes.filterMap fun (t, c) => if c == VG.Emit.staleCode then some t else none
   unless staleNow.isEmpty do
-    unless ← buildAudits staleNow do return 1
+    unless ← buildAudits staleNow do hintMapCount; return 1
     let again ← runAll libs partArgs staleNow
     codes := codes.map fun (t, c) => (t, ((again.find? (·.1 == t)).map (·.2)).getD c)
-  if let some (_, c) := codes.find? (·.2 != 0) then return c
+  if let some (_, c) := codes.find? (·.2 != 0) then
+    hintMapCount
+    return c
   let targets ← ts.mapM fun t => do
     let f := targetsOf t
     let lines := ((← IO.FS.readFile f).splitOn "\n").filter fun (l : String) => !l.isEmpty

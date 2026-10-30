@@ -217,6 +217,9 @@ jobs:
         run: |
           set -o pipefail
           touch "$RUNNER_TEMP/before-build"
+          # An audit the plan gives this shard maps every module it imports
+          # (lean/README.md): set the limit rather than rely on the default.
+          sudo sysctl -w vm.max_map_count=262144
           # Again, in case restoring the build above replaced `.lake/emit`.
           python3 ../ci/emit_sources.py
           # Warnings and errors only: not the profile every module records

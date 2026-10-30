@@ -37,6 +37,15 @@ runs:
           [ -e "$f" ] || continue
           tar --zstd -xf "$f" -C .lake/build
         done
+    # A file that is not a module (the emitter's audits, which the build
+    # below builds) maps every module it imports, private parts included
+    # (lean/README.md): set the limit rather than rely on the runner's
+    # default, which today's library fits under with little to spare.
+    - name: Allow Lean's memory maps
+      shell: bash
+      run: |
+        sudo sysctl -w vm.max_map_count=262144
+        echo "vm.max_map_count=$(cat /proc/sys/vm/max_map_count)"
     # With every shard's outputs this builds only what the plan left
     # unbuilt (all of it, with no shards); anything else it builds (e.g. if
     # a newer cache was restored here than in a shard) is checked here.
@@ -143,14 +152,6 @@ runs:
       with:
         path: .lean-manifest
         key: ${{ steps.manifest.outputs.key }}
-    # The emitter's driver maps every module it imports, private parts
-    # included (lean/README.md): set the limit rather than rely on the
-    # runner's default.
-    - name: Allow the emitter's memory maps
-      shell: bash
-      run: |
-        sudo sysctl -w vm.max_map_count=262144
-        echo "vm.max_map_count=$(cat /proc/sys/vm/max_map_count)"
     # `Emit.lean` writes its module drivers and audits again from the
     # trusted base before emitting (and builds the audits of any target
     # whose files changed): check first that they are what the build above
