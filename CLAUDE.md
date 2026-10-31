@@ -45,7 +45,10 @@ own changes are rebuilt either way, on top of the restored build.
   never edit the generated crates, `crates/verified-garbage-asm-<target>/`,
   by hand. Add an entry to a registration file,
   `lean/VerifiedGarbage/Artifacts/<Alg>/<Target>.lean`, and run
-  `lake env lean --run Emit.lean` in `lean/`.
+  `lake env lean --run Emit.lean` in `lean/`, then `python3 ci/preassemble.py`
+  (each crate's `asm/` is the printed code; its `src/`, what is compiled,
+  the same code pre-assembled, which CI checks with
+  `ci/check_preassembled.py`; ARM's crate compiles `asm/` and has no `src/`).
 * **No unverified shortcuts in proofs.** No `sorry`, `admit`, `native_decide`,
   `bv_decide` or new `axiom`s in anything an artifact depends on.
   `lake build` and the emitter enforce this (warnings are errors, and
@@ -380,6 +383,7 @@ only its files under `crates/`, in seconds once the proofs are built:
 ```sh
 lake env lean --run EmitOne.lean Md5.X86_64
 lake env lean --run EmitOne.lean --check Md5.X86_64
+python3 ../ci/preassemble.py x86_64   # its crate's src/, from asm/
 ```
 
 Name a generic group (`<Iface>.<Target>`, e.g. `Sha256Compress.AArch64`, or
@@ -400,6 +404,7 @@ merge commit with its first parent). Then, as a change needs them:
 
 ```sh
 (cd lean && lake build --log-level=warning && lake env lean --run Emit.lean --check)
+python3 ci/check_preassembled.py   # after changing crates/verified-garbage-asm-*/
 git diff --name-only origin/main -- lean/VerifiedGarbage | sed -n 's#^lean/\(.*\)\.lean$#\1#p' | tr / . \
   | xargs -r python3 ci/check_lean_public_imports.py --base origin/main -m   # after building them; --fix applies it
 cargo fmt --check && cargo clippy --all-targets -- -D warnings

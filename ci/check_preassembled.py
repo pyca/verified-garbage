@@ -22,6 +22,7 @@ A target that is not pre-assembled (ARM's, see `ci/preassemble.py`)
 compiles `asm/` itself: it must have no `src/`.
 
     python3 ci/check_preassembled.py [TARGET ...]
+    python3 ci/check_preassembled.py --triples  # the Rust targets it compiles for
 """
 
 import collections
@@ -173,6 +174,9 @@ def unassembled(crates):
 
 
 def main(argv):
+    if argv == ["--triples"]:
+        print(",".join(TRIPLES.values()))
+        return 0
     targets = argv or list(TRIPLES)
     errors = [f"{n}: not pre-assembled, so it compiles asm/ and has no src/"
               for n in unassembled(CRATES)]
