@@ -98,7 +98,7 @@ theorem schedule_after (s : State) (i b : Byte)
 
 /-- One key-scheduling round, with both swap operands read before either write. -/
 theorem schedule_step (s : State) (i j : Byte)
-    (hcx : s.gpr .a3 = i.setWidth 64) (h4 : s.gpr .a4 = j.setWidth 64) (h6 : s.gpr .t6 = 0#64)
+    (hcx : s.gpr .a3 = i.setWidth 64) (h4 : s.gpr .a4 = j.setWidth 64)
     (hal : (s.gpr .a7).toNat % 8 = 0) (hp : InRegions s.wr (s.gpr .a7) 256)
     (hk : InRegions (s.rd ++ s.wr) (s.gpr .a0 + s.gpr .t3) 1) :
     let a := s.mem (s.gpr .a7 + BitVec.ofNat 64 i.toNat)
@@ -110,7 +110,7 @@ theorem schedule_step (s : State) (i j : Byte)
       t.gpr .t3 = offNext (s.gpr .t3) (s.gpr .a1) ∧
       t.gpr .a4 = jj.setWidth 64 ∧ t.gpr .a3 = i.setWidth 64 + 1#64 ∧
       t.gpr .t2 = i.setWidth 64 + 1#64 - BitVec.ofNat 64 256 ∧
-      Keep ([.t0, .a4, .t2] ++ [.t0, .a5, .t1, .t2] ++ [.t0, .t3, .a3, .t2]) s t := by
+      Keep ([.t0, .a4, .t2] ++ [.t0, .a5, .t1, .t2, .t5] ++ [.t0, .t3, .a3, .t2]) s t := by
   intro a jj b
   have hr : InRegions (s.rd ++ s.wr) (s.gpr .a7) 256 := by
     obtain ⟨r, hr, hc⟩ := hp
@@ -120,12 +120,11 @@ theorem schedule_step (s : State) (i j : Byte)
   refine WP.mono (schedule_before s i j hcx h4 hr hk) fun t ⟨t4, tk, tm⟩ => ?_
   have tcx : t.gpr .a3 = i.setWidth 64 := (tk.gpr (by decide)).trans hcx
   have tp : t.gpr .a7 = s.gpr .a7 := tk.gpr (by decide)
-  have t6 : t.gpr .t6 = 0#64 := (tk.gpr (by decide)).trans h6
   have tr3 : t.gpr .t3 = s.gpr .t3 := tk.gpr (by decide)
   have tr1 : t.gpr .a1 = s.gpr .a1 := tk.gpr (by decide)
   have htp : InRegions t.wr (t.gpr .a7) 256 := by rw [tk.2.2, tp]; exact hp
-  refine WP.mono (WP.keep [.t0, .a5, .t1, .t2]
-    (replace_core t jj i t4 t6 tcx (by rw [tp]; exact hal) htp)
+  refine WP.mono (WP.keep [.t0, .a5, .t1, .t2, .t5]
+    (replace_core t jj i t4 tcx (by rw [tp]; exact hal) htp)
     (by decide +kernel)) fun u ⟨⟨uax, um⟩, uk⟩ => ?_
   have ucx : u.gpr .a3 = i.setWidth 64 := (uk.gpr (by decide)).trans tcx
   have up : u.gpr .a7 = s.gpr .a7 := (uk.gpr (by decide)).trans tp
@@ -189,7 +188,7 @@ theorem schedule_inv_step (s₀ s : State) {r : Nat} (hr : r < 256)
     have hg := table_get s.mem (s₀.gpr .a7) (BitVec.ofNat 8 r)
     rw [hrt, h.table] at hg
     exact hg.symm
-  refine WP.mono (schedule_step s _ _ hi h.j h.zero (by rw [h.p]; exact hal) hpoint hkeypoint)
+  refine WP.mono (schedule_step s _ _ hi h.j (by rw [h.p]; exact hal) hpoint hkeypoint)
     fun t ⟨tm, t3, t4, tcx, tz, tk⟩ => ?_
   have hnext := schedule_succ key r
   dsimp only [scheduleRound] at hnext

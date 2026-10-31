@@ -46,7 +46,7 @@ namespace VG.Proof.Rc4.RISCV64
 open VG VG.RISCV64 VG.Impl.Rc4.RISCV64 VG.Spec.Rc4 VG.Proof.Rc4
 
 /-- The registers the code writes: no preserved register, nor `ra`. -/
-def written : List Reg := [.t0, .t1, .t2, .t3, .t4, .t6, .a0, .a1, .a2, .a3, .a4, .a5, .a7]
+def written : List Reg := [.t0, .t1, .t2, .t3, .t4, .t5, .t6, .a0, .a1, .a2, .a3, .a4, .a5, .a7]
 
 /-- `Region.Disjoint` as `Mem.Sep`. -/
 theorem sep_of_disjoint {r₁ r₂ : Region} (h : r₁.Disjoint r₂) : Mem.Sep r₁.base r₁.len r₂.base r₂.len :=

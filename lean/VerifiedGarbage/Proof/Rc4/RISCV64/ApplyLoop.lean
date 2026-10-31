@@ -19,7 +19,7 @@ open VG VG.RISCV64 VG.Impl.Rc4.RISCV64 VG.Spec.Rc4 VG.Proof.Rc4 VG.Proof.Rc4.Sca
 
 /-- The concrete stream iteration realizes the abstract PRGA transition. -/
 theorem apply_step_table (s : State) (i j : Byte)
-    (hcx : s.gpr .a3 = i.setWidth 64) (h7 : s.gpr .t4 = j.setWidth 64) (h6 : s.gpr .t6 = 0#64)
+    (hcx : s.gpr .a3 = i.setWidth 64) (h7 : s.gpr .t4 = j.setWidth 64)
     (hal : (s.gpr .a7).toNat % 8 = 0)
     (hp : InRegions s.wr (s.gpr .a7) 256) (hd : InRegions s.wr (s.gpr .a1) 1)
     (hs : Mem.Sep (s.gpr .a7) 256 (s.gpr .a1) 1) :
@@ -38,7 +38,7 @@ theorem apply_step_table (s : State) (i j : Byte)
   simp only [table_get]
   have hone : (1 : Byte) = 1#8 := rfl
   simp only [hone]
-  refine WP.mono (apply_step s i j hcx h7 h6 hal hp hd) fun t ht => ?_
+  refine WP.mono (apply_step s i j hcx h7 hal hp hd) fun t ht => ?_
   obtain ⟨hmem, hrd, hwr, h0, h6', ha0, h1, h2, hi, hj⟩ := ht
   refine ⟨?_, hi, hj, ?_, ?_, hrd, hwr, h0, h6', ha0, h1, h2⟩
   · rw [hmem, table_write_sep _ _ _ _ hs, table_swap]
@@ -57,13 +57,13 @@ theorem apply_step_table (s : State) (i j : Byte)
 /-- The unconsumed data remains unchanged by a stream iteration. -/
 theorem apply_step_tail (s : State) (i j : Byte) (n : Nat)
     (hn : n + 1 < 2 ^ 64)
-    (hcx : s.gpr .a3 = i.setWidth 64) (h7 : s.gpr .t4 = j.setWidth 64) (h6 : s.gpr .t6 = 0#64)
+    (hcx : s.gpr .a3 = i.setWidth 64) (h7 : s.gpr .t4 = j.setWidth 64)
     (hal : (s.gpr .a7).toNat % 8 = 0)
     (hp : InRegions s.wr (s.gpr .a7) 256) (hd : InRegions s.wr (s.gpr .a1) 1)
     (hs : Mem.Sep (s.gpr .a7) 256 (s.gpr .a1) (n + 1)) :
     WP isa (.block applyStep) s fun t =>
       bytesAt t.mem (s.gpr .a1 + 1#64) n = bytesAt s.mem (s.gpr .a1 + 1#64) n := by
-  refine WP.mono (apply_step s i j hcx h7 h6 hal hp hd) fun t ht => ?_
+  refine WP.mono (apply_step s i j hcx h7 hal hp hd) fun t ht => ?_
   rw [ht.1]
   rw [bytes_write_sep _ _ _ _ _ (by omega)
     (sep_symm (Offset.sep_base (s.gpr .a1) (by decide) (by omega)))]
@@ -99,7 +99,7 @@ theorem apply_loop (n : Nat) (s : State) (ctx : Context)
     have hd1 : InRegions s.wr (s.gpr .a1) 1 := hd
     have hctx : ({ table := (contextAt s.mem (s.gpr .a7)).table, i := ctx.i, j := ctx.j } :
         Context) = ctx := context_ext htable rfl rfl
-    have hstep := apply_step_table s ctx.i ctx.j hcx h7 h6 hal hp hd1 hs
+    have hstep := apply_step_table s ctx.i ctx.j hcx h7 hal hp hd1 hs
     rw [hctx] at hstep
     obtain ⟨tr, t, he, ht⟩ := hstep
     obtain ⟨htab, hti, htj, hbyte, hf, hrd, hwr, hp0, h60, ha0, _, hcount⟩ := ht
@@ -126,13 +126,13 @@ theorem apply_loop (n : Nat) (s : State) (ctx : Context)
     have hs1 : Mem.Sep (s.gpr .a7) 256 (s.gpr .a1) 1 := fun x hx hy => hs x hx (by omega)
     have hctx : ({ table := (contextAt s.mem (s.gpr .a7)).table, i := ctx.i, j := ctx.j } :
         Context) = ctx := context_ext htable rfl rfl
-    have hstep := apply_step_table s ctx.i ctx.j hcx h7 h6 hal hp hd1 hs1
+    have hstep := apply_step_table s ctx.i ctx.j hcx h7 hal hp hd1 hs1
     rw [hctx] at hstep
     obtain ⟨tr, t, he, ht⟩ := hstep
     obtain ⟨htab, hti, htj, hbyte, hf, hrd, hwr, hp0, ht6, ha0, hdptr, hcount⟩ := ht
     have htail : bytesAt t.mem (s.gpr .a1 + 1#64) (n + 1) =
         bytesAt s.mem (s.gpr .a1 + 1#64) (n + 1) := by
-      obtain ⟨_, u, he', hh⟩ := apply_step_tail s ctx.i ctx.j (n + 1) hn hcx h7 h6 hal hp hd1 hs
+      obtain ⟨_, u, he', hh⟩ := apply_step_tail s ctx.i ctx.j (n + 1) hn hcx h7 hal hp hd1 hs
       obtain ⟨_, rfl⟩ := Exec.det he' he
       exact hh
     have htlen : t.gpr .a2 = BitVec.ofNat 64 (n + 1) := by
