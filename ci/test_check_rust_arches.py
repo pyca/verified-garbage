@@ -40,6 +40,16 @@ class Arches(unittest.TestCase):
             ["aarch64", "arm"],
         )
 
+    def test_one_architecture_crate(self):
+        # A target's crate of generated code, its manifest too, is its own.
+        self.assertEqual(rust_arches.arches(["crates/verified-garbage-asm-x86_64/src/md5.rs"]), ["x86_64"])
+        self.assertEqual(rust_arches.arches(["crates/verified-garbage-asm-powerpc64le/Cargo.toml"]),
+                         ["powerpc64"])
+        # A new target's, every architecture's.
+        self.assertEqual(rust_arches.arches(["crates/verified-garbage-asm-mips/src/lib.rs"]), ALL)
+        # The crate of `Features`, every architecture's.
+        self.assertEqual(rust_arches.arches(["crates/verified-garbage-cpu/src/lib.rs"]), ALL)
+
     def test_shared(self):
         for path in [
             "src/asm/mod.rs",

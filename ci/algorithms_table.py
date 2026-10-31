@@ -32,6 +32,8 @@ import re
 import sys
 import tomllib
 
+import asm_layout
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 README = ROOT / "README.md"
 ROWS = ROOT / "docs" / "algorithms"
@@ -134,7 +136,7 @@ def variants(row, arch):
     features, suffixes = set(), SUFFIXES.get(arch, {})
     found = set()
     for asm in row["asm"]:
-        path = ROOT / "src" / "asm" / ASM_DIRS.get(arch, arch) / f"{asm}.rs"
+        path = asm_layout.target_dir(ROOT, ASM_DIRS.get(arch, arch)) / f"{asm}.rs"
         if path.is_file():
             text = path.read_text()
             for m in FEATURE_CONST.finditer(text):

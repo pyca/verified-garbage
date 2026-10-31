@@ -34,6 +34,8 @@ import pathlib
 import re
 import sys
 
+import asm_layout
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 ASM = ROOT / "src" / "asm"
 TARGETS = ("x86", "x86_64")
@@ -224,7 +226,7 @@ def main():
     errors = []
     regions = 0
     for target_name in TARGETS:
-        for path in sorted((ASM / target_name).glob("*.rs")):
+        for path in sorted(asm_layout.target_dir(ROOT, target_name).glob("*.rs")):
             text = path.read_text()
             offset = 0
             first_line = 1
