@@ -34,21 +34,6 @@ open VG.Spec.Sha512 (HashValue Word Block K W bsig0 bsig1 ch maj ssig0 ssig1)
 theorem high64_append (a b : BitVec 64) : (a ++ b).extractLsb' 64 64 = a :=
   BitVec.extractLsb'_append_eq_left
 
-theorem choice_select {n : Nat} (e f g : BitVec n) :
-    (g &&& ~~~e) ||| (f &&& e) = ((f ^^^ g) &&& e) ^^^ g := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro i hi
-  simp only [BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not, BitVec.getLsbD_xor,
-    hi, decide_true, Bool.true_and]
-  cases he : e.getLsbD i <;> cases hf : f.getLsbD i <;> cases hg : g.getLsbD i <;> rfl
-
-theorem majority_xor_select {n : Nat} (a b c : BitVec n) :
-    ((c ^^^ b) &&& (a ^^^ b)) ^^^ b = ((a ||| b) &&& c) ||| (a &&& b) := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro i hi
-  simp only [BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_xor]
-  cases ha : a.getLsbD i <;> cases hb : b.getLsbD i <;> cases hc : c.getLsbD i <;> rfl
-
 /-- The working variables `v` are in the registers of round `t`. -/
 def Vars (t : Nat) (s : State) (v : HashValue) : Prop :=
   vdword (s.vpr (vvar t 0)) 0 = v[0] ∧ vdword (s.vpr (vvar t 1)) 0 = v[1] ∧
@@ -170,7 +155,7 @@ theorem round_ok (t : Nat) (ht : t < 80) (s : State) (v : HashValue) (w : Word)
     vvar_succ t _ (show 5 < 7 by omega), vvar_succ t _ (show 6 < 7 by omega)] at hv ⊢
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := hv
   apply WP.of_runBlock
-  simp only [Impl.Sha512.PPC64LE.round]
+  simp only [Impl.Sha512.PPC64LE.round, Impl.Sha2.PPC64LE.round]
   generalize vvar t 0 = a at *
   generalize vvar t 1 = b at *
   generalize vvar t 2 = c at *
@@ -489,7 +474,7 @@ theorem schedule_add16 (t : Nat) (ht : 16 ≤ t) : schedule (t+16) = schedule t 
   simp only [schedule, he, hd, schedulePair_add8 _ (by omega : 8 ≤ t/2), preg_add8]
 
 theorem round_add16 (t : Nat) : round (t+16) = round t := by
-  simp only [Impl.Sha512.PPC64LE.round, vvar_add16]
+  simp only [Impl.Sha512.PPC64LE.round, Impl.Sha2.PPC64LE.round, vvar_add16]
 
 theorem roundRange_add16 (t n : Nat) (ht : 16 ≤ t) : roundRange (t+16) n = roundRange t n := by
   induction n with
