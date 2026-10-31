@@ -1,5 +1,22 @@
 module
 
+import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.Verified
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Base
+import VerifiedGarbage.Proof.Framework.Covers
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Data.Fintype.Fin
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Message
+public import VerifiedGarbage.Impl.MlDsa.AArch64.PreparedKey.Verify
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Layout
+public import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.Entry
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Inv
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseLCT
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSelected
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSat
 import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
@@ -1018,5 +1035,624 @@ theorem verify_withCache_verified (v : VG.Proof.Sha3.AArch64.Permutation) (p : P
       (VG.Impl.MlDsa.AArch64.KeyGen.primsWith v.callee) p)
       (verifyWithCacheContract p (Verify.OptimizedSelected.selectedAbi v) 48) :=
   ⟨verify_withCache_correct v hp, verify_withCache_ct v hp, shared_verify_sat v hp⟩
+
+end VG.Proof.MlDsa.AArch64.PreparedKey
+
+/-! ## Ordinary and prepared operation entry points -/
+
+namespace VG.Proof.MlDsa.AArch64.PreparedKey
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Proof.MlKem.AArch64
+open VG.Impl.MlDsa.AArch64.Call (lea movV)
+
+def operationSetup (p : Params) (sign prepared : Bool) : List Instr :=
+  if sign then
+    if prepared then lea .x5 .x0 p.skLen ++ movV .x6 (1024 * (p.ℓ + 2 * p.k))
+    else [.addImm .x .x5 .x0 0] ++ movV .x6 0
+  else
+    if prepared then lea .x4 .x0 p.pkLen ++ movV .x5 (1024 * p.k)
+    else [.addImm .x .x4 .x0 0] ++ movV .x5 0
+
+theorem operationSetup_ok (p : Params) (sign prepared : Bool) (s : State) :
+    WP isa (.block (operationSetup p sign prepared)) s fun t =>
+      Only (if sign then [.x5, .x6] else [.x4, .x5]) s t ∧
+      t.gpr (if sign then .x5 else .x4) = s.gpr .x0 +
+        BitVec.ofNat 64 (if prepared then (if sign then p.skLen else p.pkLen) else 0) ∧
+      t.gpr (if sign then .x6 else .x5) = BitVec.ofNat 64
+        (if prepared then 1024 * (if sign then p.ℓ + 2 * p.k else p.k) else 0) := by
+  cases sign <;> cases prepared
+  all_goals simp only [operationSetup, Bool.false_eq_true, ↓reduceIte]
+  · refine wp_addImm (by decide) fun u hu h4 => movV_ok .x5 0 fun t ht h5 => wp_nil ?_
+    exact ⟨(hu.trans ht).mono (by simp), by rw [ht.get .x4, h4], h5⟩
+  · refine lea_ok (by decide) p.pkLen fun u hu h4 => ?_
+    rw [← List.append_nil (movV .x5 (1024 * p.k))]
+    refine movV_ok .x5 (1024 * p.k) fun t ht h5 => wp_nil ?_
+    exact ⟨(hu.trans ht).mono (by simp), by rw [ht.get .x4, h4], h5⟩
+  · refine wp_addImm (by decide) fun u hu h5 => movV_ok .x6 0 fun t ht h6 => wp_nil ?_
+    exact ⟨(hu.trans ht).mono (by simp), by rw [ht.get .x5, h5], h6⟩
+  · refine lea_ok (by decide) p.skLen fun u hu h5 => ?_
+    rw [← List.append_nil (movV .x6 (1024 * (p.ℓ + 2 * p.k)))]
+    refine movV_ok .x6 (1024 * (p.ℓ + 2 * p.k)) fun t ht h6 => wp_nil ?_
+    exact ⟨(hu.trans ht).mono (by simp), by rw [ht.get .x5, h5], h6⟩
+
+theorem sign_withCache_dle (v : VG.Proof.Sha3.AArch64.Permutation) {p : Params}
+    (hp : Sign.Ok3 p) : Message.DLe 3
+      (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache v.callee (Sign.primsWith v.callee) p) := by
+  have hd := (core_dle v hp).le
+  exact ⟨by simpa only [Impl.MlDsa.AArch64.PreparedKey.Sign.withCache,
+    Code.aarch64Depth, Nat.zero_max, Instr.frameUnits] using Nat.add_le_add_right hd 2⟩
+
+theorem verify_withCache_dle (v : VG.Proof.Sha3.AArch64.Permutation) (p : Params) : Message.DLe 3
+      (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache v.callee
+        (VG.Impl.MlDsa.AArch64.KeyGen.primsWith v.callee) p) := by
+  have hd := (verify_core_dle v p).le
+  exact ⟨by simpa only [Impl.MlDsa.AArch64.PreparedKey.Verify.withCache,
+    Code.aarch64Depth, Nat.zero_max, Instr.frameUnits] using Nat.add_le_add_right hd 2⟩
+
+theorem prepared_public_cache_frame {p : Params} {m m' : Mem} {key : Addr} {W : List Region}
+    (h : PreparedPublicKey p m key) (hf : Frame W m m')
+    (hd : ∀ R ∈ W, (⟨key, preparedPublicKeyBytes p⟩ : Region).Disjoint R)
+    (hb : preparedPublicKeyBytes p < 2 ^ 32) :
+    CachedPublicPolys p m' (key + BitVec.ofNat 64 p.pkLen)
+      (VG.Spec.Sha3.bytesAt m' key p.pkLen) := by
+  have hs : Region.Sub (⟨key, p.pkLen⟩ : Region) ⟨key, preparedPublicKeyBytes p⟩ :=
+    Region.sub_prefix (by simp only [preparedPublicKeyBytes]; omega)
+  have hk := VG.Proof.MlKem.bytesAt_frame hf (fun R hR => (hd R hR).sub_left hs)
+    (by simp only [preparedPublicKeyBytes] at hb; omega)
+  intro i hi
+  change PolyIs m' ((key + BitVec.ofNat 64 p.pkLen) + BitVec.ofNat 64 (4 * n * i)) _
+  rw [VG.Offset.add_add, hk]
+  exact VG.Proof.MlDsa.Verify.polyIs_frame hf (fun R hR => (hd R hR).sub_left
+    (by
+      change Region.Sub ⟨key + BitVec.ofNat 64 (p.pkLen + 4 * n * i), 1024⟩ _
+      apply VG.Offset.sub_base key
+      simp only [preparedPublicKeyBytes, n]
+      omega)) (h i hi)
+
+theorem prepared_secret_cache_frame {p : Params} {m m' : Mem} {key : Addr} {W : List Region}
+    (h : PreparedSecretKey p m key) (hf : Frame W m m')
+    (hd : ∀ R ∈ W, (⟨key, preparedSecretKeyBytes p⟩ : Region).Disjoint R)
+    (hb : preparedSecretKeyBytes p < 2 ^ 32) :
+    CachedSecretPolys p m' (key + BitVec.ofNat 64 p.skLen)
+      (VG.Spec.Sha3.bytesAt m' key p.skLen) := by
+  have hs : Region.Sub (⟨key, p.skLen⟩ : Region) ⟨key, preparedSecretKeyBytes p⟩ :=
+    Region.sub_prefix (by simp only [preparedSecretKeyBytes]; omega)
+  have hk := VG.Proof.MlKem.bytesAt_frame hf (fun R hR => (hd R hR).sub_left hs)
+    (by simp only [preparedSecretKeyBytes] at hb; omega)
+  intro i hi
+  change PolyIs m' ((key + BitVec.ofNat 64 p.skLen) + BitVec.ofNat 64 (4 * n * i)) _
+  rw [VG.Offset.add_add, hk]
+  exact VG.Proof.MlDsa.Verify.polyIs_frame hf (fun R hR => (hd R hR).sub_left
+    (by
+      change Region.Sub ⟨key + BitVec.ofNat 64 (p.skLen + 4 * n * i), 1024⟩ _
+      apply VG.Offset.sub_base key
+      simp only [preparedSecretKeyBytes, n]
+      omega)) (h i hi)
+
+def verifyEntryRd (p : Params) (s : State) : List Region :=
+  [⟨s.gpr .x0, p.pkLen⟩, ⟨s.gpr .x1, 64⟩, ⟨s.gpr .x2, p.sigLen⟩,
+    ⟨s.gpr .x4, (s.gpr .x5).toNat⟩]
+
+theorem empty_disjoint (a : Addr) (r : Region) : (⟨a, 0⟩ : Region).Disjoint r := by
+  intro x hx _
+  simp only [Region.Contains] at hx
+  omega
+
+theorem verify_empty_pre {p : Params} {σ s : State}
+    (pre : (verifyContract p abi 64).pre σ)
+    (o : Only [.x4, .x5] (pushState .x30 σ) s)
+    (h4 : s.gpr .x4 = σ.gpr .x0) (h5 : s.gpr .x5 = 0) :
+    (verifyWithCacheContract p abi 48).pre
+      (s.callEntry.withRegions (verifyEntryRd p s) σ.wr) := by
+  sig_pre [verifyContract, verifySig, abi, VG.AArch64.argRegs] at pre
+  obtain ⟨sp, rd, wr, d1, d2, d3, k1, k2, k3, k4, n1, n2, n3, n4⟩ := pre
+  have e0 : s.gpr .x0 = σ.gpr .x0 := o.get .x0 (by decide)
+  have e1 : s.gpr .x1 = σ.gpr .x1 := o.get .x1 (by decide)
+  have e2 : s.gpr .x2 = σ.gpr .x2 := o.get .x2 (by decide)
+  have e3 : s.gpr .x3 = σ.gpr .x3 := o.get .x3 (by decide)
+  have esp : s.sp = σ.sp - 16 := o.sp
+  have ks : Region.Sub (below s.sp 48) (below σ.sp 64) := by
+    rw [esp]
+    exact below_below σ.sp 16 48
+  have sn : 48 ≤ s.sp.toNat := by
+    rw [esp]
+    change 48 ≤ (σ.sp - BitVec.ofNat 64 16).toNat
+    rw [toNat_sub_ofNat' (by omega)]
+    omega
+  sig_pre [verifyWithCacheContract, verifyWithCacheSig, verifySig, abi, VG.AArch64.argRegs]
+  simp only [verifyEntryRd, h4, h5,
+    e0, e1, e2, e3, show (0 : BitVec 64).toNat = 0 from rfl, Nat.add_zero]
+  exact ⟨sn, True.intro, wr, d1, d2, d3, (empty_disjoint _ _).symm,
+    k1.sub_left ks, k2.sub_left ks, k3.sub_left ks, k4.sub_left ks,
+    (empty_disjoint _ _).symm, n1, n2, n3, n4,
+    by have := (σ.gpr .x0).isLt; omega, Or.inl True.intro⟩
+
+theorem verify_prepared_pre {p : Params} (hp : Sign.Ok3 p) {σ s : State}
+    (pre : (preparedVerifyContract p abi 64).pre σ)
+    (o : Only [.x4, .x5] (pushState .x30 σ) s)
+    (h4 : s.gpr .x4 = σ.gpr .x0 + BitVec.ofNat 64 p.pkLen)
+    (h5 : s.gpr .x5 = BitVec.ofNat 64 (1024 * p.k)) :
+    (verifyWithCacheContract p abi 48).pre
+      (s.callEntry.withRegions (verifyEntryRd p s) σ.wr) := by
+  sig_pre [preparedVerifyContract, preparedVerifySig, abi, VG.AArch64.argRegs] at pre
+  obtain ⟨sp, rd, wr, d1, d2, d3, k1, k2, k3, k4, n1, n2, n3, n4, cached⟩ := pre
+  have hb : preparedPublicKeyBytes p < 2 ^ 32 := by
+    rcases hp with rfl | rfl | rfl <;> decide
+  have hn : n = 256 := rfl
+  have small : 1024 * p.k < 2 ^ 64 := by rcases hp with rfl | rfl | rfl <;> decide
+  have e0 : s.gpr .x0 = σ.gpr .x0 := o.get .x0 (by decide)
+  have e1 : s.gpr .x1 = σ.gpr .x1 := o.get .x1 (by decide)
+  have e2 : s.gpr .x2 = σ.gpr .x2 := o.get .x2 (by decide)
+  have e3 : s.gpr .x3 = σ.gpr .x3 := o.get .x3 (by decide)
+  have esp : s.sp = σ.sp - 16 := o.sp
+  have ks : Region.Sub (below s.sp 48) (below σ.sp 64) := by
+    rw [esp]
+    exact below_below σ.sp 16 48
+  have keyPrefix : Region.Sub (⟨σ.gpr .x0, p.pkLen⟩ : Region)
+      ⟨σ.gpr .x0, preparedPublicKeyBytes p⟩ := Region.sub_prefix (by
+    simp only [preparedPublicKeyBytes]; omega)
+  have suffix : Region.Sub (⟨σ.gpr .x0 + BitVec.ofNat 64 p.pkLen, 1024 * p.k⟩ : Region)
+      ⟨σ.gpr .x0, preparedPublicKeyBytes p⟩ := Offset.sub_base _ (by
+    simp only [preparedPublicKeyBytes, hn]; omega)
+  have sn : 48 ≤ s.sp.toNat := by
+    rw [esp]
+    change 48 ≤ (σ.sp - BitVec.ofNat 64 16).toNat
+    rw [toNat_sub_ofNat' (by omega)]
+    omega
+  have cache : CachedPublicPolys p s.mem (σ.gpr .x0 + BitVec.ofNat 64 p.pkLen)
+      (Spec.Sha3.bytesAt s.mem (σ.gpr .x0) p.pkLen) := by
+    apply prepared_public_cache_frame cached (W := [below σ.sp 16]) ?_ ?_ hb
+    · rw [o.mem]
+      exact Frame.write (r := below σ.sp 16) (Frame.refl _ _) (by simp) _
+        (by simp [Region.Contains])
+    · intro R hR
+      obtain rfl := List.mem_singleton.mp hR
+      exact (k1.sub_left (below_sub (by decide) (by decide))).symm
+  have nkey : (σ.gpr .x0).toNat + p.pkLen ≤ 2 ^ 64 := by
+    simp only [preparedPublicKeyBytes] at n1
+    omega
+  have nsuffix : (σ.gpr .x0 + BitVec.ofNat 64 p.pkLen).toNat + 1024 * p.k ≤ 2 ^ 64 := by
+    have bound : (σ.gpr .x0 + BitVec.ofNat 64 p.pkLen).toNat ≤
+        (σ.gpr .x0).toNat + p.pkLen := by
+      rw [Offset.toNat_add_ofNat]
+      exact (Nat.mod_le _ _).trans (Nat.add_le_add_left (Nat.mod_le _ _) _)
+    simp only [preparedPublicKeyBytes, hn] at n1
+    omega
+  sig_pre [verifyWithCacheContract, verifyWithCacheSig, verifySig, abi, VG.AArch64.argRegs]
+  simp only [verifyEntryRd, h4, h5,
+    e0, e1, e2, e3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt small]
+  refine ⟨sn, True.intro, wr, d1.sub_left keyPrefix, d2, d3,
+    (d1.sub_left suffix).symm, (k1.sub_left ks).sub_right keyPrefix,
+    k2.sub_left ks, k3.sub_left ks, k4.sub_left ks,
+    (k1.sub_left ks).sub_right suffix, nkey, n2, n3, n4, nsuffix, Or.inr ⟨?_, cache⟩⟩
+  rw [hn]
+
+def signEntryRd (p : Params) (s : State) : List Region :=
+  [⟨s.gpr .x0, p.skLen⟩, ⟨s.gpr .x1, 64⟩, ⟨s.gpr .x2, 32⟩,
+    ⟨s.gpr .x5, (s.gpr .x6).toNat⟩]
+
+theorem sign_empty_pre {p : Params} {σ s : State}
+    (pre : (signContract p abi 64).pre σ)
+    (o : Only [.x5, .x6] (pushState .x30 σ) s)
+    (h5 : s.gpr .x5 = σ.gpr .x0) (h6 : s.gpr .x6 = 0) :
+    (signWithCacheContract p abi 48).pre
+      (s.callEntry.withRegions (signEntryRd p s) σ.wr) := by
+  sig_pre [signContract, signSig, abi, VG.AArch64.argRegs] at pre
+  obtain ⟨sp, rd, wr, d1, d2, d3, d4, d5, d6, d7,
+    k1, k2, k3, k4, k5, n1, n2, n3, n4, n5⟩ := pre
+  have e0 : s.gpr .x0 = σ.gpr .x0 := o.get .x0 (by decide)
+  have e1 : s.gpr .x1 = σ.gpr .x1 := o.get .x1 (by decide)
+  have e2 : s.gpr .x2 = σ.gpr .x2 := o.get .x2 (by decide)
+  have e3 : s.gpr .x3 = σ.gpr .x3 := o.get .x3 (by decide)
+  have e4 : s.gpr .x4 = σ.gpr .x4 := o.get .x4 (by decide)
+  have esp : s.sp = σ.sp - 16 := o.sp
+  have ks : Region.Sub (below s.sp 48) (below σ.sp 64) := by
+    rw [esp]
+    exact below_below σ.sp 16 48
+  have sn : 48 ≤ s.sp.toNat := by
+    rw [esp]
+    change 48 ≤ (σ.sp - BitVec.ofNat 64 16).toNat
+    rw [toNat_sub_ofNat' (by omega)]
+    omega
+  sig_pre [signWithCacheContract, signWithCacheSig, signSig, abi, VG.AArch64.argRegs]
+  simp only [signEntryRd, h5, h6, e0, e1, e2, e3, e4,
+    show (0 : BitVec 64).toNat = 0 from rfl, Nat.add_zero]
+  exact ⟨sn, True.intro, wr, d1, d2, d3, d4, d5, d6, d7,
+    (empty_disjoint _ _).symm, (empty_disjoint _ _).symm,
+    k1.sub_left ks, k2.sub_left ks, k3.sub_left ks, k4.sub_left ks, k5.sub_left ks,
+    (empty_disjoint _ _).symm, n1, n2, n3, n4, n5,
+    by have := (σ.gpr .x0).isLt; omega, Or.inl True.intro⟩
+
+theorem sign_prepared_pre {p : Params} (hp : Sign.Ok3 p) {σ s : State}
+    (pre : (preparedSignContract p abi 64).pre σ)
+    (o : Only [.x5, .x6] (pushState .x30 σ) s)
+    (h5 : s.gpr .x5 = σ.gpr .x0 + BitVec.ofNat 64 p.skLen)
+    (h6 : s.gpr .x6 = BitVec.ofNat 64 (1024 * (p.ℓ + 2 * p.k))) :
+    (signWithCacheContract p abi 48).pre
+      (s.callEntry.withRegions (signEntryRd p s) σ.wr) := by
+  sig_pre [preparedSignContract, preparedSignSig, abi, VG.AArch64.argRegs] at pre
+  obtain ⟨sp, rd, wr, d1, d2, d3, d4, d5, d6, d7,
+    k1, k2, k3, k4, k5, n1, n2, n3, n4, n5, cached⟩ := pre
+  have hb : preparedSecretKeyBytes p < 2 ^ 32 := by
+    rcases hp with rfl | rfl | rfl <;> decide
+  have hn : n = 256 := rfl
+  have small : 1024 * (p.ℓ + 2 * p.k) < 2 ^ 64 := by rcases hp with rfl | rfl | rfl <;> decide
+  have e0 : s.gpr .x0 = σ.gpr .x0 := o.get .x0 (by decide)
+  have e1 : s.gpr .x1 = σ.gpr .x1 := o.get .x1 (by decide)
+  have e2 : s.gpr .x2 = σ.gpr .x2 := o.get .x2 (by decide)
+  have e3 : s.gpr .x3 = σ.gpr .x3 := o.get .x3 (by decide)
+  have e4 : s.gpr .x4 = σ.gpr .x4 := o.get .x4 (by decide)
+  have esp : s.sp = σ.sp - 16 := o.sp
+  have ks : Region.Sub (below s.sp 48) (below σ.sp 64) := by
+    rw [esp]
+    exact below_below σ.sp 16 48
+  have keyPrefix : Region.Sub (⟨σ.gpr .x0, p.skLen⟩ : Region)
+      ⟨σ.gpr .x0, preparedSecretKeyBytes p⟩ := Region.sub_prefix (by
+    simp only [preparedSecretKeyBytes]; omega)
+  have suffix : Region.Sub (⟨σ.gpr .x0 + BitVec.ofNat 64 p.skLen, 1024 * (p.ℓ + 2 * p.k)⟩ : Region)
+      ⟨σ.gpr .x0, preparedSecretKeyBytes p⟩ := Offset.sub_base _ (by
+    simp only [preparedSecretKeyBytes, hn]; omega)
+  have sn : 48 ≤ s.sp.toNat := by
+    rw [esp]
+    change 48 ≤ (σ.sp - BitVec.ofNat 64 16).toNat
+    rw [toNat_sub_ofNat' (by omega)]
+    omega
+  have cache : CachedSecretPolys p s.mem (σ.gpr .x0 + BitVec.ofNat 64 p.skLen)
+      (Spec.Sha3.bytesAt s.mem (σ.gpr .x0) p.skLen) := by
+    apply prepared_secret_cache_frame cached (W := [below σ.sp 16]) ?_ ?_ hb
+    · rw [o.mem]
+      exact Frame.write (r := below σ.sp 16) (Frame.refl _ _) (by simp) _
+        (by simp [Region.Contains])
+    · intro R hR
+      obtain rfl := List.mem_singleton.mp hR
+      exact (k1.sub_left (below_sub (by decide) (by decide))).symm
+  have nkey : (σ.gpr .x0).toNat + p.skLen ≤ 2 ^ 64 := by
+    simp only [preparedSecretKeyBytes] at n1
+    omega
+  have nsuffix : (σ.gpr .x0 + BitVec.ofNat 64 p.skLen).toNat + 1024 * (p.ℓ + 2 * p.k) ≤ 2 ^ 64 := by
+    have bound : (σ.gpr .x0 + BitVec.ofNat 64 p.skLen).toNat ≤
+        (σ.gpr .x0).toNat + p.skLen := by
+      rw [Offset.toNat_add_ofNat]
+      exact (Nat.mod_le _ _).trans (Nat.add_le_add_left (Nat.mod_le _ _) _)
+    simp only [preparedSecretKeyBytes, hn] at n1
+    omega
+  sig_pre [signWithCacheContract, signWithCacheSig, signSig, abi, VG.AArch64.argRegs]
+  simp only [signEntryRd, h5, h6, e0, e1, e2, e3, e4, BitVec.toNat_ofNat, Nat.mod_eq_of_lt small]
+  refine ⟨sn, True.intro, wr, d1.sub_left keyPrefix, d2.sub_left keyPrefix,
+    d3, d4, d5, d6, d7, (d1.sub_left suffix).symm, (d2.sub_left suffix).symm,
+    (k1.sub_left ks).sub_right keyPrefix, k2.sub_left ks, k3.sub_left ks,
+    k4.sub_left ks, k5.sub_left ks, (k1.sub_left ks).sub_right suffix,
+    nkey, n2, n3, n4, n5, nsuffix, Or.inr ⟨?_, cache⟩⟩
+  rw [hn]
+
+def rawVerifyK (p : Params) (prepared : Bool) (A : Abi isa) : Contract isa :=
+  if prepared then preparedVerifyContract p A 64 else verifyContract p A 64
+
+def rawVerifyBytes (p : Params) (prepared : Bool) : Nat :=
+  if prepared then preparedPublicKeyBytes p else p.pkLen
+
+theorem verify_entry_layout {p : Params} {prepared : Bool} {σ : State}
+    (pre : (rawVerifyK p prepared abi).pre σ) :
+    64 ≤ σ.sp.toNat ∧
+    σ.rd = [⟨σ.gpr .x0, rawVerifyBytes p prepared⟩, ⟨σ.gpr .x1, 64⟩, ⟨σ.gpr .x2, p.sigLen⟩] ∧
+    σ.wr = [⟨σ.gpr .x3, scratchWords p * 8⟩] ∧
+    (below σ.sp 64).Disjoint ⟨σ.gpr .x0, rawVerifyBytes p prepared⟩ ∧
+    (below σ.sp 64).Disjoint ⟨σ.gpr .x1, 64⟩ ∧
+    (below σ.sp 64).Disjoint ⟨σ.gpr .x2, p.sigLen⟩ ∧
+    (below σ.sp 64).Disjoint ⟨σ.gpr .x3, scratchWords p * 8⟩ := by
+  cases prepared
+  all_goals
+    simp only [rawVerifyK, rawVerifyBytes, Bool.false_eq_true, ↓reduceIte] at pre ⊢
+    sig_pre [verifyContract, verifySig, preparedVerifyContract, preparedVerifySig,
+      abi, VG.AArch64.argRegs] at pre
+    exact ⟨pre.1, pre.2.1, pre.2.2.1, pre.2.2.2.2.2.2.1,
+      pre.2.2.2.2.2.2.2.1, pre.2.2.2.2.2.2.2.2.1, pre.2.2.2.2.2.2.2.2.2.1⟩
+
+theorem verify_entry_pre {p : Params} (hp : Sign.Ok3 p) {prepared : Bool} {σ s : State}
+    (pre : (rawVerifyK p prepared abi).pre σ)
+    (o : Only [.x4, .x5] (pushState .x30 σ) s)
+    (h4 : s.gpr .x4 = σ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.pkLen else 0))
+    (h5 : s.gpr .x5 = BitVec.ofNat 64 (if prepared then 1024 * p.k else 0)) :
+    (verifyWithCacheContract p abi 48).pre
+      (s.callEntry.withRegions (verifyEntryRd p s) σ.wr) := by
+  cases prepared
+  · exact verify_empty_pre pre o (by simpa using h4) h5
+  · exact verify_prepared_pre hp pre o h4 h5
+
+theorem verify_entry_covers {p : Params} {prepared : Bool} {σ s : State}
+    (pre : (rawVerifyK p prepared abi).pre σ)
+    (o : Only [.x4, .x5] (pushState .x30 σ) s)
+    (h4 : s.gpr .x4 = σ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.pkLen else 0))
+    (h5 : s.gpr .x5 = BitVec.ofNat 64 (if prepared then 1024 * p.k else 0)) :
+    Covers (verifyEntryRd p s ++ σ.wr) (s.rd ++ s.wr) := by
+  have layout := verify_entry_layout pre
+  have e0 : s.gpr .x0 = σ.gpr .x0 := o.get .x0 (by decide)
+  have e1 : s.gpr .x1 = σ.gpr .x1 := o.get .x1 (by decide)
+  have e2 : s.gpr .x2 = σ.gpr .x2 := o.get .x2 (by decide)
+  apply Covers.append
+  · apply Covers.of_sub
+    intro R hR
+    simp only [verifyEntryRd, List.mem_cons, List.not_mem_nil, or_false] at hR
+    rw [o.rd, show (pushState .x30 σ).rd = σ.rd from rfl, layout.2.1]
+    rcases hR with rfl | rfl | rfl | rfl
+    · refine ⟨⟨σ.gpr .x0, rawVerifyBytes p prepared⟩, by simp, 0, ?_, ?_⟩
+      · simpa using e0
+      · cases prepared <;> simp [rawVerifyBytes, preparedPublicKeyBytes]
+    · exact ⟨⟨σ.gpr .x1, 64⟩, by simp, 0, by simpa using e1, Nat.le_refl _⟩
+    · exact ⟨⟨σ.gpr .x2, p.sigLen⟩, by simp, 0, by simpa using e2, by change 0 + p.sigLen ≤ p.sigLen; omega⟩
+    · refine ⟨⟨σ.gpr .x0, rawVerifyBytes p prepared⟩, by simp,
+        (if prepared then p.pkLen else 0), h4, ?_⟩
+      rw [h5]
+      cases prepared
+      · change 0 + (0 : BitVec 64).toNat ≤ p.pkLen
+        exact Nat.zero_le _
+      · have hm : (BitVec.ofNat 64 (1024 * p.k)).toNat ≤ 1024 * p.k := Nat.mod_le _ _
+        simp only [rawVerifyBytes, ↓reduceIte, preparedPublicKeyBytes, n]
+        omega
+  · rw [o.wr]
+    exact Covers.refl _
+
+theorem save_input_bytes {r : Reg} {σ : State} {key : Addr} {len : Nat}
+    (hd : (below σ.sp 64).Disjoint ⟨key, len⟩) (hb : len ≤ 2 ^ 64) :
+    Spec.Sha3.bytesAt (pushState r σ).mem key len = Spec.Sha3.bytesAt σ.mem key len := by
+  apply VG.Proof.MlKem.bytesAt_frame (rs := [below σ.sp 16]) ?_ ?_ hb
+  · exact Frame.write (r := below σ.sp 16) (Frame.refl _ _) (by simp) _
+      (by simp [Region.Contains])
+  · intro R hR
+    obtain rfl := List.mem_singleton.mp hR
+    exact (hd.sub_left (below_sub (by decide) (by decide))).symm
+
+theorem operation_call_bounds {code : Prog isa} (hd : Message.DLe 3 code) :
+    16 * code.aarch64Depth + 16 < 2 ^ 64 ∧ 16 * code.aarch64Depth < 2 ^ 64 := by
+  have bound := hd.le
+  omega
+
+theorem verify_entry_correct {p : Params} (hp : Sign.Ok3 p) {name : String}
+    {code : Prog isa} (hv : ∀ σ, (verifyWithCacheContract p abi 48).pre σ →
+      ∃ tr t, Exec isa code σ tr t ∧ abiPreserved σ t ∧
+        (verifyWithCacheContract p abi 48).post σ t)
+    (hd : Message.DLe 3 code) (prepared : Bool) (σ : State)
+    (pre : (rawVerifyK p prepared abi).pre σ) :
+    ∃ tr t, Exec isa (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name code p prepared) σ tr t ∧
+      abiPreserved σ t ∧ (rawVerifyK p prepared abi).post σ t := by
+  have layout := verify_entry_layout pre
+  have depth := (operation_call_bounds hd).1
+  have guard : ∀ R ∈ σ.wr, (below σ.sp 16).Disjoint R := by
+    intro R hR
+    rw [layout.2.2.1] at hR
+    obtain rfl := List.mem_singleton.mp hR
+    exact layout.2.2.2.2.2.2.sub_left (below_sub (by decide) (by decide))
+  have main : WP isa (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name code p prepared) σ
+      fun t => abiPreserved σ t ∧ (rawVerifyK p prepared abi).post σ t := by
+    unfold Impl.MlDsa.AArch64.PreparedKey.Verify.entry
+    refine WP.frameReg (Nat.le_trans (by decide) layout.1) guard ?_ (by
+      simpa only [Code.aarch64Depth, Nat.zero_max] using depth)
+    change WP isa (.seq (.block (operationSetup p false prepared)) (.call name code)) (pushState .x30 σ) _
+    refine WP.seq (WP.mono (operationSetup_ok p false prepared (pushState .x30 σ)) fun s hs => ?_)
+    have hc := verify_entry_covers pre hs.1 hs.2.1 hs.2.2
+    have hcpre := verify_entry_pre hp pre hs.1 hs.2.1 hs.2.2
+    have hw : Covers σ.wr s.wr := by rw [hs.1.wr]; exact Covers.refl _
+    refine WP.callFV hv hcpre hc hw (fun t hr ht hsp hf hcs hvs post => ?_) (operation_call_bounds hd).2
+    refine ⟨⟨?_, rfl, ?_⟩, ?_⟩
+    · intro r hR
+      by_cases h30 : r = .x30
+      · subst r; simp [State.write]
+      simp only [State.write, h30, ite_false]
+      rw [hcs r hR h30, hs.1.get r (by
+        revert hR h30; cases r <;> decide)]
+      rfl
+    · intro r hR
+      exact (hvs r hR).trans (hs.1.vcs r hR)
+    · have e0 : s.gpr .x0 = σ.gpr .x0 := hs.1.get .x0 (by decide)
+      have e1 : s.gpr .x1 = σ.gpr .x1 := hs.1.get .x1 (by decide)
+      have e2 : s.gpr .x2 = σ.gpr .x2 := hs.1.get .x2 (by decide)
+      have keySub : Region.Sub (⟨σ.gpr .x0, p.pkLen⟩ : Region)
+          ⟨σ.gpr .x0, rawVerifyBytes p prepared⟩ := Region.sub_prefix (by
+        cases prepared <;> simp [rawVerifyBytes, preparedPublicKeyBytes])
+      have keyB : p.pkLen ≤ 2 ^ 64 := by rcases hp with rfl | rfl | rfl <;> decide
+      have sigB : p.sigLen ≤ 2 ^ 64 := by rcases hp with rfl | rfl | rfl <;> decide
+      have key := save_input_bytes (r := .x30) (layout.2.2.2.1.sub_right keySub) keyB
+      have mu := save_input_bytes (r := .x30) layout.2.2.2.2.1 (by decide)
+      have sig := save_input_bytes (r := .x30) layout.2.2.2.2.2.1 sigB
+      sig_post [verifyWithCacheContract, verifyWithCacheSig, verifySig, abi, VG.AArch64.argRegs] at post
+      simp only [e0, e1, e2, hs.1.mem, key, mu, sig] at post
+      cases prepared
+      all_goals
+        simp only [rawVerifyK, Bool.false_eq_true, ↓reduceIte]
+        sig_post [verifyContract, verifySig, preparedVerifyContract, preparedVerifySig,
+          abi, VG.AArch64.argRegs]
+        simpa only [State.write, reduceCtorEq, ite_false] using post
+  obtain ⟨tr, t, he, habi, hpost⟩ := main
+  exact ⟨tr, t, he, habi, hpost⟩
+
+theorem verify_entry_snapshots {p : Params} (hp : Sign.Ok3 p) {prepared : Bool} {σ s : State}
+    (pre : (rawVerifyK p prepared abi).pre σ)
+    (o : Only [.x4, .x5] (pushState .x30 σ) s) :
+    Spec.Sha3.bytesAt s.mem (s.gpr .x0) p.pkLen = Spec.Sha3.bytesAt σ.mem (σ.gpr .x0) p.pkLen ∧
+    Spec.Sha3.bytesAt s.mem (s.gpr .x1) 64 = Spec.Sha3.bytesAt σ.mem (σ.gpr .x1) 64 ∧
+    Spec.Sha3.bytesAt s.mem (s.gpr .x2) p.sigLen = Spec.Sha3.bytesAt σ.mem (σ.gpr .x2) p.sigLen := by
+  have layout := verify_entry_layout pre
+  have e0 : s.gpr .x0 = σ.gpr .x0 := o.get .x0 (by decide)
+  have e1 : s.gpr .x1 = σ.gpr .x1 := o.get .x1 (by decide)
+  have e2 : s.gpr .x2 = σ.gpr .x2 := o.get .x2 (by decide)
+  have keySub : Region.Sub (⟨σ.gpr .x0, p.pkLen⟩ : Region)
+      ⟨σ.gpr .x0, rawVerifyBytes p prepared⟩ := Region.sub_prefix (by
+    cases prepared <;> simp [rawVerifyBytes, preparedPublicKeyBytes])
+  have keyB : p.pkLen ≤ 2 ^ 64 := by rcases hp with rfl | rfl | rfl <;> decide
+  have sigB : p.sigLen ≤ 2 ^ 64 := by rcases hp with rfl | rfl | rfl <;> decide
+  simp only [e0, e1, e2, o.mem]
+  exact ⟨save_input_bytes (layout.2.2.2.1.sub_right keySub) keyB,
+    save_input_bytes layout.2.2.2.2.1 (by decide), save_input_bytes layout.2.2.2.2.2.1 sigB⟩
+
+theorem verify_entry_pub {p : Params} (hp : Sign.Ok3 p) {prepared : Bool} {σ τ x y : State}
+    (px : (rawVerifyK p prepared abi).pre σ) (py : (rawVerifyK p prepared abi).pre τ)
+    (pub : (rawVerifyK p prepared abi).pub σ τ)
+    (ox : Only [.x4, .x5] (pushState .x30 σ) x)
+    (oy : Only [.x4, .x5] (pushState .x30 τ) y)
+    (x4 : x.gpr .x4 = σ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.pkLen else 0))
+    (x5 : x.gpr .x5 = BitVec.ofNat 64 (if prepared then 1024 * p.k else 0))
+    (y4 : y.gpr .x4 = τ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.pkLen else 0))
+    (y5 : y.gpr .x5 = BitVec.ofNat 64 (if prepared then 1024 * p.k else 0)) :
+    (verifyWithCacheContract p abi 48).pub
+      (x.callEntry.withRegions (verifyEntryRd p x) σ.wr)
+      (y.callEntry.withRegions (verifyEntryRd p y) τ.wr) := by
+  have snapsX := verify_entry_snapshots hp px ox
+  have snapsY := verify_entry_snapshots hp py oy
+  have base : σ.sp = τ.sp ∧
+      leakBytes (Spec.Sha3.bytesAt σ.mem (σ.gpr .x0) p.pkLen ++
+        Spec.Sha3.bytesAt σ.mem (σ.gpr .x1) 64 ++ Spec.Sha3.bytesAt σ.mem (σ.gpr .x2) p.sigLen) =
+      leakBytes (Spec.Sha3.bytesAt τ.mem (τ.gpr .x0) p.pkLen ++
+        Spec.Sha3.bytesAt τ.mem (τ.gpr .x1) 64 ++ Spec.Sha3.bytesAt τ.mem (τ.gpr .x2) p.sigLen) ∧
+      σ.gpr .x0 = τ.gpr .x0 ∧ σ.gpr .x1 = τ.gpr .x1 ∧ σ.gpr .x2 = τ.gpr .x2 ∧ σ.gpr .x3 = τ.gpr .x3 := by
+    cases prepared
+    all_goals
+      simp only [rawVerifyK, Bool.false_eq_true, ↓reduceIte] at pub
+      sig_pub [verifyContract, verifySig, preparedVerifyContract, preparedVerifySig,
+        abi, VG.AArch64.argRegs] at pub
+      exact pub
+  sig_pub [verifyWithCacheContract, verifyWithCacheSig, verifySig, abi, VG.AArch64.argRegs]
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [ox.sp, oy.sp]
+    exact congrArg (· - 16) base.1
+  · rw [snapsX.1, snapsX.2.1, snapsX.2.2, snapsY.1, snapsY.2.1, snapsY.2.2]
+    exact base.2.1
+  · exact (ox.get .x0 (by decide)).trans (base.2.2.1.trans (oy.get .x0 (by decide)).symm)
+  · exact (ox.get .x1 (by decide)).trans (base.2.2.2.1.trans (oy.get .x1 (by decide)).symm)
+  · exact (ox.get .x2 (by decide)).trans (base.2.2.2.2.1.trans (oy.get .x2 (by decide)).symm)
+  · exact (ox.get .x3 (by decide)).trans (base.2.2.2.2.2.trans (oy.get .x3 (by decide)).symm)
+  · rw [x4, y4, base.2.2.1]
+  · rw [x5, y5]
+
+theorem operationSetup_tr {p : Params} (hp : Sign.Ok3 p) (sign prepared : Bool) :
+    RelCT isa (SameIn [.x0]) (.block (operationSetup p sign prepared)) (fun _ _ => True) := by
+  apply taintRel [.x0] (hc := .block []) (fun _ _ h => ⟨h.2, h.1⟩)
+  rcases hp with rfl | rfl | rfl <;> cases sign <;> cases prepared <;>
+    simp only [operationSetup, Bool.false_eq_true, ↓reduceIte] <;> taint_decide
+
+def RawVerifyRel (p : Params) (prepared : Bool) (x y : State) : Prop :=
+  (rawVerifyK p prepared abi).pre x ∧ (rawVerifyK p prepared abi).pre y ∧
+    (rawVerifyK p prepared abi).pub x y
+
+theorem verify_entry_bases {p : Params} {prepared : Bool} {x y : State}
+    (h : (rawVerifyK p prepared abi).pub x y) : SameIn [.x0] x y := by
+  cases prepared
+  all_goals
+    simp only [rawVerifyK, Bool.false_eq_true, ↓reduceIte] at h
+    sig_pub [verifyContract, verifySig, preparedVerifyContract, preparedVerifySig,
+      abi, VG.AArch64.argRegs] at h
+    exact ⟨fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact h.2.2.1, h.1⟩
+
+def VerifyCallRel (p : Params) (prepared : Bool) (x y : State) : Prop :=
+  ∃ σ τ, RawVerifyRel p prepared σ τ ∧
+    Only [.x4, .x5] (pushed .x30 σ) x ∧ Only [.x4, .x5] (pushed .x30 τ) y ∧
+    x.gpr .x4 = σ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.pkLen else 0) ∧
+    x.gpr .x5 = BitVec.ofNat 64 (if prepared then 1024 * p.k else 0) ∧
+    y.gpr .x4 = τ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.pkLen else 0) ∧
+    y.gpr .x5 = BitVec.ofNat 64 (if prepared then 1024 * p.k else 0)
+
+theorem operation_narrow {R : List Reg} {σ s : State} (o : Only R (pushed .x30 σ) s) :
+    Only R (pushState .x30 σ) (s.withRegions σ.rd σ.wr) :=
+  ⟨o.gpr, o.mem, rfl, rfl, o.sp, o.vcs⟩
+
+theorem operation_cover {R : List Reg} {σ s : State} (o : Only R (pushed .x30 σ) s) :
+    Covers (σ.rd ++ σ.wr) (s.rd ++ s.wr) := by
+  rw [o.rd, o.wr]
+  exact Covers.append (Covers.refl _) (push_wr_cover .x30 σ)
+
+theorem verify_entry_ct {p : Params} (hp : Sign.Ok3 p) {name : String} {code : Prog isa}
+    (hv : ∀ σ, (verifyWithCacheContract p abi 48).pre σ →
+      ∃ tr t, Exec isa code σ tr t ∧ abiPreserved σ t ∧
+        (verifyWithCacheContract p abi 48).post σ t)
+    (hct : ConstantTime isa (verifyWithCacheContract p abi 48).pre
+      (verifyWithCacheContract p abi 48).pub code) (prepared : Bool) :
+    ConstantTime isa (rawVerifyK p prepared abi).pre (rawVerifyK p prepared abi).pub
+      (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name code p prepared) := by
+  have hs : ∀ x y, RawVerifyRel p prepared x y → x.sp = y.sp :=
+    fun _ _ h => (verify_entry_bases h.2.2).2
+  have trace : RelCT isa (RawVerifyRel p prepared)
+      (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name code p prepared) (fun _ _ => True) := by
+    unfold Impl.MlDsa.AArch64.PreparedKey.Verify.entry
+    refine frame_tr (R := fun _ _ => True) hs ?_
+    change RelCT isa (PushRel .x30 (RawVerifyRel p prepared))
+      (.seq (.block (operationSetup p false prepared)) (.call name code)) (fun _ _ => True)
+    refine RelCT.seq (R := VerifyCallRel p prepared) (RelCT.postDep
+      (RelCT.mono (operationSetup_tr hp false prepared) (fun x y h => ?_) (fun _ _ _ => trivial))
+      (fun x y _ => ⟨operationSetup_ok p false prepared x, operationSetup_ok p false prepared y⟩)
+      (fun x y x' y' h hx hy => ?_)) ?_
+    · rcases h with ⟨σ, τ, h, rfl, rfl⟩
+      exact ⟨(verify_entry_bases h.2.2).1, congrArg (· - 16) (hs σ τ h)⟩
+    · rcases h with ⟨σ, τ, h, rfl, rfl⟩
+      exact ⟨σ, τ, h, hx.1, hy.1, hx.2.1, hx.2.2, hy.2.1, hy.2.2⟩
+    · apply RelCT.callEx hv hct
+      rintro x y ⟨σ, τ, h, ox, oy, x4, x5, y4, y5⟩
+      have nx := operation_narrow ox
+      have ny := operation_narrow oy
+      refine ⟨verifyEntryRd p x, σ.wr, verifyEntryRd p y, τ.wr, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+      · have px := verify_entry_pre hp h.1 nx x4 x5
+        simpa only [State.callEntry_withRegions, State.withRegions_withRegions,
+          verifyEntryRd, State.withRegions_gpr] using px
+      · have py := verify_entry_pre hp h.2.1 ny y4 y5
+        simpa only [State.callEntry_withRegions, State.withRegions_withRegions,
+          verifyEntryRd, State.withRegions_gpr] using py
+      · have pub := verify_entry_pub hp h.1 h.2.1 h.2.2 nx ny x4 x5 y4 y5
+        simpa only [State.callEntry_withRegions, State.withRegions_withRegions,
+          verifyEntryRd, State.withRegions_gpr] using pub
+      · have cover := verify_entry_covers h.1 nx x4 x5
+        change Covers (verifyEntryRd p x ++ σ.wr) (σ.rd ++ σ.wr) at cover
+        exact cover.trans (operation_cover ox)
+      · rw [ox.wr]; exact push_wr_cover .x30 σ
+      · have cover := verify_entry_covers h.2.1 ny y4 y5
+        change Covers (verifyEntryRd p y ++ τ.wr) (τ.rd ++ τ.wr) at cover
+        exact cover.trans (operation_cover oy)
+      · rw [oy.wr]; exact push_wr_cover .x30 τ
+  intro x y tx ty x' y' hx hy hpub ex ey
+  exact (trace x y tx ty x' y' ⟨hx, hy, hpub⟩ ex ey).1
+
+def rawVerifySat (p : Params) (prepared : Bool) (m : Mem) : State where
+  gpr r := match r with | .x0 => 0x10000 | .x1 => 0x20000 | .x2 => 0x30000 | .x3 => 0x40000 | _ => 0
+  sp := 0x1000000
+  mem := m
+  rd := [⟨0x10000, rawVerifyBytes p prepared⟩, ⟨0x20000, 64⟩, ⟨0x30000, p.sigLen⟩]
+  wr := [⟨0x40000, scratchWords p * 8⟩]
+
+theorem raw_verify_sat_pre {p : Params} (hp : Sign.Ok3 p) {m : Mem}
+    (prepared : Bool) (cache : prepared = true → PreparedPublicKey p m 0x10000) :
+    (rawVerifyK p prepared abi).pre (rawVerifySat p prepared m) := by
+  cases prepared
+  · rcases hp with rfl | rfl | rfl
+    all_goals
+      simp only [rawVerifyK, Bool.false_eq_true, ↓reduceIte]
+      sig_pre [verifyContract, verifySig, abi, VG.AArch64.argRegs]
+      simp only [rawVerifyBytes, Bool.false_eq_true, ↓reduceIte]
+      sig_and_intros
+      all_goals first | rfl | exact Region.disjoint_of_sep (by decide) | decide +kernel
+  · have cached := cache rfl
+    rcases hp with rfl | rfl | rfl
+    all_goals
+      simp only [rawVerifyK, ↓reduceIte]
+      sig_pre [preparedVerifyContract, preparedVerifySig, abi, VG.AArch64.argRegs]
+      simp only [rawVerifyBytes, ↓reduceIte]
+      sig_and_intros
+      all_goals first | exact cached | rfl | exact Region.disjoint_of_sep (by decide) | decide +kernel
+
+theorem raw_verify_sat {p : Params} (hp : Sign.Ok3 p) (prepared : Bool) :
+    ∃ s, (rawVerifyK p prepared abi).pre s := by
+  cases prepared
+  · exact ⟨rawVerifySat p false (fun _ => 0), raw_verify_sat_pre hp false (by intro h; cases h)⟩
+  · have prepPre : (preparePublicKeyContract p abi 80).pre (prepSat p.pkLen p.k) := by
+      rcases hp with rfl | rfl | rfl
+      all_goals sig_sat_check [preparePublicKeyContract, preparePublicKeySig, prepSat, abi, VG.AArch64.argRegs]
+    obtain ⟨_, t, _, _, post⟩ := public_correct hp _ prepPre
+    sig_post [preparePublicKeyContract, preparePublicKeySig, abi, VG.AArch64.argRegs] at post
+    have cache : PreparedPublicKey p t.mem 0x10000 := post.2
+    exact ⟨rawVerifySat p true t.mem, raw_verify_sat_pre hp true (fun _ => cache)⟩
+
+theorem scalar_verify_entry_verified {p : Params} (hp : Sign.Ok3 p) {name : String} {code : Prog isa}
+    (hv : Verified target code (verifyWithCacheContract p abi 48)) (hd : Message.DLe 3 code)
+    (prepared : Bool) :
+    Verified target (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name code p prepared)
+      (rawVerifyK p prepared abi) :=
+  ⟨verify_entry_correct hp hv.1 hd prepared, verify_entry_ct hp hv.1 hv.2.1 prepared,
+    raw_verify_sat hp prepared⟩
 
 end VG.Proof.MlDsa.AArch64.PreparedKey
