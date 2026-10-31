@@ -219,19 +219,24 @@ def keySpread : List Instr :=
    ldS (m 2) evenSlot, andR (m 3) (m 2) (m 1)] ++ rorK t2 (m 1) 16 ++ [andR (m 2) (m 2) t2] ++
   rorK t0 t1 16 ++ [andR t0 t0 (m 2)] ++ rorK t1 t1 40 ++ [andR t1 t1 (m 3), xorR t1 t1 t0]
 
-/-- Plane `j`: bit `j` of each group of the spread word (bits `16 i`, the
-mask in `m 4`, from `oneSlot`), filled to its sixteen bits by doubling. The
-bits wanted shift down to bit `0` of their groups, and the others are
-masked off, so a shift does what a rotation would; and no group's bits
-shift past its top, so the doubling needs no rotation either. -/
-def keyPlane (j : Nat) : List Instr :=
-  (if j = 0 then [andR (q 0) t1 (m 4)] else [shrI (q j) t1 j, andR (q j) (q j) (m 4)]) ++
-  [shlI t0 (q j) 1, xorR (q j) (q j) t0, shlI t0 (q j) 2, xorR (q j) (q j) t0,
-   shlI t0 (q j) 4, xorR (q j) (q j) t0, shlI t0 (q j) 8, xorR (q j) (q j) t0]
+/-- Plane `j`, its bits at `16 i` only: bit `j` of each group of the spread
+word (bits `16 i`, the mask in `m 4`, from `oneSlot`). The bits wanted
+shift down to bit `0` of their groups and the others are masked off, so a
+shift does what a rotation would. -/
+def keyBit (j : Nat) : List Instr :=
+  if j = 0 then [andR (q 0) t1 (m 4)] else [shrI (q j) t1 j, andR (q j) (q j) (m 4)]
+
+/-- Each plane's bits filled to their sixteen bits: `(x ⋘ 16) - x`, that is
+`x · 0xFFFF`, with no carries between the groups. -/
+def keyFill : List Instr := (List.range 8).flatMap fun j => [shlI t0 (q j) 16, .sub (q j) t0 (q j)]
+
+/-- The planes of round key `2 m + h`, from the word at `a0`, in `q 0 … q 7`,
+before the fill. -/
+def keyPre (h : Nat) : List Instr :=
+  keyWord h ++ keySpread ++ ([ldS (m 4) oneSlot] : List Instr) ++ (List.range 8).flatMap keyBit
 
 /-- The planes of round key `2 m + h`, from the word at `a0`, in `q 0 … q 7`. -/
-def keyLoad (h : Nat) : List Instr :=
-  keyWord h ++ keySpread ++ ([ldS (m 4) oneSlot] : List Instr) ++ (List.range 8).flatMap keyPlane
+def keyLoad (h : Nat) : List Instr := keyPre h ++ keyFill
 
 /-- Store the planes to the entry at `kr`. -/
 def keyStore : List Instr := (List.range 8).map fun j => .store .d (q j) kr (8 * j)
