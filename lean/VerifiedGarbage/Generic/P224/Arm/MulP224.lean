@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Ecdsa.Arm.P224.MulVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Ecdsa.Arm.P224.MulLit
 
+public import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Umaal
+
 /-!
 # P-224's point multiplication on 32-bit ARM
 
@@ -32,6 +34,13 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P224.curve) : List Artifact := 
       digit-by-digit Montgomery multiplication in calls of `vg_p224_mul_mod_p` and the other functions of \
       `p224_mont`; nothing depends on `k` or `Q` but through masks."]
     code := Impl.Ecdsa.Arm.mulP224
-    verified := Proof.Ecdsa.Arm.P224.Mul.mul_verified h.law }]
+    verified := Proof.Ecdsa.Arm.P224.Mul.mul_verified h.law },
+  Spec.Weierstrass.Mul.p224.mulApi.artifact Arm.target {
+    suffix := "_umaal"
+    notes := ["`vg_p224_mul`'s code, but for its calls of `vg_p224_point_double_umaal` and \
+      `vg_p224_point_add_umaal`. Field multiplications are calls of `vg_p224_mul_mod_p_umaal` (and `vg_p224_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`)."]
+    code := Impl.Ecdsa.Arm.mulP224U
+    verified := Proof.Ecdsa.Arm.P224.Mul.mulU_verified h.law
+    features := ["umaal"] }]
 
 end VG.Generic.P224.Arm.MulP224

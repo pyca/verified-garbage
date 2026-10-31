@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Umaal
+import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressMain
 public import VerifiedGarbage.Spec.EcKey.P224
 import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Verified
@@ -34,6 +37,11 @@ open VG VG.Arm VG.Impl.Ecdsa.Arm VG.Proof.Ecdsa.Arm VG.Proof.Ecdsa.Arm.P224
 abbrev code : Prog isa := Impl.EcKey.Compressed.Arm.decompress p224
 
 materialize_shared baseline := code
+
+/-- The function with `umaal`. -/
+abbrev codeU : Prog isa := Impl.EcKey.Compressed.Arm.decompress (p224With true)
+
+materialize_shared umaal := codeU
 
 abbrev root (a : Spec.Weierstrass.Fe Spec.P224.curve) :=
   Impl.EcKey.Compressed.rootTonelli a ((Spec.P224.curve.p - 1) / 2 ^ 96) 96 (Fin.ofNat Spec.P224.curve.p 11)
@@ -98,6 +106,66 @@ theorem ct : ConstantTime isa (decompressContract Spec.P224.curve root).pre
       · exact ho
     · taint_decide
 
+theorem ctU : ConstantTime isa (decompressContract Spec.P224.curve root).pre
+    (decompressContract Spec.P224.curve root).pub codeU := by
+  apply decompress_tonelli_ct p224u_ok (by decide +kernel)
+  · apply VG.Taint.constantTime (A := taintU) (Taint.ofRegs [.r0, .r1, .r2])
+    · intro s t _ _ ⟨_, h0, h1, h2⟩
+      apply Taint.agree_ofRegs
+      intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact h0
+      · exact h1
+      · exact h2
+    · taint_decide
+  · apply VG.Taint.constantTime (A := taintU) (Taint.ofRegs [.r12, .lr])
+    · intro s t _ _ ⟨hb, ho⟩
+      apply Taint.agree_ofRegs
+      intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hb
+      · exact ho
+    · taint_decide
+  · apply VG.Taint.constantTime (A := taintU) (Taint.ofRegs [.r12, .lr])
+    · intro s t _ _ ⟨hb, ho⟩
+      apply Taint.agree_ofRegs
+      intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hb
+      · exact ho
+    · taint_decide
+  · apply VG.Taint.constantTime (A := taintU) (Taint.ofRegs [.r12, .lr, .r11])
+    · intro s t _ _ ⟨⟨hb, ho⟩, hc⟩
+      apply Taint.agree_ofRegs
+      intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact hb
+      · exact ho
+      · exact hc
+    · taint_decide
+  · apply VG.Taint.constantTime (A := taintU) (Taint.ofRegs [.r12, .lr])
+    · intro s t _ _ ⟨hb, ho⟩
+      apply Taint.agree_ofRegs
+      intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hb
+      · exact ho
+    · taint_decide
+  · apply VG.Taint.constantTime (A := taintU) (Taint.ofRegs [.r12, .lr])
+    · intro s t _ _ ⟨hb, ho⟩
+      apply Taint.agree_ofRegs
+      intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hb
+      · exact ho
+    · taint_decide
+
 theorem sat : ∃ s, (Spec.EcKey.P224.inst.decompressPublicKeyContract abi 0).pre s := by
   have hlen : Spec.P224.curve.len = 28 := rfl
   sig_implies_sat [Spec.EcKey.P224.inst, Spec.EcKey.Instance.decompressPublicKeyContract,
@@ -107,6 +175,13 @@ theorem sat : ∃ s, (Spec.EcKey.P224.inst.decompressPublicKeyContract abi 0).pr
 theorem verified (hL : Proof.Weierstrass.Law Spec.P224.curve) :
     Verified target code (Spec.EcKey.P224.inst.decompressPublicKeyContract abi 0) :=
   Verified.of_correct (decompress_correct p224 p224_ok _ (candidateTonelli_correct p224_ok (by decide +kernel) (by decide +kernel))) ct
+    (decompress_implies Spec.EcKey.P224.inst _
+      (Proof.P224.rootFacts hL) sat)
+
+theorem verifiedU (hL : Proof.Weierstrass.Law Spec.P224.curve) :
+    Verified target codeU (Spec.EcKey.P224.inst.decompressPublicKeyContract abi 0) :=
+  Verified.of_correct (decompress_correct (p224With true) p224u_ok _
+      (candidateTonelli_correct p224u_ok (by decide +kernel) (by decide +kernel))) ctU
     (decompress_implies Spec.EcKey.P224.inst _
       (Proof.P224.rootFacts hL) sat)
 

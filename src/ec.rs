@@ -14,6 +14,7 @@
 ))]
 
 mod compressed;
+pub(crate) mod p224;
 pub(crate) mod p256;
 pub(crate) mod p384;
 pub(crate) mod p521;

@@ -52,14 +52,14 @@ def p224 (hL : Weierstrass.Law Spec.P224.curve) : RfcCurve where
   coreX := by
     intro s hs
     have pre : Proof.Ecdsa.Arm.P224.signArm.pre s := by
-      simpa only [coreK,TablesOk,Impl.Ecdsa.Arm.p224,Spec.P224.curve,Nat.reduceMul,List.not_mem_nil,forall_const,
+      simpa only [coreK,TablesOk,Impl.Ecdsa.Arm.p224,Impl.Ecdsa.Arm.p224With,Spec.P224.curve,Nat.reduceMul,List.not_mem_nil,forall_const,
         false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,Proof.Ecdsa.Arm.P224.signArm] using hs
     obtain ⟨tr,t,exec,abi,post⟩ := Proof.Ecdsa.Arm.P224.sign_arm hL s pre
     refine ⟨tr,t,exec,abi,?_⟩
     change Proof.Ecdsa.Arm.P224.signArm.post s t
     exact post
   coreCT := by
-    simpa only [coreK,coreSigOf,Spec.P224.curve,Nat.reduceMul,Impl.Ecdsa.Arm.p224,Proof.Ecdsa.Arm.P224.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
+    simpa only [coreK,coreSigOf,Spec.P224.curve,Nat.reduceMul,Impl.Ecdsa.Arm.p224,Impl.Ecdsa.Arm.p224With,Proof.Ecdsa.Arm.P224.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
       Proof.Ecdsa.Arm.P224.signArm] using Proof.Ecdsa.Arm.P224.sign_ct
   coreStack := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)

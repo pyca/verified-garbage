@@ -20,10 +20,10 @@ namespace VG.Proof.Ecdsa.Rfc6979.Arm
 open VG VG.Arm VG.Impl.Weierstrass.Arm
 open VG.Proof.Ecdsa.Arm VG.Proof.Ecdsa.Arm.P224
 
-theorem p224_comb_core_pre {s : State}
-    (h : (coreK Impl.Ecdsa.Arm.p224 p224CombConsts).pre s) : combSignPre s := by
+theorem p224_comb_core_pre {u : Bool} {s : State}
+    (h : (coreK Impl.Ecdsa.Arm.p224 p224CombConsts).pre s) : combSignPre u s := by
   obtain ⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp,tables⟩ := h
-  have hp : Pre Impl.Ecdsa.Arm.p224 s (constRegs p224CombConsts s) :=
+  have hp : Pre (Impl.Ecdsa.Arm.p224With u) s (constRegs p224CombConsts s) :=
     ⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp⟩
   refine ⟨hp,?_,?_,?_,?_⟩
   · rw [rd]
@@ -53,6 +53,14 @@ theorem p224_comb_core_ct : ConstantTime isa
   exact combSign_ct s t ts tt s' t' (p224_comb_core_pre hs) (p224_comb_core_pre ht)
     ⟨⟨sp,h0,h1,h2,h3,arg⟩,sy _ (List.mem_singleton_self _)⟩ e1 e2
 
+theorem p224_comb_core_ctU : ConstantTime isa
+    (coreK Impl.Ecdsa.Arm.p224 p224CombConsts).pre
+    (coreK Impl.Ecdsa.Arm.p224 p224CombConsts).pub Impl.Ecdsa.Arm.signP224CombU := by
+  intro s t ts tt s' t' hs ht pub e1 e2
+  obtain ⟨sp,h0,h1,h2,h3,arg,sy⟩ := pub
+  exact combSignU_ct s t ts tt s' t' (p224_comb_core_pre hs) (p224_comb_core_pre ht)
+    ⟨⟨sp,h0,h1,h2,h3,arg⟩,sy _ (List.mem_singleton_self _)⟩ e1 e2
+
 /-- P-224 with the generator comb, with the group law `hL`. -/
 def p224CombCurve (hL : Weierstrass.Law Spec.P224.curve) : RfcCurve :=
   {p224 hL with
@@ -68,6 +76,21 @@ def p224CombCurve (hL : Weierstrass.Law Spec.P224.curve) : RfcCurve :=
     coreCT := p224_comb_core_ct
     coreStack := by lit_decide }
 
+/-- `p224CombCurve`, calling `vg_ecdsa_p224_sign_umaal`. -/
+def p224CombCurveU (hL : Weierstrass.Law Spec.P224.curve) : RfcCurve :=
+  {p224CombCurve hL with
+    coreN := Spec.Ecdsa.P224.signApi.name ++ "_umaal"
+    coreC := Impl.Ecdsa.Arm.signP224CombU
+    coreX := by
+      intro s hs
+      obtain ⟨tr,t,exec,keep,post⟩ := combSign_ok hL (u := true) (p224_comb_core_pre hs)
+      refine ⟨tr,t,exec,abi_of_saved keep.saved keep.sp,?_⟩
+      simp only [coreK,coreSigOf]
+      rw [show (t.gpr .r1++t.gpr .r0).setWidth 32=t.gpr .r0 from BitVec.setWidth_append_eq_right]
+      exact post
+    coreCT := p224_comb_core_ctU
+    coreStack := by lit_decide }
+
 end VG.Proof.Ecdsa.Rfc6979.Arm
 
 namespace VG.Proof.Ecdsa.Rfc6979.Arm.P224Sha224Comb
@@ -76,6 +99,10 @@ open VG.Proof.P224.Arm
 
 def pack (hL : Weierstrass.Law Spec.P224.curve) : RfcHash :=
   {P224Sha224.pack hL with R := p224CombCurve hL}
+
+/-- `pack`, calling `vg_ecdsa_p224_sign_umaal`. -/
+def packU (hL : Weierstrass.Law Spec.P224.curve) : RfcHash :=
+  {P224Sha224.pack hL with R := p224CombCurveU hL}
 
 abbrev rfcCombSpec : Contract isa := Spec.Ecdsa.Rfc6979.P224Sha224.inst.signContract
   (abi.withConsts p224CombConsts) 240
@@ -143,5 +170,9 @@ theorem implies : (rfcArm Spec.Ecdsa.Rfc6979.P224Sha224.inst 240 p224CombConsts)
 theorem sign_verified (hL : Weierstrass.Law Spec.P224.curve) :
     Verified Arm.target (cfgOf (pack hL)).sign rfcCombSpec :=
   Arm.sign_verified (pack hL) implies
+
+theorem signU_verified (hL : Weierstrass.Law Spec.P224.curve) :
+    Verified Arm.target (cfgOf (packU hL)).sign rfcCombSpec :=
+  Arm.sign_verified (packU hL) implies
 
 end VG.Proof.Ecdsa.Rfc6979.Arm.P224Sha224Comb

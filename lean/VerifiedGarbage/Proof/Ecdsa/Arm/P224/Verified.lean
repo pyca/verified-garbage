@@ -117,8 +117,9 @@ def τ₀ : VG.Arm.Taint.T :=
   { regs := .ofList [.r0, .r1, .r2, .r3], flags := false, lens := [56, 8192], argLen := 4,
     argBases := [(0, 1)] }
 
-theorem wf₀_pre {s : State} {extra : List Region} (hp : Pre p224 s extra) : VG.Arm.Taint.Wf τ₀ s := by
-  refine ⟨fun _ => ⟨by simp [hp.wr, τ₀, p224, show Spec.P224.curve.len = 28 from rfl], ?_, ?_⟩,
+theorem wf₀_pre {u : Bool} {s : State} {extra : List Region} (hp : Pre (p224With u) s extra) :
+    VG.Arm.Taint.Wf τ₀ s := by
+  refine ⟨fun _ => ⟨by simp [hp.wr, τ₀, p224With, show Spec.P224.curve.len = 28 from rfl], ?_, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ => ⟨hp.sp_fit, ?_⟩, ?_⟩
   · simp only [hp.wr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
       List.Pairwise.nil, false_implies, implies_true, and_true]
@@ -138,14 +139,14 @@ theorem wf₀_pre {s : State} {extra : List Region} (hp : Pre p224 s extra) : VG
     simp only [VG.Arm.Taint.region, hp.wr]
     rfl
 
-theorem wf₀ {s : State} (h : signArm.pre s) : VG.Arm.Taint.Wf τ₀ s := wf₀_pre (pre_of h)
+theorem wf₀ {s : State} (h : signArm.pre s) : VG.Arm.Taint.Wf τ₀ s := wf₀_pre (u := false) (pre_of h)
 
 theorem argByte_eq (s : State) (k : Nat) :
     VG.Arm.Taint.argByte s k = stackArgAddr s 0 + BitVec.ofNat 64 k := by
   simp [VG.Arm.Taint.argByte, stackArgAddr]
 
-theorem agree₀ {s t : State} {extraS extraT : List Region}
-    (hs : Pre p224 s extraS) (ht : Pre p224 t extraT) (pub : signArm.pub s t) :
+theorem agree₀ {u : Bool} {s t : State} {extraS extraT : List Region}
+    (hs : Pre (p224With u) s extraS) (ht : Pre (p224With u) t extraT) (pub : signArm.pub s t) :
     VG.Arm.Taint.Agree τ₀ s t := by
   obtain ⟨hsp, h0, h1, h2, h3, ha⟩ := pub
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀_pre hs, wf₀_pre ht,

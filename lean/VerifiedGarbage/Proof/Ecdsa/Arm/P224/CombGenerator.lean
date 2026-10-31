@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Umaal
+
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombCorrect
 public import VerifiedGarbage.Impl.NatPairs
 public import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConfig
@@ -21,42 +23,42 @@ open VG VG.Arm VG.Impl.Ecdsa.Arm VG.Impl.Weierstrass.Arm
 open VG.Proof.Mont VG.Proof.Mont.Arm VG.Proof.Weierstrass VG.Proof.Weierstrass.Arm
 open VG.Proof.Weierstrass.Arm.TComb
 
-theorem comb_words_eq : tableWords p224Comb Spec.P224.curve
+theorem comb_words_eq (u : Bool) : tableWords (p224CombWith u) Spec.P224.curve
     VG.Impl.P224.p224Comb7x32=p224CombWords := by
   unfold p224CombWords
   rfl
 
-theorem comb_writes_cover : ∀ w ∈ writes p224Comb,
-    ∃ v ∈ Point.ladWp p224.ladderCfg p224.wk,
-      v.1≤w.1 ∧ w.1+w.2≤v.1+v.2 := by decide +kernel
+theorem comb_writes_cover (u : Bool) : ∀ w ∈ writes (p224CombWith u),
+    ∃ v ∈ Point.ladWp (p224With u).ladderCfg (p224With u).wk,
+      v.1≤w.1 ∧ w.1+w.2≤v.1+v.2 := by decide +kernel +revert
 
-theorem comb_generator_ok (hC : Law Spec.P224.curve) {s : State} {base T : Addr} {k : Nat}
+theorem comb_generator_ok (hC : Law Spec.P224.curve) {u : Bool} {s : State} {base T : Addr} {k : Nat}
     (hs : Scr s base size) (hf : Far s base 8192) {g : Reg → BitVec 32}
-    (F : Fixed p224 base g s.mem)
-    (ht : TableMem s T p224CombWords) (sym : State.addr (s.syms p224Comb.tsym)=T)
+    (F : Fixed (p224With u) base g s.mem)
+    (ht : TableMem s T p224CombWords) (sym : State.addr (s.syms (p224CombWith u).tsym)=T)
     (hd : Region.Disjoint ⟨T,8*p224CombWords.length⟩ ⟨base,4096⟩)
     (hk : k<2^224)
-    (bits : ∀ i<224,s.mem (off base (bitsAt p224.n 0+i))=if k.testBit i then 1 else 0) :
-    WP isa mulGeneratorP224 s (GeneratorPost p224 base k s) := by
-  have hc := p224_ok
-  have ht' : TableMem s T (tableWords p224Comb Spec.P224.curve VG.Impl.P224.p224Comb7x32) := by
-    rw [comb_words_eq]; exact ht
-  have hd' : Region.Disjoint ⟨T,8*(tableWords p224Comb Spec.P224.curve VG.Impl.P224.p224Comb7x32).length⟩ ⟨base,4096⟩ := by
-    rw [comb_words_eq]; exact hd
-  refine WP.mono (comb_ok p224Comb (VG.Proof.P224.Arm.comb_config hC) hC hc.onG
+    (bits : ∀ i<224,s.mem (off base (bitsAt (p224With u).n 0+i))=if k.testBit i then 1 else 0) :
+    WP isa (mulGeneratorP224With u) s (GeneratorPost (p224With u) base k s) := by
+  have hc := p224With_ok u
+  have ht' : TableMem s T (tableWords (p224CombWith u) Spec.P224.curve VG.Impl.P224.p224Comb7x32) := by
+    rw [comb_words_eq u]; exact ht
+  have hd' : Region.Disjoint ⟨T,8*(tableWords (p224CombWith u) Spec.P224.curve VG.Impl.P224.p224Comb7x32).length⟩ ⟨base,4096⟩ := by
+    rw [comb_words_eq u]; exact hd
+  refine WP.mono (comb_ok (p224CombWith u) (VG.Proof.P224.Arm.comb_config hC u) hC hc.onG
     hs hf ht' sym hd' hk F.zero bits F.ap F.b3p) fun t ⟨keep,unch,lt,rep⟩ => ?_
-  have U := unch.cover comb_writes_cover
+  have U := unch.cover (comb_writes_cover u)
   have U' := U
   rw [Point.ladWp,ladWx_eq] at U'
   have Ft := F.unch hc.n10 hs.nowrap (fixedOk_slWkP hc.n10 (by decide)) U'
   exact ⟨keep, U.mono fun w hw => List.mem_append_left _ hw, modP_of hc Ft.mp, lt, rep⟩
 
 /-- Setup and bit extraction preserve the ROM used by either signing or key generation. -/
-theorem comb_generator_stage (hC : Law Spec.P224.curve) {s₀ s : State} {base T : Addr} {A : Args}
-    (S : St₁ p224 A s₀ base s) (sy : s.syms=s₀.syms)
-    (ht : TableMem s₀ T p224CombWords) (sym : State.addr (s₀.syms p224Comb.tsym)=T)
+theorem comb_generator_stage (hC : Law Spec.P224.curve) {u : Bool} {s₀ s : State} {base T : Addr} {A : Args}
+    (S : St₁ (p224With u) A s₀ base s) (sy : s.syms=s₀.syms)
+    (ht : TableMem s₀ T p224CombWords) (sym : State.addr (s₀.syms (p224CombWith u).tsym)=T)
     (hd : Region.Disjoint ⟨T,8*p224CombWords.length⟩ ⟨base,8192⟩) :
-    WP isa mulGeneratorP224 s (GeneratorPost p224 base (kv p224 A s₀) s) := by
+    WP isa (mulGeneratorP224With u) s (GeneratorPost (p224With u) base (kv (p224With u) A s₀) s) := by
   have frame : Frame [⟨base,8192⟩] s₀.mem s.mem := outside_frame
     (S.whole.outside (o := 0) (n := 8192) (by simp)) (Nat.le_refl _)
   have ht' := ht.of_frame (by rw [S.rest.rd,S.rest.wr]) frame

@@ -25,38 +25,38 @@ namespace VG.Proof.P224.Arm
 open VG VG.Arm VG.Impl.Weierstrass VG.Impl.Weierstrass.Arm VG.Impl.P224
 open VG.Proof.Weierstrass VG.Proof.Weierstrass.Arm VG.Proof.Weierstrass.Arm.TComb
 
-theorem comb_layout : Layout p224Comb := by
-  refine ⟨by decide,by decide,?_,?_,?_,?_,?_⟩
-  · exact ⟨by decide,by decide⟩
-  all_goals decide +kernel
+theorem comb_layout (u : Bool := false) : Layout (p224CombWith u) := by
+  refine ⟨by decide +revert,by decide +revert,?_,?_,?_,?_,?_⟩
+  · exact ⟨by decide +revert,by decide +revert⟩
+  all_goals decide +kernel +revert
 
-theorem comb_config (hC : Law Spec.P224.curve) :
-    Config p224Comb Spec.P224.curve p224Comb7x32 p224Comb7Start32 where
-  layout := comb_layout
+theorem comb_config (hC : Law Spec.P224.curve) (u : Bool := false) :
+    Config (p224CombWith u) Spec.P224.curve p224Comb7x32 p224Comb7Start32 where
+  layout := comb_layout u
   fieldK := rfl
   fieldM := rfl
   modulus := Mont.p224p_ok
-  unit := unitMod_pow_two (by decide +kernel) _
+  unit := unitMod_pow_two (by decide +kernel +revert) _
   tables := VG.Proof.P224.combOk7x32 hC
-  one_lt := by decide +kernel
-  one := toM_one (unitMod_pow_two (by decide +kernel) _)
+  one_lt := by decide +kernel +revert
+  one := toM_one (unitMod_pow_two (by decide +kernel +revert) _)
   startX := rfl
   startY := rfl
-  w1 := by decide
-  w9 := by decide
-  J1 := by decide
-  J32 := by decide
-  startBits := by decide
-  coverBits := by decide
-  bitsLow := by decide
-  bitsHigh := by decide
-  bitsFit := by decide
-  windowFit := by decide
-  encJ := by decide
-  encLast := by decide
-  encRow := by decide
-  encEntry := by decide
-  encH := by decide
+  w1 := by decide +revert
+  w9 := by decide +revert
+  J1 := by decide +revert
+  J32 := by decide +revert
+  startBits := by decide +revert
+  coverBits := by decide +revert
+  bitsLow := by decide +revert
+  bitsHigh := by decide +revert
+  bitsFit := by decide +revert
+  windowFit := by decide +revert
+  encJ := by decide +revert
+  encLast := by decide +revert
+  encRow := by decide +revert
+  encEntry := by decide +revert
+  encH := by decide +revert
 
 theorem comb_words_length : p224CombWords.length=16384 := by
   have len := VG.Proof.Weierstrass.tcombWords_length (n := 4) (R := 2^256)

@@ -14,4 +14,7 @@ namespace VG
 materialize_code Impl.Ecdsa.Arm.signP224Comb
 materialize_code Impl.Ecdsa.Arm.publicKeyP224Comb
 materialize_code Impl.Ecdsa.Arm.verifyP224Comb
+materialize_code Impl.Ecdsa.Arm.signP224CombU
+materialize_code Impl.Ecdsa.Arm.publicKeyP224CombU
+materialize_code Impl.Ecdsa.Arm.verifyP224CombU
 end VG

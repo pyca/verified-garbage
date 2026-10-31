@@ -185,6 +185,16 @@ GROUPS = {
         "lib": ["mlkem_common", "mlkem1024::backend_tests", "mlkem768::backend_tests"],
         "tests": ["acvp::mlkem1024", "acvp::mlkem768", "wycheproof::mlkem1024", "wycheproof::mlkem768"],
     },
+    "p224": {
+        "lib": ["ec::p224", "ec::validate::tests::p224", "ec::compressed::tests::p224"],
+        "tests": [
+            "cavp::ecdh_p224",
+            "rfc6979::p224",
+            "wycheproof::ec_compressed::p224",
+            "wycheproof::ecdh_p224",
+            "wycheproof::ecdsa_p224",
+        ],
+    },
     "p224_sha": {
         "lib": [],
         "tests": ["rfc6979::p224::p224_sha224"],
