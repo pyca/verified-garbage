@@ -60,7 +60,7 @@ runs:
     # Mathlib and its dependencies, with the prebuilt files for those
     # modules: they change only with the toolchain, the manifest or the
     # list, so a hit skips the clones, building Mathlib's `cache` tool and
-    # the download. Archives have their own directory, index and files.tar,
+    # the download. Archives have their own directory, index and files.tar.gz,
     # separate from the project build.
     - name: Restore Mathlib and its dependencies
       id: lake-packages

@@ -233,7 +233,9 @@ class LeanArchiveTests(unittest.TestCase):
     def test_store_and_restore(self):
         lean_cache.store(self.lean, [Path(".lake/build")], 2, 5, str(self.stub))
         ltar = self.lean / ".lake/ltar"
-        self.assertTrue((ltar / "files.tar").is_file())
+        self.assertTrue((ltar / "files.tar.gz").is_file())
+        with gzip.open(ltar / "files.tar.gz") as f:
+            self.assertIn(".lake/build/lib/libNative.so", tarfile.open(fileobj=f).getnames())
         original = {p.relative_to(self.lean): p.read_bytes()
                     for p in (self.lean / ".lake/build").rglob("*") if p.is_file()}
         # Restored where only `.lake/ltar` was kept, as from the Actions cache.
@@ -370,7 +372,7 @@ class LeanArchiveTests(unittest.TestCase):
 
     def test_bundle_rejects_incomplete_or_overlapping_caches_before_output(self):
         directories = self.independent_caches()
-        for missing in ("index.json", "files.tar", "build/C.ltar"):
+        for missing in ("index.json", "files.tar.gz", "build/C.ltar"):
             path = self.lean / directories[0] / missing
             saved = path.read_bytes()
             path.unlink()
@@ -418,6 +420,31 @@ class LeanArchiveTests(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "tar failed"):
             lean_cache.restore(target, 2, str(self.stub))
 
+    def test_restore_reads_an_uncompressed_files_tar_from_before(self):
+        lean_cache.store(self.lean, [Path(".lake/build")], 2, 5, str(self.stub))
+        ltar = self.lean / ".lake/ltar"
+        with gzip.open(ltar / "files.tar.gz") as f, open(ltar / "files.tar", "wb") as g:
+            shutil.copyfileobj(f, g)
+        (ltar / "files.tar.gz").unlink()
+        target = self.root / "restored"
+        (target / ".lake").mkdir(parents=True)
+        ltar.rename(target / ".lake/ltar")
+        lean_cache.restore(target, 2, str(self.stub))
+        self.assertTrue((target / ".lake/build/lib/libNative.so").is_file())
+        # The next store replaces it with the compressed one.
+        lean_cache.store(target, [Path(".lake/build")], 2, 5, str(self.stub))
+        self.assertEqual(sorted(p.name for p in (target / ".lake/ltar").glob("files.*")), ["files.tar.gz"])
+
+    def test_dependencies_executables_are_left_out(self):
+        bin_dir = self.lean / ".lake/packages/mathlib/.lake/build/bin"
+        write(bin_dir / "cache", "executable")
+        write(bin_dir / "cache.trace", "{}")
+        data, _ = self.pack()
+        with tarfile.open(fileobj=io.BytesIO(data)) as tar:
+            inner = tarfile.open(fileobj=tar.extractfile(".lake/ltar/files.tar")).getnames()
+        self.assertFalse([name for name in inner if "/bin" in name])
+        self.assertIn(".lake/packages/mathlib/Mathlib.lean", inner)
+
     def test_pack_writes_files_tar_first(self):
         lean_cache.store(self.lean, [Path(".lake/build")], 2, 5, str(self.stub))
         data, _ = self.pack()
@@ -440,9 +467,9 @@ class LeanArchiveTests(unittest.TestCase):
                            ("packages/mathlib/.lake/build/Mathlib/Order", False)):
             names = json.loads((ltar / (rel + ".ltar")).read_text())
             self.assertEqual(any(n.endswith(".c") for n in names), has_c, rel)
-        with tarfile.open(ltar / "files.tar") as tar:
+        with tarfile.open(ltar / "files.tar.gz") as tar:
             names = tar.getnames()
-        # Nor in `files.tar`, which keeps every `.c.hash` and the objects.
+        # Nor in `files.tar.gz`, which keeps every `.c.hash` and the objects.
         self.assertNotIn(".lake/build/ir/A/B.c", names)
         self.assertIn(".lake/build/ir/A/B.c.hash", names)
         self.assertIn(".lake/build/ir/C.c.o.export", names)
