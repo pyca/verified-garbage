@@ -80,12 +80,12 @@ theorem verifyWith_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List
     WP isa (Impl.Ecdsa.Verify.Arm.Cfg.verifyWith c generator) s₀ fun s' => VKeep s₀ s' ∧ VPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have setupRun := front_ok hc hp (rest := .seq (Impl.Ecdsa.Verify.Arm.Cfg.scalars c)
-    (.seq (pow c.powN c.SN) (.seq (Impl.Ecdsa.Verify.Arm.Cfg.uv c) (.block []))))
+    (.seq (pow c.powN c.SN c.umaal) (.seq (Impl.Ecdsa.Verify.Arm.Cfg.uv c) (.block []))))
     (Q := fun s => Mid c s₀ (ptr s₀ .r3) s)
     (fun _ F => mid_ok hc F fun _ M => WP.block_nil M)
   have finish : ∀ s₂, Mid c s₀ (ptr s₀ .r3) s₂ → s₂.syms=s₀.syms →
       WP isa (.seq (Impl.Ecdsa.Verify.Arm.Cfg.pointsWith c generator)
-        (.seq (pow c.powP c.SP) (Impl.Ecdsa.Verify.Arm.Cfg.final c))) s₂
+        (.seq (pow c.powP c.SP c.umaal) (Impl.Ecdsa.Verify.Arm.Cfg.final c))) s₂
         (fun t => VKeep s₀ t ∧ VPost c s₀ t) := by
     intro s₂ hM syms₂
     have F₂ := hM.fixed

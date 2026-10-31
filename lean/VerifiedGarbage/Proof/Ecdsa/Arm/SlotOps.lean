@@ -66,8 +66,8 @@ theorem slFits {M : Mod} {S : Spec.Weierstrass.Mont.Modulus} {m : Nat} (hF : FnO
 /-- `[o] = [a] [b] R⁻¹ mod m`, on slots. -/
 theorem slMul_ok {M : Mod} {S : Spec.Weierstrass.Mont.Modulus} {m : Nat} (hF : FnOk M c.wk S m)
     (hMn : M.n = c.n) (h7 : c.n < 10) {base : Addr} {s : State} (hs : Scr s base size)
-    (hf : Far s base 8192) {o a b : Nat} (ho : o < 45) (ha : a < 45) (hb : b < 45) (hB : sv c base s b < m) :
-    WP isa (Mont.mulCall S (c.sl o) (c.sl a) (c.sl b)) s fun s' => ProgKeep M base c.wk [c.sl o] s s' ∧
+    (hf : Far s base 8192) {o a b : Nat} (ho : o < 45) (ha : a < 45) (hb : b < 45) (hB : sv c base s b < m) {u : Bool} :
+    WP isa (Mont.mulCall S (c.sl o) (c.sl a) (c.sl b) u) s fun s' => ProgKeep M base c.wk [c.sl o] s s' ∧
       sv c base s' o < m ∧ sv c base s' o * 2 ^ (64 * c.n) % m = sv c base s a * sv c base s b % m := by
   refine WP.mono (Mont.mulCall_ok hF.ok hs hf (slFits hF hMn h7 ho) (slFits hF hMn h7 ha) (slFits hF hMn h7 hb)
     (by rw [hF.k, hF.m, hMn]; exact hB)) fun s' ⟨K, lt, e⟩ => ?_

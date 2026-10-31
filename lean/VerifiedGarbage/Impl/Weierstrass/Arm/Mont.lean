@@ -93,6 +93,13 @@ def mulFn16 (n m : Nat) : Prog isa := fn n m .r4 (mulR (mod n m) (own n) 0 0 0 .
 def mulFn (n m : Nat) : Prog isa :=
   if n = 6 ∨ n = 8 ∨ n = 9 then fn n m .r4 (Packed.mulR (mod n m) (own n)) else mulFn16 n m
 
+/-- `vg_<curve>_mul_mod_<p|n>_umaal`: the packed words' rows with one `umaal`
+a word (`Packed.rowU`; the CPU feature `umaal`). -/
+def mulFnU (n m : Nat) : Prog isa := fn n m .r4 (Packed.mulR (mod n m) (own n) true)
+
+/-- `mulFn`, or with `u` `mulFnU`. -/
+def mulFnWith (u : Bool) (n m : Nat) : Prog isa := if u then mulFnU n m else mulFn n m
+
 /-- `vg_<curve>_add_mod_<p|n>`. -/
 def addFn (n m : Nat) : Prog isa := fn n m .r2 (.block (addR (mod n m) (own n) 0 0 0 .r1 .r2 .lr))
 
@@ -110,9 +117,14 @@ def callOp (f : String) (body : Prog isa) (o a b : Nat) : Prog isa :=
       .movw .r2 (BitVec.ofNat 16 a), .movw .r3 (BitVec.ofNat 16 b)]) <|
     .seq (.call f body) (.block [.mov .lr (.reg .r10)])
 
-/-- `[o] = [a] [b] R⁻¹ mod m` by a call of `vg_<curve>_mul_mod_<p|n>`. -/
-def mulCall (S : Spec.Weierstrass.Mont.Modulus) (o a b : Nat) : Prog isa :=
-  callOp (S.fn "mul") (mulFn S.k S.m) o a b
+/-- The name of `vg_<curve>_mul_mod_<p|n>`, or with `u` of its `_umaal` variant. -/
+def mulName (u : Bool) (S : Spec.Weierstrass.Mont.Modulus) : String :=
+  if u then S.fn "mul" ++ "_umaal" else S.fn "mul"
+
+/-- `[o] = [a] [b] R⁻¹ mod m` by a call of `vg_<curve>_mul_mod_<p|n>`, or with
+`u` of `vg_<curve>_mul_mod_<p|n>_umaal`. -/
+def mulCall (S : Spec.Weierstrass.Mont.Modulus) (o a b : Nat) (u : Bool := false) : Prog isa :=
+  callOp (mulName u S) (mulFnWith u S.k S.m) o a b
 
 /-- `[o] = [a] + [b] mod m` by a call of `vg_<curve>_add_mod_<p|n>`. -/
 def addCall (S : Spec.Weierstrass.Mont.Modulus) (o a b : Nat) : Prog isa :=

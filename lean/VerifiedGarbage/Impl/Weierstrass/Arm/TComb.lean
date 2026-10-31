@@ -22,6 +22,8 @@ structure TCombCfg where
  one : Nat
  zero : Nat
  neg : Nat
+ /-- Whether the point functions called are the `_umaal` variants. -/
+ u : Bool := false
 
 namespace TCombCfg
 variable (K : TCombCfg)
@@ -96,7 +98,7 @@ def entry : Prog isa :=
 /-- Add the selected entry through the existing point function. -/
 def add : Prog isa :=
  .seq (.block (copyPt K.L.M.n K.P K.L.R)) <|
- .seq (ptCall K.F false) (.block (copyPt K.L.M.n K.L.R K.O))
+ .seq (ptCall K.F false false K.u) (.block (copyPt K.L.M.n K.L.R K.O))
 
 def step : Prog isa :=
  .seq (.block [decCounter]) <| .seq K.entry <| .seq K.add (.block [testCounter])

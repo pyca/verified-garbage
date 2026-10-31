@@ -121,9 +121,9 @@ def select : List Instr :=
 /-- `x` and `y` into Montgomery's form, the check that the point is on the
 curve, and the point the ladder multiplies. -/
 def validate : Prog isa :=
-  .seq (Mont.mulCall c.SP (c.sl QXM) (c.sl E) (c.sl R2P)) <|
-  .seq (Mont.mulCall c.SP (c.sl QYM) (c.sl QY) (c.sl R2P)) <|
-  .seq (fprog c.SP (curveOps c)) (.block (checkZero c (c.sl W1) ++ select c))
+  .seq (Mont.mulCall c.SP (c.sl QXM) (c.sl E) (c.sl R2P) c.umaal) <|
+  .seq (Mont.mulCall c.SP (c.sl QYM) (c.sl QY) (c.sl R2P) c.umaal) <|
+  .seq (fprog c.SP (curveOps c) c.umaal) (.block (checkZero c (c.sl W1) ++ select c))
 
 /-- The ladder of the signature, from the point at `PX`, `PY`, `ONEP`. -/
 def ladderQ : LadderCfg := { c.ladderCfg with G := c.pt PX PY ONEP }
@@ -137,14 +137,14 @@ def finish : List Instr :=
 /-- `x = X Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery form, the checks
 of `d` and `Z`, and the result. -/
 def middle : Prog isa :=
-  progs [Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC),
-    Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE),
+  progs [Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC) c.umaal,
+    Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE) c.umaal,
     .block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ finish c)]
 
 /-- `vg_ecdh_<curve>`. -/
 def exchange : Prog isa :=
   .seq (prefix' c) <| .seq (.block (peer c)) <| .seq (validate c) <|
-  .seq (c.qMul PX PY) <| .seq (pow c.powP c.SP) (middle c)
+  .seq (c.qMul PX PY) <| .seq (pow c.powP c.SP c.umaal) (middle c)
 
 end Cfg
 

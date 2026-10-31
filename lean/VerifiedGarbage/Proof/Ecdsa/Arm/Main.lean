@@ -171,7 +171,7 @@ def GeneratorPost (c : Cfg) (base : Addr) (k : Nat) (s t : State) : Prop :=
 /-- The default generator implementation, shared by the unmodified callers. -/
 theorem generator_ladder_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s : State}
     (hS : St₁ c A s₀ base s) :
-    WP isa (VG.Impl.Weierstrass.Arm.Point.ladderP c.ladderCfg c.SP) s
+    WP isa (VG.Impl.Weierstrass.Arm.Point.ladderP c.ladderCfg c.SP false c.umaal) s
       (GeneratorPost c base (kv c A s₀) s) := by
   have h0 := hc.n0
   have h7 := hc.n10
@@ -215,7 +215,7 @@ theorem generator_ladder_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base :
       show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl B3P) c.n) = _
       rw [F.b3p]; exact toM_cmont hc _) hG
   have henc := scalarBits_enc hc
-  refine WP.mono (VG.Proof.Weierstrass.Arm.Point.ladderP_ok (ladLay hc) (ladWk hc) hc.fp ladPt hpR
+  refine WP.mono (VG.Proof.Weierstrass.Arm.Point.ladderP_ok (a0 := false) (u := c.umaal) (ladLay hc) (ladWk hc) hc.fp ladPt hpR
     (bitsAt_lt hc (j := 0) (by decide)) hS.scr hS.far (modP_of hc F.mp) hlt nofun hstep hR
       (fun t ht => hS.t₀ t (Nat.lt_of_lt_of_le ht (scalarBits_le hc))) henc)
     fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_
@@ -226,7 +226,7 @@ theorem generator_ladder_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base :
 theorem stage₂With (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : St₁ c A s₀ base s)
     {generator : Prog isa} (hMul : WP isa generator s (GeneratorPost c base (kv c A s₀) s))
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c A s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq generator (.seq (pow c.powP c.SP) rest)) s Q := by
+    WP isa (.seq generator (.seq (pow c.powP c.SP c.umaal) rest)) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hS.scr.nowrap
@@ -293,7 +293,7 @@ theorem stage₂With (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS
 /-- `[k]G` by the generic ladder, then `Z^(p-2)`. -/
 theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s : State} (hS : St₁ c A s₀ base s)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c A s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq (VG.Impl.Weierstrass.Arm.Point.ladderP c.ladderCfg c.SP) (.seq (pow c.powP c.SP) rest)) s Q :=
+    WP isa (.seq (VG.Impl.Weierstrass.Arm.Point.ladderP c.ladderCfg c.SP false c.umaal) (.seq (pow c.powP c.SP c.umaal) rest)) s Q :=
   stage₂With hc hS (generator_ladder_ok hc hC hS) h
 
 /-- After `x`, `r`, the checks and `k^(n-2)`. -/
@@ -314,7 +314,7 @@ structure St₃ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : 
 /-- `x`, `r`, `k R mod n` and the checks, then `k^(n-2)`. -/
 theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : St₂ c A s₀ base s)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₃ c A s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq c.middle (.seq (pow c.powN c.SN) rest)) s Q := by
+    WP isa (.seq c.middle (.seq (pow c.powN c.SN c.umaal) rest)) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hS.scr.nowrap

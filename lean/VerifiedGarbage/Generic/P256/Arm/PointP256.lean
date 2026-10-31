@@ -36,6 +36,8 @@ import VerifiedGarbage.Proof.Mont.Arm.Step
 import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
 import VerifiedGarbage.Proof.Weierstrass.Arm.PointVerified
 
+public import VerifiedGarbage.Proof.Weierstrass.Arm.PointP256Umaal
+
 /-!
 # P-256's point addition and doubling on 32-bit ARM
 
@@ -66,6 +68,18 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
   Spec.Weierstrass.Point.p256.doubleApi.artifact Arm.target {
     notes := notes
     code := Impl.Weierstrass.Arm.Point.pointDouble Spec.Weierstrass.Point.p256
-    verified := p256_double_verified (fermat_of_law h.law) }]
+    verified := p256_double_verified (fermat_of_law h.law) },
+  Spec.Weierstrass.Point.p256.addApi.artifact Arm.target {
+    suffix := "_umaal"
+    notes := notes ++ ["Field multiplications are calls of `vg_p256_mul_mod_p_umaal` (and `vg_p256_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`)."]
+    code := Impl.Weierstrass.Arm.Point.pointAdd Spec.Weierstrass.Point.p256 true
+    verified := p256_addU_verified (fermat_of_law h.law)
+    features := ["umaal"] },
+  Spec.Weierstrass.Point.p256.doubleApi.artifact Arm.target {
+    suffix := "_umaal"
+    notes := notes ++ ["Field multiplications are calls of `vg_p256_mul_mod_p_umaal` (and `vg_p256_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`)."]
+    code := Impl.Weierstrass.Arm.Point.pointDouble Spec.Weierstrass.Point.p256 true
+    verified := p256_doubleU_verified (fermat_of_law h.law)
+    features := ["umaal"] }]
 
 end VG.Generic.P256.Arm.PointP256

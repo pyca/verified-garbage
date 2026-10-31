@@ -58,10 +58,10 @@ theorem sat_pre (C : Spec.Weierstrass.Point.Curve) (hp : 0 < C.p) (dbl : Bool) :
 /-- `vg_<curve>_point_add` (`dbl` false) or `vg_<curve>_point_double` meets
 its contract, given its constant time. -/
 theorem sum_verified (C : Spec.Weierstrass.Point.Curve) (hM : Mont.ModOk C.k C.p) (hk6 : C.k ≤ 6)
-    (hodd : C.p % 2 = 1) (h1 : (1 : Fin C.p) ≠ 0) (hF : Fermat C.p) (dbl : Bool)
-    (hct : ConstantTime isa (sumArm C dbl).pre (sumArm C dbl).pub (fn (modP C) dbl)) :
-    Verified Arm.target (fn (modP C) dbl) (sumC C dbl) :=
-  Verified.of_correct (sum_arm hM hk6 hodd h1 hF dbl) hct
+    (hodd : C.p % 2 = 1) (h1 : (1 : Fin C.p) ≠ 0) (hF : Fermat C.p) (dbl : Bool) {u : Bool}
+    (hct : ConstantTime isa (sumArm C dbl).pre (sumArm C dbl).pub (fn (modP C) dbl u)) :
+    Verified Arm.target (fn (modP C) dbl u) (sumC C dbl) :=
+  Verified.of_correct (sum_arm hM hk6 hodd h1 hF dbl (u := u)) hct
     { pre := by sig_implies_pre [sumC, Spec.Weierstrass.Point.Curve.sumPre, Spec.Weierstrass.Point.Curve.sumPost, Spec.Weierstrass.Point.sig, sumArm, Spec.Weierstrass.Point.Curve.ConstsBelow, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       post := by sig_implies_post [sumC, Spec.Weierstrass.Point.Curve.sumPre, Spec.Weierstrass.Point.Curve.sumPost, Spec.Weierstrass.Point.sig, sumArm, Spec.Weierstrass.Point.Curve.ConstsBelow, Arm.abi, Arm.argRegs,

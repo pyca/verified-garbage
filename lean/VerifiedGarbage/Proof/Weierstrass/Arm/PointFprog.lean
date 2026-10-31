@@ -124,8 +124,8 @@ theorem fopR_ok {k N : Nat} {σ : Nat → Nat} {base : Addr} {S : Spec.Weierstra
     [NeZero S.m] (hM : ModOk S.k S.m) (hk : S.k = k) {W : List Nat} (hL : LayR k N W σ)
     (hm : UnitMod S.m (2 ^ (64 * k))) {V : List Nat} {E : Nat → Fin S.m} {s : State}
     (hI : InvR k N σ base S.m V E s) {op : FOp} (hW : op.out ∈ W) (hN : ∀ x ∈ op.out :: op.ins, x < N)
-    (hR : ∀ x ∈ op.ins, x ∈ V) :
-    WP isa (opCodeR σ S op) s fun s' =>
+    (hR : ∀ x ∈ op.ins, x ∈ V) {u : Bool} :
+    WP isa (opCodeR σ S u op) s fun s' =>
       KeepR k σ base [op.out] s s' ∧ InvR k N σ base S.m (op.out :: V) (op.run E) s' := by
   subst hk
   cases op with
@@ -163,11 +163,11 @@ theorem fopR_ok {k N : Nat} {σ : Nat → Nat} {base : Addr} {S : Spec.Weierstra
 /-- A field program. -/
 theorem fprogR_ok {k N : Nat} {σ : Nat → Nat} {base : Addr} {S : Spec.Weierstrass.Mont.Modulus}
     [NeZero S.m] (hM : ModOk S.k S.m) (hk : S.k = k) {W : List Nat} (hL : LayR k N W σ)
-    (hm : UnitMod S.m (2 ^ (64 * k))) :
+    (hm : UnitMod S.m (2 ^ (64 * k))) {u : Bool} :
     ∀ (ops : List FOp) {V : List Nat} {E : Nat → Fin S.m} {s : State},
       InvR k N σ base S.m V E s → (∀ op ∈ ops, op.out ∈ W ∧ ∀ x ∈ op.out :: op.ins, x < N) →
       readsOk ops V = true →
-      WP isa (fprogR σ S ops) s fun s' => KeepR k σ base (ops.map FOp.out) s s' ∧
+      WP isa (fprogR σ S ops u) s fun s' => KeepR k σ base (ops.map FOp.out) s s' ∧
         InvR k N σ base S.m (validAfter ops V) (runOps ops E) s'
   | [], _, _, s, hI, _, _ => WP.block_nil ⟨KeepR.refl _ _ _ _ s, hI⟩
   | op :: ops, V, E, s, hI, hS, hR => by
@@ -202,8 +202,8 @@ state holding `E` in the slots it reads. -/
 theorem opsR_ok {k : Nat} {σ : Nat → Nat} {base : Addr} {S : Spec.Weierstrass.Mont.Modulus}
     [NeZero S.m] (hM : ModOk S.k S.m) (hk : S.k = k) (hL : LayR k 17 wIds σ)
     (hm : UnitMod S.m (2 ^ (64 * k))) {ops : List FOp} (hO : OpsOk ops)
-    {E : Nat → Fin S.m} {s : State} (hI : InvR k 17 σ base S.m rIds E s) :
-    WP isa (fprogR σ S ops) s fun s' => KeepR k σ base wIds s s' ∧
+    {E : Nat → Fin S.m} {s : State} (hI : InvR k 17 σ base S.m rIds E s) {u : Bool} :
+    WP isa (fprogR σ S ops u) s fun s' => KeepR k σ base wIds s s' ∧
       InvR k 17 σ base S.m (validAfter ops rIds) (runOps ops E) s' := by
   refine WP.mono (fprogR_ok hM hk hL hm _ hI hO.slots hO.reads) fun s' ⟨hk', hI'⟩ =>
     ⟨hk'.mono fun w hw => ?_, hI'⟩
@@ -223,8 +223,8 @@ their values. -/
 theorem rcbR_ok {k : Nat} {σ : Nat → Nat} {base : Addr} {S : Spec.Weierstrass.Mont.Modulus}
     [NeZero S.m] (hM : ModOk S.k S.m) (hk : S.k = k) (hL : LayR k 17 wIds σ)
     (hm : UnitMod S.m (2 ^ (64 * k))) {E : Nat → Fin S.m} {s : State}
-    (hI : InvR k 17 σ base S.m rIds E s) :
-    WP isa (fprogR σ S (rcb sId pId qId oId)) s fun s' => KeepR k σ base wIds s s' ∧
+    (hI : InvR k 17 σ base S.m rIds E s) {u : Bool} :
+    WP isa (fprogR σ S (rcb sId pId qId oId) u) s fun s' => KeepR k σ base wIds s s' ∧
       InvR k 17 σ base S.m (validAfter (rcb sId pId qId oId) rIds) (runOps (rcb sId pId qId oId) E) s' ∧
       (runOps (rcb sId pId qId oId) E 0, runOps (rcb sId pId qId oId) E 1, runOps (rcb sId pId qId oId) E 2) =
         VG.Proof.Weierstrass.rcbAdd (E 9) (E 10) (E 3) (E 4) (E 5) (E 6) (E 7) (E 8) := by

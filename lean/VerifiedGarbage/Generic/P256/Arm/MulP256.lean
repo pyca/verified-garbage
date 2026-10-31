@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Ecdsa.Arm.P256.MulVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Ecdsa.Arm.P256.MulLit
 
+public import VerifiedGarbage.Proof.Ecdsa.Arm.P256.Umaal
+
 /-!
 # P-256's point multiplication on 32-bit ARM
 
@@ -32,6 +34,13 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
       digit-by-digit Montgomery multiplication in calls of `vg_p256_mul_mod_p` and the other functions of \
       `p256_mont`; nothing depends on `k` or `Q` but through masks."]
     code := Impl.Ecdsa.Arm.mulP256
-    verified := Proof.Ecdsa.Arm.P256.Mul.mul_verified h.law }]
+    verified := Proof.Ecdsa.Arm.P256.Mul.mul_verified h.law },
+  Spec.Weierstrass.Mul.p256.mulApi.artifact Arm.target {
+    suffix := "_umaal"
+    notes := ["`vg_p256_mul`'s code, but for its calls of `vg_p256_point_double_umaal` and \
+      `vg_p256_point_add_umaal`. Field multiplications are calls of `vg_p256_mul_mod_p_umaal` (and `vg_p256_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`)."]
+    code := Impl.Ecdsa.Arm.mulP256U
+    verified := Proof.Ecdsa.Arm.P256.Mul.mulU_verified h.law
+    features := ["umaal"] }]
 
 end VG.Generic.P256.Arm.MulP256

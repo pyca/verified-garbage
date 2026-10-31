@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontVerified
+public import VerifiedGarbage.Proof.Weierstrass.Arm.MontP256Umaal
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Montgomery arithmetic modulo the curves' `p` and `n` on ARMv7 -/
@@ -24,6 +25,14 @@ def packedNotes : List String := ["The function saves `r4`–`r9` and `lr` in it
   product from four baseline 16-by-16 `mul` products. Fixed-offset rows keep `r10` and `r11` \
   unchanged and `r12` as the workspace pointer. The accumulator is expanded to half-word \
   digits for the existing mask-selected final subtraction. No stack or CPU extension is used."]
+
+/-- How the `_umaal` multiplications work. -/
+def umaalNotes : List String := ["The function saves `r4`–`r9` and `lr` in its own working \
+  space. Montgomery multiplication scans the numbers' packed 32-bit words: each word of each \
+  row (`r3:acc[j] = acc[j] + x y[j] + r3`) is one `umaal` (`hi:lo = n m + hi + lo`, the CPU \
+  feature `umaal`). Fixed-offset rows keep `r10` and `r11` unchanged and `r12` as the \
+  workspace pointer. The accumulator is expanded to half-word digits for the mask-selected \
+  final subtraction. No stack is used."]
 
 def artifacts : List Artifact := [
   p224p.mulApi.artifact Arm.target {
@@ -66,6 +75,18 @@ def artifacts : List Artifact := [
     notes := notes
     code := mulFn p256n.k p256n.m
     verified := p256n_mul_verified },
+  p256p.mulApi.artifact Arm.target {
+    suffix := "_umaal"
+    notes := umaalNotes
+    code := mulFnU p256p.k p256p.m
+    verified := p256p_mulU_verified
+    features := ["umaal"] },
+  p256n.mulApi.artifact Arm.target {
+    suffix := "_umaal"
+    notes := umaalNotes
+    code := mulFnU p256n.k p256n.m
+    verified := p256n_mulU_verified
+    features := ["umaal"] },
   p256n.addApi.artifact Arm.target {
     notes := notes
     code := addFn p256n.k p256n.m

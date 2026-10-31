@@ -62,13 +62,13 @@ theorem checks_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
     e₁ MN (by decide) (by decide), hMN', hMN]
 
 theorem scalar_eq (c : Cfg) : c.scalar =
-    .seq (Mont.mulCall c.SN (c.sl RM) (c.sl RR) (c.sl R2N))
-    (.seq (Mont.mulCall c.SN (c.sl DM) (c.sl D) (c.sl R2N))
-    (.seq (Mont.mulCall c.SN (c.sl EM) (c.sl E) (c.sl R2N))
-    (.seq (Mont.mulCall c.SN (c.sl TT) (c.sl RM) (c.sl DM))
+    .seq (Mont.mulCall c.SN (c.sl RM) (c.sl RR) (c.sl R2N) c.umaal)
+    (.seq (Mont.mulCall c.SN (c.sl DM) (c.sl D) (c.sl R2N) c.umaal)
+    (.seq (Mont.mulCall c.SN (c.sl EM) (c.sl E) (c.sl R2N) c.umaal)
+    (.seq (Mont.mulCall c.SN (c.sl TT) (c.sl RM) (c.sl DM) c.umaal)
     (.seq (Mont.addCall c.SN (c.sl TT) (c.sl TT) (c.sl EM))
-    (.seq (Mont.mulCall c.SN (c.sl SM) (c.sl ACC) (c.sl TT))
-    (.seq (Mont.mulCall c.SN (c.sl SS) (c.sl SM) (c.sl ONE))
+    (.seq (Mont.mulCall c.SN (c.sl SM) (c.sl ACC) (c.sl TT) c.umaal)
+    (.seq (Mont.mulCall c.SN (c.sl SS) (c.sl SM) (c.sl ONE) c.umaal)
     (.block (c.checkNonzero (c.sl SS) ++ c.finish)))))))) := rfl
 
 /-- What `scalar`'s field operations leave. -/
@@ -93,9 +93,9 @@ theorem scalarIn_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
       toM c.C.n (2 ^ (64 * c.n)) (sv c base s' DM) = Fin.ofNat c.C.n (sv c base s D) →
       toM c.C.n (2 ^ (64 * c.n)) (sv c base s' EM) = Fin.ofNat c.C.n (sv c base s E) →
       WP isa rest s' Q) :
-    WP isa (.seq ((Mont.mulCall c.SN (c.sl RM) (c.sl RR) (c.sl R2N)))
-      (.seq ((Mont.mulCall c.SN (c.sl DM) (c.sl D) (c.sl R2N)))
-      (.seq ((Mont.mulCall c.SN (c.sl EM) (c.sl E) (c.sl R2N))) rest))) s Q := by
+    WP isa (.seq ((Mont.mulCall c.SN (c.sl RM) (c.sl RR) (c.sl R2N) c.umaal))
+      (.seq ((Mont.mulCall c.SN (c.sl DM) (c.sl D) (c.sl R2N) c.umaal))
+      (.seq ((Mont.mulCall c.SN (c.sl EM) (c.sl E) (c.sl R2N) c.umaal)) rest))) s Q := by
   have h7 := hc.n10
   have hn := hs.nowrap
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)
@@ -143,10 +143,10 @@ theorem scalarOut_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base s
         (toM c.C.n (2 ^ (64 * c.n)) (sv c base s RM) * toM c.C.n (2 ^ (64 * c.n)) (sv c base s DM) +
           toM c.C.n (2 ^ (64 * c.n)) (sv c base s EM)) →
       WP isa rest s' Q) :
-    WP isa (.seq ((Mont.mulCall c.SN (c.sl TT) (c.sl RM) (c.sl DM)))
+    WP isa (.seq ((Mont.mulCall c.SN (c.sl TT) (c.sl RM) (c.sl DM) c.umaal))
       (.seq (Mont.addCall c.SN (c.sl TT) (c.sl TT) (c.sl EM))
-      (.seq ((Mont.mulCall c.SN (c.sl SM) (c.sl ACC) (c.sl TT)))
-      (.seq ((Mont.mulCall c.SN (c.sl SS) (c.sl SM) (c.sl ONE))) rest)))) s Q := by
+      (.seq ((Mont.mulCall c.SN (c.sl SM) (c.sl ACC) (c.sl TT) c.umaal))
+      (.seq ((Mont.mulCall c.SN (c.sl SS) (c.sl SM) (c.sl ONE) c.umaal)) rest)))) s Q := by
   have h7 := hc.n10
   have hn := hs.nowrap
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)

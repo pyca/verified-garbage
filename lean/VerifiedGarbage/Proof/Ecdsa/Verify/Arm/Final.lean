@@ -66,9 +66,9 @@ theorem vfinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base siz
         fun rd hrd => by rw [V' rd hrd, u₂.mem, u₁.mem, hsv rd hrd], by rw [K'.sp, u₂.sp, u₁.sp]⟩
 
 theorem final_eq (c : Cfg) : Impl.Ecdsa.Verify.Arm.Cfg.final c =
-    .seq (Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC))
-    (.seq (Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE))
-    (.seq (Mont.mulCall c.SN (c.sl XN) (c.sl X) (c.sl R2N))
+    .seq (Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC) c.umaal)
+    (.seq (Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE) c.umaal)
+    (.seq (Mont.mulCall c.SN (c.sl XN) (c.sl X) (c.sl R2N) c.umaal)
     (.seq (Mont.subCall c.SN (c.sl W) (c.sl XN) (c.sl RM'))
       (.block (c.checkNonzero (c.sl RZ) ++ (Impl.Ecdh.Arm.Cfg.checkZero c (c.sl W) ++
         Impl.Ecdsa.Verify.Arm.Cfg.finish c)))))) := by
@@ -80,7 +80,7 @@ abbrev finW : List Nat := [ACC, PT, TMP, XM, X, XN, W]
 /-- `Z^(p-2)`, `x`, the last checks and the result. -/
 theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
     {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop} {s : State} (hP : Pts c s₀ base Q₁ Q₂ s) :
-    WP isa (.seq (pow c.powP c.SP) (Impl.Ecdsa.Verify.Arm.Cfg.final c)) s fun s' =>
+    WP isa (.seq (pow c.powP c.SP c.umaal) (Impl.Ecdsa.Verify.Arm.Cfg.final c)) s fun s' =>
       (∀ rd ∈ Cfg.saved, s'.gpr rd.1 = s₀.gpr rd.1) ∧ s'.sp = s₀.sp ∧
       Unch base [(0, 8192)] s₀.mem s'.mem ∧ ∃ xo, xo < c.C.p ∧
         Fin.ofNat c.C.p xo = tmv c.C c.n base s (c.sl RX) * tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2) ∧

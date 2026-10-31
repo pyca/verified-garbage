@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ecdh.Arm.Main
 public import VerifiedGarbage.Proof.Ecdh.Arm.Contract
+import VerifiedGarbage.Proof.Ecdsa.Arm.P256.Umaal
+import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
 public import VerifiedGarbage.Impl.Ecdh.P256.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
@@ -13,6 +15,7 @@ import VerifiedGarbage.Proof.Ecdh.Arm.Lit
 import VerifiedGarbage.Proof.Ecdsa.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Ecdh.Arm.Main
 meta import VerifiedGarbage.Proof.Ecdh.Arm.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
@@ -47,11 +50,11 @@ namespace VG.Proof.Ecdh.Arm
 
 open VG VG.Arm VG.Impl.Ecdsa.Arm VG.Impl.Ecdh.Arm VG.Proof.Ecdsa.Arm Spec.Weierstrass
 
-theorem pre_of {s : State} (h : ecdhArm.pre s) : EPre p256 s := by
+theorem pre_of {u : Bool} {s : State} (h : ecdhArm.pre s) : EPre (p256With u) s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
 
-theorem post_of {s s' : State} (h : EPost p256 s s') : ecdhArm.post s s' := by
+theorem post_of {u : Bool} {s s' : State} (h : EPost (p256With u) s s') : ecdhArm.post s s' := by
   unfold EPost at h
   show match ex s.mem (State.addr (s.gpr .r1)) (State.addr (s.gpr .r2)) with
     | some z => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 1 ∧
@@ -61,15 +64,15 @@ theorem post_of {s s' : State} (h : EPost p256 s s') : ecdhArm.post s s' := by
   rw [BitVec.setWidth_append_eq_right]
   revert h
   generalize hq : ex s.mem (State.addr (s.gpr .r1)) (State.addr (s.gpr .r2)) = q
-  rw [show Spec.Ecdh.exchange p256.C (dk p256 s)
-      (Spec.Ecdsa.bytesAt s.mem (ptr s .r2) (1 + 2 * p256.C.len)) =
+  rw [show Spec.Ecdh.exchange (p256With u).C (dk (p256With u) s)
+      (Spec.Ecdsa.bytesAt s.mem (ptr s .r2) (1 + 2 * (p256With u).C.len)) =
         ex s.mem (State.addr (s.gpr .r1)) (State.addr (s.gpr .r2)) from rfl, hq]
   rcases q with _ | z <;> exact id
 
-theorem ecdh_arm (hL : Weierstrass.Law Spec.P256.curve) (s : State) (hs : ecdhArm.pre s) :
-    ∃ t s', Exec isa exchangeP256 s t s' ∧ abiPreserved s s' ∧ ecdhArm.post s s' := by
-  have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok p256_ok hL hp
+theorem ecdh_arm (hL : Weierstrass.Law Spec.P256.curve) (u : Bool) (s : State) (hs : ecdhArm.pre s) :
+    ∃ t s', Exec isa (exchangeP256With u) s t s' ∧ abiPreserved s s' ∧ ecdhArm.post s s' := by
+  have hp := pre_of (u := u) hs
+  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok (P256.p256With_ok u) hL hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, K.sp⟩, post_of hpost⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -86,9 +89,9 @@ theorem ecdh_arm (hL : Weierstrass.Law Spec.P256.curve) (s : State) (hs : ecdhAr
 /-- The taint analysis starts with the arguments' registers public. -/
 def τ₀ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2, .r3], flags := false }
 
-theorem ecdh_ct : ConstantTime isa ecdhArm.pre ecdhArm.pub exchangeP256 := by
-  refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by native_taint_decide)
-  intro s t _ _ ⟨_, h0, h1, h2, h3⟩
+/-- The taint analysis's start agrees in the two states. -/
+theorem agree_τ₀ {s t : State} (h : ecdhArm.pub s t) : VG.Arm.Taint.Agree τ₀ s t := by
+  obtain ⟨_, h0, h1, h2, h3⟩ := h
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
     ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),
       fun _ h => (List.not_mem_nil h).elim⟩,
@@ -103,6 +106,12 @@ theorem ecdh_ct : ConstantTime isa ecdhArm.pre ecdhArm.pub exchangeP256 := by
   · exact h2
   · exact h3
 
+theorem ecdh_ct : ConstantTime isa ecdhArm.pre ecdhArm.pub exchangeP256 :=
+  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ _ _ h => agree_τ₀ h) (by native_taint_decide)
+
+theorem ecdhU_ct : ConstantTime isa ecdhArm.pre ecdhArm.pub exchangeP256U :=
+  VG.Taint.constantTime (A := taintU) τ₀ (fun _ _ _ _ h => agree_τ₀ h) (by taint_decide)
+
 /-- A state satisfying the precondition. -/
 def satState : State where
   gpr r := match r with
@@ -116,9 +125,10 @@ def satState : State where
   rd := [⟨0x2000, 32⟩, ⟨0x3000, 65⟩]
   wr := [⟨0x1000, 32⟩, ⟨0x8000, 8192⟩]
 
-theorem ecdh_verified (hL : Weierstrass.Law Spec.P256.curve) :
-    Verified Arm.target exchangeP256 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst Arm.abi) :=
-  Verified.of_correct (ecdh_arm hL) ecdh_ct
+theorem ecdhWith_verified (hL : Weierstrass.Law Spec.P256.curve) (u : Bool)
+    (hct : ConstantTime isa ecdhArm.pre ecdhArm.pub (exchangeP256With u)) :
+    Verified Arm.target (exchangeP256With u) (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst Arm.abi) :=
+  Verified.of_correct (ecdh_arm hL u) hct
     { pre := by
         sig_implies_pre [Spec.EcKey.P256.inst, Spec.Ecdh.Instance.exchangeContract,
           Spec.Ecdh.Instance.exchangeSig, Spec.P256.curve, Spec.EcKey.scratchWords, ecdhArm, ex, Arm.abi,
@@ -141,5 +151,13 @@ theorem ecdh_verified (hL : Weierstrass.Law Spec.P256.curve) :
           Spec.Ecdh.Instance.exchangeSig, Spec.P256.curve, Spec.EcKey.scratchWords, ecdhArm, ex, Arm.abi,
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
           [satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using satState }
+
+theorem ecdh_verified (hL : Weierstrass.Law Spec.P256.curve) :
+    Verified Arm.target exchangeP256 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst Arm.abi) :=
+  ecdhWith_verified hL false ecdh_ct
+
+theorem ecdhU_verified (hL : Weierstrass.Law Spec.P256.curve) :
+    Verified Arm.target exchangeP256U (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst Arm.abi) :=
+  ecdhWith_verified hL true ecdhU_ct
 
 end VG.Proof.Ecdh.Arm

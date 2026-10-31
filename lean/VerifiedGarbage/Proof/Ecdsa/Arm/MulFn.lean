@@ -269,7 +269,7 @@ theorem mulBody_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base siz
       (tmv c.C c.n base s₆ c.mulLadder.R.z) := by
     show Q _ (tmv c.C c.n base s₆ (c.sl RX)) (tmv c.C c.n base s₆ (c.sl RY)) (tmv c.C c.n base s₆ (c.sl RZ))
     rw [tv rx₆, tv ry₆, tv rz₆]; exact hO
-  refine WP.mono (VG.Proof.Weierstrass.Arm.Point.ladderP_ok (L := c.mulLadder) (mulLadLay hc) (mulLadWk hc)
+  refine WP.mono (VG.Proof.Weierstrass.Arm.Point.ladderP_ok (L := c.mulLadder) (a0 := false) (u := c.umaal) (mulLadLay hc) (mulLadWk hc)
     hc.fp mulLadPt hpR (bitsAt_lt hc (j := 0) (by decide)) hs₆ hf₆ M₆ hlt nofun hstep₆ hR
     (fun t ht => T₆ t (Nat.lt_of_lt_of_le ht (scalarBits_le hc))) (scalarBits_enc hc))
     fun s₇ ⟨K₇, U₇, M₇, L₇, R₇⟩ => ⟨K₁₆.trans K₇, ?_, M₇, L₇, R₇⟩
@@ -718,7 +718,7 @@ theorem qMul_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) 
       show Q _ (toM _ _ (sv c base s RX)) (toM _ _ (sv c base s RY)) (toM _ _ (sv c base s RZ))
       rw [hrx, hry, hrz, toM_cmont hc, toM_zero]
       exact hO
-    refine WP.mono (VG.Proof.Weierstrass.Arm.Point.ladderP_ok (L := pLadder c px py) (k := k)
+    refine WP.mono (VG.Proof.Weierstrass.Arm.Point.ladderP_ok (L := pLadder c px py) (k := k) (a0 := c.qA0) (u := c.umaal)
       (pLadLay hc hp) (pLadWk hc hp) hc.fp (pLadPt hp) hpR (bitsAt_lt hc (j := 0) (by decide)) hs hf
       (modP_of hc F.mp) hlt (fun h => by
         simp only [Cfg.qA0, Bool.and_eq_true, decide_eq_true_eq] at h

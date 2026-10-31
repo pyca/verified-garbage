@@ -35,10 +35,10 @@ def rootPow (c : Cfg) (table : Nat) : PowCfg :=
 
 def rootPower (c : Cfg) (e table : Nat) : Prog isa :=
   progs [.block (setConst c.n (c.sl EXPP) e),
-    bits (c.sl EXPP) (bitsAt c.n table) (8 * c.n), pow (rootPow c table) c.SP]
+    bits (c.sl EXPP) (bitsAt c.n table) (8 * c.n), pow (rootPow c table) c.SP c.umaal]
 
 def squareStep (c : Cfg) : Prog isa :=
-  .seq (Mont.mulCall c.SP (c.sl T3) (c.sl T3) (c.sl T3)) (.block [decCounter, testCounter])
+  .seq (Mont.mulCall c.SP (c.sl T3) (c.sl T3) (c.sl T3) c.umaal) (.block [decCounter, testCounter])
 
 def squarePower (c : Cfg) : Prog isa :=
   .seq (.block [testCounter]) (.ite .eq (.block []) (.loop (squareStep c) .ne))
@@ -63,7 +63,7 @@ def descentCounter (c : Cfg) : List Instr :=
   [.ldr .r11 wb (c.sl T2), decCounter, .str .r11 wb (c.sl T2), testCounter]
 
 def descentRound (c : Cfg) : Prog isa :=
-  progs [descentPower c, descentChoose c, fprog c.SP (descentOps c), .block (descentCounter c)]
+  progs [descentPower c, descentChoose c, fprog c.SP (descentOps c) c.umaal, .block (descentCounter c)]
 
 def tonelliPowers (c : Cfg) : Prog isa :=
   progs [rootPower c ((rootQ c + 1) / 2) 1,
@@ -83,7 +83,7 @@ def parityMask (c : Cfg) : List Instr :=
     .dp .and .r5 .r5 (.imm 1), .mov .r4 (.imm 0), .dp .sub .r10 .r4 (.reg .r5)]
 
 def selectRoot (c : Cfg) : Prog isa :=
-  progs [Mont.mulCall c.SP (c.sl QY) (c.sl ACC) (c.sl ONE),
+  progs [Mont.mulCall c.SP (c.sl QY) (c.sl ACC) (c.sl ONE) c.umaal,
     Mont.subCall c.SP (c.sl W0) (c.sl ZERO) (c.sl QY),
     .block (parityMask c ++ sel (2 * c.n) (c.sl QY) (c.sl QY) (c.sl W0))]
 
@@ -99,7 +99,7 @@ def checkRootChecks (c : Cfg) : List Instr :=
     (invertMask ++ c.andFlag))
 
 def checkRoot (c : Cfg) : Prog isa :=
-  .seq (fprog c.SP (checkRootOps c)) (.block (checkRootChecks c))
+  .seq (fprog c.SP (checkRootOps c) c.umaal) (.block (checkRootChecks c))
 
 def decompressFinish (c : Cfg) : List Instr :=
   EcKey.Arm.Cfg.finishWith c E QY
@@ -108,7 +108,7 @@ def recoverCoordinate (c : Cfg) : Prog isa :=
   .seq (rootCandidate c) (.seq (selectRoot c) (checkRoot c))
 
 def decompress (c : Cfg) : Prog isa :=
-  progs [.block (c.setupWith args), .block (decompressPeer c), fprog c.SP (rhsOps c),
+  progs [.block (c.setupWith args), .block (decompressPeer c), fprog c.SP (rhsOps c) c.umaal,
     recoverCoordinate c, .block (decompressFinish c)]
 
 end VG.Impl.EcKey.Compressed.Arm

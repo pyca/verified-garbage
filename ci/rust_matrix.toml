@@ -372,8 +372,8 @@ none | dsa aes_siv chacha20 sha3 shake mlkem mldsa ecdsa p224_sha p256_sha p384_
 """
 
 # ARMv7, in the `rust` job's container (cross-compiled, run as that job
-# runs them): `none` takes RSA, FFDH, DSA parameter generation's and
-# X25519's baseline code, which a CPU with `umaal` (every runner's) never
+# runs them): `none` takes RSA, FFDH, DSA parameter generation's, X25519's
+# and P-256's baseline code, which a CPU with `umaal` (every runner's) never
 # chooses.
 [[cpu]]
 chip = "native"
@@ -381,6 +381,6 @@ arch = "arm"
 os = "ubuntu-26.04-arm"
 container = { image = "ghcr.io/pyca/verified-garbage-runner:armv7-cross" }
 runs = """
-none | rsa ffdh dsa_parameters x25519 cpu
+none | rsa ffdh dsa_parameters x25519 p256 cpu
 """
 

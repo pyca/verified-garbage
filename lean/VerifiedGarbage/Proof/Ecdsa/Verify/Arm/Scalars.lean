@@ -66,22 +66,22 @@ structure Mid (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop where
 
 theorem scalars_eq (c : Cfg) : Impl.Ecdsa.Verify.Arm.Cfg.scalars c =
     .seq (.block (c.checkRange (c.sl K) ++ c.checkRange (c.sl PT)))
-      (Mont.mulCall c.SN (c.sl SM') (c.sl PT) (c.sl R2N)) := rfl
+      (Mont.mulCall c.SN (c.sl SM') (c.sl PT) (c.sl R2N) c.umaal) := rfl
 
 theorem uv_eq (c : Cfg) : Impl.Ecdsa.Verify.Arm.Cfg.uv c =
-    .seq (Mont.mulCall c.SN (c.sl EM') (c.sl D) (c.sl R2N))
-    (.seq (Mont.mulCall c.SN (c.sl RM') (c.sl K) (c.sl R2N))
-    (.seq (Mont.mulCall c.SN (c.sl UM) (c.sl EM') (c.sl ACC))
-    (.seq (Mont.mulCall c.SN (c.sl VM) (c.sl RM') (c.sl ACC))
-    (.seq (Mont.mulCall c.SN (c.sl U) (c.sl UM) (c.sl ONE))
-      (Mont.mulCall c.SN (c.sl V) (c.sl VM) (c.sl ONE)))))) := rfl
+    .seq (Mont.mulCall c.SN (c.sl EM') (c.sl D) (c.sl R2N) c.umaal)
+    (.seq (Mont.mulCall c.SN (c.sl RM') (c.sl K) (c.sl R2N) c.umaal)
+    (.seq (Mont.mulCall c.SN (c.sl UM) (c.sl EM') (c.sl ACC) c.umaal)
+    (.seq (Mont.mulCall c.SN (c.sl VM) (c.sl RM') (c.sl ACC) c.umaal)
+    (.seq (Mont.mulCall c.SN (c.sl U) (c.sl UM) (c.sl ONE) c.umaal)
+      (Mont.mulCall c.SN (c.sl V) (c.sl VM) (c.sl ONE) c.umaal))))) := rfl
 
 /-- One multiplication modulo `n`, on numbered slots: it keeps the modulus and
 every other slot but the temporary area's. -/
 theorem mulN_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) (hf : Far s base 8192)
     (hMN : ModOkW c.MN' size c.C.n s.mem base) {o a b : Nat} (ho : o < 45) (ha : a < 45) (hb : b < 45)
     (hB : sv c base s b < c.C.n) (hoN : o ≠ MN) :
-    WP isa (Mont.mulCall c.SN (c.sl o) (c.sl a) (c.sl b)) s fun s' =>
+    WP isa (Mont.mulCall c.SN (c.sl o) (c.sl a) (c.sl b) c.umaal) s fun s' =>
       Scr s' base size ∧ ModOkW c.MN' size c.C.n s'.mem base ∧
       Rest Mont.callClob s s' ∧
       Unch base (slWk c [o, TMP]) s.mem s'.mem ∧
@@ -99,7 +99,7 @@ theorem mulN_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
 theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     (hF : Front c s₀ base s) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Mid c s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq (Impl.Ecdsa.Verify.Arm.Cfg.scalars c) (.seq (pow c.powN c.SN)
+    WP isa (.seq (Impl.Ecdsa.Verify.Arm.Cfg.scalars c) (.seq (pow c.powN c.SN c.umaal)
       (.seq (Impl.Ecdsa.Verify.Arm.Cfg.uv c) rest))) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10

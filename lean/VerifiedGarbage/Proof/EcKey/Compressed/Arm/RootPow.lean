@@ -76,7 +76,7 @@ theorem rootPower_ok {c : Cfg} (hc : CfgOk c) {e j : Nat}
   rw [Impl.EcKey.Compressed.Arm.rootPower]
   change WP isa (.seq (.block (setConst c.n (c.sl EXPP) e))
     (.seq (bits (c.sl EXPP) (bitsAt c.n j) (8 * c.n))
-      (pow (Impl.EcKey.Compressed.Arm.rootPow c j) c.SP))) s _
+      (pow (Impl.EcKey.Compressed.Arm.rootPow c j) c.SP c.umaal))) s _
   refine WP.seq (WP.mono (setConst_ok hs hE he) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_)
   have hs₁ := hs.of_rest k₁ (by decide)
   refine WP.seq (WP.mono (bits_ok hs₁ (hf.of_rest k₁) h0 hE (bitsAt_le c h7 hj)

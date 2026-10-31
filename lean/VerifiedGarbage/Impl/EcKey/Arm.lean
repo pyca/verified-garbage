@@ -54,7 +54,7 @@ def upToPowWith (generator : Prog isa) : Prog isa :=
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
   .seq generator <|
-  .seq (pow c.powP c.SP) (.block [])
+  .seq (pow c.powP c.SP c.umaal) (.block [])
 
 /-- The common prefix with `gen`. -/
 def upToPow : Prog isa := upToPowWith c c.gen
@@ -71,10 +71,10 @@ def finish : List Instr := finishWith c X Y
 /-- `x = X Z⁻¹` and `y = Y Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery
 form, the checks of `d` and `Z`, and the result. -/
 def middle : Prog isa :=
-  progs [Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC),
-    Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE),
-    Mont.mulCall c.SP (c.sl YM) (c.sl RY) (c.sl ACC),
-    Mont.mulCall c.SP (c.sl Y) (c.sl YM) (c.sl ONE),
+  progs [Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC) c.umaal,
+    Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE) c.umaal,
+    Mont.mulCall c.SP (c.sl YM) (c.sl RY) (c.sl ACC) c.umaal,
+    Mont.mulCall c.SP (c.sl Y) (c.sl YM) (c.sl ONE) c.umaal,
     .block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ finish c)]
 
 /-- `vg_ec_<curve>_public_key`. -/

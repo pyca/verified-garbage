@@ -70,7 +70,7 @@ theorem descentUpdate_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State}
     (hs : Scr s base size) (hf : Far s base 8192) (hM : ModOkW c.MP' size c.C.p s.mem base)
     (hlt : ∀ i ∈ descentFields, sv c base s i < c.C.p) :
     WP isa (Impl.Weierstrass.Arm.fprog c.SP
-      (Impl.EcKey.Compressed.Arm.descentOps c)) s (DescentUpdatePost c base s) := by
+      (Impl.EcKey.Compressed.Arm.descentOps c) c.umaal) s (DescentUpdatePost c base s) := by
   have h7 := hc.n10
   have hL : Lay c.MP' size (· ∈ descentFields.map c.sl) := lay_map hc rfl rfl rfl (by decide)
   have hW : WkOk c.MP' size c.wk (· ∈ descentFields.map c.sl) := by
@@ -166,7 +166,7 @@ theorem descentRound_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State} {j : 
   have hn := hs.nowrap
   change WP isa (.seq (Impl.EcKey.Compressed.Arm.descentPower c)
     (.seq (Impl.EcKey.Compressed.Arm.descentChoose c)
-      (.seq (Impl.Weierstrass.Arm.fprog c.SP (Impl.EcKey.Compressed.Arm.descentOps c))
+      (.seq (Impl.Weierstrass.Arm.fprog c.SP (Impl.EcKey.Compressed.Arm.descentOps c) c.umaal)
         (.block (Impl.EcKey.Compressed.Arm.descentCounter c))))) s _
   refine WP.seq (WP.mono (descentPower_ok hc hs hf hM (hlt _ (by simp)) hj hj' hword)
     fun s₁ ⟨k₁, U₁, lt₁, v₁⟩ => ?_)

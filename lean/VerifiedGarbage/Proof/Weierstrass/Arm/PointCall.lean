@@ -107,17 +107,18 @@ variable {enc : Nat → Nat} {S : Spec.Weierstrass.Mont.Modulus} (hM : ModOk S.k
 include hM hs hf lo la lb
 
 /-- `[o] = [a] [b] R⁻¹ mod m` by a call of `vg_<curve>_mul_mod_<p|n>`. -/
-theorem mulCallR_ok (hB : wordsVal s.mem base (enc b) S.k < S.m) :
-    WP isa (callR enc (S.fn "mul") (mulFn S.k S.m) o a b) s fun s' => CallKeepR S.k base (enc o) s s' ∧
+theorem mulCallR_ok (hB : wordsVal s.mem base (enc b) S.k < S.m) {u : Bool} :
+    WP isa (callR enc (mulName u S) (mulFnWith u S.k S.m) o a b) s fun s' => CallKeepR S.k base (enc o) s s' ∧
       wordsVal s'.mem base (enc o) S.k < S.m ∧
       wordsVal s'.mem base (enc o) S.k * 2 ^ (64 * S.k) % S.m =
         wordsVal s.mem base (enc a) S.k * wordsVal s.mem base (enc b) S.k % S.m :=
   callR_ok (V := fun m m' => wordsVal m' base (enc o) S.k < S.m ∧
       wordsVal m' base (enc o) S.k * 2 ^ (64 * S.k) % S.m = wordsVal m base (enc a) S.k * wordsVal m base (enc b) S.k % S.m)
-    (by unfold mulFn; split <;> rfl) hf (by have := own_le S.k hM.n9; omega) (by have := own_le S.k hM.n9; omega)
+    (by unfold mulFnWith mulFnU mulFn; cases u <;> simp only [Bool.false_eq_true, ↓reduceIte] <;> (try split) <;> rfl)
+    hf (by have := own_le S.k hM.n9; omega) (by have := own_le S.k hM.n9; omega)
     (by have := own_le S.k hM.n9; omega) fun t h1 h2 h3 h4 h5 h6 h7 => by
       obtain ⟨hp, e0⟩ := pre_of_callR hs hf lo la lb h1 h2 h3 h4 h5 h6 (m := S.m)
-      refine WP.mono (mulFn_ok hM hp (by rw [e0, h6, h7]; exact hB)) fun t' ⟨A, K, ⟨V, C⟩, R⟩ => ?_
+      refine WP.mono (mulFnWith_ok u hM hp (by rw [e0, h6, h7]; exact hB)) fun t' ⟨A, K, ⟨V, C⟩, R⟩ => ?_
       rw [e0, h4, h5, h6] at *
       exact ⟨A, K, ⟨V, C⟩, R⟩
 

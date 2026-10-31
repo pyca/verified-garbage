@@ -119,8 +119,8 @@ theorem ladAdds_ok {L : LadderCfg} {wk : Nat} {C : Curve} {base : Addr} {size le
     (hW : LadWk L size wk) {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk L.M wk S C.p)
     (hp : UnitMod C.p (2 ^ (64 * L.M.n))) {E : Nat → Fe C} {s : State}
     (hI : Inv L.M base size C.p (· ∈ ladSlots L) (ladR L) E s) {rest : Prog isa}
-    {Q : State → Prop} (h : ∀ s', AddsPost L wk C base size E s s' → WP isa rest s' Q) :
-    WP isa (.seq (fprog S (rcb L.S L.R L.R L.D)) (.seq (fprog S (rcb L.S L.D L.G L.T)) rest))
+    {Q : State → Prop} (h : ∀ s', AddsPost L wk C base size E s s' → WP isa rest s' Q) {u : Bool} :
+    WP isa (.seq (fprog S (rcb L.S L.R L.R L.D) u) (.seq (fprog S (rcb L.S L.D L.G L.T) u) rest))
       s Q := by
   refine WP.seq (WP.mono (rcb_ok hL.lay hW.wk hF hp hL.a1 (ladR_S₁ L) hI (ladR_V₁ L))
     fun s₂ ⟨k₂, I₂, t₂, n₂⟩ => ?_)
@@ -196,8 +196,8 @@ theorem ladderBody_ok {L : LadderCfg} {wk : Nat} {C : Curve} {base : Addr} {size
     {s₀ : State} (hf₀ : Far s₀ base 8192) (hlt₀ : ∀ x ∈ ladRo L, wordsVal s₀.mem base x L.M.n < C.p)
     (hstep : Step L C base s₀ k Q)
     (hbits : ∀ t < L.nbits, s₀.mem (off base (L.bits + t)) = if k.testBit t then 1 else 0)
-    {j : Nat} {s : State} (hj : 1 ≤ j) (hjn : j ≤ L.nbits) (hI : LadInv L wk C base size Q s₀ s j) :
-    WP isa (ladderBody L S) s fun s' =>
+    {j : Nat} {s : State} (hj : 1 ≤ j) (hjn : j ≤ L.nbits) (hI : LadInv L wk C base size Q s₀ s j) {u : Bool} :
+    WP isa (ladderBody L S u) s fun s' =>
       LadInv L wk C base size Q s₀ s' (j - 1) ∧ s'.z = decide (j - 1 = 0) := by
   have hn := hI.scr.nowrap
   have hnb := hL.nbits
@@ -309,8 +309,8 @@ theorem ladder_ok {L : LadderCfg} {wk : Nat} {C : Curve} {base : Addr} {size k :
     (hlt : ∀ x ∈ ladR L, wordsVal s.mem base x L.M.n < C.p) (hstep : Step L C base s k Q)
     (hR : Q L.nbits (tmv C L.M.n base s L.R.x) (tmv C L.M.n base s L.R.y) (tmv C L.M.n base s L.R.z))
     (hbits : ∀ t < L.nbits, s.mem (off base (L.bits + t)) = if k.testBit t then 1 else 0)
-    (henc : encodable (BitVec.ofNat 32 L.nbits) = true) :
-    WP isa (ladder L S) s fun s' => Rest powClob s s' ∧ Unch base (ladWx L wk) s.mem s'.mem ∧
+    (henc : encodable (BitVec.ofNat 32 L.nbits) = true) {u : Bool} :
+    WP isa (ladder L S u) s fun s' => Rest powClob s s' ∧ Unch base (ladWx L wk) s.mem s'.mem ∧
       ModOkW L.M size C.p s'.mem base ∧
       (∀ x ∈ [L.R.x, L.R.y, L.R.z], wordsVal s'.mem base x L.M.n < C.p) ∧
       Q 0 (tmv C L.M.n base s' L.R.x) (tmv C L.M.n base s' L.R.y) (tmv C L.M.n base s' L.R.z) := by

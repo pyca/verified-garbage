@@ -25,10 +25,10 @@ open VG.Proof.Mont.Arm VG.Proof.Mont VG.Proof.Weierstrass.Arm VG.Proof.Weierstra
 
 variable {c : Cfg}
 
-theorem middle_eq (c : Cfg) : c.middle = .seq (Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC))
-    (.seq (Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE))
+theorem middle_eq (c : Cfg) : c.middle = .seq (Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC) c.umaal)
+    (.seq (Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE) c.umaal)
     (.seq (Mont.addCall c.SN (c.sl RR) (c.sl X) (c.sl ZERO))
-    (.seq (Mont.mulCall c.SN (c.sl KM) (c.sl K) (c.sl R2N))
+    (.seq (Mont.mulCall c.SN (c.sl KM) (c.sl K) (c.sl R2N) c.umaal)
     (.block (c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR)))))) := rfl
 
 /-- What `middle`'s field operations leave. -/
@@ -61,10 +61,10 @@ theorem midOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
     (hacc : sv c base s ACC < c.C.p) (hone : sv c base s ONE = 1) (hzero : sv c base s ZERO = 0)
     (hr2 : sv c base s R2N = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n) {rest : Prog isa}
     {Q : State → Prop} (h : ∀ s', MidPost c base s s' → WP isa rest s' Q) :
-    WP isa (.seq (Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC))
-      (.seq (Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE))
+    WP isa (.seq (Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC) c.umaal)
+      (.seq (Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE) c.umaal)
       (.seq (Mont.addCall c.SN (c.sl RR) (c.sl X) (c.sl ZERO))
-      (.seq (Mont.mulCall c.SN (c.sl KM) (c.sl K) (c.sl R2N)) rest)))) s Q := by
+      (.seq (Mont.mulCall c.SN (c.sl KM) (c.sl K) (c.sl R2N) c.umaal) rest)))) s Q := by
   have h7 := hc.n10
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)

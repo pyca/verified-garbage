@@ -82,8 +82,8 @@ structure MontPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
 theorem mont_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) (hf : Far s base 8192)
     (hM : ModOkW c.MP' size c.C.p s.mem base) (hr2 : sv c base s R2P = c.R * c.R % c.C.p)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', MontPost c base s s' → WP isa rest s' Q) :
-    WP isa (.seq (Mont.mulCall c.SP (c.sl QXM) (c.sl E) (c.sl R2P))
-      (.seq (Mont.mulCall c.SP (c.sl QYM) (c.sl QY) (c.sl R2P)) rest)) s Q := by
+    WP isa (.seq (Mont.mulCall c.SP (c.sl QXM) (c.sl E) (c.sl R2P) c.umaal)
+      (.seq (Mont.mulCall c.SP (c.sl QYM) (c.sl QY) (c.sl R2P) c.umaal) rest)) s Q := by
   have h7 := hc.n10
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
@@ -118,7 +118,7 @@ abbrev OnCurve (c : Cfg) (x y : Fe c.C) : Prop :=
 theorem curve_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) (hf : Far s base 8192)
     (hM : ModOkW c.MP' size c.C.p s.mem base) (hx : sv c base s QXM < c.C.p) (hy : sv c base s QYM < c.C.p)
     (hap : sv c base s AP = c.mont c.C.a) (hbp : sv c base s BP = c.mont c.C.b) :
-    WP isa (fprog c.SP (Impl.Ecdh.Arm.Cfg.curveOps c)) s fun s' =>
+    WP isa (fprog c.SP (Impl.Ecdh.Arm.Cfg.curveOps c) c.umaal) s fun s' =>
       Scr s' base size ∧ Rest Mont.callClob s s' ∧ Unch base (slWk c [W0, W1, W2, W3, TMP]) s.mem s'.mem ∧
       (sv c base s' W1 = 0 ↔ OnCurve c (toM c.C.p (2 ^ (64 * c.n)) (sv c base s QXM))
         (toM c.C.p (2 ^ (64 * c.n)) (sv c base s QYM))) := by
@@ -238,8 +238,8 @@ abbrev PeerOk (c : Cfg) (base : Addr) (s : State) (P₀ : Prop) : Prop :=
   P₀ ∧ OnCurve c (Fin.ofNat c.C.p (sv c base s E)) (Fin.ofNat c.C.p (sv c base s QY))
 
 theorem validate_eq (c : Cfg) : Impl.Ecdh.Arm.Cfg.validate c =
-    .seq (Mont.mulCall c.SP (c.sl QXM) (c.sl E) (c.sl R2P)) (.seq (Mont.mulCall c.SP (c.sl QYM) (c.sl QY) (c.sl R2P))
-      (.seq (fprog c.SP (Impl.Ecdh.Arm.Cfg.curveOps c))
+    .seq (Mont.mulCall c.SP (c.sl QXM) (c.sl E) (c.sl R2P) c.umaal) (.seq (Mont.mulCall c.SP (c.sl QYM) (c.sl QY) (c.sl R2P) c.umaal)
+      (.seq (fprog c.SP (Impl.Ecdh.Arm.Cfg.curveOps c) c.umaal)
       (.block (Impl.Ecdh.Arm.Cfg.checkZero c (c.sl W1) ++ Impl.Ecdh.Arm.Cfg.select c)))) := rfl
 
 theorem validate_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) (hfar : Far s base 8192)
@@ -417,7 +417,7 @@ theorem ladPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
     (ht₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0)
     {rest : Prog isa} {R : State → Prop} (h : ∀ s', LadPost c base Q s s' → WP isa rest s' R) :
-    WP isa (.seq (c.qMul PX PY) (.seq (pow c.powP c.SP) rest)) s R := by
+    WP isa (.seq (c.qMul PX PY) (.seq (pow c.powP c.SP c.umaal) rest)) s R := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap
