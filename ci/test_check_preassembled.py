@@ -3,6 +3,8 @@
 on objects and archives built here, without a compiler."""
 
 import collections
+import contextlib
+import io
 import pathlib
 import struct
 import tempfile
@@ -305,6 +307,12 @@ class Check(unittest.TestCase):
                       "verified-garbage-cpu/src"]:
                 (root / p).mkdir(parents=True)
             self.assertEqual(check_preassembled.unassembled(root), ["verified-garbage-asm-mips"])
+
+    def test_triples(self):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(check_preassembled.main(["--triples"]), 0)
+        self.assertEqual(out.getvalue().strip().split(","), list(check_preassembled.TRIPLES.values()))
 
     def test_same_targets(self):
         self.assertEqual(check_preassembled.TRIPLES, preassemble.TRIPLES)

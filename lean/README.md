@@ -105,7 +105,11 @@ never import proofs.
    stack it uses (`Sig.layoutDoc`), from the same signature, `stack` and
    `writeArgs` as the contract, as `Artifact.ofSig` proves.
    CI fails if the checked-in files differ from what Lean generates, so the
-   Rust crate contains exactly the verified code.
+   Rust crate contains exactly the verified code. Each crate compiles the
+   same code with its machine code as data, `src/`, written by
+   `ci/preassemble.py` (but ARM's, which compiles `asm/`), and CI checks
+   that it compiles to the same sections, symbols and relocations as `asm/`
+   (`ci/check_preassembled.py`).
 
 A function can call another (`Code.call name body`): the model runs the
 callee's code `body` between the call and return instructions, so the
@@ -138,6 +142,9 @@ constant.
   refers to), its `sig` and `doc` (its `Api` in `Spec/`), and
   `TCB/Emit.lean`, which decides what is emitted.
 * Lean's kernel, and the assembler in `rustc`/LLVM.
+* `ci/check_preassembled.py` (and `ci/objfile.py`, which reads object files
+  for it), which checks that each crate's pre-assembled `src/` is the code
+  of its `asm/`.
 
 Everything in `Impl/` and `Proof/` is checked by Lean and need not be read.
 
@@ -151,6 +158,7 @@ only proven against a spec and TCB that were reviewed and merged beforehand.
 lake exe cache get                  # download prebuilt Mathlib
 lake build --log-level=warning      # check every proof, run the axiom audit and golden tests
 lake env lean --run Emit.lean       # regenerate ../crates
+python3 ../ci/preassemble.py        # then pre-assemble them
 lake env lean --run Emit.lean --check
 lake env lean --run EmitOne.lean [--check] Rc2.AArch64   # one registration file
 ```
