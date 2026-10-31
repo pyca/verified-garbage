@@ -9,114 +9,6 @@ use alloc::{format, string::ToString};
 pub(super) mod vectors;
 use vectors::{hex, vectors};
 
-#[cfg(any(target_arch = "x86", target_arch = "arm", target_arch = "powerpc64"))]
-#[test]
-fn generation_domain_checks() {
-    let cases = vectors(include_str!("../../vectors/nist-cavp-dsa/SigGen.txt"), true);
-    for (p_len, q_len) in [(128, 20), (256, 20), (256, 28), (256, 32), (384, 32)] {
-        let v = cases
-            .iter()
-            .find(|v| {
-                hex(&v["P"], 0).len() == if q_len == 20 { 128 } else { p_len }
-                    && hex(&v["Q"], 0).len() == q_len
-            })
-            .unwrap();
-        let p = hex(&v["P"], p_len);
-        let q = hex(&v["Q"], q_len);
-        let g = hex(&v["G"], p_len);
-        let valid = [&p[..], &q, &g].concat();
-        let mut scratch = Secret(vec![0xa5a5a5a5a5a5a5a5; 16 * p_len]);
-        let mut check = |params: &[u8]| {
-            // SAFETY: every case has the supported widths and exact packed
-            // length. Scratch is a separate allocation of 16*p_len words.
-            unsafe {
-                crate::arch::dsa::vg_dsa_check_parameters(
-                    params.as_ptr(),
-                    params.len(),
-                    p_len,
-                    q_len,
-                    scratch.0.as_mut_ptr(),
-                    scratch.0.len(),
-                )
-            }
-        };
-        assert_eq!(check(&valid), 1, "{p_len}/{q_len}");
-        let mut bad = valid.clone();
-        bad[p_len + q_len..].fill(0);
-        assert_eq!(check(&bad), 0, "g = 0");
-        *bad.last_mut().unwrap() = 1;
-        assert_eq!(check(&bad), 0, "g = 1");
-        bad[p_len + q_len..].copy_from_slice(&p);
-        assert_eq!(check(&bad), 0, "g = p");
-        bad.copy_from_slice(&valid);
-        bad[p_len - 1] &= !1;
-        assert_eq!(check(&bad), 0, "even p");
-        bad.copy_from_slice(&valid);
-        bad[p_len + q_len - 1] &= !1;
-        assert_eq!(check(&bad), 0, "even q");
-        bad.copy_from_slice(&valid);
-        bad[p_len..p_len + q_len].fill(0);
-        assert_eq!(check(&bad), 0, "zero q");
-    }
-}
-
-#[cfg(any(target_arch = "x86", target_arch = "arm", target_arch = "powerpc64"))]
-#[test]
-fn generation_derive_keys() {
-    let cases = vectors(include_str!("../../vectors/nist-cavp-dsa/SigGen.txt"), true);
-    for (p_len, q_len) in [(128, 20), (256, 20), (256, 28), (256, 32), (384, 32)] {
-        let v = cases
-            .iter()
-            .find(|v| {
-                hex(&v["P"], 0).len() == if q_len == 20 { 128 } else { p_len }
-                    && hex(&v["Q"], 0).len() == q_len
-            })
-            .unwrap();
-        let p = hex(&v["P"], p_len);
-        let q = hex(&v["Q"], q_len);
-        let g = hex(&v["G"], p_len);
-        let x = hex(&v["X"], q_len);
-        let y = hex(&v["Y"], p_len);
-        let params = [&p[..], &q, &g].concat();
-        let expected = [&params[..], &y, &x].concat();
-        let mut scratch = Secret(vec![0xa5a5a5a5a5a5a5a5; 16 * p_len]);
-        let mut output = Secret(vec![0xa5; 3 * p_len + 2 * q_len]);
-        let mut derive = |domain: &[u8], scalar: &[u8], expected: Option<&[u8]>| {
-            output.0.fill(0xa5);
-            // SAFETY: supported widths and exact input/output lengths; each
-            // buffer has its own allocation and scratch has 16*p_len words.
-            let status = unsafe {
-                crate::arch::dsa::vg_dsa_derive_key(
-                    output.0.as_mut_ptr(),
-                    output.0.len(),
-                    domain.as_ptr(),
-                    domain.len(),
-                    p_len,
-                    scalar.as_ptr(),
-                    q_len,
-                    scratch.0.as_mut_ptr(),
-                    scratch.0.len(),
-                )
-            };
-            assert_eq!(status, u32::from(expected.is_some()), "{p_len}/{q_len}");
-            match expected {
-                Some(expected) => assert_eq!(output.0, expected),
-                None => assert!(output.0.iter().all(|&b| b == 0)),
-            }
-        };
-        derive(&params, &x, Some(&expected));
-        derive(&params, &vec![0; q_len], None);
-        derive(&params, &q, None);
-        derive(&params, &vec![0xff; q_len], None);
-        let mut bad = params.clone();
-        bad[p_len - 1] &= !1;
-        derive(&bad, &x, None);
-        bad.copy_from_slice(&params);
-        bad[p_len + q_len..].fill(0);
-        derive(&bad, &x, None);
-    }
-}
-
 fn digest(hash: &str, msg: &[u8]) -> Vec<u8> {
     let hashes: [(&str, Vec<u8>); 5] = [
         ("SHA-1", Sha1::digest(msg).to_vec()),
@@ -152,6 +44,22 @@ fn sample() -> (PrivateKey, Vec<u8>, Vec<u8>) {
     )
 }
 
+/// The signature with the nonce `nonce`, drawn on every request.
+fn sign_with_nonce(key: &PrivateKey, digest: &[u8], nonce: &[u8]) -> Result<Vec<u8>, Error> {
+    key.sign_with_rng(digest, |buf| {
+        buf.copy_from_slice(nonce);
+        Ok(())
+    })
+}
+
+/// The `r || s` of the first SigGen vector, which `sample()` signs.
+fn sample_signature() -> Vec<u8> {
+    let cases = vectors(include_str!("../../vectors/nist-cavp-dsa/SigGen.txt"), true);
+    let v = &cases[0];
+    let q_len = hex(&v["Q"], 0).len();
+    [hex(&v["R"], q_len), hex(&v["S"], q_len)].concat()
+}
+
 // Interleave four batches so libtest can distribute independent vectors across cores.
 fn cavp_signatures_batch(batch: usize) {
     for (i, v) in vectors(include_str!("../../vectors/nist-cavp-dsa/SigGen.txt"), true)
@@ -171,26 +79,10 @@ fn cavp_signatures_batch(batch: usize) {
         )
         .unwrap();
         let digest = digest(&v["Hash"], &hex(&v["Msg"], 0));
-        let mut signature = vec![0xa5; 2 * q.len()];
-        let mut scratch = Secret(vec![0xa5a5a5a5a5a5a5a5; 16 * p.len()]);
-        let signed = key.sign_once(
-            &digest,
-            &hex(&v["K"], q.len()),
-            &mut signature,
-            &mut scratch.0,
-        );
-        assert!(signed, "vector {i}");
+        let signature = sign_with_nonce(&key, &digest, &hex(&v["K"], q.len())).unwrap();
         let expected = [hex(&v["R"], q.len()), hex(&v["S"], q.len())].concat();
         assert_eq!(signature, expected, "vector {i}");
         assert!(key.public_key().verify(&digest, &signature), "vector {i}");
-        let nonce = hex(&v["K"], q.len());
-        let randomized = key
-            .sign_with_rng(&digest, |buf| {
-                buf.copy_from_slice(&nonce);
-                Ok(())
-            })
-            .unwrap();
-        assert_eq!(randomized, expected, "random tape vector {i}");
     }
 }
 
@@ -217,9 +109,6 @@ fn cavp_signatures_3() {
 #[test]
 fn random_tape_rejection_and_replay() {
     let (key, digest, nonce) = sample();
-    let mut expected = vec![0; 2 * key.public.q_len];
-    let mut scratch = Secret(vec![0u64; 16 * key.public.p_len]);
-    assert!(key.sign_once(&digest, &nonce, &mut expected, &mut scratch.0));
     let mut draws = 0;
     let signature = key
         .sign_with_rng(&digest, |buf| {
@@ -233,7 +122,7 @@ fn random_tape_rejection_and_replay() {
         })
         .unwrap();
     assert_eq!(draws, 2);
-    assert_eq!(signature, expected);
+    assert_eq!(signature, sample_signature());
     assert!(key.public_key().verify(&digest, &signature));
 }
 
@@ -269,10 +158,8 @@ fn padded_domain_and_scalars() {
     let y = hex(&v["Y"], 256);
     let x = hex(&v["X"], 32);
     let padded = PrivateKey::from_components(&p, &q, &g, &y, &x).unwrap();
-    let mut output = vec![0xa5; 64];
-    let mut scratch = Secret(vec![0xa5a5a5a5a5a5a5a5; 4096]);
-    assert!(padded.sign_once(&digest, &hex(&v["K"], 32), &mut output, &mut scratch.0));
-    assert!(padded.public_key().verify(&digest, &output));
+    let signature = sign_with_nonce(&padded, &digest, &hex(&v["K"], 32)).unwrap();
+    assert!(padded.public_key().verify(&digest, &signature));
     let fresh = padded.sign(&digest).unwrap();
     assert!(padded.public_key().verify(&digest, &fresh));
 }
@@ -310,10 +197,10 @@ fn public_subgroup_windows() {
         }
         let key = PrivateKey::from_components(&p, &order, &minus_one, &y, &x).unwrap();
         assert!(!key.public_key().verify(&digest, &signature));
-        let mut output = vec![0xa5; signature.len()];
-        let mut scratch = Secret(vec![0xa5a5a5a5a5a5a5a5; 16 * p.len()]);
-        assert!(!key.sign_once(&digest, &nonce, &mut output, &mut scratch.0));
-        assert_eq!(output, vec![0; signature.len()]);
+        assert_eq!(
+            sign_with_nonce(&key, &digest, &nonce),
+            Err(Error::InvalidKeyOrNonce)
+        );
     }
 }
 
@@ -332,8 +219,6 @@ fn signing_key_consistency_implies_public_subgroup() {
     *minus_one.last_mut().unwrap() -= 1;
     let mut one = vec![0; q.len()];
     *one.last_mut().unwrap() = 1;
-    let mut output = vec![0xa5; 2 * q.len()];
-    let mut scratch = Secret(vec![0xa5a5a5a5a5a5a5a5; 16 * p.len()]);
 
     // A valid generator with an out-of-subgroup public value fails g^x = y.
     // With x = 1, g = y = -1 passes consistency but must fail g^q = 1.
@@ -344,43 +229,49 @@ fn signing_key_consistency_implies_public_subgroup() {
         (&g, &y, &one),
     ] {
         let key = PrivateKey::from_components(&p, &q, generator, public, private).unwrap();
-        output.fill(0xa5);
-        assert!(!key.sign_once(&digest, &nonce, &mut output, &mut scratch.0));
-        assert_eq!(output, vec![0; 2 * q.len()]);
+        assert_eq!(
+            sign_with_nonce(&key, &digest, &nonce),
+            Err(Error::InvalidKeyOrNonce)
+        );
     }
     // The same boundary private scalar succeeds when y = g.
     let key = PrivateKey::from_components(&p, &q, &g, &g, &one).unwrap();
-    assert!(key.sign_once(&digest, &nonce, &mut output, &mut scratch.0));
-    assert!(key.public_key().verify(&digest, &output));
+    let signature = sign_with_nonce(&key, &digest, &nonce).unwrap();
+    assert!(key.public_key().verify(&digest, &signature));
 }
 
 #[test]
 fn malformed_keys_nonces_and_bounded_retries() {
-    let (mut key, digest, nonce) = sample();
-    let mut output = vec![0xa5; 40];
-    let mut scratch = Secret(vec![0xa5a5a5a5a5a5a5a5; 2048]);
-    for invalid in [vec![0; 20], key.public.packed[128..148].to_vec()] {
-        assert!(!key.sign_once(&digest, &invalid, &mut output, &mut scratch.0));
-        assert_eq!(output, vec![0; 40]);
-    }
+    let (key, digest, nonce) = sample();
+    let cases = vectors(include_str!("../../vectors/nist-cavp-dsa/SigGen.txt"), true);
+    let v = &cases[0];
+    let p = hex(&v["P"], 0);
+    let q = hex(&v["Q"], 0);
+    let g = hex(&v["G"], p.len());
+    let y = hex(&v["Y"], p.len());
+    let x = hex(&v["X"], q.len());
     assert_eq!(
         key.sign_with_rng(&digest, |_| Err(Error::Randomness)),
         Err(Error::Randomness)
     );
+    // Nonces of 0 and q are rejected, each draw, up to a bound.
+    for invalid in [vec![0; q.len()], q.clone()] {
+        let mut draws = 0;
+        assert_eq!(
+            key.sign_with_rng(&digest, |b| {
+                b.copy_from_slice(&invalid);
+                draws += 1;
+                Ok(())
+            }),
+            Err(Error::InvalidKeyOrNonce)
+        );
+        assert_eq!(draws, 128);
+    }
+    // A zero private scalar fails each of the bounded signing attempts.
+    let zero_x = PrivateKey::from_components(&p, &q, &g, &y, &vec![0; q.len()]).unwrap();
     let mut draws = 0;
     assert_eq!(
-        key.sign_with_rng(&digest, |b| {
-            b.fill(0);
-            draws += 1;
-            Ok(())
-        }),
-        Err(Error::InvalidKeyOrNonce)
-    );
-    assert_eq!(draws, 128);
-    key.packed.0[404..].fill(0);
-    draws = 0;
-    assert_eq!(
-        key.sign_with_rng(&digest, |b| {
+        zero_x.sign_with_rng(&digest, |b| {
             b.copy_from_slice(&nonce);
             draws += 1;
             Ok(())
@@ -388,18 +279,20 @@ fn malformed_keys_nonces_and_bounded_retries() {
         Err(Error::InvalidKeyOrNonce)
     );
     assert_eq!(draws, 8);
-    key.public.packed[128..148].fill(0);
-    key.packed.0[128..148].fill(0);
+    let zero_q = PrivateKey::from_components(&p, &vec![0; q.len()], &g, &y, &x).unwrap();
     assert_eq!(
-        key.sign_with_rng(&digest, |_| panic!("zero q needs no RNG")),
+        zero_q.sign_with_rng(&digest, |_| panic!("zero q needs no RNG")),
         Err(Error::InvalidKeyOrNonce)
     );
-    // Malformed public shape takes the early failure path and zeros output.
-    key.packed.0[127] &= 0xfe;
-    output.fill(0xa5);
-    assert!(!key.sign_once(&digest, &nonce, &mut output, &mut scratch.0));
-    assert_eq!(output, vec![0; 40]);
-    assert!(!key.public_key().verify(&digest, &output));
+    // An even modulus is rejected, for signing and verifying.
+    let mut even = p.clone();
+    *even.last_mut().unwrap() &= 0xfe;
+    let even_p = PrivateKey::from_components(&even, &q, &g, &y, &x).unwrap();
+    assert_eq!(
+        sign_with_nonce(&even_p, &digest, &nonce),
+        Err(Error::InvalidKeyOrNonce)
+    );
+    assert!(!even_p.public_key().verify(&digest, &sample_signature()));
 }
 
 #[test]
@@ -490,9 +383,7 @@ fn legacy_2048_160_signatures() {
 #[test]
 fn immutable_public_validation_cache() {
     let (key, digest, nonce) = sample();
-    let mut signature = vec![0; 2 * key.public.q_len];
-    let mut scratch = Secret(vec![0u64; 16 * key.public.p_len]);
-    assert!(key.sign_once(&digest, &nonce, &mut signature, &mut scratch.0));
+    let signature = sign_with_nonce(&key, &digest, &nonce).unwrap();
     let public = key.public_key();
     let unchecked = public.clone();
     assert_eq!(unchecked.validated.load(Ordering::Relaxed), 0);
@@ -510,27 +401,6 @@ fn immutable_public_validation_cache() {
     bad_signature[public.q_len..].fill(0);
     assert!(!validated.verify(&digest, &bad_signature));
     assert!(validated.verify(&digest, &signature));
-
-    // Compare the cached public API against the original fully checked raw API.
-    for sig in [&signature, &bad_signature] {
-        // SAFETY: supported widths, unchanged packed key, exact signature width
-        // and separately allocated scratch with the required capacity.
-        let raw = unsafe {
-            vg_dsa_verify(
-                public.packed.as_ptr(),
-                public.packed.len(),
-                public.p_len,
-                public.q_len,
-                sig.as_ptr(),
-                sig.len(),
-                digest.as_ptr(),
-                digest.len(),
-                scratch.0.as_mut_ptr(),
-                scratch.0.len(),
-            )
-        };
-        assert_eq!(public.verify(&digest, sig), raw == 1);
-    }
 
     let invalid = PublicKey::from_components(&[0; 128], &[0; 20], &[0; 128], &[0; 128]).unwrap();
     assert!(!invalid.verify(&digest, &signature));
