@@ -31,7 +31,7 @@ syntax "brun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| brun) => `(tactic| brun [])
   | `(tactic| brun [$ls,*]) => `(tactic|
-      mrun [sch, xL, xR, fReg, pPtr, qReg, acc, mReg, tmp, tmp2, lane, rowPtr, ptr, cnt, $ls,*])
+      mrun [sch, xL, xR, fReg, pPtr, qReg, acc, mReg, tmp, rowPtr, ptr, cnt, $ls,*])
 
 theorem WP.reassoc {a b c : Prog isa} {s : State} {Q : State → Prop}
     (h : WP isa (.seq (.seq a b) c) s Q) : WP isa (.seq a (.seq b c)) s Q :=
