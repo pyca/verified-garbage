@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Sha512
-public import VerifiedGarbage.Impl.Vector.PPC64LE
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # SHA-512 compression function: PPC64LE implementation

@@ -22,13 +22,4 @@ def pair (d tmp zero : VReg) (hi lo : Reg) : List Instr :=
 def loadPerm (d : VReg) (p : Reg) (control : VReg) : List Instr :=
   [.lxvd2x d p .r0, .vop (.perm d d d control)]
 
-/-- A SHA sigma in the architectural high doubleword. SHA-256 uses its
-low word (architectural word one); the undefined low doubleword is unused. -/
-def shaSigma (wide upper one : Bool) (d n : Reg) : List Instr :=
-  let v := if upper then (if one then VReg.v2 else VReg.v3) else (if one then VReg.v0 else VReg.v1)
-  [.mtvsrd v n,
-   .vop (if wide then .sha512 v v upper (if one then 8 else 0)
-     else .sha256 v v upper (if one then 4 else 0)),
-   .mfvsrd d v]
-
 end VG.Impl.Vector.PPC64LE
