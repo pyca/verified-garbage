@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressMain
 public import VerifiedGarbage.Spec.EcKey.Secp256k1
 import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Verified
@@ -30,10 +32,31 @@ abbrev code : Prog isa := Impl.EcKey.Compressed.Arm.decompress secp256k1
 
 materialize_shared baseline := code
 
+/-- The function with `umaal`. -/
+abbrev codeU : Prog isa := Impl.EcKey.Compressed.Arm.decompress (secp256k1With true)
+
+materialize_shared umaal := codeU
+
 def τ₀ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2], flags := false }
 
 theorem ct : ConstantTime isa (decompressContract Spec.Secp256k1.curve Impl.EcKey.Compressed.rootThreeModFour).pre (decompressContract Spec.Secp256k1.curve Impl.EcKey.Compressed.rootThreeModFour).pub code := by
   refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by taint_decide)
+  intro s t _ _ ⟨_, h0, h1, h2⟩
+  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
+    ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),
+      fun _ h => (List.not_mem_nil h).elim⟩,
+    ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),
+      fun _ h => (List.not_mem_nil h).elim⟩,
+    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
+    fun h => absurd h (Nat.lt_irrefl 0), fun _ h => absurd h (Nat.not_lt_zero _)⟩
+  simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact h0
+  · exact h1
+  · exact h2
+
+theorem ctU : ConstantTime isa (decompressContract Spec.Secp256k1.curve Impl.EcKey.Compressed.rootThreeModFour).pre (decompressContract Spec.Secp256k1.curve Impl.EcKey.Compressed.rootThreeModFour).pub codeU := by
+  refine VG.Taint.constantTime (A := taintU) τ₀ ?_ (by taint_decide)
   intro s t _ _ ⟨_, h0, h1, h2⟩
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
     ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),
@@ -57,6 +80,13 @@ theorem sat : ∃ s, (Spec.EcKey.Secp256k1.inst.decompressPublicKeyContract abi 
 theorem verified (hL : Proof.Weierstrass.Law Spec.Secp256k1.curve) :
     Verified target code (Spec.EcKey.Secp256k1.inst.decompressPublicKeyContract abi 0) :=
   Verified.of_correct (decompress_correct secp256k1 secp256k1_ok _ (candidateThree_correct secp256k1_ok (by decide +kernel))) ct
+    (decompress_implies Spec.EcKey.Secp256k1.inst _
+      (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat)
+
+theorem verifiedU (hL : Proof.Weierstrass.Law Spec.Secp256k1.curve) :
+    Verified target codeU (Spec.EcKey.Secp256k1.inst.decompressPublicKeyContract abi 0) :=
+  Verified.of_correct (decompress_correct (secp256k1With true) secp256k1u_ok _
+      (candidateThree_correct secp256k1u_ok (by decide +kernel))) ctU
     (decompress_implies Spec.EcKey.Secp256k1.inst _
       (Proof.Weierstrass.rootFacts_three_mod_four hL (by decide +kernel)) sat)
 

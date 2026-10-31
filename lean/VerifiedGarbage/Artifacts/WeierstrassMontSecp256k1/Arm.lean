@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontSecp256k1
+public import VerifiedGarbage.Proof.Weierstrass.Arm.MontSecp256k1Umaal
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Montgomery arithmetic modulo secp256k1's `p` and `n` on ARMv7
@@ -18,6 +19,11 @@ def artifacts : List Artifact := [
   secp256k1p.mulApi.artifact Arm.target {
     code := mulFn secp256k1p.k secp256k1p.m
     verified := secp256k1p_mul_verified },
+  secp256k1p.mulApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := mulFnU secp256k1p.k secp256k1p.m
+    verified := secp256k1p_mulU_verified
+    features := ["umaal"] },
   secp256k1p.addApi.artifact Arm.target {
     code := addFn secp256k1p.k secp256k1p.m
     verified := secp256k1p_add_verified },
@@ -27,6 +33,11 @@ def artifacts : List Artifact := [
   secp256k1n.mulApi.artifact Arm.target {
     code := mulFn secp256k1n.k secp256k1n.m
     verified := secp256k1n_mul_verified },
+  secp256k1n.mulApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := mulFnU secp256k1n.k secp256k1n.m
+    verified := secp256k1n_mulU_verified
+    features := ["umaal"] },
   secp256k1n.addApi.artifact Arm.target {
     code := addFn secp256k1n.k secp256k1n.m
     verified := secp256k1n_add_verified },

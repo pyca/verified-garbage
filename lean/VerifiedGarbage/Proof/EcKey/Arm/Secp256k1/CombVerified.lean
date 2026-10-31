@@ -36,14 +36,15 @@ theorem combPk_sat : combPkSpec.pre combPkSat := by
   · repeat' apply And.intro
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide
 
-def combPkLocal : Contract isa where
-  pre := combPkPre
-  post := PkPost secp256k1
+def combPkLocal (u : Bool) : Contract isa where
+  pre := combPkPre u
+  post := PkPost (secp256k1With u)
   pub := combPkPub
 
-theorem combPk_verified (hC : Weierstrass.Law Spec.Secp256k1.curve) :
-    Verified Arm.target publicKeySecp256k1Comb combPkSpec := by
-  refine Verified.of_correct (k := combPkLocal) (fun s hs => ?_) combPk_ct
+theorem combPkWith_verified (hC : Weierstrass.Law Spec.Secp256k1.curve) (u : Bool)
+    (hct : ConstantTime isa (combPkPre u) combPkPub (publicKeySecp256k1CombWith u)) :
+    Verified Arm.target (publicKeySecp256k1CombWith u) combPkSpec := by
+  refine Verified.of_correct (k := combPkLocal u) (fun s hs => ?_) hct
     ⟨fun _ h => combPk_pre h,?_,?_,⟨combPkSat,combPk_sat⟩⟩
   · obtain ⟨tr,t,exec,keep,post⟩ := combPk_ok hC hs
     exact ⟨tr,t,exec,VG.Proof.Ecdsa.Arm.abi_of_saved keep.saved keep.sp,post⟩
@@ -51,7 +52,7 @@ theorem combPk_verified (hC : Weierstrass.Law Spec.Secp256k1.curve) :
     sig_post [combPkSpec,Spec.EcKey.Secp256k1.inst,Spec.EcKey.Instance.publicKeyContract,
       Spec.EcKey.Instance.publicKeySig,Spec.Secp256k1.curve,Spec.EcKey.scratchWords,abi,argRegs,reduceClassify,
       Loc.val,State.addr,Abi.withConsts]
-    have pp := post_of post
+    have pp := post_of (u := u) post
     simp only [pkArm,pk,Spec.Secp256k1.curve,State.addr] at pp
     revert pp
     generalize Spec.EcKey.publicKey _ _=q
@@ -62,5 +63,13 @@ theorem combPk_verified (hC : Weierstrass.Law Spec.Secp256k1.curve) :
       Loc.val,State.addr,secp256k1CombConsts,Abi.withConsts] at pub
     obtain ⟨sp,sy,h0,h1,h2⟩ := pub
     exact ⟨⟨sp,h0,h1,h2⟩,sy⟩
+
+theorem combPk_verified (hC : Weierstrass.Law Spec.Secp256k1.curve) :
+    Verified Arm.target publicKeySecp256k1Comb combPkSpec :=
+  combPkWith_verified hC false combPk_ct
+
+theorem combPkU_verified (hC : Weierstrass.Law Spec.Secp256k1.curve) :
+    Verified Arm.target publicKeySecp256k1CombU combPkSpec :=
+  combPkWith_verified hC true combPkU_ct
 
 end VG.Proof.EcKey.Arm.Secp256k1

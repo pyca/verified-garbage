@@ -101,7 +101,8 @@ def fn (S : Spec.Weierstrass.Mont.Modulus) (dbl : Bool) (u : Bool := false) : Pr
 def ops0 (dbl : Bool) : List FOp := if dbl then dbl0 sId pId oId else rcb0m sId pId qId oId
 
 /-- `O = P + P` (`dbl`) or `P + Q` by the formulas for `a = 0`. -/
-def fn0 (S : Spec.Weierstrass.Mont.Modulus) (dbl : Bool) : Prog isa := fnOps S dbl (ops0 dbl)
+def fn0 (S : Spec.Weierstrass.Mont.Modulus) (dbl : Bool) (u : Bool := false) : Prog isa :=
+  fnOps S dbl (ops0 dbl) u
 
 /-- The curve's prime as a modulus of `Spec/Weierstrass/Mont.lean`, whose
 functions (`vg_<curve>_<op>_mod_p`) the point functions call. -/
@@ -115,9 +116,9 @@ def pointAdd (C : Spec.Weierstrass.Point.Curve) (u : Bool := false) : Prog isa :
 def pointDouble (C : Spec.Weierstrass.Point.Curve) (u : Bool := false) : Prog isa := fn (modP C) true u
 
 /-- `vg_<curve>_point_a0_double`: `O = P + P` by Algorithm 9. -/
-def pointDouble0 (C : Spec.Weierstrass.Point.Curve) : Prog isa := fn0 (modP C) true
+def pointDouble0 (C : Spec.Weierstrass.Point.Curve) (u : Bool := false) : Prog isa := fn0 (modP C) true u
 
 /-- `vg_<curve>_point_a0_add_affine`: `O = P + Q` by Algorithm 8. -/
-def pointAdd0m (C : Spec.Weierstrass.Point.Curve) : Prog isa := fn0 (modP C) false
+def pointAdd0m (C : Spec.Weierstrass.Point.Curve) (u : Bool := false) : Prog isa := fn0 (modP C) false u
 
 end VG.Impl.Weierstrass.Arm.Point

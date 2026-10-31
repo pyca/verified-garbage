@@ -10,4 +10,6 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 namespace VG
 materialize_code Impl.Ecdsa.Arm.signSecp256k1Comb
 materialize_code Impl.Ecdsa.Arm.publicKeySecp256k1Comb
+materialize_code Impl.Ecdsa.Arm.signSecp256k1CombU
+materialize_code Impl.Ecdsa.Arm.publicKeySecp256k1CombU
 end VG

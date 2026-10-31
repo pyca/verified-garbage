@@ -22,13 +22,20 @@ A generic file (see `TCB/Emit.lean`) over secp256k1's group law `h`, the variant
 namespace VG.Generic.Secp256k1.Arm.EcdsaSecp256k1Sha256
 
 open VG.Proof.Ecdsa.Rfc6979.Arm (cfgOf)
-open VG.Proof.Ecdsa.Rfc6979.Arm.Secp256k1Sha256Comb (pack sign_verified)
+open VG.Proof.Ecdsa.Rfc6979.Arm.Secp256k1Sha256Comb (pack packU sign_verified signU_verified)
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.Secp256k1.curve) : List Artifact := [
   Spec.Ecdsa.Rfc6979.Secp256k1Sha256.signApi.artifact Arm.target {
     code := (cfgOf (pack h.law)).sign
     consts := Impl.Weierstrass.Arm.secp256k1CombConsts
     stack := 240
-    verified := sign_verified h.law }]
+    verified := sign_verified h.law },
+  Spec.Ecdsa.Rfc6979.Secp256k1Sha256.signApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := (cfgOf (packU h.law)).sign
+    consts := Impl.Weierstrass.Arm.secp256k1CombConsts
+    stack := 240
+    verified := signU_verified h.law
+    features := ["umaal"] }]
 
 end VG.Generic.Secp256k1.Arm.EcdsaSecp256k1Sha256

@@ -9,9 +9,9 @@ public import VerifiedGarbage.Proof.Weierstrass.Arm.TCombLayout
 namespace VG.Proof.Secp256k1.Arm
 open VG VG.Impl.Weierstrass.Arm VG.Proof.Weierstrass.Arm.TComb
 
-theorem comb_layout : Layout secp256k1Comb := by
-  refine ⟨by decide,by decide,?_,?_,?_,?_,?_⟩
-  · exact ⟨by decide,by decide⟩
-  all_goals decide +kernel
+theorem comb_layout (u : Bool := false) : Layout (secp256k1CombWith u) := by
+  refine ⟨by decide +revert,by decide +revert,?_,?_,?_,?_,?_⟩
+  · exact ⟨by decide +revert,by decide +revert⟩
+  all_goals decide +kernel +revert
 
 end VG.Proof.Secp256k1.Arm

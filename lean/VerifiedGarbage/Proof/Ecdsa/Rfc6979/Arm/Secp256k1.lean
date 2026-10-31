@@ -52,14 +52,14 @@ def secp256k1 (hL : Weierstrass.Law Spec.Secp256k1.curve) : RfcCurve where
   coreX := by
     intro s hs
     have pre : Proof.Ecdsa.Arm.Secp256k1.signArm.pre s := by
-      simpa only [coreK,TablesOk,Impl.Ecdsa.Arm.secp256k1,Spec.Secp256k1.curve,Nat.reduceMul,List.not_mem_nil,forall_const,
+      simpa only [coreK,TablesOk,Impl.Ecdsa.Arm.secp256k1,Impl.Ecdsa.Arm.secp256k1With,Spec.Secp256k1.curve,Nat.reduceMul,List.not_mem_nil,forall_const,
         false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,Proof.Ecdsa.Arm.Secp256k1.signArm] using hs
     obtain ⟨tr,t,exec,abi,post⟩ := Proof.Ecdsa.Arm.Secp256k1.sign_arm hL s pre
     refine ⟨tr,t,exec,abi,?_⟩
     change Proof.Ecdsa.Arm.Secp256k1.signArm.post s t
     exact post
   coreCT := by
-    simpa only [coreK,coreSigOf,Spec.Secp256k1.curve,Nat.reduceMul,Impl.Ecdsa.Arm.secp256k1,Proof.Ecdsa.Arm.Secp256k1.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
+    simpa only [coreK,coreSigOf,Spec.Secp256k1.curve,Nat.reduceMul,Impl.Ecdsa.Arm.secp256k1,Impl.Ecdsa.Arm.secp256k1With,Proof.Ecdsa.Arm.Secp256k1.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
       Proof.Ecdsa.Arm.Secp256k1.signArm] using Proof.Ecdsa.Arm.Secp256k1.sign_ct
   coreStack := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)

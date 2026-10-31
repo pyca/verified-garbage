@@ -6,6 +6,7 @@ public import VerifiedGarbage.Spec.Weierstrass.Point0
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Weierstrass.Arm.PointSecp256k1
+public import VerifiedGarbage.Proof.Weierstrass.Arm.PointSecp256k1Umaal
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -15,6 +16,7 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
 public import VerifiedGarbage.Proof.Weierstrass.Arm.PointSecp256k1
+public import VerifiedGarbage.Proof.Weierstrass.Arm.PointSecp256k1Umaal
 import VerifiedGarbage.Spec.Rc2
 import VerifiedGarbage.Spec.X25519
 public import VerifiedGarbage.Proof.Framework.AddrArith
@@ -68,6 +70,21 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.Secp256k1.curve) : List Artifac
     verified := secp256k1_double0_verified (fermat_of_law h.law) },
   Impl.Secp256k1.point.add0mApi.artifact Arm.target {
     code := Impl.Weierstrass.Arm.Point.pointAdd0m Impl.Secp256k1.point
-    verified := secp256k1_add0m_verified (fermat_of_law h.law) }]
+    verified := secp256k1_add0m_verified (fermat_of_law h.law) },
+  Impl.Secp256k1.point.addApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.Weierstrass.Arm.Point.pointAdd Impl.Secp256k1.point true
+    verified := secp256k1_addU_verified (fermat_of_law h.law)
+    features := ["umaal"] },
+  Impl.Secp256k1.point.double0Api.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.Weierstrass.Arm.Point.pointDouble0 Impl.Secp256k1.point true
+    verified := secp256k1_double0U_verified (fermat_of_law h.law)
+    features := ["umaal"] },
+  Impl.Secp256k1.point.add0mApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.Weierstrass.Arm.Point.pointAdd0m Impl.Secp256k1.point true
+    verified := secp256k1_add0mU_verified (fermat_of_law h.law)
+    features := ["umaal"] }]
 
 end VG.Generic.Secp256k1.Arm.PointSecp256k1
