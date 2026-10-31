@@ -222,7 +222,7 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   code again (seconds for unrolled code). Import the code's `Lit` module
   wherever its code is evaluated: registration files too, whose default
   `sp_safe` evaluates their code. `decide +kernel` reads no literal at all:
-  use `lit_decide`. `python3 ci/check_lit_imports.py` lists the checks that
+  use `lit_decide`. `python3 ci/lit_imports.py` lists the checks that
   evaluate code without a literal they could import (see the
   `lean-profiling` skill).
 * **Unfolding recursive definitions:** `simp`/`dsimp` unfolding a recursive

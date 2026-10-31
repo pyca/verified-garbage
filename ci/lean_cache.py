@@ -404,7 +404,13 @@ def extract(lean, files):
     `--no-same-owner`: CI's runner user owns the archive's files, and
     extracting them as root (as in a container) would keep that owner. Git
     would then refuse the dependencies' checkouts, so Lake would clone them
-    again and build Mathlib from source."""
+    again and build Mathlib from source.
+
+    `files.tar` lists each root (`.lake/build`, `.lake/packages`) before what
+    it holds, but not `.lake`. Without `.lake`, `tar` makes it for the first
+    root, retries the root, and fails ("Unexpected inconsistency when making
+    directory") if the archives' unpacking made the root in between."""
+    (lean / ".lake").mkdir(parents=True, exist_ok=True)
     return subprocess.Popen(["tar", "--no-same-owner", "-xf", str(files), "-C", str(lean)]
                             + (["-z"] if files.name == STORED else []))
 

@@ -556,27 +556,27 @@ class Plan(Project):
         self.assertEqual(shards.plan(self.manifest)["targets"], [])
 
 
-class WallTime(unittest.TestCase):
+class BuildTime(unittest.TestCase):
     # D imports B and C, which import A.
     imps = {"A": [], "B": ["A"], "C": ["A"], "D": ["B", "C"]}
 
     def test_critical_path(self):
         cost = {"A": 10.0, "B": 20.0, "C": 5.0, "D": 10.0}
         self.assertEqual(shards.paths(self.imps, cost), {"A": 10.0, "B": 30.0, "C": 15.0, "D": 40.0})
-        self.assertEqual(shards.wall_time(self.imps, cost), 40.0)
+        self.assertEqual(shards.build_time(self.imps, cost), 40.0)
 
     def test_only_the_modules_built(self):
         # B is not built: D's chain is through C.
         cost = {"A": 10.0, "C": 5.0, "D": 10.0}
-        self.assertEqual(shards.wall_time(self.imps, cost), 25.0)
+        self.assertEqual(shards.build_time(self.imps, cost), 25.0)
 
     def test_throughput(self):
         imps = {str(i): [] for i in range(10)}
         cost = {m: 10.0 for m in imps}
         # Six modules share the effective 5.4 slots, then four run at full
         # speed: the last wave cannot fill the runner.
-        self.assertAlmostEqual(shards.wall_time(imps, cost), 60.0 / shards.PARALLELISM + 10)
-        self.assertEqual(shards.wall_time({}, {}), 0.0)
+        self.assertAlmostEqual(shards.build_time(imps, cost), 60.0 / shards.PARALLELISM + 10)
+        self.assertEqual(shards.build_time({}, {}), 0.0)
 
     def test_parallel_work_between_serial_barriers(self):
         imps = {"root": [], **{f"p{i}": ["root"] for i in range(12)},
