@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Rc2.RISCV64.Scan
 public import VerifiedGarbage.Spec.Rc2
 import VerifiedGarbage.Proof.Rc2.Memory
 import VerifiedGarbage.Proof.Framework.AddrArith
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Impl.Rc2.RISCV64.Lookup
 public import VerifiedGarbage.Proof.Framework.RISCV64.Keep
 
@@ -21,14 +20,6 @@ byte.
 namespace VG.Proof.Rc2.RISCV64
 
 open VG VG.RISCV64 VG.Impl.Rc2.RISCV64
-
-theorem shiftSum_word (q : BitVec 64) (hq : q.toNat % 2 = 0) : shiftSum q [1, 2] = 8 * (q.toNat % 8) := by
-  simp only [shiftSum, BitVec.getLsbD, Nat.testBit_eq_decide_div_mod_eq, decide_eq_true_eq]
-  split_ifs <;> omega
-
-theorem shiftSum_byte (q : BitVec 64) : shiftSum q [0, 1, 2] = 8 * (q.toNat % 8) := by
-  simp only [shiftSum, BitVec.getLsbD, Nat.testBit_eq_decide_div_mod_eq, decide_eq_true_eq]
-  split_ifs <;> omega
 
 theorem shr_word16 (x : BitVec 64) (l : Nat) :
     (x >>> (8 * l)).setWidth 16 =
@@ -68,8 +59,12 @@ theorem entry_byte (m : Mem) (T : Addr) (q : BitVec 64) :
     Offset.add_add, show 8 * (q.toNat / 8) + q.toNat % 8 = q.toNat by omega, BitVec.ofNat_toNat,
     BitVec.setWidth_eq]
 
-theorem keyRegs : ScanRegs .a2 .t3 := ⟨by decide, by decide, by decide, by decide, by decide, by decide,
-  by decide, by decide, by decide⟩
+theorem keyRegs : ScanRegs .a2 := ⟨by decide, by decide, by decide, by decide, by decide⟩
+
+/-- A key word's offset is even, so its lane is its bits 1 and 2. -/
+theorem word_lane : ∀ idx < 64,
+    (BitVec.ofNat 64 (2 * idx) &&& BitVec.ofNat 64 6).toNat = (BitVec.ofNat 64 (2 * idx)).toNat % 8 := by
+  decide
 
 /-- The scan of the schedule's copy at `a2`. -/
 theorem keyLookup_run (s : State) {T : Addr} (hT : s.gpr .a2 = T) (hal : T.toNat % 8 = 0) {idx : Nat}
@@ -80,8 +75,8 @@ theorem keyLookup_run (s : State) {T : Addr} (hT : s.gpr .a2 = T) (hal : T.toNat
       Keep [.a7, .t1, .t2, .t3] s t ∧ t.mem = s.mem := by
   have h2 : (BitVec.ofNat 64 (2 * idx)).toNat = 2 * idx := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  refine WP.mono (scan_run keyRegs s hT hal (rows := 16) (by decide) (lanes := [1, 2]) (by decide)
-    (bits := 16) (by decide) (by rw [hq, h2]; omega) (by rw [hq]; exact shiftSum_word _ (by rw [h2]; omega)) hr)
+  refine WP.mono (scan_run keyRegs s hT hal (rows := 16) (by decide) (laneBits := 6) (by decide)
+    (bits := 16) (by decide) (by rw [hq, h2]; omega) (by rw [hq]; exact word_lane _ hidx) hr)
     fun t ⟨t11, tk, tm⟩ => ⟨?_, tk, tm⟩
   rw [t11, hq, entry_word _ _ hidx]
 

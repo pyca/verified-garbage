@@ -20,8 +20,12 @@ namespace VG.Proof.Rc2.RISCV64
 
 open VG VG.RISCV64 VG.Impl.Rc2.RISCV64
 
-theorem piRegs : ScanRegs .a4 .t3 := ⟨by decide, by decide, by decide, by decide, by decide, by decide,
-  by decide, by decide, by decide⟩
+theorem piRegs : ScanRegs .a4 := ⟨by decide, by decide, by decide, by decide, by decide⟩
+
+/-- A byte's lane is its low three bits. -/
+theorem byte_lane (q : BitVec 64) : (q &&& BitVec.ofNat 64 7).toNat = q.toNat % 8 := by
+  rw [BitVec.toNat_and, BitVec.toNat_ofNat, show 7 % 2 ^ 64 = 2 ^ 3 - 1 from rfl,
+    Nat.and_two_pow_sub_one_eq_mod]
 
 /-- The scan of PITABLE at `a4`. -/
 theorem piLookup_run (s : State) {W : Addr} (hW : s.gpr .a4 = W) (hal : W.toNat % 8 = 0) (hq : (s.gpr .t0).toNat < 256)
@@ -29,8 +33,8 @@ theorem piLookup_run (s : State) {W : Addr} (hW : s.gpr .a4 = W) (hal : W.toNat 
     WP isa piLookup s fun t =>
       t.gpr .t1 = (Spec.Rc2.pi ((s.gpr .t0).setWidth 8)).setWidth 64 ∧
       Keep [.a7, .t1, .t2, .t3] s t ∧ t.mem = s.mem := by
-  refine WP.mono (scan_run piRegs s hW hal (rows := 32) (by decide) (lanes := [0, 1, 2]) (by decide)
-    (bits := 8) (by decide) hq (shiftSum_byte _) hr) fun t ⟨t11, tk, tm⟩ => ⟨?_, tk, tm⟩
+  refine WP.mono (scan_run piRegs s hW hal (rows := 32) (by decide) (laneBits := 7) (by decide)
+    (bits := 8) (by decide) hq (byte_lane _) hr) fun t ⟨t11, tk, tm⟩ => ⟨?_, tk, tm⟩
   have e : W + s.gpr .t0 = W + BitVec.ofNat 64 (s.gpr .t0).toNat := by
     rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
   rw [t11, entry_byte, e, hP.byte hq]
