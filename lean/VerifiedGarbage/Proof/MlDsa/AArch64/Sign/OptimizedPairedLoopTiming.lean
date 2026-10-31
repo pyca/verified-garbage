@@ -295,22 +295,40 @@ theorem earlyIf_tr {p:Params} {S:Nat} {E I:State→State→Prop} {Q:State→Stat
     obtain ⟨⟨σ,τ,p₁,p₂,pub,he,⟨i₁,r₁⟩,⟨i₂,r₂⟩⟩,sy⟩:=h.1
     exact ⟨⟨⟨σ,τ,p₁,p₂,pub,he,⟨⟨i₁,hx⟩,r₁⟩,⟨⟨i₂,(hq x y h) ▸ hx⟩,r₂⟩⟩,sy⟩,h.2⟩
 
-theorem earlySeq_tr {p:Params} {S:Nat} {E:State→State→Prop} {I:Nat→State→State→Prop} {f:Nat→Prog isa} :
-    ∀(n a:Nat),
-      (∀k,a<k→k≤a+n→∀x y,PairedRS p S E (I k) x y→(x.gpr .x24).setWidth 32=(y.gpr .x24).setWidth 32)→
-      (∀k,a≤k→k<a+n→RelCT isa (PairedRS p S E (I k)) (f k) (PairedRS p S E (I (k+1))))→
-      RelCT isa (PairedRS p S E (I a)) (Impl.MlDsa.AArch64.Sign.Optimized.seqOk f a n)
-        (PairedRS p S E fun σ s=>∃k,a≤k ∧ k≤a+n ∧ I k σ s ∧ (k=a+n ∨ (s.gpr .x24).setWidth 32=0))
-  |0,a,_,_=>earlyNil fun _ _ h=>h.mono fun _ _ hi=>⟨a,Nat.le_refl _,by omega,hi,.inl (by omega)⟩
-  |n+1,a,hq,h=>by
-    rw [Impl.MlDsa.AArch64.Sign.Optimized.seqOk]
-    refine RelCT.seq (h a (Nat.le_refl _) (by omega)) ?_
-    refine earlyIf_tr (hq (a+1) (by omega) (by omega)) ?_ ?_
-    · refine RelCT.mono (earlySeq_tr n (a+1) (fun k hk hk'=>hq k (by omega) (by omega))
-        (fun k hk hk'=>h k (by omega) (by omega))) (fun _ _ h=>h.mono fun _ _ hi=>hi.1) ?_
+/-- Pairwise early rejection only observes the already permitted prefix
+norm flags; a single odd tail has the same relational invariant. -/
+theorem earlyPairedSeq_tr {p : Params} {S : Nat} {E : State → State → Prop}
+    {I : Nat → State → State → Prop} {one two : Nat → Prog isa} :
+    ∀ (n a : Nat),
+      (∀ k, a<k → k≤a+n → ∀ x y, PairedRS p S E (I k) x y →
+        (x.gpr .x24).setWidth 32=(y.gpr .x24).setWidth 32) →
+      (∀ k, a≤k → k<a+n → RelCT isa (PairedRS p S E (I k)) (one k)
+        (PairedRS p S E (I (k+1)))) →
+      (∀ k, a≤k → k+1<a+n → RelCT isa (PairedRS p S E (I k)) (two k)
+        (PairedRS p S E (I (k+2)))) →
+      RelCT isa (PairedRS p S E (I a))
+        (Impl.MlDsa.AArch64.Sign.Optimized.seqPairedOk one two a n)
+        (PairedRS p S E fun σ s => ∃ k, a≤k ∧ k≤a+n ∧ I k σ s ∧
+          (k=a+n ∨ (s.gpr .x24).setWidth 32=0))
+  | 0,a,_,_,_ => earlyNil fun _ _ h =>
+      h.mono fun _ _ hi => ⟨a,Nat.le_refl _,by omega,hi,.inl (by omega)⟩
+  | 1,a,_,h,_ => RelCT.mono (h a (Nat.le_refl _) (by omega))
+      (fun _ _ h => h) (fun _ _ h => h.mono fun _ _ hi =>
+        ⟨a+1,by omega,by omega,hi,.inl rfl⟩)
+  | n+2,a,hq,h1,h2 => by
+    rw [Impl.MlDsa.AArch64.Sign.Optimized.seqPairedOk]
+    refine RelCT.seq (h2 a (Nat.le_refl _) (by omega)) ?_
+    refine earlyIf_tr (hq (a+2) (by omega) (by omega)) ?_ ?_
+    · refine RelCT.mono (earlyPairedSeq_tr n (a+2)
+        (fun k hk hk' => hq k (by omega) (by omega))
+        (fun k hk hk' => h1 k (by omega) (by omega))
+        (fun k hk hk' => h2 k (by omega) (by omega)))
+        (fun _ _ h => h.mono fun _ _ hi => hi.1) ?_
       intro _ _ h
-      exact h.mono fun _ _ ⟨k,hk,hk',hi,hd⟩=>⟨k,by omega,by omega,hi,hd.imp (fun _=>by omega) id⟩
-    · exact earlyNil fun _ _ h=>h.mono fun _ _ ⟨hi,hz⟩=>⟨a+1,by omega,by omega,hi,.inr hz⟩
+      exact h.mono fun _ _ ⟨k,hk,hk',hi,hd⟩ =>
+        ⟨k,by omega,by omega,hi,hd.imp (fun _ => by omega) id⟩
+    · exact earlyNil fun _ _ h =>
+        h.mono fun _ _ ⟨hi,hz⟩ => ⟨a+2,by omega,by omega,hi,.inr hz⟩
 
 theorem earlyZ_tr {p:Params} {S:Nat} (hp:Ok3 p) (h16:16≤S) (hS:S<2^64) {t r:Nat} (hr:r<p.ℓ) {E:State→State→Prop} :
     RelCT isa (PairedRS p S E (PositiveIZ p S · t r)) (Impl.MlDsa.AArch64.Sign.Optimized.zR p r)
@@ -334,24 +352,26 @@ theorem positivePairedChecks_tr {p : Params} {S : Nat} (hp : Ok3 p) (hc : ksChk 
   refine liftPairedR (fun _ _ _ h roots=>positivePairedChecks_ok hp hc h16 hS roots h.1 h.2) ?_
   unfold Impl.MlDsa.AArch64.Sign.Optimized.pairedChecks
   refine RelCT.seq (RelCT.seq (positivePairedChallenge_tr hp h16)
-    (RelCT.seq (positivePairedChecksInit_tr hp hc) (earlySeq_tr (I:=fun r σ s=>PositiveIZ p S σ t r s) p.ℓ 0
+    (RelCT.seq (positivePairedChecksInit_tr hp hc) (earlyPairedSeq_tr (I:=fun r σ s=>PositiveIZ p S σ t r s) p.ℓ 0
       (fun r _ hr x y h=>by
         obtain ⟨σ,τ,_,_,_,he,hx,hy⟩:=h.1.1
         rw [hx.1.2,hy.1.2]
         exact congrArg (BitVec.setWidth 32) (bit_congr ((hE σ τ he hx.1.1.b.sampled hy.1.1.b.sampled).1 r (by omega))))
-      (fun r _ hr=>earlyZ_tr hp h16 hS (by omega))))) ?_
+      (fun r _ hr=>earlyZ_tr hp h16 hS (by omega))
+      (fun r _ hr=>optimizedZ_pair_tr hp (by omega))))) ?_
   refine earlyIf_tr (fun x y h=>?_) ?_ ?_
   · obtain ⟨σ,τ,_,_,_,he,⟨⟨i,_,hi,hx,hdx⟩,_⟩,⟨⟨j,_,hj,hy,hdy⟩,_⟩⟩:=h.1.1
     rw [Nat.zero_add] at hi hdx hj hdy
     rw [PositiveIZ.done hi hx hdx,PositiveIZ.done hj hy hdy]
     exact congrArg (BitVec.setWidth 32) (bit_congr ((hE σ τ he hx.1.b.sampled hy.1.b.sampled).1 p.ℓ (Nat.le_refl _)))
   · refine RelCT.mono (RelCT.seq
-      (earlySeq_tr (I:=fun i σ s=>PositiveIR p S σ t i s) p.k 0
+      (earlyPairedSeq_tr (I:=fun i σ s=>PositiveIR p S σ t i s) p.k 0
         (fun i _ hi x y h=>by
           obtain ⟨σ,τ,_,_,_,he,hx,hy⟩:=h.1.1
           rw [hx.1.2,hy.1.2]
           exact congrArg (BitVec.setWidth 32) (bit_congr ((hE σ τ he hx.1.1.b.sampled hy.1.1.b.sampled).2.1 i (by omega))))
-        (fun i _ hi=>earlyR0_tr hp h16 hS (by omega))) ?_)
+        (fun i _ hi=>earlyR0_tr hp h16 hS (by omega))
+        (fun i _ hi=>optimizedR0_pair_tr hp (by omega))) ?_)
       (fun _ _ h=>h.mono fun σ s ⟨⟨i,_,hi,h,hd⟩,hn⟩=>by
         rw [Nat.zero_add] at hi hd
         have he:i=p.ℓ:=hd.resolve_right hn

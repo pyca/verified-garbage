@@ -356,15 +356,17 @@ theorem checks_ok {p : Params} {S : Nat} {σ s : State} {t : Nat} {f : Poly}
   unfold Impl.MlDsa.AArch64.Sign.Optimized.pairedChecks
   refine WP.seq (WP.seq (WP.mono (challenge_ok hp ⟨roots,cache⟩ h h1) fun a ha=>?_))
   refine WP.seq (WP.mono (init_ok hp hc ha.2 ha.1) fun b hb=>?_)
-  refine WP.mono (earlySeq_ok (I:=fun r u=>PositiveIZ p S σ t r u ∧ Roots p S f u) p.ℓ 0
-    (fun r _ hr s h=>optimizedZ_rooted_ok hp (by omega) h.2 h.1) b hb) fun c ⟨nz,_,hnz,hz,hdz⟩=>?_
+  refine WP.mono (earlyPairedSeq_ok (I:=fun r u=>PositiveIZ p S σ t r u ∧ Roots p S f u) p.ℓ 0
+    (fun r _ hr s h=>optimizedZ_rooted_ok hp (by omega) h.2 h.1)
+    (fun r _ hr s h=>optimizedZ_pair_ok hp (by omega) h.2 h.1) b hb) fun c ⟨nz,_,hnz,hz,hdz⟩=>?_
   rw [Nat.zero_add] at hnz hdz
   have zflag:=PositiveIZ.done hnz hz.1 hdz
   refine ifOkElse_ok (fun hzpass=>?_) fun hzfail=>?_
   · have he:nz=p.ℓ:=hdz.resolve_right hzpass
     subst he
-    refine WP.seq (WP.mono (earlySeq_ok (I:=fun r u=>PositiveIR p S σ t r u ∧ Roots p S f u) p.k 0
-      (fun r _ hr s h=>optimizedR0_rooted_ok hp (by omega) h.2 h.1) c ⟨positiveIR_of_IZ hz.1,hz.2⟩)
+    refine WP.seq (WP.mono (earlyPairedSeq_ok (I:=fun r u=>PositiveIR p S σ t r u ∧ Roots p S f u) p.k 0
+      (fun r _ hr s h=>optimizedR0_rooted_ok hp (by omega) h.2 h.1)
+      (fun r _ hr s h=>optimizedR0_pair_ok hp (by omega) h.2 h.1) c ⟨positiveIR_of_IZ hz.1,hz.2⟩)
       fun d ⟨nr,_,hnr,hr,hdr⟩=>?_)
     rw [Nat.zero_add] at hnr hdr
     have rflag:=PositiveIR.done hnr hr.1 hdr
