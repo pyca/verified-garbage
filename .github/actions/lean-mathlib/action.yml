@@ -55,8 +55,6 @@ runs:
       env:
         MODS: ${{ inputs.mods }}
       run: lake build --no-build $MODS
-    - uses: ./.github/actions/leantar
-      if: ${{ inputs.cache-hit != 'true' && github.event_name != 'merge_group' }}
     - name: Store Mathlib and its dependencies as module archives
       if: ${{ inputs.cache-hit != 'true' && github.event_name != 'merge_group' }}
       shell: bash
