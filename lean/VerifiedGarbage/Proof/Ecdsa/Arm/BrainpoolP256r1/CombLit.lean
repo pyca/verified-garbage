@@ -14,4 +14,7 @@ namespace VG
 materialize_code Impl.Ecdsa.Arm.signBrainpoolP256r1Comb
 materialize_code Impl.Ecdsa.Arm.publicKeyBrainpoolP256r1Comb
 materialize_code Impl.Ecdsa.Arm.verifyBrainpoolP256r1Comb
+materialize_code Impl.Ecdsa.Arm.signBrainpoolP256r1CombU
+materialize_code Impl.Ecdsa.Arm.publicKeyBrainpoolP256r1CombU
+materialize_code Impl.Ecdsa.Arm.verifyBrainpoolP256r1CombU
 end VG

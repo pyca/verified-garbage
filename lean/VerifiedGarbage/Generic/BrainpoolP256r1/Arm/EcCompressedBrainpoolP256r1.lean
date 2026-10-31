@@ -17,6 +17,16 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP256r1.curve) : List A
     verified := Proof.EcKey.Compressed.Arm.BrainpoolP256r1.verified },
   Spec.EcKey.BrainpoolP256r1.inst.decompressPublicKeyApi.artifact Arm.target {
     code := Proof.EcKey.Compressed.Arm.BrainpoolP256r1Decompress.code
-    verified := Proof.EcKey.Compressed.Arm.BrainpoolP256r1Decompress.verified h.law }]
+    verified := Proof.EcKey.Compressed.Arm.BrainpoolP256r1Decompress.verified h.law },
+  Spec.EcKey.BrainpoolP256r1.inst.compressPublicKeyApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Proof.EcKey.Compressed.Arm.BrainpoolP256r1.codeU
+    verified := Proof.EcKey.Compressed.Arm.BrainpoolP256r1.verifiedU
+    features := ["umaal"] },
+  Spec.EcKey.BrainpoolP256r1.inst.decompressPublicKeyApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Proof.EcKey.Compressed.Arm.BrainpoolP256r1Decompress.codeU
+    verified := Proof.EcKey.Compressed.Arm.BrainpoolP256r1Decompress.verifiedU h.law
+    features := ["umaal"] }]
 
 end VG.Generic.BrainpoolP256r1.Arm.EcCompressedBrainpoolP256r1

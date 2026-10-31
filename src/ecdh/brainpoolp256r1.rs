@@ -1,5 +1,6 @@
 //! ECDH over brainpoolP256r1 (`vg_ecdh_brainpoolp256r1`), and public keys
-//! (`vg_ec_brainpoolp256r1_public_key`).
+//! (`vg_ec_brainpoolp256r1_public_key`), each on ARMv7 with `umaal` where
+//! the CPU has it (`_umaal`).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -10,8 +11,11 @@
 ))]
 
 use super::{BrainpoolP256r1, Error, PrivateKey};
-use crate::arch::ec_brainpoolp256r1::vg_ec_brainpoolp256r1_public_key;
 use crate::arch::ecdh_brainpoolp256r1::vg_ecdh_brainpoolp256r1;
+#[cfg(target_arch = "arm")]
+use crate::arch::ecdh_brainpoolp256r1::vg_ecdh_brainpoolp256r1_umaal;
+use crate::cpu::detected;
+use crate::ec::brainpoolp256r1::{Mul, public_key};
 use crate::zeroize::zeroize;
 
 impl PrivateKey<BrainpoolP256r1> {
@@ -22,20 +26,7 @@ impl PrivateKey<BrainpoolP256r1> {
     ///
     /// [`Error::InvalidKey`] if the key is not in `[1, n − 1]`.
     pub fn public_key(&self) -> Result<[u8; 65], Error> {
-        let mut out = [0; 65];
-        let mut scratch = [0u64; 1024];
-        // SAFETY: `out` is valid for reads and writes of 65 bytes, `self.d`
-        // for reads of 32 and `scratch` for reads and writes of 8192; `out`
-        // and `scratch` are distinct objects from each other and `self.d`,
-        // so none overlaps another or the call's stack frame, and, as Rust
-        // objects, none wraps around the address space.
-        let ok = unsafe { vg_ec_brainpoolp256r1_public_key(&mut out, &self.d, &mut scratch) };
-        zeroize(&mut scratch);
-        if ok == 1 {
-            Ok(out)
-        } else {
-            Err(Error::InvalidKey)
-        }
+        public_key(&self.d).ok_or(Error::InvalidKey)
     }
 
     /// The shared secret with the peer whose public key is `peer`
@@ -49,13 +40,23 @@ impl PrivateKey<BrainpoolP256r1> {
     pub fn diffie_hellman(&self, peer: &[u8; 65]) -> Result<[u8; 32], Error> {
         let mut out = [0; 32];
         let mut scratch = [0u64; 1024];
-        // SAFETY: `out` is valid for reads and writes of 32 bytes, `self.d`
-        // for reads of 32, `peer` for reads of 65 and `scratch` for reads
-        // and writes of 8192; `out` and `scratch` are distinct objects from
-        // each other and the others, so none overlaps another or the call's
-        // stack frame, and, as Rust objects, none wraps around the address
-        // space.
-        let ok = unsafe { vg_ecdh_brainpoolp256r1(&mut out, &self.d, peer, &mut scratch) };
+        let ok = match Mul::select(detected()) {
+            // SAFETY: `out` is valid for reads and writes of 32 bytes,
+            // `self.d` for reads of 32, `peer` for reads of 65 and
+            // `scratch` for reads and writes of 8192; `out` and `scratch`
+            // are distinct objects from each other and the others, so none
+            // overlaps another or the call's stack frame, and, as Rust
+            // objects, none wraps around the address space.
+            Mul::Baseline => unsafe {
+                vg_ecdh_brainpoolp256r1(&mut out, &self.d, peer, &mut scratch)
+            },
+            // SAFETY: as for `Mul::Baseline`, and the CPU has `umaal`
+            // (`Mul::select`).
+            #[cfg(target_arch = "arm")]
+            Mul::Umaal => unsafe {
+                vg_ecdh_brainpoolp256r1_umaal(&mut out, &self.d, peer, &mut scratch)
+            },
+        };
         zeroize(&mut scratch);
         if ok == 1 {
             Ok(out)

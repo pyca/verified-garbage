@@ -13,6 +13,7 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
+pub(crate) mod brainpoolp256r1;
 mod compressed;
 pub(crate) mod p224;
 pub(crate) mod p256;
