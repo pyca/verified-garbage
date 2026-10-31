@@ -36,10 +36,12 @@ caches).
 """
 
 import json
+import re
 from pathlib import Path
 import sys
 import tomllib
 
+import asm_layout
 import bench_arches
 
 MATRIX = Path(__file__).resolve().parent / "rust_matrix.toml"
@@ -104,6 +106,9 @@ RUST_CI = {
 
 def arches_of(path):
     """The architectures whose tests a change to `path` runs."""
+    # A target's crate of generated code (`asm_layout`), its manifest too.
+    if m := re.match(rf"{asm_layout.CRATES}/{asm_layout.PREFIX}([a-z0-9_]+)/", path):
+        return {ARCHES[m[1]]} if m[1] in ARCHES else set(ARCHES.values())
     if path.startswith("src/asm/"):
         target = path.split("/")[2]
         if target in ARCHES and path.count("/") > 2:
