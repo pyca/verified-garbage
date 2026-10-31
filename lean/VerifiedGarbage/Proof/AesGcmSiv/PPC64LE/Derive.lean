@@ -19,6 +19,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StraightK
 public import VerifiedGarbage.Spec.Gcm
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-GCM-SIV on PPC64LE: the message keys (`derive`)

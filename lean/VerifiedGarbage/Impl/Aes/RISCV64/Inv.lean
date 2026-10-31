@@ -5,8 +5,8 @@ public import VerifiedGarbage.Impl.Aes.RISCV64.Linear
 /-!
 # The inverse round transformations of bitsliced AES on RISC-V
 
-On the state of `Linear.lean` (four blocks in `q 0 … q 7`), as on PPC64LE
-(`Impl/Aes/PPC64LE/Inv.lean`), and as BearSSL's `aes_ct64` (Thomas Pornin,
+On the state of `Linear.lean` (four blocks in `q 0 … q 7`), as on x86-64
+(`Impl/Aes/X86_64/Inv.lean`), and as BearSSL's `aes_ct64` (Thomas Pornin,
 MIT licence) computes them for decryption:
 
 * InvSubBytes: the inverse S-box is the S-box between two applications of

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Rounds
 public import VerifiedGarbage.Impl.Aes.AArch64.AeseBlocks
 public import VerifiedGarbage.Proof.Aes.InvRounds
+public import VerifiedGarbage.Proof.Aes.Vector -- shake: keep (exports the existing inverse-round value interface)
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
@@ -32,88 +33,8 @@ open VG.Impl.Aes.AArch64.Aese (kreg dreg drnd dlast aesDec)
 open VG.Spec.Aes (invSubBytes invShiftRows invMixColumns addRoundKey invSbox roundKey invCipher)
 open VG.Proof.Aes (rkState irnd invMid invMid_succ invCipher_eq invMixColumns_addRoundKey)
 
-theorem invSbox_eq : aesInvSbox = invSbox := by
-  funext b
-  simp only [aesInvSbox, invSbox, Spec.Aes.invAffine, inv_eq, ofBits8]
-
-theorem getD_invSubBytes (s : Spec.Aes.State) {i : Nat} (h : i < 16) :
-    (invSubBytes s).getD i 0 = invSbox (s.getD i 0) := by
-  simp [invSubBytes, Vector.getD, h]
-
-theorem getD_invShiftRows (s : Spec.Aes.State) {i : Nat} (h : i < 16) :
-    (invShiftRows s).getD i 0 = s.getD (i % 4 + 4 * ((i / 4 + 4 - i % 4) % 4)) 0 := by
-  rw [invShiftRows, getD_ofFn h]
-
-theorem getD_invMixColumns (s : Spec.Aes.State) {i : Nat} (h : i < 16) :
-    (invMixColumns s).getD i 0 =
-      Spec.Aes.mul 0x0e (s.getD ((i % 4 + 0) % 4 + 4 * (i / 4)) 0) ^^^
-      Spec.Aes.mul 0x0b (s.getD ((i % 4 + 1) % 4 + 4 * (i / 4)) 0) ^^^
-      Spec.Aes.mul 0x0d (s.getD ((i % 4 + 2) % 4 + 4 * (i / 4)) 0) ^^^
-      Spec.Aes.mul 0x09 (s.getD ((i % 4 + 3) % 4 + 4 * (i / 4)) 0) := by
-  rw [invMixColumns, getD_ofFn h]
-
-theorem vbyte_invShiftRows (x : BitVec 128) {i : Nat} (h : i < 16) :
-    vbyte (aesInvShiftRows x) i = vbyte x (i % 4 + 4 * ((i / 4 + 4 - i % 4) % 4)) := by
-  rw [aesInvShiftRows, vbyte_ofVBytes _ h]
-
-theorem vbyte_invMixColumns (x : BitVec 128) {i : Nat} (h : i < 16) :
-    vbyte (aesInvMixColumns x) i =
-      aesMul 0x0e (vbyte x ((i % 4 + 0) % 4 + 4 * (i / 4))) ^^^
-      aesMul 0x0b (vbyte x ((i % 4 + 1) % 4 + 4 * (i / 4))) ^^^
-      aesMul 0x0d (vbyte x ((i % 4 + 2) % 4 + 4 * (i / 4))) ^^^
-      aesMul 0x09 (vbyte x ((i % 4 + 3) % 4 + 4 * (i / 4))) := by
-  rw [aesInvMixColumns, aesMixWith, vbyte_ofVBytes _ h]
-
-/-- `aesimc` is `InvMixColumns`. -/
-theorem st_aesimc (k : BitVec 128) : st (aesInvMixColumns k) = invMixColumns (st k) := by
-  apply st_ext; intro i hi
-  have hr : ∀ k, (i % 4 + k) % 4 + 4 * (i / 4) < 16 := fun k => by omega
-  rw [getD_st _ hi, vbyte_invMixColumns _ hi, getD_invMixColumns _ hi]
-  simp only [getD_st _ (hr _), mul_eq]
-
-/-- `aesd` without its `AddRoundKey`: `InvShiftRows`, then `InvSubBytes`. -/
-theorem st_invSub (v : BitVec 128) :
-    st (aesMapBytes aesInvSbox (aesInvShiftRows v)) = invSubBytes (invShiftRows (st v)) := by
-  apply st_ext; intro i hi
-  have hs : ∀ j, j % 4 + 4 * ((j / 4 + 4 - j % 4) % 4) < 16 := fun j => by omega
-  rw [getD_st _ hi, vbyte_mapBytes _ _ hi, vbyte_invShiftRows _ hi, getD_invSubBytes _ hi,
-    getD_invShiftRows _ hi, getD_st _ (hs _), invSbox_eq]
-
-/-- `InvMixColumns` of a round key, as the bytes of a round key. -/
-def imcKey (rk : List Byte) : List Byte := (invMixColumns (rkState rk)).toList
-
-theorem getD_imcKey (rk : List Byte) {i : Nat} (hi : i < 16) :
-    (imcKey rk).getD i 0 = (invMixColumns (rkState rk)).getD i 0 := by
-  simp [imcKey, Vector.getD, hi]
-
-/-- `aesimc` of round key `rk` in a register. -/
-theorem keyIs_aesimc {k : BitVec 128} {rk : List Byte} (hk : KeyIs k rk) :
-    KeyIs (aesInvMixColumns k) (imcKey rk) := by
-  intro i hi
-  rw [← getD_st _ hi, st_aesimc, getD_imcKey _ hi]
-  refine congrArg (fun s => (invMixColumns s).getD i 0) ?_
-  apply st_ext; intro j hj
-  rw [getD_st _ hj, hk j hj]
-  simp [rkState, Vector.getD, hj]
-
-/-- `aesd` with the round key `K` that turns the register into `Z`, then
-`aesimc`, is a middle round of the inverse cipher from `Z`, with round key
-`rk`, the register then needing `InvMixColumns` of `rk`. -/
-theorem dround_st {v k : BitVec 128} {K rk : List Byte} {Z : Spec.Aes.State} (hk : KeyIs k K)
-    (h : addRoundKey (st v) K = Z) :
-    addRoundKey (st (aesInvMixColumns (aesMapBytes aesInvSbox (aesInvShiftRows (v ^^^ k)))))
-        (imcKey rk) = invMixColumns (addRoundKey (invSubBytes (invShiftRows Z)) rk) := by
-  apply st_ext; intro i hi
-  rw [invMixColumns_addRoundKey _ _ hi, getD_addRoundKey _ _ hi, getD_imcKey _ hi, st_aesimc,
-    st_invSub, eor_st hk, h]
-
-/-- `aesd` with the round key `K` that turns the register into `Z`, then
-`eor` with `rk₀`: the last round of the inverse cipher. -/
-theorem dlast_st {v k k₀ : BitVec 128} {K rk₀ : List Byte} {Z : Spec.Aes.State} (hk : KeyIs k K)
-    (hk₀ : KeyIs k₀ rk₀) (h : addRoundKey (st v) K = Z) :
-    st (aesMapBytes aesInvSbox (aesInvShiftRows (v ^^^ k)) ^^^ k₀) =
-      addRoundKey (invSubBytes (invShiftRows Z)) rk₀ := by
-  rw [eor_st hk₀, st_invSub, eor_st hk, h]
+export VG.Proof.Aes.Vector (
+  invSbox_eq getD_invSubBytes getD_invShiftRows getD_invMixColumns vbyte_invShiftRows vbyte_invMixColumns st_aesimc st_invSub imcKey getD_imcKey keyIs_aesimc dround_st dlast_st)
 
 /-! ## The rounds -/
 

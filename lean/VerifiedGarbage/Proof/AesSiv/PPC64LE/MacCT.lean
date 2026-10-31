@@ -16,6 +16,8 @@ public import VerifiedGarbage.Proof.AesSiv.PPC64LE.Env
 public import VerifiedGarbage.Proof.AesSiv.PPC64LE.S2v
 public import VerifiedGarbage.Proof.CmacAes.Stream.PPC64LE.Common
 public import VerifiedGarbage.Proof.Gather.PPC64LE.LoopCT
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-SIV on PPC64LE: S2V in two runs

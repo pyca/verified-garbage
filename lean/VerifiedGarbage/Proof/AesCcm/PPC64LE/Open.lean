@@ -22,6 +22,7 @@ import VerifiedGarbage.Proof.AesCcm.PPC64LE.Ctrs
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Exit
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Mac
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-CCM on PPC64LE: `vg_aes_ccm_open`

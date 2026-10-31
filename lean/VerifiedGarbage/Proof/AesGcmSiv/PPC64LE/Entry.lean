@@ -19,6 +19,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 public import VerifiedGarbage.Proof.Framework.PPC64LE.StraightK
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.PPC64LE.Target
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-GCM-SIV on PPC64LE: the arguments, the entry and the exit

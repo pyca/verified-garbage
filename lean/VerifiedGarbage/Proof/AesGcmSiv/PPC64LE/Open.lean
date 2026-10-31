@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Fn
 import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-GCM-SIV on PPC64LE: `vg_aes_gcm_siv_open`

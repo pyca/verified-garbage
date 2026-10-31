@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Seed.PPC64LE.G16
 public import VerifiedGarbage.Proof.Seed.G16
-public import VerifiedGarbage.Proof.Aes.PPC64LE.Encrypt
+public import VerifiedGarbage.Proof.Aes.PPC64LE.Sbox
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

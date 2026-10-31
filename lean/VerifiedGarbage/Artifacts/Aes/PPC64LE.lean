@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Aes.PPC64LE.Blocks
 public import VerifiedGarbage.Proof.Aes.PPC64LE.Ctr32
 public import VerifiedGarbage.Proof.Aes.PPC64LE.ExpandKey
-public import VerifiedGarbage.Proof.Aes.PPC64LE.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # AES on PPC64LE -/
@@ -14,9 +13,8 @@ namespace VG.Artifacts.Aes.PPC64LE
 
 def artifacts : List Artifact := [
   Spec.Aes.expandKeyApi.artifact PPC64LE.target {
-    code := Impl.StackScratch.PPC64LE.withStackScratchWiped 544 .r6 64 Impl.Aes.PPC64LE.expandKey
-    stack := 544
-    verified := Proof.Aes.PPC64LE.expandKey_framed },
+    code := Impl.Aes.PPC64LE.expandKey
+    verified := Proof.Aes.PPC64LE.expandKey_direct_verified },
   Spec.Aes.expandKeyScratchApi.artifact PPC64LE.target {
     code := Impl.Aes.PPC64LE.expandKey
     verified := Proof.Aes.PPC64LE.expandKey_verified },

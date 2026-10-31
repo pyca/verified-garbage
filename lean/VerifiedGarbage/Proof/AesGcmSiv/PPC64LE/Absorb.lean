@@ -19,6 +19,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 public import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.Spec.GcmSiv
 public import VerifiedGarbage.Spec.TripleDes
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-GCM-SIV on PPC64LE: POLYVAL's whole blocks (`chunk`)

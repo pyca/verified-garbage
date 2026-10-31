@@ -21,7 +21,7 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Spill
 /-!
 # One group of counter-mode blocks on RISC-V
 
-As on PPC64LE (`Proof/Aes/PPC64LE/Group.lean`): `ctrBlocks` builds the
+As on x86-64 (`Proof/Aes/X86_64/Group.lean`): `ctrBlocks` builds the
 counter blocks `c + b` (`b < 4`) from the slots of the counter block
 (`ctrBlocks_wp`, then `ctr_inRel` for `InRel`), `encrypt4` encrypts them
 (`Encrypt.lean`), and `xorFull` or `xorTail` XOR the keystream into the

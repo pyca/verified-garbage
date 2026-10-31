@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Align
 /-!
 # AES on whole blocks on RISC-V: the groups
 
-As on PPC64LE (`Proof/Aes/PPC64LE/Ecb.lean`): a group of `blocks` loads (up
+As on x86-64 (`Proof/Aes/X86_64/Ecb.lean`): a group of `blocks` loads (up
 to) four blocks of the data into the state registers, a byte at a time
 (`Bytes.loadLE64_ok`), runs a transformation of four blocks (`encrypt4` or
 `decrypt4`, whose proofs give `CryptOk`), and stores the results back in

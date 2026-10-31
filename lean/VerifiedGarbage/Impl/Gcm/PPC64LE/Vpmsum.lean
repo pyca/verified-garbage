@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 public import VerifiedGarbage.Impl.Gcm.Clmul
+public import VerifiedGarbage.Impl.Vector.PPC64LE
 
 /-! # GHASH using POWER8 polynomial multiply
 
@@ -30,14 +31,10 @@ abbrev Z : VReg := .v19
 
 def reverseMask : BitVec 128 := 0x0f0e0d0c0b0a09080706050403020100
 
-def const64 (d : Reg) (x : BitVec 64) : List Instr :=
-  [.lis d (x.extractLsb' 48 16), .ori d d (x.extractLsb' 32 16), .lsl d d 32,
-   .oris d d (x.extractLsb' 16 16), .ori d d (x.extractLsb' 0 16)]
+export VG.Impl.Vector.PPC64LE (const64)
 
-/-- Form both halves explicitly: MT VSR leaves its other half undefined. -/
 def pair (d : VReg) (hi lo : Reg) : List Instr :=
-  [.mtvsrd d hi, .mtvsrd T lo,
-   .vop (.sldoi d Z d 8), .vop (.sldoi d d T 8)]
+  VG.Impl.Vector.PPC64LE.pair d T Z hi lo
 
 def consts : List Instr :=
   [.li .r0 0, .vop (.logic .xor Z Z Z)] ++
@@ -48,7 +45,7 @@ def consts : List Instr :=
 
 /-- Reverse the 16 loaded bytes: logical low doubleword = first big-endian half. -/
 def loadRev (d : VReg) (p : Reg) : List Instr :=
-  [.lxvd2x d p .r0, .vop (.perm d d d MASK)]
+  Impl.Vector.PPC64LE.loadPerm d p MASK
 
 def products (a key : VReg) : List Instr :=
   [.vop (.sldoi U a Z 8), .vop (.pmsumd HI U key),

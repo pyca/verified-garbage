@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.CmacAes.Stream.PPC64LE.Common
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # Streaming AES-CMAC on PPC64LE: `vg_cmac_aes_absorb`'s straight-line code

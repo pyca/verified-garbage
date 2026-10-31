@@ -12,6 +12,7 @@ public import VerifiedGarbage.Impl.AesCtr.PPC64LE
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Spec.Ctr
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-CTR on PPC64LE: the code before the call

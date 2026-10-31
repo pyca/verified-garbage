@@ -7,6 +7,8 @@ meta import VerifiedGarbage.Proof.AesCfb8.PPC64LE.Body
 meta import VerifiedGarbage.Proof.AesCbc.PPC64LE.CT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Body
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-CFB8 on PPC64LE: constant time

@@ -20,6 +20,7 @@ public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Spec.Aes
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-GCM-SIV on PPC64LE: POLYVAL (`polyval`)

@@ -13,6 +13,8 @@ import VerifiedGarbage.Proof.AesCcm.PPC64LE.Header
 meta import VerifiedGarbage.Proof.AesCcm.PPC64LE.Header
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
 meta import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-CCM on PPC64LE: the CBC-MAC in two runs

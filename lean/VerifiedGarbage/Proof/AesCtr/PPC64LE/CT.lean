@@ -7,6 +7,8 @@ meta import VerifiedGarbage.Proof.AesCtr.PPC64LE.Iter
 meta import VerifiedGarbage.Proof.AesCbc.PPC64LE.CT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.AesCtr.PPC64LE.Body
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-CTR on PPC64LE: constant time

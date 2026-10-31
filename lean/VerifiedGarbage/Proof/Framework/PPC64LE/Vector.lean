@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Impl.Vector.PPC64LE
+import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+import VerifiedGarbage.Proof.Framework.PPC64LE.MovImm
 import VerifiedGarbage.Proof.Framework.PPC64LE.Reduce
 public meta import VerifiedGarbage.Proof.Framework.UnfoldStep
 
@@ -75,6 +78,44 @@ theorem sldoi8_eq (n m : BitVec 128) :
       decide_true, ite_false, Bool.true_and, Nat.zero_add]
     exact congrArg n.getLsbD (by omega)
 
+theorem vector_step (i : Instr) (d : VReg) (v : BitVec 128) (s : State)
+    (he : exec i s = some (s.writeV d v)) :
+    WP isa (.block [i]) s fun t => t.vpr d = v ∧ VOnly [d] s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, he, runStep_some, runBlock_nil, Option.some.injEq, exists_eq_left']
+  refine ⟨by simp only [vpr_writeV, ite_true], ⟨fun r hr => ?_, gpr_writeV ..,
+    mem_writeV .., rd_writeV .., wr_writeV .., sp_writeV .., lr_writeV ..⟩⟩
+  simp only [vpr_writeV, show r ≠ d by simpa only [List.mem_singleton] using hr, ite_false]
+
+theorem exec_sldoi8 (d n m : VReg) (s : State) :
+    exec (.vop (.sldoi d n m 8)) s = some (s.writeV d
+      ((s.vpr n).extractLsb' 0 64 ++ (s.vpr m).extractLsb' 64 64)) := by
+  change some (s.writeV d (((s.vpr n ++ s.vpr m) <<< 64).extractLsb' 128 128)) = _
+  rw [sldoi8_eq]
+
+theorem const64_ok (d : Reg) (x : BitVec 64) (s : State) :
+    WP isa (.block (Impl.Vector.PPC64LE.const64 d x)) s (· = s.write d x) := by
+  apply WP.of_runBlock
+  simp only [Impl.Vector.PPC64LE.const64, runBlock_cons, runStep_some,
+    runBlock_nil, reduceExec, show 32 < 64 by decide, ite_true,
+    RegUpd.gpr_write_self, write_overwrite, movImm64_eq, Option.some.injEq, exists_eq_left']
+
+theorem pair_ok (d tmp zero : VReg) (hi lo : Reg) (s : State)
+    (hd : d ≠ tmp) (hdz : d ≠ zero) (htz : tmp ≠ zero) (hz : s.vpr zero = 0) :
+    WP isa (.block (Impl.Vector.PPC64LE.pair d tmp zero hi lo)) s fun s' =>
+      s'.vpr d = s.gpr hi ++ s.gpr lo ∧ VOnly [d, tmp] s s' := by
+  apply WP.of_runBlock
+  simp only [Impl.Vector.PPC64LE.pair, runBlock_cons, runStep_some, runBlock_nil,
+    exec_sldoi8, reduceExec, vpr_writeV, gpr_writeV, Option.some.injEq, exists_eq_left',
+    hd, Ne.symm hd, Ne.symm hdz, Ne.symm htz, ite_true, ite_false]
+  refine ⟨?_, ⟨fun r hr => ?_, by simp only [gpr_writeV], by simp only [mem_writeV],
+    by simp only [rd_writeV], by simp only [wr_writeV], by simp only [sp_writeV],
+    by simp only [lr_writeV]⟩⟩
+  · simp only [hz, BitVec.ofNat_eq_ofNat, BitVec.extractLsb'_zero,
+      BitVec.extractLsb'_append_eq_left, BitVec.extractLsb'_append_eq_right]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [vpr_writeV, hr.1, hr.2, ite_false]
+
 theorem ofVBytes_congr (f g : Nat → BitVec 8) (h : ∀ i < 16, f i = g i) :
     ofVBytes f = ofVBytes g := by
   have e : (List.range 16).map (fun i => (f i).setWidth 128 <<< (8 * (15 - i))) =
@@ -135,6 +176,137 @@ theorem rev128_rev128 (x : BitVec 128) : rev128 (rev128 x) = x := by
   intro i hi
   rw [getLsbD_rev128 _ hi, getLsbD_rev128 _ (by omega)]
   exact congrArg x.getLsbD (by omega)
+
+theorem swapDwords_append (a b : BitVec 64) : swapDwords (a ++ b) = b ++ a := by
+  simp only [swapDwords, vdword, Nat.reduceSub, Nat.mul_zero, Nat.mul_one,
+    BitVec.extractLsb'_append_eq_left, BitVec.extractLsb'_append_eq_right]
+
+theorem swapDwords_involutive (x : BitVec 128) : swapDwords (swapDwords x) = x := by
+  change swapDwords (x.extractLsb' 0 64 ++ x.extractLsb' 64 64) = x
+  rw [swapDwords_append]
+  exact BitVec.extractLsb'_append_extractLsb'
+
+theorem getLsbD_swapDwords (x : BitVec 128) {i : Nat} (hi : i < 128) :
+    (swapDwords x).getLsbD i = x.getLsbD (if i < 64 then 64+i else i-64) := by
+  simp only [swapDwords, vdword, Nat.reduceSub, Nat.mul_zero, Nat.mul_one,
+    BitVec.getLsbD_append, BitVec.getLsbD_extractLsb', Nat.zero_add]
+  by_cases h : i < 64
+  · simp only [h, ite_true, decide_true, Bool.true_and]
+  · simp only [h, ite_false, show i-64 < 64 by omega, decide_true, Bool.true_and]
+
+theorem rev128_swapDwords (x : BitVec 128) : rev128 (swapDwords x) = swapDwords (rev128 x) := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  rw [getLsbD_rev128 _ hi, getLsbD_swapDwords _ (by omega), getLsbD_swapDwords _ hi,
+    getLsbD_rev128 _ (by split <;> omega)]
+  exact congrArg x.getLsbD (by split <;> split <;> omega)
+
+theorem rev128_xor (a b : BitVec 128) : rev128 (a ^^^ b) = rev128 a ^^^ rev128 b := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  rw [getLsbD_rev128 _ hi, BitVec.getLsbD_xor, BitVec.getLsbD_xor,
+    getLsbD_rev128 _ hi, getLsbD_rev128 _ hi]
+
+theorem vbyte_packed (f : Nat → BitVec 8) {i : Nat} (hi : i < 16) :
+    vbyte (ofVBytes f) i = f i := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro r hr
+  simp only [vbyte, BitVec.getLsbD_extractLsb', hr, decide_true, Bool.true_and]
+  rw [getLsbD_packed f (by omega) hr, show 15-(15-i) = i by omega]
+
+theorem ext_vbyte {a b : BitVec 128} (h : ∀ i < 16, vbyte a i = vbyte b i) : a = b := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro j hj
+  have he := congrArg (BitVec.getLsbD · (j % 8)) (h (15-j/8) (by omega))
+  simp only [vbyte, BitVec.getLsbD_extractLsb', show j % 8 < 8 by omega,
+    decide_true, Bool.true_and] at he
+  exact (congrArg a.getLsbD (by omega)).symm.trans (he.trans (congrArg b.getLsbD (by omega)))
+
+theorem vbyte_rev128 (x : BitVec 128) {i : Nat} (hi : i < 16) :
+    vbyte (rev128 x) i = vbyte x (15-i) := by
+  rw [rev128, vbyte_packed _ hi]
+
+theorem vbyte_swapDwords (x : BitVec 128) {i : Nat} (hi : i < 16) :
+    vbyte (swapDwords x) i = vbyte x (if i < 8 then i+8 else i-8) := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro r hr
+  simp only [vbyte, BitVec.getLsbD_extractLsb', hr, decide_true, Bool.true_and]
+  rw [getLsbD_swapDwords _ (by omega)]
+  exact congrArg x.getLsbD (by split <;> split <;> omega)
+
+def permSelf (x control : BitVec 128) : BitVec 128 :=
+  ofVBytes fun i =>
+    let j := (vbyte control i).toNat % 32
+    if j < 16 then vbyte x j else vbyte x (j-16)
+
+theorem exec_permSelf (d n c : VReg) (s : State) :
+    exec (.vop (.perm d n n c)) s = some (s.writeV d (permSelf (s.vpr n) (s.vpr c))) := rfl
+
+theorem exec_lxvd2x (d : VReg) (a b : Reg) (s : State) (ha : a ≠ .r0)
+    (hr : InRegions (s.rd ++ s.wr) (s.gpr a + s.gpr b) 16) :
+    exec (.lxvd2x d a b) s = some (s.writeV d (swapDwords (s.mem.read (s.gpr a + s.gpr b) 16))) := by
+  simp only [reduceExec, addrX, ha, ne_eq, not_false_eq_true, ite_true,
+    Option.bind_some, State.load, hr, Option.map_some]
+
+
+
+theorem exec_stxvd2x (n : VReg) (a b : Reg) (s : State) (ha : a ≠ .r0)
+    (hr : InRegions s.wr (s.gpr a + s.gpr b) 16) :
+    exec (.stxvd2x n a b) s = some {s with
+      mem := s.mem.write (s.gpr a + s.gpr b) 16 (swapDwords (s.vpr n))} := by
+  simp only [reduceExec, addrX, ha, ne_eq, not_false_eq_true, ite_true,
+    Option.bind_some, State.store, hr]
+
+theorem loadPerm_ok (d : VReg) (p : Reg) (c : VReg) (control : BitVec 128) (s : State)
+    (hp : p ≠ .r0) (hd : d ≠ c) (h0 : s.gpr .r0 = 0) (hc : s.vpr c = control)
+    (hr : InRegions (s.rd ++ s.wr) (s.gpr p) 16) :
+    WP isa (.block (Impl.Vector.PPC64LE.loadPerm d p c)) s fun t =>
+      t.vpr d = permSelf (swapDwords (s.mem.read (s.gpr p) 16)) control ∧ VOnly [d] s t := by
+  have hr' : InRegions (s.rd ++ s.wr) (s.gpr p + s.gpr .r0) 16 := by
+    simpa only [h0, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using hr
+  apply WP.of_runBlock
+  simp only [Impl.Vector.PPC64LE.loadPerm, runBlock_cons, runStep_some, runBlock_nil,
+    exec_lxvd2x d p .r0 s hp hr', exec_permSelf, vpr_writeV, Ne.symm hd, ite_false, ite_true,
+    hc, h0, BitVec.ofNat_eq_ofNat, BitVec.add_zero, Option.some.injEq, exists_eq_left']
+  refine ⟨?_, ⟨fun r hn => ?_, by simp only [gpr_writeV], by simp only [mem_writeV],
+    by simp only [rd_writeV], by simp only [wr_writeV], by simp only [sp_writeV],
+    by simp only [lr_writeV]⟩⟩
+  · trivial
+  · simp only [List.mem_singleton] at hn
+    simp only [vpr_writeV, hn, ite_false]
+
+/-- Apply an independent vector operation to each distinct state register,
+using a key register outside the list. -/
+theorem vector_map (is : VReg → Instr) (f : BitVec 128 → BitVec 128 → BitVec 128) (k : VReg)
+    (he : ∀ b s, exec (is b) s = some (s.writeV b (f (s.vpr b) (s.vpr k)))) :
+    ∀ (rs : List VReg) (s : State), rs.Nodup → k ∉ rs →
+      WP isa (.block (rs.map is)) s fun t =>
+        (∀ b ∈ rs, t.vpr b = f (s.vpr b) (s.vpr k)) ∧ VOnly rs s t
+  | [], s, _, _ => WP.block_nil ⟨fun _ h => absurd h List.not_mem_nil, VOnly.refl _ _⟩
+  | b :: bs, s, hn, hk => by
+    have hb : b ∉ bs := (List.nodup_cons.mp hn).1
+    have hk' : k ∉ bs := fun h => hk (List.mem_cons_of_mem _ h)
+    have hkb : k ≠ b := fun h => hk (h ▸ List.mem_cons_self ..)
+    change WP isa (.block ([is b] ++ bs.map is)) s _
+    rw [WP.block_append_iff]
+    refine WP.mono (vector_step (is b) b _ s (he b s)) fun u ⟨hv, ho⟩ => ?_
+    refine WP.mono (vector_map is f k he bs u (List.nodup_cons.mp hn).2 hk') fun t ⟨hv', ho'⟩ => ⟨?_, ho.trans ho'⟩
+    intro c hc
+    rcases List.mem_cons.mp hc with rfl | hc
+    · rw [ho'.v _ hb, hv]
+    · have hcb : c ≠ b := fun h => hb (h ▸ hc)
+      rw [hv' c hc, ho.v c (by simpa only [List.mem_singleton] using hcb),
+        ho.v k (by simpa only [List.mem_singleton] using hkb)]
+
+
+theorem extract_high_word_byte (v : BitVec 128) {q : Nat} (hq : q < 4) :
+    ((v.extractLsb' 64 64).setWidth 32).extractLsb' (8*q) 8 = vbyte v (7-q) := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro r hr
+  simp only [vbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth,
+    hr, show 8*q+r < 32 by omega, show 8*q+r < 64 by omega,
+    decide_true, Bool.true_and]
+  exact congrArg v.getLsbD (by omega)
 
 namespace VectorTaint
 open VG.PPC64LE.Taint (T pub set Agree)

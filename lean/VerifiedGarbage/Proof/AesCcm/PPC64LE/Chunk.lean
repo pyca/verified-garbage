@@ -17,6 +17,7 @@ import VerifiedGarbage.Proof.AesCcm.PPC64LE.Absorb
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.B0
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Callee
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-CCM on PPC64LE: a chunk of counter mode (`ctrChunk`)

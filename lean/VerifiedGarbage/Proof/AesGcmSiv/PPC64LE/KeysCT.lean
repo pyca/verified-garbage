@@ -13,6 +13,8 @@ public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Derive
 meta import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Derive
 meta import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
 import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-GCM-SIV on PPC64LE: the keys in two runs

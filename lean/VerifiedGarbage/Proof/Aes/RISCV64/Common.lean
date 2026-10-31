@@ -14,8 +14,8 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Align
 
 Addresses and memory, the branch on the number of blocks left, and the
 round keys and masks a group keeps, for the group loops of `vg_aes_ctr32`
-(`Group.lean`) and of the block functions (`Ecb.lean`), as on PPC64LE
-(`Proof/Aes/PPC64LE/Group.lean`).
+(`Group.lean`) and of the block functions (`Ecb.lean`), as on x86-64
+(`Proof/Aes/X86_64/Group.lean`).
 -/
 
 @[expose] public section

@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Callee
 public import VerifiedGarbage.Impl.AesCcm.PPC64LE
 public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 
 /-!
 # AES-CCM on PPC64LE: the arguments of the calls
