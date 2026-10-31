@@ -84,19 +84,21 @@ theorem andInputs_run (u : State) {i : Nat} (hi : i < 4) :
 /-- The sum and rotation of a mix, on word `i` of `a3`–`a6`. -/
 theorem addRot_run (u : State) {i s : Nat} (hi : i < 4) (hs : 1 ≤ s ∧ s < 16) {y : BitVec 16}
     (hy : ((u.gpr (wordReg i) + u.gpr .t2 + u.gpr .t0 + u.gpr .t1) <<< 48) >>> 48 = y.setWidth 64) :
-    WP isa (.block (addInputs (wordReg i) ++ rotate16 (wordReg i) s)) u fun t =>
+    WP isa (.block (addInputs (wordReg i) ++ rotateSum (wordReg i) s)) u fun t =>
       t.gpr (wordReg i) = (y.rotateLeft s).setWidth 64 ∧ t.mem = u.mem ∧ Keep [.a7, wordReg i] u t := by
-  refine WP.mono (WP.keep [.a7, wordReg i] (c := .block (addInputs (wordReg i) ++ rotate16 (wordReg i) s))
+  refine WP.mono (WP.keep [.a7, wordReg i] (c := .block (addInputs (wordReg i) ++ rotateSum (wordReg i) s))
     (Q := fun t => t.gpr (wordReg i) = (y.rotateLeft s).setWidth 64 ∧ t.mem = u.mem) ?_
-    (by simp [writesOnly, Code.allInstrs_eq, instrs, addInputs, rotate16, mask, dstOf]) rfl)
+    (by simp [writesOnly, Code.allInstrs_eq, instrs, addInputs, rotateSum, dstOf]) rfl)
     fun t ⟨⟨a, b⟩, c⟩ => ⟨a, b, c⟩
   have h48 : (48 : Nat) < 64 := by decide
   rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;>
   · simp only [wordReg_0, wordReg_1, wordReg_2, wordReg_3] at hy ⊢
-    unfold addInputs rotate16 mask
-    rrun [show s < 64 by omega, show 16 - s < 64 by omega]
-    rw [hy]
-    exact rot16 y hs.1 hs.2
+    unfold addInputs rotateSum
+    rrun [show 48 + s < 64 by omega, show 64 - s < 64 by omega]
+    rw [mask16] at hy
+    have h16 := congrArg (BitVec.setWidth 16) hy
+    rw [lo16_ext, lo16_ext] at h16
+    rw [rotSum16 _ hs.1 hs.2, h16]
 
 theorem wordReg_ne : ∀ i' < 4, ∀ i < 4, i' ≠ i → wordReg i' ≠ wordReg i := by decide
 theorem wordReg_other : ∀ i < 4, wordReg i ∉ [Reg.a7, .a2, .a1, .t3, .t0, .t1, .t2] := by decide
@@ -117,7 +119,7 @@ theorem mix_run {T : Addr} (u : State) (E : KeyEnv T u) {v : Spec.Rc2.State} (H 
       Holds (Spec.Rc2.mix (Spec.Rc2.scheduleAt u.mem T) j i v) t ∧ t.mem = u.mem ∧
         Keep [.a7, .t0, .t1, .t2, wordReg i] u t := by
   have e : mix j i = andInputs i ++ (loadKey j ++ (addInputs (wordReg i) ++
-      rotate16 (wordReg i) (Spec.Rc2.rotation i))) := by
+      rotateSum (wordReg i) (Spec.Rc2.rotation i))) := by
     simp only [mix, mixInputs, andInputs, List.append_assoc, List.cons_append, List.nil_append]
   have o := wordReg_other i hi
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at o
@@ -144,12 +146,12 @@ theorem rot_run (u : State) {i s : Nat} (hi : i < 4) (hs : 1 ≤ s ∧ s < 16) {
       t.gpr (wordReg i) = (y.rotateLeft s).setWidth 64 ∧ t.mem = u.mem ∧ Keep [.a7, wordReg i] u t := by
   refine WP.mono (WP.keep [.a7, wordReg i] (c := .block (rotate16 (wordReg i) s))
     (Q := fun t => t.gpr (wordReg i) = (y.rotateLeft s).setWidth 64 ∧ t.mem = u.mem) ?_
-    (by simp [writesOnly, Code.allInstrs_eq, instrs, rotate16, mask, dstOf]) rfl)
+    (by simp [writesOnly, Code.allInstrs_eq, instrs, rotate16, dstOf]) rfl)
     fun t ⟨⟨a, b⟩, c⟩ => ⟨a, b, c⟩
   rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;>
   · simp only [wordReg_0, wordReg_1, wordReg_2, wordReg_3] at hy ⊢
-    unfold rotate16 mask
-    rrun [hy, show s < 64 by omega, show 16 - s < 64 by omega]
+    unfold rotate16
+    rrun [hy, show 48 + s < 64 by omega, show 16 - s < 64 by omega]
     exact rot16 y hs.1 hs.2
 
 theorem sub_run (u : State) {i : Nat} (hi : i < 4) {y : BitVec 16}
