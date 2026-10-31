@@ -184,7 +184,9 @@ class Selection(unittest.TestCase):
         self.assertEqual(self.modules(self.rows(['src/asm/powerpc64le/consts/vg_t.rs'], ())),
                          {'powerpc64': 'x448'})
         # The directory of an architecture that is not benchmarked needs nothing.
-        self.assertEqual(self.rows(['src/asm/riscv64/x448.rs']), [])
+        self.assertEqual(self.rows(['src/asm/s390x/x448.rs']), [])
+        self.files['src/asm/riscv64/x448.rs'] = ''
+        self.assertEqual(self.modules(self.rows(['src/asm/riscv64/x448.rs'])), {'riscv64': 'x448'})
         # Manual runs check out the directory of the architecture they run.
         self.assertEqual({(r['arch'], r['asm']) for r in planner.manual('powerpc64 thumb aarch64-apple')},
                          {('powerpc64', 'powerpc64le'), ('thumb', 'arm'), ('aarch64-apple', 'aarch64')})
@@ -452,7 +454,8 @@ class Selection(unittest.TestCase):
         })
         rows = self.rows(['bench/support/shared.rs'])
         self.assertEqual(self.modules(rows), {'x86_64': 'argon2 x448', 'aarch64': 'argon2',
-                                              'x86': 'argon2', 'arm': 'argon2', 'powerpc64': 'argon2'})
+                                              'x86': 'argon2', 'arm': 'argon2', 'powerpc64': 'argon2',
+                                              'riscv64': 'argon2'})
         # A file outside `bench/` (e.g. test vectors), and one a helper
         # includes, follow the benchmarks including them in turn.
         self.files['bench/tests/argon2.rs'] = ''
@@ -464,7 +467,7 @@ class Selection(unittest.TestCase):
         self.files['bench/benches/primitives/argon2.rs'] += '\n#[path = "../../support/shared.rs"]\nmod s;\n'
         self.assertEqual(self.modules(self.rows(['bench/support/shared.rs'])),
                          {'x86_64': 'argon2 x448', 'aarch64': 'argon2', 'x86': 'argon2', 'arm': 'argon2',
-                          'powerpc64': 'argon2'})
+                          'powerpc64': 'argon2', 'riscv64': 'argon2'})
         # A file nothing includes needs nothing outside `bench/`, and every
         # benchmark inside it.
         self.assertEqual(self.rows(['tests/cavp/other.rs']), [])
@@ -548,7 +551,7 @@ class Selection(unittest.TestCase):
         self.assertEqual([(r['arch'], r['cpu-features']) for r in rows],
                          [('x86_64', ''), ('x86_64', 'avx2,avx'), ('arm', ''), ('arm', 'avx2,avx')])
         with self.assertRaisesRegex(ValueError, 'unknown architecture'):
-            planner.manual('riscv64')
+            planner.manual('s390x')
 
     def test_thumb_is_explicit_and_uses_arm_benchmarks(self):
         self.assertNotIn('thumb', {r['arch'] for r in planner.manual()})
@@ -681,19 +684,19 @@ class Selection(unittest.TestCase):
         self.base_files.update({
             'src/lib.rs': 'mod ct;\npub mod chacha;\n#[cfg(target_arch = "x86_64")]\nuse asm::x86_64 as arch;\n',
             'src/asm/mod.rs': '#[cfg(target_arch = "x86_64")]\n#[rustfmt::skip]\npub(crate) mod x86_64;\n',
-            'src/ct.rs': '//! Helpers.\n#![cfg_attr(target_arch = "riscv64", allow(dead_code))]\n'
+            'src/ct.rs': '//! Helpers.\n#![cfg_attr(target_arch = "s390x", allow(dead_code))]\n'
                          'pub(crate) fn eq() {}\n',
             'src/chacha.rs': '#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]\nfn f() {}\n',
         })
         self.files.update({
             'src/lib.rs': self.base_files['src/lib.rs']
-            + '#[cfg(target_arch = "riscv64")]\nuse asm::riscv64 as arch;\n',
+            + '#[cfg(target_arch = "s390x")]\nuse asm::s390x as arch;\n',
             'src/asm/mod.rs': self.base_files['src/asm/mod.rs']
-            + '\n#[cfg(target_arch = "riscv64")]\n'
-              '#[rustfmt::skip]\npub(crate) mod riscv64 {\n    fn f() -> [u8; 2] { [b\'}\', 0] }\n}\n',
+            + '\n#[cfg(target_arch = "s390x")]\n'
+              '#[rustfmt::skip]\npub(crate) mod s390x {\n    fn f() -> [u8; 2] { [b\'}\', 0] }\n}\n',
             'src/ct.rs': 'pub(crate) fn eq() {}\n',
             'src/chacha.rs': '#![cfg(any(\n    target_arch = "x86_64",\n    target_arch = "aarch64",\n'
-                             '    target_arch = "riscv64"\n))]\nfn f() {}\n',
+                             '    target_arch = "s390x"\n))]\nfn f() {}\n',
         })
         paths = ['src/lib.rs', 'src/asm/mod.rs', 'src/ct.rs', 'src/chacha.rs']
         self.assertEqual(self.rows(paths, registered=None), [])
@@ -835,7 +838,7 @@ class Executables(unittest.TestCase):
                                      + machine.to_bytes(2, 'little'))
         headers = {
             'x86_64': elf(64, 62), 'aarch64': elf(64, 183), 'x86': elf(32, 3), 'arm': elf(32, 40),
-            'thumb': elf(32, 40), 'powerpc64': elf(64, 21),
+            'thumb': elf(32, 40), 'powerpc64': elf(64, 21), 'riscv64': elf(64, 243),
             'aarch64-apple': b'\xcf\xfa\xed\xfe' + (0x0100000C).to_bytes(4, 'little') + bytes(12),
         }
         with tempfile.TemporaryDirectory() as tmp:
@@ -855,7 +858,7 @@ class Executables(unittest.TestCase):
 
     def test_this_machine_is_its_architecture(self):
         arch = {'x86_64': 'x86_64', 'aarch64': 'aarch64', 'arm64': 'aarch64-apple',
-                'ppc64le': 'powerpc64'}.get(os.uname().machine)
+                'ppc64le': 'powerpc64', 'riscv64': 'riscv64'}.get(os.uname().machine)
         if arch is None or not os.path.exists('/bin/sh'):
             self.skipTest('no architecture of EXECUTABLES')
         bench_compare.check_arch(os.path.realpath('/bin/sh'), arch)

@@ -39,7 +39,7 @@ jobs:
           - {tag: "verified-garbage-runner:armv7-cross", platform: "linux/arm64", os: ubuntu-26.04-arm}
           # For PPC64LE's tests, on the ppc64le runner they run on.
           - {tag: "verified-garbage-runner:ppc64le", platform: "linux/ppc64le", os: ubuntu-24.04-ppc64le}
-          # For RISC-V's tests, on the riscv64 runner they run on (RISE's, as
+          # For RISC-V's tests and benchmarks, on their riscv64 runner (RISE's, as
           # pyca/infra's riscv64 images use).
           - {tag: "verified-garbage-runner:riscv64", platform: "linux/riscv64", os: ubuntu-24.04-riscv}
           # For the lints of every target (`rust-lint`).
@@ -115,10 +115,7 @@ jobs:
               git --version
               python3 -V
               openssl version
-              # OpenSSL for the benchmarks where they are built (not riscv64).
-              if command -v pkg-config; then
-                pkg-config --exists openssl
-              fi
+              pkg-config --exists openssl
               zstd --version
               rustc -vV
               # Clippy and rustfmt only where the image has them (the lint
@@ -128,11 +125,10 @@ jobs:
                 cargo fmt --version
               fi
               command -v "$(rustc --print sysroot)/lib/rustlib/$(rustc -vV | sed -n "s/^host: //p")/bin/llvm-cov"
-              # Each C compiler with its OpenSSL (the riscv64 image has no C
-              # compiler proper, cc1: it only links, which cargo run checks).
+              # Each C compiler with its OpenSSL.
               for gcc in /usr/bin/*-linux-gnu*-gcc; do
-                if [ -e "$gcc" ] && [ -x "$("$gcc" -print-prog-name=cc1)" ]; then
-                  echo "#include <openssl/ssl.h>" | "$gcc" -xc -fsyntax-only -
+                if [ -e "$gcc" ]; then
+                  echo "#include <openssl/ssl.h>" | "$gcc" -xc -c -o /tmp/check-openssl.o -
                 fi
               done
               cd /tmp && cargo new -q hello && cd hello
