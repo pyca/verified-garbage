@@ -6282,6 +6282,10 @@ movw r1, #65416
 movt r1, #7
 bl {vg_mldsa_norm_lt}
 and r11, r11, r0
+cmp r11, #0
+bne 213f
+b 214f
+213:
 movw r0, #6144
 movt r0, #0
 add r0, r7, r0
@@ -6313,6 +6317,10 @@ movw r1, #65416
 movt r1, #7
 bl {vg_mldsa_norm_lt}
 and r11, r11, r0
+cmp r11, #0
+bne 215f
+b 216f
+215:
 movw r0, #6144
 movt r0, #0
 add r0, r7, r0
@@ -6344,6 +6352,10 @@ movw r1, #65416
 movt r1, #7
 bl {vg_mldsa_norm_lt}
 and r11, r11, r0
+cmp r11, #0
+bne 217f
+b 218f
+217:
 movw r0, #6144
 movt r0, #0
 add r0, r7, r0
@@ -6375,6 +6387,10 @@ movw r1, #65416
 movt r1, #7
 bl {vg_mldsa_norm_lt}
 and r11, r11, r0
+cmp r11, #0
+bne 219f
+b 220f
+219:
 movw r0, #6144
 movt r0, #0
 add r0, r7, r0
@@ -6406,6 +6422,10 @@ movw r1, #65416
 movt r1, #7
 bl {vg_mldsa_norm_lt}
 and r11, r11, r0
+cmp r11, #0
+bne 221f
+b 222f
+221:
 movw r0, #6144
 movt r0, #0
 add r0, r7, r0
@@ -6437,6 +6457,10 @@ movw r1, #65416
 movt r1, #7
 bl {vg_mldsa_norm_lt}
 and r11, r11, r0
+cmp r11, #0
+bne 223f
+b 224f
+223:
 movw r0, #6144
 movt r0, #0
 add r0, r7, r0
@@ -6468,6 +6492,21 @@ movw r1, #65416
 movt r1, #7
 bl {vg_mldsa_norm_lt}
 and r11, r11, r0
+cmp r11, #0
+bne 225f
+b 226f
+225:
+226:
+224:
+222:
+220:
+218:
+216:
+214:
+cmp r11, #0
+bne 227f
+b 228f
+227:
 movw r0, #6144
 movt r0, #0
 add r0, r7, r0
@@ -6508,6 +6547,10 @@ movw r1, #65160
 movt r1, #3
 bl {vg_mldsa_norm_lt}
 and r11, r11, r0
+cmp r11, #0
+bne 229f
+b 230f
+229:
 movw r0, #6144
 movt r0, #0
 add r0, r7, r0
@@ -6548,6 +6591,10 @@ movw r1, #65160
 movt r1, #3
 bl {vg_mldsa_norm_lt}
 and r11, r11, r0
+cmp r11, #0
+bne 231f
+b 232f
+231:
 movw r0, #6144
 movt r0, #0
 add r0, r7, r0
@@ -6588,6 +6635,10 @@ movw r1, #65160
 movt r1, #3
 bl {vg_mldsa_norm_lt}
 and r11, r11, r0
+cmp r11, #0
+bne 233f
+b 234f
+233:
 movw r0, #6144
 movt r0, #0
 add r0, r7, r0
@@ -6628,6 +6679,10 @@ movw r1, #65160
 movt r1, #3
 bl {vg_mldsa_norm_lt}
 and r11, r11, r0
+cmp r11, #0
+bne 235f
+b 236f
+235:
 movw r0, #6144
 movt r0, #0
 add r0, r7, r0
@@ -6668,6 +6723,10 @@ movw r1, #65160
 movt r1, #3
 bl {vg_mldsa_norm_lt}
 and r11, r11, r0
+cmp r11, #0
+bne 237f
+b 238f
+237:
 movw r0, #6144
 movt r0, #0
 add r0, r7, r0
@@ -6708,6 +6767,10 @@ movw r1, #65160
 movt r1, #3
 bl {vg_mldsa_norm_lt}
 and r11, r11, r0
+cmp r11, #0
+bne 239f
+b 240f
+239:
 movw r0, #6144
 movt r0, #0
 add r0, r7, r0
@@ -6748,6 +6811,10 @@ movw r1, #65160
 movt r1, #3
 bl {vg_mldsa_norm_lt}
 and r11, r11, r0
+cmp r11, #0
+bne 241f
+b 242f
+241:
 movw r0, #6144
 movt r0, #0
 add r0, r7, r0
@@ -6788,6 +6855,22 @@ movw r1, #65160
 movt r1, #3
 bl {vg_mldsa_norm_lt}
 and r11, r11, r0
+cmp r11, #0
+bne 243f
+b 244f
+243:
+244:
+242:
+240:
+238:
+236:
+234:
+232:
+230:
+cmp r11, #0
+bne 245f
+b 246f
+245:
 movw r0, #8192
 movt r0, #0
 add r0, r7, r0
@@ -6820,13 +6903,13 @@ movt r1, #0
 add r1, r7, r1
 movw r2, #1024
 movt r2, #0
-213:
+247:
 ldrb r3, [r0, #0]
 strb r3, [r1, #0]
 add r0, r0, #1
 add r1, r1, #1
 subs r2, r2, #1
-bne 213b
+bne 247b
 movw r0, #32768
 movt r0, #0
 add r0, r7, r0
@@ -6888,13 +6971,13 @@ movt r1, #0
 add r1, r7, r1
 movw r2, #1024
 movt r2, #0
-214:
+248:
 ldrb r3, [r0, #0]
 strb r3, [r1, #0]
 add r0, r0, #1
 add r1, r1, #1
 subs r2, r2, #1
-bne 214b
+bne 248b
 movw r0, #33792
 movt r0, #0
 add r0, r7, r0
@@ -6956,13 +7039,13 @@ movt r1, #0
 add r1, r7, r1
 movw r2, #1024
 movt r2, #0
-215:
+249:
 ldrb r3, [r0, #0]
 strb r3, [r1, #0]
 add r0, r0, #1
 add r1, r1, #1
 subs r2, r2, #1
-bne 215b
+bne 249b
 movw r0, #34816
 movt r0, #0
 add r0, r7, r0
@@ -7024,13 +7107,13 @@ movt r1, #0
 add r1, r7, r1
 movw r2, #1024
 movt r2, #0
-216:
+250:
 ldrb r3, [r0, #0]
 strb r3, [r1, #0]
 add r0, r0, #1
 add r1, r1, #1
 subs r2, r2, #1
-bne 216b
+bne 250b
 movw r0, #35840
 movt r0, #0
 add r0, r7, r0
@@ -7092,13 +7175,13 @@ movt r1, #0
 add r1, r7, r1
 movw r2, #1024
 movt r2, #0
-217:
+251:
 ldrb r3, [r0, #0]
 strb r3, [r1, #0]
 add r0, r0, #1
 add r1, r1, #1
 subs r2, r2, #1
-bne 217b
+bne 251b
 movw r0, #36864
 movt r0, #0
 add r0, r7, r0
@@ -7160,13 +7243,13 @@ movt r1, #0
 add r1, r7, r1
 movw r2, #1024
 movt r2, #0
-218:
+252:
 ldrb r3, [r0, #0]
 strb r3, [r1, #0]
 add r0, r0, #1
 add r1, r1, #1
 subs r2, r2, #1
-bne 218b
+bne 252b
 movw r0, #37888
 movt r0, #0
 add r0, r7, r0
@@ -7228,13 +7311,13 @@ movt r1, #0
 add r1, r7, r1
 movw r2, #1024
 movt r2, #0
-219:
+253:
 ldrb r3, [r0, #0]
 strb r3, [r1, #0]
 add r0, r0, #1
 add r1, r1, #1
 subs r2, r2, #1
-bne 219b
+bne 253b
 movw r0, #38912
 movt r0, #0
 add r0, r7, r0
@@ -7296,13 +7379,13 @@ movt r1, #0
 add r1, r7, r1
 movw r2, #1024
 movt r2, #0
-220:
+254:
 ldrb r3, [r0, #0]
 strb r3, [r1, #0]
 add r0, r0, #1
 add r1, r1, #1
 subs r2, r2, #1
-bne 220b
+bne 254b
 movw r0, #39936
 movt r0, #0
 add r0, r7, r0
@@ -7336,26 +7419,28 @@ ldr r0, [r7, #904]
 sub r0, r0, #76
 lsr r0, r0, #31
 and r11, r11, r0
+246:
+228:
 cmp r11, #0
-bne 221f
+bne 255f
 ldr r0, [r7, #896]
 add r0, r0, #7
 str r0, [r7, #896]
-b 222f
-221:
+b 256f
+255:
 movw r0, #1
 movt r0, #0
 str r0, [r7, #888]
-222:
+256:
 212:
 ldr r0, [r7, #888]
 subs r0, r0, #1
 str r0, [r7, #888]
 bne 23b
 cmp r11, #0
-bne 223f
-b 224f
-223:
+bne 257f
+b 258f
+257:
 movw r0, #1040
 movt r0, #0
 add r0, r7, r0
@@ -7364,13 +7449,13 @@ movt r1, #0
 add r1, r8, r1
 movw r2, #64
 movt r2, #0
-225:
+259:
 ldrb r3, [r0, #0]
 strb r3, [r1, #0]
 add r0, r0, #1
 add r1, r1, #1
 subs r2, r2, #1
-bne 225b
+bne 259b
 movw r0, #18432
 movt r0, #0
 add r0, r7, r0
@@ -7491,7 +7576,7 @@ movt r12, #0
 push {{r12, lr}}
 bl {vg_mldsa_hint_bit_pack}
 ldr r12, [sp], #8
-224:
+258:
 22:
 mov r0, r11
 mov r3, r7
