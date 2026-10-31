@@ -60,7 +60,7 @@ with the same Rust signature (`_shani`, `_avx2`, …).
   as above.
 
 A function the emitter renders as another name of an identical function of
-its module (`pub(crate) use self::<f> as <name>;`, `Rust.alias` in
+its module (`pub use self::<f> as <name>;`, `Rust.alias` in
 `lean/VerifiedGarbage/TCB/Rust.lean`) is that function's code: it has its
 signature and callees, and a use of it is a use of that function.
 
@@ -76,18 +76,20 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 ASM = ROOT / "src" / "asm"
 
 # A function's header; its body ends at the first line starting with `}`.
+# Generated items are `pub`, in a target's crate, or `pub(crate)`, as the
+# emitter wrote them when they were modules of the library.
 FN = re.compile(
-    r"^pub\(crate\) unsafe extern \"[\w-]+\" fn (vg_\w+)\((.*?)\)(?: -> ([^{]+?))? \{\n",
+    r"^pub(?:\(crate\))? unsafe extern \"[\w-]+\" fn (vg_\w+)\((.*?)\)(?: -> ([^{]+?))? \{\n",
     re.MULTILINE | re.DOTALL,
 )
 # Another name of a function of the same module (`Rust.alias`).
-ALIAS = re.compile(r"^pub\(crate\) use self::(vg_\w+) as (vg_\w+);$", re.MULTILINE)
+ALIAS = re.compile(r"^pub(?:\(crate\))? use self::(vg_\w+) as (vg_\w+);$", re.MULTILINE)
 # `<operand> = sym <path>`, found from the literal ` = sym ` (a leading
 # `\w+` would be tried at every word character of the code: 30 times slower).
 SYM = re.compile(r" = sym (?:\w+::)*(vg_\w+)")
 WORD = re.compile(r"\w")
 FEATURES = re.compile(
-    r"^pub\(crate\) const (VG_\w+)_FEATURES: crate::cpu::Features = "
+    r"^pub(?:\(crate\))? const (VG_\w+)_FEATURES: crate::cpu::Features = "
     r"crate::cpu::Features\((.*?)\);",
     re.MULTILINE,
 )
@@ -567,9 +569,26 @@ def best_callees(target, fns, var, feats):
     return errors
 
 
+def unread(srcs):
+    """Each generated file's naked functions, other names and `_FEATURES`
+    constants that `bodies`, `aliases` and `features` do not read: a change
+    to how the emitter writes them must not leave them unchecked, and the
+    check passing."""
+    errors = []
+    for target, text in srcs:
+        for what, total, read in [
+            ("naked functions", text.count("#[unsafe(naked)]"), sum(1 for _ in bodies(text))),
+            ("other names", text.count(" use self::vg_"), len(aliases(text))),
+            ("_FEATURES constants", text.count("_FEATURES: "), len(FEATURES.findall(text))),
+        ]:
+            if read < total:
+                errors.append(f"{target}: read {read} of the {total} {what} of a generated file")
+    return errors
+
+
 def main():
     srcs = sources()
-    errors = check(
+    errors = unread(srcs) + check(
         functions(srcs), production_rust(ROOT / "src"), features(srcs), all_aliases(srcs)
     )
     for e in errors:

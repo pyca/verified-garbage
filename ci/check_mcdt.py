@@ -47,8 +47,10 @@ AFFECTED = {
     "vpmullq", "vpmullw", "vpmuludq",
 }  # fmt: skip
 
+# A generated function: `pub`, in a target's crate, or `pub(crate)`, as the
+# emitter wrote them when they were modules of the library.
 FN = re.compile(
-    r"^pub\(crate\) unsafe extern \"[\w-]+\" fn (vg_\w+)\(.*?\)(?: -> [^{]+?)? \{\n(.*?)^\}",
+    r"^pub(?:\(crate\))? unsafe extern \"[\w-]+\" fn (vg_\w+)\(.*?\)(?: -> [^{]+?)? \{\n(.*?)^\}",
     re.MULTILINE | re.DOTALL,
 )
 # A string literal of the template: one line of it, or several separated by
@@ -226,7 +228,9 @@ def main():
             text = path.read_text()
             offset = 0
             first_line = 1
+            found = 0
             for m in FN.finditer(text):
+                found += 1
                 name, body = m.groups()
                 first_line += text.count("\n", offset, m.start(2))
                 offset = m.start(2)
@@ -235,6 +239,11 @@ def main():
                 errs, n = check_function(where, instrs, lines, labels)
                 errors += errs
                 regions += n
+            # Every naked function is checked: a change to how the emitter
+            # writes them must not leave them unread, and this passing.
+            naked = text.count("#[unsafe(naked)]")
+            if found < naked:
+                errors.append(f"{path.relative_to(ROOT)}: read {found} of its {naked} naked functions")
     for e in errors:
         print(e, file=sys.stderr)
     if errors:
