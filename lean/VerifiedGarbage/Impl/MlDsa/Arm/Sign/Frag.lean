@@ -236,6 +236,11 @@ def ifOkElse (t e : Prog isa) : Prog isa := .seq (.block [.cmp .r11 (.imm 0)]) (
 /-- `c` if `r11 ≠ 0`. -/
 def ifOk (c : Prog isa) : Prog isa := ifOkElse c (.block [])
 
+/-- Run checks in order, stopping after the first failed polynomial. -/
+def seqOk (f : Nat → Prog isa) (a : Nat) : Nat → Prog isa
+  | 0 => .block []
+  | n + 1 => .seq (f a) (ifOk (seqOk f (a + 1) n))
+
 /-- Load `scratch` (the fifth argument, on the stack) into `r12`, save the
 caller's `r4`–`r11` and `lr` at `scratch + 840`, keep `scratch` in `r7` and
 the pointers in `r4`, `r5`, `r6` and `r8` (from `r0`–`r3`), and `r11 ← 1`. -/
