@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.ChaCha20.Contract
 meta import VerifiedGarbage.Spec.ChaCha20.Contract
+import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Nat.Bitwise.Basic
 public import VerifiedGarbage.Impl.ChaCha20.PPC64LE
 public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Contract
@@ -575,7 +576,7 @@ def xorBody : List Instr :=
   [.lbz .r6 .r22 0, .lbz .r8 .r7 0, .logic .xor .r6 .r6 .r8, .stb .r6 .r22 0,
     .addi .r22 .r22 1, .addi .r7 .r7 1, .subi .r5 .r5 1]
 
-theorem xorLoop_eq : xorLoop = .loop (.block xorBody) (.nonzero .d .r5) := rfl
+theorem xorBytes_eq : xorBytes = .loop (.block xorBody) (.nonzero .d .r5) := rfl
 
 /-- `P j = 64 j` while blocks remain. -/
 theorem P_eq {s₀ : State} {j : Nat} (hj : P s₀ j < L s₀) : P s₀ j = 64 * j := by
@@ -655,13 +656,110 @@ theorem xor_step {s₀ : State} (hp : XPre s₀) {j i : Nat} (hj : P s₀ j < L 
       (show t < 320 by omega_arith)]
     exact h.ks t ht
 
+/-- Bytewise effect of a doubleword XOR, independent of the instruction set. -/
+theorem writeW_xor (m : Mem) (a : Addr) (y : BitVec 64) (x : Addr) :
+    m.writeW a (m.readW a 64 ^^^ y) x =
+      if (x - a).toNat < 8 then m x ^^^ y.extractLsb' (8 * (x - a).toNat) 8 else m x := by
+  change (if (x - a).toNat < 8 then ((m.readW a 64 ^^^ y).setWidth 64).extractLsb'
+    (8 * (x - a).toNat) 8 else m x) = _
+  by_cases h : (x - a).toNat < 8
+  · rw [ite_eq_left h, ite_eq_left h, BitVec.setWidth_eq, BitVec.extractLsb'_xor]
+    congr 1
+    change ((m.read a 8).setWidth 64).extractLsb' (8 * (x - a).toNat) 8 = m x
+    rw [BitVec.setWidth_eq, Mem.extractLsb'_read _ _ h, BitVec.ofNat_toNat, BitVec.setWidth_eq,
+      BitVec.add_comm, BitVec.sub_add_cancel]
+  · rw [ite_eq_right h, ite_eq_right h]
+
+theorem readW64_byte (m : Mem) (a : Addr) {t : Nat} (ht : t < 8) :
+    (m.readW a 64).extractLsb' (8 * t) 8 = m (a + BitVec.ofNat 64 t) := by
+  change ((m.read a 8).setWidth 64).extractLsb' (8 * t) 8 = _
+  rw [BitVec.setWidth_eq, Mem.extractLsb'_read _ _ ht]
+
+def xorWordBody : List Instr :=
+  [.load .d .r6 .r22 0, .load .d .r8 .r7 0, .logic .xor .r6 .r6 .r8, .store .d .r6 .r22 0,
+    .addi .r22 .r22 8, .addi .r7 .r7 8, .subi .r5 .r5 8]
+
+theorem xor_word_step {s₀ : State} (hp : XPre s₀) {j i : Nat} (hj : P s₀ j < L s₀) (hi : i + 8 ≤ C s₀ j)
+    {s : State} (h : IInv s₀ j i s) : WP isa (.block xorWordBody) s (IInv s₀ j (i + 8)) := by
+  have hL := L_lt s₀
+  have hC : C s₀ j = min 64 (L s₀ - P s₀ j) := rfl
+  have hk : P s₀ j + i < L s₀ := by omega_arith
+  have cd : (dR s₀).Contains (dp s₀ + BitVec.ofNat 64 (P s₀ j + i)) 8 :=
+    contains_off (by omega_arith) (by omega_arith)
+  have cb : (bR s₀).Contains (bp s₀ + BitVec.ofNat 64 i) 8 := contains_off (by omega_arith) (by omega_arith)
+  have i₁ : InRegions (s.rd ++ s.wr) (dp s₀ + BitVec.ofNat 64 (P s₀ j + i)) 8 :=
+    ⟨dR s₀, by simp [h.rd, h.wr, hp.rd, hp.wr], cd⟩
+  have i₂ : InRegions (s.rd ++ s.wr) (bp s₀ + BitVec.ofNat 64 i) 8 :=
+    ⟨bR s₀, by simp [h.rd, h.wr, hp.rd, hp.wr], cb⟩
+  have o₁ : InRegions s.wr (dp s₀ + BitVec.ofNat 64 (P s₀ j + i)) 8 :=
+    ⟨dR s₀, by simp [h.wr, hp.wr], cd⟩
+  unfold xorWordBody
+  refine wp_ld (a := dp s₀ + BitVec.ofNat 64 (P s₀ j + i)) (by decide) (by decide)
+    (by rw [h.r22]; exact BitVec.add_zero _) i₁ fun s₁ u₁ => ?_
+  refine wp_ld (a := bp s₀ + BitVec.ofNat 64 i) (by decide) (by decide)
+    (by rw [u₁.other _ (by decide), h.r7]; exact BitVec.add_zero _)
+    (by rw [u₁.rd, u₁.wr]; exact i₂) fun s₂ u₂ => ?_
+  refine wp_xor fun s₃ u₃ => ?_
+  refine wp_std (a := dp s₀ + BitVec.ofNat 64 (P s₀ j + i)) (by decide) (by decide)
+    (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), h.r22]
+        exact BitVec.add_zero _)
+    (by rw [u₃.wr, u₂.wr, u₁.wr]; exact o₁) fun s₄ g₄ _ => ?_
+  refine wp_addi (by decide) (by decide) fun s₅ u₅ => wp_addi (by decide) (by decide) fun s₆ u₆ =>
+    wp_subi (by decide) (by decide) fun s₇ u₇ => WP.block_nil ?_
+  have hv : s₃.gpr .r6 = s.mem.readW (dp s₀ + BitVec.ofNat 64 (P s₀ j + i)) 64 ^^^
+      s.mem.readW (bp s₀ + BitVec.ofNat 64 i) 64 := by
+    rw [u₃.gpr, u₂.other _ (by decide), u₁.gpr, u₂.gpr, u₁.mem]
+  have hm : s₇.mem = s.mem.writeW (dp s₀ + BitVec.ofNat 64 (P s₀ j + i))
+      (s.mem.readW (dp s₀ + BitVec.ofNat 64 (P s₀ j + i)) 64 ^^^
+        s.mem.readW (bp s₀ + BitVec.ofNat 64 i) 64) := by
+    rw [u₇.mem, u₆.mem, u₅.mem, g₄.mem, hv, u₃.mem, u₂.mem, u₁.mem]
+  have hfd : Frame [dR s₀] s.mem s₇.mem := by
+    rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ cd
+  have g : ∀ r, r ≠ .r6 → r ≠ .r8 → r ≠ .r22 → r ≠ .r7 → r ≠ .r5 → s₇.gpr r = s.gpr r :=
+    fun r h₁ h₂ h₃ h₄ h₅ => by
+      rw [u₇.other r h₅, u₆.other r h₄, u₅.other r h₃, g₄.gpr, u₃.other r h₁, u₂.other r h₂,
+        u₁.other r h₁]
+  refine ⟨by rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide), h.r3],
+    by rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide), h.r4], ?_, ?_, ?_,
+    by rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), g₄.gpr,
+      u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), h.r23],
+    by rw [u₇.rd, u₆.rd, u₅.rd, g₄.rd, u₃.rd, u₂.rd, u₁.rd, h.rd],
+    by rw [u₇.wr, u₆.wr, u₅.wr, g₄.wr, u₃.wr, u₂.wr, u₁.wr, h.wr],
+    by rw [stateAt_frame hfd (by simpa using hp.st_d), h.cnt], fun k hk' => ?_,
+    h.saved.frame hfd (by simpa using (hp.d_b.sub_right (savR_sub s₀)).symm), fun t ht => ?_⟩
+  · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, g₄.gpr, u₃.other _ (by decide),
+      u₂.other _ (by decide), u₁.other _ (by decide), h.r22, add_ofNat, Nat.add_assoc]
+  · rw [u₇.other _ (by decide), u₆.gpr, u₅.other _ (by decide), g₄.gpr, u₃.other _ (by decide),
+      u₂.other _ (by decide), u₁.other _ (by decide), h.r7, add_ofNat]
+  · rw [u₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide), g₄.gpr, u₃.other _ (by decide),
+      u₂.other _ (by decide), u₁.other _ (by decide), h.r5, sub_ofNat (by omega_arith), Nat.sub_sub]
+  · rw [hm, writeW_xor, Offset.sub_toNat' (dp s₀) (by omega_arith) (by omega_arith)]
+    by_cases hin : P s₀ j + i ≤ k ∧ k < P s₀ j + i + 8
+    · have ht : k - (P s₀ j + i) < 8 := by omega_arith
+      rw [ite_eq_left hin.1, ite_eq_left (by omega_arith), readW64_byte _ _ ht, add_ofNat,
+        show i + (k - (P s₀ j + i)) = k - P s₀ j by omega_arith,
+        h.data k hk', h.ks (k - P s₀ j) (by omega_arith), ← ks_eq hj (i := k - P s₀ j) (by omega_arith),
+        show P s₀ j + (k - P s₀ j) = k by omega_arith]
+      simp only [show ¬ k < P s₀ j + i by omega_arith, show k < P s₀ j + (i + 8) by omega_arith,
+        ite_true, ite_false]
+    · by_cases hik : P s₀ j + i ≤ k
+      · rw [ite_eq_left hik, ite_eq_right (by omega_arith), h.data k hk']
+        simp only [show ¬ k < P s₀ j + i by omega_arith,
+          show ¬ k < P s₀ j + (i + 8) by omega_arith, ite_false]
+      · rw [ite_eq_right hik, ite_eq_right (by omega_arith), h.data k hk']
+        simp only [show k < P s₀ j + i by omega_arith,
+          show k < P s₀ j + (i + 8) by omega_arith, ite_true]
+  · rw [hfd.bytes (R := bR s₀) (by simpa using hp.d_b.symm) (show 320 ≤ 2 ^ 64 by omega_arith)
+      (show t < 320 by omega_arith)]
+    exact h.ks t ht
+
 /-! ## A whole block -/
 
-theorem xorLoop_ok {s₀ : State} (hp : XPre s₀) {j : Nat} (hj : P s₀ j < L s₀) {s : State}
-    (h : IInv s₀ j 0 s) : WP isa xorLoop s (IInv s₀ j (C s₀ j)) := by
+theorem xorBytes_ok {s₀ : State} (hp : XPre s₀) {j : Nat} (hj : P s₀ j < L s₀) {s : State}
+    (h : IInv s₀ j 0 s) : WP isa xorBytes s (IInv s₀ j (C s₀ j)) := by
   have hpos : 0 < C s₀ j := by simp only [C]; omega_arith
   have hC : C s₀ j ≤ 64 := by simp only [C]; omega_arith
-  rw [xorLoop_eq]
+  rw [xorBytes_eq]
   let Inv : Nat → State → Prop := fun n s => ∃ i, n = C s₀ j - i ∧ i < C s₀ j ∧ IInv s₀ j i s
   have hstep : ∀ n s, Inv n s → WP isa (.block xorBody) s (fun s' =>
       (isa.eval (.nonzero .d .r5) s' = some false ∧ IInv s₀ j (C s₀ j) s') ∨
@@ -673,6 +771,40 @@ theorem xorLoop_ok {s₀ : State} (hp : XPre s₀) {j : Nat} (hj : P s₀ j < L 
     · exact .inl ⟨by rw [hz]; simp [hl], hl ▸ h'⟩
     · exact .inr ⟨by rw [hz]; simp; omega_arith, C s₀ j - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, h'⟩
   exact WP.loop (M := isa) Inv hstep (C s₀ j) s ⟨0, by simp, hpos, h⟩
+
+theorem xorWords_ok {s₀ : State} (hp : XPre s₀) {j : Nat} (hj : P s₀ j < L s₀)
+    (hc : C s₀ j = 64) {s : State} (h : IInv s₀ j 0 s) :
+    WP isa xorWords s (IInv s₀ j (C s₀ j)) := by
+  change WP isa (.loop (.block xorWordBody) (.nonzero .d .r5)) s _
+  let Inv : Nat → State → Prop := fun n s => ∃ i, n = 8 - i ∧ i < 8 ∧ IInv s₀ j (8 * i) s
+  apply WP.loop (M := isa) Inv _ 8 s ⟨0, rfl, by decide, h⟩
+  rintro n s ⟨i, rfl, hi, hI⟩
+  refine WP.mono (xor_word_step hp hj (by omega_arith) hI) fun s' h' => ?_
+  have hz := eval_nonzero_ofNat s' .r5 (by omega_arith) h'.r5
+  by_cases hl : i + 1 = 8
+  · exact .inl ⟨by rw [hz]; simp [hc]; omega_arith,
+      by simpa only [show 8 * i + 8 = C s₀ j by omega_arith] using h'⟩
+  · exact .inr ⟨by rw [hz]; simp [hc]; omega_arith, 8 - (i + 1), by omega_arith,
+      i + 1, rfl, by omega_arith, by simpa only [Nat.mul_add, Nat.mul_one] using h'⟩
+
+theorem xorLoop_ok {s₀ : State} (hp : XPre s₀) {j : Nat} (hj : P s₀ j < L s₀) {s : State}
+    (h : IInv s₀ j 0 s) : WP isa xorLoop s (IInv s₀ j (C s₀ j)) := by
+  have hc : C s₀ j ≤ 64 := by simp only [C]; omega_arith
+  unfold xorLoop
+  refine WP.seq (wp_lsr (by decide) fun s' u => WP.block_nil ?_)
+  have h' : IInv s₀ j 0 s' := by
+    rcases h with ⟨h3, h4, h22, h7, h5, h23, hrd, hwr, hcnt, hdata, hsav, hks⟩
+    exact ⟨(u.other _ (by decide)).trans h3, (u.other _ (by decide)).trans h4,
+      (u.other _ (by decide)).trans h22, (u.other _ (by decide)).trans h7,
+      (u.other _ (by decide)).trans h5, (u.other _ (by decide)).trans h23,
+      u.rd.trans hrd, u.wr.trans hwr, by rw [u.mem]; exact hcnt,
+      by rw [u.mem]; exact hdata, by rw [u.mem]; exact hsav, by rw [u.mem]; exact hks⟩
+  have hr9 : s'.gpr .r9 = BitVec.ofNat 64 (C s₀ j / 64) := by
+    rw [u.gpr, h.r5, Nat.sub_zero, ofNat_shr6 (by omega_arith)]
+  exact WP.ite (decide (C s₀ j / 64 = 0))
+    (by rw [eval_zero, hr9, ofNat_beq_zero (by omega_arith)])
+    (fun _ => xorBytes_ok hp hj h')
+    (fun hf => xorWords_ok hp hj (by simp only [decide_eq_false_iff_not] at hf; omega_arith) h')
 
 /-! ## The end of a block -/
 
