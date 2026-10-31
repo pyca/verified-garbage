@@ -11,11 +11,9 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBulk
 /-!
 # Axiom audits of individual theorems
 
-The audits refuse to run in a module, which sees the theorems it imports
-from other modules as axioms, without their proofs (`TCB/Axioms.lean`).
-These checks of theorems that are not artifacts run here, in a file that is
-not a module and so sees every proof. They were in the theorems' own
-files until those became modules.
+Checks of theorems that are not artifacts. The audit reads what each
+depends on from the records of the modules that declare them
+(`TCB/AuditRecords.lean`).
 -/
 
 #assert_standard_axioms VG.Proof.Sha3.AArch64.Neon.X2.verified

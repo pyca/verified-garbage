@@ -6,10 +6,7 @@ modules"). Exits non-zero on violations, naming each.
     `module`, after any leading comment).
 
 Lean checks the rest itself: a module may not import a file that is not
-one ("cannot import non-`module`"), and the audits refuse to run in a
-module (`TCB/Axioms.lean`, `TCB/Audit.lean`), so they run in the files
-that are not, outside lean/VerifiedGarbage/ (the emitter's drivers,
-`VerifiedGarbageTest/`).
+one ("cannot import non-`module`").
 """
 
 import pathlib

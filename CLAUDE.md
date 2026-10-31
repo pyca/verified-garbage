@@ -132,8 +132,12 @@ own changes are rebuilt either way, on top of the restored build.
 * The emitter runs compiled code, so it must be what the kernel checked:
   nothing the artifacts or the emitter use may carry `implemented_by`,
   `extern` or `export`, and nothing in `lean/VerifiedGarbage/` may declare a
-  `csimp` theorem or an `initialize`. Only `Spec/` declares definitions in
-  the namespace `VG.Spec`. The emitter refuses both (`TCB/Audit.lean`).
+  `csimp` theorem or an `initialize` (but `TCB/AuditRecords.lean`, which
+  registers the audit records). Only `Spec/` declares definitions in
+  the namespace `VG.Spec`. The emitter refuses both (`TCB/Audit.lean`),
+  from the records every module writes when it is built (the
+  `lean-modules` skill): never build a module without the lakefile's
+  `plugins`, or edit `TCB/AuditBase.lean` but with `ci/audit_base.py`.
 * Never add instructions with operand-dependent timing (e.g. `div`) to an ISA
   model.
 * On x86-64, `pmuludq`, `pmullw`, `pmulhw`, `pmaddwd`, `pmulhrsw`, their VEX
@@ -166,7 +170,7 @@ tasks, read its skill, whether or not your tool loads it for you:
 * `lean-modules`: before adding a Lean module or changing imports, when
   `ci/check_lean_public_imports.py` reports something, before narrowing the
   imports of many modules (`ci/trim_lean_imports.py`), or before writing a
-  Lean file that is not a module.
+  Lean file that is not a module, or about the audit records.
 * `benchmarking`: before measuring a change's speed, locally or with the
   Benchmarks workflow.
 * `cpu-feature-tests`: before changing what CPU features choose, its tests,

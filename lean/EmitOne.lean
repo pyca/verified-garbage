@@ -126,9 +126,15 @@ def main (args : List String) : IO UInt32 := do
   IO.FS.createDirAll ".lake/emit"
   if ← out.pathExists then IO.FS.removeDirAll out
   IO.FS.writeFile driver (VG.Emit.driver regs gens vars)
+  -- A module, run with Lake's setup for it (`Emit.lean`'s `main` says why).
+  let setup : FilePath := ".lake" / "emit" / "One.json"
+  let r ← IO.Process.output { cmd := "lake", args := #["setup-file", driver.toString] }
+  unless r.exitCode == 0 do
+    IO.eprint r.stderr
+    return r.exitCode
+  IO.FS.writeFile setup r.stdout
   let code ← runProc (← IO.appPath).toString
-    ((libs.map fun (_, f) => s!"--load-dynlib={f}").toArray ++
-      #["--run", driver.toString, out.toString])
+    #["--setup", setup.toString, "--run", driver.toString, out.toString]
   unless code == 0 do return code
   -- Copy or compare each generated file but the crates' `lib.rs` and `consts/mod.rs`.
   let dest : FilePath := ".." / "crates"

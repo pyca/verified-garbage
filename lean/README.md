@@ -97,7 +97,9 @@ never import proofs.
    compiler run other code than the definitions the kernel checked, in what
    it runs (`implemented_by`, `extern`, `export`) or anywhere in the project
    (`csimp`, `initialize`), and any `VG.Spec` definition declared outside
-   `Spec/`.
+   `Spec/`. Each audit reads the records every module writes when it is
+   built (`TCB/AuditRecords.lean`), not the proofs, which a module does not
+   see in what it imports.
 5. **Emit** — `Emit.lean` renders the registry into `crates/verified-garbage-asm-<target>/src/<module>.rs`,
    adding to each function's `# Safety` section what its contract requires of
    the memory each buffer is valid for (`Sig.validDoc`) and of where its
@@ -161,13 +163,18 @@ lake env lean --run Emit.lean --check
 lake env lean --run EmitOne.lean [--check] Rc2.AArch64   # one registration file
 ```
 
+Each emitter's driver is a module, which `Emit.lean` and `EmitOne.lean` run
+with the setup Lake gives it (`lake setup-file`), as `lake build` would build
+it: it loads what it imports without their private parts (`.olean.private`),
+and its audits read the records every module of this project writes when it
+is built (`TCB/AuditRecords.lean`; the `lean-modules` skill).
+
 On Linux, `Emit.lean` needs `vm.max_map_count` above the default of many
-distributions (65,530): its driver is not a module, so it maps every module
-it imports with its `.olean.server` and `.olean.private` parts, about six
-regions of memory per `.olean`. It refuses to start below eight per `.olean`
-and names the command to raise the limit, `sudo sysctl -w
-vm.max_map_count=262144`, which CI runs (`EmitOne.lean` loads far fewer).
-Past the limit Lean would fail with `failed to read file '….olean.private'`.
+distributions (65,530): it maps every module its drivers import. It refuses
+to start below eight regions of memory per `.olean` and names the command to
+raise the limit, `sudo sysctl -w vm.max_map_count=262144`, which CI runs
+(`EmitOne.lean` loads far fewer). Past the limit Lean would fail with
+`failed to read file '….olean'`.
 
 Every module records a profile of its build, kept in its `.trace` file
 (`moreLeanArgs` in `lakefile.toml`), which Lake prints again for each module

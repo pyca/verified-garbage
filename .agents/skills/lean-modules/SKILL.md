@@ -1,6 +1,6 @@
 ---
 name: lean-modules
-description: "Use before adding a Lean file or module, or changing imports; when running or acting on ci/check_lean_public_imports.py, ci/check_lean_single_importer.py or ci/trim_lean_imports.py, or adding `-- shake: keep`; or when writing a Lean file that is not a module: why the rules of CLAUDE.md's \"Lean modules\" hold, and the tools that check them."
+description: "Use before adding a Lean file or module, or changing imports; when running or acting on ci/check_lean_public_imports.py, ci/check_lean_single_importer.py or ci/trim_lean_imports.py, or adding `-- shake: keep`; or when writing a Lean file that is not a module, or about the audit records: why the rules of CLAUDE.md's \"Lean modules\" hold, and the tools that check them."
 ---
 
 # Lean modules
@@ -82,11 +82,18 @@ memory (about 3 GB per 1,000 modules), and `--read-batch` separately bounds
 declaration-reader roots. See [Iterating on import narrowing](../../../lean/README.md#iterating-on-import-narrowing)
 and [the evidence and verification guide](../../../ci/IMPORT_NARROWING.md).
 
-## Files that are not modules
+## Files that are not modules, and the audit records
 
-The audits (`#assert_standard_axioms`, `#assert_no_compiler_overrides`,
-`#assert_spec_origin`) run only in files that are not modules (the
-emitter's drivers, `VerifiedGarbageTest/`), and refuse
-to run in a module: a module sees the theorems it imports as axioms,
-without their proofs. A file that is not a module sees every module's
-private imports too.
+A module sees the theorems it imports as axioms, without their proofs, so
+the audits (`#assert_standard_axioms`, `#assert_no_compiler_overrides`,
+`#assert_spec_origin`) do not read proofs: they read the records each module
+of this project writes into its `.olean` when it is built
+(`TCB/AuditRecords.lean`, which every library loads as a plugin): the axioms
+and compiler overrides each of its constants depends on, and the `VG.Spec`
+names, `initialize` and `csimp` declarations it declares. A module built
+without the plugin has no records, and the audits reject what depends on
+it. For Lean's and Mathlib's constants they read `TCB/AuditBase.lean`,
+which `ci/audit_base.py generate` writes after a toolchain or Mathlib
+update. So the audits run in modules too, such as the emitter's drivers,
+which never read the private part (`.olean.private`) of this project's
+modules.
