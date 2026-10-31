@@ -13318,7 +13318,7 @@ ret
 }
 
 /// The CPU features `vg_ecdh_p384_adx` requires (`Artifact.features`).
-pub const VG_ECDH_P384_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_ECDH_P384_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// ECDH over P-384 (the ECC CDH primitive of SP 800-56A §5.7.1.2): validates the peer's public key at `peer` (SP 800-56A §5.6.2.3.3: the uncompressed form of SEC 1 §2.3.3, `04` then `x` and `y` in 48 bytes each, most significant first, both below `p`, on the curve), and writes the x-coordinate of `dQ` (48 bytes, most significant first) for the private key `d` at `d` (48 bytes, most significant first) to `*out`, and returns 1; or writes zeros and returns 0 if `peer` is not a valid public key, `d` is not in `[1, n-1]`, or `dQ` is the point at infinity.
 ///

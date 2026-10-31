@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_miller_rabin_round_adx` requires (`Artifact.features`).
-pub const VG_MILLER_RABIN_ROUND_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_MILLER_RABIN_ROUND_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// One strong Miller–Rabin round (FIPS 186-5 Appendix B.3.1, steps 4.3–4.5) in a prepared RSA Montgomery workspace. Returns 1 if the witness passes, 0 otherwise. Uses fixed windows of four bits, with no witness-dependent table address. This is neither a primality certificate nor a choice of witness distribution or round count. The caller supplies those policies.
 ///

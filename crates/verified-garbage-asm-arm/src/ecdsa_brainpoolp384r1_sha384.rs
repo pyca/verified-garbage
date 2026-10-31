@@ -916,7 +916,7 @@ bx lr",
 
 /// The CPU features `vg_ecdsa_brainpoolp384r1_sha384_sign_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_ECDSA_BRAINPOOLP384R1_SHA384_SIGN_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_ECDSA_BRAINPOOLP384R1_SHA384_SIGN_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
 /// Deterministic ECDSA signature generation over brainpoolP384r1 with HMAC-SHA-384 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (48 bytes, most significant first), signs the SHA-384 hash at `digest` (48 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (48 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 128 candidates for `k` is suitable (which does not happen in practice).
 ///

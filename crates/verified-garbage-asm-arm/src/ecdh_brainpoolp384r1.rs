@@ -2497,7 +2497,7 @@ bx lr",
 
 /// The CPU features `vg_ecdh_brainpoolp384r1_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_ECDH_BRAINPOOLP384R1_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_ECDH_BRAINPOOLP384R1_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
 /// ECDH over brainpoolP384r1 (the ECC CDH primitive of SP 800-56A §5.7.1.2): validates the peer's public key at `peer` (SP 800-56A §5.6.2.3.3: the uncompressed form of SEC 1 §2.3.3, `04` then `x` and `y` in 48 bytes each, most significant first, both below `p`, on the curve), and writes the x-coordinate of `dQ` (48 bytes, most significant first) for the private key `d` at `d` (48 bytes, most significant first) to `*out`, and returns 1; or writes zeros and returns 0 if `peer` is not a valid public key, `d` is not in `[1, n-1]`, or `dQ` is the point at infinity.
 ///

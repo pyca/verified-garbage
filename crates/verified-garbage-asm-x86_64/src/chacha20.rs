@@ -1268,7 +1268,7 @@ ret
 }
 
 /// The CPU features `vg_chacha20_xor_avx2` requires (`Artifact.features`).
-pub const VG_CHACHA20_XOR_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_CHACHA20_XOR_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// XORs the first `len` bytes of the ChaCha20 keystream of the 16-word state `*state` (RFC 8439 §2.4: the block function of the state with its block counter, word 12, advanced by 0, 1, … modulo 2³²) into the `len` bytes at `data`.
 ///
@@ -7220,7 +7220,7 @@ ret
 }
 
 /// The CPU features `vg_chacha20_xor_avx512` requires (`Artifact.features`).
-pub const VG_CHACHA20_XOR_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F);
+pub const VG_CHACHA20_XOR_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F);
 
 /// XORs the first `len` bytes of the ChaCha20 keystream of the 16-word state `*state` (RFC 8439 §2.4: the block function of the state with its block counter, word 12, advanced by 0, 1, … modulo 2³²) into the `len` bytes at `data`.
 ///
@@ -12404,7 +12404,7 @@ ret
 }
 
 /// The CPU features `vg_chacha20_xor_avx512vl` requires (`Artifact.features`).
-pub const VG_CHACHA20_XOR_AVX512VL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_CHACHA20_XOR_AVX512VL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
 
 /// XORs the first `len` bytes of the ChaCha20 keystream of the 16-word state `*state` (RFC 8439 §2.4: the block function of the state with its block counter, word 12, advanced by 0, 1, … modulo 2³²) into the `len` bytes at `data`.
 ///
@@ -22088,7 +22088,7 @@ ret
 }
 
 /// The CPU features `vg_chacha20_apply_avx2` requires (`Artifact.features`).
-pub const VG_CHACHA20_APPLY_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_CHACHA20_APPLY_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
 ///
@@ -22252,7 +22252,7 @@ ret
 }
 
 /// The CPU features `vg_chacha20_apply_avx512` requires (`Artifact.features`).
-pub const VG_CHACHA20_APPLY_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F);
+pub const VG_CHACHA20_APPLY_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F);
 
 /// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
 ///
@@ -22271,7 +22271,7 @@ pub const VG_CHACHA20_APPLY_AVX512_FEATURES: crate::cpu::Features = crate::cpu::
 pub use self::vg_chacha20_apply_ifma as vg_chacha20_apply_avx512;
 
 /// The CPU features `vg_chacha20_apply_avx512vl` requires (`Artifact.features`).
-pub const VG_CHACHA20_APPLY_AVX512VL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_CHACHA20_APPLY_AVX512VL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
 
 /// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
 ///
@@ -22435,7 +22435,7 @@ ret
 }
 
 /// The CPU features `vg_chacha20_apply_ifma` requires (`Artifact.features`).
-pub const VG_CHACHA20_APPLY_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F);
+pub const VG_CHACHA20_APPLY_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F);
 
 /// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
 ///

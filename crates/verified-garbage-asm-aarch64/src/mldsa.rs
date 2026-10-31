@@ -4575,7 +4575,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_rej_bounded_poly4_eta2_sha3` requires (`Artifact.features`).
-pub const VG_MLDSA_REJ_BOUNDED_POLY4_ETA2_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_MLDSA_REJ_BOUNDED_POLY4_ETA2_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// Samples four independent ML-DSA secret polynomials with the standard rejection-bit leakage.
 ///
@@ -6863,7 +6863,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_rej_bounded_poly4_eta4_sha3` requires (`Artifact.features`).
-pub const VG_MLDSA_REJ_BOUNDED_POLY4_ETA4_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_MLDSA_REJ_BOUNDED_POLY4_ETA4_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// Samples four independent ML-DSA secret polynomials with the standard rejection-bit leakage.
 ///
@@ -16333,7 +16333,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_commit_tail65` requires (`Artifact.features`).
-pub const VG_MLDSA_COMMIT_TAIL65_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_MLDSA_COMMIT_TAIL65_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// Computes the ML-DSA commitment and an independent mask polynomial using two SHAKE256 lanes.
 ///
@@ -18576,7 +18576,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_commit_tail87` requires (`Artifact.features`).
-pub const VG_MLDSA_COMMIT_TAIL87_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_MLDSA_COMMIT_TAIL87_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// Computes the ML-DSA commitment and an independent mask polynomial using two SHAKE256 lanes.
 ///
@@ -20813,7 +20813,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_rej_ntt_poly2_sha3` requires (`Artifact.features`).
-pub const VG_MLDSA_REJ_NTT_POLY2_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_MLDSA_REJ_NTT_POLY2_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// RejNTTPoly (FIPS 204 Algorithm 30) for two independent 34-byte seeds. On success, writes two canonical 256-coefficient polynomials and returns 1. Returns 0 if a stream fails within the specified minimum sampling bound; output is then unspecified. Timing may depend on the pointers and the two public seeds.
 ///
@@ -22359,7 +22359,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_expand_mask_pair_sha3` requires (`Artifact.features`).
-pub const VG_MLDSA_EXPAND_MASK_PAIR_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_MLDSA_EXPAND_MASK_PAIR_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// Expands two independent 66-byte seeds into two canonical ML-DSA mask polynomials. Timing depends only on the pointers and gamma1.
 ///
@@ -24927,7 +24927,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_rej_ntt_poly4_sha3` requires (`Artifact.features`).
-pub const VG_MLDSA_REJ_NTT_POLY4_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_MLDSA_REJ_NTT_POLY4_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// `RejNTTPoly` (FIPS 204 Algorithm 30) four times: for each `k` < 4, writes the element of `T_q` sampled from the SHAKE128 output of the 34 bytes of `*seeds` from byte `34 k` to the 256 coefficients of `*a` from coefficient `256 k` (each less than `q` = 8380417), and returns 1. Returns 0 if the loop reaches its bound, which is at least 894 bytes of SHAKE128 output for each (FIPS 204 Appendix C; this happens with probability about 2^-256 or less): `*a` is then unspecified, and the caller must destroy it and treat the operation as failed. The four are independent, so an implementation may compute them together (e.g. four SHAKE128 instances at once in vector registers).
 ///
@@ -26940,7 +26940,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_sample_in_ball_sha3` requires (`Artifact.features`).
-pub const VG_MLDSA_SAMPLE_IN_BALL_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_MLDSA_SAMPLE_IN_BALL_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// `SampleInBall` (FIPS 204 Algorithm 29): writes the polynomial with `tau` coefficients 1 or -1 and the others 0 sampled from the SHAKE256 output of the `len` bytes at `ctilde` to `*c` (each coefficient modulo `q` = 8380417), and returns 1. Returns 0 if the loop reaches its bound, which is at least 221 bytes of SHAKE256 output (FIPS 204 Appendix C; this happens with probability about 2^-256 or less): `*c` is then unspecified, and the caller must destroy it and treat the operation as failed.
 ///
@@ -27191,7 +27191,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_expand_mask_poly_sha3` requires (`Artifact.features`).
-pub const VG_MLDSA_EXPAND_MASK_POLY_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_MLDSA_EXPAND_MASK_POLY_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// A polynomial of `ExpandMask` (FIPS 204 Algorithm 34, lines 4 and 5): writes `BitUnpack(H(seed, 32c), gamma1 - 1, gamma1)`, for the 66 bytes `*seed` and `c = 1 + bitlen (gamma1 - 1)`, to `*a` (each coefficient modulo `q` = 8380417).
 ///

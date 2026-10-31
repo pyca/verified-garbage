@@ -862,7 +862,7 @@ bx lr",
 
 /// The CPU features `vg_p224_mul_mod_p_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_P224_MUL_MOD_P_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_P224_MUL_MOD_P_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
 /// Montgomery's product modulo P-224's prime `p`: writes the number below the modulus congruent to `a b 2^-256` to `o`. The numbers are 4 64-bit words (`32` bytes), little-endian, at the byte offsets `o`, `a` and `b` of the working space `ws`; `o` may be `a` or `b`. Every byte of `ws` but the result's and the function's own working space (bytes 3840 to 4095) keeps its value.
 ///
@@ -2990,7 +2990,7 @@ bx lr",
 
 /// The CPU features `vg_p224_mul_mod_n_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_P224_MUL_MOD_N_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_P224_MUL_MOD_N_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
 /// Montgomery's product modulo P-224's order `n`: writes the number below the modulus congruent to `a b 2^-256` to `o`. The numbers are 4 64-bit words (`32` bytes), little-endian, at the byte offsets `o`, `a` and `b` of the working space `ws`; `o` may be `a` or `b`. Every byte of `ws` but the result's and the function's own working space (bytes 3840 to 4095) keeps its value.
 ///

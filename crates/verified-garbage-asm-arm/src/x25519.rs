@@ -7641,7 +7641,7 @@ bx lr",
 
 /// The CPU features `vg_x25519_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_X25519_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_X25519_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
 /// Computes X25519 (RFC 7748 §5): writes `X25519(k, u)` to `*out`, for the 32-byte scalar `k` at `scalar` and the 32-byte u-coordinate `u` at `point`. The scalar is decoded (clamped) and the most significant bit of `u` masked as RFC 7748 specifies; the result may be all zero (for a `u` of small order), which the caller must check for if its protocol requires it (RFC 7748 §6.1).
 ///

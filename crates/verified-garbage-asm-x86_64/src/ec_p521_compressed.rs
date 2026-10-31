@@ -2770,7 +2770,7 @@ ret
 }
 
 /// The CPU features `vg_ec_p521_compress_public_key_adx` requires (`Artifact.features`).
-pub const VG_EC_P521_COMPRESS_PUBLIC_KEY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_EC_P521_COMPRESS_PUBLIC_KEY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Validate and compress a P-521 public key (SEC 1 §§2.3.3–2.3.4, SP 800-56A §5.6.2.3.3): reads `04` then `x` and `y` in 66 bytes each, most significant first; checks both coordinates below the field prime and the curve equation; writes `02` for even `y` or `03` for odd `y`, then `x` in 66 bytes, and returns 1. On invalid input, writes 67 zero bytes and returns 0. Rejects infinity and hybrid encodings.
 ///
@@ -3311,7 +3311,7 @@ ret
 }
 
 /// The CPU features `vg_ec_p521_decompress_public_key_adx` requires (`Artifact.features`).
-pub const VG_EC_P521_DECOMPRESS_PUBLIC_KEY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_EC_P521_DECOMPRESS_PUBLIC_KEY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Validate and decompress a P-521 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 66 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 66 bytes each and returns 1. If no such finite point exists, writes 133 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
 ///

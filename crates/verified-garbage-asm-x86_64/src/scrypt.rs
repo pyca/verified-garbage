@@ -1554,7 +1554,7 @@ ret
 }
 
 /// The CPU features `vg_scrypt_avx2` requires (`Artifact.features`).
-pub const VG_SCRYPT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SCRYPT_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
 /// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`. Calls `vg_pbkdf2_hmac_sha256_scratch` for its two PBKDF2-HMAC-SHA256 steps and `vg_scrypt_romix` for each of the `p` blocks.
 ///
@@ -1638,7 +1638,7 @@ ret
 }
 
 /// The CPU features `vg_scrypt_shani` requires (`Artifact.features`).
-pub const VG_SCRYPT_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
+pub const VG_SCRYPT_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
 /// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`. Calls `vg_pbkdf2_hmac_sha256_scratch` for its two PBKDF2-HMAC-SHA256 steps and `vg_scrypt_romix` for each of the `p` blocks.
 ///

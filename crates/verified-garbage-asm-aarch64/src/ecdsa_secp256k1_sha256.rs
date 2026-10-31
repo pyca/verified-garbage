@@ -435,7 +435,7 @@ ret
 }
 
 /// The CPU features `vg_ecdsa_secp256k1_sha256_sign_sha2` requires (`Artifact.features`).
-pub const VG_ECDSA_SECP256K1_SHA256_SIGN_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
+pub const VG_ECDSA_SECP256K1_SHA256_SIGN_SHA2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA2);
 
 /// Deterministic ECDSA signature generation over secp256k1 with HMAC-SHA-256 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (32 bytes, most significant first), signs the SHA-256 hash at `digest` (32 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (32 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
 ///

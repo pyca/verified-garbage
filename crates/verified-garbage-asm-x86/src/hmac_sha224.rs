@@ -1134,7 +1134,7 @@ ret
 }
 
 /// The CPU features `vg_hmac_sha224_init_shani` requires (`Artifact.features`).
-pub const VG_HMAC_SHA224_INIT_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
+pub const VG_HMAC_SHA224_INIT_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
 /// Starts an HMAC-SHA-224 computation with a key of any length: makes the SHA-224 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their SHA-224 digest, if there are more than 64) padded with zeros to 64 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_sha256_update` on `*inner` (its `count` starting at 64), and the MAC computed with `vg_hmac_sha224_finalize`.
 ///
@@ -1794,7 +1794,7 @@ jmp 21b
 }
 
 /// The CPU features `vg_hmac_sha224_finalize_shani` requires (`Artifact.features`).
-pub const VG_HMAC_SHA224_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
+pub const VG_HMAC_SHA224_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
 /// Finishes an HMAC-SHA-224 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the SHA-224 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-224 of the text under `K₀` (28 bytes) to `*out`.
 ///
@@ -1966,7 +1966,7 @@ ret
 }
 
 /// The CPU features `vg_hmac_sha224_init_scratch_shani` requires (`Artifact.features`).
-pub const VG_HMAC_SHA224_INIT_SCRATCH_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
+pub const VG_HMAC_SHA224_INIT_SCRATCH_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
 /// `vg_hmac_sha224_init`, with its working space in `*scratch`.
 ///
@@ -2122,7 +2122,7 @@ ret
 }
 
 /// The CPU features `vg_hmac_sha224_finalize_scratch_shani` requires (`Artifact.features`).
-pub const VG_HMAC_SHA224_FINALIZE_SCRATCH_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
+pub const VG_HMAC_SHA224_FINALIZE_SCRATCH_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
 /// `vg_hmac_sha224_finalize`, with its working space in `*scratch`.
 ///

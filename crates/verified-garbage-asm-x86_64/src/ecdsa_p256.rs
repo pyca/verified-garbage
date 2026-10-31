@@ -38404,7 +38404,7 @@ ret
 }
 
 /// The CPU features `vg_ecdsa_p256_sign_adx` requires (`Artifact.features`).
-pub const VG_ECDSA_P256_SIGN_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_ECDSA_P256_SIGN_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// ECDSA signature generation over P-256 (FIPS 186-5 §6.4.1): with the private key `d` and the per-message secret number `k` (each 32 bytes, most significant first), signs the hash at `digest`: its leftmost 32 bytes, or, for a shorter hash, the hash padded on the left with zeros to 32 bytes. Returns 1 and writes `r` then `s` (32 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` or `k` is not in `[1, n-1]`, or if `r` or `s` is 0, in which case the caller signs again with another `k`.
 ///
@@ -40284,7 +40284,7 @@ ret
 }
 
 /// The CPU features `vg_ecdsa_p256_verify_adx` requires (`Artifact.features`).
-pub const VG_ECDSA_P256_VERIFY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_ECDSA_P256_VERIFY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// ECDSA signature verification over P-256 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 32 bytes each, most significant first) of the hash at `digest` (its leftmost 32 bytes, or, for a shorter hash, the hash padded on the left with zeros to 32 bytes) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 32 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
 ///

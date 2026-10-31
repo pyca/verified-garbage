@@ -347,7 +347,7 @@ ret
 }
 
 /// The CPU features `vg_ec_p384_validate_public_key_adx` requires (`Artifact.features`).
-pub const VG_EC_P384_VALIDATE_PUBLIC_KEY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_EC_P384_VALIDATE_PUBLIC_KEY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// P-384 public-key validation (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): returns 1 if `public` is a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 48 bytes each, most significant first), and 0 otherwise. Checks the encoding tag, both coordinates below the field prime and the curve equation; rejects infinity and compressed or hybrid encodings. The curve has cofactor one, so no scalar multiplication is required.
 ///

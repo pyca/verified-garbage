@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_gf448_r64_pow223_adx` requires (`Artifact.features`).
-pub const VG_GF448_R64_POW223_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_GF448_R64_POW223_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Powers in curve448's field: for `a` the element at byte 832 (slot 12) of the working space `ws`, writes an element congruent to `a^(2^223 - 1)` modulo `p = 2^448 - 2^224 - 1` to byte 1408 (slot 21), and one congruent to `a^(2^222 - 1)` to byte 1344 (slot 20): the addition chain that inversion (`a^(p-2)`, 225 squarings of the first times two squarings of the second and `a`) and decoding's square root (`a^((p-3)/4)`, 223 squarings of the first times the second) share. An element is 56 bytes, a little-endian number below `2^448`, not necessarily below `p`. Every byte of `ws` but those from byte 960 to byte 1647 (the function's own working space and its results) keeps its value.
 ///

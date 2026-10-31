@@ -144,7 +144,7 @@ ret
 }
 
 /// The CPU features `vg_poly1305_blocks_avx2` requires (`Artifact.features`).
-pub const VG_POLY1305_BLOCKS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_POLY1305_BLOCKS_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// Absorbs whole blocks into a Poly1305 computation: if the streaming state `*state` represents a message under a key, it then represents that message followed by the `n` 16-byte blocks at `blocks`, under the same key.
 ///
@@ -836,7 +836,7 @@ ret
 }
 
 /// The CPU features `vg_poly1305_blocks_avx512` requires (`Artifact.features`).
-pub const VG_POLY1305_BLOCKS_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX2);
+pub const VG_POLY1305_BLOCKS_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2);
 
 /// Absorbs whole blocks into a Poly1305 computation: if the streaming state `*state` represents a message under a key, it then represents that message followed by the `n` 16-byte blocks at `blocks`, under the same key.
 ///
@@ -1605,7 +1605,7 @@ ret
 }
 
 /// The CPU features `vg_poly1305_blocks_ifma` requires (`Artifact.features`).
-pub const VG_POLY1305_BLOCKS_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512IFMA);
+pub const VG_POLY1305_BLOCKS_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512IFMA);
 
 /// Absorbs whole blocks into a Poly1305 computation: if the streaming state `*state` represents a message under a key, it then represents that message followed by the `n` 16-byte blocks at `blocks`, under the same key.
 ///
@@ -2572,7 +2572,7 @@ ret
 }
 
 /// The CPU features `vg_poly1305_update_avx2` requires (`Artifact.features`).
-pub const VG_POLY1305_UPDATE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_POLY1305_UPDATE_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
 ///
@@ -2754,7 +2754,7 @@ ret
 }
 
 /// The CPU features `vg_poly1305_update_avx512` requires (`Artifact.features`).
-pub const VG_POLY1305_UPDATE_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX2);
+pub const VG_POLY1305_UPDATE_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2);
 
 /// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
 ///
@@ -2936,7 +2936,7 @@ ret
 }
 
 /// The CPU features `vg_poly1305_update_ifma` requires (`Artifact.features`).
-pub const VG_POLY1305_UPDATE_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512IFMA);
+pub const VG_POLY1305_UPDATE_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512IFMA);
 
 /// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
 ///

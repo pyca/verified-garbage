@@ -20694,7 +20694,7 @@ bx lr",
 
 /// The CPU features `vg_ffdh_check_domain_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_FFDH_CHECK_DOMAIN_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_FFDH_CHECK_DOMAIN_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
 /// Checks imported finite-field Diffie–Hellman parameters (SP 800-56A Rev. 3 §5.5.2, without primality tests). `domain` is p, g and, if `domain_len` is `3 * p_len`, q, each `p_len` bytes, most significant first. Returns 1 if p has 512 to 8192 bits, its first byte is not zero and it is odd, `1 < g < p − 1`, and, with q, q is odd, `2 < q < p − 1`, q divides `p − 1` and `g^q mod p = 1`; otherwise 0. Does not test p or q for primality: the caller must establish their provenance.
 ///
@@ -30817,7 +30817,7 @@ bx lr",
 
 /// The CPU features `vg_ffdh_check_private_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_FFDH_CHECK_PRIVATE_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_FFDH_CHECK_PRIVATE_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
 /// Checks an imported finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 §5.6.2.1.2 and §5.6.2.1.4). With `domain` as `vg_ffdh_check_domain` takes it, y (`p_len` bytes) and x (`x_len` bytes), most significant first: returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if y is a valid public value (as `vg_ffdh_check_public` checks it) and `y = g^x mod p`; 0 otherwise.
 ///
@@ -59327,7 +59327,7 @@ bx lr",
 
 /// The CPU features `vg_ffdh_parameter_candidate_sieved_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_FFDH_PARAMETER_CANDIDATE_SIEVED_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_FFDH_PARAMETER_CANDIDATE_SIEVED_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
 /// One FFDH probable safe-prime candidate with RSA's trial-division sieve. Uses the original candidate shaping and generator congruences. Tests p and q against the first 512 primes through 1024 bits, or 1024 primes above that, before drawing witnesses. The requested p width selects both sieve bounds. Draws and tests one uniform p witness first, then the full q batch, then the remaining p witnesses. Acceptance requires the original 64 witnesses per modulus, or 128 above 2048 bits; the first p witness counts toward that total. Returns 1 and p on acceptance, 2 on rejection, or 0 on entropy shortage; output is zero otherwise. `used` is the exact consumed prefix, or zero on shortage. Contract: `VG.Spec.Ffdh.sievedParameterCandidateContract`. Timing may depend on the public tape.
 ///
@@ -77544,7 +77544,7 @@ bx lr",
 
 /// The CPU features `vg_ffdh_generate_parameters_sieved_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_FFDH_GENERATE_PARAMETERS_SIEVED_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_FFDH_GENERATE_PARAMETERS_SIEVED_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
 /// Run native FFDH parameter generation with RSA's trial-division sieve. The routine owns candidate retries, witness selection, all primality rounds, attempt limits and entropy budgets. Initialize with `vg_ffdh_parameter_generation_init`. Returns 1 with p, 3 on exhaustion, or 0 to request more entropy. On 0, discard `used` bytes and extend the preserved suffix to `state[3]` bytes before retrying. Output is zero for 0 and 3. Accepted p and q retain the original 64/128 independent witness counts. Contract: `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the public tape and the first four controller words.
 ///
@@ -84111,7 +84111,7 @@ bx lr",
 
 /// The CPU features `vg_ffdh_generate_key_precompute_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_FFDH_GENERATE_KEY_PRECOMPUTE_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_FFDH_GENERATE_KEY_PRECOMPUTE_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
 /// Initialize a reusable public fixed-base context for finite-field Diffie–Hellman key generation. The checked domain is p, g and optional q, each p_len bytes. Writes generationPrecompute: three public metadata words followed by RSA's modulus/R-squared values and 32 five-tooth comb entries. Returns 1. Word 0 is generationScalarBits, word 1 is its byte length and word 2 is the comb row count. The context has no pointers and is independent of the arithmetic backend. Contract: VG.Spec.Ffdh.generationPrecomputeContract. Timing may depend on the public domain, pointers and lengths.
 ///
@@ -85219,7 +85219,7 @@ bx lr",
 
 /// The CPU features `vg_ffdh_generate_key_cached_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_FFDH_GENERATE_KEY_CACHED_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_FFDH_GENERATE_KEY_CACHED_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
 /// One native finite-field Diffie–Hellman key-generation attempt using a reusable public five-tooth comb context. Takes p_len random bytes and implements the same vettedScalarOfOctets, keyStatus and output conventions as vg_ffdh_generate_key_vetted for checked parameters. The context's public maximum width fixes the schedule, including secret leading zeros. Contract: VG.Spec.Ffdh.cachedGenerateKeyContract. Timing may depend on the public domain, pointers, lengths and returned status, not otherwise on the random bytes or private scalar.
 ///
@@ -86301,7 +86301,7 @@ bx lr",
 
 /// The CPU features `vg_ffdh_generate_key_search_cached_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_FFDH_GENERATE_KEY_SEARCH_CACHED_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_FFDH_GENERATE_KEY_SEARCH_CACHED_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
 /// Generate a finite-field Diffie–Hellman key pair using a reusable public five-tooth comb context and the existing vettedKeySearch rejection policy. Returns 1 with a key pair, 3 when a budget is exhausted, or 0 to request entropy. On 0, discard used bytes, preserve the suffix and extend it to state[3] bytes before calling again. On 0 and 3 both outputs are zero. Entropy consumption, retry budgets and statuses are unchanged. Contract: VG.Spec.Ffdh.cachedKeySearchContract. Timing may depend on the public domain, pointers, lengths, controller policy and sequence of attempt statuses, not otherwise on private scalar bytes.
 ///
@@ -86557,7 +86557,7 @@ bx lr",
 
 /// The CPU features `vg_ffdh_derive_public_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_FFDH_DERIVE_PUBLIC_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_FFDH_DERIVE_PUBLIC_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
 /// Derives the public value of an imported finite-field Diffie–Hellman private key (SP 800-56A Rev. 3 §5.6.2.1.2 for x's range, §5.6.1.1 for `y = g^x mod p`). With `domain` as `vg_ffdh_check_domain` takes it and x (`x_len` bytes, most significant first): returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if `y = g^x mod p` is a valid public value (as `vg_ffdh_check_public` checks it), writing y (`p_len` bytes, most significant first) to `y`; 3 otherwise. Writes zeros to `y` unless it returns 1.
 ///
@@ -87939,7 +87939,7 @@ bx lr",
 
 /// The CPU features `vg_ffdh_check_public_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_FFDH_CHECK_PUBLIC_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_FFDH_CHECK_PUBLIC_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
 /// Checks an imported finite-field Diffie–Hellman public value (SP 800-56A Rev. 3 §5.6.2.3.1, and §5.6.2.3.2 with q). With `domain` as `vg_ffdh_check_domain` takes it and y (`p_len` bytes, most significant first), returns 1 if `1 < y < p − 1` and, with q, `y^q mod p = 1`; otherwise 0.
 ///
@@ -89214,7 +89214,7 @@ bx lr",
 
 /// The CPU features `vg_ffdh_exchange_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_FFDH_EXCHANGE_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_FFDH_EXCHANGE_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
 /// Finite-field Diffie–Hellman (SP 800-56A Rev. 3 §5.7.1.1, PKCS #3 §8). With `domain` as `vg_ffdh_check_domain` takes it, the private scalar x (`x_len` bytes) and the peer's public value y (`p_len` bytes), most significant first, computes `z = y^x mod p`; returns 0 and writes zeros if z is 0, 1 or `p − 1`, and otherwise returns 1 and writes z (`p_len` bytes, most significant first) to `out`. Applies no KDF.
 ///

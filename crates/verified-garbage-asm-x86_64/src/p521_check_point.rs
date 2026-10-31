@@ -4108,7 +4108,7 @@ ret
 }
 
 /// The CPU features `vg_p521_check_point_adx` requires (`Artifact.features`).
-pub const VG_P521_CHECK_POINT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_P521_CHECK_POINT_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// The check of a public point `(x, y)` on P-521 (SEC 1 §3.2.2.1, steps 2 and 3): ANDs into the flag, the 64-bit word at byte 3232 of `ws`, the mask (all ones or zero) of `x < p`, `y < p` and `y² = x³ + a x + b` modulo P-521's prime `p`. Numbers are 9 64-bit words (`72` bytes), little-endian: the function reads `x` at byte 2440, `y` at byte 2656, `p` at byte 64, `R² mod p` at byte 2872 and the curve's `a R mod p` and `b R mod p` at bytes 496 and 2944, for `R = 2^576`. It writes `x R mod p` at bytes 2512 to 2583 and `y R mod p` at bytes 2584 to 2655, and at bytes 2800 to 2871 and 3160 to 3231 the same if the flag is set on return, else the numbers at bytes 640 and 712. Bytes 208 to 279, 2728 to 2799, 3016 to 3087, 3088 to 3159 and 3520 to 4095 of `ws` are the function's own working space; every other byte of `ws` but the results' keeps its value. Constant time: only the pointer may affect timing.
 ///

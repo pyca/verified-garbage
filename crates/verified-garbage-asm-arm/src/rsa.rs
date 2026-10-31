@@ -21970,7 +21970,7 @@ bx lr",
 
 /// The CPU features `vg_rsa_private_crt_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_RSA_PRIVATE_CRT_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_RSA_PRIVATE_CRT_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
 /// The RSA private-key operation: RSADP (RFC 8017 §5.1.2), which is also RSASP1 (§5.2.1), with the private key `(p, q, dP, dQ, qInv)` (§3.2's second form, with two primes). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), writes the result of step 2.b for the input (`n_len` bytes, most significant first) to `out` (`n_len` bytes, most significant first) and returns 1; or writes zeros and returns 0 if `n` is not such a modulus, the input is not below `n`, `p q ≠ n`, or `qInv ≥ p`. `p`, `dp` and `qinv` are `p_len` bytes, and `q` and `dq` are `q_len` bytes, all most significant first. For a valid RSA key the result is `input^d mod n`; nothing checks that `p` and `q` are prime or that the exponents match a public exponent.
 ///
@@ -57470,7 +57470,7 @@ bx lr",
 
 /// The CPU features `vg_rsa_recover_primes_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_RSA_RECOVER_PRIMES_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_RSA_RECOVER_PRIMES_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
 /// The prime factors `p > q` of the modulus of an RSA private key `(n, e, d)` (SP 800-56B Rev. 2 §6.2.2's basic format), which bring it to the prime-factor format `(p, q, d)` that `vg_rsa_crt_values` takes, recovered by SP 800-56B Rev. 2 Appendix C.1 with the candidates `g = 2, 3, …` and at most 100 of them. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes) and the private exponent `d` (`d_len` bytes), both most significant first, writes `p` and `q` (`n_len` bytes each, most significant first) and returns 1; or writes zeros to both and returns 0 if `n` is not such a modulus or its factors are not found. For a valid RSA key the factors are found, but for a negligible fraction of keys.
 ///
@@ -76447,7 +76447,7 @@ bx lr",
 
 /// The CPU features `vg_rsa_private_checked_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_RSA_PRIVATE_CHECKED_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
 /// The RSA private-key operation: RSADP (RFC 8017 §5.1.2), which is also RSASP1 (§5.2.1), with the private key `(p, q, dP, dQ, qInv)` (§3.2's second form, with two primes), checked against the public exponent as BoringSSL checks it (`rsa_default_private_transform`). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the result `m` of step 2.b for the input (`n_len` bytes, most significant first), and if `m^e mod n` is the input, writes `m` to `out` (`n_len` bytes, most significant first) and returns 1. Writes zeros and returns 0 if `n` or `e` is not such a number, the input is not below `n`, `p q ≠ n`, or `qInv ≥ p`; writes zeros and returns 2 (an internal error) if `m^e mod n` is not the input, which is the case for no input if `vg_rsa_check_key` accepts the key and `p` and `q` are prime: the result is never released unless it passes the check, so that a fault in its computation does not reveal the key. `p`, `dp` and `qinv` are `p_len` bytes, and `q` and `dq` are `q_len` bytes, all most significant first.
 ///
@@ -76625,7 +76625,7 @@ bx lr",
 
 /// The CPU features `vg_rsa_public_precompute_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_RSA_PUBLIC_PRECOMPUTE_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_RSA_PUBLIC_PRECOMPUTE_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
 /// The values of an RSA modulus that `vg_rsa_public_precomputed_checked` takes, so that they are computed once per public key rather than once per operation. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) of `w = ⌈n_len / 8⌉` words of 64 bits, writes `n` and then `R² mod n` for `R = 2^(64 w)` to `pre` (`w` words each, least significant first) and returns 1; or writes zeros and returns 0 if `n` is not such a modulus.
 ///
@@ -79181,7 +79181,7 @@ bx lr",
 
 /// The CPU features `vg_rsa_public_precomputed_checked_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
 /// The RSA public-key operation: RSAEP (RFC 8017 §5.1.1), which is also RSAVP1 (§5.2.2), for a public key within BoringSSL's limits, with the modulus given by the values `vg_rsa_public_precompute` wrote for it to `pre`. With those values of a modulus `n` of `out_len` bytes and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), writes `input^e mod n` (`out_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `e` is not such a number or the input (`out_len` bytes, most significant first) is not below `n`.
 ///
