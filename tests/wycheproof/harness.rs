@@ -171,16 +171,24 @@ pub enum Expectation {
 
 impl FromJson for Expectation {
     fn from_json(v: &Value) -> Result<Self, String> {
-        let all = [
-            ("valid", Expectation::Valid),
-            ("invalid", Expectation::Invalid),
-            ("acceptable", Expectation::Acceptable),
-        ];
-        let found = all.into_iter().find(|&(s, _)| v.as_str() == Some(s));
-        found
-            .map(|(_, e)| e)
-            .ok_or_else(|| format!("expected a test result, found {v}"))
+        match v.as_str() {
+            Some("valid") => Ok(Expectation::Valid),
+            Some("invalid") => Ok(Expectation::Invalid),
+            Some("acceptable") => Ok(Expectation::Acceptable),
+            _ => Err(format!("expected a test result, found {v}")),
+        }
     }
+}
+
+/// Every test result is read, and anything else refused: so that every
+/// architecture runs every arm, whichever results its vector files have.
+#[test]
+fn expectation_from_json() {
+    let read = |json: &str| Expectation::from_json(&json.parse().unwrap());
+    assert_eq!(read(r#""valid""#), Ok(Expectation::Valid));
+    assert_eq!(read(r#""invalid""#), Ok(Expectation::Invalid));
+    assert_eq!(read(r#""acceptable""#), Ok(Expectation::Acceptable));
+    assert_eq!(read("1"), Err("expected a test result, found 1".into()));
 }
 
 crate::json_struct! {

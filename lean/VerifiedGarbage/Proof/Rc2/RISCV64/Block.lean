@@ -27,8 +27,9 @@ meta import VerifiedGarbage.Proof.Rc2.RISCV64.Lit
 
 /-! # Verified RC2 block encryption and decryption on RISC-V
 
-The schedule is copied to the working space (`copyLoop_ok`), where the
-rounds read it (`rounds_runsTo`), between the block's load and store.
+The rounds read the schedule (`rounds_runsTo`) at `a2`, between the
+block's load and store: the schedule itself if it is aligned, else its copy
+in the working space (`copyLoop_ok`), as `placeSchedule_run` proves.
 -/
 
 @[expose] public section
@@ -80,6 +81,45 @@ theorem copySchedule_run (s : State) (hrd : s.rd = [⟨s.gpr .a0, 128⟩])
     fun t ⟨tc, tf, tk⟩ => ⟨fun i hi => by rw [← u4, tc i hi, u3, um], by rw [← um, ← u4]; exact tf,
       (uk.trans tk).mono (by decide)⟩
 
+/-- The schedule the rounds read, at `a2`: aligned, readable and holding the
+schedule, the schedule itself or its copy; memory is changed only in the
+working space's first 128 bytes. -/
+theorem placeSchedule_run (s : State) (hrd : s.rd = [⟨s.gpr .a0, 128⟩])
+    (hwr : ∀ i < 128, InRegions s.wr (s.gpr .a2 + BitVec.ofNat 64 i) 1)
+    (hsep : Mem.Sep (s.gpr .a2) 128 (s.gpr .a0) 128) (hal : (s.gpr .a2).toNat % 8 = 0)
+    (hin : ∀ o n, o + n ≤ 128 → InRegions (s.rd ++ s.wr) (s.gpr .a2 + BitVec.ofNat 64 o) n) :
+    WP isa placeSchedule s fun t =>
+      (t.gpr .a2).toNat % 8 = 0 ∧
+      (∀ o n, o + n ≤ 128 → InRegions (s.rd ++ s.wr) (t.gpr .a2 + BitVec.ofNat 64 o) n) ∧
+      Spec.Rc2.scheduleAt t.mem (t.gpr .a2) = Spec.Rc2.scheduleAt s.mem (s.gpr .a0) ∧
+      Frame [⟨s.gpr .a2, 128⟩] s.mem t.mem ∧ Keep [.t0, .t3, .t4, .t5, .a7, .a2] s t := by
+  unfold placeSchedule
+  apply WP.seq
+  refine WP.mono (WP.keep [.t0] (Q := fun u => u.gpr .t0 = s.gpr .a0 &&& 7#64 ∧ u.mem = s.mem) (by rrun)
+    (by rfl) rfl) fun u ⟨⟨u0, um⟩, uk⟩ => ?_
+  have ga0 : u.gpr .a0 = s.gpr .a0 := uk.gpr (by decide)
+  have ga2 : u.gpr .a2 = s.gpr .a2 := uk.gpr (by decide)
+  refine WP.ite _ (rfl : isa.eval (.zero .t0) u = some (u.gpr .t0 == 0)) (fun hz => ?_) (fun hnz => ?_)
+  · have h0 : s.gpr .a0 &&& 7#64 = 0 := by rw [← u0]; simpa using hz
+    have hal0 : (s.gpr .a0).toNat % 8 = 0 := by
+      have e := congrArg BitVec.toNat h0
+      rw [BitVec.toNat_and, show (7#64).toNat = 2 ^ 3 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod] at e
+      exact e
+    refine WP.mono (WP.keep [.a2] (Q := fun t => t.gpr .a2 = s.gpr .a0 ∧ t.mem = s.mem) (by rrun [ga0, um])
+      (by rfl) rfl) fun t ⟨⟨t2, tm⟩, tk⟩ => ?_
+    refine ⟨by rw [t2]; exact hal0, fun o n hn => ?_, by rw [t2, tm], by rw [tm]; exact Frame.refl _ _,
+      (uk.trans tk).mono (by decide)⟩
+    rw [t2, hrd]
+    exact ⟨⟨s.gpr .a0, 128⟩, List.mem_append_left _ (List.mem_singleton_self _),
+      Offset.contains_base _ hn (by omega)⟩
+  · refine WP.mono (copySchedule_run u (by rw [uk.2.1, ga0]; exact hrd) (fun i hi => by
+        rw [uk.2.2, ga2]; exact hwr i hi) (by rw [ga0, ga2]; exact hsep)) fun t ⟨tc, tf, tk⟩ => ?_
+    have t2 : t.gpr .a2 = s.gpr .a2 := by rw [tk.gpr (by decide), ga2]
+    refine ⟨by rw [t2]; exact hal, by rw [t2]; exact hin, ?_, by rw [← um, ← ga2]; exact tf,
+      (uk.trans tk).mono (by decide)⟩
+    rw [t2, ← ga2, ← ga0, ← um]
+    exact scheduleAt_copy tc
+
 theorem block_wp (d : Spec.Rc2.Direction) (s : State) (hs : (blockC d).pre s) :
     WP isa (blockCode d) s fun s' => (blockC d).post s s' := by
   obtain ⟨hrd, hwr, hal, hfit1, hfit2, hks, hds⟩ := hs
@@ -89,12 +129,12 @@ theorem block_wp (d : Spec.Rc2.Direction) (s : State) (hs : (blockC d).pre s) :
     fun o n h => by rw [hwr]; exact ⟨_, by simp, Offset.contains_base _ h (by omega)⟩
   unfold blockCode
   apply WP.seq
-  refine WP.mono (copySchedule_run s hrd (fun i hi => inScratch i 1 (by omega))
+  refine WP.mono (placeSchedule_run s hrd (fun i hi => inScratch i 1 (by omega))
     (hks.symm.sep (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)
-    (Region.contains_self _ _))) fun t₀ ⟨c₀, f₀, k₀⟩ => ?_
+    (Region.contains_self _ _)) hal (fun o n hn => by
+      obtain ⟨r, hr, hc⟩ := inScratch o n (by omega); exact ⟨r, List.mem_append_right _ hr, hc⟩))
+    fun t₀ ⟨al₀, rd₀, K₀, f₀, k₀⟩ => ?_
   have p1₀ : t₀.gpr .a1 = s.gpr .a1 := k₀.gpr (by decide)
-  have p2₀ : t₀.gpr .a2 = s.gpr .a2 := k₀.gpr (by decide)
-  have K₀ : Spec.Rc2.scheduleAt t₀.mem (s.gpr .a2) = Spec.Rc2.scheduleAt s.mem (s.gpr .a0) := scheduleAt_copy c₀
   have B₀ : Spec.Rc2.blockAt t₀.mem (s.gpr .a1) = Spec.Rc2.blockAt s.mem (s.gpr .a1) :=
     Proof.Rc2.blockAt_frame f₀ _ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -109,9 +149,8 @@ theorem block_wp (d : Spec.Rc2.Direction) (s : State) (hs : (blockC d).pre s) :
         obtain ⟨r, hr, hc⟩ := inData 4 4 (by omega); exact ⟨r, List.mem_append_right _ hr, hc⟩))
     fun t₁ ⟨H₁, m₁, k₁⟩ => ?_
   apply WP.seq
-  have E : KeyEnv (s.gpr .a2) t₁ := ⟨by rw [k₁.gpr (by decide), p2₀], hal, fun o n hn => by
-    rw [k₁.2.1, k₁.2.2, k₀.2.1, k₀.2.2]
-    obtain ⟨r, hr, hc⟩ := inScratch o n (by omega); exact ⟨r, List.mem_append_right _ hr, hc⟩⟩
+  have E : KeyEnv (t₀.gpr .a2) t₁ := ⟨k₁.gpr (by decide), al₀, fun o n hn => by
+    rw [k₁.2.1, k₁.2.2, k₀.2.1, k₀.2.2]; exact rd₀ o n hn⟩
   refine WP.mono (rounds_runsTo d t₁ E rfl _ H₁) fun t₂ ⟨H₂, m₂, k₂⟩ => ?_
   have p4 : t₂.gpr .a1 = s.gpr .a1 := by rw [k₂.gpr (by decide), k₁.gpr (by decide), p1₀]
   refine WP.mono (blockStore_run t₂ H₂
@@ -122,7 +161,7 @@ theorem block_wp (d : Spec.Rc2.Direction) (s : State) (hs : (blockC d).pre s) :
   rw [m₃, p4, m₂, Proof.Rc2.blockAt_write64, cipher_rounds, m₁, K₀, p1₀, B₀]
 
 /-- The registers the block functions write: no preserved register, nor `ra`. -/
-def blockRegs : List Reg := [.a3, .a4, .a5, .a6, .a7, .t0, .t1, .t2, .t3, .t4, .t5]
+def blockRegs : List Reg := [.a2, .a3, .a4, .a5, .a6, .a7, .t0, .t1, .t2, .t3, .t4, .t5]
 
 theorem block_ok (d : Spec.Rc2.Direction) (hw : writesOnly blockRegs (blockCode d) = true)
     (hn : callFree (blockCode d) = true) (s : State) (hs : (blockC d).pre s) :

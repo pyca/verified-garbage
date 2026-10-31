@@ -3067,13 +3067,16 @@ pub unsafe extern "C" fn vg_rc2_encrypt_block(schedule: *const [u8; 128], data: 
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c",
+        // andi t0, a0, 7
+        r".insn 4, 0x00757293
+beqz t0, 20f",
         // addi t3, a0, 0
         // addi t4, a2, 0
         // addi t5, zero, 128
         r".insn 2, 0x8e2a
 .insn 2, 0x8eb2
 .insn 4, 0x08000f13
-20:",
+22:",
         // lbu a7, 0(t3)
         // sb a7, 0(t4)
         // addi t3, t3, 1
@@ -3084,7 +3087,12 @@ pub unsafe extern "C" fn vg_rc2_encrypt_block(schedule: *const [u8; 128], data: 
 .insn 2, 0x0e05
 .insn 2, 0x0e85
 .insn 2, 0x1f7d
-bnez t5, 20b",
+bnez t5, 22b
+j 21f
+20:",
+        // addi a2, a0, 0
+        r".insn 2, 0x862a
+21:",
         // lbu t1, 0(a1)
         // lbu a7, 1(a1)
         // slli a7, a7, 8
@@ -6472,13 +6480,16 @@ pub unsafe extern "C" fn vg_rc2_decrypt_block(schedule: *const [u8; 128], data: 
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c",
+        // andi t0, a0, 7
+        r".insn 4, 0x00757293
+beqz t0, 20f",
         // addi t3, a0, 0
         // addi t4, a2, 0
         // addi t5, zero, 128
         r".insn 2, 0x8e2a
 .insn 2, 0x8eb2
 .insn 4, 0x08000f13
-20:",
+22:",
         // lbu a7, 0(t3)
         // sb a7, 0(t4)
         // addi t3, t3, 1
@@ -6489,7 +6500,12 @@ pub unsafe extern "C" fn vg_rc2_decrypt_block(schedule: *const [u8; 128], data: 
 .insn 2, 0x0e05
 .insn 2, 0x0e85
 .insn 2, 0x1f7d
-bnez t5, 20b",
+bnez t5, 22b
+j 21f
+20:",
+        // addi a2, a0, 0
+        r".insn 2, 0x862a
+21:",
         // lbu t1, 0(a1)
         // lbu a7, 1(a1)
         // slli a7, a7, 8
