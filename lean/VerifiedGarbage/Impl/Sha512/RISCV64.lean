@@ -51,10 +51,10 @@ def T2 : Reg := .a7
 def T3 : Reg := .s0
 
 /-- The rotation amounts whose constants `2 ^ (64 - r)` live in registers. -/
-def rots : List Nat := [14, 18, 41, 28, 34, 39, 19, 61, 1, 8]
+def rots : List Nat := [19, 61, 1, 8]
 
 /-- The callee-saved registers holding the constants, in the order of `rots`. -/
-def cregs : List Reg := [.s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10]
+def cregs : List Reg := [.s1, .s2, .s3, .s4]
 
 /-- The register holding `2 ^ (64 - r)`. -/
 def C (r : Nat) : Reg := cregs.getD (rots.idxOf r) .s1
@@ -79,14 +79,17 @@ def xorRotr (hu : Bool) (d tmp x : Reg) (r : Nat) : List Instr :=
   [shr hu tmp x r, .logic .xor d d tmp, .mul tmp x (C r), .logic .xor d d tmp]
 
 /-- `d := (x ⋙ r₁) ⊕ (x ⋙ r₂) ⊕ (x ⋙ r₃)` (a `Σ`), with `tmp` clobbered. -/
-def bsig (hu : Bool) (d tmp x : Reg) (r₁ r₂ r₃ : Nat) : List Instr :=
-  [shr hu d x r₁, .mul tmp x (C r₁), .logic .xor d d tmp] ++
-    xorRotr hu d tmp x r₂ ++ xorRotr hu d tmp x r₃
+def xorRotrS (d tmp x : Reg) (r : Nat) : List Instr :=
+  [.shift .srl .d tmp x r, .logic .xor d d tmp, .shift .sll .d tmp x (64 - r), .logic .xor d d tmp]
+
+def bsig (_hu : Bool) (d tmp x : Reg) (r₁ r₂ r₃ : Nat) : List Instr :=
+  [.shift .srl .d d x r₁, .shift .sll .d tmp x (64 - r₁), .logic .xor d d tmp] ++
+    xorRotrS d tmp x r₂ ++ xorRotrS d tmp x r₃
 
 /-- `d := (x ⋙ r₁) ⊕ (x ⋙ r₂) ⊕ (x ≫ r₃)` (a `σ`), with `tmp` clobbered. -/
 def ssig (d tmp x : Reg) (r₁ r₂ r₃ : Nat) : List Instr :=
-  [shr true d x r₁, .mul tmp x (C r₁), .logic .xor d d tmp] ++
-    xorRotr true d tmp x r₂ ++ [.shift .srl .d tmp x r₃, .logic .xor d d tmp]
+  [shr false d x r₁, .mul tmp x (C r₁), .logic .xor d d tmp] ++
+    xorRotr false d tmp x r₂ ++ [.shift .srl .d tmp x r₃, .logic .xor d d tmp]
 
 /-- Leave `Wₜ` in `T0` and in its slot. The additions are in the order of the
 specification. -/
