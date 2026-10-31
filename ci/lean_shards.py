@@ -1111,19 +1111,31 @@ def module_of_output(path: str) -> str:
 def stale_outputs(build: pathlib.Path) -> list[pathlib.Path]:
     """The files under `build` that are outputs of a module of the project's
     libraries that no longer exists. Anything else (outputs of no module, of
-    the executables' roots) is kept."""
+    the executables' roots) is kept.
+
+    A file's module follows from its directory and the start of its name
+    (`module_of_output`), so one walk decides each directory's files with a
+    set lookup, and descends only into the namespaces of the libraries."""
     mods = modules()
     if not mods:
         raise SystemExit(f"no modules under {LEAN}")
     stale = []
-    for f in sorted(build.rglob("*")):
-        rel = f.relative_to(build).as_posix()
-        if not f.is_file() or rel.split("/")[0] not in ("lib", "ir"):
-            continue
-        m = module_of_output(rel)
-        if any(m == lib or m.startswith(f"{lib}.") for lib in LIBRARIES) and m not in mods:
-            stale.append(f)
-    return stale
+    for top in ("lib", "ir"):
+        for d, dirs, files in os.walk(build / top):
+            parts = pathlib.PurePath(d).relative_to(build / top).parts
+            if parts and parts[0] == "lean":
+                parts = parts[1:]
+            ns = ".".join(parts)
+            if ns and not any(ns == lib or ns.startswith(f"{lib}.") for lib in LIBRARIES):
+                # Outputs of no module of the libraries, and so is everything below.
+                dirs.clear()
+                continue
+            prefix = f"{ns}." if ns else ""
+            for f in files:
+                m = prefix + f.split(".")[0]
+                if m not in mods and any(m == lib or m.startswith(f"{lib}.") for lib in LIBRARIES):
+                    stale.append(pathlib.Path(d, f))
+    return sorted(stale)
 
 
 def main(args: list[str]) -> int:
@@ -1186,8 +1198,9 @@ def main(args: list[str]) -> int:
         stale = stale_outputs(build)
         for f in stale:
             f.unlink()
-        # The directories of modules that are gone, deepest first.
-        for d in sorted((d for d in build.rglob("*") if d.is_dir()), key=lambda d: -len(d.parts)):
+        # The directories left empty, deepest first, and their parents.
+        emptied = {d for f in stale for d in f.parents if build in d.parents}
+        for d in sorted(emptied, key=lambda d: -len(d.parts)):
             if not any(d.iterdir()):
                 d.rmdir()
         print(f"Deleted {len(stale)} outputs of modules that no longer exist.", file=sys.stderr)
