@@ -42,7 +42,8 @@ own changes are rebuilt either way, on top of the restored build.
 
 * **All assembly comes from Lean.** Never write `asm!`, `naked_asm!`,
   `global_asm!`, naked functions, `extern` blocks or a `build.rs` by hand, and
-  never edit `src/asm/` by hand. Add an entry to a registration file,
+  never edit the generated crates, `crates/verified-garbage-asm-<target>/src/`,
+  by hand. Add an entry to a registration file,
   `lean/VerifiedGarbage/Artifacts/<Alg>/<Target>.lean`, and run
   `lake env lean --run Emit.lean` in `lean/`.
 * **No unverified shortcuts in proofs.** No `sorry`, `admit`, `native_decide`,
@@ -72,7 +73,8 @@ own changes are rebuilt either way, on top of the restored build.
   and a test helper only some architectures call is built only for them.
   A pull request starts the Rust jobs (`ci/rust_matrix.toml`) of only the
   architectures its changes reach (`ci/rust_arches.py`: an architecture's
-  `src/asm/<target>/`, or shared code for all), and checks their coverage;
+  crate of generated code, `crates/verified-garbage-asm-<target>/`, or shared
+  code for all), and checks their coverage;
   the merge queue always runs every job.
 * **Known-answer tests need clear provenance.** Never type test vectors into
   a test. Use Wycheproof (`tests/wycheproof/`), or vendor the published
@@ -178,7 +180,7 @@ its own file.
 
 This takes at least two PRs (see "One kind of change per PR"): the spec
 (`Spec/<Alg>.lean` and `Spec/<Alg>/Contract.lean`) alone, then the
-implementation, its proof, its registration, the regenerated `src/asm/`,
+implementation, its proof, its registration, the regenerated crates,
 the Rust API, its tests and its benchmark together. Any TCB additions the
 primitive needs (e.g. new instructions in an ISA model) go in their own PR
 before either. Registration files (`Artifacts/`, `Generic/`) and variant
@@ -199,7 +201,8 @@ should add files, not edit lists that every other PR edits too.
   library modules they use (`ci/check_arch_gates.py` checks it), so update
   their `cfg`s with the module's.
 * Import the verified functions from `crate::arch::<module>` (the target's
-  `crate::asm::<target>::<module>`, `src/lib.rs`), once for every
+  crate of generated code, `verified_garbage_asm_<target>::<module>`,
+  `src/lib.rs`), once for every
   architecture, not with a `use` per architecture; only functions a target
   alone has (e.g. an x86-64 `_shani` variant) take a `#[cfg(target_arch)]`.
 * Tests of one algorithm go in a file of their own (`tests/cavp/<alg>.rs`,
@@ -210,7 +213,7 @@ should add files, not edit lists that every other PR edits too.
   never run).
 * A construction over many hash functions (HMAC, PBKDF2) gets a file per
   hash everywhere: its `Api`s' `module` is `<family>_<hash>` (so
-  `src/asm/<target>/hmac_sha256.rs`), its registration files are
+  `crates/verified-garbage-asm-<target>/src/hmac_sha256.rs`), its registration files are
   `Artifacts/<Family><Hash>/<Target>.lean`, its Rust implementation is
   `src/<family>/<hash>.rs` (the generic code stays in `src/<family>/mod.rs`),
   and its tests, benchmarks and `docs/algorithms/` row are
@@ -372,7 +375,7 @@ lake build --log-level=warning +VerifiedGarbage.Proof.Md5.X86_64.Compress
 To check the artifact and regenerate its code, run `EmitOne.lean` on its
 registration file: it builds only that file and what it imports, runs the
 emitter's audits on its artifacts, and writes (or, with `--check`, compares)
-only its files under `src/asm/`, in seconds once the proofs are built:
+only its files under `crates/`, in seconds once the proofs are built:
 
 ```sh
 lake env lean --run EmitOne.lean Md5.X86_64

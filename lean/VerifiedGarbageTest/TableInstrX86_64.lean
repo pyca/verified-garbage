@@ -102,8 +102,9 @@ def artifact : Artifact := artifactOf "vg_test_alutbl" 42
 
 /-- The rendering: the table read through a register, as any memory operand. -/
 def expected : String := "/// Returns 1 plus word 1 of its table.
+#[allow(clippy::missing_safety_doc)]
 #[unsafe(naked)]
-pub(crate) unsafe extern \"sysv64\" fn vg_test_alutbl() -> u64 {
+pub unsafe extern \"sysv64\" fn vg_test_alutbl() -> u64 {
     core::arch::naked_asm!(
         r\"lea rdx, [rip + {VG_TEST_ALUTBL}]
 movabs rax, 1
@@ -128,7 +129,7 @@ ret
 use super::Table;
 
 /// The table of constants `VG_TEST_ALUTBL` (`Artifact.consts`).
-pub(crate) static VG_TEST_ALUTBL: Table<16> = Table(*b\"\\
+pub static VG_TEST_ALUTBL: Table<16> = Table(*b\"\\
     \\x07\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\
     \\x2a\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\
 \");

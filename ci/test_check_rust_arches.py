@@ -220,14 +220,16 @@ class Workflow(unittest.TestCase):
         self.assertIn("LINT: ${{ needs.rust-arches.outputs.lint }}", job("rust-lint"))
 
     def test_rust_checkout_has_the_targets_functions(self):
-        # The `rust` job checks out only `src/asm/<asm or arch>/`: that must
+        # The `rust` job checks out only `crates/verified-garbage-asm-<asm or
+        # arch>/` (and every crate's manifest): that must
         # be the target directory whose architecture the entry tests.
         matrix = tomllib.loads((CI / "rust_matrix.toml").read_text())
         for entry in matrix["rust"]:
             with self.subTest(entry=entry["name"]):
                 target = entry.get("asm", entry["arch"])
                 self.assertEqual(rust_arches.ARCHES.get(target), entry["arch"])
-        self.assertIn("/src/asm/${{ matrix.asm || matrix.arch }}/", job("rust"))
+        self.assertIn("/crates/verified-garbage-asm-${{ matrix.asm || matrix.arch }}/", job("rust"))
+        self.assertIn("/crates/verified-garbage-asm-*/Cargo.toml", job("rust"))
 
     def test_only_benchmarked_arches_cache_the_benchmarks_dependencies(self):
         self.assertIn("if: ${{ matrix.bench && matrix.rust == 'stable' && runner.os == 'Linux' "

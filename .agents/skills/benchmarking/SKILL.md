@@ -66,4 +66,4 @@ whose architectures `bench_arches.py` names on stderr. Even then, run only
 the architectures it names, and prefer a module or two that show the
 change's effect over all of them. Never rerun a benchmark to get a better
 number, and never run one for a change that cannot affect speed (Lean
-proofs that leave `src/asm/` as it was, tests, docs, CI).
+proofs that leave the generated crates as they were, tests, docs, CI).

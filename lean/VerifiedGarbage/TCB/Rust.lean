@@ -10,7 +10,7 @@ is the printed assembly:
 
 ```rust
 #[unsafe(naked)]
-pub(crate) unsafe extern "<abi>" fn <name><sig> {
+pub unsafe extern "<abi>" fn <name><sig> {
     core::arch::naked_asm!(
         r"<line>
 <line>
@@ -21,9 +21,19 @@ pub(crate) unsafe extern "<abi>" fn <name><sig> {
 
 A naked function has no compiler-generated prologue or epilogue, so the
 machine code that runs is exactly the code that was verified (plus the
-final `ret` from the printer). The functions of each target are collected
-in `src/asm/<target>/`, one file per `module`, compiled only under the
-target's `cfg`.
+final `ret` from the printer). The functions of each target are a crate
+of their own, `verified-garbage-asm-<target>` (`crateDir`, under `crates/`;
+its `Cargo.toml` is written by hand), one file `src/<module>.rs` per
+`module`, compiled only under the target's `cfg` (`targetRoot`), whose
+items are therefore `pub`. The library depends on the crate of the target
+it is built for and names it `crate::arch` (`Cargo.toml`, `src/lib.rs`).
+
+The functions are in crates of their own, rather than modules of the
+library, for the time it takes to compile them: rustc puts naked functions
+in LLVM's module-level assembly, and in a release build LLVM's ThinLTO
+parses all of a codegen unit's module-level assembly again each time it
+imports a function from that unit, which it does for the Rust functions it
+shares a unit with. In a crate of their own they share a unit with none.
 
 Artifacts of a module can render to the same function but for its name
 (and documentation and constants): the same `cfg` attribute, calling
@@ -35,7 +45,7 @@ is then emitted as a function, and each other as another name of it
 
 ```rust
 #[allow(unused_imports)]
-pub(crate) use self::<the function's name> as <name>;
+pub use self::<the function's name> as <name>;
 ```
 
 Calling it runs that function, whose text is the text the artifact's own
@@ -61,7 +71,7 @@ the `doc` must not state them itself (`checkLayout`).
 An artifact that reads tables of constants (`Artifact.consts`, and those
 its instructions carry, `Printer.tables`: `tablesOf`) names each
 by the name of a `static` holding it, which `files` writes once per target,
-each in a file of its own, `src/asm/<target>/consts/<name>.rs` (its name in
+each in a file of its own, `src/consts/<name>.rs` of its crate (its name in
 lowercase), after checking that every artifact of the target with a table of
 that name gives the same words and that the code names only its own tables
 (`checkConsts`). `consts/mod.rs` declares `Table` and each table's module,
@@ -69,9 +79,9 @@ and re-exports its `static`, which the code names as `super::consts::<NAME>`:
 
 ```rust
 #[repr(C, align(64))]
-pub(crate) struct Table<const N: usize>(pub(crate) [u8; N]);
+pub struct Table<const N: usize>(pub [u8; N]);
 
-pub(crate) static <NAME>: Table<<8 n>> = Table(*b"\
+pub static <NAME>: Table<<8 n>> = Table(*b"\
     <the 8 bytes of word 0, least significant first, as \xHH>\
     …
 ");
@@ -90,7 +100,7 @@ functions' timing with them). Its name cannot be a table's (`tableName`).
 
 The code forms a table's address from the static's symbol (a `sym`
 operand), on AArch64 by `adrp` and `add` (`Line.sym`), whose operands
-`vg_sym_page!` and `vg_sym_pageoff!` (`src/asm/mod.rs`) write in the syntax
+`vg_sym_page!` and `vg_sym_pageoff!` (each crate's `lib.rs`, `targetRoot`) write in the syntax
 of the object format: `<sym>@PAGE` and `<sym>@PAGEOFF` for Mach-O, on
 Apple's platforms, and `<sym>` and `:lo12:<sym>` for ELF and COFF; on
 x86-64 by `lea` of the RIP-relative operand `[rip + <sym>]`, which is the
@@ -127,7 +137,7 @@ define):
 
 ```rust
 /// The CPU features `<name>` requires (`Artifact.features`).
-pub(crate) const <NAME>_FEATURES: crate::cpu::Features =
+pub const <NAME>_FEATURES: crate::cpu::Features =
     crate::cpu::Features(crate::cpu::feature::<FEATURE> | …);
 ```
 
@@ -267,7 +277,7 @@ def featuresConst (name gate : String) : List String → String
   | [] => ""
   | fs =>
     s!"/// The CPU features `{name}` requires (`Artifact.features`).\n" ++ gate ++
-    s!"pub(crate) const {name.toUpper}_FEATURES: crate::cpu::Features = \
+    s!"pub const {name.toUpper}_FEATURES: crate::cpu::Features = \
       crate::cpu::Features(" ++
     " | ".intercalate (fs.map fun f => s!"crate::cpu::feature::{featureConst f}") ++ ");\n\n"
 
@@ -281,7 +291,7 @@ def writtenConsts (name gate : String) (written : List (String × Nat)) : String
   String.join (written.map fun (p, n) =>
     s!"/// The bytes of `{p}` that `{name}` may write: it changes no byte of `{p}` at this \
       offset or beyond (`Artifact.written`).\n" ++ gate ++
-    s!"pub(crate) const {writtenName name p}: usize = {n};\n\n")
+    s!"pub const {writtenName name p}: usize = {n};\n\n")
 
 /-- The paragraphs documenting how much of its parameters the function `name`
 writes (`Artifact.written`). -/
@@ -487,6 +497,13 @@ def codeOf (a : Artifact) (lines : List Line) (moduleOf : String → String) : S
   "    )\n" ++
   "}\n"
 
+/-- Clippy's `missing_safety_doc`, which asks every `pub unsafe fn` for a
+`# Safety` section, allowed for a function whose documentation `doc` has
+none (as one with no buffers and no requirements, `vg_selftest_add`, does
+not: its contract asks nothing of the caller); nothing for any other. -/
+def safetyAllow (doc : String) : String :=
+  if (doc.splitOn "# Safety\n").length > 1 then "" else "#[allow(clippy::missing_safety_doc)]\n"
+
 /-- One artifact as a Rust naked function; `moduleOf` gives the module of
 each function it calls. The printer's `funcAlign` comes after the return
 (`Printer.function`) and any directives that follow it, and only the
@@ -503,12 +520,14 @@ where
   (`codeOf`). -/
   withCode (a : Artifact) (code : String) : String :=
   let gate := gateOf a
+  let doc := fullDoc a
   featuresConst a.name gate a.features ++
   writtenConsts a.name gate a.written ++
-  docComment "" (fullDoc a) ++
+  docComment "" doc ++
   gate ++
+  safetyAllow doc ++
   "#[unsafe(naked)]\n" ++
-  s!"pub(crate) unsafe extern \"{a.target.rustAbi}\" fn {a.name}" ++ code
+  s!"pub unsafe extern \"{a.target.rustAbi}\" fn {a.name}" ++ code
 
 /-- What makes two functions of a module the same function: their `cfg`
 attribute, calling convention, signature and body (`gateOf`, `codeOf`),
@@ -533,7 +552,7 @@ def alias (a : Artifact) (canon : String) : String :=
   docComment "" doc ++
   gate ++
   "#[allow(unused_imports)]\n" ++
-  s!"pub(crate) use self::{canon} as {a.name};\n"
+  s!"pub use self::{canon} as {a.name};\n"
 
 /-- The tables of constants of `a`: those its contract gives it
 (`Artifact.consts`) and those its instructions carry (`Printer.codeTables`,
@@ -764,7 +783,7 @@ def tableFile (t n : String) (ws : List (BitVec 64)) : String :=
   "#![allow(dead_code)]\n" ++
   "\nuse super::Table;\n" ++
   s!"\n/// The table of constants `{n}` (`Artifact.consts`).\n" ++
-  s!"pub(crate) static {n}: Table<{8 * ws.length}> = Table(*b\"\\\n" ++
+  s!"pub static {n}: Table<{8 * ws.length}> = Table(*b\"\\\n" ++
   String.join (ws.map fun w => "    " ++ wordBytes w ++ "\\\n") ++ "\");\n"
 
 /-- The module of a target's tables of constants, `consts/mod.rs`: `Table`,
@@ -773,9 +792,9 @@ def tablesMod (t : String) (ts : List (String × List (BitVec 64))) : String :=
   header ++ s!"//! The tables of constants of the verified functions for `{t}` (`Artifact.consts`).\n" ++
   "#![allow(dead_code, unused_imports)]\n" ++
   "\n/// A table of constants, aligned to a cache line.\n" ++
-  "#[repr(C, align(64))]\npub(crate) struct Table<const N: usize>(pub(crate) [u8; N]);\n" ++
+  "#[repr(C, align(64))]\npub struct Table<const N: usize>(pub [u8; N]);\n" ++
   String.join (ts.map fun (n, _) =>
-    s!"\n#[rustfmt::skip]\nmod {tableModule n};\npub(crate) use {tableModule n}::{n};\n")
+    s!"\n#[rustfmt::skip]\nmod {tableModule n};\npub use {tableModule n}::{n};\n")
 
 /-- `mod` declarations for generated child modules (never reformatted by rustfmt). -/
 def modDecls (ms : List String) (cfg : String → Option String) : String :=
@@ -783,7 +802,7 @@ def modDecls (ms : List String) (cfg : String → Option String) : String :=
     let c := match cfg m with
       | some c => s!"#[cfg({c})]\n"
       | none => ""
-    s!"\n{c}#[rustfmt::skip]\npub(crate) mod {m};\n")
+    s!"\n{c}#[rustfmt::skip]\npub mod {m};\n")
 
 /-- How many tasks `files` checks the artifacts on: the CPUs of CI's
 runners. The checks, and `render`, are pure functions of the artifacts, so
@@ -822,18 +841,29 @@ def targetsOf (as : List Artifact) : List (String × String) :=
   (distinct as (·.target.name)).map fun t =>
     (t, ((as.find? (·.target.name == t)).map (·.target.rustCfg)).getD "")
 
-/-- The root module, `mod.rs`: the macros its targets' modules use and a
-`mod` declaration of each target of `ts` (its name and Rust `cfg`), in order
-of their names. -/
-def rootFile (ts : List (String × String)) : String :=
+/-- The directory of the target `t`'s crate, under `crates/`: its name. -/
+def crateDir (t : String) : String := s!"verified-garbage-asm-{t}"
+
+/-- The root module of the target `t`'s crate, `src/lib.rs`: `crate::cpu`,
+the crate of `Features` that the `_FEATURES` constants name
+(`featuresConst`), the macros its modules use (`symMacros`) and a `mod`
+declaration of each of its modules `mods`, each compiled only under the
+target's Rust `cfg` `cfg` (so that a build for any other target, of every
+crate of the workspace, compiles none of them). The `cfg` is on the
+declarations, rather than the crate (`#![cfg]`), as `#[rustfmt::skip]`
+keeps rustfmt from rewriting their attributes, which the crate's cannot
+be. -/
+def targetRoot (t cfg : String) (mods : List String) : String :=
   header ++
-  "//! Formally verified assembly, emitted from Lean. See `lean/README.md`.\n" ++
+  s!"//! Verified functions for `{t}`: the crate `{crateDir t}`.\n" ++
   "//!\n" ++
   "//! Every function in these modules is the direct rendering of an `Artifact`\n" ++
   "//! whose machine code has been proven correct, memory safe and constant time\n" ++
-  "//! against its contract.\n" ++
+  "//! against its contract. See `lean/README.md`.\n" ++
+  "\n#![no_std]\n" ++
+  "\n#[allow(unused_imports)]\nuse verified_garbage_cpu as cpu;\n" ++
   symMacros ++
-  modDecls ((ts.map (·.1)).mergeSort (· ≤ ·)) fun t => (ts.find? (·.1 == t)).map (·.2)
+  modDecls mods (fun _ => some cfg)
 
 /-- The generated files of the artifacts of `ps`, given the module of each
 function each artifact calls; each artifact's code as `ps` printed it
@@ -841,30 +871,30 @@ function each artifact calls; each artifact's code as `ps` printed it
 def render (ps : List Prepared) (moduleOf : Artifact → String → String) : List (String × String) :=
   let as := ps.map (·.art)
   let targets := distinct as (·.target.name)
-  let root := rootFile (targetsOf as)
   let perTarget (t : String) : List (String × String) :=
     let arts := ps.filter (·.art.target.name == t)
     -- In order of their names, wherever their artifacts come in the list.
     let modules := (distinct (arts.map (·.art)) (·.module)).mergeSort (· ≤ ·)
     let ts := tables (arts.map (·.art))
     let mods := if ts.isEmpty then modules else (modules ++ ["consts"]).mergeSort (· ≤ ·)
-    (s!"{t}/mod.rs", header ++ s!"//! Verified functions for `{t}`.\n" ++
-      modDecls mods (fun _ => none)) ::
+    let cfg := ((targetsOf (arts.map (·.art))).map (·.2)).headD ""
+    let src := crateDir t ++ "/src"
+    (s!"{src}/lib.rs", targetRoot t cfg mods) ::
     (if ts.isEmpty then [] else
-      (s!"{t}/consts/mod.rs", tablesMod t ts) ::
-        ts.map fun (n, ws) => (s!"{t}/consts/{tableModule n}.rs", tableFile t n ws)) ++
+      (s!"{src}/consts/mod.rs", tablesMod t ts) ::
+        ts.map fun (n, ws) => (s!"{src}/consts/{tableModule n}.rs", tableFile t n ws)) ++
     -- Each module's file on a task of its own: a part (`Emit.run`) has one target.
     ((modules.map fun m => Task.spawn fun _ =>
-      (s!"{t}/{m}.rs",
+      (s!"{src}/{m}.rs",
         header ++ s!"//! Verified `{m}` functions for `{t}`.\n" ++
         "#![allow(dead_code)]\n" ++
         moduleText moduleOf (arts.filter (·.art.module == m)))).map Task.get)
   -- Each target's files on a task of their own.
-  ("mod.rs", root) :: ((targets.map fun t => Task.spawn fun _ => perTarget t).map Task.get).flatten
+  ((targets.map fun t => Task.spawn fun _ => perTarget t).map Task.get).flatten
 
-/-- The generated files, as paths relative to `src/asm/` and their contents:
-`mod.rs`, and for each target `<target>/mod.rs` and one `<target>/<module>.rs`
-per module; an error if an artifact is not made from an `Api` with a
+/-- The generated files, as paths relative to `crates/` and their contents:
+for each target, its crate's (`crateDir`) `src/lib.rs` and one
+`src/<module>.rs` per module; an error if an artifact is not made from an `Api` with a
 contract (`checkApi`), two artifacts of a target have the same name
 (`checkUnique`), a call is not of the code it runs (`checkCalls`), its
 tables of constants are not as `checkConsts` requires, an

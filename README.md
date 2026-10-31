@@ -2754,9 +2754,17 @@ The tables are generated from the code by `ci/algorithms_table.py`.
   Gracemont) on only if the operating system has set the DOITM bit, which
   user code cannot, and does not list the `VSHA512*` instructions that
   SHA-512 uses on CPUs with the SHA512 extension.
-* The proven assembly is emitted into [`src/asm/`](src/asm/) (one directory
-  per architecture) as Rust naked functions (`naked_asm!`); there is no build
-  script and no separate assembler step.
+* The proven assembly is emitted into [`crates/`](crates/) (a crate per
+  architecture, `verified-garbage-asm-<arch>`) as Rust naked functions (`naked_asm!`); there is no build script and no
+  separate assembler step. Naked functions' machine code is the same at every
+  optimization level, and optimized, rustc's ThinLTO has LLVM parse their
+  assembly twice more, so a crate depending on this one builds faster with
+  them unoptimized (as this repository's own builds are):
+
+  ```toml
+  [profile.release.package.verified-garbage-asm-x86_64]
+  opt-level = 0
+  ```
 * The public APIs are Rust that composes these verified primitives (see
   [what is not verified](#what-is-not-verified)).
 * The public APIs are tested against the [Wycheproof](https://github.com/C2SP/wycheproof)
@@ -2859,7 +2867,7 @@ WYCHEPROOF_ROOT=$PWD/wycheproof cargo test   # without it, the Wycheproof tests 
 cd lean
 lake exe cache get                   # prebuilt Mathlib
 lake build --log-level=warning       # check all proofs (without each module's recorded profile)
-lake env lean --run Emit.lean        # regenerate src/asm/ after changing lean/VerifiedGarbage/Artifacts/
+lake env lean --run Emit.lean        # regenerate the crates of crates/ after changing lean/VerifiedGarbage/Artifacts/
 ```
 
 To benchmark against OpenSSL (through rust-openssl; needs its headers) and

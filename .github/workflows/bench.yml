@@ -134,8 +134,6 @@ jobs:
             /*
             !/lean/
             !/docs/
-            !/src/asm/*/
-            /src/asm/${{ matrix.asm }}/
             !/crates/verified-garbage-asm-*/
             /crates/verified-garbage-asm-*/Cargo.toml
             /crates/verified-garbage-asm-${{ matrix.asm }}/
@@ -153,8 +151,6 @@ jobs:
             /*
             !/lean/
             !/docs/
-            !/src/asm/*/
-            /src/asm/${{ matrix.asm }}/
             !/crates/verified-garbage-asm-*/
             /crates/verified-garbage-asm-*/Cargo.toml
             /crates/verified-garbage-asm-${{ matrix.asm }}/

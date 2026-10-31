@@ -35,6 +35,22 @@ getrandom = "0.4"
 # constants and the detection in `src/cpu.rs` name.
 verified-garbage-cpu = { path = "crates/verified-garbage-cpu" }
 
+# The verified assembly of each target, generated into
+# `crates/verified-garbage-asm-<target>/src/`: a crate per target (see
+# `lean/VerifiedGarbage/TCB/Rust.lean`).
+[target.'cfg(target_arch = "aarch64")'.dependencies]
+verified-garbage-asm-aarch64 = { path = "crates/verified-garbage-asm-aarch64" }
+[target.'cfg(target_arch = "arm")'.dependencies]
+verified-garbage-asm-arm = { path = "crates/verified-garbage-asm-arm" }
+[target.'cfg(target_arch = "powerpc64")'.dependencies]
+verified-garbage-asm-powerpc64le = { path = "crates/verified-garbage-asm-powerpc64le" }
+[target.'cfg(target_arch = "riscv64")'.dependencies]
+verified-garbage-asm-riscv64 = { path = "crates/verified-garbage-asm-riscv64" }
+[target.'cfg(target_arch = "x86")'.dependencies]
+verified-garbage-asm-x86 = { path = "crates/verified-garbage-asm-x86" }
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+verified-garbage-asm-x86_64 = { path = "crates/verified-garbage-asm-x86_64" }
+
 [workspace]
 members = ["crates/*"]
 
@@ -66,3 +82,32 @@ opt-level = 3
 # backtrace), not full debug information: a tenth of a test build's time.
 [profile.test]
 debug = "line-tables-only"
+
+# The generated crates are naked functions and constants, whose machine code
+# no optimization changes. Optimized (with more than one codegen unit), rustc
+# runs ThinLTO over them, in which LLVM parses all of their assembly twice
+# more: a release build of the library took 2.6 times as long.
+[profile.dev.package.verified-garbage-asm-aarch64]
+opt-level = 0
+[profile.dev.package.verified-garbage-asm-arm]
+opt-level = 0
+[profile.dev.package.verified-garbage-asm-powerpc64le]
+opt-level = 0
+[profile.dev.package.verified-garbage-asm-riscv64]
+opt-level = 0
+[profile.dev.package.verified-garbage-asm-x86]
+opt-level = 0
+[profile.dev.package.verified-garbage-asm-x86_64]
+opt-level = 0
+[profile.release.package.verified-garbage-asm-aarch64]
+opt-level = 0
+[profile.release.package.verified-garbage-asm-arm]
+opt-level = 0
+[profile.release.package.verified-garbage-asm-powerpc64le]
+opt-level = 0
+[profile.release.package.verified-garbage-asm-riscv64]
+opt-level = 0
+[profile.release.package.verified-garbage-asm-x86]
+opt-level = 0
+[profile.release.package.verified-garbage-asm-x86_64]
+opt-level = 0
