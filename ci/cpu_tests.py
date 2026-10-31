@@ -108,6 +108,15 @@ GROUPS = {
         ],
         "tests": ["blake2_kat::blake2b", "blake2_kat::blake2s", "rfc7693::blake2b", "rfc7693::blake2s"],
     },
+    "brainpoolp256r1": {
+        "lib": ["ec::brainpoolp256r1", "ec::validate::tests::brainpoolp256r1", "ec::compressed::tests::brainpoolp256r1"],
+        "tests": [
+            "rfc7027::brainpoolp256r1",
+            "wycheproof::ec_compressed::brainpoolp256r1",
+            "wycheproof::ecdh_brainpoolp256r1",
+            "wycheproof::ecdsa_brainpoolp256r1",
+        ],
+    },
     "chacha20": {
         "lib": ["chacha20", "chacha20poly1305"],
         "tests": [

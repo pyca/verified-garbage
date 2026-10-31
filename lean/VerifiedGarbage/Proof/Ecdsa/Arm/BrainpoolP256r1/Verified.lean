@@ -85,6 +85,36 @@ theorem brainpoolp256r1_ok : CfgOk brainpoolp256r1 where
   fn := ⟨rfl, rfl, Mont.brainpoolp256r1n_ok, rfl⟩
   mulNf := fun _ h => nomatch h
 
+
+/-- brainpoolp256r1 with its field multiplications by `vg_brainpoolp256r1_mul_mod_<p|n>_umaal`:
+what `brainpoolp256r1_ok` states. -/
+theorem brainpoolp256r1u_ok : CfgOk (brainpoolp256r1With true) where
+  n0 := brainpoolp256r1_ok.n0
+  n10 := brainpoolp256r1_ok.n10
+  onG := brainpoolp256r1_ok.onG
+  p_odd := brainpoolp256r1_ok.p_odd
+  n_odd := brainpoolp256r1_ok.n_odd
+  p_lt := brainpoolp256r1_ok.p_lt
+  n_lt := brainpoolp256r1_ok.n_lt
+  n_enc := brainpoolp256r1_ok.n_enc
+  p_ge := brainpoolp256r1_ok.p_ge
+  n_ge := brainpoolp256r1_ok.n_ge
+  p_lt_2n := brainpoolp256r1_ok.p_lt_2n
+  minv_p := brainpoolp256r1_ok.minv_p
+  minv_n := brainpoolp256r1_ok.minv_n
+  len8 := brainpoolp256r1_ok.len8
+  len_lo := brainpoolp256r1_ok.len_lo
+  len_hi := brainpoolp256r1_ok.len_hi
+  sh := brainpoolp256r1_ok.sh
+  fp := brainpoolp256r1_ok.fp
+  fn := brainpoolp256r1_ok.fn
+  mulNf := fun _ h => nomatch h
+
+/-- Either configuration. -/
+theorem brainpoolp256r1With_ok (u : Bool) : CfgOk (brainpoolp256r1With u) := by
+  cases u
+  · exact brainpoolp256r1_ok
+  · exact brainpoolp256r1u_ok
 theorem pre_of {s : State} (h : signArm.pre s) : Pre brainpoolp256r1 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩
@@ -115,8 +145,9 @@ def τ₀ : VG.Arm.Taint.T :=
   { regs := .ofList [.r0, .r1, .r2, .r3], flags := false, lens := [64, 8192], argLen := 4,
     argBases := [(0, 1)] }
 
-theorem wf₀_pre {s : State} {extra : List Region} (hp : Pre brainpoolp256r1 s extra) : VG.Arm.Taint.Wf τ₀ s := by
-  refine ⟨fun _ => ⟨by simp [hp.wr, τ₀, brainpoolp256r1, show Spec.BrainpoolP256r1.curve.len = 32 from rfl], ?_, ?_⟩,
+theorem wf₀_pre {u : Bool} {s : State} {extra : List Region} (hp : Pre (brainpoolp256r1With u) s extra) :
+    VG.Arm.Taint.Wf τ₀ s := by
+  refine ⟨fun _ => ⟨by simp [hp.wr, τ₀, brainpoolp256r1With, show Spec.BrainpoolP256r1.curve.len = 32 from rfl], ?_, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ => ⟨hp.sp_fit, ?_⟩, ?_⟩
   · simp only [hp.wr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
       List.Pairwise.nil, false_implies, implies_true, and_true]
@@ -136,14 +167,14 @@ theorem wf₀_pre {s : State} {extra : List Region} (hp : Pre brainpoolp256r1 s 
     simp only [VG.Arm.Taint.region, hp.wr]
     rfl
 
-theorem wf₀ {s : State} (h : signArm.pre s) : VG.Arm.Taint.Wf τ₀ s := wf₀_pre (pre_of h)
+theorem wf₀ {s : State} (h : signArm.pre s) : VG.Arm.Taint.Wf τ₀ s := wf₀_pre (u := false) (pre_of h)
 
 theorem argByte_eq (s : State) (k : Nat) :
     VG.Arm.Taint.argByte s k = stackArgAddr s 0 + BitVec.ofNat 64 k := by
   simp [VG.Arm.Taint.argByte, stackArgAddr]
 
-theorem agree₀ {s t : State} {extraS extraT : List Region}
-    (hs : Pre brainpoolp256r1 s extraS) (ht : Pre brainpoolp256r1 t extraT) (pub : signArm.pub s t) :
+theorem agree₀ {u : Bool} {s t : State} {extraS extraT : List Region}
+    (hs : Pre (brainpoolp256r1With u) s extraS) (ht : Pre (brainpoolp256r1With u) t extraT) (pub : signArm.pub s t) :
     VG.Arm.Taint.Agree τ₀ s t := by
   obtain ⟨hsp, h0, h1, h2, h3, ha⟩ := pub
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀_pre hs, wf₀_pre ht,

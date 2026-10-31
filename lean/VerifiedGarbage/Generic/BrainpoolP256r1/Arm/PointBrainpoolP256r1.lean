@@ -38,6 +38,8 @@ import VerifiedGarbage.Proof.Mont.Arm.Step
 import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
 import VerifiedGarbage.Proof.Weierstrass.Arm.PointVerified
 
+public import VerifiedGarbage.Proof.Weierstrass.Arm.PointBrainpoolP256r1Umaal
+
 /-!
 # brainpoolP256r1's point addition and doubling on 32-bit ARM
 
@@ -60,6 +62,16 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP256r1.curve) : List A
     verified := brainpoolp256r1_add_verified (fermat_of_law h.law) },
   Spec.Weierstrass.Point.brainpoolp256r1.doubleApi.artifact Arm.target {
     code := Impl.Weierstrass.Arm.Point.pointDouble Spec.Weierstrass.Point.brainpoolp256r1
-    verified := brainpoolp256r1_double_verified (fermat_of_law h.law) }]
+    verified := brainpoolp256r1_double_verified (fermat_of_law h.law) },
+  Spec.Weierstrass.Point.brainpoolp256r1.addApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.Weierstrass.Arm.Point.pointAdd Spec.Weierstrass.Point.brainpoolp256r1 true
+    verified := brainpoolp256r1_addU_verified (fermat_of_law h.law)
+    features := ["umaal"] },
+  Spec.Weierstrass.Point.brainpoolp256r1.doubleApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.Weierstrass.Arm.Point.pointDouble Spec.Weierstrass.Point.brainpoolp256r1 true
+    verified := brainpoolp256r1_doubleU_verified (fermat_of_law h.law)
+    features := ["umaal"] }]
 
 end VG.Generic.BrainpoolP256r1.Arm.PointBrainpoolP256r1

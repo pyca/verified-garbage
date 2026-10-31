@@ -24,6 +24,18 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP256r1.curve) : List A
   Spec.Ecdsa.BrainpoolP256r1.verifyApi.artifact Arm.target {
     consts := Impl.Weierstrass.Arm.brainpoolp256r1CombConsts
     code := Impl.Ecdsa.Arm.verifyBrainpoolP256r1Comb
-    verified := Proof.Ecdsa.Verify.Arm.BrainpoolP256r1.combVerify_verified h.law }]
+    verified := Proof.Ecdsa.Verify.Arm.BrainpoolP256r1.combVerify_verified h.law },
+  Spec.Ecdsa.BrainpoolP256r1.signApi.artifact Arm.target {
+    suffix := "_umaal"
+    consts := Impl.Weierstrass.Arm.brainpoolp256r1CombConsts
+    code := Impl.Ecdsa.Arm.signBrainpoolP256r1CombU
+    verified := Proof.Ecdsa.Arm.BrainpoolP256r1.combSignU_verified h.law
+    features := ["umaal"] },
+  Spec.Ecdsa.BrainpoolP256r1.verifyApi.artifact Arm.target {
+    suffix := "_umaal"
+    consts := Impl.Weierstrass.Arm.brainpoolp256r1CombConsts
+    code := Impl.Ecdsa.Arm.verifyBrainpoolP256r1CombU
+    verified := Proof.Ecdsa.Verify.Arm.BrainpoolP256r1.combVerifyU_verified h.law
+    features := ["umaal"] }]
 
 end VG.Generic.BrainpoolP256r1.Arm.EcdsaBrainpoolP256r1

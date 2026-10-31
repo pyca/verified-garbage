@@ -20,10 +20,10 @@ namespace VG.Proof.Ecdsa.Rfc6979.Arm
 open VG VG.Arm VG.Impl.Weierstrass.Arm
 open VG.Proof.Ecdsa.Arm VG.Proof.Ecdsa.Arm.BrainpoolP256r1
 
-theorem brainpoolp256r1_comb_core_pre {s : State}
-    (h : (coreK Impl.Ecdsa.Arm.brainpoolp256r1 brainpoolp256r1CombConsts).pre s) : combSignPre s := by
+theorem brainpoolp256r1_comb_core_pre {u : Bool} {s : State}
+    (h : (coreK Impl.Ecdsa.Arm.brainpoolp256r1 brainpoolp256r1CombConsts).pre s) : combSignPre u s := by
   obtain ⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp,tables⟩ := h
-  have hp : Pre Impl.Ecdsa.Arm.brainpoolp256r1 s (constRegs brainpoolp256r1CombConsts s) :=
+  have hp : Pre (Impl.Ecdsa.Arm.brainpoolp256r1With u) s (constRegs brainpoolp256r1CombConsts s) :=
     ⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp⟩
   refine ⟨hp,?_,?_,?_,?_⟩
   · rw [rd]
@@ -53,6 +53,14 @@ theorem brainpoolp256r1_comb_core_ct : ConstantTime isa
   exact combSign_ct s t ts tt s' t' (brainpoolp256r1_comb_core_pre hs) (brainpoolp256r1_comb_core_pre ht)
     ⟨⟨sp,h0,h1,h2,h3,arg⟩,sy _ (List.mem_singleton_self _)⟩ e1 e2
 
+theorem brainpoolp256r1_comb_core_ctU : ConstantTime isa
+    (coreK Impl.Ecdsa.Arm.brainpoolp256r1 brainpoolp256r1CombConsts).pre
+    (coreK Impl.Ecdsa.Arm.brainpoolp256r1 brainpoolp256r1CombConsts).pub Impl.Ecdsa.Arm.signBrainpoolP256r1CombU := by
+  intro s t ts tt s' t' hs ht pub e1 e2
+  obtain ⟨sp,h0,h1,h2,h3,arg,sy⟩ := pub
+  exact combSignU_ct s t ts tt s' t' (brainpoolp256r1_comb_core_pre hs) (brainpoolp256r1_comb_core_pre ht)
+    ⟨⟨sp,h0,h1,h2,h3,arg⟩,sy _ (List.mem_singleton_self _)⟩ e1 e2
+
 /-- brainpoolP256r1 with the generator comb, with the group law `hL`. -/
 def brainpoolp256r1CombCurve (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) : RfcCurve :=
   {brainpoolp256r1 hL with
@@ -68,6 +76,21 @@ def brainpoolp256r1CombCurve (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) :
     coreCT := brainpoolp256r1_comb_core_ct
     coreStack := by lit_decide }
 
+/-- `brainpoolp256r1CombCurve`, calling `vg_ecdsa_brainpoolp256r1_sign_umaal`. -/
+def brainpoolp256r1CombCurveU (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) : RfcCurve :=
+  {brainpoolp256r1CombCurve hL with
+    coreN := Spec.Ecdsa.BrainpoolP256r1.signApi.name ++ "_umaal"
+    coreC := Impl.Ecdsa.Arm.signBrainpoolP256r1CombU
+    coreX := by
+      intro s hs
+      obtain ⟨tr,t,exec,keep,post⟩ := combSign_ok hL (u := true) (brainpoolp256r1_comb_core_pre hs)
+      refine ⟨tr,t,exec,abi_of_saved keep.saved keep.sp,?_⟩
+      simp only [coreK,coreSigOf]
+      rw [show (t.gpr .r1++t.gpr .r0).setWidth 32=t.gpr .r0 from BitVec.setWidth_append_eq_right]
+      exact post
+    coreCT := brainpoolp256r1_comb_core_ctU
+    coreStack := by lit_decide }
+
 end VG.Proof.Ecdsa.Rfc6979.Arm
 
 namespace VG.Proof.Ecdsa.Rfc6979.Arm.BrainpoolP256r1Sha256Comb
@@ -76,6 +99,10 @@ open VG.Proof.BrainpoolP256r1.Arm
 
 def pack (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) : RfcHash :=
   {BrainpoolP256r1Sha256.pack hL with R := brainpoolp256r1CombCurve hL}
+
+/-- `pack`, calling `vg_ecdsa_brainpoolp256r1_sign_umaal`. -/
+def packU (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) : RfcHash :=
+  {BrainpoolP256r1Sha256.pack hL with R := brainpoolp256r1CombCurveU hL}
 
 abbrev rfcCombSpec : Contract isa := Spec.Ecdsa.Rfc6979.BrainpoolP256r1Sha256.inst.signContract
   (abi.withConsts brainpoolp256r1CombConsts) 240
@@ -143,5 +170,9 @@ theorem implies : (rfcArm Spec.Ecdsa.Rfc6979.BrainpoolP256r1Sha256.inst 240 brai
 theorem sign_verified (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) :
     Verified Arm.target (cfgOf (pack hL)).sign rfcCombSpec :=
   Arm.sign_verified (pack hL) implies
+
+theorem signU_verified (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) :
+    Verified Arm.target (cfgOf (packU hL)).sign rfcCombSpec :=
+  Arm.sign_verified (packU hL) implies
 
 end VG.Proof.Ecdsa.Rfc6979.Arm.BrainpoolP256r1Sha256Comb
