@@ -1594,7 +1594,9 @@ pub unsafe extern "C" fn vg_rc2_expand_key(key: *const u8, key_len: usize, effec
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_rc2_encrypt_block(schedule: *const [u8; 128], data: *mut [u8; 8], scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        r".insn 2, 0x8e2a
+        r".insn 4, 0x757293
+.insn 4, 0x2028063
+.insn 2, 0x8e2a
 .insn 2, 0x8eb2
 .insn 4, 0x8000f13
 .insn 4, 0xe4883
@@ -1603,6 +1605,8 @@ pub unsafe extern "C" fn vg_rc2_encrypt_block(schedule: *const [u8; 128], data: 
 .insn 2, 0xe85
 .insn 2, 0x1f7d
 .insn 4, 0xfe0f19e3
+.insn 2, 0xa011
+.insn 2, 0x862a
 .insn 4, 0x5c303
 .insn 4, 0x15c883
 .insn 2, 0x8a2
@@ -3304,7 +3308,9 @@ pub unsafe extern "C" fn vg_rc2_encrypt_block(schedule: *const [u8; 128], data: 
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_rc2_decrypt_block(schedule: *const [u8; 128], data: *mut [u8; 8], scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        r".insn 2, 0x8e2a
+        r".insn 4, 0x757293
+.insn 4, 0x2028063
+.insn 2, 0x8e2a
 .insn 2, 0x8eb2
 .insn 4, 0x8000f13
 .insn 4, 0xe4883
@@ -3313,6 +3319,8 @@ pub unsafe extern "C" fn vg_rc2_decrypt_block(schedule: *const [u8; 128], data: 
 .insn 2, 0xe85
 .insn 2, 0x1f7d
 .insn 4, 0xfe0f19e3
+.insn 2, 0xa011
+.insn 2, 0x862a
 .insn 4, 0x5c303
 .insn 4, 0x15c883
 .insn 2, 0x8a2

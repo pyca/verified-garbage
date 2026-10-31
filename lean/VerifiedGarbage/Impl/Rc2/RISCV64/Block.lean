@@ -10,15 +10,17 @@ public import VerifiedGarbage.Spec.Rc2
 `vg_rc2_{en,de}crypt_block(schedule = a0, data = a1, scratch = a2)`, the
 algorithm of the PPC64LE implementation (`Impl/Rc2/PPC64LE/Block.lean`).
 The model faults on misaligned accesses, and the contracts state no
-alignment for the schedule or the block, so the schedule is first copied a
-byte at a time to the start of the working space, which is aligned, and
-read there: a key word at a public index with `lhu`, at the secret index of
-a mash by a scan of the copy's doublewords (`keyLookup`). The block is read
+alignment for the schedule or the block. The rounds read the schedule at
+`a2`, aligned to 8 bytes: a key word at a public index with `lhu`, at the
+secret index of a mash by a scan of its doublewords (`keyLookup`). If the
+schedule is aligned (its address, public, is a multiple of 8), `a2` is the
+schedule itself; if not, the schedule is copied a byte at a time to the
+start of the working space, which is aligned, and read there. The block is read
 and written a byte at a time, as a little-endian doubleword. The four words
 are kept zero-extended in `a3`–`a6`. A mix computes `a & b` and `c & ~a`
 (as `c XOR (a & c)`) from the neighbouring words, adds them and the key
 word, masks the sum to 16 bits and rotates it with two shifts. Only
-temporaries and argument registers are used, and no stack.
+temporaries and argument registers are written, and no stack is used.
 -/
 
 @[expose] public section
@@ -104,8 +106,13 @@ def round (direction : Spec.Rc2.Direction) (j : Nat) : Prog isa :=
 def rounds (direction : Spec.Rc2.Direction) : Prog isa :=
   (List.range 16).foldr (fun j rest => .seq (round direction j) rest) (.block [])
 
+/-- The schedule the rounds read into `a2`: the schedule at `a0` if its
+address is a multiple of 8, else its copy (`copySchedule`). -/
+def placeSchedule : Prog isa :=
+  .seq (.block [.logicImm .and .t0 .a0 7]) (.ite (.zero .t0) (.block [.addi .a2 .a0 0]) copySchedule)
+
 def blockCode (direction : Spec.Rc2.Direction) : Prog isa :=
-  .seq copySchedule (.seq (.block blockLoad) (.seq (rounds direction) (.block blockStore)))
+  .seq placeSchedule (.seq (.block blockLoad) (.seq (rounds direction) (.block blockStore)))
 
 def encryptBlock : Prog isa := blockCode .encrypt
 def decryptBlock : Prog isa := blockCode .decrypt
