@@ -20,6 +20,8 @@ import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public meta import VerifiedGarbage.Impl.Pbkdf2.PPC64LE
 import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 
 /-!
 # PBKDF2-HMAC's iteration over a Merkle–Damgård hash function on PPC64LE: correctness
@@ -332,10 +334,10 @@ theorem ctOf (P : Params) (D : Nat) (name : String) (code : Prog isa) {pre : Sta
     (hpub : ∀ s₁ s₂, pub s₁ s₂ → s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧
       (s₁.gpr .r5).setWidth 32 = (s₂.gpr .r5).setWidth 32 ∧ s₁.gpr .r6 = s₂.gpr .r6 ∧
       s₁.gpr .r7 = s₂.gpr .r7 ∧ s₁.sp = s₂.sp)
-    {hc : VG.Taint.Hint taint.T}
-    (hb : (taint.check (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7]) (main P D name code) hc).isSome = true) :
+    {hc : VG.Taint.Hint vectorTaint.T}
+    (hb : (vectorTaint.check (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7]) (main P D name code) hc).isSome = true) :
     ConstantTime isa pre pub (iterate P D name code) := by
-  refine RelCT.constantTime (Q := fun _ _ => True) (RelCT.seq ?_ (RelCT.taint (A := taint)
+  refine RelCT.constantTime (Q := fun _ _ => True) (RelCT.seq ?_ (RelCT.taint (A := vectorTaint)
     (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7]) (fun _ _ h => h) hb))
   have ag4 : ∀ s₁ s₂ : State, pre s₁ ∧ pre s₂ ∧ pub s₁ s₂ →
       taint.Agree (Taint.ofRegs [.r3, .r4, .r6, .r7]) s₁ s₂ := by
@@ -344,7 +346,7 @@ theorem ctOf (P : Params) (D : Nat) (name : String) (code : Prog isa) {pre : Sta
     refine ⟨hsp, fun r hr => ?_⟩
     simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
-  refine RelCT.mono (RelCT.wpDep (F := Entry) (RelCT.taint (A := taint) (Taint.ofRegs [.r3, .r4, .r6, .r7])
+  refine RelCT.mono (RelCT.wpDep (F := Entry) (RelCT.taint (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r6, .r7])
     ag4 (by taint_decide)) fun s₁ s₂ _ => ⟨entry_ok s₁, entry_ok s₂⟩) (fun _ _ h => h) ?_
   rintro s₁' s₂' ⟨-, σ₁, σ₂, ⟨_, _, hq⟩, a, b⟩
   obtain ⟨h3, h4, h5, h6, h7, hsp⟩ := hpub σ₁ σ₂ hq
@@ -359,8 +361,8 @@ theorem ctOf (P : Params) (D : Nat) (name : String) (code : Prog isa) {pre : Sta
 
 /-- `iterate` is constant time, given the taint analysis of `main`. -/
 theorem ct (P : Params) (D : Nat) (name : String) (code : Prog isa) (S : StreamingHash) (Wi : Nat)
-    {hc : VG.Taint.Hint taint.T}
-    (hb : (taint.check (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7]) (main P D name code) hc).isSome = true) :
+    {hc : VG.Taint.Hint vectorTaint.T}
+    (hb : (vectorTaint.check (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7]) (main P D name code) hc).isSome = true) :
     ConstantTime isa (iterK S Wi).pre (iterK S Wi).pub (iterate P D name code) :=
   ctOf P D name code (fun _ _ h => h) hb
 

@@ -21,3 +21,7 @@ pub use vg_ffdh_vetted_groups_ppc::VG_FFDH_VETTED_GROUPS_PPC;
 #[rustfmt::skip]
 mod vg_rsa_keygen_trial32;
 pub use vg_rsa_keygen_trial32::VG_RSA_KEYGEN_TRIAL32;
+
+#[rustfmt::skip]
+mod vg_sha512_ppc64le_k;
+pub use vg_sha512_ppc64le_k::VG_SHA512_PPC64LE_K;
