@@ -303,24 +303,26 @@ def sync (dir : FilePath) (check : Bool) (files : List (String × String))
           IO.println s!"removed stale {path}"
   return ok
 
-/-- The directories under `dir` of crates of generated code
-(`Rust.crateDir`): those it deletes stale `.rs` files in, and checks. -/
-def crateDirs (dir : FilePath) : IO (List String) := do
+/-- The directories of generated files (`Rust.codeDir`) of the crates of
+generated code under `dir` (`Rust.crateDir`): those it deletes stale `.rs`
+files in, and checks. -/
+def codeDirs (dir : FilePath) : IO (List String) := do
   unless ← dir.pathExists do return []
   let mut ds := #[]
   for e in ← dir.readDir do
-    if (← e.path.isDir) && e.fileName.startsWith (Rust.crateDir "") then ds := ds.push e.fileName
+    if (← e.path.isDir) && e.fileName.startsWith (Rust.crateDir "") then
+      ds := ds.push (e.fileName ++ "/" ++ Rust.codeSubdir)
   return (ds.qsort (· < ·)).toList
 
 /-- Writes the files generated from `as` under the directory in `args` (by
-default `../crates`), deleting any other `.rs` file in a crate of generated
-code there (`crateDirs`, and nothing else there: the other crates are
-written by hand); or, if `args` starts with `--check`, writes nothing and
+default `../crates`), deleting any other `.rs` file in the `asm/` of a crate
+of generated code there (`codeDirs`, and nothing else: the rest of those
+crates, and the other crates, are not the emitter's); or, if `args` starts with `--check`, writes nothing and
 fails if the files on disk differ from what would be generated.
 
 With `--part FILE`, `as` are the artifacts of a part (`parts`): only the
 files of their targets' crates are written or checked, and the other `.rs`
-files in those crates; then `FILE` gets their targets, for `finish`, which
+files in those crates' `asm/`; then `FILE` gets their targets, for `finish`, which
 checks the rest. -/
 def run (as : List Artifact) (args : List String) : IO UInt32 := do
   let some (check, part, dir) := parseArgs args | do IO.eprintln usage; return 2
@@ -328,9 +330,9 @@ def run (as : List Artifact) (args : List String) : IO UInt32 := do
     | .ok files => pure files
     | .error e => do IO.eprintln e; return 1
   let targets := Rust.targetsOf as
-  let own := targets.map (Rust.crateDir ·.1)
+  let own := targets.map (Rust.codeDir ·.1)
   let ok ← match part with
-    | none => sync dir check files (Rust.dedup (own ++ (← crateDirs dir))) []
+    | none => sync dir check files (Rust.dedup (own ++ (← codeDirs dir))) []
     | some _ =>
       sync dir check (files.filter fun (n, _) => own.any (n.startsWith <| · ++ "/")) own []
   if !ok then
@@ -348,15 +350,15 @@ def inTwoParts (targets : List (List (String × String))) : Option String :=
 /-- After `run` succeeded on every part, given the targets each wrote: no
 target is in two parts (so each part generated all of its targets' files,
 from all of their artifacts), and no other crate of generated code has a
-`.rs` file (a target's that no longer has artifacts). Writes (deleting
+`.rs` file in its `asm/` (a target's that no longer has artifacts). Writes (deleting
 those files) or checks, as `run`. -/
 def finish (targets : List (List (String × String))) (args : List String) : IO UInt32 := do
   let some (check, _, dir) := parseArgs args | do IO.eprintln usage; return 2
   if let some t := inTwoParts targets then
     IO.eprintln s!"the artifacts of the target {t} are in two parts"
     return 1
-  let own := targets.flatten.map (Rust.crateDir ·.1)
-  let stale := (← crateDirs dir).filter (!own.contains ·)
+  let own := targets.flatten.map (Rust.codeDir ·.1)
+  let stale := (← codeDirs dir).filter (!own.contains ·)
   unless ← sync dir check [] stale [] do
     IO.eprintln "run `lake build && lake env lean --run Emit.lean` in lean/ and commit the result"
     return 1
