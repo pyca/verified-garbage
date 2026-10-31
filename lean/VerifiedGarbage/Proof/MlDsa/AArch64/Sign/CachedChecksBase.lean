@@ -52,6 +52,10 @@ theorem keep_z {p : Params} {r : Nat} (hp : Ok3 p) (hr : r<p.ℓ) :
     keepB (sgR p) (sgW p) [(yP p r,1024)] t4P 1024=true := by
   revert r; rcases hp with rfl|rfl|rfl <;> decide
 
+theorem keep_low {p : Params} {i : Nat} (hp : Ok3 p) (hi : i<p.k) :
+    keepB (sgR p) (sgW p) [(wP p i,1024),(hP i,1024)] t4P 1024=true := by
+  revert i; rcases hp with rfl|rfl|rfl <;> decide
+
 theorem keep_ones {p : Params} (hp : Ok3 p) :
     keepB (sgR p) (sgW p) [(sc oONES,8)] t4P 1024=true := by
   rcases hp with rfl|rfl|rfl <;> decide

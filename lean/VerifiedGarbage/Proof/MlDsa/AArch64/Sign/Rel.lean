@@ -182,19 +182,19 @@ theorem vector_lrel_tr {S : Nat} {rbs wbs : List (Reg × Nat)} {P : State → St
 
 /-! ## `ρ` -/
 
-theorem signLeakT_head (p : Params) (sk μ rnd : List Byte) :
-    ∃ X, signLeakT p sk μ rnd = leakBytes (sk.take 32) ++ X := by
-  unfold signLeakT
+theorem signLeak_head (p : Params) (sk μ rnd : List Byte) :
+    ∃ X, signLeak p sk μ rnd = leakBytes (sk.take 32) ++ X := by
+  unfold signLeak
   rcases e : skDecode p sk with ⟨ρ, K, tr, s₁, s₂, t₀⟩
   have hρ : ρ = sk.take 32 := by rw [← skRho_eq p sk, e]
   subst hρ
   exact ⟨_, rfl⟩
 
 theorem leak_rho {p : Params} {sk₁ sk₂ μ₁ μ₂ r₁ r₂ : List Byte} (h1 : sk₁.length = p.skLen)
-    (h2 : sk₂.length = p.skLen) (h : signLeakT p sk₁ μ₁ r₁ = signLeakT p sk₂ μ₂ r₂) :
+    (h2 : sk₂.length = p.skLen) (h : signLeak p sk₁ μ₁ r₁ = signLeak p sk₂ μ₂ r₂) :
     sk₁.take 32 = sk₂.take 32 := by
-  obtain ⟨X₁, e₁⟩ := signLeakT_head p sk₁ μ₁ r₁
-  obtain ⟨X₂, e₂⟩ := signLeakT_head p sk₂ μ₂ r₂
+  obtain ⟨X₁, e₁⟩ := signLeak_head p sk₁ μ₁ r₁
+  obtain ⟨X₂, e₂⟩ := signLeak_head p sk₂ μ₂ r₂
   rw [e₁, e₂] at h
   refine leakBytes_inj (List.append_inj h ?_).1
   rw [leakBytes_length, leakBytes_length, List.length_take, List.length_take, h1, h2]

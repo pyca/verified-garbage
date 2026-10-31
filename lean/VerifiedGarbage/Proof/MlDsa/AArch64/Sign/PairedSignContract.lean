@@ -36,6 +36,6 @@ theorem pairedSignK_implies_spec {p : Params} (hp : Ok3 p) :
     (pairedSignK p signStack).Implies
       (signContract p (abi.withConsts pairedSignRootConsts) signStack) := by
   have h := pairedSignK_implies hp
-  exact ⟨h.pre, h.post, fun s₁ s₂ h₁ h₂ e => h.pub s₁ s₂ h₁ h₂ (Sign.signContract_pubT e), h.sat⟩
+  exact ⟨h.pre, h.post, fun s₁ s₂ h₁ h₂ e => h.pub s₁ s₂ h₁ h₂ (e), h.sat⟩
 
 end VG.Proof.MlDsa.AArch64.Sign

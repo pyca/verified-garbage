@@ -6,6 +6,8 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskCopy
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedChecks
 
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedChecksCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedR0
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedChecksBoundary
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedChecksZVector
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
@@ -95,6 +97,56 @@ open VG VG.AArch64 VG.Spec.MlDsa
 open VG.Impl.MlDsa.AArch64.Sign
 open VG.Impl.MlDsa.AArch64.Call (Ptr sc)
 open VG.Proof.MlDsa.AArch64.Optimized
+
+theorem optimizedR0_rooted_ok {p : Params} {S : Nat} {σ s : State} {t i : Nat}
+    (hp : Ok3 p) (hi : i<p.k) (roots : Roots p S f s) (h : PositiveIR p S σ t i s) :
+    WP isa (Impl.MlDsa.AArch64.Sign.Optimized.r0R p i) s (fun u=>PositiveIR p S σ t (i+1) u ∧ Roots p S f u) := by
+  have hc := optimizedR0Chk_ok hp i hi
+  simp only [optimizedR0Chk,Bool.and_eq_true,decide_eq_true_eq,List.all_eq_true] at hc
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨cl,hgb⟩,rp⟩,wp⟩,rr⟩,wr⟩,re⟩,we⟩,hwp⟩ := hc
+  simp only [subLowNormChk,Bool.and_eq_true] at cl
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨hwr,hcr⟩,hlr⟩,hww⟩,hwl⟩,hwc⟩,hwo⟩,hco⟩,_⟩ := cl
+  obtain ⟨h,hflag⟩ := h
+  unfold Impl.MlDsa.AArch64.Sign.Optimized.r0R
+  refine WP.seq (WP.mono_syms (responseProduct_ok ⟨h.b.l.st,h.b.l.k.d.roots⟩
+    (responseProductChk_r0 hp i hi) h.b.c (h.b.l.k.d.s2 i hi)) fun a ⟨hpa,h24a,hprod⟩ hsa => ?_)
+  have ra := roots.step_layout h.b.l.st.lay hpa hsa hwp (keep_product hp)
+  have ha := h.step hpa hsa rp wp hwp
+  have hw : PolyIs a.mem (pa a (wP p i)) (Wv p σ (p.ℓ*t) i) := by
+    have hv := ha.w 0 (by omega)
+    simpa only [Nat.add_zero] using hv
+  have hraw : RawPolyIs a.mem (pa a t1P) (nttInv (multiplyNTT
+      (VG.Proof.MlDsa.Sign.chF (cV p σ (p.ℓ*t))) (S2v p σ i))) := by
+    rw [hpa.pa (by decide)]; exact hprod
+  have ready := subLowNormReady_layout ha.b.l.st.lay hwr hcr hlr hww hwl hwc hwo hco
+    hw.1 hraw.1 hgb.1 hgb.2.1 hgb.2.2
+  refine WP.seq (WP.mono_syms (subLowNormAt_field_layout ha.b.l.st.lay hwr hcr hlr ready hw hraw)
+    fun b ⟨hpb,h24b,hhigh,hlow,hret⟩ hsb => ?_)
+  have rb := ra.step_layout ha.b.l.st.lay hpb hsb
+    (by simpa using And.intro hww hwl) (keep_low hp hi)
+  have high' : NatPl b (wBase p+i) (WHighv p σ (p.ℓ*t) i) := by
+    change NatPolyIs b.mem (pa b (wP p i)) _
+    rw [hpb.pa (ha.b.l.st.lay.ptrBs hwr)]
+    exact hhigh
+  have low' : SignedPl b (5+i) (R0v p σ (p.ℓ*t) i) (-(p.γ₂:Int)) p.γ₂ := by
+    change SignedPolyIs b.mem (pa b (hP i)) _ _ _
+    rw [hpb.pa (ha.b.l.st.lay.ptrBs hlr)]
+    exact hlow
+  simp only [positiveRfam,Bool.and_eq_true] at rr
+  have hbstate : PositiveIRb p S σ t (i+1) b :=
+    ⟨ha.b.step hpb hsb rr.1.1.1.1 (by simpa using And.intro hww hwl),
+      ha.z.keep ha.b.l.st.lay hpb rr.1.1.1.2,
+      (ha.high.keep ha.b.l.st.lay hpb rr.1.1.2).snoc high',
+      (ha.low.keep ha.b.l.st.lay hpb rr.1.2).snoc low',
+      (ha.w.shift hi).keep ha.b.l.st.lay hpb wr,(ha.b.l.st.lay.keepW hpb rr.2).trans ha.ones⟩
+  refine WP.mono_syms (and24_ok b) fun c ⟨hkc,hflagc⟩ hsc => ?_
+  have hpc : PPostB S b c [] := postB24 hkc []
+  refine ⟨⟨hbstate.step hpc hsc re we (by simp),?_⟩,
+    rb.step_layout hbstate.b.l.st.lay hpc hsc (by simp) (keep_nil hp)⟩
+  rw [hflagc,bit_and (h24b.trans (h24a.trans hflag)) hret]
+  exact bit_congr ⟨fun ⟨⟨a,b⟩,c⟩=>⟨a,forall_lt_succ.mp ⟨b,c⟩⟩,
+    fun ⟨a,b⟩=>⟨⟨a,(forall_lt_succ.mpr b).1⟩,(forall_lt_succ.mpr b).2⟩⟩
+
 
 theorem optimizedR0_pair_ok {p : Params} {S : Nat} {σ s : State} {t i : Nat}
     (hp : Ok3 p) (hi : i+1<p.k) (roots : Roots p S f s) (h : PositiveIR p S σ t i s) :
@@ -304,26 +356,39 @@ theorem checks_ok {p : Params} {S : Nat} {σ s : State} {t : Nat} {f : Poly}
   unfold Impl.MlDsa.AArch64.Sign.Optimized.pairedChecks
   refine WP.seq (WP.seq (WP.mono (challenge_ok hp ⟨roots,cache⟩ h h1) fun a ha=>?_))
   refine WP.seq (WP.mono (init_ok hp hc ha.2 ha.1) fun b hb=>?_)
-  refine WP.mono (optimizedZ_paired_vector_ok hp hb.2 hb.1) fun c hz=>?_
+  refine WP.mono (earlyPairedSeq_ok (I:=fun r u=>PositiveIZ p S σ t r u ∧ Roots p S f u) p.ℓ 0
+    (fun r _ hr s h=>optimizedZ_rooted_ok hp (by omega) h.2 h.1)
+    (fun r _ hr s h=>optimizedZ_pair_ok hp (by omega) h.2 h.1) b hb) fun c ⟨nz,_,hnz,hz,hdz⟩=>?_
+  rw [Nat.zero_add] at hnz hdz
+  have zflag:=PositiveIZ.done hnz hz.1 hdz
   refine ifOkElse_ok (fun hzpass=>?_) fun hzfail=>?_
-  · refine WP.seq (WP.mono (optimizedR0_paired_vector_ok hp hz.2 (positiveIR_of_IZ hz.1)) fun d hr=>?_)
+  · have he:nz=p.ℓ:=hdz.resolve_right hzpass
+    subst he
+    refine WP.seq (WP.mono (earlyPairedSeq_ok (I:=fun r u=>PositiveIR p S σ t r u ∧ Roots p S f u) p.k 0
+      (fun r _ hr s h=>optimizedR0_rooted_ok hp (by omega) h.2 h.1)
+      (fun r _ hr s h=>optimizedR0_pair_ok hp (by omega) h.2 h.1) c ⟨positiveIR_of_IZ hz.1,hz.2⟩)
+      fun d ⟨nr,_,hnr,hr,hdr⟩=>?_)
+    rw [Nat.zero_add] at hnr hdr
+    have rflag:=PositiveIR.done hnr hr.1 hdr
     refine ifOkElse_ok (fun hrpass=>?_) fun hrfail=>?_
-    · refine WP.seq (WP.mono (optimizedHint_paired_vector_ok hp hr.2 (positiveIH_of_IR hr.1)) fun e he=>?_)
+    · have he:nr=p.k:=hdr.resolve_right hrpass
+      subst he
+      refine WP.seq (WP.mono (optimizedHint_paired_vector_ok hp hr.2 (positiveIH_of_IR hr.1)) fun e he=>?_)
       refine WP.seq (WP.mono (ones_ok hp hc he.2 he.1) fun a ha=>?_)
       exact WP.mono (branch_ok hp hc ha.2 ha.1) fun u hu=>⟨hu.1,hu.2.roots,hu.2.cache⟩
     · have flag : d.gpr .x24=0 := by
-        rw [hr.1.2]; exact bit_zero.mpr (fun h=>(bit_ne.mpr h) (by rw [←hr.1.2]; exact hrfail))
+        rw [rflag]; exact bit_zero.mpr (fun h=>(bit_ne.mpr h) (by rw [←rflag]; exact hrfail))
       have fail : ¬ PassV p σ (p.ℓ*t) := by
         intro hpass
         exact (bit_ne.mpr (show ZOk p σ (p.ℓ*t) ∧ R0Ok p σ (p.ℓ*t) from ⟨hpass.1,hpass.2.1⟩))
-          (by rw [←hr.1.2]; exact hrfail)
+          (by rw [←rflag]; exact hrfail)
       exact WP.mono (reject_ok hp hc hr.2 hr.1.1.b.l hr.1.1.b.sampled fail flag)
         fun _ hu=>⟨.inr hu.1,hu.2.roots,hu.2.cache⟩
   · have flag : c.gpr .x24=0 := by
-      rw [hz.1.2]; exact bit_zero.mpr (fun h=>(bit_ne.mpr h) (by rw [←hz.1.2]; exact hzfail))
+      rw [zflag]; exact bit_zero.mpr (fun h=>(bit_ne.mpr h) (by rw [←zflag]; exact hzfail))
     have fail : ¬ PassV p σ (p.ℓ*t) := by
       intro hpass
-      exact (bit_ne.mpr hpass.1) (by rw [←hz.1.2]; exact hzfail)
+      exact (bit_ne.mpr hpass.1) (by rw [←zflag]; exact hzfail)
     exact WP.mono (reject_ok hp hc hz.2 hz.1.1.b.l hz.1.1.b.sampled fail flag)
       fun _ hu=>⟨.inr hu.1,hu.2.roots,hu.2.cache⟩
 

@@ -5433,6 +5433,9 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_z}
 and w24, w24, w0
+cbnz w24, 233f
+b 234f
+233:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #43008, lsl #0
@@ -5453,6 +5456,9 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_z}
 and w24, w24, w0
+cbnz w24, 235f
+b 236f
+235:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #45056, lsl #0
@@ -5473,6 +5479,9 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_z}
 and w24, w24, w0
+cbnz w24, 237f
+b 238f
+237:
 movz x0, #6144, lsl #0
 add x0, x28, x0
 movz x1, #5120, lsl #0
@@ -5491,12 +5500,15 @@ movk x2, #0, lsl #32
 movk x2, #0, lsl #48
 bl {vg_mldsa_signed_add_norm}
 and w24, w24, w0
-cbnz w24, 233f
+238:
+236:
+234:
+cbnz w24, 239f
 ldr x9, [x28, #904]
 add x9, x9, #7
 str x9, [x28, #904]
-b 234f
-233:
+b 240f
+239:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #48128, lsl #0
@@ -5517,6 +5529,9 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_r0}
 and w24, w24, w0
+cbnz w24, 241f
+b 242f
+241:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #50176, lsl #0
@@ -5537,6 +5552,9 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_r0}
 and w24, w24, w0
+cbnz w24, 243f
+b 244f
+243:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #52224, lsl #0
@@ -5557,6 +5575,9 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_r0}
 and w24, w24, w0
+cbnz w24, 245f
+b 246f
+245:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #54272, lsl #0
@@ -5577,12 +5598,19 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_r0}
 and w24, w24, w0
-cbnz w24, 235f
+cbnz w24, 247f
+b 248f
+247:
+248:
+246:
+244:
+242:
+cbnz w24, 249f
 ldr x9, [x28, #904]
 add x9, x9, #7
 str x9, [x28, #904]
-b 236f
-235:
+b 250f
+249:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #56320, lsl #0
@@ -5683,25 +5711,25 @@ ldr x9, [x28, #912]
 sub x9, x9, #76
 lsr x9, x9, #63
 and w24, w24, w9
-cbnz w24, 237f
+cbnz w24, 251f
 ldr x9, [x28, #904]
 add x9, x9, #7
 str x9, [x28, #904]
-b 238f
-237:
+b 252f
+251:
 movz x9, #1, lsl #0
 str x9, [x28, #896]
-238:
-236:
-234:
+252:
+250:
+240:
 232:
 ldr x9, [x28, #896]
 sub x9, x9, #1
 str x9, [x28, #896]
 cbnz x9, 22b
-cbnz w24, 239f
-b 240f
-239:
+cbnz w24, 253f
+b 254f
+253:
 movz x0, #18432, lsl #0
 add x0, x28, x0
 bl {vg_mldsa_canonicalize_signed}
@@ -5726,13 +5754,13 @@ bl {vg_mldsa_canonicalize_signed}
 add x0, x23, #0
 add x1, x28, #1040
 movz x2, #64, lsl #0
-241:
+255:
 ldrb w9, [x1, #0]
 strb w9, [x0, #0]
 add x0, x0, #1
 add x1, x1, #1
 sub x2, x2, #1
-cbnz x2, 241b
+cbnz x2, 255b
 movz x0, #18432, lsl #0
 add x0, x28, x0
 movz x1, #65535, lsl #0
@@ -5832,7 +5860,7 @@ movz x3, #4544, lsl #0
 add x3, x23, x3
 movz x4, #83, lsl #0
 bl {vg_mldsa_hint_bit_pack}
-240:
+254:
 21:
 add x0, x24, #0
 ldr x23, [x28, #840]
@@ -12524,6 +12552,9 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_z}
 and w24, w24, w0
+cbnz w24, 28f
+b 29f
+28:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #43008, lsl #0
@@ -12544,6 +12575,9 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_z}
 and w24, w24, w0
+cbnz w24, 210f
+b 211f
+210:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #45056, lsl #0
@@ -12564,6 +12598,9 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_z}
 and w24, w24, w0
+cbnz w24, 212f
+b 213f
+212:
 movz x0, #6144, lsl #0
 add x0, x28, x0
 movz x1, #5120, lsl #0
@@ -12582,12 +12619,15 @@ movk x2, #0, lsl #32
 movk x2, #0, lsl #48
 bl {vg_mldsa_signed_add_norm}
 and w24, w24, w0
-cbnz w24, 28f
+213:
+211:
+29:
+cbnz w24, 214f
 ldr x9, [x28, #904]
 add x9, x9, #7
 str x9, [x28, #904]
-b 29f
-28:
+b 215f
+214:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #48128, lsl #0
@@ -12608,6 +12648,9 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_r0}
 and w24, w24, w0
+cbnz w24, 216f
+b 217f
+216:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #50176, lsl #0
@@ -12628,6 +12671,9 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_r0}
 and w24, w24, w0
+cbnz w24, 218f
+b 219f
+218:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #52224, lsl #0
@@ -12648,6 +12694,9 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_r0}
 and w24, w24, w0
+cbnz w24, 220f
+b 221f
+220:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #54272, lsl #0
@@ -12668,12 +12717,19 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_r0}
 and w24, w24, w0
-cbnz w24, 210f
+cbnz w24, 222f
+b 223f
+222:
+223:
+221:
+219:
+217:
+cbnz w24, 224f
 ldr x9, [x28, #904]
 add x9, x9, #7
 str x9, [x28, #904]
-b 211f
-210:
+b 225f
+224:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #56320, lsl #0
@@ -12774,25 +12830,25 @@ ldr x9, [x28, #912]
 sub x9, x9, #76
 lsr x9, x9, #63
 and w24, w24, w9
-cbnz w24, 212f
+cbnz w24, 226f
 ldr x9, [x28, #904]
 add x9, x9, #7
 str x9, [x28, #904]
-b 213f
-212:
+b 227f
+226:
 movz x9, #1, lsl #0
 str x9, [x28, #896]
-213:
-211:
-29:
+227:
+225:
+215:
 27:
 ldr x9, [x28, #896]
 sub x9, x9, #1
 str x9, [x28, #896]
 cbnz x9, 22b
-cbnz w24, 214f
-b 215f
-214:
+cbnz w24, 228f
+b 229f
+228:
 movz x0, #18432, lsl #0
 add x0, x28, x0
 bl {vg_mldsa_canonicalize_signed}
@@ -12817,13 +12873,13 @@ bl {vg_mldsa_canonicalize_signed}
 add x0, x23, #0
 add x1, x28, #1040
 movz x2, #64, lsl #0
-216:
+230:
 ldrb w9, [x1, #0]
 strb w9, [x0, #0]
 add x0, x0, #1
 add x1, x1, #1
 sub x2, x2, #1
-cbnz x2, 216b
+cbnz x2, 230b
 movz x0, #18432, lsl #0
 add x0, x28, x0
 movz x1, #65535, lsl #0
@@ -12923,7 +12979,7 @@ movz x3, #4544, lsl #0
 add x3, x23, x3
 movz x4, #83, lsl #0
 bl {vg_mldsa_hint_bit_pack}
-215:
+229:
 21:
 add x0, x24, #0
 ldr x23, [x28, #840]

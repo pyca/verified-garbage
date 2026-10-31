@@ -2218,6 +2218,9 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_z}
 and w24, w24, w0
+cbnz w24, 221f
+b 222f
+221:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #28672, lsl #0
@@ -2238,12 +2241,17 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_z}
 and w24, w24, w0
-cbnz w24, 221f
+cbnz w24, 223f
+b 224f
+223:
+224:
+222:
+cbnz w24, 225f
 ldr x9, [x28, #904]
 add x9, x9, #4
 str x9, [x28, #904]
-b 222f
-221:
+b 226f
+225:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #30720, lsl #0
@@ -2264,6 +2272,9 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_r0}
 and w24, w24, w0
+cbnz w24, 227f
+b 228f
+227:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #32768, lsl #0
@@ -2284,12 +2295,17 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_r0}
 and w24, w24, w0
-cbnz w24, 223f
+cbnz w24, 229f
+b 230f
+229:
+230:
+228:
+cbnz w24, 231f
 ldr x9, [x28, #904]
 add x9, x9, #4
 str x9, [x28, #904]
-b 224f
-223:
+b 232f
+231:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #34816, lsl #0
@@ -2342,25 +2358,25 @@ ldr x9, [x28, #912]
 sub x9, x9, #81
 lsr x9, x9, #63
 and w24, w24, w9
-cbnz w24, 225f
+cbnz w24, 233f
 ldr x9, [x28, #904]
 add x9, x9, #4
 str x9, [x28, #904]
-b 226f
-225:
+b 234f
+233:
 movz x9, #1, lsl #0
 str x9, [x28, #896]
+234:
+232:
 226:
-224:
-222:
 220:
 ldr x9, [x28, #896]
 sub x9, x9, #1
 str x9, [x28, #896]
 cbnz x9, 22b
-cbnz w24, 227f
-b 228f
-227:
+cbnz w24, 235f
+b 236f
+235:
 movz x0, #14336, lsl #0
 add x0, x28, x0
 bl {vg_mldsa_canonicalize_signed}
@@ -2376,13 +2392,13 @@ bl {vg_mldsa_canonicalize_signed}
 add x0, x23, #0
 add x1, x28, #1040
 movz x2, #32, lsl #0
-229:
+237:
 ldrb w9, [x1, #0]
 strb w9, [x0, #0]
 add x0, x0, #1
 add x1, x1, #1
 sub x2, x2, #1
-cbnz x2, 229b
+cbnz x2, 237b
 movz x0, #14336, lsl #0
 add x0, x28, x0
 movz x1, #65535, lsl #0
@@ -2442,7 +2458,7 @@ movz x2, #80, lsl #0
 add x3, x23, #2336
 movz x4, #84, lsl #0
 bl {vg_mldsa_hint_bit_pack}
-228:
+236:
 21:
 add x0, x24, #0
 ldr x23, [x28, #840]
@@ -5127,6 +5143,9 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_z}
 and w24, w24, w0
+cbnz w24, 25f
+b 26f
+25:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #28672, lsl #0
@@ -5147,12 +5166,17 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_z}
 and w24, w24, w0
-cbnz w24, 25f
+cbnz w24, 27f
+b 28f
+27:
+28:
+26:
+cbnz w24, 29f
 ldr x9, [x28, #904]
 add x9, x9, #4
 str x9, [x28, #904]
-b 26f
-25:
+b 210f
+29:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #30720, lsl #0
@@ -5173,6 +5197,9 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_r0}
 and w24, w24, w0
+cbnz w24, 211f
+b 212f
+211:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #32768, lsl #0
@@ -5193,12 +5220,17 @@ movk x6, #0, lsl #32
 movk x6, #0, lsl #48
 bl {vg_mldsa_fused_pair_r0}
 and w24, w24, w0
-cbnz w24, 27f
+cbnz w24, 213f
+b 214f
+213:
+214:
+212:
+cbnz w24, 215f
 ldr x9, [x28, #904]
 add x9, x9, #4
 str x9, [x28, #904]
-b 28f
-27:
+b 216f
+215:
 movz x0, #5120, lsl #0
 add x0, x28, x0
 movz x1, #34816, lsl #0
@@ -5251,25 +5283,25 @@ ldr x9, [x28, #912]
 sub x9, x9, #81
 lsr x9, x9, #63
 and w24, w24, w9
-cbnz w24, 29f
+cbnz w24, 217f
 ldr x9, [x28, #904]
 add x9, x9, #4
 str x9, [x28, #904]
-b 210f
-29:
+b 218f
+217:
 movz x9, #1, lsl #0
 str x9, [x28, #896]
+218:
+216:
 210:
-28:
-26:
 24:
 ldr x9, [x28, #896]
 sub x9, x9, #1
 str x9, [x28, #896]
 cbnz x9, 22b
-cbnz w24, 211f
-b 212f
-211:
+cbnz w24, 219f
+b 220f
+219:
 movz x0, #14336, lsl #0
 add x0, x28, x0
 bl {vg_mldsa_canonicalize_signed}
@@ -5285,13 +5317,13 @@ bl {vg_mldsa_canonicalize_signed}
 add x0, x23, #0
 add x1, x28, #1040
 movz x2, #32, lsl #0
-213:
+221:
 ldrb w9, [x1, #0]
 strb w9, [x0, #0]
 add x0, x0, #1
 add x1, x1, #1
 sub x2, x2, #1
-cbnz x2, 213b
+cbnz x2, 221b
 movz x0, #14336, lsl #0
 add x0, x28, x0
 movz x1, #65535, lsl #0
@@ -5351,7 +5383,7 @@ movz x2, #80, lsl #0
 add x3, x23, #2336
 movz x4, #84, lsl #0
 bl {vg_mldsa_hint_bit_pack}
-212:
+220:
 21:
 add x0, x24, #0
 ldr x23, [x28, #840]
