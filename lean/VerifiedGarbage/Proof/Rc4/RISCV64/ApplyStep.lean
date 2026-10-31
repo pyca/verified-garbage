@@ -93,7 +93,7 @@ theorem apply_after (s : State) (k : Byte) (hax : s.gpr .a5 = k.setWidth 64)
 /-- One iteration, with the writes expressed against the original memory.
 Both swap operands are read before either write, including for a self-swap. -/
 theorem apply_step (s : State) (i j : Byte)
-    (hcx : s.gpr .a3 = i.setWidth 64) (h7 : s.gpr .t4 = j.setWidth 64) (h6 : s.gpr .t6 = 0#64)
+    (hcx : s.gpr .a3 = i.setWidth 64) (h7 : s.gpr .t4 = j.setWidth 64)
     (hal : (s.gpr .a7).toNat % 8 = 0)
     (hp : InRegions s.wr (s.gpr .a7) 256) (hd : InRegions s.wr (s.gpr .a1) 1) :
     let ii := i + 1#8
@@ -122,8 +122,8 @@ theorem apply_step (s : State) (i j : Byte)
   have t6 : t.gpr .t6 = s.gpr .t6 := tk.gpr (by decide)
   have htp : InRegions t.wr (t.gpr .a7) 256 := by rw [tk.2.2, tp]; exact hp
   rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.t0, .a5, .t1, .t2]
-    (replace_core t jj ii t9 (t6.trans h6) tcx (by rw [tp]; exact hal) htp)
+  refine WP.mono (WP.keep [.t0, .a5, .t1, .t2, .t5]
+    (replace_core t jj ii t9 tcx (by rw [tp]; exact hal) htp)
     (by decide +kernel)) fun u ⟨⟨uax, um⟩, uk⟩ => ?_
   rw [tm, tp] at uax um
   have ucx : u.gpr .a3 = ii.setWidth 64 := (uk.gpr (by decide)).trans tcx
@@ -153,9 +153,9 @@ theorem apply_step (s : State) (i j : Byte)
   have vwr : v.wr = s.wr := vk.2.2.trans uwr
   have hvp : InRegions (v.rd ++ v.wr) (v.gpr .a7) 256 := by rw [vrd, vwr, vp]; exact hr
   rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.t0, .a5, .t1, .t2]
-    (lookup_core v (a + b) v9' (v6.trans h6) (by rw [vp]; exact hal) hvp)
-    (by decide +kernel)) fun w ⟨⟨wax, wm⟩, wk⟩ => ?_
+  refine WP.mono (WP.keep [.t0, .a5, .t1, .t2, .t5]
+    (lookup_core v (a + b) v9' (by rw [vp]; exact hal) hvp)
+    (by decide +kernel)) fun w ⟨⟨wax, _, wm⟩, wk⟩ => ?_
   rw [hvm, vp] at wax
   have w0 : w.gpr .a0 = s.gpr .a0 := (wk.gpr (by decide)).trans ((vk.gpr (by decide)).trans u0)
   have w1 : w.gpr .a1 = s.gpr .a1 := (wk.gpr (by decide)).trans ((vk.gpr (by decide)).trans u1)
