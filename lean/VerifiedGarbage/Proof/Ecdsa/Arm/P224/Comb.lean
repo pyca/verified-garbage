@@ -17,6 +17,8 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.SavedAbi
 public import VerifiedGarbage.Proof.P224.Arm.Comb
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
 import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
+import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Umaal
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PlainSimp
@@ -24,6 +26,7 @@ import Mathlib.Logic.Function.Basic
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P224.CombLit
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Impl.Ecdsa.P224.ArmComb
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
@@ -45,21 +48,21 @@ open VG.Proof.Ecdsa.Arm
 abbrev combSignSpec : Contract isa :=
   Spec.Ecdsa.P224.inst.signContract (abi.withConsts p224CombConsts)
 
-def combSignPre (s : State) : Prop :=
-  Pre p224 s (constRegs p224CombConsts s) ∧ ConstsOk p224CombConsts 0 s
+def combSignPre (u : Bool) (s : State) : Prop :=
+  Pre (p224With u) s (constRegs p224CombConsts s) ∧ ConstsOk p224CombConsts 0 s
 
-theorem sign_spec_pre {s : State}
-    (h : (Spec.Ecdsa.P224.inst.signContract abi).pre s) : Pre p224 s := by
+theorem sign_spec_pre {u : Bool} {s : State}
+    (h : (Spec.Ecdsa.P224.inst.signContract abi).pre s) : Pre (p224With u) s := by
   sig_pre [Spec.Ecdsa.P224.inst,Spec.Ecdsa.Instance.signContract,Spec.Ecdsa.Instance.signSig,
     Spec.P224.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,Loc.val,State.addr,stackArgAddr,
     BitVec.add_zero] at h
   obtain ⟨sp,rd,wr,_od,_oh,_ok,os,oa,ds,hs,ks,sa,fo,fd,fh,fk,fs⟩ := h
   exact ⟨rd,wr,os,ds,hs,ks,oa,sa,fo,fd,fh,fk,fs,sp⟩
 
-theorem combSign_pre {s : State} (h : combSignSpec.pre s) : combSignPre s := by
+theorem combSign_pre {u : Bool} {s : State} (h : combSignSpec.pre s) : combSignPre u s := by
   have hp : (Spec.Ecdsa.P224.inst.signContract abi).pre (stripConsts p224CombConsts s) ∧
       ConstsOk p224CombConsts 0 s := pre_consts.mp h
-  have p := sign_spec_pre hp.1
+  have p := sign_spec_pre (u := u) hp.1
   refine ⟨⟨?_,p.wr,p.out_sc,p.d_sc,p.digest_sc,p.k_sc,p.out_args,p.sc_args,
     p.out_fit,p.d_fit,p.digest_fit,p.k_fit,p.sc_fit,p.sp_fit⟩,hp.2⟩
   rw [← List.take_append_drop (s.rd.length-p224CombConsts.length) s.rd,hp.2.1]
@@ -67,20 +70,27 @@ theorem combSign_pre {s : State} (h : combSignSpec.pre s) : combSignPre s := by
 
 def combSignPub (s t : State) : Prop := signArm.pub s t ∧ s.syms p224Comb.tsym=t.syms p224Comb.tsym
 
-theorem combSign_ct : ConstantTime isa combSignPre combSignPub signP224Comb := by
+theorem combSign_ct : ConstantTime isa (combSignPre false) combSignPub signP224Comb := by
   refine VG.Taint.constantTime (A := taintSym [p224Comb.tsym]) τ₀ ?_ (by native_taint_decide)
   intro s t hs ht pub
   exact ⟨agree₀ hs.1 ht.1 pub.1,fun n hn => by
     obtain rfl := List.mem_singleton.mp hn
     exact pub.2⟩
 
-theorem combSign_ok (hC : Law Spec.P224.curve) {s₀ : State} (hp : combSignPre s₀) :
-    WP isa signP224Comb s₀ fun t => SignKeep p224 s₀ t ∧ SignPost p224 s₀ t := by
+theorem combSignU_ct : ConstantTime isa (combSignPre true) combSignPub signP224CombU := by
+  refine VG.Taint.constantTime (A := taintSymU [p224Comb.tsym]) τ₀ ?_ (by taint_decide)
+  intro s t hs ht pub
+  exact ⟨agree₀ hs.1 ht.1 pub.1,fun n hn => by
+    obtain rfl := List.mem_singleton.mp hn
+    exact pub.2⟩
+
+theorem combSign_ok (hC : Law Spec.P224.curve) {u : Bool} {s₀ : State} (hp : combSignPre u s₀) :
+    WP isa (signP224CombWith u) s₀ fun t => SignKeep (p224With u) s₀ t ∧ SignPost (p224With u) s₀ t := by
   have member : (p224Comb.tsym,p224CombWords)∈p224CombConsts := List.mem_singleton_self _
   have ht := tableMem_of_consts hp.2 member
   have hd := table_disjoint_of_consts hp.2 member
     (show scR s₀∈s₀.wr by rw [hp.1.wr]; simp)
-  exact signWith_ok p224_ok hC hp.1 fun _ S sy => comb_generator_stage hC S sy ht rfl hd
+  exact signWith_ok (p224With_ok u) hC hp.1 fun _ S sy => comb_generator_stage hC S sy ht rfl hd
 
 open VG.Proof.P224.Arm in
 theorem combSign_sat : combSignSpec.pre combSatState := by
@@ -102,14 +112,15 @@ theorem combSign_sat : combSignSpec.pre combSatState := by
   · repeat' apply And.intro
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide
 
-def combSignLocal : Contract isa where
-  pre := combSignPre
-  post := SignPost p224
+def combSignLocal (u : Bool) : Contract isa where
+  pre := combSignPre u
+  post := SignPost (p224With u)
   pub := combSignPub
 
-theorem combSign_verified (hC : Weierstrass.Law Spec.P224.curve) :
-    Verified Arm.target signP224Comb combSignSpec := by
-  refine Verified.of_correct (k := combSignLocal) (fun s hs => ?_) combSign_ct
+theorem combSignWith_verified (hC : Weierstrass.Law Spec.P224.curve) (u : Bool)
+    (hct : ConstantTime isa (combSignPre u) combSignPub (signP224CombWith u)) :
+    Verified Arm.target (signP224CombWith u) combSignSpec := by
+  refine Verified.of_correct (k := combSignLocal u) (fun s hs => ?_) hct
     ⟨fun _ h => combSign_pre h,?_,?_,⟨VG.Proof.P224.Arm.combSatState,combSign_sat⟩⟩
   · obtain ⟨tr,t,exec,keep,post⟩ := combSign_ok hC hs
     exact ⟨tr,t,exec,abi_of_saved keep.saved keep.sp,post⟩
@@ -125,5 +136,13 @@ theorem combSign_verified (hC : Weierstrass.Law Spec.P224.curve) :
       Loc.val,State.addr,stackArgAddr,BitVec.add_zero,p224CombConsts,Abi.withConsts] at pub
     obtain ⟨sp,sy,h0,h1,h2,h3,ha⟩ := pub
     exact ⟨⟨sp,h0,h1,h2,h3,ha⟩,sy⟩
+
+theorem combSign_verified (hC : Weierstrass.Law Spec.P224.curve) :
+    Verified Arm.target signP224Comb combSignSpec :=
+  combSignWith_verified hC false combSign_ct
+
+theorem combSignU_verified (hC : Weierstrass.Law Spec.P224.curve) :
+    Verified Arm.target signP224CombU combSignSpec :=
+  combSignWith_verified hC true combSignU_ct
 
 end VG.Proof.Ecdsa.Arm.P224

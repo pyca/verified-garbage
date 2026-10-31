@@ -49,8 +49,21 @@ macro_rules! check {
             $base(&mut $out, $public, &mut $ws)
         }
     }};
+    ($base:ident, $out:ident, $public:ident, $ws:ident, umaal: $umaal:ident, $ufeatures:ident) => {{
+        #[cfg(target_arch = "arm")]
+        {
+            match Backend::select(detected(), $ufeatures) {
+                Backend::Baseline => $base(&mut $out, $public, &mut $ws),
+                Backend::Fast => $umaal(&mut $out, $public, &mut $ws),
+            }
+        }
+        #[cfg(not(target_arch = "arm"))]
+        {
+            $base(&mut $out, $public, &mut $ws)
+        }
+    }};
     ($base:ident, $out:ident, $public:ident, $ws:ident, $adx:ident, $features:ident,
-        $umaal:ident, $ufeatures:ident) => {{
+        umaal: $umaal:ident, $ufeatures:ident) => {{
         #[cfg(target_arch = "x86_64")]
         {
             match Backend::select(detected(), $features) {
@@ -94,7 +107,7 @@ macro_rules! codec {
                 // overlap the return address. Dispatch checks CPU requirements.
                 let ok = unsafe {
                     check!($compress, out, public, ws $(, $compress_adx, $features)?
-                        $(, $compress_umaal, $cfeatures)?)
+                        $(, umaal: $compress_umaal, $cfeatures)?)
                 };
                 (ok == 1).then_some(out)
             }
@@ -117,7 +130,7 @@ macro_rules! codec {
                 // overlap the return address. Dispatch checks CPU requirements.
                 let ok = unsafe {
                     check!($decompress, out, public, ws $(, $decompress_adx, $features)?
-                        $(, $decompress_umaal, $dfeatures)?)
+                        $(, umaal: $decompress_umaal, $dfeatures)?)
                 };
                 (ok == 1).then_some(out)
             }
@@ -140,6 +153,12 @@ codec!(
     vg_ec_p224_compress_public_key,
     vg_ec_p224_decompress_public_key,
     []
+    [
+        vg_ec_p224_compress_public_key_umaal,
+        vg_ec_p224_decompress_public_key_umaal,
+        VG_EC_P224_COMPRESS_PUBLIC_KEY_UMAAL_FEATURES,
+        VG_EC_P224_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES
+    ]
 );
 codec!(
     P256,

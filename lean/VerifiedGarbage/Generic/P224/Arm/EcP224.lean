@@ -25,6 +25,14 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P224.curve) : List Artifact := 
       the pointers."]
     consts := Impl.Weierstrass.Arm.p224CombConsts
     code := Impl.Ecdsa.Arm.publicKeyP224Comb
-    verified := Proof.EcKey.Arm.P224.combPk_verified h.law }]
+    verified := Proof.EcKey.Arm.P224.combPk_verified h.law },
+  Spec.EcKey.P224.publicKeyApi.artifact Arm.target {
+    suffix := "_umaal"
+    notes := ["`vg_ec_p224_public_key`'s code, but for its calls of `vg_p224_point_add_umaal` in \
+      the comb. Field multiplications are calls of `vg_p224_mul_mod_p_umaal` (and `vg_p224_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`)."]
+    consts := Impl.Weierstrass.Arm.p224CombConsts
+    code := Impl.Ecdsa.Arm.publicKeyP224CombU
+    verified := Proof.EcKey.Arm.P224.combPkU_verified h.law
+    features := ["umaal"] }]
 
 end VG.Generic.P224.Arm.EcP224

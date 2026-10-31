@@ -19,11 +19,14 @@ import VerifiedGarbage.Proof.Weierstrass.Arm.TCombConsts
 import VerifiedGarbage.Proof.Weierstrass.Arm.TCombScan
 import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
+import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Umaal
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PlainSimp
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P224.CombLit
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Impl.Ecdsa.P224.ArmComb
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
@@ -48,54 +51,54 @@ open VG.Proof.Mont VG.Proof.Mont.Arm
 abbrev combVerifySpec : Contract isa :=
   Spec.Ecdsa.P224.inst.verifyContract (abi.withConsts p224CombConsts)
 
-def combVerifyPre (s : State) : Prop :=
-  VPre p224 s (constRegs p224CombConsts s) ∧ ConstsOk p224CombConsts 0 s
+def combVerifyPre (um : Bool) (s : State) : Prop :=
+  VPre (p224With um) s (constRegs p224CombConsts s) ∧ ConstsOk p224CombConsts 0 s
 
-theorem verify_spec_pre {s : State}
-    (h : (Spec.Ecdsa.P224.inst.verifyContract abi).pre s) : VPre p224 s := by
+theorem verify_spec_pre {um : Bool} {s : State}
+    (h : (Spec.Ecdsa.P224.inst.verifyContract abi).pre s) : VPre (p224With um) s := by
   sig_pre [Spec.Ecdsa.P224.inst,Spec.Ecdsa.Instance.verifyContract,Spec.Ecdsa.Instance.verifySig,
     Spec.P224.curve,Spec.Ecdsa.scratchWords,abi,argRegs,reduceClassify,Loc.val,State.addr] at h
   obtain ⟨_sp,rd,wr,ps,ds,ss,fp,fd,fs,fc⟩ := h
   exact ⟨rd,wr,ps,ds,ss,fp,fd,fs,fc⟩
 
-theorem combVerify_pre {s : State} (h : combVerifySpec.pre s) : combVerifyPre s := by
+theorem combVerify_pre {um : Bool} {s : State} (h : combVerifySpec.pre s) : combVerifyPre um s := by
   have hp : (Spec.Ecdsa.P224.inst.verifyContract abi).pre (stripConsts p224CombConsts s) ∧
       ConstsOk p224CombConsts 0 s := pre_consts.mp h
-  have p := verify_spec_pre hp.1
+  have p := verify_spec_pre (um := um) hp.1
   refine ⟨⟨?_,p.wr,p.pk_sc,p.dg_sc,p.sig_sc,p.pk_fit,p.dg_fit,p.sig_fit,p.sc_fit⟩,hp.2⟩
   rw [← List.take_append_drop (s.rd.length-p224CombConsts.length) s.rd,hp.2.1]
   exact congrArg (fun rs => rs++constRegs p224CombConsts s) p.rd
 
-theorem combVerify_ok (hC : Law Spec.P224.curve) {s₀ : State} (hp : combVerifyPre s₀) :
-    WP isa verifyP224Comb s₀ fun t => VKeep s₀ t ∧ VPost p224 s₀ t := by
+theorem combVerify_ok (hC : Law Spec.P224.curve) {um : Bool} {s₀ : State} (hp : combVerifyPre um s₀) :
+    WP isa (verifyP224CombWith um) s₀ fun t => VKeep s₀ t ∧ VPost (p224With um) s₀ t := by
   have member : (p224Comb.tsym,p224CombWords)∈p224CombConsts := List.mem_singleton_self _
   have ht := tableMem_of_consts hp.2 member
   have hd := table_disjoint_of_consts hp.2 member
     (show (⟨ptr s₀ .r3,8192⟩ : Region)∈s₀.wr by rw [hp.1.wr]; simp)
-  apply verifyWith_ok p224_ok hC hp.1 (a0₁ := false) nofun
+  apply verifyWith_ok (p224With_ok um) hC hp.1 (a0₁ := false) nofun
   intro s M syms
   intro u hs hf F _ _ _ _ _ _ _ kv keep unch syu
   have frame : Frame [⟨ptr s₀ .r3,8192⟩] s₀.mem u.mem := outside_frame
     (unch.outside (o := 0) (n := 8192) (by simp)) (Nat.le_refl _)
   have hu := ht.of_frame (by rw [keep.rd,keep.wr]) frame
     (by simpa only [List.mem_singleton,forall_eq] using hd)
-  have k_eq : sv p224 (ptr s₀ .r3) u K=sv p224 (ptr s₀ .r3) s U := kv rfl
+  have k_eq : sv (p224With um) (ptr s₀ .r3) u K=sv (p224With um) (ptr s₀ .r3) s U := kv rfl
   -- The table of `u`'s bits, from `K`'s slot.
-  refine WP.seq (WP.mono_syms (tbl_bits_ok p224_ok hs hf (i := K) (j := 0) (by decide) (by decide))
+  refine WP.seq (WP.mono_syms (tbl_bits_ok (p224With_ok um) hs hf (i := K) (j := 0) (by decide) (by decide))
     fun u₂ ⟨b₂,k₂,O₂⟩ sy₂ => ?_)
   have hs₂ := hs.of_rest k₂ (by decide)
   have hf₂ := hf.of_rest k₂
-  have F₂ := F.unch p224_ok.n10 hs.nowrap (W := [(bitsAt p224.n 0,64*p224.n)])
-    (fun w hw => Or.inr (by rw [List.mem_singleton.mp hw]; decide)) O₂.unch
-  have hu₂ := hu.of_frame (by rw [k₂.rd,k₂.wr]) (outside_frame O₂ (size := 8192) (by decide))
+  have F₂ := F.unch (p224With_ok um).n10 hs.nowrap (W := [(bitsAt (p224With um).n 0,64*(p224With um).n)])
+    (fun w hw => Or.inr (by rw [List.mem_singleton.mp hw]; cases um <;> decide)) O₂.unch
+  have hu₂ := hu.of_frame (by rw [k₂.rd,k₂.wr]) (outside_frame O₂ (size := 8192) (by cases um <;> decide))
     (by simpa only [List.mem_singleton,forall_eq] using hd)
-  have bits : ∀ i<224,u₂.mem (off (ptr s₀ .r3) (bitsAt p224.n 0+i))=
-      if (sv p224 (ptr s₀ .r3) s U).testBit i then 1 else 0 := fun i hi => by
+  have bits : ∀ i<224,u₂.mem (off (ptr s₀ .r3) (bitsAt (p224With um).n 0+i))=
+      if (sv (p224With um) (ptr s₀ .r3) s U).testBit i then 1 else 0 := fun i hi => by
     rw [b₂ i (by change i < 64 * 4; omega)]
     simp only [sv] at k_eq
     rw [k_eq]
-  have mul := comb_generator_ok hC hs₂ hf₂ F₂ hu₂ (by rw [sy₂,syu,syms])
-    (hd.sub_right (Region.sub_prefix (by decide))) (k := sv p224 (ptr s₀ .r3) s U)
+  have mul := comb_generator_ok hC hs₂ hf₂ F₂ hu₂ (by rw [sy₂,syu,syms]; rfl)
+    (hd.sub_right (Region.sub_prefix (by decide))) (k := sv (p224With um) (ptr s₀ .r3) s U)
     (Nat.lt_trans M.u_lt (by decide)) bits
   refine WP.mono mul fun t ⟨R,U',Mo,L,Rp⟩ => ⟨(k₂.mono (by decide)).trans R,
     (O₂.unch.trans U').mono fun w hw => ?_,Mo,L,by simpa only [Nat.shiftRight_zero] using Rp⟩
@@ -106,9 +109,20 @@ theorem combVerify_ok (hC : Law Spec.P224.curve) {s₀ : State} (hp : combVerify
 
 def combVerifyPub (s t : State) : Prop := verifyArm.pub s t ∧ s.syms p224Comb.tsym=t.syms p224Comb.tsym
 
-theorem combVerify_ct : ConstantTime isa combVerifyPre combVerifyPub verifyP224Comb := by
+theorem combVerify_ct : ConstantTime isa (combVerifyPre false) combVerifyPub verifyP224Comb := by
   refine VG.Taint.constantTime (A := taintSym [p224Comb.tsym]) (Taint.ofRegs [.r0,.r1,.r2,.r3]) ?_
     (by native_taint_decide)
+  intro s t _ _ ⟨⟨_,h0,h1,h2,h3⟩,sy⟩
+  refine ⟨Taint.agree_ofRegs (fun r hr => ?_),fun n hn => ?_⟩
+  · simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl|rfl|rfl|rfl
+    exacts [h0,h1,h2,h3]
+  · obtain rfl := List.mem_singleton.mp hn
+    exact sy
+
+theorem combVerifyU_ct : ConstantTime isa (combVerifyPre true) combVerifyPub verifyP224CombU := by
+  refine VG.Taint.constantTime (A := taintSymU [p224Comb.tsym]) (Taint.ofRegs [.r0,.r1,.r2,.r3]) ?_
+    (by taint_decide)
   intro s t _ _ ⟨⟨_,h0,h1,h2,h3⟩,sy⟩
   refine ⟨Taint.agree_ofRegs (fun r hr => ?_),fun n hn => ?_⟩
   · simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -141,14 +155,15 @@ theorem combVerify_sat : combVerifySpec.pre combVerifySat := by
   · repeat' apply And.intro
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide
 
-def combVerifyLocal : Contract isa where
-  pre := combVerifyPre
-  post := VPost p224
+def combVerifyLocal (um : Bool) : Contract isa where
+  pre := combVerifyPre um
+  post := VPost (p224With um)
   pub := combVerifyPub
 
-theorem combVerify_verified (hC : Weierstrass.Law Spec.P224.curve) :
-    Verified Arm.target verifyP224Comb combVerifySpec := by
-  refine Verified.of_correct (k := combVerifyLocal) (fun s hs => ?_) combVerify_ct
+theorem combVerifyWith_verified (hC : Weierstrass.Law Spec.P224.curve) (um : Bool)
+    (hct : ConstantTime isa (combVerifyPre um) combVerifyPub (verifyP224CombWith um)) :
+    Verified Arm.target (verifyP224CombWith um) combVerifySpec := by
+  refine Verified.of_correct (k := combVerifyLocal um) (fun s hs => ?_) hct
     ⟨fun _ h => combVerify_pre h,?_,?_,⟨combVerifySat,combVerify_sat⟩⟩
   · obtain ⟨tr,t,exec,keep,post⟩ := combVerify_ok hC hs
     exact ⟨tr,t,exec,VG.Proof.Ecdsa.Arm.abi_of_saved keep.saved keep.sp,post⟩
@@ -164,5 +179,13 @@ theorem combVerify_verified (hC : Weierstrass.Law Spec.P224.curve) :
       Loc.val,State.addr,p224CombConsts,Abi.withConsts] at pub
     obtain ⟨sp,sy,_inputs,h0,h1,h2,h3⟩ := pub
     exact ⟨⟨sp,h0,h1,h2,h3⟩,sy⟩
+
+theorem combVerify_verified (hC : Weierstrass.Law Spec.P224.curve) :
+    Verified Arm.target verifyP224Comb combVerifySpec :=
+  combVerifyWith_verified hC false combVerify_ct
+
+theorem combVerifyU_verified (hC : Weierstrass.Law Spec.P224.curve) :
+    Verified Arm.target verifyP224CombU combVerifySpec :=
+  combVerifyWith_verified hC true combVerifyU_ct
 
 end VG.Proof.Ecdsa.Verify.Arm.P224

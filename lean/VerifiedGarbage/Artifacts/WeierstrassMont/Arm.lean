@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontVerified
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontP256Umaal
+public import VerifiedGarbage.Proof.Weierstrass.Arm.MontP224Umaal
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontP384Umaal
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -40,6 +41,12 @@ def artifacts : List Artifact := [
     notes := notes
     code := mulFn p224p.k p224p.m
     verified := p224p_mul_verified },
+  p224p.mulApi.artifact Arm.target {
+    suffix := "_umaal"
+    notes := umaalNotes
+    code := mulFnU p224p.k p224p.m
+    verified := p224p_mulU_verified
+    features := ["umaal"] },
   p224p.addApi.artifact Arm.target {
     notes := notes
     code := addFn p224p.k p224p.m
@@ -52,6 +59,12 @@ def artifacts : List Artifact := [
     notes := notes
     code := mulFn p224n.k p224n.m
     verified := p224n_mul_verified },
+  p224n.mulApi.artifact Arm.target {
+    suffix := "_umaal"
+    notes := umaalNotes
+    code := mulFnU p224n.k p224n.m
+    verified := p224n_mulU_verified
+    features := ["umaal"] },
   p224n.addApi.artifact Arm.target {
     notes := notes
     code := addFn p224n.k p224n.m
