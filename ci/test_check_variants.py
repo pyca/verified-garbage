@@ -131,6 +131,27 @@ class Aliases(unittest.TestCase):
         "pub(crate) use self::vg_g as vg_g_s;\n"
     )
 
+    def test_public_items(self):
+        # A target's crate's items are `pub`.
+        text = self.TEXT.replace("pub(crate) ", "pub ")
+        targets = check_variants.functions([("x", text)])
+        self.assertEqual(targets["x"]["vg_g_s"], targets["x"]["vg_g"])
+        self.assertEqual(targets["x"]["vg_g"][1], {"vg_f"})
+
+    def test_unread_items_fail(self):
+        # Items written in a form the script does not read are errors, not
+        # items quietly left unchecked.
+        read = "#[unsafe(naked)]\n" + self.TEXT + (
+            "pub const VG_G_FEATURES: crate::cpu::Features = "
+            "crate::cpu::Features(crate::cpu::feature::AVX);\n")
+        self.assertEqual(check_variants.unread([("x", read)]), [])
+        unread = read.replace("pub(crate) ", "pub(in crate) ").replace("pub const", "pub(in crate) const")
+        self.assertEqual(check_variants.unread([("x", unread)]), [
+            "x: read 0 of the 1 naked functions of a generated file",
+            "x: read 0 of the 1 other names of a generated file",
+            "x: read 0 of the 1 _FEATURES constants of a generated file",
+        ])
+
     def test_another_name_is_the_function(self):
         targets = check_variants.functions([("x", self.TEXT)])
         self.assertEqual(targets["x"]["vg_g_s"], targets["x"]["vg_g"])

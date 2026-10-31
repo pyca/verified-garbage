@@ -97,6 +97,41 @@ class InstructionLocations(unittest.TestCase):
         self.assertEqual(stderr.getvalue().splitlines(), expected)
 
 
+    def run_main(self, text):
+        """`main`'s status and errors, with `text` the only file of each target."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            for arch in check_mcdt.TARGETS:
+                path = root / "src" / "asm" / arch / "test.rs"
+                path.parent.mkdir(parents=True)
+                path.write_text(text)
+            stderr = io.StringIO()
+            with patch.object(check_mcdt, "ROOT", root), patch.object(
+                check_mcdt, "ASM", root / "src" / "asm"
+            ), contextlib.redirect_stderr(stderr), contextlib.redirect_stdout(io.StringIO()):
+                status = check_mcdt.main()
+        return status, stderr.getvalue().splitlines()
+
+    def test_public_functions_are_read(self):
+        # A target's crate's functions are `pub`.
+        status, errors = self.run_main('#[unsafe(naked)]\n'
+                                       'pub unsafe extern "sysv64" fn vg_f() {\n'
+                                       '    naked_asm!(\n        "pmullw xmm0, xmm1",\n    );\n}\n')
+        self.assertEqual(status, 1)
+        self.assertEqual(len(errors), len(check_mcdt.TARGETS))
+        self.assertTrue(all("(vg_f):4: `pmullw xmm0, xmm1` is outside" in e for e in errors))
+
+    def test_unread_functions_fail(self):
+        # A naked function written in a form `FN` does not read is an error,
+        # not a function quietly left unchecked.
+        status, errors = self.run_main('#[unsafe(naked)]\n'
+                                       'pub(in crate) unsafe extern "sysv64" fn vg_f() {\n'
+                                       '    naked_asm!(\n        "pmullw xmm0, xmm1",\n    );\n}\n')
+        self.assertEqual(status, 1)
+        self.assertEqual(errors, [f"src/asm/{arch}/test.rs: read 0 of its 1 naked functions"
+                                  for arch in check_mcdt.TARGETS])
+
+
 class ColdBranch(unittest.TestCase):
     PROLOGUE = [
         "stmxcsr DWORD PTR [rsp]",
