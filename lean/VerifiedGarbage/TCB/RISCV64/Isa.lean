@@ -29,11 +29,12 @@ Modelling choices:
   (`call`) and the return jumps to it (`ret`), which faults unless it is the
   address the call left.
 * The registers are 64 bits. The 32-bit operations are the `*w` forms
-  (`addw`, `subw`, `addiw`, `slliw`, `srliw`, `sraiw`), which read the low 32
-  bits of their operands and sign-extend their 32-bit result (RV64I,
-  "Integer Computational Instructions": "These *w instructions ignore the
-  upper 32 bits of their inputs and always produce 32-bit signed values,
-  sign-extending them to 64 bits"), the loads of words
+  (`addw`, `subw`, `addiw`, `slliw`, `srliw`, `sraiw`, `sllw`, `srlw`,
+  `sraw`), which read the low 32 bits of their operands (`sllw`, `srlw` and
+  `sraw` only the low 5 bits of their shift amount) and sign-extend their
+  32-bit result (RV64I, "Integer Computational Instructions": "These *w
+  instructions ignore the upper 32 bits of their inputs and always produce
+  32-bit signed values, sign-extending them to 64 bits"), the loads of words
   (`lwu`, zero-extended) and the stores of words (the low 32 bits); every
   other operation acts on all 64 bits.
 * Immediates the instruction cannot encode make it fault, so verified code
@@ -71,9 +72,15 @@ Modelling choices:
   attests data-independent latency for a list of instructions, which
   includes every computational instruction modelled here (`lui`, `auipc`,
   `addi`, `andi`, `ori`, `xori`, `slli`, `srli`, `srai`, `add`, `sub`,
-  `sltu`, `and`, `or`, `xor`, `addiw`, `slliw`, `srliw`, `sraiw`, `addw`,
-  `subw`, and, of the M extension, `mul` and `mulhu`: "Multiplication is
-  included; division and remaindering excluded").
+  `sll`, `srl`, `sra`, `sltu`, `and`, `or`, `xor`, `addiw`, `slliw`,
+  `srliw`, `sraiw`, `addw`, `subw`, `sllw`, `srlw`, `sraw`, and, of the M
+  extension, `mul` and `mulhu`: "Multiplication is included; division and
+  remaindering excluded"). The shifts by a register are in Zkt's RVI listing
+  (`sll`, `srl` and `sra`, and of RV64 `sllw`, `srlw` and `sraw`; Scalar
+  Cryptography, "Data Independent Execution Latency Subset: Zkt": "The Zkt
+  extension attests that the machine has data-independent execution time for
+  a safe subset of instructions"), so their latency is independent of the
+  shift amount as well as of the value shifted.
   As for the other ISAs, the leakage model assumes these take the same time
   whatever their operands; loads, stores and branches leak their addresses
   and conditions, which the taint analysis keeps public.
@@ -162,8 +169,8 @@ structure State where
 inductive LogicOp | and | or | xor
   deriving DecidableEq, Repr
 
-/-- The shifts by an immediate: logical left, logical right, arithmetic
-right. -/
+/-- The shifts, by an immediate (`shift`) or by a register (`shiftReg`):
+logical left, logical right, arithmetic right. -/
 inductive ShiftOp | sll | srl | sra
   deriving DecidableEq, Repr
 
@@ -201,6 +208,10 @@ inductive Instr
   `slliw`/`srliw`/`sraiw rd, rs1, sh` (the low word, `sh < 32`, the result
   sign-extended) -/
   | shift (op : ShiftOp) (sz : Size) (d n : Reg) (sh : Nat)
+  /-- `sll`/`srl`/`sra rd, rs1, rs2` (a doubleword, shifted by the low 6 bits
+  of `m`) or `sllw`/`srlw`/`sraw rd, rs1, rs2` (the low word, shifted by the
+  low 5 bits of `m`, the result sign-extended) -/
+  | shiftReg (op : ShiftOp) (sz : Size) (d n m : Reg)
   /-- `lbu`/`lhu`/`lwu`/`ld rd, off(rs1)`: the value, zero-extended;
   `0 ≤ off < 2048`, the address naturally aligned -/
   | load (wd : Width) (t n : Reg) (off : Nat)
@@ -290,7 +301,13 @@ chapters (which name instructions in lower case):
   instructions that are defined analogously to add and sub but operate on
   32-bit values and produce signed 32-bit results. Overflows are ignored, and
   the low 32-bits of the result is sign-extended to 64-bits and written to
-  the destination register";
+  the destination register"; "sll, srl, and sra perform logical left,
+  logical right, and arithmetic right shifts on the value in register rs1 by
+  the shift amount held in register rs2. In RV64I, only the low 6 bits of rs2
+  are considered for the shift amount" (the shift amount is `rs2 mod 64`);
+  "sllw, srlw, and sraw are RV64I-only instructions that are analogously
+  defined but operate on 32-bit values and sign-extend their 32-bit results
+  to 64 bits. The shift amount is given by rs2[4:0]" (`rs2 mod 32`);
 * RV32I, "Integer Register-Immediate Instructions": "addi adds the
   sign-extended 12-bit immediate to register rs1. Arithmetic overflow is
   ignored and the result is simply the low XLEN bits of the result" (`li rd,
@@ -398,6 +415,16 @@ def exec : Instr → State → Option State
       some (s.write d (sext32 (match op with
         | .sll => a <<< sh | .srl => a >>> sh | .sra => a.sshiftRight sh)))
     else none
+  | .shiftReg op .d d n m, s =>
+    let a := s.gpr n
+    let sh := (s.gpr m).toNat % 64
+    some (s.write d (match op with
+      | .sll => a <<< sh | .srl => a >>> sh | .sra => a.sshiftRight sh))
+  | .shiftReg op .w d n m, s =>
+    let a := (s.gpr n).setWidth 32
+    let sh := (s.gpr m).toNat % 32
+    some (s.write d (sext32 (match op with
+      | .sll => a <<< sh | .srl => a >>> sh | .sra => a.sshiftRight sh)))
   | .load wd t n off, s =>
     (addr s wd.bytes n off).bind fun a =>
       (s.load a wd.bytes).map fun v => s.write t (v.setWidth 64)

@@ -183,6 +183,8 @@ theorem exec_sp {i : Instr} {s s' : State} (h : exec i s = some s') : s'.sp = s.
   | shift op sz =>
     cases sz <;> simp only [exec] at h <;> (split at h <;> [skip; cases h]) <;>
     simp only [Option.some.injEq] at h <;> subst h <;> rfl
+  | shiftReg op sz =>
+    cases sz <;> simp only [exec, Option.some.injEq] at h <;> subst h <;> rfl
   | _ =>
     simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff, State.write, State.load,
       State.store] at h
