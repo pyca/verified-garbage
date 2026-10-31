@@ -102,6 +102,7 @@ def artifact : Artifact := artifactOf "vg_test_alutbl" 42
 
 /-- The rendering: the table read through a register, as any memory operand. -/
 def expected : String := "/// Returns 1 plus word 1 of its table.
+#[allow(clippy::missing_safety_doc)]
 #[unsafe(naked)]
 pub unsafe extern \"sysv64\" fn vg_test_alutbl() -> u64 {
     core::arch::naked_asm!(

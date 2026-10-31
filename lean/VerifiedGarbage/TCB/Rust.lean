@@ -497,6 +497,13 @@ def codeOf (a : Artifact) (lines : List Line) (moduleOf : String → String) : S
   "    )\n" ++
   "}\n"
 
+/-- Clippy's `missing_safety_doc`, which asks every `pub unsafe fn` for a
+`# Safety` section, allowed for a function whose documentation `doc` has
+none (as one with no buffers and no requirements, `vg_selftest_add`, does
+not: its contract asks nothing of the caller); nothing for any other. -/
+def safetyAllow (doc : String) : String :=
+  if (doc.splitOn "# Safety\n").length > 1 then "" else "#[allow(clippy::missing_safety_doc)]\n"
+
 /-- One artifact as a Rust naked function; `moduleOf` gives the module of
 each function it calls. The printer's `funcAlign` comes after the return
 (`Printer.function`) and any directives that follow it, and only the
@@ -513,10 +520,12 @@ where
   (`codeOf`). -/
   withCode (a : Artifact) (code : String) : String :=
   let gate := gateOf a
+  let doc := fullDoc a
   featuresConst a.name gate a.features ++
   writtenConsts a.name gate a.written ++
-  docComment "" (fullDoc a) ++
+  docComment "" doc ++
   gate ++
+  safetyAllow doc ++
   "#[unsafe(naked)]\n" ++
   s!"pub unsafe extern \"{a.target.rustAbi}\" fn {a.name}" ++ code
 
@@ -835,11 +844,15 @@ def targetsOf (as : List Artifact) : List (String × String) :=
 /-- The directory of the target `t`'s crate, under `crates/`: its name. -/
 def crateDir (t : String) : String := s!"verified-garbage-asm-{t}"
 
-/-- The root module of the target `t`'s crate, `src/lib.rs`, compiled only
-under its Rust `cfg` `cfg` (so that a build for any other target finds the
-crate empty): `crate::cpu`, the crate of `Features` that the `_FEATURES`
-constants name (`featuresConst`), the macros its modules use (`symMacros`)
-and a `mod` declaration of each of its modules `mods`. -/
+/-- The root module of the target `t`'s crate, `src/lib.rs`: `crate::cpu`,
+the crate of `Features` that the `_FEATURES` constants name
+(`featuresConst`), the macros its modules use (`symMacros`) and a `mod`
+declaration of each of its modules `mods`, each compiled only under the
+target's Rust `cfg` `cfg` (so that a build for any other target, of every
+crate of the workspace, compiles none of them). The `cfg` is on the
+declarations, rather than the crate (`#![cfg]`), as `#[rustfmt::skip]`
+keeps rustfmt from rewriting their attributes, which the crate's cannot
+be. -/
 def targetRoot (t cfg : String) (mods : List String) : String :=
   header ++
   s!"//! Verified functions for `{t}`: the crate `{crateDir t}`.\n" ++
@@ -848,10 +861,9 @@ def targetRoot (t cfg : String) (mods : List String) : String :=
   "//! whose machine code has been proven correct, memory safe and constant time\n" ++
   "//! against its contract. See `lean/README.md`.\n" ++
   "\n#![no_std]\n" ++
-  s!"#![cfg({cfg})]\n" ++
   "\n#[allow(unused_imports)]\nuse verified_garbage_cpu as cpu;\n" ++
   symMacros ++
-  modDecls mods (fun _ => none)
+  modDecls mods (fun _ => some cfg)
 
 /-- The generated files of the artifacts of `ps`, given the module of each
 function each artifact calls; each artifact's code as `ps` printed it

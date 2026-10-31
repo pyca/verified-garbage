@@ -3,14 +3,20 @@
 # compiling the library does not compile them again with it.
 [package]
 name = "verified-garbage-asm-aarch64"
-version = "0.0.0"
-edition = "2024"
-rust-version = "1.88"
 description = "The formally verified assembly of verified-garbage for aarch64"
-license = "Apache-2.0 OR BSD-3-Clause"
-repository = "https://github.com/pyca/verified-garbage"
-publish = false
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
 build = false
+
+# Stated, though it is the default, so that the manifest is valid where only
+# it is checked out (CI's jobs of the other targets), as Cargo reads it for
+# every path dependency, built or not.
+[lib]
+path = "src/lib.rs"
 
 [dependencies]
 verified-garbage-cpu = { path = "../verified-garbage-cpu" }

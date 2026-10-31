@@ -102,6 +102,7 @@ def artifact : Artifact := artifactOf "vg_test_ldrqtbl" 42
 /-- The rendering: the table's address formed with `adrSym`, then read
 through the register as by any `ldr q`. -/
 def expected : String := "/// Returns word 3 of its table.
+#[allow(clippy::missing_safety_doc)]
 #[unsafe(naked)]
 pub unsafe extern \"C\" fn vg_test_ldrqtbl() -> u64 {
     core::arch::naked_asm!(

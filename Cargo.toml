@@ -53,17 +53,6 @@ verified-garbage-asm-x86_64 = { path = "crates/verified-garbage-asm-x86_64" }
 
 [workspace]
 members = ["crates/*"]
-# The generated crates are not members (`exclude` takes no globs), so that
-# `cargo fmt` leaves them as the emitter wrote them and Clippy lints them as
-# it does any dependency.
-exclude = [
-    "crates/verified-garbage-asm-aarch64",
-    "crates/verified-garbage-asm-arm",
-    "crates/verified-garbage-asm-powerpc64le",
-    "crates/verified-garbage-asm-riscv64",
-    "crates/verified-garbage-asm-x86",
-    "crates/verified-garbage-asm-x86_64",
-]
 
 # What every crate of the workspace shares, which each inherits
 # (`<key>.workspace = true`).

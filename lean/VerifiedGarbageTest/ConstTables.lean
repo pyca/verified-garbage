@@ -99,6 +99,7 @@ def artifact : Artifact where
 /-- The rendering: the static's page and offset in the syntax of the object
 format (`vg_sym_page!`, `vg_sym_pageoff!`), and its symbol. -/
 def expected : String := "/// Returns word 1 of its table.
+#[allow(clippy::missing_safety_doc)]
 #[unsafe(naked)]
 pub unsafe extern \"C\" fn vg_test_consts() -> u64 {
     core::arch::naked_asm!(
