@@ -84,8 +84,7 @@ theorem pub_of {s₀ s₀' : State} (h : (signContract p X86.abi 96).pub s₀ s�
   · rw [Y_n] at hi
     obtain rfl | rfl | rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 := by omega
     exacts [a0, a1, a2, a3, a4]
-  · refine signLeakT_congr p (by simp only [skOf, VG.Spec.Sha3.bytesAt, List.length_map, List.length_range]) ?_
-    simp only [skOf, muOf, rndOf, bSk, bMu, bRnd, addr0]
+  · simp only [skOf, muOf, rndOf, bSk, bMu, bRnd, addr0]
     exact e₂
 
 end VG.Proof.MlDsa.X86.Sign

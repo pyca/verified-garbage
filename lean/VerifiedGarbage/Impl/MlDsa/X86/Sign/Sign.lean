@@ -22,8 +22,8 @@ caller's registers in a frame of 16 bytes (`leaf`), keeps `scratch` in
 3. The rejection sampling loop, at most 814 iterations (`minBounds.sign`),
    with the counter `κ` at `KAP`: the commitment (`y ← ExpandMask(ρ″, κ)`,
    `ŷ = NTT(y)`, `w = NTT⁻¹(Â ŷ)`, and `c̃ = H(μ ‖ w1Encode(HighBits(w)), λ/4)`
-   at `CT`), then `c = SampleInBall(c̃)` and, if it succeeded, every validity
-   check of the iteration, combined without a branch into `OK`: the norms
+   at `CT`), then `c = SampleInBall(c̃)` and, if it succeeded, the validity
+   checks in order, stopping at the first failing `z` or `r₀` polynomial: the norms
    of `z = y + NTT⁻¹(ĉ ŝ₁)`, of `r₀ = LowBits(w - NTT⁻¹(ĉ ŝ₂))` and of
    `ct₀ = NTT⁻¹(ĉ t̂₀)`, and the number of 1s of the hint
    `h = MakeHint(-ct₀, w - cs₂ + ct₀)`. The loop ends when `SampleInBall`
@@ -34,8 +34,8 @@ caller's registers in a frame of 16 bytes (`leaf`), keeps `scratch` in
 It returns `OK`. Only the calls of `vg_mldsa_rej_ntt_poly` (whose seeds are
 `ρ` and two indices), and the branch on their results, depend on `ρ`; only
 the calls of `vg_mldsa_sample_in_ball`, and the branch on their results, on
-`c̃`; only the branch on the validity checks on whether they passed, and
-only the call of `vg_mldsa_hint_bit_pack` on the hint of the signature.
+`c̃`; only the branches on validity checks on which check rejected the iteration
+and, for `z` and `r₀`, the first failing polynomial; and only the call of `vg_mldsa_hint_bit_pack` on the hint of the signature.
 Every other address and branch depends only on the pointers.
 -/
 
@@ -182,12 +182,17 @@ def onesOk : List Instr :=
 def nextKappa : List Instr :=
   [.mov .eax (.mem (at_ .esi oKAP)), .alu .add .eax (.imm (BitVec.ofNat 32 p.ℓ)), .store (at_ .esi oKAP) .eax]
 
-/-- The validity checks of an iteration, combined into `OK`; then, if they
-passed, `CNT ← 1` (the loop ends with `OK = 1`), and otherwise `κ ← κ + ℓ`. -/
+/-- Check low-part norms until one polynomial fails; construct hints only
+when every low-part norm passed. -/
+def checksR0 : Prog isa :=
+  .seq (seqOk (r0R P p) 0 p.k) (ifOk (.seq (seqR (hR P p) 0 p.k) (.block (onesOk p))))
+
+/-- Reject at the first failing response or low-part polynomial, skipping
+the remaining checks for this candidate. -/
 def checks : Prog isa :=
   .seq (nttAt P cP) (.seq (.block (st32 oOK 1 ++ st32 oONES 0))
-    (.seq (seqR (zR P p) 0 p.ℓ) (.seq (seqR (r0R P p) 0 p.k) (.seq (seqR (hR P p) 0 p.k)
-      (.seq (.block (onesOk p)) (ifOkElse (.block (st32 oCNT 1)) (.block (nextKappa p))))))))
+    (.seq (.seq (seqOk (zR P p) 0 p.ℓ) (ifOk (checksR0 P p)))
+      (ifOkElse (.block (st32 oCNT 1)) (.block (nextKappa p)))))
 
 /-- An iteration: the commitment, `SampleInBall`, and the checks if it
 succeeded (and otherwise `OK ← 0`, `CNT ← 1`); then `CNT ← CNT - 1`, which

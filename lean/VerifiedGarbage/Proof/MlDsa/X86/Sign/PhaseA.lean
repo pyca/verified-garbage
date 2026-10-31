@@ -87,7 +87,7 @@ theorem skLen_ge (ps : PS p) : 32 ≤ p.skLen := by have := ps.hskLen; omega
 
 theorem rhoS_eq {s₀ s₀' : State} (ps : PS p) (hq : SPub p s₀ s₀') : rhoS p s₀ = rhoS p s₀' :=
   rho_of_leak (by rw [VG.Proof.MlKem.bytesAt_length]; exact skLen_ge ps)
-    (by rw [VG.Proof.MlKem.bytesAt_length]; exact skLen_ge ps) hq.2
+    (by rw [VG.Proof.MlKem.bytesAt_length]; exact skLen_ge ps) hq.coarse
 
 /-! ## An entry -/
 
