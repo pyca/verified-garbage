@@ -43,7 +43,7 @@ open VG.Spec.Sha3 (bytesAt)
 abbrev scrLen (p : Params) : Nat := 8 * scratchWords p
 
 /-- `vg_mldsa*_sign(sk = x0, mu = x1, rnd = x2, sig = x3, scratch = x4) -> w0`, with `S` bytes of stack
-below `sp`, and the leakage `signLeakT`. -/
+below `sp`, and the leakage `signLeak`. -/
 def signK (p : Params) (S : Nat) : Contract isa where
   pre s :=
     [⟨s.gpr .x0, p.skLen⟩, ⟨s.gpr .x1, 64⟩, ⟨s.gpr .x2, 32⟩] ⊆ s.rd ∧
@@ -64,9 +64,9 @@ def signK (p : Params) (S : Nat) : Contract isa where
       (bytesAt s.mem (s.gpr .x2) 32)) ((s'.gpr .x0).setWidth 32) (bytesAt s'.mem (s.gpr .x3) p.sigLen)
   pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
     s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.sp = s₂.sp ∧
-    signLeakT p (bytesAt s₁.mem (s₁.gpr .x0) p.skLen) (bytesAt s₁.mem (s₁.gpr .x1) 64)
+    signLeak p (bytesAt s₁.mem (s₁.gpr .x0) p.skLen) (bytesAt s₁.mem (s₁.gpr .x1) 64)
         (bytesAt s₁.mem (s₁.gpr .x2) 32) =
-      signLeakT p (bytesAt s₂.mem (s₂.gpr .x0) p.skLen) (bytesAt s₂.mem (s₂.gpr .x1) 64)
+      signLeak p (bytesAt s₂.mem (s₂.gpr .x0) p.skLen) (bytesAt s₂.mem (s₂.gpr .x1) 64)
         (bytesAt s₂.mem (s₂.gpr .x2) 32)
 
 /-! ## The layout -/

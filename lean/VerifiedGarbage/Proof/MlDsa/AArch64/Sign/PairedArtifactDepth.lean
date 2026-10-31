@@ -13,6 +13,11 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedDepth
 namespace VG.Proof.MlDsa.AArch64.Message
 open VG VG.AArch64
 
+theorem earlySeq_dle {f : Nat→Prog isa} (h:∀k,DLe 1 (f k)) :
+    ∀n a,DLe 1 (Impl.MlDsa.AArch64.Sign.Optimized.seqOk f a n)
+  |0,_=>DLe.block []
+  |n+1,a=>DLe.seq (h a) (DLe.ite (earlySeq_dle h n (a+1)) (DLe.block []))
+
 theorem pairedChecks_dle (p : Spec.MlDsa.Params) :
     DLe 1 (Impl.MlDsa.AArch64.Sign.Optimized.pairedChecks p) := by
   have hn : DLe 1 Impl.MlDsa.AArch64.Optimized.Ntt.staticNtt := ⟨by decide +kernel⟩
@@ -24,6 +29,14 @@ theorem pairedChecks_dle (p : Spec.MlDsa.Params) :
   have ph : DLe 1 (Impl.MlDsa.AArch64.Optimized.Paired.selected .h) := ⟨by decide +kernel⟩
   unfold Impl.MlDsa.AArch64.Sign.Optimized.pairedChecks
   dle_tac
+  · apply earlySeq_dle
+    intro r
+    unfold Impl.MlDsa.AArch64.Sign.Optimized.zR
+    dle_tac
+  · apply earlySeq_dle
+    intro r
+    unfold Impl.MlDsa.AArch64.Sign.Optimized.r0R
+    dle_tac
 
 theorem pairedSignWith_dle (v : Proof.Sha3.AArch64.Permutation)
     {p : Spec.MlDsa.Params} (hp3 : Sign.Ok3 p) :

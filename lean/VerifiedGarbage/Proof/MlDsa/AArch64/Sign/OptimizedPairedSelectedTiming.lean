@@ -21,7 +21,7 @@ theorem selectedPairedChecks_tr {p : Params} (hp : Ok3 p) :
   intro t ht
   apply positivePairedChecks_tr hp (by rcases hp with rfl|rfl|rfl <;> decide) (by decide) (by decide)
   intro σ τ he hs ht'
-  exact leq_agree (paramsOk hp) he ht hs ht'
+  exact leq_prefixAgree (paramsOk hp) he ht hs ht'
 
 theorem selectedPairedSignLoop_tr (v : Proof.Sha3.AArch64.Permutation)
     {p : Params} (hp : Ok3 p) :

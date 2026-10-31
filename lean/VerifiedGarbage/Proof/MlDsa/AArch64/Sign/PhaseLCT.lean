@@ -20,7 +20,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
-# ML-DSA signing on AArch64: the loop leaks what `signLeakT` says
+# ML-DSA signing on AArch64: the loop leaks what `signLeak` says
 
 Two runs whose remaining iterations leak the same (`LeakEq`) agree on the
 iteration's `c̃` (`leq_ct`), on whether it passes (`leq_pass`) and on its hint
@@ -49,7 +49,7 @@ variable (p : Params)
 
 /-- What the `n` iterations from counter `κ` leak, for the function entered in `σ`. -/
 abbrev leakL (σ : State) (n κ : Nat) : List Nat :=
-  signLeakLoopT p maxBounds (amat p (Am p σ)) ((List.range p.ℓ).map (S1v p σ)) ((List.range p.k).map (S2v p σ))
+  signLeakLoop p maxBounds (amat p (Am p σ)) ((List.range p.ℓ).map (S1v p σ)) ((List.range p.k).map (S2v p σ))
     ((List.range p.k).map (T0v p σ)) (muOf σ) (rppOf p σ) n κ
 
 /-- Two runs agree on what the iterations from `t` leak. -/
@@ -80,19 +80,19 @@ section
 variable {p : Params} {σ₁ σ₂ : State} {t : Nat}
 
 theorem leq_step (h : LeakEq p t σ₁ σ₂) (ht : t < 814) :
-    signLeakLoopT p maxBounds (amat p (Am p σ₁)) ((List.range p.ℓ).map (S1v p σ₁)) ((List.range p.k).map (S2v p σ₁))
+    signLeakLoop p maxBounds (amat p (Am p σ₁)) ((List.range p.ℓ).map (S1v p σ₁)) ((List.range p.k).map (S2v p σ₁))
       ((List.range p.k).map (T0v p σ₁)) (muOf σ₁) (rppOf p σ₁) ((999 - t) + 1) (p.ℓ * t) =
-    signLeakLoopT p maxBounds (amat p (Am p σ₂)) ((List.range p.ℓ).map (S1v p σ₂)) ((List.range p.k).map (S2v p σ₂))
+    signLeakLoop p maxBounds (amat p (Am p σ₂)) ((List.range p.ℓ).map (S1v p σ₂)) ((List.range p.k).map (S2v p σ₂))
       ((List.range p.k).map (T0v p σ₂)) (muOf σ₂) (rppOf p σ₂) ((999 - t) + 1) (p.ℓ * t) := by
   rw [show 999 - t + 1 = 1000 - t by omega]; exact h
 
 theorem leq_ct (h : LeakEq p t σ₁ σ₂) (ht : t < 814) : CTv p σ₁ (p.ℓ * t) = CTv p σ₂ (p.ℓ * t) := by
-  have := (leakT_step (leq_step h ht)).1
+  have := (leakF_step (leq_step h ht)).1
   rwa [signCommit_eq, signCommit_eq] at this
 
 theorem leq_succ (h : LeakEq p t σ₁ σ₂) (ht : t < 814)
     (hr : ∃ ct, iterF p σ₁ maxBounds (p.ℓ * t) = some (ct, none)) : LeakEq p (t + 1) σ₁ σ₂ := by
-  have := ((leakT_step (leq_step h ht)).2.1 hr).2
+  have := ((leakF_step (leq_step h ht)).2.1 hr).2
   unfold LeakEq
   rw [show 1000 - (t + 1) = 999 - t by omega, Nat.mul_succ]
   exact this
@@ -109,7 +109,7 @@ theorem leq_pass (hp : ParamsOk p) (h : LeakEq p t σ₁ σ₂) (ht : t < 814)
     (hs₁ : (sampleInBall p.τ maxBounds.ball (CTv p σ₁ (p.ℓ * t))).isSome)
     (hs₂ : (sampleInBall p.τ maxBounds.ball (CTv p σ₂ (p.ℓ * t))).isSome) :
     PassV p σ₁ (p.ℓ * t) ↔ PassV p σ₂ (p.ℓ * t) := by
-  have e := (leakT_step (leq_step h ht)).2.2
+  have e := (leakF_step (leq_step h ht)).2.2
   rw [outTag_eq hp hs₁, outTag_eq hp hs₂] at e
   by_cases h1 : PassV p σ₁ (p.ℓ * t) <;> by_cases h2 : PassV p σ₂ (p.ℓ * t)
   · exact iff_of_true h1 h2
@@ -152,16 +152,91 @@ theorem leq_agree (hp : ParamsOk p) (h : LeakEq p t σ₁ σ₂) (ht : t < 814)
   · have h2 := hpass.mp h1
     exact ⟨iff_of_true h1.1 h2.1, iff_of_true ⟨h1.1, h1.2.1⟩ ⟨h2.1, h2.2.1⟩, hpass⟩
   · have h2 : ¬ PassV p σ₂ (p.ℓ * t) := fun h2 => h1 (hpass.mpr h2)
-    have e := leakT_tag (leq_step h ht) (iter_rej hp hs₁ h1) (iter_rej hp hs₂ h2)
+    have e := congrArg coarseTag (leakF_tag (leq_step h ht) (iter_rej hp hs₁ h1) (iter_rej hp hs₂ h2))
+    rw [coarseTag_signRejectTag,coarseTag_signRejectTag] at e
     rw [tag_eq hp hs₁, tag_eq hp hs₂] at e
     exact ⟨(tagFn_eq e).1, (tagFn_eq e).2, hpass⟩
+
+/-- What the branches of the checks need two runs to agree on: whether the
+first `r` polynomials of `z` passed, for each `r` (the checks stop at the
+first that fails), whether `z` and the first `i` polynomials of `r₀` passed,
+for each `i`, and whether the iteration passed. -/
+abbrev PrefixChecksAgree (p : Params) (t : Nat) (σ₁ σ₂ : State) : Prop :=
+  (∀ r ≤ p.ℓ, (∀ j < r, normRq [Zv p σ₁ (p.ℓ * t) j] < p.γ₁ - p.β) ↔
+    (∀ j < r, normRq [Zv p σ₂ (p.ℓ * t) j] < p.γ₁ - p.β)) ∧
+  (∀ i ≤ p.k, (ZOk p σ₁ (p.ℓ * t) ∧ ∀ j < i, normRq [R0v p σ₁ (p.ℓ * t) j] < p.γ₂ - p.β) ↔
+    (ZOk p σ₂ (p.ℓ * t) ∧ ∀ j < i, normRq [R0v p σ₂ (p.ℓ * t) j] < p.γ₂ - p.β)) ∧
+  (PassV p σ₁ (p.ℓ * t) ↔ PassV p σ₂ (p.ℓ * t))
+
+/-- `signRejectTag`'s value: which check failed, and for those of `z` and
+`r₀` the first polynomial that failed it. -/
+def prefixTagFn (a b c : Prop) [Decidable a] [Decidable b] [Decidable c] (x y : Nat) : Nat :=
+  if ¬ a then 5 * x else if ¬ b then 2 + 5 * y else if ¬ c then 3 else 4
+
+theorem prefixTagFn_eq {a b c a' b' c' : Prop} [Decidable a] [Decidable b] [Decidable c] [Decidable a'] [Decidable b']
+    [Decidable c'] {x y x' y' : Nat} (h : prefixTagFn a b c x y = prefixTagFn a' b' c' x' y') :
+    (a ↔ a') ∧ (¬ a → x = x') ∧ (a ∧ b ↔ a' ∧ b') ∧ (a → ¬ b → y = y') := by
+  unfold prefixTagFn at h
+  by_cases ha : a <;> by_cases hb : b <;> by_cases hc : c <;> by_cases ha' : a' <;> by_cases hb' : b' <;>
+    by_cases hc' : c' <;> simp only [ha, hb, hc, ha', hb', hc', not_true_eq_false, not_false_eq_true,
+      ite_true, ite_false] at h <;> first | omega | (simp_all <;> omega)
+
+/-- The first polynomial of `z` that fails its check, or `ℓ`. -/
+abbrev zFirst (p : Params) (σ : State) (κ : Nat) : Nat :=
+  (List.range p.ℓ).findIdx fun r => decide (normRq [Zv p σ κ r] ≥ p.γ₁ - p.β)
+
+/-- The first polynomial of `r₀` that fails its check, or `k`. -/
+abbrev rFirst (p : Params) (σ : State) (κ : Nat) : Nat :=
+  (List.range p.k).findIdx fun i => decide (normRq [R0v p σ κ i] ≥ p.γ₂ - p.β)
+
+theorem prefixTag_eq (hp : ParamsOk p) {σ : State} {κ : Nat}
+    (hs : (sampleInBall p.τ maxBounds.ball (CTv p σ κ)).isSome) :
+    signRejectTag p maxBounds (amat p (Am p σ)) ((List.range p.ℓ).map (S1v p σ)) ((List.range p.k).map (S2v p σ))
+      ((List.range p.k).map (T0v p σ)) (muOf σ) (rppOf p σ) κ =
+      prefixTagFn (ZOk p σ κ) (R0Ok p σ κ) (∀ j < p.k, normRq [CT0v p σ κ j] < p.γ₂) (zFirst p σ κ) (rFirst p σ κ) := by
+  rw [signRejectTag_eqF hp, show ctF p (Am p σ) (muOf σ) (rppOf p σ) κ = CTv p σ κ from rfl, cV_eq hs]
+  rfl
+
+/-- The first `r ≤ n` polynomials pass a check exactly when the first that
+fails it comes at `r` or later. -/
+theorem prefix_ok {n B : Nat} (f : Nat → Poly) {r : Nat} (hr : r ≤ n) :
+    (∀ j < r, normRq [f j] < B) ↔ r ≤ (List.range n).findIdx fun j => decide (normRq [f j] ≥ B) := by
+  rw [← prefix_findIdx n _ hr]
+  simp only [decide_eq_false_iff_not, ge_iff_le, Nat.not_le]
+
+/-- Two runs that agree on what the iterations from `t` leak agree on the
+checks of iteration `t` that pass, polynomial by polynomial. -/
+theorem leq_prefixAgree (hp : ParamsOk p) (h : LeakEq p t σ₁ σ₂) (ht : t < 814)
+    (hs₁ : (sampleInBall p.τ maxBounds.ball (CTv p σ₁ (p.ℓ * t))).isSome)
+    (hs₂ : (sampleInBall p.τ maxBounds.ball (CTv p σ₂ (p.ℓ * t))).isSome) : PrefixChecksAgree p t σ₁ σ₂ := by
+  have hpass := leq_pass hp h ht hs₁ hs₂
+  by_cases h1 : PassV p σ₁ (p.ℓ * t)
+  · have h2 := hpass.mp h1
+    exact ⟨fun r hr => iff_of_true (fun j hj => h1.1 j (by omega)) (fun j hj => h2.1 j (by omega)),
+      fun i hi => iff_of_true ⟨h1.1, fun j hj => h1.2.1 j (by omega)⟩ ⟨h2.1, fun j hj => h2.2.1 j (by omega)⟩, hpass⟩
+  · have h2 : ¬ PassV p σ₂ (p.ℓ * t) := fun h2 => h1 (hpass.mpr h2)
+    have e := leakF_tag (leq_step h ht) (iter_rej hp hs₁ h1) (iter_rej hp hs₂ h2)
+    rw [prefixTag_eq hp hs₁, prefixTag_eq hp hs₂] at e
+    obtain ⟨ea, ex, eab, ey⟩ := prefixTagFn_eq e
+    refine ⟨fun r hr => ?_, fun i hi => ?_, hpass⟩
+    · by_cases hz : ZOk p σ₁ (p.ℓ * t)
+      · exact iff_of_true (fun j hj => hz j (by omega)) (fun j hj => ea.mp hz j (by omega))
+      · rw [prefix_ok _ hr, prefix_ok _ hr]; exact iff_of_eq (congrArg (r ≤ ·) (ex hz))
+    · by_cases hz : ZOk p σ₁ (p.ℓ * t)
+      · have hz' := ea.mp hz
+        by_cases hr0 : R0Ok p σ₁ (p.ℓ * t)
+        · have hr0' := (eab.mp ⟨hz, hr0⟩).2
+          exact iff_of_true ⟨hz, fun j hj => hr0 j (by omega)⟩ ⟨hz', fun j hj => hr0' j (by omega)⟩
+        · rw [and_iff_right hz, and_iff_right hz', prefix_ok _ hi, prefix_ok _ hi]
+          exact iff_of_eq (congrArg (i ≤ ·) (ey hz hr0))
+      · exact iff_of_false (fun h => hz h.1) (fun h => hz (ea.mpr h.1))
 
 theorem leq_hints (hp : ParamsOk p) (h : LeakEq p t σ₁ σ₂) (ht : t < 814)
     (hs₁ : (sampleInBall p.τ maxBounds.ball (CTv p σ₁ (p.ℓ * t))).isSome)
     (hs₂ : (sampleInBall p.τ maxBounds.ball (CTv p σ₂ (p.ℓ * t))).isSome)
     (h1 : PassV p σ₁ (p.ℓ * t)) (h2 : PassV p σ₂ (p.ℓ * t)) :
     (List.range p.k).map (Hv p σ₁ (p.ℓ * t)) = (List.range p.k).map (Hv p σ₂ (p.ℓ * t)) := by
-  have e := (leakT_step (leq_step h ht)).2.2
+  have e := (leakF_step (leq_step h ht)).2.2
   rw [outTag_eq hp hs₁, outTag_eq hp hs₂, ifp h1, ifp h2] at e
   exact hints_inj (by simp) (List.cons.inj e).2
 

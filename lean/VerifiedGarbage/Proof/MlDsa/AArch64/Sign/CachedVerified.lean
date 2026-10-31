@@ -554,7 +554,7 @@ theorem iter_tr {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params}
     intro t ht
     apply positivePairedChecks_tr hp3 (ksChk_ok hp3) h16 hP.s64
     intro σ τ he hs ht'
-    exact leq_agree (paramsOk hp3) he ht hs ht'
+    exact leq_prefixAgree (paramsOk hp3) he ht hs ht'
   intro x y tx ty x' y' hr ex ey
   obtain ⟨eq,hi⟩ := iter_trace hP hp hchecks hcommit hball ht _ _ _ _ _ _ hr ex ey
   obtain ⟨σ,τ,_,_,_,_,hx,hy⟩ := hr.1.1
