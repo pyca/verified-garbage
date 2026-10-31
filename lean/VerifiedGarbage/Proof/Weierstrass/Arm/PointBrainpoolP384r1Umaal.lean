@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Weierstrass.Arm.PointVerified
 import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
 import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP384r1
-import VerifiedGarbage.Proof.Weierstrass.Arm.PointBrainpoolP384r1
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
@@ -16,7 +15,6 @@ meta import VerifiedGarbage.Proof.Weierstrass.Law
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.PointVerified
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP384r1
-import VerifiedGarbage.Proof.Weierstrass.Arm.PointBrainpoolP384r1
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
