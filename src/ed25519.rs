@@ -414,6 +414,7 @@ mod x86_64_tests {
         VG_ED25519_VERIFY_SHANI_FEATURES, VG_ED25519_VERIFY_SHANI_IFMA_FEATURES,
     };
     use crate::cpu::NAMES;
+    use crate::cpu::feature;
 
     /// The CPU features of the three operations with SHA-512's backend `s`
     /// and the field multiplications `f`.
@@ -483,24 +484,24 @@ mod x86_64_tests {
     #[test]
     fn select() {
         let cases: [(Features, Sha512Backend, Field); 14] = [
-            (Features::of(&[]), Sha512Backend::Scalar, Field::Baseline),
+            (Features(0), Sha512Backend::Scalar, Field::Baseline),
             (
-                Features::of(&["bmi2"]),
+                Features(feature::BMI2),
                 Sha512Backend::Scalar,
                 Field::Baseline,
             ),
             (
-                Features::of(&["adx"]),
+                Features(feature::ADX),
                 Sha512Backend::Scalar,
                 Field::Baseline,
             ),
             (
-                Features::of(&["bmi2", "adx"]),
+                Features(feature::BMI2 | feature::ADX),
                 Sha512Backend::Scalar,
                 Field::Baseline,
             ),
             (
-                Features::of(&["avx", "avx2", "bmi2", "adx"]),
+                Features(feature::AVX | feature::AVX2 | feature::BMI2 | feature::ADX),
                 Sha512Backend::Scalar,
                 Field::Adx,
             ),
@@ -530,7 +531,14 @@ mod x86_64_tests {
                 Field::Ifma,
             ),
             (
-                Features::of(&["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma"]),
+                Features(
+                    feature::AVX
+                        | feature::AVX2
+                        | feature::BMI2
+                        | feature::ADX
+                        | feature::AVX512F
+                        | feature::AVX512IFMA,
+                ),
                 Sha512Backend::Scalar,
                 Field::Adx,
             ),

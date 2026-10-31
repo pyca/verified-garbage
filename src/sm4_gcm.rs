@@ -635,8 +635,8 @@ mod tests {
     /// The implementation of GHASH chosen for each set of features.
     #[test]
     fn ghash_backend() {
-        let f = |names: &[&str]| Ghash::select(Features::of(names));
-        assert_eq!(f(&[]), Ghash::Scalar);
+        let f = |bits: u32| Ghash::select(Features(bits));
+        assert_eq!(f(0), Ghash::Scalar);
         assert_eq!(Sm4Gcm::new(&[0; 16]).ghash, Ghash::select(detected()));
     }
 
@@ -644,23 +644,33 @@ mod tests {
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     #[test]
     fn ghash_backend_x86() {
-        let f = |names: &[&str]| Ghash::select(Features::of(names));
-        assert_eq!(f(&["pclmulqdq"]), Ghash::Scalar);
-        assert_eq!(f(&["pclmulqdq", "ssse3"]), Ghash::Pclmul);
-        let all = ["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"];
+        let f = |bits: u32| Ghash::select(Features(bits));
+        assert_eq!(f(crate::cpu::feature::PCLMULQDQ), Ghash::Scalar);
+        assert_eq!(
+            f(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3),
+            Ghash::Pclmul
+        );
+        let all = crate::cpu::feature::AVX
+            | crate::cpu::feature::AVX2
+            | crate::cpu::feature::PCLMULQDQ
+            | crate::cpu::feature::SSSE3
+            | crate::cpu::feature::VPCLMULQDQ;
         #[cfg(target_arch = "x86_64")]
-        assert_eq!(f(&all), Ghash::Vpclmul);
+        assert_eq!(f(all), Ghash::Vpclmul);
         // 32-bit x86 has no `_vpclmul` instances.
         #[cfg(target_arch = "x86")]
-        assert_eq!(f(&all), Ghash::Pclmul);
-        assert_eq!(f(&all[1..]), Ghash::Pclmul);
+        assert_eq!(f(all), Ghash::Pclmul);
+        assert_eq!(f(all & !crate::cpu::feature::AVX), Ghash::Pclmul);
     }
 
     /// The instance AArch64's CPUs with PMULL choose.
     #[cfg(target_arch = "aarch64")]
     #[test]
     fn ghash_backend_aarch64() {
-        assert_eq!(Ghash::select(Features::of(&["aes"])), Ghash::Aes);
+        assert_eq!(
+            Ghash::select(Features(crate::cpu::feature::AES)),
+            Ghash::Aes
+        );
     }
 
     /// The text of a message is checked against its limits before

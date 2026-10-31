@@ -418,15 +418,15 @@ mod tests {
     #[test]
     fn backend_selection() {
         use super::Backend;
-        use crate::cpu::Features;
+        use crate::cpu::{Features, feature};
         for apple in [false, true] {
             for requested in [false, true] {
                 assert_eq!(
-                    Backend::select(Features::of(&[]), apple, requested),
+                    Backend::select(Features(0), apple, requested),
                     Backend::Scalar
                 );
                 assert_eq!(
-                    Backend::select(Features::of(&["sha3"]), apple, requested),
+                    Backend::select(Features(feature::SHA3), apple, requested),
                     if apple || requested {
                         Backend::Sha3
                     } else {

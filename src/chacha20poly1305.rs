@@ -631,7 +631,7 @@ mod tests {
         // AVX-512F alone is not enough: the AVX-512 instances' Poly1305
         // calls its AVX2 implementation.
         assert_eq!(select(VG_CHACHA20_XOR_AVX512_FEATURES), Backend::Scalar);
-        assert_eq!(select(Features::of(&["avx"])), Backend::Scalar);
+        assert_eq!(select(Features(crate::cpu::feature::AVX)), Backend::Scalar);
     }
 
     /// On x86, the SSSE3 instances (`seal`, `open` and `seal_gather`) need
@@ -656,7 +656,7 @@ mod tests {
         assert_eq!(VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES, ssse3);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES, ssse3);
         assert_eq!(select(ssse3), Backend::Ssse3);
-        assert_eq!(select(Features::of(&[])), Backend::Scalar);
+        assert_eq!(select(Features(0)), Backend::Scalar);
     }
 
     /// On AArch64, the SVE2 instances need the features of
@@ -679,11 +679,11 @@ mod tests {
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_SVE2_FEATURES, sve2);
         assert_eq!(
             select(Features::all(&[
-                Features::of(&["neon"]),
+                Features(crate::cpu::feature::NEON),
                 VG_CHACHA20_XOR_SVE2_FEATURES
             ])),
             Backend::Sve2
         );
-        assert_eq!(select(Features::of(&["neon"])), Backend::Neon);
+        assert_eq!(select(Features(crate::cpu::feature::NEON)), Backend::Neon);
     }
 }

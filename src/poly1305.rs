@@ -102,7 +102,7 @@ impl Backend {
     /// saturate).
     #[cfg(target_arch = "aarch64")]
     fn select_for(f: Features, apple: bool) -> Backend {
-        if apple && f.contains(const { Features::of(&["neon"]) }) {
+        if apple && f.contains(const { Features(crate::cpu::feature::NEON) }) {
             Backend::Neon
         } else {
             Backend::Scalar
@@ -327,14 +327,19 @@ mod tests {
             // AVX-512F alone is not enough: the AVX-512 instance calls the
             // AVX2 one.
             assert_eq!(
-                Backend::select(Features::of(&["avx", "avx512f"])),
+                Backend::select(Features(
+                    crate::cpu::feature::AVX | crate::cpu::feature::AVX512F
+                )),
                 Backend::Scalar
             );
-            assert_eq!(Backend::select(Features::of(&["avx"])), Backend::Scalar);
+            assert_eq!(
+                Backend::select(Features(crate::cpu::feature::AVX)),
+                Backend::Scalar
+            );
         }
         #[cfg(target_arch = "aarch64")]
         {
-            let neon = Features::of(&["neon"]);
+            let neon = Features(crate::cpu::feature::NEON);
             assert_eq!(Backend::select_for(neon, true), Backend::Neon);
             assert_eq!(Backend::select_for(neon, false), Backend::Scalar);
             assert_eq!(Backend::select_for(Features(0), true), Backend::Scalar);
