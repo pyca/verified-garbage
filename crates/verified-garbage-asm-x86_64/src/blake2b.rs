@@ -71,7 +71,7 @@ ret
 }
 
 /// The CPU features `vg_blake2b_compress_avx2` requires (`Artifact.features`).
-pub const VG_BLAKE2B_COMPRESS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_BLAKE2B_COMPRESS_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// The BLAKE2b compression function F (RFC 7693 §3.2): updates the state `*state` (`h[0..7]`) with the `n` 128-byte blocks starting at `blocks`, in order: block `i` with the offset counter `t + 128 * i` (a 128-bit integer, so it does not wrap), and with the final block flag if `last != 0`.
 ///
@@ -970,7 +970,7 @@ ret
 }
 
 /// The CPU features `vg_blake2b_update_avx2` requires (`Artifact.features`).
-pub const VG_BLAKE2B_UPDATE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_BLAKE2B_UPDATE_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// Absorbs data into a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, it then represents that data followed by the `len` bytes at `data`.
 ///
@@ -1114,7 +1114,7 @@ ret
 }
 
 /// The CPU features `vg_blake2b_finalize_avx2` requires (`Artifact.features`).
-pub const VG_BLAKE2B_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_BLAKE2B_FINALIZE_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// Finishes a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (64 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
 ///
@@ -1207,7 +1207,7 @@ ret
 }
 
 /// The CPU features `vg_blake2b_update_scratch_avx2` requires (`Artifact.features`).
-pub const VG_BLAKE2B_UPDATE_SCRATCH_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_BLAKE2B_UPDATE_SCRATCH_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// `vg_blake2b_update`, with its working space in `*scratch`.
 ///
@@ -1349,7 +1349,7 @@ ret
 }
 
 /// The CPU features `vg_blake2b_finalize_scratch_avx2` requires (`Artifact.features`).
-pub const VG_BLAKE2B_FINALIZE_SCRATCH_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_BLAKE2B_FINALIZE_SCRATCH_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// `vg_blake2b_finalize`, with its working space in `*scratch`.
 ///
@@ -1440,7 +1440,7 @@ ret
 }
 
 /// The CPU features `vg_blake2b_compress_avx512` requires (`Artifact.features`).
-pub const VG_BLAKE2B_COMPRESS_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_BLAKE2B_COMPRESS_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
 
 /// The BLAKE2b compression function F (RFC 7693 §3.2): updates the state `*state` (`h[0..7]`) with the `n` 128-byte blocks starting at `blocks`, in order: block `i` with the offset counter `t + 128 * i` (a 128-bit integer, so it does not wrap), and with the final block flag if `last != 0`.
 ///
@@ -2279,7 +2279,7 @@ ret
 }
 
 /// The CPU features `vg_blake2b_update_avx512` requires (`Artifact.features`).
-pub const VG_BLAKE2B_UPDATE_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_BLAKE2B_UPDATE_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
 
 /// Absorbs data into a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, it then represents that data followed by the `len` bytes at `data`.
 ///
@@ -2423,7 +2423,7 @@ ret
 }
 
 /// The CPU features `vg_blake2b_finalize_avx512` requires (`Artifact.features`).
-pub const VG_BLAKE2B_FINALIZE_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_BLAKE2B_FINALIZE_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
 
 /// Finishes a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (64 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
 ///
@@ -2516,7 +2516,7 @@ ret
 }
 
 /// The CPU features `vg_blake2b_update_scratch_avx512` requires (`Artifact.features`).
-pub const VG_BLAKE2B_UPDATE_SCRATCH_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_BLAKE2B_UPDATE_SCRATCH_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
 
 /// `vg_blake2b_update`, with its working space in `*scratch`.
 ///
@@ -2658,7 +2658,7 @@ ret
 }
 
 /// The CPU features `vg_blake2b_finalize_scratch_avx512` requires (`Artifact.features`).
-pub const VG_BLAKE2B_FINALIZE_SCRATCH_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_BLAKE2B_FINALIZE_SCRATCH_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
 
 /// `vg_blake2b_finalize`, with its working space in `*scratch`.
 ///

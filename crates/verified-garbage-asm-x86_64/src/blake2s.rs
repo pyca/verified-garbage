@@ -63,7 +63,7 @@ ret
 }
 
 /// The CPU features `vg_blake2s_compress_avx` requires (`Artifact.features`).
-pub const VG_BLAKE2S_COMPRESS_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX);
+pub const VG_BLAKE2S_COMPRESS_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX);
 
 /// The BLAKE2s compression function F (RFC 7693 §3.2): updates the state `*state` (`h[0..7]`) with the `n` 64-byte blocks starting at `blocks`, in order: block `i` with the offset counter `t + 64 * i` (modulo 2⁶⁴), and with the final block flag if `last != 0`.
 ///
@@ -851,7 +851,7 @@ ret
 }
 
 /// The CPU features `vg_blake2s_update_avx` requires (`Artifact.features`).
-pub const VG_BLAKE2S_UPDATE_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX);
+pub const VG_BLAKE2S_UPDATE_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX);
 
 /// Absorbs data into a BLAKE2s computation: if the streaming state `*state` represents data of `count` bytes, it then represents that data followed by the `len` bytes at `data`.
 ///
@@ -995,7 +995,7 @@ ret
 }
 
 /// The CPU features `vg_blake2s_finalize_avx` requires (`Artifact.features`).
-pub const VG_BLAKE2S_FINALIZE_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX);
+pub const VG_BLAKE2S_FINALIZE_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX);
 
 /// Finishes a BLAKE2s computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (32 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
 ///

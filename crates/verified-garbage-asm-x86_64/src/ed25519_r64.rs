@@ -4312,7 +4312,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_r64_double_ext_adx` requires (`Artifact.features`).
-pub const VG_ED25519_R64_DOUBLE_EXT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_ED25519_R64_DOUBLE_EXT_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Point doubling on edwards25519: replaces the point at byte 64 of the working space `ws` with its double, by RFC 8032's doubling formula in extended coordinates (§5.1.4). A point is four coordinates `X, Y, Z, T` of 32 bytes each, consecutive; a coordinate is a little-endian number below `2^256` standing for its residue modulo `p = 2^255 - 19`. Every byte of `ws` but the result's and the function's own working space (bytes 320 to 575) keeps its value.
 ///
@@ -5066,7 +5066,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_r64_add_cached_ext_adx` requires (`Artifact.features`).
-pub const VG_ED25519_R64_ADD_CACHED_EXT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_ED25519_R64_ADD_CACHED_EXT_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Point addition on edwards25519: replaces the point at byte 64 of the working space `ws` with its sum with the point `q` whose cached form, `[Y - X, Y + X, 2dT, 2Z]`, is at byte 192, by RFC 8032's complete addition formula in extended coordinates. A point is four coordinates `X, Y, Z, T` of 32 bytes each, consecutive; a coordinate is a little-endian number below `2^256` standing for its residue modulo `p = 2^255 - 19`. Every byte of `ws` but the result's and the function's own working space (bytes 320 to 575) keeps its value.
 ///
@@ -5883,7 +5883,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_r64_add_cached_proj_adx` requires (`Artifact.features`).
-pub const VG_ED25519_R64_ADD_CACHED_PROJ_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_ED25519_R64_ADD_CACHED_PROJ_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Point addition on edwards25519: replaces the point at byte 64 of the working space `ws` with its sum with the point `q` whose cached form, `[Y - X, Y + X, 2dT, 2Z]`, is at byte 192, by RFC 8032's complete addition formula in extended coordinates. A point is four coordinates `X, Y, Z, T` of 32 bytes each, consecutive; a coordinate is a little-endian number below `2^256` standing for its residue modulo `p = 2^255 - 19`. Every byte of `ws` but the result's and the function's own working space (bytes 320 to 575) keeps its value. It does not compute the result's `T`, which only an addition reads: the 32 bytes at byte 160 of `ws` are unspecified on return.
 ///
@@ -7989,7 +7989,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_r64_add_affine_ext_adx` requires (`Artifact.features`).
-pub const VG_ED25519_R64_ADD_AFFINE_EXT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_ED25519_R64_ADD_AFFINE_EXT_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Point addition on edwards25519: replaces the point at byte 64 of the working space `ws` with its sum with the point `q` with `Z = 1` whose cached form's first three coordinates, `[Y - X, Y + X, 2dT]`, are at byte 192, by RFC 8032's complete addition formula in extended coordinates. The 32 bytes at byte 288, where its `2Z` would be, need not hold anything. A point is four coordinates `X, Y, Z, T` of 32 bytes each, consecutive; a coordinate is a little-endian number below `2^256` standing for its residue modulo `p = 2^255 - 19`. Every byte of `ws` but the result's and the function's own working space (bytes 320 to 575) keeps its value.
 ///

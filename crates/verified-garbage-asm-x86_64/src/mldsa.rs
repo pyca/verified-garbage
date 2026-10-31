@@ -1497,7 +1497,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_ntt_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA_NTT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_NTT_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// The ML-DSA number-theoretic transform, `NTT` (FIPS 204 Algorithm 41), of the polynomial `*f` (256 coefficients less than `q` = 8380417), in place.
 ///
@@ -1921,7 +1921,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_montgomery_inv_ntt_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA_MONTGOMERY_INV_NTT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_MONTGOMERY_INV_NTT_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// Replaces `*f` with `R * NTT^-1(*f)`, coefficientwise modulo `q` = 8380417, reduced, where `R = 2^32 mod q`. An input scaled by `R^-1` produces the ordinary inverse transform of the unscaled polynomial.
 ///
@@ -2370,7 +2370,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_montgomery_multiply_ntt_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA_MONTGOMERY_MULTIPLY_NTT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_MONTGOMERY_MULTIPLY_NTT_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// Writes `R^-1 * MultiplyNTT(*f, *g)` to `*h`, coefficientwise modulo `q` = 8380417, reduced, where `R = 2^32 mod q`. The factor of `R^-1` is canceled by `vg_mldsa_montgomery_inv_ntt`.
 ///
@@ -2464,7 +2464,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_montgomery_multiply_add_ntt_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA_MONTGOMERY_MULTIPLY_ADD_NTT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_MONTGOMERY_MULTIPLY_ADD_NTT_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// Adds `R^-1 * MultiplyNTT(*f, *g)` to `*h`, coefficientwise modulo `q` = 8380417, reduced, where `R = 2^32 mod q`. The existing accumulator is not rescaled; callers must keep every accumulated term at the same scale.
 ///
@@ -2569,7 +2569,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_add_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA_ADD_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_ADD_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// Adds the polynomial `*g` to `*f` modulo `q` = 8380417, coefficient by coefficient (FIPS 204 Algorithm 44).
 ///
@@ -2611,7 +2611,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_sub_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA_SUB_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_SUB_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// Subtracts the polynomial `*g` from `*f` modulo `q` = 8380417, coefficient by coefficient.
 ///
@@ -4729,7 +4729,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_dot_inverse4_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA_DOT_INVERSE4_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_DOT_INVERSE4_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// Writes the canonical inverse NTT of the sum of coefficientwise products of 4 pairs of polynomials. Each input family is contiguous. Timing depends only on pointers, as specified by `dotInverseContract`.
 ///
@@ -5240,7 +5240,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_dot_inverse5_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA_DOT_INVERSE5_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_DOT_INVERSE5_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// Writes the canonical inverse NTT of the sum of coefficientwise products of 5 pairs of polynomials. Each input family is contiguous. Timing depends only on pointers, as specified by `dotInverseContract`.
 ///
@@ -5759,7 +5759,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_dot_inverse7_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA_DOT_INVERSE7_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_DOT_INVERSE7_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// Writes the canonical inverse NTT of the sum of coefficientwise products of 7 pairs of polynomials. Each input family is contiguous. Timing depends only on pointers, as specified by `dotInverseContract`.
 ///
@@ -7359,7 +7359,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_high_bits_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA_HIGH_BITS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_HIGH_BITS_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// `HighBits` (FIPS 204 Algorithm 37) of each coefficient of `*r`, with `gamma2` = `γ₂`: writes the `r1`s to `*out`.
 ///
@@ -7459,7 +7459,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_low_bits_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA_LOW_BITS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_LOW_BITS_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// `LowBits` (FIPS 204 Algorithm 38) of each coefficient of `*r`, with `gamma2` = `γ₂`: writes the `r0`s, modulo `q` = 8380417, to `*out`.
 ///
@@ -7718,7 +7718,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_norm_lt_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA_NORM_LT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_NORM_LT_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// Returns 1 if the infinity norm of the polynomial `*f` (FIPS 204 §2.3: the largest `|fᵢ mod± q|`) is less than `bound`, and 0 otherwise.
 ///
@@ -7771,7 +7771,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_make_hint_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA_MAKE_HINT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_MAKE_HINT_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// `MakeHint` (FIPS 204 Algorithm 39) of each pair of coefficients of `*z` and `*r`, with `gamma2` = `γ₂`: writes 1 for true and 0 for false to `*h`, and returns the number of 1s.
 ///
@@ -8057,7 +8057,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_use_hint_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA_USE_HINT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_USE_HINT_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// `UseHint` (FIPS 204 Algorithm 40) of each pair of coefficients of `*h` (a hint bit: true if it is not 0) and `*r`, with `gamma2` = `γ₂`: writes the results to `*out`.
 ///
@@ -8388,7 +8388,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_rej_ntt_poly4_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA_REJ_NTT_POLY4_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_REJ_NTT_POLY4_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// `RejNTTPoly` (FIPS 204 Algorithm 30) four times: for each `k` < 4, writes the element of `T_q` sampled from the SHAKE128 output of the 34 bytes of `*seeds` from byte `34 k` to the 256 coefficients of `*a` from coefficient `256 k` (each less than `q` = 8380417), and returns 1. Returns 0 if the loop reaches its bound, which is at least 894 bytes of SHAKE128 output for each (FIPS 204 Appendix C; this happens with probability about 2^-256 or less): `*a` is then unspecified, and the caller must destroy it and treat the operation as failed. The four are independent, so an implementation may compute them together (e.g. four SHAKE128 instances at once in vector registers).
 ///
@@ -11978,7 +11978,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_expand_mask_poly4_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA_EXPAND_MASK_POLY4_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_EXPAND_MASK_POLY4_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// Four polynomials of `ExpandMask` (FIPS 204 Algorithm 34, lines 4 and 5): for each `k` < 4, writes `BitUnpack(H(seed, 32c), gamma1 - 1, gamma1)`, for the 66 bytes `seed` of `*seeds` from byte `66 k` and `c = 1 + bitlen (gamma1 - 1)`, to the 256 coefficients of `*a` from coefficient `256 k` (each modulo `q` = 8380417). The four are independent, so an implementation may compute them together (e.g. four SHAKE256 instances at once in vector registers).
 ///

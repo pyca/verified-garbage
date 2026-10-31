@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_mlkem768_kpke_encrypt` requires (`Artifact.features`).
-pub const VG_MLKEM768_KPKE_ENCRYPT_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM768_KPKE_ENCRYPT_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// ML-KEM-768 K-PKE encryption after sampling (FIPS 203 Algorithm 14, lines 2 and 18–23). The inputs are:
 /// * the matrix `Â` in `*a` (9 polynomials, by rows);
@@ -4825,7 +4825,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem768_kpke_decrypt` requires (`Artifact.features`).
-pub const VG_MLKEM768_KPKE_DECRYPT_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM768_KPKE_DECRYPT_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// ML-KEM-768 K-PKE decryption (FIPS 203 Algorithm 15): writes the message that the ciphertext `*ct` decrypts to with the decryption key `*s` (1152 bytes) to `*m`.
 ///
@@ -13168,7 +13168,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem768_check_ek_avx2` requires (`Artifact.features`).
-pub const VG_MLKEM768_CHECK_EK_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM768_CHECK_EK_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// The ML-KEM-768 encapsulation key check (FIPS 203 §7.2): returns 1 if every 12-bit integer that the first 1152 bytes of `*ek` encode is less than `q` = 3329 (the modulus check), and 0 otherwise. An encapsulation key must pass it before it is given to `vg_mlkem768_encaps`.
 ///
@@ -13221,7 +13221,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem768_kpke_keygen_ntt` requires (`Artifact.features`).
-pub const VG_MLKEM768_KPKE_KEYGEN_NTT_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM768_KPKE_KEYGEN_NTT_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// The transforms of ML-KEM-768 K-PKE key generation (FIPS 203 Algorithm 13, lines 16, 17 and 20). The input is the vectors `s` and `e` in `*se` (3 polynomials each, one after the other, 256 `u16` coefficients reduced modulo `q` = 3329). Writes `ŝ = NTT(s)` to `*s`, `ê = NTT(e)` to `*e` (3 polynomials of 256 `u32` coefficients each, reduced), and `ByteEncode₁₂(ŝ)` to `*dk`.
 ///
@@ -15015,7 +15015,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem768_kpke_keygen_row` requires (`Artifact.features`).
-pub const VG_MLKEM768_KPKE_KEYGEN_ROW_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM768_KPKE_KEYGEN_ROW_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// A row of `t̂` in ML-KEM-768 K-PKE key generation (FIPS 203 Algorithm 13, lines 18 and 19). The inputs are the row `Â[i]` of the matrix in `*a` (3 polynomials of 256 `u16` coefficients), and `ŝ` in `*s` (3 polynomials) and `ê[i]` in `*e` of 256 `u32` coefficients each, all reduced modulo `q` = 3329. Writes `ByteEncode₁₂(Â[i] ∘ ŝ + ê[i])` to `*ek`.
 ///
@@ -15440,7 +15440,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem768_keygen_avx2` requires (`Artifact.features`).
-pub const VG_MLKEM768_KEYGEN_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM768_KEYGEN_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// ML-KEM-768 key generation from a seed, `ML-KEM.KeyGen_internal(d, z)` (FIPS 203 Algorithm 16): with `d` in bytes 0–31 of `*seed` and `z` in bytes 32–63, writes the encapsulation key to `*ek` and the decapsulation key to `*dk`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -24877,7 +24877,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem768_encaps_h_avx2` requires (`Artifact.features`).
-pub const VG_MLKEM768_ENCAPS_H_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM768_ENCAPS_H_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// ML-KEM-768 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem768_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -26856,7 +26856,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem768_encaps_avx2` requires (`Artifact.features`).
-pub const VG_MLKEM768_ENCAPS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM768_ENCAPS_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// ML-KEM-768 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -35687,7 +35687,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem768_decaps_avx2` requires (`Artifact.features`).
-pub const VG_MLKEM768_DECAPS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM768_DECAPS_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// ML-KEM-768 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -44555,7 +44555,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem768_keygen_avx512` requires (`Artifact.features`).
-pub const VG_MLKEM768_KEYGEN_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_MLKEM768_KEYGEN_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
 
 /// ML-KEM-768 key generation from a seed, `ML-KEM.KeyGen_internal(d, z)` (FIPS 203 Algorithm 16): with `d` in bytes 0–31 of `*seed` and `z` in bytes 32–63, writes the encapsulation key to `*ek` and the decapsulation key to `*dk`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -50824,7 +50824,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem768_encaps_h_avx512` requires (`Artifact.features`).
-pub const VG_MLKEM768_ENCAPS_H_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_MLKEM768_ENCAPS_H_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
 
 /// ML-KEM-768 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem768_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -52099,7 +52099,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem768_encaps_avx512` requires (`Artifact.features`).
-pub const VG_MLKEM768_ENCAPS_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_MLKEM768_ENCAPS_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
 
 /// ML-KEM-768 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -58114,7 +58114,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem768_decaps_avx512` requires (`Artifact.features`).
-pub const VG_MLKEM768_DECAPS_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_MLKEM768_DECAPS_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
 
 /// ML-KEM-768 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///

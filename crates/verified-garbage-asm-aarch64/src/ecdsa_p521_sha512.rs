@@ -765,7 +765,7 @@ ret
 }
 
 /// The CPU features `vg_ecdsa_p521_sha512_sign_sha3` requires (`Artifact.features`).
-pub const VG_ECDSA_P521_SHA512_SIGN_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_ECDSA_P521_SHA512_SIGN_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// Deterministic ECDSA signature generation over P-521 with HMAC-SHA-512 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (66 bytes, most significant first), signs the SHA-512 hash at `digest` (64 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (66 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
 ///

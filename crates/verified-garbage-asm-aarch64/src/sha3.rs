@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_keccak_f1600_sha3` requires (`Artifact.features`).
-pub const VG_KECCAK_F1600_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_KECCAK_F1600_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// The permutation Keccak-f[1600] (FIPS 202 §3.4): applies it to the state `*state` (lane `x + 5y` at index `x + 5y`).
 ///
@@ -10193,7 +10193,7 @@ ret
 }
 
 /// The CPU features `vg_keccak_f1600_x2_sha3` requires (`Artifact.features`).
-pub const VG_KECCAK_F1600_X2_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_KECCAK_F1600_X2_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// The permutation Keccak-f[1600] (FIPS 202 §3.4) on two states at once: applies it to each of the two states interleaved in `*states`, lane `x + 5y` of the first at index `2(x + 5y)` and of the second at index `2(x + 5y) + 1`.
 ///
@@ -11939,7 +11939,7 @@ ret
 }
 
 /// The CPU features `vg_keccak_f1600_x3_sha3` requires (`Artifact.features`).
-pub const VG_KECCAK_F1600_X3_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_KECCAK_F1600_X3_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// The permutation Keccak-f[1600] (FIPS 202 §3.4) on three states at once: applies it to each of the two states interleaved in `*states`, lane `x + 5y` of the first at index `2(x + 5y)` and of the second at index `2(x + 5y) + 1`, and to the state `*state`, lane `x + 5y` at index `x + 5y`.
 ///
@@ -20084,7 +20084,7 @@ ret
 }
 
 /// The CPU features `vg_keccak_absorb_scratch_sha3` requires (`Artifact.features`).
-pub const VG_KECCAK_ABSORB_SCRATCH_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_KECCAK_ABSORB_SCRATCH_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// `vg_keccak_absorb`, with its working space in `*scratch`.
 ///
@@ -22096,7 +22096,7 @@ ret
 }
 
 /// The CPU features `vg_keccak_pad_sha3` requires (`Artifact.features`).
-pub const VG_KECCAK_PAD_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_KECCAK_PAD_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// Pads a SHA-3 or SHAKE message: if the state `*state` represents a message whose length is `pos` modulo `rate` (`VG.Spec.Sha3.Repr`), it becomes the state after absorbing that message with the domain-separation suffix (the low byte of `suffix`, with the first bit of the padding: `0x06` for SHA-3, `0x1f` for SHAKE) and `pad10*1`.
 ///
@@ -22137,7 +22137,7 @@ ret
 }
 
 /// The CPU features `vg_keccak_pad_scratch_sha3` requires (`Artifact.features`).
-pub const VG_KECCAK_PAD_SCRATCH_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_KECCAK_PAD_SCRATCH_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// `vg_keccak_pad`, with its working space in `*scratch`.
 ///
@@ -22178,7 +22178,7 @@ ret
 }
 
 /// The CPU features `vg_keccak_squeeze_sha3` requires (`Artifact.features`).
-pub const VG_KECCAK_SQUEEZE_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_KECCAK_SQUEEZE_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// Squeezes output from a padded SHA-3 or SHAKE state: writes to `out` the `outlen` bytes of the output of the sponge with rate `rate` from the state `*state` (FIPS 202 Algorithm 8, steps 7 to 10), from byte `pos` of that output on; leaves in `*state` a state, and returns a position, from which the output continues after them. Start from the state `vg_keccak_pad` leaves and position 0.
 ///
@@ -22264,7 +22264,7 @@ ret
 }
 
 /// The CPU features `vg_keccak_squeeze_scratch_sha3` requires (`Artifact.features`).
-pub const VG_KECCAK_SQUEEZE_SCRATCH_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_KECCAK_SQUEEZE_SCRATCH_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// `vg_keccak_squeeze`, with its working space in `*scratch`.
 ///

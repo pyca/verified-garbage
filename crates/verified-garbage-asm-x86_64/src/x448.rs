@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_x448_adx` requires (`Artifact.features`).
-pub const VG_X448_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_X448_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Computes X448 (RFC 7748 §5): writes `X448(k, u)` to `*out`, for the 56-byte scalar `k` at `scalar` and the 56-byte u-coordinate `u` at `point`. The scalar is decoded (clamped); all 448 bits of `u` are used and noncanonical coordinates are reduced modulo the field prime. The result may be all zero (for a `u` of small order), which the caller must check for if its protocol requires it (RFC 7748 §6.2).
 ///

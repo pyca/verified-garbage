@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_ed448_r64_point_double_adx` requires (`Artifact.features`).
-pub const VG_ED448_R64_POINT_DOUBLE_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_ED448_R64_POINT_DOUBLE_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Point doubling on edwards448: replaces the point in slots 0 to 2 of the working space `ws` (bytes 64 to 255) with its double, by RFC 8032's doubling formulas in projective coordinates (§5.2.4). A point is three coordinates `X, Y, Z` in consecutive slots; slot `n` of `ws` is the 64 bytes from byte `64 + 64 n`, of which a coordinate takes the first 56: a little-endian number below `2^448`, standing for its residue modulo `p = 2^448 - 2^224 - 1`, not necessarily reduced. Every byte of `ws` but the result's and the function's own working space (bytes 832 to 1647) keeps its value.
 ///
@@ -2040,7 +2040,7 @@ ret
 }
 
 /// The CPU features `vg_ed448_r64_point_add_affine_adx` requires (`Artifact.features`).
-pub const VG_ED448_R64_POINT_ADD_AFFINE_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_ED448_R64_POINT_ADD_AFFINE_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Point addition on edwards448: writes to slots 3 to 5 of the working space `ws` (bytes 256 to 447) the sum of the point in slots 0 to 2 (bytes 64 to 255) and the point `(x : y : 1)`, for `x` and `y` in slots 8 and 9 (bytes 576 and 640), by RFC 8032's complete addition formula in projective coordinates (§5.2.4), with `d` read from slot 11 (byte 768). A point is three coordinates `X, Y, Z` in consecutive slots; slot `n` of `ws` is the 64 bytes from byte `64 + 64 n`, of which a coordinate takes the first 56: a little-endian number below `2^448`, standing for its residue modulo `p = 2^448 - 2^224 - 1`, not necessarily reduced. Every byte of `ws` but the result's and the function's own working space (bytes 832 to 1647) keeps its value.
 ///

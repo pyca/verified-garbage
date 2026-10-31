@@ -4723,7 +4723,7 @@ ret
 }
 
 /// The CPU features `vg_aes_expand_key_aesni` requires (`Artifact.features`).
-pub const VG_AES_EXPAND_KEY_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
+pub const VG_AES_EXPAND_KEY_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
 
 /// The AES key expansion (FIPS 197 §5.2, `KEYEXPANSION`): writes the key schedule of the `key_len`-byte key at `key`, the words `w[0] … w[4 * Nr + 3]` for `Nr = key_len / 4 + 6` rounds, each as its 4 bytes (`16 * (Nr + 1)` bytes in all), to the start of `*schedule`, as `vg_aes_ctr32` reads it.
 ///
@@ -5262,7 +5262,7 @@ ret
 }
 
 /// The CPU features `vg_aes_expand_key_scratch_aesni` requires (`Artifact.features`).
-pub const VG_AES_EXPAND_KEY_SCRATCH_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
+pub const VG_AES_EXPAND_KEY_SCRATCH_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
 
 /// `vg_aes_expand_key`, with its working space in `*scratch`.
 ///
@@ -5734,7 +5734,7 @@ ret
 }
 
 /// The CPU features `vg_aes_ctr32_aesni` requires (`Artifact.features`).
-pub const VG_AES_CTR32_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_CTR32_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
 
 /// AES counter mode with GCM's 32-bit increment (NIST SP 800-38D §6.5, on whole blocks): XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
@@ -6035,7 +6035,7 @@ ret
 }
 
 /// The CPU features `vg_aes_ctr32_vaes` requires (`Artifact.features`).
-pub const VG_AES_CTR32_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_CTR32_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
 
 /// AES counter mode with GCM's 32-bit increment (NIST SP 800-38D §6.5, on whole blocks): XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
@@ -10374,7 +10374,7 @@ ret
 }
 
 /// The CPU features `vg_aes_encrypt_blocks_aesni` requires (`Artifact.features`).
-pub const VG_AES_ENCRYPT_BLOCKS_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
+pub const VG_AES_ENCRYPT_BLOCKS_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
 
 /// The bytes of `scratch` that `vg_aes_encrypt_blocks_aesni` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
 pub const VG_AES_ENCRYPT_BLOCKS_AESNI_SCRATCH_WRITTEN: usize = 0;
@@ -10632,7 +10632,7 @@ ret
 }
 
 /// The CPU features `vg_aes_decrypt_blocks_aesni` requires (`Artifact.features`).
-pub const VG_AES_DECRYPT_BLOCKS_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
+pub const VG_AES_DECRYPT_BLOCKS_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
 
 /// AES decryption of whole blocks (FIPS 197 §5.3, `INVCIPHER`): replaces each of the `n` 16-byte blocks at `data` with its decryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule, which the inverse cipher uses in the reverse order).
 ///
@@ -10934,7 +10934,7 @@ ret
 }
 
 /// The CPU features `vg_aes_encrypt_blocks_vaes` requires (`Artifact.features`).
-pub const VG_AES_ENCRYPT_BLOCKS_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES);
+pub const VG_AES_ENCRYPT_BLOCKS_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
 
 /// The bytes of `scratch` that `vg_aes_encrypt_blocks_vaes` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
 pub const VG_AES_ENCRYPT_BLOCKS_VAES_SCRATCH_WRITTEN: usize = 0;
@@ -11364,7 +11364,7 @@ ret
 }
 
 /// The CPU features `vg_aes_decrypt_blocks_vaes` requires (`Artifact.features`).
-pub const VG_AES_DECRYPT_BLOCKS_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES);
+pub const VG_AES_DECRYPT_BLOCKS_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
 
 /// AES decryption of whole blocks (FIPS 197 §5.3, `INVCIPHER`): replaces each of the `n` 16-byte blocks at `data` with its decryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule, which the inverse cipher uses in the reverse order).
 ///

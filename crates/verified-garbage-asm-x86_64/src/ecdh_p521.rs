@@ -13460,7 +13460,7 @@ ret
 }
 
 /// The CPU features `vg_ecdh_p521_adx` requires (`Artifact.features`).
-pub const VG_ECDH_P521_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_ECDH_P521_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// ECDH over P-521 (the ECC CDH primitive of SP 800-56A §5.7.1.2): validates the peer's public key at `peer` (SP 800-56A §5.6.2.3.3: the uncompressed form of SEC 1 §2.3.3, `04` then `x` and `y` in 66 bytes each, most significant first, both below `p`, on the curve), and writes the x-coordinate of `dQ` (66 bytes, most significant first) for the private key `d` at `d` (66 bytes, most significant first) to `*out`, and returns 1; or writes zeros and returns 0 if `peer` is not a valid public key, `d` is not in `[1, n-1]`, or `dQ` is the point at infinity.
 ///

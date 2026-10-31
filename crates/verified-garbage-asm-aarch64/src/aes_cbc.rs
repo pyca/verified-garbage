@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_aes_cbc_decrypt_aes_sha3` requires (`Artifact.features`).
-pub const VG_AES_CBC_DECRYPT_AES_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SHA3);
+pub const VG_AES_CBC_DECRYPT_AES_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SHA3);
 
 /// The bytes of `scratch` that `vg_aes_cbc_decrypt_aes_sha3` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
 pub const VG_AES_CBC_DECRYPT_AES_SHA3_SCRATCH_WRITTEN: usize = 0;
@@ -879,7 +879,7 @@ ret
 }
 
 /// The CPU features `vg_aes_cbc_encrypt_aes` requires (`Artifact.features`).
-pub const VG_AES_CBC_ENCRYPT_AES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
+pub const VG_AES_CBC_ENCRYPT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
 
 /// The bytes of `scratch` that `vg_aes_cbc_encrypt_aes` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
 pub const VG_AES_CBC_ENCRYPT_AES_SCRATCH_WRITTEN: usize = 0;
@@ -1145,7 +1145,7 @@ ret
 }
 
 /// The CPU features `vg_aes_cbc_decrypt_aes` requires (`Artifact.features`).
-pub const VG_AES_CBC_DECRYPT_AES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
+pub const VG_AES_CBC_DECRYPT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
 
 /// AES-CBC decryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is the AES inverse cipher (FIPS 197 §5.3) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is removed.
 ///

@@ -457,7 +457,7 @@ ret
 }
 
 /// The CPU features `vg_pbkdf2_hmac_sha384_iterate_avx2` requires (`Artifact.features`).
-pub const VG_PBKDF2_HMAC_SHA384_ITERATE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_PBKDF2_HMAC_SHA384_ITERATE_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
 /// Runs `n` steps of PBKDF2-HMAC-SHA-384's iteration: if, for a 128-byte key `K₀`, the SHA-384 streaming state in bytes 0 to 191 of `*key` represents `K₀ ⊕ ipad` and the one in bytes 192 to 383 represents `K₀ ⊕ opad` (as `vg_hmac_sha384_init` leaves them), repeats `U ← HMAC-SHA-384 (K₀, U)`, `T ← T ⊕ U` `n` times, from `U = *u` and `T = *t`, and leaves the final `T` in `*t` (RFC 8018, step 3 of `F`).
 ///
@@ -739,7 +739,7 @@ ret
 }
 
 /// The CPU features `vg_pbkdf2_hmac_sha384_avx2` requires (`Artifact.features`).
-pub const VG_PBKDF2_HMAC_SHA384_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_PBKDF2_HMAC_SHA384_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
 /// PBKDF2-HMAC-SHA-384 (RFC 8018 §5.2, with HMAC-SHA-384 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-384 and HMAC-SHA-384 functions and `vg_pbkdf2_hmac_sha384_iterate`.
 ///
@@ -919,7 +919,7 @@ ret
 }
 
 /// The CPU features `vg_pbkdf2_hmac_sha384_iterate_shani` requires (`Artifact.features`).
-pub const VG_PBKDF2_HMAC_SHA384_ITERATE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_PBKDF2_HMAC_SHA384_ITERATE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
 
 /// Runs `n` steps of PBKDF2-HMAC-SHA-384's iteration: if, for a 128-byte key `K₀`, the SHA-384 streaming state in bytes 0 to 191 of `*key` represents `K₀ ⊕ ipad` and the one in bytes 192 to 383 represents `K₀ ⊕ opad` (as `vg_hmac_sha384_init` leaves them), repeats `U ← HMAC-SHA-384 (K₀, U)`, `T ← T ⊕ U` `n` times, from `U = *u` and `T = *t`, and leaves the final `T` in `*t` (RFC 8018, step 3 of `F`).
 ///
@@ -1201,7 +1201,7 @@ ret
 }
 
 /// The CPU features `vg_pbkdf2_hmac_sha384_shani` requires (`Artifact.features`).
-pub const VG_PBKDF2_HMAC_SHA384_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_PBKDF2_HMAC_SHA384_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
 
 /// PBKDF2-HMAC-SHA-384 (RFC 8018 §5.2, with HMAC-SHA-384 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-384 and HMAC-SHA-384 functions and `vg_pbkdf2_hmac_sha384_iterate`.
 ///

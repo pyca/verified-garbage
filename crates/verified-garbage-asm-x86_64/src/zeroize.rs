@@ -60,7 +60,7 @@ ret
 }
 
 /// The CPU features `vg_zeroize_avx` requires (`Artifact.features`).
-pub const VG_ZEROIZE_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX);
+pub const VG_ZEROIZE_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX);
 
 /// Wipes a buffer: sets the `len` bytes at `p` to zero, and writes no other memory. A call of it is not a dead store the compiler may remove, since the compiler cannot see its code.
 ///

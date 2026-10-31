@@ -2137,7 +2137,7 @@ bx lr",
 
 /// The CPU features `vg_miller_rabin_round_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_MILLER_RABIN_ROUND_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_MILLER_RABIN_ROUND_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
 /// One strong Miller–Rabin round (FIPS 186-5 Appendix B.3.1, steps 4.3–4.5) in a prepared RSA Montgomery workspace. Returns 1 if the witness passes, 0 otherwise. Uses fixed windows of four bits, with no witness-dependent table address. This is neither a primality certificate nor a choice of witness distribution or round count. The caller supplies those policies.
 ///

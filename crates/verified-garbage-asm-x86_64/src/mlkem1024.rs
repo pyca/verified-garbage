@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_mlkem1024_kpke_keygen` requires (`Artifact.features`).
-pub const VG_MLKEM1024_KPKE_KEYGEN_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM1024_KPKE_KEYGEN_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// ML-KEM-1024 K-PKE key generation after sampling (FIPS 203 Algorithm 13, lines 16–20). The inputs are the matrix `Â` in `*a` (16 polynomials, by rows) and the vectors `s` and `e` in `*se` (4 polynomials each, one after the other), each polynomial 256 `u16` coefficients reduced modulo `q` = 3329. Writes `ByteEncode₁₂(t̂)` to `*ek` and `ByteEncode₁₂(ŝ)` to `*dk`, with `ŝ = NTT(s)` and `t̂ = Â ∘ ŝ + NTT(e)`.
 ///
@@ -2446,7 +2446,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem1024_kpke_encrypt` requires (`Artifact.features`).
-pub const VG_MLKEM1024_KPKE_ENCRYPT_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM1024_KPKE_ENCRYPT_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// ML-KEM-1024 K-PKE encryption after sampling (FIPS 203 Algorithm 14, lines 2 and 18–23). The inputs are:
 /// * the matrix `Â` in `*a` (16 polynomials, by rows);
@@ -7429,7 +7429,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem1024_kpke_decrypt` requires (`Artifact.features`).
-pub const VG_MLKEM1024_KPKE_DECRYPT_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM1024_KPKE_DECRYPT_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// ML-KEM-1024 K-PKE decryption (FIPS 203 Algorithm 15): writes the message that the ciphertext `*ct` decrypts to with the decryption key `*s` (1536 bytes) to `*m`.
 ///
@@ -15951,7 +15951,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem1024_check_ek_avx2` requires (`Artifact.features`).
-pub const VG_MLKEM1024_CHECK_EK_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM1024_CHECK_EK_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// The ML-KEM-1024 encapsulation key check (FIPS 203 §7.2): returns 1 if every 12-bit integer that the first 1536 bytes of `*ek` encode is less than `q` = 3329 (the modulus check), and 0 otherwise. An encapsulation key must pass it before it is given to `vg_mlkem1024_encaps`.
 ///
@@ -16004,7 +16004,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem1024_keygen_avx2` requires (`Artifact.features`).
-pub const VG_MLKEM1024_KEYGEN_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM1024_KEYGEN_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// The bytes of `scratch` that `vg_mlkem1024_keygen_avx2` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
 pub const VG_MLKEM1024_KEYGEN_AVX2_SCRATCH_WRITTEN: usize = 37376;
@@ -17391,7 +17391,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem1024_encaps_h_avx2` requires (`Artifact.features`).
-pub const VG_MLKEM1024_ENCAPS_H_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM1024_ENCAPS_H_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// The bytes of `scratch` that `vg_mlkem1024_encaps_h_avx2` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
 pub const VG_MLKEM1024_ENCAPS_H_AVX2_SCRATCH_WRITTEN: usize = 37376;
@@ -18800,7 +18800,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem1024_encaps_avx2` requires (`Artifact.features`).
-pub const VG_MLKEM1024_ENCAPS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM1024_ENCAPS_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// The bytes of `scratch` that `vg_mlkem1024_encaps_avx2` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
 pub const VG_MLKEM1024_ENCAPS_AVX2_SCRATCH_WRITTEN: usize = 37376;
@@ -29331,7 +29331,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem1024_decaps_avx2` requires (`Artifact.features`).
-pub const VG_MLKEM1024_DECAPS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM1024_DECAPS_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// The bytes of `scratch` that `vg_mlkem1024_decaps_avx2` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
 pub const VG_MLKEM1024_DECAPS_AVX2_SCRATCH_WRITTEN: usize = 37376;
@@ -39887,7 +39887,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem1024_keygen_avx512` requires (`Artifact.features`).
-pub const VG_MLKEM1024_KEYGEN_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_MLKEM1024_KEYGEN_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
 
 /// The bytes of `scratch` that `vg_mlkem1024_keygen_avx512` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
 pub const VG_MLKEM1024_KEYGEN_AVX512_SCRATCH_WRITTEN: usize = 37376;
@@ -40922,7 +40922,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem1024_encaps_h_avx512` requires (`Artifact.features`).
-pub const VG_MLKEM1024_ENCAPS_H_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_MLKEM1024_ENCAPS_H_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
 
 /// The bytes of `scratch` that `vg_mlkem1024_encaps_h_avx512` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
 pub const VG_MLKEM1024_ENCAPS_H_AVX512_SCRATCH_WRITTEN: usize = 37376;
@@ -41979,7 +41979,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem1024_encaps_avx512` requires (`Artifact.features`).
-pub const VG_MLKEM1024_ENCAPS_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_MLKEM1024_ENCAPS_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
 
 /// The bytes of `scratch` that `vg_mlkem1024_encaps_avx512` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
 pub const VG_MLKEM1024_ENCAPS_AVX512_SCRATCH_WRITTEN: usize = 37376;
@@ -49342,7 +49342,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem1024_decaps_avx512` requires (`Artifact.features`).
-pub const VG_MLKEM1024_DECAPS_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_MLKEM1024_DECAPS_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
 
 /// The bytes of `scratch` that `vg_mlkem1024_decaps_avx512` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
 pub const VG_MLKEM1024_DECAPS_AVX512_SCRATCH_WRITTEN: usize = 37376;
