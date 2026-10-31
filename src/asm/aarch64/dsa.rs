@@ -31201,7 +31201,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_sha256_sha2` requires (`Artifact.features`).
-pub(crate) const VG_DSA_GENERATE_PARAMETERS_SHA256_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha2"]);
+pub(crate) const VG_DSA_GENERATE_PARAMETERS_SHA256_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
 
 /// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
 ///
@@ -37475,7 +37475,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_sha1_sha2` requires (`Artifact.features`).
-pub(crate) const VG_DSA_GENERATE_PARAMETERS_SHA1_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha2"]);
+pub(crate) const VG_DSA_GENERATE_PARAMETERS_SHA1_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
 
 /// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
 ///
@@ -43749,7 +43749,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_sha1_sha2_sha256_sha2` requires (`Artifact.features`).
-pub(crate) const VG_DSA_GENERATE_PARAMETERS_SHA1_SHA2_SHA256_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha2"]);
+pub(crate) const VG_DSA_GENERATE_PARAMETERS_SHA1_SHA2_SHA256_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
 
 /// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
 ///

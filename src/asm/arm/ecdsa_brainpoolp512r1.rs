@@ -8516,7 +8516,7 @@ bx lr",
 
 /// The CPU features `vg_ecdsa_brainpoolp512r1_sign_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_ECDSA_BRAINPOOLP512R1_SIGN_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
+pub(crate) const VG_ECDSA_BRAINPOOLP512R1_SIGN_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
 
 /// ECDSA signature generation over brainpoolP512r1 (FIPS 186-5 §6.4.1): with the private key `d` and the per-message secret number `k` (each 64 bytes, most significant first), signs the hash at `digest`: its leftmost 64 bytes, or, for a shorter hash, the hash padded on the left with zeros to 64 bytes. Returns 1 and writes `r` then `s` (64 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` or `k` is not in `[1, n-1]`, or if `r` or `s` is 0, in which case the caller signs again with another `k`.
 ///
@@ -11567,7 +11567,7 @@ bx lr",
 
 /// The CPU features `vg_ecdsa_brainpoolp512r1_verify_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_ECDSA_BRAINPOOLP512R1_VERIFY_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
+pub(crate) const VG_ECDSA_BRAINPOOLP512R1_VERIFY_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
 
 /// ECDSA signature verification over brainpoolP512r1 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 64 bytes each, most significant first) of the hash at `digest` (its leftmost 64 bytes, or, for a shorter hash, the hash padded on the left with zeros to 64 bytes) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 64 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
 ///

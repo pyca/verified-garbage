@@ -1443,7 +1443,7 @@ ret
 }
 
 /// The CPU features `vg_p256_check_point_adx` requires (`Artifact.features`).
-pub(crate) const VG_P256_CHECK_POINT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["bmi2", "adx"]);
+pub(crate) const VG_P256_CHECK_POINT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// The check of a public point `(x, y)` on P-256 (SEC 1 §3.2.2.1, steps 2 and 3): ANDs into the flag, the 64-bit word at byte 1472 of `ws`, the mask (all ones or zero) of `x < p`, `y < p` and `y² = x³ + a x + b` modulo P-256's prime `p`. Numbers are 4 64-bit words (`32` bytes), little-endian: the function reads `x` at byte 1120, `y` at byte 1216, `p` at byte 64, `R² mod p` at byte 1312 and the curve's `a R mod p` and `b R mod p` at bytes 256 and 1344, for `R = 2^256`. It writes `x R mod p` at bytes 1152 to 1183 and `y R mod p` at bytes 1184 to 1215, and at bytes 1280 to 1311 and 1440 to 1471 the same if the flag is set on return, else the numbers at bytes 320 and 352. Bytes 128 to 159, 1248 to 1279, 1376 to 1407, 1408 to 1439 and 3840 to 4095 of `ws` are the function's own working space; every other byte of `ws` but the results' keeps its value. Constant time: only the pointer may affect timing.
 ///

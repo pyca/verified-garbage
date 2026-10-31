@@ -53,14 +53,20 @@ mod tests {
 """
 
 
-def asm(*features, old=False):
+def asm(*features, old=None):
     """A generated module with a variant needing each of `features`: as a
-    `Features` constant, or with `old` as the list of names generated before."""
-    if old:
+    `Features` constant of their bits, or as generated before, with `old`
+    `"of"` as one of their names (`Features::of`) and `"names"` as the list
+    of their names."""
+    if old == "names":
         return "".join(f"pub(crate) const VG_F{i}_FEATURES: &[&str] = &{json.dumps(f)};\n"
                        for i, f in enumerate(features))
+    if old == "of":
+        return "".join(f"pub(crate) const VG_F{i}_FEATURES: crate::cpu::Features = "
+                       f"crate::cpu::Features::of(&{json.dumps(f)});\n"
+                       for i, f in enumerate(features))
     return "".join(f"pub(crate) const VG_F{i}_FEATURES: crate::cpu::Features = "
-                   f"crate::cpu::Features::of(&{json.dumps(f)});\n"
+                   f"crate::cpu::Features({' | '.join(f'crate::cpu::feature::{n.upper()}' for n in f)});\n"
                    for i, f in enumerate(features))
 
 
@@ -239,7 +245,14 @@ class Selection(unittest.TestCase):
     def test_features_listed_by_names_at_base_count(self):
         # Only the base has the variant needing ADX, as a list of names.
         self.files['src/asm/x86_64/x448.rs'] = asm(['bmi2'])
-        self.base_files['src/asm/x86_64/x448.rs'] = asm(['bmi2'], ['bmi2', 'adx'], old=True)
+        self.base_files['src/asm/x86_64/x448.rs'] = asm(['bmi2'], ['bmi2', 'adx'], old="names")
+        rows = self.rows(['src/asm/x86_64/x448.rs'])
+        self.assertEqual(self.configurations(rows, 'x86_64'), ['', 'avx,avx2,bmi1,bmi2', 'none'])
+
+    def test_features_of_names_at_base_count(self):
+        # Only the base has the variant needing ADX, made by `Features::of`.
+        self.files['src/asm/x86_64/x448.rs'] = asm(['bmi2'])
+        self.base_files['src/asm/x86_64/x448.rs'] = asm(['bmi2'], ['bmi2', 'adx'], old="of")
         rows = self.rows(['src/asm/x86_64/x448.rs'])
         self.assertEqual(self.configurations(rows, 'x86_64'), ['', 'avx,avx2,bmi1,bmi2', 'none'])
 

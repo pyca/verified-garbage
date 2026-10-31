@@ -19,7 +19,7 @@ def tree(files: dict) -> tempfile.TemporaryDirectory:
 
 def features(name, fs):
     return (f"pub(crate) const {name}_FEATURES: crate::cpu::Features = "
-            f"crate::cpu::Features::of(&[{', '.join(repr(f).replace(chr(39), chr(34)) for f in fs)}]);\n")
+            f"crate::cpu::Features({' | '.join(f'crate::cpu::feature::{f.upper()}' for f in fs)});\n")
 
 
 class Cells(unittest.TestCase):

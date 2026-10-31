@@ -1470,7 +1470,7 @@ bx lr",
 
 /// The CPU features `vg_ecdh_p256_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_ECDH_P256_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
+pub(crate) const VG_ECDH_P256_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
 
 /// ECDH over P-256 (the ECC CDH primitive of SP 800-56A §5.7.1.2): validates the peer's public key at `peer` (SP 800-56A §5.6.2.3.3: the uncompressed form of SEC 1 §2.3.3, `04` then `x` and `y` in 32 bytes each, most significant first, both below `p`, on the curve), and writes the x-coordinate of `dQ` (32 bytes, most significant first) for the private key `d` at `d` (32 bytes, most significant first) to `*out`, and returns 1; or writes zeros and returns 0 if `peer` is not a valid public key, `d` is not in `[1, n-1]`, or `dQ` is the point at infinity.
 ///

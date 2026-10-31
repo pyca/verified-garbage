@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_aes_gcm_siv_seal_aesni` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SIV_SEAL_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+pub(crate) const VG_AES_GCM_SIV_SEAL_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
 
 /// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
 ///
@@ -769,7 +769,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_siv_open_aesni` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SIV_OPEN_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+pub(crate) const VG_AES_GCM_SIV_OPEN_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
 
 /// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
 ///
@@ -1565,7 +1565,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_siv_seal_aesni_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3"]);
+pub(crate) const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
 ///
@@ -2331,7 +2331,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_siv_open_aesni_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3"]);
+pub(crate) const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
 ///
@@ -3127,7 +3127,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_siv_seal_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
+pub(crate) const VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
 ///
@@ -3893,7 +3893,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_siv_open_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
+pub(crate) const VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
 ///

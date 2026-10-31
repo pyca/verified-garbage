@@ -979,7 +979,7 @@ ret
 }
 
 /// The CPU features `vg_chacha20_poly1305_seal_ssse3` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["ssse3"]);
+pub(crate) const VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SSSE3);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. Composed of calls of `vg_chacha20_block`, `vg_chacha20_xor` and the Poly1305 functions.
 ///
@@ -1418,7 +1418,7 @@ ret
 }
 
 /// The CPU features `vg_chacha20_poly1305_open_ssse3` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["ssse3"]);
+pub(crate) const VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SSSE3);
 
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unspecified (they must not be used). The tags are compared without a branch.
 ///
@@ -1873,7 +1873,7 @@ ret
 }
 
 /// The CPU features `vg_chacha20_poly1305_seal_gather_ssse3` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["ssse3"]);
+pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SSSE3);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
 ///

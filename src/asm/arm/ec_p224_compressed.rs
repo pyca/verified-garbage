@@ -2505,7 +2505,7 @@ bx lr",
 
 /// The CPU features `vg_ec_p224_compress_public_key_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_EC_P224_COMPRESS_PUBLIC_KEY_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
+pub(crate) const VG_EC_P224_COMPRESS_PUBLIC_KEY_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
 
 /// Validate and compress a P-224 public key (SEC 1 §§2.3.3–2.3.4, SP 800-56A §5.6.2.3.3): reads `04` then `x` and `y` in 28 bytes each, most significant first; checks both coordinates below the field prime and the curve equation; writes `02` for even `y` or `03` for odd `y`, then `x` in 28 bytes, and returns 1. On invalid input, writes 29 zero bytes and returns 0. Rejects infinity and hybrid encodings.
 ///
@@ -3572,7 +3572,7 @@ bx lr",
 
 /// The CPU features `vg_ec_p224_decompress_public_key_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_EC_P224_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
+pub(crate) const VG_EC_P224_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
 
 /// Validate and decompress a P-224 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 28 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 28 bytes each and returns 1. If no such finite point exists, writes 57 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
 ///

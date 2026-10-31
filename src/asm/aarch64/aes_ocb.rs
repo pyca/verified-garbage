@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_aes_ocb_init_aes` requires (`Artifact.features`).
-pub(crate) const VG_AES_OCB_INIT_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+pub(crate) const VG_AES_OCB_INIT_AES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
 
 /// The AES-OCB key setup (RFC 7253 §4.1): writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and `L_* = ENCIPHER(K, zeros(128))` in bytes 240–255. The other bytes are unspecified. The other `vg_aes_ocb_*` functions read it, with `Nr` as their `rounds`.
 ///
@@ -70,7 +70,7 @@ ret
 }
 
 /// The CPU features `vg_aes_ocb_seal_aes` requires (`Artifact.features`).
-pub(crate) const VG_AES_OCB_SEAL_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+pub(crate) const VG_AES_OCB_SEAL_AES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
 
 /// AES-OCB authenticated encryption (RFC 7253 §4.2, `OCB-ENCRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the tag of `tag_len` bytes, of the data and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The RFC's ciphertext is the encrypted data followed by the tag. A nonce must never be used twice with the same key.
 ///
@@ -1169,7 +1169,7 @@ ret
 }
 
 /// The CPU features `vg_aes_ocb_open_aes` requires (`Artifact.features`).
-pub(crate) const VG_AES_OCB_OPEN_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+pub(crate) const VG_AES_OCB_OPEN_AES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
 
 /// AES-OCB authenticated decryption (RFC 7253 §4.3, `OCB-DECRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds and the received tag (the last `tag_len` bytes of the RFC's ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted data at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the tag is that of the data and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
 ///

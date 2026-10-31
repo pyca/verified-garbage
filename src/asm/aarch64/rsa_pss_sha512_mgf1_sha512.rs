@@ -1245,7 +1245,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_encode_sha3` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_ENCODE_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
+pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_ENCODE_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// EMSA-PSS-ENCODE (RFC 8017 §9.1.1) with SHA-512 and MGF1 with SHA-512, of the 64-byte digest `*digest` with the salt `salt`, into `em_bits` bits: writes the `em_len` bytes of the encoding to `em` and returns 1, or returns 0 if the salt does not fit (`em_len < 66 + salt_len`), leaving `em` unspecified. The step of RSASSA-PSS signing (`vg_rsa_pss_sha512_mgf1_sha512_sign`) before the RSA primitive.
 ///
@@ -1754,7 +1754,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_check_encoding_sha3` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_CHECK_ENCODING_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
+pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_CHECK_ENCODING_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// EMSA-PSS-VERIFY (RFC 8017 §9.1.2) with SHA-512 and MGF1 with SHA-512, with BoringSSL's step 10: whether the `em_len` bytes at `em`, an encoding of `em_bits` bits, are consistent with the 64-byte digest `*digest`, expecting a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero. Returns 1 if so and 0 otherwise. The step of RSASSA-PSS verification (`vg_rsa_pss_sha512_mgf1_sha512_verify`) after the RSA primitive.
 ///
@@ -2662,7 +2662,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_sign_sha512_sha3` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
+pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-512 and MGF1 with SHA-512, of a SHA-512 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 64-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 66`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
@@ -2960,7 +2960,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_sha512_sha3` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
+pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// RSASSA-PSS signature verification (RFC 8017 §8.1.2) with SHA-512 and MGF1 with SHA-512, of a signature of a SHA-512 digest. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), returns 1 if `sig` (`n_len` bytes, most significant first) is an RSASSA-PSS signature of the 64-byte digest `*digest` with a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero (BoringSSL's `RSA_PSS_SALTLEN_AUTO`); and 0 if it is not, or if `n` is not such a modulus, `e` is not such a number, or `sig` is not below `n`.
 ///

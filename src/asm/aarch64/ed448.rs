@@ -13887,7 +13887,7 @@ ret
 }
 
 /// The CPU features `vg_ed448_public_key_sha3` requires (`Artifact.features`).
-pub(crate) const VG_ED448_PUBLIC_KEY_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
+pub(crate) const VG_ED448_PUBLIC_KEY_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// Ed448 public-key derivation (RFC 8032 §5.2.5): writes the 57-byte public key to `*out`, from the 57-byte private key at `seed`, including SHAKE256 and pruning. Contract: `VG.Spec.Ed448.publicKeyContract`. Constant time: only pointers may affect timing.
 ///
@@ -14120,7 +14120,7 @@ ret
 }
 
 /// The CPU features `vg_ed448_sign_cached_sha3` requires (`Artifact.features`).
-pub(crate) const VG_ED448_SIGN_CACHED_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
+pub(crate) const VG_ED448_SIGN_CACHED_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// Ed448 signing (RFC 8032 §5.2.6): writes the 114-byte signature to `*out`, for the `len` bytes at `message`, the `ctxlen` bytes of context at `context` and the 57-byte private key at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses Ed448 with a context, not Ed448ph (no prehash); the context is empty for plain Ed448. Contract: `VG.Spec.Ed448.signCachedContract`. Constant time: only pointers and the context and message lengths may affect timing, not any buffer contents.
 ///
@@ -14549,7 +14549,7 @@ ret
 }
 
 /// The CPU features `vg_ed448_verify_sha3` requires (`Artifact.features`).
-pub(crate) const VG_ED448_VERIFY_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
+pub(crate) const VG_ED448_VERIFY_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// Ed448 verification (RFC 8032 §5.2.7): returns 1 if the 114-byte signature at `signature` verifies for the 57-byte public key at `pk`, the `ctxlen` bytes of context at `context` and the `len` bytes at `message`, and 0 otherwise (always 0 for a context longer than 255 bytes). Uses Ed448 with a context, not Ed448ph (no prehash). Checks canonical point encodings, S < L, and the cofactored equation `[4][S]B = [4]R + [4][k]A` with the challenge k = SHAKE256(dom4(0, C) || R || A || M, 114) reduced modulo L. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed448.verifyContract`. Not constant time: timing may depend on the public key, context, message and signature.
 ///

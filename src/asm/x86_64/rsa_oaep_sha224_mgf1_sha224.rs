@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_rsa_oaep_sha224_mgf1_sha224_decrypt_crt_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_DECRYPT_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi2", "adx"]);
+pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_DECRYPT_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSAES-OAEP decryption (RFC 8017 §7.1.2) with SHA-224 and MGF1 with SHA-224, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
 ///
@@ -885,7 +885,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha224_mgf1_sha224_decrypt_crt_ifma` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_DECRYPT_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]);
+pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_DECRYPT_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSAES-OAEP decryption (RFC 8017 §7.1.2) with SHA-224 and MGF1 with SHA-224, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
 ///
@@ -1328,7 +1328,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha224_mgf1_sha224_decrypt_sha224_avx2_crt_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_DECRYPT_SHA224_AVX2_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2", "adx"]);
+pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_DECRYPT_SHA224_AVX2_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSAES-OAEP decryption (RFC 8017 §7.1.2) with SHA-224 and MGF1 with SHA-224, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
 ///
@@ -1771,7 +1771,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha224_mgf1_sha224_decrypt_sha224_avx2` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_DECRYPT_SHA224_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2"]);
+pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_DECRYPT_SHA224_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// RSAES-OAEP decryption (RFC 8017 §7.1.2) with SHA-224 and MGF1 with SHA-224, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
 ///
@@ -2214,7 +2214,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha224_mgf1_sha224_decrypt_sha224_avx2_crt_ifma` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_DECRYPT_SHA224_AVX2_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2", "avx512f", "avx512ifma", "avx512vl", "adx"]);
+pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_DECRYPT_SHA224_AVX2_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::ADX);
 
 /// RSAES-OAEP decryption (RFC 8017 §7.1.2) with SHA-224 and MGF1 with SHA-224, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
 ///
@@ -2657,7 +2657,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha224_mgf1_sha224_decrypt_sha224_shani_crt_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_DECRYPT_SHA224_SHANI_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3", "avx", "avx2", "bmi2", "adx"]);
+pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_DECRYPT_SHA224_SHANI_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSAES-OAEP decryption (RFC 8017 §7.1.2) with SHA-224 and MGF1 with SHA-224, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
 ///
@@ -3100,7 +3100,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha224_mgf1_sha224_decrypt_sha224_shani` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_DECRYPT_SHA224_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
+pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_DECRYPT_SHA224_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
 
 /// RSAES-OAEP decryption (RFC 8017 §7.1.2) with SHA-224 and MGF1 with SHA-224, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
 ///
@@ -3543,7 +3543,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha224_mgf1_sha224_decrypt_sha224_shani_crt_ifma` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_DECRYPT_SHA224_SHANI_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3", "avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]);
+pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_DECRYPT_SHA224_SHANI_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSAES-OAEP decryption (RFC 8017 §7.1.2) with SHA-224 and MGF1 with SHA-224, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
 ///
@@ -3986,7 +3986,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha224_mgf1_sha224_encrypt_precomputed_rsa_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_ENCRYPT_PRECOMPUTED_RSA_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["bmi2", "adx"]);
+pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_ENCRYPT_PRECOMPUTED_RSA_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with SHA-224 and MGF1 with SHA-224. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first), writes the encryption of the message `msg` with the label `label` and the 28-byte seed `*seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 58` bytes. The seed must be fresh random bytes for each encryption.
 ///
@@ -4686,7 +4686,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha224_mgf1_sha224_encrypt_precomputed_rsa_ifma` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_ENCRYPT_PRECOMPUTED_RSA_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]);
+pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_ENCRYPT_PRECOMPUTED_RSA_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with SHA-224 and MGF1 with SHA-224. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first), writes the encryption of the message `msg` with the label `label` and the 28-byte seed `*seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 58` bytes. The seed must be fresh random bytes for each encryption.
 ///
@@ -5038,7 +5038,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha224_mgf1_sha224_encrypt_precomputed_sha224_avx2_rsa_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_ENCRYPT_PRECOMPUTED_SHA224_AVX2_RSA_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2", "adx"]);
+pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_ENCRYPT_PRECOMPUTED_SHA224_AVX2_RSA_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with SHA-224 and MGF1 with SHA-224. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first), writes the encryption of the message `msg` with the label `label` and the 28-byte seed `*seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 58` bytes. The seed must be fresh random bytes for each encryption.
 ///
@@ -5390,7 +5390,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha224_mgf1_sha224_encrypt_precomputed_sha224_avx2` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_ENCRYPT_PRECOMPUTED_SHA224_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2"]);
+pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_ENCRYPT_PRECOMPUTED_SHA224_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with SHA-224 and MGF1 with SHA-224. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first), writes the encryption of the message `msg` with the label `label` and the 28-byte seed `*seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 58` bytes. The seed must be fresh random bytes for each encryption.
 ///
@@ -5742,7 +5742,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha224_mgf1_sha224_encrypt_precomputed_sha224_avx2_rsa_ifma` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_ENCRYPT_PRECOMPUTED_SHA224_AVX2_RSA_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2", "avx512f", "avx512ifma", "avx512vl", "adx"]);
+pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_ENCRYPT_PRECOMPUTED_SHA224_AVX2_RSA_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::ADX);
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with SHA-224 and MGF1 with SHA-224. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first), writes the encryption of the message `msg` with the label `label` and the 28-byte seed `*seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 58` bytes. The seed must be fresh random bytes for each encryption.
 ///
@@ -6094,7 +6094,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha224_mgf1_sha224_encrypt_precomputed_sha224_shani_rsa_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_ENCRYPT_PRECOMPUTED_SHA224_SHANI_RSA_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3", "bmi2", "adx"]);
+pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_ENCRYPT_PRECOMPUTED_SHA224_SHANI_RSA_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with SHA-224 and MGF1 with SHA-224. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first), writes the encryption of the message `msg` with the label `label` and the 28-byte seed `*seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 58` bytes. The seed must be fresh random bytes for each encryption.
 ///
@@ -6446,7 +6446,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha224_mgf1_sha224_encrypt_precomputed_sha224_shani` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_ENCRYPT_PRECOMPUTED_SHA224_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
+pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_ENCRYPT_PRECOMPUTED_SHA224_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with SHA-224 and MGF1 with SHA-224. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first), writes the encryption of the message `msg` with the label `label` and the 28-byte seed `*seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 58` bytes. The seed must be fresh random bytes for each encryption.
 ///
@@ -6798,7 +6798,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha224_mgf1_sha224_encrypt_precomputed_sha224_shani_rsa_ifma` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_ENCRYPT_PRECOMPUTED_SHA224_SHANI_RSA_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3", "avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]);
+pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA224_ENCRYPT_PRECOMPUTED_SHA224_SHANI_RSA_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with SHA-224 and MGF1 with SHA-224. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first), writes the encryption of the message `msg` with the label `label` and the 28-byte seed `*seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 58` bytes. The seed must be fresh random bytes for each encryption.
 ///

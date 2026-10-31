@@ -706,7 +706,7 @@ bx lr",
 
 /// The CPU features `vg_ecdsa_p224_sha224_sign_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_ECDSA_P224_SHA224_SIGN_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
+pub(crate) const VG_ECDSA_P224_SHA224_SIGN_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
 
 /// Deterministic ECDSA signature generation over P-224 with HMAC-SHA-224 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (28 bytes, most significant first), signs the SHA-224 hash at `digest` (28 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (28 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
 ///

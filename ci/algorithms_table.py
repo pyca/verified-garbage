@@ -97,7 +97,9 @@ ARCH_FEATURES = {"aarch64": {"aes": "AES, PMULL", "sha2": "SHA extensions", "sha
 
 CFG = re.compile(r"^#!\[cfg\((.*?)\)\]$", re.MULTILINE | re.DOTALL)
 ARCH = re.compile(r'target_arch\s*=\s*"(\w+)"')
-FEATURE_CONST = re.compile(r"_FEATURES: crate::cpu::Features = crate::cpu::Features::of\(&\[(.*?)\]\);")
+# A generated `_FEATURES` constant: the bits of its features, by name in uppercase.
+FEATURE_CONST = re.compile(r"_FEATURES: crate::cpu::Features = crate::cpu::Features\((.*?)\);")
+FEATURE_BIT = re.compile(r"crate::cpu::feature::(\w+)")
 FUNCTION = re.compile(r"\bfn (vg_\w+)\(")
 
 
@@ -136,7 +138,7 @@ def variants(row, arch):
         if path.is_file():
             text = path.read_text()
             for m in FEATURE_CONST.finditer(text):
-                features |= set(re.findall(r'"([^"]+)"', m[1]))
+                features |= {f.lower() for f in FEATURE_BIT.findall(m[1])}
             found |= {s for f in FUNCTION.findall(text) for s in suffixes if f.endswith(f"_{s}")}
     features -= implied(features)
     order = list(FEATURES)

@@ -6041,7 +6041,7 @@ ret
 }
 
 /// The CPU features `vg_argon2_compress_avx2` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_COMPRESS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
+pub(crate) const VG_ARGON2_COMPRESS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Argon2's compression function G (RFC 9106 §3.5–3.6): writes G(*x, *y) to `*out`. Each block is 128 little-endian 64-bit words.
 ///
@@ -7561,7 +7561,7 @@ ret
 }
 
 /// The CPU features `vg_argon2_compress_avx512` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_COMPRESS_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f"]);
+pub(crate) const VG_ARGON2_COMPRESS_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F);
 
 /// Argon2's compression function G (RFC 9106 §3.5–3.6): writes G(*x, *y) to `*out`. Each block is 128 little-endian 64-bit words.
 ///
@@ -8269,7 +8269,7 @@ ret
 }
 
 /// The CPU features `vg_argon2_hprime_avx2` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_HPRIME_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
+pub(crate) const VG_ARGON2_HPRIME_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Argon2's variable-length hash H′ (RFC 9106 §3.3): hashes the `input_len` bytes at `input` to `out_len` bytes at `out`, including the LE32 output-length prefix and the BLAKE2b chaining required for outputs longer than 64 bytes.
 ///
@@ -8437,7 +8437,7 @@ ret
 }
 
 /// The CPU features `vg_argon2_hprime_avx512` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_HPRIME_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "avx512f", "avx512vl"]);
+pub(crate) const VG_ARGON2_HPRIME_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
 
 /// Argon2's variable-length hash H′ (RFC 9106 §3.3): hashes the `input_len` bytes at `input` to `out_len` bytes at `out`, including the LE32 output-length prefix and the BLAKE2b chaining required for outputs longer than 64 bytes.
 ///
@@ -8769,7 +8769,7 @@ ret
 }
 
 /// The CPU features `vg_argon2_blake2b_avx2_g_avx2` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_BLAKE2B_AVX2_G_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
+pub(crate) const VG_ARGON2_BLAKE2B_AVX2_G_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Argon2 version 1.3 (RFC 9106): derives `out_len` bytes at `out` from the password, salt, optional secret and associated data. `kind` selects Argon2d (0), Argon2i (1) or Argon2id (2). Performs the entire derivation: H₀, H′, initialization, all memory-filling passes, the final lane XOR and H′ of that block.
 ///
@@ -11626,7 +11626,7 @@ ret
 }
 
 /// The CPU features `vg_argon2_blake2b_avx2_g_avx512` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_BLAKE2B_AVX2_G_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "avx512f"]);
+pub(crate) const VG_ARGON2_BLAKE2B_AVX2_G_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F);
 
 /// Argon2 version 1.3 (RFC 9106): derives `out_len` bytes at `out` from the password, salt, optional secret and associated data. `kind` selects Argon2d (0), Argon2i (1) or Argon2id (2). Performs the entire derivation: H₀, H′, initialization, all memory-filling passes, the final lane XOR and H′ of that block.
 ///
@@ -14483,7 +14483,7 @@ ret
 }
 
 /// The CPU features `vg_argon2_blake2b_avx2` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_BLAKE2B_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
+pub(crate) const VG_ARGON2_BLAKE2B_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Argon2 version 1.3 (RFC 9106): derives `out_len` bytes at `out` from the password, salt, optional secret and associated data. `kind` selects Argon2d (0), Argon2i (1) or Argon2id (2). Performs the entire derivation: H₀, H′, initialization, all memory-filling passes, the final lane XOR and H′ of that block.
 ///
@@ -17340,7 +17340,7 @@ ret
 }
 
 /// The CPU features `vg_argon2_blake2b_avx512_g_avx2` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_BLAKE2B_AVX512_G_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "avx512f", "avx512vl"]);
+pub(crate) const VG_ARGON2_BLAKE2B_AVX512_G_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
 
 /// Argon2 version 1.3 (RFC 9106): derives `out_len` bytes at `out` from the password, salt, optional secret and associated data. `kind` selects Argon2d (0), Argon2i (1) or Argon2id (2). Performs the entire derivation: H₀, H′, initialization, all memory-filling passes, the final lane XOR and H′ of that block.
 ///
@@ -20197,7 +20197,7 @@ ret
 }
 
 /// The CPU features `vg_argon2_blake2b_avx512_g_avx512` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_BLAKE2B_AVX512_G_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "avx512f", "avx512vl"]);
+pub(crate) const VG_ARGON2_BLAKE2B_AVX512_G_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
 
 /// Argon2 version 1.3 (RFC 9106): derives `out_len` bytes at `out` from the password, salt, optional secret and associated data. `kind` selects Argon2d (0), Argon2i (1) or Argon2id (2). Performs the entire derivation: H₀, H′, initialization, all memory-filling passes, the final lane XOR and H′ of that block.
 ///
@@ -23054,7 +23054,7 @@ ret
 }
 
 /// The CPU features `vg_argon2_blake2b_avx512` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_BLAKE2B_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "avx512f", "avx512vl"]);
+pub(crate) const VG_ARGON2_BLAKE2B_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
 
 /// Argon2 version 1.3 (RFC 9106): derives `out_len` bytes at `out` from the password, salt, optional secret and associated data. `kind` selects Argon2d (0), Argon2i (1) or Argon2id (2). Performs the entire derivation: H₀, H′, initialization, all memory-filling passes, the final lane XOR and H′ of that block.
 ///
@@ -25911,7 +25911,7 @@ ret
 }
 
 /// The CPU features `vg_argon2_g_avx2` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_G_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
+pub(crate) const VG_ARGON2_G_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Argon2 version 1.3 (RFC 9106): derives `out_len` bytes at `out` from the password, salt, optional secret and associated data. `kind` selects Argon2d (0), Argon2i (1) or Argon2id (2). Performs the entire derivation: H₀, H′, initialization, all memory-filling passes, the final lane XOR and H′ of that block.
 ///
@@ -28768,7 +28768,7 @@ ret
 }
 
 /// The CPU features `vg_argon2_g_avx512` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_G_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f"]);
+pub(crate) const VG_ARGON2_G_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F);
 
 /// Argon2 version 1.3 (RFC 9106): derives `out_len` bytes at `out` from the password, salt, optional secret and associated data. `kind` selects Argon2d (0), Argon2i (1) or Argon2id (2). Performs the entire derivation: H₀, H′, initialization, all memory-filling passes, the final lane XOR and H′ of that block.
 ///

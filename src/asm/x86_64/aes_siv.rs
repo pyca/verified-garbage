@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_aes_siv_init_aesni` requires (`Artifact.features`).
-pub(crate) const VG_AES_SIV_INIT_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "ssse3"]);
+pub(crate) const VG_AES_SIV_INIT_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
 
 /// The AES-SIV key setup (RFC 5297 §2.6): writes the key context of the `key_len`-byte key `K = K1 ‖ K2` at `key` (the halves of `key_len / 2` bytes) to `*ctx`: the key schedule of `K1` for `Nr = key_len / 8 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, its CMAC subkeys (NIST SP 800-38B §6.1) in bytes 240–271, and the key schedule of `K2` in the `16 * (Nr + 1)` bytes from byte 272. The other bytes are unspecified. The other `vg_aes_siv_*` functions read it, with `Nr` as their `rounds`.
 ///
@@ -129,7 +129,7 @@ ret
 }
 
 /// The CPU features `vg_aes_siv_init_vaes` requires (`Artifact.features`).
-pub(crate) const VG_AES_SIV_INIT_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "ssse3", "vaes"]);
+pub(crate) const VG_AES_SIV_INIT_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
 
 /// The AES-SIV key setup (RFC 5297 §2.6): writes the key context of the `key_len`-byte key `K = K1 ‖ K2` at `key` (the halves of `key_len / 2` bytes) to `*ctx`: the key schedule of `K1` for `Nr = key_len / 8 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, its CMAC subkeys (NIST SP 800-38B §6.1) in bytes 240–271, and the key schedule of `K2` in the `16 * (Nr + 1)` bytes from byte 272. The other bytes are unspecified. The other `vg_aes_siv_*` functions read it, with `Nr` as their `rounds`.
 ///
@@ -194,7 +194,7 @@ ret
 }
 
 /// The CPU features `vg_aes_siv_encrypt_aesni` requires (`Artifact.features`).
-pub(crate) const VG_AES_SIV_ENCRYPT_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "ssse3"]);
+pub(crate) const VG_AES_SIV_ENCRYPT_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
 
 /// AES-SIV encryption, `SIV-ENCRYPT` (RFC 5297 §2.6): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds, computes the synthetic IV `V = S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes; for nonce-based encryption, §3, the nonce is the last) and the `len` bytes of plaintext `P` at `data`, writes it to `*siv`, and encrypts the plaintext in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared. The RFC's output is `V` followed by the encrypted data.
 ///
@@ -613,7 +613,7 @@ ret
 }
 
 /// The CPU features `vg_aes_siv_decrypt_aesni` requires (`Artifact.features`).
-pub(crate) const VG_AES_SIV_DECRYPT_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "ssse3"]);
+pub(crate) const VG_AES_SIV_DECRYPT_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
 
 /// AES-SIV decryption, `SIV-DECRYPT` (RFC 5297 §2.7): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds and the received synthetic IV `V` at `siv`, decrypts the `len` bytes of ciphertext at `data` in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared, computes `S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes) and the plaintext `P`, and returns 1 if it is `V`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The IVs are compared without a branch.
 ///
@@ -1074,7 +1074,7 @@ ret
 }
 
 /// The CPU features `vg_aes_siv_encrypt_aesni_cbc` requires (`Artifact.features`).
-pub(crate) const VG_AES_SIV_ENCRYPT_AESNI_CBC_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "ssse3"]);
+pub(crate) const VG_AES_SIV_ENCRYPT_AESNI_CBC_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
 
 /// AES-SIV encryption, `SIV-ENCRYPT` (RFC 5297 §2.6): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds, computes the synthetic IV `V = S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes; for nonce-based encryption, §3, the nonce is the last) and the `len` bytes of plaintext `P` at `data`, writes it to `*siv`, and encrypts the plaintext in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared. The RFC's output is `V` followed by the encrypted data.
 ///
@@ -1493,7 +1493,7 @@ ret
 }
 
 /// The CPU features `vg_aes_siv_decrypt_aesni_cbc` requires (`Artifact.features`).
-pub(crate) const VG_AES_SIV_DECRYPT_AESNI_CBC_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "ssse3"]);
+pub(crate) const VG_AES_SIV_DECRYPT_AESNI_CBC_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
 
 /// AES-SIV decryption, `SIV-DECRYPT` (RFC 5297 §2.7): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds and the received synthetic IV `V` at `siv`, decrypts the `len` bytes of ciphertext at `data` in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared, computes `S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes) and the plaintext `P`, and returns 1 if it is `V`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The IVs are compared without a branch.
 ///
@@ -2826,7 +2826,7 @@ ret
 }
 
 /// The CPU features `vg_aes_siv_encrypt_vaes` requires (`Artifact.features`).
-pub(crate) const VG_AES_SIV_ENCRYPT_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "ssse3", "vaes"]);
+pub(crate) const VG_AES_SIV_ENCRYPT_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
 
 /// AES-SIV encryption, `SIV-ENCRYPT` (RFC 5297 §2.6): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds, computes the synthetic IV `V = S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes; for nonce-based encryption, §3, the nonce is the last) and the `len` bytes of plaintext `P` at `data`, writes it to `*siv`, and encrypts the plaintext in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared. The RFC's output is `V` followed by the encrypted data.
 ///
@@ -3245,7 +3245,7 @@ ret
 }
 
 /// The CPU features `vg_aes_siv_decrypt_vaes` requires (`Artifact.features`).
-pub(crate) const VG_AES_SIV_DECRYPT_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "ssse3", "vaes"]);
+pub(crate) const VG_AES_SIV_DECRYPT_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
 
 /// AES-SIV decryption, `SIV-DECRYPT` (RFC 5297 §2.7): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds and the received synthetic IV `V` at `siv`, decrypts the `len` bytes of ciphertext at `data` in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared, computes `S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes) and the plaintext `P`, and returns 1 if it is `V`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The IVs are compared without a branch.
 ///
