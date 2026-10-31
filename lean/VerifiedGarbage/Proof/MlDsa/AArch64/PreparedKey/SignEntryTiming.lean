@@ -2069,3 +2069,827 @@ theorem verify_entry_constants_ct {p : Params} (hp : Ok3 p) {name : String} {cod
   exact (trace x y tx ty x' y' ⟨hx, hy, hpub⟩ ex ey).1
 
 end VG.Proof.MlDsa.AArch64.PreparedKey
+
+/-! ## Prepared verification entries have satisfiable layouts -/
+
+namespace VG.Proof.MlDsa.AArch64.PreparedKey
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Proof.MlDsa.AArch64.Sign
+open VG.Proof.MlDsa.AArch64.Optimized
+
+def prepWithTables (p : Params) (m : Mem) : State where
+  gpr r := match r with | .x0 => 0x1000 | .x1 => 0x10000 | .x2 => 0x200000 | _ => 0
+  sp := 0x1000000
+  mem := m
+  rd := [⟨0x1000, p.pkLen⟩]
+  wr := [⟨0x10000, preparedPublicKeyBytes p⟩, ⟨0x200000, 1024⟩]
+
+theorem prepWithTables_pre {p : Params} (hp : Ok3 p) (m : Mem) :
+    (preparePublicKeyContract p abi 80).pre (prepWithTables p m) := by
+  rcases hp with rfl | rfl | rfl
+  all_goals
+    sig_pre [preparePublicKeyContract, preparePublicKeySig, abi, VG.AArch64.argRegs]
+    sig_and_intros
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide +kernel
+
+theorem prepare_public_depth {p : Params} (hp : Ok3 p) :
+    (Impl.MlDsa.AArch64.PreparedKey.preparePublic p).aarch64Depth ≤ 5 := by
+  rcases hp with rfl | rfl | rfl <;> decide +kernel
+
+theorem public_preparation_preserves_roots {p : Params} (hp : Ok3 p) {m : Mem} {t : State}
+    {tr : List Leak}
+    (he : Exec isa (Impl.MlDsa.AArch64.PreparedKey.preparePublic p) (prepWithTables p m) tr t)
+    {base : Addr} (hb : base = 1048576 ∨ base = 1052480) :
+    ∀ i < 488, t.mem.readW (base + BitVec.ofNat 64 (8 * i)) 64 =
+      m.readW (base + BitVec.ofNat 64 (8 * i)) 64 := by
+  have depth := prepare_public_depth hp
+  have bound : 16 * (Impl.MlDsa.AArch64.PreparedKey.preparePublic p).aarch64Depth < 2 ^ 64 := by omega
+  have frame := Exec.frameSp he bound
+  intro i hi
+  apply frame.readW (r := ⟨base, 3904⟩)
+    (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
+  intro R hR
+  simp only [prepWithTables, List.cons_append, List.nil_append, List.mem_cons,
+    List.not_mem_nil, or_false] at hR
+  rcases hR with rfl | rfl | rfl
+  · rcases hp with rfl | rfl | rfl <;> rcases hb with rfl | rfl
+    all_goals exact Region.disjoint_of_sep (by decide)
+  · rcases hb with rfl | rfl
+    all_goals exact Region.disjoint_of_sep (by decide)
+  · have hs : Region.Sub (below (0x1000000 : Addr)
+        (16 * (Impl.MlDsa.AArch64.PreparedKey.preparePublic p).aarch64Depth))
+        (below (0x1000000 : Addr) 80) := below_sub (by omega) (by decide)
+    apply Region.Disjoint.sub_right _ hs
+    rcases hb with rfl | rfl
+    all_goals exact Region.disjoint_of_sep (by decide)
+theorem raw_verify_pre_extend {p : Params} {prepared : Bool} {s : State}
+    (h : (rawVerifyK p prepared abi).pre (s.withRegions (rawVerifyRd p prepared s) s.wr))
+    (hr : StaticRoots 64 s) (hd : s.rd = rawVerifyRd p prepared s ++ verifyRootRd s) :
+    (rawVerifyK p prepared (abi.withConsts signRootConsts)).pre s := by
+  cases prepared
+  all_goals
+    simp only [rawVerifyK, Bool.false_eq_true, ↓reduceIte] at h ⊢
+    sig_pre [verifyContract, verifySig, preparedVerifyContract, preparedVerifySig,
+      abi, VG.AArch64.argRegs] at h
+    sig_pre [verifyContract, verifySig, preparedVerifyContract, preparedVerifySig,
+      abi, VG.AArch64.argRegs, Abi.withConsts, signRootConsts_eq,
+      Abi.constRegions, Abi.constsHeld, TableConstants.staticNttWords_length,
+      InverseTable.expandedWords_length, stackBelow]
+    obtain ⟨sp, _rd, wr, d1, d2, d3, k1, k2, k3, k4, n1, n2, n3, tail⟩ := h
+    exact ⟨sp,by rw [hd]; rfl,hr.forward.held,hr.inverse.held,hr.forward.fit,
+      hr.forward.writable,hr.forward.stack,hr.inverse.fit,hr.inverse.writable,
+      hr.inverse.stack,hr.forward.aligned,hr.inverse.aligned,by rw [hd]; rfl,
+      wr,d1,d2,d3,k1,k2,k3,k4,n1,n2,n3,tail⟩
+
+def rawVerifyConstSat (p : Params) (prepared : Bool) (m : Mem) : State :=
+  { rawVerifySat p prepared m with
+    syms := fun name => if name = "VG_MLDSA_NTT_EXPANDED" then 1048576 else 1052480
+    rd := (rawVerifySat p prepared m).rd ++ [⟨1048576,3904⟩,⟨1052480,3904⟩] }
+
+theorem rawVerifyConstSat_roots (p : Params) (hp : Ok3 p) (prepared : Bool) (m : Mem)
+    (hf : ∀ i < 488, m.readW (1048576 + BitVec.ofNat 64 (8 * i)) 64 =
+      Impl.MlDsa.AArch64.Optimized.Ntt.staticNttWords.getD i 0)
+    (hi : ∀ i < 488, m.readW (1052480 + BitVec.ofNat 64 (8 * i)) 64 =
+      Impl.MlDsa.AArch64.Optimized.Inverse.expandedWords.getD i 0) :
+    StaticRoots 64 (rawVerifyConstSat p prepared m) := by
+  refine ⟨⟨hf, by dsimp [rawVerifyConstSat]; decide, ?_, ?_,
+      by apply Region.disjoint_of_sep; dsimp [rawVerifyConstSat, rawVerifySat]; decide,
+      by dsimp [rawVerifyConstSat]⟩,
+    ⟨hi, by dsimp [rawVerifyConstSat]; decide, ?_, ?_,
+      by apply Region.disjoint_of_sep; dsimp [rawVerifyConstSat, rawVerifySat]; decide,
+      by dsimp [rawVerifyConstSat]⟩⟩
+  · apply Covers.one
+    exact ⟨⟨1048576,3904⟩, by simp [rawVerifyConstSat], Region.contains_self _ _⟩
+  · rcases hp with rfl | rfl | rfl
+    all_goals
+      simp only [rawVerifyConstSat, rawVerifySat, List.mem_cons, List.not_mem_nil,
+        or_false, forall_eq]
+      exact Region.disjoint_of_sep (by decide)
+  · apply Covers.one
+    exact ⟨⟨1052480,3904⟩, by simp [rawVerifyConstSat], Region.contains_self _ _⟩
+  · rcases hp with rfl | rfl | rfl
+    all_goals
+      simp only [rawVerifyConstSat, rawVerifySat, List.mem_cons, List.not_mem_nil,
+        or_false, forall_eq]
+      exact Region.disjoint_of_sep (by decide)
+
+theorem rawVerifyConstSat_pre {p : Params} (hp : Ok3 p) (prepared : Bool) (m : Mem)
+    (hf : ∀ i < 488, m.readW (1048576 + BitVec.ofNat 64 (8 * i)) 64 =
+      Impl.MlDsa.AArch64.Optimized.Ntt.staticNttWords.getD i 0)
+    (hi : ∀ i < 488, m.readW (1052480 + BitVec.ofNat 64 (8 * i)) 64 =
+      Impl.MlDsa.AArch64.Optimized.Inverse.expandedWords.getD i 0)
+    (cache : prepared = true → PreparedPublicKey p m 0x10000) :
+    (rawVerifyK p prepared (abi.withConsts signRootConsts)).pre
+      (rawVerifyConstSat p prepared m) := by
+  apply raw_verify_pre_extend ?_ (rawVerifyConstSat_roots p hp prepared m hf hi) rfl
+  have base := raw_verify_sat_pre hp prepared cache
+  cases prepared
+  all_goals
+    simp only [rawVerifyK, Bool.false_eq_true, ↓reduceIte] at base ⊢
+    sig_pre [verifyContract, verifySig, preparedVerifyContract, preparedVerifySig,
+      abi, VG.AArch64.argRegs] at base ⊢
+    exact base
+
+theorem raw_verify_constants_sat {p : Params} (hp : Ok3 p) (prepared : Bool) :
+    ∃ s, (rawVerifyK p prepared (abi.withConsts signRootConsts)).pre s := by
+  have roots := (pairedRoots_entry (by decide) (pairedSign_sat hp)).2.1
+  let m := (pairedSignSat p).mem
+  have hf : ∀ i < 488, m.readW (1048576 + BitVec.ofNat 64 (8 * i)) 64 =
+      Impl.MlDsa.AArch64.Optimized.Ntt.staticNttWords.getD i 0 := roots.forward.held
+  have hi : ∀ i < 488, m.readW (1052480 + BitVec.ofNat 64 (8 * i)) 64 =
+      Impl.MlDsa.AArch64.Optimized.Inverse.expandedWords.getD i 0 := roots.inverse.held
+  cases prepared
+  · exact ⟨rawVerifyConstSat p false m,
+      rawVerifyConstSat_pre hp false m hf hi (by intro h; cases h)⟩
+  · obtain ⟨_, t, he, _, post⟩ := public_correct hp (prepWithTables p m) (prepWithTables_pre hp m)
+    sig_post [preparePublicKeyContract, preparePublicKeySig, abi, VG.AArch64.argRegs] at post
+    have cache : PreparedPublicKey p t.mem 0x10000 := post.2
+    have forward := public_preparation_preserves_roots hp he (base := 1048576) (.inl rfl)
+    have inverse := public_preparation_preserves_roots hp he (base := 1052480) (.inr rfl)
+    exact ⟨rawVerifyConstSat p true t.mem,
+      rawVerifyConstSat_pre hp true t.mem (fun i hi' => (forward i hi').trans (hf i hi'))
+        (fun i hi' => (inverse i hi').trans (hi i hi')) (fun _ => cache)⟩
+
+theorem constants_verify_entry_verified {p : Params} (hp : Ok3 p) {name : String} {code : Prog isa}
+    (hv : Verified target code (verifyWithCacheContract p (abi.withConsts signRootConsts) 48))
+    (hd : Message.DLe 3 code) (prepared : Bool) :
+    Verified target (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name code p prepared)
+      (rawVerifyK p prepared (abi.withConsts signRootConsts)) :=
+  ⟨verify_entry_constants_correct hp hv.1 hd prepared,
+    verify_entry_constants_ct hp hv.1 hv.2.1 prepared, raw_verify_constants_sat hp prepared⟩
+end VG.Proof.MlDsa.AArch64.PreparedKey
+
+namespace VG.Proof.MlDsa.AArch64.PreparedKey
+open VG VG.AArch64 VG.Spec.MlDsa
+
+theorem verify_entry_verified (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Sign.Ok3 p)
+    (name : String) (prepared : Bool) :
+    Verified target
+      (Impl.MlDsa.AArch64.PreparedKey.Verify.entry name
+        (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache v.callee
+          (VG.Impl.MlDsa.AArch64.KeyGen.primsWith v.callee) p) p prepared)
+      (rawVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)) := by
+  have shared := verify_withCache_verified v p hp
+  have depth := verify_withCache_dle v p
+  by_cases hpair : v.callee.pairedSha3 = true
+  · have habi : Verify.OptimizedSelected.selectedAbi v = abi.withConsts Sign.signRootConsts := by
+      simp only [Verify.OptimizedSelected.selectedAbi, Verify.OptimizedSelected.selectedConsts,
+        hpair, ↓reduceIte]
+    rw [habi] at shared ⊢
+    exact constants_verify_entry_verified hp shared depth prepared
+  · have hfalse : v.callee.pairedSha3 = false := Bool.eq_false_iff.mpr hpair
+    have habi : Verify.OptimizedSelected.selectedAbi v = abi := by
+      simp only [Verify.OptimizedSelected.selectedAbi, Verify.OptimizedSelected.selectedConsts,
+        hfalse, Bool.false_eq_true, ↓reduceIte, show abi.withConsts [] = abi by rfl]
+    rw [habi] at shared ⊢
+    exact scalar_verify_entry_verified hp shared depth prepared
+
+end VG.Proof.MlDsa.AArch64.PreparedKey
+
+namespace VG.Proof.MlDsa.AArch64.PreparedKey
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Proof.MlDsa.AArch64.Sign
+open VG.Proof.MlDsa.AArch64.Optimized
+open VG.Proof.MlKem.AArch64 (Only)
+
+def rawSignK (p : Params) (prepared : Bool) (A : Abi isa) : Contract isa :=
+  if prepared then preparedSignContract p A 64 else signContract p A 64
+
+def rawSignBytes (p : Params) (prepared : Bool) : Nat :=
+  if prepared then preparedSecretKeyBytes p else p.skLen
+
+def rawSignRd (p : Params) (prepared : Bool) (s : State) : List Region :=
+  [⟨s.gpr .x0, rawSignBytes p prepared⟩, ⟨s.gpr .x1, 64⟩, ⟨s.gpr .x2, 32⟩]
+
+def signRootRd (s : State) : List Region :=
+  [⟨s.syms "VG_MLDSA_NTT_EXPANDED",3904⟩, ⟨s.syms "VG_MLDSA_INV_FOLDED",3904⟩,
+    ⟨s.syms "VG_MLDSA_INV_PAIR",4096⟩]
+
+theorem sign_entry_layout {p : Params} {prepared : Bool} {σ : State}
+    (pre : (rawSignK p prepared abi).pre σ) :
+    64 ≤ σ.sp.toNat ∧ σ.rd = rawSignRd p prepared σ ∧
+    σ.wr = [⟨σ.gpr .x3, p.sigLen⟩, ⟨σ.gpr .x4, scratchWords p * 8⟩] ∧
+    (below σ.sp 64).Disjoint ⟨σ.gpr .x0, rawSignBytes p prepared⟩ ∧
+    (below σ.sp 64).Disjoint ⟨σ.gpr .x1, 64⟩ ∧
+    (below σ.sp 64).Disjoint ⟨σ.gpr .x2, 32⟩ ∧
+    (below σ.sp 64).Disjoint ⟨σ.gpr .x3, p.sigLen⟩ ∧
+    (below σ.sp 64).Disjoint ⟨σ.gpr .x4, scratchWords p * 8⟩ := by
+  cases prepared
+  all_goals
+    simp only [rawSignK, rawSignRd, rawSignBytes, Bool.false_eq_true, ↓reduceIte] at pre ⊢
+    sig_pre [signContract, signSig, preparedSignContract, preparedSignSig,
+      abi, VG.AArch64.argRegs] at pre
+    obtain ⟨sp, rd, wr, _, _, _, _, _, _, _, k1, k2, k3, k4, k5, _⟩ := pre
+    exact ⟨sp, rd, wr, k1, k2, k3, k4, k5⟩
+
+theorem sign_entry_pre {p : Params} (hp : Ok3 p) {prepared : Bool} {σ s : State}
+    (pre : (rawSignK p prepared abi).pre σ)
+    (o : Only [.x5, .x6] (pushState .x30 σ) s)
+    (h5 : s.gpr .x5 = σ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.skLen else 0))
+    (h6 : s.gpr .x6 = BitVec.ofNat 64 (if prepared then 1024 * (p.ℓ + 2 * p.k) else 0)) :
+    (signWithCacheContract p abi 48).pre
+      (s.callEntry.withRegions (signEntryRd p s) σ.wr) := by
+  cases prepared
+  · exact sign_empty_pre pre o (by simpa using h5) h6
+  · exact sign_prepared_pre hp pre o h5 h6
+
+theorem raw_sign_constants {p : Params} {prepared : Bool} {σ : State}
+    (pre : (rawSignK p prepared (abi.withConsts pairedSignRootConsts)).pre σ) :
+    (rawSignK p prepared abi).pre (σ.withRegions (rawSignRd p prepared σ) σ.wr) ∧
+    StaticRoots 64 σ ∧ PairedRoots 64 σ ∧ σ.rd = rawSignRd p prepared σ ++ signRootRd σ := by
+  cases prepared
+  all_goals
+    simp only [rawSignK, Bool.false_eq_true, ↓reduceIte] at pre ⊢
+    sig_pre [signContract, signSig, preparedSignContract, preparedSignSig,
+      abi, VG.AArch64.argRegs, Abi.withConsts, pairedSignRootConsts_eq,
+      Abi.constRegions, Abi.constsHeld, TableConstants.staticNttWords_length,
+      InverseTable.expandedWords_length, PairedTable.expandedWords_length, stackBelow] at pre
+    obtain ⟨sp, hd, hf, hi, hp', hff, hfw, hfs, hif, hiw, his, hpf, hpw, hps,
+      hfa, hia, hpa, ht, hw, d1, d2, d3, d4, d5, d6, d7,
+      k1, k2, k3, k4, k5, n1, n2, n3, n4, tail⟩ := pre
+    have rd := (List.take_append_drop (σ.rd.length - 3) σ.rd).symm
+    rw [ht, hd] at rd
+    refine ⟨?_, ⟨⟨hf, hff, ?_, hfw, hfs, hfa⟩, ⟨hi, hif, ?_, hiw, his, hia⟩⟩,
+      ⟨hp', hpf, ?_, hpw, hps, hpa⟩, rd⟩
+    · sig_pre [signContract, signSig, preparedSignContract, preparedSignSig,
+        abi, VG.AArch64.argRegs]
+      exact ⟨sp, rfl, hw, d1, d2, d3, d4, d5, d6, d7,
+        k1, k2, k3, k4, k5, n1, n2, n3, n4, tail⟩
+    · apply Covers.one
+      exact ⟨⟨σ.syms "VG_MLDSA_NTT_EXPANDED",3904⟩,
+        List.mem_append_left _ (by rw [rd]; simp), Region.contains_self _ _⟩
+    · apply Covers.one
+      exact ⟨⟨σ.syms "VG_MLDSA_INV_FOLDED",3904⟩,
+        List.mem_append_left _ (by rw [rd]; simp), Region.contains_self _ _⟩
+    · apply Covers.one
+      exact ⟨⟨σ.syms "VG_MLDSA_INV_PAIR",4096⟩,
+        List.mem_append_left _ (by rw [rd]; simp), Region.contains_self _ _⟩
+
+theorem sign_entry_constants_pre {p : Params} (hp : Ok3 p) {prepared : Bool} {σ s : State}
+    (pre : (rawSignK p prepared (abi.withConsts pairedSignRootConsts)).pre σ)
+    (o : Only [.x5, .x6] (pushState .x30 σ) s) (hy : s.syms = σ.syms)
+    (h5 : s.gpr .x5 = σ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.skLen else 0))
+    (h6 : s.gpr .x6 = BitVec.ofNat 64 (if prepared then 1024 * (p.ℓ + 2 * p.k) else 0)) :
+    (signWithCacheContract p (abi.withConsts pairedSignRootConsts) 48).pre
+      (s.callEntry.withRegions (signEntryRd p s ++ signRootRd s) σ.wr) := by
+  have resources := raw_sign_constants pre
+  have ob := operation_reset_rd o (rawSignRd p prepared σ)
+  have base := sign_entry_pre hp resources.1 ob h5 h6
+  have roots := operation_static_roots resources.2.1 o hy
+  have pair := operation_paired_roots resources.2.2.1 o hy
+  have hw : Covers σ.wr s.wr := by rw [o.wr]; exact Covers.refl _
+  have borrowed : StaticRoots 48
+      (s.callEntry.withRegions (signEntryRd p s ++ signRootRd s) σ.wr) :=
+    ⟨operation_table_reborrow roots.forward (by simp [signRootRd]) hw,
+      operation_table_reborrow roots.inverse (by simp [signRootRd]) hw⟩
+  have paired : PairedRoots 48
+      (s.callEntry.withRegions (signEntryRd p s ++ signRootRd s) σ.wr) :=
+    operation_pair_reborrow pair (by simp [signRootRd]) hw
+  apply sign_cache_pre_extend ?_ borrowed paired rfl
+  simpa only [State.callEntry_withRegions, State.withRegions_withRegions,
+    signEntryRd, State.withRegions_gpr, State.withRegions_wr,
+    State.callEntry_gpr _ (r := .x0) (by decide), State.callEntry_gpr _ (r := .x1) (by decide),
+    State.callEntry_gpr _ (r := .x2) (by decide), State.callEntry_gpr _ (r := .x5) (by decide),
+    State.callEntry_gpr _ (r := .x6) (by decide)] using base
+
+end VG.Proof.MlDsa.AArch64.PreparedKey
+
+namespace VG.Proof.MlDsa.AArch64.PreparedKey
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Proof.MlDsa.AArch64.Sign
+open VG.Proof.MlKem.AArch64 (Only)
+
+theorem sign_entry_covers {p : Params} {prepared : Bool} {σ s : State}
+    (pre : (rawSignK p prepared abi).pre σ)
+    (o : Only [.x5, .x6] (pushState .x30 σ) s)
+    (h5 : s.gpr .x5 = σ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.skLen else 0))
+    (h6 : s.gpr .x6 = BitVec.ofNat 64 (if prepared then 1024 * (p.ℓ + 2 * p.k) else 0)) :
+    Covers (signEntryRd p s ++ σ.wr) (s.rd ++ s.wr) := by
+  have layout := sign_entry_layout pre
+  have e0 : s.gpr .x0 = σ.gpr .x0 := o.get .x0 (by decide)
+  have e1 : s.gpr .x1 = σ.gpr .x1 := o.get .x1 (by decide)
+  have e2 : s.gpr .x2 = σ.gpr .x2 := o.get .x2 (by decide)
+  apply Covers.append
+  · apply Covers.of_sub
+    intro R hR
+    simp only [signEntryRd, List.mem_cons, List.not_mem_nil, or_false] at hR
+    rw [o.rd, show (pushState .x30 σ).rd = σ.rd from rfl, layout.2.1, rawSignRd]
+    rcases hR with rfl | rfl | rfl | rfl
+    · refine ⟨⟨σ.gpr .x0, rawSignBytes p prepared⟩, by simp, 0, ?_, ?_⟩
+      · simpa using e0
+      · cases prepared <;> simp [rawSignBytes, preparedSecretKeyBytes]
+    · exact ⟨⟨σ.gpr .x1, 64⟩, by simp, 0, by simpa using e1, Nat.le_refl _⟩
+    · exact ⟨⟨σ.gpr .x2, 32⟩, by simp, 0, by simpa using e2, by change 0 + 32 ≤ 32; omega⟩
+    · refine ⟨⟨σ.gpr .x0, rawSignBytes p prepared⟩, by simp,
+        (if prepared then p.skLen else 0), h5, ?_⟩
+      rw [h6]
+      cases prepared
+      · change 0 + (0 : BitVec 64).toNat ≤ p.skLen
+        exact Nat.zero_le _
+      · have hm : (BitVec.ofNat 64 (1024 * (p.ℓ + 2 * p.k))).toNat ≤ 1024 * (p.ℓ + 2 * p.k) := Nat.mod_le _ _
+        simp only [rawSignBytes, ↓reduceIte, preparedSecretKeyBytes, n]
+        omega
+  · rw [o.wr]
+    exact Covers.refl _
+
+theorem sign_entry_snapshots {p : Params} (hp : Sign.Ok3 p) {prepared : Bool} {σ s : State}
+    (pre : (rawSignK p prepared abi).pre σ)
+    (o : Only [.x5, .x6] (pushState .x30 σ) s) :
+    Spec.Sha3.bytesAt s.mem (s.gpr .x0) p.skLen = Spec.Sha3.bytesAt σ.mem (σ.gpr .x0) p.skLen ∧
+    Spec.Sha3.bytesAt s.mem (s.gpr .x1) 64 = Spec.Sha3.bytesAt σ.mem (σ.gpr .x1) 64 ∧
+    Spec.Sha3.bytesAt s.mem (s.gpr .x2) 32 = Spec.Sha3.bytesAt σ.mem (σ.gpr .x2) 32 := by
+  have layout := sign_entry_layout pre
+  have e0 : s.gpr .x0 = σ.gpr .x0 := o.get .x0 (by decide)
+  have e1 : s.gpr .x1 = σ.gpr .x1 := o.get .x1 (by decide)
+  have e2 : s.gpr .x2 = σ.gpr .x2 := o.get .x2 (by decide)
+  have keySub : Region.Sub (⟨σ.gpr .x0, p.skLen⟩ : Region)
+      ⟨σ.gpr .x0, rawSignBytes p prepared⟩ := Region.sub_prefix (by
+    cases prepared <;> simp [rawSignBytes, preparedSecretKeyBytes])
+  have keyB : p.skLen ≤ 2 ^ 64 := by rcases hp with rfl | rfl | rfl <;> decide
+  have sigB : 32 ≤ 2 ^ 64 := by rcases hp with rfl | rfl | rfl <;> decide
+  simp only [e0, e1, e2, o.mem]
+  exact ⟨save_input_bytes (layout.2.2.2.1.sub_right keySub) keyB,
+    save_input_bytes layout.2.2.2.2.1 (by decide), save_input_bytes layout.2.2.2.2.2.1 sigB⟩
+
+theorem sign_entry_constants_covers {p : Params} {prepared : Bool} {σ s : State}
+    (pre : (rawSignK p prepared (abi.withConsts pairedSignRootConsts)).pre σ)
+    (o : Only [.x5, .x6] (pushState .x30 σ) s) (hy : s.syms = σ.syms)
+    (h5 : s.gpr .x5 = σ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.skLen else 0))
+    (h6 : s.gpr .x6 = BitVec.ofNat 64 (if prepared then 1024 * (p.ℓ + 2 * p.k) else 0)) :
+    Covers ((signEntryRd p s ++ signRootRd s) ++ σ.wr) (s.rd ++ s.wr) := by
+  have resources := raw_sign_constants pre
+  have ob := operation_reset_rd o (rawSignRd p prepared σ)
+  have base := sign_entry_covers resources.1 ob h5 h6
+  have lift : Covers (rawSignRd p prepared σ ++ σ.wr) (s.rd ++ s.wr) := by
+    rw [o.rd, o.wr]
+    change Covers (rawSignRd p prepared σ ++ σ.wr) (σ.rd ++ σ.wr)
+    apply Covers.append
+    · apply Covers.of_mem
+      intro T hT
+      rw [resources.2.2.2]
+      exact List.mem_append_left _ hT
+    · exact Covers.refl _
+  have baseRead : Covers (signEntryRd p s) (s.rd ++ s.wr) := by
+    intro a n ⟨T, hT, hC⟩
+    apply lift a n
+    exact base a n ⟨T, List.mem_append_left _ hT, hC⟩
+  have rootRead : Covers (signRootRd s) (s.rd ++ s.wr) := by
+    apply Covers.left
+    apply Covers.of_mem
+    intro T hT
+    rw [o.rd, show (pushState .x30 σ).rd = σ.rd from rfl, resources.2.2.2]
+    apply List.mem_append_right
+    simpa only [signRootRd, hy] using hT
+  exact Covers.append_left (Covers.append_left baseRead rootRead)
+    (Covers.right (by rw [o.wr]; exact Covers.refl _))
+
+end VG.Proof.MlDsa.AArch64.PreparedKey
+
+namespace VG.Proof.MlDsa.AArch64.PreparedKey
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Proof.MlDsa.AArch64.Sign
+
+theorem sign_entry_correct {p : Params} (hp : Ok3 p) {name : String}
+    {code : Prog isa} (hv : ∀ σ, (signWithCacheContract p (abi.withConsts pairedSignRootConsts) 48).pre σ →
+      ∃ tr t, Exec isa code σ tr t ∧ abiPreserved σ t ∧
+        (signWithCacheContract p (abi.withConsts pairedSignRootConsts) 48).post σ t)
+    (hd : Message.DLe 3 code) (prepared : Bool) (σ : State)
+    (pre : (rawSignK p prepared (abi.withConsts pairedSignRootConsts)).pre σ) :
+    ∃ tr t, Exec isa (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name code p prepared) σ tr t ∧
+      abiPreserved σ t ∧ (rawSignK p prepared (abi.withConsts pairedSignRootConsts)).post σ t := by
+  have resources := raw_sign_constants pre
+  have layout := sign_entry_layout resources.1
+  have depth := (operation_call_bounds hd).1
+  have guard : ∀ R ∈ σ.wr, (below σ.sp 16).Disjoint R := by
+    intro R hR
+    have wr : σ.wr = [⟨σ.gpr .x3, p.sigLen⟩, ⟨σ.gpr .x4, scratchWords p * 8⟩] := layout.2.2.1
+    rw [wr] at hR
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
+    rcases hR with rfl | rfl
+    · exact layout.2.2.2.2.2.2.1.sub_left (below_sub (by decide) (by decide))
+    · exact layout.2.2.2.2.2.2.2.sub_left (below_sub (by decide) (by decide))
+  have main : WP isa (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name code p prepared) σ
+      fun t => abiPreserved σ t ∧ (rawSignK p prepared (abi.withConsts pairedSignRootConsts)).post σ t := by
+    unfold Impl.MlDsa.AArch64.PreparedKey.Sign.entry
+    refine WP.frameReg (Nat.le_trans (by decide) layout.1) guard ?_ (by
+      simpa only [Code.aarch64Depth, Nat.zero_max] using depth)
+    change WP isa (.seq (.block (operationSetup p true prepared)) (.call name code)) (pushState .x30 σ) _
+    refine WP.seq (WP.mono_syms (operationSetup_ok p true prepared (pushState .x30 σ)) fun s hs sy => ?_)
+    have hc := sign_entry_constants_covers pre hs.1 sy hs.2.1 hs.2.2
+    have hcpre := sign_entry_constants_pre hp pre hs.1 sy hs.2.1 hs.2.2
+    have hw : Covers σ.wr s.wr := by rw [hs.1.wr]; exact Covers.refl _
+    refine WP.callFV hv hcpre hc hw (fun t hr ht hsp hf hcs hvs post => ?_) (operation_call_bounds hd).2
+    refine ⟨⟨?_, rfl, ?_⟩, ?_⟩
+    · intro r hR
+      by_cases h30 : r = .x30
+      · subst r; simp [State.write]
+      simp only [State.write, h30, ite_false]
+      rw [hcs r hR h30, hs.1.get r (by revert hR h30; cases r <;> decide)]
+      rfl
+    · intro r hR
+      exact (hvs r hR).trans (hs.1.vcs r hR)
+    · have ob := operation_reset_rd hs.1 (rawSignRd p prepared σ)
+      have snaps := sign_entry_snapshots hp resources.1 ob
+      have sk : Spec.Sha3.bytesAt s.mem (s.gpr .x0) p.skLen = Spec.Sha3.bytesAt σ.mem (σ.gpr .x0) p.skLen := snaps.1
+      have mu : Spec.Sha3.bytesAt s.mem (s.gpr .x1) 64 = Spec.Sha3.bytesAt σ.mem (σ.gpr .x1) 64 := snaps.2.1
+      have rnd : Spec.Sha3.bytesAt s.mem (s.gpr .x2) 32 = Spec.Sha3.bytesAt σ.mem (σ.gpr .x2) 32 := snaps.2.2
+      have e3 : s.gpr .x3 = σ.gpr .x3 := hs.1.get .x3 (by decide)
+      sig_post [signWithCacheContract, signWithCacheSig, signSig, abi, VG.AArch64.argRegs, Abi.withConsts] at post
+      rw [sk, mu, rnd, e3] at post
+      cases prepared
+      all_goals
+        simp only [rawSignK, Bool.false_eq_true, ↓reduceIte]
+        sig_post [signContract, signSig, preparedSignContract, preparedSignSig,
+          abi, VG.AArch64.argRegs, Abi.withConsts]
+        simpa only [State.write, reduceCtorEq, ite_false] using post
+  obtain ⟨tr, t, he, habi, hpost⟩ := main
+  exact ⟨tr, t, he, habi, hpost⟩
+
+end VG.Proof.MlDsa.AArch64.PreparedKey
+
+namespace VG.Proof.MlDsa.AArch64.PreparedKey
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Proof.MlDsa.AArch64.Sign
+open VG.Proof.MlKem.AArch64 (Only)
+
+theorem sign_entry_base_pub {p : Params} (hp : Ok3 p) {prepared : Bool} {σ τ x y : State}
+    (px : (rawSignK p prepared abi).pre σ) (py : (rawSignK p prepared abi).pre τ)
+    (pub : (rawSignK p prepared abi).pub σ τ)
+    (ox : Only [.x5, .x6] (pushState .x30 σ) x)
+    (oy : Only [.x5, .x6] (pushState .x30 τ) y)
+    (x5 : x.gpr .x5 = σ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.skLen else 0))
+    (x6 : x.gpr .x6 = BitVec.ofNat 64 (if prepared then 1024 * (p.ℓ + 2 * p.k) else 0))
+    (y5 : y.gpr .x5 = τ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.skLen else 0))
+    (y6 : y.gpr .x6 = BitVec.ofNat 64 (if prepared then 1024 * (p.ℓ + 2 * p.k) else 0)) :
+    (signWithCacheContract p abi 48).pub
+      (x.callEntry.withRegions (signEntryRd p x) σ.wr)
+      (y.callEntry.withRegions (signEntryRd p y) τ.wr) := by
+  have snapsX := sign_entry_snapshots hp px ox
+  have snapsY := sign_entry_snapshots hp py oy
+  have base : σ.sp = τ.sp ∧
+      signLeak p (Spec.Sha3.bytesAt σ.mem (σ.gpr .x0) p.skLen)
+        (Spec.Sha3.bytesAt σ.mem (σ.gpr .x1) 64) (Spec.Sha3.bytesAt σ.mem (σ.gpr .x2) 32) =
+      signLeak p (Spec.Sha3.bytesAt τ.mem (τ.gpr .x0) p.skLen)
+        (Spec.Sha3.bytesAt τ.mem (τ.gpr .x1) 64) (Spec.Sha3.bytesAt τ.mem (τ.gpr .x2) 32) ∧
+      σ.gpr .x0 = τ.gpr .x0 ∧ σ.gpr .x1 = τ.gpr .x1 ∧ σ.gpr .x2 = τ.gpr .x2 ∧
+      σ.gpr .x3 = τ.gpr .x3 ∧ σ.gpr .x4 = τ.gpr .x4 := by
+    cases prepared
+    all_goals
+      simp only [rawSignK, Bool.false_eq_true, ↓reduceIte] at pub
+      sig_pub [signContract, signSig, preparedSignContract, preparedSignSig, abi, VG.AArch64.argRegs] at pub
+      exact pub
+  sig_pub [signWithCacheContract, signWithCacheSig, signSig, abi, VG.AArch64.argRegs]
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [ox.sp, oy.sp]
+    exact congrArg (· - 16) base.1
+  · rw [snapsX.1, snapsX.2.1, snapsX.2.2, snapsY.1, snapsY.2.1, snapsY.2.2]
+    exact base.2.1
+  · exact (ox.get .x0 (by decide)).trans (base.2.2.1.trans (oy.get .x0 (by decide)).symm)
+  · exact (ox.get .x1 (by decide)).trans (base.2.2.2.1.trans (oy.get .x1 (by decide)).symm)
+  · exact (ox.get .x2 (by decide)).trans (base.2.2.2.2.1.trans (oy.get .x2 (by decide)).symm)
+  · exact (ox.get .x3 (by decide)).trans (base.2.2.2.2.2.1.trans (oy.get .x3 (by decide)).symm)
+  · exact (ox.get .x4 (by decide)).trans (base.2.2.2.2.2.2.trans (oy.get .x4 (by decide)).symm)
+  · rw [x5, y5, base.2.2.1]
+  · rw [x6, y6]
+
+theorem raw_sign_constants_pub {p : Params} {prepared : Bool} {x y : State}
+    (h : (rawSignK p prepared (abi.withConsts pairedSignRootConsts)).pub x y) :
+    (rawSignK p prepared abi).pub
+      (x.withRegions (rawSignRd p prepared x) x.wr)
+      (y.withRegions (rawSignRd p prepared y) y.wr) ∧
+    x.syms "VG_MLDSA_NTT_EXPANDED" = y.syms "VG_MLDSA_NTT_EXPANDED" ∧
+    x.syms "VG_MLDSA_INV_FOLDED" = y.syms "VG_MLDSA_INV_FOLDED" ∧
+    x.syms "VG_MLDSA_INV_PAIR" = y.syms "VG_MLDSA_INV_PAIR" := by
+  cases prepared
+  all_goals
+    simp only [rawSignK, Bool.false_eq_true, ↓reduceIte] at h ⊢
+    sig_pub [signContract, signSig, preparedSignContract, preparedSignSig,
+      abi, VG.AArch64.argRegs, Abi.withConsts, pairedSignRootConsts_eq] at h
+    obtain ⟨sp, hf, hi, hp', leak, h0, h1, h2, h3, h4⟩ := h
+    refine ⟨?_, hf, hi, hp'⟩
+    sig_pub [signContract, signSig, preparedSignContract, preparedSignSig,
+      abi, VG.AArch64.argRegs]
+    exact ⟨sp, leak, h0, h1, h2, h3, h4⟩
+
+theorem sign_entry_pub {p : Params} (hp : Ok3 p) {prepared : Bool} {σ τ x y : State}
+    (px : (rawSignK p prepared (abi.withConsts pairedSignRootConsts)).pre σ)
+    (py : (rawSignK p prepared (abi.withConsts pairedSignRootConsts)).pre τ)
+    (pub : (rawSignK p prepared (abi.withConsts pairedSignRootConsts)).pub σ τ)
+    (ox : Only [.x5, .x6] (pushState .x30 σ) x)
+    (oy : Only [.x5, .x6] (pushState .x30 τ) y)
+    (sx : x.syms = σ.syms) (sy : y.syms = τ.syms)
+    (x5 : x.gpr .x5 = σ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.skLen else 0))
+    (x6 : x.gpr .x6 = BitVec.ofNat 64 (if prepared then 1024 * (p.ℓ + 2 * p.k) else 0))
+    (y5 : y.gpr .x5 = τ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.skLen else 0))
+    (y6 : y.gpr .x6 = BitVec.ofNat 64 (if prepared then 1024 * (p.ℓ + 2 * p.k) else 0)) :
+    (signWithCacheContract p (abi.withConsts pairedSignRootConsts) 48).pub
+      (x.callEntry.withRegions (signEntryRd p x ++ signRootRd x) σ.wr)
+      (y.callEntry.withRegions (signEntryRd p y ++ signRootRd y) τ.wr) := by
+  have pub0 := raw_sign_constants_pub pub
+  have base := sign_entry_base_pub hp (raw_sign_constants px).1 (raw_sign_constants py).1
+    pub0.1 (operation_reset_rd ox _) (operation_reset_rd oy _) x5 x6 y5 y6
+  sig_pub [signWithCacheContract, signWithCacheSig, signSig, abi, VG.AArch64.argRegs] at base
+  sig_pub [signWithCacheContract, signWithCacheSig, signSig, abi, VG.AArch64.argRegs,
+    Abi.withConsts, pairedSignRootConsts_eq]
+  obtain ⟨sp, leak, h0, h1, h2, h3, h4, h5, h6⟩ := base
+  exact ⟨sp, by simpa only [sx, sy] using pub0.2.1,
+    by simpa only [sx, sy] using pub0.2.2.1, by simpa only [sx, sy] using pub0.2.2.2,
+    leak, h0, h1, h2, h3, h4, h5, h6⟩
+
+end VG.Proof.MlDsa.AArch64.PreparedKey
+
+namespace VG.Proof.MlDsa.AArch64.PreparedKey
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Proof.MlDsa.AArch64.Sign
+open VG.Proof.MlKem.AArch64 (Only)
+
+theorem sign_entry_bases {p : Params} {prepared : Bool} {x y : State}
+    (h : (rawSignK p prepared abi).pub x y) : SameIn [.x0] x y := by
+  cases prepared
+  all_goals
+    simp only [rawSignK, Bool.false_eq_true, ↓reduceIte] at h
+    sig_pub [signContract, signSig, preparedSignContract, preparedSignSig,
+      abi, VG.AArch64.argRegs] at h
+    exact ⟨fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact h.2.2.1, h.1⟩
+
+def RawSignEntryRel (p : Params) (prepared : Bool) (x y : State) : Prop :=
+  (rawSignK p prepared (abi.withConsts pairedSignRootConsts)).pre x ∧
+  (rawSignK p prepared (abi.withConsts pairedSignRootConsts)).pre y ∧
+  (rawSignK p prepared (abi.withConsts pairedSignRootConsts)).pub x y
+
+def SignEntryCallRel (p : Params) (prepared : Bool) (x y : State) : Prop :=
+  ∃ σ τ, RawSignEntryRel p prepared σ τ ∧
+    Only [.x5, .x6] (pushed .x30 σ) x ∧ Only [.x5, .x6] (pushed .x30 τ) y ∧
+    x.gpr .x5 = σ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.skLen else 0) ∧
+    x.gpr .x6 = BitVec.ofNat 64 (if prepared then 1024 * (p.ℓ + 2 * p.k) else 0) ∧
+    y.gpr .x5 = τ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.skLen else 0) ∧
+    y.gpr .x6 = BitVec.ofNat 64 (if prepared then 1024 * (p.ℓ + 2 * p.k) else 0) ∧
+    x.syms = σ.syms ∧ y.syms = τ.syms
+
+def SignEntrySetupOut (p : Params) (prepared : Bool) (s t : State) : Prop :=
+  (Only [.x5, .x6] s t ∧
+    t.gpr .x5 = s.gpr .x0 + BitVec.ofNat 64 (if prepared then p.skLen else 0) ∧
+    t.gpr .x6 = BitVec.ofNat 64 (if prepared then 1024 * (p.ℓ + 2 * p.k) else 0)) ∧ t.syms = s.syms
+
+theorem sign_entry_setup_syms_ok (p : Params) (prepared : Bool) (s : State) :
+    WP isa (.block (operationSetup p true prepared)) s (SignEntrySetupOut p prepared s) := by
+  exact WP.mono_syms (operationSetup_ok p true prepared s) (fun _ h hy => ⟨h, hy⟩)
+
+theorem sign_entry_ct {p : Params} (hp : Ok3 p) {name : String} {code : Prog isa}
+    (hv : ∀ σ, (signWithCacheContract p (abi.withConsts pairedSignRootConsts) 48).pre σ →
+      ∃ tr t, Exec isa code σ tr t ∧ abiPreserved σ t ∧
+        (signWithCacheContract p (abi.withConsts pairedSignRootConsts) 48).post σ t)
+    (hct : ConstantTime isa (signWithCacheContract p (abi.withConsts pairedSignRootConsts) 48).pre
+      (signWithCacheContract p (abi.withConsts pairedSignRootConsts) 48).pub code) (prepared : Bool) :
+    ConstantTime isa (rawSignK p prepared (abi.withConsts pairedSignRootConsts)).pre
+      (rawSignK p prepared (abi.withConsts pairedSignRootConsts)).pub
+      (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name code p prepared) := by
+  have hs : ∀ x y, RawSignEntryRel p prepared x y → x.sp = y.sp :=
+    fun _ _ h => (sign_entry_bases (raw_sign_constants_pub h.2.2).1).2
+  have trace : RelCT isa (RawSignEntryRel p prepared)
+      (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name code p prepared) (fun _ _ => True) := by
+    unfold Impl.MlDsa.AArch64.PreparedKey.Sign.entry
+    refine frame_tr (R := fun _ _ => True) hs ?_
+    change RelCT isa (PushRel .x30 (RawSignEntryRel p prepared))
+      (.seq (.block (operationSetup p true prepared)) (.call name code)) (fun _ _ => True)
+    refine RelCT.seq (R := SignEntryCallRel p prepared) (RelCT.postDep
+      (RelCT.mono (operationSetup_tr hp true prepared) (fun x y h => ?_) (fun _ _ _ => trivial))
+      (fun x y _ => ⟨sign_entry_setup_syms_ok p prepared x, sign_entry_setup_syms_ok p prepared y⟩)
+      (fun x y x' y' h hx hy => ?_)) ?_
+    · rcases h with ⟨σ, τ, h, rfl, rfl⟩
+      exact ⟨(sign_entry_bases (raw_sign_constants_pub h.2.2).1).1,
+        congrArg (· - 16) (hs σ τ h)⟩
+    · rcases h with ⟨σ, τ, h, rfl, rfl⟩
+      exact ⟨σ, τ, h, hx.1.1, hy.1.1, hx.1.2.1, hx.1.2.2,
+        hy.1.2.1, hy.1.2.2, hx.2, hy.2⟩
+    · apply RelCT.callEx hv hct
+      rintro x y ⟨σ, τ, h, ox, oy, x5, x6, y5, y6, sx, sy⟩
+      have nx := operation_narrow ox
+      have ny := operation_narrow oy
+      refine ⟨signEntryRd p x ++ signRootRd x, σ.wr,
+        signEntryRd p y ++ signRootRd y, τ.wr, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+      · have px := sign_entry_constants_pre hp h.1 nx sx x5 x6
+        simpa only [State.callEntry_withRegions, State.withRegions_withRegions,
+          signEntryRd, signRootRd, State.withRegions_gpr, operation_region_syms] using px
+      · have py := sign_entry_constants_pre hp h.2.1 ny sy y5 y6
+        simpa only [State.callEntry_withRegions, State.withRegions_withRegions,
+          signEntryRd, signRootRd, State.withRegions_gpr, operation_region_syms] using py
+      · have pub := sign_entry_pub hp h.1 h.2.1 h.2.2 nx ny sx sy x5 x6 y5 y6
+        simpa only [State.callEntry_withRegions, State.withRegions_withRegions,
+          signEntryRd, signRootRd, State.withRegions_gpr, operation_region_syms] using pub
+      · have cover := sign_entry_constants_covers h.1 nx sx x5 x6
+        change Covers ((signEntryRd p x ++ signRootRd x) ++ σ.wr) (σ.rd ++ σ.wr) at cover
+        exact cover.trans (operation_cover ox)
+      · rw [ox.wr]; exact push_wr_cover .x30 σ
+      · have cover := sign_entry_constants_covers h.2.1 ny sy y5 y6
+        change Covers ((signEntryRd p y ++ signRootRd y) ++ τ.wr) (τ.rd ++ τ.wr) at cover
+        exact cover.trans (operation_cover oy)
+      · rw [oy.wr]; exact push_wr_cover .x30 τ
+  intro x y tx ty x' y' hx hy hpub ex ey
+  exact (trace x y tx ty x' y' ⟨hx, hy, hpub⟩ ex ey).1
+
+end VG.Proof.MlDsa.AArch64.PreparedKey
+
+/-! ## Prepared signing entries have satisfiable layouts -/
+
+namespace VG.Proof.MlDsa.AArch64.PreparedKey
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Proof.MlDsa.AArch64.Sign
+open VG.Proof.MlDsa.AArch64.Optimized
+
+def prepSecretWithTables (p : Params) (m : Mem) : State where
+  gpr r := match r with | .x0 => 0x1000 | .x1 => 0x10000 | .x2 => 0x200000 | _ => 0
+  sp := 0x1000000
+  mem := m
+  rd := [⟨0x1000, p.skLen⟩]
+  wr := [⟨0x10000, preparedSecretKeyBytes p⟩, ⟨0x200000,1024⟩]
+
+theorem prepSecretWithTables_pre {p : Params} (hp : Ok3 p) (m : Mem) :
+    (prepareSecretKeyContract p abi 80).pre (prepSecretWithTables p m) := by
+  rcases hp with rfl | rfl | rfl
+  all_goals
+    sig_pre [prepareSecretKeyContract, prepareSecretKeySig, abi, VG.AArch64.argRegs]
+    sig_and_intros
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide +kernel
+
+theorem prepare_secret_depth {p : Params} (hp : Ok3 p) :
+    (Impl.MlDsa.AArch64.PreparedKey.prepareSecret p).aarch64Depth ≤ 5 := by
+  rcases hp with rfl | rfl | rfl <;> decide +kernel
+
+theorem secret_preparation_preserves_roots {p : Params} (hp : Ok3 p) {m : Mem} {t : State}
+    {tr : List Leak}
+    (he : Exec isa (Impl.MlDsa.AArch64.PreparedKey.prepareSecret p) (prepSecretWithTables p m) tr t)
+    {base : Addr} (hb : base = 1048576 ∨ base = 1052480 ∨ base = 1056384) :
+    ∀ i < 512, t.mem.readW (base + BitVec.ofNat 64 (8 * i)) 64 =
+      m.readW (base + BitVec.ofNat 64 (8 * i)) 64 := by
+  have depth := prepare_secret_depth hp
+  have bound : 16 * (Impl.MlDsa.AArch64.PreparedKey.prepareSecret p).aarch64Depth < 2 ^ 64 := by omega
+  have frame := Exec.frameSp he bound
+  intro i hi
+  apply frame.readW (r := ⟨base,4096⟩)
+    (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
+  intro R hR
+  simp only [prepSecretWithTables, List.cons_append, List.nil_append, List.mem_cons,
+    List.not_mem_nil, or_false] at hR
+  rcases hR with rfl | rfl | rfl
+  · rcases hp with rfl | rfl | rfl <;> rcases hb with rfl | rfl | rfl
+    all_goals exact Region.disjoint_of_sep (by decide)
+  · rcases hb with rfl | rfl | rfl
+    all_goals exact Region.disjoint_of_sep (by decide)
+  · have hs : Region.Sub (below (0x1000000 : Addr)
+        (16 * (Impl.MlDsa.AArch64.PreparedKey.prepareSecret p).aarch64Depth))
+        (below (0x1000000 : Addr) 80) := below_sub (by omega) (by decide)
+    apply Region.Disjoint.sub_right _ hs
+    rcases hb with rfl | rfl | rfl
+    all_goals exact Region.disjoint_of_sep (by decide)
+
+def rawSignSat (p : Params) (prepared : Bool) (m : Mem) : State where
+  gpr r := match r with
+    | .x0 => 0x10000 | .x1 => 0x20000 | .x2 => 0x30000 | .x3 => 0x40000 | .x4 => 0x400000 | _ => 0
+  sp := 0x1000000
+  mem := m
+  rd := [⟨0x10000, rawSignBytes p prepared⟩, ⟨0x20000,64⟩, ⟨0x30000,32⟩]
+  wr := [⟨0x40000,p.sigLen⟩,⟨0x400000,scratchWords p * 8⟩]
+
+theorem raw_sign_sat_pre {p : Params} (hp : Ok3 p) {m : Mem}
+    (prepared : Bool) (cache : prepared = true → PreparedSecretKey p m 0x10000) :
+    (rawSignK p prepared abi).pre (rawSignSat p prepared m) := by
+  cases prepared
+  · rcases hp with rfl | rfl | rfl
+    all_goals
+      simp only [rawSignK, Bool.false_eq_true, ↓reduceIte]
+      sig_pre [signContract, signSig, abi, VG.AArch64.argRegs]
+      simp only [rawSignBytes, Bool.false_eq_true, ↓reduceIte]
+      sig_and_intros
+      all_goals first | exact Region.disjoint_of_sep (by decide) | decide +kernel
+  · have cached := cache rfl
+    rcases hp with rfl | rfl | rfl
+    all_goals
+      simp only [rawSignK, ↓reduceIte]
+      sig_pre [preparedSignContract, preparedSignSig, abi, VG.AArch64.argRegs]
+      simp only [rawSignBytes, ↓reduceIte]
+      sig_and_intros
+      all_goals first | exact cached | exact Region.disjoint_of_sep (by decide) | decide +kernel
+
+theorem raw_sign_pre_extend {p : Params} {prepared : Bool} {s : State}
+    (h : (rawSignK p prepared abi).pre (s.withRegions (rawSignRd p prepared s) s.wr))
+    (hr : StaticRoots 64 s) (rp : PairedRoots 64 s)
+    (hd : s.rd = rawSignRd p prepared s ++ signRootRd s) :
+    (rawSignK p prepared (abi.withConsts pairedSignRootConsts)).pre s := by
+  cases prepared
+  all_goals
+    simp only [rawSignK, Bool.false_eq_true, ↓reduceIte] at h ⊢
+    sig_pre [signContract, signSig, preparedSignContract, preparedSignSig,
+      abi, VG.AArch64.argRegs] at h
+    sig_pre [signContract, signSig, preparedSignContract, preparedSignSig,
+      abi, VG.AArch64.argRegs, Abi.withConsts, pairedSignRootConsts_eq,
+      Abi.constRegions, Abi.constsHeld, TableConstants.staticNttWords_length,
+      InverseTable.expandedWords_length, PairedTable.expandedWords_length, stackBelow]
+    obtain ⟨sp, _rd, wr, d1, d2, d3, d4, d5, d6, d7,
+      k1, k2, k3, k4, k5, n1, n2, n3, n4, tail⟩ := h
+    exact ⟨sp,by rw [hd]; rfl,hr.forward.held,hr.inverse.held,rp.held,
+      hr.forward.fit,hr.forward.writable,hr.forward.stack,hr.inverse.fit,
+      hr.inverse.writable,hr.inverse.stack,rp.fit,rp.writable,rp.stack,
+      hr.forward.aligned,hr.inverse.aligned,rp.aligned,by rw [hd]; rfl,
+      wr,d1,d2,d3,d4,d5,d6,d7,k1,k2,k3,k4,k5,n1,n2,n3,n4,tail⟩
+
+def rawSignConstSat (p : Params) (prepared : Bool) (m : Mem) : State :=
+  { rawSignSat p prepared m with
+    syms := fun name => if name = "VG_MLDSA_NTT_EXPANDED" then 1048576 else
+      if name = "VG_MLDSA_INV_FOLDED" then 1052480 else 1056384
+    rd := (rawSignSat p prepared m).rd ++ [⟨1048576,3904⟩,⟨1052480,3904⟩,⟨1056384,4096⟩] }
+
+theorem rawSignConstSat_roots (p : Params) (hp : Ok3 p) (prepared : Bool) (m : Mem)
+    (hf : ∀ i < 488, m.readW (1048576 + BitVec.ofNat 64 (8 * i)) 64 =
+      Impl.MlDsa.AArch64.Optimized.Ntt.staticNttWords.getD i 0)
+    (hi : ∀ i < 488, m.readW (1052480 + BitVec.ofNat 64 (8 * i)) 64 =
+      Impl.MlDsa.AArch64.Optimized.Inverse.expandedWords.getD i 0)
+    (hp' : ∀ i < 512, m.readW (1056384 + BitVec.ofNat 64 (8 * i)) 64 =
+      Impl.MlDsa.AArch64.Optimized.Paired.expandedWords.getD i 0) :
+    StaticRoots 64 (rawSignConstSat p prepared m) ∧ PairedRoots 64 (rawSignConstSat p prepared m) := by
+  have forward : StaticTable 64 "VG_MLDSA_NTT_EXPANDED"
+      Impl.MlDsa.AArch64.Optimized.Ntt.staticNttWords (rawSignConstSat p prepared m) := by
+    refine ⟨hf, by dsimp [rawSignConstSat]; decide, ?_, ?_,
+      by apply Region.disjoint_of_sep; dsimp [rawSignConstSat,rawSignSat]; decide,
+      by dsimp [rawSignConstSat]⟩
+    · exact Covers.one ⟨⟨1048576,3904⟩, by simp [rawSignConstSat], Region.contains_self _ _⟩
+    · rcases hp with rfl | rfl | rfl
+      all_goals
+        simp only [rawSignConstSat,rawSignSat,List.mem_cons,List.not_mem_nil,or_false,forall_eq_or_imp,forall_eq]
+        exact ⟨Region.disjoint_of_sep (by decide),Region.disjoint_of_sep (by decide)⟩
+  have inverse : StaticTable 64 "VG_MLDSA_INV_FOLDED"
+      Impl.MlDsa.AArch64.Optimized.Inverse.expandedWords (rawSignConstSat p prepared m) := by
+    refine ⟨hi, by dsimp [rawSignConstSat]; decide, ?_, ?_,
+      by apply Region.disjoint_of_sep; dsimp [rawSignConstSat,rawSignSat]; decide,
+      by dsimp [rawSignConstSat]⟩
+    · exact Covers.one ⟨⟨1052480,3904⟩, by simp [rawSignConstSat], Region.contains_self _ _⟩
+    · rcases hp with rfl | rfl | rfl
+      all_goals
+        simp only [rawSignConstSat,rawSignSat,List.mem_cons,List.not_mem_nil,or_false,forall_eq_or_imp,forall_eq]
+        exact ⟨Region.disjoint_of_sep (by decide),Region.disjoint_of_sep (by decide)⟩
+  have pair : PairedRoots 64 (rawSignConstSat p prepared m) := by
+    refine ⟨hp', by dsimp [rawSignConstSat]; decide, ?_, ?_,
+      by apply Region.disjoint_of_sep; dsimp [rawSignConstSat,rawSignSat]; decide,
+      by dsimp [rawSignConstSat]⟩
+    · exact Covers.one ⟨⟨1056384,4096⟩, by simp [rawSignConstSat], Region.contains_self _ _⟩
+    · rcases hp with rfl | rfl | rfl
+      all_goals
+        simp only [rawSignConstSat,rawSignSat,List.mem_cons,List.not_mem_nil,or_false,forall_eq_or_imp,forall_eq]
+        exact ⟨Region.disjoint_of_sep (by decide),Region.disjoint_of_sep (by decide)⟩
+  exact ⟨⟨forward,inverse⟩,pair⟩
+
+theorem rawSignConstSat_pre {p : Params} (hp : Ok3 p) (prepared : Bool) (m : Mem)
+    (hf : ∀ i < 488, m.readW (1048576 + BitVec.ofNat 64 (8 * i)) 64 =
+      Impl.MlDsa.AArch64.Optimized.Ntt.staticNttWords.getD i 0)
+    (hi : ∀ i < 488, m.readW (1052480 + BitVec.ofNat 64 (8 * i)) 64 =
+      Impl.MlDsa.AArch64.Optimized.Inverse.expandedWords.getD i 0)
+    (hp' : ∀ i < 512, m.readW (1056384 + BitVec.ofNat 64 (8 * i)) 64 =
+      Impl.MlDsa.AArch64.Optimized.Paired.expandedWords.getD i 0)
+    (cache : prepared = true → PreparedSecretKey p m 0x10000) :
+    (rawSignK p prepared (abi.withConsts pairedSignRootConsts)).pre
+      (rawSignConstSat p prepared m) := by
+  have roots := rawSignConstSat_roots p hp prepared m hf hi hp'
+  apply raw_sign_pre_extend ?_ roots.1 roots.2 rfl
+  have base := raw_sign_sat_pre hp prepared cache
+  cases prepared
+  all_goals
+    simp only [rawSignK,Bool.false_eq_true,↓reduceIte] at base ⊢
+    sig_pre [signContract,signSig,preparedSignContract,preparedSignSig,
+      abi,VG.AArch64.argRegs] at base ⊢
+    exact base
+
+theorem raw_sign_sat {p : Params} (hp : Ok3 p) (prepared : Bool) :
+    ∃ s, (rawSignK p prepared (abi.withConsts pairedSignRootConsts)).pre s := by
+  have roots := pairedRoots_entry (by decide) (pairedSign_sat hp)
+  let m := (pairedSignSat p).mem
+  have hf : ∀ i < 488, m.readW (1048576 + BitVec.ofNat 64 (8 * i)) 64 =
+      Impl.MlDsa.AArch64.Optimized.Ntt.staticNttWords.getD i 0 := roots.2.1.forward.held
+  have hi : ∀ i < 488, m.readW (1052480 + BitVec.ofNat 64 (8 * i)) 64 =
+      Impl.MlDsa.AArch64.Optimized.Inverse.expandedWords.getD i 0 := roots.2.1.inverse.held
+  have hp' : ∀ i < 512, m.readW (1056384 + BitVec.ofNat 64 (8 * i)) 64 =
+      Impl.MlDsa.AArch64.Optimized.Paired.expandedWords.getD i 0 := roots.2.2.held
+  cases prepared
+  · exact ⟨rawSignConstSat p false m,
+      rawSignConstSat_pre hp false m hf hi hp' (by intro h; cases h)⟩
+  · obtain ⟨_,t,he,_,post⟩ := secret_correct hp (prepSecretWithTables p m) (prepSecretWithTables_pre hp m)
+    sig_post [prepareSecretKeyContract,prepareSecretKeySig,abi,VG.AArch64.argRegs] at post
+    have cache : PreparedSecretKey p t.mem 0x10000 := post.2
+    have forward := secret_preparation_preserves_roots hp he (base := 1048576) (.inl rfl)
+    have inverse := secret_preparation_preserves_roots hp he (base := 1052480) (.inr (.inl rfl))
+    have pair := secret_preparation_preserves_roots hp he (base := 1056384) (.inr (.inr rfl))
+    exact ⟨rawSignConstSat p true t.mem,
+      rawSignConstSat_pre hp true t.mem
+        (fun i hi' => (forward i (by omega)).trans (hf i hi'))
+        (fun i hi' => (inverse i (by omega)).trans (hi i hi'))
+        (fun i hi' => (pair i hi').trans (hp' i hi')) (fun _ => cache)⟩
+
+theorem sign_entry_verified (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Ok3 p)
+    (name : String) (prepared : Bool) :
+    Verified target
+      (Impl.MlDsa.AArch64.PreparedKey.Sign.entry name
+        (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache v.callee (primsWith v.callee) p) p prepared)
+      (rawSignK p prepared (abi.withConsts pairedSignRootConsts)) :=
+  ⟨sign_entry_correct hp (withCache_verified v p hp).1 (sign_withCache_dle v hp) prepared,
+    sign_entry_ct hp (withCache_verified v p hp).1 (withCache_verified v p hp).2.1 prepared,
+    raw_sign_sat hp prepared⟩
+end VG.Proof.MlDsa.AArch64.PreparedKey
