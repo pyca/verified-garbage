@@ -16,7 +16,7 @@
 /// * `out` and `scratch` must not overlap each other, `d` or `digest` (distinct Rust objects never do).
 /// * None of `out`, `d`, `digest` and `scratch` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ecdsa_brainpoolp384r1_sha384_sign(out: *mut [u8; 96], d: *const [u8; 48], digest: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_ecdsa_brainpoolp384r1_sha384_sign(out: *mut [u8; 96], d: *const [u8; 48], digest: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"str x30, [sp, #-16]!
 sub sp, sp, #224
@@ -495,7 +495,7 @@ ret
 }
 
 /// The CPU features `vg_ecdsa_brainpoolp384r1_sha384_sign_sha3` requires (`Artifact.features`).
-pub(crate) const VG_ECDSA_BRAINPOOLP384R1_SHA384_SIGN_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_ECDSA_BRAINPOOLP384R1_SHA384_SIGN_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// Deterministic ECDSA signature generation over brainpoolP384r1 with HMAC-SHA-384 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (48 bytes, most significant first), signs the SHA-384 hash at `digest` (48 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (48 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 128 candidates for `k` is suitable (which does not happen in practice).
 ///
@@ -512,7 +512,7 @@ pub(crate) const VG_ECDSA_BRAINPOOLP384R1_SHA384_SIGN_SHA3_FEATURES: crate::cpu:
 /// * None of `out`, `d`, `digest` and `scratch` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ecdsa_brainpoolp384r1_sha384_sign_sha3(out: *mut [u8; 96], d: *const [u8; 48], digest: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_ecdsa_brainpoolp384r1_sha384_sign_sha3(out: *mut [u8; 96], d: *const [u8; 48], digest: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".arch_extension sha3
 str x30, [sp, #-16]!

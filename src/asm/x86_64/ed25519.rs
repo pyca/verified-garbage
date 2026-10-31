@@ -15,7 +15,7 @@
 /// * `out` and `scratch` must not overlap each other, `r`, `k` or `s` (distinct Rust objects never do).
 /// * None of `out`, `r`, `k`, `s` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_scalar_mul_add(out: *mut [u8; 32], r: *const [u8; 32], k: *const [u8; 32], s: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed25519_scalar_mul_add(out: *mut [u8; 32], r: *const [u8; 32], k: *const [u8; 32], s: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8], rbx
 mov QWORD PTR [r8+8], rbp
@@ -291,7 +291,7 @@ ret
 /// * `out` and `scratch` must not overlap each other or `expanded` (distinct Rust objects never do).
 /// * None of `out`, `expanded` and `scratch` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_public_key_expanded(out: *mut [u8; 32], expanded: *const [u8; 64], scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed25519_public_key_expanded(out: *mut [u8; 32], expanded: *const [u8; 64], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -357,7 +357,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_public_key_expanded_adx` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_PUBLIC_KEY_EXPANDED_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_ED25519_PUBLIC_KEY_EXPANDED_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, for the 32-byte private seed whose SHA-512 digest (§5.1.5, step 1) is at `expanded`, including pruning. Contract: `VG.Spec.Ed25519.publicKeyExpandedContract`. Constant time: only pointers may affect timing.
 ///
@@ -373,7 +373,7 @@ pub(crate) const VG_ED25519_PUBLIC_KEY_EXPANDED_ADX_FEATURES: crate::cpu::Featur
 /// * None of `out`, `expanded` and `scratch` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_public_key_expanded_adx(out: *mut [u8; 32], expanded: *const [u8; 64], scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed25519_public_key_expanded_adx(out: *mut [u8; 32], expanded: *const [u8; 64], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -439,7 +439,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_public_key_expanded_ifma` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_PUBLIC_KEY_EXPANDED_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
+pub const VG_ED25519_PUBLIC_KEY_EXPANDED_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
 
 /// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, for the 32-byte private seed whose SHA-512 digest (§5.1.5, step 1) is at `expanded`, including pruning. Contract: `VG.Spec.Ed25519.publicKeyExpandedContract`. Constant time: only pointers may affect timing.
 ///
@@ -455,7 +455,7 @@ pub(crate) const VG_ED25519_PUBLIC_KEY_EXPANDED_IFMA_FEATURES: crate::cpu::Featu
 /// * None of `out`, `expanded` and `scratch` may overlap the return address on the stack or the 72 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_public_key_expanded_ifma(out: *mut [u8; 32], expanded: *const [u8; 64], scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed25519_public_key_expanded_ifma(out: *mut [u8; 32], expanded: *const [u8; 64], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -531,7 +531,7 @@ ret
 /// * `out` and `scratch` must not overlap each other or `wide` (distinct Rust objects never do).
 /// * None of `out`, `wide` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_scalar_reduce(out: *mut [u8; 32], wide: *const [u8; 64], scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed25519_scalar_reduce(out: *mut [u8; 32], wide: *const [u8; 64], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
@@ -650,7 +650,7 @@ ret
 /// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
 /// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_scalar_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed25519_scalar_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
@@ -1860,7 +1860,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_scalar_base_adx` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_SCALAR_BASE_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_ED25519_SCALAR_BASE_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Ed25519 base-point multiplication (RFC 8032 §5.1.4): writes the encoding of `[s]B` to `*out`, for the unsigned little-endian 256-bit integer at `scalar`, without pruning. Contract: `VG.Spec.Ed25519.scalarBaseContract`. Constant time: only pointers may affect timing.
 ///
@@ -1874,7 +1874,7 @@ pub(crate) const VG_ED25519_SCALAR_BASE_ADX_FEATURES: crate::cpu::Features = cra
 /// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_scalar_base_adx(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed25519_scalar_base_adx(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
@@ -2680,7 +2680,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_scalar_base_ifma` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_SCALAR_BASE_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
+pub const VG_ED25519_SCALAR_BASE_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
 
 /// Ed25519 base-point multiplication (RFC 8032 §5.1.4): writes the encoding of `[s]B` to `*out`, for the unsigned little-endian 256-bit integer at `scalar`, without pruning. Contract: `VG.Spec.Ed25519.scalarBaseContract`. Constant time: only pointers may affect timing.
 ///
@@ -2694,7 +2694,7 @@ pub(crate) const VG_ED25519_SCALAR_BASE_IFMA_FEATURES: crate::cpu::Features = cr
 /// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_scalar_base_ifma(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed25519_scalar_base_ifma(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
@@ -5911,7 +5911,7 @@ ret
 /// * `scratch` must not overlap `pk`, `signature` or `challenge` (distinct Rust objects never do).
 /// * None of `pk`, `signature`, `challenge` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_equation(pk: *const [u8; 32], signature: *const [u8; 64], challenge: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_ed25519_verify_equation(pk: *const [u8; 32], signature: *const [u8; 64], challenge: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov rax, rdx
 mov rdx, rcx
@@ -25858,7 +25858,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_verify_equation_adx` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_VERIFY_EQUATION_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_ED25519_VERIFY_EQUATION_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Checks Ed25519 encodings and the equation `[S]B = R + [k]A` (RFC 8032 §5.1.7), returning 1 if they pass and 0 otherwise. `pk` holds A, `signature` holds R || S, and `challenge` holds all 64 bytes of k as a little-endian integer, used as given: it is not reduced modulo L. To verify a signature on M as RFC 8032 §6 and `VG.Spec.Ed25519.verify` do, the caller must reduce SHA-512(R || A || M) modulo L (e.g. with `vg_ed25519_scalar_reduce`) and supply the 32-byte result followed by 32 zero bytes as `challenge`; this function does not hash M. Passing the unreduced digest instead checks the equation with the full 512-bit k, which RFC 8032 §5.1.7 also permits but which differs from §6 and OpenSSL whenever A has a small-order component. Rejects noncanonical points and S >= L, with no additional subgroup or small-order check. Contract: `VG.Spec.Ed25519.verifyEquationContract`. Not constant time: timing may depend on all inputs.
 ///
@@ -25873,7 +25873,7 @@ pub(crate) const VG_ED25519_VERIFY_EQUATION_ADX_FEATURES: crate::cpu::Features =
 /// * None of `pk`, `signature`, `challenge` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_equation_adx(pk: *const [u8; 32], signature: *const [u8; 64], challenge: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_ed25519_verify_equation_adx(pk: *const [u8; 32], signature: *const [u8; 64], challenge: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov rax, rdx
 mov rdx, rcx
@@ -40486,7 +40486,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_verify_equation_ifma` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_VERIFY_EQUATION_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
+pub const VG_ED25519_VERIFY_EQUATION_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
 
 /// Checks Ed25519 encodings and the equation `[S]B = R + [k]A` (RFC 8032 §5.1.7), returning 1 if they pass and 0 otherwise. `pk` holds A, `signature` holds R || S, and `challenge` holds all 64 bytes of k as a little-endian integer, used as given: it is not reduced modulo L. To verify a signature on M as RFC 8032 §6 and `VG.Spec.Ed25519.verify` do, the caller must reduce SHA-512(R || A || M) modulo L (e.g. with `vg_ed25519_scalar_reduce`) and supply the 32-byte result followed by 32 zero bytes as `challenge`; this function does not hash M. Passing the unreduced digest instead checks the equation with the full 512-bit k, which RFC 8032 §5.1.7 also permits but which differs from §6 and OpenSSL whenever A has a small-order component. Rejects noncanonical points and S >= L, with no additional subgroup or small-order check. Contract: `VG.Spec.Ed25519.verifyEquationContract`. Not constant time: timing may depend on all inputs.
 ///
@@ -40501,7 +40501,7 @@ pub(crate) const VG_ED25519_VERIFY_EQUATION_IFMA_FEATURES: crate::cpu::Features 
 /// * None of `pk`, `signature`, `challenge` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_equation_ifma(pk: *const [u8; 32], signature: *const [u8; 64], challenge: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_ed25519_verify_equation_ifma(pk: *const [u8; 32], signature: *const [u8; 64], challenge: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov rax, rdx
 mov rdx, rcx
@@ -55267,7 +55267,7 @@ ret
 /// * `scratch` must not overlap `pk`, `message` or `signature` (distinct Rust objects never do).
 /// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_ed25519_verify(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -55382,7 +55382,7 @@ ret
 /// * `out` and `scratch` must not overlap each other, `expanded`, `pk` or `message` (distinct Rust objects never do).
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed25519_sign_expanded(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -55604,7 +55604,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_verify_adx` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_VERIFY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_ED25519_VERIFY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
@@ -55619,7 +55619,7 @@ pub(crate) const VG_ED25519_VERIFY_ADX_FEATURES: crate::cpu::Features = crate::c
 /// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_adx(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_ed25519_verify_adx(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -55720,7 +55720,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_sign_expanded_adx` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_SIGN_EXPANDED_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_ED25519_SIGN_EXPANDED_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
@@ -55738,7 +55738,7 @@ pub(crate) const VG_ED25519_SIGN_EXPANDED_ADX_FEATURES: crate::cpu::Features = c
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_adx(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed25519_sign_expanded_adx(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -55960,7 +55960,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_verify_ifma` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_VERIFY_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
+pub const VG_ED25519_VERIFY_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
@@ -55975,7 +55975,7 @@ pub(crate) const VG_ED25519_VERIFY_IFMA_FEATURES: crate::cpu::Features = crate::
 /// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_ed25519_verify_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -56076,7 +56076,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_sign_expanded_ifma` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
+pub const VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
@@ -56094,7 +56094,7 @@ pub(crate) const VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES: crate::cpu::Features = 
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed25519_sign_expanded_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -56316,7 +56316,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_verify_avx2` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_VERIFY_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_ED25519_VERIFY_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
@@ -56331,7 +56331,7 @@ pub(crate) const VG_ED25519_VERIFY_AVX2_FEATURES: crate::cpu::Features = crate::
 /// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_avx2(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_ed25519_verify_avx2(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -56432,7 +56432,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_sign_expanded_avx2` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_SIGN_EXPANDED_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_ED25519_SIGN_EXPANDED_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
@@ -56450,7 +56450,7 @@ pub(crate) const VG_ED25519_SIGN_EXPANDED_AVX2_FEATURES: crate::cpu::Features = 
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -56672,7 +56672,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_verify_avx2_adx` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_VERIFY_AVX2_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_ED25519_VERIFY_AVX2_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
@@ -56687,7 +56687,7 @@ pub(crate) const VG_ED25519_VERIFY_AVX2_ADX_FEATURES: crate::cpu::Features = cra
 /// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_avx2_adx(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_ed25519_verify_avx2_adx(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -56788,7 +56788,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_sign_expanded_avx2_adx` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_SIGN_EXPANDED_AVX2_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_ED25519_SIGN_EXPANDED_AVX2_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
@@ -56806,7 +56806,7 @@ pub(crate) const VG_ED25519_SIGN_EXPANDED_AVX2_ADX_FEATURES: crate::cpu::Feature
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2_adx(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2_adx(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -57028,7 +57028,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_verify_avx2_ifma` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_VERIFY_AVX2_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
+pub const VG_ED25519_VERIFY_AVX2_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
@@ -57043,7 +57043,7 @@ pub(crate) const VG_ED25519_VERIFY_AVX2_IFMA_FEATURES: crate::cpu::Features = cr
 /// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2`, `adx`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_avx2_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_ed25519_verify_avx2_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -57144,7 +57144,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_sign_expanded_avx2_ifma` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_SIGN_EXPANDED_AVX2_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
+pub const VG_ED25519_SIGN_EXPANDED_AVX2_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
@@ -57162,7 +57162,7 @@ pub(crate) const VG_ED25519_SIGN_EXPANDED_AVX2_IFMA_FEATURES: crate::cpu::Featur
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed25519_sign_expanded_avx2_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -57384,7 +57384,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_verify_shani` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_VERIFY_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_ED25519_VERIFY_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
@@ -57399,7 +57399,7 @@ pub(crate) const VG_ED25519_VERIFY_SHANI_FEATURES: crate::cpu::Features = crate:
 /// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_shani(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_ed25519_verify_shani(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -57500,7 +57500,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_sign_expanded_shani` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_SIGN_EXPANDED_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_ED25519_SIGN_EXPANDED_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
@@ -57518,7 +57518,7 @@ pub(crate) const VG_ED25519_SIGN_EXPANDED_SHANI_FEATURES: crate::cpu::Features =
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_shani(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed25519_sign_expanded_shani(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -57740,7 +57740,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_verify_shani_adx` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_VERIFY_SHANI_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_ED25519_VERIFY_SHANI_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
@@ -57755,7 +57755,7 @@ pub(crate) const VG_ED25519_VERIFY_SHANI_ADX_FEATURES: crate::cpu::Features = cr
 /// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `sha512`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_shani_adx(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_ed25519_verify_shani_adx(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -57856,7 +57856,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_sign_expanded_shani_adx` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_SIGN_EXPANDED_SHANI_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_ED25519_SIGN_EXPANDED_SHANI_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
@@ -57874,7 +57874,7 @@ pub(crate) const VG_ED25519_SIGN_EXPANDED_SHANI_ADX_FEATURES: crate::cpu::Featur
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `sha512`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_shani_adx(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed25519_sign_expanded_shani_adx(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -58096,7 +58096,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_verify_shani_ifma` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_VERIFY_SHANI_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
+pub const VG_ED25519_VERIFY_SHANI_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
@@ -58111,7 +58111,7 @@ pub(crate) const VG_ED25519_VERIFY_SHANI_IFMA_FEATURES: crate::cpu::Features = c
 /// * None of `pk`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `sha512`, `bmi2`, `adx`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_shani_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_ed25519_verify_shani_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -58212,7 +58212,7 @@ ret
 }
 
 /// The CPU features `vg_ed25519_sign_expanded_shani_ifma` requires (`Artifact.features`).
-pub(crate) const VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
+pub const VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
@@ -58230,7 +58230,7 @@ pub(crate) const VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES: crate::cpu::Featu
 /// * None of `out`, `expanded`, `pk`, `message` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `sha512`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_expanded_shani_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed25519_sign_expanded_shani_ifma(out: *mut [u8; 64], expanded: *const [u8; 64], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push rdi
 push rsi

@@ -15,7 +15,7 @@
 /// * `f` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * Neither `f` nor `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
+pub unsafe extern "sysv64" fn vg_mldsa_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r"stmxcsr DWORD PTR [rsi+768]
 mov r11d, DWORD PTR [rsi+768]
@@ -594,7 +594,7 @@ ret
 /// * `f` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * Neither `f` nor `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_inv_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
+pub unsafe extern "sysv64" fn vg_mldsa_inv_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r"stmxcsr DWORD PTR [rsi+768]
 mov r11d, DWORD PTR [rsi+768]
@@ -1180,7 +1180,7 @@ ret
 /// * `h` must not overlap `f` or `g` (distinct Rust objects never do).
 /// * None of `h`, `f` and `g` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_multiply_ntt(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
+pub unsafe extern "sysv64" fn vg_mldsa_multiply_ntt(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
         r"mov r8, rdi
 movdqu xmm6, XMMWORD PTR [rdi+1008]
@@ -1302,7 +1302,7 @@ ret
 /// * `h` must not overlap `f` or `g` (distinct Rust objects never do).
 /// * None of `h`, `f` and `g` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_multiply_add_ntt(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
+pub unsafe extern "sysv64" fn vg_mldsa_multiply_add_ntt(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
         r"mov r8, rdi
 movdqu xmm6, XMMWORD PTR [rdi+1008]
@@ -1434,7 +1434,7 @@ ret
 /// * `f` must not overlap `g` (distinct Rust objects never do).
 /// * Neither `f` nor `g` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_add(f: *mut [u32; 256], g: *const [u32; 256]) {
+pub unsafe extern "sysv64" fn vg_mldsa_add(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
         r"mov eax, 8380417
 movq xmm15, rax
@@ -1472,7 +1472,7 @@ ret
 /// * `f` must not overlap `g` (distinct Rust objects never do).
 /// * Neither `f` nor `g` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_sub(f: *mut [u32; 256], g: *const [u32; 256]) {
+pub unsafe extern "sysv64" fn vg_mldsa_sub(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
         r"mov eax, 8380417
 movq xmm15, rax
@@ -1497,7 +1497,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_ntt_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_NTT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_NTT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// The ML-DSA number-theoretic transform, `NTT` (FIPS 204 Algorithm 41), of the polynomial `*f` (256 coefficients less than `q` = 8380417), in place.
 ///
@@ -1513,7 +1513,7 @@ pub(crate) const VG_MLDSA_NTT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::
 /// * Neither `f` nor `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_ntt_avx2(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
+pub unsafe extern "sysv64" fn vg_mldsa_ntt_avx2(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r"stmxcsr DWORD PTR [rsi+768]
 mov r11d, DWORD PTR [rsi+768]
@@ -1921,7 +1921,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_montgomery_inv_ntt_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_MONTGOMERY_INV_NTT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_MONTGOMERY_INV_NTT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Replaces `*f` with `R * NTT^-1(*f)`, coefficientwise modulo `q` = 8380417, reduced, where `R = 2^32 mod q`. An input scaled by `R^-1` produces the ordinary inverse transform of the unscaled polynomial.
 ///
@@ -1937,7 +1937,7 @@ pub(crate) const VG_MLDSA_MONTGOMERY_INV_NTT_AVX2_FEATURES: crate::cpu::Features
 /// * Neither `f` nor `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_montgomery_inv_ntt_avx2(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
+pub unsafe extern "sysv64" fn vg_mldsa_montgomery_inv_ntt_avx2(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r"stmxcsr DWORD PTR [rsi+768]
 mov r11d, DWORD PTR [rsi+768]
@@ -2370,7 +2370,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_montgomery_multiply_ntt_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_MONTGOMERY_MULTIPLY_NTT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_MONTGOMERY_MULTIPLY_NTT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Writes `R^-1 * MultiplyNTT(*f, *g)` to `*h`, coefficientwise modulo `q` = 8380417, reduced, where `R = 2^32 mod q`. The factor of `R^-1` is canceled by `vg_mldsa_montgomery_inv_ntt`.
 ///
@@ -2387,7 +2387,7 @@ pub(crate) const VG_MLDSA_MONTGOMERY_MULTIPLY_NTT_AVX2_FEATURES: crate::cpu::Fea
 /// * None of `h`, `f` and `g` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_montgomery_multiply_ntt_avx2(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
+pub unsafe extern "sysv64" fn vg_mldsa_montgomery_multiply_ntt_avx2(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
         r"mov r8, rdi
 vmovdqu ymm6, YMMWORD PTR [rdi+992]
@@ -2464,7 +2464,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_montgomery_multiply_add_ntt_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_MONTGOMERY_MULTIPLY_ADD_NTT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_MONTGOMERY_MULTIPLY_ADD_NTT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Adds `R^-1 * MultiplyNTT(*f, *g)` to `*h`, coefficientwise modulo `q` = 8380417, reduced, where `R = 2^32 mod q`. The existing accumulator is not rescaled; callers must keep every accumulated term at the same scale.
 ///
@@ -2482,7 +2482,7 @@ pub(crate) const VG_MLDSA_MONTGOMERY_MULTIPLY_ADD_NTT_AVX2_FEATURES: crate::cpu:
 /// * None of `h`, `f` and `g` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_montgomery_multiply_add_ntt_avx2(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
+pub unsafe extern "sysv64" fn vg_mldsa_montgomery_multiply_add_ntt_avx2(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
         r"mov r8, rdi
 vmovdqu ymm6, YMMWORD PTR [rdi+992]
@@ -2569,7 +2569,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_add_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_ADD_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_ADD_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Adds the polynomial `*g` to `*f` modulo `q` = 8380417, coefficient by coefficient (FIPS 204 Algorithm 44).
 ///
@@ -2585,7 +2585,7 @@ pub(crate) const VG_MLDSA_ADD_AVX2_FEATURES: crate::cpu::Features = crate::cpu::
 /// * Neither `f` nor `g` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_add_avx2(f: *mut [u32; 256], g: *const [u32; 256]) {
+pub unsafe extern "sysv64" fn vg_mldsa_add_avx2(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
         r"mov eax, 8380417
 vmovq xmm15, rax
@@ -2611,7 +2611,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_sub_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_SUB_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_SUB_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Subtracts the polynomial `*g` from `*f` modulo `q` = 8380417, coefficient by coefficient.
 ///
@@ -2627,7 +2627,7 @@ pub(crate) const VG_MLDSA_SUB_AVX2_FEATURES: crate::cpu::Features = crate::cpu::
 /// * Neither `f` nor `g` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_sub_avx2(f: *mut [u32; 256], g: *const [u32; 256]) {
+pub unsafe extern "sysv64" fn vg_mldsa_sub_avx2(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
         r"mov eax, 8380417
 vmovq xmm15, rax
@@ -2663,7 +2663,7 @@ ret
 /// * `out` and `scratch` must not overlap each other, `a` or `b` (distinct Rust objects never do).
 /// * None of `out`, `a`, `b` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_dot_inverse4(out: *mut [u32; 256], a: *const [u32; 1024], b: *const [u32; 1024], scratch: *mut [u64; 128]) {
+pub unsafe extern "sysv64" fn vg_mldsa_dot_inverse4(out: *mut [u32; 256], a: *const [u32; 1024], b: *const [u32; 1024], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r"mov r10, rsi
 mov rsi, rcx
@@ -3342,7 +3342,7 @@ ret
 /// * `out` and `scratch` must not overlap each other, `a` or `b` (distinct Rust objects never do).
 /// * None of `out`, `a`, `b` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_dot_inverse5(out: *mut [u32; 256], a: *const [u32; 1280], b: *const [u32; 1280], scratch: *mut [u64; 128]) {
+pub unsafe extern "sysv64" fn vg_mldsa_dot_inverse5(out: *mut [u32; 256], a: *const [u32; 1280], b: *const [u32; 1280], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r"mov r10, rsi
 mov rsi, rcx
@@ -4031,7 +4031,7 @@ ret
 /// * `out` and `scratch` must not overlap each other, `a` or `b` (distinct Rust objects never do).
 /// * None of `out`, `a`, `b` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_dot_inverse7(out: *mut [u32; 256], a: *const [u32; 1792], b: *const [u32; 1792], scratch: *mut [u64; 128]) {
+pub unsafe extern "sysv64" fn vg_mldsa_dot_inverse7(out: *mut [u32; 256], a: *const [u32; 1792], b: *const [u32; 1792], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r"mov r10, rsi
 mov rsi, rcx
@@ -4729,7 +4729,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_dot_inverse4_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_DOT_INVERSE4_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_DOT_INVERSE4_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Writes the canonical inverse NTT of the sum of coefficientwise products of 4 pairs of polynomials. Each input family is contiguous. Timing depends only on pointers, as specified by `dotInverseContract`.
 ///
@@ -4744,7 +4744,7 @@ pub(crate) const VG_MLDSA_DOT_INVERSE4_AVX2_FEATURES: crate::cpu::Features = cra
 /// * None of `out`, `a`, `b` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_dot_inverse4_avx2(out: *mut [u32; 256], a: *const [u32; 1024], b: *const [u32; 1024], scratch: *mut [u64; 128]) {
+pub unsafe extern "sysv64" fn vg_mldsa_dot_inverse4_avx2(out: *mut [u32; 256], a: *const [u32; 1024], b: *const [u32; 1024], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r"mov r10, rsi
 mov rsi, rcx
@@ -5240,7 +5240,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_dot_inverse5_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_DOT_INVERSE5_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_DOT_INVERSE5_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Writes the canonical inverse NTT of the sum of coefficientwise products of 5 pairs of polynomials. Each input family is contiguous. Timing depends only on pointers, as specified by `dotInverseContract`.
 ///
@@ -5255,7 +5255,7 @@ pub(crate) const VG_MLDSA_DOT_INVERSE5_AVX2_FEATURES: crate::cpu::Features = cra
 /// * None of `out`, `a`, `b` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_dot_inverse5_avx2(out: *mut [u32; 256], a: *const [u32; 1280], b: *const [u32; 1280], scratch: *mut [u64; 128]) {
+pub unsafe extern "sysv64" fn vg_mldsa_dot_inverse5_avx2(out: *mut [u32; 256], a: *const [u32; 1280], b: *const [u32; 1280], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r"mov r10, rsi
 mov rsi, rcx
@@ -5759,7 +5759,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_dot_inverse7_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_DOT_INVERSE7_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_DOT_INVERSE7_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Writes the canonical inverse NTT of the sum of coefficientwise products of 7 pairs of polynomials. Each input family is contiguous. Timing depends only on pointers, as specified by `dotInverseContract`.
 ///
@@ -5774,7 +5774,7 @@ pub(crate) const VG_MLDSA_DOT_INVERSE7_AVX2_FEATURES: crate::cpu::Features = cra
 /// * None of `out`, `a`, `b` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_dot_inverse7_avx2(out: *mut [u32; 256], a: *const [u32; 1792], b: *const [u32; 1792], scratch: *mut [u64; 128]) {
+pub unsafe extern "sysv64" fn vg_mldsa_dot_inverse7_avx2(out: *mut [u32; 256], a: *const [u32; 1792], b: *const [u32; 1792], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r"mov r10, rsi
 mov rsi, rcx
@@ -6306,7 +6306,7 @@ ret
 /// * `out` must not overlap `f` (distinct Rust objects never do).
 /// * Neither `f` nor `out` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_simple_bit_pack(f: *const [u32; 256], b: u32, out: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_mldsa_simple_bit_pack(f: *const [u32; 256], b: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"mov esi, esi
 mov r8, rdx
@@ -6405,7 +6405,7 @@ ret
 /// * `out` must not overlap `f` (distinct Rust objects never do).
 /// * Neither `f` nor `out` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_bit_pack(f: *const [u32; 256], a: u32, b: u32, out: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_mldsa_bit_pack(f: *const [u32; 256], a: u32, b: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"mov edx, edx
 mov r8, rcx
@@ -6706,7 +6706,7 @@ ret
 /// * `f` must not overlap `v` (distinct Rust objects never do).
 /// * Neither `v` nor `f` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_bit_unpack(v: *const u8, len: usize, a: u32, b: u32, f: *mut [u32; 256]) {
+pub unsafe extern "sysv64" fn vg_mldsa_bit_unpack(v: *const u8, len: usize, a: u32, b: u32, f: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r"mov ecx, ecx
 mov rsi, r8
@@ -7005,7 +7005,7 @@ ret
 /// * `f` must not overlap `v` (distinct Rust objects never do).
 /// * Neither `v` nor `f` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_unpack_t1(v: *const [u8; 320], f: *mut [u32; 256]) {
+pub unsafe extern "sysv64" fn vg_mldsa_unpack_t1(v: *const [u8; 320], f: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r"mov ecx, 64
 20:
@@ -7050,7 +7050,7 @@ ret
 /// * `y` must not overlap `h` (distinct Rust objects never do).
 /// * Neither `h` nor `y` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_hint_bit_pack(h: *const u32, hlen: usize, omega: u32, y: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_mldsa_hint_bit_pack(h: *const u32, hlen: usize, omega: u32, y: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"mov edx, edx
 mov eax, 0
@@ -7101,7 +7101,7 @@ ret
 /// * `h` must not overlap `y` (distinct Rust objects never do).
 /// * Neither `y` nor `h` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_hint_bit_unpack(y: *const u8, len: usize, omega: u32, h: *mut u32, hlen: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_mldsa_hint_bit_unpack(y: *const u8, len: usize, omega: u32, h: *mut u32, hlen: usize) -> u32 {
     core::arch::naked_asm!(
         r"mov edx, edx
 mov eax, 0
@@ -7204,7 +7204,7 @@ ret
 /// * `t1` and `t0` must not overlap each other or `t` (distinct Rust objects never do).
 /// * None of `t`, `t1` and `t0` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_power2round(t: *const [u32; 256], t1: *mut [u32; 256], t0: *mut [u32; 256]) {
+pub unsafe extern "sysv64" fn vg_mldsa_power2round(t: *const [u32; 256], t1: *mut [u32; 256], t0: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r"mov ecx, 256
 20:
@@ -7239,7 +7239,7 @@ ret
 /// * `out` must not overlap `r` (distinct Rust objects never do).
 /// * Neither `r` nor `out` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_high_bits(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
+pub unsafe extern "sysv64" fn vg_mldsa_high_bits(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r"mov esi, esi
 cmp esi, 261888
@@ -7298,7 +7298,7 @@ ret
 /// * `out` must not overlap `r` (distinct Rust objects never do).
 /// * Neither `r` nor `out` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_low_bits(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
+pub unsafe extern "sysv64" fn vg_mldsa_low_bits(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r"mov esi, esi
 cmp esi, 261888
@@ -7359,7 +7359,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_high_bits_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_HIGH_BITS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_HIGH_BITS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// `HighBits` (FIPS 204 Algorithm 37) of each coefficient of `*r`, with `gamma2` = `γ₂`: writes the `r1`s to `*out`.
 ///
@@ -7375,7 +7375,7 @@ pub(crate) const VG_MLDSA_HIGH_BITS_AVX2_FEATURES: crate::cpu::Features = crate:
 /// * Neither `r` nor `out` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_high_bits_avx2(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
+pub unsafe extern "sysv64" fn vg_mldsa_high_bits_avx2(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r"mov esi, esi
 cmp esi, 261888
@@ -7459,7 +7459,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_low_bits_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_LOW_BITS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_LOW_BITS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// `LowBits` (FIPS 204 Algorithm 38) of each coefficient of `*r`, with `gamma2` = `γ₂`: writes the `r0`s, modulo `q` = 8380417, to `*out`.
 ///
@@ -7475,7 +7475,7 @@ pub(crate) const VG_MLDSA_LOW_BITS_AVX2_FEATURES: crate::cpu::Features = crate::
 /// * Neither `r` nor `out` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_low_bits_avx2(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
+pub unsafe extern "sysv64" fn vg_mldsa_low_bits_avx2(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r"mov esi, esi
 cmp esi, 261888
@@ -7590,7 +7590,7 @@ ret
 /// * Each of the 256 `u32`s of `f` must be less than `q` = 8380417.
 /// * `f` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_norm_lt(f: *const [u32; 256], bound: u32) -> u32 {
+pub unsafe extern "sysv64" fn vg_mldsa_norm_lt(f: *const [u32; 256], bound: u32) -> u32 {
     core::arch::naked_asm!(
         r"mov esi, esi
 mov r9, -1
@@ -7627,7 +7627,7 @@ ret
 /// * `h` must not overlap `z` or `r` (distinct Rust objects never do).
 /// * None of `z`, `r` and `h` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_make_hint(z: *const [u32; 256], r: *const [u32; 256], gamma2: u32, h: *mut [u32; 256]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mldsa_make_hint(z: *const [u32; 256], r: *const [u32; 256], gamma2: u32, h: *mut [u32; 256]) -> u32 {
     core::arch::naked_asm!(
         r"mov edx, edx
 cmp edx, 261888
@@ -7718,7 +7718,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_norm_lt_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_NORM_LT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_NORM_LT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Returns 1 if the infinity norm of the polynomial `*f` (FIPS 204 §2.3: the largest `|fᵢ mod± q|`) is less than `bound`, and 0 otherwise.
 ///
@@ -7731,7 +7731,7 @@ pub(crate) const VG_MLDSA_NORM_LT_AVX2_FEATURES: crate::cpu::Features = crate::c
 /// * `f` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_norm_lt_avx2(f: *const [u32; 256], bound: u32) -> u32 {
+pub unsafe extern "sysv64" fn vg_mldsa_norm_lt_avx2(f: *const [u32; 256], bound: u32) -> u32 {
     core::arch::naked_asm!(
         r"mov esi, esi
 cmp esi, 8380417
@@ -7771,7 +7771,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_make_hint_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_MAKE_HINT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_MAKE_HINT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// `MakeHint` (FIPS 204 Algorithm 39) of each pair of coefficients of `*z` and `*r`, with `gamma2` = `γ₂`: writes 1 for true and 0 for false to `*h`, and returns the number of 1s.
 ///
@@ -7789,7 +7789,7 @@ pub(crate) const VG_MLDSA_MAKE_HINT_AVX2_FEATURES: crate::cpu::Features = crate:
 /// * None of `z`, `r` and `h` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_make_hint_avx2(z: *const [u32; 256], r: *const [u32; 256], gamma2: u32, h: *mut [u32; 256]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mldsa_make_hint_avx2(z: *const [u32; 256], r: *const [u32; 256], gamma2: u32, h: *mut [u32; 256]) -> u32 {
     core::arch::naked_asm!(
         r"mov edx, edx
 cmp edx, 261888
@@ -7972,7 +7972,7 @@ ret
 /// * `out` must not overlap `h` or `r` (distinct Rust objects never do).
 /// * None of `h`, `r` and `out` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_use_hint(h: *const [u32; 256], r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
+pub unsafe extern "sysv64" fn vg_mldsa_use_hint(h: *const [u32; 256], r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r"mov edx, edx
 cmp edx, 261888
@@ -8057,7 +8057,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_use_hint_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_USE_HINT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_USE_HINT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// `UseHint` (FIPS 204 Algorithm 40) of each pair of coefficients of `*h` (a hint bit: true if it is not 0) and `*r`, with `gamma2` = `γ₂`: writes the results to `*out`.
 ///
@@ -8074,7 +8074,7 @@ pub(crate) const VG_MLDSA_USE_HINT_AVX2_FEATURES: crate::cpu::Features = crate::
 /// * None of `h`, `r` and `out` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_use_hint_avx2(h: *const [u32; 256], r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
+pub unsafe extern "sysv64" fn vg_mldsa_use_hint_avx2(h: *const [u32; 256], r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r"mov edx, edx
 cmp edx, 261888
@@ -8220,7 +8220,7 @@ ret
 /// * `a` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `seed`, `a` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_rej_ntt_poly(seed: *const [u8; 34], a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mldsa_rej_ntt_poly(seed: *const [u8; 34], a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rdx+2024], rbx
 mov QWORD PTR [rdx+2032], rbp
@@ -8332,7 +8332,7 @@ ret
 /// * `a` and `scratch` must not overlap each other or `seeds` (distinct Rust objects never do).
 /// * None of `seeds`, `a` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_rej_ntt_poly4(seeds: *const [u8; 136], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mldsa_rej_ntt_poly4(seeds: *const [u8; 136], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rdx+4384], rbx
 mov QWORD PTR [rdx+4392], rbp
@@ -8388,7 +8388,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_rej_ntt_poly4_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_REJ_NTT_POLY4_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_REJ_NTT_POLY4_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// `RejNTTPoly` (FIPS 204 Algorithm 30) four times: for each `k` < 4, writes the element of `T_q` sampled from the SHAKE128 output of the 34 bytes of `*seeds` from byte `34 k` to the 256 coefficients of `*a` from coefficient `256 k` (each less than `q` = 8380417), and returns 1. Returns 0 if the loop reaches its bound, which is at least 894 bytes of SHAKE128 output for each (FIPS 204 Appendix C; this happens with probability about 2^-256 or less): `*a` is then unspecified, and the caller must destroy it and treat the operation as failed. The four are independent, so an implementation may compute them together (e.g. four SHAKE128 instances at once in vector registers).
 ///
@@ -8404,7 +8404,7 @@ pub(crate) const VG_MLDSA_REJ_NTT_POLY4_AVX2_FEATURES: crate::cpu::Features = cr
 /// * None of `seeds`, `a` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_rej_ntt_poly4_avx2(seeds: *const [u8; 136], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mldsa_rej_ntt_poly4_avx2(seeds: *const [u8; 136], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rdx+4384], rbx
 mov QWORD PTR [rdx+4392], rbp
@@ -11548,7 +11548,7 @@ ret
 /// * `a` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `seed`, `a` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_rej_bounded_poly(seed: *const [u8; 66], eta: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mldsa_rej_bounded_poly(seed: *const [u8; 66], eta: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rcx+2024], rbx
 mov QWORD PTR [rcx+2032], rbp
@@ -11748,7 +11748,7 @@ ret
 /// * `a` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `seed`, `a` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_expand_mask_poly(seed: *const [u8; 66], gamma1: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) {
+pub unsafe extern "sysv64" fn vg_mldsa_expand_mask_poly(seed: *const [u8; 66], gamma1: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rcx+2024], rbx
 mov QWORD PTR [rcx+2032], rbp
@@ -11923,7 +11923,7 @@ ret
 /// * `a` and `scratch` must not overlap each other or `seeds` (distinct Rust objects never do).
 /// * None of `seeds`, `a` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_expand_mask_poly4(seeds: *const [u8; 264], gamma1: u32, a: *mut [u32; 1024], scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_mldsa_expand_mask_poly4(seeds: *const [u8; 264], gamma1: u32, a: *mut [u32; 1024], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rcx+5088], rbx
 mov QWORD PTR [rcx+5096], rbp
@@ -11978,7 +11978,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_expand_mask_poly4_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_EXPAND_MASK_POLY4_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA_EXPAND_MASK_POLY4_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Four polynomials of `ExpandMask` (FIPS 204 Algorithm 34, lines 4 and 5): for each `k` < 4, writes `BitUnpack(H(seed, 32c), gamma1 - 1, gamma1)`, for the 66 bytes `seed` of `*seeds` from byte `66 k` and `c = 1 + bitlen (gamma1 - 1)`, to the 256 coefficients of `*a` from coefficient `256 k` (each modulo `q` = 8380417). The four are independent, so an implementation may compute them together (e.g. four SHAKE256 instances at once in vector registers).
 ///
@@ -11995,7 +11995,7 @@ pub(crate) const VG_MLDSA_EXPAND_MASK_POLY4_AVX2_FEATURES: crate::cpu::Features 
 /// * None of `seeds`, `a` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_expand_mask_poly4_avx2(seeds: *const [u8; 264], gamma1: u32, a: *mut [u32; 1024], scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_mldsa_expand_mask_poly4_avx2(seeds: *const [u8; 264], gamma1: u32, a: *mut [u32; 1024], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rcx+5088], rbx
 mov QWORD PTR [rcx+5096], rbp
@@ -13267,7 +13267,7 @@ ret
 /// * `c` and `scratch` must not overlap each other or `ctilde` (distinct Rust objects never do).
 /// * None of `ctilde`, `c` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_sample_in_ball(ctilde: *const u8, len: usize, tau: u32, c: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mldsa_sample_in_ball(ctilde: *const u8, len: usize, tau: u32, c: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+2024], rbx
 mov QWORD PTR [r8+2032], rbp

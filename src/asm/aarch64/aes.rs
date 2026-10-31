@@ -15,7 +15,7 @@
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may overlap the 512 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
+pub unsafe extern "C" fn vg_aes_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     core::arch::naked_asm!(
         r"sub sp, sp, #512
 add x3, sp, #0
@@ -1285,7 +1285,7 @@ ret
 /// * `schedule` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
 /// * None of `key`, `schedule` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_expand_key_scratch(key: *const u8, key_len: usize, schedule: *mut [u8; 240], scratch: *mut [u64; 64]) {
+pub unsafe extern "C" fn vg_aes_expand_key_scratch(key: *const u8, key_len: usize, schedule: *mut [u8; 240], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
         r"add x5, x3, #0
 str x19, [x5, #384]
@@ -2518,7 +2518,7 @@ ret
 /// * `counter`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `counter`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_ctr32(schedule: *const [u8; 240], rounds: usize, counter: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub unsafe extern "C" fn vg_aes_ctr32(schedule: *const [u8; 240], rounds: usize, counter: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r"str x19, [x5, #384]
 str x20, [x5, #392]
@@ -3967,7 +3967,7 @@ ret
 }
 
 /// The CPU features `vg_aes_expand_key_aes` requires (`Artifact.features`).
-pub(crate) const VG_AES_EXPAND_KEY_AES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
+pub const VG_AES_EXPAND_KEY_AES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
 
 /// The AES key expansion (FIPS 197 §5.2, `KEYEXPANSION`): writes the key schedule of the `key_len`-byte key at `key`, the words `w[0] … w[4 * Nr + 3]` for `Nr = key_len / 4 + 6` rounds, each as its 4 bytes (`16 * (Nr + 1)` bytes in all), to the start of `*schedule`, as `vg_aes_ctr32` reads it.
 ///
@@ -3983,7 +3983,7 @@ pub(crate) const VG_AES_EXPAND_KEY_AES_FEATURES: crate::cpu::Features = crate::c
 /// * Neither `key` nor `schedule` may overlap the 512 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_expand_key_aes(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
+pub unsafe extern "C" fn vg_aes_expand_key_aes(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     core::arch::naked_asm!(
         r".arch_extension aes
 sub sp, sp, #512
@@ -4496,7 +4496,7 @@ ret
 }
 
 /// The CPU features `vg_aes_expand_key_scratch_aes` requires (`Artifact.features`).
-pub(crate) const VG_AES_EXPAND_KEY_SCRATCH_AES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
+pub const VG_AES_EXPAND_KEY_SCRATCH_AES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
 
 /// `vg_aes_expand_key`, with its working space in `*scratch`.
 ///
@@ -4514,7 +4514,7 @@ pub(crate) const VG_AES_EXPAND_KEY_SCRATCH_AES_FEATURES: crate::cpu::Features = 
 /// * None of `key`, `schedule` and `scratch` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_expand_key_scratch_aes(key: *const u8, key_len: usize, schedule: *mut [u8; 240], scratch: *mut [u64; 64]) {
+pub unsafe extern "C" fn vg_aes_expand_key_scratch_aes(key: *const u8, key_len: usize, schedule: *mut [u8; 240], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
         r".arch_extension aes
 movi v0.2d, #0
@@ -4990,7 +4990,7 @@ ret
 }
 
 /// The CPU features `vg_aes_ctr32_aes` requires (`Artifact.features`).
-pub(crate) const VG_AES_CTR32_AES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
+pub const VG_AES_CTR32_AES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
 
 /// AES counter mode with GCM's 32-bit increment (NIST SP 800-38D §6.5, on whole blocks): XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
@@ -5008,7 +5008,7 @@ pub(crate) const VG_AES_CTR32_AES_FEATURES: crate::cpu::Features = crate::cpu::F
 /// * None of `schedule`, `counter`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_ctr32_aes(schedule: *const [u8; 240], rounds: usize, counter: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub unsafe extern "C" fn vg_aes_ctr32_aes(schedule: *const [u8; 240], rounds: usize, counter: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r".arch_extension aes
 ldr q16, [x0, #0]
@@ -5406,7 +5406,7 @@ ret
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_encrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub unsafe extern "C" fn vg_aes_encrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r"add x5, x4, #0
 add x4, x3, #0
@@ -6831,7 +6831,7 @@ ret
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_decrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub unsafe extern "C" fn vg_aes_decrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r"add x5, x4, #0
 add x4, x3, #0
@@ -8385,10 +8385,10 @@ ret
 }
 
 /// The CPU features `vg_aes_encrypt_blocks_aes` requires (`Artifact.features`).
-pub(crate) const VG_AES_ENCRYPT_BLOCKS_AES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
+pub const VG_AES_ENCRYPT_BLOCKS_AES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
 
 /// The bytes of `scratch` that `vg_aes_encrypt_blocks_aes` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
-pub(crate) const VG_AES_ENCRYPT_BLOCKS_AES_SCRATCH_WRITTEN: usize = 0;
+pub const VG_AES_ENCRYPT_BLOCKS_AES_SCRATCH_WRITTEN: usize = 0;
 
 /// AES encryption of whole blocks (FIPS 197 §5.1, `CIPHER`): replaces each of the `n` 16-byte blocks at `data` with its encryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
@@ -8407,7 +8407,7 @@ pub(crate) const VG_AES_ENCRYPT_BLOCKS_AES_SCRATCH_WRITTEN: usize = 0;
 /// * None of `schedule`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_encrypt_blocks_aes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub unsafe extern "C" fn vg_aes_encrypt_blocks_aes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r".arch_extension aes
 ldr q16, [x0, #0]
@@ -8741,10 +8741,10 @@ ret
 }
 
 /// The CPU features `vg_aes_decrypt_blocks_aes` requires (`Artifact.features`).
-pub(crate) const VG_AES_DECRYPT_BLOCKS_AES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
+pub const VG_AES_DECRYPT_BLOCKS_AES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
 
 /// The bytes of `scratch` that `vg_aes_decrypt_blocks_aes` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
-pub(crate) const VG_AES_DECRYPT_BLOCKS_AES_SCRATCH_WRITTEN: usize = 0;
+pub const VG_AES_DECRYPT_BLOCKS_AES_SCRATCH_WRITTEN: usize = 0;
 
 /// AES decryption of whole blocks (FIPS 197 §5.3, `INVCIPHER`): replaces each of the `n` 16-byte blocks at `data` with its decryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule, which the inverse cipher uses in the reverse order).
 ///
@@ -8763,7 +8763,7 @@ pub(crate) const VG_AES_DECRYPT_BLOCKS_AES_SCRATCH_WRITTEN: usize = 0;
 /// * None of `schedule`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_decrypt_blocks_aes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+pub unsafe extern "C" fn vg_aes_decrypt_blocks_aes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r".arch_extension aes
 ldr q16, [x0, #0]

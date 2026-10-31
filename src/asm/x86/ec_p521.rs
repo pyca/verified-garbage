@@ -17,7 +17,7 @@
 /// * `out` and `scratch` must not overlap each other or `d` (distinct Rust objects never do).
 /// * None of `out`, `d` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ec_p521_public_key(out: *mut [u8; 133], d: *const [u8; 66], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_ec_p521_public_key(out: *mut [u8; 133], d: *const [u8; 66], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov eax, DWORD PTR [esp+12]
 mov DWORD PTR [eax], ebx

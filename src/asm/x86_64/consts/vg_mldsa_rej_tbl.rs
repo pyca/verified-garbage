@@ -5,7 +5,7 @@
 use super::Table;
 
 /// The table of constants `VG_MLDSA_REJ_TBL` (`Artifact.consts`).
-pub(crate) static VG_MLDSA_REJ_TBL: Table<512> = Table(*b"\
+pub static VG_MLDSA_REJ_TBL: Table<512> = Table(*b"\
     \x80\x80\x80\x80\x80\x80\x80\x80\
     \x80\x80\x80\x80\x80\x80\x80\x80\
     \x00\x01\x02\x03\x80\x80\x80\x80\

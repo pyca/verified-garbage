@@ -15,7 +15,7 @@
 /// * `schedule` must not overlap `key` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may overlap the return address on the stack or the 2708 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_camellia_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 272]) {
+pub unsafe extern "C" fn vg_camellia_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 272]) {
     core::arch::naked_asm!(
         r"lea esp, [esp-2708]
 mov eax, DWORD PTR [esp+2712]
@@ -5506,7 +5506,7 @@ ret
 /// * `data` must not overlap `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `schedule` nor `data` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_camellia_ecb_encrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
+pub unsafe extern "C" fn vg_camellia_ecb_encrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r"lea esp, [esp-2712]
 mov eax, DWORD PTR [esp+2716]
@@ -6750,7 +6750,7 @@ ret
 /// * `data` must not overlap `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `schedule` nor `data` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_camellia_ecb_decrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
+pub unsafe extern "C" fn vg_camellia_ecb_decrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r"lea esp, [esp-2712]
 mov eax, DWORD PTR [esp+2716]
@@ -9690,7 +9690,7 @@ ret
 /// * `ws` must not overlap the arguments on the stack (distinct Rust objects never do).
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_camellia_crypt_prepared(rounds: usize, ws: *mut u64, ws_len: usize) {
+pub unsafe extern "C" fn vg_camellia_crypt_prepared(rounds: usize, ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
         r"mov eax, DWORD PTR [esp+8]
 mov DWORD PTR [eax+2620], ebx

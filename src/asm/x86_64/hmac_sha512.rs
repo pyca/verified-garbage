@@ -14,7 +14,7 @@
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
 /// * None of `inner`, `outer` and `key` may overlap the return address on the stack or the 3440 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_hmac_sha512_init(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
+pub unsafe extern "sysv64" fn vg_hmac_sha512_init(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r"cmp rcx, 129
 jae 20f
@@ -707,7 +707,7 @@ jmp 21b
 /// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
 /// * None of `inner`, `outer` and `out` may overlap the return address on the stack or the 1896 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_hmac_sha512_finalize(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64]) {
+pub unsafe extern "sysv64" fn vg_hmac_sha512_finalize(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1880]
 mov r8, rsp
@@ -825,7 +825,7 @@ ret
 /// * `inner`, `outer` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
 /// * None of `inner`, `outer`, `key` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_hmac_sha512_init_scratch(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize, scratch: *mut [u64; 234]) {
+pub unsafe extern "sysv64" fn vg_hmac_sha512_init_scratch(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize, scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+1376], rbx
 mov QWORD PTR [r8+1384], rbp
@@ -1029,7 +1029,7 @@ ret
 /// * `inner`, `out` and `scratch` must not overlap each other or `outer` (distinct Rust objects never do).
 /// * None of `inner`, `outer`, `out` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_hmac_sha512_finalize_scratch(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 234]) {
+pub unsafe extern "sysv64" fn vg_hmac_sha512_finalize_scratch(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+1376], rbx
 mov QWORD PTR [r8+1384], rbp
@@ -1129,7 +1129,7 @@ ret
 }
 
 /// The CPU features `vg_hmac_sha512_init_avx2` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA512_INIT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_HMAC_SHA512_INIT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// Starts an HMAC-SHA-512 computation with a key of any length: makes the SHA-512 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their SHA-512 digest, if there are more than 128) padded with zeros to 128 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_sha512_update` on `*inner` (its `count` starting at 128), and the MAC computed with `vg_hmac_sha512_finalize`.
 ///
@@ -1144,7 +1144,7 @@ pub(crate) const VG_HMAC_SHA512_INIT_AVX2_FEATURES: crate::cpu::Features = crate
 /// * None of `inner`, `outer` and `key` may overlap the return address on the stack or the 3440 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_hmac_sha512_init_avx2(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
+pub unsafe extern "sysv64" fn vg_hmac_sha512_init_avx2(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r"cmp rcx, 129
 jae 20f
@@ -1825,7 +1825,7 @@ jmp 21b
 }
 
 /// The CPU features `vg_hmac_sha512_finalize_avx2` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA512_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_HMAC_SHA512_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// Finishes an HMAC-SHA-512 computation: if, for a 128-byte key `K₀` and a text of fewer than 2⁶⁴ − 128 bytes, the SHA-512 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-512 of the text under `K₀` (64 bytes) to `*out`.
 ///
@@ -1841,7 +1841,7 @@ pub(crate) const VG_HMAC_SHA512_FINALIZE_AVX2_FEATURES: crate::cpu::Features = c
 /// * None of `inner`, `outer` and `out` may overlap the return address on the stack or the 1896 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_hmac_sha512_finalize_avx2(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64]) {
+pub unsafe extern "sysv64" fn vg_hmac_sha512_finalize_avx2(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1880]
 mov r8, rsp
@@ -1945,7 +1945,7 @@ ret
 }
 
 /// The CPU features `vg_hmac_sha512_init_scratch_avx2` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA512_INIT_SCRATCH_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_HMAC_SHA512_INIT_SCRATCH_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// `vg_hmac_sha512_init`, with its working space in `*scratch`.
 ///
@@ -1963,7 +1963,7 @@ pub(crate) const VG_HMAC_SHA512_INIT_SCRATCH_AVX2_FEATURES: crate::cpu::Features
 /// * None of `inner`, `outer`, `key` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_hmac_sha512_init_scratch_avx2(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize, scratch: *mut [u64; 234]) {
+pub unsafe extern "sysv64" fn vg_hmac_sha512_init_scratch_avx2(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize, scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+1376], rbx
 mov QWORD PTR [r8+1384], rbp
@@ -2153,7 +2153,7 @@ ret
 }
 
 /// The CPU features `vg_hmac_sha512_finalize_scratch_avx2` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA512_FINALIZE_SCRATCH_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_HMAC_SHA512_FINALIZE_SCRATCH_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// `vg_hmac_sha512_finalize`, with its working space in `*scratch`.
 ///
@@ -2171,7 +2171,7 @@ pub(crate) const VG_HMAC_SHA512_FINALIZE_SCRATCH_AVX2_FEATURES: crate::cpu::Feat
 /// * None of `inner`, `outer`, `out` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_hmac_sha512_finalize_scratch_avx2(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 234]) {
+pub unsafe extern "sysv64" fn vg_hmac_sha512_finalize_scratch_avx2(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+1376], rbx
 mov QWORD PTR [r8+1384], rbp
@@ -2271,7 +2271,7 @@ ret
 }
 
 /// The CPU features `vg_hmac_sha512_init_shani` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA512_INIT_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_HMAC_SHA512_INIT_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// Starts an HMAC-SHA-512 computation with a key of any length: makes the SHA-512 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their SHA-512 digest, if there are more than 128) padded with zeros to 128 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_sha512_update` on `*inner` (its `count` starting at 128), and the MAC computed with `vg_hmac_sha512_finalize`.
 ///
@@ -2286,7 +2286,7 @@ pub(crate) const VG_HMAC_SHA512_INIT_SHANI_FEATURES: crate::cpu::Features = crat
 /// * None of `inner`, `outer` and `key` may overlap the return address on the stack or the 3440 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_hmac_sha512_init_shani(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
+pub unsafe extern "sysv64" fn vg_hmac_sha512_init_shani(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r"cmp rcx, 129
 jae 20f
@@ -2967,7 +2967,7 @@ jmp 21b
 }
 
 /// The CPU features `vg_hmac_sha512_finalize_shani` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA512_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_HMAC_SHA512_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// Finishes an HMAC-SHA-512 computation: if, for a 128-byte key `K₀` and a text of fewer than 2⁶⁴ − 128 bytes, the SHA-512 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-512 of the text under `K₀` (64 bytes) to `*out`.
 ///
@@ -2983,7 +2983,7 @@ pub(crate) const VG_HMAC_SHA512_FINALIZE_SHANI_FEATURES: crate::cpu::Features = 
 /// * None of `inner`, `outer` and `out` may overlap the return address on the stack or the 1896 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_hmac_sha512_finalize_shani(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64]) {
+pub unsafe extern "sysv64" fn vg_hmac_sha512_finalize_shani(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1880]
 mov r8, rsp
@@ -3087,7 +3087,7 @@ ret
 }
 
 /// The CPU features `vg_hmac_sha512_init_scratch_shani` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA512_INIT_SCRATCH_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_HMAC_SHA512_INIT_SCRATCH_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// `vg_hmac_sha512_init`, with its working space in `*scratch`.
 ///
@@ -3105,7 +3105,7 @@ pub(crate) const VG_HMAC_SHA512_INIT_SCRATCH_SHANI_FEATURES: crate::cpu::Feature
 /// * None of `inner`, `outer`, `key` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_hmac_sha512_init_scratch_shani(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize, scratch: *mut [u64; 234]) {
+pub unsafe extern "sysv64" fn vg_hmac_sha512_init_scratch_shani(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize, scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+1376], rbx
 mov QWORD PTR [r8+1384], rbp
@@ -3295,7 +3295,7 @@ ret
 }
 
 /// The CPU features `vg_hmac_sha512_finalize_scratch_shani` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA512_FINALIZE_SCRATCH_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_HMAC_SHA512_FINALIZE_SCRATCH_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// `vg_hmac_sha512_finalize`, with its working space in `*scratch`.
 ///
@@ -3313,7 +3313,7 @@ pub(crate) const VG_HMAC_SHA512_FINALIZE_SCRATCH_SHANI_FEATURES: crate::cpu::Fea
 /// * None of `inner`, `outer`, `out` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_hmac_sha512_finalize_scratch_shani(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 234]) {
+pub unsafe extern "sysv64" fn vg_hmac_sha512_finalize_scratch_shani(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+1376], rbx
 mov QWORD PTR [r8+1384], rbp

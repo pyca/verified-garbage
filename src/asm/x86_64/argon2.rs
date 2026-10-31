@@ -16,7 +16,7 @@
 /// * `out` and `scratch` must not overlap each other, `x` or `y` (distinct Rust objects never do).
 /// * None of `x`, `y`, `out` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_argon2_compress(x: *const [u64; 128], y: *const [u64; 128], out: *mut [u64; 128], scratch: *mut [u64; 512]) {
+pub unsafe extern "sysv64" fn vg_argon2_compress(x: *const [u64; 128], y: *const [u64; 128], out: *mut [u64; 128], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
         r"mov rax, QWORD PTR [rdi]
 xor rax, QWORD PTR [rsi]
@@ -6041,7 +6041,7 @@ ret
 }
 
 /// The CPU features `vg_argon2_compress_avx2` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_COMPRESS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_ARGON2_COMPRESS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Argon2's compression function G (RFC 9106 §3.5–3.6): writes G(*x, *y) to `*out`. Each block is 128 little-endian 64-bit words.
 ///
@@ -6058,7 +6058,7 @@ pub(crate) const VG_ARGON2_COMPRESS_AVX2_FEATURES: crate::cpu::Features = crate:
 /// * None of `x`, `y`, `out` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_argon2_compress_avx2(x: *const [u64; 128], y: *const [u64; 128], out: *mut [u64; 128], scratch: *mut [u64; 512]) {
+pub unsafe extern "sysv64" fn vg_argon2_compress_avx2(x: *const [u64; 128], y: *const [u64; 128], out: *mut [u64; 128], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
         r"stmxcsr DWORD PTR [rcx+2048]
 mov r11d, DWORD PTR [rcx+2048]
@@ -7561,7 +7561,7 @@ ret
 }
 
 /// The CPU features `vg_argon2_compress_avx512` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_COMPRESS_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F);
+pub const VG_ARGON2_COMPRESS_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F);
 
 /// Argon2's compression function G (RFC 9106 §3.5–3.6): writes G(*x, *y) to `*out`. Each block is 128 little-endian 64-bit words.
 ///
@@ -7578,7 +7578,7 @@ pub(crate) const VG_ARGON2_COMPRESS_AVX512_FEATURES: crate::cpu::Features = crat
 /// * None of `x`, `y`, `out` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx512f` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_argon2_compress_avx512(x: *const [u64; 128], y: *const [u64; 128], out: *mut [u64; 128], scratch: *mut [u64; 512]) {
+pub unsafe extern "sysv64" fn vg_argon2_compress_avx512(x: *const [u64; 128], y: *const [u64; 128], out: *mut [u64; 128], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
         r"stmxcsr DWORD PTR [rcx+2048]
 mov r11d, DWORD PTR [rcx+2048]
@@ -8269,7 +8269,7 @@ ret
 }
 
 /// The CPU features `vg_argon2_hprime_avx2` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_HPRIME_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_ARGON2_HPRIME_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Argon2's variable-length hash H′ (RFC 9106 §3.3): hashes the `input_len` bytes at `input` to `out_len` bytes at `out`, including the LE32 output-length prefix and the BLAKE2b chaining required for outputs longer than 64 bytes.
 ///
@@ -8286,7 +8286,7 @@ pub(crate) const VG_ARGON2_HPRIME_AVX2_FEATURES: crate::cpu::Features = crate::c
 /// * None of `input`, `out` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_argon2_hprime_avx2(input: *const u8, input_len: usize, out: *mut u8, out_len: usize, scratch: *mut [u64; 2048]) {
+pub unsafe extern "sysv64" fn vg_argon2_hprime_avx2(input: *const u8, input_len: usize, out: *mut u8, out_len: usize, scratch: *mut [u64; 2048]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+840], rbp
 mov QWORD PTR [r8+848], r12
@@ -8437,7 +8437,7 @@ ret
 }
 
 /// The CPU features `vg_argon2_hprime_avx512` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_HPRIME_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_ARGON2_HPRIME_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
 
 /// Argon2's variable-length hash H′ (RFC 9106 §3.3): hashes the `input_len` bytes at `input` to `out_len` bytes at `out`, including the LE32 output-length prefix and the BLAKE2b chaining required for outputs longer than 64 bytes.
 ///
@@ -8454,7 +8454,7 @@ pub(crate) const VG_ARGON2_HPRIME_AVX512_FEATURES: crate::cpu::Features = crate:
 /// * None of `input`, `out` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_argon2_hprime_avx512(input: *const u8, input_len: usize, out: *mut u8, out_len: usize, scratch: *mut [u64; 2048]) {
+pub unsafe extern "sysv64" fn vg_argon2_hprime_avx512(input: *const u8, input_len: usize, out: *mut u8, out_len: usize, scratch: *mut [u64; 2048]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+840], rbp
 mov QWORD PTR [r8+848], r12
@@ -8618,7 +8618,7 @@ ret
 /// * `out` and `scratch` must not overlap each other or `input` (distinct Rust objects never do).
 /// * None of `input`, `out` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_argon2_hprime(input: *const u8, input_len: usize, out: *mut u8, out_len: usize, scratch: *mut [u64; 2048]) {
+pub unsafe extern "sysv64" fn vg_argon2_hprime(input: *const u8, input_len: usize, out: *mut u8, out_len: usize, scratch: *mut [u64; 2048]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+840], rbp
 mov QWORD PTR [r8+848], r12
@@ -8769,7 +8769,7 @@ ret
 }
 
 /// The CPU features `vg_argon2_blake2b_avx2_g_avx2` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_BLAKE2B_AVX2_G_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_ARGON2_BLAKE2B_AVX2_G_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Argon2 version 1.3 (RFC 9106): derives `out_len` bytes at `out` from the password, salt, optional secret and associated data. `kind` selects Argon2d (0), Argon2i (1) or Argon2id (2). Performs the entire derivation: H₀, H′, initialization, all memory-filling passes, the final lane XOR and H′ of that block.
 ///
@@ -8794,7 +8794,7 @@ pub(crate) const VG_ARGON2_BLAKE2B_AVX2_G_AVX2_FEATURES: crate::cpu::Features = 
 /// * None of `password`, `salt`, `secret`, `associated_data`, `memory`, `scratch` and `out` may overlap the return address on the stack or the 344 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_argon2_blake2b_avx2_g_avx2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+pub unsafe extern "sysv64" fn vg_argon2_blake2b_avx2_g_avx2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r"push rbx
 push rbp
@@ -11626,7 +11626,7 @@ ret
 }
 
 /// The CPU features `vg_argon2_blake2b_avx2_g_avx512` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_BLAKE2B_AVX2_G_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F);
+pub const VG_ARGON2_BLAKE2B_AVX2_G_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F);
 
 /// Argon2 version 1.3 (RFC 9106): derives `out_len` bytes at `out` from the password, salt, optional secret and associated data. `kind` selects Argon2d (0), Argon2i (1) or Argon2id (2). Performs the entire derivation: H₀, H′, initialization, all memory-filling passes, the final lane XOR and H′ of that block.
 ///
@@ -11651,7 +11651,7 @@ pub(crate) const VG_ARGON2_BLAKE2B_AVX2_G_AVX512_FEATURES: crate::cpu::Features 
 /// * None of `password`, `salt`, `secret`, `associated_data`, `memory`, `scratch` and `out` may overlap the return address on the stack or the 344 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `avx512f` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_argon2_blake2b_avx2_g_avx512(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+pub unsafe extern "sysv64" fn vg_argon2_blake2b_avx2_g_avx512(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r"push rbx
 push rbp
@@ -14483,7 +14483,7 @@ ret
 }
 
 /// The CPU features `vg_argon2_blake2b_avx2` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_BLAKE2B_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_ARGON2_BLAKE2B_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Argon2 version 1.3 (RFC 9106): derives `out_len` bytes at `out` from the password, salt, optional secret and associated data. `kind` selects Argon2d (0), Argon2i (1) or Argon2id (2). Performs the entire derivation: H₀, H′, initialization, all memory-filling passes, the final lane XOR and H′ of that block.
 ///
@@ -14508,7 +14508,7 @@ pub(crate) const VG_ARGON2_BLAKE2B_AVX2_FEATURES: crate::cpu::Features = crate::
 /// * None of `password`, `salt`, `secret`, `associated_data`, `memory`, `scratch` and `out` may overlap the return address on the stack or the 344 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_argon2_blake2b_avx2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+pub unsafe extern "sysv64" fn vg_argon2_blake2b_avx2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r"push rbx
 push rbp
@@ -17340,7 +17340,7 @@ ret
 }
 
 /// The CPU features `vg_argon2_blake2b_avx512_g_avx2` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_BLAKE2B_AVX512_G_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_ARGON2_BLAKE2B_AVX512_G_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
 
 /// Argon2 version 1.3 (RFC 9106): derives `out_len` bytes at `out` from the password, salt, optional secret and associated data. `kind` selects Argon2d (0), Argon2i (1) or Argon2id (2). Performs the entire derivation: H₀, H′, initialization, all memory-filling passes, the final lane XOR and H′ of that block.
 ///
@@ -17365,7 +17365,7 @@ pub(crate) const VG_ARGON2_BLAKE2B_AVX512_G_AVX2_FEATURES: crate::cpu::Features 
 /// * None of `password`, `salt`, `secret`, `associated_data`, `memory`, `scratch` and `out` may overlap the return address on the stack or the 344 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_argon2_blake2b_avx512_g_avx2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+pub unsafe extern "sysv64" fn vg_argon2_blake2b_avx512_g_avx2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r"push rbx
 push rbp
@@ -20197,7 +20197,7 @@ ret
 }
 
 /// The CPU features `vg_argon2_blake2b_avx512_g_avx512` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_BLAKE2B_AVX512_G_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_ARGON2_BLAKE2B_AVX512_G_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
 
 /// Argon2 version 1.3 (RFC 9106): derives `out_len` bytes at `out` from the password, salt, optional secret and associated data. `kind` selects Argon2d (0), Argon2i (1) or Argon2id (2). Performs the entire derivation: H₀, H′, initialization, all memory-filling passes, the final lane XOR and H′ of that block.
 ///
@@ -20222,7 +20222,7 @@ pub(crate) const VG_ARGON2_BLAKE2B_AVX512_G_AVX512_FEATURES: crate::cpu::Feature
 /// * None of `password`, `salt`, `secret`, `associated_data`, `memory`, `scratch` and `out` may overlap the return address on the stack or the 344 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_argon2_blake2b_avx512_g_avx512(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+pub unsafe extern "sysv64" fn vg_argon2_blake2b_avx512_g_avx512(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r"push rbx
 push rbp
@@ -23054,7 +23054,7 @@ ret
 }
 
 /// The CPU features `vg_argon2_blake2b_avx512` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_BLAKE2B_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_ARGON2_BLAKE2B_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
 
 /// Argon2 version 1.3 (RFC 9106): derives `out_len` bytes at `out` from the password, salt, optional secret and associated data. `kind` selects Argon2d (0), Argon2i (1) or Argon2id (2). Performs the entire derivation: H₀, H′, initialization, all memory-filling passes, the final lane XOR and H′ of that block.
 ///
@@ -23079,7 +23079,7 @@ pub(crate) const VG_ARGON2_BLAKE2B_AVX512_FEATURES: crate::cpu::Features = crate
 /// * None of `password`, `salt`, `secret`, `associated_data`, `memory`, `scratch` and `out` may overlap the return address on the stack or the 344 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_argon2_blake2b_avx512(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+pub unsafe extern "sysv64" fn vg_argon2_blake2b_avx512(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r"push rbx
 push rbp
@@ -25911,7 +25911,7 @@ ret
 }
 
 /// The CPU features `vg_argon2_g_avx2` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_G_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_ARGON2_G_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Argon2 version 1.3 (RFC 9106): derives `out_len` bytes at `out` from the password, salt, optional secret and associated data. `kind` selects Argon2d (0), Argon2i (1) or Argon2id (2). Performs the entire derivation: H₀, H′, initialization, all memory-filling passes, the final lane XOR and H′ of that block.
 ///
@@ -25936,7 +25936,7 @@ pub(crate) const VG_ARGON2_G_AVX2_FEATURES: crate::cpu::Features = crate::cpu::F
 /// * None of `password`, `salt`, `secret`, `associated_data`, `memory`, `scratch` and `out` may overlap the return address on the stack or the 344 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_argon2_g_avx2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+pub unsafe extern "sysv64" fn vg_argon2_g_avx2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r"push rbx
 push rbp
@@ -28768,7 +28768,7 @@ ret
 }
 
 /// The CPU features `vg_argon2_g_avx512` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_G_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F);
+pub const VG_ARGON2_G_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F);
 
 /// Argon2 version 1.3 (RFC 9106): derives `out_len` bytes at `out` from the password, salt, optional secret and associated data. `kind` selects Argon2d (0), Argon2i (1) or Argon2id (2). Performs the entire derivation: H₀, H′, initialization, all memory-filling passes, the final lane XOR and H′ of that block.
 ///
@@ -28793,7 +28793,7 @@ pub(crate) const VG_ARGON2_G_AVX512_FEATURES: crate::cpu::Features = crate::cpu:
 /// * None of `password`, `salt`, `secret`, `associated_data`, `memory`, `scratch` and `out` may overlap the return address on the stack or the 344 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx512f` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_argon2_g_avx512(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+pub unsafe extern "sysv64" fn vg_argon2_g_avx512(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r"push rbx
 push rbp
@@ -31646,7 +31646,7 @@ ret
 /// * `memory`, `scratch` and `out` must not overlap each other, `password`, `salt`, `secret`, `associated_data` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `password`, `salt`, `secret`, `associated_data`, `memory`, `scratch` and `out` may overlap the return address on the stack or the 344 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_argon2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+pub unsafe extern "sysv64" fn vg_argon2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r"push rbx
 push rbp

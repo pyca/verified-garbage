@@ -5,7 +5,7 @@
 use super::Table;
 
 /// The table of constants `VG_ED448_VERIFY_ODD_BASE` (`Artifact.consts`).
-pub(crate) static VG_ED448_VERIFY_ODD_BASE: Table<8192> = Table(*b"\
+pub static VG_ED448_VERIFY_ODD_BASE: Table<8192> = Table(*b"\
     \x5e\xc0\x0c\xc7\x2b\xa8\x26\x00\
     \x26\x8e\x93\x00\x8b\xe1\x80\x00\
     \x3b\x43\x11\x65\xb6\x2a\xf7\x00\

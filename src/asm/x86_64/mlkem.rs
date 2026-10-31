@@ -15,7 +15,7 @@
 /// * `f` must not overlap `g` (distinct Rust objects never do).
 /// * Neither `f` nor `g` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem_add(f: *mut [u32; 256], g: *const [u32; 256]) {
+pub unsafe extern "sysv64" fn vg_mlkem_add(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
         r"mov eax, 3329
 movq xmm15, rax
@@ -53,7 +53,7 @@ ret
 /// * `f` must not overlap `g` (distinct Rust objects never do).
 /// * Neither `f` nor `g` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem_sub(f: *mut [u32; 256], g: *const [u32; 256]) {
+pub unsafe extern "sysv64" fn vg_mlkem_sub(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
         r"mov eax, 3329
 movq xmm15, rax
@@ -90,7 +90,7 @@ ret
 /// * `a` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `seed`, `a` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem_sample_ntt(seed: *const [u8; 34], a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mlkem_sample_ntt(seed: *const [u8; 34], a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rdx+1680], rbx
 mov QWORD PTR [rdx+1688], rbp
@@ -294,7 +294,7 @@ ret
 /// * `out` must not overlap `f` (distinct Rust objects never do).
 /// * Neither `f` nor `out` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem_encode12(f: *const [u32; 256], out: *mut [u8; 384]) {
+pub unsafe extern "sysv64" fn vg_mlkem_encode12(f: *const [u32; 256], out: *mut [u8; 384]) {
     core::arch::naked_asm!(
         r"mov ecx, 128
 20:
@@ -327,7 +327,7 @@ ret
 /// * `f` must not overlap `b` (distinct Rust objects never do).
 /// * Neither `b` nor `f` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem_decode12(b: *const [u8; 384], f: *mut [u32; 256]) {
+pub unsafe extern "sysv64" fn vg_mlkem_decode12(b: *const [u8; 384], f: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r"mov ecx, 128
 20:
@@ -371,7 +371,7 @@ ret
 /// * `f` must not overlap `b` (distinct Rust objects never do).
 /// * Neither `b` nor `f` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem_cbd2(b: *const [u8; 128], f: *mut [u32; 256]) {
+pub unsafe extern "sysv64" fn vg_mlkem_cbd2(b: *const [u8; 128], f: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r"mov eax, 3329
 movq xmm15, rax
@@ -529,7 +529,7 @@ ret
 /// * `out` must not overlap `f` (distinct Rust objects never do).
 /// * Neither `f` nor `out` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem_compress_encode(f: *const [u32; 256], d: u32, out: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_mlkem_compress_encode(f: *const [u32; 256], d: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"mov esi, esi
 mov r8, rdx
@@ -696,7 +696,7 @@ ret
 /// * `f` must not overlap `b` (distinct Rust objects never do).
 /// * Neither `b` nor `f` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem_decode_decompress(b: *const u8, len: usize, d: u32, f: *mut [u32; 256]) {
+pub unsafe extern "sysv64" fn vg_mlkem_decode_decompress(b: *const u8, len: usize, d: u32, f: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r"mov edx, edx
 mov rsi, rcx
@@ -871,7 +871,7 @@ ret
 /// * `a` and `scratch` must not overlap each other or `seeds` (distinct Rust objects never do).
 /// * None of `seeds`, `a` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem_sample_ntt4(seeds: *const [u8; 136], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mlkem_sample_ntt4(seeds: *const [u8; 136], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rdx+4384], rbx
 mov QWORD PTR [rdx+4392], rbp

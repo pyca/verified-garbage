@@ -18,7 +18,7 @@
 /// * `out` and `scratch` must not overlap each other, `d`, `digest` or `k` (distinct Rust objects never do).
 /// * None of `out`, `d`, `digest`, `k` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ecdsa_p224_sign(out: *mut [u8; 56], d: *const [u8; 28], digest: *const [u8; 28], k: *const [u8; 28], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_ecdsa_p224_sign(out: *mut [u8; 56], d: *const [u8; 28], digest: *const [u8; 28], k: *const [u8; 28], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"str x19, [x4, #0]
 str x20, [x4, #8]
@@ -3399,7 +3399,7 @@ ret
 /// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
 /// * None of `public`, `digest`, `sig` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ecdsa_p224_verify(public: *const [u8; 57], digest: *const [u8; 28], sig: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_ecdsa_p224_verify(public: *const [u8; 57], digest: *const [u8; 28], sig: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"add x4, x3, #0
 add x6, x0, #0

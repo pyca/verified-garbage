@@ -16,7 +16,7 @@
 /// * `out` and `scratch` must not overlap each other, `x` or `y` (distinct Rust objects never do).
 /// * None of `x`, `y`, `out` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_argon2_compress(x: *const [u64; 128], y: *const [u64; 128], out: *mut [u64; 128], scratch: *mut [u64; 512]) {
+pub unsafe extern "C" fn vg_argon2_compress(x: *const [u64; 128], y: *const [u64; 128], out: *mut [u64; 128], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
         r"str r4, [r3, #2048]
 str r5, [r3, #2052]
@@ -4556,7 +4556,7 @@ bx lr",
 /// * `out` and `scratch` must not overlap each other, `input` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `input`, `out` and `scratch` may overlap the 32 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_argon2_hprime(input: *const u8, input_len: usize, out: *mut u8, out_len: usize, scratch: *mut [u64; 2048]) {
+pub unsafe extern "C" fn vg_argon2_hprime(input: *const u8, input_len: usize, out: *mut u8, out_len: usize, scratch: *mut [u64; 2048]) {
     core::arch::naked_asm!(
         r"ldr r12, [sp, #0]
 str r4, [r12, #840]
@@ -4744,7 +4744,7 @@ bx lr",
 /// * `memory`, `scratch` and `out` must not overlap each other, `password`, `salt`, `secret`, `associated_data` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `password`, `salt`, `secret`, `associated_data`, `memory`, `scratch` and `out` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_argon2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+pub unsafe extern "C" fn vg_argon2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r"push {{r0, r1, r2, r3}}
 push {{r3, r4, r5, r6, r7, r8, r9, r10, r11, lr}}

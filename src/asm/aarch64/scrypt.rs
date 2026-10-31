@@ -14,7 +14,7 @@
 /// * `b` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * Neither `b` nor `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_salsa20_8(b: *mut [u8; 64], scratch: *mut [u32; 16]) {
+pub unsafe extern "C" fn vg_salsa20_8(b: *mut [u8; 64], scratch: *mut [u32; 16]) {
     core::arch::naked_asm!(
         r"ldr w2, [x0, #0]
 ldr w3, [x0, #4]
@@ -483,7 +483,7 @@ ret
 /// * `y` and `scratch` must not overlap each other or `b` (distinct Rust objects never do).
 /// * None of `b`, `y` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_scrypt_blockmix(b: *const [u8; 128], r: usize, y: *mut [u8; 128], ry: usize, scratch: *mut [u32; 32]) {
+pub unsafe extern "C" fn vg_scrypt_blockmix(b: *const [u8; 128], r: usize, y: *mut [u8; 128], ry: usize, scratch: *mut [u32; 32]) {
     core::arch::naked_asm!(
         r"str x30, [sp, #-16]!
 str x19, [x4, #64]
@@ -1511,7 +1511,7 @@ ret
 /// * `b`, `v` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * None of `b`, `v` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_scrypt_romix(b: *mut [u8; 128], r: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize) {
+pub unsafe extern "C" fn vg_scrypt_romix(b: *mut [u8; 128], r: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize) {
     core::arch::naked_asm!(
         r"str x19, [x4, #128]
 str x20, [x4, #136]
@@ -1633,7 +1633,7 @@ ret
 /// * `b`, `v`, `scratch` and `out` must not overlap each other, `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `password`, `salt`, `b`, `v`, `scratch` and `out` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_scrypt(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
+pub unsafe extern "C" fn vg_scrypt(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r"str x30, [sp, #-16]!
 sub sp, sp, #64
@@ -1691,7 +1691,7 @@ ret
 }
 
 /// The CPU features `vg_scrypt_sha2` requires (`Artifact.features`).
-pub(crate) const VG_SCRYPT_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
+pub const VG_SCRYPT_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
 
 /// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`. Calls `vg_pbkdf2_hmac_sha256_scratch` for its two PBKDF2-HMAC-SHA256 steps and `vg_scrypt_romix` for each of the `p` blocks.
 ///
@@ -1711,7 +1711,7 @@ pub(crate) const VG_SCRYPT_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Fea
 /// * None of `password`, `salt`, `b`, `v`, `scratch` and `out` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_scrypt_sha2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
+pub unsafe extern "C" fn vg_scrypt_sha2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r".arch_extension sha2
 str x30, [sp, #-16]!

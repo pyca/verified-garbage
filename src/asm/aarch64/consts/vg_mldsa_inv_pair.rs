@@ -5,7 +5,7 @@
 use super::Table;
 
 /// The table of constants `VG_MLDSA_INV_PAIR` (`Artifact.consts`).
-pub(crate) static VG_MLDSA_INV_PAIR: Table<4096> = Table(*b"\
+pub static VG_MLDSA_INV_PAIR: Table<4096> = Table(*b"\
     \x2a\x29\x0b\x00\xf3\xc8\x6f\x00\
     \x33\xee\x0b\x00\xed\xe1\x62\x00\
     \xe6\xf4\x2b\x0b\x5b\xeb\xe4\x6f\

@@ -14,7 +14,7 @@
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may overlap the return address on the stack or the 520 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_triple_des_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 384]) {
+pub unsafe extern "sysv64" fn vg_triple_des_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 384]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-520]
 mov rcx, rsp
@@ -1397,7 +1397,7 @@ ret
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_triple_des_encrypt_block(schedule: *const [u8; 384], data: *mut [u8; 8], scratch: *mut [u64; 64]) {
+pub unsafe extern "sysv64" fn vg_triple_des_encrypt_block(schedule: *const [u8; 384], data: *mut [u8; 8], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
@@ -3599,7 +3599,7 @@ ret
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_triple_des_decrypt_block(schedule: *const [u8; 384], data: *mut [u8; 8], scratch: *mut [u64; 64]) {
+pub unsafe extern "sysv64" fn vg_triple_des_decrypt_block(schedule: *const [u8; 384], data: *mut [u8; 8], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
@@ -5801,7 +5801,7 @@ ret
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_triple_des_ecb_encrypt_core(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize, scratch: *mut [u64; 128]) {
+pub unsafe extern "sysv64" fn vg_triple_des_ecb_encrypt_core(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize, scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r"cmp rdx, 128
 jb 20f
@@ -12419,7 +12419,7 @@ ret
 /// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_triple_des_ecb_decrypt_core(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize, scratch: *mut [u64; 128]) {
+pub unsafe extern "sysv64" fn vg_triple_des_ecb_decrypt_core(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize, scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r"cmp rdx, 128
 jb 20f
@@ -19035,7 +19035,7 @@ ret
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `data` may overlap the return address on the stack or the 1040 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_triple_des_ecb_encrypt(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
+pub unsafe extern "sysv64" fn vg_triple_des_ecb_encrypt(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1032]
 mov rcx, rsp
@@ -19188,7 +19188,7 @@ ret
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `data` may overlap the return address on the stack or the 1040 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_triple_des_ecb_decrypt(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
+pub unsafe extern "sysv64" fn vg_triple_des_ecb_decrypt(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1032]
 mov rcx, rsp
@@ -19331,7 +19331,7 @@ ret
 }
 
 /// The CPU features `vg_triple_des_ecb_encrypt_avx2` requires (`Artifact.features`).
-pub(crate) const VG_TRIPLE_DES_ECB_ENCRYPT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_TRIPLE_DES_ECB_ENCRYPT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Triple DES ECB encryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
@@ -19345,7 +19345,7 @@ pub(crate) const VG_TRIPLE_DES_ECB_ENCRYPT_AVX2_FEATURES: crate::cpu::Features =
 /// * Neither `schedule` nor `data` may overlap the return address on the stack or the 1040 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_triple_des_ecb_encrypt_avx2(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
+pub unsafe extern "sysv64" fn vg_triple_des_ecb_encrypt_avx2(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1032]
 mov rcx, rsp
@@ -20871,7 +20871,7 @@ ret
 }
 
 /// The CPU features `vg_triple_des_ecb_decrypt_avx2` requires (`Artifact.features`).
-pub(crate) const VG_TRIPLE_DES_ECB_DECRYPT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_TRIPLE_DES_ECB_DECRYPT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Triple DES ECB decryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
@@ -20885,7 +20885,7 @@ pub(crate) const VG_TRIPLE_DES_ECB_DECRYPT_AVX2_FEATURES: crate::cpu::Features =
 /// * Neither `schedule` nor `data` may overlap the return address on the stack or the 1040 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_triple_des_ecb_decrypt_avx2(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
+pub unsafe extern "sysv64" fn vg_triple_des_ecb_decrypt_avx2(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1032]
 mov rcx, rsp
@@ -22411,7 +22411,7 @@ ret
 }
 
 /// The CPU features `vg_triple_des_ecb_encrypt_avx512` requires (`Artifact.features`).
-pub(crate) const VG_TRIPLE_DES_ECB_ENCRYPT_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F);
+pub const VG_TRIPLE_DES_ECB_ENCRYPT_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F);
 
 /// Triple DES ECB encryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
@@ -22425,7 +22425,7 @@ pub(crate) const VG_TRIPLE_DES_ECB_ENCRYPT_AVX512_FEATURES: crate::cpu::Features
 /// * Neither `schedule` nor `data` may overlap the return address on the stack or the 1040 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `avx512f` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_triple_des_ecb_encrypt_avx512(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
+pub unsafe extern "sysv64" fn vg_triple_des_ecb_encrypt_avx512(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1032]
 mov rcx, rsp
@@ -25234,7 +25234,7 @@ ret
 }
 
 /// The CPU features `vg_triple_des_ecb_decrypt_avx512` requires (`Artifact.features`).
-pub(crate) const VG_TRIPLE_DES_ECB_DECRYPT_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F);
+pub const VG_TRIPLE_DES_ECB_DECRYPT_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F);
 
 /// Triple DES ECB decryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
@@ -25248,7 +25248,7 @@ pub(crate) const VG_TRIPLE_DES_ECB_DECRYPT_AVX512_FEATURES: crate::cpu::Features
 /// * Neither `schedule` nor `data` may overlap the return address on the stack or the 1040 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `avx512f` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_triple_des_ecb_decrypt_avx512(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
+pub unsafe extern "sysv64" fn vg_triple_des_ecb_decrypt_avx512(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1032]
 mov rcx, rsp

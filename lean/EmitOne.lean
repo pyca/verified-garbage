@@ -57,7 +57,7 @@ def usage : String := "usage: lake env lean --run EmitOne.lean [--check] <Alg>.<
 
 /-- The names of the functions a generated file defines: each line declaring
 `extern "<abi>" fn <name>(`, whatever its ABI (`"C"`, `"sysv64"`, …), and
-each other name of one of them, `pub(crate) use self::<f> as <name>;`
+each other name of one of them, `pub use self::<f> as <name>;`
 (`VG.Rust.alias`). -/
 def fnNames (text : String) : List String :=
   (text.splitOn "\n").filterMap fun line =>
@@ -67,7 +67,7 @@ def fnNames (text : String) : List String :=
       | [_, decl] => some ((decl.splitOn "(").headD "")
       | _ => none
     | _ =>
-      if line.startsWith "pub(crate) use self::vg_" then
+      if line.startsWith "pub use self::vg_" then
         match line.splitOn " as " with
         | [_, name] => some ((name.splitOn ";").headD "")
         | _ => none

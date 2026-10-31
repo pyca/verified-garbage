@@ -5,7 +5,7 @@
 use super::Table;
 
 /// The table of constants `VG_BLOWFISH_INIT` (`Artifact.consts`).
-pub(crate) static VG_BLOWFISH_INIT: Table<4168> = Table(*b"\
+pub static VG_BLOWFISH_INIT: Table<4168> = Table(*b"\
     \xa6\xac\xdb\xb7\xed\x96\x45\x99\
     \x47\xf7\xe2\x16\xd8\x69\xa3\x7e\
     \x8f\x58\x58\xee\x1d\xb5\x39\x13\

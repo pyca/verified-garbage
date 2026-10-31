@@ -16,7 +16,7 @@
 /// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
 /// * None of `out`, `scalar`, `point` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_x25519(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) {
+pub unsafe extern "C" fn vg_x25519(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
         r"str x19, [x3, #0]
 str x20, [x3, #8]
@@ -5249,7 +5249,7 @@ ret
 }
 
 /// The bytes of `scratch` that `vg_x25519_base` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
-pub(crate) const VG_X25519_BASE_SCRATCH_WRITTEN: usize = 1024;
+pub const VG_X25519_BASE_SCRATCH_WRITTEN: usize = 1024;
 
 /// Computes an X25519 public key (RFC 7748 §6.1): writes `X25519(k, 9)`, the X25519 function of the 32-byte scalar `k` at `scalar` and the base point's u-coordinate 9, to `*out`. The scalar is decoded (clamped).
 ///
@@ -5266,7 +5266,7 @@ pub(crate) const VG_X25519_BASE_SCRATCH_WRITTEN: usize = 1024;
 /// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
 /// * None of `out`, `scalar` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_x25519_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub unsafe extern "C" fn vg_x25519_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"str x19, [x2, #0]
 str x20, [x2, #8]

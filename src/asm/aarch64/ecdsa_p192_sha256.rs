@@ -16,7 +16,7 @@
 /// * `out` and `scratch` must not overlap each other, `d` or `digest` (distinct Rust objects never do).
 /// * None of `out`, `d`, `digest` and `scratch` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ecdsa_p192_sha256_sign(out: *mut [u8; 48], d: *const [u8; 24], digest: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_ecdsa_p192_sha256_sign(out: *mut [u8; 48], d: *const [u8; 24], digest: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"str x30, [sp, #-16]!
 sub sp, sp, #224
@@ -430,7 +430,7 @@ ret
 }
 
 /// The CPU features `vg_ecdsa_p192_sha256_sign_sha2` requires (`Artifact.features`).
-pub(crate) const VG_ECDSA_P192_SHA256_SIGN_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
+pub const VG_ECDSA_P192_SHA256_SIGN_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
 
 /// Deterministic ECDSA signature generation over P-192 with HMAC-SHA-256 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (24 bytes, most significant first), signs the SHA-256 hash at `digest` (32 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (24 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
 ///
@@ -447,7 +447,7 @@ pub(crate) const VG_ECDSA_P192_SHA256_SIGN_SHA2_FEATURES: crate::cpu::Features =
 /// * None of `out`, `d`, `digest` and `scratch` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ecdsa_p192_sha256_sign_sha2(out: *mut [u8; 48], d: *const [u8; 24], digest: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_ecdsa_p192_sha256_sign_sha2(out: *mut [u8; 48], d: *const [u8; 24], digest: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".arch_extension sha2
 str x30, [sp, #-16]!

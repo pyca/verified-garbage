@@ -14,7 +14,7 @@
 /// * Bytes 3520 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_p521_mul_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "sysv64" fn vg_p521_mul_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov esi, esi
 mov edx, edx
@@ -1139,7 +1139,7 @@ ret
 }
 
 /// The CPU features `vg_p521_mul_mod_p_adx` requires (`Artifact.features`).
-pub(crate) const VG_P521_MUL_MOD_P_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_P521_MUL_MOD_P_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Montgomery's product modulo P-521's prime `p`: writes the number below the modulus congruent to `a b 2^-576` to `o`. The numbers are 9 64-bit words (`72` bytes), little-endian, at the byte offsets `o`, `a` and `b` of the working space `ws`; `o` may be `a` or `b`. Every byte of `ws` but the result's and the function's own working space (bytes 3520 to 4095) keeps its value.
 ///
@@ -1154,7 +1154,7 @@ pub(crate) const VG_P521_MUL_MOD_P_ADX_FEATURES: crate::cpu::Features = crate::c
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_p521_mul_mod_p_adx(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "sysv64" fn vg_p521_mul_mod_p_adx(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov esi, esi
 mov edx, edx
@@ -1810,7 +1810,7 @@ ret
 /// * Bytes 3520 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_p521_mul_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "sysv64" fn vg_p521_mul_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov esi, esi
 mov edx, edx

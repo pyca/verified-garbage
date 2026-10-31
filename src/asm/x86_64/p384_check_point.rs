@@ -14,7 +14,7 @@
 /// * Bytes 160 to 207, 1840 to 1887, 2032 to 2079, 2080 to 2127 and 3712 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_p384_check_point(ws: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_p384_check_point(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"movq xmm0, rbx
 movq xmm1, rbp
@@ -2694,7 +2694,7 @@ ret
 }
 
 /// The CPU features `vg_p384_check_point_adx` requires (`Artifact.features`).
-pub(crate) const VG_P384_CHECK_POINT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_P384_CHECK_POINT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// The check of a public point `(x, y)` on P-384 (SEC 1 §3.2.2.1, steps 2 and 3): ANDs into the flag, the 64-bit word at byte 2176 of `ws`, the mask (all ones or zero) of `x < p`, `y < p` and `y² = x³ + a x + b` modulo P-384's prime `p`. Numbers are 6 64-bit words (`48` bytes), little-endian: the function reads `x` at byte 1648, `y` at byte 1792, `p` at byte 64, `R² mod p` at byte 1936 and the curve's `a R mod p` and `b R mod p` at bytes 352 and 1984, for `R = 2^384`. It writes `x R mod p` at bytes 1696 to 1743 and `y R mod p` at bytes 1744 to 1791, and at bytes 1888 to 1935 and 2128 to 2175 the same if the flag is set on return, else the numbers at bytes 448 and 496. Bytes 160 to 207, 1840 to 1887, 2032 to 2079, 2080 to 2127 and 3712 to 4095 of `ws` are the function's own working space; every other byte of `ws` but the results' keeps its value. Constant time: only the pointer may affect timing.
 ///
@@ -2709,7 +2709,7 @@ pub(crate) const VG_P384_CHECK_POINT_ADX_FEATURES: crate::cpu::Features = crate:
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_p384_check_point_adx(ws: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_p384_check_point_adx(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"movq xmm0, rbx
 movq xmm1, rbp

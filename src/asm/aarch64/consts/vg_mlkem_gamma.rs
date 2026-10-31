@@ -5,7 +5,7 @@
 use super::Table;
 
 /// The table of constants `VG_MLKEM_GAMMA` (`Artifact.consts`).
-pub(crate) static VG_MLKEM_GAMMA: Table<512> = Table(*b"\
+pub static VG_MLKEM_GAMMA: Table<512> = Table(*b"\
     \x11\x00\x00\x00\xf0\x0c\x00\x00\
     \xc9\x0a\x00\x00\x38\x02\x00\x00\
     \x47\x02\x00\x00\xba\x0a\x00\x00\

@@ -14,7 +14,7 @@
 /// * `buf` must not overlap `state` (distinct Rust objects never do).
 /// * Neither `state` nor `buf` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_chacha20_block(state: *const [u32; 16], buf: *mut [u32; 64]) {
+pub unsafe extern "C" fn vg_chacha20_block(state: *const [u32; 16], buf: *mut [u32; 64]) {
     core::arch::naked_asm!(
         r"ldr w2, [x0, #0]
 ldr w3, [x0, #4]
@@ -1059,7 +1059,7 @@ ret
 /// * `state` must not overlap `key` or `nonce` (distinct Rust objects never do).
 /// * None of `state`, `key` and `nonce` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
+pub unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
         r"ldr x9, [x1, #0]
 ldr x10, [x1, #8]
@@ -1105,7 +1105,7 @@ ret
 /// * `state` must not overlap `nonce` (distinct Rust objects never do).
 /// * Neither `state` nor `nonce` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
+pub unsafe extern "C" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
         r"ldr x9, [x1, #0]
 ldr x10, [x1, #8]
@@ -1145,7 +1145,7 @@ ret
 /// * `state`, `data` and `buf` must not overlap each other (distinct Rust objects never do).
 /// * None of `state`, `data` and `buf` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_chacha20_xor_neon(state: *mut [u32; 16], data: *mut u8, len: usize, buf: *mut [u32; 80]) {
+pub unsafe extern "C" fn vg_chacha20_xor_neon(state: *mut [u32; 16], data: *mut u8, len: usize, buf: *mut [u32; 80]) {
     core::arch::naked_asm!(
         r"lsr x5, x2, #6
 sub x5, x5, #8
@@ -3316,7 +3316,7 @@ ret
 /// * `state` and `data` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `data` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_chacha20_apply_neon(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+pub unsafe extern "C" fn vg_chacha20_apply_neon(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
         r"ldr x9, [x0, #128]
 subs x13, x9, x2
@@ -3447,7 +3447,7 @@ ret
 /// * `state`, `data` and `buf` must not overlap each other (distinct Rust objects never do).
 /// * None of `state`, `data` and `buf` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_chacha20_xor(state: *mut [u32; 16], data: *mut u8, len: usize, buf: *mut [u32; 80]) {
+pub unsafe extern "C" fn vg_chacha20_xor(state: *mut [u32; 16], data: *mut u8, len: usize, buf: *mut [u32; 80]) {
     core::arch::naked_asm!(
         r"str x19, [x3, #256]
 str x20, [x3, #264]
@@ -3503,7 +3503,7 @@ ret
 /// * `state` and `data` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `data` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_chacha20_apply(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+pub unsafe extern "C" fn vg_chacha20_apply(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
         r"ldr x9, [x0, #128]
 subs x13, x9, x2
@@ -3621,7 +3621,7 @@ ret
 }
 
 /// The CPU features `vg_chacha20_xor_sve2` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_XOR_SVE2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SVE2);
+pub const VG_CHACHA20_XOR_SVE2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SVE2);
 
 /// XORs the first `len` bytes of the ChaCha20 keystream of the 16-word state `*state` (RFC 8439 §2.4: the block function of the state with its block counter, word 12, advanced by 0, 1, … modulo 2³²) into the `len` bytes at `data`.
 ///
@@ -3638,7 +3638,7 @@ pub(crate) const VG_CHACHA20_XOR_SVE2_FEATURES: crate::cpu::Features = crate::cp
 /// * None of `state`, `data` and `buf` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sve2` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_chacha20_xor_sve2(state: *mut [u32; 16], data: *mut u8, len: usize, buf: *mut [u32; 80]) {
+pub unsafe extern "C" fn vg_chacha20_xor_sve2(state: *mut [u32; 16], data: *mut u8, len: usize, buf: *mut [u32; 80]) {
     core::arch::naked_asm!(
         r".arch_extension sve2
 lsr x5, x2, #6
@@ -5513,7 +5513,7 @@ ret
 }
 
 /// The CPU features `vg_chacha20_apply_sve2` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_APPLY_SVE2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SVE2);
+pub const VG_CHACHA20_APPLY_SVE2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SVE2);
 
 /// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
 ///
@@ -5527,7 +5527,7 @@ pub(crate) const VG_CHACHA20_APPLY_SVE2_FEATURES: crate::cpu::Features = crate::
 /// * Neither `state` nor `data` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sve2` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_chacha20_apply_sve2(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
+pub unsafe extern "C" fn vg_chacha20_apply_sve2(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
         r".arch_extension sve2
 ldr x9, [x0, #128]

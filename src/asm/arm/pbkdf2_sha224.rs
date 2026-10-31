@@ -16,7 +16,7 @@
 /// * `t` and `scratch` must not overlap each other, `key`, `u` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `u`, `t` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224_iterate(key: *const [u8; 192], u: *const [u8; 28], n: u32, t: *mut [u8; 28], scratch: *mut [u64; 104]) {
+pub unsafe extern "C" fn vg_pbkdf2_hmac_sha224_iterate(key: *const [u8; 192], u: *const [u8; 28], n: u32, t: *mut [u8; 28], scratch: *mut [u64; 104]) {
     core::arch::naked_asm!(
         r"ldr r12, [sp, #0]
 str r4, [r12, #160]
@@ -221,7 +221,7 @@ bx lr",
 /// * `out` must not overlap `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `password`, `salt` and `out` may overlap the 1656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub unsafe extern "C" fn vg_pbkdf2_hmac_sha224(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #1632
 add r12, sp, #0

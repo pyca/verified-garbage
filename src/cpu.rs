@@ -30,10 +30,12 @@
 
 use core::sync::atomic::{AtomicU32, Ordering};
 
-pub(crate) use verified_garbage_cpu::{Features, feature};
+pub(crate) use verified_garbage_cpu::Features;
 // The names, for reading `VG_CPU_FEATURES` and for the tests.
 #[cfg(any(test, feature = "cpu-features-env"))]
 pub(crate) use verified_garbage_cpu::NAMES;
+#[cfg(test)]
+use verified_garbage_cpu::feature;
 
 /// The detected features, with [`DETECTED_INIT`] set once they are known.
 static DETECTED: AtomicU32 = AtomicU32::new(0);

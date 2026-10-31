@@ -11,7 +11,7 @@
 /// * `p` must be valid for reads and writes of `len` bytes.
 /// * `p` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_zeroize(p: *mut u8, len: usize) {
+pub unsafe extern "C" fn vg_zeroize(p: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"movz x2, #0, lsl #0
 lsr x3, x1, #7

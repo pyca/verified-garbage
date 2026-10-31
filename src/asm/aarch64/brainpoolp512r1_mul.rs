@@ -14,7 +14,7 @@
 /// * Bytes 1152 to 2047, 192 to 255 and 2944 to 3503 of `ws` are unspecified on return and may hold intermediate values, which are secret and which the caller must destroy.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_brainpoolp512r1_mul(ws: *mut [u64; 1024]) {
+pub unsafe extern "C" fn vg_brainpoolp512r1_mul(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"str x19, [x0, #3456]
 str x21, [x0, #3464]

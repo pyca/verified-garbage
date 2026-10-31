@@ -5,7 +5,7 @@
 use super::Table;
 
 /// The table of constants `VG_ED25519_VERIFY_NEG_BASE` (`Artifact.consts`).
-pub(crate) static VG_ED25519_VERIFY_NEG_BASE: Table<1920> = Table(*b"\
+pub static VG_ED25519_VERIFY_NEG_BASE: Table<1920> = Table(*b"\
     \xd3\x2a\xda\x70\x9f\xd2\xa9\x36\
     \x4d\x58\xda\x6a\x9f\x38\xd3\x96\
     \xa3\x23\x29\x02\xce\x1d\x5b\x3f\

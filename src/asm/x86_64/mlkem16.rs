@@ -15,7 +15,7 @@
 /// * `a` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `seed`, `a` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem16_sample_ntt(seed: *const [u8; 34], a: *mut [u16; 256], scratch: *mut [u64; 256]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mlkem16_sample_ntt(seed: *const [u8; 34], a: *mut [u16; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rdx+1680], rbx
 mov QWORD PTR [rdx+1688], rbp
@@ -208,7 +208,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem16_sample_ntt4_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLKEM16_SAMPLE_NTT4_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM16_SAMPLE_NTT4_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// `SampleNTT` (FIPS 203 Algorithm 7) four times: for each `k` < 4, writes the element of `T_q` sampled from the SHAKE128 output of the 34 bytes of `*seeds` from byte `34 k` to the 256 coefficients of `*a` from coefficient `256 k` (each less than `q` = 3329), and returns 1. Returns 0 if the loop reaches its bound for one of them, which is at least 280 iterations (FIPS 203 Appendix B; this happens with probability less than 2^-261 for each): `*a` is then unspecified, and the caller must destroy it and treat the operation as failed. The four are independent, so an implementation may compute them together (e.g. four SHAKE128 instances at once in vector registers).
 ///
@@ -224,7 +224,7 @@ pub(crate) const VG_MLKEM16_SAMPLE_NTT4_AVX2_FEATURES: crate::cpu::Features = cr
 /// * None of `seeds`, `a` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem16_sample_ntt4_avx2(seeds: *const [u8; 136], a: *mut [u16; 1024], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mlkem16_sample_ntt4_avx2(seeds: *const [u8; 136], a: *mut [u16; 1024], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rdx+4384], rbx
 mov QWORD PTR [rdx+4392], rbp
@@ -2485,7 +2485,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem16_sample_ntt4_avx512` requires (`Artifact.features`).
-pub(crate) const VG_MLKEM16_SAMPLE_NTT4_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_MLKEM16_SAMPLE_NTT4_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
 
 /// `SampleNTT` (FIPS 203 Algorithm 7) four times: for each `k` < 4, writes the element of `T_q` sampled from the SHAKE128 output of the 34 bytes of `*seeds` from byte `34 k` to the 256 coefficients of `*a` from coefficient `256 k` (each less than `q` = 3329), and returns 1. Returns 0 if the loop reaches its bound for one of them, which is at least 280 iterations (FIPS 203 Appendix B; this happens with probability less than 2^-261 for each): `*a` is then unspecified, and the caller must destroy it and treat the operation as failed. The four are independent, so an implementation may compute them together (e.g. four SHAKE128 instances at once in vector registers).
 ///
@@ -2501,7 +2501,7 @@ pub(crate) const VG_MLKEM16_SAMPLE_NTT4_AVX512_FEATURES: crate::cpu::Features = 
 /// * None of `seeds`, `a` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem16_sample_ntt4_avx512(seeds: *const [u8; 136], a: *mut [u16; 1024], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mlkem16_sample_ntt4_avx512(seeds: *const [u8; 136], a: *mut [u16; 1024], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rdx+4384], rbx
 mov QWORD PTR [rdx+4392], rbp
@@ -4058,7 +4058,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem16_cbd2_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLKEM16_CBD2_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM16_CBD2_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// `SamplePolyCBD₂` (FIPS 203 Algorithm 8 with `η` = 2): writes the polynomial sampled from the 128 bytes `*b` to `*f` (256 coefficients less than `q` = 3329).
 ///
@@ -4072,7 +4072,7 @@ pub(crate) const VG_MLKEM16_CBD2_AVX2_FEATURES: crate::cpu::Features = crate::cp
 /// * Neither `b` nor `f` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem16_cbd2_avx2(b: *const [u8; 128], f: *mut [u16; 256]) {
+pub unsafe extern "sysv64" fn vg_mlkem16_cbd2_avx2(b: *const [u8; 128], f: *mut [u16; 256]) {
     core::arch::naked_asm!(
         r"mov eax, 218172673
 vmovq xmm15, rax

@@ -14,7 +14,7 @@
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
 /// * None of `inner`, `outer` and `key` may overlap the 1136 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_sha1_init(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
+pub unsafe extern "C" fn vg_hmac_sha1_init(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r"movz x10, #64, lsl #0
 movz x12, #0, lsl #0
@@ -296,7 +296,7 @@ b 21b
 /// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
 /// * None of `inner`, `outer` and `out` may overlap the 464 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
+pub unsafe extern "C" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r"sub sp, sp, #448
 add x4, sp, #0
@@ -407,7 +407,7 @@ ret
 /// * `inner`, `outer` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
 /// * None of `inner`, `outer`, `key` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_sha1_init_scratch(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize, scratch: *mut [u64; 56]) {
+pub unsafe extern "C" fn vg_hmac_sha1_init_scratch(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize, scratch: *mut [u64; 56]) {
     core::arch::naked_asm!(
         r"str x19, [x4, #160]
 str x20, [x4, #168]
@@ -548,7 +548,7 @@ ret
 /// * `inner`, `out` and `scratch` must not overlap each other or `outer` (distinct Rust objects never do).
 /// * None of `inner`, `outer`, `out` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_sha1_finalize_scratch(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 56]) {
+pub unsafe extern "C" fn vg_hmac_sha1_finalize_scratch(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 56]) {
     core::arch::naked_asm!(
         r"str x19, [x4, #160]
 str x20, [x4, #168]
@@ -642,7 +642,7 @@ ret
 }
 
 /// The CPU features `vg_hmac_sha1_init_sha2` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA1_INIT_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
+pub const VG_HMAC_SHA1_INIT_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
 
 /// Starts an HMAC-SHA-1 computation with a key of any length: makes the SHA-1 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their SHA-1 digest, if there are more than 64) padded with zeros to 64 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_sha1_update` on `*inner` (its `count` starting at 64), and the MAC computed with `vg_hmac_sha1_finalize`.
 ///
@@ -657,7 +657,7 @@ pub(crate) const VG_HMAC_SHA1_INIT_SHA2_FEATURES: crate::cpu::Features = crate::
 /// * None of `inner`, `outer` and `key` may overlap the 1136 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_sha1_init_sha2(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
+pub unsafe extern "C" fn vg_hmac_sha1_init_sha2(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r".arch_extension sha2
 movz x10, #64, lsl #0
@@ -929,7 +929,7 @@ b 21b
 }
 
 /// The CPU features `vg_hmac_sha1_finalize_sha2` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA1_FINALIZE_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
+pub const VG_HMAC_SHA1_FINALIZE_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
 
 /// Finishes an HMAC-SHA-1 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the SHA-1 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-1 of the text under `K₀` (20 bytes) to `*out`.
 ///
@@ -945,7 +945,7 @@ pub(crate) const VG_HMAC_SHA1_FINALIZE_SHA2_FEATURES: crate::cpu::Features = cra
 /// * None of `inner`, `outer` and `out` may overlap the 464 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_sha1_finalize_sha2(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
+pub unsafe extern "C" fn vg_hmac_sha1_finalize_sha2(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r".arch_extension sha2
 sub sp, sp, #448
@@ -1044,7 +1044,7 @@ ret
 }
 
 /// The CPU features `vg_hmac_sha1_init_scratch_sha2` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA1_INIT_SCRATCH_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
+pub const VG_HMAC_SHA1_INIT_SCRATCH_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
 
 /// `vg_hmac_sha1_init`, with its working space in `*scratch`.
 ///
@@ -1062,7 +1062,7 @@ pub(crate) const VG_HMAC_SHA1_INIT_SCRATCH_SHA2_FEATURES: crate::cpu::Features =
 /// * None of `inner`, `outer`, `key` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_sha1_init_scratch_sha2(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize, scratch: *mut [u64; 56]) {
+pub unsafe extern "C" fn vg_hmac_sha1_init_scratch_sha2(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize, scratch: *mut [u64; 56]) {
     core::arch::naked_asm!(
         r".arch_extension sha2
 str x19, [x4, #160]
@@ -1191,7 +1191,7 @@ ret
 }
 
 /// The CPU features `vg_hmac_sha1_finalize_scratch_sha2` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA1_FINALIZE_SCRATCH_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
+pub const VG_HMAC_SHA1_FINALIZE_SCRATCH_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
 
 /// `vg_hmac_sha1_finalize`, with its working space in `*scratch`.
 ///
@@ -1209,7 +1209,7 @@ pub(crate) const VG_HMAC_SHA1_FINALIZE_SCRATCH_SHA2_FEATURES: crate::cpu::Featur
 /// * None of `inner`, `outer`, `out` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_sha1_finalize_scratch_sha2(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 56]) {
+pub unsafe extern "C" fn vg_hmac_sha1_finalize_scratch_sha2(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 56]) {
     core::arch::naked_asm!(
         r".arch_extension sha2
 str x19, [x4, #160]

@@ -15,7 +15,7 @@
 /// * `f` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * Neither `f` nor `scratch` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
+pub unsafe extern "C" fn vg_mldsa_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r"stdu %r1, -48(%r1)
 std %r14, 32(%r1)
@@ -861,7 +861,7 @@ blr",
 /// * `f` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * Neither `f` nor `scratch` may overlap the 96 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_inv_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
+pub unsafe extern "C" fn vg_mldsa_inv_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r"stdu %r1, -48(%r1)
 std %r14, 32(%r1)
@@ -1727,7 +1727,7 @@ blr",
 /// * `h` must not overlap `f` or `g` (distinct Rust objects never do).
 /// * None of `h`, `f` and `g` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_multiply_ntt(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
+pub unsafe extern "C" fn vg_mldsa_multiply_ntt(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
         r"lis %r8, 512
 ori %r8, %r8, 32796
@@ -1773,7 +1773,7 @@ blr",
 /// * `h` must not overlap `f` or `g` (distinct Rust objects never do).
 /// * None of `h`, `f` and `g` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_multiply_add_ntt(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
+pub unsafe extern "C" fn vg_mldsa_multiply_add_ntt(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
         r"lis %r8, 512
 ori %r8, %r8, 32796
@@ -1819,7 +1819,7 @@ blr",
 /// * `f` must not overlap `g` (distinct Rust objects never do).
 /// * Neither `f` nor `g` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_add(f: *mut [u32; 256], g: *const [u32; 256]) {
+pub unsafe extern "C" fn vg_mldsa_add(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
         r"li %r5, 256
 lis %r8, 127
@@ -1855,7 +1855,7 @@ blr",
 /// * `f` must not overlap `g` (distinct Rust objects never do).
 /// * Neither `f` nor `g` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_sub(f: *mut [u32; 256], g: *const [u32; 256]) {
+pub unsafe extern "C" fn vg_mldsa_sub(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
         r"li %r5, 256
 lis %r8, 127
@@ -1890,7 +1890,7 @@ blr",
 /// * `out` must not overlap `f` (distinct Rust objects never do).
 /// * Neither `f` nor `out` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_simple_bit_pack(f: *const [u32; 256], b: u32, out: *mut u8, len: usize) {
+pub unsafe extern "C" fn vg_mldsa_simple_bit_pack(f: *const [u32; 256], b: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"addi %r10, %r3, 0
 addi %r11, %r5, 0
@@ -1995,7 +1995,7 @@ blr",
 /// * `out` must not overlap `f` (distinct Rust objects never do).
 /// * Neither `f` nor `out` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_bit_pack(f: *const [u32; 256], a: u32, b: u32, out: *mut u8, len: usize) {
+pub unsafe extern "C" fn vg_mldsa_bit_pack(f: *const [u32; 256], a: u32, b: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"addi %r10, %r3, 0
 addi %r11, %r6, 0
@@ -2315,7 +2315,7 @@ blr",
 /// * `f` must not overlap `v` (distinct Rust objects never do).
 /// * Neither `v` nor `f` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_bit_unpack(v: *const u8, len: usize, a: u32, b: u32, f: *mut [u32; 256]) {
+pub unsafe extern "C" fn vg_mldsa_bit_unpack(v: *const u8, len: usize, a: u32, b: u32, f: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r"addi %r10, %r3, 0
 addi %r11, %r7, 0
@@ -2689,7 +2689,7 @@ blr",
 /// * `f` must not overlap `v` (distinct Rust objects never do).
 /// * Neither `v` nor `f` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_unpack_t1(v: *const [u8; 320], f: *mut [u32; 256]) {
+pub unsafe extern "C" fn vg_mldsa_unpack_t1(v: *const [u8; 320], f: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r"addi %r10, %r3, 0
 addi %r11, %r4, 0
@@ -2752,7 +2752,7 @@ blr",
 /// * `y` must not overlap `h` (distinct Rust objects never do).
 /// * Neither `h` nor `y` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_hint_bit_pack(h: *const u32, hlen: usize, omega: u32, y: *mut u8, len: usize) {
+pub unsafe extern "C" fn vg_mldsa_hint_bit_pack(h: *const u32, hlen: usize, omega: u32, y: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"rldicr %r5, %r5, 32, 31
 rldicl %r5, %r5, 32, 32
@@ -2807,7 +2807,7 @@ blr",
 /// * `h` must not overlap `y` (distinct Rust objects never do).
 /// * Neither `y` nor `h` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_hint_bit_unpack(y: *const u8, len: usize, omega: u32, h: *mut u32, hlen: usize) -> u32 {
+pub unsafe extern "C" fn vg_mldsa_hint_bit_unpack(y: *const u8, len: usize, omega: u32, h: *mut u32, hlen: usize) -> u32 {
     core::arch::naked_asm!(
         r"rldicr %r5, %r5, 32, 31
 rldicl %r5, %r5, 32, 32
@@ -2940,7 +2940,7 @@ blr",
 /// * `t1` and `t0` must not overlap each other or `t` (distinct Rust objects never do).
 /// * None of `t`, `t1` and `t0` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_power2round(t: *const [u32; 256], t1: *mut [u32; 256], t0: *mut [u32; 256]) {
+pub unsafe extern "C" fn vg_mldsa_power2round(t: *const [u32; 256], t1: *mut [u32; 256], t0: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r"li %r6, 256
 lis %r7, 127
@@ -2980,7 +2980,7 @@ blr",
 /// * `out` must not overlap `r` (distinct Rust objects never do).
 /// * Neither `r` nor `out` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_high_bits(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
+pub unsafe extern "C" fn vg_mldsa_high_bits(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r"lis %r7, 3
 ori %r7, %r7, 65280
@@ -3053,7 +3053,7 @@ blr",
 /// * `out` must not overlap `r` (distinct Rust objects never do).
 /// * Neither `r` nor `out` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_low_bits(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
+pub unsafe extern "C" fn vg_mldsa_low_bits(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r"lis %r7, 3
 ori %r7, %r7, 65280
@@ -3143,7 +3143,7 @@ blr",
 /// * Each of the 256 `u32`s of `f` must be less than `q` = 8380417.
 /// * `f` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_norm_lt(f: *const [u32; 256], bound: u32) -> u32 {
+pub unsafe extern "C" fn vg_mldsa_norm_lt(f: *const [u32; 256], bound: u32) -> u32 {
     core::arch::naked_asm!(
         r"rlwinm %r4, %r4, 0, 0, 31
 li %r9, 1
@@ -3183,7 +3183,7 @@ blr",
 /// * `h` must not overlap `z` or `r` (distinct Rust objects never do).
 /// * None of `z`, `r` and `h` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_make_hint(z: *const [u32; 256], r: *const [u32; 256], gamma2: u32, h: *mut [u32; 256]) -> u32 {
+pub unsafe extern "C" fn vg_mldsa_make_hint(z: *const [u32; 256], r: *const [u32; 256], gamma2: u32, h: *mut [u32; 256]) -> u32 {
     core::arch::naked_asm!(
         r"lis %r7, 3
 ori %r7, %r7, 65280
@@ -3311,7 +3311,7 @@ blr",
 /// * `out` must not overlap `h` or `r` (distinct Rust objects never do).
 /// * None of `h`, `r` and `out` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_use_hint(h: *const [u32; 256], r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
+pub unsafe extern "C" fn vg_mldsa_use_hint(h: *const [u32; 256], r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r"lis %r7, 3
 ori %r7, %r7, 65280
@@ -3422,7 +3422,7 @@ blr",
 /// * `a` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `seed`, `a` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_rej_ntt_poly(seed: *const [u8; 34], a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
+pub unsafe extern "C" fn vg_mldsa_rej_ntt_poly(seed: *const [u8; 34], a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
         r"mflr %r0
 std %r27, 2000(%r5)
@@ -3542,7 +3542,7 @@ blr",
 /// * `a` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `seed`, `a` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_rej_bounded_poly(seed: *const [u8; 66], eta: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
+pub unsafe extern "C" fn vg_mldsa_rej_bounded_poly(seed: *const [u8; 66], eta: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
         r"mflr %r0
 std %r27, 2000(%r6)
@@ -3762,7 +3762,7 @@ blr",
 /// * `a` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `seed`, `a` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_expand_mask_poly(seed: *const [u8; 66], gamma1: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) {
+pub unsafe extern "C" fn vg_mldsa_expand_mask_poly(seed: *const [u8; 66], gamma1: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r"mflr %r0
 std %r27, 2000(%r6)
@@ -3972,7 +3972,7 @@ blr",
 /// * `c` and `scratch` must not overlap each other or `ctilde` (distinct Rust objects never do).
 /// * None of `ctilde`, `c` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_sample_in_ball(ctilde: *const u8, len: usize, tau: u32, c: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
+pub unsafe extern "C" fn vg_mldsa_sample_in_ball(ctilde: *const u8, len: usize, tau: u32, c: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
         r"mflr %r0
 std %r27, 2000(%r7)

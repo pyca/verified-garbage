@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_miller_rabin_round_adx` requires (`Artifact.features`).
-pub(crate) const VG_MILLER_RABIN_ROUND_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_MILLER_RABIN_ROUND_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// One strong Miller–Rabin round (FIPS 186-5 Appendix B.3.1, steps 4.3–4.5) in a prepared RSA Montgomery workspace. Returns 1 if the witness passes, 0 otherwise. Uses fixed windows of four bits, with no witness-dependent table address. This is neither a primality certificate nor a choice of witness distribution or round count. The caller supplies those policies.
 ///
@@ -20,7 +20,7 @@ pub(crate) const VG_MILLER_RABIN_ROUND_ADX_FEATURES: crate::cpu::Features = crat
 /// * `ws` must not overlap the return address on the stack or the 120 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_miller_rabin_round_adx(ws: *mut u64, ws_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_miller_rabin_round_adx(ws: *mut u64, ws_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"mov rsi, QWORD PTR [rdi+128]
 mov rdx, QWORD PTR [rdi+136]
@@ -1043,7 +1043,7 @@ ret
 /// * The working space may contain secrets on return and must be destroyed after use.
 /// * `ws` must not overlap the return address on the stack or the 120 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_miller_rabin_round(ws: *mut u64, ws_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_miller_rabin_round(ws: *mut u64, ws_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"mov rsi, QWORD PTR [rdi+128]
 mov rdx, QWORD PTR [rdi+136]

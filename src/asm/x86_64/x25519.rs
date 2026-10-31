@@ -16,7 +16,7 @@
 /// * `out` and `scratch` must not overlap each other, `scalar` or `point` (distinct Rust objects never do).
 /// * None of `out`, `scalar`, `point` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_x25519(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) {
+pub unsafe extern "sysv64" fn vg_x25519(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
         r"mov r8, QWORD PTR [rdx]
 mov r9, QWORD PTR [rdx+8]
@@ -4298,7 +4298,7 @@ ret
 }
 
 /// The CPU features `vg_x25519_adx` requires (`Artifact.features`).
-pub(crate) const VG_X25519_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_X25519_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Computes X25519 (RFC 7748 §5): writes `X25519(k, u)` to `*out`, for the 32-byte scalar `k` at `scalar` and the 32-byte u-coordinate `u` at `point`. The scalar is decoded (clamped) and the most significant bit of `u` masked as RFC 7748 specifies; the result may be all zero (for a `u` of small order), which the caller must check for if its protocol requires it (RFC 7748 §6.1).
 ///
@@ -4315,7 +4315,7 @@ pub(crate) const VG_X25519_ADX_FEATURES: crate::cpu::Features = crate::cpu::Feat
 /// * None of `out`, `scalar`, `point` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_x25519_adx(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) {
+pub unsafe extern "sysv64" fn vg_x25519_adx(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
         r"mov r8, QWORD PTR [rdx]
 mov r9, QWORD PTR [rdx+8]
@@ -6787,7 +6787,7 @@ ret
 }
 
 /// The CPU features `vg_x25519_ifma` requires (`Artifact.features`).
-pub(crate) const VG_X25519_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
+pub const VG_X25519_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
 
 /// Computes X25519 (RFC 7748 §5): writes `X25519(k, u)` to `*out`, for the 32-byte scalar `k` at `scalar` and the 32-byte u-coordinate `u` at `point`. The scalar is decoded (clamped) and the most significant bit of `u` masked as RFC 7748 specifies; the result may be all zero (for a `u` of small order), which the caller must check for if its protocol requires it (RFC 7748 §6.1).
 ///
@@ -6804,7 +6804,7 @@ pub(crate) const VG_X25519_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Fea
 /// * None of `out`, `scalar`, `point` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_x25519_ifma(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) {
+pub unsafe extern "sysv64" fn vg_x25519_ifma(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
         r"mov r8, QWORD PTR [rdx]
 mov r9, QWORD PTR [rdx+8]
@@ -7905,7 +7905,7 @@ ret
 /// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
 /// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_x25519_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_x25519_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
@@ -9120,7 +9120,7 @@ ret
 }
 
 /// The CPU features `vg_x25519_base_adx` requires (`Artifact.features`).
-pub(crate) const VG_X25519_BASE_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_X25519_BASE_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Computes an X25519 public key (RFC 7748 §6.1): writes `X25519(k, 9)`, the X25519 function of the 32-byte scalar `k` at `scalar` and the base point's u-coordinate 9, to `*out`. The scalar is decoded (clamped).
 ///
@@ -9136,7 +9136,7 @@ pub(crate) const VG_X25519_BASE_ADX_FEATURES: crate::cpu::Features = crate::cpu:
 /// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_x25519_base_adx(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_x25519_base_adx(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
@@ -9947,7 +9947,7 @@ ret
 }
 
 /// The CPU features `vg_x25519_base_ifma` requires (`Artifact.features`).
-pub(crate) const VG_X25519_BASE_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
+pub const VG_X25519_BASE_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
 
 /// Computes an X25519 public key (RFC 7748 §6.1): writes `X25519(k, 9)`, the X25519 function of the 32-byte scalar `k` at `scalar` and the base point's u-coordinate 9, to `*out`. The scalar is decoded (clamped).
 ///
@@ -9963,7 +9963,7 @@ pub(crate) const VG_X25519_BASE_IFMA_FEATURES: crate::cpu::Features = crate::cpu
 /// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2`, `adx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_x25519_base_ifma(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_x25519_base_ifma(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp

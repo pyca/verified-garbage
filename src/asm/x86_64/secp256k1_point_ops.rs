@@ -13,7 +13,7 @@
 /// * The function's own working space, bytes 608 to 703, 800 to 991 and 128 to 159 of `ws`, is unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_secp256k1_jac_double(ws: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_secp256k1_jac_double(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"movq xmm0, rbp
 movq xmm1, r12
@@ -2492,7 +2492,7 @@ ret
 /// * The function's own working space, bytes 608 to 703, 800 to 991 and 128 to 159 of `ws`, is unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_secp256k1_jac_add_cached(ws: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_secp256k1_jac_add_cached(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"movq xmm0, rbp
 movq xmm1, r12
@@ -9356,7 +9356,7 @@ ret
 /// * The function's own working space, bytes 608 to 703, 800 to 991 and 128 to 159 of `ws`, is unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_secp256k1_jac_add_affine(ws: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_secp256k1_jac_add_affine(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"movq xmm0, rbp
 movq xmm1, r12

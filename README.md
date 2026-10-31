@@ -2755,8 +2755,17 @@ The tables are generated from the code by `ci/algorithms_table.py`.
   user code cannot, and does not list the `VSHA512*` instructions that
   SHA-512 uses on CPUs with the SHA512 extension.
 * The proven assembly is emitted into [`src/asm/`](src/asm/) (one directory
-  per architecture) as Rust naked functions (`naked_asm!`); there is no build
-  script and no separate assembler step.
+  per architecture, each a crate of its own, `verified-garbage-asm-<arch>`)
+  as Rust naked functions (`naked_asm!`); there is no build script and no
+  separate assembler step. Naked functions' machine code is the same at every
+  optimization level, and optimized, rustc's ThinLTO has LLVM parse their
+  assembly twice more, so a crate depending on this one builds faster with
+  them unoptimized (as this repository's own builds are):
+
+  ```toml
+  [profile.release.package.verified-garbage-asm-x86_64]
+  opt-level = 0
+  ```
 * The public APIs are Rust that composes these verified primitives (see
   [what is not verified](#what-is-not-verified)).
 * The public APIs are tested against the [Wycheproof](https://github.com/C2SP/wycheproof)

@@ -28,7 +28,7 @@
 /// * `n`, `d`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` must not overlap each other or `e` (distinct Rust objects never do).
 /// * None of `n`, `d`, `p`, `q`, `dp`, `dq`, `qinv`, `e` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 68 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_keygen_key(n: *mut u8, n_len: usize, d: *mut u8, d_len: usize, p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, dp: *mut u8, dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize, e: *const u8, e_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_rsa_keygen_key(n: *mut u8, n_len: usize, d: *mut u8, d_len: usize, p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, dp: *mut u8, dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize, e: *const u8, e_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"push ebx
 push ebp
@@ -15147,7 +15147,7 @@ ret
 /// * `ws` must not overlap the arguments on the stack (distinct Rust objects never do).
 /// * `ws` must not overlap the return address on the stack or the 36 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_keygen_inverse(ws: *mut u64, ws_len: usize, len: usize) {
+pub unsafe extern "C" fn vg_rsa_keygen_inverse(ws: *mut u64, ws_len: usize, len: usize) {
     core::arch::naked_asm!(
         r"push ebx
 push ebp
@@ -18809,7 +18809,7 @@ ret
 /// * `out`, `used` and `scratch` must not overlap each other, `e`, `p` or `rand` (distinct Rust objects never do).
 /// * None of `out`, `used`, `e`, `p`, `rand` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_keygen_candidate(out: *mut u8, out_len: usize, used: *mut [u64; 1], e: *const u8, e_len: usize, p: *const u8, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_rsa_keygen_candidate(out: *mut u8, out_len: usize, used: *mut [u64; 1], e: *const u8, e_len: usize, p: *const u8, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"push ebx
 push ebp

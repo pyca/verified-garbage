@@ -16,7 +16,7 @@
 /// * `y` and `scratch` must not overlap each other, `h` or `data` (distinct Rust objects never do).
 /// * None of `h`, `y`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ghash(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32]) {
+pub unsafe extern "sysv64" fn vg_ghash(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8], rbx
 mov QWORD PTR [r8+8], rbp
@@ -706,7 +706,7 @@ ret
 }
 
 /// The CPU features `vg_ghash_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_GHASH_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_GHASH_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// GHASH (NIST SP 800-38D §6.4) continued over whole blocks: with the hash subkey `H` the block at `h`, replaces the block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at `data` (blocks big-endian, `•` the multiplication of §6.3).
 ///
@@ -723,7 +723,7 @@ pub(crate) const VG_GHASH_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Fe
 /// * None of `h`, `y`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ghash_pclmul(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32]) {
+pub unsafe extern "sysv64" fn vg_ghash_pclmul(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r"lea rax, [rip + {VG_GCM_CONSTS}]
 movdqu xmm0, XMMWORD PTR [rax]
@@ -980,7 +980,7 @@ ret
 }
 
 /// The CPU features `vg_ghash_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_GHASH_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_GHASH_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// GHASH (NIST SP 800-38D §6.4) continued over whole blocks: with the hash subkey `H` the block at `h`, replaces the block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at `data` (blocks big-endian, `•` the multiplication of §6.3).
 ///
@@ -997,7 +997,7 @@ pub(crate) const VG_GHASH_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::F
 /// * None of `h`, `y`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ghash_vpclmul(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32]) {
+pub unsafe extern "sysv64" fn vg_ghash_vpclmul(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r"lea rax, [rip + {VG_GCM_CONSTS}]
 movdqu xmm0, XMMWORD PTR [rax]
@@ -1654,7 +1654,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_prepare_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F);
+pub const VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F);
 
 /// Makes the 1024-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes and, at byte `256 + 32*k`, for `k` from 0 to 23, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedPowersRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
 ///
@@ -1664,7 +1664,7 @@ pub(crate) const VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES: crate::cpu::Feature
 /// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq` and `avx512f` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare_vpclmul_avx512(ctx: *mut [u64; 128]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_prepare_vpclmul_avx512(ctx: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r"lea rax, [rip + {VG_GCM_CONSTS}]
 movdqu xmm0, XMMWORD PTR [rax]
@@ -2005,10 +2005,10 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_prepare16_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_PREPARE16_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_PREPARE16_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// The bytes of `ctx` that `vg_aes_gcm_prepare16_vpclmul` may write: it changes no byte of `ctx` at this offset or beyond (`Artifact.written`).
-pub(crate) const VG_AES_GCM_PREPARE16_VPCLMUL_CTX_WRITTEN: usize = 512;
+pub const VG_AES_GCM_PREPARE16_VPCLMUL_CTX_WRITTEN: usize = 512;
 
 /// Makes the 1024-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, a 16-power prepared key context of the same key, in place: keeps its first 256 bytes and, at byte `256 + 32*k`, for `k` from 0 to 7, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255. Use only the `*_prepared16` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepare16Contract`: the first 256 bytes are kept and the context satisfies `PreparedPowers16Repr`. Constant time: only the pointer may affect timing, not the hash subkey.
 ///
@@ -2020,7 +2020,7 @@ pub(crate) const VG_AES_GCM_PREPARE16_VPCLMUL_CTX_WRITTEN: usize = 512;
 /// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare16_vpclmul(ctx: *mut [u64; 128]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_prepare16_vpclmul(ctx: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r"lea rax, [rip + {VG_GCM_CONSTS}]
 movdqu xmm0, XMMWORD PTR [rax]
@@ -2181,10 +2181,10 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_prepare16_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_PREPARE16_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::PCLMULQDQ);
+pub const VG_AES_GCM_PREPARE16_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::PCLMULQDQ);
 
 /// The bytes of `ctx` that `vg_aes_gcm_prepare16_pclmul_avx` may write: it changes no byte of `ctx` at this offset or beyond (`Artifact.written`).
-pub(crate) const VG_AES_GCM_PREPARE16_PCLMUL_AVX_CTX_WRITTEN: usize = 512;
+pub const VG_AES_GCM_PREPARE16_PCLMUL_AVX_CTX_WRITTEN: usize = 512;
 
 /// Makes the 1024-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, a 16-power prepared key context of the same key, in place: keeps its first 256 bytes and, at byte `256 + 32*k`, for `k` from 0 to 7, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255. Use only the `*_prepared16` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepare16Contract`: the first 256 bytes are kept and the context satisfies `PreparedPowers16Repr`. Constant time: only the pointer may affect timing, not the hash subkey.
 ///
@@ -2196,7 +2196,7 @@ pub(crate) const VG_AES_GCM_PREPARE16_PCLMUL_AVX_CTX_WRITTEN: usize = 512;
 /// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `pclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare16_pclmul_avx(ctx: *mut [u64; 128]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_prepare16_pclmul_avx(ctx: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r"movabs rax, 579005069656919567
 vmovq xmm0, rax
@@ -2412,7 +2412,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_aesni` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: as `vg_aes_ctr32` and then `vg_ghash`.
 ///
@@ -2431,7 +2431,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_AESNI_FEATURES: crate::cpu::Features 
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_aesni(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_aesni(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -2473,7 +2473,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_aesni` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
 
 /// AES-GCM's decryption of whole blocks (NIST SP 800-38D §7.2 steps 5 and 6, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the `n` 16-byte blocks of ciphertext at `data`, with the hash subkey of `*ctx`, then XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into them, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`: as `vg_ghash` and then `vg_aes_ctr32`.
 ///
@@ -2492,7 +2492,7 @@ pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_AESNI_FEATURES: crate::cpu::Features 
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_aesni(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_aesni(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -2534,7 +2534,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_init_aesni` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_INIT_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SSSE3 | crate::cpu::feature::AES);
+pub const VG_AES_GCM_INIT_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SSSE3 | crate::cpu::feature::AES);
 
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
@@ -2549,7 +2549,7 @@ pub(crate) const VG_AES_GCM_INIT_AESNI_FEATURES: crate::cpu::Features = crate::c
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2568]
 mov rcx, rsp
@@ -2598,7 +2598,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_aesni` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_SEAL_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
@@ -2618,7 +2618,7 @@ pub(crate) const VG_AES_GCM_SEAL_AESNI_FEATURES: crate::cpu::Features = crate::c
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2600]
 mov rax, QWORD PTR [rsp+2608]
@@ -2995,7 +2995,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_aesni` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_OPEN_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_OPEN_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
 
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
@@ -3015,7 +3015,7 @@ pub(crate) const VG_AES_GCM_OPEN_AESNI_FEATURES: crate::cpu::Features = crate::c
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2608]
 mov rax, QWORD PTR [rsp+2616]
@@ -3506,7 +3506,7 @@ ret
 /// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
 /// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_stream_init as vg_aes_gcm_stream_init_aesni;
+pub use self::vg_aes_gcm_stream_init as vg_aes_gcm_stream_init_aesni;
 
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
@@ -3522,10 +3522,10 @@ pub(crate) use self::vg_aes_gcm_stream_init as vg_aes_gcm_stream_init_aesni;
 /// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_stream_aad as vg_aes_gcm_stream_aad_aesni;
+pub use self::vg_aes_gcm_stream_aad as vg_aes_gcm_stream_aad_aesni;
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_aesni` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_ENCRYPT_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
 ///
@@ -3543,7 +3543,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_AESNI_FEATURES: crate::cpu::Features 
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -3939,7 +3939,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_aesni` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_DECRYPT_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_DECRYPT_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
 
 /// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
 ///
@@ -3957,7 +3957,7 @@ pub(crate) const VG_AES_GCM_STREAM_DECRYPT_AESNI_FEATURES: crate::cpu::Features 
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -4353,7 +4353,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_finish_aesni` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
 
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
@@ -4370,7 +4370,7 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES: crate::cpu::Features =
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2576]
 mov rax, rsp
@@ -4486,7 +4486,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_verify_aesni` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
 
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
@@ -4503,7 +4503,7 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES: crate::cpu::Features =
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -4691,7 +4691,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_aesni` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, writes to the `n` 16-byte blocks at `dst` the `n` blocks at `src` XORed with `CIPH_K(CB₁) … CIPH_K(CBₙ)`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: `vg_aes_gcm_encrypt_blocks` with the plaintext read from `src`.
 ///
@@ -4712,7 +4712,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_AESNI_FEATURES: crate::cpu::Featur
 /// * None of `ctx`, `counter`, `y`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_aesni(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_aesni(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+24]
 mov r10, QWORD PTR [rsp+8]
@@ -4757,7 +4757,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_aesni` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, writes to the `len` bytes at `dst` the encryption of the `len` bytes at `src`, as the continuation of that plaintext, and the state then represents the message with them appended: `vg_aes_gcm_stream_encrypt` with the plaintext read from `src`.
 ///
@@ -4777,7 +4777,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_AESNI_FEATURES: crate::cpu::Featur
 /// * None of `ctx`, `state`, `src` and `dst` may overlap the return address on the stack or the 4856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2232]
 mov rax, QWORD PTR [rsp+2240]
@@ -4947,7 +4947,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_aesni` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_GATHER_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_SEAL_GATHER_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -4969,7 +4969,7 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_AESNI_FEATURES: crate::cpu::Features = c
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-240]
 mov rax, QWORD PTR [rsp+248]
@@ -5455,7 +5455,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_aesni` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_SPLIT_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_SEAL_SPLIT_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag) of a plaintext whose first part is elsewhere: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` of `dst` with its first `src_len` bytes read from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -5477,7 +5477,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_AESNI_FEATURES: crate::cpu::Features = cr
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_split_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2616]
 mov rax, QWORD PTR [rsp+2624]
@@ -5923,7 +5923,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_aesni_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: as `vg_aes_ctr32` and then `vg_ghash`.
 ///
@@ -5942,7 +5942,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_AESNI_PCLMUL_FEATURES: crate::cpu::Fe
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -5984,7 +5984,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_aesni_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM's decryption of whole blocks (NIST SP 800-38D §7.2 steps 5 and 6, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the `n` 16-byte blocks of ciphertext at `data`, with the hash subkey of `*ctx`, then XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into them, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`: as `vg_ghash` and then `vg_aes_ctr32`.
 ///
@@ -6003,7 +6003,7 @@ pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_AESNI_PCLMUL_FEATURES: crate::cpu::Fe
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -6045,7 +6045,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_init_aesni_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_INIT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SSSE3 | crate::cpu::feature::AES);
+pub const VG_AES_GCM_INIT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SSSE3 | crate::cpu::feature::AES);
 
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
@@ -6062,10 +6062,10 @@ pub(crate) const VG_AES_GCM_INIT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = c
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_init_aesni as vg_aes_gcm_init_aesni_pclmul;
+pub use self::vg_aes_gcm_init_aesni as vg_aes_gcm_init_aesni_pclmul;
 
 /// The CPU features `vg_aes_gcm_seal_aesni_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
@@ -6085,7 +6085,7 @@ pub(crate) const VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES: crate::cpu::Features = c
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2600]
 mov rax, QWORD PTR [rsp+2608]
@@ -6462,7 +6462,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_aesni_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
@@ -6482,7 +6482,7 @@ pub(crate) const VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES: crate::cpu::Features = c
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2608]
 mov rax, QWORD PTR [rsp+2616]
@@ -6958,7 +6958,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_init_aesni_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
 ///
@@ -6977,10 +6977,10 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_FEATURES: crate::cpu::Featu
 /// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_stream_init_pclmul as vg_aes_gcm_stream_init_aesni_pclmul;
+pub use self::vg_aes_gcm_stream_init_pclmul as vg_aes_gcm_stream_init_aesni_pclmul;
 
 /// The CPU features `vg_aes_gcm_stream_aad_aesni_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
@@ -6997,10 +6997,10 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_FEATURES: crate::cpu::Featur
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_stream_aad_pclmul as vg_aes_gcm_stream_aad_aesni_pclmul;
+pub use self::vg_aes_gcm_stream_aad_pclmul as vg_aes_gcm_stream_aad_aesni_pclmul;
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_aesni_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
 ///
@@ -7018,7 +7018,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_FEATURES: crate::cpu::Fe
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -7414,7 +7414,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_aesni_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
 ///
@@ -7432,7 +7432,7 @@ pub(crate) const VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_FEATURES: crate::cpu::Fe
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -7828,7 +7828,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_finish_aesni_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
@@ -7845,7 +7845,7 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES: crate::cpu::Fea
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2576]
 mov rax, rsp
@@ -7961,7 +7961,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_verify_aesni_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
@@ -7978,7 +7978,7 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES: crate::cpu::Fea
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -8166,7 +8166,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_aesni_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, writes to the `n` 16-byte blocks at `dst` the `n` blocks at `src` XORed with `CIPH_K(CB₁) … CIPH_K(CBₙ)`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: `vg_aes_gcm_encrypt_blocks` with the plaintext read from `src`.
 ///
@@ -8187,7 +8187,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_AESNI_PCLMUL_FEATURES: crate::cpu:
 /// * None of `ctx`, `counter`, `y`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+24]
 mov r10, QWORD PTR [rsp+8]
@@ -8232,7 +8232,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_aesni_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, writes to the `len` bytes at `dst` the encryption of the `len` bytes at `src`, as the continuation of that plaintext, and the state then represents the message with them appended: `vg_aes_gcm_stream_encrypt` with the plaintext read from `src`.
 ///
@@ -8252,7 +8252,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_AESNI_PCLMUL_FEATURES: crate::cpu:
 /// * None of `ctx`, `state`, `src` and `dst` may overlap the return address on the stack or the 4856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2232]
 mov rax, QWORD PTR [rsp+2240]
@@ -8422,7 +8422,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_aesni_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -8444,7 +8444,7 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_FEATURES: crate::cpu::Featu
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-240]
 mov rax, QWORD PTR [rsp+248]
@@ -8930,7 +8930,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_aesni_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_SPLIT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_SEAL_SPLIT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag) of a plaintext whose first part is elsewhere: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` of `dst` with its first `src_len` bytes read from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -8952,7 +8952,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_AESNI_PCLMUL_FEATURES: crate::cpu::Featur
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_split_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2616]
 mov rax, QWORD PTR [rsp+2624]
@@ -9398,7 +9398,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: as `vg_aes_ctr32` and then `vg_ghash`.
 ///
@@ -9417,7 +9417,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_AESNI_PCLMUL_AVX_FEATURES: crate::cpu
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -12803,7 +12803,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
 
 /// AES-GCM's decryption of whole blocks (NIST SP 800-38D §7.2 steps 5 and 6, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the `n` 16-byte blocks of ciphertext at `data`, with the hash subkey of `*ctx`, then XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into them, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`: as `vg_ghash` and then `vg_aes_ctr32`.
 ///
@@ -12822,7 +12822,7 @@ pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_AESNI_PCLMUL_AVX_FEATURES: crate::cpu
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -14804,7 +14804,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_init_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_INIT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SSSE3 | crate::cpu::feature::AES);
+pub const VG_AES_GCM_INIT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SSSE3 | crate::cpu::feature::AES);
 
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
@@ -14821,10 +14821,10 @@ pub(crate) const VG_AES_GCM_INIT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_init_aesni as vg_aes_gcm_init_aesni_pclmul_avx;
+pub use self::vg_aes_gcm_init_aesni as vg_aes_gcm_init_aesni_pclmul_avx;
 
 /// The CPU features `vg_aes_gcm_seal_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_SEAL_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
@@ -14844,7 +14844,7 @@ pub(crate) const VG_AES_GCM_SEAL_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2600]
 mov rax, QWORD PTR [rsp+2608]
@@ -15393,7 +15393,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_OPEN_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_OPEN_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
 
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
@@ -15413,7 +15413,7 @@ pub(crate) const VG_AES_GCM_OPEN_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2608]
 mov rax, QWORD PTR [rsp+2616]
@@ -15889,7 +15889,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_init_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
 ///
@@ -15908,10 +15908,10 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::F
 /// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_stream_init_pclmul as vg_aes_gcm_stream_init_aesni_pclmul_avx;
+pub use self::vg_aes_gcm_stream_init_pclmul as vg_aes_gcm_stream_init_aesni_pclmul_avx;
 
 /// The CPU features `vg_aes_gcm_stream_aad_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
@@ -15928,10 +15928,10 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Fe
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_stream_aad_pclmul as vg_aes_gcm_stream_aad_aesni_pclmul_avx;
+pub use self::vg_aes_gcm_stream_aad_pclmul as vg_aes_gcm_stream_aad_aesni_pclmul_avx;
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
 ///
@@ -15949,7 +15949,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -16345,7 +16345,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
 
 /// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
 ///
@@ -16363,7 +16363,7 @@ pub(crate) const VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -16759,7 +16759,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_finish_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
@@ -16778,10 +16778,10 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_AVX_FEATURES: crate::cpu:
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_stream_finish_aesni_pclmul as vg_aes_gcm_stream_finish_aesni_pclmul_avx;
+pub use self::vg_aes_gcm_stream_finish_aesni_pclmul as vg_aes_gcm_stream_finish_aesni_pclmul_avx;
 
 /// The CPU features `vg_aes_gcm_stream_verify_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
@@ -16800,10 +16800,10 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_AVX_FEATURES: crate::cpu:
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_stream_verify_aesni_pclmul as vg_aes_gcm_stream_verify_aesni_pclmul_avx;
+pub use self::vg_aes_gcm_stream_verify_aesni_pclmul as vg_aes_gcm_stream_verify_aesni_pclmul_avx;
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, writes to the `n` 16-byte blocks at `dst` the `n` blocks at `src` XORed with `CIPH_K(CB₁) … CIPH_K(CBₙ)`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: `vg_aes_gcm_encrypt_blocks` with the plaintext read from `src`.
 ///
@@ -16824,7 +16824,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_AESNI_PCLMUL_AVX_FEATURES: crate::
 /// * None of `ctx`, `counter`, `y`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+24]
 mov r10, QWORD PTR [rsp+8]
@@ -20243,7 +20243,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, writes to the `len` bytes at `dst` the encryption of the `len` bytes at `src`, as the continuation of that plaintext, and the state then represents the message with them appended: `vg_aes_gcm_stream_encrypt` with the plaintext read from `src`.
 ///
@@ -20263,7 +20263,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_AESNI_PCLMUL_AVX_FEATURES: crate::
 /// * None of `ctx`, `state`, `src` and `dst` may overlap the return address on the stack or the 4856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2232]
 mov rax, QWORD PTR [rsp+2240]
@@ -20433,7 +20433,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -20455,7 +20455,7 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::F
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-240]
 mov rax, QWORD PTR [rsp+248]
@@ -20941,7 +20941,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_SPLIT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_SEAL_SPLIT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag) of a plaintext whose first part is elsewhere: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` of `dst` with its first `src_len` bytes read from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -20963,7 +20963,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Fe
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_split_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2616]
 mov rax, QWORD PTR [rsp+2624]
@@ -21581,7 +21581,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
 
 /// `vg_aes_gcm_encrypt_blocks` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.encryptBlocksPrepared16Contract`.
 ///
@@ -21599,7 +21599,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_PREPARED16_AESNI_PCLMUL_AVX_FEATURES:
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -26084,7 +26084,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
 
 /// `vg_aes_gcm_decrypt_blocks` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.decryptBlocksPrepared16Contract`.
 ///
@@ -26102,7 +26102,7 @@ pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_PREPARED16_AESNI_PCLMUL_AVX_FEATURES:
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -29699,7 +29699,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_SEAL_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
 
 /// `vg_aes_gcm_seal` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPrepared16Contract`.
 ///
@@ -29716,7 +29716,7 @@ pub(crate) const VG_AES_GCM_SEAL_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cp
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2600]
 mov rax, QWORD PTR [rsp+2608]
@@ -30752,7 +30752,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_OPEN_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_OPEN_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
 
 /// `vg_aes_gcm_open` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPrepared16Contract`.
 ///
@@ -30769,7 +30769,7 @@ pub(crate) const VG_AES_GCM_OPEN_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cp
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2608]
 mov rax, QWORD PTR [rsp+2616]
@@ -31781,7 +31781,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
 
 /// `vg_aes_gcm_stream_encrypt` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPrepared16Contract`.
 ///
@@ -31796,7 +31796,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES:
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -32192,7 +32192,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_DECRYPT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
 
 /// `vg_aes_gcm_stream_decrypt` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPrepared16Contract`.
 ///
@@ -32207,7 +32207,7 @@ pub(crate) const VG_AES_GCM_STREAM_DECRYPT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES:
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -32603,7 +32603,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
 
 /// `vg_aes_gcm_encrypt_blocks_to` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.encryptBlocksToPrepared16Contract`.
 ///
@@ -32623,7 +32623,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_PREPARED16_AESNI_PCLMUL_AVX_FEATUR
 /// * None of `ctx`, `counter`, `y`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+24]
 mov r10, QWORD PTR [rsp+8]
@@ -35878,7 +35878,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
 
 /// `vg_aes_gcm_stream_encrypt_to` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptToPrepared16Contract`.
 ///
@@ -35895,7 +35895,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_PREPARED16_AESNI_PCLMUL_AVX_FEATUR
 /// * None of `ctx`, `state`, `src` and `dst` may overlap the return address on the stack or the 4856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2232]
 mov rax, QWORD PTR [rsp+2240]
@@ -36065,7 +36065,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_GATHER_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_SEAL_GATHER_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
 
 /// `vg_aes_gcm_seal_gather` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPrepared16Contract`.
 ///
@@ -36084,7 +36084,7 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: cr
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-240]
 mov rax, QWORD PTR [rsp+248]
@@ -37092,7 +37092,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_SPLIT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_SEAL_SPLIT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
 
 /// `vg_aes_gcm_seal_split` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealSplitPrepared16Contract`.
 ///
@@ -37111,7 +37111,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: cra
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2616]
 mov rax, QWORD PTR [rsp+2624]
@@ -38597,7 +38597,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_aesni_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: as `vg_aes_ctr32` and then `vg_ghash`.
 ///
@@ -38616,7 +38616,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_AESNI_VPCLMUL_FEATURES: crate::cpu::F
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -38658,7 +38658,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_aesni_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM's decryption of whole blocks (NIST SP 800-38D §7.2 steps 5 and 6, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the `n` 16-byte blocks of ciphertext at `data`, with the hash subkey of `*ctx`, then XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into them, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`: as `vg_ghash` and then `vg_aes_ctr32`.
 ///
@@ -38677,7 +38677,7 @@ pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_AESNI_VPCLMUL_FEATURES: crate::cpu::F
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -38719,7 +38719,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_init_aesni_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_INIT_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SSSE3 | crate::cpu::feature::AES);
+pub const VG_AES_GCM_INIT_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SSSE3 | crate::cpu::feature::AES);
 
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
@@ -38736,10 +38736,10 @@ pub(crate) const VG_AES_GCM_INIT_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = 
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_init_aesni as vg_aes_gcm_init_aesni_vpclmul;
+pub use self::vg_aes_gcm_init_aesni as vg_aes_gcm_init_aesni_vpclmul;
 
 /// The CPU features `vg_aes_gcm_seal_aesni_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_SEAL_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
@@ -38759,7 +38759,7 @@ pub(crate) const VG_AES_GCM_SEAL_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = 
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2600]
 mov rax, QWORD PTR [rsp+2608]
@@ -39136,7 +39136,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_aesni_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_OPEN_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_OPEN_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
@@ -39156,7 +39156,7 @@ pub(crate) const VG_AES_GCM_OPEN_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = 
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2608]
 mov rax, QWORD PTR [rsp+2616]
@@ -39632,7 +39632,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_init_aesni_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_INIT_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_INIT_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
 ///
@@ -39651,10 +39651,10 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_AESNI_VPCLMUL_FEATURES: crate::cpu::Feat
 /// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_stream_init_vpclmul as vg_aes_gcm_stream_init_aesni_vpclmul;
+pub use self::vg_aes_gcm_stream_init_vpclmul as vg_aes_gcm_stream_init_aesni_vpclmul;
 
 /// The CPU features `vg_aes_gcm_stream_aad_aesni_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_AAD_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_AAD_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
@@ -39671,10 +39671,10 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_AESNI_VPCLMUL_FEATURES: crate::cpu::Featu
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_stream_aad_vpclmul as vg_aes_gcm_stream_aad_aesni_vpclmul;
+pub use self::vg_aes_gcm_stream_aad_vpclmul as vg_aes_gcm_stream_aad_aesni_vpclmul;
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_aesni_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_ENCRYPT_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
 ///
@@ -39692,7 +39692,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_AESNI_VPCLMUL_FEATURES: crate::cpu::F
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -40088,7 +40088,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_aesni_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_DECRYPT_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_DECRYPT_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
 ///
@@ -40106,7 +40106,7 @@ pub(crate) const VG_AES_GCM_STREAM_DECRYPT_AESNI_VPCLMUL_FEATURES: crate::cpu::F
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -40502,7 +40502,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_finish_aesni_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_FINISH_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
@@ -40519,7 +40519,7 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_VPCLMUL_FEATURES: crate::cpu::Fe
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2576]
 mov rax, rsp
@@ -40635,7 +40635,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_verify_aesni_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_VERIFY_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
@@ -40652,7 +40652,7 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_VPCLMUL_FEATURES: crate::cpu::Fe
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -40840,7 +40840,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_aesni_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, writes to the `n` 16-byte blocks at `dst` the `n` blocks at `src` XORed with `CIPH_K(CB₁) … CIPH_K(CBₙ)`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: `vg_aes_gcm_encrypt_blocks` with the plaintext read from `src`.
 ///
@@ -40861,7 +40861,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_AESNI_VPCLMUL_FEATURES: crate::cpu
 /// * None of `ctx`, `counter`, `y`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+24]
 mov r10, QWORD PTR [rsp+8]
@@ -40906,7 +40906,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_aesni_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, writes to the `len` bytes at `dst` the encryption of the `len` bytes at `src`, as the continuation of that plaintext, and the state then represents the message with them appended: `vg_aes_gcm_stream_encrypt` with the plaintext read from `src`.
 ///
@@ -40926,7 +40926,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_AESNI_VPCLMUL_FEATURES: crate::cpu
 /// * None of `ctx`, `state`, `src` and `dst` may overlap the return address on the stack or the 4856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2232]
 mov rax, QWORD PTR [rsp+2240]
@@ -41096,7 +41096,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_aesni_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_GATHER_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_SEAL_GATHER_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -41118,7 +41118,7 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_AESNI_VPCLMUL_FEATURES: crate::cpu::Feat
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-240]
 mov rax, QWORD PTR [rsp+248]
@@ -41604,7 +41604,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_aesni_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_SPLIT_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_SEAL_SPLIT_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag) of a plaintext whose first part is elsewhere: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` of `dst` with its first `src_len` bytes read from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -41626,7 +41626,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_AESNI_VPCLMUL_FEATURES: crate::cpu::Featu
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_split_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2616]
 mov rax, QWORD PTR [rsp+2624]
@@ -42072,7 +42072,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: as `vg_aes_ctr32` and then `vg_ghash`.
 ///
@@ -42091,7 +42091,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_PCLMUL_FEATURES: crate::cpu::Features
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_pclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_pclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -42133,7 +42133,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM's decryption of whole blocks (NIST SP 800-38D §7.2 steps 5 and 6, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the `n` 16-byte blocks of ciphertext at `data`, with the hash subkey of `*ctx`, then XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into them, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`: as `vg_ghash` and then `vg_aes_ctr32`.
 ///
@@ -42152,7 +42152,7 @@ pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_PCLMUL_FEATURES: crate::cpu::Features
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_pclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_pclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -42207,10 +42207,10 @@ ret
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_init as vg_aes_gcm_init_pclmul;
+pub use self::vg_aes_gcm_init as vg_aes_gcm_init_pclmul;
 
 /// The CPU features `vg_aes_gcm_seal_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_SEAL_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
@@ -42230,7 +42230,7 @@ pub(crate) const VG_AES_GCM_SEAL_PCLMUL_FEATURES: crate::cpu::Features = crate::
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2600]
 mov rax, QWORD PTR [rsp+2608]
@@ -42607,7 +42607,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_OPEN_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_OPEN_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
@@ -42627,7 +42627,7 @@ pub(crate) const VG_AES_GCM_OPEN_PCLMUL_FEATURES: crate::cpu::Features = crate::
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2608]
 mov rax, QWORD PTR [rsp+2616]
@@ -43103,7 +43103,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_init_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
 ///
@@ -43120,7 +43120,7 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES: crate::cpu::Features = 
 /// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_init_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2568]
 mov r8, rsp
@@ -43254,7 +43254,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_aad_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
@@ -43269,7 +43269,7 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES: crate::cpu::Features = c
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2568]
 mov r9, rsp
@@ -43383,7 +43383,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
 ///
@@ -43401,7 +43401,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES: crate::cpu::Features
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -43797,7 +43797,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_DECRYPT_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_DECRYPT_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
 ///
@@ -43815,7 +43815,7 @@ pub(crate) const VG_AES_GCM_STREAM_DECRYPT_PCLMUL_FEATURES: crate::cpu::Features
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -44211,7 +44211,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_finish_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
@@ -44228,7 +44228,7 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES: crate::cpu::Features 
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2576]
 mov rax, rsp
@@ -44344,7 +44344,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_verify_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
@@ -44361,7 +44361,7 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES: crate::cpu::Features 
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -44549,7 +44549,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, writes to the `n` 16-byte blocks at `dst` the `n` blocks at `src` XORed with `CIPH_K(CB₁) … CIPH_K(CBₙ)`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: `vg_aes_gcm_encrypt_blocks` with the plaintext read from `src`.
 ///
@@ -44570,7 +44570,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_PCLMUL_FEATURES: crate::cpu::Featu
 /// * None of `ctx`, `counter`, `y`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_pclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_pclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+24]
 mov r10, QWORD PTR [rsp+8]
@@ -44615,7 +44615,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, writes to the `len` bytes at `dst` the encryption of the `len` bytes at `src`, as the continuation of that plaintext, and the state then represents the message with them appended: `vg_aes_gcm_stream_encrypt` with the plaintext read from `src`.
 ///
@@ -44635,7 +44635,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_PCLMUL_FEATURES: crate::cpu::Featu
 /// * None of `ctx`, `state`, `src` and `dst` may overlap the return address on the stack or the 4856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2232]
 mov rax, QWORD PTR [rsp+2240]
@@ -44805,7 +44805,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_GATHER_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_SEAL_GATHER_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -44827,7 +44827,7 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_PCLMUL_FEATURES: crate::cpu::Features = 
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-240]
 mov rax, QWORD PTR [rsp+248]
@@ -45313,7 +45313,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_SPLIT_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_SEAL_SPLIT_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag) of a plaintext whose first part is elsewhere: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` of `dst` with its first `src_len` bytes read from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -45335,7 +45335,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_PCLMUL_FEATURES: crate::cpu::Features = c
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_split_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2616]
 mov rax, QWORD PTR [rsp+2624]
@@ -45796,7 +45796,7 @@ ret
 /// * `counter`, `y`, `data` and `scratch` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -45853,7 +45853,7 @@ ret
 /// * `counter`, `y`, `data` and `scratch` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -45906,7 +45906,7 @@ ret
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2568]
 mov rcx, rsp
@@ -45971,7 +45971,7 @@ ret
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2600]
 mov rax, QWORD PTR [rsp+2608]
@@ -46364,7 +46364,7 @@ ret
 /// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2608]
 mov rax, QWORD PTR [rsp+2616]
@@ -46853,7 +46853,7 @@ ret
 /// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
 /// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2568]
 mov r8, rsp
@@ -46998,7 +46998,7 @@ ret
 /// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2568]
 mov r9, rsp
@@ -47126,7 +47126,7 @@ ret
 /// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -47536,7 +47536,7 @@ ret
 /// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -47945,7 +47945,7 @@ ret
 /// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2576]
 mov rax, rsp
@@ -48074,7 +48074,7 @@ ret
 /// * `state` must not overlap `ctx`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -48279,7 +48279,7 @@ ret
 /// * `counter`, `y`, `dst` and `scratch` must not overlap each other, `ctx`, `src` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `counter`, `y`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+24]
 mov r10, QWORD PTR [rsp+8]
@@ -48340,7 +48340,7 @@ ret
 /// * `state` and `dst` must not overlap each other, `ctx`, `src` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state`, `src` and `dst` may overlap the return address on the stack or the 4856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2232]
 mov rax, QWORD PTR [rsp+2240]
@@ -48528,7 +48528,7 @@ ret
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-240]
 mov rax, QWORD PTR [rsp+248]
@@ -49032,7 +49032,7 @@ ret
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_split(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2616]
 mov rax, QWORD PTR [rsp+2624]
@@ -49478,7 +49478,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_vaes` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: as `vg_aes_ctr32` and then `vg_ghash`.
 ///
@@ -49497,7 +49497,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_VAES_FEATURES: crate::cpu::Features =
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_vaes(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_vaes(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -49539,7 +49539,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_vaes` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
 
 /// AES-GCM's decryption of whole blocks (NIST SP 800-38D §7.2 steps 5 and 6, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the `n` 16-byte blocks of ciphertext at `data`, with the hash subkey of `*ctx`, then XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into them, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`: as `vg_ghash` and then `vg_aes_ctr32`.
 ///
@@ -49558,7 +49558,7 @@ pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_VAES_FEATURES: crate::cpu::Features =
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_vaes(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_vaes(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -49600,7 +49600,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_init_vaes` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_INIT_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES | crate::cpu::feature::AES);
+pub const VG_AES_GCM_INIT_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES | crate::cpu::feature::AES);
 
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
@@ -49615,7 +49615,7 @@ pub(crate) const VG_AES_GCM_INIT_VAES_FEATURES: crate::cpu::Features = crate::cp
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `ssse3`, `vaes` and `aes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_init_vaes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2568]
 mov rcx, rsp
@@ -49664,7 +49664,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_vaes` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_GCM_SEAL_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
@@ -49684,7 +49684,7 @@ pub(crate) const VG_AES_GCM_SEAL_VAES_FEATURES: crate::cpu::Features = crate::cp
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vaes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_vaes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2600]
 mov rax, QWORD PTR [rsp+2608]
@@ -50061,7 +50061,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_vaes` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_OPEN_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_GCM_OPEN_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
 
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
@@ -50081,7 +50081,7 @@ pub(crate) const VG_AES_GCM_OPEN_VAES_FEATURES: crate::cpu::Features = crate::cp
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vaes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_vaes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2608]
 mov rax, QWORD PTR [rsp+2616]
@@ -50572,7 +50572,7 @@ ret
 /// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
 /// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_stream_init as vg_aes_gcm_stream_init_vaes;
+pub use self::vg_aes_gcm_stream_init as vg_aes_gcm_stream_init_vaes;
 
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
@@ -50588,10 +50588,10 @@ pub(crate) use self::vg_aes_gcm_stream_init as vg_aes_gcm_stream_init_vaes;
 /// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_stream_aad as vg_aes_gcm_stream_aad_vaes;
+pub use self::vg_aes_gcm_stream_aad as vg_aes_gcm_stream_aad_vaes;
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_vaes` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_GCM_STREAM_ENCRYPT_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
 ///
@@ -50609,7 +50609,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_VAES_FEATURES: crate::cpu::Features =
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_vaes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_vaes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -51005,7 +51005,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_vaes` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_DECRYPT_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_GCM_STREAM_DECRYPT_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
 
 /// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
 ///
@@ -51023,7 +51023,7 @@ pub(crate) const VG_AES_GCM_STREAM_DECRYPT_VAES_FEATURES: crate::cpu::Features =
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_vaes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_vaes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -51419,7 +51419,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_finish_vaes` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_FINISH_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_GCM_STREAM_FINISH_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
 
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
@@ -51436,7 +51436,7 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_VAES_FEATURES: crate::cpu::Features = 
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2576]
 mov rax, rsp
@@ -51552,7 +51552,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_verify_vaes` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_VERIFY_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_GCM_STREAM_VERIFY_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
 
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
@@ -51569,7 +51569,7 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_VAES_FEATURES: crate::cpu::Features = 
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -51757,7 +51757,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_vaes` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, writes to the `n` 16-byte blocks at `dst` the `n` blocks at `src` XORed with `CIPH_K(CB₁) … CIPH_K(CBₙ)`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: `vg_aes_gcm_encrypt_blocks` with the plaintext read from `src`.
 ///
@@ -51778,7 +51778,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VAES_FEATURES: crate::cpu::Feature
 /// * None of `ctx`, `counter`, `y`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_vaes(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_vaes(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+24]
 mov r10, QWORD PTR [rsp+8]
@@ -51823,7 +51823,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_vaes` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, writes to the `len` bytes at `dst` the encryption of the `len` bytes at `src`, as the continuation of that plaintext, and the state then represents the message with them appended: `vg_aes_gcm_stream_encrypt` with the plaintext read from `src`.
 ///
@@ -51843,7 +51843,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_FEATURES: crate::cpu::Feature
 /// * None of `ctx`, `state`, `src` and `dst` may overlap the return address on the stack or the 4856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_vaes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_vaes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2232]
 mov rax, QWORD PTR [rsp+2240]
@@ -52013,7 +52013,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_vaes` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_GATHER_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_GCM_SEAL_GATHER_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -52035,7 +52035,7 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_VAES_FEATURES: crate::cpu::Features = cr
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_vaes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_vaes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-240]
 mov rax, QWORD PTR [rsp+248]
@@ -52521,7 +52521,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_vaes` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_SPLIT_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_GCM_SEAL_SPLIT_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag) of a plaintext whose first part is elsewhere: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` of `dst` with its first `src_len` bytes read from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -52543,7 +52543,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_VAES_FEATURES: crate::cpu::Features = cra
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_vaes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_split_vaes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2616]
 mov rax, QWORD PTR [rsp+2624]
@@ -52989,7 +52989,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_vaes_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: as `vg_aes_ctr32` and then `vg_ghash`.
 ///
@@ -53008,7 +53008,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_VAES_PCLMUL_FEATURES: crate::cpu::Fea
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -53050,7 +53050,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_vaes_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM's decryption of whole blocks (NIST SP 800-38D §7.2 steps 5 and 6, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the `n` 16-byte blocks of ciphertext at `data`, with the hash subkey of `*ctx`, then XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into them, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`: as `vg_ghash` and then `vg_aes_ctr32`.
 ///
@@ -53069,7 +53069,7 @@ pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_VAES_PCLMUL_FEATURES: crate::cpu::Fea
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -53111,7 +53111,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_init_vaes_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_INIT_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES | crate::cpu::feature::AES);
+pub const VG_AES_GCM_INIT_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES | crate::cpu::feature::AES);
 
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
@@ -53128,10 +53128,10 @@ pub(crate) const VG_AES_GCM_INIT_VAES_PCLMUL_FEATURES: crate::cpu::Features = cr
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `ssse3`, `vaes` and `aes` target features.
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_init_vaes as vg_aes_gcm_init_vaes_pclmul;
+pub use self::vg_aes_gcm_init_vaes as vg_aes_gcm_init_vaes_pclmul;
 
 /// The CPU features `vg_aes_gcm_seal_vaes_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_SEAL_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
@@ -53151,7 +53151,7 @@ pub(crate) const VG_AES_GCM_SEAL_VAES_PCLMUL_FEATURES: crate::cpu::Features = cr
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2600]
 mov rax, QWORD PTR [rsp+2608]
@@ -53528,7 +53528,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_vaes_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_OPEN_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_OPEN_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
@@ -53548,7 +53548,7 @@ pub(crate) const VG_AES_GCM_OPEN_VAES_PCLMUL_FEATURES: crate::cpu::Features = cr
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2608]
 mov rax, QWORD PTR [rsp+2616]
@@ -54024,7 +54024,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_init_vaes_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_INIT_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_INIT_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
 ///
@@ -54043,10 +54043,10 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_VAES_PCLMUL_FEATURES: crate::cpu::Featur
 /// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_stream_init_pclmul as vg_aes_gcm_stream_init_vaes_pclmul;
+pub use self::vg_aes_gcm_stream_init_pclmul as vg_aes_gcm_stream_init_vaes_pclmul;
 
 /// The CPU features `vg_aes_gcm_stream_aad_vaes_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_AAD_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_AAD_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
@@ -54063,10 +54063,10 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_VAES_PCLMUL_FEATURES: crate::cpu::Feature
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_stream_aad_pclmul as vg_aes_gcm_stream_aad_vaes_pclmul;
+pub use self::vg_aes_gcm_stream_aad_pclmul as vg_aes_gcm_stream_aad_vaes_pclmul;
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_vaes_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_ENCRYPT_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
 ///
@@ -54084,7 +54084,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_VAES_PCLMUL_FEATURES: crate::cpu::Fea
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -54480,7 +54480,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_vaes_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_DECRYPT_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_DECRYPT_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
 ///
@@ -54498,7 +54498,7 @@ pub(crate) const VG_AES_GCM_STREAM_DECRYPT_VAES_PCLMUL_FEATURES: crate::cpu::Fea
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -54894,7 +54894,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_finish_vaes_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_FINISH_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_FINISH_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
@@ -54911,7 +54911,7 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_VAES_PCLMUL_FEATURES: crate::cpu::Feat
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2576]
 mov rax, rsp
@@ -55027,7 +55027,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_verify_vaes_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_VERIFY_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_VERIFY_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
@@ -55044,7 +55044,7 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_VAES_PCLMUL_FEATURES: crate::cpu::Feat
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -55232,7 +55232,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_vaes_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, writes to the `n` 16-byte blocks at `dst` the `n` blocks at `src` XORed with `CIPH_K(CB₁) … CIPH_K(CBₙ)`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: `vg_aes_gcm_encrypt_blocks` with the plaintext read from `src`.
 ///
@@ -55253,7 +55253,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VAES_PCLMUL_FEATURES: crate::cpu::
 /// * None of `ctx`, `counter`, `y`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+24]
 mov r10, QWORD PTR [rsp+8]
@@ -55298,7 +55298,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_vaes_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, writes to the `len` bytes at `dst` the encryption of the `len` bytes at `src`, as the continuation of that plaintext, and the state then represents the message with them appended: `vg_aes_gcm_stream_encrypt` with the plaintext read from `src`.
 ///
@@ -55318,7 +55318,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_PCLMUL_FEATURES: crate::cpu::
 /// * None of `ctx`, `state`, `src` and `dst` may overlap the return address on the stack or the 4856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2232]
 mov rax, QWORD PTR [rsp+2240]
@@ -55488,7 +55488,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_vaes_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_GATHER_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_SEAL_GATHER_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -55510,7 +55510,7 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_VAES_PCLMUL_FEATURES: crate::cpu::Featur
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-240]
 mov rax, QWORD PTR [rsp+248]
@@ -55996,7 +55996,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_vaes_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_SPLIT_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_SEAL_SPLIT_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag) of a plaintext whose first part is elsewhere: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` of `dst` with its first `src_len` bytes read from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -56018,7 +56018,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_VAES_PCLMUL_FEATURES: crate::cpu::Feature
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_split_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2616]
 mov rax, QWORD PTR [rsp+2624]
@@ -56464,7 +56464,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: as `vg_aes_ctr32` and then `vg_ghash`.
 ///
@@ -56483,7 +56483,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_VAES_VPCLMUL_FEATURES: crate::cpu::Fe
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -57432,7 +57432,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM's decryption of whole blocks (NIST SP 800-38D §7.2 steps 5 and 6, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the `n` 16-byte blocks of ciphertext at `data`, with the hash subkey of `*ctx`, then XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into them, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`: as `vg_ghash` and then `vg_aes_ctr32`.
 ///
@@ -57451,7 +57451,7 @@ pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_VAES_VPCLMUL_FEATURES: crate::cpu::Fe
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -58080,7 +58080,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_init_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_INIT_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES | crate::cpu::feature::AES);
+pub const VG_AES_GCM_INIT_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES | crate::cpu::feature::AES);
 
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
@@ -58097,10 +58097,10 @@ pub(crate) const VG_AES_GCM_INIT_VAES_VPCLMUL_FEATURES: crate::cpu::Features = c
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `ssse3`, `vaes` and `aes` target features.
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_init_vaes as vg_aes_gcm_init_vaes_vpclmul;
+pub use self::vg_aes_gcm_init_vaes as vg_aes_gcm_init_vaes_vpclmul;
 
 /// The CPU features `vg_aes_gcm_seal_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_SEAL_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
@@ -58120,7 +58120,7 @@ pub(crate) const VG_AES_GCM_SEAL_VAES_VPCLMUL_FEATURES: crate::cpu::Features = c
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2600]
 mov rax, QWORD PTR [rsp+2608]
@@ -58497,7 +58497,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_OPEN_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_OPEN_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
@@ -58517,7 +58517,7 @@ pub(crate) const VG_AES_GCM_OPEN_VAES_VPCLMUL_FEATURES: crate::cpu::Features = c
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2608]
 mov rax, QWORD PTR [rsp+2616]
@@ -58993,7 +58993,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_init_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
 ///
@@ -59012,10 +59012,10 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_FEATURES: crate::cpu::Featu
 /// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_stream_init_vpclmul as vg_aes_gcm_stream_init_vaes_vpclmul;
+pub use self::vg_aes_gcm_stream_init_vpclmul as vg_aes_gcm_stream_init_vaes_vpclmul;
 
 /// The CPU features `vg_aes_gcm_stream_aad_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
@@ -59032,10 +59032,10 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_FEATURES: crate::cpu::Featur
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_stream_aad_vpclmul as vg_aes_gcm_stream_aad_vaes_vpclmul;
+pub use self::vg_aes_gcm_stream_aad_vpclmul as vg_aes_gcm_stream_aad_vaes_vpclmul;
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_ENCRYPT_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
 ///
@@ -59053,7 +59053,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_VAES_VPCLMUL_FEATURES: crate::cpu::Fe
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -59449,7 +59449,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
 ///
@@ -59467,7 +59467,7 @@ pub(crate) const VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_FEATURES: crate::cpu::Fe
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -59863,7 +59863,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_finish_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
@@ -59880,7 +59880,7 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_FEATURES: crate::cpu::Fea
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2576]
 mov rax, rsp
@@ -59996,7 +59996,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_verify_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
@@ -60013,7 +60013,7 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_FEATURES: crate::cpu::Fea
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -60201,7 +60201,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, writes to the `n` 16-byte blocks at `dst` the `n` blocks at `src` XORed with `CIPH_K(CB₁) … CIPH_K(CBₙ)`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: `vg_aes_gcm_encrypt_blocks` with the plaintext read from `src`.
 ///
@@ -60222,7 +60222,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VAES_VPCLMUL_FEATURES: crate::cpu:
 /// * None of `ctx`, `counter`, `y`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+24]
 mov r10, QWORD PTR [rsp+8]
@@ -61178,7 +61178,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, writes to the `len` bytes at `dst` the encryption of the `len` bytes at `src`, as the continuation of that plaintext, and the state then represents the message with them appended: `vg_aes_gcm_stream_encrypt` with the plaintext read from `src`.
 ///
@@ -61198,7 +61198,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_VPCLMUL_FEATURES: crate::cpu:
 /// * None of `ctx`, `state`, `src` and `dst` may overlap the return address on the stack or the 4856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2232]
 mov rax, QWORD PTR [rsp+2240]
@@ -61368,7 +61368,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_GATHER_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_SEAL_GATHER_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -61390,7 +61390,7 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_VAES_VPCLMUL_FEATURES: crate::cpu::Featu
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-240]
 mov rax, QWORD PTR [rsp+248]
@@ -61876,7 +61876,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_SPLIT_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_SEAL_SPLIT_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag) of a plaintext whose first part is elsewhere: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` of `dst` with its first `src_len` bytes read from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -61898,7 +61898,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_VAES_VPCLMUL_FEATURES: crate::cpu::Featur
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_split_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2616]
 mov rax, QWORD PTR [rsp+2624]
@@ -62344,7 +62344,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// `vg_aes_gcm_encrypt_blocks` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.encryptBlocksPrepared16Contract`.
 ///
@@ -62362,7 +62362,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_PREPARED16_VAES_VPCLMUL_FEATURES: cra
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -65613,7 +65613,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// `vg_aes_gcm_decrypt_blocks` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.decryptBlocksPrepared16Contract`.
 ///
@@ -65631,7 +65631,7 @@ pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_PREPARED16_VAES_VPCLMUL_FEATURES: cra
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -68032,7 +68032,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_SEAL_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// `vg_aes_gcm_seal` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPrepared16Contract`.
 ///
@@ -68049,7 +68049,7 @@ pub(crate) const VG_AES_GCM_SEAL_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::F
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2600]
 mov rax, QWORD PTR [rsp+2608]
@@ -68426,7 +68426,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_OPEN_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_OPEN_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// `vg_aes_gcm_open` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPrepared16Contract`.
 ///
@@ -68443,7 +68443,7 @@ pub(crate) const VG_AES_GCM_OPEN_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::F
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2608]
 mov rax, QWORD PTR [rsp+2616]
@@ -69455,7 +69455,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// `vg_aes_gcm_stream_encrypt` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPrepared16Contract`.
 ///
@@ -69470,7 +69470,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_PREPARED16_VAES_VPCLMUL_FEATURES: cra
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -69866,7 +69866,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_DECRYPT_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// `vg_aes_gcm_stream_decrypt` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPrepared16Contract`.
 ///
@@ -69881,7 +69881,7 @@ pub(crate) const VG_AES_GCM_STREAM_DECRYPT_PREPARED16_VAES_VPCLMUL_FEATURES: cra
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -70277,7 +70277,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// `vg_aes_gcm_encrypt_blocks_to` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.encryptBlocksToPrepared16Contract`.
 ///
@@ -70297,7 +70297,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_PREPARED16_VAES_VPCLMUL_FEATURES: 
 /// * None of `ctx`, `counter`, `y`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+24]
 mov r10, QWORD PTR [rsp+8]
@@ -71574,7 +71574,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// `vg_aes_gcm_stream_encrypt_to` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptToPrepared16Contract`.
 ///
@@ -71591,7 +71591,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_PREPARED16_VAES_VPCLMUL_FEATURES: 
 /// * None of `ctx`, `state`, `src` and `dst` may overlap the return address on the stack or the 4856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2232]
 mov rax, QWORD PTR [rsp+2240]
@@ -71761,7 +71761,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_GATHER_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_SEAL_GATHER_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// `vg_aes_gcm_seal_gather` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPrepared16Contract`.
 ///
@@ -71780,7 +71780,7 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_PREPARED16_VAES_VPCLMUL_FEATURES: crate:
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-240]
 mov rax, QWORD PTR [rsp+248]
@@ -72788,7 +72788,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_SPLIT_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_SEAL_SPLIT_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// `vg_aes_gcm_seal_split` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealSplitPrepared16Contract`.
 ///
@@ -72807,7 +72807,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_PREPARED16_VAES_VPCLMUL_FEATURES: crate::
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_split_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2616]
 mov rax, QWORD PTR [rsp+2624]
@@ -75270,7 +75270,7 @@ jmp 216b
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: as `vg_aes_ctr32` and then `vg_ghash`.
 ///
@@ -75289,7 +75289,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_VAES_VPCLMUL_AVX512_FEATURES: crate::
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -76788,7 +76788,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
 
 /// AES-GCM's decryption of whole blocks (NIST SP 800-38D §7.2 steps 5 and 6, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the `n` 16-byte blocks of ciphertext at `data`, with the hash subkey of `*ctx`, then XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into them, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`: as `vg_ghash` and then `vg_aes_ctr32`.
 ///
@@ -76807,7 +76807,7 @@ pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_VAES_VPCLMUL_AVX512_FEATURES: crate::
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -77840,7 +77840,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_init_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_INIT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES | crate::cpu::feature::AES);
+pub const VG_AES_GCM_INIT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES | crate::cpu::feature::AES);
 
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
@@ -77857,10 +77857,10 @@ pub(crate) const VG_AES_GCM_INIT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Featu
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `ssse3`, `vaes` and `aes` target features.
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_init_vaes as vg_aes_gcm_init_vaes_vpclmul_avx512;
+pub use self::vg_aes_gcm_init_vaes as vg_aes_gcm_init_vaes_vpclmul_avx512;
 
 /// The CPU features `vg_aes_gcm_seal_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
@@ -77880,7 +77880,7 @@ pub(crate) const VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Featu
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2600]
 mov rax, QWORD PTR [rsp+2608]
@@ -78962,7 +78962,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_OPEN_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_OPEN_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
 
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
@@ -78982,7 +78982,7 @@ pub(crate) const VG_AES_GCM_OPEN_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Featu
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2608]
 mov rax, QWORD PTR [rsp+2616]
@@ -80174,7 +80174,7 @@ jmp 235b
 }
 
 /// The CPU features `vg_aes_gcm_stream_init_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
 ///
@@ -80193,10 +80193,10 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu
 /// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_stream_init_vpclmul as vg_aes_gcm_stream_init_vaes_vpclmul_avx512;
+pub use self::vg_aes_gcm_stream_init_vpclmul as vg_aes_gcm_stream_init_vaes_vpclmul_avx512;
 
 /// The CPU features `vg_aes_gcm_stream_aad_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
@@ -80213,10 +80213,10 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu:
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_stream_aad_vpclmul as vg_aes_gcm_stream_aad_vaes_vpclmul_avx512;
+pub use self::vg_aes_gcm_stream_aad_vpclmul as vg_aes_gcm_stream_aad_vaes_vpclmul_avx512;
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_STREAM_ENCRYPT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
 ///
@@ -80234,7 +80234,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_VAES_VPCLMUL_AVX512_FEATURES: crate::
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -80630,7 +80630,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
 
 /// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
 ///
@@ -80648,7 +80648,7 @@ pub(crate) const VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_AVX512_FEATURES: crate::
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -81044,7 +81044,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_finish_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
@@ -81063,10 +81063,10 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_AVX512_FEATURES: crate::c
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_stream_finish_vaes_vpclmul as vg_aes_gcm_stream_finish_vaes_vpclmul_avx512;
+pub use self::vg_aes_gcm_stream_finish_vaes_vpclmul as vg_aes_gcm_stream_finish_vaes_vpclmul_avx512;
 
 /// The CPU features `vg_aes_gcm_stream_verify_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
@@ -81085,10 +81085,10 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_AVX512_FEATURES: crate::c
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_stream_verify_vaes_vpclmul as vg_aes_gcm_stream_verify_vaes_vpclmul_avx512;
+pub use self::vg_aes_gcm_stream_verify_vaes_vpclmul as vg_aes_gcm_stream_verify_vaes_vpclmul_avx512;
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, writes to the `n` 16-byte blocks at `dst` the `n` blocks at `src` XORed with `CIPH_K(CB₁) … CIPH_K(CBₙ)`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: `vg_aes_gcm_encrypt_blocks` with the plaintext read from `src`.
 ///
@@ -81109,7 +81109,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VAES_VPCLMUL_AVX512_FEATURES: crat
 /// * None of `ctx`, `counter`, `y`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+24]
 mov r10, QWORD PTR [rsp+8]
@@ -82615,7 +82615,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, writes to the `len` bytes at `dst` the encryption of the `len` bytes at `src`, as the continuation of that plaintext, and the state then represents the message with them appended: `vg_aes_gcm_stream_encrypt` with the plaintext read from `src`.
 ///
@@ -82635,7 +82635,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_VPCLMUL_AVX512_FEATURES: crat
 /// * None of `ctx`, `state`, `src` and `dst` may overlap the return address on the stack or the 4856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2232]
 mov rax, QWORD PTR [rsp+2240]
@@ -82805,7 +82805,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_GATHER_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_SEAL_GATHER_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -82827,7 +82827,7 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-240]
 mov rax, QWORD PTR [rsp+248]
@@ -83313,7 +83313,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_SPLIT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_SEAL_SPLIT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag) of a plaintext whose first part is elsewhere: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` of `dst` with its first `src_len` bytes read from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -83335,7 +83335,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu:
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_split_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2616]
 mov rax, QWORD PTR [rsp+2624]
@@ -84544,7 +84544,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_SPLIT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_SEAL_SPLIT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
 
 /// `vg_aes_gcm_seal_split` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealSplitPreparedContract`.
 ///
@@ -84563,7 +84563,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: cr
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2616]
 mov rax, QWORD PTR [rsp+2624]
@@ -87954,7 +87954,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
 
 /// `vg_aes_gcm_encrypt_blocks` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.encryptBlocksPreparedContract`.
 ///
@@ -87972,7 +87972,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_PREPARED_VAES_VPCLMUL_AVX512_FEATURES
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -89806,7 +89806,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
 
 /// `vg_aes_gcm_decrypt_blocks` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.decryptBlocksPreparedContract`.
 ///
@@ -89824,7 +89824,7 @@ pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_PREPARED_VAES_VPCLMUL_AVX512_FEATURES
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -91052,7 +91052,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
 
 /// `vg_aes_gcm_seal` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
 ///
@@ -91069,7 +91069,7 @@ pub(crate) const VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::c
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2600]
 mov rax, QWORD PTR [rsp+2608]
@@ -92407,7 +92407,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
 
 /// `vg_aes_gcm_open` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
 ///
@@ -92424,7 +92424,7 @@ pub(crate) const VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::c
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2608]
 mov rax, QWORD PTR [rsp+2616]
@@ -93920,7 +93920,7 @@ jmp 229b
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
 
 /// `vg_aes_gcm_stream_encrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
 ///
@@ -93935,7 +93935,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -94331,7 +94331,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
 
 /// `vg_aes_gcm_stream_decrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
 ///
@@ -94346,7 +94346,7 @@ pub(crate) const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -94742,7 +94742,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
 
 /// `vg_aes_gcm_encrypt_blocks_to` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.encryptBlocksToPreparedContract`.
 ///
@@ -94762,7 +94762,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATU
 /// * None of `ctx`, `counter`, `y`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+24]
 mov r10, QWORD PTR [rsp+8]
@@ -96623,7 +96623,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
 
 /// `vg_aes_gcm_stream_encrypt_to` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptToPreparedContract`.
 ///
@@ -96640,7 +96640,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATU
 /// * None of `ctx`, `state`, `src` and `dst` may overlap the return address on the stack or the 4856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2232]
 mov rax, QWORD PTR [rsp+2240]
@@ -96810,7 +96810,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
 
 /// `vg_aes_gcm_seal_gather` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
 ///
@@ -96829,7 +96829,7 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: c
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-240]
 mov rax, QWORD PTR [rsp+248]
@@ -97400,7 +97400,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: as `vg_aes_ctr32` and then `vg_ghash`.
 ///
@@ -97419,7 +97419,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_VPCLMUL_FEATURES: crate::cpu::Feature
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_vpclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_vpclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -97461,7 +97461,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM's decryption of whole blocks (NIST SP 800-38D §7.2 steps 5 and 6, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the `n` 16-byte blocks of ciphertext at `data`, with the hash subkey of `*ctx`, then XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into them, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`: as `vg_ghash` and then `vg_aes_ctr32`.
 ///
@@ -97480,7 +97480,7 @@ pub(crate) const VG_AES_GCM_DECRYPT_BLOCKS_VPCLMUL_FEATURES: crate::cpu::Feature
 /// * None of `ctx`, `counter`, `y`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_vpclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_vpclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+8]
 mov QWORD PTR [r11], rdi
@@ -97535,10 +97535,10 @@ ret
 /// * `ctx` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_init as vg_aes_gcm_init_vpclmul;
+pub use self::vg_aes_gcm_init as vg_aes_gcm_init_vpclmul;
 
 /// The CPU features `vg_aes_gcm_seal_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_SEAL_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
@@ -97558,7 +97558,7 @@ pub(crate) const VG_AES_GCM_SEAL_VPCLMUL_FEATURES: crate::cpu::Features = crate:
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2600]
 mov rax, QWORD PTR [rsp+2608]
@@ -97935,7 +97935,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_OPEN_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_OPEN_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
@@ -97955,7 +97955,7 @@ pub(crate) const VG_AES_GCM_OPEN_VPCLMUL_FEATURES: crate::cpu::Features = crate:
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2608]
 mov rax, QWORD PTR [rsp+2616]
@@ -98431,7 +98431,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_init_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_INIT_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_INIT_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
 ///
@@ -98448,7 +98448,7 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_VPCLMUL_FEATURES: crate::cpu::Features =
 /// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_vpclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_init_vpclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2568]
 mov r8, rsp
@@ -98582,7 +98582,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_aad_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_AAD_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_AAD_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
@@ -98597,7 +98597,7 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_VPCLMUL_FEATURES: crate::cpu::Features = 
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_vpclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_vpclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2568]
 mov r9, rsp
@@ -98711,7 +98711,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_ENCRYPT_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
 ///
@@ -98729,7 +98729,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_VPCLMUL_FEATURES: crate::cpu::Feature
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -99125,7 +99125,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_DECRYPT_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_DECRYPT_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
 ///
@@ -99143,7 +99143,7 @@ pub(crate) const VG_AES_GCM_STREAM_DECRYPT_VPCLMUL_FEATURES: crate::cpu::Feature
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -99539,7 +99539,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_finish_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_FINISH_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_FINISH_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
@@ -99556,7 +99556,7 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_VPCLMUL_FEATURES: crate::cpu::Features
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2576]
 mov rax, rsp
@@ -99672,7 +99672,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_verify_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_VERIFY_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_VERIFY_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
@@ -99689,7 +99689,7 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_VPCLMUL_FEATURES: crate::cpu::Features
 /// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2584]
 mov rax, QWORD PTR [rsp+2592]
@@ -99877,7 +99877,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, writes to the `n` 16-byte blocks at `dst` the `n` blocks at `src` XORed with `CIPH_K(CB₁) … CIPH_K(CBₙ)`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: `vg_aes_gcm_encrypt_blocks` with the plaintext read from `src`.
 ///
@@ -99898,7 +99898,7 @@ pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VPCLMUL_FEATURES: crate::cpu::Feat
 /// * None of `ctx`, `counter`, `y`, `src`, `dst` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_vpclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_encrypt_blocks_to_vpclmul(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], src: *const [u8; 16], n: usize, dst: *mut [u8; 16], dst_n: usize, scratch: *mut [u64; 264]) {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+24]
 mov r10, QWORD PTR [rsp+8]
@@ -99943,7 +99943,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, writes to the `len` bytes at `dst` the encryption of the `len` bytes at `src`, as the continuation of that plaintext, and the state then represents the message with them appended: `vg_aes_gcm_stream_encrypt` with the plaintext read from `src`.
 ///
@@ -99963,7 +99963,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_TO_VPCLMUL_FEATURES: crate::cpu::Feat
 /// * None of `ctx`, `state`, `src` and `dst` may overlap the return address on the stack or the 4856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, src: *const u8, len: usize, dst: *mut u8, dst_len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2232]
 mov rax, QWORD PTR [rsp+2240]
@@ -100133,7 +100133,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_GATHER_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_SEAL_GATHER_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -100155,7 +100155,7 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_VPCLMUL_FEATURES: crate::cpu::Features =
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-240]
 mov rax, QWORD PTR [rsp+248]
@@ -100641,7 +100641,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_SPLIT_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_SEAL_SPLIT_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag) of a plaintext whose first part is elsewhere: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` of `dst` with its first `src_len` bytes read from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -100663,7 +100663,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_VPCLMUL_FEATURES: crate::cpu::Features = 
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_split_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-2616]
 mov rax, QWORD PTR [rsp+2624]

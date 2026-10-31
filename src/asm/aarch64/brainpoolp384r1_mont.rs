@@ -14,7 +14,7 @@
 /// * Bytes 3712 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_brainpoolp384r1_mul_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_brainpoolp384r1_mul_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"add w1, w1, #0
 add w2, w2, #0
@@ -537,7 +537,7 @@ ret
 /// * Bytes 3712 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_brainpoolp384r1_mul_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_brainpoolp384r1_mul_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"add w1, w1, #0
 add w2, w2, #0

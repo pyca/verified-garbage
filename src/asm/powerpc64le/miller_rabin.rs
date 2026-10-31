@@ -16,7 +16,7 @@
 /// * The working space may contain secrets on return and must be destroyed after use.
 /// * `ws` must not overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_miller_rabin_round(ws: *mut u64, ws_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_miller_rabin_round(ws: *mut u64, ws_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"stdu %r1, -176(%r1)
 addi %r5, %r1, 32

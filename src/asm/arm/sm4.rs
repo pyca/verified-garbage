@@ -13,7 +13,7 @@
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may overlap the 1456 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sm4_expand_key(key: *const [u8; 16], schedule: *mut [u8; 128]) {
+pub unsafe extern "C" fn vg_sm4_expand_key(key: *const [u8; 16], schedule: *mut [u8; 128]) {
     core::arch::naked_asm!(
         r"sub sp, sp, #1456
 add r2, sp, #0
@@ -2998,7 +2998,7 @@ bx lr",
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `data` may overlap the 1472 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sm4_ecb(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize, decrypt: usize) {
+pub unsafe extern "C" fn vg_sm4_ecb(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize, decrypt: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #1472
 add r12, sp, #0
@@ -5402,7 +5402,7 @@ bx lr",
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `data` may overlap the 1480 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sm4_ecb_encrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
+pub unsafe extern "C" fn vg_sm4_ecb_encrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r"push {{r4, lr}}
 mov r4, lr
@@ -5426,7 +5426,7 @@ bx lr",
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `data` may overlap the 1480 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sm4_ecb_decrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
+pub unsafe extern "C" fn vg_sm4_ecb_decrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r"push {{r4, lr}}
 mov r4, lr
@@ -5453,7 +5453,7 @@ bx lr",
 /// * `ws` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `ws` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sm4_prepare_keys(schedule: *const [u8; 128], decrypt: usize, ws: *mut u64, ws_len: usize) {
+pub unsafe extern "C" fn vg_sm4_prepare_keys(schedule: *const [u8; 128], decrypt: usize, ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
         r"str r4, [r2, #1408]
 str r5, [r2, #1412]
@@ -5600,7 +5600,7 @@ bx lr",
 /// * The bytes 0..384, 1408..1456 of `ws` are unspecified on return but for the blocks, and hold secrets, which the caller must destroy.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sm4_crypt_prepared(ws: *mut u64, ws_len: usize) {
+pub unsafe extern "C" fn vg_sm4_crypt_prepared(ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
         r"str r4, [r0, #1408]
 str r5, [r0, #1412]

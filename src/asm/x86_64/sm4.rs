@@ -13,7 +13,7 @@
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may overlap the return address on the stack or the 3144 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sm4_expand_key(key: *const [u8; 16], schedule: *mut [u8; 128]) {
+pub unsafe extern "sysv64" fn vg_sm4_expand_key(key: *const [u8; 16], schedule: *mut [u8; 128]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-3144]
 mov rdx, rsp
@@ -4513,7 +4513,7 @@ ret
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `data` may overlap the return address on the stack or the 3144 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sm4_ecb_encrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
+pub unsafe extern "sysv64" fn vg_sm4_ecb_encrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-3144]
 mov rcx, rsp
@@ -9067,7 +9067,7 @@ ret
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `data` may overlap the return address on the stack or the 3144 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sm4_ecb_decrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
+pub unsafe extern "sysv64" fn vg_sm4_ecb_decrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-3144]
 mov rcx, rsp
@@ -13622,7 +13622,7 @@ ret
 /// * The bytes 0..384, 408..1024, 3072..3136 of `ws` are unspecified on return but for the blocks, and hold secrets, which the caller must destroy.
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sm4_crypt_prepared(ws: *mut u64, ws_len: usize) {
+pub unsafe extern "sysv64" fn vg_sm4_crypt_prepared(ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
         r"mov r9, rdi
 mov QWORD PTR [r9+3072], rbx

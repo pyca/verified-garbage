@@ -4,32 +4,32 @@
 
 /// A table of constants, aligned to a cache line.
 #[repr(C, align(64))]
-pub(crate) struct Table<const N: usize>(pub(crate) [u8; N]);
+pub struct Table<const N: usize>(pub [u8; N]);
 
 #[rustfmt::skip]
 mod vg_cast5_s1234;
-pub(crate) use vg_cast5_s1234::VG_CAST5_S1234;
+pub use vg_cast5_s1234::VG_CAST5_S1234;
 
 #[rustfmt::skip]
 mod vg_cast5_s5678;
-pub(crate) use vg_cast5_s5678::VG_CAST5_S5678;
+pub use vg_cast5_s5678::VG_CAST5_S5678;
 
 #[rustfmt::skip]
 mod vg_ed25519_comb;
-pub(crate) use vg_ed25519_comb::VG_ED25519_COMB;
+pub use vg_ed25519_comb::VG_ED25519_COMB;
 
 #[rustfmt::skip]
 mod vg_ed25519_verify_neg_base;
-pub(crate) use vg_ed25519_verify_neg_base::VG_ED25519_VERIFY_NEG_BASE;
+pub use vg_ed25519_verify_neg_base::VG_ED25519_VERIFY_NEG_BASE;
 
 #[rustfmt::skip]
 mod vg_ffdh_vetted_groups_x86;
-pub(crate) use vg_ffdh_vetted_groups_x86::VG_FFDH_VETTED_GROUPS_X86;
+pub use vg_ffdh_vetted_groups_x86::VG_FFDH_VETTED_GROUPS_X86;
 
 #[rustfmt::skip]
 mod vg_p256_comb;
-pub(crate) use vg_p256_comb::VG_P256_COMB;
+pub use vg_p256_comb::VG_P256_COMB;
 
 #[rustfmt::skip]
 mod vg_rsa_keygen_trial32;
-pub(crate) use vg_rsa_keygen_trial32::VG_RSA_KEYGEN_TRIAL32;
+pub use vg_rsa_keygen_trial32::VG_RSA_KEYGEN_TRIAL32;

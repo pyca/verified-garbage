@@ -17,7 +17,7 @@
 /// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
 /// * None of `out`, `public` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ec_p521_compress_public_key(out: *mut [u8; 67], public: *const [u8; 133], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_ec_p521_compress_public_key(out: *mut [u8; 67], public: *const [u8; 133], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov eax, DWORD PTR [esp+12]
 mov DWORD PTR [eax], ebx
@@ -1499,7 +1499,7 @@ ret
 /// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
 /// * None of `out`, `public` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ec_p521_decompress_public_key(out: *mut [u8; 133], public: *const [u8; 67], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_ec_p521_decompress_public_key(out: *mut [u8; 133], public: *const [u8; 67], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov eax, DWORD PTR [esp+12]
 mov DWORD PTR [eax], ebx

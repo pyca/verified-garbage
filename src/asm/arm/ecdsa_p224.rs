@@ -18,7 +18,7 @@
 /// * `out` and `scratch` must not overlap each other, `d`, `digest`, `k` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `d`, `digest`, `k` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ecdsa_p224_sign(out: *mut [u8; 56], d: *const [u8; 28], digest: *const [u8; 28], k: *const [u8; 28], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_ecdsa_p224_sign(out: *mut [u8; 56], d: *const [u8; 28], digest: *const [u8; 28], k: *const [u8; 28], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"ldr r12, [sp, #0]
 str r4, [r12, #0]
@@ -1922,7 +1922,7 @@ bx lr",
 /// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
 /// * None of `public`, `digest`, `sig` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ecdsa_p224_verify(public: *const [u8; 57], digest: *const [u8; 28], sig: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_ecdsa_p224_verify(public: *const [u8; 57], digest: *const [u8; 28], sig: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov r12, r3
 str r4, [r12, #0]
@@ -4863,7 +4863,7 @@ bx lr",
 
 /// The CPU features `vg_ecdsa_p224_sign_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_ECDSA_P224_SIGN_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_ECDSA_P224_SIGN_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
 
 /// ECDSA signature generation over P-224 (FIPS 186-5 §6.4.1): with the private key `d` and the per-message secret number `k` (each 28 bytes, most significant first), signs the hash at `digest`: its leftmost 28 bytes, or, for a shorter hash, the hash padded on the left with zeros to 28 bytes. Returns 1 and writes `r` then `s` (28 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` or `k` is not in `[1, n-1]`, or if `r` or `s` is 0, in which case the caller signs again with another `k`.
 ///
@@ -4883,7 +4883,7 @@ pub(crate) const VG_ECDSA_P224_SIGN_UMAAL_FEATURES: crate::cpu::Features = crate
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ecdsa_p224_sign_umaal(out: *mut [u8; 56], d: *const [u8; 28], digest: *const [u8; 28], k: *const [u8; 28], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_ecdsa_p224_sign_umaal(out: *mut [u8; 56], d: *const [u8; 28], digest: *const [u8; 28], k: *const [u8; 28], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"ldr r12, [sp, #0]
 str r4, [r12, #0]
@@ -6775,7 +6775,7 @@ bx lr",
 
 /// The CPU features `vg_ecdsa_p224_verify_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_ECDSA_P224_VERIFY_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_ECDSA_P224_VERIFY_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
 
 /// ECDSA signature verification over P-224 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 28 bytes each, most significant first) of the hash at `digest` (its leftmost 28 bytes, or, for a shorter hash, the hash padded on the left with zeros to 28 bytes) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 28 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
 ///
@@ -6793,7 +6793,7 @@ pub(crate) const VG_ECDSA_P224_VERIFY_UMAAL_FEATURES: crate::cpu::Features = cra
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ecdsa_p224_verify_umaal(public: *const [u8; 57], digest: *const [u8; 28], sig: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_ecdsa_p224_verify_umaal(public: *const [u8; 57], digest: *const [u8; 28], sig: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov r12, r3
 str r4, [r12, #0]

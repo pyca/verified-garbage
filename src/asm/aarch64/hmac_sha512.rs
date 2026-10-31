@@ -14,7 +14,7 @@
 /// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
 /// * None of `inner`, `outer` and `key` may overlap the 3424 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_sha512_init(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
+pub unsafe extern "C" fn vg_hmac_sha512_init(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r"movz x10, #128, lsl #0
 movz x12, #0, lsl #0
@@ -507,7 +507,7 @@ b 21b
 /// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
 /// * None of `inner`, `outer` and `out` may overlap the 1888 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_sha512_finalize(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64]) {
+pub unsafe extern "C" fn vg_hmac_sha512_finalize(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r"sub sp, sp, #1872
 add x4, sp, #0
@@ -623,7 +623,7 @@ ret
 /// * `inner`, `outer` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
 /// * None of `inner`, `outer`, `key` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_sha512_init_scratch(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize, scratch: *mut [u64; 234]) {
+pub unsafe extern "C" fn vg_hmac_sha512_init_scratch(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize, scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
         r"str x19, [x4, #688]
 str x20, [x4, #696]
@@ -828,7 +828,7 @@ ret
 /// * `inner`, `out` and `scratch` must not overlap each other or `outer` (distinct Rust objects never do).
 /// * None of `inner`, `outer`, `out` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_sha512_finalize_scratch(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 234]) {
+pub unsafe extern "C" fn vg_hmac_sha512_finalize_scratch(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
         r"str x19, [x4, #688]
 str x20, [x4, #696]
@@ -927,7 +927,7 @@ ret
 }
 
 /// The CPU features `vg_hmac_sha512_init_sha3` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA512_INIT_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_HMAC_SHA512_INIT_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// Starts an HMAC-SHA-512 computation with a key of any length: makes the SHA-512 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their SHA-512 digest, if there are more than 128) padded with zeros to 128 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_sha512_update` on `*inner` (its `count` starting at 128), and the MAC computed with `vg_hmac_sha512_finalize`.
 ///
@@ -942,7 +942,7 @@ pub(crate) const VG_HMAC_SHA512_INIT_SHA3_FEATURES: crate::cpu::Features = crate
 /// * None of `inner`, `outer` and `key` may overlap the 3424 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_sha512_init_sha3(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
+pub unsafe extern "C" fn vg_hmac_sha512_init_sha3(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r".arch_extension sha3
 movz x10, #128, lsl #0
@@ -1425,7 +1425,7 @@ b 21b
 }
 
 /// The CPU features `vg_hmac_sha512_finalize_sha3` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA512_FINALIZE_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_HMAC_SHA512_FINALIZE_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// Finishes an HMAC-SHA-512 computation: if, for a 128-byte key `K₀` and a text of fewer than 2⁶⁴ − 128 bytes, the SHA-512 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-512 of the text under `K₀` (64 bytes) to `*out`.
 ///
@@ -1441,7 +1441,7 @@ pub(crate) const VG_HMAC_SHA512_FINALIZE_SHA3_FEATURES: crate::cpu::Features = c
 /// * None of `inner`, `outer` and `out` may overlap the 1888 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_sha512_finalize_sha3(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64]) {
+pub unsafe extern "C" fn vg_hmac_sha512_finalize_sha3(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r".arch_extension sha3
 sub sp, sp, #1872
@@ -1545,7 +1545,7 @@ ret
 }
 
 /// The CPU features `vg_hmac_sha512_init_scratch_sha3` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA512_INIT_SCRATCH_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_HMAC_SHA512_INIT_SCRATCH_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// `vg_hmac_sha512_init`, with its working space in `*scratch`.
 ///
@@ -1563,7 +1563,7 @@ pub(crate) const VG_HMAC_SHA512_INIT_SCRATCH_SHA3_FEATURES: crate::cpu::Features
 /// * None of `inner`, `outer`, `key` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_sha512_init_scratch_sha3(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize, scratch: *mut [u64; 234]) {
+pub unsafe extern "C" fn vg_hmac_sha512_init_scratch_sha3(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize, scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
         r".arch_extension sha3
 str x19, [x4, #688]
@@ -1756,7 +1756,7 @@ ret
 }
 
 /// The CPU features `vg_hmac_sha512_finalize_scratch_sha3` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA512_FINALIZE_SCRATCH_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_HMAC_SHA512_FINALIZE_SCRATCH_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// `vg_hmac_sha512_finalize`, with its working space in `*scratch`.
 ///
@@ -1774,7 +1774,7 @@ pub(crate) const VG_HMAC_SHA512_FINALIZE_SCRATCH_SHA3_FEATURES: crate::cpu::Feat
 /// * None of `inner`, `outer`, `out` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_sha512_finalize_scratch_sha3(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 234]) {
+pub unsafe extern "C" fn vg_hmac_sha512_finalize_scratch_sha3(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
         r".arch_extension sha3
 str x19, [x4, #688]

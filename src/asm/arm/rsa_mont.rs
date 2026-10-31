@@ -18,7 +18,7 @@
 /// * `ws` must not overlap the arguments on the stack (distinct Rust objects never do).
 /// * `ws` must not overlap the 40 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_mont_mul(ws: *mut u64, ws_len: usize, o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_rsa_mont_mul(ws: *mut u64, ws_len: usize, o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"push {{r0, r4, r5, r6, r7, r8, r9, r10, r11, lr}}
 ldr r12, [sp, #40]
@@ -623,7 +623,7 @@ bx lr",
 
 /// The CPU features `vg_rsa_mont_mul_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_RSA_MONT_MUL_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_RSA_MONT_MUL_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
 
 /// Montgomery multiplication in the working space of the RSA functions: writes to array `o` the number below the modulus `m` (array 0) congruent to `a b 2^(-64 w)` modulo `m`, for the numbers in arrays `a` and `b`. The working space is a header of 32 words, then 8 arrays of `w + 2` words each: header word 6 holds `w`, word 7 `-m⁻¹ mod 2^64`, and words 8 to 15 the addresses of the arrays. The numbers are `w` 64-bit words, little-endian, at the start of their arrays; `o` may be `a` or `b`, and `a` may be `b`. Every byte of `ws` but those of arrays 2 and 3 (the function's own) and of array `o` keeps its value.
 ///
@@ -643,7 +643,7 @@ pub(crate) const VG_RSA_MONT_MUL_UMAAL_FEATURES: crate::cpu::Features = crate::c
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_mont_mul_umaal(ws: *mut u64, ws_len: usize, o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_rsa_mont_mul_umaal(ws: *mut u64, ws_len: usize, o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"push {{r0, r4, r5, r6, r7, r8, r9, r10, r11, lr}}
 ldr r12, [sp, #40]

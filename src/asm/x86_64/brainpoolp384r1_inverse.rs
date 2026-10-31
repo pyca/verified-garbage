@@ -13,7 +13,7 @@
 /// * Bytes 1504 to 1551, 4048 to 4095 and 3400 to 3847 of `ws` are unspecified on return and may hold intermediate values, which are secret and which the caller must destroy.
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_brainpoolp384r1_inv_mod_p(ws: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_brainpoolp384r1_inv_mod_p(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rdi+1504], rbx
 mov QWORD PTR [rdi+1512], rbp
@@ -2760,7 +2760,7 @@ ret
 /// * Bytes 1504 to 1551, 4048 to 4095 and 3400 to 3847 of `ws` are unspecified on return and may hold intermediate values, which are secret and which the caller must destroy.
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_brainpoolp384r1_inv_mod_n(ws: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_brainpoolp384r1_inv_mod_n(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rdi+1504], rbx
 mov QWORD PTR [rdi+1512], rbp

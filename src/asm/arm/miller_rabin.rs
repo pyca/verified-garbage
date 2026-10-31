@@ -16,7 +16,7 @@
 /// * The working space may contain secrets on return and must be destroyed after use.
 /// * `ws` must not overlap the 56 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_miller_rabin_round(ws: *mut u64, ws_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_miller_rabin_round(ws: *mut u64, ws_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
 add r8, r0, #96
@@ -2137,7 +2137,7 @@ bx lr",
 
 /// The CPU features `vg_miller_rabin_round_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_MILLER_RABIN_ROUND_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_MILLER_RABIN_ROUND_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
 
 /// One strong Miller–Rabin round (FIPS 186-5 Appendix B.3.1, steps 4.3–4.5) in a prepared RSA Montgomery workspace. Returns 1 if the witness passes, 0 otherwise. Uses fixed windows of four bits, with no witness-dependent table address. This is neither a primality certificate nor a choice of witness distribution or round count. The caller supplies those policies.
 ///
@@ -2155,7 +2155,7 @@ pub(crate) const VG_MILLER_RABIN_ROUND_UMAAL_FEATURES: crate::cpu::Features = cr
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_miller_rabin_round_umaal(ws: *mut u64, ws_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_miller_rabin_round_umaal(ws: *mut u64, ws_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
 add r8, r0, #96

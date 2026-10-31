@@ -4,116 +4,116 @@
 
 /// A table of constants, aligned to a cache line.
 #[repr(C, align(64))]
-pub(crate) struct Table<const N: usize>(pub(crate) [u8; N]);
+pub struct Table<const N: usize>(pub [u8; N]);
 
 #[rustfmt::skip]
 mod vg_blowfish_init;
-pub(crate) use vg_blowfish_init::VG_BLOWFISH_INIT;
+pub use vg_blowfish_init::VG_BLOWFISH_INIT;
 
 #[rustfmt::skip]
 mod vg_brainpoolp256r1_comb7;
-pub(crate) use vg_brainpoolp256r1_comb7::VG_BRAINPOOLP256R1_COMB7;
+pub use vg_brainpoolp256r1_comb7::VG_BRAINPOOLP256R1_COMB7;
 
 #[rustfmt::skip]
 mod vg_cast5_s1234;
-pub(crate) use vg_cast5_s1234::VG_CAST5_S1234;
+pub use vg_cast5_s1234::VG_CAST5_S1234;
 
 #[rustfmt::skip]
 mod vg_cast5_s5678;
-pub(crate) use vg_cast5_s5678::VG_CAST5_S5678;
+pub use vg_cast5_s5678::VG_CAST5_S5678;
 
 #[rustfmt::skip]
 mod vg_ed25519_comb;
-pub(crate) use vg_ed25519_comb::VG_ED25519_COMB;
+pub use vg_ed25519_comb::VG_ED25519_COMB;
 
 #[rustfmt::skip]
 mod vg_ed25519_verify_neg_base;
-pub(crate) use vg_ed25519_verify_neg_base::VG_ED25519_VERIFY_NEG_BASE;
+pub use vg_ed25519_verify_neg_base::VG_ED25519_VERIFY_NEG_BASE;
 
 #[rustfmt::skip]
 mod vg_ed448_verify_odd_base;
-pub(crate) use vg_ed448_verify_odd_base::VG_ED448_VERIFY_ODD_BASE;
+pub use vg_ed448_verify_odd_base::VG_ED448_VERIFY_ODD_BASE;
 
 #[rustfmt::skip]
 mod vg_ffdh_vetted_groups_a64;
-pub(crate) use vg_ffdh_vetted_groups_a64::VG_FFDH_VETTED_GROUPS_A64;
+pub use vg_ffdh_vetted_groups_a64::VG_FFDH_VETTED_GROUPS_A64;
 
 #[rustfmt::skip]
 mod vg_gcm_tail_idx;
-pub(crate) use vg_gcm_tail_idx::VG_GCM_TAIL_IDX;
+pub use vg_gcm_tail_idx::VG_GCM_TAIL_IDX;
 
 #[rustfmt::skip]
 mod vg_mldsa_inv_folded;
-pub(crate) use vg_mldsa_inv_folded::VG_MLDSA_INV_FOLDED;
+pub use vg_mldsa_inv_folded::VG_MLDSA_INV_FOLDED;
 
 #[rustfmt::skip]
 mod vg_mldsa_inv_pair;
-pub(crate) use vg_mldsa_inv_pair::VG_MLDSA_INV_PAIR;
+pub use vg_mldsa_inv_pair::VG_MLDSA_INV_PAIR;
 
 #[rustfmt::skip]
 mod vg_mldsa_ntt_expanded;
-pub(crate) use vg_mldsa_ntt_expanded::VG_MLDSA_NTT_EXPANDED;
+pub use vg_mldsa_ntt_expanded::VG_MLDSA_NTT_EXPANDED;
 
 #[rustfmt::skip]
 mod vg_mlkem16_intt_zetas;
-pub(crate) use vg_mlkem16_intt_zetas::VG_MLKEM16_INTT_ZETAS;
+pub use vg_mlkem16_intt_zetas::VG_MLKEM16_INTT_ZETAS;
 
 #[rustfmt::skip]
 mod vg_mlkem16_ntt_zetas;
-pub(crate) use vg_mlkem16_ntt_zetas::VG_MLKEM16_NTT_ZETAS;
+pub use vg_mlkem16_ntt_zetas::VG_MLKEM16_NTT_ZETAS;
 
 #[rustfmt::skip]
 mod vg_mlkem_gamma;
-pub(crate) use vg_mlkem_gamma::VG_MLKEM_GAMMA;
+pub use vg_mlkem_gamma::VG_MLKEM_GAMMA;
 
 #[rustfmt::skip]
 mod vg_mlkem_ntt16_zetas;
-pub(crate) use vg_mlkem_ntt16_zetas::VG_MLKEM_NTT16_ZETAS;
+pub use vg_mlkem_ntt16_zetas::VG_MLKEM_NTT16_ZETAS;
 
 #[rustfmt::skip]
 mod vg_mlkem_rej_shuffle;
-pub(crate) use vg_mlkem_rej_shuffle::VG_MLKEM_REJ_SHUFFLE;
+pub use vg_mlkem_rej_shuffle::VG_MLKEM_REJ_SHUFFLE;
 
 #[rustfmt::skip]
 mod vg_p224_comb;
-pub(crate) use vg_p224_comb::VG_P224_COMB;
+pub use vg_p224_comb::VG_P224_COMB;
 
 #[rustfmt::skip]
 mod vg_p256_comb;
-pub(crate) use vg_p256_comb::VG_P256_COMB;
+pub use vg_p256_comb::VG_P256_COMB;
 
 #[rustfmt::skip]
 mod vg_p256_gtab;
-pub(crate) use vg_p256_gtab::VG_P256_GTAB;
+pub use vg_p256_gtab::VG_P256_GTAB;
 
 #[rustfmt::skip]
 mod vg_p384_comb;
-pub(crate) use vg_p384_comb::VG_P384_COMB;
+pub use vg_p384_comb::VG_P384_COMB;
 
 #[rustfmt::skip]
 mod vg_p384_gtab;
-pub(crate) use vg_p384_gtab::VG_P384_GTAB;
+pub use vg_p384_gtab::VG_P384_GTAB;
 
 #[rustfmt::skip]
 mod vg_p521_comb;
-pub(crate) use vg_p521_comb::VG_P521_COMB;
+pub use vg_p521_comb::VG_P521_COMB;
 
 #[rustfmt::skip]
 mod vg_sha224_h0;
-pub(crate) use vg_sha224_h0::VG_SHA224_H0;
+pub use vg_sha224_h0::VG_SHA224_H0;
 
 #[rustfmt::skip]
 mod vg_sha256_h0;
-pub(crate) use vg_sha256_h0::VG_SHA256_H0;
+pub use vg_sha256_h0::VG_SHA256_H0;
 
 #[rustfmt::skip]
 mod vg_sha256_k;
-pub(crate) use vg_sha256_k::VG_SHA256_K;
+pub use vg_sha256_k::VG_SHA256_K;
 
 #[rustfmt::skip]
 mod vg_sha512_k;
-pub(crate) use vg_sha512_k::VG_SHA512_K;
+pub use vg_sha512_k::VG_SHA512_K;
 
 #[rustfmt::skip]
 mod vg_x448_comb;
-pub(crate) use vg_x448_comb::VG_X448_COMB;
+pub use vg_x448_comb::VG_X448_COMB;

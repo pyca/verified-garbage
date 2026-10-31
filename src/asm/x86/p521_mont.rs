@@ -15,7 +15,7 @@
 /// * `ws` must not overlap the arguments on the stack (distinct Rust objects never do).
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_p521_mul_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_p521_mul_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+3740], ebx
@@ -5524,7 +5524,7 @@ ret
 /// * `ws` must not overlap the arguments on the stack (distinct Rust objects never do).
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_p521_add_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_p521_add_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+3752], ebp
@@ -5759,7 +5759,7 @@ ret
 /// * `ws` must not overlap the arguments on the stack (distinct Rust objects never do).
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_p521_sub_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_p521_sub_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+3752], ebp
@@ -5952,7 +5952,7 @@ ret
 /// * `ws` must not overlap the arguments on the stack (distinct Rust objects never do).
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_p521_mul_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_p521_mul_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+3740], ebx
@@ -11515,7 +11515,7 @@ ret
 /// * `ws` must not overlap the arguments on the stack (distinct Rust objects never do).
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_p521_add_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_p521_add_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+3752], ebp
@@ -11750,7 +11750,7 @@ ret
 /// * `ws` must not overlap the arguments on the stack (distinct Rust objects never do).
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_p521_sub_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_p521_sub_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+3752], ebp

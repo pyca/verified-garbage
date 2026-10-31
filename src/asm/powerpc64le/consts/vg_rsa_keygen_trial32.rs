@@ -5,7 +5,7 @@
 use super::Table;
 
 /// The table of constants `VG_RSA_KEYGEN_TRIAL32` (`Artifact.consts`).
-pub(crate) static VG_RSA_KEYGEN_TRIAL32: Table<8192> = Table(*b"\
+pub static VG_RSA_KEYGEN_TRIAL32: Table<8192> = Table(*b"\
     \x03\x00\x00\x00\x55\x55\x55\x55\
     \x05\x00\x00\x00\x33\x33\x33\x33\
     \x07\x00\x00\x00\x49\x92\x24\x49\

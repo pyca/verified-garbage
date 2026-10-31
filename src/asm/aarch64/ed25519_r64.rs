@@ -12,7 +12,7 @@
 /// * Bytes 320 to 575 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ed25519_r64_double_ext(ws: *mut [u64; 1024]) {
+pub unsafe extern "C" fn vg_ed25519_r64_double_ext(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov v16.d[0], x20
 mov v16.d[1], x21
@@ -899,7 +899,7 @@ ret
 /// * Bytes 320 to 575 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ed25519_r64_add_affine_ext(ws: *mut [u64; 1024]) {
+pub unsafe extern "C" fn vg_ed25519_r64_add_affine_ext(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov v16.d[0], x20
 mov v16.d[1], x21

@@ -12,7 +12,7 @@
 /// * Bytes 512 to 767 of `ws` but the result are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_gf25519_r64_invert(ws: *mut [u64; 512]) {
+pub unsafe extern "sysv64" fn vg_gf25519_r64_invert(ws: *mut [u64; 512]) {
     core::arch::naked_asm!(
         r"movq xmm0, rbx
 movq xmm1, rbp

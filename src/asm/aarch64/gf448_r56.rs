@@ -13,7 +13,7 @@
 /// * Bytes 1856 to 2751 and 3584 to 4735 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_gf448_r56_pow_p34(ws: *mut [u64; 1024]) {
+pub unsafe extern "C" fn vg_gf448_r56_pow_p34(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"add x3, x0, #0
 movz x12, #65535, lsl #0
@@ -3559,7 +3559,7 @@ ret
 /// * Bytes 3584 to 4735 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_gf448_r56_mul(ws: *mut [u64; 1024], o: u64, a: u64, b: u64) {
+pub unsafe extern "C" fn vg_gf448_r56_mul(ws: *mut [u64; 1024], o: u64, a: u64, b: u64) {
     core::arch::naked_asm!(
         r"mov v21.d[0], x30
 mov v21.d[1], x21

@@ -13,7 +13,7 @@
 /// * Bytes 3584 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_p256_point_add(ws: *mut [u64; 1024]) {
+pub unsafe extern "C" fn vg_p256_point_add(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mflr %r0
 std %r0, 3584(%r3)
@@ -197,7 +197,7 @@ blr",
 /// * Bytes 3584 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_p256_point_double(ws: *mut [u64; 1024]) {
+pub unsafe extern "C" fn vg_p256_point_double(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mflr %r0
 std %r0, 3584(%r3)

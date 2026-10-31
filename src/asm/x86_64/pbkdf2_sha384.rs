@@ -16,7 +16,7 @@
 /// * `t` and `scratch` must not overlap each other, `key` or `u` (distinct Rust objects never do).
 /// * None of `key`, `u`, `t` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384_iterate(key: *const [u8; 384], u: *const [u8; 48], n: u32, t: *mut [u8; 48], scratch: *mut [u64; 234]) {
+pub unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384_iterate(key: *const [u8; 384], u: *const [u8; 48], n: u32, t: *mut [u8; 48], scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+1328], rbx
 mov QWORD PTR [r8+1336], rbp
@@ -293,7 +293,7 @@ ret
 /// * `out` must not overlap `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 3456 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-3432]
 mov rax, QWORD PTR [rsp+3440]
@@ -457,7 +457,7 @@ ret
 }
 
 /// The CPU features `vg_pbkdf2_hmac_sha384_iterate_avx2` requires (`Artifact.features`).
-pub(crate) const VG_PBKDF2_HMAC_SHA384_ITERATE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_PBKDF2_HMAC_SHA384_ITERATE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// Runs `n` steps of PBKDF2-HMAC-SHA-384's iteration: if, for a 128-byte key `K₀`, the SHA-384 streaming state in bytes 0 to 191 of `*key` represents `K₀ ⊕ ipad` and the one in bytes 192 to 383 represents `K₀ ⊕ opad` (as `vg_hmac_sha384_init` leaves them), repeats `U ← HMAC-SHA-384 (K₀, U)`, `T ← T ⊕ U` `n` times, from `U = *u` and `T = *t`, and leaves the final `T` in `*t` (RFC 8018, step 3 of `F`).
 ///
@@ -474,7 +474,7 @@ pub(crate) const VG_PBKDF2_HMAC_SHA384_ITERATE_AVX2_FEATURES: crate::cpu::Featur
 /// * None of `key`, `u`, `t` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384_iterate_avx2(key: *const [u8; 384], u: *const [u8; 48], n: u32, t: *mut [u8; 48], scratch: *mut [u64; 234]) {
+pub unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384_iterate_avx2(key: *const [u8; 384], u: *const [u8; 48], n: u32, t: *mut [u8; 48], scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+1328], rbx
 mov QWORD PTR [r8+1336], rbp
@@ -739,7 +739,7 @@ ret
 }
 
 /// The CPU features `vg_pbkdf2_hmac_sha384_avx2` requires (`Artifact.features`).
-pub(crate) const VG_PBKDF2_HMAC_SHA384_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_PBKDF2_HMAC_SHA384_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// PBKDF2-HMAC-SHA-384 (RFC 8018 §5.2, with HMAC-SHA-384 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-384 and HMAC-SHA-384 functions and `vg_pbkdf2_hmac_sha384_iterate`.
 ///
@@ -755,7 +755,7 @@ pub(crate) const VG_PBKDF2_HMAC_SHA384_AVX2_FEATURES: crate::cpu::Features = cra
 /// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 3456 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384_avx2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384_avx2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-3432]
 mov rax, QWORD PTR [rsp+3440]
@@ -919,7 +919,7 @@ ret
 }
 
 /// The CPU features `vg_pbkdf2_hmac_sha384_iterate_shani` requires (`Artifact.features`).
-pub(crate) const VG_PBKDF2_HMAC_SHA384_ITERATE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_PBKDF2_HMAC_SHA384_ITERATE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// Runs `n` steps of PBKDF2-HMAC-SHA-384's iteration: if, for a 128-byte key `K₀`, the SHA-384 streaming state in bytes 0 to 191 of `*key` represents `K₀ ⊕ ipad` and the one in bytes 192 to 383 represents `K₀ ⊕ opad` (as `vg_hmac_sha384_init` leaves them), repeats `U ← HMAC-SHA-384 (K₀, U)`, `T ← T ⊕ U` `n` times, from `U = *u` and `T = *t`, and leaves the final `T` in `*t` (RFC 8018, step 3 of `F`).
 ///
@@ -936,7 +936,7 @@ pub(crate) const VG_PBKDF2_HMAC_SHA384_ITERATE_SHANI_FEATURES: crate::cpu::Featu
 /// * None of `key`, `u`, `t` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384_iterate_shani(key: *const [u8; 384], u: *const [u8; 48], n: u32, t: *mut [u8; 48], scratch: *mut [u64; 234]) {
+pub unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384_iterate_shani(key: *const [u8; 384], u: *const [u8; 48], n: u32, t: *mut [u8; 48], scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+1328], rbx
 mov QWORD PTR [r8+1336], rbp
@@ -1201,7 +1201,7 @@ ret
 }
 
 /// The CPU features `vg_pbkdf2_hmac_sha384_shani` requires (`Artifact.features`).
-pub(crate) const VG_PBKDF2_HMAC_SHA384_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_PBKDF2_HMAC_SHA384_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// PBKDF2-HMAC-SHA-384 (RFC 8018 §5.2, with HMAC-SHA-384 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-384 and HMAC-SHA-384 functions and `vg_pbkdf2_hmac_sha384_iterate`.
 ///
@@ -1217,7 +1217,7 @@ pub(crate) const VG_PBKDF2_HMAC_SHA384_SHANI_FEATURES: crate::cpu::Features = cr
 /// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 3456 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-3432]
 mov rax, QWORD PTR [rsp+3440]

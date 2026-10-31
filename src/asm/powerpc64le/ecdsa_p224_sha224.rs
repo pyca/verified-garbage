@@ -16,7 +16,7 @@
 /// * `out` and `scratch` must not overlap each other, `d` or `digest` (distinct Rust objects never do).
 /// * None of `out`, `d`, `digest` and `scratch` may overlap the 400 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ecdsa_p224_sha224_sign(out: *mut [u8; 56], d: *const [u8; 28], digest: *const [u8; 28], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_ecdsa_p224_sha224_sign(out: *mut [u8; 56], d: *const [u8; 28], digest: *const [u8; 28], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mflr %r0
 stdu %r1, -48(%r1)

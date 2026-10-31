@@ -5,7 +5,7 @@
 use super::Table;
 
 /// The table of constants `VG_GCM_TAIL_IDX` (`Artifact.consts`).
-pub(crate) static VG_GCM_TAIL_IDX: Table<32> = Table(*b"\
+pub static VG_GCM_TAIL_IDX: Table<32> = Table(*b"\
     \x00\x01\x02\x03\x04\x05\x06\x07\
     \x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\
     \x07\x06\x05\x04\x03\x02\x01\x00\

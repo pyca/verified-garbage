@@ -1,0 +1,19 @@
+# The verified functions for `x86`, generated from Lean into this directory
+# (see `lean/VerifiedGarbage/TCB/Rust.lean`): a crate of its own, so that
+# compiling the library does not compile them again with it.
+[package]
+name = "verified-garbage-asm-x86"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.88"
+description = "The formally verified assembly of verified-garbage for x86"
+license = "Apache-2.0 OR BSD-3-Clause"
+repository = "https://github.com/pyca/verified-garbage"
+publish = false
+build = false
+
+[lib]
+path = "mod.rs"
+
+[dependencies]
+verified-garbage-cpu = { path = "../../../cpu" }

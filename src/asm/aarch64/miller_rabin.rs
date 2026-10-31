@@ -16,7 +16,7 @@
 /// * The working space may contain secrets on return and must be destroyed after use.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_miller_rabin_round(ws: *mut u64, ws_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_miller_rabin_round(ws: *mut u64, ws_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"ldr x12, [x0, #48]
 ldr x11, [x0, #224]

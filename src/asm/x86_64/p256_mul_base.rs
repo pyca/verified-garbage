@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_p256_mul_base_adx` requires (`Artifact.features`).
-pub(crate) const VG_P256_MUL_BASE_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_P256_MUL_BASE_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// The multiple `P = [k]G` of P-256's base point `G`, for the number `k` of 4 64-bit words (`32` bytes), little-endian, at byte 1056 of `ws`, in projective coordinates (`(X : Y : Z)` for `(X / Z, Y / Z)`, and `(0 : Y : 0)` for the point at infinity) at bytes 512 to 607: coordinates of 4 64-bit words, little-endian, in Montgomery's form modulo P-256's prime `p`, below it. The function reads `p` at byte 64 and zero at byte 160, and tables of multiples of `G` that are constants of the library. Bytes 608 to 1055, 1344 to 1407, 128 to 159 and 1504 to 1767 of `ws` are the function's own working space; every other byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect timing.
 ///
@@ -17,7 +17,7 @@ pub(crate) const VG_P256_MUL_BASE_ADX_FEATURES: crate::cpu::Features = crate::cp
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2`, `adx`, `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_p256_mul_base_adx(ws: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_p256_mul_base_adx(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rdi+992], rbx
 mov QWORD PTR [rdi+1000], rbp

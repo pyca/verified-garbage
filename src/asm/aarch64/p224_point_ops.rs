@@ -13,7 +13,7 @@
 /// * The function's own working space, bytes 608 to 703, 800 to 991 and 128 to 159 of `ws`, is unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_p224_proj_add(ws: *mut [u64; 1024]) {
+pub unsafe extern "C" fn vg_p224_proj_add(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"movz x7, #0, lsl #0
 ldr x4, [x0, #704]

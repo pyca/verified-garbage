@@ -14,7 +14,7 @@
 /// * Bytes 128 to 159, 1248 to 1279, 1376 to 1407, 1408 to 1439 and 3840 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_secp256k1_check_point(ws: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_secp256k1_check_point(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"movq xmm0, rbx
 movq xmm1, rbp

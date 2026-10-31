@@ -15,7 +15,7 @@
 /// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
 /// * None of `out`, `public` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ec_p384_compress_public_key(out: *mut [u8; 49], public: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_ec_p384_compress_public_key(out: *mut [u8; 49], public: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"or %r12, %r4, %r4
 std %r14, 0(%r5)
@@ -1127,7 +1127,7 @@ blr",
 /// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
 /// * None of `out`, `public` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ec_p384_decompress_public_key(out: *mut [u8; 97], public: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_ec_p384_decompress_public_key(out: *mut [u8; 97], public: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"or %r12, %r4, %r4
 std %r14, 0(%r5)

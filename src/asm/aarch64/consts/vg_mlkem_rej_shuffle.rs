@@ -5,7 +5,7 @@
 use super::Table;
 
 /// The table of constants `VG_MLKEM_REJ_SHUFFLE` (`Artifact.consts`).
-pub(crate) static VG_MLKEM_REJ_SHUFFLE: Table<4096> = Table(*b"\
+pub static VG_MLKEM_REJ_SHUFFLE: Table<4096> = Table(*b"\
     \xff\xff\xff\xff\xff\xff\xff\xff\
     \xff\xff\xff\xff\xff\xff\xff\xff\
     \x00\x01\xff\xff\xff\xff\xff\xff\

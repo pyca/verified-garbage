@@ -16,7 +16,7 @@
 /// * Arrays 2 and 3 may contain secret intermediates on return; the caller must destroy them.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_square_4_4(ws: *mut u64, ws_len: usize) {
+pub unsafe extern "C" fn vg_rsa_square_4_4(ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
         r"ldr x12, [x0, #48]
 lsr x3, x12, #4
@@ -1606,7 +1606,7 @@ ret
 /// * Arrays 2 and 3 may contain secret intermediates on return; the caller must destroy them.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_square_6_6(ws: *mut u64, ws_len: usize) {
+pub unsafe extern "C" fn vg_rsa_square_6_6(ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
         r"ldr x12, [x0, #48]
 lsr x3, x12, #4
@@ -6219,7 +6219,7 @@ ret
 /// * Arrays 2, 3 and 5 and control words 26 and 28 may contain intermediate values on return; the caller must destroy secret intermediates.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_square_window5(ws: *mut u64, ws_len: usize) {
+pub unsafe extern "C" fn vg_rsa_square_window5(ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
         r"ldr x12, [x0, #48]
 lsr x3, x12, #4
@@ -12007,7 +12007,7 @@ ret
 /// * `pre` and `scratch` must not overlap each other or `n` (distinct Rust objects never do).
 /// * None of `pre`, `n` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_public_precompute(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_rsa_public_precompute(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"str x0, [x4, #128]
 str x2, [x4, #136]
@@ -12487,7 +12487,7 @@ ret
 /// * `out` and `scratch` must not overlap each other, `pre`, `e`, `input` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `pre`, `e`, `input` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_public_precomputed_checked(out: *mut u8, out_len: usize, pre: *const u64, pre_len: usize, e: *const u8, e_len: usize, input: *const u8, input_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_rsa_public_precomputed_checked(out: *mut u8, out_len: usize, pre: *const u64, pre_len: usize, e: *const u8, e_len: usize, input: *const u8, input_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"movz x16, #65535, lsl #0
 movk x16, #65535, lsl #16
@@ -20109,7 +20109,7 @@ ret
 /// * `out` and `scratch` must not overlap each other, `n`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_private_crt(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_rsa_private_crt(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"ldr x8, [sp, #64]
 str x0, [x8, #128]
@@ -25595,7 +25595,7 @@ ret
 /// * `dp`, `dq`, `qinv` and `scratch` must not overlap each other, `n`, `p`, `q`, `d` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `dp`, `dq`, `qinv`, `n`, `p`, `q`, `d` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_crt_values(dp: *mut u8, dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_rsa_crt_values(dp: *mut u8, dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"ldr x8, [sp, #48]
 str x0, [x8, #128]
@@ -27044,7 +27044,7 @@ ret
 /// * `p`, `q` and `scratch` must not overlap each other, `n`, `e`, `d` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `p`, `q`, `n`, `e`, `d` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_recover_primes(p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_rsa_recover_primes(p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"ldr x8, [sp, #16]
 str x0, [x8, #128]
@@ -29330,7 +29330,7 @@ ret
 /// * `scratch` must not overlap `n`, `e`, `d`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `n`, `e`, `d`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_check_key(n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_rsa_check_key(n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"ldr x8, [sp, #64]
 str x0, [x8, #136]
@@ -31785,7 +31785,7 @@ ret
 /// * `scratch` must not overlap `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_check_crt_key(n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_rsa_check_crt_key(n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"ldr x8, [sp, #48]
 str x0, [x8, #136]
@@ -33440,7 +33440,7 @@ ret
 /// * Arrays 2 and 3 are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_mul_5_1_4(ws: *mut u64, ws_len: usize) {
+pub unsafe extern "C" fn vg_rsa_mul_5_1_4(ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
         r"ldr x12, [x0, #48]
 lsr x3, x12, #4
@@ -34889,7 +34889,7 @@ ret
 /// * Arrays 2 and 3 are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_mul_6_5_6(ws: *mut u64, ws_len: usize) {
+pub unsafe extern "C" fn vg_rsa_mul_6_5_6(ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
         r"ldr x12, [x0, #48]
 lsr x3, x12, #4
@@ -36338,7 +36338,7 @@ ret
 /// * Arrays 2 and 3 are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_mul_6_4_7(ws: *mut u64, ws_len: usize) {
+pub unsafe extern "C" fn vg_rsa_mul_6_4_7(ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
         r"ldr x12, [x0, #48]
 lsr x3, x12, #4
@@ -37787,7 +37787,7 @@ ret
 /// * Arrays 2 and 3 are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_mul_5_5_4(ws: *mut u64, ws_len: usize) {
+pub unsafe extern "C" fn vg_rsa_mul_5_5_4(ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
         r"ldr x12, [x0, #48]
 lsr x3, x12, #4
@@ -39236,7 +39236,7 @@ ret
 /// * Arrays 2 and 3 are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_mul_6_6_5(ws: *mut u64, ws_len: usize) {
+pub unsafe extern "C" fn vg_rsa_mul_6_6_5(ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
         r"ldr x12, [x0, #48]
 lsr x3, x12, #4
@@ -40685,7 +40685,7 @@ ret
 /// * Arrays 2 and 3 are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_mul_6_6_7(ws: *mut u64, ws_len: usize) {
+pub unsafe extern "C" fn vg_rsa_mul_6_6_7(ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
         r"ldr x12, [x0, #48]
 lsr x3, x12, #4
@@ -42134,7 +42134,7 @@ ret
 /// * Arrays 2 and 3 are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_mul_1_1_4(ws: *mut u64, ws_len: usize) {
+pub unsafe extern "C" fn vg_rsa_mul_1_1_4(ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
         r"ldr x12, [x0, #48]
 lsr x3, x12, #4
@@ -43583,7 +43583,7 @@ ret
 /// * Arrays 2 and 3 are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_mul_6_5_1(ws: *mut u64, ws_len: usize) {
+pub unsafe extern "C" fn vg_rsa_mul_6_5_1(ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
         r"ldr x12, [x0, #48]
 lsr x3, x12, #4
@@ -45032,7 +45032,7 @@ ret
 /// * Arrays 2 and 3 are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_mul_5_1_7(ws: *mut u64, ws_len: usize) {
+pub unsafe extern "C" fn vg_rsa_mul_5_1_7(ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
         r"ldr x12, [x0, #48]
 lsr x3, x12, #4
@@ -46481,7 +46481,7 @@ ret
 /// * Arrays 2 and 3 are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_mul_1_1_6(ws: *mut u64, ws_len: usize) {
+pub unsafe extern "C" fn vg_rsa_mul_1_1_6(ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
         r"ldr x12, [x0, #48]
 lsr x3, x12, #4
@@ -47930,7 +47930,7 @@ ret
 /// * Arrays 2 and 3 are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_mul_4_4_7(ws: *mut u64, ws_len: usize) {
+pub unsafe extern "C" fn vg_rsa_mul_4_4_7(ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
         r"ldr x12, [x0, #48]
 lsr x3, x12, #4
@@ -49379,7 +49379,7 @@ ret
 /// * Arrays 2 and 3 are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_mul_6_4_6(ws: *mut u64, ws_len: usize) {
+pub unsafe extern "C" fn vg_rsa_mul_6_4_6(ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
         r"ldr x12, [x0, #48]
 lsr x3, x12, #4
@@ -50840,7 +50840,7 @@ ret
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the 3248 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_private_checked(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_rsa_private_checked(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"str x30, [sp, #-16]!
 sub sp, sp, #3232

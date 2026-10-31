@@ -15,7 +15,7 @@
 /// * `ws` must not overlap the arguments on the stack (distinct Rust objects never do).
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_gf448_r16_mul(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_gf448_r16_mul(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+4080], ebx
@@ -7081,7 +7081,7 @@ ret
 /// * `ws` must not overlap the arguments on the stack (distinct Rust objects never do).
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_gf448_r16_add(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_gf448_r16_add(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+4080], ebx
@@ -7720,7 +7720,7 @@ ret
 /// * `ws` must not overlap the arguments on the stack (distinct Rust objects never do).
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_gf448_r16_sub(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_gf448_r16_sub(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+4080], ebx
@@ -8387,7 +8387,7 @@ ret
 /// * `ws` must not overlap the arguments on the stack (distinct Rust objects never do).
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_gf448_r16_mul_a24(ws: *mut [u64; 1024], o: u32, a: u32) {
+pub unsafe extern "C" fn vg_gf448_r16_mul_a24(ws: *mut [u64; 1024], o: u32, a: u32) {
     core::arch::naked_asm!(
         r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+4080], ebx

@@ -19,7 +19,7 @@
 /// * `out`, `used` and `scratch` must not overlap each other, `key`, `digest`, `rand` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_dsa_sign_random(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_dsa_sign_random(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"sub sp, sp, #256
 add x15, sp, #40
@@ -340,7 +340,7 @@ ret
 /// * `out` and `scratch` must not overlap each other, `key`, `nonce`, `digest` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `key`, `nonce`, `digest` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_dsa_sign(out: *mut u8, out_len: usize, key: *const u8, key_len: usize, p_len: usize, nonce: *const u8, q_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_dsa_sign(out: *mut u8, out_len: usize, key: *const u8, key_len: usize, p_len: usize, nonce: *const u8, q_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"ldr x11, [sp, #8]
 movz x12, #0, lsl #0
@@ -6641,7 +6641,7 @@ ret
 /// * `scratch` must not overlap `key`, `signature`, `digest` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `signature`, `digest` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_dsa_verify(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_dsa_verify(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"ldr x11, [sp, #0]
 movz x12, #0, lsl #0
@@ -13142,7 +13142,7 @@ ret
 /// * `scratch` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_dsa_validate_public_key(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_dsa_validate_public_key(key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"add x11, x4, #0
 movz x6, #0, lsl #0
@@ -15708,7 +15708,7 @@ ret
 /// * `scratch` must not overlap `key`, `signature`, `digest` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `signature`, `digest` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_dsa_verify_prevalidated(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_dsa_verify_prevalidated(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"ldr x11, [sp, #0]
 movz x12, #0, lsl #0
@@ -20090,7 +20090,7 @@ ret
 /// * `out`, `used` and `scratch` must not overlap each other, `params`, `rand` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `used`, `params`, `rand` and `scratch` may overlap the 256 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_dsa_generate_key(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_dsa_generate_key(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"sub sp, sp, #256
 add x15, sp, #40
@@ -20392,7 +20392,7 @@ ret
 /// * `scratch` must not overlap `params` (distinct Rust objects never do).
 /// * Neither `params` nor `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_dsa_check_parameters(params: *const u8, params_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_dsa_check_parameters(params: *const u8, params_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"add x11, x4, #0
 movz x12, #0, lsl #0
@@ -22274,7 +22274,7 @@ ret
 /// * `out` and `scratch` must not overlap each other, `params`, `x` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `params`, `x` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_dsa_derive_key(out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_dsa_derive_key(out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"add x11, x7, #0
 movz x12, #0, lsl #0
@@ -24948,7 +24948,7 @@ ret
 /// * `out` and `scratch` must not overlap each other, `seeds`, `hs`, `witnesses` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the 736 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_dsa_generate_parameters(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_dsa_generate_parameters(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"sub sp, sp, #448
 str x19, [sp, #304]
@@ -31201,7 +31201,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_sha256_sha2` requires (`Artifact.features`).
-pub(crate) const VG_DSA_GENERATE_PARAMETERS_SHA256_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
+pub const VG_DSA_GENERATE_PARAMETERS_SHA256_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
 
 /// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
 ///
@@ -31220,7 +31220,7 @@ pub(crate) const VG_DSA_GENERATE_PARAMETERS_SHA256_SHA2_FEATURES: crate::cpu::Fe
 /// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the 736 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_dsa_generate_parameters_sha256_sha2(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_dsa_generate_parameters_sha256_sha2(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".arch_extension sha2
 sub sp, sp, #448
@@ -37475,7 +37475,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_sha1_sha2` requires (`Artifact.features`).
-pub(crate) const VG_DSA_GENERATE_PARAMETERS_SHA1_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
+pub const VG_DSA_GENERATE_PARAMETERS_SHA1_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
 
 /// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
 ///
@@ -37494,7 +37494,7 @@ pub(crate) const VG_DSA_GENERATE_PARAMETERS_SHA1_SHA2_FEATURES: crate::cpu::Feat
 /// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the 736 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_dsa_generate_parameters_sha1_sha2(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_dsa_generate_parameters_sha1_sha2(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".arch_extension sha2
 sub sp, sp, #448
@@ -43749,7 +43749,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_sha1_sha2_sha256_sha2` requires (`Artifact.features`).
-pub(crate) const VG_DSA_GENERATE_PARAMETERS_SHA1_SHA2_SHA256_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
+pub const VG_DSA_GENERATE_PARAMETERS_SHA1_SHA2_SHA256_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
 
 /// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
 ///
@@ -43768,7 +43768,7 @@ pub(crate) const VG_DSA_GENERATE_PARAMETERS_SHA1_SHA2_SHA256_SHA2_FEATURES: crat
 /// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the 736 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_dsa_generate_parameters_sha1_sha2_sha256_sha2(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_dsa_generate_parameters_sha1_sha2_sha256_sha2(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".arch_extension sha2
 sub sp, sp, #448
@@ -50038,7 +50038,7 @@ ret
 /// * `ws` must not overlap `hs` (distinct Rust objects never do).
 /// * Neither `ws` nor `hs` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_dsa_generator_1024(ws: *mut u64, ws_len: usize, hs: *const u8, hs_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_dsa_generator_1024(ws: *mut u64, ws_len: usize, hs: *const u8, hs_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"sub sp, sp, #272
 str x19, [x0, #27840]
@@ -54407,7 +54407,7 @@ ret
 /// * `ws` must not overlap `hs` (distinct Rust objects never do).
 /// * Neither `ws` nor `hs` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_dsa_generator_2048(ws: *mut u64, ws_len: usize, hs: *const u8, hs_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_dsa_generator_2048(ws: *mut u64, ws_len: usize, hs: *const u8, hs_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"sub sp, sp, #272
 str x19, [x0, #27840]
@@ -58776,7 +58776,7 @@ ret
 /// * `ws` must not overlap `hs` (distinct Rust objects never do).
 /// * Neither `ws` nor `hs` may overlap the 288 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_dsa_generator_3072(ws: *mut u64, ws_len: usize, hs: *const u8, hs_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_dsa_generator_3072(ws: *mut u64, ws_len: usize, hs: *const u8, hs_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"sub sp, sp, #272
 str x19, [x0, #27840]
@@ -63145,7 +63145,7 @@ ret
 /// * `ws` and `used` must not overlap each other or `rand` (distinct Rust objects never do).
 /// * None of `ws`, `rand` and `used` may overlap the 272 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_dsa_probable_prime_160(ws: *mut u64, ws_len: usize, rand: *const u8, rand_len: usize, used: *mut [u64; 1]) -> u32 {
+pub unsafe extern "C" fn vg_dsa_probable_prime_160(ws: *mut u64, ws_len: usize, rand: *const u8, rand_len: usize, used: *mut [u64; 1]) -> u32 {
     core::arch::naked_asm!(
         r"sub sp, sp, #272
 str x0, [sp, #40]
@@ -65878,7 +65878,7 @@ ret
 /// * `ws` and `used` must not overlap each other or `rand` (distinct Rust objects never do).
 /// * None of `ws`, `rand` and `used` may overlap the 272 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_dsa_probable_prime_256(ws: *mut u64, ws_len: usize, rand: *const u8, rand_len: usize, used: *mut [u64; 1]) -> u32 {
+pub unsafe extern "C" fn vg_dsa_probable_prime_256(ws: *mut u64, ws_len: usize, rand: *const u8, rand_len: usize, used: *mut [u64; 1]) -> u32 {
     core::arch::naked_asm!(
         r"sub sp, sp, #272
 str x0, [sp, #40]
@@ -68611,7 +68611,7 @@ ret
 /// * `ws` and `used` must not overlap each other or `rand` (distinct Rust objects never do).
 /// * None of `ws`, `rand` and `used` may overlap the 272 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_dsa_probable_prime_1024(ws: *mut u64, ws_len: usize, rand: *const u8, rand_len: usize, used: *mut [u64; 1]) -> u32 {
+pub unsafe extern "C" fn vg_dsa_probable_prime_1024(ws: *mut u64, ws_len: usize, rand: *const u8, rand_len: usize, used: *mut [u64; 1]) -> u32 {
     core::arch::naked_asm!(
         r"sub sp, sp, #272
 str x0, [sp, #40]
@@ -71344,7 +71344,7 @@ ret
 /// * `ws` and `used` must not overlap each other or `rand` (distinct Rust objects never do).
 /// * None of `ws`, `rand` and `used` may overlap the 272 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_dsa_probable_prime_2048(ws: *mut u64, ws_len: usize, rand: *const u8, rand_len: usize, used: *mut [u64; 1]) -> u32 {
+pub unsafe extern "C" fn vg_dsa_probable_prime_2048(ws: *mut u64, ws_len: usize, rand: *const u8, rand_len: usize, used: *mut [u64; 1]) -> u32 {
     core::arch::naked_asm!(
         r"sub sp, sp, #272
 str x0, [sp, #40]
@@ -74077,7 +74077,7 @@ ret
 /// * `ws` and `used` must not overlap each other or `rand` (distinct Rust objects never do).
 /// * None of `ws`, `rand` and `used` may overlap the 272 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_dsa_probable_prime_3072(ws: *mut u64, ws_len: usize, rand: *const u8, rand_len: usize, used: *mut [u64; 1]) -> u32 {
+pub unsafe extern "C" fn vg_dsa_probable_prime_3072(ws: *mut u64, ws_len: usize, rand: *const u8, rand_len: usize, used: *mut [u64; 1]) -> u32 {
     core::arch::naked_asm!(
         r"sub sp, sp, #272
 str x0, [sp, #40]

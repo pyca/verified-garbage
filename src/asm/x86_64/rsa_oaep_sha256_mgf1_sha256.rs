@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_rsa_oaep_sha256_mgf1_sha256_decrypt_crt_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSAES-OAEP decryption (RFC 8017 §7.1.2) with SHA-256 and MGF1 with SHA-256, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
 ///
@@ -34,7 +34,7 @@ pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_CRT_ADX_FEATURES: crate:
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_decrypt_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_decrypt_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
@@ -473,7 +473,7 @@ ret
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
@@ -885,7 +885,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha256_mgf1_sha256_decrypt_crt_ifma` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSAES-OAEP decryption (RFC 8017 §7.1.2) with SHA-256 and MGF1 with SHA-256, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
 ///
@@ -916,7 +916,7 @@ pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_CRT_IFMA_FEATURES: crate
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_decrypt_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_decrypt_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
@@ -1328,7 +1328,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_avx2_crt_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_SHA256_AVX2_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_SHA256_AVX2_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSAES-OAEP decryption (RFC 8017 §7.1.2) with SHA-256 and MGF1 with SHA-256, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
 ///
@@ -1359,7 +1359,7 @@ pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_SHA256_AVX2_CRT_ADX_FEAT
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_avx2_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_avx2_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
@@ -1771,7 +1771,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_avx2` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_SHA256_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_SHA256_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// RSAES-OAEP decryption (RFC 8017 §7.1.2) with SHA-256 and MGF1 with SHA-256, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
 ///
@@ -1802,7 +1802,7 @@ pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_SHA256_AVX2_FEATURES: cr
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_avx2(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_avx2(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
@@ -2214,7 +2214,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_avx2_crt_ifma` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_SHA256_AVX2_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::ADX);
+pub const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_SHA256_AVX2_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::ADX);
 
 /// RSAES-OAEP decryption (RFC 8017 §7.1.2) with SHA-256 and MGF1 with SHA-256, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
 ///
@@ -2245,7 +2245,7 @@ pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_SHA256_AVX2_CRT_IFMA_FEA
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2`, `avx512f`, `avx512ifma`, `avx512vl` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_avx2_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_avx2_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
@@ -2657,7 +2657,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_shani_crt_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_SHA256_SHANI_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_SHA256_SHANI_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSAES-OAEP decryption (RFC 8017 §7.1.2) with SHA-256 and MGF1 with SHA-256, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
 ///
@@ -2688,7 +2688,7 @@ pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_SHA256_SHANI_CRT_ADX_FEA
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha`, `ssse3`, `avx`, `avx2`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_shani_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_shani_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
@@ -3100,7 +3100,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_shani` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_SHA256_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
+pub const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_SHA256_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
 
 /// RSAES-OAEP decryption (RFC 8017 §7.1.2) with SHA-256 and MGF1 with SHA-256, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
 ///
@@ -3131,7 +3131,7 @@ pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_SHA256_SHANI_FEATURES: c
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_shani(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_shani(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
@@ -3543,7 +3543,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_shani_crt_ifma` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_SHA256_SHANI_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_SHA256_SHANI_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSAES-OAEP decryption (RFC 8017 §7.1.2) with SHA-256 and MGF1 with SHA-256, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
 ///
@@ -3574,7 +3574,7 @@ pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_DECRYPT_SHA256_SHANI_CRT_IFMA_FE
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct` and `scratch` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha`, `ssse3`, `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_shani_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_shani_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
@@ -3986,7 +3986,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed_rsa_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_ENCRYPT_PRECOMPUTED_RSA_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_RSA_OAEP_SHA256_MGF1_SHA256_ENCRYPT_PRECOMPUTED_RSA_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with SHA-256 and MGF1 with SHA-256. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first), writes the encryption of the message `msg` with the label `label` and the 32-byte seed `*seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 66` bytes. The seed must be fresh random bytes for each encryption.
 ///
@@ -4017,7 +4017,7 @@ pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_ENCRYPT_PRECOMPUTED_RSA_ADX_FEAT
 /// * None of `out`, `n`, `e`, `label`, `msg`, `seed`, `scratch` and `pre` may overlap the return address on the stack or the 312 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed_rsa_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 32], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed_rsa_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 32], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
@@ -4365,7 +4365,7 @@ ret
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `label`, `msg`, `seed`, `pre` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `label`, `msg`, `seed`, `scratch` and `pre` may overlap the return address on the stack or the 312 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 32], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 32], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
@@ -4686,7 +4686,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed_rsa_ifma` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_ENCRYPT_PRECOMPUTED_RSA_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_RSA_OAEP_SHA256_MGF1_SHA256_ENCRYPT_PRECOMPUTED_RSA_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with SHA-256 and MGF1 with SHA-256. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first), writes the encryption of the message `msg` with the label `label` and the 32-byte seed `*seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 66` bytes. The seed must be fresh random bytes for each encryption.
 ///
@@ -4717,7 +4717,7 @@ pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_ENCRYPT_PRECOMPUTED_RSA_IFMA_FEA
 /// * None of `out`, `n`, `e`, `label`, `msg`, `seed`, `scratch` and `pre` may overlap the return address on the stack or the 312 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed_rsa_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 32], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed_rsa_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 32], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
@@ -5038,7 +5038,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed_sha256_avx2_rsa_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_ENCRYPT_PRECOMPUTED_SHA256_AVX2_RSA_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_RSA_OAEP_SHA256_MGF1_SHA256_ENCRYPT_PRECOMPUTED_SHA256_AVX2_RSA_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with SHA-256 and MGF1 with SHA-256. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first), writes the encryption of the message `msg` with the label `label` and the 32-byte seed `*seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 66` bytes. The seed must be fresh random bytes for each encryption.
 ///
@@ -5069,7 +5069,7 @@ pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_ENCRYPT_PRECOMPUTED_SHA256_AVX2_
 /// * None of `out`, `n`, `e`, `label`, `msg`, `seed`, `scratch` and `pre` may overlap the return address on the stack or the 312 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed_sha256_avx2_rsa_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 32], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed_sha256_avx2_rsa_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 32], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
@@ -5390,7 +5390,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed_sha256_avx2` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_ENCRYPT_PRECOMPUTED_SHA256_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_RSA_OAEP_SHA256_MGF1_SHA256_ENCRYPT_PRECOMPUTED_SHA256_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with SHA-256 and MGF1 with SHA-256. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first), writes the encryption of the message `msg` with the label `label` and the 32-byte seed `*seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 66` bytes. The seed must be fresh random bytes for each encryption.
 ///
@@ -5421,7 +5421,7 @@ pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_ENCRYPT_PRECOMPUTED_SHA256_AVX2_
 /// * None of `out`, `n`, `e`, `label`, `msg`, `seed`, `scratch` and `pre` may overlap the return address on the stack or the 312 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed_sha256_avx2(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 32], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed_sha256_avx2(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 32], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
@@ -5742,7 +5742,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed_sha256_avx2_rsa_ifma` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_ENCRYPT_PRECOMPUTED_SHA256_AVX2_RSA_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::ADX);
+pub const VG_RSA_OAEP_SHA256_MGF1_SHA256_ENCRYPT_PRECOMPUTED_SHA256_AVX2_RSA_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::ADX);
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with SHA-256 and MGF1 with SHA-256. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first), writes the encryption of the message `msg` with the label `label` and the 32-byte seed `*seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 66` bytes. The seed must be fresh random bytes for each encryption.
 ///
@@ -5773,7 +5773,7 @@ pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_ENCRYPT_PRECOMPUTED_SHA256_AVX2_
 /// * None of `out`, `n`, `e`, `label`, `msg`, `seed`, `scratch` and `pre` may overlap the return address on the stack or the 312 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2`, `avx512f`, `avx512ifma`, `avx512vl` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed_sha256_avx2_rsa_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 32], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed_sha256_avx2_rsa_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 32], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
@@ -6094,7 +6094,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed_sha256_shani_rsa_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_ENCRYPT_PRECOMPUTED_SHA256_SHANI_RSA_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_RSA_OAEP_SHA256_MGF1_SHA256_ENCRYPT_PRECOMPUTED_SHA256_SHANI_RSA_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with SHA-256 and MGF1 with SHA-256. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first), writes the encryption of the message `msg` with the label `label` and the 32-byte seed `*seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 66` bytes. The seed must be fresh random bytes for each encryption.
 ///
@@ -6125,7 +6125,7 @@ pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_ENCRYPT_PRECOMPUTED_SHA256_SHANI
 /// * None of `out`, `n`, `e`, `label`, `msg`, `seed`, `scratch` and `pre` may overlap the return address on the stack or the 312 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha`, `ssse3`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed_sha256_shani_rsa_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 32], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed_sha256_shani_rsa_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 32], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
@@ -6446,7 +6446,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed_sha256_shani` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_ENCRYPT_PRECOMPUTED_SHA256_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
+pub const VG_RSA_OAEP_SHA256_MGF1_SHA256_ENCRYPT_PRECOMPUTED_SHA256_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with SHA-256 and MGF1 with SHA-256. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first), writes the encryption of the message `msg` with the label `label` and the 32-byte seed `*seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 66` bytes. The seed must be fresh random bytes for each encryption.
 ///
@@ -6477,7 +6477,7 @@ pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_ENCRYPT_PRECOMPUTED_SHA256_SHANI
 /// * None of `out`, `n`, `e`, `label`, `msg`, `seed`, `scratch` and `pre` may overlap the return address on the stack or the 312 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed_sha256_shani(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 32], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed_sha256_shani(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 32], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
@@ -6798,7 +6798,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed_sha256_shani_rsa_ifma` requires (`Artifact.features`).
-pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_ENCRYPT_PRECOMPUTED_SHA256_SHANI_RSA_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_RSA_OAEP_SHA256_MGF1_SHA256_ENCRYPT_PRECOMPUTED_SHA256_SHANI_RSA_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with SHA-256 and MGF1 with SHA-256. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first), writes the encryption of the message `msg` with the label `label` and the 32-byte seed `*seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 66` bytes. The seed must be fresh random bytes for each encryption.
 ///
@@ -6829,7 +6829,7 @@ pub(crate) const VG_RSA_OAEP_SHA256_MGF1_SHA256_ENCRYPT_PRECOMPUTED_SHA256_SHANI
 /// * None of `out`, `n`, `e`, `label`, `msg`, `seed`, `scratch` and `pre` may overlap the return address on the stack or the 312 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha`, `ssse3`, `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed_sha256_shani_rsa_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 32], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_oaep_sha256_mgf1_sha256_encrypt_precomputed_sha256_shani_rsa_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 32], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi

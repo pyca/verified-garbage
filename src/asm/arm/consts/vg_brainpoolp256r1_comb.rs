@@ -5,7 +5,7 @@
 use super::Table;
 
 /// The table of constants `VG_BRAINPOOLP256R1_COMB` (`Artifact.consts`).
-pub(crate) static VG_BRAINPOOLP256R1_COMB: Table<151552> = Table(*b"\
+pub static VG_BRAINPOOLP256R1_COMB: Table<151552> = Table(*b"\
     \x0c\xd1\x1f\x35\x2d\xd9\xc0\x27\
     \x0a\xf3\x7c\xb9\x9a\x4d\xde\x80\
     \xd3\x2a\x89\x6b\x1d\x31\x4c\x70\

@@ -14,7 +14,7 @@
 /// * `state` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `state` nor `key` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_blake2b_init(state: *mut [u8; 192], outlen: usize, key: *const u8, keylen: usize) {
+pub unsafe extern "sysv64" fn vg_blake2b_init(state: *mut [u8; 192], outlen: usize, key: *const u8, keylen: usize) {
     core::arch::naked_asm!(
         r"movabs rax, -4942790177534073029
 mov QWORD PTR [rdi+8], rax
@@ -71,7 +71,7 @@ ret
 }
 
 /// The CPU features `vg_blake2b_compress_avx2` requires (`Artifact.features`).
-pub(crate) const VG_BLAKE2B_COMPRESS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_BLAKE2B_COMPRESS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// The BLAKE2b compression function F (RFC 7693 §3.2): updates the state `*state` (`h[0..7]`) with the `n` 128-byte blocks starting at `blocks`, in order: block `i` with the offset counter `t + 128 * i` (a 128-bit integer, so it does not wrap), and with the final block flag if `last != 0`.
 ///
@@ -87,7 +87,7 @@ pub(crate) const VG_BLAKE2B_COMPRESS_AVX2_FEATURES: crate::cpu::Features = crate
 /// * None of `state`, `blocks` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_blake2b_compress_avx2(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, t: u64, last: u32, scratch: *mut [u64; 64]) {
+pub unsafe extern "sysv64" fn vg_blake2b_compress_avx2(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, t: u64, last: u32, scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
         r"mov r8d, r8d
 movabs rax, 144396693218329603
@@ -970,7 +970,7 @@ ret
 }
 
 /// The CPU features `vg_blake2b_update_avx2` requires (`Artifact.features`).
-pub(crate) const VG_BLAKE2B_UPDATE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_BLAKE2B_UPDATE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Absorbs data into a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, it then represents that data followed by the `len` bytes at `data`.
 ///
@@ -985,7 +985,7 @@ pub(crate) const VG_BLAKE2B_UPDATE_AVX2_FEATURES: crate::cpu::Features = crate::
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_blake2b_update_avx2(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_blake2b_update_avx2(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-584]
 mov r8, rsp
@@ -1114,7 +1114,7 @@ ret
 }
 
 /// The CPU features `vg_blake2b_finalize_avx2` requires (`Artifact.features`).
-pub(crate) const VG_BLAKE2B_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_BLAKE2B_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Finishes a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (64 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
 ///
@@ -1130,7 +1130,7 @@ pub(crate) const VG_BLAKE2B_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_blake2b_finalize_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+pub unsafe extern "sysv64" fn vg_blake2b_finalize_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-584]
 mov rcx, rsp
@@ -1207,7 +1207,7 @@ ret
 }
 
 /// The CPU features `vg_blake2b_update_scratch_avx2` requires (`Artifact.features`).
-pub(crate) const VG_BLAKE2B_UPDATE_SCRATCH_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_BLAKE2B_UPDATE_SCRATCH_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// `vg_blake2b_update`, with its working space in `*scratch`.
 ///
@@ -1224,7 +1224,7 @@ pub(crate) const VG_BLAKE2B_UPDATE_SCRATCH_AVX2_FEATURES: crate::cpu::Features =
 /// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_blake2b_update_scratch_avx2(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 72]) {
+pub unsafe extern "sysv64" fn vg_blake2b_update_scratch_avx2(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 72]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+512], rbx
 mov QWORD PTR [r8+520], rbp
@@ -1349,7 +1349,7 @@ ret
 }
 
 /// The CPU features `vg_blake2b_finalize_scratch_avx2` requires (`Artifact.features`).
-pub(crate) const VG_BLAKE2B_FINALIZE_SCRATCH_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_BLAKE2B_FINALIZE_SCRATCH_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// `vg_blake2b_finalize`, with its working space in `*scratch`.
 ///
@@ -1367,7 +1367,7 @@ pub(crate) const VG_BLAKE2B_FINALIZE_SCRATCH_AVX2_FEATURES: crate::cpu::Features
 /// * None of `state`, `out` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_blake2b_finalize_scratch_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 72]) {
+pub unsafe extern "sysv64" fn vg_blake2b_finalize_scratch_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 72]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rcx+512], rbx
 mov QWORD PTR [rcx+520], rbp
@@ -1440,7 +1440,7 @@ ret
 }
 
 /// The CPU features `vg_blake2b_compress_avx512` requires (`Artifact.features`).
-pub(crate) const VG_BLAKE2B_COMPRESS_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_BLAKE2B_COMPRESS_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
 
 /// The BLAKE2b compression function F (RFC 7693 §3.2): updates the state `*state` (`h[0..7]`) with the `n` 128-byte blocks starting at `blocks`, in order: block `i` with the offset counter `t + 128 * i` (a 128-bit integer, so it does not wrap), and with the final block flag if `last != 0`.
 ///
@@ -1456,7 +1456,7 @@ pub(crate) const VG_BLAKE2B_COMPRESS_AVX512_FEATURES: crate::cpu::Features = cra
 /// * None of `state`, `blocks` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_blake2b_compress_avx512(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, t: u64, last: u32, scratch: *mut [u64; 64]) {
+pub unsafe extern "sysv64" fn vg_blake2b_compress_avx512(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, t: u64, last: u32, scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
         r"mov r8d, r8d
 movabs rax, 7640891576956012808
@@ -2279,7 +2279,7 @@ ret
 }
 
 /// The CPU features `vg_blake2b_update_avx512` requires (`Artifact.features`).
-pub(crate) const VG_BLAKE2B_UPDATE_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_BLAKE2B_UPDATE_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
 
 /// Absorbs data into a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, it then represents that data followed by the `len` bytes at `data`.
 ///
@@ -2294,7 +2294,7 @@ pub(crate) const VG_BLAKE2B_UPDATE_AVX512_FEATURES: crate::cpu::Features = crate
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_blake2b_update_avx512(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_blake2b_update_avx512(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-584]
 mov r8, rsp
@@ -2423,7 +2423,7 @@ ret
 }
 
 /// The CPU features `vg_blake2b_finalize_avx512` requires (`Artifact.features`).
-pub(crate) const VG_BLAKE2B_FINALIZE_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_BLAKE2B_FINALIZE_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
 
 /// Finishes a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (64 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
 ///
@@ -2439,7 +2439,7 @@ pub(crate) const VG_BLAKE2B_FINALIZE_AVX512_FEATURES: crate::cpu::Features = cra
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_blake2b_finalize_avx512(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+pub unsafe extern "sysv64" fn vg_blake2b_finalize_avx512(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-584]
 mov rcx, rsp
@@ -2516,7 +2516,7 @@ ret
 }
 
 /// The CPU features `vg_blake2b_update_scratch_avx512` requires (`Artifact.features`).
-pub(crate) const VG_BLAKE2B_UPDATE_SCRATCH_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_BLAKE2B_UPDATE_SCRATCH_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
 
 /// `vg_blake2b_update`, with its working space in `*scratch`.
 ///
@@ -2533,7 +2533,7 @@ pub(crate) const VG_BLAKE2B_UPDATE_SCRATCH_AVX512_FEATURES: crate::cpu::Features
 /// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_blake2b_update_scratch_avx512(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 72]) {
+pub unsafe extern "sysv64" fn vg_blake2b_update_scratch_avx512(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 72]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+512], rbx
 mov QWORD PTR [r8+520], rbp
@@ -2658,7 +2658,7 @@ ret
 }
 
 /// The CPU features `vg_blake2b_finalize_scratch_avx512` requires (`Artifact.features`).
-pub(crate) const VG_BLAKE2B_FINALIZE_SCRATCH_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_BLAKE2B_FINALIZE_SCRATCH_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
 
 /// `vg_blake2b_finalize`, with its working space in `*scratch`.
 ///
@@ -2676,7 +2676,7 @@ pub(crate) const VG_BLAKE2B_FINALIZE_SCRATCH_AVX512_FEATURES: crate::cpu::Featur
 /// * None of `state`, `out` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_blake2b_finalize_scratch_avx512(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 72]) {
+pub unsafe extern "sysv64" fn vg_blake2b_finalize_scratch_avx512(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 72]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rcx+512], rbx
 mov QWORD PTR [rcx+520], rbp
@@ -2761,7 +2761,7 @@ ret
 /// * `state` and `scratch` must not overlap each other or `blocks` (distinct Rust objects never do).
 /// * None of `state`, `blocks` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_blake2b_compress(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, t: u64, last: u32, scratch: *mut [u64; 64]) {
+pub unsafe extern "sysv64" fn vg_blake2b_compress(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, t: u64, last: u32, scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r9+296], rbx
 mov QWORD PTR [r9+304], rbp
@@ -4444,7 +4444,7 @@ ret
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_blake2b_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_blake2b_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-584]
 mov r8, rsp
@@ -4585,7 +4585,7 @@ ret
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_blake2b_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+pub unsafe extern "sysv64" fn vg_blake2b_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-584]
 mov rcx, rsp
@@ -4675,7 +4675,7 @@ ret
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_blake2b_update_scratch(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 72]) {
+pub unsafe extern "sysv64" fn vg_blake2b_update_scratch(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 72]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+512], rbx
 mov QWORD PTR [r8+520], rbp
@@ -4814,7 +4814,7 @@ ret
 /// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * None of `state`, `out` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_blake2b_finalize_scratch(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 72]) {
+pub unsafe extern "sysv64" fn vg_blake2b_finalize_scratch(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 72]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rcx+512], rbx
 mov QWORD PTR [rcx+520], rbp

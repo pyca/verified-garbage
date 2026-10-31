@@ -15,7 +15,7 @@
 /// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
 /// * None of `out`, `public` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ec_p384_compress_public_key(out: *mut [u8; 49], public: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_ec_p384_compress_public_key(out: *mut [u8; 49], public: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov r8, rdx
 mov r9, rsi
@@ -389,7 +389,7 @@ ret
 /// * `out` and `scratch` must not overlap each other or `public` (distinct Rust objects never do).
 /// * None of `out`, `public` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ec_p384_decompress_public_key(out: *mut [u8; 97], public: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_ec_p384_decompress_public_key(out: *mut [u8; 97], public: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov r8, rdx
 mov r9, rsi
@@ -1900,7 +1900,7 @@ ret
 }
 
 /// The CPU features `vg_ec_p384_compress_public_key_adx` requires (`Artifact.features`).
-pub(crate) const VG_EC_P384_COMPRESS_PUBLIC_KEY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_EC_P384_COMPRESS_PUBLIC_KEY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Validate and compress a P-384 public key (SEC 1 §§2.3.3–2.3.4, SP 800-56A §5.6.2.3.3): reads `04` then `x` and `y` in 48 bytes each, most significant first; checks both coordinates below the field prime and the curve equation; writes `02` for even `y` or `03` for odd `y`, then `x` in 48 bytes, and returns 1. On invalid input, writes 49 zero bytes and returns 0. Rejects infinity and hybrid encodings.
 ///
@@ -1916,7 +1916,7 @@ pub(crate) const VG_EC_P384_COMPRESS_PUBLIC_KEY_ADX_FEATURES: crate::cpu::Featur
 /// * None of `out`, `public` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ec_p384_compress_public_key_adx(out: *mut [u8; 49], public: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_ec_p384_compress_public_key_adx(out: *mut [u8; 49], public: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov r8, rdx
 mov r9, rsi
@@ -2278,7 +2278,7 @@ ret
 }
 
 /// The CPU features `vg_ec_p384_decompress_public_key_adx` requires (`Artifact.features`).
-pub(crate) const VG_EC_P384_DECOMPRESS_PUBLIC_KEY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_EC_P384_DECOMPRESS_PUBLIC_KEY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Validate and decompress a P-384 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 48 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 48 bytes each and returns 1. If no such finite point exists, writes 97 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
 ///
@@ -2294,7 +2294,7 @@ pub(crate) const VG_EC_P384_DECOMPRESS_PUBLIC_KEY_ADX_FEATURES: crate::cpu::Feat
 /// * None of `out`, `public` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ec_p384_decompress_public_key_adx(out: *mut [u8; 97], public: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_ec_p384_decompress_public_key_adx(out: *mut [u8; 97], public: *const [u8; 49], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov r8, rdx
 mov r9, rsi

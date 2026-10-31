@@ -5,7 +5,7 @@
 use super::Table;
 
 /// The table of constants `VG_ED25519_COMB` (`Artifact.consts`).
-pub(crate) static VG_ED25519_COMB: Table<40448> = Table(*b"\
+pub static VG_ED25519_COMB: Table<40448> = Table(*b"\
     \x3e\x91\x40\xd7\x05\x39\x10\x9d\
     \xb3\xbe\x40\xd1\x05\x9f\x39\xfd\
     \x09\x8a\x8f\x68\x34\x84\xc1\xa5\

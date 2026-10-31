@@ -18,7 +18,7 @@
 /// * `em` and `scratch` must not overlap each other, `digest` or `salt` (distinct Rust objects never do).
 /// * None of `em`, `digest`, `salt` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_pss_md5_mgf1_md5_encode(em: *mut u8, em_len: usize, digest: *const [u8; 16], salt: *const u8, salt_len: usize, em_bits: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_rsa_pss_md5_mgf1_md5_encode(em: *mut u8, em_len: usize, digest: *const [u8; 16], salt: *const u8, salt_len: usize, em_bits: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"sub sp, sp, #336
 add x16, sp, #0
@@ -480,7 +480,7 @@ ret
 /// * `scratch` must not overlap `digest` or `em` (distinct Rust objects never do).
 /// * None of `digest`, `em` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_pss_md5_mgf1_md5_check_encoding(digest: *const [u8; 16], em: *const u8, em_len: usize, em_bits: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_rsa_pss_md5_mgf1_md5_check_encoding(digest: *const [u8; 16], em: *const u8, em_len: usize, em_bits: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"sub sp, sp, #336
 add w5, w5, #0
@@ -1171,7 +1171,7 @@ ret
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the 3584 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_pss_md5_mgf1_md5_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 16], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_rsa_pss_md5_mgf1_md5_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 16], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"sub sp, sp, #336
 add x16, sp, #0
@@ -1333,7 +1333,7 @@ ret
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the 688 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_pss_md5_mgf1_md5_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 16], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub unsafe extern "C" fn vg_rsa_pss_md5_mgf1_md5_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 16], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"sub sp, sp, #336
 add x16, sp, #0

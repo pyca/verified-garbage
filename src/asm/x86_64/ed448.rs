@@ -13,7 +13,7 @@
 /// * `out` and `scratch` must not overlap each other or `wide` (distinct Rust objects never do).
 /// * None of `out`, `wide` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed448_scalar_reduce(out: *mut [u8; 57], wide: *const [u8; 114], scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed448_scalar_reduce(out: *mut [u8; 57], wide: *const [u8; 114], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
@@ -176,7 +176,7 @@ ret
 /// * `out` and `scratch` must not overlap each other, `r`, `k` or `s` (distinct Rust objects never do).
 /// * None of `out`, `r`, `k`, `s` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed448_scalar_mul_add(out: *mut [u8; 57], r: *const [u8; 57], k: *const [u8; 57], s: *const [u8; 57], scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed448_scalar_mul_add(out: *mut [u8; 57], r: *const [u8; 57], k: *const [u8; 57], s: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8], rbx
 mov QWORD PTR [r8+8], rbp
@@ -992,7 +992,7 @@ ret
 }
 
 /// The CPU features `vg_ed448_public_key_adx` requires (`Artifact.features`).
-pub(crate) const VG_ED448_PUBLIC_KEY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_ED448_PUBLIC_KEY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Ed448 public-key derivation (RFC 8032 §5.2.5): writes the 57-byte public key to `*out`, from the 57-byte private key at `seed`, including SHAKE256 and pruning. Contract: `VG.Spec.Ed448.publicKeyContract`. Constant time: only pointers may affect timing.
 ///
@@ -1007,7 +1007,7 @@ pub(crate) const VG_ED448_PUBLIC_KEY_ADX_FEATURES: crate::cpu::Features = crate:
 /// * None of `out`, `seed` and `scratch` may overlap the return address on the stack or the 104 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed448_public_key_adx(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed448_public_key_adx(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -1132,7 +1132,7 @@ ret
 }
 
 /// The CPU features `vg_ed448_scalar_base_adx` requires (`Artifact.features`).
-pub(crate) const VG_ED448_SCALAR_BASE_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_ED448_SCALAR_BASE_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Ed448 base-point multiplication (RFC 8032 §5.2.4): writes the 57-byte encoding of `[s]B` to `*out`, for the unsigned little-endian 456-bit integer at `scalar`, without pruning. Contract: `VG.Spec.Ed448.scalarBaseContract`. Constant time: only pointers may affect timing.
 ///
@@ -1146,7 +1146,7 @@ pub(crate) const VG_ED448_SCALAR_BASE_ADX_FEATURES: crate::cpu::Features = crate
 /// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed448_scalar_base_adx(out: *mut [u8; 57], scalar: *const [u8; 57], scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed448_scalar_base_adx(out: *mut [u8; 57], scalar: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
@@ -6183,7 +6183,7 @@ ret
 }
 
 /// The CPU features `vg_ed448_sign_cached_adx` requires (`Artifact.features`).
-pub(crate) const VG_ED448_SIGN_CACHED_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_ED448_SIGN_CACHED_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Ed448 signing (RFC 8032 §5.2.6): writes the 114-byte signature to `*out`, for the `len` bytes at `message`, the `ctxlen` bytes of context at `context` and the 57-byte private key at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses Ed448 with a context, not Ed448ph (no prehash); the context is empty for plain Ed448. Contract: `VG.Spec.Ed448.signCachedContract`. Constant time: only pointers and the context and message lengths may affect timing, not any buffer contents.
 ///
@@ -6203,7 +6203,7 @@ pub(crate) const VG_ED448_SIGN_CACHED_ADX_FEATURES: crate::cpu::Features = crate
 /// * None of `out`, `seed`, `pk`, `context`, `message` and `scratch` may overlap the return address on the stack or the 464 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed448_sign_cached_adx(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed448_sign_cached_adx(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov r10, QWORD PTR [rsp+8]
 mov r11, QWORD PTR [rsp+16]
@@ -6619,7 +6619,7 @@ ret
 }
 
 /// The CPU features `vg_ed448_verify_adx` requires (`Artifact.features`).
-pub(crate) const VG_ED448_VERIFY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_ED448_VERIFY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Ed448 verification (RFC 8032 §5.2.7): returns 1 if the 114-byte signature at `signature` verifies for the 57-byte public key at `pk`, the `ctxlen` bytes of context at `context` and the `len` bytes at `message`, and 0 otherwise (always 0 for a context longer than 255 bytes). Uses Ed448 with a context, not Ed448ph (no prehash). Checks canonical point encodings, S < L, and the cofactored equation `[4][S]B = [4]R + [4][k]A` with the challenge k = SHAKE256(dom4(0, C) || R || A || M, 114) reduced modulo L. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed448.verifyContract`. Not constant time: timing may depend on the public key, context, message and signature.
 ///
@@ -6635,7 +6635,7 @@ pub(crate) const VG_ED448_VERIFY_ADX_FEATURES: crate::cpu::Features = crate::cpu
 /// * None of `pk`, `context`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 272 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed448_verify_adx(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_ed448_verify_adx(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"cmp rdx, 256
 jb 20f
@@ -6828,7 +6828,7 @@ ret
 }
 
 /// The CPU features `vg_ed448_verify_equation_adx` requires (`Artifact.features`).
-pub(crate) const VG_ED448_VERIFY_EQUATION_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_ED448_VERIFY_EQUATION_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Checks Ed448 encodings and the cofactored equation `[4][S]B = [4]R + [4][k]A` (RFC 8032 §5.2.7), returning 1 if they pass and 0 otherwise. `pk` holds A, `signature` holds R || S, and `challenge` holds k as a 57-byte little-endian integer, used as given. To verify a signature on M with the context C as `VG.Spec.Ed448.verify` does, the caller must reduce SHAKE256(dom4(0, C) || R || A || M, 114) modulo L (e.g. with `vg_ed448_scalar_reduce`) and supply the 57-byte result as `challenge`; this function does not hash M. Rejects noncanonical points and S >= L, with no additional subgroup or small-order check. Contract: `VG.Spec.Ed448.verifyEquationContract`. Not constant time: timing may depend on all inputs.
 ///
@@ -6843,7 +6843,7 @@ pub(crate) const VG_ED448_VERIFY_EQUATION_ADX_FEATURES: crate::cpu::Features = c
 /// * None of `pk`, `signature`, `challenge` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed448_verify_equation_adx(pk: *const [u8; 57], signature: *const [u8; 114], challenge: *const [u8; 57], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_ed448_verify_equation_adx(pk: *const [u8; 57], signature: *const [u8; 114], challenge: *const [u8; 57], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rcx], rbx
 mov QWORD PTR [rcx+8], rbp
@@ -15559,7 +15559,7 @@ ret
 /// * `out` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `out`, `seed` and `scratch` may overlap the return address on the stack or the 104 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed448_public_key(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed448_public_key(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"push rdi
 push rsi
@@ -15694,7 +15694,7 @@ ret
 /// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
 /// * None of `out`, `scalar` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed448_scalar_base(out: *mut [u8; 57], scalar: *const [u8; 57], scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed448_scalar_base(out: *mut [u8; 57], scalar: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
@@ -21347,7 +21347,7 @@ ret
 /// * `out` and `scratch` must not overlap each other, `seed`, `pk`, `context`, `message` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `seed`, `pk`, `context`, `message` and `scratch` may overlap the return address on the stack or the 464 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed448_sign_cached(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_ed448_sign_cached(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov r10, QWORD PTR [rsp+8]
 mov r11, QWORD PTR [rsp+16]
@@ -21775,7 +21775,7 @@ ret
 /// * `scratch` must not overlap `pk`, `context`, `message`, `signature` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `pk`, `context`, `message`, `signature` and `scratch` may overlap the return address on the stack or the 272 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed448_verify(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_ed448_verify(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"cmp rdx, 256
 jb 20f
@@ -21979,7 +21979,7 @@ ret
 /// * `scratch` must not overlap `pk`, `signature` or `challenge` (distinct Rust objects never do).
 /// * None of `pk`, `signature`, `challenge` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ed448_verify_equation(pk: *const [u8; 57], signature: *const [u8; 114], challenge: *const [u8; 57], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_ed448_verify_equation(pk: *const [u8; 57], signature: *const [u8; 114], challenge: *const [u8; 57], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rcx], rbx
 mov QWORD PTR [rcx+8], rbp

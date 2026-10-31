@@ -106,7 +106,7 @@ def artifact : Artifact where
 /-- The rendering: the static's symbol in a RIP-relative operand. -/
 def expected : String := "/// Returns word 1 of its table.
 #[unsafe(naked)]
-pub(crate) unsafe extern \"sysv64\" fn vg_test_consts() -> u64 {
+pub unsafe extern \"sysv64\" fn vg_test_consts() -> u64 {
     core::arch::naked_asm!(
         r\"lea rax, [rip + {VG_TEST_TABLE}]
 mov rax, QWORD PTR [rax+8]

@@ -5,7 +5,7 @@
 use super::Table;
 
 /// The table of constants `VG_SHA512_K` (`Artifact.consts`).
-pub(crate) static VG_SHA512_K: Table<640> = Table(*b"\
+pub static VG_SHA512_K: Table<640> = Table(*b"\
     \x22\xae\x28\xd7\x98\x2f\x8a\x42\
     \xcd\x65\xef\x23\x91\x44\x37\x71\
     \x2f\x3b\x4d\xec\xcf\xfb\xc0\xb5\

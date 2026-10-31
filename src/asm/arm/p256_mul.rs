@@ -14,7 +14,7 @@
 /// * Bytes 608 to 1055, 1344 to 1375, 128 to 159 and 1504 to 8191 of `ws` are unspecified on return and may hold intermediate values, which are secret and which the caller must destroy.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_p256_mul(ws: *mut [u64; 1024]) {
+pub unsafe extern "C" fn vg_p256_mul(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov r12, r0
 str r4, [r12, #1504]
@@ -493,7 +493,7 @@ bx lr",
 
 /// The CPU features `vg_p256_mul_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_P256_MUL_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_P256_MUL_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
 
 /// The multiple `P = [k]Q` of a point `Q` of P-256, for the number `k` of 4 64-bit words (`32` bytes), little-endian, at byte 1056 of `ws`, and `Q`'s affine coordinates `x` and `y` at bytes 512 and 544, in projective coordinates (`(X : Y : Z)` for `(X / Z, Y / Z)`, and `(0 : Y : 0)` for the point at infinity) in `Q`'s place, at bytes 512 to 607: coordinates of 4 64-bit words, little-endian, in Montgomery's form modulo P-256's prime `p`, below it, for `k` in `[1, n - 1]`, `n` the order of P-256's base point (for any other `k` the coordinates are unspecified). The function reads `p` at byte 64, zero at byte 160, and one, `a` and `3 b` in Montgomery's form at bytes 224, 256 and 288. Bytes 608 to 1055, 1344 to 1375, 128 to 159 and 1504 to 8191 of `ws` are the function's own working space; every other byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect timing.
 ///
@@ -509,7 +509,7 @@ pub(crate) const VG_P256_MUL_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_p256_mul_umaal(ws: *mut [u64; 1024]) {
+pub unsafe extern "C" fn vg_p256_mul_umaal(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov r12, r0
 str r4, [r12, #1504]

@@ -14,7 +14,7 @@
 /// * Bytes 3904 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_p192_mul_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_p192_mul_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov r12, r0
 str r4, [r12, #4056]
@@ -682,7 +682,7 @@ bx lr",
 /// * Bytes 3904 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_p192_add_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_p192_add_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov r12, r0
 str r4, [r12, #4056]
@@ -985,7 +985,7 @@ bx lr",
 /// * Bytes 3904 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_p192_sub_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_p192_sub_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov r12, r0
 str r4, [r12, #4056]
@@ -1331,7 +1331,7 @@ bx lr",
 /// * Bytes 3904 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_p192_mul_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_p192_mul_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov r12, r0
 str r4, [r12, #4056]
@@ -1999,7 +1999,7 @@ bx lr",
 /// * Bytes 3904 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_p192_add_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_p192_add_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov r12, r0
 str r4, [r12, #4056]
@@ -2302,7 +2302,7 @@ bx lr",
 /// * Bytes 3904 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_p192_sub_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_p192_sub_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov r12, r0
 str r4, [r12, #4056]

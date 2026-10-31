@@ -18,7 +18,7 @@
 /// * `out` and `scratch` must not overlap each other, `d`, `digest` or `k` (distinct Rust objects never do).
 /// * None of `out`, `d`, `digest`, `k` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p521_sign(out: *mut [u8; 132], d: *const [u8; 66], digest: *const [u8; 66], k: *const [u8; 66], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_ecdsa_p521_sign(out: *mut [u8; 132], d: *const [u8; 66], digest: *const [u8; 66], k: *const [u8; 66], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8], rbx
 mov QWORD PTR [r8+8], rbp
@@ -6088,7 +6088,7 @@ ret
 /// * `scratch` must not overlap `public`, `digest` or `sig` (distinct Rust objects never do).
 /// * None of `public`, `digest`, `sig` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p521_verify(public: *const [u8; 133], digest: *const [u8; 66], sig: *const [u8; 132], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_ecdsa_p521_verify(public: *const [u8; 133], digest: *const [u8; 66], sig: *const [u8; 132], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov r8, rcx
 mov r9, rdi
@@ -21047,7 +21047,7 @@ ret
 }
 
 /// The CPU features `vg_ecdsa_p521_sign_adx` requires (`Artifact.features`).
-pub(crate) const VG_ECDSA_P521_SIGN_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_ECDSA_P521_SIGN_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// ECDSA signature generation over P-521 (FIPS 186-5 §6.4.1): with the private key `d` and the per-message secret number `k` (each 66 bytes, most significant first), signs the hash at `digest`: its leftmost 66 bytes, or, for a shorter hash, the hash's integer shifted left by 7 bits, in 66 bytes, most significant first; `e` (FIPS 186-5 §6.4.1) is the leftmost 521 bits of those bytes. Returns 1 and writes `r` then `s` (66 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` or `k` is not in `[1, n-1]`, or if `r` or `s` is 0, in which case the caller signs again with another `k`.
 ///
@@ -21066,7 +21066,7 @@ pub(crate) const VG_ECDSA_P521_SIGN_ADX_FEATURES: crate::cpu::Features = crate::
 /// * None of `out`, `d`, `digest`, `k` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2`, `adx`, `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p521_sign_adx(out: *mut [u8; 132], d: *const [u8; 66], digest: *const [u8; 66], k: *const [u8; 66], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_ecdsa_p521_sign_adx(out: *mut [u8; 132], d: *const [u8; 66], digest: *const [u8; 66], k: *const [u8; 66], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8], rbx
 mov QWORD PTR [r8+8], rbp
@@ -25138,7 +25138,7 @@ ret
 }
 
 /// The CPU features `vg_ecdsa_p521_verify_adx` requires (`Artifact.features`).
-pub(crate) const VG_ECDSA_P521_VERIFY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_ECDSA_P521_VERIFY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// ECDSA signature verification over P-521 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 66 bytes each, most significant first) of the hash at `digest` (its leftmost 66 bytes, or, for a shorter hash, the hash's integer shifted left by 7 bits, in 66 bytes, most significant first; `e` (FIPS 186-5 §6.4.1) is the leftmost 521 bits of those bytes) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 66 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
 ///
@@ -25155,7 +25155,7 @@ pub(crate) const VG_ECDSA_P521_VERIFY_ADX_FEATURES: crate::cpu::Features = crate
 /// * None of `public`, `digest`, `sig` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p521_verify_adx(public: *const [u8; 133], digest: *const [u8; 66], sig: *const [u8; 132], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "sysv64" fn vg_ecdsa_p521_verify_adx(public: *const [u8; 133], digest: *const [u8; 66], sig: *const [u8; 132], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"mov r8, rcx
 mov r9, rdi

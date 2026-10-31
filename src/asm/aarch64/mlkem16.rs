@@ -13,7 +13,7 @@
 /// * `f` must not overlap `b` (distinct Rust objects never do).
 /// * Neither `b` nor `f` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mlkem16_cbd2(b: *const [u8; 128], f: *mut [u16; 256]) {
+pub unsafe extern "C" fn vg_mlkem16_cbd2(b: *const [u8; 128], f: *mut [u16; 256]) {
     core::arch::naked_asm!(
         r"movz x9, #255, lsl #0
 movk x9, #256, lsl #16
@@ -79,7 +79,7 @@ ret
 /// * `f` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * Neither `f` nor `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mlkem16_ntt(f: *mut [u16; 256], scratch: *mut [u64; 64]) {
+pub unsafe extern "C" fn vg_mlkem16_ntt(f: *mut [u16; 256], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
         r"umov x7, v8.d[0]
 umov x8, v9.d[0]
@@ -623,7 +623,7 @@ ret
 /// * `f` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * Neither `f` nor `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mlkem16_inv_ntt(f: *mut [u16; 256], scratch: *mut [u64; 64]) {
+pub unsafe extern "C" fn vg_mlkem16_inv_ntt(f: *mut [u16; 256], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
         r"umov x7, v8.d[0]
 umov x8, v9.d[0]

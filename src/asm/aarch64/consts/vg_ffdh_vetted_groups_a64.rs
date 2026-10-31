@@ -5,7 +5,7 @@
 use super::Table;
 
 /// The table of constants `VG_FFDH_VETTED_GROUPS_A64` (`Artifact.consts`).
-pub(crate) static VG_FFDH_VETTED_GROUPS_A64: Table<17744> = Table(*b"\
+pub static VG_FFDH_VETTED_GROUPS_A64: Table<17744> = Table(*b"\
     \x00\x01\x00\x00\xe1\x00\x00\x00\
     \xff\xff\xff\xff\xff\xff\xff\xff\
     \xc9\x0f\xda\xa2\x21\x68\xc2\x34\

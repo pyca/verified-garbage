@@ -13,7 +13,7 @@
 /// * The function's own working space, bytes 880 to 1023, 1168 to 1455 and 4048 to 4095 of `ws`, is unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_p384_jac_add_cached(ws: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_p384_jac_add_cached(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"movq xmm0, rbp
 movq xmm1, r12
@@ -9816,7 +9816,7 @@ ret
 /// * The function's own working space, bytes 880 to 1023, 1168 to 1455 and 4048 to 4095 of `ws`, is unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_p384_jac_add_affine(ws: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_p384_jac_add_affine(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"movq xmm0, rbp
 movq xmm1, r12
@@ -18281,7 +18281,7 @@ ret
 }
 
 /// The CPU features `vg_p384_jac_add_cached_adx` requires (`Artifact.features`).
-pub(crate) const VG_P384_JAC_ADD_CACHED_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_P384_JAC_ADD_CACHED_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// The sum `P = P + Q` of points on P-384 in Jacobian coordinates, `Q` given with its `Z²` at byte 6160 and `Z³` at byte 6208 (add-1998-cmo-2, with the point at infinity, equal and opposite points decided and handled). Coordinates are numbers of 6 64-bit words (`48` bytes), little-endian, in Montgomery's form modulo P-384's prime `p`, and a point is three at consecutive offsets of `ws`: `P` at bytes 736 to 879, `Q` at bytes 1024 to 1167. The function reads `p` at byte 64. The function's own working space is bytes 880 to 1023, 1168 to 1455 and 4048 to 4095 of `ws`; every other byte of `ws` but the result's keeps its value.
 ///
@@ -18295,7 +18295,7 @@ pub(crate) const VG_P384_JAC_ADD_CACHED_ADX_FEATURES: crate::cpu::Features = cra
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_p384_jac_add_cached_adx(ws: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_p384_jac_add_cached_adx(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"movq xmm0, rbp
 movq xmm1, r12
@@ -24870,7 +24870,7 @@ ret
 }
 
 /// The CPU features `vg_p384_jac_add_affine_adx` requires (`Artifact.features`).
-pub(crate) const VG_P384_JAC_ADD_AFFINE_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_P384_JAC_ADD_AFFINE_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// The sum `P = P + Q` of points on P-384 in Jacobian coordinates, `Q`'s `Z` 1 (the mixed addition, with the point at infinity `P`, equal and opposite points decided and handled; `Q`'s `Z` is read only to copy `Q` when `P` is the point at infinity). Coordinates are numbers of 6 64-bit words (`48` bytes), little-endian, in Montgomery's form modulo P-384's prime `p`, and a point is three at consecutive offsets of `ws`: `P` at bytes 736 to 879, `Q` at bytes 1024 to 1167. The function reads `p` at byte 64. The function's own working space is bytes 880 to 1023, 1168 to 1455 and 4048 to 4095 of `ws`; every other byte of `ws` but the result's keeps its value.
 ///
@@ -24884,7 +24884,7 @@ pub(crate) const VG_P384_JAC_ADD_AFFINE_ADX_FEATURES: crate::cpu::Features = cra
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_p384_jac_add_affine_adx(ws: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_p384_jac_add_affine_adx(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"movq xmm0, rbp
 movq xmm1, r12

@@ -14,7 +14,7 @@
 /// * `scratch` must not overlap `params` (distinct Rust objects never do).
 /// * Neither `params` nor `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_generation_check_parameters(params: *const u8, params_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_generation_check_parameters(params: *const u8, params_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"mov r11, r8
 mov QWORD PTR [r11], rbx
@@ -5031,7 +5031,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_sign_random_adx` requires (`Artifact.features`).
-pub(crate) const VG_DSA_SIGN_RANDOM_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_SIGN_RANDOM_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Randomized DSA signing of a prehashed digest from fresh independent random octets. Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for invalid key/retry exhaustion, or 2 for insufficient random bytes. On failure out is zero. used counts consumed complete draws on every return. Checks algebraic consistency, not primality. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignContract`.
 ///
@@ -5051,7 +5051,7 @@ pub(crate) const VG_DSA_SIGN_RANDOM_ADX_FEATURES: crate::cpu::Features = crate::
 /// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_sign_random_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_sign_random_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-248]
 mov QWORD PTR [rsp+40], rdi
@@ -5307,7 +5307,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_sign_adx` requires (`Artifact.features`).
-pub(crate) const VG_DSA_SIGN_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_SIGN_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// One DSA signing attempt on a prehashed digest. The key is big-endian p||q||g||y||x with component widths p_len, q_len, p_len, p_len, q_len; nonce is q_len bytes. Returns 1 and r||s (q_len bytes each), or 0 and zero output for invalid components, nonce or zero r/s. Checks algebraic consistency, not primality. Caller must assure domain validity and supply fresh independent nonces. Timing may depend on public p,q,g,y and success, not otherwise on x, nonce or digest. Contract: `VG.Spec.Dsa.signContract`.
 ///
@@ -5325,7 +5325,7 @@ pub(crate) const VG_DSA_SIGN_ADX_FEATURES: crate::cpu::Features = crate::cpu::Fe
 /// * None of `out`, `key`, `nonce`, `digest` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_sign_adx(out: *mut u8, out_len: usize, key: *const u8, key_len: usize, p_len: usize, nonce: *const u8, q_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_sign_adx(out: *mut u8, out_len: usize, key: *const u8, key_len: usize, p_len: usize, nonce: *const u8, q_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+32]
 mov QWORD PTR [r11], rbx
@@ -11883,7 +11883,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_verify_adx` requires (`Artifact.features`).
-pub(crate) const VG_DSA_VERIFY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_VERIFY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// DSA verification of a prehashed digest. The key is big-endian p||q||g||y with widths p_len, q_len, p_len, p_len; signature is r||s with q_len bytes each. Returns 1 if verification succeeds, otherwise 0. Checks algebraic consistency, not primality; caller must assure domain validity. Timing may depend on p,q,g,y and the result, not otherwise on signature or digest. Contract: `VG.Spec.Dsa.verifyContract`.
 ///
@@ -11900,7 +11900,7 @@ pub(crate) const VG_DSA_VERIFY_ADX_FEATURES: crate::cpu::Features = crate::cpu::
 /// * None of `key`, `signature`, `digest` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_verify_adx(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_verify_adx(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+24]
 mov QWORD PTR [r11], rbx
@@ -18586,7 +18586,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_key_adx` requires (`Artifact.features`).
-pub(crate) const VG_DSA_GENERATE_KEY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_GENERATE_KEY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Generate a DSA private key from p||q||g and fresh independent random bytes. Uses at most 128 rejection-sampling draws, computes y=g^x mod p, and checks algebraic consistency, not primality. Returns 1 with p||q||g||y||x, 0 for invalid input/draw limit, or 2 for insufficient randomness. Failure zeros out; used counts consumed complete draws on every return. Timing may depend on public parameters, sampling decisions, consumption and success, not otherwise on x or randomness. Contract: `VG.Spec.Dsa.generateKeyContract`.
 ///
@@ -18605,7 +18605,7 @@ pub(crate) const VG_DSA_GENERATE_KEY_ADX_FEATURES: crate::cpu::Features = crate:
 /// * None of `out`, `used`, `params`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_generate_key_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_generate_key_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-248]
 mov QWORD PTR [rsp+40], rdi
@@ -18849,7 +18849,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_check_parameters_adx` requires (`Artifact.features`).
-pub(crate) const VG_DSA_CHECK_PARAMETERS_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_CHECK_PARAMETERS_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// DSA domain checks on big-endian p||q||g (widths p_len, q_len, p_len), those of key generation before it samples: returns 1 if the widths are supported and the domain is algebraically consistent (supported bit lengths, odd p and q, q divides p-1, 1 < g < p, g^q = 1 mod p), otherwise 0. Checks algebraic consistency, not primality. All inputs are public. Contract: `VG.Spec.Dsa.checkParametersContract`.
 ///
@@ -18864,7 +18864,7 @@ pub(crate) const VG_DSA_CHECK_PARAMETERS_ADX_FEATURES: crate::cpu::Features = cr
 /// * Neither `params` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_check_parameters_adx(params: *const u8, params_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_check_parameters_adx(params: *const u8, params_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"mov r11, r8
 mov QWORD PTR [r11], rbx
@@ -20763,7 +20763,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_derive_key_adx` requires (`Artifact.features`).
-pub(crate) const VG_DSA_DERIVE_KEY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_DERIVE_KEY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Derive a DSA private key from big-endian p||q||g and a supplied q_len-byte scalar x, as key generation does after sampling x: checks the domain and 0 < x < q, computes y = g^x mod p and checks the key. Returns 1 with p||q||g||y||x, or 0 and zero output. Checks algebraic consistency, not primality. x must be a fresh uniform scalar the caller sampled. Timing may depend on p, q, g and success, not otherwise on x. Contract: `VG.Spec.Dsa.deriveKeyContract`.
 ///
@@ -20780,7 +20780,7 @@ pub(crate) const VG_DSA_DERIVE_KEY_ADX_FEATURES: crate::cpu::Features = crate::c
 /// * None of `out`, `params`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_derive_key_adx(out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_derive_key_adx(out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+16]
 mov QWORD PTR [r11], rbx
@@ -23566,7 +23566,7 @@ ret
 /// * `out`, `used` and `scratch` must not overlap each other, `key`, `digest`, `rand` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_sign_random(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_sign_random(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-248]
 mov QWORD PTR [rsp+40], rdi
@@ -23836,7 +23836,7 @@ ret
 /// * `out` and `scratch` must not overlap each other, `key`, `nonce`, `digest` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `key`, `nonce`, `digest` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_sign(out: *mut u8, out_len: usize, key: *const u8, key_len: usize, p_len: usize, nonce: *const u8, q_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_sign(out: *mut u8, out_len: usize, key: *const u8, key_len: usize, p_len: usize, nonce: *const u8, q_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+32]
 mov QWORD PTR [r11], rbx
@@ -30407,7 +30407,7 @@ ret
 /// * `scratch` must not overlap `key`, `signature`, `digest` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `key`, `signature`, `digest` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_verify(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_verify(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+24]
 mov QWORD PTR [r11], rbx
@@ -37108,7 +37108,7 @@ ret
 /// * `out`, `used` and `scratch` must not overlap each other, `params`, `rand` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `used`, `params`, `rand` and `scratch` may overlap the return address on the stack or the 264 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_generate_key(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_generate_key(out: *mut u8, out_len: usize, used: *mut [u64; 1], params: *const u8, params_len: usize, p_len: usize, q_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-248]
 mov QWORD PTR [rsp+40], rdi
@@ -37363,7 +37363,7 @@ ret
 /// * `scratch` must not overlap `params` (distinct Rust objects never do).
 /// * Neither `params` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_check_parameters(params: *const u8, params_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_check_parameters(params: *const u8, params_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"mov r11, r8
 mov QWORD PTR [r11], rbx
@@ -39275,7 +39275,7 @@ ret
 /// * `out` and `scratch` must not overlap each other, `params`, `x` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `params`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_derive_key(out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_derive_key(out: *mut u8, out_len: usize, params: *const u8, params_len: usize, p_len: usize, x: *const u8, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"mov r11, QWORD PTR [rsp+16]
 mov QWORD PTR [r11], rbx
@@ -42045,7 +42045,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_1024_mr_adx` requires (`Artifact.features`).
-pub(crate) const VG_DSA_GENERATE_PARAMETERS_1024_MR_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_GENERATE_PARAMETERS_1024_MR_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Generate DSA parameters with p_len = 128, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -42064,7 +42064,7 @@ pub(crate) const VG_DSA_GENERATE_PARAMETERS_1024_MR_ADX_FEATURES: crate::cpu::Fe
 /// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 536 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_generate_parameters_1024_mr_adx(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_1024_mr_adx(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-48]
 mov QWORD PTR [rsp], rbx
@@ -47456,7 +47456,7 @@ ret
 /// * `out` and `scratch` must not overlap each other, `seeds`, `hs`, `witnesses` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 536 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_generate_parameters_1024(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_1024(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-48]
 mov QWORD PTR [rsp], rbx
@@ -52833,7 +52833,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_1024_sha1_shani_mr_adx` requires (`Artifact.features`).
-pub(crate) const VG_DSA_GENERATE_PARAMETERS_1024_SHA1_SHANI_MR_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_GENERATE_PARAMETERS_1024_SHA1_SHANI_MR_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Generate DSA parameters with p_len = 128, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -52852,7 +52852,7 @@ pub(crate) const VG_DSA_GENERATE_PARAMETERS_1024_SHA1_SHANI_MR_ADX_FEATURES: cra
 /// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 536 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha`, `ssse3`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_generate_parameters_1024_sha1_shani_mr_adx(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_1024_sha1_shani_mr_adx(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-48]
 mov QWORD PTR [rsp], rbx
@@ -58229,7 +58229,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_1024_sha1_shani` requires (`Artifact.features`).
-pub(crate) const VG_DSA_GENERATE_PARAMETERS_1024_SHA1_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
+pub const VG_DSA_GENERATE_PARAMETERS_1024_SHA1_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
 
 /// Generate DSA parameters with p_len = 128, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -58248,7 +58248,7 @@ pub(crate) const VG_DSA_GENERATE_PARAMETERS_1024_SHA1_SHANI_FEATURES: crate::cpu
 /// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 536 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_generate_parameters_1024_sha1_shani(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_1024_sha1_shani(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-48]
 mov QWORD PTR [rsp], rbx
@@ -63625,7 +63625,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_2048_mr_adx` requires (`Artifact.features`).
-pub(crate) const VG_DSA_GENERATE_PARAMETERS_2048_MR_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_GENERATE_PARAMETERS_2048_MR_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Generate DSA parameters with p_len = 256, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -63644,7 +63644,7 @@ pub(crate) const VG_DSA_GENERATE_PARAMETERS_2048_MR_ADX_FEATURES: crate::cpu::Fe
 /// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 536 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_generate_parameters_2048_mr_adx(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_2048_mr_adx(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-48]
 mov QWORD PTR [rsp], rbx
@@ -68611,7 +68611,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_3072_mr_adx` requires (`Artifact.features`).
-pub(crate) const VG_DSA_GENERATE_PARAMETERS_3072_MR_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_GENERATE_PARAMETERS_3072_MR_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Generate DSA parameters with p_len = 384, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -68630,7 +68630,7 @@ pub(crate) const VG_DSA_GENERATE_PARAMETERS_3072_MR_ADX_FEATURES: crate::cpu::Fe
 /// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 536 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_generate_parameters_3072_mr_adx(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_3072_mr_adx(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-48]
 mov QWORD PTR [rsp], rbx
@@ -73988,7 +73988,7 @@ ret
 /// * `out` and `scratch` must not overlap each other, `seeds`, `hs`, `witnesses` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 536 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_generate_parameters_2048(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_2048(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-48]
 mov QWORD PTR [rsp], rbx
@@ -78970,7 +78970,7 @@ ret
 /// * `out` and `scratch` must not overlap each other, `seeds`, `hs`, `witnesses` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 536 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_generate_parameters_3072(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_3072(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-48]
 mov QWORD PTR [rsp], rbx
@@ -84313,7 +84313,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_2048_sha256_avx2_mr_adx` requires (`Artifact.features`).
-pub(crate) const VG_DSA_GENERATE_PARAMETERS_2048_SHA256_AVX2_MR_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_GENERATE_PARAMETERS_2048_SHA256_AVX2_MR_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Generate DSA parameters with p_len = 256, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -84332,7 +84332,7 @@ pub(crate) const VG_DSA_GENERATE_PARAMETERS_2048_SHA256_AVX2_MR_ADX_FEATURES: cr
 /// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 536 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_generate_parameters_2048_sha256_avx2_mr_adx(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_2048_sha256_avx2_mr_adx(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-48]
 mov QWORD PTR [rsp], rbx
@@ -89299,7 +89299,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_3072_sha256_avx2_mr_adx` requires (`Artifact.features`).
-pub(crate) const VG_DSA_GENERATE_PARAMETERS_3072_SHA256_AVX2_MR_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_GENERATE_PARAMETERS_3072_SHA256_AVX2_MR_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Generate DSA parameters with p_len = 384, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -89318,7 +89318,7 @@ pub(crate) const VG_DSA_GENERATE_PARAMETERS_3072_SHA256_AVX2_MR_ADX_FEATURES: cr
 /// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 536 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_generate_parameters_3072_sha256_avx2_mr_adx(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_3072_sha256_avx2_mr_adx(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-48]
 mov QWORD PTR [rsp], rbx
@@ -94661,7 +94661,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_2048_sha256_avx2` requires (`Artifact.features`).
-pub(crate) const VG_DSA_GENERATE_PARAMETERS_2048_SHA256_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_DSA_GENERATE_PARAMETERS_2048_SHA256_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// Generate DSA parameters with p_len = 256, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -94680,7 +94680,7 @@ pub(crate) const VG_DSA_GENERATE_PARAMETERS_2048_SHA256_AVX2_FEATURES: crate::cp
 /// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 536 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_generate_parameters_2048_sha256_avx2(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_2048_sha256_avx2(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-48]
 mov QWORD PTR [rsp], rbx
@@ -99647,7 +99647,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_3072_sha256_avx2` requires (`Artifact.features`).
-pub(crate) const VG_DSA_GENERATE_PARAMETERS_3072_SHA256_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_DSA_GENERATE_PARAMETERS_3072_SHA256_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// Generate DSA parameters with p_len = 384, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -99666,7 +99666,7 @@ pub(crate) const VG_DSA_GENERATE_PARAMETERS_3072_SHA256_AVX2_FEATURES: crate::cp
 /// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 536 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_generate_parameters_3072_sha256_avx2(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_3072_sha256_avx2(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-48]
 mov QWORD PTR [rsp], rbx
@@ -105009,7 +105009,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_2048_sha256_shani_mr_adx` requires (`Artifact.features`).
-pub(crate) const VG_DSA_GENERATE_PARAMETERS_2048_SHA256_SHANI_MR_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_GENERATE_PARAMETERS_2048_SHA256_SHANI_MR_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Generate DSA parameters with p_len = 256, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -105028,7 +105028,7 @@ pub(crate) const VG_DSA_GENERATE_PARAMETERS_2048_SHA256_SHANI_MR_ADX_FEATURES: c
 /// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 536 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha`, `ssse3`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_generate_parameters_2048_sha256_shani_mr_adx(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_2048_sha256_shani_mr_adx(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-48]
 mov QWORD PTR [rsp], rbx
@@ -109995,7 +109995,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_3072_sha256_shani_mr_adx` requires (`Artifact.features`).
-pub(crate) const VG_DSA_GENERATE_PARAMETERS_3072_SHA256_SHANI_MR_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_GENERATE_PARAMETERS_3072_SHA256_SHANI_MR_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Generate DSA parameters with p_len = 384, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -110014,7 +110014,7 @@ pub(crate) const VG_DSA_GENERATE_PARAMETERS_3072_SHA256_SHANI_MR_ADX_FEATURES: c
 /// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 536 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha`, `ssse3`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_generate_parameters_3072_sha256_shani_mr_adx(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_3072_sha256_shani_mr_adx(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-48]
 mov QWORD PTR [rsp], rbx
@@ -115357,7 +115357,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_2048_sha256_shani` requires (`Artifact.features`).
-pub(crate) const VG_DSA_GENERATE_PARAMETERS_2048_SHA256_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
+pub const VG_DSA_GENERATE_PARAMETERS_2048_SHA256_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
 
 /// Generate DSA parameters with p_len = 256, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -115376,7 +115376,7 @@ pub(crate) const VG_DSA_GENERATE_PARAMETERS_2048_SHA256_SHANI_FEATURES: crate::c
 /// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 536 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_generate_parameters_2048_sha256_shani(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_2048_sha256_shani(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-48]
 mov QWORD PTR [rsp], rbx
@@ -120343,7 +120343,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_3072_sha256_shani` requires (`Artifact.features`).
-pub(crate) const VG_DSA_GENERATE_PARAMETERS_3072_SHA256_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
+pub const VG_DSA_GENERATE_PARAMETERS_3072_SHA256_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
 
 /// Generate DSA parameters with p_len = 384, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -120362,7 +120362,7 @@ pub(crate) const VG_DSA_GENERATE_PARAMETERS_3072_SHA256_SHANI_FEATURES: crate::c
 /// * None of `out`, `seeds`, `hs`, `witnesses` and `scratch` may overlap the return address on the stack or the 536 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_generate_parameters_3072_sha256_shani(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_generate_parameters_3072_sha256_shani(out: *mut u8, out_len: usize, p_len: usize, q_len: usize, seeds: *const u8, seeds_len: usize, hs: *const u8, hs_len: usize, witnesses: *const u8, witnesses_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-48]
 mov QWORD PTR [rsp], rbx
@@ -125705,7 +125705,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_probable_prime_adx` requires (`Artifact.features`).
-pub(crate) const VG_DSA_PROBABLE_PRIME_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_PROBABLE_PRIME_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// DSA's probable-prime test (`VG.Spec.Dsa.probablePrime`: trial division, then RSA's blinded Miller–Rabin loop with 64 uniform witnesses through 2048 bits and 128 above) of an odd number of exactly `bits` bits, for `bits` one of [160, 256, 1024, 2048, 3072], stored as `bits / 8` big-endian bytes in `ws` at the offset `VG.Spec.Dsa.ProbablePrime.api` gives that size, with witnesses drawn from the front of `rand`. Returns 1 for a probable prime, 2 for a composite, and 0 if `rand` ran out; for 1 and 2 writes the octets read to `used`. Every byte of `ws` keeps its value but those of the size's scratch ranges. Acceptance is probable primality, not a certificate.
 ///
@@ -125725,7 +125725,7 @@ pub(crate) const VG_DSA_PROBABLE_PRIME_ADX_FEATURES: crate::cpu::Features = crat
 /// * None of `ws`, `rand` and `used` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_probable_prime_adx(ws: *mut u64, ws_len: usize, rand: *const u8, rand_len: usize, used: *mut [u64; 1], bits: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_probable_prime_adx(ws: *mut u64, ws_len: usize, rand: *const u8, rand_len: usize, used: *mut [u64; 1], bits: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-56]
 mov QWORD PTR [rsp], rbx
@@ -134145,7 +134145,7 @@ ret
 /// * `ws` and `used` must not overlap each other or `rand` (distinct Rust objects never do).
 /// * None of `ws`, `rand` and `used` may overlap the return address on the stack or the 184 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_dsa_probable_prime(ws: *mut u64, ws_len: usize, rand: *const u8, rand_len: usize, used: *mut [u64; 1], bits: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_dsa_probable_prime(ws: *mut u64, ws_len: usize, rand: *const u8, rand_len: usize, used: *mut [u64; 1], bits: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-56]
 mov QWORD PTR [rsp], rbx

@@ -5,7 +5,7 @@
 use super::Table;
 
 /// The table of constants `VG_MLKEM_NTT16_ZETAS` (`Artifact.consts`).
-pub(crate) static VG_MLKEM_NTT16_ZETAS: Table<512> = Table(*b"\
+pub static VG_MLKEM_NTT16_ZETAS: Table<512> = Table(*b"\
     \x26\x04\x28\x01\x8f\x09\x00\x00\
     \x21\x01\x4b\x01\xb5\x0c\xdc\x06\
     \xd5\x28\x62\x0b\x16\x5e\x00\x00\

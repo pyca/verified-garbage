@@ -14,7 +14,7 @@
 /// * Bytes 3584 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_gf448_r16_mul(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_gf448_r16_mul(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"str r4, [r0, #3968]
 str r5, [r0, #3972]
@@ -1169,7 +1169,7 @@ bx lr",
 /// * Bytes 3584 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_gf448_r16_add(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_gf448_r16_add(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"str r4, [r0, #3968]
 str r5, [r0, #3972]
@@ -1750,7 +1750,7 @@ bx lr",
 /// * Bytes 3584 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_gf448_r16_sub(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_gf448_r16_sub(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"str r4, [r0, #3968]
 str r5, [r0, #3972]
@@ -2415,7 +2415,7 @@ bx lr",
 /// * Bytes 3584 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_gf448_r16_mul_a24(ws: *mut [u64; 1024], o: u32, a: u32) {
+pub unsafe extern "C" fn vg_gf448_r16_mul_a24(ws: *mut [u64; 1024], o: u32, a: u32) {
     core::arch::naked_asm!(
         r"str r4, [r0, #3968]
 str r5, [r0, #3972]

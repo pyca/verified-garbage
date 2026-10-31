@@ -15,7 +15,7 @@
 /// * `state` and `scratch` must not overlap each other or `blocks` (distinct Rust objects never do).
 /// * None of `state`, `blocks` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_compress(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, scratch: *mut [u64; 166]) {
+pub unsafe extern "sysv64" fn vg_sha512_compress(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, scratch: *mut [u64; 166]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rcx+128], rbx
 mov QWORD PTR [rcx+136], rbp
@@ -1408,7 +1408,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_compress_avx2` requires (`Artifact.features`).
-pub(crate) const VG_SHA512_COMPRESS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SHA512_COMPRESS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// The SHA-512 compression function (FIPS 180-4 §6.4.2), shared by SHA-384, SHA-512, SHA-512/224 and SHA-512/256: updates the hash value `*state` with the `n` 128-byte blocks starting at `blocks`, in order.
 ///
@@ -1424,7 +1424,7 @@ pub(crate) const VG_SHA512_COMPRESS_AVX2_FEATURES: crate::cpu::Features = crate:
 /// * None of `state`, `blocks` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_compress_avx2(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, scratch: *mut [u64; 166]) {
+pub unsafe extern "sysv64" fn vg_sha512_compress_avx2(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, scratch: *mut [u64; 166]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rcx+1280], rbx
 mov QWORD PTR [rcx+1288], rbp
@@ -2971,7 +2971,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_compress_shani` requires (`Artifact.features`).
-pub(crate) const VG_SHA512_COMPRESS_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_SHA512_COMPRESS_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// The SHA-512 compression function (FIPS 180-4 §6.4.2), shared by SHA-384, SHA-512, SHA-512/224 and SHA-512/256: updates the hash value `*state` with the `n` 128-byte blocks starting at `blocks`, in order.
 ///
@@ -2987,7 +2987,7 @@ pub(crate) const VG_SHA512_COMPRESS_SHANI_FEATURES: crate::cpu::Features = crate
 /// * None of `state`, `blocks` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_compress_shani(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, scratch: *mut [u64; 166]) {
+pub unsafe extern "sysv64" fn vg_sha512_compress_shani(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, scratch: *mut [u64; 166]) {
     core::arch::naked_asm!(
         r"movabs rax, 283686952306183
 vmovq xmm8, rax
@@ -3225,7 +3225,7 @@ ret
 /// * `state` must be valid for reads and writes of 192 bytes.
 /// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha384_init(state: *mut [u8; 192]) {
+pub unsafe extern "sysv64" fn vg_sha384_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
         r"movabs rax, -3766243637369397544
 mov QWORD PTR [rdi], rax
@@ -3257,7 +3257,7 @@ ret
 /// * `state` must be valid for reads and writes of 192 bytes.
 /// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_init(state: *mut [u8; 192]) {
+pub unsafe extern "sysv64" fn vg_sha512_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
         r"movabs rax, 7640891576956012808
 mov QWORD PTR [rdi], rax
@@ -3289,7 +3289,7 @@ ret
 /// * `state` must be valid for reads and writes of 192 bytes.
 /// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_224_init(state: *mut [u8; 192]) {
+pub unsafe extern "sysv64" fn vg_sha512_224_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
         r"movabs rax, -8341449602262348382
 mov QWORD PTR [rdi], rax
@@ -3321,7 +3321,7 @@ ret
 /// * `state` must be valid for reads and writes of 192 bytes.
 /// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_256_init(state: *mut [u8; 192]) {
+pub unsafe extern "sysv64" fn vg_sha512_256_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
         r"movabs rax, 2463787394917988140
 mov QWORD PTR [rdi], rax
@@ -3357,7 +3357,7 @@ ret
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 1392 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha384_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
+pub unsafe extern "sysv64" fn vg_sha384_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1384]
 mov rcx, rsp
@@ -3520,7 +3520,7 @@ ret
 /// * `out` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha384_digest(data: *const u8, len: usize, out: *mut [u8; 48]) {
+pub unsafe extern "sysv64" fn vg_sha384_digest(data: *const u8, len: usize, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1592]
 mov rcx, rsp
@@ -3748,7 +3748,7 @@ ret
 }
 
 /// The CPU features `vg_sha384_finalize_avx2` requires (`Artifact.features`).
-pub(crate) const VG_SHA384_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SHA384_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// Finishes a SHA-384 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-384 (as `vg_sha384_init` starts it), writes the SHA-384 digest of that message (48 bytes, `VG.Spec.Sha512.sha384`) to `*out`.
 ///
@@ -3764,7 +3764,7 @@ pub(crate) const VG_SHA384_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate:
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 1392 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha384_finalize_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
+pub unsafe extern "sysv64" fn vg_sha384_finalize_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1384]
 mov rcx, rsp
@@ -3917,7 +3917,7 @@ ret
 }
 
 /// The CPU features `vg_sha384_digest_avx2` requires (`Artifact.features`).
-pub(crate) const VG_SHA384_DIGEST_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SHA384_DIGEST_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// Computes the SHA-384 digest of the `len` bytes at `data` (48 bytes, `VG.Spec.Sha512.sha384`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-384 computation with that message.
 ///
@@ -3931,7 +3931,7 @@ pub(crate) const VG_SHA384_DIGEST_AVX2_FEATURES: crate::cpu::Features = crate::c
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha384_digest_avx2(data: *const u8, len: usize, out: *mut [u8; 48]) {
+pub unsafe extern "sysv64" fn vg_sha384_digest_avx2(data: *const u8, len: usize, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1592]
 mov rcx, rsp
@@ -4159,7 +4159,7 @@ ret
 }
 
 /// The CPU features `vg_sha384_finalize_shani` requires (`Artifact.features`).
-pub(crate) const VG_SHA384_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_SHA384_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// Finishes a SHA-384 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-384 (as `vg_sha384_init` starts it), writes the SHA-384 digest of that message (48 bytes, `VG.Spec.Sha512.sha384`) to `*out`.
 ///
@@ -4175,7 +4175,7 @@ pub(crate) const VG_SHA384_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 1392 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha384_finalize_shani(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
+pub unsafe extern "sysv64" fn vg_sha384_finalize_shani(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1384]
 mov rcx, rsp
@@ -4328,7 +4328,7 @@ ret
 }
 
 /// The CPU features `vg_sha384_digest_shani` requires (`Artifact.features`).
-pub(crate) const VG_SHA384_DIGEST_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_SHA384_DIGEST_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// Computes the SHA-384 digest of the `len` bytes at `data` (48 bytes, `VG.Spec.Sha512.sha384`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-384 computation with that message.
 ///
@@ -4342,7 +4342,7 @@ pub(crate) const VG_SHA384_DIGEST_SHANI_FEATURES: crate::cpu::Features = crate::
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha384_digest_shani(data: *const u8, len: usize, out: *mut [u8; 48]) {
+pub unsafe extern "sysv64" fn vg_sha384_digest_shani(data: *const u8, len: usize, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1592]
 mov rcx, rsp
@@ -4580,7 +4580,7 @@ ret
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 1392 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_sha512_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1384]
 mov r8, rsp
@@ -4743,7 +4743,7 @@ ret
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 1392 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+pub unsafe extern "sysv64" fn vg_sha512_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1384]
 mov rcx, rsp
@@ -4914,7 +4914,7 @@ ret
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_update_scratch(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 172]) {
+pub unsafe extern "sysv64" fn vg_sha512_update_scratch(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 172]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+1328], rbx
 mov QWORD PTR [r8+1336], rbp
@@ -5075,7 +5075,7 @@ ret
 /// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * None of `state`, `out` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_finalize_scratch(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 172]) {
+pub unsafe extern "sysv64" fn vg_sha512_finalize_scratch(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 172]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rcx+1328], rbx
 mov QWORD PTR [rcx+1336], rbp
@@ -5240,7 +5240,7 @@ ret
 /// * `out` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_digest(data: *const u8, len: usize, out: *mut [u8; 64]) {
+pub unsafe extern "sysv64" fn vg_sha512_digest(data: *const u8, len: usize, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1592]
 mov rcx, rsp
@@ -5474,7 +5474,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_update_avx2` requires (`Artifact.features`).
-pub(crate) const VG_SHA512_UPDATE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SHA512_UPDATE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// Absorbs data into a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
@@ -5488,7 +5488,7 @@ pub(crate) const VG_SHA512_UPDATE_AVX2_FEATURES: crate::cpu::Features = crate::c
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 1392 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_update_avx2(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_sha512_update_avx2(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1384]
 mov r8, rsp
@@ -5639,7 +5639,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_finalize_avx2` requires (`Artifact.features`).
-pub(crate) const VG_SHA512_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SHA512_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// Finishes a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (64 bytes) to `*out`. The SHA-512 digest is all of it; the SHA-384, SHA-512/224 and SHA-512/256 digests are its first 48, 28 and 32 bytes.
 ///
@@ -5655,7 +5655,7 @@ pub(crate) const VG_SHA512_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate:
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 1392 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_finalize_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+pub unsafe extern "sysv64" fn vg_sha512_finalize_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1384]
 mov rcx, rsp
@@ -5814,7 +5814,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_update_scratch_avx2` requires (`Artifact.features`).
-pub(crate) const VG_SHA512_UPDATE_SCRATCH_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SHA512_UPDATE_SCRATCH_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// `vg_sha512_update`, with its working space in `*scratch`.
 ///
@@ -5830,7 +5830,7 @@ pub(crate) const VG_SHA512_UPDATE_SCRATCH_AVX2_FEATURES: crate::cpu::Features = 
 /// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_update_scratch_avx2(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 172]) {
+pub unsafe extern "sysv64" fn vg_sha512_update_scratch_avx2(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 172]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+1328], rbx
 mov QWORD PTR [r8+1336], rbp
@@ -5977,7 +5977,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_finalize_scratch_avx2` requires (`Artifact.features`).
-pub(crate) const VG_SHA512_FINALIZE_SCRATCH_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SHA512_FINALIZE_SCRATCH_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// `vg_sha512_finalize`, with its working space in `*scratch`.
 ///
@@ -5995,7 +5995,7 @@ pub(crate) const VG_SHA512_FINALIZE_SCRATCH_AVX2_FEATURES: crate::cpu::Features 
 /// * None of `state`, `out` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_finalize_scratch_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 172]) {
+pub unsafe extern "sysv64" fn vg_sha512_finalize_scratch_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 172]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rcx+1328], rbx
 mov QWORD PTR [rcx+1336], rbp
@@ -6150,7 +6150,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_digest_avx2` requires (`Artifact.features`).
-pub(crate) const VG_SHA512_DIGEST_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SHA512_DIGEST_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// Computes the SHA-512 digest of the `len` bytes at `data` (64 bytes, `VG.Spec.Sha512.sha512`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512 computation with that message.
 ///
@@ -6164,7 +6164,7 @@ pub(crate) const VG_SHA512_DIGEST_AVX2_FEATURES: crate::cpu::Features = crate::c
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_digest_avx2(data: *const u8, len: usize, out: *mut [u8; 64]) {
+pub unsafe extern "sysv64" fn vg_sha512_digest_avx2(data: *const u8, len: usize, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1592]
 mov rcx, rsp
@@ -6398,7 +6398,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_update_shani` requires (`Artifact.features`).
-pub(crate) const VG_SHA512_UPDATE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_SHA512_UPDATE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// Absorbs data into a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
@@ -6412,7 +6412,7 @@ pub(crate) const VG_SHA512_UPDATE_SHANI_FEATURES: crate::cpu::Features = crate::
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 1392 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_update_shani(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_sha512_update_shani(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1384]
 mov r8, rsp
@@ -6563,7 +6563,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_finalize_shani` requires (`Artifact.features`).
-pub(crate) const VG_SHA512_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_SHA512_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// Finishes a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (64 bytes) to `*out`. The SHA-512 digest is all of it; the SHA-384, SHA-512/224 and SHA-512/256 digests are its first 48, 28 and 32 bytes.
 ///
@@ -6579,7 +6579,7 @@ pub(crate) const VG_SHA512_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 1392 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_finalize_shani(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+pub unsafe extern "sysv64" fn vg_sha512_finalize_shani(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1384]
 mov rcx, rsp
@@ -6738,7 +6738,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_update_scratch_shani` requires (`Artifact.features`).
-pub(crate) const VG_SHA512_UPDATE_SCRATCH_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_SHA512_UPDATE_SCRATCH_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// `vg_sha512_update`, with its working space in `*scratch`.
 ///
@@ -6754,7 +6754,7 @@ pub(crate) const VG_SHA512_UPDATE_SCRATCH_SHANI_FEATURES: crate::cpu::Features =
 /// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_update_scratch_shani(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 172]) {
+pub unsafe extern "sysv64" fn vg_sha512_update_scratch_shani(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 172]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+1328], rbx
 mov QWORD PTR [r8+1336], rbp
@@ -6901,7 +6901,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_finalize_scratch_shani` requires (`Artifact.features`).
-pub(crate) const VG_SHA512_FINALIZE_SCRATCH_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_SHA512_FINALIZE_SCRATCH_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// `vg_sha512_finalize`, with its working space in `*scratch`.
 ///
@@ -6919,7 +6919,7 @@ pub(crate) const VG_SHA512_FINALIZE_SCRATCH_SHANI_FEATURES: crate::cpu::Features
 /// * None of `state`, `out` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_finalize_scratch_shani(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 172]) {
+pub unsafe extern "sysv64" fn vg_sha512_finalize_scratch_shani(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 172]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rcx+1328], rbx
 mov QWORD PTR [rcx+1336], rbp
@@ -7074,7 +7074,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_digest_shani` requires (`Artifact.features`).
-pub(crate) const VG_SHA512_DIGEST_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_SHA512_DIGEST_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// Computes the SHA-512 digest of the `len` bytes at `data` (64 bytes, `VG.Spec.Sha512.sha512`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512 computation with that message.
 ///
@@ -7088,7 +7088,7 @@ pub(crate) const VG_SHA512_DIGEST_SHANI_FEATURES: crate::cpu::Features = crate::
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_digest_shani(data: *const u8, len: usize, out: *mut [u8; 64]) {
+pub unsafe extern "sysv64" fn vg_sha512_digest_shani(data: *const u8, len: usize, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1592]
 mov rcx, rsp
@@ -7334,7 +7334,7 @@ ret
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 1392 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_224_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
+pub unsafe extern "sysv64" fn vg_sha512_224_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1384]
 mov rcx, rsp
@@ -7491,7 +7491,7 @@ ret
 /// * `out` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_224_digest(data: *const u8, len: usize, out: *mut [u8; 28]) {
+pub unsafe extern "sysv64" fn vg_sha512_224_digest(data: *const u8, len: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1592]
 mov rcx, rsp
@@ -7713,7 +7713,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_224_finalize_avx2` requires (`Artifact.features`).
-pub(crate) const VG_SHA512_224_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SHA512_224_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// Finishes a SHA-512/224 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-512/224 (as `vg_sha512_224_init` starts it), writes the SHA-512/224 digest of that message (28 bytes, `VG.Spec.Sha512.sha512_224`) to `*out`.
 ///
@@ -7729,7 +7729,7 @@ pub(crate) const VG_SHA512_224_FINALIZE_AVX2_FEATURES: crate::cpu::Features = cr
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 1392 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_224_finalize_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
+pub unsafe extern "sysv64" fn vg_sha512_224_finalize_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1384]
 mov rcx, rsp
@@ -7876,7 +7876,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_224_digest_avx2` requires (`Artifact.features`).
-pub(crate) const VG_SHA512_224_DIGEST_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SHA512_224_DIGEST_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// Computes the SHA-512/224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha512.sha512_224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/224 computation with that message.
 ///
@@ -7890,7 +7890,7 @@ pub(crate) const VG_SHA512_224_DIGEST_AVX2_FEATURES: crate::cpu::Features = crat
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_224_digest_avx2(data: *const u8, len: usize, out: *mut [u8; 28]) {
+pub unsafe extern "sysv64" fn vg_sha512_224_digest_avx2(data: *const u8, len: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1592]
 mov rcx, rsp
@@ -8112,7 +8112,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_224_finalize_shani` requires (`Artifact.features`).
-pub(crate) const VG_SHA512_224_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_SHA512_224_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// Finishes a SHA-512/224 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-512/224 (as `vg_sha512_224_init` starts it), writes the SHA-512/224 digest of that message (28 bytes, `VG.Spec.Sha512.sha512_224`) to `*out`.
 ///
@@ -8128,7 +8128,7 @@ pub(crate) const VG_SHA512_224_FINALIZE_SHANI_FEATURES: crate::cpu::Features = c
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 1392 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_224_finalize_shani(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
+pub unsafe extern "sysv64" fn vg_sha512_224_finalize_shani(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1384]
 mov rcx, rsp
@@ -8275,7 +8275,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_224_digest_shani` requires (`Artifact.features`).
-pub(crate) const VG_SHA512_224_DIGEST_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_SHA512_224_DIGEST_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// Computes the SHA-512/224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha512.sha512_224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/224 computation with that message.
 ///
@@ -8289,7 +8289,7 @@ pub(crate) const VG_SHA512_224_DIGEST_SHANI_FEATURES: crate::cpu::Features = cra
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_224_digest_shani(data: *const u8, len: usize, out: *mut [u8; 28]) {
+pub unsafe extern "sysv64" fn vg_sha512_224_digest_shani(data: *const u8, len: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1592]
 mov rcx, rsp
@@ -8523,7 +8523,7 @@ ret
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 1392 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_256_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
+pub unsafe extern "sysv64" fn vg_sha512_256_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1384]
 mov rcx, rsp
@@ -8680,7 +8680,7 @@ ret
 /// * `out` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_256_digest(data: *const u8, len: usize, out: *mut [u8; 32]) {
+pub unsafe extern "sysv64" fn vg_sha512_256_digest(data: *const u8, len: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1592]
 mov rcx, rsp
@@ -8902,7 +8902,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_256_finalize_avx2` requires (`Artifact.features`).
-pub(crate) const VG_SHA512_256_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SHA512_256_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// Finishes a SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-512/256 (as `vg_sha512_256_init` starts it), writes the SHA-512/256 digest of that message (32 bytes, `VG.Spec.Sha512.sha512_256`) to `*out`.
 ///
@@ -8918,7 +8918,7 @@ pub(crate) const VG_SHA512_256_FINALIZE_AVX2_FEATURES: crate::cpu::Features = cr
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 1392 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_256_finalize_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
+pub unsafe extern "sysv64" fn vg_sha512_256_finalize_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1384]
 mov rcx, rsp
@@ -9065,7 +9065,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_256_digest_avx2` requires (`Artifact.features`).
-pub(crate) const VG_SHA512_256_DIGEST_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SHA512_256_DIGEST_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// Computes the SHA-512/256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha512.sha512_256`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/256 computation with that message.
 ///
@@ -9079,7 +9079,7 @@ pub(crate) const VG_SHA512_256_DIGEST_AVX2_FEATURES: crate::cpu::Features = crat
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_256_digest_avx2(data: *const u8, len: usize, out: *mut [u8; 32]) {
+pub unsafe extern "sysv64" fn vg_sha512_256_digest_avx2(data: *const u8, len: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1592]
 mov rcx, rsp
@@ -9301,7 +9301,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_256_finalize_shani` requires (`Artifact.features`).
-pub(crate) const VG_SHA512_256_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_SHA512_256_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// Finishes a SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-512/256 (as `vg_sha512_256_init` starts it), writes the SHA-512/256 digest of that message (32 bytes, `VG.Spec.Sha512.sha512_256`) to `*out`.
 ///
@@ -9317,7 +9317,7 @@ pub(crate) const VG_SHA512_256_FINALIZE_SHANI_FEATURES: crate::cpu::Features = c
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 1392 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_256_finalize_shani(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
+pub unsafe extern "sysv64" fn vg_sha512_256_finalize_shani(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1384]
 mov rcx, rsp
@@ -9464,7 +9464,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_256_digest_shani` requires (`Artifact.features`).
-pub(crate) const VG_SHA512_256_DIGEST_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_SHA512_256_DIGEST_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// Computes the SHA-512/256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha512.sha512_256`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/256 computation with that message.
 ///
@@ -9478,7 +9478,7 @@ pub(crate) const VG_SHA512_256_DIGEST_SHANI_FEATURES: crate::cpu::Features = cra
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 1600 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha512_256_digest_shani(data: *const u8, len: usize, out: *mut [u8; 32]) {
+pub unsafe extern "sysv64" fn vg_sha512_256_digest_shani(data: *const u8, len: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-1592]
 mov rcx, rsp

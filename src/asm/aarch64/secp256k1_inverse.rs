@@ -13,7 +13,7 @@
 /// * Bytes 1024 to 1055, 128 to 159 and 2296 to 2615 of `ws` are unspecified on return and may hold intermediate values, which are secret and which the caller must destroy.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_secp256k1_inv_mod_p(ws: *mut [u64; 1024]) {
+pub unsafe extern "C" fn vg_secp256k1_inv_mod_p(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"str x19, [x0, #2584]
 movz x11, #1, lsl #0
@@ -2009,7 +2009,7 @@ ret
 /// * Bytes 1024 to 1055, 128 to 159 and 2296 to 2615 of `ws` are unspecified on return and may hold intermediate values, which are secret and which the caller must destroy.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_secp256k1_inv_mod_n(ws: *mut [u64; 1024]) {
+pub unsafe extern "C" fn vg_secp256k1_inv_mod_n(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"str x19, [x0, #2584]
 movz x11, #1, lsl #0

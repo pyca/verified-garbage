@@ -13,7 +13,7 @@
 /// * Bytes 3360 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_p384_point_add(ws: *mut [u64; 1024]) {
+pub unsafe extern "C" fn vg_p384_point_add(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov r12, r0
 str lr, [r12, #3360]
@@ -236,7 +236,7 @@ bx lr",
 /// * Bytes 3360 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_p384_point_double(ws: *mut [u64; 1024]) {
+pub unsafe extern "C" fn vg_p384_point_double(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov r12, r0
 str lr, [r12, #3360]
@@ -450,7 +450,7 @@ bx lr",
 
 /// The CPU features `vg_p384_point_add_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_P384_POINT_ADD_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_P384_POINT_ADD_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
 
 /// The complete addition `O = P + Q` of points on P-384 (Renes, Costello and Batina's Algorithm 1). A point is three projective coordinates `X, Y, Z` in Montgomery's form modulo the curve's prime, each 6 64-bit words (`48` bytes), little-endian, at consecutive byte offsets of the working space `ws`: `O` at byte 2832, `P` at 2976 and `Q` at 3120. The curve's `a` and `3b`, in the same form, are read at bytes 3264 and 3312. Every byte of `ws` but `O`'s and the function's own working space (bytes 3360 to 4095) keeps its value.
 ///
@@ -465,7 +465,7 @@ pub(crate) const VG_P384_POINT_ADD_UMAAL_FEATURES: crate::cpu::Features = crate:
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_p384_point_add_umaal(ws: *mut [u64; 1024]) {
+pub unsafe extern "C" fn vg_p384_point_add_umaal(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov r12, r0
 str lr, [r12, #3360]
@@ -679,7 +679,7 @@ bx lr",
 
 /// The CPU features `vg_p384_point_double_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_P384_POINT_DOUBLE_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_P384_POINT_DOUBLE_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
 
 /// The doubling `O = P + P` of a point on P-384, by the complete addition (Renes, Costello and Batina's Algorithm 1). A point is three projective coordinates `X, Y, Z` in Montgomery's form modulo the curve's prime, each 6 64-bit words (`48` bytes), little-endian, at consecutive byte offsets of the working space `ws`: `O` at byte 2832, `P` at 2976 and `Q` at 3120. The curve's `a` and `3b`, in the same form, are read at bytes 3264 and 3312. Every byte of `ws` but `O`'s and the function's own working space (bytes 3360 to 4095) keeps its value.
 ///
@@ -694,7 +694,7 @@ pub(crate) const VG_P384_POINT_DOUBLE_UMAAL_FEATURES: crate::cpu::Features = cra
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_p384_point_double_umaal(ws: *mut [u64; 1024]) {
+pub unsafe extern "C" fn vg_p384_point_double_umaal(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"mov r12, r0
 str lr, [r12, #3360]

@@ -14,7 +14,7 @@
 /// * Bytes 3584 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_brainpoolp512r1_mul_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_brainpoolp512r1_mul_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov r12, r0
 str r4, [r12, #3976]
@@ -1271,7 +1271,7 @@ bx lr",
 
 /// The CPU features `vg_brainpoolp512r1_mul_mod_p_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_BRAINPOOLP512R1_MUL_MOD_P_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_BRAINPOOLP512R1_MUL_MOD_P_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
 
 /// Montgomery's product modulo brainpoolP512r1's prime `p`: writes the number below the modulus congruent to `a b 2^-512` to `o`. The numbers are 8 64-bit words (`64` bytes), little-endian, at the byte offsets `o`, `a` and `b` of the working space `ws`; `o` may be `a` or `b`. Every byte of `ws` but the result's and the function's own working space (bytes 3584 to 4095) keeps its value.
 ///
@@ -1287,7 +1287,7 @@ pub(crate) const VG_BRAINPOOLP512R1_MUL_MOD_P_UMAAL_FEATURES: crate::cpu::Featur
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_brainpoolp512r1_mul_mod_p_umaal(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_brainpoolp512r1_mul_mod_p_umaal(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov r12, r0
 str r4, [r12, #3976]
@@ -2068,7 +2068,7 @@ bx lr",
 /// * Bytes 3584 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_brainpoolp512r1_add_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_brainpoolp512r1_add_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov r12, r0
 str r4, [r12, #3976]
@@ -2801,7 +2801,7 @@ bx lr",
 /// * Bytes 3584 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_brainpoolp512r1_sub_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_brainpoolp512r1_sub_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov r12, r0
 str r4, [r12, #3976]
@@ -3647,7 +3647,7 @@ bx lr",
 /// * Bytes 3584 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_brainpoolp512r1_mul_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_brainpoolp512r1_mul_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov r12, r0
 str r4, [r12, #3976]
@@ -4904,7 +4904,7 @@ bx lr",
 
 /// The CPU features `vg_brainpoolp512r1_mul_mod_n_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_BRAINPOOLP512R1_MUL_MOD_N_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_BRAINPOOLP512R1_MUL_MOD_N_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
 
 /// Montgomery's product modulo brainpoolP512r1's order `n`: writes the number below the modulus congruent to `a b 2^-512` to `o`. The numbers are 8 64-bit words (`64` bytes), little-endian, at the byte offsets `o`, `a` and `b` of the working space `ws`; `o` may be `a` or `b`. Every byte of `ws` but the result's and the function's own working space (bytes 3584 to 4095) keeps its value.
 ///
@@ -4920,7 +4920,7 @@ pub(crate) const VG_BRAINPOOLP512R1_MUL_MOD_N_UMAAL_FEATURES: crate::cpu::Featur
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_brainpoolp512r1_mul_mod_n_umaal(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_brainpoolp512r1_mul_mod_n_umaal(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov r12, r0
 str r4, [r12, #3976]
@@ -5701,7 +5701,7 @@ bx lr",
 /// * Bytes 3584 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_brainpoolp512r1_add_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_brainpoolp512r1_add_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov r12, r0
 str r4, [r12, #3976]
@@ -6434,7 +6434,7 @@ bx lr",
 /// * Bytes 3584 to 4095 of `ws` are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_brainpoolp512r1_sub_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_brainpoolp512r1_sub_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"mov r12, r0
 str r4, [r12, #3976]

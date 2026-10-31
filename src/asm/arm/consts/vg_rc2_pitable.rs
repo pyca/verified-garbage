@@ -5,7 +5,7 @@
 use super::Table;
 
 /// The table of constants `VG_RC2_PITABLE` (`Artifact.consts`).
-pub(crate) static VG_RC2_PITABLE: Table<256> = Table(*b"\
+pub static VG_RC2_PITABLE: Table<256> = Table(*b"\
     \xd9\x78\xf9\xc4\x19\xdd\xb5\xed\
     \x28\xe9\xfd\x79\x4a\xa0\xd8\x9d\
     \xc6\x7e\x37\x83\x2b\x76\x53\x8e\

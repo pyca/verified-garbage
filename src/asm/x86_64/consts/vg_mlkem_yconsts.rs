@@ -5,7 +5,7 @@
 use super::Table;
 
 /// The table of constants `VG_MLKEM_YCONSTS` (`Artifact.consts`).
-pub(crate) static VG_MLKEM_YCONSTS: Table<1344> = Table(*b"\
+pub static VG_MLKEM_YCONSTS: Table<1344> = Table(*b"\
     \x00\x00\x00\x00\x0b\x00\x00\x00\
     \x00\x00\x00\x00\x0b\x00\x00\x00\
     \x00\x00\x00\x00\x0b\x00\x00\x00\

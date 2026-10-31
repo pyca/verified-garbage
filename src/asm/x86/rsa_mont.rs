@@ -17,7 +17,7 @@
 /// * `ws` must not overlap the arguments on the stack (distinct Rust objects never do).
 /// * `ws` must not overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_mont_mul_at(ws: *mut u64, ws_len: usize, n: u32, m: u32, inv: u32, s: u32, o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_rsa_mont_mul_at(ws: *mut u64, ws_len: usize, n: u32, m: u32, inv: u32, s: u32, o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"push ebx
 push esi
@@ -1066,7 +1066,7 @@ ret
 /// * `ws` must not overlap the arguments on the stack (distinct Rust objects never do).
 /// * `ws` must not overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_mont_mul(ws: *mut u64, ws_len: usize, o: u32, a: u32, b: u32) {
+pub unsafe extern "C" fn vg_rsa_mont_mul(ws: *mut u64, ws_len: usize, o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
         r"push ebx
 push esi

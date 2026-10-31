@@ -15,7 +15,7 @@
 /// * `schedule` must not overlap `key` (distinct Rust objects never do).
 /// * Neither `key` nor `schedule` may overlap the 3248 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_camellia_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 272]) {
+pub unsafe extern "C" fn vg_camellia_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 272]) {
     core::arch::naked_asm!(
         r"sub sp, sp, #3248
 add x3, sp, #0
@@ -2519,7 +2519,7 @@ ret
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `data` may overlap the 3248 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_camellia_ecb_encrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
+pub unsafe extern "C" fn vg_camellia_ecb_encrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #3248
 add x4, sp, #0
@@ -4991,7 +4991,7 @@ ret
 /// * `data` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `data` may overlap the 3248 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_camellia_ecb_decrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
+pub unsafe extern "C" fn vg_camellia_ecb_decrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #3248
 add x4, sp, #0
@@ -8274,7 +8274,7 @@ ret
 /// * `ws` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `ws` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_camellia_prepare_keys(schedule: *const [u8; 272], rounds: usize, decrypt: usize, ws: *mut u64, ws_len: usize) {
+pub unsafe extern "C" fn vg_camellia_prepare_keys(schedule: *const [u8; 272], rounds: usize, decrypt: usize, ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
         r"add x5, x3, #0
 str x19, [x5, #2944]
@@ -9583,7 +9583,7 @@ ret
 /// * The bytes 0..384, 424..768, 2944..3152 of `ws` are unspecified on return but for the blocks, and hold secrets, which the caller must destroy.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_camellia_crypt_prepared(rounds: usize, ws: *mut u64, ws_len: usize) {
+pub unsafe extern "C" fn vg_camellia_crypt_prepared(rounds: usize, ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
         r"add x5, x1, #0
 str x19, [x5, #2944]
@@ -11565,7 +11565,7 @@ ret
 /// * `ws` must not overlap `schedule` (distinct Rust objects never do).
 /// * Neither `schedule` nor `ws` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_camellia_prepare_encrypt_keys(schedule: *const [u8; 272], rounds: usize, ws: *mut u64, ws_len: usize) {
+pub unsafe extern "C" fn vg_camellia_prepare_encrypt_keys(schedule: *const [u8; 272], rounds: usize, ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
         r"add x5, x2, #0
 add x9, x21, #0
@@ -11760,7 +11760,7 @@ ret
 /// * The bytes 768..784 of `ws` are unspecified on return but for the blocks, and hold secrets, which the caller must destroy.
 /// * `ws` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_camellia_encrypt_prepared(rounds: usize, ws: *mut u64, ws_len: usize) {
+pub unsafe extern "C" fn vg_camellia_encrypt_prepared(rounds: usize, ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
         r"add x5, x1, #0
 add x1, x0, #0

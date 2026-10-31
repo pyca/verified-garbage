@@ -18,7 +18,7 @@
 /// * `em` and `scratch` must not overlap each other, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `em`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 400 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_encode(em: *mut u8, em_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, em_bits: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_encode(em: *mut u8, em_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, em_bits: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -504,7 +504,7 @@ ret
 /// * `scratch` must not overlap `digest`, `em` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `digest`, `em` and `scratch` may overlap the return address on the stack or the 400 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_check_encoding(digest: *const [u8; 64], em: *const u8, em_len: usize, em_bits: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_check_encoding(digest: *const [u8; 64], em: *const u8, em_len: usize, em_bits: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -1515,7 +1515,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_encode_avx2` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_ENCODE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_RSA_PSS_SHA512_MGF1_SHA512_ENCODE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// EMSA-PSS-ENCODE (RFC 8017 §9.1.1) with SHA-512 and MGF1 with SHA-512, of the 64-byte digest `*digest` with the salt `salt`, into `em_bits` bits: writes the `em_len` bytes of the encoding to `em` and returns 1, or returns 0 if the salt does not fit (`em_len < 66 + salt_len`), leaving `em` unspecified. The step of RSASSA-PSS signing (`vg_rsa_pss_sha512_mgf1_sha512_sign`) before the RSA primitive.
 ///
@@ -1534,7 +1534,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_ENCODE_AVX2_FEATURES: crate::cpu:
 /// * None of `em`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 400 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_encode_avx2(em: *mut u8, em_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, em_bits: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_encode_avx2(em: *mut u8, em_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, em_bits: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -2006,7 +2006,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_check_encoding_avx2` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_CHECK_ENCODING_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_RSA_PSS_SHA512_MGF1_SHA512_CHECK_ENCODING_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// EMSA-PSS-VERIFY (RFC 8017 §9.1.2) with SHA-512 and MGF1 with SHA-512, with BoringSSL's step 10: whether the `em_len` bytes at `em`, an encoding of `em_bits` bits, are consistent with the 64-byte digest `*digest`, expecting a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero. Returns 1 if so and 0 otherwise. The step of RSASSA-PSS verification (`vg_rsa_pss_sha512_mgf1_sha512_verify`) after the RSA primitive.
 ///
@@ -2024,7 +2024,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_CHECK_ENCODING_AVX2_FEATURES: cra
 /// * None of `digest`, `em` and `scratch` may overlap the return address on the stack or the 400 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_check_encoding_avx2(digest: *const [u8; 64], em: *const u8, em_len: usize, em_bits: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_check_encoding_avx2(digest: *const [u8; 64], em: *const u8, em_len: usize, em_bits: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -3035,7 +3035,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_encode_shani` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_ENCODE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_RSA_PSS_SHA512_MGF1_SHA512_ENCODE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// EMSA-PSS-ENCODE (RFC 8017 §9.1.1) with SHA-512 and MGF1 with SHA-512, of the 64-byte digest `*digest` with the salt `salt`, into `em_bits` bits: writes the `em_len` bytes of the encoding to `em` and returns 1, or returns 0 if the salt does not fit (`em_len < 66 + salt_len`), leaving `em` unspecified. The step of RSASSA-PSS signing (`vg_rsa_pss_sha512_mgf1_sha512_sign`) before the RSA primitive.
 ///
@@ -3054,7 +3054,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_ENCODE_SHANI_FEATURES: crate::cpu
 /// * None of `em`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 400 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_encode_shani(em: *mut u8, em_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, em_bits: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_encode_shani(em: *mut u8, em_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, em_bits: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -3526,7 +3526,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_check_encoding_shani` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_CHECK_ENCODING_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_RSA_PSS_SHA512_MGF1_SHA512_CHECK_ENCODING_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// EMSA-PSS-VERIFY (RFC 8017 §9.1.2) with SHA-512 and MGF1 with SHA-512, with BoringSSL's step 10: whether the `em_len` bytes at `em`, an encoding of `em_bits` bits, are consistent with the 64-byte digest `*digest`, expecting a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero. Returns 1 if so and 0 otherwise. The step of RSASSA-PSS verification (`vg_rsa_pss_sha512_mgf1_sha512_verify`) after the RSA primitive.
 ///
@@ -3544,7 +3544,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_CHECK_ENCODING_SHANI_FEATURES: cr
 /// * None of `digest`, `em` and `scratch` may overlap the return address on the stack or the 400 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_check_encoding_shani(digest: *const [u8; 64], em: *const u8, em_len: usize, em_bits: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_check_encoding_shani(digest: *const [u8; 64], em: *const u8, em_len: usize, em_bits: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -4555,7 +4555,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_sign_crt_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-512 and MGF1 with SHA-512, of a SHA-512 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 64-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 66`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
@@ -4585,7 +4585,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_CRT_ADX_FEATURES: crate::cpu
 /// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_sign_crt_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_sign_crt_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -4754,7 +4754,7 @@ ret
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -4897,7 +4897,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_sign_crt_ifma` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-512 and MGF1 with SHA-512, of a SHA-512 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 64-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 66`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
@@ -4927,7 +4927,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_CRT_IFMA_FEATURES: crate::cp
 /// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_sign_crt_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_sign_crt_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -5070,7 +5070,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_sign_sha512_avx2_crt_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_AVX2_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_AVX2_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-512 and MGF1 with SHA-512, of a SHA-512 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 64-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 66`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
@@ -5100,7 +5100,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_AVX2_CRT_ADX_FEATURES
 /// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_sign_sha512_avx2_crt_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_sign_sha512_avx2_crt_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -5243,7 +5243,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_sign_sha512_avx2` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-512 and MGF1 with SHA-512, of a SHA-512 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 64-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 66`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
@@ -5273,7 +5273,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_AVX2_FEATURES: crate:
 /// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_sign_sha512_avx2(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_sign_sha512_avx2(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -5416,7 +5416,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_sign_sha512_avx2_crt_ifma` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_AVX2_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::ADX);
+pub const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_AVX2_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::ADX);
 
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-512 and MGF1 with SHA-512, of a SHA-512 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 64-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 66`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
@@ -5446,7 +5446,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_AVX2_CRT_IFMA_FEATURE
 /// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2`, `avx512f`, `avx512ifma`, `avx512vl` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_sign_sha512_avx2_crt_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_sign_sha512_avx2_crt_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -5589,7 +5589,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_sign_sha512_shani_crt_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_SHANI_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_SHANI_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-512 and MGF1 with SHA-512, of a SHA-512 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 64-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 66`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
@@ -5619,7 +5619,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_SHANI_CRT_ADX_FEATURE
 /// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `sha512`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_sign_sha512_shani_crt_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_sign_sha512_shani_crt_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -5762,7 +5762,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_sign_sha512_shani` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-512 and MGF1 with SHA-512, of a SHA-512 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 64-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 66`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
@@ -5792,7 +5792,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_SHANI_FEATURES: crate
 /// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_sign_sha512_shani(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_sign_sha512_shani(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -5935,7 +5935,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_sign_sha512_shani_crt_ifma` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_SHANI_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_SHANI_CRT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-512 and MGF1 with SHA-512, of a SHA-512 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 64-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 66`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
@@ -5965,7 +5965,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_SHANI_CRT_IFMA_FEATUR
 /// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `sha512`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_sign_sha512_shani_crt_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_sign_sha512_shani_crt_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -6108,7 +6108,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_rsa_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_RSA_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_RSA_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSASSA-PSS signature verification (RFC 8017 §8.1.2) with SHA-512 and MGF1 with SHA-512, of a signature of a SHA-512 digest. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), returns 1 if `sig` (`n_len` bytes, most significant first) is an RSASSA-PSS signature of the 64-byte digest `*digest` with a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero (BoringSSL's `RSA_PSS_SALTLEN_AUTO`); and 0 if it is not, or if `n` is not such a modulus, `e` is not such a number, or `sig` is not below `n`.
 ///
@@ -6137,7 +6137,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_RSA_ADX_FEATUR
 /// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_rsa_adx(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_rsa_adx(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -6267,7 +6267,7 @@ ret
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -6372,7 +6372,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_rsa_ifma` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_RSA_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_RSA_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSASSA-PSS signature verification (RFC 8017 §8.1.2) with SHA-512 and MGF1 with SHA-512, of a signature of a SHA-512 digest. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), returns 1 if `sig` (`n_len` bytes, most significant first) is an RSASSA-PSS signature of the 64-byte digest `*digest` with a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero (BoringSSL's `RSA_PSS_SALTLEN_AUTO`); and 0 if it is not, or if `n` is not such a modulus, `e` is not such a number, or `sig` is not below `n`.
 ///
@@ -6401,7 +6401,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_RSA_IFMA_FEATU
 /// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_rsa_ifma(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_rsa_ifma(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -6506,7 +6506,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_sha512_avx2_rsa_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_AVX2_RSA_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_AVX2_RSA_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSASSA-PSS signature verification (RFC 8017 §8.1.2) with SHA-512 and MGF1 with SHA-512, of a signature of a SHA-512 digest. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), returns 1 if `sig` (`n_len` bytes, most significant first) is an RSASSA-PSS signature of the 64-byte digest `*digest` with a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero (BoringSSL's `RSA_PSS_SALTLEN_AUTO`); and 0 if it is not, or if `n` is not such a modulus, `e` is not such a number, or `sig` is not below `n`.
 ///
@@ -6535,7 +6535,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_AVX2_RS
 /// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_sha512_avx2_rsa_adx(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_sha512_avx2_rsa_adx(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -6640,7 +6640,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_sha512_avx2` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// RSASSA-PSS signature verification (RFC 8017 §8.1.2) with SHA-512 and MGF1 with SHA-512, of a signature of a SHA-512 digest. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), returns 1 if `sig` (`n_len` bytes, most significant first) is an RSASSA-PSS signature of the 64-byte digest `*digest` with a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero (BoringSSL's `RSA_PSS_SALTLEN_AUTO`); and 0 if it is not, or if `n` is not such a modulus, `e` is not such a number, or `sig` is not below `n`.
 ///
@@ -6669,7 +6669,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_AVX2_FE
 /// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_sha512_avx2(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_sha512_avx2(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -6774,7 +6774,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_sha512_avx2_rsa_ifma` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_AVX2_RSA_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::ADX);
+pub const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_AVX2_RSA_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::ADX);
 
 /// RSASSA-PSS signature verification (RFC 8017 §8.1.2) with SHA-512 and MGF1 with SHA-512, of a signature of a SHA-512 digest. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), returns 1 if `sig` (`n_len` bytes, most significant first) is an RSASSA-PSS signature of the 64-byte digest `*digest` with a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero (BoringSSL's `RSA_PSS_SALTLEN_AUTO`); and 0 if it is not, or if `n` is not such a modulus, `e` is not such a number, or `sig` is not below `n`.
 ///
@@ -6803,7 +6803,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_AVX2_RS
 /// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2`, `avx512f`, `avx512ifma`, `avx512vl` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_sha512_avx2_rsa_ifma(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_sha512_avx2_rsa_ifma(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -6908,7 +6908,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_sha512_shani_rsa_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_SHANI_RSA_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_SHANI_RSA_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSASSA-PSS signature verification (RFC 8017 §8.1.2) with SHA-512 and MGF1 with SHA-512, of a signature of a SHA-512 digest. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), returns 1 if `sig` (`n_len` bytes, most significant first) is an RSASSA-PSS signature of the 64-byte digest `*digest` with a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero (BoringSSL's `RSA_PSS_SALTLEN_AUTO`); and 0 if it is not, or if `n` is not such a modulus, `e` is not such a number, or `sig` is not below `n`.
 ///
@@ -6937,7 +6937,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_SHANI_R
 /// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `sha512`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_sha512_shani_rsa_adx(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_sha512_shani_rsa_adx(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -7042,7 +7042,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_sha512_shani` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// RSASSA-PSS signature verification (RFC 8017 §8.1.2) with SHA-512 and MGF1 with SHA-512, of a signature of a SHA-512 digest. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), returns 1 if `sig` (`n_len` bytes, most significant first) is an RSASSA-PSS signature of the 64-byte digest `*digest` with a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero (BoringSSL's `RSA_PSS_SALTLEN_AUTO`); and 0 if it is not, or if `n` is not such a modulus, `e` is not such a number, or `sig` is not below `n`.
 ///
@@ -7071,7 +7071,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_SHANI_F
 /// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_sha512_shani(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_sha512_shani(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
@@ -7176,7 +7176,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_sha512_shani_rsa_ifma` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_SHANI_RSA_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_SHANI_RSA_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// RSASSA-PSS signature verification (RFC 8017 §8.1.2) with SHA-512 and MGF1 with SHA-512, of a signature of a SHA-512 digest. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), returns 1 if `sig` (`n_len` bytes, most significant first) is an RSASSA-PSS signature of the 64-byte digest `*digest` with a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero (BoringSSL's `RSA_PSS_SALTLEN_AUTO`); and 0 if it is not, or if `n` is not such a modulus, `e` is not such a number, or `sig` is not below `n`.
 ///
@@ -7205,7 +7205,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_SHANI_R
 /// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `sha512`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_sha512_shani_rsa_ifma(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_sha512_shani_rsa_ifma(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx

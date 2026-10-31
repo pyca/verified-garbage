@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_keccak_f1600_sha3` requires (`Artifact.features`).
-pub(crate) const VG_KECCAK_F1600_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_KECCAK_F1600_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// The permutation Keccak-f[1600] (FIPS 202 §3.4): applies it to the state `*state` (lane `x + 5y` at index `x + 5y`).
 ///
@@ -18,7 +18,7 @@ pub(crate) const VG_KECCAK_F1600_SHA3_FEATURES: crate::cpu::Features = crate::cp
 /// * Neither `state` nor `scratch` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_keccak_f1600_sha3(state: *mut [u64; 25], scratch: *mut [u64; 64]) {
+pub unsafe extern "C" fn vg_keccak_f1600_sha3(state: *mut [u64; 25], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
         r".arch_extension sha3
 str q8, [x1, #0]
@@ -1762,7 +1762,7 @@ ret
 /// * `state` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_keccak_f1600(state: *mut [u64; 25], scratch: *mut [u64; 64]) {
+pub unsafe extern "C" fn vg_keccak_f1600(state: *mut [u64; 25], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
         r"dup v0.2d, x19
 dup v1.2d, x20
@@ -4456,7 +4456,7 @@ ret
 /// * `states` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * Neither `states` nor `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_keccak_f1600_x2(states: *mut [u64; 50], scratch: *mut [u64; 16]) {
+pub unsafe extern "C" fn vg_keccak_f1600_x2(states: *mut [u64; 50], scratch: *mut [u64; 16]) {
     core::arch::naked_asm!(
         r"str q8, [x1, #0]
 str q9, [x1, #16]
@@ -10193,7 +10193,7 @@ ret
 }
 
 /// The CPU features `vg_keccak_f1600_x2_sha3` requires (`Artifact.features`).
-pub(crate) const VG_KECCAK_F1600_X2_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_KECCAK_F1600_X2_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// The permutation Keccak-f[1600] (FIPS 202 §3.4) on two states at once: applies it to each of the two states interleaved in `*states`, lane `x + 5y` of the first at index `2(x + 5y)` and of the second at index `2(x + 5y) + 1`.
 ///
@@ -10208,7 +10208,7 @@ pub(crate) const VG_KECCAK_F1600_X2_SHA3_FEATURES: crate::cpu::Features = crate:
 /// * Neither `states` nor `scratch` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_keccak_f1600_x2_sha3(states: *mut [u64; 50], scratch: *mut [u64; 16]) {
+pub unsafe extern "C" fn vg_keccak_f1600_x2_sha3(states: *mut [u64; 50], scratch: *mut [u64; 16]) {
     core::arch::naked_asm!(
         r".arch_extension sha3
 str q8, [x1, #0]
@@ -11939,7 +11939,7 @@ ret
 }
 
 /// The CPU features `vg_keccak_f1600_x3_sha3` requires (`Artifact.features`).
-pub(crate) const VG_KECCAK_F1600_X3_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_KECCAK_F1600_X3_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// The permutation Keccak-f[1600] (FIPS 202 §3.4) on three states at once: applies it to each of the two states interleaved in `*states`, lane `x + 5y` of the first at index `2(x + 5y)` and of the second at index `2(x + 5y) + 1`, and to the state `*state`, lane `x + 5y` at index `x + 5y`.
 ///
@@ -11955,7 +11955,7 @@ pub(crate) const VG_KECCAK_F1600_X3_SHA3_FEATURES: crate::cpu::Features = crate:
 /// * None of `states`, `state` and `scratch` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_keccak_f1600_x3_sha3(states: *mut [u64; 50], state: *mut [u64; 25], scratch: *mut [u64; 16]) {
+pub unsafe extern "C" fn vg_keccak_f1600_x3_sha3(states: *mut [u64; 50], state: *mut [u64; 25], scratch: *mut [u64; 16]) {
     core::arch::naked_asm!(
         r".arch_extension sha3
 sub sp, sp, #128
@@ -16900,7 +16900,7 @@ ret
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_keccak_absorb_scratch(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub unsafe extern "C" fn vg_keccak_absorb_scratch(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r"cbz x2, 20f
 b 21f
@@ -19864,7 +19864,7 @@ ret
 /// * `rate` must be 72, 104, 136, 144 or 168, and `pos` less than `rate`.
 /// * `state` must not overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_keccak_pad(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32) {
+pub unsafe extern "C" fn vg_keccak_pad(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32) {
     core::arch::naked_asm!(
         r"sub sp, sp, #640
 add x4, sp, #0
@@ -19902,7 +19902,7 @@ ret
 /// * `state` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_keccak_pad_scratch(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32, scratch: *mut [u64; 80]) {
+pub unsafe extern "C" fn vg_keccak_pad_scratch(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32, scratch: *mut [u64; 80]) {
     core::arch::naked_asm!(
         r"str x30, [sp, #-16]!
 add x9, x0, x2
@@ -19936,7 +19936,7 @@ ret
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_keccak_squeeze(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize) -> usize {
+pub unsafe extern "C" fn vg_keccak_squeeze(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize) -> usize {
     core::arch::naked_asm!(
         r"sub sp, sp, #640
 add x5, sp, #0
@@ -20018,7 +20018,7 @@ ret
 /// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * None of `state`, `out` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_keccak_squeeze_scratch(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize, scratch: *mut [u64; 80]) -> usize {
+pub unsafe extern "C" fn vg_keccak_squeeze_scratch(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r"str x30, [sp, #-16]!
 str x19, [x5, #512]
@@ -20084,7 +20084,7 @@ ret
 }
 
 /// The CPU features `vg_keccak_absorb_scratch_sha3` requires (`Artifact.features`).
-pub(crate) const VG_KECCAK_ABSORB_SCRATCH_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_KECCAK_ABSORB_SCRATCH_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// `vg_keccak_absorb`, with its working space in `*scratch`.
 ///
@@ -20101,7 +20101,7 @@ pub(crate) const VG_KECCAK_ABSORB_SCRATCH_SHA3_FEATURES: crate::cpu::Features = 
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_keccak_absorb_scratch_sha3(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub unsafe extern "C" fn vg_keccak_absorb_scratch_sha3(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r".arch_extension sha3
 cbz x2, 20f
@@ -22096,7 +22096,7 @@ ret
 }
 
 /// The CPU features `vg_keccak_pad_sha3` requires (`Artifact.features`).
-pub(crate) const VG_KECCAK_PAD_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_KECCAK_PAD_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// Pads a SHA-3 or SHAKE message: if the state `*state` represents a message whose length is `pos` modulo `rate` (`VG.Spec.Sha3.Repr`), it becomes the state after absorbing that message with the domain-separation suffix (the low byte of `suffix`, with the first bit of the padding: `0x06` for SHA-3, `0x1f` for SHAKE) and `pad10*1`.
 ///
@@ -22109,7 +22109,7 @@ pub(crate) const VG_KECCAK_PAD_SHA3_FEATURES: crate::cpu::Features = crate::cpu:
 /// * `state` must not overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_keccak_pad_sha3(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32) {
+pub unsafe extern "C" fn vg_keccak_pad_sha3(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32) {
     core::arch::naked_asm!(
         r".arch_extension sha3
 sub sp, sp, #640
@@ -22137,7 +22137,7 @@ ret
 }
 
 /// The CPU features `vg_keccak_pad_scratch_sha3` requires (`Artifact.features`).
-pub(crate) const VG_KECCAK_PAD_SCRATCH_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_KECCAK_PAD_SCRATCH_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// `vg_keccak_pad`, with its working space in `*scratch`.
 ///
@@ -22153,7 +22153,7 @@ pub(crate) const VG_KECCAK_PAD_SCRATCH_SHA3_FEATURES: crate::cpu::Features = cra
 /// * Neither `state` nor `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_keccak_pad_scratch_sha3(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32, scratch: *mut [u64; 80]) {
+pub unsafe extern "C" fn vg_keccak_pad_scratch_sha3(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32, scratch: *mut [u64; 80]) {
     core::arch::naked_asm!(
         r".arch_extension sha3
 str x30, [sp, #-16]!
@@ -22178,7 +22178,7 @@ ret
 }
 
 /// The CPU features `vg_keccak_squeeze_sha3` requires (`Artifact.features`).
-pub(crate) const VG_KECCAK_SQUEEZE_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_KECCAK_SQUEEZE_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// Squeezes output from a padded SHA-3 or SHAKE state: writes to `out` the `outlen` bytes of the output of the sponge with rate `rate` from the state `*state` (FIPS 202 Algorithm 8, steps 7 to 10), from byte `pos` of that output on; leaves in `*state` a state, and returns a position, from which the output continues after them. Start from the state `vg_keccak_pad` leaves and position 0.
 ///
@@ -22193,7 +22193,7 @@ pub(crate) const VG_KECCAK_SQUEEZE_SHA3_FEATURES: crate::cpu::Features = crate::
 /// * Neither `state` nor `out` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_keccak_squeeze_sha3(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize) -> usize {
+pub unsafe extern "C" fn vg_keccak_squeeze_sha3(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize) -> usize {
     core::arch::naked_asm!(
         r".arch_extension sha3
 sub sp, sp, #640
@@ -22264,7 +22264,7 @@ ret
 }
 
 /// The CPU features `vg_keccak_squeeze_scratch_sha3` requires (`Artifact.features`).
-pub(crate) const VG_KECCAK_SQUEEZE_SCRATCH_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_KECCAK_SQUEEZE_SCRATCH_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// `vg_keccak_squeeze`, with its working space in `*scratch`.
 ///
@@ -22281,7 +22281,7 @@ pub(crate) const VG_KECCAK_SQUEEZE_SCRATCH_SHA3_FEATURES: crate::cpu::Features =
 /// * None of `state`, `out` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_keccak_squeeze_scratch_sha3(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize, scratch: *mut [u64; 80]) -> usize {
+pub unsafe extern "C" fn vg_keccak_squeeze_scratch_sha3(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         r".arch_extension sha3
 str x30, [sp, #-16]!

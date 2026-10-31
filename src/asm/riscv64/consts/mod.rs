@@ -4,12 +4,12 @@
 
 /// A table of constants, aligned to a cache line.
 #[repr(C, align(64))]
-pub(crate) struct Table<const N: usize>(pub(crate) [u8; N]);
+pub struct Table<const N: usize>(pub [u8; N]);
 
 #[rustfmt::skip]
 mod vg_cast5_s1234;
-pub(crate) use vg_cast5_s1234::VG_CAST5_S1234;
+pub use vg_cast5_s1234::VG_CAST5_S1234;
 
 #[rustfmt::skip]
 mod vg_cast5_s5678;
-pub(crate) use vg_cast5_s5678::VG_CAST5_S5678;
+pub use vg_cast5_s5678::VG_CAST5_S5678;

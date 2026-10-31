@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_mlkem1024_kpke_keygen` requires (`Artifact.features`).
-pub(crate) const VG_MLKEM1024_KPKE_KEYGEN_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM1024_KPKE_KEYGEN_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// ML-KEM-1024 K-PKE key generation after sampling (FIPS 203 Algorithm 13, lines 16–20). The inputs are the matrix `Â` in `*a` (16 polynomials, by rows) and the vectors `s` and `e` in `*se` (4 polynomials each, one after the other), each polynomial 256 `u16` coefficients reduced modulo `q` = 3329. Writes `ByteEncode₁₂(t̂)` to `*ek` and `ByteEncode₁₂(ŝ)` to `*dk`, with `ŝ = NTT(s)` and `t̂ = Â ∘ ŝ + NTT(e)`.
 ///
@@ -24,7 +24,7 @@ pub(crate) const VG_MLKEM1024_KPKE_KEYGEN_FEATURES: crate::cpu::Features = crate
 /// * None of `ek`, `dk`, `a`, `se` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_kpke_keygen(ek: *mut [u8; 1536], dk: *mut [u8; 1536], a: *const [u16; 4096], se: *mut [u16; 2048], scratch: *mut [u64; 2560]) {
+pub unsafe extern "sysv64" fn vg_mlkem1024_kpke_keygen(ek: *mut [u8; 1536], dk: *mut [u8; 1536], a: *const [u16; 4096], se: *mut [u16; 2048], scratch: *mut [u64; 2560]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+19456], rbx
 mov QWORD PTR [r8+19464], rbp
@@ -2446,7 +2446,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem1024_kpke_encrypt` requires (`Artifact.features`).
-pub(crate) const VG_MLKEM1024_KPKE_ENCRYPT_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM1024_KPKE_ENCRYPT_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// ML-KEM-1024 K-PKE encryption after sampling (FIPS 203 Algorithm 14, lines 2 and 18–23). The inputs are:
 /// * the matrix `Â` in `*a` (16 polynomials, by rows);
@@ -2474,7 +2474,7 @@ pub(crate) const VG_MLKEM1024_KPKE_ENCRYPT_FEATURES: crate::cpu::Features = crat
 /// * None of `ct`, `a`, `t`, `r`, `m` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_kpke_encrypt(ct: *mut [u8; 1568], a: *const [u16; 4096], t: *const [u8; 1536], r: *mut [u16; 2304], m: *const [u8; 32], scratch: *mut [u64; 2560]) {
+pub unsafe extern "sysv64" fn vg_mlkem1024_kpke_encrypt(ct: *mut [u8; 1568], a: *const [u16; 4096], t: *const [u8; 1536], r: *mut [u16; 2304], m: *const [u8; 32], scratch: *mut [u64; 2560]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r9+19456], rbx
 mov QWORD PTR [r9+19464], rbp
@@ -7429,7 +7429,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem1024_kpke_decrypt` requires (`Artifact.features`).
-pub(crate) const VG_MLKEM1024_KPKE_DECRYPT_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM1024_KPKE_DECRYPT_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// ML-KEM-1024 K-PKE decryption (FIPS 203 Algorithm 15): writes the message that the ciphertext `*ct` decrypts to with the decryption key `*s` (1536 bytes) to `*m`.
 ///
@@ -7446,7 +7446,7 @@ pub(crate) const VG_MLKEM1024_KPKE_DECRYPT_FEATURES: crate::cpu::Features = crat
 /// * None of `m`, `s`, `ct` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_kpke_decrypt(m: *mut [u8; 32], s: *const [u8; 1536], ct: *const [u8; 1568], scratch: *mut [u64; 2048]) {
+pub unsafe extern "sysv64" fn vg_mlkem1024_kpke_decrypt(m: *mut [u8; 32], s: *const [u8; 1536], ct: *const [u8; 1568], scratch: *mut [u64; 2048]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rcx+14336], rbx
 mov QWORD PTR [rcx+14344], rbp
@@ -10657,7 +10657,7 @@ ret
 /// * `u` and `scratch` must not overlap each other, `a`, `t` or `y` (distinct Rust objects never do).
 /// * None of `u`, `a`, `t`, `y` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encrypt_mul(u: *mut [u32; 1280], a: *const [u32; 4096], t: *const [u32; 1024], y: *const [u32; 1024], scratch: *mut [u64; 512]) {
+pub unsafe extern "sysv64" fn vg_mlkem1024_encrypt_mul(u: *mut [u32; 1280], a: *const [u32; 4096], t: *const [u32; 1024], y: *const [u32; 1024], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+3072], rbp
 mov QWORD PTR [r8+3080], r12
@@ -12667,7 +12667,7 @@ ret
 /// * `w` and `scratch` must not overlap each other, `s` or `u` (distinct Rust objects never do).
 /// * None of `w`, `s`, `u` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_decrypt_mul(w: *mut [u32; 256], s: *const [u32; 1024], u: *const [u32; 1024], scratch: *mut [u64; 512]) {
+pub unsafe extern "sysv64" fn vg_mlkem1024_decrypt_mul(w: *mut [u32; 256], s: *const [u32; 1024], u: *const [u32; 1024], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rcx+3072], rbp
 mov QWORD PTR [rcx+3080], r12
@@ -13769,7 +13769,7 @@ ret
 /// * `t`, `s` and `scratch` must not overlap each other, `a` or `e` (distinct Rust objects never do).
 /// * None of `t`, `s`, `a`, `e` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_keygen_mul(t: *mut [u32; 1024], s: *mut [u32; 1024], a: *const [u32; 4096], e: *const [u32; 1024], scratch: *mut [u64; 512]) {
+pub unsafe extern "sysv64" fn vg_mlkem1024_keygen_mul(t: *mut [u32; 1024], s: *mut [u32; 1024], a: *const [u32; 4096], e: *const [u32; 1024], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+3072], rbp
 mov QWORD PTR [r8+3080], r12
@@ -15521,7 +15521,7 @@ ret
 /// * `out` must not overlap `f` (distinct Rust objects never do).
 /// * Neither `f` nor `out` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_compress_encode(f: *const [u32; 256], d: u32, out: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_mlkem1024_compress_encode(f: *const [u32; 256], d: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"mov esi, esi
 mov r8, rdx
@@ -15716,7 +15716,7 @@ ret
 /// * `f` must not overlap `b` (distinct Rust objects never do).
 /// * Neither `b` nor `f` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_decode_decompress(b: *const u8, len: usize, d: u32, f: *mut [u32; 256]) {
+pub unsafe extern "sysv64" fn vg_mlkem1024_decode_decompress(b: *const u8, len: usize, d: u32, f: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r"mov edx, edx
 mov rsi, rcx
@@ -15920,7 +15920,7 @@ ret
 /// * `ek` must be valid for reads of 1568 bytes.
 /// * `ek` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_check_ek(ek: *const [u8; 1568]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mlkem1024_check_ek(ek: *const [u8; 1568]) -> u32 {
     core::arch::naked_asm!(
         r"mov r8d, 0
 mov ecx, 512
@@ -15951,7 +15951,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem1024_check_ek_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLKEM1024_CHECK_EK_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM1024_CHECK_EK_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// The ML-KEM-1024 encapsulation key check (FIPS 203 §7.2): returns 1 if every 12-bit integer that the first 1536 bytes of `*ek` encode is less than `q` = 3329 (the modulus check), and 0 otherwise. An encapsulation key must pass it before it is given to `vg_mlkem1024_encaps`.
 ///
@@ -15963,7 +15963,7 @@ pub(crate) const VG_MLKEM1024_CHECK_EK_AVX2_FEATURES: crate::cpu::Features = cra
 /// * `ek` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_check_ek_avx2(ek: *const [u8; 1568]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mlkem1024_check_ek_avx2(ek: *const [u8; 1568]) -> u32 {
     core::arch::naked_asm!(
         r"lea rax, [rip + {VG_MLKEM_YCONSTS}]
 vmovdqu ymm8, YMMWORD PTR [rax+1184]
@@ -16004,10 +16004,10 @@ ret
 }
 
 /// The CPU features `vg_mlkem1024_keygen_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLKEM1024_KEYGEN_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM1024_KEYGEN_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// The bytes of `scratch` that `vg_mlkem1024_keygen_avx2` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
-pub(crate) const VG_MLKEM1024_KEYGEN_AVX2_SCRATCH_WRITTEN: usize = 37376;
+pub const VG_MLKEM1024_KEYGEN_AVX2_SCRATCH_WRITTEN: usize = 37376;
 
 /// ML-KEM-1024 key generation from a seed, `ML-KEM.KeyGen_internal(d, z)` (FIPS 203 Algorithm 16): with `d` in bytes 0–31 of `*seed` and `z` in bytes 32–63, writes the encapsulation key to `*ek` and the decapsulation key to `*dk`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -16027,7 +16027,7 @@ pub(crate) const VG_MLKEM1024_KEYGEN_AVX2_SCRATCH_WRITTEN: usize = 37376;
 /// * None of `seed`, `ek`, `dk` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_keygen_avx2(seed: *const [u8; 64], ek: *mut [u8; 1568], dk: *mut [u8; 3168], scratch: *mut [u64; 6144]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mlkem1024_keygen_avx2(seed: *const [u8; 64], ek: *mut [u8; 1568], dk: *mut [u8; 3168], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rcx+840], rbx
 mov QWORD PTR [rcx+848], rbp
@@ -17391,10 +17391,10 @@ ret
 }
 
 /// The CPU features `vg_mlkem1024_encaps_h_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLKEM1024_ENCAPS_H_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM1024_ENCAPS_H_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// The bytes of `scratch` that `vg_mlkem1024_encaps_h_avx2` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
-pub(crate) const VG_MLKEM1024_ENCAPS_H_AVX2_SCRATCH_WRITTEN: usize = 37376;
+pub const VG_MLKEM1024_ENCAPS_H_AVX2_SCRATCH_WRITTEN: usize = 37376;
 
 /// ML-KEM-1024 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem1024_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -17418,7 +17418,7 @@ pub(crate) const VG_MLKEM1024_ENCAPS_H_AVX2_SCRATCH_WRITTEN: usize = 37376;
 /// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps_h_avx2(ek: *const [u8; 1568], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mlkem1024_encaps_h_avx2(ek: *const [u8; 1568], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r9+840], rbx
 mov QWORD PTR [r9+848], rbp
@@ -18800,10 +18800,10 @@ ret
 }
 
 /// The CPU features `vg_mlkem1024_encaps_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLKEM1024_ENCAPS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM1024_ENCAPS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// The bytes of `scratch` that `vg_mlkem1024_encaps_avx2` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
-pub(crate) const VG_MLKEM1024_ENCAPS_AVX2_SCRATCH_WRITTEN: usize = 37376;
+pub const VG_MLKEM1024_ENCAPS_AVX2_SCRATCH_WRITTEN: usize = 37376;
 
 /// ML-KEM-1024 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -18825,7 +18825,7 @@ pub(crate) const VG_MLKEM1024_ENCAPS_AVX2_SCRATCH_WRITTEN: usize = 37376;
 /// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps_avx2(ek: *const [u8; 1568], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mlkem1024_encaps_avx2(ek: *const [u8; 1568], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+840], rbx
 mov QWORD PTR [r8+848], rbp
@@ -29331,10 +29331,10 @@ ret
 }
 
 /// The CPU features `vg_mlkem1024_decaps_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLKEM1024_DECAPS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLKEM1024_DECAPS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// The bytes of `scratch` that `vg_mlkem1024_decaps_avx2` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
-pub(crate) const VG_MLKEM1024_DECAPS_AVX2_SCRATCH_WRITTEN: usize = 37376;
+pub const VG_MLKEM1024_DECAPS_AVX2_SCRATCH_WRITTEN: usize = 37376;
 
 /// ML-KEM-1024 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -29354,7 +29354,7 @@ pub(crate) const VG_MLKEM1024_DECAPS_AVX2_SCRATCH_WRITTEN: usize = 37376;
 /// * None of `dk`, `ct`, `key` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_decaps_avx2(dk: *const [u8; 3168], ct: *const [u8; 1568], key: *mut [u8; 32], scratch: *mut [u64; 6144]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mlkem1024_decaps_avx2(dk: *const [u8; 3168], ct: *const [u8; 1568], key: *mut [u8; 32], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rcx+840], rbx
 mov QWORD PTR [rcx+848], rbp
@@ -39887,10 +39887,10 @@ ret
 }
 
 /// The CPU features `vg_mlkem1024_keygen_avx512` requires (`Artifact.features`).
-pub(crate) const VG_MLKEM1024_KEYGEN_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_MLKEM1024_KEYGEN_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
 
 /// The bytes of `scratch` that `vg_mlkem1024_keygen_avx512` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
-pub(crate) const VG_MLKEM1024_KEYGEN_AVX512_SCRATCH_WRITTEN: usize = 37376;
+pub const VG_MLKEM1024_KEYGEN_AVX512_SCRATCH_WRITTEN: usize = 37376;
 
 /// ML-KEM-1024 key generation from a seed, `ML-KEM.KeyGen_internal(d, z)` (FIPS 203 Algorithm 16): with `d` in bytes 0–31 of `*seed` and `z` in bytes 32–63, writes the encapsulation key to `*ek` and the decapsulation key to `*dk`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -39910,7 +39910,7 @@ pub(crate) const VG_MLKEM1024_KEYGEN_AVX512_SCRATCH_WRITTEN: usize = 37376;
 /// * None of `seed`, `ek`, `dk` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_keygen_avx512(seed: *const [u8; 64], ek: *mut [u8; 1568], dk: *mut [u8; 3168], scratch: *mut [u64; 6144]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mlkem1024_keygen_avx512(seed: *const [u8; 64], ek: *mut [u8; 1568], dk: *mut [u8; 3168], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rcx+840], rbx
 mov QWORD PTR [rcx+848], rbp
@@ -40922,10 +40922,10 @@ ret
 }
 
 /// The CPU features `vg_mlkem1024_encaps_h_avx512` requires (`Artifact.features`).
-pub(crate) const VG_MLKEM1024_ENCAPS_H_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_MLKEM1024_ENCAPS_H_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
 
 /// The bytes of `scratch` that `vg_mlkem1024_encaps_h_avx512` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
-pub(crate) const VG_MLKEM1024_ENCAPS_H_AVX512_SCRATCH_WRITTEN: usize = 37376;
+pub const VG_MLKEM1024_ENCAPS_H_AVX512_SCRATCH_WRITTEN: usize = 37376;
 
 /// ML-KEM-1024 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem1024_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -40949,7 +40949,7 @@ pub(crate) const VG_MLKEM1024_ENCAPS_H_AVX512_SCRATCH_WRITTEN: usize = 37376;
 /// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps_h_avx512(ek: *const [u8; 1568], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mlkem1024_encaps_h_avx512(ek: *const [u8; 1568], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r9+840], rbx
 mov QWORD PTR [r9+848], rbp
@@ -41979,10 +41979,10 @@ ret
 }
 
 /// The CPU features `vg_mlkem1024_encaps_avx512` requires (`Artifact.features`).
-pub(crate) const VG_MLKEM1024_ENCAPS_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_MLKEM1024_ENCAPS_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
 
 /// The bytes of `scratch` that `vg_mlkem1024_encaps_avx512` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
-pub(crate) const VG_MLKEM1024_ENCAPS_AVX512_SCRATCH_WRITTEN: usize = 37376;
+pub const VG_MLKEM1024_ENCAPS_AVX512_SCRATCH_WRITTEN: usize = 37376;
 
 /// ML-KEM-1024 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -42004,7 +42004,7 @@ pub(crate) const VG_MLKEM1024_ENCAPS_AVX512_SCRATCH_WRITTEN: usize = 37376;
 /// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps_avx512(ek: *const [u8; 1568], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mlkem1024_encaps_avx512(ek: *const [u8; 1568], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+840], rbx
 mov QWORD PTR [r8+848], rbp
@@ -49342,10 +49342,10 @@ ret
 }
 
 /// The CPU features `vg_mlkem1024_decaps_avx512` requires (`Artifact.features`).
-pub(crate) const VG_MLKEM1024_DECAPS_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
+pub const VG_MLKEM1024_DECAPS_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
 
 /// The bytes of `scratch` that `vg_mlkem1024_decaps_avx512` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
-pub(crate) const VG_MLKEM1024_DECAPS_AVX512_SCRATCH_WRITTEN: usize = 37376;
+pub const VG_MLKEM1024_DECAPS_AVX512_SCRATCH_WRITTEN: usize = 37376;
 
 /// ML-KEM-1024 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -49365,7 +49365,7 @@ pub(crate) const VG_MLKEM1024_DECAPS_AVX512_SCRATCH_WRITTEN: usize = 37376;
 /// * None of `dk`, `ct`, `key` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_decaps_avx512(dk: *const [u8; 3168], ct: *const [u8; 1568], key: *mut [u8; 32], scratch: *mut [u64; 6144]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mlkem1024_decaps_avx512(dk: *const [u8; 3168], ct: *const [u8; 1568], key: *mut [u8; 32], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rcx+840], rbx
 mov QWORD PTR [rcx+848], rbp
@@ -56744,7 +56744,7 @@ ret
 /// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
 /// * None of `seed`, `ek`, `dk` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_keygen(seed: *const [u8; 64], ek: *mut [u8; 1568], dk: *mut [u8; 3168], scratch: *mut [u64; 6144]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mlkem1024_keygen(seed: *const [u8; 64], ek: *mut [u8; 1568], dk: *mut [u8; 3168], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rcx+840], rbx
 mov QWORD PTR [rcx+848], rbp
@@ -57875,7 +57875,7 @@ ret
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
 /// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps_h(ek: *const [u8; 1568], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mlkem1024_encaps_h(ek: *const [u8; 1568], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r9+840], rbx
 mov QWORD PTR [r9+848], rbp
@@ -59087,7 +59087,7 @@ ret
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
 /// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps(ek: *const [u8; 1568], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mlkem1024_encaps(ek: *const [u8; 1568], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [r8+840], rbx
 mov QWORD PTR [r8+848], rbp
@@ -60339,7 +60339,7 @@ ret
 /// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
 /// * None of `dk`, `ct`, `key` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_decaps(dk: *const [u8; 3168], ct: *const [u8; 1568], key: *mut [u8; 32], scratch: *mut [u64; 6144]) -> u32 {
+pub unsafe extern "sysv64" fn vg_mlkem1024_decaps(dk: *const [u8; 3168], ct: *const [u8; 1568], key: *mut [u8; 32], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
         r"mov QWORD PTR [rcx+840], rbx
 mov QWORD PTR [rcx+848], rbp

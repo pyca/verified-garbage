@@ -15,7 +15,7 @@
 /// * `f` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * Neither `f` nor `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_montgomery_inv_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
+pub unsafe extern "C" fn vg_mldsa_montgomery_inv_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         concat!("adrp x1, ", vg_sym_page!("{VG_MLDSA_INV_FOLDED}")),
         concat!("add x1, x1, ", vg_sym_pageoff!("{VG_MLDSA_INV_FOLDED}")),
@@ -392,7 +392,7 @@ ret
 /// * Each input coefficient must be less than q = 8380417.
 /// * `f` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_ntt_positive(f: *mut [u32; 256]) {
+pub unsafe extern "C" fn vg_mldsa_ntt_positive(f: *mut [u32; 256]) {
     core::arch::naked_asm!(
         concat!("adrp x1, ", vg_sym_page!("{VG_MLDSA_NTT_EXPANDED}")),
         concat!("add x1, x1, ", vg_sym_pageoff!("{VG_MLDSA_NTT_EXPANDED}")),
@@ -739,7 +739,7 @@ ret
 /// * `out` must not overlap `f` (distinct Rust objects never do).
 /// * Neither `out` nor `f` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_ntt_positive_from(out: *mut [u32; 256], f: *const [u32; 256]) {
+pub unsafe extern "C" fn vg_mldsa_ntt_positive_from(out: *mut [u32; 256], f: *const [u32; 256]) {
     core::arch::naked_asm!(
         r"add x11, x1, #0",
         concat!("adrp x1, ", vg_sym_page!("{VG_MLDSA_NTT_EXPANDED}")),
@@ -1091,7 +1091,7 @@ ret
 /// * `f` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * Neither `f` nor `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
+pub unsafe extern "C" fn vg_mldsa_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r"movz w9, #65024, lsl #0
 movk w9, #63, lsl #16
@@ -2170,7 +2170,7 @@ ret
 /// * `f` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * Neither `f` nor `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_inv_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
+pub unsafe extern "C" fn vg_mldsa_inv_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r"movz w9, #57857, lsl #0
 movk w9, #63, lsl #16
@@ -3251,7 +3251,7 @@ ret
 /// * `h` must not overlap `f` or `g` (distinct Rust objects never do).
 /// * None of `h`, `f` and `g` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_multiply_ntt(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
+pub unsafe extern "C" fn vg_mldsa_multiply_ntt(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
         r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
@@ -3301,7 +3301,7 @@ ret
 /// * `h` must not overlap `f` or `g` (distinct Rust objects never do).
 /// * None of `h`, `f` and `g` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_multiply_add_ntt(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
+pub unsafe extern "C" fn vg_mldsa_multiply_add_ntt(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
         r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
@@ -3351,7 +3351,7 @@ ret
 /// * `f` must not overlap `g` (distinct Rust objects never do).
 /// * Neither `f` nor `g` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_add(f: *mut [u32; 256], g: *const [u32; 256]) {
+pub unsafe extern "C" fn vg_mldsa_add(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
         r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
@@ -3389,7 +3389,7 @@ ret
 /// * `f` must not overlap `g` (distinct Rust objects never do).
 /// * Neither `f` nor `g` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_sub(f: *mut [u32; 256], g: *const [u32; 256]) {
+pub unsafe extern "C" fn vg_mldsa_sub(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
         r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
@@ -3426,7 +3426,7 @@ ret
 /// * `a` and `scratch` must not overlap each other or `seeds` (distinct Rust objects never do).
 /// * None of `seeds`, `a` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_rej_bounded_poly4_eta2(seeds: *const [u8; 264], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_mldsa_rej_bounded_poly4_eta2(seeds: *const [u8; 264], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"str x19, [x2, #7968]
 str x20, [x2, #7976]
@@ -4575,7 +4575,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_rej_bounded_poly4_eta2_sha3` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_REJ_BOUNDED_POLY4_ETA2_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_MLDSA_REJ_BOUNDED_POLY4_ETA2_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// Samples four independent ML-DSA secret polynomials with the standard rejection-bit leakage.
 ///
@@ -4589,7 +4589,7 @@ pub(crate) const VG_MLDSA_REJ_BOUNDED_POLY4_ETA2_SHA3_FEATURES: crate::cpu::Feat
 /// * None of `seeds`, `a` and `scratch` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_rej_bounded_poly4_eta2_sha3(seeds: *const [u8; 264], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_mldsa_rej_bounded_poly4_eta2_sha3(seeds: *const [u8; 264], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".arch_extension sha3
 str x19, [x2, #7968]
@@ -5750,7 +5750,7 @@ ret
 /// * `a` and `scratch` must not overlap each other or `seeds` (distinct Rust objects never do).
 /// * None of `seeds`, `a` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_rej_bounded_poly4_eta4(seeds: *const [u8; 264], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_mldsa_rej_bounded_poly4_eta4(seeds: *const [u8; 264], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"str x19, [x2, #7968]
 str x20, [x2, #7976]
@@ -6863,7 +6863,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_rej_bounded_poly4_eta4_sha3` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_REJ_BOUNDED_POLY4_ETA4_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_MLDSA_REJ_BOUNDED_POLY4_ETA4_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// Samples four independent ML-DSA secret polynomials with the standard rejection-bit leakage.
 ///
@@ -6877,7 +6877,7 @@ pub(crate) const VG_MLDSA_REJ_BOUNDED_POLY4_ETA4_SHA3_FEATURES: crate::cpu::Feat
 /// * None of `seeds`, `a` and `scratch` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_rej_bounded_poly4_eta4_sha3(seeds: *const [u8; 264], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_mldsa_rej_bounded_poly4_eta4_sha3(seeds: *const [u8; 264], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".arch_extension sha3
 str x19, [x2, #7968]
@@ -8003,7 +8003,7 @@ ret
 /// * `out` and `scratch` must not overlap each other, `a` or `b` (distinct Rust objects never do).
 /// * None of `out`, `a`, `b` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_dot_inverse4(out: *mut [u32; 256], a: *const [u32; 1024], b: *const [u32; 1024], scratch: *mut [u64; 128]) {
+pub unsafe extern "C" fn vg_mldsa_dot_inverse4(out: *mut [u32; 256], a: *const [u32; 1024], b: *const [u32; 1024], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r"add x13, x1, #0
 add x14, x2, #0",
@@ -8559,7 +8559,7 @@ ret
 /// * `out` and `scratch` must not overlap each other, `a` or `b` (distinct Rust objects never do).
 /// * None of `out`, `a`, `b` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_dot_inverse5(out: *mut [u32; 256], a: *const [u32; 1280], b: *const [u32; 1280], scratch: *mut [u64; 128]) {
+pub unsafe extern "C" fn vg_mldsa_dot_inverse5(out: *mut [u32; 256], a: *const [u32; 1280], b: *const [u32; 1280], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r"add x13, x1, #0
 add x14, x2, #0",
@@ -9147,7 +9147,7 @@ ret
 /// * `out` and `scratch` must not overlap each other, `a` or `b` (distinct Rust objects never do).
 /// * None of `out`, `a`, `b` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_dot_inverse7(out: *mut [u32; 256], a: *const [u32; 1792], b: *const [u32; 1792], scratch: *mut [u64; 128]) {
+pub unsafe extern "C" fn vg_mldsa_dot_inverse7(out: *mut [u32; 256], a: *const [u32; 1792], b: *const [u32; 1792], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r"add x13, x1, #0
 add x14, x2, #0",
@@ -9800,7 +9800,7 @@ ret
 /// * `out` and `scratch` must not overlap each other, `a` or `b` (distinct Rust objects never do).
 /// * None of `out`, `a`, `b` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_multiply_inverse_raw(out: *mut [u32; 256], a: *const [u32; 256], b: *const [u32; 256], scratch: *mut [u64; 128]) {
+pub unsafe extern "C" fn vg_mldsa_multiply_inverse_raw(out: *mut [u32; 256], a: *const [u32; 256], b: *const [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         r"add x13, x1, #0
 add x14, x2, #0",
@@ -10216,7 +10216,7 @@ ret
 /// * Each coefficient, interpreted as a signed 32-bit integer, must be strictly between -8380417 and 8380417.
 /// * `f` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_canonicalize_signed(f: *mut [u32; 256]) {
+pub unsafe extern "C" fn vg_mldsa_canonicalize_signed(f: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
@@ -10262,7 +10262,7 @@ ret
 /// * `out` must not overlap `a` or `b` (distinct Rust objects never do).
 /// * None of `out`, `a` and `b` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_montgomery_dot4(out: *mut [u32; 256], a: *const [u32; 1024], b: *const [u32; 1024]) {
+pub unsafe extern "C" fn vg_mldsa_montgomery_dot4(out: *mut [u32; 256], a: *const [u32; 1024], b: *const [u32; 1024]) {
     core::arch::naked_asm!(
         r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
@@ -10317,7 +10317,7 @@ ret
 /// * `out` must not overlap `a` or `b` (distinct Rust objects never do).
 /// * None of `out`, `a` and `b` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_montgomery_dot5(out: *mut [u32; 256], a: *const [u32; 1280], b: *const [u32; 1280]) {
+pub unsafe extern "C" fn vg_mldsa_montgomery_dot5(out: *mut [u32; 256], a: *const [u32; 1280], b: *const [u32; 1280]) {
     core::arch::naked_asm!(
         r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
@@ -10376,7 +10376,7 @@ ret
 /// * `out` must not overlap `a` or `b` (distinct Rust objects never do).
 /// * None of `out`, `a` and `b` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_montgomery_dot7(out: *mut [u32; 256], a: *const [u32; 1792], b: *const [u32; 1792]) {
+pub unsafe extern "C" fn vg_mldsa_montgomery_dot7(out: *mut [u32; 256], a: *const [u32; 1792], b: *const [u32; 1792]) {
     core::arch::naked_asm!(
         r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
@@ -10443,7 +10443,7 @@ ret
 /// * `out` must not overlap `a` or `b` (distinct Rust objects never do).
 /// * None of `out`, `a` and `b` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_montgomery_product(out: *mut [u32; 256], a: *const [u32; 256], b: *const [u32; 256]) {
+pub unsafe extern "C" fn vg_mldsa_montgomery_product(out: *mut [u32; 256], a: *const [u32; 256], b: *const [u32; 256]) {
     core::arch::naked_asm!(
         r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
@@ -10485,7 +10485,7 @@ ret
 /// * `out` must not overlap `r` (distinct Rust objects never do).
 /// * Neither `r` nor `out` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_high_pack4(r: *const [u32; 256], out: *mut [u8; 128]) {
+pub unsafe extern "C" fn vg_mldsa_high_pack4(r: *const [u32; 256], out: *mut [u8; 128]) {
     core::arch::naked_asm!(
         r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
@@ -10608,7 +10608,7 @@ ret
 /// * `out` must not overlap `r` (distinct Rust objects never do).
 /// * Neither `r` nor `out` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_high_pack6(r: *const [u32; 256], out: *mut [u8; 192]) {
+pub unsafe extern "C" fn vg_mldsa_high_pack6(r: *const [u32; 256], out: *mut [u8; 192]) {
     core::arch::naked_asm!(
         r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
@@ -10743,7 +10743,7 @@ ret
 /// * `out` must not overlap `f` (distinct Rust objects never do).
 /// * Neither `f` nor `out` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_simple_bit_pack(f: *const [u32; 256], b: u32, out: *mut u8, len: usize) {
+pub unsafe extern "C" fn vg_mldsa_simple_bit_pack(f: *const [u32; 256], b: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"sub x9, x3, #128
 cbz x9, 20f
@@ -10973,7 +10973,7 @@ ret
 /// * `out` must not overlap `f` (distinct Rust objects never do).
 /// * Neither `f` nor `out` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_bit_pack(f: *const [u32; 256], a: u32, b: u32, out: *mut u8, len: usize) {
+pub unsafe extern "C" fn vg_mldsa_bit_pack(f: *const [u32; 256], a: u32, b: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"sub x9, x4, #96
 cbz x9, 20f
@@ -11554,7 +11554,7 @@ ret
 /// * `f` must not overlap `v` (distinct Rust objects never do).
 /// * Neither `v` nor `f` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_bit_unpack(v: *const u8, len: usize, a: u32, b: u32, f: *mut [u32; 256]) {
+pub unsafe extern "C" fn vg_mldsa_bit_unpack(v: *const u8, len: usize, a: u32, b: u32, f: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r"movz x13, #57345, lsl #0
 movk x13, #127, lsl #16
@@ -11903,7 +11903,7 @@ ret
 /// * `f` must not overlap `v` (distinct Rust objects never do).
 /// * Neither `v` nor `f` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_unpack_t1(v: *const [u8; 320], f: *mut [u32; 256]) {
+pub unsafe extern "C" fn vg_mldsa_unpack_t1(v: *const [u8; 320], f: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r"add x4, x1, #0
 movz x15, #1023, lsl #0
@@ -11965,7 +11965,7 @@ ret
 /// * `y` must not overlap `h` (distinct Rust objects never do).
 /// * Neither `h` nor `y` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_hint_bit_pack(h: *const u32, hlen: usize, omega: u32, y: *mut u8, len: usize) {
+pub unsafe extern "C" fn vg_mldsa_hint_bit_pack(h: *const u32, hlen: usize, omega: u32, y: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"lsr x12, x1, #8
 sub x2, x4, x12
@@ -12016,7 +12016,7 @@ ret
 /// * `h` must not overlap `y` (distinct Rust objects never do).
 /// * Neither `y` nor `h` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_hint_bit_unpack(y: *const u8, len: usize, omega: u32, h: *mut u32, hlen: usize) -> u32 {
+pub unsafe extern "C" fn vg_mldsa_hint_bit_unpack(y: *const u8, len: usize, omega: u32, h: *mut u32, hlen: usize) -> u32 {
     core::arch::naked_asm!(
         r"lsr x12, x4, #8
 sub x2, x1, x12
@@ -12112,7 +12112,7 @@ ret
 /// * `y` and `work` must not overlap each other, `challenge` or `secret` (distinct Rust objects never do).
 /// * None of `challenge`, `secret`, `y` and `work` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_fused_pair_z(challenge: *const [u32; 256], secret: *const [u32; 512], y: *mut [u32; 512], unused: u64, work: *mut [u64; 272], unused_gamma: u32, bound: u32) -> u32 {
+pub unsafe extern "C" fn vg_mldsa_fused_pair_z(challenge: *const [u32; 256], secret: *const [u32; 512], y: *mut [u32; 512], unused: u64, work: *mut [u64; 272], unused_gamma: u32, bound: u32) -> u32 {
     core::arch::naked_asm!(
         r"add x13, x0, #0
 add x14, x1, #0
@@ -13000,7 +13000,7 @@ ret
 /// * `w`, `low` and `work` must not overlap each other, `challenge` or `secret` (distinct Rust objects never do).
 /// * None of `challenge`, `secret`, `w`, `low` and `work` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_fused_pair_r0(challenge: *const [u32; 256], secret: *const [u32; 512], w: *mut [u32; 512], low: *mut [u32; 512], work: *mut [u64; 272], gamma2: u32, bound: u32) -> u32 {
+pub unsafe extern "C" fn vg_mldsa_fused_pair_r0(challenge: *const [u32; 256], secret: *const [u32; 512], w: *mut [u32; 512], low: *mut [u32; 512], work: *mut [u64; 272], gamma2: u32, bound: u32) -> u32 {
     core::arch::naked_asm!(
         r"add x13, x0, #0
 add x14, x1, #0
@@ -15254,7 +15254,7 @@ ret
 /// * `low` and `work` must not overlap each other, `challenge`, `secret` or `high` (distinct Rust objects never do).
 /// * None of `challenge`, `secret`, `low`, `high` and `work` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_fused_pair_h(challenge: *const [u32; 256], secret: *const [u32; 512], low: *mut [u32; 512], high: *const [u32; 512], work: *mut [u64; 272], gamma2: u32, bound: u32) -> u64 {
+pub unsafe extern "C" fn vg_mldsa_fused_pair_h(challenge: *const [u32; 256], secret: *const [u32; 512], low: *mut [u32; 512], high: *const [u32; 512], work: *mut [u64; 272], gamma2: u32, bound: u32) -> u64 {
     core::arch::naked_asm!(
         r"add x13, x0, #0
 add x14, x1, #0
@@ -16333,7 +16333,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_commit_tail65` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_COMMIT_TAIL65_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_MLDSA_COMMIT_TAIL65_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// Computes the ML-DSA commitment and an independent mask polynomial using two SHAKE256 lanes.
 ///
@@ -16349,7 +16349,7 @@ pub(crate) const VG_MLDSA_COMMIT_TAIL65_FEATURES: crate::cpu::Features = crate::
 /// * None of `mu`, `w1`, `commitment`, `scratch`, `seed` and `mask` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_commit_tail65(mu: *const [u8; 64], w1: *const [u8; 768], commitment: *mut [u8; 48], scratch: *mut [u64; 256], seed: *const [u8; 64], nonce: u64, mask: *mut [u32; 256]) {
+pub unsafe extern "C" fn vg_mldsa_commit_tail65(mu: *const [u8; 64], w1: *const [u8; 768], commitment: *mut [u8; 48], scratch: *mut [u64; 256], seed: *const [u8; 64], nonce: u64, mask: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r".arch_extension sha3
 str q8, [x3, #0]
@@ -18576,7 +18576,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_commit_tail87` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_COMMIT_TAIL87_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_MLDSA_COMMIT_TAIL87_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// Computes the ML-DSA commitment and an independent mask polynomial using two SHAKE256 lanes.
 ///
@@ -18592,7 +18592,7 @@ pub(crate) const VG_MLDSA_COMMIT_TAIL87_FEATURES: crate::cpu::Features = crate::
 /// * None of `mu`, `w1`, `commitment`, `scratch`, `seed` and `mask` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_commit_tail87(mu: *const [u8; 64], w1: *const [u8; 1024], commitment: *mut [u8; 64], scratch: *mut [u64; 256], seed: *const [u8; 64], nonce: u64, mask: *mut [u32; 256]) {
+pub unsafe extern "C" fn vg_mldsa_commit_tail87(mu: *const [u8; 64], w1: *const [u8; 1024], commitment: *mut [u8; 64], scratch: *mut [u64; 256], seed: *const [u8; 64], nonce: u64, mask: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r".arch_extension sha3
 str q8, [x3, #0]
@@ -20813,7 +20813,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_rej_ntt_poly2_sha3` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_REJ_NTT_POLY2_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_MLDSA_REJ_NTT_POLY2_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// RejNTTPoly (FIPS 204 Algorithm 30) for two independent 34-byte seeds. On success, writes two canonical 256-coefficient polynomials and returns 1. Returns 0 if a stream fails within the specified minimum sampling bound; output is then unspecified. Timing may depend on the pointers and the two public seeds.
 ///
@@ -20827,7 +20827,7 @@ pub(crate) const VG_MLDSA_REJ_NTT_POLY2_SHA3_FEATURES: crate::cpu::Features = cr
 /// * None of `seeds`, `a` and `scratch` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_rej_ntt_poly2_sha3(seeds: *const [u8; 68], a: *mut [u32; 512], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_mldsa_rej_ntt_poly2_sha3(seeds: *const [u8; 68], a: *mut [u32; 512], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".arch_extension sha3
 str x19, [x2, #7968]
@@ -22359,7 +22359,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_expand_mask_pair_sha3` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_EXPAND_MASK_PAIR_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_MLDSA_EXPAND_MASK_PAIR_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// Expands two independent 66-byte seeds into two canonical ML-DSA mask polynomials. Timing depends only on the pointers and gamma1.
 ///
@@ -22374,7 +22374,7 @@ pub(crate) const VG_MLDSA_EXPAND_MASK_PAIR_SHA3_FEATURES: crate::cpu::Features =
 /// * None of `seeds`, `a`, `b` and `scratch` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_expand_mask_pair_sha3(seeds: *const [u8; 132], gamma1: u32, a: *mut [u32; 256], b: *mut [u32; 256], scratch: *mut [u64; 1024]) {
+pub unsafe extern "C" fn vg_mldsa_expand_mask_pair_sha3(seeds: *const [u8; 132], gamma1: u32, a: *mut [u32; 256], b: *mut [u32; 256], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r".arch_extension sha3
 str x19, [x4, #7968]
@@ -23242,7 +23242,7 @@ ret
 /// * `y` must not overlap `cs` (distinct Rust objects never do).
 /// * Neither `y` nor `cs` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_signed_add_norm(y: *mut [u32; 256], cs: *const [u32; 256], bound: u32) -> u32 {
+pub unsafe extern "C" fn vg_mldsa_signed_add_norm(y: *mut [u32; 256], cs: *const [u32; 256], bound: u32) -> u32 {
     core::arch::naked_asm!(
         r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
@@ -23333,7 +23333,7 @@ ret
 /// * `t1` and `t0` must not overlap each other or `t` (distinct Rust objects never do).
 /// * None of `t`, `t1` and `t0` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_power2round(t: *const [u32; 256], t1: *mut [u32; 256], t0: *mut [u32; 256]) {
+pub unsafe extern "C" fn vg_mldsa_power2round(t: *const [u32; 256], t1: *mut [u32; 256], t0: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
@@ -23403,7 +23403,7 @@ ret
 /// * Each of the 256 `u32`s of `f` must be less than `q` = 8380417.
 /// * `f` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_norm_lt(f: *const [u32; 256], bound: u32) -> u32 {
+pub unsafe extern "C" fn vg_mldsa_norm_lt(f: *const [u32; 256], bound: u32) -> u32 {
     core::arch::naked_asm!(
         r"add w1, w1, #0
 movz w9, #57345, lsl #0
@@ -23441,7 +23441,7 @@ ret
 /// * `out` must not overlap `h` or `r` (distinct Rust objects never do).
 /// * None of `h`, `r` and `out` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_use_hint(h: *const [u32; 256], r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
+pub unsafe extern "C" fn vg_mldsa_use_hint(h: *const [u32; 256], r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
         r"add w2, w2, #0
 movz w4, #65280, lsl #0
@@ -23542,7 +23542,7 @@ ret
 /// * `out` must not overlap `hints` or `w` (distinct Rust objects never do).
 /// * None of `out`, `hints` and `w` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_usehint_pack4(out: *mut [u8; 128], hints: *const [u32; 256], w: *const [u32; 256], gamma2: u32) {
+pub unsafe extern "C" fn vg_mldsa_usehint_pack4(out: *mut [u8; 128], hints: *const [u32; 256], w: *const [u32; 256], gamma2: u32) {
     core::arch::naked_asm!(
         r"add x4, x1, #0
 add x5, x2, #0
@@ -23891,7 +23891,7 @@ ret
 /// * `out` must not overlap `hints` or `w` (distinct Rust objects never do).
 /// * None of `out`, `hints` and `w` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_usehint_pack6(out: *mut [u8; 192], hints: *const [u32; 256], w: *const [u32; 256], gamma2: u32) {
+pub unsafe extern "C" fn vg_mldsa_usehint_pack6(out: *mut [u8; 192], hints: *const [u32; 256], w: *const [u32; 256], gamma2: u32) {
     core::arch::naked_asm!(
         r"add x4, x1, #0
 add x5, x2, #0
@@ -24241,7 +24241,7 @@ ret
 /// * `a` and `scratch` must not overlap each other or `seeds` (distinct Rust objects never do).
 /// * None of `seeds`, `a` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_rej_ntt_poly4(seeds: *const [u8; 136], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_mldsa_rej_ntt_poly4(seeds: *const [u8; 136], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"str x19, [x2, #7968]
 str x20, [x2, #7976]
@@ -24813,7 +24813,7 @@ ret
 /// * `c` and `scratch` must not overlap each other or `ctilde` (distinct Rust objects never do).
 /// * None of `ctilde`, `c` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_sample_in_ball(ctilde: *const u8, len: usize, tau: u32, c: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
+pub unsafe extern "C" fn vg_mldsa_sample_in_ball(ctilde: *const u8, len: usize, tau: u32, c: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
         r"str x25, [x4, #2016]
 str x26, [x4, #2024]
@@ -24927,7 +24927,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_rej_ntt_poly4_sha3` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_REJ_NTT_POLY4_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_MLDSA_REJ_NTT_POLY4_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// `RejNTTPoly` (FIPS 204 Algorithm 30) four times: for each `k` < 4, writes the element of `T_q` sampled from the SHAKE128 output of the 34 bytes of `*seeds` from byte `34 k` to the 256 coefficients of `*a` from coefficient `256 k` (each less than `q` = 8380417), and returns 1. Returns 0 if the loop reaches its bound, which is at least 894 bytes of SHAKE128 output for each (FIPS 204 Appendix C; this happens with probability about 2^-256 or less): `*a` is then unspecified, and the caller must destroy it and treat the operation as failed. The four are independent, so an implementation may compute them together (e.g. four SHAKE128 instances at once in vector registers).
 ///
@@ -24943,7 +24943,7 @@ pub(crate) const VG_MLDSA_REJ_NTT_POLY4_SHA3_FEATURES: crate::cpu::Features = cr
 /// * None of `seeds`, `a` and `scratch` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_rej_ntt_poly4_sha3(seeds: *const [u8; 136], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_mldsa_rej_ntt_poly4_sha3(seeds: *const [u8; 136], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r".arch_extension sha3
 str x19, [x2, #7968]
@@ -26940,7 +26940,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_sample_in_ball_sha3` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_SAMPLE_IN_BALL_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_MLDSA_SAMPLE_IN_BALL_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// `SampleInBall` (FIPS 204 Algorithm 29): writes the polynomial with `tau` coefficients 1 or -1 and the others 0 sampled from the SHAKE256 output of the `len` bytes at `ctilde` to `*c` (each coefficient modulo `q` = 8380417), and returns 1. Returns 0 if the loop reaches its bound, which is at least 221 bytes of SHAKE256 output (FIPS 204 Appendix C; this happens with probability about 2^-256 or less): `*c` is then unspecified, and the caller must destroy it and treat the operation as failed.
 ///
@@ -26957,7 +26957,7 @@ pub(crate) const VG_MLDSA_SAMPLE_IN_BALL_SHA3_FEATURES: crate::cpu::Features = c
 /// * None of `ctilde`, `c` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_sample_in_ball_sha3(ctilde: *const u8, len: usize, tau: u32, c: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
+pub unsafe extern "C" fn vg_mldsa_sample_in_ball_sha3(ctilde: *const u8, len: usize, tau: u32, c: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
         r".arch_extension sha3
 str x25, [x4, #2016]
@@ -27191,7 +27191,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa_expand_mask_poly_sha3` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_EXPAND_MASK_POLY_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_MLDSA_EXPAND_MASK_POLY_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// A polynomial of `ExpandMask` (FIPS 204 Algorithm 34, lines 4 and 5): writes `BitUnpack(H(seed, 32c), gamma1 - 1, gamma1)`, for the 66 bytes `*seed` and `c = 1 + bitlen (gamma1 - 1)`, to `*a` (each coefficient modulo `q` = 8380417).
 ///
@@ -27208,7 +27208,7 @@ pub(crate) const VG_MLDSA_EXPAND_MASK_POLY_SHA3_FEATURES: crate::cpu::Features =
 /// * None of `seed`, `a` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_expand_mask_poly_sha3(seed: *const [u8; 66], gamma1: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) {
+pub unsafe extern "C" fn vg_mldsa_expand_mask_poly_sha3(seed: *const [u8; 66], gamma1: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
         r".arch_extension sha3
 str x25, [x3, #2016]

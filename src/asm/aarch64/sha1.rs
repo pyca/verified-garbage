@@ -15,7 +15,7 @@
 /// * `state` and `scratch` must not overlap each other or `blocks` (distinct Rust objects never do).
 /// * None of `state`, `blocks` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha1_compress(state: *mut [u32; 5], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 14]) {
+pub unsafe extern "C" fn vg_sha1_compress(state: *mut [u32; 5], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 14]) {
     core::arch::naked_asm!(
         r"cbz x2, 20f
 22:
@@ -1543,7 +1543,7 @@ ret
 /// * `state` must be valid for reads and writes of 84 bytes.
 /// * `state` must not wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
+pub unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
     core::arch::naked_asm!(
         r"movz w9, #8961, lsl #0
 movk w9, #26437, lsl #16
@@ -1566,7 +1566,7 @@ ret
 }
 
 /// The CPU features `vg_sha1_compress_sha2` requires (`Artifact.features`).
-pub(crate) const VG_SHA1_COMPRESS_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
+pub const VG_SHA1_COMPRESS_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
 
 /// The SHA-1 compression function (FIPS 180-4 §6.1.2): updates the hash value `*state` with the `n` 64-byte blocks starting at `blocks`, in order.
 ///
@@ -1582,7 +1582,7 @@ pub(crate) const VG_SHA1_COMPRESS_SHA2_FEATURES: crate::cpu::Features = crate::c
 /// * None of `state`, `blocks` and `scratch` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha1_compress_sha2(state: *mut [u32; 5], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 14]) {
+pub unsafe extern "C" fn vg_sha1_compress_sha2(state: *mut [u32; 5], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 14]) {
     core::arch::naked_asm!(
         r".arch_extension sha2
 cbz x2, 20f
@@ -1753,7 +1753,7 @@ ret
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha1_update(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
+pub unsafe extern "C" fn vg_sha1_update(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #160
 add x4, sp, #0
@@ -1925,7 +1925,7 @@ ret
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha1_finalize(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
+pub unsafe extern "C" fn vg_sha1_finalize(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r"sub sp, sp, #160
 add x3, sp, #0
@@ -2040,7 +2040,7 @@ ret
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha1_update_scratch(state: *mut [u8; 84], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 20]) {
+pub unsafe extern "C" fn vg_sha1_update_scratch(state: *mut [u8; 84], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 20]) {
     core::arch::naked_asm!(
         r"str x30, [sp, #-16]!
 str x19, [x4, #112]
@@ -2211,7 +2211,7 @@ ret
 /// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * None of `state`, `out` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha1_finalize_scratch(state: *mut [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 20]) {
+pub unsafe extern "C" fn vg_sha1_finalize_scratch(state: *mut [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 20]) {
     core::arch::naked_asm!(
         r"str x30, [sp, #-16]!
 str x19, [x3, #112]
@@ -2321,7 +2321,7 @@ ret
 /// * `out` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the 272 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha1_digest(data: *const u8, len: usize, out: *mut [u8; 20]) {
+pub unsafe extern "C" fn vg_sha1_digest(data: *const u8, len: usize, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r"sub sp, sp, #272
 add x10, sp, #208
@@ -2495,7 +2495,7 @@ ret
 }
 
 /// The CPU features `vg_sha1_update_sha2` requires (`Artifact.features`).
-pub(crate) const VG_SHA1_UPDATE_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
+pub const VG_SHA1_UPDATE_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
 
 /// Absorbs data into a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
@@ -2509,7 +2509,7 @@ pub(crate) const VG_SHA1_UPDATE_SHA2_FEATURES: crate::cpu::Features = crate::cpu
 /// * Neither `state` nor `data` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha1_update_sha2(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
+pub unsafe extern "C" fn vg_sha1_update_sha2(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r".arch_extension sha2
 sub sp, sp, #160
@@ -2672,7 +2672,7 @@ ret
 }
 
 /// The CPU features `vg_sha1_finalize_sha2` requires (`Artifact.features`).
-pub(crate) const VG_SHA1_FINALIZE_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
+pub const VG_SHA1_FINALIZE_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
 
 /// Finishes a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SHA-1 digest of that message to `*out`.
 ///
@@ -2687,7 +2687,7 @@ pub(crate) const VG_SHA1_FINALIZE_SHA2_FEATURES: crate::cpu::Features = crate::c
 /// * Neither `state` nor `out` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha1_finalize_sha2(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
+pub unsafe extern "C" fn vg_sha1_finalize_sha2(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r".arch_extension sha2
 sub sp, sp, #160
@@ -2792,7 +2792,7 @@ ret
 }
 
 /// The CPU features `vg_sha1_update_scratch_sha2` requires (`Artifact.features`).
-pub(crate) const VG_SHA1_UPDATE_SCRATCH_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
+pub const VG_SHA1_UPDATE_SCRATCH_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
 
 /// `vg_sha1_update`, with its working space in `*scratch`.
 ///
@@ -2808,7 +2808,7 @@ pub(crate) const VG_SHA1_UPDATE_SCRATCH_SHA2_FEATURES: crate::cpu::Features = cr
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha1_update_scratch_sha2(state: *mut [u8; 84], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 20]) {
+pub unsafe extern "C" fn vg_sha1_update_scratch_sha2(state: *mut [u8; 84], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 20]) {
     core::arch::naked_asm!(
         r".arch_extension sha2
 str x30, [sp, #-16]!
@@ -2968,7 +2968,7 @@ ret
 }
 
 /// The CPU features `vg_sha1_finalize_scratch_sha2` requires (`Artifact.features`).
-pub(crate) const VG_SHA1_FINALIZE_SCRATCH_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
+pub const VG_SHA1_FINALIZE_SCRATCH_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
 
 /// `vg_sha1_finalize`, with its working space in `*scratch`.
 ///
@@ -2985,7 +2985,7 @@ pub(crate) const VG_SHA1_FINALIZE_SCRATCH_SHA2_FEATURES: crate::cpu::Features = 
 /// * None of `state`, `out` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha1_finalize_scratch_sha2(state: *mut [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 20]) {
+pub unsafe extern "C" fn vg_sha1_finalize_scratch_sha2(state: *mut [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 20]) {
     core::arch::naked_asm!(
         r".arch_extension sha2
 str x30, [sp, #-16]!
@@ -3087,7 +3087,7 @@ ret
 }
 
 /// The CPU features `vg_sha1_digest_sha2` requires (`Artifact.features`).
-pub(crate) const VG_SHA1_DIGEST_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
+pub const VG_SHA1_DIGEST_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
 
 /// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
 ///
@@ -3101,7 +3101,7 @@ pub(crate) const VG_SHA1_DIGEST_SHA2_FEATURES: crate::cpu::Features = crate::cpu
 /// * Neither `data` nor `out` may overlap the 272 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha1_digest_sha2(data: *const u8, len: usize, out: *mut [u8; 20]) {
+pub unsafe extern "C" fn vg_sha1_digest_sha2(data: *const u8, len: usize, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
         r".arch_extension sha2
 sub sp, sp, #272

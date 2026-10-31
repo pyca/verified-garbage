@@ -11,7 +11,7 @@
 /// * `p` must be valid for reads and writes of `len` bytes.
 /// * `p` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_zeroize(p: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_zeroize(p: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"mov rax, 0
 mov rdx, rsi
@@ -60,7 +60,7 @@ ret
 }
 
 /// The CPU features `vg_zeroize_avx` requires (`Artifact.features`).
-pub(crate) const VG_ZEROIZE_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX);
+pub const VG_ZEROIZE_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX);
 
 /// Wipes a buffer: sets the `len` bytes at `p` to zero, and writes no other memory. A call of it is not a dead store the compiler may remove, since the compiler cannot see its code.
 ///
@@ -72,7 +72,7 @@ pub(crate) const VG_ZEROIZE_AVX_FEATURES: crate::cpu::Features = crate::cpu::Fea
 /// * `p` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_zeroize_avx(p: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_zeroize_avx(p: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"vpxor xmm0, xmm0, xmm0
 mov rax, 0

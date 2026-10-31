@@ -12,7 +12,7 @@
 /// * `b` must be valid for reads of `b_len` bytes.
 /// * Neither `a` nor `b` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ct_eq(a: *const u8, a_len: usize, b: *const u8, b_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_ct_eq(a: *const u8, a_len: usize, b: *const u8, b_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"mov rax, 0
 mov r8, rsi

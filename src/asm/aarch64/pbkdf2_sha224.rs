@@ -16,7 +16,7 @@
 /// * `t` and `scratch` must not overlap each other, `key` or `u` (distinct Rust objects never do).
 /// * None of `key`, `u`, `t` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224_iterate(key: *const [u8; 192], u: *const [u8; 28], n: u32, t: *mut [u8; 28], scratch: *mut [u64; 104]) {
+pub unsafe extern "C" fn vg_pbkdf2_hmac_sha224_iterate(key: *const [u8; 192], u: *const [u8; 28], n: u32, t: *mut [u8; 28], scratch: *mut [u64; 104]) {
     core::arch::naked_asm!(
         r"add w2, w2, #0
 str x19, [x4, #112]
@@ -182,7 +182,7 @@ ret
 /// * `out` must not overlap `password` or `salt` (distinct Rust objects never do).
 /// * None of `password`, `salt` and `out` may overlap the 1616 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub unsafe extern "C" fn vg_pbkdf2_hmac_sha224(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #1600
 add x7, sp, #0
@@ -423,7 +423,7 @@ ret
 }
 
 /// The CPU features `vg_pbkdf2_hmac_sha224_iterate_sha2` requires (`Artifact.features`).
-pub(crate) const VG_PBKDF2_HMAC_SHA224_ITERATE_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
+pub const VG_PBKDF2_HMAC_SHA224_ITERATE_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
 
 /// Runs `n` steps of PBKDF2-HMAC-SHA-224's iteration: if, for a 64-byte key `K₀`, the SHA-224 streaming state in bytes 0 to 95 of `*key` represents `K₀ ⊕ ipad` and the one in bytes 96 to 191 represents `K₀ ⊕ opad` (as `vg_hmac_sha224_init` leaves them), repeats `U ← HMAC-SHA-224 (K₀, U)`, `T ← T ⊕ U` `n` times, from `U = *u` and `T = *t`, and leaves the final `T` in `*t` (RFC 8018, step 3 of `F`).
 ///
@@ -440,7 +440,7 @@ pub(crate) const VG_PBKDF2_HMAC_SHA224_ITERATE_SHA2_FEATURES: crate::cpu::Featur
 /// * None of `key`, `u`, `t` and `scratch` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224_iterate_sha2(key: *const [u8; 192], u: *const [u8; 28], n: u32, t: *mut [u8; 28], scratch: *mut [u64; 104]) {
+pub unsafe extern "C" fn vg_pbkdf2_hmac_sha224_iterate_sha2(key: *const [u8; 192], u: *const [u8; 28], n: u32, t: *mut [u8; 28], scratch: *mut [u64; 104]) {
     core::arch::naked_asm!(
         r".arch_extension sha2
 add w2, w2, #0
@@ -596,7 +596,7 @@ ret
 }
 
 /// The CPU features `vg_pbkdf2_hmac_sha224_sha2` requires (`Artifact.features`).
-pub(crate) const VG_PBKDF2_HMAC_SHA224_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
+pub const VG_PBKDF2_HMAC_SHA224_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA2);
 
 /// PBKDF2-HMAC-SHA-224 (RFC 8018 §5.2, with HMAC-SHA-224 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-224 and HMAC-SHA-224 functions and `vg_pbkdf2_hmac_sha224_iterate`.
 ///
@@ -612,7 +612,7 @@ pub(crate) const VG_PBKDF2_HMAC_SHA224_SHA2_FEATURES: crate::cpu::Features = cra
 /// * None of `password`, `salt` and `out` may overlap the 1616 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha2` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224_sha2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
+pub unsafe extern "C" fn vg_pbkdf2_hmac_sha224_sha2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r".arch_extension sha2
 sub sp, sp, #1600

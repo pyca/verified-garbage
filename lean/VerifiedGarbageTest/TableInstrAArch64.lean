@@ -103,7 +103,7 @@ def artifact : Artifact := artifactOf "vg_test_ldrqtbl" 42
 through the register as by any `ldr q`. -/
 def expected : String := "/// Returns word 3 of its table.
 #[unsafe(naked)]
-pub(crate) unsafe extern \"C\" fn vg_test_ldrqtbl() -> u64 {
+pub unsafe extern \"C\" fn vg_test_ldrqtbl() -> u64 {
     core::arch::naked_asm!(
         concat!(\"adrp x1, \", vg_sym_page!(\"{VG_TEST_LDRQTBL}\")),
         concat!(\"add x1, x1, \", vg_sym_pageoff!(\"{VG_TEST_LDRQTBL}\")),
@@ -129,7 +129,7 @@ ret
 use super::Table;
 
 /// The table of constants `VG_TEST_LDRQTBL` (`Artifact.consts`).
-pub(crate) static VG_TEST_LDRQTBL: Table<32> = Table(*b\"\\
+pub static VG_TEST_LDRQTBL: Table<32> = Table(*b\"\\
     \\x07\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\
     \\x08\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\
     \\x09\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\

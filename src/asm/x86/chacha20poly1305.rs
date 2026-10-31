@@ -18,7 +18,7 @@
 /// * `data` and `tag` must not overlap each other, `key`, `nonce` or `aad` (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 772 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea esp, [esp-740]
 mov eax, DWORD PTR [esp+744]
@@ -453,7 +453,7 @@ ret
 /// * `data` must not overlap `key`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 772 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r"lea esp, [esp-740]
 mov eax, DWORD PTR [esp+744]
@@ -907,7 +907,7 @@ ret
 /// * `dst` and `tag` must not overlap each other, `key`, `nonce`, `aad`, `src` or the slices `src` lists (distinct Rust objects never do).
 /// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 824 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "C" fn vg_chacha20_poly1305_seal_gather(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea esp, [esp-48]
 mov DWORD PTR [esp+36], ebx
@@ -979,7 +979,7 @@ ret
 }
 
 /// The CPU features `vg_chacha20_poly1305_seal_ssse3` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SSSE3);
+pub const VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SSSE3);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. Composed of calls of `vg_chacha20_block`, `vg_chacha20_xor` and the Poly1305 functions.
 ///
@@ -998,7 +998,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES: crate::cpu::Features 
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 772 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "C" fn vg_chacha20_poly1305_seal_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea esp, [esp-740]
 mov eax, DWORD PTR [esp+744]
@@ -1418,7 +1418,7 @@ ret
 }
 
 /// The CPU features `vg_chacha20_poly1305_open_ssse3` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SSSE3);
+pub const VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SSSE3);
 
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unspecified (they must not be used). The tags are compared without a branch.
 ///
@@ -1437,7 +1437,7 @@ pub(crate) const VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES: crate::cpu::Features 
 /// * None of `key`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 772 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub unsafe extern "C" fn vg_chacha20_poly1305_open_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r"lea esp, [esp-740]
 mov eax, DWORD PTR [esp+744]
@@ -1873,7 +1873,7 @@ ret
 }
 
 /// The CPU features `vg_chacha20_poly1305_seal_gather_ssse3` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SSSE3);
+pub const VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SSSE3);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
 ///
@@ -1895,7 +1895,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES: crate::cpu::Fe
 /// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 824 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "C" fn vg_chacha20_poly1305_seal_gather_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r"lea esp, [esp-48]
 mov DWORD PTR [esp+36], ebx

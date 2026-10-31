@@ -13,7 +13,7 @@
 /// * Bytes 1024 to 1055, 128 to 159 and 2296 to 2615 of `ws` are unspecified on return and may hold intermediate values, which are secret and which the caller must destroy.
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_p224_inv_mod_p(ws: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_p224_inv_mod_p(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"movq xmm0, rbx
 movq xmm1, rbp
@@ -2197,7 +2197,7 @@ ret
 /// * Bytes 1024 to 1055, 128 to 159 and 2296 to 2615 of `ws` are unspecified on return and may hold intermediate values, which are secret and which the caller must destroy.
 /// * `ws` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_p224_inv_mod_n(ws: *mut [u64; 1024]) {
+pub unsafe extern "sysv64" fn vg_p224_inv_mod_n(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
         r"movq xmm0, rbx
 movq xmm1, rbp

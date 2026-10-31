@@ -16,7 +16,7 @@
 /// * `out` and `scratch` must not overlap each other, `d` or `digest` (distinct Rust objects never do).
 /// * None of `out`, `d`, `digest` and `scratch` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ecdsa_p384_sha384_sign(out: *mut [u8; 96], d: *const [u8; 48], digest: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_ecdsa_p384_sha384_sign(out: *mut [u8; 96], d: *const [u8; 48], digest: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"sub sp, sp, #216
 add r12, sp, #0
@@ -916,7 +916,7 @@ bx lr",
 
 /// The CPU features `vg_ecdsa_p384_sha384_sign_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_ECDSA_P384_SHA384_SIGN_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_ECDSA_P384_SHA384_SIGN_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
 
 /// Deterministic ECDSA signature generation over P-384 with HMAC-SHA-384 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (48 bytes, most significant first), signs the SHA-384 hash at `digest` (48 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (48 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
 ///
@@ -934,7 +934,7 @@ pub(crate) const VG_ECDSA_P384_SHA384_SIGN_UMAAL_FEATURES: crate::cpu::Features 
 /// * The CPU must support the `umaal` target feature.
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ecdsa_p384_sha384_sign_umaal(out: *mut [u8; 96], d: *const [u8; 48], digest: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
+pub unsafe extern "C" fn vg_ecdsa_p384_sha384_sign_umaal(out: *mut [u8; 96], d: *const [u8; 48], digest: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
         r"sub sp, sp, #216
 add r12, sp, #0

@@ -5,7 +5,7 @@
 use super::Table;
 
 /// The table of constants `VG_SECP256K1_COMB` (`Artifact.consts`).
-pub(crate) static VG_SECP256K1_COMB: Table<151552> = Table(*b"\
+pub static VG_SECP256K1_COMB: Table<151552> = Table(*b"\
     \x97\x20\x7e\x48\x5a\x2e\x36\xd7\
     \xdb\x66\xbc\x29\x53\x29\x1e\x23\
     \x9c\x12\xfd\x33\xc0\x48\x9f\x97\
