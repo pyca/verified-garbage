@@ -84,6 +84,7 @@ theorem key_ok (hw : writesOnly keyRegs expandKey = true) (hn : callFree expandK
       schScr := dKS
       valid := hn'
       trd := List.mem_append_left _ trd
+      tal := ConstsOk.aligned hk List.mem_cons_self
       held := ConstsOk.held1 hk
       tblSch := twr _ (by rw [hwr]; simp)
       tblScr := twr _ (by rw [hwr]; simp) }

@@ -288,7 +288,7 @@ def fT (t : Nat) (km kr d : Spec.Cast5.Word) : Spec.Cast5.Word :=
 /-- What a round needs: `(L, R)` in the low words of `(a6, a7)`; `Kmᵢ` at
 `km` and `Krᵢ` at `km + 64` (of which the low byte's low five bits matter);
 the round's number modulo 3 in `typ`; and the table `VG_CAST5_S1234` at
-`tbl`, readable. -/
+`tbl`, readable and 64-byte aligned. -/
 structure RoundPre (s : State) (kmw krw l r : Spec.Cast5.Word) (t : Nat) : Prop where
   xL : lo (s.gpr xL) = l
   xR : lo (s.gpr xR) = r
@@ -299,10 +299,11 @@ structure RoundPre (s : State) (kmw krw l r : Spec.Cast5.Word) (t : Nat) : Prop 
   ht : t < 3
   typ : s.gpr typ = BitVec.ofNat 64 t
   trd : (⟨s.gpr tbl, 4096⟩ : Region) ∈ s.rd ++ s.wr
+  tal : (s.gpr tbl).toNat % 64 = 0
   held : Held s.mem (s.gpr tbl) Impl.Cast5.s1234
 
 /-- The registers a round writes. -/
-def roundRegs : List Reg := [tmp, wd, num, ep, .s4, .s5, .s6, .s7, .s0, .s1, .s2, .s3, vI, vKr, msk,
+def roundRegs : List Reg := [tmp, wd, .t2, ep, .s4, .s5, .s6, .s7, .s0, .s1, .s2, .s3, vI, vKr, msk,
   xL, xR, km, typ, left]
 
 theorem round_ok (s : State) (up : Bool) {kmw krw l r : Spec.Cast5.Word} {t : Nat}
@@ -339,6 +340,7 @@ theorem round_ok (s : State) (up : Bool) {kmw krw l r : Spec.Cast5.Word} {t : Na
   -- The scan.
   have sp : ScanPre x :=
     { idx := fun k hk => by rw [xi k hk]; exact Nat.mod_lt _ (by decide)
+      tal := by rw [tx]; exact h.tal
       trd := by rw [tx, kx.2.1, kx.2.2]; exact h.trd }
   refine WP.seq (WP.mono (scan_ok x sp) fun y ⟨ya, yk, ym⟩ => ?_)
   have ky := kx.trans yk

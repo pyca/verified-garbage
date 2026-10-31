@@ -76,14 +76,14 @@ theorem sel_ok (cs : List (List Instr)) (i : Nat) {s : State} {j : Nat} (hij : i
 /-! ## The state of key expansion -/
 
 /-- The registers a step writes. -/
-def stepRegs : List Reg := [tmp, wd, num, ep, .s4, .s5, .s6, .s7, .s0, .s1, .s2, .s3, vI, stp]
+def stepRegs : List Reg := [tmp, wd, .t2, ep, .s4, .s5, .s6, .s7, .s0, .s1, .s2, .s3, vI, vKr, msk, stp]
 
 /-- The state of key expansion from the memory `m0`: the working space,
 rounded up to a multiple of 8, at `cb` in `wkK` (its first 152 bytes, which
 the code uses, writable), the schedule at `kb`, the arrays, subkeys and
 extra lookups of `k` in memory; and the table `VG_CAST5_S5678` at `T` in
-`tbl`, readable, held in `m0` and apart from the working space's first 64
-bytes and the schedule. -/
+`tbl`, readable, 64-byte aligned, held in `m0` and apart from the working
+space's first 64 bytes and the schedule. -/
 structure KS (m0 : Mem) (cb kb T : Addr) (s : State) (k : KSt) : Prop where
   wk : s.gpr wkK = cb
   mem : KMem m0 s.mem cb kb k.xz k.ws
@@ -97,6 +97,7 @@ structure KS (m0 : Mem) (cb kb T : Addr) (s : State) (k : KSt) : Prop where
   dKS : Region.Disjoint ⟨kb, 128⟩ ⟨cb, 152⟩
   tblR : s.gpr tbl = T
   trd : (⟨T, 4096⟩ : Region) ∈ s.rd ++ s.wr
+  tal : T.toNat % 64 = 0
   held0 : Held m0 T s5678
   dTS : Region.Disjoint ⟨T, 4096⟩ ⟨cb, 64⟩
   dTK : Region.Disjoint ⟨T, 4096⟩ ⟨kb, 128⟩
@@ -127,7 +128,7 @@ theorem KS.update {u : State} {k' : KSt} {rs : List Reg} (hk : Keep rs s u)
     (hl : k'.ws.length ≤ 32) (hrs : wkK ∉ rs ∧ tbl ∉ rs := by decide) : KS m0 cb kb T u k' :=
   ⟨(hk.gpr hrs.1).trans h.wk, hm, he, hl, h.al, h.cfit, h.kfit, fun hw => by rw [hk.2.2]; exact h.scr hw,
     by rw [hk.2.2]; exact h.sch, h.dKS, (hk.gpr hrs.2).trans h.tblR,
-    by rw [hk.2.1, hk.2.2]; exact h.trd, h.held0, h.dTS, h.dTK⟩
+    by rw [hk.2.1, hk.2.2]; exact h.trd, h.tal, h.held0, h.dTS, h.dTK⟩
 
 /-- The table, still held. -/
 theorem KS.held : Held s.mem T s5678 := by
