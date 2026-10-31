@@ -134,7 +134,7 @@ theorem keyStep_ok {m0 : Mem} {cb kb T : Addr} {u : State} {k0 : KSt} {j hh : Na
     · show (v.gpr .s1).toNat < 256; rw [v5]; exact setWidth8_lt _
     · show (v.gpr .s2).toNat < 256; rw [v6]; exact setWidth8_lt _
     · show (v.gpr .s3).toNat < 256; rw [v7]; exact setWidth8_lt _
-  have sp : ScanPre v := ⟨hidx, by rw [hv.tblR]; exact hv.trd⟩
+  have sp : ScanPre v := ⟨hidx, by rw [hv.tblR]; exact hv.tal, by rw [hv.tblR]; exact hv.trd⟩
   refine WP.seq (WP.mono (scan_ok v sp) fun w ⟨wa, wk, wm⟩ => ?_)
   have hw : KS m0 cb kb T w kj := hv.update wk (by rw [wm]; exact hv.mem) (fun i hi => by rw [wm]; exact hv.ex i hi)
     hv.len

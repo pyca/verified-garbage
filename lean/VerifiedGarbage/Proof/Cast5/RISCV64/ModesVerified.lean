@@ -201,7 +201,7 @@ theorem keyArgs_of (up : Bool) {n : Nat} {M : Mode} (hstep : M.step = 8) :
       Proof.Modes.RISCV64.scrRegion, Proof.Modes.RISCV64.Dp, Proof.Modes.RISCV64.N, Proof.Modes.RISCV64.Fb,
       h₁.a2, h₁.a3, h₁.sp, hstep]
     rfl
-  refine ⟨by rw [h₁.mem, h₁.a0], ?_, by rw [h₁.a0]; exact fK, fun r hr => ?_, ?_, ?_, fun r hr => ?_⟩
+  refine ⟨by rw [h₁.mem, h₁.a0], ?_, by rw [h₁.a0]; exact fK, fun r hr => ?_, ?_, ?_, ?_, fun r hr => ?_⟩
   · rw [h₁.rd, h₁.wr, Mode.keyR, h₁.a0]
     exact List.mem_append_left _ (stripConsts_rd_mem (by rw [hrd]; simp))
   · rw [ews] at hr
@@ -210,6 +210,7 @@ theorem keyArgs_of (up : Bool) {n : Nat} {M : Mode} (hstep : M.step = 8) :
     · rw [Mode.keyR, h₁.a0]; exact dKD
     · rw [Mode.keyR, h₁.a0]; exact dSK.symm
   · rw [h₁.rd, h₁.wr, Mode.tblR, h₁.syms]; exact List.mem_append_left _ trd
+  · rw [h₁.syms]; exact ConstsOk.aligned hk List.mem_cons_self
   · rw [h₁.mem, h₁.syms]; exact ConstsOk.held1 hk
   · rw [ews] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

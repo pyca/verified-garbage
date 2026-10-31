@@ -7,15 +7,23 @@ public import VerifiedGarbage.Impl.Words.RISCV64
 /-!
 # CAST5 on RISC-V
 
-The design of PPC64LE's (`Impl/Cast5/PPC64LE.lean`). A lookup in an S-box
-never uses a secret as an address: the four lookups a round function (or a
-line of key expansion) makes are made at once by a *scan* of the static
-table `VG_CAST5_S1234` (or `VG_CAST5_S5678` in key expansion,
-`Impl/Cast5/Tables.lean`), 256 entries of four words: a loop over the
-entries `j`, in order, loading each of the entry's words `k` and keeping it
-under a mask that is all ones exactly if the index in `s0 + k` is `j`
-(`xor`, then `(x - 1) >> 63`, arithmetically), ORed into `s4 + k`. No secret
-is an address or a branch condition.
+A lookup in an S-box never uses a secret as an address: the four lookups a
+round function (or a line of key expansion) makes are made at once by a
+*scan* of the static table `VG_CAST5_S1234` (or `VG_CAST5_S5678` in key
+expansion, `Impl/Cast5/Tables.lean`), 256 entries of four words, two
+quadwords: quadword `q` of entry `e` holds word `2q` (the low word) and
+`2q + 1` (the high word). The scan is two passes, pass `q` reading quadword
+`q` of every entry, for the indices `2q` (low word) and `2q + 1` (high
+word), in 16 blocks of 16 entries, from the last. A block's 16 quadwords
+are reduced to one by a tree of selections `a XOR ((a XOR b) AND m)`, the
+mask `m` of level `c` all ones in each word whose index has bit `c` set
+(made once a pass): in each word, the entry of the block whose number is
+the index's low four bits. The block's selection is then kept where the
+block's mask is set, all ones in each word whose index's block (its high
+four bits) is at most the block's number, so that the last block to set a
+word is the index's. No secret is an address or a branch condition. The
+table is 64-byte aligned (`Abi.withConsts`), so its quadwords take aligned
+loads.
 
 Each function has the scan once: encryption and decryption run their rounds
 in a loop whose body is one round, choosing the round's type (its number
@@ -27,8 +35,8 @@ number. The rotation by the secret amount `Kr` (§2.2) is five rotations by
 rotation), each kept or not by a mask made from a bit of `Kr`.
 
 The model faults on misaligned accesses, and the contracts state no
-alignment for the buffers, nor for the tables, so the subkeys, the blocks,
-the key and the tables' words are read and written a byte at a time; the
+alignment for the buffers, so the subkeys, the blocks and the key are read
+and written a byte at a time; the
 working space `scratch` is rounded up to a multiple of 8 (it has room to
 spare), and words kept there take aligned accesses. It holds the caller's
 `s0`–`s10` (at `savedOff`) and, in key expansion, `x`, `z` and a group's
@@ -48,8 +56,7 @@ open VG.Impl.Words.RISCV64 (loadBE32 loadLE32 storeBE storeLE32)
 
 /-- The table's address. -/
 abbrev tbl : Reg := .t4
-/-- The scan's entry number and its address. -/
-abbrev num : Reg := .t2
+/-- The address of the scan's block. -/
 abbrev ep : Reg := .t3
 /-- Temporaries. -/
 abbrev tmp : Reg := .t0
@@ -73,30 +80,83 @@ def idxReg : Nat → Reg
 def accReg : Nat → Reg
   | 0 => .s4 | 1 => .s5 | 2 => .s6 | _ => .s7
 
-/-- Lookup `k` at the entry whose number is in `num` and whose words are at
-`ep`: `wd` := word `k` of the entry (a byte at a time), `tmp` := the mask
-(all ones iff index `k` is the entry's number), and `wd` under it ORed into
-value `k`. -/
-def look (k : Nat) : List Instr :=
-  loadLE32 wd tmp ep (4 * k) ++
-  [.logic .xor tmp (idxReg k) num, .addi tmp tmp (-1), .shift .sra .d tmp tmp 63,
-   .logic .and wd wd tmp, .logic .or (accReg k) (accReg k) wd]
+/-- The mask of level `c` (0–3) of a pass's selections. -/
+def maskReg : Nat → Reg
+  | 0 => .t0 | 1 => .t1 | 2 => .t2 | _ => .t5
 
-/-- The four lookups at an entry. -/
-def scanEntry : List Instr := (List.range 4).flatMap look
+/-- The register a block's selection ends in, in pass `q`. -/
+def selReg (q : Nat) : Reg := if q = 0 then .s5 else .s0
 
-/-- An entry, then on to the next (`tmp` zero after the last, number 255). -/
-def scanBody : List Instr :=
-  scanEntry ++ ([.addi ep ep 16, .addi num num 1, .addi tmp num (-256)] : List Instr)
+/-- The register of a block's mask, in pass `q`. -/
+def blkReg (q : Nat) : Reg := if q = 0 then .s6 else .s1
+
+/-- The registers of a pass's selections, pass `q`. -/
+def treeRegs (q : Nat) : List Reg := [selReg q, blkReg q, .a5, .t6, .s7]
+
+/-- `a := a XOR ((a XOR b) AND m)`: `b`'s bits where `m`'s are set, `a`'s
+elsewhere. Clobbers `b`. -/
+def pick (a b m : Reg) : List Instr := [.logic .xor b b a, .logic .and b b m, .logic .xor a a b]
+
+/-- The selection among the `2 ^ L` quadwords at `ep + o + 16 e` (`e < 2 ^
+L`) by the masks of levels `0 … L - 1`, into the first of the registers
+`rs` (`L + 1` of them, all clobbered): the two halves' selections, of
+`2 ^ (L - 1)` quadwords each, then the second where level `L - 1`'s mask is
+set. -/
+def tree : Nat → Nat → List Reg → List Instr
+  | 0, o, a :: _ => [.load .d a ep o]
+  | L + 1, o, a :: b :: rs =>
+    tree L o (a :: b :: rs) ++ tree L (o + 16 * 2 ^ L) (b :: rs) ++ pick a b (maskReg L)
+  | _, _, _ => []
+
+/-- The mask of level `c` of pass `q`: bit `c` of index `2q` spread over the
+low word, of index `2q + 1` over the high word (each shifted to the top,
+arithmetically down, then to its word). Clobbers `a5`. -/
+def maskSetup (q c : Nat) : List Instr :=
+  [.shift .sll .d (maskReg c) (idxReg (2 * q)) (63 - c), .shift .sra .d (maskReg c) (maskReg c) 63,
+   .shift .srl .d (maskReg c) (maskReg c) 32, .shift .sll .d .a5 (idxReg (2 * q + 1)) (63 - c),
+   .shift .sra .d .a5 .a5 63, .shift .sll .d .a5 .a5 32, .logic .or (maskReg c) (maskReg c) .a5]
+
+/-- The start of pass `q`: the masks of levels 0–3; the indices' blocks
+less 17 (`h - 17`, for an index's block `h`, its number shifted right by
+4), in place; `ep` past the table's end. -/
+def passStart (q : Nat) : List Instr :=
+  (List.range 4).flatMap (maskSetup q) ++
+  [.shift .srl .d (idxReg (2 * q)) (idxReg (2 * q)) 4, .addi (idxReg (2 * q)) (idxReg (2 * q)) (-17),
+   .shift .srl .d (idxReg (2 * q + 1)) (idxReg (2 * q + 1)) 4,
+   .addi (idxReg (2 * q + 1)) (idxReg (2 * q + 1)) (-17),
+   .addi ep tbl 2047, .addi ep ep 2047, .addi ep ep 2]
+
+/-- Block `J` of pass `q`, the blocks `J + 1 … 15` done: `ep` at the block
+(`tbl + 256 J`), the indices' registers to `h - J - 1`, negative exactly if
+`J ≥ h`; the block's quadwords `q` of its 16 entries selected by the
+indices' low bits (each word by its own index); the block's mask, all ones
+in each word whose index's block `h` is at most `J` (the low word's from
+its register shifted right by 32, the high word's arithmetically by 63
+then left by 32); and the selection kept in value `2q` where the mask is
+set. The last block a word's mask is set at is the index's. -/
+def passBody (q : Nat) : List Instr :=
+  [.addi ep ep (-256), .addi (idxReg (2 * q)) (idxReg (2 * q)) 1,
+   .addi (idxReg (2 * q + 1)) (idxReg (2 * q + 1)) 1] ++
+  tree 4 (8 * q) (treeRegs q) ++
+  [.shift .srl .d (blkReg q) (idxReg (2 * q)) 32, .shift .sra .d .a5 (idxReg (2 * q + 1)) 63,
+   .shift .sll .d .a5 .a5 32, .logic .or (blkReg q) (blkReg q) .a5] ++
+  pick (accReg (2 * q)) (selReg q) (blkReg q)
+
+/-- The words of value `2q`: its high word to value `2q + 1`, its low word
+kept. -/
+def passEnd (q : Nat) : List Instr :=
+  [.shift .srl .d (accReg (2 * q + 1)) (accReg (2 * q)) 32, .shift .sll .d (accReg (2 * q)) (accReg (2 * q)) 32,
+   .shift .srl .d (accReg (2 * q)) (accReg (2 * q)) 32]
+
+/-- Pass `q` of a scan: lookups `2q` and `2q + 1`, from quadword `q` of
+each entry, its 16 blocks of 16 entries from the last. -/
+def pass (q : Nat) : Prog isa :=
+  .seq (.block (passStart q)) (.seq (.loop (.block (passBody q)) (.ne ep tbl)) (.block (passEnd q)))
 
 /-- The scan of the table at `tbl` (256 entries of four words) at the
-indices in `s0`–`s3` (each below 256), into `s4`–`s7`: every entry in
-turn, its number in `num` and its address in `ep`. Clobbers `tmp` and
-`wd`. -/
-def scan : Prog isa :=
-  .seq (.block [mov ep tbl, .li num 0, .li (accReg 0) 0, .li (accReg 1) 0, .li (accReg 2) 0,
-      .li (accReg 3) 0])
-    (.loop (.block scanBody) (.nonzero tmp))
+indices in `s0`–`s3` (each below 256), into `s4`–`s7`: lookups 0 and 1,
+then 2 and 3. Clobbers `s0`–`s3`, `t0`–`t3`, `t5`, `t6` and `a5`. -/
+def scan : Prog isa := .seq (pass 0) (pass 1)
 
 /-! ## The working space -/
 

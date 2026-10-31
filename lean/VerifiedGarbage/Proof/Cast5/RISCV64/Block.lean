@@ -43,7 +43,7 @@ def cipher (up : Bool) (k : Spec.Cast5.Schedule) (n : Nat) : Spec.Cast5.Block �
 /-- What the block function needs: the block at `p` in `pr` (a register
 the rounds keep), writable; the schedule at `kb` in `sch`, readable; the
 number of rounds `n` in `rnd`; and the table `VG_CAST5_S1234` at `tbl`,
-readable. -/
+readable and 64-byte aligned. -/
 structure BPre (s : State) (pr : Reg) (p kb : Addr) (n : Nat) : Prop where
   ptr : s.gpr pr = p
   prOk : pr ∉ roundRegs
@@ -51,6 +51,7 @@ structure BPre (s : State) (pr : Reg) (p kb : Addr) (n : Nat) : Prop where
   rounds : s.gpr rnd = BitVec.ofNat 64 n
   nv : n = 12 ∨ n = 16
   trd : (⟨s.gpr tbl, 4096⟩ : Region) ∈ s.rd ++ s.wr
+  tal : (s.gpr tbl).toNat % 64 = 0
   held : Held s.mem (s.gpr tbl) Impl.Cast5.s1234
   inP : InRegions s.wr p 8
   inK : (⟨kb, 128⟩ : Region) ∈ s.rd ++ s.wr
@@ -122,6 +123,7 @@ theorem round_step {s u : State} {pr : Reg} {p kb : Addr} {n : Nat} (h : BPre s 
       ht := Nat.mod_lt _ (by decide)
       typ := hu.vtyp
       trd := by rw [g tbl, hu.keep.2.1, hu.keep.2.2]; exact h.trd
+      tal := by rw [g tbl]; exact h.tal
       held := by rw [g tbl, hu.mem]; exact h.held }
   refine WP.mono (round_ok u up pre) fun v ⟨v1, v2, vkm, vt, vl, vk, vm⟩ => ⟨v1, ?_, ?_, vt, ?_,
     (hu.keep.trans vk).mono (by decide), vm.trans hu.mem⟩
