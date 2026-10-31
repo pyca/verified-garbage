@@ -74,9 +74,14 @@ path = "tests/main.rs"
 # types, without serde's derive).
 serde_json = "1"
 
-# The Wycheproof tests parse ~100 MB of JSON; optimize dependencies (but not
-# this crate) in test builds.
-[profile.dev.package."*"]
+# The Wycheproof tests parse ~100 MB of JSON; optimize the parser (and the
+# `memchr` it scans strings with) in test builds. Only these: the other
+# dependencies' speed does not matter to the tests, and optimizing them, and
+# their build scripts, kept the cores busy while the generated crate and
+# the library, which the tests wait for, were compiling.
+[profile.dev.package.serde_json]
+opt-level = 3
+[profile.dev.package.memchr]
 opt-level = 3
 
 # Test builds keep only line tables (the file and line of each frame of a
