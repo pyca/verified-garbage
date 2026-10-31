@@ -18,8 +18,9 @@ Names are compared without the crate's hash (`Cs…_`), which depends on where
 the crate is compiled from, and objects as one set of sections and symbols,
 as the functions may be split among them differently.
 
-A target that is not pre-assembled (ARM's, see `ci/preassemble.py`)
-compiles `asm/` itself: it must have no `src/`.
+A target that is not pre-assembled (ARM's, see `ci/preassemble.py`, and
+RISC-V's, whose printer emits the machine code itself) compiles `asm/`
+itself: it must have no `src/`.
 
     python3 ci/check_preassembled.py [TARGET ...]
     python3 ci/check_preassembled.py --triples  # the Rust targets it compiles for
@@ -47,7 +48,6 @@ TRIPLES = {
     "x86": "i686-unknown-linux-gnu",
     "aarch64": "aarch64-unknown-linux-gnu",
     "powerpc64le": "powerpc64le-unknown-linux-gnu",
-    "riscv64": "riscv64gc-unknown-linux-gnu",
 }
 
 NAKED = re.compile(r"^    core::arch::naked_asm!\(\n.*?^    \)\n", re.M | re.S)

@@ -230,26 +230,43 @@ def line (call : String) : Line → String
     s!"        concat!(\"{escape s}\", vg_sym_pageoff!(\"" ++ "{" ++ n ++ "}\")),\n"
   | l => "        " ++ literal ((lineText call l).getD "") ++ ",\n"
 
+/-- The text of a comment line of a printer (`// <text>` on one line, e.g.
+the text of an instruction that RISC-V's printer emits as its machine code),
+which `template` writes as a Rust comment, not as a line of the assembly. -/
+def commentOf : Line → Option String
+  | .text l =>
+    if l.startsWith "// " && !l.contains '\n' && !l.contains '\r' then some l else none
+  | _ => none
+
 /-- The arguments of `naked_asm!` for the template lines `ls`: each run of
 lines that are text alone (`lineText`) as one string literal (`literal`) of
 those lines separated by newlines, the others as arguments of their own
 (`line`).
 `naked_asm!` joins its arguments with newlines, so the template is the same
 as with one argument per line. A function's template is then a few tokens
-for rustc to parse and expand, not one per line. -/
+for rustc to parse and expand, not one per line.
+A comment line (`commentOf`) is not part of the template: it is written,
+in order, as a Rust comment before the string literal of the run it falls in,
+so the assembler never sees it. -/
 def template (call : String) (ls : List Line) : String :=
-  go ls []
+  go ls [] []
 where
-  /-- The arguments for `ls`, after the run of text lines `run` (reversed). -/
-  go : List Line → List String → String
-    | [], run => flush run
-    | l :: ls, run => match lineText call l with
-      | some t => go ls (t :: run)
-      | none => flush run ++ line call l ++ go ls []
-  /-- The run of text lines `run` (reversed) as one string literal. -/
-  flush : List String → String
-    | [] => ""
-    | run => "        " ++ literal ("\n".intercalate run.reverse) ++ ",\n"
+  /-- The arguments for `ls`, after the run of text lines `run` and the
+  comments `cs` before it (both reversed). -/
+  go : List Line → List String → List String → String
+    | [], run, cs => flush run cs
+    | l :: ls, run, cs => match commentOf l with
+      | some c => go ls run (c :: cs)
+      | none => match lineText call l with
+        | some t => go ls (t :: run) cs
+        | none => flush run cs ++ line call l ++ go ls [] []
+  /-- The comments `cs`, then the run of text lines `run` as one string
+  literal (both reversed). -/
+  flush : List String → List String → String
+    | run, cs => String.join (cs.reverse.map fun c => s!"        {c}\n") ++
+      match run with
+      | [] => ""
+      | run => "        " ++ literal ("\n".intercalate run.reverse) ++ ",\n"
 
 /-- `fs` as an English list of code spans: "`a`, `b` and `c`". -/
 def codeList : List String → String

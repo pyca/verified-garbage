@@ -567,47 +567,47 @@ def sampleRV : Prog RISCV64.isa :=
   "27:",
   "bltu t0, t1, 28f",
   "210:",
-  "add a0, a1, a2",
-  "sub a3, a4, a5",
-  "addw a6, a7, t0",
-  "subw t1, t2, t3",
-  "sltu t4, t5, t6",
-  "mul a0, a1, a2",
-  "mulhu a3, a4, a5",
-  "and s0, s1, s2",
-  "or s3, s4, s5",
-  "xor s6, s7, s8",
-  "addi s9, s10, 2047",
-  "addi s11, ra, -2048",
-  "addiw a0, a0, -1",
-  "andi a1, a1, 255",
-  "ori a2, a2, -2048",
-  "xori a3, a3, -1",
-  "addi a4, zero, -1",
-  "addi a4, zero, 2047",
-  "lui a5, 434334",
-  "lui a5, 1048575",
-  "slli a6, a6, 63",
-  "srli a6, a6, 1",
-  "srai a6, a6, 0",
-  "slliw a7, a7, 31",
-  "srliw a7, a7, 7",
-  "sraiw a7, a7, 0",
-  "lbu t0, 0(a0)",
-  "lhu t0, 2046(a0)",
-  "lwu t1, 4(a1)",
-  "ld t2, 2040(a2)",
-  "sb t0, 2047(a0)",
-  "sh t0, 0(a0)",
-  "sw t1, 4(a1)",
-  "sd t2, 8(a2)",
-  "addi a0, sp, 2047",
+  "// add a0, a1, a2", ".insn 4, 0x00c58533",
+  "// sub a3, a4, a5", ".insn 4, 0x40f706b3",
+  "// addw a6, a7, t0", ".insn 4, 0x0058883b",
+  "// subw t1, t2, t3", ".insn 4, 0x41c3833b",
+  "// sltu t4, t5, t6", ".insn 4, 0x01ff3eb3",
+  "// mul a0, a1, a2", ".insn 4, 0x02c58533",
+  "// mulhu a3, a4, a5", ".insn 4, 0x02f736b3",
+  "// and s0, s1, s2", ".insn 4, 0x0124f433",
+  "// or s3, s4, s5", ".insn 4, 0x015a69b3",
+  "// xor s6, s7, s8", ".insn 4, 0x018bcb33",
+  "// addi s9, s10, 2047", ".insn 4, 0x7ffd0c93",
+  "// addi s11, ra, -2048", ".insn 4, 0x80008d93",
+  "// addiw a0, a0, -1", ".insn 4, 0xfff5051b",
+  "// andi a1, a1, 255", ".insn 4, 0x0ff5f593",
+  "// ori a2, a2, -2048", ".insn 4, 0x80066613",
+  "// xori a3, a3, -1", ".insn 4, 0xfff6c693",
+  "// addi a4, zero, -1", ".insn 4, 0xfff00713",
+  "// addi a4, zero, 2047", ".insn 4, 0x7ff00713",
+  "// lui a5, 434334", ".insn 4, 0x6a09e7b7",
+  "// lui a5, 1048575", ".insn 4, 0xfffff7b7",
+  "// slli a6, a6, 63", ".insn 4, 0x03f81813",
+  "// srli a6, a6, 1", ".insn 4, 0x00185813",
+  "// srai a6, a6, 0", ".insn 4, 0x40085813",
+  "// slliw a7, a7, 31", ".insn 4, 0x01f8989b",
+  "// srliw a7, a7, 7", ".insn 4, 0x0078d89b",
+  "// sraiw a7, a7, 0", ".insn 4, 0x4008d89b",
+  "// lbu t0, 0(a0)", ".insn 4, 0x00054283",
+  "// lhu t0, 2046(a0)", ".insn 4, 0x7fe55283",
+  "// lwu t1, 4(a1)", ".insn 4, 0x0045e303",
+  "// ld t2, 2040(a2)", ".insn 4, 0x7f863383",
+  "// sb t0, 2047(a0)", ".insn 4, 0x7e550fa3",
+  "// sh t0, 0(a0)", ".insn 4, 0x00551023",
+  "// sw t1, 4(a1)", ".insn 4, 0x0065a223",
+  "// sd t2, 8(a2)", ".insn 4, 0x00763423",
+  "// addi a0, sp, 2047", ".insn 4, 0x7ff10513",
   "lla s1, <sym VG_TABLE>",
   "bnez t6, 210b",
   "j 29f",
   "28:",
   "29:",
-  "ret"
+  "// ret", ".insn 4, 0x00008067"
 ]
 
 -- Every register name.
@@ -620,18 +620,18 @@ def sampleRV : Prog RISCV64.isa :=
 #guard text (RISCV64.printer.function
     (.frame (.push .ra) (.frame (.alloc 2032) (.call "vg_f" (.block [])) (.free 2032))
       (.pop .ra) : Prog RISCV64.isa)) == [
-  "addi sp, sp, -16", "sd ra, 8(sp)", "addi sp, sp, -2032", "<call vg_f>",
-  "addi sp, sp, 2032", "ld ra, 8(sp)", "addi sp, sp, 16", "ret"]
+  "// addi sp, sp, -16", ".insn 4, 0xff010113", "// sd ra, 8(sp)", ".insn 4, 0x00113423", "// addi sp, sp, -2032", ".insn 4, 0x81010113", "<call vg_f>",
+  "// addi sp, sp, 2032", ".insn 4, 0x7f010113", "// ld ra, 8(sp)", ".insn 4, 0x00813083", "// addi sp, sp, 16", ".insn 4, 0x01010113", "// ret", ".insn 4, 0x00008067"]
 #guard Rust.line RISCV64.printer.call (.call "vg_f") == "        r\"call {vg_f}\",\n"
 -- A buffer of 2048 bytes or more: two `addi`s each way, of at most 2032
 -- bytes, the largest frame being 4064 bytes; 2047 bytes and less is one.
 #guard text (RISCV64.printer.function
     (.frame (.alloc 2048) (.call "vg_f" (.block [])) (.free 2048) : Prog RISCV64.isa)) == [
-  "addi sp, sp, -2032", "addi sp, sp, -16", "<call vg_f>", "addi sp, sp, 16", "addi sp, sp, 2032", "ret"]
+  "// addi sp, sp, -2032", ".insn 4, 0x81010113", "// addi sp, sp, -16", ".insn 4, 0xff010113", "<call vg_f>", "// addi sp, sp, 16", ".insn 4, 0x01010113", "// addi sp, sp, 2032", ".insn 4, 0x7f010113", "// ret", ".insn 4, 0x00008067"]
 #guard text (RISCV64.printer.function
     (.frame (.alloc 4064) (.block [.addSp .a0 0]) (.free 4064) : Prog RISCV64.isa)) == [
-  "addi sp, sp, -2032", "addi sp, sp, -2032", "addi a0, sp, 0", "addi sp, sp, 2032", "addi sp, sp, 2032",
-  "ret"]
+  "// addi sp, sp, -2032", ".insn 4, 0x81010113", "// addi sp, sp, -2032", ".insn 4, 0x81010113", "// addi a0, sp, 0", ".insn 4, 0x00010513", "// addi sp, sp, 2032", ".insn 4, 0x7f010113", "// addi sp, sp, 2032", ".insn 4, 0x7f010113",
+  "// ret", ".insn 4, 0x00008067"]
 #guard RISCV64.Instr.asm (.alloc 2304) == ["addi sp, sp, -2032", "addi sp, sp, -272"]
 #guard RISCV64.Instr.asm (.free 2304) == ["addi sp, sp, 272", "addi sp, sp, 2032"]
 #guard RISCV64.Instr.asm (.alloc 2032) == ["addi sp, sp, -2032"]
@@ -640,7 +640,7 @@ def sampleRV : Prog RISCV64.isa :=
 -- which the assembler expands to `auipc` and `addi`. `asm` gives the text
 -- `Rust.line` writes, for reading.
 #guard text (RISCV64.printer.function (.block [.lla .a5 "VG_TABLE"] : Prog RISCV64.isa)) == [
-  "lla a5, <sym VG_TABLE>", "ret"]
+  "lla a5, <sym VG_TABLE>", "// ret", ".insn 4, 0x00008067"]
 #guard Rust.line RISCV64.printer.call (.sym "lla a5, " .bare "VG_TABLE") ==
   "        r\"lla a5, {VG_TABLE}\",\n"
 #guard RISCV64.Instr.asm (.lla .a5 "VG_TABLE") == ["lla a5, VG_TABLE"]

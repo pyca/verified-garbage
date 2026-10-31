@@ -48,7 +48,8 @@ own changes are rebuilt either way, on top of the restored build.
   `lake env lean --run Emit.lean` in `lean/`, then `python3 ci/preassemble.py`
   (each crate's `asm/` is the printed code; its `src/`, what is compiled,
   the same code pre-assembled, which CI checks with
-  `ci/check_preassembled.py`; ARM's crate compiles `asm/` and has no `src/`).
+  `ci/check_preassembled.py`; ARM's and RISC-V's crates compile `asm/` and
+  have no `src/`).
 * **No unverified shortcuts in proofs.** No `sorry`, `admit`, `native_decide`,
   `bv_decide` or new `axiom`s in anything an artifact depends on.
   `lake build` and the emitter enforce this (warnings are errors, and
