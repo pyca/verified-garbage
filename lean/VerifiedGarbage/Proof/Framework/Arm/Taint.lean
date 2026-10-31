@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import Batteries.Data.List.Basic
+import VerifiedGarbage.Proof.Framework.Arm.Reduce
 
 /-!
 # Taint tracking for ARMv7
@@ -575,7 +576,7 @@ theorem exec_dst {i : Instr} {d : Reg} (hd : dst i = some d) {s s' : State}
     (h : exec i s = some s') :
     s'.wr = s.wr ∧ s'.mem = s.mem ∧ s'.sp = s.sp ∧ ∀ r, r ≠ d → s'.gpr r = s.gpr r := by
   cases i <;> simp only [dst, Option.some.injEq, reduceCtorEq] at hd <;> subst hd <;>
-  simp only [exec, Option.map_eq_some_iff, State.load32, State.load8] at h <;>
+  simp only [reduceExec, Option.map_eq_some_iff, State.load32, State.load8] at h <;>
   (repeat' split at h) <;>
   (try simp only [Option.some.injEq, reduceCtorEq] at h) <;>
   first
@@ -633,21 +634,21 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
   | push | pop | alloc | free | umaal => simp only [step, reduceCtorEq] at hs
   | mov d o =>
     simp only [step, Option.some.injEq] at hs; subst hs
-    simp only [exec, Option.map_eq_some_iff] at e₁ e₂
+    simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨y₁, h₁, rfl⟩ := e₁; obtain ⟨y₂, h₂, rfl⟩ := e₂
     exact ⟨rfl, ha.keep ⟨regs_set ha.rf.1 (op2_some ha h₁ h₂), fun hf => ha.rf.2 hf⟩ rfl rfl rfl rfl
       rfl rfl rfl rfl rfl rfl (movBases_ok ha.wf₁ h₁) (movBases_ok ha.wf₂ h₂)⟩
   | mvn d o =>
     simp only [step, Option.some.injEq] at hs; subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl rfl rfl fun _ h => h⟩
-    simp only [exec, Option.map_eq_some_iff] at e₁ e₂
+    simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨y₁, h₁, rfl⟩ := e₁; obtain ⟨y₂, h₂, rfl⟩ := e₂
     refine ⟨regs_set ha.rf.1 fun hp => ?_, fun hf => ha.rf.2 hf⟩
     rw [op2_some ha h₁ h₂ hp]
   | dp op d n o =>
     simp only [step, Option.some.injEq] at hs; subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl rfl rfl fun _ h => h⟩
-    simp only [exec, Option.map_eq_some_iff] at e₁ e₂
+    simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨y₁, h₁, rfl⟩ := e₁; obtain ⟨y₂, h₂, rfl⟩ := e₂
     refine ⟨regs_set ha.rf.1 fun hp => ?_, fun hf => ha.rf.2 hf⟩
     simp only [Bool.and_eq_true] at hp
@@ -655,7 +656,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
   | adds d n o =>
     simp only [step, Option.some.injEq] at hs; subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl rfl rfl fun _ h => h⟩
-    simp only [exec, Option.map_eq_some_iff] at e₁ e₂
+    simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨y₁, h₁, rfl⟩ := e₁; obtain ⟨y₂, h₂, rfl⟩ := e₂
     refine ⟨regs_set (fun r hr => by simpa [addFlags] using ha.rf.1 r hr) fun hp => ?_, fun hp => ?_⟩ <;>
     · simp only [Bool.and_eq_true] at hp
@@ -664,7 +665,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
   | adc d n o =>
     simp only [step, Option.some.injEq] at hs; subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl rfl rfl fun _ h => h⟩
-    simp only [exec, Option.map_eq_some_iff] at e₁ e₂
+    simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨y₁, h₁, rfl⟩ := e₁; obtain ⟨y₂, h₂, rfl⟩ := e₂
     refine ⟨regs_set ha.rf.1 fun hp => ?_, fun hf => ha.rf.2 hf⟩
     simp only [Bool.and_eq_true] at hp
@@ -672,7 +673,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
   | subs d n o =>
     simp only [step, Option.some.injEq] at hs; subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl rfl rfl fun _ h => h⟩
-    simp only [exec, Option.map_eq_some_iff] at e₁ e₂
+    simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨y₁, h₁, rfl⟩ := e₁; obtain ⟨y₂, h₂, rfl⟩ := e₂
     refine ⟨regs_set (fun r hr => by simpa [subFlags] using ha.rf.1 r hr) fun hp => ?_, fun hp => ?_⟩ <;>
     · simp only [Bool.and_eq_true] at hp
@@ -680,7 +681,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
       try simp [subFlags, State.setReg]
   | cmp n o =>
     simp only [step, Option.some.injEq] at hs; subst hs
-    simp only [exec, Option.map_eq_some_iff] at e₁ e₂
+    simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨y₁, h₁, rfl⟩ := e₁; obtain ⟨y₂, h₂, rfl⟩ := e₂
     refine ⟨rfl, ha.keep ⟨fun r hr => by simpa [subFlags] using ha.rf.1 r hr, fun hp => ?_⟩ rfl rfl rfl rfl
       rfl rfl rfl rfl rfl rfl (fun p h => by simpa [subFlags, region] using ha.wf₁.bases p h)
@@ -691,7 +692,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
   | addSp d imm =>
     simp only [step, Option.some.injEq] at hs; subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl rfl rfl fun _ h => h⟩
-    simp only [exec] at e₁ e₂
+    simp only [reduceExec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i hi
     simp only [hi, ite_true, Option.some.injEq] at e₁ e₂
@@ -702,34 +703,34 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
   | movw d imm =>
     simp only [step, Option.some.injEq] at hs; subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl rfl rfl fun _ h => h⟩
-    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    simp only [reduceExec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     exact ⟨regs_set (d := d) (p := true) ha.rf.1 fun _ => rfl, fun hf => ha.rf.2 hf⟩
   | adrSym d name =>
     simp only [step, Option.some.injEq] at hs; subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl rfl rfl fun _ h => h⟩
-    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    simp only [reduceExec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     exact ⟨regs_set (d := d) (p := false) ha.rf.1 (fun h => nomatch h), fun hf => ha.rf.2 hf⟩
   | movt d imm =>
     simp only [step, Option.some.injEq] at hs; subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl rfl rfl fun _ h => h⟩
-    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    simp only [reduceExec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     exact ⟨regs_set ha.rf.1 fun hp => by rw [ha.reg hp], fun hf => ha.rf.2 hf⟩
   | rev d m =>
     simp only [step, Option.some.injEq] at hs; subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl rfl rfl fun _ h => h⟩
-    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    simp only [reduceExec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     exact ⟨regs_set ha.rf.1 fun hp => by rw [ha.reg hp], fun hf => ha.rf.2 hf⟩
   | mul d n m =>
     simp only [step, Option.some.injEq] at hs; subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl rfl rfl fun _ h => h⟩
-    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    simp only [reduceExec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     refine ⟨regs_set ha.rf.1 fun hp => ?_, fun hf => ha.rf.2 hf⟩
     simp only [Bool.and_eq_true] at hp
     rw [ha.reg hp.1, ha.reg hp.2]
   | mla d n m a =>
     simp only [step, Option.some.injEq] at hs; subst hs
     refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl rfl rfl fun _ h => h⟩
-    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    simp only [reduceExec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     refine ⟨regs_set ha.rf.1 fun hp => ?_, fun hf => ha.rf.2 hf⟩
     simp only [Bool.and_eq_true] at hp
     rw [ha.reg hp.1.1, ha.reg hp.1.2, ha.reg hp.2]
@@ -738,7 +739,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at hs <;> [skip; cases hs]
     rename_i hn; cases hs
     refine ⟨by simp [addrs, ha.reg hn], ha.write rfl e₁ e₂ ?_ rfl rfl rfl rfl fun _ h => h⟩
-    simp only [exec] at e₁ e₂
+    simp only [reduceExec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i hoff
     simp only [hoff, ite_true, Option.map_eq_some_iff, State.load32] at e₁ e₂
@@ -753,7 +754,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at hs <;> [skip; cases hs]
     rename_i hn; cases hs
     refine ⟨by simp [addrs, ha.reg hn], ?_⟩
-    simp only [exec, State.store32] at e₁ e₂
+    simp only [reduceExec, State.store32] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i hoff
     simp only [hoff, ite_true] at e₁ e₂
@@ -767,7 +768,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at hs <;> [skip; cases hs]
     rename_i hn; cases hs
     refine ⟨by simp [addrs, ha.reg hn], ha.write rfl e₁ e₂ ?_ rfl rfl rfl rfl fun _ h => h⟩
-    simp only [exec] at e₁ e₂
+    simp only [reduceExec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i hoff
     simp only [hoff, ite_true, Option.map_eq_some_iff] at e₁ e₂
@@ -778,7 +779,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at hs <;> [skip; cases hs]
     rename_i hn; cases hs
     refine ⟨by simp [addrs, ha.reg hn], ?_⟩
-    simp only [exec, State.store8] at e₁ e₂
+    simp only [reduceExec, State.store8] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i hoff
     simp only [hoff, ite_true] at e₁ e₂
@@ -793,7 +794,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     rename_i ho; cases hs
     have hsp := ha.sp (by omega_arith)
     refine ⟨by simp only [addrs, hsp], ?_⟩
-    simp only [exec] at e₁ e₂
+    simp only [reduceExec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i hoff
     simp only [hoff, ite_true, Option.map_eq_some_iff, State.load32] at e₁ e₂

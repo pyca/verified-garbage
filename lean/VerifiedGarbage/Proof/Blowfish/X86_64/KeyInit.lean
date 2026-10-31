@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # Key expansion: the initial schedule
@@ -31,7 +32,7 @@ theorem SchedW.of_mem {S : Addr} {t : State} (h : (⟨S, 4168⟩ : Region) ∈ t
 
 theorem exec_store64 {s : State} {m : MemOp} {r : Reg} (h : InRegions s.wr (s.ea m) 8) :
     exec (.store m r) s = some { s with mem := s.mem.writeW (s.ea m) (s.gpr r) } := by
-  simp only [exec, State.store64, h, ite_true]
+  simp only [reduceExec, State.store64, h, ite_true]
 
 /-- `u` is `t` with other registers and memory. -/
 def GM (t u : State) : Prop := u = { t with gpr := u.gpr, mem := u.mem }

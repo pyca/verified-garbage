@@ -21,6 +21,17 @@ defaultTargets = ["NativeTCB", "NativeTCBX86_64", "NativeTCBX86", "NativeTCBAArc
 # `leanOptions`, whose TOML cannot set both `profiler` and
 # `profiler.threshold`.
 moreLeanArgs = ["-j2", "-Dprofiler=true", "-Dprofiler.threshold=1"]
+# The CI build cache leaves out the C of every module the build does not
+# compile (all but the precompiled libraries'), and restoring it writes an
+# empty `.c` in its place (`ci/lean_cache.py`): Lake only checks that the
+# file is there, and takes its hash from its `.c.hash`. Lean never writes an
+# empty `.c`, so compiling one would build an object without the module's
+# code: make it an error. If a module whose `.c` the cache left empty is now
+# compiled ("ISO C requires a translation unit to contain at least one
+# declaration" for `.lake/build/ir/<Module>.c`), make Lake write its C again:
+# delete the module's `.trace` (`.lake/build/lib/lean/<Module>.trace`) and
+# build.
+moreLeancArgs = ["-Werror=empty-translation-unit"]
 
 [leanOptions]
 autoImplicit = false
@@ -136,6 +147,9 @@ globs = ["VerifiedGarbage.Proof.Framework.SigEval", "VerifiedGarbage.Proof.Frame
   "VerifiedGarbage.Proof.Framework.KernelRfl", "VerifiedGarbage.Proof.Framework.Sig",
   "VerifiedGarbage.Proof.Framework.RegionsSub",
   "VerifiedGarbage.Proof.Framework.PlainSimp", "VerifiedGarbage.Proof.Framework.TacticTemplate",
+  "VerifiedGarbage.Proof.Framework.UnfoldStep", "VerifiedGarbage.Proof.Framework.X86_64.Reduce",
+  "VerifiedGarbage.Proof.Framework.X86.Reduce", "VerifiedGarbage.Proof.Framework.AArch64.Reduce",
+  "VerifiedGarbage.Proof.Framework.Arm.Reduce", "VerifiedGarbage.Proof.Framework.PPC64LE.Reduce",
   "VerifiedGarbage.Proof.MlDsa.DecideAt", "VerifiedGarbage.Impl.NatPairs",
   "VerifiedGarbage.Impl.AArch64Instrs"]
 precompileModules = true

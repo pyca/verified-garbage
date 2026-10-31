@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Blowfish.X86_64.Combine
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Impl.Rc2.X86_64.Sse2Lookup
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # An S-box lookup
@@ -157,7 +158,7 @@ theorem lookup_run {sch : Reg} {S : Addr} {s : State} (E : LookEnv sch S s) {j :
   have a₄ : ∀ b < 4, t₄.xmm (accReg b) = 0 := fun b hb => by
     rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;>
       simp (disch := decide) only [t₄, t₃, pops_eq, List.foldl, XOp.exec, State.setReg32, xmm_setReg,
-        xmm_setXmm_of_ne, xmm_setXmm_self, accReg, List.getD_cons_zero, List.getD_cons_succ, XBinOp.eval,
+        xmm_setXmm_of_ne, xmm_setXmm_self, accReg, List.getD_cons_zero, List.getD_cons_succ, reduceXBinOpEval,
         BitVec.xor_self] <;> rfl
   have xs₄ : ∀ d, d ≠ .xmm8 → d ≠ .xmm9 → d ≠ .xmm10 → d ≠ .xmm11 → t₄.xmm d = t₂.xmm d :=
     fun d h8 h9 h10 h11 => by
@@ -230,7 +231,7 @@ theorem lookup_run {sch : Reg} {S : Addr} {s : State} (E : LookEnv sch S s) {j :
       · rw [k3 _ (by decide) (by decide), k2 _ (by decide) (by decide), a1, k0 _ (by decide) (by decide)]
       · rw [k3 _ (by decide) (by decide), a2, k1 _ (by decide) (by decide), k0 _ (by decide) (by decide)]
       · rw [a3, k2 _ (by decide) (by decide), k1 _ (by decide) (by decide), k0 _ (by decide) (by decide)]
-    simp (disch := decide) only [w, cops, List.foldl, XOp.exec, xmm_setXmm_self, xmm_setXmm_of_ne, XBinOp.eval]
+    simp (disch := decide) only [w, cops, List.foldl, XOp.exec, xmm_setXmm_self, xmm_setXmm_of_ne, reduceXBinOpEval]
     rw [dword_or, dword_or, dword_or, pslld_dword0 _ _ (by decide), pslld_dword0 _ _ (by decide),
       pslld_dword0 _ _ (by decide), r3 0 (by decide), r3 1 (by decide), r3 2 (by decide), r3 3 (by decide),
       red 0 (by decide), red 1 (by decide), red 2 (by decide), red 3 (by decide), hm₄]

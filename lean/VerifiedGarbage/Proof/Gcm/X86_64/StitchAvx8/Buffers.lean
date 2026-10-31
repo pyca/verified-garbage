@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! ## Buffer -/
 
@@ -61,7 +62,7 @@ theorem prepCounter_ok (s : State) (i : Nat)
       t.mem = s.mem.writeW (s.gpr .r11 + BitVec.ofNat 64 (652 + 16 * i))
         (bswap32 ((s.gpr .r8).setWidth 32 + BitVec.ofNat 32 i)) ∧ BufferFrame s t := by
   apply WP.of_runBlock
-  simp only [prepCounter, runBlock_cons, runStep_some, runBlock_nil, exec, isa,
+  simp only [prepCounter, runBlock_cons, runStep_some, runBlock_nil, reduceExec, isa,
     readSrc32, execAlu32, State.setReg32, gpr_setReg, gpr_arithFlags,
     reduceCtorEq, ↓reduceIte, Option.map_some, Option.bind_some,
     setWidth_setWidth_32, store32_eq, ea_at, wr_setReg, wr_arithFlags,
@@ -149,7 +150,7 @@ theorem bump_ok (s : State) :
       (∀ r, r ≠ .r8 → t.gpr r = s.gpr r) ∧ t.mem = s.mem ∧
       (∀ r l, t.lane r l = s.lane r l) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, isa,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, isa,
     execAlu32, readSrc32, Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [State.setReg32, gpr_setReg, ite_true, setWidth_setWidth_32]

@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 /-!
 # X448 on x86 (32-bit): instruction rules
@@ -70,7 +71,7 @@ variable {is : List Instr} {s : State} {Q : State → Prop}
 
 theorem wp_mov {d : Reg} {src : Src} {v : BitVec 32} (h : readSrc s src = some v)
     (k : ∀ t, Upd s t d v → WP isa (.block is) t Q) : WP isa (.block (.mov d src :: is)) s Q :=
-  WP.cons (by simp only [exec, h, Option.map_some]) (k _ (Upd.setReg _ _ _))
+  WP.cons (by simp only [reduceExec, h, Option.map_some]) (k _ (Upd.setReg _ _ _))
 
 /-- The ALU operations that write their result and do not read carry. -/
 def plain (op : AluOp) : Prop := op = .add ∨ op = .sub ∨ op = .and ∨ op = .or ∨ op = .xor
@@ -84,12 +85,12 @@ theorem wp_alu {op : AluOp} {d : Reg} {src : Src} {v : BitVec 32} (hop : plain o
       t.zf = some (aluVal op (s.gpr d) v == 0) → WP isa (.block is) t Q) :
     WP isa (.block (.alu op d src :: is)) s Q := by
   rcases hop with rfl | rfl | rfl | rfl | rfl <;>
-    refine WP.cons (by simp only [exec, execAlu, h, Option.bind_some]; rfl) (k _ (Upd.flags _ _ _ _ _ _ _) rfl)
+    refine WP.cons (by simp only [reduceExec, execAlu, h, Option.bind_some]; rfl) (k _ (Upd.flags _ _ _ _ _ _ _) rfl)
 
 theorem wp_shift {op : ShiftOp} {d : Reg} {n : Nat} (hn : 1 ≤ n ∧ n ≤ 31)
     (k : ∀ t, Upd s t d (match op with | .shr => s.gpr d >>> n | .ror => (s.gpr d).rotateRight n) →
       WP isa (.block is) t Q) : WP isa (.block (.shift op d n :: is)) s Q := by
-  cases op <;> refine WP.cons (by simp only [exec, execShift, hn, and_self, ite_true]; rfl)
+  cases op <;> refine WP.cons (by simp only [reduceExec, execShift, hn, and_self, ite_true]; rfl)
     (k _ (Upd.flags _ _ _ _ _ _ _))
 
 theorem wp_load {d : Reg} {m : MemOp} {a : Addr} (ha : s.ea m = a)
@@ -102,20 +103,20 @@ theorem wp_store {r : Reg} {m : MemOp} {a : Addr} (ha : s.ea m = a)
     (hw : InRegions s.wr a 4)
     (k : ∀ t, Mupd s t (s.mem.writeW a (s.gpr r)) → WP isa (.block is) t Q) :
     WP isa (.block (.store m r :: is)) s Q :=
-  WP.cons (t := {s with mem := s.mem.writeW a (s.gpr r)}) (by simp only [exec, ha, State.store32, hw, ite_true]) (k _ ⟨rfl, rfl, rfl, rfl⟩)
+  WP.cons (t := {s with mem := s.mem.writeW a (s.gpr r)}) (by simp only [reduceExec, ha, State.store32, hw, ite_true]) (k _ ⟨rfl, rfl, rfl, rfl⟩)
 
 theorem wp_load8 {d : Reg} {m : MemOp} {a : Addr} (ha : s.ea m = a)
     (hr : InRegions (s.rd ++ s.wr) a 1)
     (k : ∀ t, Upd s t d ((s.mem a).setWidth 32) → WP isa (.block is) t Q) :
     WP isa (.block (.movzx8 d m :: is)) s Q :=
-  WP.cons (by simp only [exec, ha, State.load8, hr, ite_true, Option.map_some])
+  WP.cons (by simp only [reduceExec, ha, State.load8, hr, ite_true, Option.map_some])
     (k _ (Upd.setReg _ _ _))
 
 theorem wp_store8 {r : Reg8} {m : MemOp} {a : Addr} (ha : s.ea m = a)
     (hw : InRegions s.wr a 1)
     (k : ∀ t, Mupd s t (s.mem.writeW a ((s.gpr r.reg).setWidth 8)) → WP isa (.block is) t Q) :
     WP isa (.block (.store8 m r :: is)) s Q :=
-  WP.cons (t := {s with mem := s.mem.writeW a ((s.gpr r.reg).setWidth 8)}) (by simp only [exec, ha, State.store8, hw, ite_true]) (k _ ⟨rfl, rfl, rfl, rfl⟩)
+  WP.cons (t := {s with mem := s.mem.writeW a ((s.gpr r.reg).setWidth 8)}) (by simp only [reduceExec, ha, State.store8, hw, ite_true]) (k _ ⟨rfl, rfl, rfl, rfl⟩)
 
 
 theorem load_ok {base : Addr} (hs : Scr s base) {d : Reg} {o : Nat} (ho : o + 4 ≤ 8192)
@@ -145,7 +146,7 @@ theorem wp_cmp {r : Reg} {src : Src} {v : BitVec 32} (h : readSrc s src = some v
     WP isa (.block (.alu .cmp r src :: is)) s Q :=
   WP.cons (t := arithFlags s (s.gpr r - v) ((s.gpr r).toNat < v.toNat)
     (subOverflow (s.gpr r) v (s.gpr r - v)))
-    (by simp only [exec, execAlu, h, Option.bind_some]) (k _ ⟨rfl, rfl, rfl, rfl⟩ rfl)
+    (by simp only [reduceExec, execAlu, h, Option.bind_some]) (k _ ⟨rfl, rfl, rfl, rfl⟩ rfl)
 
 end
 

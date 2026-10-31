@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Impl.Bignum.Layout
 import VerifiedGarbage.TCB.AArch64.Simd
 import VerifiedGarbage.Impl.Bignum.AArch64.Core
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-! A table row's SIMD comparison and masked insertion. -/
 
@@ -52,7 +53,7 @@ theorem loadBit_ok {s : State} {r : VReg} {i : Nat} {choose : Prop} [Decidable c
   apply WP.of_runBlock
   simp only [runBlock_cons, exec, addr, show 16 * i % 16 = 0 by omega,
     show 16 * i < 4096 * 16 by omega, and_self, ite_true, Option.bind_some,
-    State.load, hld, Option.map_some, runStep_some, VOp.eval,
+    State.load, hld, Option.map_some, runStep_some, reduceVOpEval,
     RegUpd.v_setV_self, RegUpd.v_setV_of_ne _ _ (show VReg.v20 ≠ .v21 by decide),
     RegUpd.v_setV_of_ne _ _ hr', hm, bit_mask, runBlock_nil,
     Option.some.injEq, exists_eq_left']

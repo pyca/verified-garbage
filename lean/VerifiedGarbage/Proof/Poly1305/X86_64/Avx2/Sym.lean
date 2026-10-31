@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # Poly1305 on x86-64 with AVX2: straight-line code, quadword by quadword
@@ -478,7 +479,7 @@ theorem sstep_ok {ld : Bool} {s₀ : State} (hc : ld = true → Ctx s₀) {σ σ
       unfold Sym.bin at e
       split at e <;> cases e <;>
         refine h.set (hv_of (fun k hk => ?_) (fun r hr k _ => by rw [qw_vbin, ite_eq_right hr])) he <;>
-        rw [qw_vbin, ite_eq_left rfl] <;> simp only [VBinOp.sse, Q.eval]
+        rw [qw_vbin, ite_eq_left rfl] <;> simp only [reduceVBinOpSse, Q.eval]
       · rw [qword_paddq _ _ (mod2_lt k), qw_lane, qw_lane, hR a k hk, hR b k hk]
       · rw [qword_pmuludq _ _ (mod2_lt k), qw_lane, qw_lane, hR a k hk, hR b k hk]
       · rw [XBinOp.eval, qword_and, qw_lane, qw_lane, hR a k hk, hR b k hk]
@@ -538,7 +539,7 @@ theorem sstep_ok {ld : Bool} {s₀ : State} (hc : ld = true → Ctx s₀) {σ σ
       rw [h.rd, h.wr]; exact hc hld i hi
     refine ⟨s.setV .l256 d ((s.mem.readW (s₀.gpr .rsi + BitVec.ofNat 64 (8 * i)) 256).extractLsb' 0 128)
       ((s.mem.readW (s₀.gpr .rsi + BitVec.ofNat 64 (8 * i)) 256).extractLsb' 128 128),
-      by simp only [exec, ea, State.load256, hin, ite_true, Option.map_some], ?_⟩
+      by simp only [reduceExec, ea, State.load256, hin, ite_true, Option.map_some], ?_⟩
     refine h.set (hv_of (fun k hk => ?_) (fun r hr k hk => by rw [qw_load _ _ _ _ hk, ite_eq_right hr]))
       (vec_setV h.eq _ _ _ _)
     rw [qw_load _ _ _ _ hk, ite_eq_left rfl, h.mem, Offset.add_add]; simp only [Q.eval, Nat.mul_add]

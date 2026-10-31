@@ -8,6 +8,7 @@ public import VerifiedGarbage.Impl.Blake2.X86.CompressS
 import VerifiedGarbage.Proof.Framework.X86.SseDword
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 /-!
 # BLAKE2s on x86 (32-bit), with SSE2: the rounds
@@ -86,7 +87,7 @@ theorem vg_ok (s : State) :
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   rw [vg_eq]
   apply WP.of_runBlock
-  simp only [xb, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+  simp only [xb, runBlock_cons, runStep_some, runBlock_nil, reduceExec, XOp.exec,
     RegUpd.gpr_setXmm, RegUpd.mem_setXmm, RegUpd.rd_setXmm, RegUpd.wr_setXmm,
     Option.some.injEq, exists_eq_left']
   refine ⟨fun l hl => ?_, fun r h0 h1 h2 h3 h4 => ?_, trivial, trivial, trivial, trivial⟩
@@ -133,7 +134,7 @@ theorem gather_ok {K : BitVec 32} {M : Block 32} {s : State} (hk : s.gpr .edi = 
   have r3 := hrd _ (hf 3 (by decide))
   rw [gather_eq]
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, readSrc, ea_mk,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, XOp.exec, readSrc, ea_mk,
     State.load32, RegUpd.gpr_setReg_self, RegUpd.gpr_setXmm, RegUpd.mem_setXmm, RegUpd.rd_setXmm,
     RegUpd.wr_setXmm, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
     RegUpd.gpr_setReg_of_ne, hk, r0, r1, r2, r3, reduceCtorEq, not_false_eq_true, ↓reduceIte,
@@ -250,7 +251,7 @@ theorem shufs_ok (o₁ o₂ o₃ : BitVec 8) {a b c : Nat}
       (∀ r, r ≠ .xmm0 → r ≠ .xmm2 → r ≠ .xmm3 → s'.xmm r = s.xmm r) ∧
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, RegUpd.gpr_setXmm,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, XOp.exec, RegUpd.gpr_setXmm,
     RegUpd.mem_setXmm, RegUpd.rd_setXmm, RegUpd.wr_setXmm, Option.some.injEq, exists_eq_left']
   refine ⟨fun i hi => ?_, fun i _ => ?_, fun i hi => ?_, fun i hi => ?_, fun r h1 h2 h3 => ?_, trivial,
     trivial, trivial, trivial⟩ <;>

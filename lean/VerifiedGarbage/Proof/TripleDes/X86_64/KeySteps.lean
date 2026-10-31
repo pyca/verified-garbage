@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.TripleDes.Word
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 @[expose] public section
 
@@ -22,7 +23,7 @@ theorem rotate28_ok (s : State) (r : Reg) (hr : r ≠ .rax)
   have hleft : 1 ≤ 64 - n ∧ 64 - n ≤ 63 := by omega
   have hright : 1 ≤ 28 - n ∧ 28 - n ≤ 63 := by omega
   refine ⟨_, by
-    simp only [Key.rotate28, rr, runBlock_cons, runStep_some, runBlock_nil, exec,
+    simp only [Key.rotate28, rr, runBlock_cons, runStep_some, runBlock_nil, reduceExec,
       execAlu, execShift, readSrc, hleft, hright, and_self, ite_true, hr, Ne.symm hr,
       Option.bind_some, Option.map_some, gpr_setReg, gpr_setFlags, gpr_arithFlags,
       ite_false]

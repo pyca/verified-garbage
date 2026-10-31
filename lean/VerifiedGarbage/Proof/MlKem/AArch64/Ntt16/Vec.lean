@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16
 public import VerifiedGarbage.Spec.MlKem
 import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # ML-KEM's 16-bit NTT on AArch64: vectors of halfwords
@@ -250,7 +251,7 @@ theorem eval_mulH {s : State} {op : VMulHOp} {d n m : VReg}
     (h : ∀ e < 8, (op.lane (vhalf (s.v d) e) (vhalf (s.v n) e) (vhalf (s.v m) e)).isSome) :
     VOp.eval s (.mulH op d n m) =
       some (d, ofVHalves fun e => (op.lane (vhalf (s.v d) e) (vhalf (s.v n) e) (vhalf (s.v m) e)).getD 0) := by
-  simp only [VOp.eval]
+  simp only [reduceVOpEval]
   rw [ite_eq_left (by
     rw [range8]
     simp only [List.all_cons, List.all_nil, h 0 (by decide), h 1 (by decide), h 2 (by decide),

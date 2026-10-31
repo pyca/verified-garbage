@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.VArith
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # ML-DSA on x86-64: arithmetic modulo `q` in doublewords
@@ -66,14 +67,14 @@ theorem lo32_toNat (x : BitVec 64) : (lo32 x).toNat = x.toNat % 2 ^ 32 := by
 theorem qword_paddq (x y : BitVec 128) {i : Nat} (hi : i < 2) :
     qword (XBinOp.eval .paddq x y) i = qword x i + qword y i := by
   rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
-  · simp only [XBinOp.eval, qword_app0]
-  · simp only [XBinOp.eval, qword_app1]
+  · simp only [reduceXBinOpEval, qword_app0]
+  · simp only [reduceXBinOpEval, qword_app1]
 
 theorem qword_pmuludq (x y : BitVec 128) {i : Nat} (hi : i < 2) :
     qword (XBinOp.eval .pmuludq x y) i = lo32 (qword x i) * lo32 (qword y i) := by
   rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
-  · simp only [XBinOp.eval, qword_app0, lo32, ← dword_lo]
-  · simp only [XBinOp.eval, qword_app1, lo32, ← dword_lo]
+  · simp only [reduceXBinOpEval, qword_app0, lo32, ← dword_lo]
+  · simp only [reduceXBinOpEval, qword_app1, lo32, ← dword_lo]
 
 theorem qword_psrlq32 (x : BitVec 128) {i : Nat} (hi : i < 2) :
     qword (XShiftOp.eval .psrlq x 32) i = qword x i >>> 32 := by

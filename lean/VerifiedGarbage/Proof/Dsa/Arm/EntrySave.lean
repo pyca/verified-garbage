@@ -11,6 +11,7 @@ public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Dsa.Arm.Shape
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Reduce
 
 /-!
 # DSA on 32-bit ARM: saving the registers and the arguments
@@ -36,7 +37,7 @@ theorem wp_ldrSp {s : State} {is : List Instr} {Q : State → Prop} {t : Reg} {i
     WP isa (.block (.ldrSp t (4 * i) :: is)) s Q := by
   have e : stackArgAddr s i = State.addr (s.sp + BitVec.ofNat 32 (4 * i)) := rfl
   rw [e] at hin
-  exact VG.Proof.X25519.Arm.WP.cons (by simp only [exec, hi, ite_true, State.load32, hin, Option.map_some]; rfl)
+  exact VG.Proof.X25519.Arm.WP.cons (by simp only [reduceExec, hi, ite_true, State.load32, hin, Option.map_some]; rfl)
     (k _ (VG.Proof.X25519.Arm.Upd.setReg _ _ _))
 
 /-- `[r12 + d] = r`. -/

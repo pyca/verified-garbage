@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Seed.SboxLit
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # Loading the key on x86-64
@@ -34,7 +35,7 @@ theorem step_shl (s : State) (d : Reg) {n : Nat} (h1 : 1 ≤ n) (h2 : n ≤ 63) 
   refine ⟨_, ?_, upd_flags (some ((s.gpr d).getLsbD (64 - n)))
     (if n = 1 then some ((s.gpr d <<< n).msb ^^ (s.gpr d).getLsbD (64 - n)) else none)
     (some (s.gpr d <<< n == 0)) (some (s.gpr d <<< n).msb) rfl⟩
-  simp only [exec, execShift, h1, h2, and_self, ite_true]
+  simp only [reduceExec, execShift, h1, h2, and_self, ite_true]
 
 theorem step_or_reg (s : State) (d r : Reg) :
     ∃ t, exec (.alu .or d (.reg r)) s = some t ∧ Upd s t d (s.gpr d ||| s.gpr r) :=

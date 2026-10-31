@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 /-!
 # Taint tracking for x86 (32-bit)
@@ -910,30 +911,30 @@ theorem exec_dst {i : Instr} {d : Reg} (hd : dst i = some d) {s s' : State}
     (h : exec i s = some s') :
     s'.wr = s.wr ∧ s'.mem = s.mem ∧ ∀ r, r ≠ d → s'.gpr r = s.gpr r := by
   cases i with
-  | symPush | push | pop | alloc | free | mcdtEnter => simp only [exec, reduceCtorEq] at h
+  | symPush | push | pop | alloc | free | mcdtEnter => simp only [reduceExec, reduceCtorEq] at h
   | mov d' src =>
     simp only [dst, Option.some.injEq] at hd; subst hd
-    simp only [exec, Option.map_eq_some_iff] at h
+    simp only [reduceExec, Option.map_eq_some_iff] at h
     obtain ⟨v, -, rfl⟩ := h
     exact ⟨rfl, rfl, fun r h => setReg_ne h⟩
   | alu op d' src =>
     simp only [dst, Option.some.injEq] at hd; subst hd
-    simp only [exec, execAlu_eq, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    simp only [reduceExec, execAlu_eq, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨b, -, out, -, rfl⟩ := h
     split <;> exact ⟨rfl, rfl, fun r h => by simp [RegUpd.gpr_setReg, h]⟩
   | shift op d' n =>
     simp only [dst, Option.some.injEq] at hd; subst hd
-    simp only [exec, execShift] at h
+    simp only [reduceExec, execShift] at h
     split at h <;> [skip; cases h]
     cases op <;> simp only [Option.some.injEq] at h <;> subst h <;>
       exact ⟨rfl, rfl, fun r h => by simp [State.setReg, State.setFlags, h]⟩
   | bswap d' =>
     simp only [dst, Option.some.injEq] at hd; subst hd
-    simp only [exec, Option.some.injEq] at h; subst h
+    simp only [reduceExec, Option.some.injEq] at h; subst h
     exact ⟨rfl, rfl, fun r h => setReg_ne h⟩
   | movzx8 d' m =>
     simp only [dst, Option.some.injEq] at hd; subst hd
-    simp only [exec, Option.map_eq_some_iff] at h
+    simp only [reduceExec, Option.map_eq_some_iff] at h
     obtain ⟨v, -, rfl⟩ := h
     exact ⟨rfl, rfl, fun r h => setReg_ne h⟩
   | store m r => simp [dst] at hd
@@ -1074,7 +1075,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     rename_i hok; cases hs
     simp only [Bool.and_eq_true, bne_iff_ne, ne_eq] at hok
     obtain ⟨hd, hok⟩ := hok
-    simp only [exec, Option.map_eq_some_iff] at e₁ e₂
+    simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨v₁, hv₁, rfl⟩ := e₁; obtain ⟨v₂, hv₂, rfl⟩ := e₂
     refine ⟨ha.srcAddrs hok, ha.keep ⟨regs_set ha.rf.1 fun hp => ?_, fun hf => ha.rf.2 hf⟩
       rfl rfl rfl rfl rfl rfl rfl rfl rfl (setReg_ne fun h => hd h.symm)
@@ -1099,7 +1100,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at hs <;> [skip; cases hs]
     rename_i hm; cases hs
     refine ⟨by simp [addrs, ha.ea hm], ?_⟩
-    simp only [exec, State.store32] at e₁ e₂
+    simp only [reduceExec, State.store32] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     split at e₂ <;> [skip; cases e₂]
     rename_i h₁ h₂
@@ -1113,7 +1114,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     simp only [Bool.and_eq_true, bne_iff_ne, ne_eq] at hok
     obtain ⟨hd, hok⟩ := hok
     refine ⟨ha.srcAddrs hok, ha.write rfl hd e₁ e₂ ?_ rfl rfl rfl rfl rfl fun _ h => h⟩
-    simp only [exec, execAlu_eq, Option.bind_eq_some_iff, Option.map_eq_some_iff] at e₁ e₂
+    simp only [reduceExec, execAlu_eq, Option.bind_eq_some_iff, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨b₁, hb₁, out₁, ho₁, rfl⟩ := e₁; obtain ⟨b₂, hb₂, out₂, ho₂, rfl⟩ := e₂
     exact alu_sound ha.rf (fun hp => ha.readSrc hp hb₁ hb₂) ho₁ ho₂
   | shift op d n =>
@@ -1123,8 +1124,8 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     simp only [bne_iff_ne, ne_eq] at hd
     refine ⟨rfl, ha.write rfl hd e₁ e₂ ?_ rfl rfl rfl rfl rfl fun _ h => h⟩
     by_cases hn : 1 ≤ n ∧ n ≤ 31
-    swap; · simp [exec, execShift, hn] at e₁
-    simp only [exec, execShift, hn, and_self, ite_true] at e₁ e₂
+    swap; · simp [reduceExec, execShift, hn] at e₁
+    simp only [reduceExec, execShift, hn, and_self, ite_true] at e₁ e₂
     refine ⟨fun r hr => ?_, fun hf => ?_⟩
     · by_cases hrd : r = d
       · subst hrd
@@ -1144,7 +1145,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     rename_i hd; cases hs
     simp only [bne_iff_ne, ne_eq] at hd
     refine ⟨rfl, ha.write rfl hd e₁ e₂ ?_ rfl rfl rfl rfl rfl fun _ h => h⟩
-    simp only [exec, Option.some.injEq] at e₁ e₂
+    simp only [reduceExec, Option.some.injEq] at e₁ e₂
     subst e₁ e₂
     refine ⟨fun r hr => ?_, fun hf => by simpa using ha.rf.2 hf⟩
     by_cases hrd : r = d
@@ -1157,7 +1158,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     simp only [Bool.and_eq_true, bne_iff_ne, ne_eq] at hok
     obtain ⟨hd, hm⟩ := hok
     refine ⟨by simp [addrs, ha.ea hm], ha.write rfl hd e₁ e₂ ?_ rfl rfl rfl rfl rfl fun _ h => h⟩
-    simp only [exec, Option.map_eq_some_iff] at e₁ e₂
+    simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨x₁, -, rfl⟩ := e₁; obtain ⟨x₂, -, rfl⟩ := e₂
     exact ⟨regs_set (p := false) ha.rf.1 (fun h => by cases h), fun hf => ha.rf.2 hf⟩
   | store8 m r =>
@@ -1165,7 +1166,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at hs <;> [skip; cases hs]
     rename_i hm; cases hs
     refine ⟨by simp [addrs, ha.ea hm], ?_⟩
-    simp only [exec, State.store8] at e₁ e₂
+    simp only [reduceExec, State.store8] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     split at e₂ <;> [skip; cases e₂]
     rename_i h₁ h₂
@@ -1175,7 +1176,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
   | mul r =>
     simp only [step, Option.some.injEq] at hs
     subst hs
-    simp only [exec, Option.some.injEq] at e₁ e₂
+    simp only [reduceExec, Option.some.injEq] at e₁ e₂
     subst e₁ e₂
     exact ⟨rfl, ha.mul⟩
 

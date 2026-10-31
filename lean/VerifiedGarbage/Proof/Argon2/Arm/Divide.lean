@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Blake2.Arm.Stream.Common
 import VerifiedGarbage.Proof.Argon2.Divide
 public import VerifiedGarbage.Impl.Argon2.Arm.Divide
 public import VerifiedGarbage.Proof.MdStream.Arm.Common
+import VerifiedGarbage.Proof.Framework.Arm.Reduce
 
 /-!
 # Fixed-time division on ARMv7
@@ -33,7 +34,7 @@ theorem wp_subsC {d n : Reg} {o : Op2} {y : BitVec 32} (ho : o.eval s = some y)
     (k : ∀ s', Upd s s' d (s.gpr n - y) → s'.c = decide (y.toNat ≤ (s.gpr n).toNat) →
       WP isa (.block is) s' Q) :
     WP isa (.block (.subs d n o :: is)) s Q :=
-  WP.cons (s' := (subFlags s (s.gpr n) y).setReg d (s.gpr n - y)) (by simp [exec, ho])
+  WP.cons (s' := (subFlags s (s.gpr n) y).setReg d (s.gpr n - y)) (by simp [reduceExec, ho])
     (k _ (Upd.subs _ _ _ _ _) rfl)
 
 end

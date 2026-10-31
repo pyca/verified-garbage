@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # One-pass XTS-AES on x86-64: the tweaks XORed in, one block per register
@@ -43,7 +44,7 @@ theorem tPre1_ok (b : XReg) (d : Nat) (s : State)
     State.load128, ea_at, hd, he, Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨?_, by simp [State.setV], by simp [State.setV], by simp [State.setV], by simp [State.setV],
     fun r h => by simp [State.setV, h]⟩
-  simp [State.setV, State.lane, VBinOp.sse, XBinOp.eval]
+  simp [State.setV, State.lane, reduceVBinOpSse, XBinOp.eval]
 
 theorem tPost1_ok (b : XReg) (d : Nat) (s : State)
     (hd : InRegions s.wr (s.gpr .r11 + BitVec.ofInt 64 (d : Int)) 16)
@@ -61,7 +62,7 @@ theorem tPost1_ok (b : XReg) (d : Nat) (s : State)
     simp only [isa, exec, State.store128_eq, ea_at, s₁, State.setV_gpr, State.setV_mem, State.setV_wr, hd,
       ite_true], WP.block_nil ?_⟩
   refine ⟨?_, by simp [s₁], by simp [s₁], by simp [s₁], fun r h => by simp [s₁, State.setV, h]⟩
-  simp [s₁, State.setV, State.lane, VBinOp.sse, XBinOp.eval, u]
+  simp [s₁, State.setV, State.lane, reduceVBinOpSse, XBinOp.eval, u]
 
 theorem tPreList_ok (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
     (hd : ∀ k < regs.length, InRegions (s.rd ++ s.wr) (s.gpr .r11 + BitVec.ofInt 64 ((16 * (j + k) : Nat) : Int)) 16)

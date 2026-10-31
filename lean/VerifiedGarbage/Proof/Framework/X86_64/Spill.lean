@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # x86-64: saving registers in memory and restoring them
@@ -78,7 +79,7 @@ theorem save_run (b : Reg) (l : List (Reg × Nat)) (s : State)
   induction l generalizing s with
   | nil => exact runBlock_nil
   | cons p l ih =>
-    simp only [saveCode, List.map_cons, runBlock_cons, exec, State.store64, ea_slot,
+    simp only [saveCode, List.map_cons, runBlock_cons, reduceExec, State.store64, ea_slot,
       hw p List.mem_cons_self, ite_true, runStep_some]
     exact ih _ fun q hq => hw q (List.mem_cons_of_mem _ hq)
 
@@ -203,7 +204,7 @@ theorem restore_run (b : Reg) (l : List (Reg × Nat)) (g : Reg → BitVec 64) (s
   induction l generalizing s with
   | nil => exact runBlock_nil
   | cons p l ih =>
-    simp only [restoreCode, List.map_cons, runBlock_cons, exec, readSrc, State.load64, ea_slot,
+    simp only [restoreCode, List.map_cons, runBlock_cons, reduceExec, readSrc, State.load64, ea_slot,
       hr p List.mem_cons_self, ite_true, hs p List.mem_cons_self, Option.map_some, runStep_some]
     cases l with
     | nil => exact runBlock_nil

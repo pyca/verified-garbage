@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # ML-KEM on AArch64: vectors
@@ -342,14 +343,14 @@ variable {is : List Instr} {s : State} {Q : State → Prop}
 
 theorem wp_vop {op : VOp} {d : VReg} {x : BitVec 128} (he : op.eval s = some (d, x))
     (k : ∀ s', VUpd s s' d x → WP isa (.block is) s' Q) : WP isa (.block (.vop op :: is)) s Q :=
-  WP.cons (s' := s.setV d x) (by simp only [exec, he, Option.map_some]) (k _ (vupd_setV s d x))
+  WP.cons (s' := s.setV d x) (by simp only [reduceExec, he, Option.map_some]) (k _ (vupd_setV s d x))
 
 theorem wp_ldrq {t : VReg} {n : Reg} {off : Nat} {a : Addr} (ho : off % 16 = 0 ∧ off < 4096 * 16)
     (ha : s.gpr n + BitVec.ofNat 64 off = a) (hin : InRegions (s.rd ++ s.wr) a 16)
     (k : ∀ s', VUpd s s' t (s.mem.read a 16) → WP isa (.block is) s' Q) :
     WP isa (.block (.ldrq t n off :: is)) s Q :=
   WP.cons (s' := s.setV t (s.mem.read a 16))
-    (by simp only [exec, addr, ho, and_self, ite_true, ha, Option.bind_some, State.load, hin,
+    (by simp only [reduceExec, addr, ho, and_self, ite_true, ha, Option.bind_some, State.load, hin,
       Option.map_some]) (k _ (vupd_setV _ _ _))
 
 theorem wp_strq {t : VReg} {n : Reg} {off : Nat} {a : Addr} (ho : off % 16 = 0 ∧ off < 4096 * 16)
@@ -357,7 +358,7 @@ theorem wp_strq {t : VReg} {n : Reg} {off : Nat} {a : Addr} (ho : off % 16 = 0 �
     (k : ∀ s', VMem s s' (s.mem.write a 16 (s.v t)) → WP isa (.block is) s' Q) :
     WP isa (.block (.strq t n off :: is)) s Q :=
   WP.cons (s' := { s with mem := s.mem.write a 16 (s.v t) })
-    (by simp only [exec, addr, ho, and_self, ite_true, ha, Option.bind_some, State.store, hout])
+    (by simp only [reduceExec, addr, ho, and_self, ite_true, ha, Option.bind_some, State.store, hout])
     (k _ ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩)
 
 end

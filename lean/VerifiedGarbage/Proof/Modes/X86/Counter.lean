@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.X86.RegUpd
 public import VerifiedGarbage.Impl.Modes.X86.Counter
 public import VerifiedGarbage.Spec.Ctr
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 /-!
 # CTR on x86: the increments
@@ -62,7 +63,7 @@ theorem incr_ok (s : State) {base : Reg} {off : Nat} (hne : base ≠ .eax) {Q : 
       (m.writeW (Q + BitVec.ofNat 64 (4 * j)) v).readW Q 32 = m.readW Q 32 := by
     simpa using sep m 0 j (by decide) hj hne v
   refine ⟨_, by
-    simp only [↓reduceIte, incAt, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+    simp only [↓reduceIte, incAt, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc,
       State.load32, State.store32, ea_mk, execAlu, Option.bind_some, Option.map_some,
       gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags, rd_setReg, rd_arithFlags, wr_setReg,
       wr_arithFlags, cf_setReg, cf_arithFlags, hne, a0, ha 4 (by decide), ha 8 (by decide), ha 12 (by decide),
@@ -149,7 +150,7 @@ theorem inc32_ok (s : State) {base : Reg} {off : Nat} (hne : base ≠ .eax) {Q :
       (∀ r, r ≠ .eax → s'.gpr r = s.gpr r) ∧
       s'.mem = inc32Mem s.mem Q ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp only [↓reduceIte, inc32At, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+    simp only [↓reduceIte, inc32At, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc,
       State.load32, State.store32, ea_mk, execAlu, Option.bind_some, Option.map_some,
       gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags, rd_setReg, rd_arithFlags, wr_setReg,
       wr_arithFlags, hne, ha, hr, hw]

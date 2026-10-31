@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 /-! ## From `ResidentRejVec.lean` -/
 
 -- Formerly `VerifiedGarbage/Proof/MlDsa/AArch64/Optimized/ResidentRejGather.lean`, which only this module imported.
@@ -135,7 +136,7 @@ theorem decode_ok {s : State} {d : VReg}
       VChg [d,.v2] s t ∧ t.v d=candidates (s.v .v0) (s.v .v4) ∧
       t.v .v2=accepted (candidates (s.v .v0) (s.v .v4)) (s.v .v5) := by
   refine wp_vop (d := d) (x := gatherValue (s.v .v0)) (by
-    simp only [VOp.eval,hi]; rfl) fun a ha =>
+    simp only [reduceVOpEval,hi]; rfl) fun a ha =>
     wp_vop (d := d) rfl fun b hb => wp_vop (d := .v2) rfl fun c hc =>
     wp_vop (d := .v2) rfl fun t ht => WP.block_nil_iff.mpr ?_
   refine ⟨(((ha.chg.trans hb.chg).trans hc.chg).trans ht.chg).mono ?_,?_,?_⟩

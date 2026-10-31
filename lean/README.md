@@ -343,6 +343,13 @@ Without the `zstd` command, `pip install zstandard` and replace `zstd -dc`
 with
 `python3 -c 'import sys, zstandard; zstandard.ZstdDecompressor().copy_stream(sys.stdin.buffer, sys.stdout.buffer)'`.
 
+The cache holds the C (`.c`) only of the modules the build compiles, those
+of the precompiled libraries (`lakefile.toml`): nothing reads the others',
+about 1.2 GB. `unpack` writes an empty `.c` in place of each, which is all
+Lake checks for. Compiling an empty one is an error (`moreLeancArgs` in
+`lakefile.toml`, which says what to do if a module whose C the cache left
+out is now compiled).
+
 `unpack` leaves the files' owner alone, as `tar --no-same-owner` would: the
 archive's files belong to CI's runner user, and extracting them as root (as
 in a container) would keep that owner. Git then refuses the dependencies'

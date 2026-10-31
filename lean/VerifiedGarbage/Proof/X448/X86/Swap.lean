@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 /-!
 # X448 on x86 (32-bit): constant-time conditional swaps
@@ -52,7 +53,7 @@ theorem swapStep_ok {s : State} {base : Addr} (hs : Scr s base) {x y i : Nat}
   have ye := hs.ea (d := y + 4 * i) (by omega)
   simp only [State.ea, sc, at_] at xe ye
   apply WP.of_runBlock
-  simp only [ld, st, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, State.ea, sc, at_,
+  simp only [ld, st, runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu, readSrc, State.ea, sc, at_,
     State.load32, State.store32, RegUpd.gpr_setReg, RegUpd.mem_setReg,
     RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, xe, ye, hc, lx, ly, wx, wy,
     ite_true, ite_false, reduceCtorEq, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']

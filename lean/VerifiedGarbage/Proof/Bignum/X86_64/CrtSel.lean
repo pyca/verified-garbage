@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Bignum.CrtExp
 
 -- Reduce vector updates before comparing unchanged fields of whole states.
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 @[expose] public section
 
@@ -93,7 +94,7 @@ theorem q128_and (a b : BitVec 128) (q : Nat) : q128 (a &&& b) q = q128 a q &&& 
 /-- The mask in both quadwords: `punpcklqdq` of `movq`. -/
 theorem q128_dup (x : BitVec 64) {q : Nat} (hq : q < 2) :
     q128 (XBinOp.eval .punpcklqdq ((0 : BitVec 64) ++ x) ((0 : BitVec 64) ++ x)) q = x := by
-  simp only [XBinOp.eval]
+  simp only [reduceXBinOpEval]
   rw [show qword ((0 : BitVec 64) ++ x) 0 = x from q128_low x]
   exact q128_pair x hq
 
@@ -162,7 +163,7 @@ theorem gOr_ok {s : State} {B : Addr} {Z e i : Nat} (hs : Scr s B Z) {b : Reg} {
   rw [WP.block_cons_iff]
   refine ⟨_, rfl, WP.block_nil ?_⟩
   simp only [XOp.exec, xmm_setXmm_self, xmm_setXmm_of_ne _ _ hx1, xmm_setXmm_of_ne _ _ (show ¬ XReg.xmm0 = .xmm1 by decide),
-    gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, XBinOp.eval, and_true]
+    gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, reduceXBinOpEval, and_true]
   refine ⟨fun q hq => ?_, fun y h0 h1 => ?_⟩
   · rw [q128_or, q128_and, q128_read _ _ hq, off_add_eq]
   · rw [xmm_setXmm_of_ne _ _ h0, xmm_setXmm_of_ne _ _ h1, xmm_setXmm_of_ne _ _ h1]
@@ -184,7 +185,7 @@ theorem gFirst_ok {s : State} {B : Addr} {Z e i : Nat} (hs : Scr s B Z) (hb : s.
   rw [WP.block_cons_iff]
   refine ⟨_, rfl, WP.block_nil ?_⟩
   simp only [XOp.exec, xmm_setXmm_self, xmm_setXmm_of_ne _ _ (show ¬ XReg.xmm8 = .xmm0 by decide),
-    gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, XBinOp.eval, and_true]
+    gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, reduceXBinOpEval, and_true]
   refine ⟨fun q hq => ?_, fun y h0 _ => ?_⟩
   · rw [q128_and, q128_read _ _ hq, off_add_eq]
   · rw [xmm_setXmm_of_ne _ _ h0, xmm_setXmm_of_ne _ _ h0]

@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
 import VerifiedGarbage.Proof.MlKem.X86_64.VPack
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # ML-KEM on x86-64: sums of products in words, with AVX2
@@ -155,7 +156,7 @@ theorem vpxor0_ok (s : State) :
   simp only [yb, runBlock_cons, runStep_some, runBlock_nil, exec, Option.some.injEq, exists_eq_left']
   refine ⟨?_, rfl, rfl, rfl, rfl⟩
   rw [State.ymm_eq, lane_vbin256, lane_vbin256, ifp rfl, ifp rfl]
-  simp only [VBinOp.sse, pxor_self]
+  simp only [reduceVBinOpSse, pxor_self]
   rfl
 
 theorem zeroAccY_wp {s : State} (hw : pR (s.gpr .rdi) ∈ s.wr) :

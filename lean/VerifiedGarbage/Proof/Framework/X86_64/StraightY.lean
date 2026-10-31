@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.TCB.X86_64.Isa
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # x86-64: straight-line bitwise AVX2 code, quadword lane by lane
@@ -392,7 +393,7 @@ theorem step_ok (hD : ∀ q < 4, D.Sound (R q)) {e e' : Env α} {s : State} (hok
           have ex := qw_ymm s a hq
           have ey := qw_ymm s b hq
           cases op <;> simp only [binop, reduceCtorEq, Option.some.injEq] at hf <;> subst hf <;>
-            simp only [VBinOp.sse, XBinOp.eval]
+            simp only [reduceVBinOpSse, reduceXBinOpEval]
           · rw [qword_xor, ← ex, ← ey]; exact (hD q hq).xor (hRx q hq) (hRy q hq) hr
           · rw [qword_or, ← ex, ← ey]; exact (hD q hq).or (hRx q hq) (hRy q hq) hr
           · rw [qword_and, ← ex, ← ey]; exact (hD q hq).and (hRx q hq) (hRy q hq) hr
@@ -513,7 +514,7 @@ theorem step_ok (hD : ∀ q < 4, D.Sound (R q)) {e e' : Env α} {s : State} (hok
           ⟨r, List.mem_append_right _ hr, hc⟩
         let v := s.mem.readW (yAddr (s.gpr c.base) k) 256
         refine ⟨s.setV .l256 d (v.extractLsb' 0 128) (v.extractLsb' 128 128),
-          by simp [exec, State.load256, hea, hin, v], ?_⟩
+          by simp [reduceExec, State.load256, hea, hin, v], ?_⟩
         refine (post_setV hok hrel fun q hq => ?_).writes (fun r h => by simp [ydst, h])
           (fun _ h => h.elim)
         rw [split_eq]
@@ -531,7 +532,7 @@ theorem step_ok (hD : ∀ q < 4, D.Sound (R q)) {e e' : Env α} {s : State} (hok
         have hea := ea_of (s := s) hb hi hd
         have hin := hok.slotIn k hlt
         refine ⟨{ s with mem := s.mem.writeW (yAddr (s.gpr c.base) k) (s.ymm r) },
-          by simp [exec, State.store256, hea, hin], ?_⟩
+          by simp [reduceExec, State.store256, hea, hin], ?_⟩
         have hsep : ∀ j < c.slots, j ≠ k → Mem.Sep (yAddr (s.gpr c.base) j) (256 / 8)
             (yAddr (s.gpr c.base) k) (256 / 8) := fun j hj hjk =>
           slot_sep _ (by have := hok.slots; omega_arith) (by have := hok.slots; omega_arith) hjk
@@ -576,7 +577,7 @@ theorem step_ok (hD : ∀ q < 4, D.Sound (R q)) {e e' : Env α} {s : State} (hok
       · simpa [State.setReg, State.ymm] using hrel.xc r w hw
       · simp [State.setReg, Ne.symm hdb]
       · simp [State.setReg, Ne.symm hdb]
-      · simp only [Instr.dst, Option.some.injEq] at hr
+      · simp only [reduceInstrDst, Option.some.injEq] at hr
         simp [State.setReg, Ne.symm hr]
       · simp only [State.setReg]; exact Frame.refl _ _
   | _ => simp [step] at h

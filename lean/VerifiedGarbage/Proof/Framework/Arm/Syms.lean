@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.Arm.Isa
+import VerifiedGarbage.Proof.Framework.Arm.Reduce
 
 /-!
 # ARMv7: the addresses of statics never change
@@ -19,7 +20,7 @@ namespace VG.Arm
 theorem setReg_syms (s : State) (r : Reg) (v : BitVec 32) : (s.setReg r v).syms = s.syms := rfl
 
 theorem exec_syms {i : Instr} {s s' : State} (h : exec i s = some s') : s'.syms = s.syms := by
-  cases i <;> simp only [exec, State.load32, State.load8, State.store32, State.store8,
+  cases i <;> simp only [reduceExec, State.load32, State.load8, State.store32, State.store8,
       Option.map_eq_some_iff, reduceCtorEq] at h <;> (repeat' split at h) <;>
     (try simp only [Option.some.injEq, reduceCtorEq, Option.map_some, Option.map_none] at h) <;>
     first

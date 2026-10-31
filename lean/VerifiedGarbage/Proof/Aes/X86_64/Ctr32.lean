@@ -18,6 +18,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # AES counter mode on x86-64: the whole function
@@ -155,7 +156,7 @@ theorem save_ok {s : State} {b : Addr} {n : Nat} (hw : (⟨b, n⟩ : Region) ∈
     rw [p.base] at h
     simp only [saveCfg, hb] at h
     exact h
-  · have : (saveRegs.all fun i => i.dst != some r) = true := by simp [saveRegs, savedRegs, st, Instr.dst]
+  · have : (saveRegs.all fun i => i.dst != some r) = true := by simp [saveRegs, savedRegs, st, reduceInstrDst]
     simp [this]
   · have := p.frame
     simpa [slotRegion, saveCfg, hb] using this
@@ -187,7 +188,7 @@ theorem restore_ok {s₀ s : State} {b : Addr} {n : Nat} (hw : (⟨b, n⟩ : Reg
       have h0 := hr 0 (by omega_arith); have h1 := hr 1 (by omega_arith); have h2 := hr 2 (by omega_arith)
       have h3 := hr 3 (by omega_arith); have h4 := hr 4 (by omega_arith); have h5 := hr 5 (by omega_arith)
       simp only [sreg] at h0 h1 h2 h3 h4 h5
-      simp [restoreRegs, savedRegs, movS, Instr.dst, Ne.symm h0, Ne.symm h1, Ne.symm h2, Ne.symm h3,
+      simp [restoreRegs, savedRegs, movS, reduceInstrDst, Ne.symm h0, Ne.symm h1, Ne.symm h2, Ne.symm h3,
         Ne.symm h4, Ne.symm h5]
     simp [this]
   · have := p.frame

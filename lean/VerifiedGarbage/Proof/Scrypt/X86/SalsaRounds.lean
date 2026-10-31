@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Scrypt.Spec
 public import VerifiedGarbage.Impl.Scrypt.X86.Salsa
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 /-!
 # The Salsa20/8 Core on x86 (32-bit), with SSE2: the rounds
@@ -63,7 +64,7 @@ theorem vstep_ok {x y z : XReg} {n : Nat} (hn : 0 < n) (hn' : n < 32) (hx4 : x �
       (∀ r, r ≠ x → r ≠ .xmm4 → r ≠ .xmm5 → s'.xmm r = s.xmm r) ∧
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
-  simp only [vstep, xb, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+  simp only [vstep, xb, runBlock_cons, runStep_some, runBlock_nil, reduceExec, XOp.exec,
     RegUpd.gpr_setXmm, RegUpd.mem_setXmm, RegUpd.rd_setXmm, RegUpd.wr_setXmm,
     Option.some.injEq, exists_eq_left']
   refine ⟨fun i hi => ?_, fun r h0 h4 h5 => ?_, trivial, trivial, trivial, trivial⟩
@@ -219,7 +220,7 @@ theorem toRows_ok {v : Vector Word 16} {s : State} (h : Arr ci v s) :
     WP isa (.block toRows) s fun s' => Arr ri v s' ∧ (∀ r, r ≠ .xmm1 → r ≠ .xmm2 → r ≠ .xmm3 →
       s'.xmm r = s.xmm r) ∧ s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
-  simp only [toRows, shuf, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+  simp only [toRows, shuf, runBlock_cons, runStep_some, runBlock_nil, reduceExec, XOp.exec,
     RegUpd.gpr_setXmm, RegUpd.mem_setXmm, RegUpd.rd_setXmm, RegUpd.wr_setXmm,
     RegUpd.xmm_setXmm_of_ne, reduceCtorEq, not_false_eq_true, shuf39, shuf4e, shuf93,
     Option.some.injEq, exists_eq_left']
@@ -240,7 +241,7 @@ theorem toCols_ok {v : Vector Word 16} {s : State} (h : Arr ri v s) :
     WP isa (.block toCols) s fun s' => Arr ci v s' ∧ (∀ r, r ≠ .xmm1 → r ≠ .xmm2 → r ≠ .xmm3 →
       s'.xmm r = s.xmm r) ∧ s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
-  simp only [toCols, shuf, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+  simp only [toCols, shuf, runBlock_cons, runStep_some, runBlock_nil, reduceExec, XOp.exec,
     RegUpd.gpr_setXmm, RegUpd.mem_setXmm, RegUpd.rd_setXmm, RegUpd.wr_setXmm,
     RegUpd.xmm_setXmm_of_ne, reduceCtorEq, not_false_eq_true, shuf39, shuf4e, shuf93,
     Option.some.injEq, exists_eq_left']
@@ -262,7 +263,7 @@ theorem toDiag_ok {v : Vector Word 16} {s : State} (h : Arr rowIdx v s) :
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
   simp only [toDiag, transpose, shuf, xb, List.cons_append, List.nil_append, runBlock_cons,
-    runStep_some, runBlock_nil, exec, XOp.exec, RegUpd.gpr_setXmm, RegUpd.mem_setXmm,
+    runStep_some, runBlock_nil, reduceExec, XOp.exec, RegUpd.gpr_setXmm, RegUpd.mem_setXmm,
     RegUpd.rd_setXmm, RegUpd.wr_setXmm, RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne,
     reduceCtorEq, not_false_eq_true, eval_movdqa, shuf39, shuf4e, shuf93, punpckldq_eq,
     punpckhdq_eq, punpcklqdq_eq, punpckhqdq_eq, dword_ofDwords_0, dword_ofDwords_1,
@@ -282,7 +283,7 @@ theorem fromDiag_ok {v : Vector Word 16} {s : State} (h : Arr ci v s) :
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
   simp only [fromDiag, transpose, shuf, xb, List.cons_append, List.nil_append, runBlock_cons,
-    runStep_some, runBlock_nil, exec, XOp.exec, RegUpd.gpr_setXmm, RegUpd.mem_setXmm,
+    runStep_some, runBlock_nil, reduceExec, XOp.exec, RegUpd.gpr_setXmm, RegUpd.mem_setXmm,
     RegUpd.rd_setXmm, RegUpd.wr_setXmm, RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne,
     reduceCtorEq, not_false_eq_true, eval_movdqa, shuf39, shuf4e, shuf93, punpckldq_eq,
     punpckhdq_eq, punpcklqdq_eq, punpckhqdq_eq, dword_ofDwords_0, dword_ofDwords_1,

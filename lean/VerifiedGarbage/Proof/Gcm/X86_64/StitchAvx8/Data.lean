@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # Applying the encrypted counter to one data block
@@ -56,7 +57,7 @@ theorem xorData_one_ok (ix : Bool) (s : State) (b : XReg) (j : Nat)
       YFrame [b] (s.setMem t.mem) t := by
   apply WP.of_runBlock
   simp only [xorData, List.append_nil, runBlock_cons, runStep_some, runBlock_nil,
-    exec, isa, State.load128, hr, ite_true, Option.map_some, VBinOp.sse,
+    exec, isa, State.load128, hr, ite_true, Option.map_some, reduceVBinOpSse,
     XBinOp.eval, State.store128_eq, State.setV_ea, State.setV_wr, hw,
     xmm_setV, ite_true, State.setV_mem, Option.some.injEq, exists_eq_left']
   refine ⟨rfl, ?_⟩

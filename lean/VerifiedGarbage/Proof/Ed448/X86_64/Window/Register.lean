@@ -19,6 +19,7 @@ import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! Select one coordinate in registers, storing it only after scanning the table. -/
 
@@ -39,7 +40,7 @@ theorem compareDigit_ok {s : State} {d i : Nat} (hd : d < 17) (hi : i < 17)
     WP isa (.block (compareDigit i)) s fun u =>
       u.zf = decide (d = i) ∧ Keeps [] s u := by
   apply WP.of_runBlock
-  simp only [compareDigit, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+  simp only [compareDigit, runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu,
     readSrc, hr, RegUpd.zf_arithFlags, Option.bind_some,
     Option.some.injEq, exists_eq_left']
   exact ⟨cmp_calc d hd i hi, fun _ _ => rfl, rfl, rfl, rfl⟩
@@ -54,7 +55,7 @@ theorem chooseMem_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat}
   cases sw <;>
     simp only [chooseMem, W, List.range_succ, List.range_zero, List.nil_append,
       List.zip_cons_cons, List.zip_nil_right, List.map_cons, List.map_nil, List.cons_append,
-      runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execCmov, eval,
+      runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, execCmov, eval,
       RegUpd.zf_setReg, hz, ea_sc, hs.rdi, State.load64,
       hr 0 (by decide), hr 1 (by decide), hr 2 (by decide), hr 3 (by decide),
       hr 4 (by decide), hr 5 (by decide), hr 6 (by decide), RegUpd.gpr_setReg,
@@ -79,7 +80,7 @@ theorem chooseConst_ok {s : State} (v : Spec.X448.Fe) {sw : Bool} (hz : s.zf = s
     simp only [chooseConst, W, words7, List.range_succ, List.range_zero, List.nil_append,
       List.map_cons, List.map_nil, List.zip_cons_cons, List.zip_nil_right,
       List.flatMap_cons, List.flatMap_nil, List.cons_append,
-      runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execCmov, eval,
+      runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, execCmov, eval,
       RegUpd.zf_setReg, hz, RegUpd.gpr_setReg,
       Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left',
       reduceCtorEq, ite_true, ite_false]

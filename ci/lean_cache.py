@@ -15,8 +15,16 @@ cache, a fifth of the size `zstd` makes of the same files, since `leantar`
 encodes an `.olean`'s objects compactly before compressing them. A module's
 archive is `.lake/ltar/<build>/<Module>.ltar`, where `<build>` is its build
 directory relative to `.lake/` (`build`, or `packages/mathlib/.lake/build`).
+Of a module's `.c`, which only building native code reads, an archive keeps
+only that of a module the build compiled (an object, `ir/<Module>.c.o.*`,
+next to it: the precompiled libraries' modules, and the few of the
+packages' executables): the others' are nine tenths of the C (1.2 GB),
+written and never read. `unpack` and `restore` write an empty file in its
+place, which is all Lake looks for (the `.c.hash` in `files.tar` gives its
+hash), and `lakefile.toml` makes compiling an empty file an error.
 `.lake/ltar/index.json` records the dependency hash and output hashes of
-each archive's module: `pack` packs only the modules that changed since,
+each archive's module, and whether it holds the `.c`: `pack` packs only the
+modules that changed since,
 and removes the archives of modules that no longer exist. Before packing a
 module, it moves the messages of its `.trace` (the build's profile, nine
 tenths of the traces' bytes) to `.lake/ltar/logs.json.gz`, so that the archive
@@ -121,20 +129,50 @@ def build_dirs(lean, roots):
 
 
 def modules(lean, build):
-    """The built modules of `build`: their names, traces and outputs (paths relative to `lean`)."""
+    """The built modules of `build`: their names, traces, the outputs their
+    archives hold, and the `.c` they leave out, if any (paths relative to
+    `lean`)."""
     lib = lean / build / "lib" / "lean"
     for trace in sorted(lib.glob("**/*.trace")):
         name = str(trace.relative_to(lib))[:-len(".trace")]
         if not (lib / (name + ".olean")).is_file():
             continue  # not a module (a native library's trace)
         outputs = [(base, ext, build / ("lib/lean", "ir")[base] / (name + ext)) for base, ext in OUTPUTS]
-        yield name, trace, [o for o in outputs if (lean / o[2]).is_file()]
+        outputs = [o for o in outputs if (lean / o[2]).is_file()]
+        c = build / "ir" / (name + ".c")
+        if compiled(lean, c):
+            yield name, trace, outputs, None
+        else:
+            yield name, trace, [o for o in outputs if o[2] != c], c
 
 
-def key(trace):
-    """What a module's archive holds: its dependency hash and its outputs' hashes."""
+def compiled(lean, c):
+    """Whether the build compiled the C file `c` (relative to `lean`): Lake
+    writes its object next to it, `<Module>.c.o.export` or
+    `<Module>.c.o.noexport`."""
+    return any((lean / c.parent / (c.name + o)).is_file() for o in (".o.export", ".o.noexport"))
+
+
+def key(trace, c):
+    """What a module's archive holds: its dependency hash, its outputs'
+    hashes, and whether its `.c` (`c`, a bool)."""
     t = json.loads(trace.read_text())
-    return json.dumps([t["depHash"], t["outputs"]], sort_keys=True)
+    return json.dumps([t["depHash"], t["outputs"], c], sort_keys=True)
+
+
+def placeholder(lean, rel):
+    """Writes an empty file in place of the `.c` of the module whose archive
+    is at `.lake/ltar/<rel>`, before `leantar` unpacks the archive, which
+    replaces it if the archive holds the `.c`; it replaces whatever `.c` was
+    there (of another build of the module). Lake only checks that the file
+    exists, and reads its hash from its `.c.hash`; compiling it fails
+    (`lakefile.toml`'s `moreLeancArgs`)."""
+    build = build_of(rel)
+    end = len(Path(build).parts) - 1
+    name = Path(*Path(rel).parts[end:]).with_suffix(".c")
+    c = lean / build / "ir" / name
+    c.parent.mkdir(parents=True, exist_ok=True)
+    c.open("w").close()
 
 
 def read_logs(path):
@@ -185,15 +223,18 @@ def update(lean, roots, jobs, level, tool, archive_dir=LTAR, reuse=None):
     tasks = []
     kept = 0
     for build in builds:
-        for name, trace, outputs in modules(lean, build):
+        for name, trace, outputs, c in modules(lean, build):
             rel = str(build.relative_to(".lake") / name)
             ltar = archive_dir / (rel + ".ltar")
-            index[rel] = key(trace)
+            index[rel] = key(trace, c is None)
             take_log(trace, rel, logs, old_logs or {})
             # The outputs' `.hash` files stay: without them Lake would read
-            # every output again to hash it.
+            # every output again to hash it. A `.c` left out of the archive
+            # goes nowhere: unpacking writes an empty file in its place.
             packed.add(trace.relative_to(lean))
             packed.update(path for _, _, path in outputs)
+            if c is not None:
+                packed.add(c)
             if old.get(rel) == index[rel] and (lean / ltar).is_file():
                 kept += 1
                 continue
@@ -344,6 +385,7 @@ def restore(lean, jobs, tool, archive_dir=LTAR, modules=None, others=None):
             if others and (m is None or m in chosen):
                 continue
             build = build_of(rel)
+            placeholder(lean, rel)
             records.append({"file": str(ltar.relative_to(lean)),
                             "base": [str(build / "lib/lean"), str(build / "ir")]})
         if records:
@@ -437,6 +479,7 @@ def unpack(lean, jobs, tmp, batch, tool, stream, logs=False):
                 with open(file, "wb") as f:
                     shutil.copyfileobj(tar.extractfile(member), f)
                 build = build_of(rel.relative_to(LTAR))
+                placeholder(lean, rel.relative_to(LTAR))
                 records.append({"file": str(file), "base": [str(build / "lib/lean"), str(build / "ir")]})
                 size += member.size
                 if size >= batch:

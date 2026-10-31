@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.Stitch
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # ChaCha20-Poly1305 with the AVX2 code (x86-64): padding
@@ -38,13 +39,13 @@ theorem pad1_ok {r : Reg} {i : Instr} (hi : IsPad r i) (s : State) :
     WP isa (.block [i]) s (PadPost r s) := by
   apply WP.of_runBlock
   rcases hi with rfl | rfl | rfl
-  · simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, State.setReg32, Option.map_some,
+  · simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc32, State.setReg32, Option.map_some,
       Option.some.injEq, exists_eq_left']
     exact ⟨fun q hq => by simp [gpr_setReg, hq], rfl, rfl, rfl, rfl⟩
-  · simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, Option.map_some,
+  · simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, Option.map_some,
       Option.some.injEq, exists_eq_left']
     exact ⟨fun q hq => by simp [gpr_setReg, hq], rfl, rfl, rfl, rfl⟩
-  · simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, State.setReg32, Option.map_some,
+  · simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc32, State.setReg32, Option.map_some,
       Option.some.injEq, exists_eq_left']
     exact ⟨fun q hq => by simp [gpr_setReg, hq], rfl, rfl, rfl, rfl⟩
 

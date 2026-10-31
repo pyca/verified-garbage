@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRun
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 @[expose] public section
 
@@ -71,7 +72,7 @@ theorem finalLoad_ok (i : Fin 7) {s : State} {rest : List Instr} {Q : State → 
   have he (t : State) (d a : VReg) (j : Nat) (hj : j<4) :
       (VOp.dupE .s4 d a j).eval t=some (d,
         VArr.s4.map2 (fun w _ _ => (t.v a).extractLsb' (w*j) w) 0 0) := by
-    simp only [VOp.eval,VArr.esize,show 128/32=4 by decide,hj,ite_true]
+    simp only [reduceVOpEval,VArr.esize,show 128/32=4 by decide,hj,ite_true]
   refine VG.Proof.MlKem.AArch64.wp_vop (he s .v20 _ _ hi.1) fun s₁ h₁ =>
     VG.Proof.MlKem.AArch64.wp_vop (he s₁ .v21 _ _ hi.2.1) fun t h₂ => ?_
   have hc' : VChg [.v20,.v21] s t := h₁.chg.trans h₂.chg

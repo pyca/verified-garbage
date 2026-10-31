@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # x86-64: the calling-convention obligations
@@ -27,74 +28,74 @@ theorem exec_mxcsr {i : Instr} (hi : loadsMxcsr i = false) {s s' : State} (h : e
   cases i with
   | ldmxcsr => cases hi
   | alu op d src =>
-    simp only [exec, Taint.execAlu_eq, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    simp only [reduceExec, Taint.execAlu_eq, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨_, _, _, _, rfl⟩ := h; split <;> rfl
   | alu32 op d src =>
-    simp only [exec, Taint.execAlu32_eq, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    simp only [reduceExec, Taint.execAlu32_eq, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨_, _, _, _, rfl⟩ := h; split <;> rfl
   | aluTbl op d m n ws =>
-    simp only [exec] at h
+    simp only [reduceExec] at h
     split at h <;> [skip; cases h]
     simp only [Taint.execAluW_eq, Option.map_eq_some_iff] at h
     obtain ⟨_, _, rfl⟩ := h; split <;> rfl
   | shift32 op d n =>
-    simp only [exec, execShift32] at h
+    simp only [reduceExec, execShift32] at h
     split at h <;> [skip; cases h]
     cases op <;> (simp only [Option.some.injEq] at h; subst h; rfl)
   | shift op d n =>
-    simp only [exec, execShift] at h
+    simp only [reduceExec, execShift] at h
     split at h <;> [skip; cases h]
     cases op <;> (simp only [Option.some.injEq] at h; subst h; rfl)
-  | xop op => simp only [exec, Option.some.injEq] at h; subst h; rw [Taint.XOp.exec_eq op s]
-  | vop op => simp only [exec, Option.some.injEq] at h; subst h; rw [Taint.VOp.exec_eq op s]
+  | xop op => simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.XOp.exec_eq op s]
+  | vop op => simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.VOp.exec_eq op s]
   | vmovdquLoad len d m | vbinLoad _ len d _ m =>
-    cases len <;> simp only [exec, Option.map_eq_some_iff] at h <;> obtain ⟨_, _, rfl⟩ := h <;> rfl
-  | vmovdquTbl d m n ws | movdquTbl d m n ws => simp only [exec] at h; split at h <;> cases h; rfl
+    cases len <;> simp only [reduceExec, Option.map_eq_some_iff] at h <;> obtain ⟨_, _, rfl⟩ := h <;> rfl
+  | vmovdquTbl d m n ws | movdquTbl d m n ws => simp only [reduceExec] at h; split at h <;> cases h; rfl
   | vmovdquStore len m r =>
     cases len
-    · simp only [exec, State.store128] at h; split at h <;> cases h; rfl
-    · simp only [exec, State.store256] at h; split at h <;> cases h; rfl
-  | store m r => simp only [exec, State.store64] at h; split at h <;> cases h; rfl
-  | store32 m r => simp only [exec, State.store32] at h; split at h <;> cases h; rfl
-  | store8 m r => simp only [exec, State.store8] at h; split at h <;> cases h; rfl
-  | store16 m r => simp only [exec, State.store16] at h; split at h <;> cases h; rfl
-  | movdquStore m r => simp only [exec, State.store128] at h; split at h <;> cases h; rfl
-  | stmxcsr m => simp only [exec, State.store32] at h; split at h <;> cases h; rfl
-  | vmovdqu32Store m r => simp only [exec, State.store512] at h; split at h <;> cases h; rfl
-  | evStore m r => simp only [exec, State.store256] at h; split at h <;> cases h; rfl
+    · simp only [reduceExec, State.store128] at h; split at h <;> cases h; rfl
+    · simp only [reduceExec, State.store256] at h; split at h <;> cases h; rfl
+  | store m r => simp only [reduceExec, State.store64] at h; split at h <;> cases h; rfl
+  | store32 m r => simp only [reduceExec, State.store32] at h; split at h <;> cases h; rfl
+  | store8 m r => simp only [reduceExec, State.store8] at h; split at h <;> cases h; rfl
+  | store16 m r => simp only [reduceExec, State.store16] at h; split at h <;> cases h; rfl
+  | movdquStore m r => simp only [reduceExec, State.store128] at h; split at h <;> cases h; rfl
+  | stmxcsr m => simp only [reduceExec, State.store32] at h; split at h <;> cases h; rfl
+  | vmovdqu32Store m r => simp only [reduceExec, State.store512] at h; split at h <;> cases h; rfl
+  | evStore m r => simp only [reduceExec, State.store256] at h; split at h <;> cases h; rfl
   | kStore m k r => obtain ⟨_, rfl⟩ := State.storeMasked512_eq h; rfl
   | kStore8 m k r => obtain ⟨_, rfl⟩ := State.storeMasked512B_eq h; rfl
-  | zop op => simp only [exec, Option.some.injEq] at h; subst h; rw [Taint.ZOp.exec_eq op s]
-  | eop op => simp only [exec, Option.some.injEq] at h; subst h; rw [Taint.EOp.exec_eq op s]
+  | zop op => simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.ZOp.exec_eq op s]
+  | eop op => simp only [reduceExec, Option.some.injEq] at h; subst h; rw [Taint.EOp.exec_eq op s]
   | evLoad d | evMadd52Load _ d =>
-    simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; cases d <;> rfl
+    simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; cases d <;> rfl
   | mov | mov32 | movzx8 | movzx16 | movdquLoad | vbroadcasti128 | vmovdqu32Load | vbroadcasti32x4 | vbroadcasti32x4H | zbcst | vpbroadcastdZ | zbcstd
   | vpmadd52Load | kLoad | kLoad8 =>
-    simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
+    simp only [reduceExec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
   | bswap32 | bswap | movImm64 | leaSym | lfence | mul | imul | imul3 | andn32 | andn | vpmovmskb
   | movqR | shiftCl | shiftx =>
-    simp only [exec, Option.some.injEq] at h; subst h; rfl
-  | rorx32 => simp only [exec, execRorx32] at h; split at h <;> cases h; rfl
-  | rorx => simp only [exec, execRorx] at h; split at h <;> cases h; rfl
-  | shld => simp only [exec, execShld] at h; split at h <;> cases h; rfl
-  | btr => simp only [exec, execBtr] at h; split at h <;> cases h; rfl
+    simp only [reduceExec, Option.some.injEq] at h; subst h; rfl
+  | rorx32 => simp only [reduceExec, execRorx32] at h; split at h <;> cases h; rfl
+  | rorx => simp only [reduceExec, execRorx] at h; split at h <;> cases h; rfl
+  | shld => simp only [reduceExec, execShld] at h; split at h <;> cases h; rfl
+  | btr => simp only [reduceExec, execBtr] at h; split at h <;> cases h; rfl
   | mulx =>
-    simp only [exec, execMulx] at h; split at h
+    simp only [reduceExec, execMulx] at h; split at h
     · cases h
     · simp only [Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
   | adcx =>
-    simp only [exec, execAdcx] at h; split at h
+    simp only [reduceExec, execAdcx] at h; split at h
     · cases h
     · simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
       obtain ⟨_, _, _, _, rfl⟩ := h; rfl
   | adox =>
-    simp only [exec, execAdox] at h; split at h
+    simp only [reduceExec, execAdox] at h; split at h
     · cases h
     · simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
       obtain ⟨_, _, _, _, rfl⟩ := h; rfl
   | cmov =>
     obtain ⟨_, c, -, -, rfl⟩ := Taint.execCmov_some h; cases c <;> rfl
-  | push | pop | alloc | free => simp only [exec, reduceCtorEq] at h
+  | push | pop | alloc | free => simp only [reduceExec, reduceCtorEq] at h
 
 theorem pushRegs_mxcsr (s : State) (rs : List Reg) : (pushRegs s rs).mxcsr = s.mxcsr := by
   induction rs generalizing s with

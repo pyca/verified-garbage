@@ -21,6 +21,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Argon2.Permutation
 meta import VerifiedGarbage.Proof.Argon2.Permutation
 meta import VerifiedGarbage.Impl.Poly1305.X86_64
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # Verified Argon2 block compression on x86-64 with AVX2
@@ -114,7 +115,7 @@ theorem mask_ok {d : XReg} (hd : d ≠ .xmm13) (lo hi : BitVec 64) (s : State) :
   refine ⟨fun l hl => ?_, fun x h1 h2 l => ?_, ?_, fun r hr => ?_, ?_, ?_, ?_⟩
   · rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;>
       simp only [VOp.exec, State.lane_setV256, State.lane_setV128, State.ymm_eq, RegUpd.gpr_setReg,
-        lane_setReg, hd, ↓reduceIte, reduceCtorEq, VBinOp.sse, XBinOp.eval, qword]
+        lane_setReg, hd, ↓reduceIte, reduceCtorEq, VBinOp.sse, reduceXBinOpEval, qword]
     · exact perm44_0 lo hi
     · exact perm44_1 lo hi
   · simp only [VOp.exec, State.lane_setV256, State.lane_setV128, lane_setReg, h1, h2, ite_false]

@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Tbl
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # Instructions of the batch code, one at a time
@@ -51,14 +52,14 @@ theorem exec_tbl4 (s : State) (x : Bool) (d n m : VReg) :
 theorem exec_ldrq {s : State} {t : VReg} {n : Reg} {off : Nat} (ho : off % 16 = 0 ∧ off < 65536)
     (h : InRegions (s.rd ++ s.wr) (s.gpr n + BitVec.ofNat 64 off) 16) :
     exec (.ldrq t n off) s = some (s.setV t (s.mem.read (s.gpr n + BitVec.ofNat 64 off) 16)) := by
-  simp only [exec, addr, show off < 4096 * 16 by omega, ho, and_self, ite_true, Option.bind_some,
+  simp only [reduceExec, addr, show off < 4096 * 16 by omega, ho, and_self, ite_true, Option.bind_some,
     State.load, h, Option.map_some]
 
 theorem exec_strq {s : State} {t : VReg} {n : Reg} {off : Nat} (ho : off % 16 = 0 ∧ off < 65536)
     (h : InRegions s.wr (s.gpr n + BitVec.ofNat 64 off) 16) :
     exec (.strq t n off) s =
       some { s with mem := s.mem.write (s.gpr n + BitVec.ofNat 64 off) 16 (s.v t) } := by
-  simp only [exec, addr, show off < 4096 * 16 by omega, ho, and_self, ite_true, Option.bind_some,
+  simp only [reduceExec, addr, show off < 4096 * 16 by omega, ho, and_self, ite_true, Option.bind_some,
     State.store, h]
 
 end VG.Proof.Blowfish.AArch64

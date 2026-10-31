@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # The comb from tables in memory on AArch64: the selection by vectors
@@ -284,9 +285,9 @@ theorem selEntryV_ok (K : TCombCfg) {tb : Reg} {o c : Nat} {G : SelGroup} (hG : 
   have hmi : G.mask ≠ G.idx := fun e => hG.idx (by rw [e]; simp)
   rw [TCombCfg.selEntry]
   simp only [List.cons_append, List.nil_append]
-  refine wp_vop (d := G.idx) (x := dup2 (BitVec.ofNat 64 m)) (by simp only [VOp.eval, hidx, h18, map2_dup2, hc0]) ?_
+  refine wp_vop (d := G.idx) (x := dup2 (BitVec.ofNat 64 m)) (by simp only [reduceVOpEval, hidx, h18, map2_dup2, hc0]) ?_
   refine wp_vop (d := G.mask) (x := if a = m then BitVec.allOnes 128 else 0)
-    (by simp only [VOp.eval, RegUpd.v_setV_self, RegUpd.v_setV_of_ne _ _ hi19, h19, cmeq_dup2,
+    (by simp only [reduceVOpEval, RegUpd.v_setV_self, RegUpd.v_setV_of_ne _ _ hi19, h19, cmeq_dup2,
       ofNat_eq_iff ha hm]) ?_
   rw [WP.block_append_iff]
   refine WP.mono (ldsV_ok c hG (o := 16 * K.M.n * (m - 1) + o)
@@ -336,7 +337,7 @@ theorem movisV_ok (s : State) : ∀ rs : List VReg,
   | [] => WP.block_nil ⟨fun _ h => absurd h List.not_mem_nil, VKeep.refl _ _ _⟩
   | r :: rs => by
     rw [List.map_cons]
-    refine wp_vop (d := r) (x := 0) (by simp only [VOp.eval]) ?_
+    refine wp_vop (d := r) (x := 0) (by simp only [reduceVOpEval]) ?_
     refine WP.mono (movisV_ok (s.setV r 0) rs) fun t ⟨z, k⟩ => ⟨fun q hq => ?_, ?_⟩
     · by_cases h : q ∈ rs
       · exact z q h
@@ -367,7 +368,7 @@ theorem orrsV_ok (n : Nat) (hn : n ≤ 4) {s : State} : ∀ k ≤ n,
       k₁.v _ (not_mem_map_range fun i hi => selA_B n hn i (by omega_using [hk, hi]) k (by omega_using [hk]))
     refine wp_vop (d := (selA n).acc.getD k .v0)
       (x := s.v ((selA n).acc.getD k .v0) ||| s.v ((selB n).acc.getD k .v0))
-      (by simp only [VOp.eval, e1, e2]) (WP.block_nil ⟨fun i hi => ?_,
+      (by simp only [reduceVOpEval, e1, e2]) (WP.block_nil ⟨fun i hi => ?_,
         (k₁.mono (fun _ h => h) fun _ h => List.mem_append_left _ h).trans
         ((VKeep.setV _ _ _).mono (fun _ h => h) fun _ h => List.mem_append_right _ h)⟩)
     rcases Nat.lt_or_ge i k with h | h
@@ -531,7 +532,7 @@ theorem bcastV_ok (s : State) :
       t.v .v19 = dup2 (s.gpr .x2) ∧ t.v .v28 = dup2 (s.gpr .x5) ∧
       t.v .v18 = dup2 (s.gpr .x5 + s.gpr .x5) ∧ VKeep [] [.v18, .v19, .v28] s t := by
   apply WP.of_runBlock
-  simp only [selBcast, runBlock_cons, runStep_some, runBlock_nil, exec, VOp.eval, Option.map_some,
+  simp only [selBcast, runBlock_cons, runStep_some, runBlock_nil, exec, reduceVOpEval, Option.map_some,
     RegUpd.v_setV, RegUpd.gpr_setV, reduceCtorEq, ↓reduceIte, Option.some.injEq, exists_eq_left']
   rw [map2_dup2]
   refine ⟨trivial, trivial, rfl, fun _ _ => rfl, rfl, rfl, rfl, rfl, fun r hr => ?_⟩
@@ -559,12 +560,12 @@ theorem passV_ok (K : TCombCfg) {tb : Reg} {o c : Nat} (hc : c ≤ 4) (hoc : o +
   have nAB := regs_not_acc _ hc
   rw [TCombCfg.selPass]
   iterate 3 rw [WP.block_append_iff]
-  refine wp_vop (d := .v17) (x := 0) (by simp only [VOp.eval, selA]) ?_
+  refine wp_vop (d := .v17) (x := 0) (by simp only [reduceVOpEval, selA]) ?_
   refine wp_vop (d := .v17) (x := dup2 (0 - 1))
-    (by simp only [VOp.eval, selA, RegUpd.v_setV_self,
+    (by simp only [reduceVOpEval, selA, RegUpd.v_setV_self,
       RegUpd.v_setV_of_ne _ _ (show VReg.v28 ≠ .v17 by decide), h28]
         rw [← dup2_zero, map2_dup2]) ?_
-  refine wp_vop (d := .v30) (x := 0) (by simp only [VOp.eval, selB]) (WP.block_nil ?_)
+  refine wp_vop (d := .v30) (x := 0) (by simp only [reduceVOpEval, selB]) (WP.block_nil ?_)
   have k₁ : VKeep [] ((selA c).wr ++ (selB c).wr) s
       (((s.setV .v17 0).setV .v17 (dup2 (0 - 1))).setV .v30 0) :=
     ((VKeep.setV' _ _ (by simp [SelGroup.wr, selA])).trans (VKeep.setV' _ _ (by simp [SelGroup.wr, selA]))).trans
@@ -695,9 +696,9 @@ theorem selOneV_ok (v : Nat) {c h k : Nat} (hc : c ≤ 4) (hk : h + k ≤ c) {a 
         else s.v ((selA c).acc.getD (h + i) .v0)) ∧
       VKeep [.x6] (.v16 :: .v20 :: (List.range k).map fun i => (selA c).acc.getD (h + i) .v0) s t := by
   rw [TCombCfg.selOne, WP.block_append_iff]
-  refine wp_vop (d := .v16) (x := 0) (by simp only [VOp.eval]) ?_
+  refine wp_vop (d := .v16) (x := 0) (by simp only [reduceVOpEval]) ?_
   refine wp_vop (d := .v16) (x := if (0 : BitVec 64) = BitVec.ofNat 64 a then BitVec.allOnes 128 else 0)
-    (by simp only [VOp.eval, RegUpd.v_setV_self,
+    (by simp only [reduceVOpEval, RegUpd.v_setV_self,
       RegUpd.v_setV_of_ne _ _ (show VReg.v19 ≠ .v16 by decide), h19]
         rw [← dup2_zero, cmeq_dup2, dup2_zero]) (WP.block_nil ?_)
   refine WP.mono (fixV_ok v hc (h := h) k hk) fun t ⟨f, kt⟩ => ⟨fun i hi => ?_, ?_⟩

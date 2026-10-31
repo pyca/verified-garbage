@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 @[expose] public section
 
@@ -72,7 +73,7 @@ def opState (s : VG.AArch64.State) : Op → VG.AArch64.State
   | .bcax d n m a => s.setV d (s.v n ^^^ (s.v m &&& ~~~(s.v a)))
 
 theorem op_exec (s : VG.AArch64.State) (op : Op) : exec op.instr s = some (opState s op) := by
-  cases op <;> simp only [Op.instr, exec_vop, VOp.eval, opState, Option.map_some]
+  cases op <;> simp only [Op.instr, exec_vop, reduceVOpEval, opState, Option.map_some]
   rename_i k
   simp only [k.isLt, ite_true, Option.map_some]
 

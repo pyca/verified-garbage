@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Gcm.Spec
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 /-! XOR the encrypted SIMD lanes into writable data. The execution proof
 keeps register updates folded, and expresses memory through writeW. -/
@@ -50,7 +51,7 @@ theorem xor1_ok (b : XReg) (d : Nat) (s : State) (hb : b ≠ .xmm7)
   have hin' := inRegions_wr hin
   apply WP.of_runBlock
   simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil,
-    exec, XOp.exec, isa, State.load128, State.store128, ea_setXmm,
+    reduceExec, XOp.exec, isa, State.load128, State.store128, ea_setXmm,
     gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, xmm_setXmm,
     hin, hin', hb,
     Option.map_some, Option.some.injEq, exists_eq_left']

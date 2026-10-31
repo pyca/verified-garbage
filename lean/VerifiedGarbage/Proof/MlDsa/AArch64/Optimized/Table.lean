@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 @[expose] public section
 
@@ -41,7 +42,7 @@ theorem rootPair_ok (src : VReg) (i : Nat) (hi : i < 2) (hs : src ≠ .v18)
   have he (t : State) (d : VReg) (j : Nat) (hj : j < 4) :
       (VOp.dupE .s4 d src j).eval t = some (d,
         VArr.s4.map2 (fun w _ _ => (t.v src).extractLsb' (w*j) w) 0 0) := by
-    simp only [VOp.eval, VArr.esize, show 128 / 32 = 4 by decide, hj, ite_true]
+    simp only [reduceVOpEval, VArr.esize, show 128 / 32 = 4 by decide, hj, ite_true]
   refine wp_vop (he s .v18 (2*i) (by omega)) fun s₁ h₁ =>
     wp_vop (he s₁ .v19 (2*i+1) (by omega)) fun s₂ h₂ => ?_
   refine k s₂ (h₁.chg.trans h₂.chg) ?_ ?_

@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # Multiword arithmetic on x86-64: the steps of the BMI2/ADX multiplication
@@ -86,7 +87,7 @@ theorem mulx_ok (s : State) {hi lo : Reg} {src : Src} {v : BitVec 64}
     | reg r => simp only [execMulx, hsrc, Option.map_some]
     | mem m => simp only [execMulx, hsrc, Option.map_some]
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, he, RegUpd.gpr_setReg_self,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, he, RegUpd.gpr_setReg_self,
     RegUpd.gpr_setReg_of_ne _ _ (Ne.symm hhl), Option.some.injEq, exists_eq_left']
   refine ⟨mulx_arith _ _, rfl, rfl, fun r hr => ?_, rfl, rfl, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -104,7 +105,7 @@ theorem adcx_ok (s : State) {dst : Reg} {src : Src} {v : BitVec 64} {c : Bool}
     | reg r => simp only [execAdcx, hsrc, hc, Option.bind_some, Option.map_some]
     | mem m => simp only [execAdcx, hsrc, hc, Option.bind_some, Option.map_some]
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, he, Option.some.injEq, exists_eq_left']
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, he, Option.some.injEq, exists_eq_left']
   refine ⟨_, rfl, rfl, ?_, fun r hr => ?_, rfl, rfl, rfl⟩
   · simp only [RegUpd.gpr_setReg_self]
     exact adc_carry _ _ _
@@ -123,7 +124,7 @@ theorem adox_ok (s : State) {dst : Reg} {src : Src} {v : BitVec 64} {o : Bool}
     | reg r => simp only [execAdox, hsrc, ho, Option.bind_some, Option.map_some]
     | mem m => simp only [execAdox, hsrc, ho, Option.bind_some, Option.map_some]
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, he, Option.some.injEq, exists_eq_left']
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, he, Option.some.injEq, exists_eq_left']
   refine ⟨_, rfl, rfl, ?_, fun r hr => ?_, rfl, rfl, rfl⟩
   · simp only [RegUpd.gpr_setReg_self]
     exact adc_carry _ _ _
@@ -135,7 +136,7 @@ theorem movZero_ok (s : State) (r : Reg) :
     WP isa (.block [.mov32 r (.imm 0)]) s fun s' =>
       s'.gpr r = 0 ∧ s'.cf = s.cf ∧ s'.of = s.of ∧ Keeps [r] s s' := by
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, Option.map_some, State.setReg32,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc32, Option.map_some, State.setReg32,
     RegUpd.gpr_setReg_self, Option.some.injEq, exists_eq_left']
   refine ⟨rfl, rfl, rfl, fun r' hr => ?_, rfl, rfl, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -222,7 +223,7 @@ theorem xorRsi_ok (s : State) :
     WP isa (.block [.alu32 .xor .rsi (.reg .rsi)]) s fun s' =>
       s'.gpr .rsi = 0 ∧ s'.cf = some false ∧ s'.of = some false ∧ Keeps [.rsi] s s' := by
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu32, readSrc32, Option.bind_some,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu32, readSrc32, Option.bind_some,
     State.setReg32, Option.some.injEq, exists_eq_left']
   refine ⟨?_, rfl, rfl, fun r hr => ?_, rfl, rfl, rfl⟩
   · simp only [RegUpd.gpr_setReg_self, BitVec.xor_self]; rfl
@@ -234,7 +235,7 @@ theorem movMem_ok (s : State) {dst : Reg} {m : MemOp} {v : BitVec 64} (hsrc : re
     WP isa (.block [.mov dst (.mem m)]) s fun s' =>
       s'.gpr dst = v ∧ s'.cf = s.cf ∧ s'.of = s.of ∧ Keeps [dst] s s' := by
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, hsrc, Option.map_some, Option.some.injEq,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, hsrc, Option.map_some, Option.some.injEq,
     exists_eq_left']
   refine ⟨RegUpd.gpr_setReg_self .., rfl, rfl, fun r hr => ?_, rfl, rfl, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

@@ -5,6 +5,7 @@ public import VerifiedGarbage.TCB.X86_64.Isa
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # x86-64: AVX2 blocks as SSE blocks on each lane
@@ -124,12 +125,12 @@ theorem laneSse_ok {i : Instr} {ss : List Instr} (h : laneSse i = some ss) (s : 
     rw [proj_setV256 _ _ _ _ hl]
     split at h
     · subst_vars; cases h
-      simp only [runBlock, exec, XOp.exec, Option.bind_some, State.proj_xmm]
+      simp only [runBlock, reduceExec, XOp.exec, Option.bind_some, State.proj_xmm]
       rcases lane01 hl with rfl | rfl <;> rfl
     · split at h
       · cases h
       · rename_i h1 h2; cases h
-        simp only [runBlock, exec, XOp.exec, Option.bind_some, State.proj_xmm]
+        simp only [runBlock, reduceExec, XOp.exec, Option.bind_some, State.proj_xmm]
         rw [RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne _ _ h2, setXmm_setXmm, eval_movdqa]
         rcases lane01 hl with rfl | rfl <;> rfl
   case vpclmulqdq len d a b n =>
@@ -143,12 +144,12 @@ theorem laneSse_ok {i : Instr} {ss : List Instr} (h : laneSse i = some ss) (s : 
     rw [proj_setV256 _ _ _ _ hl]
     split at h
     · subst_vars; cases h
-      simp only [runBlock, exec, XOp.exec, Option.bind_some, State.proj_xmm]
+      simp only [runBlock, reduceExec, XOp.exec, Option.bind_some, State.proj_xmm]
       rcases lane01 hl with rfl | rfl <;> rfl
     · split at h
       · cases h
       · rename_i h1 h2; cases h
-        simp only [runBlock, exec, XOp.exec, Option.bind_some, State.proj_xmm]
+        simp only [runBlock, reduceExec, XOp.exec, Option.bind_some, State.proj_xmm]
         rw [RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne _ _ h2, setXmm_setXmm, eval_movdqa]
         rcases lane01 hl with rfl | rfl <;> rfl
   case vshift op len d a n =>
@@ -161,10 +162,10 @@ theorem laneSse_ok {i : Instr} {ss : List Instr} (h : laneSse i = some ss) (s : 
     rw [proj_setV256 _ _ _ _ hl]
     split at h
     · subst_vars; cases h
-      simp only [runBlock, exec, XOp.exec, Option.bind_some, State.proj_xmm]
+      simp only [runBlock, reduceExec, XOp.exec, Option.bind_some, State.proj_xmm]
       rcases lane01 hl with rfl | rfl <;> rfl
     · cases h
-      simp only [runBlock, exec, XOp.exec, Option.bind_some, State.proj_xmm]
+      simp only [runBlock, reduceExec, XOp.exec, Option.bind_some, State.proj_xmm]
       rw [RegUpd.xmm_setXmm_self, setXmm_setXmm, eval_movdqa]
       rcases lane01 hl with rfl | rfl <;> rfl
   case vpshufd len d a o =>
@@ -177,7 +178,7 @@ theorem laneSse_ok {i : Instr} {ss : List Instr} (h : laneSse i = some ss) (s : 
     subst hlen
     cases h
     rw [proj_setV256 _ _ _ _ hl]
-    simp only [runBlock, exec, XOp.exec, Option.bind_some, State.proj_xmm]
+    simp only [runBlock, reduceExec, XOp.exec, Option.bind_some, State.proj_xmm]
     rcases lane01 hl with rfl | rfl <;> rfl
   case vmovdqa len d a =>
     refine ⟨s.setV len d (s.lane a 0) (s.lane a 1), rfl, VKeep.setV .., fun l hl => ?_⟩
@@ -188,7 +189,7 @@ theorem laneSse_ok {i : Instr} {ss : List Instr} (h : laneSse i = some ss) (s : 
     subst hlen
     cases h
     rw [proj_setV256 _ _ _ _ hl]
-    simp only [runBlock, exec, XOp.exec, Option.bind_some, State.proj_xmm]
+    simp only [runBlock, reduceExec, XOp.exec, Option.bind_some, State.proj_xmm]
     rcases lane01 hl with rfl | rfl <;> rfl
 
 theorem laneSseBlock_ok {vs ss : List Instr} (h : laneSseBlock vs = some ss) (s : State) :

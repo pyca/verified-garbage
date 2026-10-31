@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # Interleaved counter mode and GHASH: the setting
@@ -121,7 +122,7 @@ theorem store16_ok (x x' : XReg) (b : Reg) (s : State) (h0 : s.lane .xmm0 0 = re
   simp only [State.lane] at h0
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, VOp.exec, isa, State.setV, State.store128_eq,
-    VG.Proof.Gcm.X86_64.Pclmul.ea_at, VBinOp.sse, State.lane, ite_true, hin', h0, Option.some.injEq,
+    VG.Proof.Gcm.X86_64.Pclmul.ea_at, reduceVBinOpSse, State.lane, ite_true, hin', h0, Option.some.injEq,
     exists_eq_left']
   refine ⟨by rw [BitVec.ofInt_natCast, BitVec.add_zero]; simp, rfl, rfl, rfl, fun r hr l hl => ?_⟩
   rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> simp [hr]

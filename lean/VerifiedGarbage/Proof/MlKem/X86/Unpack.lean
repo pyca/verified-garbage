@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.MlKem.Compress
 public import VerifiedGarbage.Impl.MlKem.X86.Compress
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86.Reduce
 
 /-!
 # ML-KEM on x86 (32-bit): unpacking and decompressing coefficients
@@ -53,7 +54,7 @@ theorem decomp_spec {d : Nat} (hd : d ∈ compressWidths) (is : List Instr) (s :
     rcases mem_compressWidths hd with rfl | rfl | rfl <;> refine ⟨by decide, by decide, ?_⟩ <;> omega
   rw [WP.block_append_iff]
   apply WP.of_runBlock
-  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, decompOp, runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, decompOp, runBlock_cons, runStep_some, runBlock_nil, reduceExec,
     execAlu, execShift, execMul, readSrc, State.setReg, arithFlags, State.setFlags, Option.bind_some,
     Option.map_some, Option.some.injEq, exists_eq_left', hd'.1, hd'.2.1, and_self]
   refine k _ ⟨fun r hr => ?_, rfl, rfl, rfl⟩ ?_
@@ -102,7 +103,7 @@ theorem unpackStep_spec {d : Nat} (hd : d ∈ compressWidths) (j : Nat) (hj : d 
   refine wp_cons (s' := (s₁.setFlags (some false) (some false)
     (some (s₁.gpr .eax &&& BitVec.ofNat 32 (2 ^ d - 1) == 0))
     (some (s₁.gpr .eax &&& BitVec.ofNat 32 (2 ^ d - 1)).msb)).setReg .eax
-    (s₁.gpr .eax &&& BitVec.ofNat 32 (2 ^ d - 1))) (by simp only [exec, execAlu, readSrc,
+    (s₁.gpr .eax &&& BitVec.ofNat 32 (2 ^ d - 1))) (by simp only [reduceExec, execAlu, readSrc,
       Option.bind_some, arithFlags]) ?_
   have hy : ((s₁.gpr .eax &&& BitVec.ofNat 32 (2 ^ d - 1))).toNat = B / 2 ^ (d * j) % 2 ^ d := by
     rw [toNat_and_mask _ _ hd', v₁, toNat_shr, hB]

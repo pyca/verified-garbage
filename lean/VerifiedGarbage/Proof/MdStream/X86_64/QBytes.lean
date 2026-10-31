@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # The bytes of 64-bit words, shifted, and moved into SSE registers
@@ -68,7 +69,7 @@ theorem byte_punpcklqdq (a b : BitVec 64) (i : Nat) :
     simp only [qword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, Nat.mul_zero, Nat.zero_add, hj,
       decide_true, Bool.true_and, ite_true]
   rw [show XBinOp.eval .punpcklqdq ((0 : BitVec 64) ++ a) ((0 : BitVec 64) ++ b) = b ++ a by
-    simp only [XBinOp.eval, e]]
+    simp only [reduceXBinOpEval, e]]
   apply BitVec.eq_of_getLsbD_eq
   intro j hj
   by_cases h : i < 8

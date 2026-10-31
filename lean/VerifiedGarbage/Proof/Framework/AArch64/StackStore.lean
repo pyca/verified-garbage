@@ -4,6 +4,7 @@ import Std.Data.DTreeMap.Internal.Balancing
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 
 /-! Execution of an aligned stack-relative word store. -/
@@ -16,7 +17,7 @@ theorem exec_storeSp {s : State} {t : Reg} {off : Nat}
     (h : InRegions s.wr (s.sp + BitVec.ofNat 64 off) 8) :
     exec (.strSp t off) s =
       some { s with mem := s.mem.writeW (s.sp + BitVec.ofNat 64 off) (s.gpr t) } := by
-  simp only [exec, ho, and_self, ite_true, State.store, h, Mem.writeW]
+  simp only [reduceExec, ho, and_self, ite_true, State.store, h, Mem.writeW]
   rfl
 
 end VG.Proof.Bignum.AArch64

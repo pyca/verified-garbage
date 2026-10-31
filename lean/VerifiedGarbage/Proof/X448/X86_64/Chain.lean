@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import Batteries.Data.List.Basic
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # X448 on x86-64: carry chains, loads and stores
@@ -102,7 +103,7 @@ theorem adcs_ok (X : List Reg) (s₀ : State) :
     let c1 := decide (2 ^ 64 ≤ (s.gpr r).toNat + v.toNat + c.toNat)
     let s1 := (arithFlags s x c1 (addOverflow (s.gpr r) v x)).setReg r x
     have he : exec (.alu .adc r src) s = some s1 := by
-      simp only [exec, execAlu, hv', hc, Option.bind_some, Option.map_some]; rfl
+      simp only [reduceExec, execAlu, hv', hc, Option.bind_some, Option.map_some]; rfl
     rw [chain, WP.block_cons_iff]
     refine ⟨s1, he, ?_⟩
     have hk1 : Keeps X s₀ s1 := hk.setFlagsReg hrX x x c1 _
@@ -141,7 +142,7 @@ theorem add_chain_ok (X : List Reg) (s : State) (r : Reg) (rs : List Reg) (src :
   let c1 := decide (2 ^ 64 ≤ (s.gpr r).toNat + v.toNat)
   let s1 := (arithFlags s x c1 (addOverflow (s.gpr r) v x)).setReg r x
   have he : exec (.alu .add r src) s = some s1 := by
-    simp only [exec, execAlu, hv.read, Option.bind_some]; rfl
+    simp only [reduceExec, execAlu, hv.read, Option.bind_some]; rfl
   rw [chain, WP.block_cons_iff]
   refine ⟨s1, he, ?_⟩
   have hk1 : Keeps X s s1 := (Keeps.refl X s).setFlagsReg hrX x x c1 _
@@ -191,7 +192,7 @@ theorem sbbs_ok (X : List Reg) (s₀ : State) :
     let c1 := decide ((s.gpr r).toNat < v.toNat + c.toNat)
     let s1 := (arithFlags s x c1 (subOverflow (s.gpr r) v x)).setReg r x
     have he : exec (.alu .sbb r src) s = some s1 := by
-      simp only [exec, execAlu, hv', hc, Option.bind_some, Option.map_some]; rfl
+      simp only [reduceExec, execAlu, hv', hc, Option.bind_some, Option.map_some]; rfl
     rw [chain, WP.block_cons_iff]
     refine ⟨s1, he, ?_⟩
     have hk1 : Keeps X s₀ s1 := hk.setFlagsReg hrX x x c1 _
@@ -230,7 +231,7 @@ theorem sub_chain_ok (X : List Reg) (s : State) (r : Reg) (rs : List Reg) (src :
   let c1 := decide ((s.gpr r).toNat < v.toNat)
   let s1 := (arithFlags s x c1 (subOverflow (s.gpr r) v x)).setReg r x
   have he : exec (.alu .sub r src) s = some s1 := by
-    simp only [exec, execAlu, hv.read, Option.bind_some]; rfl
+    simp only [reduceExec, execAlu, hv.read, Option.bind_some]; rfl
   rw [chain, WP.block_cons_iff]
   refine ⟨s1, he, ?_⟩
   have hk1 : Keeps X s s1 := (Keeps.refl X s).setFlagsReg hrX x x c1 _
@@ -270,7 +271,7 @@ theorem loads_ok {s : State} {base : Addr} (hs : Scr s base) :
     have hl : (r :: rs).length = rs.length + 1 := rfl
     rw [loads, WP.block_cons_iff]
     refine ⟨s.setReg r (word s.mem base o), by
-      simp only [exec, readSrc_sc hs (d := o) (by omega_arith), Option.map_some], ?_⟩
+      simp only [reduceExec, readSrc_sc hs (d := o) (by omega_arith), Option.map_some], ?_⟩
     have hs1 : Scr (s.setReg r (word s.mem base o)) base :=
       ⟨by rw [RegUpd.gpr_setReg_of_ne _ _ (Ne.symm hrd)]; exact hs.rdi, hs.wr, hs.nowrap⟩
     refine WP.mono (loads_ok hs1 (o + 8) rs (List.nodup_cons.mp hnd).2
@@ -353,7 +354,7 @@ theorem shl32_ok (s : State) (h : (s.gpr .r15).toNat < 2 ^ 32) :
       (s'.gpr .rax).toNat = (s.gpr .r15).toNat * 2 ^ 32 ∧ Keeps [.rax] s s' := by
   apply WP.of_runBlock
   have h32 : (1 ≤ 32 ∧ 32 ≤ 63) = True := by decide
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execShift, h32, ite_true,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, execShift, h32, ite_true,
     Option.map_some, RegUpd.gpr_setReg_self, Option.some.injEq, exists_eq_left']
   refine ⟨rotr32 _ h, fun r hr => ?_, rfl, rfl, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -481,7 +482,7 @@ theorem mulStep_ok (s : State) {t c ai : Reg} {ld : Instr} {v : BitVec 64}
       Keeps [t, c, .rax, .rdx] s s' := by
   apply WP.of_runBlock
   simp only [mulStep, runBlock_cons, hld, runStep_some]
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execMul,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, execMul,
     execAlu, Option.map_some, Option.bind_some, RegUpd.gpr_setReg, RegUpd.gpr_setFlags,
     RegUpd.gpr_arithFlags, RegUpd.cf_arithFlags, RegUpd.cf_setReg, ite_true, ha, hc, ht, htc, hc', ht',
     Ne.symm htc, Ne.symm ht', ite_false, reduceCtorEq, Option.some.injEq, exists_eq_left', se0]
@@ -504,14 +505,14 @@ theorem ldStable_sc {X : List Reg} {s : State} {base : Addr} (hs : Scr s base) (
     {d : Nat} (hd : d + 8 ≤ 8192) :
     LdStable X s (.mov .rax (.mem (sc d))) (word s.mem base d) := fun t hg hm _ hwr => by
   have ht : Scr t base := ⟨(hg _ hX).trans hs.rdi, hwr ▸ hs.wr, hs.nowrap⟩
-  simp only [exec, readSrc_sc ht hd, hm, Option.map_some]
+  simp only [reduceExec, readSrc_sc ht hd, hm, Option.map_some]
 
 theorem ldStable_sc32 {X : List Reg} {s : State} {base : Addr} (hs : Scr s base) (hX : .rdi ∉ X)
     {d : Nat} (hd : d + 8 ≤ 8192) :
     LdStable X s (.mov32 .rax (.mem (sc d))) ((s.mem.readW (off base d) 32).setWidth 64) :=
   fun t hg hm _ hwr => by
     have ht : Scr t base := ⟨(hg _ hX).trans hs.rdi, hwr ▸ hs.wr, hs.nowrap⟩
-    simp only [exec, readSrc32, State.load32, ea_sc, ht.rdi, ht.read (d := d) (n := 4) (by omega_arith),
+    simp only [reduceExec, readSrc32, State.load32, ea_sc, ht.rdi, ht.read (d := d) (n := 4) (by omega_arith),
       ite_true, hm, Option.map_some, State.setReg32]
 
 /-- Multiply-accumulate steps along `ts`: `ts + 2^(64n) rbp = ts + rbp + rcx · vs`. -/

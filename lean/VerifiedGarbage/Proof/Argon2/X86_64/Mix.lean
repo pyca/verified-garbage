@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Argon2.X86_64.Compress
 public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-! # Argon2's modified addition on x86-64 -/
 
@@ -36,7 +37,7 @@ theorem addMul_ok {a b : Reg}
       (∀ r, r ≠ a → r ≠ .rax → r ≠ .rdx → r ≠ .rsi → t.gpr r = s.gpr r) ∧
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   apply WP.of_runBlock
-  simp only [addMul, runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [addMul, runBlock_cons, runStep_some, runBlock_nil, reduceExec,
     readSrc32, readSrc, State.setReg32, execMul, execAlu,
     RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
     RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags,
@@ -56,7 +57,7 @@ theorem xorRotate_ok {a d : Reg} (n : Nat)
       (∀ r, r ≠ d → t.gpr r = s.gpr r) ∧
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, execAlu,
     execShift, hn, hn', and_self, ite_true, Option.bind_some,
     Option.some.injEq, exists_eq_left', RegUpd.gpr_setReg, RegUpd.mem_setReg,
     RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_setFlags, RegUpd.mem_setFlags,

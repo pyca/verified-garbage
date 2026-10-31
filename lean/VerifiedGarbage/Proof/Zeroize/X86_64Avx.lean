@@ -12,6 +12,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # `vg_zeroize_avx` on x86-64
@@ -113,7 +114,7 @@ theorem correctAvx (s₀ : State) (hp : contract.pre s₀) :
       (show ∀ p : Addr, p + BitVec.ofNat 64 0 = p from BitVec.add_zero), VOp.exec_gpr, VOp.exec_mem,
       VOp.exec_wr]
     refine ⟨⟨⟨fun _ h => absurd h (Nat.not_lt_zero _), Frame.refl _ _⟩, ?_⟩, rfl⟩
-    simp only [State.setReg, State.setFlags, VOp.exec, State.setV, VBinOp.sse, XBinOp.eval, BitVec.xor_self,
+    simp only [State.setReg, State.setFlags, VOp.exec, State.setV, reduceVBinOpSse, reduceXBinOpEval, BitVec.xor_self,
       ite_true]
     rfl
   unfold zeroizeAvx

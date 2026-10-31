@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Aes.X86_64.AesNi
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Gcm.X86_64.Rev
 public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 @[expose] public section
 
@@ -119,7 +120,7 @@ theorem aesenc_st (v k : BitVec 128) (rk : List Byte) (hk : ∀ i < 16, byte k i
     st (XBinOp.eval .aesenc v k) = addRoundKey (mixColumns (shiftRows (subBytes (st v)))) rk := by
   apply st_ext; intro i hi
   rw [getD_st _ hi, getD_addRoundKey _ _ hi, getD_mixColumns _ hi, ← hk i hi]
-  simp only [XBinOp.eval, byte_xor]
+  simp only [reduceXBinOpEval, byte_xor]
   rw [byte_mixColumns _ hi]
   have hr : ∀ k, (i % 4 + k) % 4 + 4 * (i / 4) < 16 := fun k => by omega
   have hs : ∀ j, j % 4 + 4 * ((j / 4 + j % 4) % 4) < 16 := fun j => by omega
@@ -131,7 +132,7 @@ theorem aesenclast_st (v k : BitVec 128) (rk : List Byte) (hk : ∀ i < 16, byte
     st (XBinOp.eval .aesenclast v k) = addRoundKey (shiftRows (subBytes (st v))) rk := by
   apply st_ext; intro i hi
   rw [getD_st _ hi, getD_addRoundKey _ _ hi, ← hk i hi]
-  simp only [XBinOp.eval, byte_xor]
+  simp only [reduceXBinOpEval, byte_xor]
   have hs : ∀ j, j % 4 + 4 * ((j / 4 + j % 4) % 4) < 16 := fun j => by omega
   simp only [byte_mapBytes _ _ hi, getD_shiftRows _ hi, byte_shiftRows _ hi, sbox_eq,
     getD_subBytes _ (hs _), getD_st _ (hs _)]
@@ -338,7 +339,7 @@ theorem keyOp_ok (regs : List XReg) (op : XBinOp) (a : MemOp) (s : State) (hnd :
       XFrame (.xmm8 :: regs) s s' := by
   rw [keyOp, WP.block_cons_iff]
   refine ⟨s.setXmm .xmm8 (s.mem.readW (s.ea a) 128), by
-    simp [isa, exec, State.load128, hin], ?_⟩
+    simp [isa, reduceExec, State.load128, hin], ?_⟩
   refine WP.mono (map_ok op regs _ hnd h8) fun s' ⟨hv, hf⟩ => ⟨fun b hb => ?_, ?_⟩
   · have hb8 : b ≠ .xmm8 := fun h => h8 (h ▸ hb)
     rw [hv b hb]; simp [State.setXmm, hb8]
@@ -392,7 +393,7 @@ theorem cmpRsi_ok (s : State) (c : BitVec 32) (nr : Nat) (hrsi : s.gpr .rsi = Bi
     WP isa (.block [.alu .cmp .rsi (.imm c)]) s fun s' =>
       s'.zf = some (BitVec.ofNat 64 nr - c.signExtend 64 == 0) ∧ XFrame [] s s' := by
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, execAlu, readSrc, arithFlags,
     State.setFlags, isa, hrsi, Option.bind_some, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, rfl, rfl, rfl, rfl, fun _ _ => rfl⟩
 

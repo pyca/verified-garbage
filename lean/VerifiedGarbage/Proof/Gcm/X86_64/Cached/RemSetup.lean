@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # The setup of the blocks after the last group
@@ -71,7 +72,7 @@ theorem remCtr_ok (s : State) {r : Nat} (hr : r < 2 ^ 32) (h10 : s.gpr .r10 = Bi
   rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil ?_⟩
-  simp only [VOp.exec, VBinOp.sse, State.lane_setV128, ↓reduceIte, reduceCtorEq, h10, h0, paddd_rep _ r hr]
+  simp only [VOp.exec, reduceVBinOpSse, State.lane_setV128, ↓reduceIte, reduceCtorEq, h10, h0, paddd_rep _ r hr]
 
 /-- A 16-byte store of `x` to `[b]`. -/
 theorem store16_ok (x : XReg) (b : Reg) (s : State) (hin : InRegions s.wr (s.gpr b + BitVec.ofInt 64 ((0 : Nat) : Int)) 16) :

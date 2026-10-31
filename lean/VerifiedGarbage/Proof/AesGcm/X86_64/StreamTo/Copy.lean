@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: copying bytes
@@ -53,7 +54,7 @@ theorem copyLoopL_ok (s : State) {S D : Addr} {n : Nat} (h : CopyPre s S D n) :
       (∀ r, r ≠ .rax → r ≠ .r10 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨s₁, run₁, r10₁, g₁⟩ : ∃ s₁, runBlock isa [.mov32 .r10 (imm 0)] s = some s₁ ∧
       s₁.gpr .r10 = BitVec.ofNat 64 0 ∧ s₁ = s.setReg .r10 (BitVec.setWidth 64 (BitVec.ofNat 32 0)) :=
-    ⟨_, by simp only [imm, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, Option.map_some,
+    ⟨_, by simp only [imm, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc32, Option.map_some,
       State.setReg32], by simp [gpr_setReg], rfl⟩
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   subst g₁

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # ChaCha20 on x86-64 with AVX-512: straight-line code, doubleword by doubleword
@@ -321,7 +322,7 @@ theorem sstep_ok {s₀ : State} (hc : Ctx s₀) {σ σ' : Sym} {s : State} (h : 
     refine ⟨s.setZ d ((s.mem.readW ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) 512).extractLsb' 0 128)
       ((s.mem.readW ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) 512).extractLsb' 128 128)
       ((s.mem.readW ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) 512).extractLsb' 256 128)
-      ((s.mem.readW ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) 512).extractLsb' 384 128), by simp only [exec, ea, State.load512, hin, ite_true, Option.map_some],
+      ((s.mem.readW ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) 512).extractLsb' 384 128), by simp only [reduceExec, ea, State.load512, hin, ite_true, Option.map_some],
       h.setReg (fun r p hp => ?_) (by simp) (by simp) (by simp) (by simp)⟩
     rw [zw_split, State.zlane_setZ _ _ _ _ _ _ _ (div4_lt hp)]
     split
@@ -336,7 +337,7 @@ theorem sstep_ok {s₀ : State} (hc : Ctx s₀) {σ σ' : Sym} {s : State} (h : 
     refine ⟨s.setZ d (s.mem.readW ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) 128)
       (s.mem.readW ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) 128)
       (s.mem.readW ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) 128)
-      (s.mem.readW ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) 128), by simp only [exec, ea, State.load128, hin, ite_true, Option.map_some],
+      (s.mem.readW ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) 128), by simp only [reduceExec, ea, State.load128, hin, ite_true, Option.map_some],
       h.setReg (fun r p hp => ?_) (by simp) (by simp) (by simp) (by simp)⟩
     rw [zw_split, State.zlane_setZ _ _ _ _ _ _ _ (div4_lt hp)]
     split
@@ -355,7 +356,7 @@ theorem sstep_ok {s₀ : State} (hc : Ctx s₀) {σ σ' : Sym} {s : State} (h : 
     have ea : s.ea m = (regn s₀ b).base + BitVec.ofNat 64 (4 * i) := by rw [hea, h.gpr]; rfl
     have hin := in_regn hc hb h.wr hi'
     refine ⟨s.setMem (s.mem.writeW ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) (s.zmm r)),
-      by simp only [exec, ea, State.store512_eq, hin, ite_true], ⟨fun r' p hp => ?_,
+      by simp only [reduceExec, ea, State.store512_eq, hin, ite_true], ⟨fun r' p hp => ?_,
       fun b' i' hb' hi'' => ?_, by simp [h.gpr], by simp [h.rd], by simp [h.wr], ?_, fun hd => by cases hd⟩⟩
     · simp only [zw_split, State.setMem_zlane]; exact h.reg r' p hp
     · simp only [State.setMem_mem]
@@ -400,7 +401,7 @@ theorem sstep_ok {s₀ : State} (hc : Ctx s₀) {σ σ' : Sym} {s : State} (h : 
     generalize hvd : s.mem.readW ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) 32 = v at hv
     refine ⟨s.setZ d (v ++ v ++ v ++ v) (v ++ v ++ v ++ v) (v ++ v ++ v ++ v) (v ++ v ++ v ++ v), ?_,
       h.setReg (fun r p hp => ?_) (by simp) (by simp) (by simp) (by simp)⟩
-    · simp only [exec, ea, State.load32, hin, ite_true, Option.map_some, hvd]
+    · simp only [reduceExec, ea, State.load32, hin, ite_true, Option.map_some, hvd]
     · rw [zw_split, State.zlane_setZ _ _ _ _ _ _ _ (div4_lt hp)]
       split
       · rw [pick4_same _ (div4_lt hp), dword_rep4 _ (mod4_lt p)]; exact hv
@@ -416,7 +417,7 @@ theorem sstep_ok {s₀ : State} (hc : Ctx s₀) {σ σ' : Sym} {s : State} (h : 
       (XBinOp.eval .paddd (s.zlane a 1) (v ++ v ++ v ++ v)) (XBinOp.eval .paddd (s.zlane a 2) (v ++ v ++ v ++ v))
       (XBinOp.eval .paddd (s.zlane a 3) (v ++ v ++ v ++ v)), ?_,
       h.setReg (fun r p hp => ?_) (by simp) (by simp) (by simp) (by simp)⟩
-    · simp only [exec, ea, State.load32, hin, ite_true, Option.map_some, ZBcstDOp.sse, hvd]
+    · simp only [reduceExec, ea, State.load32, hin, ite_true, Option.map_some, ZBcstDOp.sse, hvd]
     · rw [zw_split, State.zlane_setZ _ _ _ _ _ _ _ (div4_lt hp)]
       split
       · rw [pick4_fn (fun l => XBinOp.eval .paddd (s.zlane a l) (v ++ v ++ v ++ v)) (div4_lt hp),

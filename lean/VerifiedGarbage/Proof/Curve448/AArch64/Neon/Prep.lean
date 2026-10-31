@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Convert
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 
 /-!
 # The constants, the operand sums and the shifted second operands
@@ -32,7 +33,7 @@ theorem consts_ok {s : State} {base : Addr} (hs : Scr s base) :
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.gpr = s.gpr ∧
       (∀ r : VReg, r ≠ V 30 → r ≠ V 31 → t.v r = s.v r) ∧ Scr t base := by
   refine WP.of_runBlock ⟨_, by
-    simp only [consts, runBlock_cons, runStep_some, runBlock_nil, exec, vo, VOp.eval,
+    simp only [consts, runBlock_cons, runStep_some, runBlock_nil, exec, vo, reduceVOpEval,
       Option.map_some]; rfl, ?_⟩
   refine ⟨fun e he => ?_, ?_, rfl, rfl, rfl, by simp only [RegUpd.gpr_setV], fun r h1 h2 => ?_,
     scr_of hs (by simp only [RegUpd.gpr_setV]) rfl⟩

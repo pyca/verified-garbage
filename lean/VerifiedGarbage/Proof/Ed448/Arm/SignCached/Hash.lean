@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Reduce
 
 /-!
 # Ed448 signing with a cached public key on ARMv7: the hashes
@@ -139,7 +140,7 @@ theorem prune_step (hc : Ctx L g m₀ t) (hL : L.Ok) :
         Spec.Ed448.prune (Spec.Ed448.bytesAt t.mem (State.addr L.E + BitVec.ofNat 64 S) 114) := by
   unfold prune
   refine WP.seq (VG.Proof.X25519.Arm.WP.cons (s' := t.setReg .r12 (t.sp + BitVec.ofNat 32 S))
-    (by simp [exec, S]) (WP.block_nil ?_))
+    (by simp [reduceExec, S]) (WP.block_nil ?_))
   have hsp := hc.sp
   have ht := hL.top
   have e12 : (t.setReg .r12 (t.sp + BitVec.ofNat 32 S)).gpr .r12 = L.E + BitVec.ofNat 32 S := by

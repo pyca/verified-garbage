@@ -68,6 +68,19 @@ def module(build, name, dep="1", body="x", log=None):
     write(lib / (name + ".trace"), json.dumps(trace))
 
 
+def compile_c(build, name):
+    """Marks `name`'s C as compiled, as Lake leaves its object."""
+    write(build / "ir" / (name + ".c.o.export"), "object")
+    write(build / "ir" / (name + ".c.o.export.hash"), "0")
+
+
+def as_restored(files):
+    """A tree of files (path to bytes) as unpacking it gives it: the `.c` of
+    a module the build did not compile is empty."""
+    return {path: b"" if path.suffix == ".c" and path.with_name(path.name + ".o.export") not in files
+            else data for path, data in files.items()}
+
+
 class LeanArchiveTests(unittest.TestCase):
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
@@ -82,6 +95,7 @@ class LeanArchiveTests(unittest.TestCase):
         build = self.lean / ".lake/build"
         module(build, "A/B")
         module(build, "C")
+        compile_c(build, "C")
         write(build / "lib/libNative.so", "native")
         write(build / "lib/lean/libNative.so.trace", "{}")  # not a module
         mathlib = self.lean / ".lake/packages/mathlib"
@@ -133,7 +147,7 @@ class LeanArchiveTests(unittest.TestCase):
                     and ".lake/ltar" not in str(p)}
         restored = {p.relative_to(target): p.read_bytes()
                     for p in (target / ".lake").rglob("*") if p.is_file()}
-        self.assertEqual(restored, original)
+        self.assertEqual(restored, as_restored(original))
         self.assertTrue(os.access(target / ".lake/packages/mathlib/scripts/run.sh", os.X_OK))
 
     def test_the_build_messages_leave_the_traces(self):
@@ -231,7 +245,7 @@ class LeanArchiveTests(unittest.TestCase):
         lean_cache.restore(target, 2, str(self.stub))
         restored = {p.relative_to(target): p.read_bytes()
                     for p in (target / ".lake/build").rglob("*") if p.is_file()}
-        self.assertEqual(restored, original)
+        self.assertEqual(restored, as_restored(original))
         # The archives stay, so the next store packs nothing.
         self.log.write_text("")
         lean_cache.store(target, [Path(".lake/build")], 2, 5, str(self.stub))
@@ -259,7 +273,7 @@ class LeanArchiveTests(unittest.TestCase):
         lean_cache.restore(target, 2, str(self.stub), others=chosen)
         restored = {p.relative_to(target): p.read_bytes()
                     for p in (target / ".lake/build").rglob("*") if p.is_file()}
-        expected = dict(original)
+        expected = as_restored(original)
         expected[Path(".lake/build/lib/lean/A/B.olean")] = b"rebuilt"
         expected[Path(".lake/build/lib/lean/A/B.olean.hash")] = b"1"
         self.assertEqual(restored, expected)
@@ -344,8 +358,8 @@ class LeanArchiveTests(unittest.TestCase):
         target = self.root / "bundled-restore"
         target.mkdir()
         lean_cache.unpack(target, 2, str(self.root), 1, str(self.stub), io.BytesIO(data.getvalue()))
-        self.assertEqual(expected, {p.relative_to(target): p.read_bytes()
-                                    for p in target.rglob("*") if p.is_file()})
+        self.assertEqual(as_restored(expected), {p.relative_to(target): p.read_bytes()
+                                                 for p in target.rglob("*") if p.is_file()})
         self.assertTrue(os.access(target / ".lake/packages/mathlib/scripts/run.sh", os.X_OK))
         # The merged index also supports keeping and restoring the caches.
         cached = self.root / "bundled-cache"
@@ -445,6 +459,39 @@ class LeanArchiveTests(unittest.TestCase):
         self.assertIn(".lake/build/lib/libNative.so", inner)
         # Nothing but `.lake/ltar`.
         self.assertTrue(all(name.startswith(".lake/ltar") for name in names))
+
+    def test_archives_hold_only_the_compiled_c(self):
+        self.pack()
+        ltar = self.lean / ".lake/ltar"
+        for rel, has_c in (("build/A/B", False), ("build/C", True),
+                           ("packages/mathlib/.lake/build/Mathlib/Order", False)):
+            names = json.loads((ltar / (rel + ".ltar")).read_text())
+            self.assertEqual(any(n.endswith(".c") for n in names), has_c, rel)
+        with tarfile.open(ltar / "files.tar") as tar:
+            names = tar.getnames()
+        # Nor in `files.tar`, which keeps every `.c.hash` and the objects.
+        self.assertNotIn(".lake/build/ir/A/B.c", names)
+        self.assertIn(".lake/build/ir/A/B.c.hash", names)
+        self.assertIn(".lake/build/ir/C.c.o.export", names)
+
+    def test_compiling_a_module_packs_its_c_again(self):
+        self.pack()
+        compile_c(self.lean / ".lake/build", "A/B")
+        _, packed = self.pack()
+        self.assertEqual(packed, [".lake/ltar/build/A/B.ltar"])
+        names = json.loads((self.lean / ".lake/ltar/build/A/B.ltar").read_text())
+        self.assertIn("1/A/B.c", names)
+
+    def test_unpacking_replaces_a_stale_c(self):
+        data, _ = self.pack()
+        target = self.root / "restored"
+        write(target / ".lake/build/ir/A/B.c", "another build's C")
+        write(target / ".lake/build/ir/C.c", "another build's C")
+        with tempfile.TemporaryDirectory() as tmp:
+            lean_cache.unpack(target, 2, tmp, 1, str(self.stub), io.BytesIO(data))
+        self.assertEqual((target / ".lake/build/ir/A/B.c").read_bytes(), b"")
+        self.assertEqual((target / ".lake/build/ir/C.c").read_text(), "C.c x")
+        self.assertEqual((target / ".lake/packages/mathlib/.lake/build/ir/Mathlib/Order.c").read_bytes(), b"")
 
     def test_build_of(self):
         self.assertEqual(lean_cache.build_of("build/A/B"), Path(".lake/build"))

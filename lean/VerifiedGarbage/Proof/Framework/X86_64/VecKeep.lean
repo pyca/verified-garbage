@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86_64.Isa
 public import VerifiedGarbage.Impl.X86_64Scal
 public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # x86-64: code that does not touch the vector registers
@@ -62,7 +63,7 @@ theorem execCmov_vec {cc : Cond} {d : Reg} {src : Src} {s t : State} (h : execCm
 theorem exec_vec {i : Instr} (hi : scalarI i = true) {s t : State} (h : exec i s = some t) :
     t.xmm = s.xmm ∧ t.ymmHi = s.ymmHi := by
   cases i <;> simp only [scalarI, Bool.false_eq_true] at hi
-  all_goals simp only [exec, Option.map_eq_some_iff] at h
+  all_goals simp only [reduceExec, Option.map_eq_some_iff] at h
   all_goals first
     | exact ⟨(execAlu32_vec h).1, (execAlu32_vec h).2.1⟩
     | exact ⟨(execMulx_vec h).1, (execMulx_vec h).2.1⟩

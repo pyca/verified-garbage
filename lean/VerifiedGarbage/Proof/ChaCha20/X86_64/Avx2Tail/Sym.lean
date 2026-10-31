@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Sym
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.X86_64.Reduce
 
 /-!
 # ChaCha20 on x86-64 with AVX2, the last bytes: straight-line code
@@ -142,7 +143,7 @@ theorem sstep_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) {σ σ' : Sym} {s : 
       refine ⟨_, rfl, h.setReg (fun r p hp => ?_) (by simp) (by simp) (by simp) (by simp)⟩
       simp only [yw, lane_vbin256]
       split
-      · simp only [VBinOp.sse, T.eval, dword_paddd _ _ (mod4_lt' p)]
+      · simp only [reduceVBinOpSse, T.eval, dword_paddd _ _ (mod4_lt' p)]
         rw [← yw, ← yw, h.reg a p hp, h.reg b p hp]
       · rfl
     · split at e
@@ -150,7 +151,7 @@ theorem sstep_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) {σ σ' : Sym} {s : 
         refine ⟨_, rfl, h.setReg (fun r p hp => ?_) (by simp) (by simp) (by simp) (by simp)⟩
         simp only [yw, lane_vbin256]
         split
-        · simp only [VBinOp.sse, T.eval, dword_pxor]
+        · simp only [reduceVBinOpSse, T.eval, dword_pxor]
           rw [← yw, ← yw, h.reg a p hp, h.reg b p hp]
         · rfl
       · split at e
@@ -160,7 +161,7 @@ theorem sstep_ok {D : Nat} {s₀ : State} (hc : Ctx D s₀) {σ σ' : Sym} {s : 
           refine ⟨_, rfl, h.setReg (fun r p hp => ?_) (by simp) (by simp) (by simp) (by simp)⟩
           simp only [yw, lane_vbin256]
           split
-          · simp only [VBinOp.sse, dword_por, BitVec.or_self]
+          · simp only [reduceVBinOpSse, dword_por, BitVec.or_self]
             rw [← yw]; exact h.reg a p hp
           · rfl
         · cases e
