@@ -216,4 +216,74 @@ def preparedVerifyMessageApi (p : Params) (module label : String) : Api where
     "The cached digest must equal SHAKE256 of the encoded public-key prefix, 64 bytes.",
     keyScratchSafety]
 
+/-- Canonical secret transforms in a separate read-only buffer. This is the
+same cache as `PreparedSecretKey`, without its encoded-prefix storage choice. -/
+def CachedSecretPolys (p : Params) (m : Mem) (cache : Addr) (sk : List Byte) : Prop :=
+  ∀ i < p.ℓ + 2 * p.k, PolyIs m (cache + BitVec.ofNat 64 (4 * n * i))
+    (preparedSecretPolys p sk)[i]!
+
+/-- Canonical public transforms in a separate read-only buffer. -/
+def CachedPublicPolys (p : Params) (m : Mem) (cache : Addr) (pk : List Byte) : Prop :=
+  ∀ i < p.k, PolyIs m (cache + BitVec.ofNat 64 (4 * n * i))
+    (preparedPublicPolys p pk)[i]!
+
+/-- Private common-kernel interface. The optional slice lets ordinary and
+prepared entry points share one implementation without changing either API. -/
+def signWithCacheSig (p : Params) : Sig :=
+  { signSig p with params := (signSig p).params ++
+      [("cache", .slice false .u8 "cache_len")] }
+
+def signWithCacheContract (p : Params) {M : ISA} (A : Abi M)
+    (stack : Nat := 0) : Contract M :=
+  (signWithCacheSig p).contract A
+    (pre := fun sk _mu _rnd _sig _scratch cache cacheLen m =>
+      cacheLen = 0 ∨
+      (cacheLen.toNat = 4 * n * (p.ℓ + 2 * p.k) ∧
+        CachedSecretPolys p m cache (bytesAt m sk p.skLen)))
+    (post := fun sk mu rnd sig _scratch _cache _cacheLen m m' r =>
+      Outcome (fun b => signMu p b (bytesAt m sk p.skLen) (bytesAt m mu 64) (bytesAt m rnd 32)) r
+        (bytesAt m' sig p.sigLen))
+    (writeArgs := true) (stack := stack)
+    (leak := some fun sk mu rnd _sig _scratch _cache _cacheLen m =>
+      signLeak p (bytesAt m sk p.skLen) (bytesAt m mu 64) (bytesAt m rnd 32))
+
+def verifyWithCacheSig (p : Params) : Sig :=
+  { verifySig p with params := (verifySig p).params ++
+      [("cache", .slice false .u8 "cache_len")] }
+
+def verifyWithCacheContract (p : Params) {M : ISA} (A : Abi M)
+    (stack : Nat := 0) : Contract M :=
+  (verifyWithCacheSig p).contract A
+    (pre := fun pk _mu _sig _scratch cache cacheLen m =>
+      cacheLen = 0 ∨
+      (cacheLen.toNat = 4 * n * p.k ∧
+        CachedPublicPolys p m cache (bytesAt m pk p.pkLen)))
+    (post := fun pk mu sig _scratch _cache _cacheLen m _m' r =>
+      let v := fun b => verifyMu p b (bytesAt m pk p.pkLen) (bytesAt m mu 64) (bytesAt m sig p.sigLen)
+      (r = 1 ∧ ∃ b, v b = some true) ∨ (r = 0 ∧ v minBounds ≠ some true))
+    (writeArgs := true) (stack := stack)
+    (leak := some fun pk mu sig _scratch _cache _cacheLen m =>
+      leakBytes (bytesAt m pk p.pkLen ++ bytesAt m mu 64 ++ bytesAt m sig p.sigLen))
+
+def signWithCacheApi (p : Params) (module label : String) : Api where
+  module := module
+  name := s!"vg_{module}_sign_with_cache"
+  sig := signWithCacheSig p
+  writeArgs := true
+  contracts := some fun A stack => signWithCacheContract p A stack
+  summary := s!"Private common {label} signing kernel with an optional canonical key-polynomial cache. Results and permitted leakage are those of signContract."
+  safety := ["An absent cache has zero length; its pointer is valid for that empty slice. Otherwise the length must be exactly the secret polynomial-cache size and CachedSecretPolys must hold for the encoded key.",
+    "Cached secret coefficients contain private key material and must be destroyed after use."] ++
+    (signApi p module label).safety
+
+def verifyWithCacheApi (p : Params) (module label : String) : Api where
+  module := module
+  name := s!"vg_{module}_verify_with_cache"
+  sig := verifyWithCacheSig p
+  writeArgs := true
+  contracts := some fun A stack => verifyWithCacheContract p A stack
+  summary := s!"Private common {label} verification kernel with an optional canonical key-polynomial cache. Results and permitted leakage are those of verifyContract."
+  safety := ["An absent cache has zero length; its pointer is valid for that empty slice. Otherwise the length must be exactly the public polynomial-cache size and CachedPublicPolys must hold for the encoded key.",
+    keyScratchSafety]
+
 end VG.Spec.MlDsa
