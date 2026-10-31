@@ -64,7 +64,7 @@ def step (τ : T) : Instr → Option T
   -- Frames are analysed by `push` and `pop`; a static's address
   -- (`adrSym`) is not analysed.
   | .push .. | .pop .. | .alloc .. | .free .. | .adrSym ..
-  | .vop .. | .lxvd2x .. | .stxvd2x .. | .mtvsrd .. | .mfvsrd .. => none
+  | .vop .. | .lxvd2x .. | .lxvd2xTbl .. | .stxvd2x .. | .mtvsrd .. | .mfvsrd .. => none
 
 def condPub (τ : T) : Cond → Bool
   | .zero _ r | .nonzero _ r => pub τ r
@@ -111,7 +111,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     (hs : step τ i = some τ') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
     addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by
   cases i with
-  | push | pop | alloc | free | adrSym | vop | lxvd2x | stxvd2x | mtvsrd | mfvsrd => simp only [step, reduceCtorEq] at hs
+  | push | pop | alloc | free | adrSym | vop | lxvd2x | lxvd2xTbl | stxvd2x | mtvsrd | mfvsrd => simp only [step, reduceCtorEq] at hs
   | addSp d imm =>
     simp only [step, Option.some.injEq] at hs; subst hs
     simp only [reduceExec] at e₁ e₂

@@ -161,7 +161,7 @@ theorem step_upd (hr : τ.regs.subset r = true) (hsl : Sub τ.slots sl) (i : Ins
   have and_imp : ∀ {a b : Reg}, (pub τ a && pub τ b) = true → (pub (upd τ r sl) a && pub (upd τ r sl) b) = true :=
     and_upd hr
   cases i with
-  | push | pop | alloc | free | adrSym | vop | lxvd2x | stxvd2x | mtvsrd | mfvsrd => simp only [step, reduceCtorEq] at hs
+  | push | pop | alloc | free | adrSym | vop | lxvd2x | lxvd2xTbl | stxvd2x | mtvsrd | mfvsrd => simp only [step, reduceCtorEq] at hs
   | add d n m | sub d n m | mul d n m | mulhu d n m | addc d n m | subc d n m =>
     simp only [step, Option.some.injEq] at hs ⊢; subst hs
     exact ⟨_, rfl, wr_upd hr hsl d and_imp⟩

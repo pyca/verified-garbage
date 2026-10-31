@@ -264,4 +264,38 @@ def sPoly : State := { sVec with vpr := fun r =>
   "vadduwm %v3, %v0, %v1", "vaddudm %v3, %v0, %v1", "vperm %v3, %v0, %v1, %v2",
   "vsldoi %v3, %v0, %v1, 15"]
 
+-- Literal-table loads read the emitter's immutable words, independently
+-- of the caller's permitted memory. Indexed addressing must still agree
+-- with the static and table bounds, including a nonzero RB=r0 value.
+def tableWords : List (BitVec 64) := [0x0123456789abcdef, 0xfedcba9876543210, 42]
+def sTable : State := { sVec with
+  gpr := fun r => if r = .r3 then 0x1000 else if r = .r4 then 8 else 0
+  syms := fun _ => 0x1000
+  rd := [], wr := [], mem := fun _ => 0 }
+def tableLoad (a b : Reg) (ws := tableWords) : Instr :=
+  .lxvd2xTbl .v19 a b "VG_TEST_PPC_TABLE" ws
+#guard (exec (tableLoad .r3 .r0) sTable).map (·.vpr .v19) ==
+  some 0x0123456789abcdeffedcba9876543210
+#guard (exec (tableLoad .r3 .r4) sTable).map (·.vpr .v19) ==
+  some 0xfedcba9876543210000000000000002a
+#guard (exec (tableLoad .r0 .r3) sTable).isNone -- RA=0 encoding
+#guard (exec (tableLoad .r3 .r4) { sTable with
+  gpr := fun r => if r = .r3 then 0x1000 else 7 }).isNone -- unaligned index
+#guard (exec (tableLoad .r3 .r4) { sTable with
+  gpr := fun r => if r = .r3 then 0x1000 else 16 }).isNone -- only one word left
+#guard (exec (tableLoad .r3 .r4 [1, 2]) sTable).isNone -- extends past table
+#guard (exec (tableLoad .r3 .r0 []) sTable).isNone
+#guard (exec (tableLoad .r3 .r0 [1]) sTable).isNone
+#guard (exec (tableLoad .r3 .r0) { sTable with syms := fun _ => 0x2000 }).isNone
+#guard (exec (tableLoad .r3 .r0) { sTable with
+  gpr := fun r => if r = .r3 then 0x1000 else if r = .r0 then 8 else 0 }).map
+  (·.vpr .v19) == some 0xfedcba9876543210000000000000002a
+#guard (exec (tableLoad .r3 .r4) sTable).map
+  (fun s => (s.gpr .r3, s.lr, s.ca, s.sp, s.unknowns 0, s.vpr .v0)) ==
+  some (sTable.gpr .r3, sTable.lr, sTable.ca, sTable.sp, sTable.unknowns 0, sTable.vpr .v0)
+#guard addrs (tableLoad .r3 .r4) sTable == [8]
+#guard Instr.asm (tableLoad .r3 .r4) == ["lxvd2x 51, %r3, %r4"]
+#guard printer.tables (tableLoad .r3 .r4) == [("VG_TEST_PPC_TABLE", tableWords)]
+#guard printer.tables (.lxvd2x .v19 .r3 .r4) == []
+
 end VG.Test.PPC64LE

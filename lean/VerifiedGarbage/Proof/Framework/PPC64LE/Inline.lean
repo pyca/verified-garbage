@@ -29,6 +29,7 @@ def State.withRegions (s : State) (rd wr : List Region) : State := { s with rd :
 @[simp] theorem State.withRegions_sp (s : State) (rd wr) : (s.withRegions rd wr).sp = s.sp := rfl
 @[simp] theorem State.withRegions_mem (s : State) (rd wr) : (s.withRegions rd wr).mem = s.mem := rfl
 @[simp] theorem State.withRegions_rd (s : State) (rd wr) : (s.withRegions rd wr).rd = rd := rfl
+@[simp] theorem State.withRegions_syms (s : State) (rd wr) : (s.withRegions rd wr).syms = s.syms := rfl
 @[simp] theorem State.withRegions_wr (s : State) (rd wr) : (s.withRegions rd wr).wr = wr := rfl
 @[simp] theorem State.withRegions_self (s : State) : s.withRegions s.rd s.wr = s := rfl
 @[simp] theorem State.withRegions_withRegions (s : State) (rd wr rd' wr') :
@@ -71,7 +72,7 @@ def dstOf : Instr → Option Reg
   | .logic _ d .. | .rotr _ d .. | .lsr _ d .. | .lsl d .. | .load _ d .. | .lbz d .. | .loadRev _ d ..
   | .mflr d | .pop d | .addSp d _ | .adrSym d _ | .mfvsrd d _ => some d
   | .store .. | .stb .. | .storeRev .. | .mtlr _ | .push _ | .alloc _ | .free _
-  | .vop .. | .lxvd2x .. | .stxvd2x .. | .mtvsrd .. => none
+  | .vop .. | .lxvd2x .. | .lxvd2xTbl .. | .stxvd2x .. | .mtvsrd .. => none
 
 section
 variable {s s' : State} {rd wr : List Region}
@@ -209,6 +210,10 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : dstOf i ≠ some r) (h : exec i s =
     simp only [reduceExec, Option.map_eq_some_iff] at h
     obtain ⟨⟨d, v⟩, -, rfl⟩ := h
     rfl
+  | lxvd2xTbl d a b name ws =>
+    simp only [reduceExec] at h
+    split at h <;> [skip; cases h]
+    simp only [Option.some.injEq] at h; subst h; rfl
   | mtvsrd d n =>
     simp only [reduceExec, Option.some.injEq] at h; subst h; rfl
   | mtlr r' =>
