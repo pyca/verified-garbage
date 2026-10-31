@@ -19,34 +19,37 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use serde::Deserialize;
+use crate::json_struct;
 
 use super::harness::Hex;
 
-#[derive(Deserialize)]
-pub struct KeyGen {
-    pub seed: Hex,
-    pub ek: Hex,
-    pub dk: Hex,
+json_struct! {
+    pub struct KeyGen {
+        pub seed: Hex,
+        pub ek: Hex,
+        pub dk: Hex,
+    }
 }
 
-#[derive(Deserialize)]
-pub struct Encaps {
-    pub ek: Hex,
-    pub m: Hex,
-    pub c: Hex,
-    #[serde(rename = "K")]
-    pub k: Hex,
+json_struct! {
+    pub struct Encaps {
+        pub ek: Hex,
+        pub m: Hex,
+        pub c: Hex,
+        #[json(rename = "K")]
+        pub k: Hex,
+    }
 }
 
-#[derive(Deserialize)]
-pub struct Decaps {
-    pub seed: Hex,
-    #[serde(default)]
-    pub ek: Option<Hex>,
-    pub c: Hex,
-    #[serde(rename = "K")]
-    pub k: Hex,
+json_struct! {
+    pub struct Decaps {
+        pub seed: Hex,
+        #[json(default)]
+        pub ek: Option<Hex>,
+        pub c: Hex,
+        #[json(rename = "K")]
+        pub k: Hex,
+    }
 }
 
 /// Defines the tests of the parameter set `$n` (`"768"`), of the module

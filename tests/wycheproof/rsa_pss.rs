@@ -19,7 +19,7 @@
     feature = "alloc"
 ))]
 
-use serde::Deserialize;
+use crate::json_struct;
 use verified_garbage::hashes::{
     md5::Md5, sha1::Sha1, sha224::Sha224, sha256::Sha256, sha384::Sha384, sha512::Sha512,
     sha512_224::Sha512_224, sha512_256::Sha512_256,
@@ -30,50 +30,59 @@ use verified_garbage::rsa_pss::{Hash, SaltLength, sign, sign_with_rng, verify};
 use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Public {
-    modulus: Hex,
-    public_exponent: Hex,
+json_struct! {
+    struct Public {
+        modulus: Hex,
+        #[json(rename = "publicExponent")]
+        public_exponent: Hex,
+    }
 }
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct VerifyGroup {
-    public_key: Public,
-    sha: String,
-    mgf_sha: String,
-    s_len: usize,
+json_struct! {
+    struct VerifyGroup {
+        #[json(rename = "publicKey")]
+        public_key: Public,
+        sha: String,
+        #[json(rename = "mgfSha")]
+        mgf_sha: String,
+        #[json(rename = "sLen")]
+        s_len: usize,
+    }
 }
 
-#[derive(Deserialize)]
-struct SigCase {
-    msg: Hex,
-    sig: Hex,
+json_struct! {
+    struct SigCase {
+        msg: Hex,
+        sig: Hex,
+    }
 }
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Crt {
-    modulus: Hex,
-    private_exponent: Hex,
-    public_exponent: Hex,
-    prime1: Hex,
-    prime2: Hex,
-    exponent1: Hex,
-    exponent2: Hex,
-    coefficient: Hex,
+json_struct! {
+    struct Crt {
+        modulus: Hex,
+        #[json(rename = "privateExponent")]
+        private_exponent: Hex,
+        #[json(rename = "publicExponent")]
+        public_exponent: Hex,
+        prime1: Hex,
+        prime2: Hex,
+        exponent1: Hex,
+        exponent2: Hex,
+        coefficient: Hex,
+    }
 }
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct CrtGroup {
-    private_key: Crt,
+json_struct! {
+    struct CrtGroup {
+        #[json(rename = "privateKey")]
+        private_key: Crt,
+    }
 }
 
-#[derive(Deserialize)]
-struct MsgCase {
-    msg: Hex,
+json_struct! {
+    struct MsgCase {
+        msg: Hex,
+    }
 }
 
 /// `x` without its leading zero bytes.

@@ -21,35 +21,39 @@
 
 use std::sync::Mutex;
 
-use serde::Deserialize;
+use crate::json_struct;
 use verified_garbage::rsa::{Error, PrivateKey, PublicKey};
 
 use super::harness::{self, Expectation, Hex, TestFile, TestGroup};
 use crate::require_vectors;
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Key {
-    modulus: Hex,
-    private_exponent: Hex,
-    public_exponent: Hex,
-    prime1: Hex,
-    prime2: Hex,
-    exponent1: Hex,
-    exponent2: Hex,
-    coefficient: Hex,
+json_struct! {
+    struct Key {
+        modulus: Hex,
+        #[json(rename = "privateExponent")]
+        private_exponent: Hex,
+        #[json(rename = "publicExponent")]
+        public_exponent: Hex,
+        prime1: Hex,
+        prime2: Hex,
+        exponent1: Hex,
+        exponent2: Hex,
+        coefficient: Hex,
+    }
 }
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Group {
-    private_key: Key,
+json_struct! {
+    struct Group {
+        #[json(rename = "privateKey")]
+        private_key: Key,
+    }
 }
 
-#[derive(Deserialize)]
-struct Case {
-    msg: Hex,
-    ct: Hex,
+json_struct! {
+    struct Case {
+        msg: Hex,
+        ct: Hex,
+    }
 }
 
 /// `x` without its leading zero bytes (the vectors write numbers in DER's

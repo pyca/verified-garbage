@@ -304,25 +304,30 @@ def sync (dir : FilePath) (check : Bool) (files : List (String × String))
   return ok
 
 /-- The directories of generated files (`Rust.codeDir`) of the crates of
-generated code under `dir` (`Rust.crateDir`): those it deletes stale `.rs`
-files in, and checks. -/
+generated code under `dir` (`Rust.crateDir`), and the `asm/` of a crate
+whose generated files are in `src/` (`Rust.codeSubdir`), which has none:
+those it deletes stale `.rs` files in, and checks. -/
 def codeDirs (dir : FilePath) : IO (List String) := do
   unless ← dir.pathExists do return []
   let mut ds := #[]
   for e in ← dir.readDir do
     if (← e.path.isDir) && e.fileName.startsWith (Rust.crateDir "") then
-      ds := ds.push (e.fileName ++ "/" ++ Rust.codeSubdir)
+      let t := (e.fileName.drop (Rust.crateDir "").length).toString
+      ds := ds.push (Rust.codeDir t)
+      -- A target whose generated files are in `src/` has none in `asm/`.
+      if Rust.codeSubdir t == "src" then ds := ds.push (Rust.crateDir t ++ "/asm")
   return (ds.qsort (· < ·)).toList
 
 /-- Writes the files generated from `as` under the directory in `args` (by
-default `../crates`), deleting any other `.rs` file in the `asm/` of a crate
-of generated code there (`codeDirs`, and nothing else: the rest of those
-crates, and the other crates, are not the emitter's); or, if `args` starts with `--check`, writes nothing and
+default `../crates`), deleting any other `.rs` file in the directory of
+generated files of a crate of generated code there (`codeDirs`, and nothing
+else: the rest of those crates, and the other crates, are not the emitter's);
+or, if `args` starts with `--check`, writes nothing and
 fails if the files on disk differ from what would be generated.
 
 With `--part FILE`, `as` are the artifacts of a part (`parts`): only the
 files of their targets' crates are written or checked, and the other `.rs`
-files in those crates' `asm/`; then `FILE` gets their targets, for `finish`, which
+files in those crates' directories of generated files; then `FILE` gets their targets, for `finish`, which
 checks the rest. -/
 def run (as : List Artifact) (args : List String) : IO UInt32 := do
   let some (check, part, dir) := parseArgs args | do IO.eprintln usage; return 2
@@ -350,7 +355,8 @@ def inTwoParts (targets : List (List (String × String))) : Option String :=
 /-- After `run` succeeded on every part, given the targets each wrote: no
 target is in two parts (so each part generated all of its targets' files,
 from all of their artifacts), and no other crate of generated code has a
-`.rs` file in its `asm/` (a target's that no longer has artifacts). Writes (deleting
+`.rs` file in its directory of generated files (a target's that no longer
+has artifacts, or RISC-V's `asm/`, which it no longer writes). Writes (deleting
 those files) or checks, as `run`. -/
 def finish (targets : List (List (String × String))) (args : List String) : IO UInt32 := do
   let some (check, _, dir) := parseArgs args | do IO.eprintln usage; return 2

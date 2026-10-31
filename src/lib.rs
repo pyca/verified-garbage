@@ -68,6 +68,12 @@ compile_error!(
 #[cfg(all(target_arch = "riscv64", not(target_feature = "m")))]
 compile_error!("64-bit RISC-V needs the M extension (e.g. riscv64gc-unknown-linux-gnu)");
 
+// The RISC-V code uses the C extension's compressed encodings (see
+// `lean/VerifiedGarbage/TCB/RISCV64/Encode.lean`), which every `riscv64gc`
+// target has.
+#[cfg(all(target_arch = "riscv64", not(target_feature = "c")))]
+compile_error!("64-bit RISC-V needs the C extension (e.g. riscv64gc-unknown-linux-gnu)");
+
 // The 32-bit x86 model's baseline is i686 with SSE2 (see
 // `lean/VerifiedGarbage/TCB/X86/Isa.lean`): older CPUs' `mul` is not constant
 // time.

@@ -23,8 +23,8 @@ A naked function has no compiler-generated prologue or epilogue, so the
 machine code that runs is exactly the code that was verified (plus the
 final `ret` from the printer). The functions of each target are a crate
 of their own, `verified-garbage-asm-<target>` (`crateDir`, under `crates/`;
-its `Cargo.toml` is written by hand), one file `asm/<module>.rs` per
-`module` (`codeDir`), compiled only under the target's `cfg` (`targetRoot`), whose
+its `Cargo.toml` is written by hand), one file `<module>.rs` per `module`,
+in its `asm/` or `src/` (`codeDir`), compiled only under the target's `cfg` (`targetRoot`), whose
 items are therefore `pub`. The library depends on the crate of the target
 it is built for and names it `crate::arch` (`Cargo.toml`, `src/lib.rs`).
 
@@ -71,7 +71,7 @@ the `doc` must not state them itself (`checkLayout`).
 An artifact that reads tables of constants (`Artifact.consts`, and those
 its instructions carry, `Printer.tables`: `tablesOf`) names each
 by the name of a `static` holding it, which `files` writes once per target,
-each in a file of its own, `asm/consts/<name>.rs` of its crate (its name in
+each in a file of its own, `consts/<name>.rs` of its crate's `codeDir` (its name in
 lowercase), after checking that every artifact of the target with a table of
 that name gives the same words and that the code names only its own tables
 (`checkConsts`). `consts/mod.rs` declares `Table` and each table's module,
@@ -230,26 +230,51 @@ def line (call : String) : Line → String
     s!"        concat!(\"{escape s}\", vg_sym_pageoff!(\"" ++ "{" ++ n ++ "}\")),\n"
   | l => "        " ++ literal ((lineText call l).getD "") ++ ",\n"
 
+/-- The text of a comment line of a printer (`// <text>` on one line, e.g.
+the text of an instruction that RISC-V's printer emits as its machine code),
+which `template` writes as a Rust comment, not as a line of the assembly. -/
+def commentOf : Line → Option String
+  | .text l =>
+    if l.startsWith "// " && !l.contains '\n' && !l.contains '\r' then some l else none
+  | _ => none
+
 /-- The arguments of `naked_asm!` for the template lines `ls`: each run of
 lines that are text alone (`lineText`) as one string literal (`literal`) of
 those lines separated by newlines, the others as arguments of their own
 (`line`).
 `naked_asm!` joins its arguments with newlines, so the template is the same
 as with one argument per line. A function's template is then a few tokens
-for rustc to parse and expand, not one per line. -/
+for rustc to parse and expand, not one per line.
+A comment line (`commentOf`), which comments the line after it, is not part
+of the template: it is written as a Rust comment before the string literal
+that line is in, so the assembler never sees it. A comment after a line that
+no comment is about (e.g. a label or a branch, after the commented
+instructions before it) starts a new literal, so that each literal's
+comments are just above it: one literal per run of commented lines and the
+lines after them, not per line. -/
 def template (call : String) (ls : List Line) : String :=
-  go ls []
+  go ls [] [] false false
 where
-  /-- The arguments for `ls`, after the run of text lines `run` (reversed). -/
-  go : List Line → List String → String
-    | [], run => flush run
-    | l :: ls, run => match lineText call l with
-      | some t => go ls (t :: run)
-      | none => flush run ++ line call l ++ go ls []
-  /-- The run of text lines `run` (reversed) as one string literal. -/
-  flush : List String → String
-    | [] => ""
-    | run => "        " ++ literal ("\n".intercalate run.reverse) ++ ",\n"
+  /-- The arguments for `ls`, after the run of text lines `run` and the
+  comments `cs` before it (both reversed); `tail` if `run` has a line that
+  no comment is about since its last commented one, and `after` if the line
+  before was a comment. -/
+  go : List Line → List String → List String → Bool → Bool → String
+    | [], run, cs, _, _ => flush run cs
+    | l :: ls, run, cs, tail, after => match commentOf l with
+      | some c =>
+        if tail then flush run cs ++ go ls [] [c] false true
+        else go ls run (c :: cs) false true
+      | none => match lineText call l with
+        | some t => go ls (t :: run) cs (tail || !after) false
+        | none => flush run cs ++ line call l ++ go ls [] [] false false
+  /-- The comments `cs`, then the run of text lines `run` as one string
+  literal (both reversed). -/
+  flush : List String → List String → String
+    | run, cs => String.join (cs.reverse.map fun c => s!"        {c}\n") ++
+      match run with
+      | [] => ""
+      | run => "        " ++ literal ("\n".intercalate run.reverse) ++ ",\n"
 
 /-- `fs` as an English list of code spans: "`a`, `b` and `c`". -/
 def codeList : List String → String
@@ -453,8 +478,8 @@ def cfgGate : List String → String
 of the target named `t`: the first and last lines of its template, so that
 they apply to all of it and to nothing after it.
 
-On RISC-V (`riscv64`), `.option push` and `.option arch, +m`, then
-`.option pop`, enable the M extension for the function alone. The model's
+On RISC-V (`riscv64`), `.option push` and `.option arch, +m, +c`, then
+`.option pop`, enable the M and C extensions for the function alone. The model's
 multiplies, `mul` and `mulhu`, are M's (`TCB/RISCV64/Isa.lean`), and the
 target compiles them only where Rust enables it (`target_feature = "m"`,
 `TCB/RISCV64/Target.lean`'s `rustCfg`), but rustc does not always tell the
@@ -470,10 +495,13 @@ bound an `.option arch, +` ("We recommend `.option arch, +` and
 options after the function are what they were before it. The directives
 emit no bytes and change no instruction: the assembler accepts the `mul` and
 `mulhu` that the model describes, the only instructions of M the printer
-emits. (They are keyed on the target here, rather than being a field of its
+emits. `+c` likewise enables the C extension, whose compressed encodings
+the printer emits as `.insn 2, …` (`TCB/RISCV64/Encode.lean`'s `compress`),
+which the assembler accepts only with it, and which the target compiles only
+where Rust enables it (`target_feature = "c"`). (They are keyed on the target here, rather than being a field of its
 `Printer`, so that adding them did not change what every proof imports.) -/
 def funcOptions : String → List String × List String
-  | "riscv64" => ([".option push", ".option arch, +m"], [".option pop"])
+  | "riscv64" => ([".option push", ".option arch, +m, +c"], [".option pop"])
   | _ => ([], [])
 
 /-- The `cfg` attribute of `a`'s function and constants (`cfgGate` of
@@ -845,15 +873,23 @@ def targetsOf (as : List Artifact) : List (String × String) :=
 /-- The directory of the target `t`'s crate, under `crates/`: its name. -/
 def crateDir (t : String) : String := s!"verified-garbage-asm-{t}"
 
-/-- The directory of a crate of generated code that holds its generated
-files, the code as printed: `asm/`. -/
-def codeSubdir : String := "asm"
+/-- The directory of the crate of the target named `t` that holds its
+generated files: `src/`, which its crate compiles, for a target whose
+printer emits its straight-line code as machine code (RISC-V's,
+`TCB/RISCV64/Encode.lean`), and `asm/`, the code as printed, for the others,
+whose crates compile it as it is (ARM's) or pre-assembled
+(`ci/preassemble.py` writes their `src/`). Keyed on the target here, rather
+than being a field of its `Printer`, so that it does not change what every
+proof imports. -/
+def codeSubdir : String → String
+  | "riscv64" => "src"
+  | _ => "asm"
 
 /-- The directory of the target `t`'s generated files, under `crates/`:
-`asm/` of its crate (`crateDir`, `codeSubdir`). -/
-def codeDir (t : String) : String := crateDir t ++ "/" ++ codeSubdir
+`codeSubdir t` of its crate (`crateDir`). -/
+def codeDir (t : String) : String := crateDir t ++ "/" ++ codeSubdir t
 
-/-- The root module of the target `t`'s crate, `asm/lib.rs`: the macros its
+/-- The root module of the target `t`'s crate, `lib.rs` (in its `codeDir`): the macros its
 modules use (`symMacros`) and a `mod`
 declaration of each of its modules `mods`, each compiled only under the
 target's Rust `cfg` `cfg` (so that a build for any other target, of every
@@ -900,8 +936,8 @@ def render (ps : List Prepared) (moduleOf : Artifact → String → String) : Li
   ((targets.map fun t => Task.spawn fun _ => perTarget t).map Task.get).flatten
 
 /-- The generated files, as paths relative to `crates/` and their contents:
-for each target, its crate's `asm/lib.rs` and one `asm/<module>.rs`
-per module (`codeDir`); an error if an artifact is not made from an `Api` with a
+for each target, its crate's `lib.rs` and one `<module>.rs` per module, in
+its `codeDir`; an error if an artifact is not made from an `Api` with a
 contract (`checkApi`), two artifacts of a target have the same name
 (`checkUnique`), a call is not of the code it runs (`checkCalls`), its
 tables of constants are not as `checkConsts` requires, an
