@@ -20,7 +20,7 @@ on:
         description: The commit to compare against, as a full or abbreviated SHA, a branch or a tag (empty to run the branch alone, next to OpenSSL and aws-lc-rs)
         required: false
       arches:
-        description: Space-separated architectures to run (x86_64 aarch64 x86 arm powerpc64, or thumb and aarch64-apple, which run only when named; empty for x86_64 aarch64 x86 arm powerpc64)
+        description: Space-separated architectures to run (x86_64 aarch64 x86 arm powerpc64 riscv64, or thumb and aarch64-apple, which run only when named; empty for x86_64 aarch64 x86 arm powerpc64 riscv64)
         required: false
       cpu_features:
         description: Space-separated VG_CPU_FEATURES configurations to run on each, `-` for none (empty for those that choose among the modules' implementations; `python3 ci/bench_arches.py --choices` lists them)
