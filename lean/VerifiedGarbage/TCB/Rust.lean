@@ -130,15 +130,16 @@ type's alignment.
 An artifact whose code needs CPU features beyond the target's baseline
 (`Artifact.features`) also gets a last `# Safety` item saying the CPU must
 support them, and a constant of them, for the Rust that checks for them
-before calling it: a `Features` set (`src/cpu.rs`), the union of the bits
-`crate::cpu::feature::<FEATURE>` of their names in uppercase (`featureConst`), which does not
-compile with a name `src/cpu.rs` does not detect (a constant it does not
-define):
+before calling it: a `Features` set (the crate `verified_garbage_cpu`,
+`crates/verified-garbage-cpu/`), the union of the bits
+`verified_garbage_cpu::feature::<FEATURE>` of their names in uppercase
+(`featureConst`), which does not compile with a name that crate does not
+know (a constant it does not define):
 
 ```rust
 /// The CPU features `<name>` requires (`Artifact.features`).
-pub const <NAME>_FEATURES: crate::cpu::Features =
-    crate::cpu::Features(crate::cpu::feature::<FEATURE> | …);
+pub const <NAME>_FEATURES: verified_garbage_cpu::Features =
+    verified_garbage_cpu::Features(verified_garbage_cpu::feature::<FEATURE> | …);
 ```
 
 (rustc evaluates every constant of the crate, and an `|` of constants is a
@@ -277,9 +278,9 @@ def featuresConst (name gate : String) : List String → String
   | [] => ""
   | fs =>
     s!"/// The CPU features `{name}` requires (`Artifact.features`).\n" ++ gate ++
-    s!"pub const {name.toUpper}_FEATURES: crate::cpu::Features = \
-      crate::cpu::Features(" ++
-    " | ".intercalate (fs.map fun f => s!"crate::cpu::feature::{featureConst f}") ++ ");\n\n"
+    s!"pub const {name.toUpper}_FEATURES: verified_garbage_cpu::Features = \
+      verified_garbage_cpu::Features(" ++
+    " | ".intercalate (fs.map fun f => s!"verified_garbage_cpu::feature::{featureConst f}") ++ ");\n\n"
 
 /-- The name of the constant of how much of its parameter `param` the
 function `name` writes (`Artifact.written`). -/
@@ -844,9 +845,8 @@ def targetsOf (as : List Artifact) : List (String × String) :=
 /-- The directory of the target `t`'s crate, under `crates/`: its name. -/
 def crateDir (t : String) : String := s!"verified-garbage-asm-{t}"
 
-/-- The root module of the target `t`'s crate, `src/lib.rs`: `crate::cpu`,
-the crate of `Features` that the `_FEATURES` constants name
-(`featuresConst`), the macros its modules use (`symMacros`) and a `mod`
+/-- The root module of the target `t`'s crate, `src/lib.rs`: the macros its
+modules use (`symMacros`) and a `mod`
 declaration of each of its modules `mods`, each compiled only under the
 target's Rust `cfg` `cfg` (so that a build for any other target, of every
 crate of the workspace, compiles none of them). The `cfg` is on the
@@ -861,7 +861,6 @@ def targetRoot (t cfg : String) (mods : List String) : String :=
   "//! whose machine code has been proven correct, memory safe and constant time\n" ++
   "//! against its contract. See `lean/README.md`.\n" ++
   "\n#![no_std]\n" ++
-  "\n#[allow(unused_imports)]\nuse verified_garbage_cpu as cpu;\n" ++
   symMacros ++
   modDecls mods (fun _ => some cfg)
 

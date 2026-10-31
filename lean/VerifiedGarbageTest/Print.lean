@@ -909,8 +909,8 @@ def safeDoc : String := "Does things.\n\n# Safety\n\n* `p` must be valid."
 #guard Rust.featuresConst "vg_f" "" [] == ""
 #guard Rust.featuresConst "vg_sha256_compress_shani" "" ["sha", "ssse3"] ==
   "/// The CPU features `vg_sha256_compress_shani` requires (`Artifact.features`).\n\
-  pub const VG_SHA256_COMPRESS_SHANI_FEATURES: crate::cpu::Features = \
-  crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);\n\n"
+  pub const VG_SHA256_COMPRESS_SHANI_FEATURES: verified_garbage_cpu::Features = \
+  verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);\n\n"
 #guard Rust.featureConst "avx512ifma" == "AVX512IFMA"
 #guard Rust.featureConst "sse4.1" == "SSE4_1"
 
@@ -926,7 +926,7 @@ def safeDoc : String := "Does things.\n\n# Safety\n\n* `p` must be valid."
 #guard (Arm.printer.featureCfg "neon").isNone
 #guard Rust.featuresConst "vg_f_umaal" "#[cfg(c)]\n" ["umaal"] ==
   "/// The CPU features `vg_f_umaal` requires (`Artifact.features`).\n#[cfg(c)]\n\
-  pub const VG_F_UMAAL_FEATURES: crate::cpu::Features = \
-  crate::cpu::Features(crate::cpu::feature::UMAAL);\n\n"
+  pub const VG_F_UMAAL_FEATURES: verified_garbage_cpu::Features = \
+  verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);\n\n"
 
 end VG.Test
