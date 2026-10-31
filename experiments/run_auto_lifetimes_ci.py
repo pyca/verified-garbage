@@ -9,7 +9,8 @@ shutil.copy2(harness,base/'examples/mldsa-cache-lifetime.rs')
 subprocess.run(['rustc','-Vv'],check=True)
 for repo in (base,head):
  print(repo,subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip(),flush=True)
-policies=['baseline','1','2','4']
+print('logical CPUs',os.cpu_count(),'affinity',len(os.sched_getaffinity(0)) if hasattr(os,'sched_getaffinity') else 'unknown',flush=True)
+policies=['baseline','2']
 for policy in policies:
  repo=base if policy=='baseline' else head
  with (out/f'build-{policy}.log').open('w') as log:
@@ -17,7 +18,7 @@ for policy in policies:
  shutil.copy2(repo/'target/release/examples/mldsa-cache-lifetime',out/f'run-{policy}')
  print('built',policy,flush=True)
 results={}
-for run,order in enumerate([policies,list(reversed(policies)),['2','4','baseline','1']]):
+for run,order in enumerate([policies,list(reversed(policies)),policies]):
  for policy in order:
   p=subprocess.run([str(out/f'run-{policy}')],capture_output=True,text=True,check=True)
   (out/f'results-{run}-{policy}.csv').write_text(p.stdout)

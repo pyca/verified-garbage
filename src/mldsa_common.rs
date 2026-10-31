@@ -76,7 +76,7 @@ pub(crate) mod auto_cache {
         None => 2,
     };
 
-    #[repr(C, align(16))]
+    #[repr(C, align(64))]
     pub(crate) struct Prepared<const N: usize, const SECRET: bool> {
         pub(crate) bytes: [u8; N],
     }

@@ -46,3 +46,9 @@ AArch64 job, three interleaved passes, only these ML-DSA lifetime workloads.
 Its workflow definition is unchanged; request modules `mldsa44 mldsa65 mldsa87`,
 architecture `aarch64`, and the unrestricted default CPU-feature configuration.
 No unrestricted algorithm/architecture benchmark run is needed.
+
+The follow-up candidate aligns prepared allocations to 64 bytes, so all cached
+polynomial starts are at least 32-byte aligned. The initial 16-byte-aligned
+candidate regressed warm four-thread ML-DSA-65 signing on N2 by 9.8%; retain
+that result when assessing this follow-up. The follow-up CI run compares only
+ordinary keys and second-use promotion, with three interleaved passes.
