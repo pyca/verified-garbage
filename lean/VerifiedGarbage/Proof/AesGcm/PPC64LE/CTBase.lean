@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Callee
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -67,7 +68,7 @@ theorem skip {I : State → Prop} : CT I (.block []) := by
       simp only [execBlock, Option.some.injEq, Prod.mk.injEq] at h₁ h₂
       exact ⟨h₁.2.symm.trans h₂.2, trivial⟩
 
-theorem gh {I : State → Prop} {name : String}
+theorem gh [VG.Proof.Gcm.PPC64LE.GhashLaw] {I : State → Prop} {name : String}
     (h : ∀ s₁ s₂, I s₁ → I s₂ → ∃ H Y D S : Addr, ∃ n : Nat,
       GhCall s₁ H Y D S n ∧ GhCall s₂ H Y D S n ∧ s₁.sp = s₂.sp) :
     CT I (.call name Impl.Gcm.PPC64LE.ghash) :=

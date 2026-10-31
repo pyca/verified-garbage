@@ -22,6 +22,9 @@ its halves swapped is of the class of `x⁻¹ · Hᵏ` (`x_φ_pp`).
 
 @[expose] public section
 
+local notation "vdword" => VG.Proof.Gcm.Clmul.vdword
+local notation "ofVDwords" => VG.Proof.Gcm.Clmul.ofVDwords
+
 namespace VG.Proof.AesGcm.AArch64
 
 open VG VG.AArch64

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
@@ -87,7 +88,7 @@ theorem si_entry {s : State} (hs : streamInitPPC64LE.pre s) :
   rw [h30, h31]
   exact ⟨by rw [en.keeps.rd, en.keeps.wr, hrd]; exact covers_mem (by simp), hlt, wn, dns, dnw⟩
 
-theorem streamInit_wp {s : State} (hs : streamInitPPC64LE.pre s) :
+theorem streamInit_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s : State} (hs : streamInitPPC64LE.pre s) :
     WP isa streamInit s fun s' => abiPreserved s s' ∧ streamInitPPC64LE.post s s' := by
   have L₀ : Lay (s.gpr .r3) (s.gpr .r6) (s.gpr .r7) := by
     obtain ⟨-, -, dcs, dcw, -, -, dsw, wc, -, ws, ww⟩ := hs

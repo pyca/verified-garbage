@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Seal
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.Wp
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Env
@@ -58,7 +59,7 @@ theorem buf_cryR {c : Cx} {P : Addr} {len : Nat} (hw : (⟨P, len⟩ : Region).D
   · exact hd
 
 /-- `vg_aes_gcm_siv_open`, for its arguments. -/
-theorem open_wp' (hti : TagInputEq) {c : Cx} {s : State} (Ar : Args c s) :
+theorem open_wp' [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) {c : Cx} {s : State} (Ar : Args c s) :
     WP isa «open» s fun s' => abiPreserved s s' ∧
       openOut (Spec.GcmSiv.decryptWith (Spec.GcmSiv.ctxCiph s.mem c.K c.R) (Spec.GcmSiv.keyLen c.R)
         (bytesAt s.mem c.N 12) (bytesAt s.mem c.D c.n) (bytesAt s.mem c.A c.al) (bytesAt s.mem c.T 16))
@@ -206,7 +207,7 @@ theorem open_wp' (hti : TagInputEq) {c : Cx} {s : State} (Ar : Args c s) :
     · rw [md]; simp only [ite_eq_right_of_eq_false _ _ (eq_false hc'), List.map_const', hlen, Spec.GcmSiv.zeros]
 
 /-- `vg_aes_gcm_siv_open`. -/
-theorem open_wp (hti : TagInputEq) {s : State} (h : openPPC64LE.pre s) :
+theorem open_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] (hti : TagInputEq) {s : State} (h : openPPC64LE.pre s) :
     WP isa «open» s fun s' => abiPreserved s s' ∧ openPPC64LE.post s s' := by
   have A := args_of_open h
   refine WP.mono (open_wp' hti A) fun s' ⟨ga, hp⟩ => ⟨ga, ?_⟩

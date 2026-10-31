@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Gather.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Sig
@@ -82,11 +83,11 @@ theorem gatherSat_pre : ∃ s, (Spec.Gcm.sealGatherContract PPC64LE.abi 2832).pr
 theorem gather_implies : gatherPPC64LE.Implies (Spec.Gcm.sealGatherContract PPC64LE.abi 2832) :=
   ⟨fun _ h => gatherPre_of_spec h, fun _ _ _ h => gatherPost_of h, fun _ _ _ _ h => gatherPub_of h, gatherSat_pre⟩
 
-theorem sealGather_correct (s : State) (hs : gatherPPC64LE.pre s) :
+theorem sealGather_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] (s : State) (hs : gatherPPC64LE.pre s) :
     ∃ t s', Exec isa sealGather s t s' ∧ abiPreserved s s' ∧ gatherPPC64LE.post s s' :=
   sealGather_wp seal_framed.1 hs
 
-theorem sealGather_verified :
+theorem sealGather_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target sealGather (Spec.Gcm.sealGatherContract PPC64LE.abi 2832) :=
   Verified.of_correct (k := gatherPPC64LE) sealGather_correct (sealGather_ct seal_framed.1 seal_framed.2.1)
     gather_implies

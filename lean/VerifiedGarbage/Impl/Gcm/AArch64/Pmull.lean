@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.Impl.Gcm.Clmul -- shake: keep (exports the existing PMULL constants)
 
 /-!
 # GHASH with PMULL on AArch64
@@ -71,11 +72,11 @@ def sReg : Nat → VReg
   | 2 => .v25 | 3 => .v26 | 4 => .v27 | 5 => .v28 | 6 => .v29 | 7 => .v30 | 8 => .v31
   | _ => .v24
 
-/-- The reduction constant `0xc2 · 2⁵⁶`. -/
-def poly : BitVec 64 := 0xc200000000000000#64
+/- The reduction constant `0xc2 · 2⁵⁶`. -/
+export VG.Impl.Gcm.Clmul (poly)
 
-/-- `x⁻²` (reflected): the high doubleword; the low one is 3. -/
-def xInv2Hi : BitVec 64 := 0x4600000000000000#64
+/- `x⁻²` (reflected): the high doubleword; the low one is 3. -/
+export VG.Impl.Gcm.Clmul (xInv2Hi)
 
 /-- Clear the product. -/
 def zero : List Instr := [.vop (.movi0 LO), .vop (.movi0 MID), .vop (.movi0 HI)]

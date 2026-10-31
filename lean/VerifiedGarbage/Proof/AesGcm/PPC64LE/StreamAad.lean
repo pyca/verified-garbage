@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Fn
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.StreamInit
@@ -91,7 +92,7 @@ theorem aad_entry {s : State} (hs : streamAadPPC64LE.pre s) {x : List Byte}
 
 /-- One run of `stream_aad`, for additional data `x` so far of `aad_len` bytes
 modulo 16. -/
-theorem aad_run {s : State} (hs : streamAadPPC64LE.pre s) {x : List Byte}
+theorem aad_run [VG.Proof.Gcm.PPC64LE.GhashLaw] {s : State} (hs : streamAadPPC64LE.pre s) {x : List Byte}
     (hx : x.length % 16 = (s.gpr .r5).toNat % 16) :
     WP isa streamAad s fun s' => abiPreserved s s' ∧
       (Absorbed s.mem (s.gpr .r4 + BitVec.ofNat 64 16) (s.gpr .r4 + BitVec.ofNat 64 32)
@@ -135,7 +136,7 @@ theorem aad_run {s : State} (hs : streamAadPPC64LE.pre s) {x : List Byte}
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self, fun _ h => h⟩).trans
       (f₂.sub fun r hr => ⟨r, List.mem_cons_of_mem _ hr, fun _ h => h⟩)
 
-theorem streamAad_wp {s : State} (hs : streamAadPPC64LE.pre s) :
+theorem streamAad_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s : State} (hs : streamAadPPC64LE.pre s) :
     WP isa streamAad s fun s' => abiPreserved s s' ∧ streamAadPPC64LE.post s s' := by
   have hz : (Spec.Gcm.zeros ((s.gpr .r5).toNat % 16)).length % 16 = (s.gpr .r5).toNat % 16 := by
     rw [Proof.Gcm.length_zeros, Nat.mod_mod]

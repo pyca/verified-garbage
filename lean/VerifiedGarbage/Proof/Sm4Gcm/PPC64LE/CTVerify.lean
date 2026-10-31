@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Contract
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTFin
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CTBase
@@ -71,7 +72,7 @@ variable {c st w x sp : Addr} (L : Lay c st w) (X : XOk c st w x) {A T Tp : BitV
 include L X
 
 /-- `verify` after the tag length is known to be allowed. -/
-theorem verOk_ct (t1 : 1 ≤ tl) (t16 : tl ≤ 16) :
+theorem verOk_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] (t1 : 1 ≤ tl) (t16 : tl ≤ 16) :
     CT (VerI c st w x sp A T Tp tl) (.seq recv (.seq (finTag 0) (cmp 0))) := by
   refine CT.seq (J := VerI c st w x sp A T Tp tl) ?_ (fun s ⟨V, a, b, d, e, f, g, i, j, he, hT, hTd, hx⟩ => ?_) ?_
   · obtain ⟨_, hc⟩ := recv_taint
@@ -103,7 +104,7 @@ theorem verOk_ct (t1 : 1 ≤ tl) (t16 : tl ≤ 16) :
   · rw [h₁.r31, h₂.r31, d₁, d₂]
 
 /-- The same, for correctness: `W` is kept in `r31`. -/
-theorem verOk_wp (t1 : 1 ≤ tl) (t16 : tl ≤ 16) {s : State} (h : VerI c st w x sp A T Tp tl s) :
+theorem verOk_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] (t1 : 1 ≤ tl) (t16 : tl ≤ 16) {s : State} (h : VerI c st w x sp A T Tp tl s) :
     WP isa (.seq recv (.seq (finTag 0) (cmp 0))) s fun s' => s'.gpr .r31 = w ∧ s'.sp = sp := by
   obtain ⟨V, a, b, d, e, f, g, i, j, he, hT, hTd, hx⟩ := h
   refine WP.seq (WP.mono (recv_ok he j t1 t16 (by rw [i]; exact hT) (by rw [i, d]; exact hTd.sub_right (Lay.wSub
@@ -119,7 +120,7 @@ theorem verOk_wp (t1 : 1 ≤ tl) (t16 : tl ≤ 16) {s : State} (h : VerI c st w 
 
 end
 
-theorem streamVerify_ct : ConstantTime isa streamVerifyPPC64LE.pre streamVerifyPPC64LE.pub streamVerify := by
+theorem streamVerify_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] : ConstantTime isa streamVerifyPPC64LE.pre streamVerifyPPC64LE.pub streamVerify := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q3, q4, q5, q6, q7, q8, q9, q10, qsp⟩ := hq
   have h₁' : verPre σ₁ := h₁

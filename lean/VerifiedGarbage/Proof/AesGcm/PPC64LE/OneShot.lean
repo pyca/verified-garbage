@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Tag
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.J0
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Crypt
@@ -97,7 +98,7 @@ theorem stb_t16 {d : Nat} (hd : d = 0 ∨ d = 48) :
 
 /-- `oneAad`: `J₀` of the `n`-byte nonce at `Np`, then the additional data
 (`aad_len`, `r22`, bytes at `r21`) absorbed and padded. -/
-theorem oneAad_ok {H : Block} {Np : Addr} {n : Nat} {s : State} (he : Env V sp s)
+theorem oneAad_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {H : Block} {Np : Addr} {n : Nat} {s : State} (he : Env V sp s)
     (hH : blockAt s.mem (V .r29 + BitVec.ofNat 64 240) = H) (h24 : s.gpr .r24 = Np)
     (h25 : s.gpr .r25 = BitVec.ofNat 64 n) (h18 : V .r18 = BitVec.ofNat 64 n) (hN : DataOk (V .r30) (V .r31) s Np n)
     (hA : DataOk (V .r30) (V .r31) s (V .r21) (V .r22).toNat) :
@@ -239,7 +240,7 @@ section
 variable {V : Reg → BitVec 64} {sp : Addr} (L : Lay (V .r29) (V .r30) (V .r31))
 include L
 
-theorem oneTag_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {H : Block} {a : List Byte} {s : State} (he : Env V sp s)
+theorem oneTag_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {o R : Nat} (ho : o = 0 ∨ o = 112) {H : Block} {a : List Byte} {s : State} (he : Env V sp s)
     (h28 : V .r28 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (hH : blockAt s.mem (V .r29 + BitVec.ofNat 64 240) = H) (hl : (V .r22).toNat = a.length)
     (hab : Absorbed s.mem (V .r30 + BitVec.ofNat 64 16) (V .r30 + BitVec.ofNat 64 32) H (a ++ zeros (padLen a.length)))

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Contract
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.FinTag
 import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.CTCrypt
@@ -77,7 +78,7 @@ section
 variable {c st w x sp : Addr} (L : Lay c st w) (X : XOk c st w x)
 include L X
 
-theorem tag_ct {o : Nat} (ho : o = 0 ∨ o = 112) :
+theorem tag_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] {o : Nat} (ho : o = 0 ∨ o = 112) :
     CT (EnvX c st w x sp) (tag o) := by
   refine CT.seq (J := EnvX c st w x sp)
     ((lens_ct L (yo := 16) (.inr rfl)).mono fun s ⟨V, a, b, d, _, he, _⟩ => ⟨V, a, b, d, he⟩)
@@ -107,7 +108,7 @@ theorem tag_ct {o : Nat} (ho : o = 0 ∨ o = 112) :
       rw [a₂, b₂, d₂, c₂] at g₂
       exact ⟨_, _, _, _, _, g₁, g₂, e₁.sp.trans e₂.sp.symm⟩
 
-theorem finTag_ct {o : Nat} (ho : o = 0 ∨ o = 112) {A T : BitVec 64} :
+theorem finTag_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] {o : Nat} (ho : o = 0 ∨ o = 112) {A T : BitVec 64} :
     CT (FTI c st w x sp A T) (finTag o) := by
   have hq : finQ A T < 16 := by simp only [finQ]; split <;> exact Nat.mod_lt _ (by decide)
   let J : State → Prop := fun s => FTI c st w x sp A T s ∧ s.gpr .r26 = BitVec.ofNat 64 (finQ A T)
@@ -185,7 +186,7 @@ theorem finEntry_taint : ∃ h, (VG.Taint.check VG.PPC64LE.taint
 theorem tagOut_taint : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs [.r20, .r31]) (.block tagOut)
     h).isSome = true := ⟨_, by taint_decide⟩
 
-theorem streamFinish_ct : ConstantTime isa streamFinishPPC64LE.pre streamFinishPPC64LE.pub streamFinish := by
+theorem streamFinish_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] : ConstantTime isa streamFinishPPC64LE.pre streamFinishPPC64LE.pub streamFinish := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q3, q4, q5, q6, q7, q8, q9, qsp⟩ := hq
   have h₁' : finPre σ₁ := h₁
