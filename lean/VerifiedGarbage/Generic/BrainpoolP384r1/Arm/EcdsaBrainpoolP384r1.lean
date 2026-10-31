@@ -83,6 +83,16 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP384r1.curve) : List A
     verified := Proof.Ecdsa.Arm.BrainpoolP384r1.sign_verified h.law },
   Spec.Ecdsa.BrainpoolP384r1.verifyApi.artifact Arm.target {
     code := Impl.Ecdsa.Verify.Arm.verifyBrainpoolP384r1
-    verified := Proof.Ecdsa.Verify.Arm.BrainpoolP384r1.verify_verified h.law }]
+    verified := Proof.Ecdsa.Verify.Arm.BrainpoolP384r1.verify_verified h.law },
+  Spec.Ecdsa.BrainpoolP384r1.signApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.Ecdsa.Arm.signBrainpoolP384r1U
+    verified := Proof.Ecdsa.Arm.BrainpoolP384r1.signU_verified h.law
+    features := ["umaal"] },
+  Spec.Ecdsa.BrainpoolP384r1.verifyApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Impl.Ecdsa.Verify.Arm.verifyBrainpoolP384r1U
+    verified := Proof.Ecdsa.Verify.Arm.BrainpoolP384r1.verifyU_verified h.law
+    features := ["umaal"] }]
 
 end VG.Generic.BrainpoolP384r1.Arm.EcdsaBrainpoolP384r1

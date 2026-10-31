@@ -11,7 +11,13 @@ namespace VG.Impl.EcKey.Arm
 
 open VG.Arm
 
+/-- `vg_ec_brainpoolp384r1_public_key`, or with `u` `vg_ec_brainpoolp384r1_public_key_umaal`. -/
+def publicKeyBrainpoolP384r1With (u : Bool) : Prog isa := Cfg.publicKey (Impl.Ecdsa.Arm.brainpoolp384r1With u)
+
 /-- `vg_ec_brainpoolp384r1_public_key`. -/
-def publicKeyBrainpoolP384r1 : Prog isa := Cfg.publicKey Impl.Ecdsa.Arm.brainpoolp384r1
+def publicKeyBrainpoolP384r1 : Prog isa := publicKeyBrainpoolP384r1With false
+
+/-- `vg_ec_brainpoolp384r1_public_key_umaal`. -/
+def publicKeyBrainpoolP384r1U : Prog isa := publicKeyBrainpoolP384r1With true
 
 end VG.Impl.EcKey.Arm

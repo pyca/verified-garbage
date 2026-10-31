@@ -52,16 +52,36 @@ def brainpoolp384r1 (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) : RfcCurve
   coreX := by
     intro s hs
     have pre : Proof.Ecdsa.Arm.BrainpoolP384r1.signArm.pre s := by
-      simpa only [coreK,TablesOk,Impl.Ecdsa.Arm.brainpoolp384r1,Spec.BrainpoolP384r1.curve,Nat.reduceMul,List.not_mem_nil,forall_const,
+      simpa only [coreK,TablesOk,Impl.Ecdsa.Arm.brainpoolp384r1,Impl.Ecdsa.Arm.brainpoolp384r1With,Spec.BrainpoolP384r1.curve,Nat.reduceMul,List.not_mem_nil,forall_const,
         false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,Proof.Ecdsa.Arm.BrainpoolP384r1.signArm] using hs
-    obtain ⟨tr,t,exec,abi,post⟩ := Proof.Ecdsa.Arm.BrainpoolP384r1.sign_arm hL s pre
+    obtain ⟨tr,t,exec,abi,post⟩ := Proof.Ecdsa.Arm.BrainpoolP384r1.sign_arm hL false s pre
     refine ⟨tr,t,exec,abi,?_⟩
     change Proof.Ecdsa.Arm.BrainpoolP384r1.signArm.post s t
     exact post
   coreCT := by
-    simpa only [coreK,coreSigOf,Spec.BrainpoolP384r1.curve,Nat.reduceMul,Impl.Ecdsa.Arm.brainpoolp384r1,Proof.Ecdsa.Arm.BrainpoolP384r1.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
+    simpa only [coreK,coreSigOf,Spec.BrainpoolP384r1.curve,Nat.reduceMul,Impl.Ecdsa.Arm.brainpoolp384r1,Impl.Ecdsa.Arm.brainpoolp384r1With,Proof.Ecdsa.Arm.BrainpoolP384r1.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
       Proof.Ecdsa.Arm.BrainpoolP384r1.signArm] using Proof.Ecdsa.Arm.BrainpoolP384r1.sign_ct
   coreStack := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+
+
+/-- `brainpoolp384r1`, calling `vg_ecdsa_brainpoolp384r1_sign_umaal`. -/
+def brainpoolp384r1U (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) : RfcCurve :=
+  {brainpoolp384r1 hL with
+    coreN := Spec.Ecdsa.BrainpoolP384r1.signApi.name ++ "_umaal"
+    coreC := Impl.Ecdsa.Arm.signBrainpoolP384r1U
+    coreX := by
+      intro s hs
+      have pre : Proof.Ecdsa.Arm.BrainpoolP384r1.signArm.pre s := by
+        simpa only [coreK,TablesOk,Impl.Ecdsa.Arm.brainpoolp384r1,Impl.Ecdsa.Arm.brainpoolp384r1With,Spec.BrainpoolP384r1.curve,Nat.reduceMul,List.not_mem_nil,forall_const,
+          false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,Proof.Ecdsa.Arm.BrainpoolP384r1.signArm] using hs
+      obtain ⟨tr,t,exec,abi,post⟩ := Proof.Ecdsa.Arm.BrainpoolP384r1.sign_arm hL true s pre
+      refine ⟨tr,t,exec,abi,?_⟩
+      change Proof.Ecdsa.Arm.BrainpoolP384r1.signArm.post s t
+      exact post
+    coreCT := by
+      simpa only [coreK,coreSigOf,Spec.BrainpoolP384r1.curve,Nat.reduceMul,Impl.Ecdsa.Arm.brainpoolp384r1,Impl.Ecdsa.Arm.brainpoolp384r1With,Proof.Ecdsa.Arm.BrainpoolP384r1.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
+        Proof.Ecdsa.Arm.BrainpoolP384r1.signArm] using Proof.Ecdsa.Arm.BrainpoolP384r1.signU_ct
+    coreStack := by lit_decide }
 
 end VG.Proof.Ecdsa.Rfc6979.Arm
