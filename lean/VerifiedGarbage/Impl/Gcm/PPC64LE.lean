@@ -91,8 +91,8 @@ def step : List Instr := [
   .logic .and T VL M,
   .logic .xor ZL ZL T,
   -- M := −LSB₁(V)
-  .lsl T VL 63,
-  .lsr .d T T 63,
+  .li T 1,
+  .logic .and T VL T,
   .sub M ZERO T,
   -- V := (V >> 1) ⊕ (R ∧ M)
   .lsr .d VL VL 1,

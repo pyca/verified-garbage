@@ -2720,8 +2720,8 @@ and %r15, %r12, %r0
 xor %r10, %r10, %r15
 and %r15, %r14, %r0
 xor %r11, %r11, %r15
-rldicr %r15, %r14, 63, 0
-rldicl %r15, %r15, 1, 63
+li %r15, 1
+and %r15, %r14, %r15
 subf %r0, %r15, %r18
 rldicl %r14, %r14, 63, 1
 rldicr %r15, %r12, 63, 0
@@ -2739,8 +2739,8 @@ and %r15, %r12, %r0
 xor %r10, %r10, %r15
 and %r15, %r14, %r0
 xor %r11, %r11, %r15
-rldicr %r15, %r14, 63, 0
-rldicl %r15, %r15, 1, 63
+li %r15, 1
+and %r15, %r14, %r15
 subf %r0, %r15, %r18
 rldicl %r14, %r14, 63, 1
 rldicr %r15, %r12, 63, 0
@@ -2758,8 +2758,8 @@ and %r15, %r12, %r0
 xor %r10, %r10, %r15
 and %r15, %r14, %r0
 xor %r11, %r11, %r15
-rldicr %r15, %r14, 63, 0
-rldicl %r15, %r15, 1, 63
+li %r15, 1
+and %r15, %r14, %r15
 subf %r0, %r15, %r18
 rldicl %r14, %r14, 63, 1
 rldicr %r15, %r12, 63, 0
@@ -2777,8 +2777,8 @@ and %r15, %r12, %r0
 xor %r10, %r10, %r15
 and %r15, %r14, %r0
 xor %r11, %r11, %r15
-rldicr %r15, %r14, 63, 0
-rldicl %r15, %r15, 1, 63
+li %r15, 1
+and %r15, %r14, %r15
 subf %r0, %r15, %r18
 rldicl %r14, %r14, 63, 1
 rldicr %r15, %r12, 63, 0
@@ -2796,8 +2796,8 @@ and %r15, %r12, %r0
 xor %r10, %r10, %r15
 and %r15, %r14, %r0
 xor %r11, %r11, %r15
-rldicr %r15, %r14, 63, 0
-rldicl %r15, %r15, 1, 63
+li %r15, 1
+and %r15, %r14, %r15
 subf %r0, %r15, %r18
 rldicl %r14, %r14, 63, 1
 rldicr %r15, %r12, 63, 0
@@ -2815,8 +2815,8 @@ and %r15, %r12, %r0
 xor %r10, %r10, %r15
 and %r15, %r14, %r0
 xor %r11, %r11, %r15
-rldicr %r15, %r14, 63, 0
-rldicl %r15, %r15, 1, 63
+li %r15, 1
+and %r15, %r14, %r15
 subf %r0, %r15, %r18
 rldicl %r14, %r14, 63, 1
 rldicr %r15, %r12, 63, 0
@@ -2834,8 +2834,8 @@ and %r15, %r12, %r0
 xor %r10, %r10, %r15
 and %r15, %r14, %r0
 xor %r11, %r11, %r15
-rldicr %r15, %r14, 63, 0
-rldicl %r15, %r15, 1, 63
+li %r15, 1
+and %r15, %r14, %r15
 subf %r0, %r15, %r18
 rldicl %r14, %r14, 63, 1
 rldicr %r15, %r12, 63, 0
@@ -2853,8 +2853,8 @@ and %r15, %r12, %r0
 xor %r10, %r10, %r15
 and %r15, %r14, %r0
 xor %r11, %r11, %r15
-rldicr %r15, %r14, 63, 0
-rldicl %r15, %r15, 1, 63
+li %r15, 1
+and %r15, %r14, %r15
 subf %r0, %r15, %r18
 rldicl %r14, %r14, 63, 1
 rldicr %r15, %r12, 63, 0

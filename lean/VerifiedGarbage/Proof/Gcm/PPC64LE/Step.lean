@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Impl.Gcm.PPC64LE
 public import VerifiedGarbage.Proof.Gcm.Spec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Framework.PPC64LE.Reduce
+import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -60,13 +62,11 @@ theorem neg_msb (x : BitVec 64) :
       split <;> simp [BitVec.getLsbD_one, show i ≠ 0 by omega_using [hi, h]]
   rw [h]; split <;> decide
 
-/-- `sldi t, lo, 63; srdi t, t, 63` isolates the lowest bit. -/
+/-- Masking with one isolates the lowest bit without two dependent shifts. -/
 theorem neg_lsb (x : BitVec 64) :
-    (0 : BitVec 64) - x <<< 63 >>> 63 = if x.getLsbD 0 then BitVec.allOnes 64 else 0 := by
-  rw [neg_msb]
-  have : (x <<< 63).msb = x.getLsbD 0 := by
-    rw [BitVec.msb_eq_getLsbD_last, BitVec.getLsbD_shiftLeft]; simp
-  rw [this]
+    (0 : BitVec 64) - (x &&& 1#64) = if x.getLsbD 0 then BitVec.allOnes 64 else 0 := by
+  rw [BitVec.and_one_eq_setWidth_ofBool_getLsbD]
+  cases x.getLsbD 0 <;> decide
 
 theorem mask_z (zh zl vh vl : BitVec 64) (c : Bool) :
     (zh ^^^ (vh &&& if c then BitVec.allOnes 64 else 0)) ++
@@ -92,7 +92,7 @@ theorem shr1 (a b : BitVec 64) : a >>> 1 ++ (b >>> 1 ||| a <<< 63) = (a ++ b) >>
     congr 1; omega_using [hi, h]
 
 theorem update_v (vh vl : BitVec 64) :
-    (vh >>> 1 ^^^ ((0 : BitVec 64) - vl <<< 63 >>> 63 &&& rHigh)) ++ (vl >>> 1 ||| vh <<< 63) =
+    (vh >>> 1 ^^^ ((0 : BitVec 64) - (vl &&& 1#64) &&& rHigh)) ++ (vl >>> 1 ||| vh <<< 63) =
       if (vh ++ vl).getLsbD 0 then ((vh ++ vl) >>> 1) ^^^ Spec.Gcm.R else (vh ++ vl) >>> 1 := by
   rw [neg_lsb, R_eq, BitVec.getLsbD_append, ← shr1]
   simp only [show (0 : Nat) < 64 by decide, ite_true]
@@ -122,8 +122,10 @@ theorem step_ok (x : Block) (zv : Block × Block) (k : Nat) (s : State)
   simp only [XH, XL, ZH, ZL, VH, VL, RH, ZERO] at hx hr hz ⊢
   apply WP.of_runBlock
   simp only [step, XH, XL, ZH, ZL, VH, VL, M, T, RH, ZERO]
-  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, runBlock_cons, runStep_some,
-    runBlock_nil, exec, State.read, State.write, BitVec.setWidth_eq, Size.bits, Size.ext,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reducePow, runBlock_cons, runStep_some,
+    runBlock_nil, reduceExec, State.read, RegUpd.gpr_write, RegUpd.mem_write,
+    RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.lr_write,
+    BitVec.setWidth_eq, Size.bits, Size.ext,
     Option.some.injEq, exists_eq_left']
   and_intros
   · rw [shl1, hx, BitVec.shiftLeft_add]
