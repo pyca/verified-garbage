@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Hmac.Scratch
 meta import VerifiedGarbage.Proof.Hmac.Scratch
 meta import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Shared
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Shared
+import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 
 /-!
 # HMAC-SHA-384 on PPC64LE
@@ -36,17 +38,17 @@ def ok : HashOK hash :=
 
 theorem init_ct : ConstantTime isa (initG ok.SH (hash.W + 48) 96).pre (initG ok.SH (hash.W + 48) 96).pub
     hash.init :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
     (fun _ _ _ _ hp => Shared.agree hp) (by taint_decide)
 
 theorem fin_ct : ConstantTime isa (finG ok.SH (hash.W + 48 + hash.FD) 96).pre
     (finG ok.SH (hash.W + 48 + hash.FD) 96).pub hash.finalize :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
     (fun _ _ _ _ hp => Shared.agree hp) (by taint_decide)
 
 theorem long_ct : ConstantTime isa (longG ok.SH hash.lbytes 144).pre (longG ok.SH hash.lbytes 144).pub
     hash.initLong :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
     (fun _ _ _ _ hp => Shared.agree hp) (by taint_decide)
 
 /-! ## The shared contracts -/

@@ -44,22 +44,18 @@ oris %r17, %r17, 55080
 ori %r17, %r17, 44578
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -76,22 +72,18 @@ oris %r17, %r17, 9199
 ori %r17, %r17, 26061
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -108,22 +100,18 @@ oris %r17, %r17, 60493
 ori %r17, %r17, 15151
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -140,22 +128,18 @@ oris %r17, %r17, 33161
 ori %r17, %r17, 56252
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -172,22 +156,18 @@ oris %r17, %r17, 62280
 ori %r17, %r17, 46392
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -204,22 +184,18 @@ oris %r17, %r17, 46597
 ori %r17, %r17, 53273
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -236,22 +212,18 @@ oris %r17, %r17, 44825
 ori %r17, %r17, 20379
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -268,22 +240,18 @@ oris %r17, %r17, 55917
 ori %r17, %r17, 33048
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -300,22 +268,18 @@ oris %r17, %r17, 41731
 ori %r17, %r17, 578
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -332,22 +296,18 @@ oris %r17, %r17, 17776
 ori %r17, %r17, 28606
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -364,22 +324,18 @@ oris %r17, %r17, 20196
 ori %r17, %r17, 45708
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -396,22 +352,18 @@ oris %r17, %r17, 54783
 ori %r17, %r17, 46306
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -428,22 +380,18 @@ oris %r17, %r17, 62075
 ori %r17, %r17, 35183
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -460,22 +408,18 @@ oris %r17, %r17, 15126
 ori %r17, %r17, 38577
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -492,22 +436,18 @@ oris %r17, %r17, 9671
 ori %r17, %r17, 4661
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -524,22 +464,18 @@ oris %r17, %r17, 53097
 ori %r17, %r17, 9876
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -547,19 +483,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -571,22 +503,18 @@ oris %r17, %r17, 40689
 ori %r17, %r17, 19154
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -594,19 +522,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -618,22 +542,18 @@ oris %r17, %r17, 14415
 ori %r17, %r17, 9699
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -641,19 +561,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -665,22 +581,18 @@ oris %r17, %r17, 35724
 ori %r17, %r17, 54709
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -688,19 +600,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -712,22 +620,18 @@ oris %r17, %r17, 30636
 ori %r17, %r17, 40037
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -735,19 +639,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -759,22 +659,18 @@ oris %r17, %r17, 22827
 ori %r17, %r17, 629
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -782,19 +678,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -806,22 +698,18 @@ oris %r17, %r17, 28326
 ori %r17, %r17, 58499
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -829,19 +717,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -853,22 +737,18 @@ oris %r17, %r17, 48449
 ori %r17, %r17, 64468
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -876,19 +756,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -900,22 +776,18 @@ oris %r17, %r17, 33553
 ori %r17, %r17, 21429
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -923,19 +795,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -947,22 +815,18 @@ oris %r17, %r17, 61030
 ori %r17, %r17, 57259
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -970,19 +834,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -994,22 +854,18 @@ oris %r17, %r17, 11700
 ori %r17, %r17, 12816
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -1017,19 +873,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -1041,22 +893,18 @@ oris %r17, %r17, 39163
 ori %r17, %r17, 8511
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -1064,19 +912,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -1088,22 +932,18 @@ oris %r17, %r17, 48879
 ori %r17, %r17, 3812
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -1111,19 +951,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -1135,22 +971,18 @@ oris %r17, %r17, 15784
 ori %r17, %r17, 36802
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -1158,19 +990,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -1182,22 +1010,18 @@ oris %r17, %r17, 37642
 ori %r17, %r17, 42789
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -1205,19 +1029,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -1229,22 +1049,18 @@ oris %r17, %r17, 57347
 ori %r17, %r17, 33391
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -1252,19 +1068,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -1276,22 +1088,18 @@ oris %r17, %r17, 2574
 ori %r17, %r17, 28272
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -1299,19 +1107,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -1323,22 +1127,18 @@ oris %r17, %r17, 18130
 ori %r17, %r17, 12284
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -1346,19 +1146,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -1370,22 +1166,18 @@ oris %r17, %r17, 23590
 ori %r17, %r17, 51494
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -1393,19 +1185,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -1417,22 +1205,18 @@ oris %r17, %r17, 23236
 ori %r17, %r17, 10989
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -1440,19 +1224,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -1464,22 +1244,18 @@ oris %r17, %r17, 40341
 ori %r17, %r17, 46047
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -1487,19 +1263,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -1511,22 +1283,18 @@ oris %r17, %r17, 35759
 ori %r17, %r17, 25566
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -1534,19 +1302,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -1558,22 +1322,18 @@ oris %r17, %r17, 15479
 ori %r17, %r17, 45736
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -1581,19 +1341,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -1605,22 +1361,18 @@ oris %r17, %r17, 18413
 ori %r17, %r17, 44774
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -1628,19 +1380,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -1652,22 +1400,18 @@ oris %r17, %r17, 5250
 ori %r17, %r17, 13627
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -1675,19 +1419,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -1699,22 +1439,18 @@ oris %r17, %r17, 19697
 ori %r17, %r17, 868
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -1722,19 +1458,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -1746,22 +1478,18 @@ oris %r17, %r17, 48194
 ori %r17, %r17, 12289
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -1769,19 +1497,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -1793,22 +1517,18 @@ oris %r17, %r17, 53496
 ori %r17, %r17, 38801
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -1816,19 +1536,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -1840,22 +1556,18 @@ oris %r17, %r17, 1620
 ori %r17, %r17, 48688
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -1863,19 +1575,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -1887,22 +1595,18 @@ oris %r17, %r17, 55023
 ori %r17, %r17, 21016
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -1910,19 +1614,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -1934,22 +1634,18 @@ oris %r17, %r17, 21861
 ori %r17, %r17, 43280
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -1957,19 +1653,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -1981,22 +1673,18 @@ oris %r17, %r17, 22385
 ori %r17, %r17, 8234
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -2004,19 +1692,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -2028,22 +1712,18 @@ oris %r17, %r17, 12987
 ori %r17, %r17, 53688
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -2051,19 +1731,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -2075,22 +1751,18 @@ oris %r17, %r17, 47314
 ori %r17, %r17, 53448
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -2098,19 +1770,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -2122,22 +1790,18 @@ oris %r17, %r17, 20801
 ori %r17, %r17, 43859
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -2145,19 +1809,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -2169,22 +1829,18 @@ oris %r17, %r17, 57230
 ori %r17, %r17, 60313
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -2192,19 +1848,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -2216,22 +1868,18 @@ oris %r17, %r17, 57755
 ori %r17, %r17, 18600
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -2239,19 +1887,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -2263,22 +1907,18 @@ oris %r17, %r17, 50633
 ori %r17, %r17, 23139
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -2286,19 +1926,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -2310,22 +1946,18 @@ oris %r17, %r17, 58177
 ori %r17, %r17, 35531
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -2333,19 +1965,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -2357,22 +1985,18 @@ oris %r17, %r17, 30563
 ori %r17, %r17, 58227
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -2380,19 +2004,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -2404,22 +2024,18 @@ oris %r17, %r17, 54962
 ori %r17, %r17, 47267
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -2427,19 +2043,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -2451,22 +2063,18 @@ oris %r17, %r17, 24047
 ori %r17, %r17, 45820
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -2474,19 +2082,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -2498,22 +2102,18 @@ oris %r17, %r17, 17175
 ori %r17, %r17, 12128
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -2521,19 +2121,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -2545,22 +2141,18 @@ oris %r17, %r17, 41456
 ori %r17, %r17, 43890
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -2568,19 +2160,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -2592,22 +2180,18 @@ oris %r17, %r17, 6756
 ori %r17, %r17, 14828
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -2615,19 +2199,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -2639,22 +2219,18 @@ oris %r17, %r17, 9059
 ori %r17, %r17, 7720
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -2662,19 +2238,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -2686,22 +2258,18 @@ oris %r17, %r17, 56962
 ori %r17, %r17, 48617
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -2709,19 +2277,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -2733,22 +2297,18 @@ oris %r17, %r17, 45766
 ori %r17, %r17, 30997
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -2756,19 +2316,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -2780,22 +2336,18 @@ oris %r17, %r17, 58226
 ori %r17, %r17, 21291
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -2803,19 +2355,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -2827,22 +2375,18 @@ oris %r17, %r17, 59942
 ori %r17, %r17, 24988
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -2850,19 +2394,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -2874,22 +2414,18 @@ oris %r17, %r17, 8640
 ori %r17, %r17, 49671
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -2897,19 +2433,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -2921,22 +2453,18 @@ oris %r17, %r17, 52704
 ori %r17, %r17, 60190
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -2944,19 +2472,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -2968,22 +2492,18 @@ oris %r17, %r17, 61038
 ori %r17, %r17, 53624
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -2991,19 +2511,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -3015,22 +2531,18 @@ oris %r17, %r17, 29207
 ori %r17, %r17, 28602
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -3038,19 +2550,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -3062,22 +2570,18 @@ oris %r17, %r17, 41672
 ori %r17, %r17, 39078
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -3085,19 +2589,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -3109,22 +2609,18 @@ oris %r17, %r17, 48889
 ori %r17, %r17, 3502
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -3132,19 +2628,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -3156,22 +2648,18 @@ oris %r17, %r17, 4892
 ori %r17, %r17, 18203
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -3179,19 +2667,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -3203,22 +2687,18 @@ oris %r17, %r17, 8964
 ori %r17, %r17, 32132
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -3226,19 +2706,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -3250,22 +2726,18 @@ oris %r17, %r17, 16583
 ori %r17, %r17, 9363
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -3273,19 +2745,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -3297,22 +2765,18 @@ oris %r17, %r17, 5577
 ori %r17, %r17, 48828
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -3320,19 +2784,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -3344,22 +2804,18 @@ oris %r17, %r17, 39952
 ori %r17, %r17, 3404
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -3367,19 +2823,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -3391,22 +2843,18 @@ oris %r17, %r17, 52030
 ori %r17, %r17, 17078
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -3414,19 +2862,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -3438,22 +2882,18 @@ oris %r17, %r17, 64613
 ori %r17, %r17, 32298
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -3461,19 +2901,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -3485,22 +2921,18 @@ oris %r17, %r17, 15062
 ori %r17, %r17, 64236
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -3508,19 +2940,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -3532,22 +2960,18 @@ oris %r17, %r17, 19015
 ori %r17, %r17, 22551
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -3995,22 +3419,18 @@ oris %r17, %r17, 55080
 ori %r17, %r17, 44578
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -4027,22 +3447,18 @@ oris %r17, %r17, 9199
 ori %r17, %r17, 26061
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -4059,22 +3475,18 @@ oris %r17, %r17, 60493
 ori %r17, %r17, 15151
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -4091,22 +3503,18 @@ oris %r17, %r17, 33161
 ori %r17, %r17, 56252
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -4123,22 +3531,18 @@ oris %r17, %r17, 62280
 ori %r17, %r17, 46392
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -4155,22 +3559,18 @@ oris %r17, %r17, 46597
 ori %r17, %r17, 53273
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -4187,22 +3587,18 @@ oris %r17, %r17, 44825
 ori %r17, %r17, 20379
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -4219,22 +3615,18 @@ oris %r17, %r17, 55917
 ori %r17, %r17, 33048
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -4251,22 +3643,18 @@ oris %r17, %r17, 41731
 ori %r17, %r17, 578
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -4283,22 +3671,18 @@ oris %r17, %r17, 17776
 ori %r17, %r17, 28606
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -4315,22 +3699,18 @@ oris %r17, %r17, 20196
 ori %r17, %r17, 45708
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -4347,22 +3727,18 @@ oris %r17, %r17, 54783
 ori %r17, %r17, 46306
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -4379,22 +3755,18 @@ oris %r17, %r17, 62075
 ori %r17, %r17, 35183
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -4411,22 +3783,18 @@ oris %r17, %r17, 15126
 ori %r17, %r17, 38577
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -4443,22 +3811,18 @@ oris %r17, %r17, 9671
 ori %r17, %r17, 4661
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -4475,22 +3839,18 @@ oris %r17, %r17, 53097
 ori %r17, %r17, 9876
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -4498,19 +3858,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -4522,22 +3878,18 @@ oris %r17, %r17, 40689
 ori %r17, %r17, 19154
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -4545,19 +3897,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -4569,22 +3917,18 @@ oris %r17, %r17, 14415
 ori %r17, %r17, 9699
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -4592,19 +3936,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -4616,22 +3956,18 @@ oris %r17, %r17, 35724
 ori %r17, %r17, 54709
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -4639,19 +3975,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -4663,22 +3995,18 @@ oris %r17, %r17, 30636
 ori %r17, %r17, 40037
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -4686,19 +4014,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -4710,22 +4034,18 @@ oris %r17, %r17, 22827
 ori %r17, %r17, 629
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -4733,19 +4053,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -4757,22 +4073,18 @@ oris %r17, %r17, 28326
 ori %r17, %r17, 58499
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -4780,19 +4092,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -4804,22 +4112,18 @@ oris %r17, %r17, 48449
 ori %r17, %r17, 64468
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -4827,19 +4131,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -4851,22 +4151,18 @@ oris %r17, %r17, 33553
 ori %r17, %r17, 21429
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -4874,19 +4170,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -4898,22 +4190,18 @@ oris %r17, %r17, 61030
 ori %r17, %r17, 57259
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -4921,19 +4209,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -4945,22 +4229,18 @@ oris %r17, %r17, 11700
 ori %r17, %r17, 12816
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -4968,19 +4248,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -4992,22 +4268,18 @@ oris %r17, %r17, 39163
 ori %r17, %r17, 8511
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -5015,19 +4287,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -5039,22 +4307,18 @@ oris %r17, %r17, 48879
 ori %r17, %r17, 3812
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -5062,19 +4326,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -5086,22 +4346,18 @@ oris %r17, %r17, 15784
 ori %r17, %r17, 36802
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -5109,19 +4365,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -5133,22 +4385,18 @@ oris %r17, %r17, 37642
 ori %r17, %r17, 42789
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -5156,19 +4404,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -5180,22 +4424,18 @@ oris %r17, %r17, 57347
 ori %r17, %r17, 33391
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -5203,19 +4443,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -5227,22 +4463,18 @@ oris %r17, %r17, 2574
 ori %r17, %r17, 28272
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -5250,19 +4482,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -5274,22 +4502,18 @@ oris %r17, %r17, 18130
 ori %r17, %r17, 12284
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -5297,19 +4521,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -5321,22 +4541,18 @@ oris %r17, %r17, 23590
 ori %r17, %r17, 51494
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -5344,19 +4560,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -5368,22 +4580,18 @@ oris %r17, %r17, 23236
 ori %r17, %r17, 10989
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -5391,19 +4599,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -5415,22 +4619,18 @@ oris %r17, %r17, 40341
 ori %r17, %r17, 46047
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -5438,19 +4638,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -5462,22 +4658,18 @@ oris %r17, %r17, 35759
 ori %r17, %r17, 25566
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -5485,19 +4677,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -5509,22 +4697,18 @@ oris %r17, %r17, 15479
 ori %r17, %r17, 45736
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -5532,19 +4716,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -5556,22 +4736,18 @@ oris %r17, %r17, 18413
 ori %r17, %r17, 44774
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -5579,19 +4755,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -5603,22 +4775,18 @@ oris %r17, %r17, 5250
 ori %r17, %r17, 13627
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -5626,19 +4794,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -5650,22 +4814,18 @@ oris %r17, %r17, 19697
 ori %r17, %r17, 868
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -5673,19 +4833,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -5697,22 +4853,18 @@ oris %r17, %r17, 48194
 ori %r17, %r17, 12289
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -5720,19 +4872,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -5744,22 +4892,18 @@ oris %r17, %r17, 53496
 ori %r17, %r17, 38801
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -5767,19 +4911,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -5791,22 +4931,18 @@ oris %r17, %r17, 1620
 ori %r17, %r17, 48688
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -5814,19 +4950,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -5838,22 +4970,18 @@ oris %r17, %r17, 55023
 ori %r17, %r17, 21016
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -5861,19 +4989,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -5885,22 +5009,18 @@ oris %r17, %r17, 21861
 ori %r17, %r17, 43280
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -5908,19 +5028,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -5932,22 +5048,18 @@ oris %r17, %r17, 22385
 ori %r17, %r17, 8234
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -5955,19 +5067,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -5979,22 +5087,18 @@ oris %r17, %r17, 12987
 ori %r17, %r17, 53688
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -6002,19 +5106,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -6026,22 +5126,18 @@ oris %r17, %r17, 47314
 ori %r17, %r17, 53448
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -6049,19 +5145,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -6073,22 +5165,18 @@ oris %r17, %r17, 20801
 ori %r17, %r17, 43859
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -6096,19 +5184,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -6120,22 +5204,18 @@ oris %r17, %r17, 57230
 ori %r17, %r17, 60313
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -6143,19 +5223,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -6167,22 +5243,18 @@ oris %r17, %r17, 57755
 ori %r17, %r17, 18600
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -6190,19 +5262,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -6214,22 +5282,18 @@ oris %r17, %r17, 50633
 ori %r17, %r17, 23139
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -6237,19 +5301,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -6261,22 +5321,18 @@ oris %r17, %r17, 58177
 ori %r17, %r17, 35531
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -6284,19 +5340,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -6308,22 +5360,18 @@ oris %r17, %r17, 30563
 ori %r17, %r17, 58227
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -6331,19 +5379,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -6355,22 +5399,18 @@ oris %r17, %r17, 54962
 ori %r17, %r17, 47267
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -6378,19 +5418,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -6402,22 +5438,18 @@ oris %r17, %r17, 24047
 ori %r17, %r17, 45820
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -6425,19 +5457,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -6449,22 +5477,18 @@ oris %r17, %r17, 17175
 ori %r17, %r17, 12128
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -6472,19 +5496,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -6496,22 +5516,18 @@ oris %r17, %r17, 41456
 ori %r17, %r17, 43890
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -6519,19 +5535,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -6543,22 +5555,18 @@ oris %r17, %r17, 6756
 ori %r17, %r17, 14828
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -6566,19 +5574,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -6590,22 +5594,18 @@ oris %r17, %r17, 9059
 ori %r17, %r17, 7720
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -6613,19 +5613,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -6637,22 +5633,18 @@ oris %r17, %r17, 56962
 ori %r17, %r17, 48617
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -6660,19 +5652,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -6684,22 +5672,18 @@ oris %r17, %r17, 45766
 ori %r17, %r17, 30997
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -6707,19 +5691,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -6731,22 +5711,18 @@ oris %r17, %r17, 58226
 ori %r17, %r17, 21291
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -6754,19 +5730,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -6778,22 +5750,18 @@ oris %r17, %r17, 59942
 ori %r17, %r17, 24988
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -6801,19 +5769,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -6825,22 +5789,18 @@ oris %r17, %r17, 8640
 ori %r17, %r17, 49671
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -6848,19 +5808,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -6872,22 +5828,18 @@ oris %r17, %r17, 52704
 ori %r17, %r17, 60190
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -6895,19 +5847,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -6919,22 +5867,18 @@ oris %r17, %r17, 61038
 ori %r17, %r17, 53624
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -6942,19 +5886,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -6966,22 +5906,18 @@ oris %r17, %r17, 29207
 ori %r17, %r17, 28602
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -6989,19 +5925,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -7013,22 +5945,18 @@ oris %r17, %r17, 41672
 ori %r17, %r17, 39078
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -7036,19 +5964,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -7060,22 +5984,18 @@ oris %r17, %r17, 48889
 ori %r17, %r17, 3502
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -7083,19 +6003,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -7107,22 +6023,18 @@ oris %r17, %r17, 4892
 ori %r17, %r17, 18203
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -7130,19 +6042,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -7154,22 +6062,18 @@ oris %r17, %r17, 8964
 ori %r17, %r17, 32132
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -7177,19 +6081,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -7201,22 +6101,18 @@ oris %r17, %r17, 16583
 ori %r17, %r17, 9363
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -7224,19 +6120,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -7248,22 +6140,18 @@ oris %r17, %r17, 5577
 ori %r17, %r17, 48828
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -7271,19 +6159,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -7295,22 +6179,18 @@ oris %r17, %r17, 39952
 ori %r17, %r17, 3404
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -7318,19 +6198,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -7342,22 +6218,18 @@ oris %r17, %r17, 52030
 ori %r17, %r17, 17078
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -7365,19 +6237,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -7389,22 +6257,18 @@ oris %r17, %r17, 64613
 ori %r17, %r17, 32298
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -7412,19 +6276,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -7436,22 +6296,18 @@ oris %r17, %r17, 15062
 ori %r17, %r17, 64236
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -7459,19 +6315,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -7483,22 +6335,18 @@ oris %r17, %r17, 19015
 ori %r17, %r17, 22551
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -7662,22 +6510,18 @@ oris %r17, %r17, 55080
 ori %r17, %r17, 44578
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -7694,22 +6538,18 @@ oris %r17, %r17, 9199
 ori %r17, %r17, 26061
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -7726,22 +6566,18 @@ oris %r17, %r17, 60493
 ori %r17, %r17, 15151
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -7758,22 +6594,18 @@ oris %r17, %r17, 33161
 ori %r17, %r17, 56252
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -7790,22 +6622,18 @@ oris %r17, %r17, 62280
 ori %r17, %r17, 46392
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -7822,22 +6650,18 @@ oris %r17, %r17, 46597
 ori %r17, %r17, 53273
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -7854,22 +6678,18 @@ oris %r17, %r17, 44825
 ori %r17, %r17, 20379
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -7886,22 +6706,18 @@ oris %r17, %r17, 55917
 ori %r17, %r17, 33048
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -7918,22 +6734,18 @@ oris %r17, %r17, 41731
 ori %r17, %r17, 578
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -7950,22 +6762,18 @@ oris %r17, %r17, 17776
 ori %r17, %r17, 28606
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -7982,22 +6790,18 @@ oris %r17, %r17, 20196
 ori %r17, %r17, 45708
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -8014,22 +6818,18 @@ oris %r17, %r17, 54783
 ori %r17, %r17, 46306
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -8046,22 +6846,18 @@ oris %r17, %r17, 62075
 ori %r17, %r17, 35183
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -8078,22 +6874,18 @@ oris %r17, %r17, 15126
 ori %r17, %r17, 38577
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -8110,22 +6902,18 @@ oris %r17, %r17, 9671
 ori %r17, %r17, 4661
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -8142,22 +6930,18 @@ oris %r17, %r17, 53097
 ori %r17, %r17, 9876
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -8165,19 +6949,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -8189,22 +6969,18 @@ oris %r17, %r17, 40689
 ori %r17, %r17, 19154
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -8212,19 +6988,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -8236,22 +7008,18 @@ oris %r17, %r17, 14415
 ori %r17, %r17, 9699
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -8259,19 +7027,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -8283,22 +7047,18 @@ oris %r17, %r17, 35724
 ori %r17, %r17, 54709
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -8306,19 +7066,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -8330,22 +7086,18 @@ oris %r17, %r17, 30636
 ori %r17, %r17, 40037
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -8353,19 +7105,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -8377,22 +7125,18 @@ oris %r17, %r17, 22827
 ori %r17, %r17, 629
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -8400,19 +7144,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -8424,22 +7164,18 @@ oris %r17, %r17, 28326
 ori %r17, %r17, 58499
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -8447,19 +7183,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -8471,22 +7203,18 @@ oris %r17, %r17, 48449
 ori %r17, %r17, 64468
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -8494,19 +7222,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -8518,22 +7242,18 @@ oris %r17, %r17, 33553
 ori %r17, %r17, 21429
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -8541,19 +7261,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -8565,22 +7281,18 @@ oris %r17, %r17, 61030
 ori %r17, %r17, 57259
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -8588,19 +7300,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -8612,22 +7320,18 @@ oris %r17, %r17, 11700
 ori %r17, %r17, 12816
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -8635,19 +7339,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -8659,22 +7359,18 @@ oris %r17, %r17, 39163
 ori %r17, %r17, 8511
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -8682,19 +7378,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -8706,22 +7398,18 @@ oris %r17, %r17, 48879
 ori %r17, %r17, 3812
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -8729,19 +7417,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -8753,22 +7437,18 @@ oris %r17, %r17, 15784
 ori %r17, %r17, 36802
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -8776,19 +7456,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -8800,22 +7476,18 @@ oris %r17, %r17, 37642
 ori %r17, %r17, 42789
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -8823,19 +7495,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -8847,22 +7515,18 @@ oris %r17, %r17, 57347
 ori %r17, %r17, 33391
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -8870,19 +7534,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -8894,22 +7554,18 @@ oris %r17, %r17, 2574
 ori %r17, %r17, 28272
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -8917,19 +7573,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -8941,22 +7593,18 @@ oris %r17, %r17, 18130
 ori %r17, %r17, 12284
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -8964,19 +7612,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -8988,22 +7632,18 @@ oris %r17, %r17, 23590
 ori %r17, %r17, 51494
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -9011,19 +7651,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -9035,22 +7671,18 @@ oris %r17, %r17, 23236
 ori %r17, %r17, 10989
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -9058,19 +7690,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -9082,22 +7710,18 @@ oris %r17, %r17, 40341
 ori %r17, %r17, 46047
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -9105,19 +7729,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -9129,22 +7749,18 @@ oris %r17, %r17, 35759
 ori %r17, %r17, 25566
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -9152,19 +7768,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -9176,22 +7788,18 @@ oris %r17, %r17, 15479
 ori %r17, %r17, 45736
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -9199,19 +7807,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -9223,22 +7827,18 @@ oris %r17, %r17, 18413
 ori %r17, %r17, 44774
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -9246,19 +7846,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -9270,22 +7866,18 @@ oris %r17, %r17, 5250
 ori %r17, %r17, 13627
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -9293,19 +7885,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -9317,22 +7905,18 @@ oris %r17, %r17, 19697
 ori %r17, %r17, 868
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -9340,19 +7924,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -9364,22 +7944,18 @@ oris %r17, %r17, 48194
 ori %r17, %r17, 12289
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -9387,19 +7963,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -9411,22 +7983,18 @@ oris %r17, %r17, 53496
 ori %r17, %r17, 38801
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -9434,19 +8002,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -9458,22 +8022,18 @@ oris %r17, %r17, 1620
 ori %r17, %r17, 48688
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -9481,19 +8041,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -9505,22 +8061,18 @@ oris %r17, %r17, 55023
 ori %r17, %r17, 21016
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -9528,19 +8080,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -9552,22 +8100,18 @@ oris %r17, %r17, 21861
 ori %r17, %r17, 43280
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -9575,19 +8119,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -9599,22 +8139,18 @@ oris %r17, %r17, 22385
 ori %r17, %r17, 8234
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -9622,19 +8158,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -9646,22 +8178,18 @@ oris %r17, %r17, 12987
 ori %r17, %r17, 53688
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -9669,19 +8197,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -9693,22 +8217,18 @@ oris %r17, %r17, 47314
 ori %r17, %r17, 53448
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -9716,19 +8236,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -9740,22 +8256,18 @@ oris %r17, %r17, 20801
 ori %r17, %r17, 43859
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -9763,19 +8275,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -9787,22 +8295,18 @@ oris %r17, %r17, 57230
 ori %r17, %r17, 60313
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -9810,19 +8314,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -9834,22 +8334,18 @@ oris %r17, %r17, 57755
 ori %r17, %r17, 18600
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -9857,19 +8353,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -9881,22 +8373,18 @@ oris %r17, %r17, 50633
 ori %r17, %r17, 23139
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -9904,19 +8392,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -9928,22 +8412,18 @@ oris %r17, %r17, 58177
 ori %r17, %r17, 35531
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -9951,19 +8431,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -9975,22 +8451,18 @@ oris %r17, %r17, 30563
 ori %r17, %r17, 58227
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -9998,19 +8470,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -10022,22 +8490,18 @@ oris %r17, %r17, 54962
 ori %r17, %r17, 47267
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -10045,19 +8509,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -10069,22 +8529,18 @@ oris %r17, %r17, 24047
 ori %r17, %r17, 45820
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -10092,19 +8548,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -10116,22 +8568,18 @@ oris %r17, %r17, 17175
 ori %r17, %r17, 12128
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -10139,19 +8587,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -10163,22 +8607,18 @@ oris %r17, %r17, 41456
 ori %r17, %r17, 43890
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -10186,19 +8626,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -10210,22 +8646,18 @@ oris %r17, %r17, 6756
 ori %r17, %r17, 14828
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -10233,19 +8665,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -10257,22 +8685,18 @@ oris %r17, %r17, 9059
 ori %r17, %r17, 7720
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -10280,19 +8704,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -10304,22 +8724,18 @@ oris %r17, %r17, 56962
 ori %r17, %r17, 48617
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -10327,19 +8743,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -10351,22 +8763,18 @@ oris %r17, %r17, 45766
 ori %r17, %r17, 30997
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -10374,19 +8782,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -10398,22 +8802,18 @@ oris %r17, %r17, 58226
 ori %r17, %r17, 21291
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -10421,19 +8821,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -10445,22 +8841,18 @@ oris %r17, %r17, 59942
 ori %r17, %r17, 24988
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -10468,19 +8860,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -10492,22 +8880,18 @@ oris %r17, %r17, 8640
 ori %r17, %r17, 49671
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -10515,19 +8899,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -10539,22 +8919,18 @@ oris %r17, %r17, 52704
 ori %r17, %r17, 60190
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -10562,19 +8938,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -10586,22 +8958,18 @@ oris %r17, %r17, 61038
 ori %r17, %r17, 53624
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -10609,19 +8977,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -10633,22 +8997,18 @@ oris %r17, %r17, 29207
 ori %r17, %r17, 28602
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -10656,19 +9016,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -10680,22 +9036,18 @@ oris %r17, %r17, 41672
 ori %r17, %r17, 39078
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -10703,19 +9055,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -10727,22 +9075,18 @@ oris %r17, %r17, 48889
 ori %r17, %r17, 3502
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -10750,19 +9094,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -10774,22 +9114,18 @@ oris %r17, %r17, 4892
 ori %r17, %r17, 18203
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -10797,19 +9133,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -10821,22 +9153,18 @@ oris %r17, %r17, 8964
 ori %r17, %r17, 32132
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -10844,19 +9172,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -10868,22 +9192,18 @@ oris %r17, %r17, 16583
 ori %r17, %r17, 9363
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -10891,19 +9211,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -10915,22 +9231,18 @@ oris %r17, %r17, 5577
 ori %r17, %r17, 48828
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -10938,19 +9250,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -10962,22 +9270,18 @@ oris %r17, %r17, 39952
 ori %r17, %r17, 3404
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -10985,19 +9289,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -11009,22 +9309,18 @@ oris %r17, %r17, 52030
 ori %r17, %r17, 17078
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -11032,19 +9328,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -11056,22 +9348,18 @@ oris %r17, %r17, 64613
 ori %r17, %r17, 32298
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -11079,19 +9367,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -11103,22 +9387,18 @@ oris %r17, %r17, 15062
 ori %r17, %r17, 64236
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -11126,19 +9406,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -11150,22 +9426,18 @@ oris %r17, %r17, 19015
 ori %r17, %r17, 22551
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -11396,22 +9668,18 @@ oris %r17, %r17, 55080
 ori %r17, %r17, 44578
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -11428,22 +9696,18 @@ oris %r17, %r17, 9199
 ori %r17, %r17, 26061
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -11460,22 +9724,18 @@ oris %r17, %r17, 60493
 ori %r17, %r17, 15151
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -11492,22 +9752,18 @@ oris %r17, %r17, 33161
 ori %r17, %r17, 56252
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -11524,22 +9780,18 @@ oris %r17, %r17, 62280
 ori %r17, %r17, 46392
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -11556,22 +9808,18 @@ oris %r17, %r17, 46597
 ori %r17, %r17, 53273
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -11588,22 +9836,18 @@ oris %r17, %r17, 44825
 ori %r17, %r17, 20379
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -11620,22 +9864,18 @@ oris %r17, %r17, 55917
 ori %r17, %r17, 33048
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -11652,22 +9892,18 @@ oris %r17, %r17, 41731
 ori %r17, %r17, 578
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -11684,22 +9920,18 @@ oris %r17, %r17, 17776
 ori %r17, %r17, 28606
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -11716,22 +9948,18 @@ oris %r17, %r17, 20196
 ori %r17, %r17, 45708
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -11748,22 +9976,18 @@ oris %r17, %r17, 54783
 ori %r17, %r17, 46306
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -11780,22 +10004,18 @@ oris %r17, %r17, 62075
 ori %r17, %r17, 35183
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -11812,22 +10032,18 @@ oris %r17, %r17, 15126
 ori %r17, %r17, 38577
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -11844,22 +10060,18 @@ oris %r17, %r17, 9671
 ori %r17, %r17, 4661
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -11876,22 +10088,18 @@ oris %r17, %r17, 53097
 ori %r17, %r17, 9876
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -11899,19 +10107,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -11923,22 +10127,18 @@ oris %r17, %r17, 40689
 ori %r17, %r17, 19154
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -11946,19 +10146,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -11970,22 +10166,18 @@ oris %r17, %r17, 14415
 ori %r17, %r17, 9699
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -11993,19 +10185,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -12017,22 +10205,18 @@ oris %r17, %r17, 35724
 ori %r17, %r17, 54709
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -12040,19 +10224,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -12064,22 +10244,18 @@ oris %r17, %r17, 30636
 ori %r17, %r17, 40037
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -12087,19 +10263,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -12111,22 +10283,18 @@ oris %r17, %r17, 22827
 ori %r17, %r17, 629
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -12134,19 +10302,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -12158,22 +10322,18 @@ oris %r17, %r17, 28326
 ori %r17, %r17, 58499
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -12181,19 +10341,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -12205,22 +10361,18 @@ oris %r17, %r17, 48449
 ori %r17, %r17, 64468
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -12228,19 +10380,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -12252,22 +10400,18 @@ oris %r17, %r17, 33553
 ori %r17, %r17, 21429
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -12275,19 +10419,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -12299,22 +10439,18 @@ oris %r17, %r17, 61030
 ori %r17, %r17, 57259
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -12322,19 +10458,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -12346,22 +10478,18 @@ oris %r17, %r17, 11700
 ori %r17, %r17, 12816
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -12369,19 +10497,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -12393,22 +10517,18 @@ oris %r17, %r17, 39163
 ori %r17, %r17, 8511
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -12416,19 +10536,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -12440,22 +10556,18 @@ oris %r17, %r17, 48879
 ori %r17, %r17, 3812
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -12463,19 +10575,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -12487,22 +10595,18 @@ oris %r17, %r17, 15784
 ori %r17, %r17, 36802
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -12510,19 +10614,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -12534,22 +10634,18 @@ oris %r17, %r17, 37642
 ori %r17, %r17, 42789
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -12557,19 +10653,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -12581,22 +10673,18 @@ oris %r17, %r17, 57347
 ori %r17, %r17, 33391
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -12604,19 +10692,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -12628,22 +10712,18 @@ oris %r17, %r17, 2574
 ori %r17, %r17, 28272
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -12651,19 +10731,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -12675,22 +10751,18 @@ oris %r17, %r17, 18130
 ori %r17, %r17, 12284
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -12698,19 +10770,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -12722,22 +10790,18 @@ oris %r17, %r17, 23590
 ori %r17, %r17, 51494
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -12745,19 +10809,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -12769,22 +10829,18 @@ oris %r17, %r17, 23236
 ori %r17, %r17, 10989
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -12792,19 +10848,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -12816,22 +10868,18 @@ oris %r17, %r17, 40341
 ori %r17, %r17, 46047
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -12839,19 +10887,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -12863,22 +10907,18 @@ oris %r17, %r17, 35759
 ori %r17, %r17, 25566
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -12886,19 +10926,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -12910,22 +10946,18 @@ oris %r17, %r17, 15479
 ori %r17, %r17, 45736
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -12933,19 +10965,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -12957,22 +10985,18 @@ oris %r17, %r17, 18413
 ori %r17, %r17, 44774
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -12980,19 +11004,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -13004,22 +11024,18 @@ oris %r17, %r17, 5250
 ori %r17, %r17, 13627
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -13027,19 +11043,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -13051,22 +11063,18 @@ oris %r17, %r17, 19697
 ori %r17, %r17, 868
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -13074,19 +11082,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -13098,22 +11102,18 @@ oris %r17, %r17, 48194
 ori %r17, %r17, 12289
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -13121,19 +11121,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -13145,22 +11141,18 @@ oris %r17, %r17, 53496
 ori %r17, %r17, 38801
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -13168,19 +11160,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -13192,22 +11180,18 @@ oris %r17, %r17, 1620
 ori %r17, %r17, 48688
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -13215,19 +11199,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -13239,22 +11219,18 @@ oris %r17, %r17, 55023
 ori %r17, %r17, 21016
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -13262,19 +11238,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -13286,22 +11258,18 @@ oris %r17, %r17, 21861
 ori %r17, %r17, 43280
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -13309,19 +11277,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -13333,22 +11297,18 @@ oris %r17, %r17, 22385
 ori %r17, %r17, 8234
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -13356,19 +11316,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -13380,22 +11336,18 @@ oris %r17, %r17, 12987
 ori %r17, %r17, 53688
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -13403,19 +11355,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -13427,22 +11375,18 @@ oris %r17, %r17, 47314
 ori %r17, %r17, 53448
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -13450,19 +11394,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -13474,22 +11414,18 @@ oris %r17, %r17, 20801
 ori %r17, %r17, 43859
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -13497,19 +11433,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -13521,22 +11453,18 @@ oris %r17, %r17, 57230
 ori %r17, %r17, 60313
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -13544,19 +11472,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -13568,22 +11492,18 @@ oris %r17, %r17, 57755
 ori %r17, %r17, 18600
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -13591,19 +11511,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -13615,22 +11531,18 @@ oris %r17, %r17, 50633
 ori %r17, %r17, 23139
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -13638,19 +11550,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -13662,22 +11570,18 @@ oris %r17, %r17, 58177
 ori %r17, %r17, 35531
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -13685,19 +11589,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -13709,22 +11609,18 @@ oris %r17, %r17, 30563
 ori %r17, %r17, 58227
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -13732,19 +11628,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -13756,22 +11648,18 @@ oris %r17, %r17, 54962
 ori %r17, %r17, 47267
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -13779,19 +11667,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -13803,22 +11687,18 @@ oris %r17, %r17, 24047
 ori %r17, %r17, 45820
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -13826,19 +11706,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -13850,22 +11726,18 @@ oris %r17, %r17, 17175
 ori %r17, %r17, 12128
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -13873,19 +11745,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -13897,22 +11765,18 @@ oris %r17, %r17, 41456
 ori %r17, %r17, 43890
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -13920,19 +11784,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -13944,22 +11804,18 @@ oris %r17, %r17, 6756
 ori %r17, %r17, 14828
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -13967,19 +11823,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -13991,22 +11843,18 @@ oris %r17, %r17, 9059
 ori %r17, %r17, 7720
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -14014,19 +11862,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -14038,22 +11882,18 @@ oris %r17, %r17, 56962
 ori %r17, %r17, 48617
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -14061,19 +11901,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -14085,22 +11921,18 @@ oris %r17, %r17, 45766
 ori %r17, %r17, 30997
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -14108,19 +11940,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -14132,22 +11960,18 @@ oris %r17, %r17, 58226
 ori %r17, %r17, 21291
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -14155,19 +11979,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -14179,22 +11999,18 @@ oris %r17, %r17, 59942
 ori %r17, %r17, 24988
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -14202,19 +12018,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -14226,22 +12038,18 @@ oris %r17, %r17, 8640
 ori %r17, %r17, 49671
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -14249,19 +12057,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -14273,22 +12077,18 @@ oris %r17, %r17, 52704
 ori %r17, %r17, 60190
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -14296,19 +12096,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -14320,22 +12116,18 @@ oris %r17, %r17, 61038
 ori %r17, %r17, 53624
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -14343,19 +12135,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -14367,22 +12155,18 @@ oris %r17, %r17, 29207
 ori %r17, %r17, 28602
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -14390,19 +12174,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -14414,22 +12194,18 @@ oris %r17, %r17, 41672
 ori %r17, %r17, 39078
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -14437,19 +12213,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -14461,22 +12233,18 @@ oris %r17, %r17, 48889
 ori %r17, %r17, 3502
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -14484,19 +12252,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -14508,22 +12272,18 @@ oris %r17, %r17, 4892
 ori %r17, %r17, 18203
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -14531,19 +12291,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -14555,22 +12311,18 @@ oris %r17, %r17, 8964
 ori %r17, %r17, 32132
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -14578,19 +12330,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -14602,22 +12350,18 @@ oris %r17, %r17, 16583
 ori %r17, %r17, 9363
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -14625,19 +12369,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -14649,22 +12389,18 @@ oris %r17, %r17, 5577
 ori %r17, %r17, 48828
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -14672,19 +12408,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -14696,22 +12428,18 @@ oris %r17, %r17, 39952
 ori %r17, %r17, 3404
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -14719,19 +12447,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -14743,22 +12467,18 @@ oris %r17, %r17, 52030
 ori %r17, %r17, 17078
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -14766,19 +12486,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -14790,22 +12506,18 @@ oris %r17, %r17, 64613
 ori %r17, %r17, 32298
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -14813,19 +12525,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -14837,22 +12545,18 @@ oris %r17, %r17, 15062
 ori %r17, %r17, 64236
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -14860,19 +12564,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -14884,22 +12584,18 @@ oris %r17, %r17, 19015
 ori %r17, %r17, 22551
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -15062,22 +12758,18 @@ oris %r17, %r17, 55080
 ori %r17, %r17, 44578
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -15094,22 +12786,18 @@ oris %r17, %r17, 9199
 ori %r17, %r17, 26061
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -15126,22 +12814,18 @@ oris %r17, %r17, 60493
 ori %r17, %r17, 15151
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -15158,22 +12842,18 @@ oris %r17, %r17, 33161
 ori %r17, %r17, 56252
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -15190,22 +12870,18 @@ oris %r17, %r17, 62280
 ori %r17, %r17, 46392
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -15222,22 +12898,18 @@ oris %r17, %r17, 46597
 ori %r17, %r17, 53273
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -15254,22 +12926,18 @@ oris %r17, %r17, 44825
 ori %r17, %r17, 20379
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -15286,22 +12954,18 @@ oris %r17, %r17, 55917
 ori %r17, %r17, 33048
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -15318,22 +12982,18 @@ oris %r17, %r17, 41731
 ori %r17, %r17, 578
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -15350,22 +13010,18 @@ oris %r17, %r17, 17776
 ori %r17, %r17, 28606
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -15382,22 +13038,18 @@ oris %r17, %r17, 20196
 ori %r17, %r17, 45708
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -15414,22 +13066,18 @@ oris %r17, %r17, 54783
 ori %r17, %r17, 46306
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -15446,22 +13094,18 @@ oris %r17, %r17, 62075
 ori %r17, %r17, 35183
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -15478,22 +13122,18 @@ oris %r17, %r17, 15126
 ori %r17, %r17, 38577
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -15510,22 +13150,18 @@ oris %r17, %r17, 9671
 ori %r17, %r17, 4661
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -15542,22 +13178,18 @@ oris %r17, %r17, 53097
 ori %r17, %r17, 9876
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -15565,19 +13197,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -15589,22 +13217,18 @@ oris %r17, %r17, 40689
 ori %r17, %r17, 19154
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -15612,19 +13236,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -15636,22 +13256,18 @@ oris %r17, %r17, 14415
 ori %r17, %r17, 9699
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -15659,19 +13275,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -15683,22 +13295,18 @@ oris %r17, %r17, 35724
 ori %r17, %r17, 54709
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -15706,19 +13314,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -15730,22 +13334,18 @@ oris %r17, %r17, 30636
 ori %r17, %r17, 40037
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -15753,19 +13353,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -15777,22 +13373,18 @@ oris %r17, %r17, 22827
 ori %r17, %r17, 629
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -15800,19 +13392,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -15824,22 +13412,18 @@ oris %r17, %r17, 28326
 ori %r17, %r17, 58499
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -15847,19 +13431,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -15871,22 +13451,18 @@ oris %r17, %r17, 48449
 ori %r17, %r17, 64468
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -15894,19 +13470,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -15918,22 +13490,18 @@ oris %r17, %r17, 33553
 ori %r17, %r17, 21429
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -15941,19 +13509,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -15965,22 +13529,18 @@ oris %r17, %r17, 61030
 ori %r17, %r17, 57259
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -15988,19 +13548,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -16012,22 +13568,18 @@ oris %r17, %r17, 11700
 ori %r17, %r17, 12816
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -16035,19 +13587,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -16059,22 +13607,18 @@ oris %r17, %r17, 39163
 ori %r17, %r17, 8511
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -16082,19 +13626,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -16106,22 +13646,18 @@ oris %r17, %r17, 48879
 ori %r17, %r17, 3812
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -16129,19 +13665,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -16153,22 +13685,18 @@ oris %r17, %r17, 15784
 ori %r17, %r17, 36802
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -16176,19 +13704,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -16200,22 +13724,18 @@ oris %r17, %r17, 37642
 ori %r17, %r17, 42789
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -16223,19 +13743,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -16247,22 +13763,18 @@ oris %r17, %r17, 57347
 ori %r17, %r17, 33391
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -16270,19 +13782,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -16294,22 +13802,18 @@ oris %r17, %r17, 2574
 ori %r17, %r17, 28272
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -16317,19 +13821,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -16341,22 +13841,18 @@ oris %r17, %r17, 18130
 ori %r17, %r17, 12284
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -16364,19 +13860,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -16388,22 +13880,18 @@ oris %r17, %r17, 23590
 ori %r17, %r17, 51494
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -16411,19 +13899,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -16435,22 +13919,18 @@ oris %r17, %r17, 23236
 ori %r17, %r17, 10989
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -16458,19 +13938,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -16482,22 +13958,18 @@ oris %r17, %r17, 40341
 ori %r17, %r17, 46047
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -16505,19 +13977,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -16529,22 +13997,18 @@ oris %r17, %r17, 35759
 ori %r17, %r17, 25566
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -16552,19 +14016,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -16576,22 +14036,18 @@ oris %r17, %r17, 15479
 ori %r17, %r17, 45736
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -16599,19 +14055,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -16623,22 +14075,18 @@ oris %r17, %r17, 18413
 ori %r17, %r17, 44774
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -16646,19 +14094,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -16670,22 +14114,18 @@ oris %r17, %r17, 5250
 ori %r17, %r17, 13627
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -16693,19 +14133,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -16717,22 +14153,18 @@ oris %r17, %r17, 19697
 ori %r17, %r17, 868
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -16740,19 +14172,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -16764,22 +14192,18 @@ oris %r17, %r17, 48194
 ori %r17, %r17, 12289
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -16787,19 +14211,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -16811,22 +14231,18 @@ oris %r17, %r17, 53496
 ori %r17, %r17, 38801
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -16834,19 +14250,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -16858,22 +14270,18 @@ oris %r17, %r17, 1620
 ori %r17, %r17, 48688
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -16881,19 +14289,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -16905,22 +14309,18 @@ oris %r17, %r17, 55023
 ori %r17, %r17, 21016
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -16928,19 +14328,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -16952,22 +14348,18 @@ oris %r17, %r17, 21861
 ori %r17, %r17, 43280
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -16975,19 +14367,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -16999,22 +14387,18 @@ oris %r17, %r17, 22385
 ori %r17, %r17, 8234
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -17022,19 +14406,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -17046,22 +14426,18 @@ oris %r17, %r17, 12987
 ori %r17, %r17, 53688
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -17069,19 +14445,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -17093,22 +14465,18 @@ oris %r17, %r17, 47314
 ori %r17, %r17, 53448
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -17116,19 +14484,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -17140,22 +14504,18 @@ oris %r17, %r17, 20801
 ori %r17, %r17, 43859
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -17163,19 +14523,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -17187,22 +14543,18 @@ oris %r17, %r17, 57230
 ori %r17, %r17, 60313
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -17210,19 +14562,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -17234,22 +14582,18 @@ oris %r17, %r17, 57755
 ori %r17, %r17, 18600
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -17257,19 +14601,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -17281,22 +14621,18 @@ oris %r17, %r17, 50633
 ori %r17, %r17, 23139
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -17304,19 +14640,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -17328,22 +14660,18 @@ oris %r17, %r17, 58177
 ori %r17, %r17, 35531
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -17351,19 +14679,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -17375,22 +14699,18 @@ oris %r17, %r17, 30563
 ori %r17, %r17, 58227
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -17398,19 +14718,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -17422,22 +14738,18 @@ oris %r17, %r17, 54962
 ori %r17, %r17, 47267
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -17445,19 +14757,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -17469,22 +14777,18 @@ oris %r17, %r17, 24047
 ori %r17, %r17, 45820
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -17492,19 +14796,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -17516,22 +14816,18 @@ oris %r17, %r17, 17175
 ori %r17, %r17, 12128
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -17539,19 +14835,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -17563,22 +14855,18 @@ oris %r17, %r17, 41456
 ori %r17, %r17, 43890
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -17586,19 +14874,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -17610,22 +14894,18 @@ oris %r17, %r17, 6756
 ori %r17, %r17, 14828
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -17633,19 +14913,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -17657,22 +14933,18 @@ oris %r17, %r17, 9059
 ori %r17, %r17, 7720
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -17680,19 +14952,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -17704,22 +14972,18 @@ oris %r17, %r17, 56962
 ori %r17, %r17, 48617
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -17727,19 +14991,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -17751,22 +15011,18 @@ oris %r17, %r17, 45766
 ori %r17, %r17, 30997
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -17774,19 +15030,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -17798,22 +15050,18 @@ oris %r17, %r17, 58226
 ori %r17, %r17, 21291
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -17821,19 +15069,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -17845,22 +15089,18 @@ oris %r17, %r17, 59942
 ori %r17, %r17, 24988
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -17868,19 +15108,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -17892,22 +15128,18 @@ oris %r17, %r17, 8640
 ori %r17, %r17, 49671
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -17915,19 +15147,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -17939,22 +15167,18 @@ oris %r17, %r17, 52704
 ori %r17, %r17, 60190
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -17962,19 +15186,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -17986,22 +15206,18 @@ oris %r17, %r17, 61038
 ori %r17, %r17, 53624
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -18009,19 +15225,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -18033,22 +15245,18 @@ oris %r17, %r17, 29207
 ori %r17, %r17, 28602
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -18056,19 +15264,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -18080,22 +15284,18 @@ oris %r17, %r17, 41672
 ori %r17, %r17, 39078
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -18103,19 +15303,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -18127,22 +15323,18 @@ oris %r17, %r17, 48889
 ori %r17, %r17, 3502
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -18150,19 +15342,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -18174,22 +15362,18 @@ oris %r17, %r17, 4892
 ori %r17, %r17, 18203
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -18197,19 +15381,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -18221,22 +15401,18 @@ oris %r17, %r17, 8964
 ori %r17, %r17, 32132
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -18244,19 +15420,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -18268,22 +15440,18 @@ oris %r17, %r17, 16583
 ori %r17, %r17, 9363
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -18291,19 +15459,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -18315,22 +15479,18 @@ oris %r17, %r17, 5577
 ori %r17, %r17, 48828
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -18338,19 +15498,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -18362,22 +15518,18 @@ oris %r17, %r17, 39952
 ori %r17, %r17, 3404
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -18385,19 +15537,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -18409,22 +15557,18 @@ oris %r17, %r17, 52030
 ori %r17, %r17, 17078
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -18432,19 +15576,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -18456,22 +15596,18 @@ oris %r17, %r17, 64613
 ori %r17, %r17, 32298
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -18479,19 +15615,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -18503,22 +15635,18 @@ oris %r17, %r17, 15062
 ori %r17, %r17, 64236
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -18526,19 +15654,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -18550,22 +15674,18 @@ oris %r17, %r17, 19015
 ori %r17, %r17, 22551
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -18748,22 +15868,18 @@ oris %r17, %r17, 55080
 ori %r17, %r17, 44578
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -18780,22 +15896,18 @@ oris %r17, %r17, 9199
 ori %r17, %r17, 26061
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -18812,22 +15924,18 @@ oris %r17, %r17, 60493
 ori %r17, %r17, 15151
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -18844,22 +15952,18 @@ oris %r17, %r17, 33161
 ori %r17, %r17, 56252
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -18876,22 +15980,18 @@ oris %r17, %r17, 62280
 ori %r17, %r17, 46392
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -18908,22 +16008,18 @@ oris %r17, %r17, 46597
 ori %r17, %r17, 53273
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -18940,22 +16036,18 @@ oris %r17, %r17, 44825
 ori %r17, %r17, 20379
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -18972,22 +16064,18 @@ oris %r17, %r17, 55917
 ori %r17, %r17, 33048
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -19004,22 +16092,18 @@ oris %r17, %r17, 41731
 ori %r17, %r17, 578
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -19036,22 +16120,18 @@ oris %r17, %r17, 17776
 ori %r17, %r17, 28606
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -19068,22 +16148,18 @@ oris %r17, %r17, 20196
 ori %r17, %r17, 45708
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -19100,22 +16176,18 @@ oris %r17, %r17, 54783
 ori %r17, %r17, 46306
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -19132,22 +16204,18 @@ oris %r17, %r17, 62075
 ori %r17, %r17, 35183
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -19164,22 +16232,18 @@ oris %r17, %r17, 15126
 ori %r17, %r17, 38577
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -19196,22 +16260,18 @@ oris %r17, %r17, 9671
 ori %r17, %r17, 4661
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -19228,22 +16288,18 @@ oris %r17, %r17, 53097
 ori %r17, %r17, 9876
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -19251,19 +16307,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -19275,22 +16327,18 @@ oris %r17, %r17, 40689
 ori %r17, %r17, 19154
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -19298,19 +16346,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -19322,22 +16366,18 @@ oris %r17, %r17, 14415
 ori %r17, %r17, 9699
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -19345,19 +16385,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -19369,22 +16405,18 @@ oris %r17, %r17, 35724
 ori %r17, %r17, 54709
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -19392,19 +16424,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -19416,22 +16444,18 @@ oris %r17, %r17, 30636
 ori %r17, %r17, 40037
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -19439,19 +16463,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -19463,22 +16483,18 @@ oris %r17, %r17, 22827
 ori %r17, %r17, 629
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -19486,19 +16502,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -19510,22 +16522,18 @@ oris %r17, %r17, 28326
 ori %r17, %r17, 58499
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -19533,19 +16541,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -19557,22 +16561,18 @@ oris %r17, %r17, 48449
 ori %r17, %r17, 64468
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -19580,19 +16580,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -19604,22 +16600,18 @@ oris %r17, %r17, 33553
 ori %r17, %r17, 21429
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -19627,19 +16619,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -19651,22 +16639,18 @@ oris %r17, %r17, 61030
 ori %r17, %r17, 57259
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -19674,19 +16658,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -19698,22 +16678,18 @@ oris %r17, %r17, 11700
 ori %r17, %r17, 12816
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -19721,19 +16697,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -19745,22 +16717,18 @@ oris %r17, %r17, 39163
 ori %r17, %r17, 8511
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -19768,19 +16736,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -19792,22 +16756,18 @@ oris %r17, %r17, 48879
 ori %r17, %r17, 3812
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -19815,19 +16775,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -19839,22 +16795,18 @@ oris %r17, %r17, 15784
 ori %r17, %r17, 36802
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -19862,19 +16814,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -19886,22 +16834,18 @@ oris %r17, %r17, 37642
 ori %r17, %r17, 42789
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -19909,19 +16853,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -19933,22 +16873,18 @@ oris %r17, %r17, 57347
 ori %r17, %r17, 33391
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -19956,19 +16892,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -19980,22 +16912,18 @@ oris %r17, %r17, 2574
 ori %r17, %r17, 28272
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -20003,19 +16931,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -20027,22 +16951,18 @@ oris %r17, %r17, 18130
 ori %r17, %r17, 12284
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -20050,19 +16970,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -20074,22 +16990,18 @@ oris %r17, %r17, 23590
 ori %r17, %r17, 51494
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -20097,19 +17009,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -20121,22 +17029,18 @@ oris %r17, %r17, 23236
 ori %r17, %r17, 10989
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -20144,19 +17048,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -20168,22 +17068,18 @@ oris %r17, %r17, 40341
 ori %r17, %r17, 46047
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -20191,19 +17087,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -20215,22 +17107,18 @@ oris %r17, %r17, 35759
 ori %r17, %r17, 25566
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -20238,19 +17126,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -20262,22 +17146,18 @@ oris %r17, %r17, 15479
 ori %r17, %r17, 45736
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -20285,19 +17165,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -20309,22 +17185,18 @@ oris %r17, %r17, 18413
 ori %r17, %r17, 44774
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -20332,19 +17204,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -20356,22 +17224,18 @@ oris %r17, %r17, 5250
 ori %r17, %r17, 13627
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -20379,19 +17243,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -20403,22 +17263,18 @@ oris %r17, %r17, 19697
 ori %r17, %r17, 868
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -20426,19 +17282,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -20450,22 +17302,18 @@ oris %r17, %r17, 48194
 ori %r17, %r17, 12289
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -20473,19 +17321,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -20497,22 +17341,18 @@ oris %r17, %r17, 53496
 ori %r17, %r17, 38801
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -20520,19 +17360,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -20544,22 +17380,18 @@ oris %r17, %r17, 1620
 ori %r17, %r17, 48688
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -20567,19 +17399,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -20591,22 +17419,18 @@ oris %r17, %r17, 55023
 ori %r17, %r17, 21016
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -20614,19 +17438,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -20638,22 +17458,18 @@ oris %r17, %r17, 21861
 ori %r17, %r17, 43280
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -20661,19 +17477,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -20685,22 +17497,18 @@ oris %r17, %r17, 22385
 ori %r17, %r17, 8234
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -20708,19 +17516,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -20732,22 +17536,18 @@ oris %r17, %r17, 12987
 ori %r17, %r17, 53688
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -20755,19 +17555,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -20779,22 +17575,18 @@ oris %r17, %r17, 47314
 ori %r17, %r17, 53448
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -20802,19 +17594,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -20826,22 +17614,18 @@ oris %r17, %r17, 20801
 ori %r17, %r17, 43859
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -20849,19 +17633,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -20873,22 +17653,18 @@ oris %r17, %r17, 57230
 ori %r17, %r17, 60313
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -20896,19 +17672,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -20920,22 +17692,18 @@ oris %r17, %r17, 57755
 ori %r17, %r17, 18600
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -20943,19 +17711,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -20967,22 +17731,18 @@ oris %r17, %r17, 50633
 ori %r17, %r17, 23139
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -20990,19 +17750,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -21014,22 +17770,18 @@ oris %r17, %r17, 58177
 ori %r17, %r17, 35531
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -21037,19 +17789,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -21061,22 +17809,18 @@ oris %r17, %r17, 30563
 ori %r17, %r17, 58227
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -21084,19 +17828,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -21108,22 +17848,18 @@ oris %r17, %r17, 54962
 ori %r17, %r17, 47267
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -21131,19 +17867,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -21155,22 +17887,18 @@ oris %r17, %r17, 24047
 ori %r17, %r17, 45820
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -21178,19 +17906,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -21202,22 +17926,18 @@ oris %r17, %r17, 17175
 ori %r17, %r17, 12128
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -21225,19 +17945,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -21249,22 +17965,18 @@ oris %r17, %r17, 41456
 ori %r17, %r17, 43890
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -21272,19 +17984,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -21296,22 +18004,18 @@ oris %r17, %r17, 6756
 ori %r17, %r17, 14828
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -21319,19 +18023,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -21343,22 +18043,18 @@ oris %r17, %r17, 9059
 ori %r17, %r17, 7720
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -21366,19 +18062,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -21390,22 +18082,18 @@ oris %r17, %r17, 56962
 ori %r17, %r17, 48617
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -21413,19 +18101,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -21437,22 +18121,18 @@ oris %r17, %r17, 45766
 ori %r17, %r17, 30997
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -21460,19 +18140,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -21484,22 +18160,18 @@ oris %r17, %r17, 58226
 ori %r17, %r17, 21291
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -21507,19 +18179,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -21531,22 +18199,18 @@ oris %r17, %r17, 59942
 ori %r17, %r17, 24988
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -21554,19 +18218,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -21578,22 +18238,18 @@ oris %r17, %r17, 8640
 ori %r17, %r17, 49671
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -21601,19 +18257,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -21625,22 +18277,18 @@ oris %r17, %r17, 52704
 ori %r17, %r17, 60190
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -21648,19 +18296,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -21672,22 +18316,18 @@ oris %r17, %r17, 61038
 ori %r17, %r17, 53624
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -21695,19 +18335,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -21719,22 +18355,18 @@ oris %r17, %r17, 29207
 ori %r17, %r17, 28602
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -21742,19 +18374,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -21766,22 +18394,18 @@ oris %r17, %r17, 41672
 ori %r17, %r17, 39078
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -21789,19 +18413,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -21813,22 +18433,18 @@ oris %r17, %r17, 48889
 ori %r17, %r17, 3502
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -21836,19 +18452,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -21860,22 +18472,18 @@ oris %r17, %r17, 4892
 ori %r17, %r17, 18203
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -21883,19 +18491,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -21907,22 +18511,18 @@ oris %r17, %r17, 8964
 ori %r17, %r17, 32132
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -21930,19 +18530,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -21954,22 +18550,18 @@ oris %r17, %r17, 16583
 ori %r17, %r17, 9363
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -21977,19 +18569,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -22001,22 +18589,18 @@ oris %r17, %r17, 5577
 ori %r17, %r17, 48828
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -22024,19 +18608,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -22048,22 +18628,18 @@ oris %r17, %r17, 39952
 ori %r17, %r17, 3404
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -22071,19 +18647,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -22095,22 +18667,18 @@ oris %r17, %r17, 52030
 ori %r17, %r17, 17078
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -22118,19 +18686,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -22142,22 +18706,18 @@ oris %r17, %r17, 64613
 ori %r17, %r17, 32298
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -22165,19 +18725,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -22189,22 +18745,18 @@ oris %r17, %r17, 15062
 ori %r17, %r17, 64236
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -22212,19 +18764,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -22236,22 +18784,18 @@ oris %r17, %r17, 19015
 ori %r17, %r17, 22551
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -22429,22 +18973,18 @@ oris %r17, %r17, 55080
 ori %r17, %r17, 44578
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -22461,22 +19001,18 @@ oris %r17, %r17, 9199
 ori %r17, %r17, 26061
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -22493,22 +19029,18 @@ oris %r17, %r17, 60493
 ori %r17, %r17, 15151
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -22525,22 +19057,18 @@ oris %r17, %r17, 33161
 ori %r17, %r17, 56252
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -22557,22 +19085,18 @@ oris %r17, %r17, 62280
 ori %r17, %r17, 46392
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -22589,22 +19113,18 @@ oris %r17, %r17, 46597
 ori %r17, %r17, 53273
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -22621,22 +19141,18 @@ oris %r17, %r17, 44825
 ori %r17, %r17, 20379
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -22653,22 +19169,18 @@ oris %r17, %r17, 55917
 ori %r17, %r17, 33048
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -22685,22 +19197,18 @@ oris %r17, %r17, 41731
 ori %r17, %r17, 578
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -22717,22 +19225,18 @@ oris %r17, %r17, 17776
 ori %r17, %r17, 28606
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -22749,22 +19253,18 @@ oris %r17, %r17, 20196
 ori %r17, %r17, 45708
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -22781,22 +19281,18 @@ oris %r17, %r17, 54783
 ori %r17, %r17, 46306
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -22813,22 +19309,18 @@ oris %r17, %r17, 62075
 ori %r17, %r17, 35183
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -22845,22 +19337,18 @@ oris %r17, %r17, 15126
 ori %r17, %r17, 38577
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -22877,22 +19365,18 @@ oris %r17, %r17, 9671
 ori %r17, %r17, 4661
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -22909,22 +19393,18 @@ oris %r17, %r17, 53097
 ori %r17, %r17, 9876
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -22932,19 +19412,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -22956,22 +19432,18 @@ oris %r17, %r17, 40689
 ori %r17, %r17, 19154
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -22979,19 +19451,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -23003,22 +19471,18 @@ oris %r17, %r17, 14415
 ori %r17, %r17, 9699
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -23026,19 +19490,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -23050,22 +19510,18 @@ oris %r17, %r17, 35724
 ori %r17, %r17, 54709
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -23073,19 +19529,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -23097,22 +19549,18 @@ oris %r17, %r17, 30636
 ori %r17, %r17, 40037
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -23120,19 +19568,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -23144,22 +19588,18 @@ oris %r17, %r17, 22827
 ori %r17, %r17, 629
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -23167,19 +19607,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -23191,22 +19627,18 @@ oris %r17, %r17, 28326
 ori %r17, %r17, 58499
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -23214,19 +19646,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -23238,22 +19666,18 @@ oris %r17, %r17, 48449
 ori %r17, %r17, 64468
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -23261,19 +19685,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -23285,22 +19705,18 @@ oris %r17, %r17, 33553
 ori %r17, %r17, 21429
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -23308,19 +19724,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -23332,22 +19744,18 @@ oris %r17, %r17, 61030
 ori %r17, %r17, 57259
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -23355,19 +19763,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -23379,22 +19783,18 @@ oris %r17, %r17, 11700
 ori %r17, %r17, 12816
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -23402,19 +19802,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -23426,22 +19822,18 @@ oris %r17, %r17, 39163
 ori %r17, %r17, 8511
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -23449,19 +19841,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -23473,22 +19861,18 @@ oris %r17, %r17, 48879
 ori %r17, %r17, 3812
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -23496,19 +19880,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -23520,22 +19900,18 @@ oris %r17, %r17, 15784
 ori %r17, %r17, 36802
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -23543,19 +19919,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -23567,22 +19939,18 @@ oris %r17, %r17, 37642
 ori %r17, %r17, 42789
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -23590,19 +19958,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -23614,22 +19978,18 @@ oris %r17, %r17, 57347
 ori %r17, %r17, 33391
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -23637,19 +19997,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -23661,22 +20017,18 @@ oris %r17, %r17, 2574
 ori %r17, %r17, 28272
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -23684,19 +20036,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -23708,22 +20056,18 @@ oris %r17, %r17, 18130
 ori %r17, %r17, 12284
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -23731,19 +20075,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -23755,22 +20095,18 @@ oris %r17, %r17, 23590
 ori %r17, %r17, 51494
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -23778,19 +20114,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -23802,22 +20134,18 @@ oris %r17, %r17, 23236
 ori %r17, %r17, 10989
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -23825,19 +20153,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -23849,22 +20173,18 @@ oris %r17, %r17, 40341
 ori %r17, %r17, 46047
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -23872,19 +20192,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -23896,22 +20212,18 @@ oris %r17, %r17, 35759
 ori %r17, %r17, 25566
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -23919,19 +20231,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -23943,22 +20251,18 @@ oris %r17, %r17, 15479
 ori %r17, %r17, 45736
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -23966,19 +20270,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -23990,22 +20290,18 @@ oris %r17, %r17, 18413
 ori %r17, %r17, 44774
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -24013,19 +20309,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -24037,22 +20329,18 @@ oris %r17, %r17, 5250
 ori %r17, %r17, 13627
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -24060,19 +20348,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -24084,22 +20368,18 @@ oris %r17, %r17, 19697
 ori %r17, %r17, 868
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -24107,19 +20387,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -24131,22 +20407,18 @@ oris %r17, %r17, 48194
 ori %r17, %r17, 12289
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -24154,19 +20426,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -24178,22 +20446,18 @@ oris %r17, %r17, 53496
 ori %r17, %r17, 38801
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -24201,19 +20465,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -24225,22 +20485,18 @@ oris %r17, %r17, 1620
 ori %r17, %r17, 48688
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -24248,19 +20504,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -24272,22 +20524,18 @@ oris %r17, %r17, 55023
 ori %r17, %r17, 21016
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -24295,19 +20543,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -24319,22 +20563,18 @@ oris %r17, %r17, 21861
 ori %r17, %r17, 43280
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -24342,19 +20582,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -24366,22 +20602,18 @@ oris %r17, %r17, 22385
 ori %r17, %r17, 8234
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -24389,19 +20621,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -24413,22 +20641,18 @@ oris %r17, %r17, 12987
 ori %r17, %r17, 53688
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -24436,19 +20660,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -24460,22 +20680,18 @@ oris %r17, %r17, 47314
 ori %r17, %r17, 53448
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -24483,19 +20699,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -24507,22 +20719,18 @@ oris %r17, %r17, 20801
 ori %r17, %r17, 43859
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -24530,19 +20738,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -24554,22 +20758,18 @@ oris %r17, %r17, 57230
 ori %r17, %r17, 60313
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -24577,19 +20777,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -24601,22 +20797,18 @@ oris %r17, %r17, 57755
 ori %r17, %r17, 18600
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -24624,19 +20816,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -24648,22 +20836,18 @@ oris %r17, %r17, 50633
 ori %r17, %r17, 23139
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -24671,19 +20855,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -24695,22 +20875,18 @@ oris %r17, %r17, 58177
 ori %r17, %r17, 35531
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -24718,19 +20894,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -24742,22 +20914,18 @@ oris %r17, %r17, 30563
 ori %r17, %r17, 58227
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -24765,19 +20933,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -24789,22 +20953,18 @@ oris %r17, %r17, 54962
 ori %r17, %r17, 47267
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -24812,19 +20972,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -24836,22 +20992,18 @@ oris %r17, %r17, 24047
 ori %r17, %r17, 45820
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -24859,19 +21011,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -24883,22 +21031,18 @@ oris %r17, %r17, 17175
 ori %r17, %r17, 12128
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -24906,19 +21050,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -24930,22 +21070,18 @@ oris %r17, %r17, 41456
 ori %r17, %r17, 43890
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -24953,19 +21089,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -24977,22 +21109,18 @@ oris %r17, %r17, 6756
 ori %r17, %r17, 14828
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -25000,19 +21128,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -25024,22 +21148,18 @@ oris %r17, %r17, 9059
 ori %r17, %r17, 7720
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -25047,19 +21167,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -25071,22 +21187,18 @@ oris %r17, %r17, 56962
 ori %r17, %r17, 48617
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -25094,19 +21206,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -25118,22 +21226,18 @@ oris %r17, %r17, 45766
 ori %r17, %r17, 30997
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -25141,19 +21245,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -25165,22 +21265,18 @@ oris %r17, %r17, 58226
 ori %r17, %r17, 21291
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -25188,19 +21284,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -25212,22 +21304,18 @@ oris %r17, %r17, 59942
 ori %r17, %r17, 24988
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -25235,19 +21323,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -25259,22 +21343,18 @@ oris %r17, %r17, 8640
 ori %r17, %r17, 49671
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -25282,19 +21362,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -25306,22 +21382,18 @@ oris %r17, %r17, 52704
 ori %r17, %r17, 60190
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -25329,19 +21401,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -25353,22 +21421,18 @@ oris %r17, %r17, 61038
 ori %r17, %r17, 53624
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -25376,19 +21440,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -25400,22 +21460,18 @@ oris %r17, %r17, 29207
 ori %r17, %r17, 28602
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -25423,19 +21479,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -25447,22 +21499,18 @@ oris %r17, %r17, 41672
 ori %r17, %r17, 39078
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -25470,19 +21518,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -25494,22 +21538,18 @@ oris %r17, %r17, 48889
 ori %r17, %r17, 3502
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -25517,19 +21557,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -25541,22 +21577,18 @@ oris %r17, %r17, 4892
 ori %r17, %r17, 18203
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -25564,19 +21596,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -25588,22 +21616,18 @@ oris %r17, %r17, 8964
 ori %r17, %r17, 32132
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -25611,19 +21635,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -25635,22 +21655,18 @@ oris %r17, %r17, 16583
 ori %r17, %r17, 9363
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -25658,19 +21674,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -25682,22 +21694,18 @@ oris %r17, %r17, 5577
 ori %r17, %r17, 48828
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -25705,19 +21713,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -25729,22 +21733,18 @@ oris %r17, %r17, 39952
 ori %r17, %r17, 3404
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -25752,19 +21752,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -25776,22 +21772,18 @@ oris %r17, %r17, 52030
 ori %r17, %r17, 17078
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -25799,19 +21791,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -25823,22 +21811,18 @@ oris %r17, %r17, 64613
 ori %r17, %r17, 32298
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -25846,19 +21830,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -25870,22 +21850,18 @@ oris %r17, %r17, 15062
 ori %r17, %r17, 64236
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -25893,19 +21869,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -25917,22 +21889,18 @@ oris %r17, %r17, 19015
 ori %r17, %r17, 22551
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -26104,22 +22072,18 @@ oris %r17, %r17, 55080
 ori %r17, %r17, 44578
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -26136,22 +22100,18 @@ oris %r17, %r17, 9199
 ori %r17, %r17, 26061
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -26168,22 +22128,18 @@ oris %r17, %r17, 60493
 ori %r17, %r17, 15151
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -26200,22 +22156,18 @@ oris %r17, %r17, 33161
 ori %r17, %r17, 56252
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -26232,22 +22184,18 @@ oris %r17, %r17, 62280
 ori %r17, %r17, 46392
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -26264,22 +22212,18 @@ oris %r17, %r17, 46597
 ori %r17, %r17, 53273
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -26296,22 +22240,18 @@ oris %r17, %r17, 44825
 ori %r17, %r17, 20379
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -26328,22 +22268,18 @@ oris %r17, %r17, 55917
 ori %r17, %r17, 33048
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -26360,22 +22296,18 @@ oris %r17, %r17, 41731
 ori %r17, %r17, 578
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -26392,22 +22324,18 @@ oris %r17, %r17, 17776
 ori %r17, %r17, 28606
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -26424,22 +22352,18 @@ oris %r17, %r17, 20196
 ori %r17, %r17, 45708
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -26456,22 +22380,18 @@ oris %r17, %r17, 54783
 ori %r17, %r17, 46306
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -26488,22 +22408,18 @@ oris %r17, %r17, 62075
 ori %r17, %r17, 35183
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -26520,22 +22436,18 @@ oris %r17, %r17, 15126
 ori %r17, %r17, 38577
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -26552,22 +22464,18 @@ oris %r17, %r17, 9671
 ori %r17, %r17, 4661
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -26584,22 +22492,18 @@ oris %r17, %r17, 53097
 ori %r17, %r17, 9876
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -26607,19 +22511,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -26631,22 +22531,18 @@ oris %r17, %r17, 40689
 ori %r17, %r17, 19154
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -26654,19 +22550,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -26678,22 +22570,18 @@ oris %r17, %r17, 14415
 ori %r17, %r17, 9699
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -26701,19 +22589,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -26725,22 +22609,18 @@ oris %r17, %r17, 35724
 ori %r17, %r17, 54709
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -26748,19 +22628,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -26772,22 +22648,18 @@ oris %r17, %r17, 30636
 ori %r17, %r17, 40037
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -26795,19 +22667,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -26819,22 +22687,18 @@ oris %r17, %r17, 22827
 ori %r17, %r17, 629
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -26842,19 +22706,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -26866,22 +22726,18 @@ oris %r17, %r17, 28326
 ori %r17, %r17, 58499
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -26889,19 +22745,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -26913,22 +22765,18 @@ oris %r17, %r17, 48449
 ori %r17, %r17, 64468
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -26936,19 +22784,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -26960,22 +22804,18 @@ oris %r17, %r17, 33553
 ori %r17, %r17, 21429
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -26983,19 +22823,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -27007,22 +22843,18 @@ oris %r17, %r17, 61030
 ori %r17, %r17, 57259
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -27030,19 +22862,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -27054,22 +22882,18 @@ oris %r17, %r17, 11700
 ori %r17, %r17, 12816
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -27077,19 +22901,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -27101,22 +22921,18 @@ oris %r17, %r17, 39163
 ori %r17, %r17, 8511
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -27124,19 +22940,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -27148,22 +22960,18 @@ oris %r17, %r17, 48879
 ori %r17, %r17, 3812
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -27171,19 +22979,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -27195,22 +22999,18 @@ oris %r17, %r17, 15784
 ori %r17, %r17, 36802
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -27218,19 +23018,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -27242,22 +23038,18 @@ oris %r17, %r17, 37642
 ori %r17, %r17, 42789
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -27265,19 +23057,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -27289,22 +23077,18 @@ oris %r17, %r17, 57347
 ori %r17, %r17, 33391
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -27312,19 +23096,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -27336,22 +23116,18 @@ oris %r17, %r17, 2574
 ori %r17, %r17, 28272
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -27359,19 +23135,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -27383,22 +23155,18 @@ oris %r17, %r17, 18130
 ori %r17, %r17, 12284
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -27406,19 +23174,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -27430,22 +23194,18 @@ oris %r17, %r17, 23590
 ori %r17, %r17, 51494
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -27453,19 +23213,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -27477,22 +23233,18 @@ oris %r17, %r17, 23236
 ori %r17, %r17, 10989
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -27500,19 +23252,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -27524,22 +23272,18 @@ oris %r17, %r17, 40341
 ori %r17, %r17, 46047
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -27547,19 +23291,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -27571,22 +23311,18 @@ oris %r17, %r17, 35759
 ori %r17, %r17, 25566
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -27594,19 +23330,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -27618,22 +23350,18 @@ oris %r17, %r17, 15479
 ori %r17, %r17, 45736
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -27641,19 +23369,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -27665,22 +23389,18 @@ oris %r17, %r17, 18413
 ori %r17, %r17, 44774
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -27688,19 +23408,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -27712,22 +23428,18 @@ oris %r17, %r17, 5250
 ori %r17, %r17, 13627
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -27735,19 +23447,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -27759,22 +23467,18 @@ oris %r17, %r17, 19697
 ori %r17, %r17, 868
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -27782,19 +23486,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -27806,22 +23506,18 @@ oris %r17, %r17, 48194
 ori %r17, %r17, 12289
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -27829,19 +23525,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -27853,22 +23545,18 @@ oris %r17, %r17, 53496
 ori %r17, %r17, 38801
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -27876,19 +23564,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -27900,22 +23584,18 @@ oris %r17, %r17, 1620
 ori %r17, %r17, 48688
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -27923,19 +23603,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -27947,22 +23623,18 @@ oris %r17, %r17, 55023
 ori %r17, %r17, 21016
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -27970,19 +23642,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -27994,22 +23662,18 @@ oris %r17, %r17, 21861
 ori %r17, %r17, 43280
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -28017,19 +23681,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -28041,22 +23701,18 @@ oris %r17, %r17, 22385
 ori %r17, %r17, 8234
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -28064,19 +23720,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -28088,22 +23740,18 @@ oris %r17, %r17, 12987
 ori %r17, %r17, 53688
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -28111,19 +23759,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -28135,22 +23779,18 @@ oris %r17, %r17, 47314
 ori %r17, %r17, 53448
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -28158,19 +23798,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -28182,22 +23818,18 @@ oris %r17, %r17, 20801
 ori %r17, %r17, 43859
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -28205,19 +23837,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -28229,22 +23857,18 @@ oris %r17, %r17, 57230
 ori %r17, %r17, 60313
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -28252,19 +23876,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -28276,22 +23896,18 @@ oris %r17, %r17, 57755
 ori %r17, %r17, 18600
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -28299,19 +23915,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -28323,22 +23935,18 @@ oris %r17, %r17, 50633
 ori %r17, %r17, 23139
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -28346,19 +23954,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -28370,22 +23974,18 @@ oris %r17, %r17, 58177
 ori %r17, %r17, 35531
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -28393,19 +23993,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -28417,22 +24013,18 @@ oris %r17, %r17, 30563
 ori %r17, %r17, 58227
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -28440,19 +24032,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -28464,22 +24052,18 @@ oris %r17, %r17, 54962
 ori %r17, %r17, 47267
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -28487,19 +24071,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -28511,22 +24091,18 @@ oris %r17, %r17, 24047
 ori %r17, %r17, 45820
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -28534,19 +24110,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -28558,22 +24130,18 @@ oris %r17, %r17, 17175
 ori %r17, %r17, 12128
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -28581,19 +24149,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -28605,22 +24169,18 @@ oris %r17, %r17, 41456
 ori %r17, %r17, 43890
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -28628,19 +24188,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -28652,22 +24208,18 @@ oris %r17, %r17, 6756
 ori %r17, %r17, 14828
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -28675,19 +24227,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -28699,22 +24247,18 @@ oris %r17, %r17, 9059
 ori %r17, %r17, 7720
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -28722,19 +24266,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -28746,22 +24286,18 @@ oris %r17, %r17, 56962
 ori %r17, %r17, 48617
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -28769,19 +24305,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -28793,22 +24325,18 @@ oris %r17, %r17, 45766
 ori %r17, %r17, 30997
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -28816,19 +24344,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -28840,22 +24364,18 @@ oris %r17, %r17, 58226
 ori %r17, %r17, 21291
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -28863,19 +24383,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 112(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
 ld %r17, 8(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
@@ -28887,22 +24403,18 @@ oris %r17, %r17, 59942
 ori %r17, %r17, 24988
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -28910,19 +24422,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 120(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
 ld %r17, 16(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
@@ -28934,22 +24442,18 @@ oris %r17, %r17, 8640
 ori %r17, %r17, 49671
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -28957,19 +24461,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 0(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
 ld %r17, 24(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
@@ -28981,22 +24481,18 @@ oris %r17, %r17, 52704
 ori %r17, %r17, 60190
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -29004,19 +24500,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 8(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
 ld %r17, 32(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
@@ -29028,22 +24520,18 @@ oris %r17, %r17, 61038
 ori %r17, %r17, 53624
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -29051,19 +24539,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 16(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
 ld %r17, 40(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
@@ -29075,22 +24559,18 @@ oris %r17, %r17, 29207
 ori %r17, %r17, 28602
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -29098,19 +24578,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 24(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
 ld %r17, 48(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
@@ -29122,22 +24598,18 @@ oris %r17, %r17, 41672
 ori %r17, %r17, 39078
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -29145,19 +24617,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 32(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
 ld %r17, 56(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
@@ -29169,22 +24637,18 @@ oris %r17, %r17, 48889
 ori %r17, %r17, 3502
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -29192,19 +24656,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 40(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 0(%r6)
 add %r16, %r16, %r18
 ld %r17, 64(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
@@ -29216,22 +24676,18 @@ oris %r17, %r17, 4892
 ori %r17, %r17, 18203
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9
@@ -29239,19 +24695,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r7, %r7, %r17
 ld %r17, 48(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 8(%r6)
 add %r16, %r16, %r18
 ld %r17, 72(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
@@ -29263,22 +24715,18 @@ oris %r17, %r17, 8964
 ori %r17, %r17, 32132
 add %r17, %r17, %r16
 add %r15, %r15, %r17
-rldicl %r17, %r11, 50, 0
-rldicl %r18, %r11, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r11
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r15, %r15, %r17
 xor %r17, %r12, %r14
 and %r17, %r17, %r11
 xor %r17, %r17, %r14
 add %r15, %r15, %r17
 add %r10, %r10, %r15
-rldicl %r17, %r7, 36, 0
-rldicl %r18, %r7, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r7
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r7, %r8
 and %r18, %r18, %r9
 and %r19, %r7, %r8
@@ -29286,19 +24734,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r15, %r15, %r17
 ld %r17, 56(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 16(%r6)
 add %r16, %r16, %r18
 ld %r17, 80(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 72(%r6)
 add %r16, %r16, %r18
@@ -29310,22 +24754,18 @@ oris %r17, %r17, 16583
 ori %r17, %r17, 9363
 add %r17, %r17, %r16
 add %r14, %r14, %r17
-rldicl %r17, %r10, 50, 0
-rldicl %r18, %r10, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r10
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r14, %r14, %r17
 xor %r17, %r11, %r12
 and %r17, %r17, %r10
 xor %r17, %r17, %r12
 add %r14, %r14, %r17
 add %r9, %r9, %r14
-rldicl %r17, %r15, 36, 0
-rldicl %r18, %r15, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r15
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r15, %r7
 and %r18, %r18, %r8
 and %r19, %r15, %r7
@@ -29333,19 +24773,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r14, %r14, %r17
 ld %r17, 64(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 24(%r6)
 add %r16, %r16, %r18
 ld %r17, 88(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 80(%r6)
 add %r16, %r16, %r18
@@ -29357,22 +24793,18 @@ oris %r17, %r17, 5577
 ori %r17, %r17, 48828
 add %r17, %r17, %r16
 add %r12, %r12, %r17
-rldicl %r17, %r9, 50, 0
-rldicl %r18, %r9, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r9
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r12, %r12, %r17
 xor %r17, %r10, %r11
 and %r17, %r17, %r9
 xor %r17, %r17, %r11
 add %r12, %r12, %r17
 add %r8, %r8, %r12
-rldicl %r17, %r14, 36, 0
-rldicl %r18, %r14, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r14
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r14, %r15
 and %r18, %r18, %r7
 and %r19, %r14, %r15
@@ -29380,19 +24812,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r12, %r12, %r17
 ld %r17, 72(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 32(%r6)
 add %r16, %r16, %r18
 ld %r17, 96(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 88(%r6)
 add %r16, %r16, %r18
@@ -29404,22 +24832,18 @@ oris %r17, %r17, 39952
 ori %r17, %r17, 3404
 add %r17, %r17, %r16
 add %r11, %r11, %r17
-rldicl %r17, %r8, 50, 0
-rldicl %r18, %r8, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r8
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r11, %r11, %r17
 xor %r17, %r9, %r10
 and %r17, %r17, %r8
 xor %r17, %r17, %r10
 add %r11, %r11, %r17
 add %r7, %r7, %r11
-rldicl %r17, %r12, 36, 0
-rldicl %r18, %r12, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r12
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r12, %r14
 and %r18, %r18, %r15
 and %r19, %r12, %r14
@@ -29427,19 +24851,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r11, %r11, %r17
 ld %r17, 80(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 40(%r6)
 add %r16, %r16, %r18
 ld %r17, 104(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 96(%r6)
 add %r16, %r16, %r18
@@ -29451,22 +24871,18 @@ oris %r17, %r17, 52030
 ori %r17, %r17, 17078
 add %r17, %r17, %r16
 add %r10, %r10, %r17
-rldicl %r17, %r7, 50, 0
-rldicl %r18, %r7, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r7, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r7
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r10, %r10, %r17
 xor %r17, %r8, %r9
 and %r17, %r17, %r7
 xor %r17, %r17, %r9
 add %r10, %r10, %r17
 add %r15, %r15, %r10
-rldicl %r17, %r11, 36, 0
-rldicl %r18, %r11, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r11, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r11
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r11, %r12
 and %r18, %r18, %r14
 and %r19, %r11, %r12
@@ -29474,19 +24890,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r10, %r10, %r17
 ld %r17, 88(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 48(%r6)
 add %r16, %r16, %r18
 ld %r17, 112(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 104(%r6)
 add %r16, %r16, %r18
@@ -29498,22 +24910,18 @@ oris %r17, %r17, 64613
 ori %r17, %r17, 32298
 add %r17, %r17, %r16
 add %r9, %r9, %r17
-rldicl %r17, %r15, 50, 0
-rldicl %r18, %r15, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r15, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r15
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r9, %r9, %r17
 xor %r17, %r7, %r8
 and %r17, %r17, %r15
 xor %r17, %r17, %r8
 add %r9, %r9, %r17
 add %r14, %r14, %r9
-rldicl %r17, %r10, 36, 0
-rldicl %r18, %r10, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r10, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r10
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r10, %r11
 and %r18, %r18, %r12
 and %r19, %r10, %r11
@@ -29521,19 +24929,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r9, %r9, %r17
 ld %r17, 96(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 56(%r6)
 add %r16, %r16, %r18
 ld %r17, 120(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 112(%r6)
 add %r16, %r16, %r18
@@ -29545,22 +24949,18 @@ oris %r17, %r17, 15062
 ori %r17, %r17, 64236
 add %r17, %r17, %r16
 add %r8, %r8, %r17
-rldicl %r17, %r14, 50, 0
-rldicl %r18, %r14, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r14, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r14
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r8, %r8, %r17
 xor %r17, %r15, %r7
 and %r17, %r17, %r14
 xor %r17, %r17, %r7
 add %r8, %r8, %r17
 add %r12, %r12, %r8
-rldicl %r17, %r9, 36, 0
-rldicl %r18, %r9, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r9, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r9
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r9, %r10
 and %r18, %r18, %r11
 and %r19, %r9, %r10
@@ -29568,19 +24968,15 @@ or %r18, %r18, %r19
 add %r17, %r17, %r18
 add %r8, %r8, %r17
 ld %r17, 104(%r6)
-rldicl %r16, %r17, 45, 0
-rldicl %r18, %r17, 3, 0
-xor %r16, %r16, %r18
-rldicl %r18, %r17, 58, 6
-xor %r16, %r16, %r18
+mtvsrd 32, %r17
+vshasigmad %v0, %v0, 0, 8
+mfvsrd %r16, 32
 ld %r18, 64(%r6)
 add %r16, %r16, %r18
 ld %r17, 0(%r6)
-rldicl %r18, %r17, 63, 0
-rldicl %r19, %r17, 56, 0
-xor %r18, %r18, %r19
-rldicl %r19, %r17, 57, 7
-xor %r18, %r18, %r19
+mtvsrd 33, %r17
+vshasigmad %v1, %v1, 0, 0
+mfvsrd %r18, 33
 add %r16, %r16, %r18
 ld %r18, 120(%r6)
 add %r16, %r16, %r18
@@ -29592,22 +24988,18 @@ oris %r17, %r17, 19015
 ori %r17, %r17, 22551
 add %r17, %r17, %r16
 add %r7, %r7, %r17
-rldicl %r17, %r12, 50, 0
-rldicl %r18, %r12, 46, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r12, 23, 0
-xor %r17, %r17, %r18
+mtvsrd 34, %r12
+vshasigmad %v2, %v2, 1, 8
+mfvsrd %r17, 34
 add %r7, %r7, %r17
 xor %r17, %r14, %r15
 and %r17, %r17, %r12
 xor %r17, %r17, %r15
 add %r7, %r7, %r17
 add %r11, %r11, %r7
-rldicl %r17, %r8, 36, 0
-rldicl %r18, %r8, 30, 0
-xor %r17, %r17, %r18
-rldicl %r18, %r8, 25, 0
-xor %r17, %r17, %r18
+mtvsrd 35, %r8
+vshasigmad %v3, %v3, 1, 0
+mfvsrd %r17, 35
 or %r18, %r8, %r9
 and %r18, %r18, %r10
 and %r19, %r8, %r9

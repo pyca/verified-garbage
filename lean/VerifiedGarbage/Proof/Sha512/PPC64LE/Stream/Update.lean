@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Sha512.PPC64LE.Compress
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Compress
+import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 
 /-!
 # Streaming SHA-512 on PPC64LE: `update`
@@ -731,7 +733,7 @@ theorem update_verified : Verified PPC64LE.target update Proof.Sha512.updatePPC6
   · obtain ⟨t, s', he, hk, hsp, h⟩ := correct (pre_of hs)
     exact ⟨t, s', he, ⟨hk, hsp, Exec.lr he (by decide +kernel)
       (by rw [← Code.allInstrs_eq]; decide +kernel)⟩, h⟩
-  · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7]) (fun _ _ _ _ hp => agree₀ hp)
+  · exact VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7]) (fun _ _ _ _ hp => agree₀ hp)
       (by taint_decide)
   · refine ⟨sat, rfl, rfl, ?_, ?_, ?_⟩ <;>
     exact Region.disjoint_of_sep (by decide)

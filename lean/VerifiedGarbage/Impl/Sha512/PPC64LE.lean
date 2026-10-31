@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Sha512
-public import VerifiedGarbage.TCB.PPC64LE.Isa
+public import VerifiedGarbage.Impl.Vector.PPC64LE
 
 /-!
 # SHA-512 compression function: PPC64LE implementation
@@ -66,29 +66,12 @@ def schedule (t : Nat) : List Instr :=
     .li .r0 (8 * t),
     .loadRev .d T0 .r4 .r0,
     .store .d T0 .r6 (slot t)]
-  else [
-    -- T0 := σ₁(Wₜ₋₂)
-    .load .d T1 .r6 (slot (t + 14)),
-    .rotr .d T0 T1 19,
-    .rotr .d T2 T1 61,
-    .logic .xor T0 T0 T2,
-    .lsr .d T2 T1 6,
-    .logic .xor T0 T0 T2,
-    -- T0 := T0 + Wₜ₋₇
-    .load .d T2 .r6 (slot (t + 9)),
-    .add T0 T0 T2,
-    -- T0 := T0 + σ₀(Wₜ₋₁₅)
-    .load .d T1 .r6 (slot (t + 1)),
-    .rotr .d T2 T1 1,
-    .rotr .d T3 T1 8,
-    .logic .xor T2 T2 T3,
-    .lsr .d T3 T1 7,
-    .logic .xor T2 T2 T3,
-    .add T0 T0 T2,
-    -- T0 := T0 + Wₜ₋₁₆
-    .load .d T2 .r6 (slot t),
-    .add T0 T0 T2,
-    .store .d T0 .r6 (slot t)]
+  else [.load .d T1 .r6 (slot (t + 14))] ++
+    Impl.Vector.PPC64LE.shaSigma true false true T0 T1 ++
+    [.load .d T2 .r6 (slot (t + 9)), .add T0 T0 T2,
+     .load .d T1 .r6 (slot (t + 1))] ++
+    Impl.Vector.PPC64LE.shaSigma true false false T2 T1 ++
+    [.add T0 T0 T2, .load .d T2 .r6 (slot t), .add T0 T0 T2, .store .d T0 .r6 (slot t)]
 
 /-- Round `t`, with `Wₜ` in `T0`. Form `h + (Kₜ + Wₜ)` independently
 of the state-dependent sigma and choice functions, shortening the serial
@@ -97,37 +80,14 @@ def round (t : Nat) : List Instr :=
   let a := var t 0; let b := var t 1; let c := var t 2; let d := var t 3
   let e := var t 4; let f := var t 5; let g := var t 6; let h := var t 7
   movImm64 T1 (K t) ++
-  [ -- h := h + (Kₜ + Wₜ)
-    .add T1 T1 T0,
-    .add h h T1,
-    -- h := h + Σ₁(e)
-    .rotr .d T1 e 14,
-    .rotr .d T2 e 18,
-    .logic .xor T1 T1 T2,
-    .rotr .d T2 e 41,
-    .logic .xor T1 T1 T2,
-    .add h h T1,
-    -- h := h + Ch(e, f, g), as ((f ⊕ g) ∧ e) ⊕ g
-    .logic .xor T1 f g,
-    .logic .and T1 T1 e,
-    .logic .xor T1 T1 g,
-    .add h h T1,
-    -- e' := d + T₁
-    .add d d h,
-    -- T1 := Σ₀(a)
-    .rotr .d T1 a 28,
-    .rotr .d T2 a 34,
-    .logic .xor T1 T1 T2,
-    .rotr .d T2 a 39,
-    .logic .xor T1 T1 T2,
-    -- T₂ := Σ₀(a) + Maj(a, b, c), independently of T₁ in h
-    .logic .or T2 a b,
-    .logic .and T2 T2 c,
-    .logic .and T3 a b,
-    .logic .or T2 T2 T3,
-    .add T1 T1 T2,
-    -- a' := T₁ + T₂
-    .add h h T1]
+  [.add T1 T1 T0, .add h h T1] ++
+  Impl.Vector.PPC64LE.shaSigma true true true T1 e ++
+  [.add h h T1,
+   .logic .xor T1 f g, .logic .and T1 T1 e, .logic .xor T1 T1 g, .add h h T1,
+   .add d d h] ++
+  Impl.Vector.PPC64LE.shaSigma true true false T1 a ++
+  [.logic .or T2 a b, .logic .and T2 T2 c, .logic .and T3 a b, .logic .or T2 T2 T3,
+   .add T1 T1 T2, .add h h T1]
 
 /-- Rounds `0 … n-1`. -/
 def rounds : Nat → Prog isa

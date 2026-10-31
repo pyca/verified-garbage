@@ -25,6 +25,8 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.TCB.PPC64LE.Isa
+import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 
 /-!
 # `vg_ed25519_verify` on PPC64LE, verified
@@ -94,7 +96,7 @@ theorem vp_bytes {s₁ s₂ : State} (h : VP s₁ s₂) :
 theorem restore_ct {P : State → State → Prop}
     (hp : ∀ t₁ t₂, P t₁ t₂ → t₁.sp = t₂.sp ∧ t₁.gpr .r25 = t₂.gpr .r25) :
     RelCT isa P (.block (restoreRegs .r25 128 verifyRegs)) fun _ _ => True :=
-  RelCT.taint (A := taint) (Taint.ofRegs [.r25]) (fun t₁ t₂ h => ⟨(hp _ _ h).1, fun r hr => by
+  RelCT.taint (A := vectorTaint) (Taint.ofRegs [.r25]) (fun t₁ t₂ h => ⟨(hp _ _ h).1, fun r hr => by
     simp only [Taint.mem_ofRegs, List.mem_singleton] at hr
     subst hr; exact (hp _ _ h).2⟩) (by taint_decide)
 
@@ -106,7 +108,7 @@ theorem ver_ct : ConstantTime isa verC.pre verC.pub verifyMessage := by
   unfold verifyMessage
   refine RelCT.seq (R := fun t₁ t₂ => ∃ σ : VPair, VerArgs σ.1.1 t₁ ∧ VerArgs σ.1.2 t₂) ?_ <|
     RelCT.seq (R := fun t₁ t₂ => ∃ σ : VPair, VerInv σ.1.1 t₁ ∧ VerInv σ.1.2 t₂) ?_ ?_
-  · refine ((RelCT.taint (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8]) (fun s₁ s₂ h => ?_)
+  · refine ((RelCT.taint (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8]) (fun s₁ s₂ h => ?_)
       (by taint_decide)).wpDep (F := VerArgs) fun s₁ s₂ h =>
         ⟨verifyHash_ok sha512OK (verC_pre h.1), verifyHash_ok sha512OK (verC_pre h.2.1)⟩).mono (fun _ _ h => h)
       fun t₁ t₂ ⟨_, σ₁, σ₂, hp, a₁, a₂⟩ => ⟨⟨(σ₁, σ₂), hp⟩, a₁, a₂⟩

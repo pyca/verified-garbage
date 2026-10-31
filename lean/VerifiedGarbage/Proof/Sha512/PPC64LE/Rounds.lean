@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Reduce
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 public import VerifiedGarbage.Proof.Sha512.Spec
 public import VerifiedGarbage.Impl.Sha512.PPC64LE
 import all Init.Data.Nat.Bitwise.Basic
@@ -25,6 +26,9 @@ namespace VG.Proof.Sha512.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.Sha512.PPC64LE
 open VG.Spec.Sha512 (HashValue Word Block K W bsig0 bsig1 ch maj ssig0 ssig1)
+
+theorem high64_append (a b : BitVec 64) : (a ++ b).extractLsb' 64 64 = a :=
+  BitVec.extractLsb'_append_eq_left
 
 /-- The working variables `v` are in the registers of round `t`. -/
 def Vars (t : Nat) (s : State) (v : HashValue) : Prop :=
@@ -101,7 +105,7 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w : Word)
     var_succ t _ (show 5 < 7 by omega), var_succ t _ (show 6 < 7 by omega)] at hv ⊢
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := hv
   apply WP.of_runBlock
-  simp only [Impl.Sha512.PPC64LE.round, movImm64, List.cons_append, List.nil_append]
+  simp only [Impl.Sha512.PPC64LE.round, movImm64, Impl.Vector.PPC64LE.shaSigma, ite_true, ite_false, Bool.false_eq_true, List.cons_append, List.nil_append]
   generalize var t 0 = a at *
   generalize var t 1 = b at *
   generalize var t 2 = c at *
@@ -114,16 +118,21 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w : Word)
   simp only [T0, T1, T2, T3, List.nodup_cons, List.mem_cons, List.not_mem_nil,
     List.reverse_cons, List.reverse_nil, List.nil_append, List.cons_append, or_false, not_or,
     List.nodup_nil, and_true] at hs hs'
-  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, isa, State.read, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, reduceVOpEval, Option.map_some, vpr_writeV, gpr_writeV, mem_writeV, rd_writeV, wr_writeV, vdword,
+    Nat.sub_zero, Nat.mul_one, high64_append,
+    show (8 : Nat) &&& 5 = 0 by decide, show (0 : Nat) &&& 5 = 0 by decide,
+    show (8 : Nat).testBit 3 = true by decide, show (8 : Nat).testBit 1 = false by decide,
+    show (0 : Nat).testBit 3 = false by decide, show (0 : Nat).testBit 1 = false by decide,
+    and_self, isa, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write,
     RegUpd.wr_write,
-    Size.bits, Size.ext, hs, hs', h0, h1, h2, h3, h4, h5, h6, h7, hw, BitVec.setWidth_eq,
+    hs, hs', h0, h1, h2, h3, h4, h5, h6, h7, hw,
     Option.some.injEq, exists_eq_left', Nat.reduceAdd, Nat.reduceLT, ↓reduceIte, true_and]
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, fun r hr => ?_⟩
   rotate_right
   · obtain ⟨n3, n7, n17, n18, n19⟩ := hpw r hr
     simp only [n3, n7, n17, n18, n19, ↓reduceIte]
   all_goals
-    simp (config := {failIfUnchanged := false}) only [roundKW, bsig1, ch_eq, bsig0, maj_eq,
+    simp (config := {failIfUnchanged := false}) only [roundKW, bsig1, ch_eq, bsig0, maj_eq, VG.PPC64LE.sigma512, ite_true, ite_false, Bool.false_eq_true,
       movImm64_eq, Vector.getElem_mk, List.getElem_toArray, List.getElem_cons_zero,
       List.getElem_cons_succ]
   all_goals rw [t1_add_tree]
@@ -167,14 +176,21 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp scr : Addr)
     rw [show slot (t - 7) = slot (t + 9) by simp only [slot]; omega] at e7
     rw [show slot (t - 15) = slot (t + 1) by simp only [slot]; omega] at e15
     rw [show slot (t - 16) = slot t by simp only [slot]; omega] at e16
-    simp only [Impl.Sha512.PPC64LE.schedule, ht, ite_false, T0, T1, T2, T3]
+    simp only [Impl.Sha512.PPC64LE.schedule, ht, ite_false, T0, T1, T2, T3,
+      Impl.Vector.PPC64LE.shaSigma, ite_true, Bool.false_eq_true, List.cons_append, List.nil_append]
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec_load_d, exec_store_d, slot_ok,
-      exec_add, exec_logic, exec_rotr_d, exec_lsr_d, isa, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, hr6, hin, hout, e2, e7, e15,
+      exec_add, reduceExec, reduceVOpEval, Option.map_some,
+      vpr_writeV, gpr_writeV, mem_writeV, rd_writeV, wr_writeV, vdword, Nat.sub_zero, Nat.mul_one,
+      high64_append, VG.PPC64LE.sigma512, Bool.false_eq_true,
+      show (8 : Nat) &&& 5 = 0 by decide, show (0 : Nat) &&& 5 = 0 by decide,
+      show (8 : Nat).testBit 3 = true by decide, show (8 : Nat).testBit 1 = false by decide,
+      show (0 : Nat).testBit 3 = false by decide, show (0 : Nat).testBit 1 = false by decide,
+      isa, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, hr6, hin, hout, e2, e7, e15,
       e16, Option.some.injEq, exists_eq_left', Nat.reduceLT, reduceCtorEq, ↓reduceIte, ne_eq,
       not_false_eq_true, and_self, true_and]
     have hW := W_ge M (t := t) (by omega)
     refine ⟨by rw [hW]; rfl, by rw [hW]; rfl, fun r h0 h1 h2 h3 _ => ?_⟩
-    simp [h0, h1, h2, h3]
+    simp [h0, h1, h2]
 
 /-! ## The 80 rounds -/
 
