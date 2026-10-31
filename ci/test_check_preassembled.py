@@ -298,7 +298,8 @@ class Check(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = pathlib.Path(d)
             for p in ["verified-garbage-asm-x86_64/src", "verified-garbage-asm-x86_64/asm",
-                      "verified-garbage-asm-arm/asm", "verified-garbage-asm-mips/src",
+                      "verified-garbage-asm-arm/asm", "verified-garbage-asm-riscv64/src",
+                      "verified-garbage-asm-mips/asm", "verified-garbage-asm-mips/src",
                       "verified-garbage-cpu/src"]:
                 (root / p).mkdir(parents=True)
             self.assertEqual(check_preassembled.unassembled(root), ["verified-garbage-asm-mips"])

@@ -18,9 +18,10 @@ Names are compared without the crate's hash (`Cs…_`), which depends on where
 the crate is compiled from, and objects as one set of sections and symbols,
 as the functions may be split among them differently.
 
-A target that is not pre-assembled (ARM's, see `ci/preassemble.py`, and
-RISC-V's, whose printer emits the machine code itself) compiles `asm/`
-itself: it must have no `src/`.
+A crate that is not pre-assembled compiles the emitter's output itself: its
+`asm/` (ARM's, see `ci/preassemble.py`) or, where the printer already emits
+the machine code, its `src/` (RISC-V's). It must not have both: a `src/`
+beside an `asm/` would be compiled unchecked.
 
     python3 ci/check_preassembled.py [TARGET ...]
     python3 ci/check_preassembled.py --triples  # the Rust targets it compiles for
@@ -168,9 +169,9 @@ def check_objects(target, triple, errors, workdir):
 
 def unassembled(crates):
     """The crates of generated code under `crates` that are not
-    pre-assembled but have a `src/`."""
+    pre-assembled but have both an `asm/` and a `src/`."""
     return [d.name for d in sorted(crates.glob(PREFIX + "*"))
-            if d.name[len(PREFIX):] not in TRIPLES and (d / "src").exists()]
+            if d.name[len(PREFIX):] not in TRIPLES and (d / "asm").exists() and (d / "src").exists()]
 
 
 def main(argv):
@@ -178,7 +179,7 @@ def main(argv):
         print(",".join(TRIPLES.values()))
         return 0
     targets = argv or list(TRIPLES)
-    errors = [f"{n}: not pre-assembled, so it compiles asm/ and has no src/"
+    errors = [f"{n}: not pre-assembled, so it compiles the emitter's asm/ or src/, not both"
               for n in unassembled(CRATES)]
     for target in targets:
         d = CRATES / (PREFIX + target)

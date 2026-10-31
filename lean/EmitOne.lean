@@ -10,7 +10,7 @@ than building every module of the library as `Emit.lean` needs. Run it from
 
 * `lake env lean --run EmitOne.lean Rc2.AArch64 [More.Target …]` builds
   `VerifiedGarbage/Artifacts/Rc2/AArch64.lean`, and writes its files under
-  `../crates` (its target's crate, `verified-garbage-asm-<target>/asm/`).
+  `../crates` (its target's crate's `asm/`, or RISC-V's `src/`).
 * `lake env lean --run EmitOne.lean --check Rc2.AArch64 …` writes nothing and
   fails if those files on disk differ from what would be generated.
 
@@ -26,7 +26,7 @@ It runs the same trusted printer (`VG.Emit.run`) and the same audits
 crate's root `lib.rs` and `consts/mod.rs`. It refuses a file that does not
 exist yet (a new module also changes `lib.rs`) or that has functions it did not generate (another
 registration file emits into it): `Emit.lean` handles those. Each table of
-constants has a file of its own (`asm/consts/<name>.rs` of the crate, which
+constants has a file of its own (`consts/<name>.rs` of the crate, which
 depends only on the table), so it writes those of its artifacts' tables and
 leaves the others; a new table is a new file. It is a
 convenience while iterating, not a replacement: `Emit.lean --check`, which CI

@@ -24,10 +24,11 @@ copied as it is. This script is not trusted: `ci/check_preassembled.py`
 checks that compiling `src/` gives each function the same bytes,
 relocations and symbols as compiling `asm/`.
 
-Two crates compile `asm/` itself, and are not pre-assembled: ARM's, which is
-built both as ARM and as Thumb code, whose bytes differ, and which Rust
-cannot tell apart at compile time; and RISC-V's, whose printer already emits
-each instruction's machine code (`lean/VerifiedGarbage/TCB/RISCV64/Encode.lean`).
+Two crates compile the emitter's output itself, and are not pre-assembled:
+ARM's (`asm/`), which is built both as ARM and as Thumb code, whose bytes
+differ, and which Rust cannot tell apart at compile time; and RISC-V's
+(`src/`), whose printer already emits each instruction's machine code
+(`lean/VerifiedGarbage/TCB/RISCV64/Encode.lean`).
 
     python3 ci/preassemble.py [TARGET ...]          # rewrite src/
     python3 ci/preassemble.py --check [TARGET ...]  # fail if src/ is stale

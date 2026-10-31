@@ -48,6 +48,7 @@ def VOp.asm : VOp → String
   | .logic op d n m =>
     let op := match op with | .and => "vand" | .or => "vor" | .xor => "vxor"
     s!"{op} {d.name}, {n.name}, {m.name}"
+  | .sel d n m mask => s!"vsel {d.name}, {n.name}, {m.name}, {mask.name}"
   | .add dw d n m => s!"{if dw then "vaddudm" else "vadduwm"} {d.name}, {n.name}, {m.name}"
   | .perm d n m c => s!"vperm {d.name}, {n.name}, {m.name}, {c.name}"
   | .sldoi d n m sh => s!"vsldoi {d.name}, {n.name}, {m.name}, {sh}"

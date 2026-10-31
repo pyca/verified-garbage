@@ -621,6 +621,12 @@ def sampleRV : Prog RISCV64.isa :=
     .alloc 4096, .free 4096].all (·.unencodable.isSome)
 #guard RISCV64.Instr.unencodable (.lla .a0 "VG_TABLE") == none
 #guard RISCV64.Instr.unencodable (.alloc 4064) == none
+-- RISC-V's generated files, already machine code, are in its crate's
+-- `src/`, which it compiles; every other target's, the code as printed, in
+-- its `asm/`.
+#guard Rust.codeDir "riscv64" == "verified-garbage-asm-riscv64/src"
+#guard ["x86_64", "x86", "aarch64", "arm", "powerpc64le"].all fun t =>
+  Rust.codeDir t == s!"verified-garbage-asm-{t}/asm"
 -- A comment line is a printer's `// ` line of one line: anything else is
 -- assembly.
 #guard Rust.commentOf (.text "// add a0, a1, a2") == some "// add a0, a1, a2"
@@ -671,7 +677,7 @@ def sampleRV : Prog RISCV64.isa :=
 -- Every RISC-V function's text enables the M extension for itself alone
 -- (`Rust.funcOptions`): `.option push` and `.option arch, +m` are its first
 -- lines and `.option pop` its last, after its labels, branches and return
--- (`vg_ct_eq`, the code of `crates/verified-garbage-asm-riscv64/asm/ct.rs`). Other targets' functions
+-- (`vg_ct_eq`, the code of `crates/verified-garbage-asm-riscv64/src/ct.rs`). Other targets' functions
 -- get no such directives.
 #guard Rust.funcOptions RISCV64.target.name ==
   ([".option push", ".option arch, +m"], [".option pop"])
