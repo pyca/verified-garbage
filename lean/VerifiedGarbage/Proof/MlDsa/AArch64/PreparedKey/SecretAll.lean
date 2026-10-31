@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Lay
 
 /-! # Preparing all secret-key polynomials -/
 
+-- separate module: isolates the secret-polynomial loop invariant from the encoded-slice mathematics and ABI framing.
+
 @[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.PreparedKey
@@ -22,6 +24,7 @@ def secretWrites (p : Params) : List (Ptr × Nat) :=
 structure SecretInv (p : Params) (σ : State) (key : List Byte) (done : Nat) (s : State) : Prop where
   lay : Lay 16 (input p.skLen) (output p.skLen (p.ℓ + 2 * p.k)) s
   post : PPostB 16 σ s (secretWrites p)
+  x24 : s.gpr .x24 = σ.gpr .x24
   source : bytesAt s.mem (pa s (.x25, 0)) p.skLen = key
   encoded : bytesAt s.mem (pa s (.x26, 0)) p.skLen = key
   polys : ∀ i < done, PolyIs s.mem (pa s (.x26, p.skLen + 1024 * i))
@@ -32,8 +35,8 @@ theorem secret_step {p : Params}
     {σ s : State} {key : List Byte} {i : Nat} (hi : i < (p.ℓ + 2 * p.k))
     (h : SecretInv p σ key i s) :
     WP isa (secretPoly p i) s (SecretInv p σ key (i + 1)) := by
-  refine WP.mono (secretPoly_ok hp h.lay h.source hi) fun t ⟨ht, _, hpoly⟩ => ?_
-  refine ⟨h.lay.post ht, ?_, ?_, ?_, ?_⟩
+  refine WP.mono (secretPoly_ok hp h.lay h.source hi) fun t ⟨ht, h24, hpoly⟩ => ?_
+  refine ⟨h.lay.post ht, ?_, h24.trans h.x24, ?_, ?_, ?_⟩
   · refine h.post.trans ht (by
       intro w hw
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -71,14 +74,14 @@ theorem secret_body {p : Params}
       (seqR (secretPoly p) 0 (p.ℓ + 2 * p.k))) s fun t =>
       SecretInv p s (bytesAt s.mem (pa s (.x25, 0)) p.skLen) (p.ℓ + 2 * p.k) t ∧
       PreparedSecretKey p t.mem (pa t (.x26, 0)) := by
-  refine WP.seq (WP.mono (copy_ok L (secret_copy_check hp)) fun u ⟨hu, _, hc⟩ => ?_)
+  refine WP.seq (WP.mono (copy_ok L (secret_copy_check hp)) fun u ⟨hu, h24, hc⟩ => ?_)
   have hkeep : keepB (input p.skLen) (output p.skLen (p.ℓ + 2 * p.k))
       [((.x26, 0), p.skLen)] (.x25, 0) p.skLen = true := by
     simp only [keepB, List.all_cons, List.all_nil, Bool.and_true, sep25_26, in25,
       Bool.and_eq_true, decide_eq_true_eq]
     omega
   have hinit : SecretInv p s (bytesAt s.mem (pa s (.x25, 0)) p.skLen) 0 u := by
-    refine ⟨L.post hu, hu.mono (by simp [secretWrites]), L.keepBytes hu hkeep, ?_, ?_⟩
+    refine ⟨L.post hu, hu.mono (by simp [secretWrites]), h24, L.keepBytes hu hkeep, ?_, ?_⟩
     · rwa [hu.pa (p := (.x26, 0)) (by decide)]
     · intro i hi
       omega

@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
 
 /-! # Each preparation slice decodes the specified secret polynomial -/
 
+-- separate module: isolates encoded-slice mathematics from machine-state and memory-frame proofs.
+
 @[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.PreparedKey

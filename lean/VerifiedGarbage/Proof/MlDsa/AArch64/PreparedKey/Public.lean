@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Lay
 
 /-! # Preparing all public-key polynomials -/
 
+-- separate module: isolates the public-polynomial loop invariant from secret decoding and generic ABI framing.
+
 @[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.PreparedKey
@@ -22,6 +24,7 @@ def publicWrites (p : Params) : List (Ptr × Nat) :=
 structure PublicInv (p : Params) (σ : State) (key : List Byte) (done : Nat) (s : State) : Prop where
   lay : Lay 16 (input p.pkLen) (output p.pkLen p.k) s
   post : PPostB 16 σ s (publicWrites p)
+  x24 : s.gpr .x24 = σ.gpr .x24
   source : bytesAt s.mem (pa s (.x25, 0)) p.pkLen = key
   encoded : bytesAt s.mem (pa s (.x26, 0)) p.pkLen = key
   polys : ∀ i < done, PolyIs s.mem (pa s (.x26, p.pkLen + 1024 * i))
@@ -33,13 +36,13 @@ theorem public_step {p : Params}
     (h : PublicInv p σ key i s) :
     WP isa (publicPoly p i) s (PublicInv p σ key (i + 1)) := by
   obtain ⟨hc, hi'⟩ := public_checks hp hi
-  refine WP.mono (publicPoly_ok h.lay hc hi') fun t ⟨ht, _, hpoly⟩ => ?_
+  refine WP.mono (publicPoly_ok h.lay hc hi') fun t ⟨ht, h24, hpoly⟩ => ?_
   have hslice : bytesAt s.mem (pa s (.x25, 32 + 320 * i)) 320 =
       (key.drop (32 + 320 * i)).take 320 := by
     rw [← h.source, MlKem.bytesAt_slice _ _ (by have := (KeyGen.pfacts hp).pk; omega)]
     simp only [pa, BitVec.add_zero]
   rw [hslice] at hpoly
-  refine ⟨h.lay.post ht, ?_, ?_, ?_, ?_⟩
+  refine ⟨h.lay.post ht, ?_, h24.trans h.x24, ?_, ?_, ?_⟩
   · refine h.post.trans ht (by
       intro w hw
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -77,14 +80,14 @@ theorem public_body {p : Params}
       (seqR (publicPoly p) 0 p.k)) s fun t =>
       PublicInv p s (bytesAt s.mem (pa s (.x25, 0)) p.pkLen) p.k t ∧
       PreparedPublicKey p t.mem (pa t (.x26, 0)) := by
-  refine WP.seq (WP.mono (copy_ok L (public_copy_check hp)) fun u ⟨hu, _, hc⟩ => ?_)
+  refine WP.seq (WP.mono (copy_ok L (public_copy_check hp)) fun u ⟨hu, h24, hc⟩ => ?_)
   have hkeep : keepB (input p.pkLen) (output p.pkLen p.k)
       [((.x26, 0), p.pkLen)] (.x25, 0) p.pkLen = true := by
     simp only [keepB, List.all_cons, List.all_nil, Bool.and_true, sep25_26, in25,
       Bool.and_eq_true, decide_eq_true_eq]
     omega
   have hinit : PublicInv p s (bytesAt s.mem (pa s (.x25, 0)) p.pkLen) 0 u := by
-    refine ⟨L.post hu, hu.mono (by simp [publicWrites]), L.keepBytes hu hkeep, ?_, ?_⟩
+    refine ⟨L.post hu, hu.mono (by simp [publicWrites]), h24, L.keepBytes hu hkeep, ?_, ?_⟩
     · rwa [hu.pa (p := (.x26, 0)) (by decide)]
     · intro i hi
       omega

@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 
 /-! # Canonical transforms used to prepare ML-DSA keys -/
 
+-- separate module: generic decode/NTT call composition is shared by public, secret, and timing proofs.
+
 @[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.PreparedKey
