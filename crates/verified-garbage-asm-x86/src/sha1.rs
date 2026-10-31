@@ -1985,7 +1985,7 @@ ret
 }
 
 /// The CPU features `vg_sha1_compress_shani` requires (`Artifact.features`).
-pub const VG_SHA1_COMPRESS_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
+pub const VG_SHA1_COMPRESS_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
 /// The SHA-1 compression function (FIPS 180-4 §6.1.2): updates the hash value `*state` with the `n` 64-byte blocks starting at `blocks`, in order.
 ///
@@ -2188,7 +2188,7 @@ ret
 }
 
 /// The CPU features `vg_sha1_update_shani` requires (`Artifact.features`).
-pub const VG_SHA1_UPDATE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
+pub const VG_SHA1_UPDATE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
 /// Absorbs data into a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
@@ -2347,7 +2347,7 @@ ret
 }
 
 /// The CPU features `vg_sha1_finalize_shani` requires (`Artifact.features`).
-pub const VG_SHA1_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
+pub const VG_SHA1_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
 /// Finishes a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SHA-1 digest of that message to `*out`.
 ///
@@ -2489,7 +2489,7 @@ ret
 }
 
 /// The CPU features `vg_sha1_update_scratch_shani` requires (`Artifact.features`).
-pub const VG_SHA1_UPDATE_SCRATCH_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
+pub const VG_SHA1_UPDATE_SCRATCH_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
 /// `vg_sha1_update`, with its working space in `*scratch`.
 ///
@@ -2635,7 +2635,7 @@ ret
 }
 
 /// The CPU features `vg_sha1_finalize_scratch_shani` requires (`Artifact.features`).
-pub const VG_SHA1_FINALIZE_SCRATCH_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
+pub const VG_SHA1_FINALIZE_SCRATCH_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
 /// `vg_sha1_finalize`, with its working space in `*scratch`.
 ///

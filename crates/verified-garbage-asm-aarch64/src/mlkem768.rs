@@ -2704,7 +2704,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem768_keygen_x2_sha3` requires (`Artifact.features`).
-pub const VG_MLKEM768_KEYGEN_X2_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_MLKEM768_KEYGEN_X2_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// ML-KEM-768 key generation from a seed, `ML-KEM.KeyGen_internal(d, z)` (FIPS 203 Algorithm 16): with `d` in bytes 0–31 of `*seed` and `z` in bytes 32–63, writes the encapsulation key to `*ek` and the decapsulation key to `*dk`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -9201,7 +9201,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem768_encaps_x2_sha3` requires (`Artifact.features`).
-pub const VG_MLKEM768_ENCAPS_X2_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_MLKEM768_ENCAPS_X2_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// ML-KEM-768 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -15966,7 +15966,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem768_decaps_x2_sha3` requires (`Artifact.features`).
-pub const VG_MLKEM768_DECAPS_X2_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_MLKEM768_DECAPS_X2_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// ML-KEM-768 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -23361,7 +23361,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem768_keygen_x2_sha3_keccak_sha3` requires (`Artifact.features`).
-pub const VG_MLKEM768_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_MLKEM768_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// ML-KEM-768 key generation from a seed, `ML-KEM.KeyGen_internal(d, z)` (FIPS 203 Algorithm 16): with `d` in bytes 0–31 of `*seed` and `z` in bytes 32–63, writes the encapsulation key to `*ek` and the decapsulation key to `*dk`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -29858,7 +29858,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem768_encaps_x2_sha3_keccak_sha3` requires (`Artifact.features`).
-pub const VG_MLKEM768_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_MLKEM768_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// ML-KEM-768 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -36623,7 +36623,7 @@ ret
 }
 
 /// The CPU features `vg_mlkem768_decaps_x2_sha3_keccak_sha3` requires (`Artifact.features`).
-pub const VG_MLKEM768_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
+pub const VG_MLKEM768_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
 
 /// ML-KEM-768 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///

@@ -4298,7 +4298,7 @@ ret
 }
 
 /// The CPU features `vg_x25519_adx` requires (`Artifact.features`).
-pub const VG_X25519_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_X25519_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Computes X25519 (RFC 7748 §5): writes `X25519(k, u)` to `*out`, for the 32-byte scalar `k` at `scalar` and the 32-byte u-coordinate `u` at `point`. The scalar is decoded (clamped) and the most significant bit of `u` masked as RFC 7748 specifies; the result may be all zero (for a `u` of small order), which the caller must check for if its protocol requires it (RFC 7748 §6.1).
 ///
@@ -6787,7 +6787,7 @@ ret
 }
 
 /// The CPU features `vg_x25519_ifma` requires (`Artifact.features`).
-pub const VG_X25519_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
+pub const VG_X25519_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
 
 /// Computes X25519 (RFC 7748 §5): writes `X25519(k, u)` to `*out`, for the 32-byte scalar `k` at `scalar` and the 32-byte u-coordinate `u` at `point`. The scalar is decoded (clamped) and the most significant bit of `u` masked as RFC 7748 specifies; the result may be all zero (for a `u` of small order), which the caller must check for if its protocol requires it (RFC 7748 §6.1).
 ///
@@ -9120,7 +9120,7 @@ ret
 }
 
 /// The CPU features `vg_x25519_base_adx` requires (`Artifact.features`).
-pub const VG_X25519_BASE_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_X25519_BASE_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Computes an X25519 public key (RFC 7748 §6.1): writes `X25519(k, 9)`, the X25519 function of the 32-byte scalar `k` at `scalar` and the base point's u-coordinate 9, to `*out`. The scalar is decoded (clamped).
 ///
@@ -9947,7 +9947,7 @@ ret
 }
 
 /// The CPU features `vg_x25519_base_ifma` requires (`Artifact.features`).
-pub const VG_X25519_BASE_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
+pub const VG_X25519_BASE_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
 
 /// Computes an X25519 public key (RFC 7748 §6.1): writes `X25519(k, 9)`, the X25519 function of the 32-byte scalar `k` at `scalar` and the base point's u-coordinate 9, to `*out`. The scalar is decoded (clamped).
 ///

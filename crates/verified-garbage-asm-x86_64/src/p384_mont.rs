@@ -844,7 +844,7 @@ ret
 }
 
 /// The CPU features `vg_p384_mul_mod_p_adx` requires (`Artifact.features`).
-pub const VG_P384_MUL_MOD_P_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_P384_MUL_MOD_P_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Montgomery's product modulo P-384's prime `p`: writes the number below the modulus congruent to `a b 2^-384` to `o`. The numbers are 6 64-bit words (`48` bytes), little-endian, at the byte offsets `o`, `a` and `b` of the working space `ws`; `o` may be `a` or `b`. Every byte of `ws` but the result's and the function's own working space (bytes 3712 to 4095) keeps its value.
 ///
@@ -2107,7 +2107,7 @@ ret
 }
 
 /// The CPU features `vg_p384_mul_mod_n_adx` requires (`Artifact.features`).
-pub const VG_P384_MUL_MOD_N_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_P384_MUL_MOD_N_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Montgomery's product modulo P-384's order `n`: writes the number below the modulus congruent to `a b 2^-384` to `o`. The numbers are 6 64-bit words (`48` bytes), little-endian, at the byte offsets `o`, `a` and `b` of the working space `ws`; `o` may be `a` or `b`. Every byte of `ws` but the result's and the function's own working space (bytes 3712 to 4095) keeps its value.
 ///

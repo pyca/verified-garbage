@@ -3936,7 +3936,7 @@ bx lr",
 
 /// The CPU features `vg_ec_brainpoolp512r1_compress_public_key_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_EC_BRAINPOOLP512R1_COMPRESS_PUBLIC_KEY_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_EC_BRAINPOOLP512R1_COMPRESS_PUBLIC_KEY_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
 /// Validate and compress a brainpoolP512r1 public key (SEC 1 §§2.3.3–2.3.4, SP 800-56A §5.6.2.3.3): reads `04` then `x` and `y` in 64 bytes each, most significant first; checks both coordinates below the field prime and the curve equation; writes `02` for even `y` or `03` for odd `y`, then `x` in 64 bytes, and returns 1. On invalid input, writes 65 zero bytes and returns 0. Rejects infinity and hybrid encodings.
 ///
@@ -5932,7 +5932,7 @@ bx lr",
 
 /// The CPU features `vg_ec_brainpoolp512r1_decompress_public_key_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub const VG_EC_BRAINPOOLP512R1_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
+pub const VG_EC_BRAINPOOLP512R1_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::UMAAL);
 
 /// Validate and decompress a brainpoolP512r1 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 64 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 64 bytes each and returns 1. If no such finite point exists, writes 129 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
 ///

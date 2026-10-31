@@ -5031,7 +5031,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_sign_random_adx` requires (`Artifact.features`).
-pub const VG_DSA_SIGN_RANDOM_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_SIGN_RANDOM_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Randomized DSA signing of a prehashed digest from fresh independent random octets. Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for invalid key/retry exhaustion, or 2 for insufficient random bytes. On failure out is zero. used counts consumed complete draws on every return. Checks algebraic consistency, not primality. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignContract`.
 ///
@@ -5307,7 +5307,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_sign_adx` requires (`Artifact.features`).
-pub const VG_DSA_SIGN_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_SIGN_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// One DSA signing attempt on a prehashed digest. The key is big-endian p||q||g||y||x with component widths p_len, q_len, p_len, p_len, q_len; nonce is q_len bytes. Returns 1 and r||s (q_len bytes each), or 0 and zero output for invalid components, nonce or zero r/s. Checks algebraic consistency, not primality. Caller must assure domain validity and supply fresh independent nonces. Timing may depend on public p,q,g,y and success, not otherwise on x, nonce or digest. Contract: `VG.Spec.Dsa.signContract`.
 ///
@@ -11883,7 +11883,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_verify_adx` requires (`Artifact.features`).
-pub const VG_DSA_VERIFY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_VERIFY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// DSA verification of a prehashed digest. The key is big-endian p||q||g||y with widths p_len, q_len, p_len, p_len; signature is r||s with q_len bytes each. Returns 1 if verification succeeds, otherwise 0. Checks algebraic consistency, not primality; caller must assure domain validity. Timing may depend on p,q,g,y and the result, not otherwise on signature or digest. Contract: `VG.Spec.Dsa.verifyContract`.
 ///
@@ -18586,7 +18586,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_key_adx` requires (`Artifact.features`).
-pub const VG_DSA_GENERATE_KEY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_GENERATE_KEY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Generate a DSA private key from p||q||g and fresh independent random bytes. Uses at most 128 rejection-sampling draws, computes y=g^x mod p, and checks algebraic consistency, not primality. Returns 1 with p||q||g||y||x, 0 for invalid input/draw limit, or 2 for insufficient randomness. Failure zeros out; used counts consumed complete draws on every return. Timing may depend on public parameters, sampling decisions, consumption and success, not otherwise on x or randomness. Contract: `VG.Spec.Dsa.generateKeyContract`.
 ///
@@ -18849,7 +18849,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_check_parameters_adx` requires (`Artifact.features`).
-pub const VG_DSA_CHECK_PARAMETERS_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_CHECK_PARAMETERS_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// DSA domain checks on big-endian p||q||g (widths p_len, q_len, p_len), those of key generation before it samples: returns 1 if the widths are supported and the domain is algebraically consistent (supported bit lengths, odd p and q, q divides p-1, 1 < g < p, g^q = 1 mod p), otherwise 0. Checks algebraic consistency, not primality. All inputs are public. Contract: `VG.Spec.Dsa.checkParametersContract`.
 ///
@@ -20763,7 +20763,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_derive_key_adx` requires (`Artifact.features`).
-pub const VG_DSA_DERIVE_KEY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_DERIVE_KEY_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Derive a DSA private key from big-endian p||q||g and a supplied q_len-byte scalar x, as key generation does after sampling x: checks the domain and 0 < x < q, computes y = g^x mod p and checks the key. Returns 1 with p||q||g||y||x, or 0 and zero output. Checks algebraic consistency, not primality. x must be a fresh uniform scalar the caller sampled. Timing may depend on p, q, g and success, not otherwise on x. Contract: `VG.Spec.Dsa.deriveKeyContract`.
 ///
@@ -42045,7 +42045,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_1024_mr_adx` requires (`Artifact.features`).
-pub const VG_DSA_GENERATE_PARAMETERS_1024_MR_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_GENERATE_PARAMETERS_1024_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Generate DSA parameters with p_len = 128, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -52833,7 +52833,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_1024_sha1_shani_mr_adx` requires (`Artifact.features`).
-pub const VG_DSA_GENERATE_PARAMETERS_1024_SHA1_SHANI_MR_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_GENERATE_PARAMETERS_1024_SHA1_SHANI_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Generate DSA parameters with p_len = 128, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -58229,7 +58229,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_1024_sha1_shani` requires (`Artifact.features`).
-pub const VG_DSA_GENERATE_PARAMETERS_1024_SHA1_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
+pub const VG_DSA_GENERATE_PARAMETERS_1024_SHA1_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
 /// Generate DSA parameters with p_len = 128, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -63625,7 +63625,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_2048_mr_adx` requires (`Artifact.features`).
-pub const VG_DSA_GENERATE_PARAMETERS_2048_MR_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_GENERATE_PARAMETERS_2048_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Generate DSA parameters with p_len = 256, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -68611,7 +68611,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_3072_mr_adx` requires (`Artifact.features`).
-pub const VG_DSA_GENERATE_PARAMETERS_3072_MR_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_GENERATE_PARAMETERS_3072_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Generate DSA parameters with p_len = 384, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -84313,7 +84313,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_2048_sha256_avx2_mr_adx` requires (`Artifact.features`).
-pub const VG_DSA_GENERATE_PARAMETERS_2048_SHA256_AVX2_MR_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_GENERATE_PARAMETERS_2048_SHA256_AVX2_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Generate DSA parameters with p_len = 256, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -89299,7 +89299,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_3072_sha256_avx2_mr_adx` requires (`Artifact.features`).
-pub const VG_DSA_GENERATE_PARAMETERS_3072_SHA256_AVX2_MR_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_GENERATE_PARAMETERS_3072_SHA256_AVX2_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Generate DSA parameters with p_len = 384, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -94661,7 +94661,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_2048_sha256_avx2` requires (`Artifact.features`).
-pub const VG_DSA_GENERATE_PARAMETERS_2048_SHA256_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_DSA_GENERATE_PARAMETERS_2048_SHA256_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
 /// Generate DSA parameters with p_len = 256, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -99647,7 +99647,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_3072_sha256_avx2` requires (`Artifact.features`).
-pub const VG_DSA_GENERATE_PARAMETERS_3072_SHA256_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_DSA_GENERATE_PARAMETERS_3072_SHA256_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
 /// Generate DSA parameters with p_len = 384, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -105009,7 +105009,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_2048_sha256_shani_mr_adx` requires (`Artifact.features`).
-pub const VG_DSA_GENERATE_PARAMETERS_2048_SHA256_SHANI_MR_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_GENERATE_PARAMETERS_2048_SHA256_SHANI_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Generate DSA parameters with p_len = 256, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -109995,7 +109995,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_3072_sha256_shani_mr_adx` requires (`Artifact.features`).
-pub const VG_DSA_GENERATE_PARAMETERS_3072_SHA256_SHANI_MR_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_GENERATE_PARAMETERS_3072_SHA256_SHANI_MR_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Generate DSA parameters with p_len = 384, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -115357,7 +115357,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_2048_sha256_shani` requires (`Artifact.features`).
-pub const VG_DSA_GENERATE_PARAMETERS_2048_SHA256_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
+pub const VG_DSA_GENERATE_PARAMETERS_2048_SHA256_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
 /// Generate DSA parameters with p_len = 256, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -120343,7 +120343,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_generate_parameters_3072_sha256_shani` requires (`Artifact.features`).
-pub const VG_DSA_GENERATE_PARAMETERS_3072_SHA256_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
+pub const VG_DSA_GENERATE_PARAMETERS_3072_SHA256_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
 /// Generate DSA parameters with p_len = 384, using the same bounded FIPS 186-4 parameter-generation algorithm and random-tape policy as vg_dsa_generate_parameters. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced. All three tapes may affect timing. Contract: VG.Spec.Dsa.GenerationSized.contract.
 ///
@@ -125705,7 +125705,7 @@ ret
 }
 
 /// The CPU features `vg_dsa_probable_prime_adx` requires (`Artifact.features`).
-pub const VG_DSA_PROBABLE_PRIME_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_DSA_PROBABLE_PRIME_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// DSA's probable-prime test (`VG.Spec.Dsa.probablePrime`: trial division, then RSA's blinded Miller–Rabin loop with 64 uniform witnesses through 2048 bits and 128 above) of an odd number of exactly `bits` bits, for `bits` one of [160, 256, 1024, 2048, 3072], stored as `bits / 8` big-endian bytes in `ws` at the offset `VG.Spec.Dsa.ProbablePrime.api` gives that size, with witnesses drawn from the front of `rand`. Returns 1 for a probable prime, 2 for a composite, and 0 if `rand` ran out; for 1 and 2 writes the octets read to `used`. Every byte of `ws` keeps its value but those of the size's scratch ranges. Acceptance is probable primality, not a certificate.
 ///

@@ -938,7 +938,7 @@ ret
 }
 
 /// The CPU features `vg_ecdsa_p256_sha256_sign_adx` requires (`Artifact.features`).
-pub const VG_ECDSA_P256_SHA256_SIGN_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_ECDSA_P256_SHA256_SIGN_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// Deterministic ECDSA signature generation over P-256 with HMAC-SHA-256 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (32 bytes, most significant first), signs the SHA-256 hash at `digest` (32 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (32 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
 ///
@@ -1877,7 +1877,7 @@ ret
 }
 
 /// The CPU features `vg_ecdsa_p256_sha256_sign_avx2` requires (`Artifact.features`).
-pub const VG_ECDSA_P256_SHA256_SIGN_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_ECDSA_P256_SHA256_SIGN_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
 /// Deterministic ECDSA signature generation over P-256 with HMAC-SHA-256 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (32 bytes, most significant first), signs the SHA-256 hash at `digest` (32 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (32 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
 ///
@@ -2816,7 +2816,7 @@ ret
 }
 
 /// The CPU features `vg_ecdsa_p256_sha256_sign_avx2_adx` requires (`Artifact.features`).
-pub const VG_ECDSA_P256_SHA256_SIGN_AVX2_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_ECDSA_P256_SHA256_SIGN_AVX2_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Deterministic ECDSA signature generation over P-256 with HMAC-SHA-256 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (32 bytes, most significant first), signs the SHA-256 hash at `digest` (32 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (32 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
 ///
@@ -3755,7 +3755,7 @@ ret
 }
 
 /// The CPU features `vg_ecdsa_p256_sha256_sign_shani` requires (`Artifact.features`).
-pub const VG_ECDSA_P256_SHA256_SIGN_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
+pub const VG_ECDSA_P256_SHA256_SIGN_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
 /// Deterministic ECDSA signature generation over P-256 with HMAC-SHA-256 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (32 bytes, most significant first), signs the SHA-256 hash at `digest` (32 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (32 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
 ///
@@ -4694,7 +4694,7 @@ ret
 }
 
 /// The CPU features `vg_ecdsa_p256_sha256_sign_shani_adx` requires (`Artifact.features`).
-pub const VG_ECDSA_P256_SHA256_SIGN_SHANI_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_ECDSA_P256_SHA256_SIGN_SHANI_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// Deterministic ECDSA signature generation over P-256 with HMAC-SHA-256 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (32 bytes, most significant first), signs the SHA-256 hash at `digest` (32 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (32 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
 ///

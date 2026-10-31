@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_aes_cfb128_encrypt_aes` requires (`Artifact.features`).
-pub const VG_AES_CFB128_ENCRYPT_AES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
+pub const VG_AES_CFB128_ENCRYPT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
 
 /// AES-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
@@ -78,7 +78,7 @@ ret
 }
 
 /// The CPU features `vg_aes_cfb128_decrypt_aes` requires (`Artifact.features`).
-pub const VG_AES_CFB128_DECRYPT_AES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
+pub const VG_AES_CFB128_DECRYPT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
 
 /// The bytes of `scratch` that `vg_aes_cfb128_decrypt_aes` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
 pub const VG_AES_CFB128_DECRYPT_AES_SCRATCH_WRITTEN: usize = 0;

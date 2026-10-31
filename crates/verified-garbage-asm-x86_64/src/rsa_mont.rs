@@ -286,7 +286,7 @@ ret
 }
 
 /// The CPU features `vg_rsa_mont_mul_adx` requires (`Artifact.features`).
-pub const VG_RSA_MONT_MUL_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_RSA_MONT_MUL_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Montgomery multiplication in the working space of the RSA functions: writes to array `o` the number below the modulus `m` (array 0) congruent to `a b 2^(-64 w)` modulo `m`, for the numbers in arrays `a` and `b`. The working space is a header of 32 words, then 8 arrays of `w + 2` words each: header word 6 holds `w`, word 7 `-m⁻¹ mod 2^64`, and words 8 to 15 the addresses of the arrays. The numbers are `w` 64-bit words, little-endian, at the start of their arrays; `o` may be `a` or `b`, and `a` may be `b`. Every byte of `ws` but those of arrays 2 and 3 (the function's own) and of array `o` keeps its value.
 ///
@@ -2771,7 +2771,7 @@ ret
 pub use self::vg_rsa_mont_mul as vg_rsa_lazy_mont_mul;
 
 /// The CPU features `vg_rsa_lazy_mont_mul_adx` requires (`Artifact.features`).
-pub const VG_RSA_LAZY_MONT_MUL_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
+pub const VG_RSA_LAZY_MONT_MUL_ADX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Lazy Montgomery multiplication in the working space of the RSA functions: writes to array `o` a number of `w` words congruent to `a b 2^(-64 w)` modulo the modulus `m` (array 0), for the numbers in arrays `a` and `b`, which, like the result, need not be below `m`. The working space is laid out as for `vg_rsa_mont_mul`: a header of 32 words, then 8 arrays of `w + 2` words each; header word 6 holds `w`, word 7 `-m⁻¹ mod 2^64`, and words 8 to 15 the addresses of the arrays. The numbers are `w` 64-bit words, little-endian, at the start of their arrays; `o` may be `a` or `b`, and `a` may be `b`. Every byte of `ws` but those of arrays 2 and 3 (the function's own) and of array `o` keeps its value.
 ///

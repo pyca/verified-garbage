@@ -7,9 +7,6 @@
 
 #![no_std]
 
-#[allow(unused_imports)]
-use verified_garbage_cpu as cpu;
-
 /// The page of a `static`'s address, in the assembler syntax of the object format.
 #[cfg(target_vendor = "apple")]
 #[allow(unused_macros)]

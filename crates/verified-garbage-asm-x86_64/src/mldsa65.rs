@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_mldsa65_keygen_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA65_KEYGEN_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA65_KEYGEN_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// ML-DSA-65 key generation from a seed, `ML-DSA.KeyGen_internal(ξ)` (FIPS 204 Algorithm 6): with the 32-byte seed `ξ` at `seed`, writes the public key to `*pk` and the private key to `*sk`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -1361,7 +1361,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa65_sign_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA65_SIGN_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA65_SIGN_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// ML-DSA-65 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
@@ -3108,7 +3108,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa65_sign_message_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA65_SIGN_MESSAGE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA65_SIGN_MESSAGE_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// ML-DSA-65 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unspecified.
 ///
@@ -3259,7 +3259,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa65_verify_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA65_VERIFY_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA65_VERIFY_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// ML-DSA-65 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
 ///
@@ -4364,7 +4364,7 @@ ret
 }
 
 /// The CPU features `vg_mldsa65_verify_message_cached_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA65_VERIFY_MESSAGE_CACHED_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_MLDSA65_VERIFY_MESSAGE_CACHED_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// ML-DSA-65 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. The message formatting and verification semantics match `vg_mldsa65_verify_message`.
 ///

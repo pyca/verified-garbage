@@ -706,7 +706,7 @@ ret
 }
 
 /// The CPU features `vg_ghash_pclmul` requires (`Artifact.features`).
-pub const VG_GHASH_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_GHASH_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// GHASH (NIST SP 800-38D §6.4) continued over whole blocks: with the hash subkey `H` the block at `h`, replaces the block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at `data` (blocks big-endian, `•` the multiplication of §6.3).
 ///
@@ -980,7 +980,7 @@ ret
 }
 
 /// The CPU features `vg_ghash_vpclmul` requires (`Artifact.features`).
-pub const VG_GHASH_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_GHASH_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// GHASH (NIST SP 800-38D §6.4) continued over whole blocks: with the hash subkey `H` the block at `h`, replaces the block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at `data` (blocks big-endian, `•` the multiplication of §6.3).
 ///
@@ -1654,7 +1654,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_prepare_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F);
+pub const VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F);
 
 /// Makes the 1024-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes and, at byte `256 + 32*k`, for `k` from 0 to 23, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedPowersRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
 ///
@@ -2005,7 +2005,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_prepare16_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_PREPARE16_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_PREPARE16_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// The bytes of `ctx` that `vg_aes_gcm_prepare16_vpclmul` may write: it changes no byte of `ctx` at this offset or beyond (`Artifact.written`).
 pub const VG_AES_GCM_PREPARE16_VPCLMUL_CTX_WRITTEN: usize = 512;
@@ -2181,7 +2181,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_prepare16_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_PREPARE16_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::PCLMULQDQ);
+pub const VG_AES_GCM_PREPARE16_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::PCLMULQDQ);
 
 /// The bytes of `ctx` that `vg_aes_gcm_prepare16_pclmul_avx` may write: it changes no byte of `ctx` at this offset or beyond (`Artifact.written`).
 pub const VG_AES_GCM_PREPARE16_PCLMUL_AVX_CTX_WRITTEN: usize = 512;
@@ -2412,7 +2412,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_aesni` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: as `vg_aes_ctr32` and then `vg_ghash`.
 ///
@@ -2473,7 +2473,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_aesni` requires (`Artifact.features`).
-pub const VG_AES_GCM_DECRYPT_BLOCKS_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM's decryption of whole blocks (NIST SP 800-38D §7.2 steps 5 and 6, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the `n` 16-byte blocks of ciphertext at `data`, with the hash subkey of `*ctx`, then XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into them, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`: as `vg_ghash` and then `vg_aes_ctr32`.
 ///
@@ -2534,7 +2534,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_init_aesni` requires (`Artifact.features`).
-pub const VG_AES_GCM_INIT_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SSSE3 | crate::cpu::feature::AES);
+pub const VG_AES_GCM_INIT_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
 
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
@@ -2598,7 +2598,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_aesni` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_SEAL_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
@@ -2995,7 +2995,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_aesni` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_OPEN_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
@@ -3525,7 +3525,7 @@ pub use self::vg_aes_gcm_stream_init as vg_aes_gcm_stream_init_aesni;
 pub use self::vg_aes_gcm_stream_aad as vg_aes_gcm_stream_aad_aesni;
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_aesni` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_ENCRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
 ///
@@ -3939,7 +3939,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_aesni` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_DECRYPT_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_DECRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
 
 /// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
 ///
@@ -4353,7 +4353,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_finish_aesni` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
 
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
@@ -4486,7 +4486,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_verify_aesni` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
 
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
@@ -4691,7 +4691,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_aesni` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, writes to the `n` 16-byte blocks at `dst` the `n` blocks at `src` XORed with `CIPH_K(CB₁) … CIPH_K(CBₙ)`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: `vg_aes_gcm_encrypt_blocks` with the plaintext read from `src`.
 ///
@@ -4757,7 +4757,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_aesni` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_TO_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, writes to the `len` bytes at `dst` the encryption of the `len` bytes at `src`, as the continuation of that plaintext, and the state then represents the message with them appended: `vg_aes_gcm_stream_encrypt` with the plaintext read from `src`.
 ///
@@ -4947,7 +4947,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_aesni` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_GATHER_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_SEAL_GATHER_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -5455,7 +5455,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_aesni` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_SPLIT_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_SEAL_SPLIT_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag) of a plaintext whose first part is elsewhere: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` of `dst` with its first `src_len` bytes read from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -5923,7 +5923,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: as `vg_aes_ctr32` and then `vg_ghash`.
 ///
@@ -5984,7 +5984,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_DECRYPT_BLOCKS_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM's decryption of whole blocks (NIST SP 800-38D §7.2 steps 5 and 6, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the `n` 16-byte blocks of ciphertext at `data`, with the hash subkey of `*ctx`, then XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into them, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`: as `vg_ghash` and then `vg_aes_ctr32`.
 ///
@@ -6045,7 +6045,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_init_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_INIT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SSSE3 | crate::cpu::feature::AES);
+pub const VG_AES_GCM_INIT_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
 
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
@@ -6065,7 +6065,7 @@ pub const VG_AES_GCM_INIT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::c
 pub use self::vg_aes_gcm_init_aesni as vg_aes_gcm_init_aesni_pclmul;
 
 /// The CPU features `vg_aes_gcm_seal_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
@@ -6462,7 +6462,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
@@ -6958,7 +6958,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_init_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
 ///
@@ -6980,7 +6980,7 @@ pub const VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = c
 pub use self::vg_aes_gcm_stream_init_pclmul as vg_aes_gcm_stream_init_aesni_pclmul;
 
 /// The CPU features `vg_aes_gcm_stream_aad_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
@@ -7000,7 +7000,7 @@ pub const VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_FEATURES: crate::cpu::Features = cr
 pub use self::vg_aes_gcm_stream_aad_pclmul as vg_aes_gcm_stream_aad_aesni_pclmul;
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
 ///
@@ -7414,7 +7414,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
 ///
@@ -7828,7 +7828,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_finish_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
@@ -7961,7 +7961,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_verify_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
@@ -8166,7 +8166,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, writes to the `n` 16-byte blocks at `dst` the `n` blocks at `src` XORed with `CIPH_K(CB₁) … CIPH_K(CBₙ)`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: `vg_aes_gcm_encrypt_blocks` with the plaintext read from `src`.
 ///
@@ -8232,7 +8232,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_TO_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, writes to the `len` bytes at `dst` the encryption of the `len` bytes at `src`, as the continuation of that plaintext, and the state then represents the message with them appended: `vg_aes_gcm_stream_encrypt` with the plaintext read from `src`.
 ///
@@ -8422,7 +8422,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -8930,7 +8930,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_SPLIT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_SEAL_SPLIT_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag) of a plaintext whose first part is elsewhere: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` of `dst` with its first `src_len` bytes read from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -9398,7 +9398,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: as `vg_aes_ctr32` and then `vg_ghash`.
 ///
@@ -12803,7 +12803,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_DECRYPT_BLOCKS_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
 /// AES-GCM's decryption of whole blocks (NIST SP 800-38D §7.2 steps 5 and 6, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the `n` 16-byte blocks of ciphertext at `data`, with the hash subkey of `*ctx`, then XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into them, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`: as `vg_ghash` and then `vg_aes_ctr32`.
 ///
@@ -14804,7 +14804,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_init_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_INIT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SSSE3 | crate::cpu::feature::AES);
+pub const VG_AES_GCM_INIT_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
 
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
@@ -14824,7 +14824,7 @@ pub const VG_AES_GCM_INIT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crat
 pub use self::vg_aes_gcm_init_aesni as vg_aes_gcm_init_aesni_pclmul_avx;
 
 /// The CPU features `vg_aes_gcm_seal_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_SEAL_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
@@ -15393,7 +15393,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_OPEN_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
@@ -15889,7 +15889,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_init_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
 ///
@@ -15911,7 +15911,7 @@ pub const VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features
 pub use self::vg_aes_gcm_stream_init_pclmul as vg_aes_gcm_stream_init_aesni_pclmul_avx;
 
 /// The CPU features `vg_aes_gcm_stream_aad_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
@@ -15931,7 +15931,7 @@ pub const VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features 
 pub use self::vg_aes_gcm_stream_aad_pclmul as vg_aes_gcm_stream_aad_aesni_pclmul_avx;
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
 ///
@@ -16345,7 +16345,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
 /// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
 ///
@@ -16759,7 +16759,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_finish_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
@@ -16781,7 +16781,7 @@ pub const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Featur
 pub use self::vg_aes_gcm_stream_finish_aesni_pclmul as vg_aes_gcm_stream_finish_aesni_pclmul_avx;
 
 /// The CPU features `vg_aes_gcm_stream_verify_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
@@ -16803,7 +16803,7 @@ pub const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Featur
 pub use self::vg_aes_gcm_stream_verify_aesni_pclmul as vg_aes_gcm_stream_verify_aesni_pclmul_avx;
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, writes to the `n` 16-byte blocks at `dst` the `n` blocks at `src` XORed with `CIPH_K(CB₁) … CIPH_K(CBₙ)`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: `vg_aes_gcm_encrypt_blocks` with the plaintext read from `src`.
 ///
@@ -20243,7 +20243,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_TO_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, writes to the `len` bytes at `dst` the encryption of the `len` bytes at `src`, as the continuation of that plaintext, and the state then represents the message with them appended: `vg_aes_gcm_stream_encrypt` with the plaintext read from `src`.
 ///
@@ -20433,7 +20433,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -20941,7 +20941,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_SPLIT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_SEAL_SPLIT_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag) of a plaintext whose first part is elsewhere: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` of `dst` with its first `src_len` bytes read from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -21581,7 +21581,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
 /// `vg_aes_gcm_encrypt_blocks` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.encryptBlocksPrepared16Contract`.
 ///
@@ -26084,7 +26084,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_DECRYPT_BLOCKS_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
 /// `vg_aes_gcm_decrypt_blocks` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.decryptBlocksPrepared16Contract`.
 ///
@@ -29699,7 +29699,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_SEAL_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
 /// `vg_aes_gcm_seal` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPrepared16Contract`.
 ///
@@ -30752,7 +30752,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_OPEN_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
 /// `vg_aes_gcm_open` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPrepared16Contract`.
 ///
@@ -31781,7 +31781,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
 /// `vg_aes_gcm_stream_encrypt` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPrepared16Contract`.
 ///
@@ -32192,7 +32192,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
 /// `vg_aes_gcm_stream_decrypt` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPrepared16Contract`.
 ///
@@ -32603,7 +32603,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
 /// `vg_aes_gcm_encrypt_blocks_to` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.encryptBlocksToPrepared16Contract`.
 ///
@@ -35878,7 +35878,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_TO_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
 /// `vg_aes_gcm_stream_encrypt_to` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptToPrepared16Contract`.
 ///
@@ -36065,7 +36065,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_GATHER_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_SEAL_GATHER_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
 /// `vg_aes_gcm_seal_gather` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPrepared16Contract`.
 ///
@@ -37092,7 +37092,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_SPLIT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::AVX);
+pub const VG_AES_GCM_SEAL_SPLIT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
 /// `vg_aes_gcm_seal_split` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealSplitPrepared16Contract`.
 ///
@@ -38597,7 +38597,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_aesni_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: as `vg_aes_ctr32` and then `vg_ghash`.
 ///
@@ -38658,7 +38658,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_aesni_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_DECRYPT_BLOCKS_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM's decryption of whole blocks (NIST SP 800-38D §7.2 steps 5 and 6, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the `n` 16-byte blocks of ciphertext at `data`, with the hash subkey of `*ctx`, then XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into them, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`: as `vg_ghash` and then `vg_aes_ctr32`.
 ///
@@ -38719,7 +38719,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_init_aesni_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_INIT_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SSSE3 | crate::cpu::feature::AES);
+pub const VG_AES_GCM_INIT_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
 
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
@@ -38739,7 +38739,7 @@ pub const VG_AES_GCM_INIT_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::
 pub use self::vg_aes_gcm_init_aesni as vg_aes_gcm_init_aesni_vpclmul;
 
 /// The CPU features `vg_aes_gcm_seal_aesni_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_SEAL_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
@@ -39136,7 +39136,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_aesni_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_OPEN_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
@@ -39632,7 +39632,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_init_aesni_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_INIT_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_INIT_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
 ///
@@ -39654,7 +39654,7 @@ pub const VG_AES_GCM_STREAM_INIT_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = 
 pub use self::vg_aes_gcm_stream_init_vpclmul as vg_aes_gcm_stream_init_aesni_vpclmul;
 
 /// The CPU features `vg_aes_gcm_stream_aad_aesni_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_AAD_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_AAD_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
@@ -39674,7 +39674,7 @@ pub const VG_AES_GCM_STREAM_AAD_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = c
 pub use self::vg_aes_gcm_stream_aad_vpclmul as vg_aes_gcm_stream_aad_aesni_vpclmul;
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_aesni_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_ENCRYPT_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
 ///
@@ -40088,7 +40088,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_aesni_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_DECRYPT_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_DECRYPT_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
 ///
@@ -40502,7 +40502,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_finish_aesni_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_FINISH_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_FINISH_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
@@ -40635,7 +40635,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_verify_aesni_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_VERIFY_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_VERIFY_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
@@ -40840,7 +40840,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_aesni_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, writes to the `n` 16-byte blocks at `dst` the `n` blocks at `src` XORed with `CIPH_K(CB₁) … CIPH_K(CBₙ)`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: `vg_aes_gcm_encrypt_blocks` with the plaintext read from `src`.
 ///
@@ -40906,7 +40906,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_aesni_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_TO_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, writes to the `len` bytes at `dst` the encryption of the `len` bytes at `src`, as the continuation of that plaintext, and the state then represents the message with them appended: `vg_aes_gcm_stream_encrypt` with the plaintext read from `src`.
 ///
@@ -41096,7 +41096,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_aesni_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_GATHER_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_SEAL_GATHER_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -41604,7 +41604,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_aesni_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_SPLIT_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_SEAL_SPLIT_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag) of a plaintext whose first part is elsewhere: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` of `dst` with its first `src_len` bytes read from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -42072,7 +42072,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: as `vg_aes_ctr32` and then `vg_ghash`.
 ///
@@ -42133,7 +42133,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_DECRYPT_BLOCKS_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM's decryption of whole blocks (NIST SP 800-38D §7.2 steps 5 and 6, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the `n` 16-byte blocks of ciphertext at `data`, with the hash subkey of `*ctx`, then XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into them, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`: as `vg_ghash` and then `vg_aes_ctr32`.
 ///
@@ -42210,7 +42210,7 @@ ret
 pub use self::vg_aes_gcm_init as vg_aes_gcm_init_pclmul;
 
 /// The CPU features `vg_aes_gcm_seal_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_SEAL_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
@@ -42607,7 +42607,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_OPEN_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
@@ -43103,7 +43103,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_init_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
 ///
@@ -43254,7 +43254,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_aad_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
@@ -43383,7 +43383,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
 ///
@@ -43797,7 +43797,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_DECRYPT_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_DECRYPT_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
 ///
@@ -44211,7 +44211,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_finish_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
@@ -44344,7 +44344,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_verify_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
@@ -44549,7 +44549,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, writes to the `n` 16-byte blocks at `dst` the `n` blocks at `src` XORed with `CIPH_K(CB₁) … CIPH_K(CBₙ)`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: `vg_aes_gcm_encrypt_blocks` with the plaintext read from `src`.
 ///
@@ -44615,7 +44615,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_TO_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, writes to the `len` bytes at `dst` the encryption of the `len` bytes at `src`, as the continuation of that plaintext, and the state then represents the message with them appended: `vg_aes_gcm_stream_encrypt` with the plaintext read from `src`.
 ///
@@ -44805,7 +44805,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_GATHER_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_SEAL_GATHER_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -45313,7 +45313,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_SPLIT_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_SEAL_SPLIT_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag) of a plaintext whose first part is elsewhere: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` of `dst` with its first `src_len` bytes read from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -49478,7 +49478,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_vaes` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: as `vg_aes_ctr32` and then `vg_ghash`.
 ///
@@ -49539,7 +49539,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_vaes` requires (`Artifact.features`).
-pub const VG_AES_GCM_DECRYPT_BLOCKS_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
 
 /// AES-GCM's decryption of whole blocks (NIST SP 800-38D §7.2 steps 5 and 6, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the `n` 16-byte blocks of ciphertext at `data`, with the hash subkey of `*ctx`, then XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into them, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`: as `vg_ghash` and then `vg_aes_ctr32`.
 ///
@@ -49600,7 +49600,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_init_vaes` requires (`Artifact.features`).
-pub const VG_AES_GCM_INIT_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES | crate::cpu::feature::AES);
+pub const VG_AES_GCM_INIT_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
 
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
@@ -49664,7 +49664,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_vaes` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_GCM_SEAL_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
@@ -50061,7 +50061,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_vaes` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_GCM_OPEN_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
 
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
@@ -50591,7 +50591,7 @@ pub use self::vg_aes_gcm_stream_init as vg_aes_gcm_stream_init_vaes;
 pub use self::vg_aes_gcm_stream_aad as vg_aes_gcm_stream_aad_vaes;
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_vaes` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_GCM_STREAM_ENCRYPT_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
 ///
@@ -51005,7 +51005,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_vaes` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_DECRYPT_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_GCM_STREAM_DECRYPT_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
 
 /// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
 ///
@@ -51419,7 +51419,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_finish_vaes` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_FINISH_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_GCM_STREAM_FINISH_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
 
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
@@ -51552,7 +51552,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_verify_vaes` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_VERIFY_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_GCM_STREAM_VERIFY_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
 
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
@@ -51757,7 +51757,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_vaes` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, writes to the `n` 16-byte blocks at `dst` the `n` blocks at `src` XORed with `CIPH_K(CB₁) … CIPH_K(CBₙ)`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: `vg_aes_gcm_encrypt_blocks` with the plaintext read from `src`.
 ///
@@ -51823,7 +51823,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_vaes` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, writes to the `len` bytes at `dst` the encryption of the `len` bytes at `src`, as the continuation of that plaintext, and the state then represents the message with them appended: `vg_aes_gcm_stream_encrypt` with the plaintext read from `src`.
 ///
@@ -52013,7 +52013,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_vaes` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_GATHER_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_GCM_SEAL_GATHER_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -52521,7 +52521,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_vaes` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_SPLIT_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES);
+pub const VG_AES_GCM_SEAL_SPLIT_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag) of a plaintext whose first part is elsewhere: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` of `dst` with its first `src_len` bytes read from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -52989,7 +52989,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_vaes_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: as `vg_aes_ctr32` and then `vg_ghash`.
 ///
@@ -53050,7 +53050,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_vaes_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_DECRYPT_BLOCKS_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM's decryption of whole blocks (NIST SP 800-38D §7.2 steps 5 and 6, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the `n` 16-byte blocks of ciphertext at `data`, with the hash subkey of `*ctx`, then XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into them, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`: as `vg_ghash` and then `vg_aes_ctr32`.
 ///
@@ -53111,7 +53111,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_init_vaes_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_INIT_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES | crate::cpu::feature::AES);
+pub const VG_AES_GCM_INIT_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
 
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
@@ -53131,7 +53131,7 @@ pub const VG_AES_GCM_INIT_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cp
 pub use self::vg_aes_gcm_init_vaes as vg_aes_gcm_init_vaes_pclmul;
 
 /// The CPU features `vg_aes_gcm_seal_vaes_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_SEAL_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
@@ -53528,7 +53528,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_vaes_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_OPEN_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
@@ -54024,7 +54024,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_init_vaes_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_INIT_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_INIT_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
 ///
@@ -54046,7 +54046,7 @@ pub const VG_AES_GCM_STREAM_INIT_VAES_PCLMUL_FEATURES: crate::cpu::Features = cr
 pub use self::vg_aes_gcm_stream_init_pclmul as vg_aes_gcm_stream_init_vaes_pclmul;
 
 /// The CPU features `vg_aes_gcm_stream_aad_vaes_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_AAD_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_AAD_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
@@ -54066,7 +54066,7 @@ pub const VG_AES_GCM_STREAM_AAD_VAES_PCLMUL_FEATURES: crate::cpu::Features = cra
 pub use self::vg_aes_gcm_stream_aad_pclmul as vg_aes_gcm_stream_aad_vaes_pclmul;
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_vaes_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_ENCRYPT_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
 ///
@@ -54480,7 +54480,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_vaes_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_DECRYPT_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_DECRYPT_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
 ///
@@ -54894,7 +54894,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_finish_vaes_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_FINISH_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_FINISH_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
@@ -55027,7 +55027,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_verify_vaes_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_VERIFY_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_VERIFY_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
@@ -55232,7 +55232,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_vaes_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, writes to the `n` 16-byte blocks at `dst` the `n` blocks at `src` XORed with `CIPH_K(CB₁) … CIPH_K(CBₙ)`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: `vg_aes_gcm_encrypt_blocks` with the plaintext read from `src`.
 ///
@@ -55298,7 +55298,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_vaes_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, writes to the `len` bytes at `dst` the encryption of the `len` bytes at `src`, as the continuation of that plaintext, and the state then represents the message with them appended: `vg_aes_gcm_stream_encrypt` with the plaintext read from `src`.
 ///
@@ -55488,7 +55488,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_vaes_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_GATHER_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_SEAL_GATHER_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -55996,7 +55996,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_vaes_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_SPLIT_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::VAES | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_AES_GCM_SEAL_SPLIT_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag) of a plaintext whose first part is elsewhere: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` of `dst` with its first `src_len` bytes read from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -56464,7 +56464,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: as `vg_aes_ctr32` and then `vg_ghash`.
 ///
@@ -57432,7 +57432,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_DECRYPT_BLOCKS_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM's decryption of whole blocks (NIST SP 800-38D §7.2 steps 5 and 6, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the `n` 16-byte blocks of ciphertext at `data`, with the hash subkey of `*ctx`, then XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into them, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`: as `vg_ghash` and then `vg_aes_ctr32`.
 ///
@@ -58080,7 +58080,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_init_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_INIT_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES | crate::cpu::feature::AES);
+pub const VG_AES_GCM_INIT_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
 
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
@@ -58100,7 +58100,7 @@ pub const VG_AES_GCM_INIT_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::c
 pub use self::vg_aes_gcm_init_vaes as vg_aes_gcm_init_vaes_vpclmul;
 
 /// The CPU features `vg_aes_gcm_seal_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_SEAL_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
@@ -58497,7 +58497,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_OPEN_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
@@ -58993,7 +58993,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_init_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
 ///
@@ -59015,7 +59015,7 @@ pub const VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_FEATURES: crate::cpu::Features = c
 pub use self::vg_aes_gcm_stream_init_vpclmul as vg_aes_gcm_stream_init_vaes_vpclmul;
 
 /// The CPU features `vg_aes_gcm_stream_aad_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
@@ -59035,7 +59035,7 @@ pub const VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_FEATURES: crate::cpu::Features = cr
 pub use self::vg_aes_gcm_stream_aad_vpclmul as vg_aes_gcm_stream_aad_vaes_vpclmul;
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_ENCRYPT_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
 ///
@@ -59449,7 +59449,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
 ///
@@ -59863,7 +59863,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_finish_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
@@ -59996,7 +59996,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_verify_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
@@ -60201,7 +60201,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, writes to the `n` 16-byte blocks at `dst` the `n` blocks at `src` XORed with `CIPH_K(CB₁) … CIPH_K(CBₙ)`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: `vg_aes_gcm_encrypt_blocks` with the plaintext read from `src`.
 ///
@@ -61178,7 +61178,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, writes to the `len` bytes at `dst` the encryption of the `len` bytes at `src`, as the continuation of that plaintext, and the state then represents the message with them appended: `vg_aes_gcm_stream_encrypt` with the plaintext read from `src`.
 ///
@@ -61368,7 +61368,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_GATHER_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_SEAL_GATHER_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -61876,7 +61876,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_SPLIT_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_SEAL_SPLIT_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag) of a plaintext whose first part is elsewhere: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` of `dst` with its first `src_len` bytes read from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -62344,7 +62344,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_PREPARED16_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// `vg_aes_gcm_encrypt_blocks` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.encryptBlocksPrepared16Contract`.
 ///
@@ -65613,7 +65613,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_DECRYPT_BLOCKS_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_PREPARED16_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// `vg_aes_gcm_decrypt_blocks` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.decryptBlocksPrepared16Contract`.
 ///
@@ -68032,7 +68032,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_SEAL_PREPARED16_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// `vg_aes_gcm_seal` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPrepared16Contract`.
 ///
@@ -68426,7 +68426,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_OPEN_PREPARED16_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// `vg_aes_gcm_open` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPrepared16Contract`.
 ///
@@ -69455,7 +69455,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED16_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// `vg_aes_gcm_stream_encrypt` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPrepared16Contract`.
 ///
@@ -69866,7 +69866,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED16_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// `vg_aes_gcm_stream_decrypt` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPrepared16Contract`.
 ///
@@ -70277,7 +70277,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_PREPARED16_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// `vg_aes_gcm_encrypt_blocks_to` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.encryptBlocksToPrepared16Contract`.
 ///
@@ -71574,7 +71574,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_TO_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_PREPARED16_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// `vg_aes_gcm_stream_encrypt_to` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptToPrepared16Contract`.
 ///
@@ -71761,7 +71761,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_GATHER_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_SEAL_GATHER_PREPARED16_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// `vg_aes_gcm_seal_gather` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPrepared16Contract`.
 ///
@@ -72788,7 +72788,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_SPLIT_PREPARED16_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_SEAL_SPLIT_PREPARED16_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// `vg_aes_gcm_seal_split` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealSplitPrepared16Contract`.
 ///
@@ -75270,7 +75270,7 @@ jmp 216b
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: as `vg_aes_ctr32` and then `vg_ghash`.
 ///
@@ -76788,7 +76788,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_DECRYPT_BLOCKS_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
 /// AES-GCM's decryption of whole blocks (NIST SP 800-38D §7.2 steps 5 and 6, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the `n` 16-byte blocks of ciphertext at `data`, with the hash subkey of `*ctx`, then XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into them, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`: as `vg_ghash` and then `vg_aes_ctr32`.
 ///
@@ -77840,7 +77840,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_init_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_INIT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SSSE3 | crate::cpu::feature::VAES | crate::cpu::feature::AES);
+pub const VG_AES_GCM_INIT_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
 
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
@@ -77860,7 +77860,7 @@ pub const VG_AES_GCM_INIT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = c
 pub use self::vg_aes_gcm_init_vaes as vg_aes_gcm_init_vaes_vpclmul_avx512;
 
 /// The CPU features `vg_aes_gcm_seal_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
@@ -78962,7 +78962,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_OPEN_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
@@ -80174,7 +80174,7 @@ jmp 235b
 }
 
 /// The CPU features `vg_aes_gcm_stream_init_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
 ///
@@ -80196,7 +80196,7 @@ pub const VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Featu
 pub use self::vg_aes_gcm_stream_init_vpclmul as vg_aes_gcm_stream_init_vaes_vpclmul_avx512;
 
 /// The CPU features `vg_aes_gcm_stream_aad_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
@@ -80216,7 +80216,7 @@ pub const VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Featur
 pub use self::vg_aes_gcm_stream_aad_vpclmul as vg_aes_gcm_stream_aad_vaes_vpclmul_avx512;
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_STREAM_ENCRYPT_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
 ///
@@ -80630,7 +80630,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
 /// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
 ///
@@ -81044,7 +81044,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_finish_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
@@ -81066,7 +81066,7 @@ pub const VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Fea
 pub use self::vg_aes_gcm_stream_finish_vaes_vpclmul as vg_aes_gcm_stream_finish_vaes_vpclmul_avx512;
 
 /// The CPU features `vg_aes_gcm_stream_verify_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
@@ -81088,7 +81088,7 @@ pub const VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Fea
 pub use self::vg_aes_gcm_stream_verify_vaes_vpclmul as vg_aes_gcm_stream_verify_vaes_vpclmul_avx512;
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, writes to the `n` 16-byte blocks at `dst` the `n` blocks at `src` XORed with `CIPH_K(CB₁) … CIPH_K(CBₙ)`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: `vg_aes_gcm_encrypt_blocks` with the plaintext read from `src`.
 ///
@@ -82615,7 +82615,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, writes to the `len` bytes at `dst` the encryption of the `len` bytes at `src`, as the continuation of that plaintext, and the state then represents the message with them appended: `vg_aes_gcm_stream_encrypt` with the plaintext read from `src`.
 ///
@@ -82805,7 +82805,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_GATHER_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_SEAL_GATHER_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -83313,7 +83313,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_SPLIT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_SEAL_SPLIT_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag) of a plaintext whose first part is elsewhere: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` of `dst` with its first `src_len` bytes read from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -84544,7 +84544,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_SPLIT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_SEAL_SPLIT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
 /// `vg_aes_gcm_seal_split` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealSplitPreparedContract`.
 ///
@@ -87954,7 +87954,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
 /// `vg_aes_gcm_encrypt_blocks` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.encryptBlocksPreparedContract`.
 ///
@@ -89806,7 +89806,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_DECRYPT_BLOCKS_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
 /// `vg_aes_gcm_decrypt_blocks` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.decryptBlocksPreparedContract`.
 ///
@@ -91052,7 +91052,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
 /// `vg_aes_gcm_seal` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
 ///
@@ -92407,7 +92407,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
 /// `vg_aes_gcm_open` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
 ///
@@ -93920,7 +93920,7 @@ jmp 229b
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
 /// `vg_aes_gcm_stream_encrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
 ///
@@ -94331,7 +94331,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
 /// `vg_aes_gcm_stream_decrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
 ///
@@ -94742,7 +94742,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
 /// `vg_aes_gcm_encrypt_blocks_to` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.encryptBlocksToPreparedContract`.
 ///
@@ -96623,7 +96623,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
 /// `vg_aes_gcm_stream_encrypt_to` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptToPreparedContract`.
 ///
@@ -96810,7 +96810,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES | crate::cpu::feature::VAES | crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW);
+pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
 /// `vg_aes_gcm_seal_gather` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
 ///
@@ -97400,7 +97400,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: as `vg_aes_ctr32` and then `vg_ghash`.
 ///
@@ -97461,7 +97461,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_decrypt_blocks_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_DECRYPT_BLOCKS_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_DECRYPT_BLOCKS_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM's decryption of whole blocks (NIST SP 800-38D §7.2 steps 5 and 6, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the `n` 16-byte blocks of ciphertext at `data`, with the hash subkey of `*ctx`, then XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into them, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`: as `vg_ghash` and then `vg_aes_ctr32`.
 ///
@@ -97538,7 +97538,7 @@ ret
 pub use self::vg_aes_gcm_init as vg_aes_gcm_init_vpclmul;
 
 /// The CPU features `vg_aes_gcm_seal_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_SEAL_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
@@ -97935,7 +97935,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_open_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_OPEN_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
@@ -98431,7 +98431,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_init_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_INIT_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_INIT_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Starts an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_aes_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_aes_gcm_stream_aad`, then `vg_aes_gcm_stream_encrypt` or `vg_aes_gcm_stream_decrypt`, then `vg_aes_gcm_stream_finish` or `vg_aes_gcm_stream_verify`, with the same key context.
 ///
@@ -98582,7 +98582,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_aad_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_AAD_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_AAD_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
@@ -98711,7 +98711,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_ENCRYPT_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
 ///
@@ -99125,7 +99125,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_decrypt_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_DECRYPT_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_DECRYPT_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Decrypts the next piece of the text of an incremental AES-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_aes_gcm_stream_verify` has returned 1.
 ///
@@ -99539,7 +99539,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_finish_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_FINISH_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_FINISH_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
@@ -99672,7 +99672,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_verify_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_VERIFY_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_VERIFY_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
@@ -99877,7 +99877,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_encrypt_blocks_to_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_ENCRYPT_BLOCKS_TO_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, writes to the `n` 16-byte blocks at `dst` the `n` blocks at `src` XORed with `CIPH_K(CB₁) … CIPH_K(CBₙ)`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: `vg_aes_gcm_encrypt_blocks` with the plaintext read from `src`.
 ///
@@ -99943,7 +99943,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_to_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_TO_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_STREAM_ENCRYPT_TO_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Encrypts the next piece of the text of an incremental AES-GCM encryption (NIST SP 800-38D §7.1), out of place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, writes to the `len` bytes at `dst` the encryption of the `len` bytes at `src`, as the continuation of that plaintext, and the state then represents the message with them appended: `vg_aes_gcm_stream_encrypt` with the plaintext read from `src`.
 ///
@@ -100133,7 +100133,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_GATHER_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_SEAL_GATHER_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
 ///
@@ -100641,7 +100641,7 @@ ret
 }
 
 /// The CPU features `vg_aes_gcm_seal_split_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_SPLIT_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_AES_GCM_SEAL_SPLIT_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag) of a plaintext whose first part is elsewhere: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` of `dst` with its first `src_len` bytes read from `src`. A shorter tag is the first bytes of this one.
 ///

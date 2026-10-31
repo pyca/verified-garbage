@@ -19331,7 +19331,7 @@ ret
 }
 
 /// The CPU features `vg_triple_des_ecb_encrypt_avx2` requires (`Artifact.features`).
-pub const VG_TRIPLE_DES_ECB_ENCRYPT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_TRIPLE_DES_ECB_ENCRYPT_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// Triple DES ECB encryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
@@ -20871,7 +20871,7 @@ ret
 }
 
 /// The CPU features `vg_triple_des_ecb_decrypt_avx2` requires (`Artifact.features`).
-pub const VG_TRIPLE_DES_ECB_DECRYPT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
+pub const VG_TRIPLE_DES_ECB_DECRYPT_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// Triple DES ECB decryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
@@ -22411,7 +22411,7 @@ ret
 }
 
 /// The CPU features `vg_triple_des_ecb_encrypt_avx512` requires (`Artifact.features`).
-pub const VG_TRIPLE_DES_ECB_ENCRYPT_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F);
+pub const VG_TRIPLE_DES_ECB_ENCRYPT_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F);
 
 /// Triple DES ECB encryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
@@ -25234,7 +25234,7 @@ ret
 }
 
 /// The CPU features `vg_triple_des_ecb_decrypt_avx512` requires (`Artifact.features`).
-pub const VG_TRIPLE_DES_ECB_DECRYPT_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F);
+pub const VG_TRIPLE_DES_ECB_DECRYPT_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F);
 
 /// Triple DES ECB decryption (SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_triple_des_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///

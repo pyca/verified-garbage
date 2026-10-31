@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_aes_ccm_seal_aesni` requires (`Artifact.features`).
-pub const VG_AES_CCM_SEAL_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
+pub const VG_AES_CCM_SEAL_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
 
 /// AES-CCM generation-encryption (NIST SP 800-38C §6.1, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, encrypts the `len` bytes of payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the encrypted MAC (`T ⊕ MSB_Tlen(S₀)`) of `tag_len` bytes, of the payload and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The ciphertext of §6.1 is the encrypted payload followed by it.
 ///
@@ -550,7 +550,7 @@ ret
 }
 
 /// The CPU features `vg_aes_ccm_open_aesni` requires (`Artifact.features`).
-pub const VG_AES_CCM_OPEN_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
+pub const VG_AES_CCM_OPEN_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
 
 /// AES-CCM decryption-verification (NIST SP 800-38C §6.2, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, and the received encrypted MAC (the last `tag_len` bytes of the ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the MAC is that of the payload and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The MACs are compared without a branch.
 ///

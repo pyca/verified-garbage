@@ -1408,7 +1408,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_compress_avx2` requires (`Artifact.features`).
-pub const VG_SHA512_COMPRESS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SHA512_COMPRESS_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
 /// The SHA-512 compression function (FIPS 180-4 §6.4.2), shared by SHA-384, SHA-512, SHA-512/224 and SHA-512/256: updates the hash value `*state` with the `n` 128-byte blocks starting at `blocks`, in order.
 ///
@@ -2971,7 +2971,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_compress_shani` requires (`Artifact.features`).
-pub const VG_SHA512_COMPRESS_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_SHA512_COMPRESS_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
 
 /// The SHA-512 compression function (FIPS 180-4 §6.4.2), shared by SHA-384, SHA-512, SHA-512/224 and SHA-512/256: updates the hash value `*state` with the `n` 128-byte blocks starting at `blocks`, in order.
 ///
@@ -3748,7 +3748,7 @@ ret
 }
 
 /// The CPU features `vg_sha384_finalize_avx2` requires (`Artifact.features`).
-pub const VG_SHA384_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SHA384_FINALIZE_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
 /// Finishes a SHA-384 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-384 (as `vg_sha384_init` starts it), writes the SHA-384 digest of that message (48 bytes, `VG.Spec.Sha512.sha384`) to `*out`.
 ///
@@ -3917,7 +3917,7 @@ ret
 }
 
 /// The CPU features `vg_sha384_digest_avx2` requires (`Artifact.features`).
-pub const VG_SHA384_DIGEST_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SHA384_DIGEST_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
 /// Computes the SHA-384 digest of the `len` bytes at `data` (48 bytes, `VG.Spec.Sha512.sha384`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-384 computation with that message.
 ///
@@ -4159,7 +4159,7 @@ ret
 }
 
 /// The CPU features `vg_sha384_finalize_shani` requires (`Artifact.features`).
-pub const VG_SHA384_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_SHA384_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
 
 /// Finishes a SHA-384 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-384 (as `vg_sha384_init` starts it), writes the SHA-384 digest of that message (48 bytes, `VG.Spec.Sha512.sha384`) to `*out`.
 ///
@@ -4328,7 +4328,7 @@ ret
 }
 
 /// The CPU features `vg_sha384_digest_shani` requires (`Artifact.features`).
-pub const VG_SHA384_DIGEST_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_SHA384_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
 
 /// Computes the SHA-384 digest of the `len` bytes at `data` (48 bytes, `VG.Spec.Sha512.sha384`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-384 computation with that message.
 ///
@@ -5474,7 +5474,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_update_avx2` requires (`Artifact.features`).
-pub const VG_SHA512_UPDATE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SHA512_UPDATE_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
 /// Absorbs data into a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
@@ -5639,7 +5639,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_finalize_avx2` requires (`Artifact.features`).
-pub const VG_SHA512_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SHA512_FINALIZE_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
 /// Finishes a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (64 bytes) to `*out`. The SHA-512 digest is all of it; the SHA-384, SHA-512/224 and SHA-512/256 digests are its first 48, 28 and 32 bytes.
 ///
@@ -5814,7 +5814,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_update_scratch_avx2` requires (`Artifact.features`).
-pub const VG_SHA512_UPDATE_SCRATCH_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SHA512_UPDATE_SCRATCH_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
 /// `vg_sha512_update`, with its working space in `*scratch`.
 ///
@@ -5977,7 +5977,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_finalize_scratch_avx2` requires (`Artifact.features`).
-pub const VG_SHA512_FINALIZE_SCRATCH_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SHA512_FINALIZE_SCRATCH_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
 /// `vg_sha512_finalize`, with its working space in `*scratch`.
 ///
@@ -6150,7 +6150,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_digest_avx2` requires (`Artifact.features`).
-pub const VG_SHA512_DIGEST_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SHA512_DIGEST_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
 /// Computes the SHA-512 digest of the `len` bytes at `data` (64 bytes, `VG.Spec.Sha512.sha512`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512 computation with that message.
 ///
@@ -6398,7 +6398,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_update_shani` requires (`Artifact.features`).
-pub const VG_SHA512_UPDATE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_SHA512_UPDATE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
 
 /// Absorbs data into a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
@@ -6563,7 +6563,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_finalize_shani` requires (`Artifact.features`).
-pub const VG_SHA512_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_SHA512_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
 
 /// Finishes a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (64 bytes) to `*out`. The SHA-512 digest is all of it; the SHA-384, SHA-512/224 and SHA-512/256 digests are its first 48, 28 and 32 bytes.
 ///
@@ -6738,7 +6738,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_update_scratch_shani` requires (`Artifact.features`).
-pub const VG_SHA512_UPDATE_SCRATCH_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_SHA512_UPDATE_SCRATCH_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
 
 /// `vg_sha512_update`, with its working space in `*scratch`.
 ///
@@ -6901,7 +6901,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_finalize_scratch_shani` requires (`Artifact.features`).
-pub const VG_SHA512_FINALIZE_SCRATCH_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_SHA512_FINALIZE_SCRATCH_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
 
 /// `vg_sha512_finalize`, with its working space in `*scratch`.
 ///
@@ -7074,7 +7074,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_digest_shani` requires (`Artifact.features`).
-pub const VG_SHA512_DIGEST_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_SHA512_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
 
 /// Computes the SHA-512 digest of the `len` bytes at `data` (64 bytes, `VG.Spec.Sha512.sha512`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512 computation with that message.
 ///
@@ -7713,7 +7713,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_224_finalize_avx2` requires (`Artifact.features`).
-pub const VG_SHA512_224_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SHA512_224_FINALIZE_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
 /// Finishes a SHA-512/224 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-512/224 (as `vg_sha512_224_init` starts it), writes the SHA-512/224 digest of that message (28 bytes, `VG.Spec.Sha512.sha512_224`) to `*out`.
 ///
@@ -7876,7 +7876,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_224_digest_avx2` requires (`Artifact.features`).
-pub const VG_SHA512_224_DIGEST_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SHA512_224_DIGEST_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
 /// Computes the SHA-512/224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha512.sha512_224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/224 computation with that message.
 ///
@@ -8112,7 +8112,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_224_finalize_shani` requires (`Artifact.features`).
-pub const VG_SHA512_224_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_SHA512_224_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
 
 /// Finishes a SHA-512/224 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-512/224 (as `vg_sha512_224_init` starts it), writes the SHA-512/224 digest of that message (28 bytes, `VG.Spec.Sha512.sha512_224`) to `*out`.
 ///
@@ -8275,7 +8275,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_224_digest_shani` requires (`Artifact.features`).
-pub const VG_SHA512_224_DIGEST_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_SHA512_224_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
 
 /// Computes the SHA-512/224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha512.sha512_224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/224 computation with that message.
 ///
@@ -8902,7 +8902,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_256_finalize_avx2` requires (`Artifact.features`).
-pub const VG_SHA512_256_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SHA512_256_FINALIZE_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
 /// Finishes a SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-512/256 (as `vg_sha512_256_init` starts it), writes the SHA-512/256 digest of that message (32 bytes, `VG.Spec.Sha512.sha512_256`) to `*out`.
 ///
@@ -9065,7 +9065,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_256_digest_avx2` requires (`Artifact.features`).
-pub const VG_SHA512_256_DIGEST_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
+pub const VG_SHA512_256_DIGEST_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::BMI1 | verified_garbage_cpu::feature::BMI2);
 
 /// Computes the SHA-512/256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha512.sha512_256`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/256 computation with that message.
 ///
@@ -9301,7 +9301,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_256_finalize_shani` requires (`Artifact.features`).
-pub const VG_SHA512_256_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_SHA512_256_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
 
 /// Finishes a SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-512/256 (as `vg_sha512_256_init` starts it), writes the SHA-512/256 digest of that message (32 bytes, `VG.Spec.Sha512.sha512_256`) to `*out`.
 ///
@@ -9464,7 +9464,7 @@ ret
 }
 
 /// The CPU features `vg_sha512_256_digest_shani` requires (`Artifact.features`).
-pub const VG_SHA512_256_DIGEST_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
+pub const VG_SHA512_256_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SHA512);
 
 /// Computes the SHA-512/256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha512.sha512_256`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-512/256 computation with that message.
 ///

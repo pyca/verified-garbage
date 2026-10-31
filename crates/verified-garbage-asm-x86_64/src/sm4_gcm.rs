@@ -1185,7 +1185,7 @@ ret
 }
 
 /// The CPU features `vg_sm4_gcm_seal_pclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_SEAL_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_SM4_GCM_SEAL_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// SM4-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag; RFC 8998 §3.5.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
@@ -1540,7 +1540,7 @@ ret
 }
 
 /// The CPU features `vg_sm4_gcm_open_pclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_OPEN_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_SM4_GCM_OPEN_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// SM4-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD; RFC 8998 §3.5.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
@@ -1975,7 +1975,7 @@ ret
 }
 
 /// The CPU features `vg_sm4_gcm_stream_init_pclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_STREAM_INIT_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_SM4_GCM_STREAM_INIT_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Starts an incremental SM4-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_sm4_gcm_stream_aad`, then `vg_sm4_gcm_stream_encrypt` or `vg_sm4_gcm_stream_decrypt`, then `vg_sm4_gcm_stream_finish` or `vg_sm4_gcm_stream_verify`, with the same key context.
 ///
@@ -2126,7 +2126,7 @@ ret
 }
 
 /// The CPU features `vg_sm4_gcm_stream_aad_pclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_STREAM_AAD_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_SM4_GCM_STREAM_AAD_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Absorbs additional data into an incremental SM4-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
@@ -2255,7 +2255,7 @@ ret
 }
 
 /// The CPU features `vg_sm4_gcm_stream_encrypt_pclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_SM4_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Encrypts the next piece of the text of an incremental SM4-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
 ///
@@ -2521,7 +2521,7 @@ ret
 }
 
 /// The CPU features `vg_sm4_gcm_stream_decrypt_pclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_STREAM_DECRYPT_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_SM4_GCM_STREAM_DECRYPT_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Decrypts the next piece of the text of an incremental SM4-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_sm4_gcm_stream_verify` has returned 1.
 ///
@@ -2787,7 +2787,7 @@ ret
 }
 
 /// The CPU features `vg_sm4_gcm_stream_finish_pclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_STREAM_FINISH_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_SM4_GCM_STREAM_FINISH_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Finishes an incremental SM4-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_sm4_gcm_stream_verify`.
 ///
@@ -2913,7 +2913,7 @@ ret
 }
 
 /// The CPU features `vg_sm4_gcm_stream_verify_pclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_STREAM_VERIFY_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3);
+pub const VG_SM4_GCM_STREAM_VERIFY_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// Finishes an incremental SM4-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
@@ -5005,7 +5005,7 @@ ret
 }
 
 /// The CPU features `vg_sm4_gcm_seal_vpclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_SEAL_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_SM4_GCM_SEAL_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// SM4-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag; RFC 8998 §3.5.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
@@ -5360,7 +5360,7 @@ ret
 }
 
 /// The CPU features `vg_sm4_gcm_open_vpclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_OPEN_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_SM4_GCM_OPEN_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// SM4-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD; RFC 8998 §3.5.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
@@ -5795,7 +5795,7 @@ ret
 }
 
 /// The CPU features `vg_sm4_gcm_stream_init_vpclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_STREAM_INIT_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_SM4_GCM_STREAM_INIT_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Starts an incremental SM4-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_sm4_gcm_stream_aad`, then `vg_sm4_gcm_stream_encrypt` or `vg_sm4_gcm_stream_decrypt`, then `vg_sm4_gcm_stream_finish` or `vg_sm4_gcm_stream_verify`, with the same key context.
 ///
@@ -5946,7 +5946,7 @@ ret
 }
 
 /// The CPU features `vg_sm4_gcm_stream_aad_vpclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_STREAM_AAD_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_SM4_GCM_STREAM_AAD_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Absorbs additional data into an incremental SM4-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
@@ -6075,7 +6075,7 @@ ret
 }
 
 /// The CPU features `vg_sm4_gcm_stream_encrypt_vpclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_STREAM_ENCRYPT_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_SM4_GCM_STREAM_ENCRYPT_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Encrypts the next piece of the text of an incremental SM4-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
 ///
@@ -6341,7 +6341,7 @@ ret
 }
 
 /// The CPU features `vg_sm4_gcm_stream_decrypt_vpclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_STREAM_DECRYPT_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_SM4_GCM_STREAM_DECRYPT_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Decrypts the next piece of the text of an incremental SM4-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_sm4_gcm_stream_verify` has returned 1.
 ///
@@ -6607,7 +6607,7 @@ ret
 }
 
 /// The CPU features `vg_sm4_gcm_stream_finish_vpclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_STREAM_FINISH_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_SM4_GCM_STREAM_FINISH_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Finishes an incremental SM4-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_sm4_gcm_stream_verify`.
 ///
@@ -6733,7 +6733,7 @@ ret
 }
 
 /// The CPU features `vg_sm4_gcm_stream_verify_vpclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_STREAM_VERIFY_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3 | crate::cpu::feature::VPCLMULQDQ);
+pub const VG_SM4_GCM_STREAM_VERIFY_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
 /// Finishes an incremental SM4-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
