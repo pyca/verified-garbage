@@ -83,12 +83,18 @@ def schedule (t : Nat) : List Instr :=
     .add T0 T0 T2,
     .store .w T0 .r6 (slot t)]
 
-/-- Round `t`, with `Wₜ` in `T0`. The additions are in the order of the
-specification. -/
+/-- Round `t`, with `Wₜ` in `T0`. Form `h + (Kₜ + Wₜ)` independently
+of the state-dependent sigma and choice functions, shortening the serial
+addition chain without adding instructions. -/
 def round (t : Nat) : List Instr :=
   let a := var t 0; let b := var t 1; let c := var t 2; let d := var t 3
   let e := var t 4; let f := var t 5; let g := var t 6; let h := var t 7
-  [ -- h := h + Σ₁(e)
+  [ -- h := h + (Kₜ + Wₜ)
+    .lis T1 ((K t).extractLsb' 16 16),
+    .ori T1 T1 ((K t).extractLsb' 0 16),
+    .add T1 T1 T0,
+    .add h h T1,
+    -- h := h + Σ₁(e)
     .rotr .w T1 e 6,
     .rotr .w T2 e 11,
     .logic .xor T1 T1 T2,
@@ -100,25 +106,21 @@ def round (t : Nat) : List Instr :=
     .logic .and T1 T1 e,
     .logic .xor T1 T1 g,
     .add h h T1,
-    -- h := h + Kₜ + Wₜ, which is T₁
-    .lis T1 ((K t).extractLsb' 16 16),
-    .ori T1 T1 ((K t).extractLsb' 0 16),
-    .add h h T1,
-    .add h h T0,
     -- e' := d + T₁
     .add d d h,
-    -- h := h + Σ₀(a)
+    -- T1 := Σ₀(a)
     .rotr .w T1 a 2,
     .rotr .w T2 a 13,
     .logic .xor T1 T1 T2,
     .rotr .w T2 a 22,
     .logic .xor T1 T1 T2,
-    .add h h T1,
-    -- h := h + Maj(a, b, c), as ((a ∨ b) ∧ c) ∨ (a ∧ b); now h = a' = T₁ + T₂
-    .logic .or T1 a b,
-    .logic .and T1 T1 c,
-    .logic .and T2 a b,
-    .logic .or T1 T1 T2,
+    -- T₂ := Σ₀(a) + Maj(a, b, c), independently of T₁ in h
+    .logic .or T2 a b,
+    .logic .and T2 T2 c,
+    .logic .and T3 a b,
+    .logic .or T2 T2 T3,
+    .add T1 T1 T2,
+    -- a' := T₁ + T₂
     .add h h T1]
 
 /-- Rounds `0 … n-1`. -/
