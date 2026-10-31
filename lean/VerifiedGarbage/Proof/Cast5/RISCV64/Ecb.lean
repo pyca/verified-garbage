@@ -64,8 +64,8 @@ abbrev wAt (D : Addr) (b : Nat) : Addr := D + BitVec.ofNat 64 (8 * b)
 def loopWrites : List Reg := roundRegs ++ [dat, cnt]
 
 /-- The loop's fixed facts, about the state `s₀` before it: the schedule at
-`S`, the `n` blocks at `D`, and the table at `T`, readable and apart from
-the blocks. -/
+`S`, the `n` blocks at `D`, and the table at `T`, readable, 64-byte aligned
+and apart from the blocks. -/
 structure LoopEnv (S D T : Addr) (n N : Nat) (s₀ : State) : Prop where
   r3 : s₀.gpr sch = S
   r4 : s₀.gpr rnd = BitVec.ofNat 64 n
@@ -77,6 +77,7 @@ structure LoopEnv (S D T : Addr) (n N : Nat) (s₀ : State) : Prop where
   keyData : (⟨S, 128⟩ : Region).Disjoint ⟨D, 8 * N⟩
   fit : D.toNat + 8 * N ≤ 2 ^ 64
   trd : (⟨T, 4096⟩ : Region) ∈ s₀.rd ++ s₀.wr
+  tal : T.toNat % 64 = 0
   held : Held s₀.mem T Impl.Cast5.s1234
   tblData : (⟨T, 4096⟩ : Region).Disjoint ⟨D, 8 * N⟩
 
@@ -109,6 +110,7 @@ theorem ecb_step {S D T : Addr} {n N : Nat} {up : Bool} {s₀ : State} (L : Loop
       rounds := by rw [g rnd]; exact L.r4
       nv := L.nv
       trd := by rw [g tbl, L.tbl, I.keep.2.1, I.keep.2.2]; exact L.trd
+      tal := by rw [g tbl, L.tbl]; exact L.tal
       held := by
         rw [g tbl, L.tbl]
         exact held_frame I.frame dTD (by rw [s1234_len]; decide) L.held
@@ -264,9 +266,9 @@ theorem restored_saved {g : Reg → BitVec 64} {u s' : State} (R : Spill.Restore
 
 /-! ## The function -/
 
-/-- What ECB may assume: the schedule and the table readable, the `n`
-blocks and the working space writable, all apart, none wrapping around, and
-12 or 16 rounds. -/
+/-- What ECB may assume: the schedule and the table readable, the table
+64-byte aligned, the `n` blocks and the working space writable, all apart,
+none wrapping around, and 12 or 16 rounds. -/
 structure EcbPre (s : State) : Prop where
   key : (⟨s.gpr .a0, 128⟩ : Region) ∈ s.rd ++ s.wr
   kfit : (s.gpr .a0).toNat + 128 ≤ 2 ^ 64
@@ -278,6 +280,7 @@ structure EcbPre (s : State) : Prop where
   dataScr : (⟨s.gpr .a2, 8 * (s.gpr .a3).toNat⟩ : Region).Disjoint ⟨s.gpr .a4, 256⟩
   nv : (s.gpr .a1).toNat = 12 ∨ (s.gpr .a1).toNat = 16
   trd : (⟨s.syms Impl.Cast5.s1234Sym, 4096⟩ : Region) ∈ s.rd ++ s.wr
+  tal : (s.syms Impl.Cast5.s1234Sym).toNat % 64 = 0
   held : Held s.mem (s.syms Impl.Cast5.s1234Sym) Impl.Cast5.s1234
   tblData : (⟨s.syms Impl.Cast5.s1234Sym, 4096⟩ : Region).Disjoint ⟨s.gpr .a2, 8 * (s.gpr .a3).toNat⟩
   tblScr : (⟨s.syms Impl.Cast5.s1234Sym, 4096⟩ : Region).Disjoint ⟨s.gpr .a4, 256⟩
@@ -316,6 +319,7 @@ theorem ecb_wp (up : Bool) {s : State} (h : EcbPre s) :
       keyData := h.keyData
       fit := fit
       trd := by rw [k₀.2.1, k₀.2.2]; exact h.trd
+      tal := h.tal
       held := held_frame fr₀ (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; rw [s1234_len]; exact h.tblScr.sub_right sub88)
         (by rw [s1234_len]; decide) h.held

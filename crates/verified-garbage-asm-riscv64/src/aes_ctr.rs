@@ -20,7 +20,7 @@
 pub unsafe extern "C" fn vg_aes_ctr(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi t0, a5, 2047
         // addi t0, t0, 8
         // andi t0, t0, -8
@@ -38,7 +38,7 @@ pub unsafe extern "C" fn vg_aes_ctr(schedule: *const [u8; 240], rounds: usize, c
         // addi s5, a4, 0
         // addi s6, a5, 0
         r".insn 4, 0x7ff78293
-.insn 4, 0x00828293
+.insn 2, 0x02a1
 .insn 4, 0xff82f293
 .insn 4, 0x0012b823
 .insn 4, 0x0092bc23
@@ -47,12 +47,12 @@ pub unsafe extern "C" fn vg_aes_ctr(schedule: *const [u8; 240], rounds: usize, c
 .insn 4, 0x0342b823
 .insn 4, 0x0352bc23
 .insn 4, 0x0562b023
-.insn 4, 0x00050493
-.insn 4, 0x00058913
-.insn 4, 0x00060993
-.insn 4, 0x00068a13
-.insn 4, 0x00070a93
-.insn 4, 0x00078b13
+.insn 2, 0x84aa
+.insn 2, 0x892e
+.insn 2, 0x89b2
+.insn 2, 0x8a36
+.insn 2, 0x8aba
+.insn 2, 0x8b3e
 beqz s5, 20f
 22:",
         // lbu t1, 12(s3)
@@ -85,34 +85,34 @@ beqz s5, 20f
         // addi a4, t2, 0
         // addi a5, s6, 0
         r".insn 4, 0x00c9c303
-.insn 4, 0x01831313
+.insn 2, 0x0362
 .insn 4, 0x00d9c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x00e9c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x00f9c383
 .insn 4, 0x00736333
-.insn 4, 0x00100393
-.insn 4, 0x02039393
+.insn 2, 0x4385
+.insn 2, 0x1382
 .insn 4, 0x406383b3
 .insn 4, 0x007abe33
-.insn 4, 0x00000e93
+.insn 2, 0x4e81
 .insn 4, 0x41ce8e33
 .insn 4, 0x007aceb3
 .insn 4, 0x01cefeb3
 .insn 4, 0x01d3c3b3
 .insn 4, 0x7ffb0293
-.insn 4, 0x00828293
+.insn 2, 0x02a1
 .insn 4, 0xff82f293
 .insn 4, 0x0072b023
-.insn 4, 0x00048513
-.insn 4, 0x00090593
-.insn 4, 0x00098613
-.insn 4, 0x000a0693
-.insn 4, 0x00038713
-.insn 4, 0x000b0793
+.insn 2, 0x8526
+.insn 2, 0x85ca
+.insn 2, 0x864e
+.insn 2, 0x86d2
+.insn 2, 0x871e
+.insn 2, 0x87da
 call {vg_aes_ctr32}",
         // addi t0, s6, 2047
         // addi t0, t0, 8
@@ -132,19 +132,19 @@ call {vg_aes_ctr32}",
         // lbu t2, 15(s3)
         // or t1, t1, t2
         r".insn 4, 0x7ffb0293
-.insn 4, 0x00828293
+.insn 2, 0x02a1
 .insn 4, 0xff82f293
 .insn 4, 0x0002b303
 .insn 4, 0x406a8ab3
-.insn 4, 0x00431313
-.insn 4, 0x006a0a33
+.insn 2, 0x0312
+.insn 2, 0x9a1a
 .insn 4, 0x00c9c303
-.insn 4, 0x01831313
+.insn 2, 0x0362
 .insn 4, 0x00d9c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x00e9c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x00f9c383
 .insn 4, 0x00736333
@@ -233,30 +233,30 @@ j 24f
         // srli t2, t1, 0
         // sb t2, 7(s3)
         r".insn 4, 0x0089c303
-.insn 4, 0x00831313
+.insn 2, 0x0322
 .insn 4, 0x0099c383
 .insn 4, 0x00736333
-.insn 4, 0x00831313
+.insn 2, 0x0322
 .insn 4, 0x00a9c383
 .insn 4, 0x00736333
-.insn 4, 0x00831313
+.insn 2, 0x0322
 .insn 4, 0x00b9c383
 .insn 4, 0x00736333
-.insn 4, 0x00831313
+.insn 2, 0x0322
 .insn 4, 0x00c9c383
 .insn 4, 0x00736333
-.insn 4, 0x00831313
+.insn 2, 0x0322
 .insn 4, 0x00d9c383
 .insn 4, 0x00736333
-.insn 4, 0x00831313
+.insn 2, 0x0322
 .insn 4, 0x00e9c383
 .insn 4, 0x00736333
-.insn 4, 0x00831313
+.insn 2, 0x0322
 .insn 4, 0x00f9c383
 .insn 4, 0x00736333
-.insn 4, 0x00100393
-.insn 4, 0x02039393
-.insn 4, 0x00730333
+.insn 2, 0x4385
+.insn 2, 0x1382
+.insn 2, 0x931e
 .insn 4, 0x03835e13
 .insn 4, 0x01c98423
 .insn 4, 0x03035e13
@@ -275,28 +275,28 @@ j 24f
 .insn 4, 0x01c987a3
 .insn 4, 0x00733e33
 .insn 4, 0x0009c303
-.insn 4, 0x00831313
+.insn 2, 0x0322
 .insn 4, 0x0019c383
 .insn 4, 0x00736333
-.insn 4, 0x00831313
+.insn 2, 0x0322
 .insn 4, 0x0029c383
 .insn 4, 0x00736333
-.insn 4, 0x00831313
+.insn 2, 0x0322
 .insn 4, 0x0039c383
 .insn 4, 0x00736333
-.insn 4, 0x00831313
+.insn 2, 0x0322
 .insn 4, 0x0049c383
 .insn 4, 0x00736333
-.insn 4, 0x00831313
+.insn 2, 0x0322
 .insn 4, 0x0059c383
 .insn 4, 0x00736333
-.insn 4, 0x00831313
+.insn 2, 0x0322
 .insn 4, 0x0069c383
 .insn 4, 0x00736333
-.insn 4, 0x00831313
+.insn 2, 0x0322
 .insn 4, 0x0079c383
 .insn 4, 0x00736333
-.insn 4, 0x01c30333
+.insn 2, 0x9372
 .insn 4, 0x03835393
 .insn 4, 0x00798023
 .insn 4, 0x03035393
@@ -330,7 +330,7 @@ j 21f
         // ld s6, 64(t0)
         // ret
         r".insn 4, 0x7ffb0293
-.insn 4, 0x00828293
+.insn 2, 0x02a1
 .insn 4, 0xff82f293
 .insn 4, 0x0102b083
 .insn 4, 0x0182b483
@@ -339,7 +339,7 @@ j 21f
 .insn 4, 0x0302ba03
 .insn 4, 0x0382ba83
 .insn 4, 0x0402bb03
-.insn 4, 0x00008067
+.insn 2, 0x8082
 .option pop",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )

@@ -46,14 +46,15 @@ abbrev keyR (s : State) : Region := ⟨s.gpr .a0, 128⟩
 abbrev tblR (s : State) : Region := ⟨s.syms s1234Sym, 4096⟩
 
 /-- The subkeys at `a0` are `k`, and they and the table are readable, within
-the address space and apart from the regions `rs`; the table holds the
-S-boxes. -/
+the address space and apart from the regions `rs`; the table is 64-byte
+aligned and holds the S-boxes. -/
 structure KeyArgs (s : State) (rs : List Region) (k : Spec.Cast5.Schedule) : Prop where
   sched : Spec.Cast5.scheduleAt s.mem (s.gpr .a0) = k
   key : keyR s ∈ s.rd ++ s.wr
   kfit : (s.gpr .a0).toNat + 128 ≤ 2 ^ 64
   keyOut : ∀ r ∈ rs, (keyR s).Disjoint r
   tbl : tblR s ∈ s.rd ++ s.wr
+  tal : (s.syms s1234Sym).toNat % 64 = 0
   held : Held s.mem (s.syms s1234Sym) s1234
   tblOut : ∀ r ∈ rs, (tblR s).Disjoint r
 
@@ -82,6 +83,7 @@ theorem KeyArgs.congr {s s' : State} {rs : List Region} {k : Spec.Cast5.Schedule
       kfit := by rw [e]; exact h.kfit
       keyOut := by rw [keyR, e]; exact h.keyOut
       tbl := by rw [hrd, hw, tblR, hsy]; exact mem_extend h.tbl
+      tal := by rw [hsy]; exact h.tal
       held := by rw [hsy]; exact Proof.Cast5.held_frame h.held hf ht
       tblOut := by rw [tblR, hsy]; exact h.tblOut }
 
@@ -220,6 +222,7 @@ theorem crypt_wp (up : Bool) {n : Nat} (hn : n = 12 ∨ n = 16) {s : State} {B :
       rounds := n₇
       nv := hn
       trd := by rw [t₇, rd₇, wr₇]; exact hk.tbl
+      tal := by rw [t₇]; exact hk.tal
       held := by rw [t₇, m₇]; exact Proof.Cast5.held_frame hk.held fM htM
       inP := ⟨_, by rw [wr₇]; exact hW, Offset.contains_base _ (by decide) (by omega_arith)⟩
       inK := by rw [rd₇, wr₇]; exact hk.key

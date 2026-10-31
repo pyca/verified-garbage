@@ -19,7 +19,7 @@
 pub unsafe extern "C" fn vg_pbkdf2_hmac_sha224_iterate(key: *const [u8; 192], u: *const [u8; 28], n: u32, t: *mut [u8; 28], scratch: *mut [u64; 104]) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // slli a2, a2, 32
         // srli a2, a2, 32
         // addi a4, a4, 7
@@ -165,23 +165,23 @@ pub unsafe extern "C" fn vg_pbkdf2_hmac_sha224_iterate(key: *const [u8; 192], u:
         // sb t1, 62(s3)
         // addi t1, zero, 224
         // sb t1, 63(s3)
-        r".insn 4, 0x02061613
-.insn 4, 0x02065613
-.insn 4, 0x00770713
-.insn 4, 0xff877713
+        r".insn 2, 0x1602
+.insn 2, 0x9201
+.insn 2, 0x071d
+.insn 2, 0x9b61
 .insn 4, 0x04173823
-.insn 4, 0x04973c23
+.insn 2, 0xef24
 .insn 4, 0x07273023
 .insn 4, 0x07373423
 .insn 4, 0x07473823
 .insn 4, 0x07573c23
 .insn 4, 0x09673023
-.insn 4, 0x00070913
+.insn 2, 0x893a
 .insn 4, 0x08870493
 .insn 4, 0x0a870993
-.insn 4, 0x00050a13
-.insn 4, 0x00068a93
-.insn 4, 0x00060b13
+.insn 2, 0x8a2a
+.insn 2, 0x8ab6
+.insn 2, 0x8b32
 .insn 4, 0x0005c303
 .insn 4, 0x00698023
 .insn 4, 0x0015c303
@@ -240,73 +240,73 @@ pub unsafe extern "C" fn vg_pbkdf2_hmac_sha224_iterate(key: *const [u8; 192], u:
 .insn 4, 0x00698da3
 .insn 4, 0x08000313
 .insn 4, 0x00698e23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x00698ea3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x00698f23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x00698fa3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698023
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x026980a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698123
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x026981a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698223
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x026982a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698323
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x026983a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698423
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x026984a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698523
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x026985a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698623
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x026986a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698723
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x026987a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698823
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x026988a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698923
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x026989a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698a23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698aa3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698b23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698ba3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698c23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698ca3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698d23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698da3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698e23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698ea3
-.insn 4, 0x00200313
+.insn 2, 0x4309
 .insn 4, 0x02698f23
 .insn 4, 0x0e000313
 .insn 4, 0x02698fa3
@@ -444,10 +444,10 @@ beqz s6, 20f
 .insn 4, 0x00648f23
 .insn 4, 0x01fa4303
 .insn 4, 0x00648fa3
-.insn 4, 0x00048513
-.insn 4, 0x00098593
-.insn 4, 0x00100613
-.insn 4, 0x00090693
+.insn 2, 0x8526
+.insn 2, 0x85ce
+.insn 2, 0x4605
+.insn 2, 0x86ca
 call {vg_sha256_compress}",
         // lbu t1, 0(s1)
         // lbu t2, 1(s1)
@@ -645,13 +645,13 @@ call {vg_sha256_compress}",
         // addi a3, s2, 0
         r".insn 4, 0x0004c303
 .insn 4, 0x0014c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x0024c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x0034c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x01835393
 .insn 4, 0x00798023
@@ -663,13 +663,13 @@ call {vg_sha256_compress}",
 .insn 4, 0x007981a3
 .insn 4, 0x0044c303
 .insn 4, 0x0054c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x0064c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x0074c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x01835393
 .insn 4, 0x00798223
@@ -681,13 +681,13 @@ call {vg_sha256_compress}",
 .insn 4, 0x007983a3
 .insn 4, 0x0084c303
 .insn 4, 0x0094c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x00a4c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x00b4c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x01835393
 .insn 4, 0x00798423
@@ -699,13 +699,13 @@ call {vg_sha256_compress}",
 .insn 4, 0x007985a3
 .insn 4, 0x00c4c303
 .insn 4, 0x00d4c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x00e4c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x00f4c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x01835393
 .insn 4, 0x00798623
@@ -717,13 +717,13 @@ call {vg_sha256_compress}",
 .insn 4, 0x007987a3
 .insn 4, 0x0104c303
 .insn 4, 0x0114c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x0124c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x0134c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x01835393
 .insn 4, 0x00798823
@@ -735,13 +735,13 @@ call {vg_sha256_compress}",
 .insn 4, 0x007989a3
 .insn 4, 0x0144c303
 .insn 4, 0x0154c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x0164c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x0174c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x01835393
 .insn 4, 0x00798a23
@@ -753,13 +753,13 @@ call {vg_sha256_compress}",
 .insn 4, 0x00798ba3
 .insn 4, 0x0184c303
 .insn 4, 0x0194c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x01a4c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x01b4c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x01835393
 .insn 4, 0x00798c23
@@ -833,10 +833,10 @@ call {vg_sha256_compress}",
 .insn 4, 0x00648f23
 .insn 4, 0x07fa4303
 .insn 4, 0x00648fa3
-.insn 4, 0x00048513
-.insn 4, 0x00098593
-.insn 4, 0x00100613
-.insn 4, 0x00090693
+.insn 2, 0x8526
+.insn 2, 0x85ce
+.insn 2, 0x4605
+.insn 2, 0x86ca
 call {vg_sha256_compress}",
         // lbu t1, 0(s1)
         // lbu t2, 1(s1)
@@ -1079,13 +1079,13 @@ call {vg_sha256_compress}",
         // addi s6, s6, -1
         r".insn 4, 0x0004c303
 .insn 4, 0x0014c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x0024c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x0034c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x01835393
 .insn 4, 0x00798023
@@ -1097,13 +1097,13 @@ call {vg_sha256_compress}",
 .insn 4, 0x007981a3
 .insn 4, 0x0044c303
 .insn 4, 0x0054c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x0064c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x0074c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x01835393
 .insn 4, 0x00798223
@@ -1115,13 +1115,13 @@ call {vg_sha256_compress}",
 .insn 4, 0x007983a3
 .insn 4, 0x0084c303
 .insn 4, 0x0094c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x00a4c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x00b4c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x01835393
 .insn 4, 0x00798423
@@ -1133,13 +1133,13 @@ call {vg_sha256_compress}",
 .insn 4, 0x007985a3
 .insn 4, 0x00c4c303
 .insn 4, 0x00d4c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x00e4c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x00f4c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x01835393
 .insn 4, 0x00798623
@@ -1151,13 +1151,13 @@ call {vg_sha256_compress}",
 .insn 4, 0x007987a3
 .insn 4, 0x0104c303
 .insn 4, 0x0114c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x0124c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x0134c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x01835393
 .insn 4, 0x00798823
@@ -1169,13 +1169,13 @@ call {vg_sha256_compress}",
 .insn 4, 0x007989a3
 .insn 4, 0x0144c303
 .insn 4, 0x0154c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x0164c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x0174c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x01835393
 .insn 4, 0x00798a23
@@ -1187,13 +1187,13 @@ call {vg_sha256_compress}",
 .insn 4, 0x00798ba3
 .insn 4, 0x0184c303
 .insn 4, 0x0194c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x01a4c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x01b4c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x01835393
 .insn 4, 0x00798c23
@@ -1315,7 +1315,7 @@ call {vg_sha256_compress}",
 .insn 4, 0x01b9c383
 .insn 4, 0x00734333
 .insn 4, 0x006a8da3
-.insn 4, 0xfffb0b13
+.insn 2, 0x1b7d
 bnez s6, 22b
 j 21f
 20:
@@ -1335,7 +1335,7 @@ j 21f
 .insn 4, 0x07893a83
 .insn 4, 0x08093b03
 .insn 4, 0x06093903
-.insn 4, 0x00008067
+.insn 2, 0x8082
 .option pop",
         vg_sha256_compress = sym super::sha256::vg_sha256_compress,
     )
@@ -1357,7 +1357,7 @@ j 21f
 pub unsafe extern "C" fn vg_pbkdf2_hmac_sha224(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi sp, sp, -240
         // addi sp, sp, -416
         // addi t0, sp, 0
@@ -1379,9 +1379,9 @@ pub unsafe extern "C" fn vg_pbkdf2_hmac_sha224(password: *const u8, password_len
         // addi a3, a1, 0
         // addi a0, s1, 64
         // addi a1, s1, 160
-        r".insn 4, 0xf1010113
-.insn 4, 0xe6010113
-.insn 4, 0x00010293
+        r".insn 2, 0x7151
+.insn 2, 0x7125
+.insn 2, 0x828a
 .insn 4, 0x0012b023
 .insn 4, 0x0092b423
 .insn 4, 0x0122b823
@@ -1390,19 +1390,19 @@ pub unsafe extern "C" fn vg_pbkdf2_hmac_sha224(password: *const u8, password_len
 .insn 4, 0x0352b423
 .insn 4, 0x0362b823
 .insn 4, 0x0372bc23
-.insn 4, 0x00028493
-.insn 4, 0x00068913
-.insn 4, 0x00070993
-.insn 4, 0x00078a13
-.insn 4, 0x00080a93
-.insn 4, 0x00060b13
-.insn 4, 0x00050613
-.insn 4, 0x00058693
+.insn 2, 0x8496
+.insn 2, 0x8936
+.insn 2, 0x89ba
+.insn 2, 0x8a3e
+.insn 2, 0x8ac2
+.insn 2, 0x8b32
+.insn 2, 0x862a
+.insn 2, 0x86ae
 .insn 4, 0x04048513
 .insn 4, 0x0a048593
 call {vg_hmac_sha224_init}",
         // addi s7, zero, 1
-        r".insn 4, 0x00100b93
+        r".insn 2, 0x4b85
 beqz s5, 20f
 22:",
         // lbu t1, 64(s1)
@@ -1795,8 +1795,8 @@ beqz s5, 20f
 .insn 4, 0x14648fa3
 .insn 4, 0x10048513
 .insn 4, 0x04000593
-.insn 4, 0x000b0613
-.insn 4, 0x00090693
+.insn 2, 0x865a
+.insn 2, 0x86ca
 call {vg_sha256_update}",
         // srli t1, s7, 24
         // sb t1, 408(s1)
@@ -1819,7 +1819,7 @@ call {vg_sha256_update}",
 .insn 4, 0x10048513
 .insn 4, 0x04090593
 .insn 4, 0x19848613
-.insn 4, 0x00400693
+.insn 2, 0x4691
 call {vg_sha256_update}",
         // addi a0, s1, 256
         // addi a1, s1, 160
@@ -1958,15 +1958,15 @@ call {vg_pbkdf2_hmac_sha224_iterate}",
         // addi t2, s5, 0
         r".insn 4, 0xfe4a8313
 .insn 4, 0x03f35313
-.insn 4, 0x000a8393
+.insn 2, 0x83d6
 bnez t1, 23f",
         // addi t2, zero, 28
-        r".insn 4, 0x01c00393
+        r".insn 2, 0x43f1
 j 24f
 23:
 24:",
         // addi t3, zero, 0
-        r".insn 4, 0x00000e13
+        r".insn 2, 0x4e01
 25:",
         // add t4, s1, t3
         // lbu t1, 380(t4)
@@ -1978,15 +1978,15 @@ j 24f
 .insn 4, 0x17cec303
 .insn 4, 0x01ca0eb3
 .insn 4, 0x006e8023
-.insn 4, 0x001e0e13
-.insn 4, 0xfff38393
+.insn 2, 0x0e05
+.insn 2, 0x13fd
 bnez t2, 25b",
         // add s4, s4, t3
         // sub s5, s5, t3
         // addi s7, s7, 1
-        r".insn 4, 0x01ca0a33
+        r".insn 2, 0x9a72
 .insn 4, 0x41ca8ab3
-.insn 4, 0x001b8b93
+.insn 2, 0x0b85
 bnez s5, 22b
 j 21f
 20:
@@ -2009,10 +2009,10 @@ j 21f
 .insn 4, 0x0284ba83
 .insn 4, 0x0304bb03
 .insn 4, 0x0384bb83
-.insn 4, 0x0084b483
-.insn 4, 0x1a010113
-.insn 4, 0x0f010113
-.insn 4, 0x00008067
+.insn 2, 0x6484
+.insn 2, 0x611d
+.insn 2, 0x616d
+.insn 2, 0x8082
 .option pop",
         vg_hmac_sha224_init = sym super::hmac_sha224::vg_hmac_sha224_init,
         vg_sha256_update = sym super::sha256::vg_sha256_update,

@@ -17,7 +17,7 @@
 pub unsafe extern "C" fn vg_hmac_sha224_init(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi sp, sp, -176
         // addi t0, sp, 0
         // sd ra, 128(t0)
@@ -36,65 +36,65 @@ pub unsafe extern "C" fn vg_hmac_sha224_init(inner: *mut [u8; 96], outer: *mut [
         // addi t2, t2, 63
         // srli t2, t2, 7
         // add t1, t1, t2
-        r".insn 4, 0xf5010113
-.insn 4, 0x00010293
+        r".insn 2, 0x7171
+.insn 2, 0x828a
 .insn 4, 0x0812b023
 .insn 4, 0x0972b423
 .insn 4, 0x0982b823
 .insn 4, 0x0992bc23
 .insn 4, 0x0ba2b023
 .insn 4, 0x0bb2b423
-.insn 4, 0x00050b93
-.insn 4, 0x00028c13
-.insn 4, 0x00058c93
-.insn 4, 0x00060d13
-.insn 4, 0x00068d93
+.insn 2, 0x8baa
+.insn 2, 0x8c16
+.insn 2, 0x8cae
+.insn 2, 0x8d32
+.insn 2, 0x8db6
 .insn 4, 0x0076d313
 .insn 4, 0x07f6f393
 .insn 4, 0x03f38393
 .insn 4, 0x0073d393
-.insn 4, 0x00730333
+.insn 2, 0x931e
 beqz t1, 20f",
         // addi a0, s8, 0
-        r".insn 4, 0x000c0513
+        r".insn 2, 0x8562
 call {vg_sha224_init}",
         // addi a0, s8, 0
         // addi a1, zero, 0
         // addi a2, s10, 0
         // addi a3, s11, 0
-        r".insn 4, 0x000c0513
-.insn 4, 0x00000593
-.insn 4, 0x000d0613
-.insn 4, 0x000d8693
+        r".insn 2, 0x8562
+.insn 2, 0x4581
+.insn 2, 0x866a
+.insn 2, 0x86ee
 call {vg_sha256_update}",
         // addi a0, s8, 0
         // addi a1, s11, 0
         // addi a2, s8, 96
-        r".insn 4, 0x000c0513
-.insn 4, 0x000d8593
+        r".insn 2, 0x8562
+.insn 2, 0x85ee
 .insn 4, 0x060c0613
 call {vg_sha224_finalize}",
         // addi s10, s8, 96
         // addi s11, zero, 28
         r".insn 4, 0x060c0d13
-.insn 4, 0x01c00d93
+.insn 2, 0x4df1
 j 21f
 20:
 21:",
         // addi a0, s7, 0
-        r".insn 4, 0x000b8513
+        r".insn 2, 0x855e
 call {vg_sha224_init}",
         // addi a0, s9, 0
-        r".insn 4, 0x000c8513
+        r".insn 2, 0x8566
 call {vg_sha224_init}",
         // addi t5, zero, 54
         // addi t6, zero, 0
         // addi t2, s10, 0
         // addi t3, s11, 0
         r".insn 4, 0x03600f13
-.insn 4, 0x00000f93
-.insn 4, 0x000d0393
-.insn 4, 0x000d8e13
+.insn 2, 0x4f81
+.insn 2, 0x83ea
+.insn 2, 0x8e6e
 beqz t3, 22f
 24:",
         // lbu t1, 0(t2)
@@ -108,9 +108,9 @@ beqz t3, 22f
 .insn 4, 0x01e34333
 .insn 4, 0x01fc8eb3
 .insn 4, 0x026e8023
-.insn 4, 0x00138393
-.insn 4, 0x001f8f93
-.insn 4, 0xfffe0e13
+.insn 2, 0x0385
+.insn 2, 0x0f85
+.insn 2, 0x1e7d
 bnez t3, 24b
 j 23f
 22:
@@ -127,8 +127,8 @@ beqz t3, 25f
         // addi t3, t3, -1
         r".insn 4, 0x01fc8eb3
 .insn 4, 0x03ee8023
-.insn 4, 0x001f8f93
-.insn 4, 0xfffe0e13
+.insn 2, 0x0f85
+.insn 2, 0x1e7d
 bnez t3, 27b
 j 26f
 25:
@@ -137,8 +137,8 @@ j 26f
         // addi a1, zero, 0
         // addi a2, s9, 32
         // addi a3, zero, 64
-        r".insn 4, 0x000b8513
-.insn 4, 0x00000593
+        r".insn 2, 0x855e
+.insn 2, 0x4581
 .insn 4, 0x020c8613
 .insn 4, 0x04000693
 call {vg_sha256_update}",
@@ -147,9 +147,9 @@ call {vg_sha256_update}",
         // addi t2, s10, 0
         // addi t3, s11, 0
         r".insn 4, 0x05c00f13
-.insn 4, 0x00000f93
-.insn 4, 0x000d0393
-.insn 4, 0x000d8e13
+.insn 2, 0x4f81
+.insn 2, 0x83ea
+.insn 2, 0x8e6e
 beqz t3, 28f
 210:",
         // lbu t1, 0(t2)
@@ -163,9 +163,9 @@ beqz t3, 28f
 .insn 4, 0x01e34333
 .insn 4, 0x01fb8eb3
 .insn 4, 0x026e8023
-.insn 4, 0x00138393
-.insn 4, 0x001f8f93
-.insn 4, 0xfffe0e13
+.insn 2, 0x0385
+.insn 2, 0x0f85
+.insn 2, 0x1e7d
 bnez t3, 210b
 j 29f
 28:
@@ -182,8 +182,8 @@ beqz t3, 211f
         // addi t3, t3, -1
         r".insn 4, 0x01fb8eb3
 .insn 4, 0x03ee8023
-.insn 4, 0x001f8f93
-.insn 4, 0xfffe0e13
+.insn 2, 0x0f85
+.insn 2, 0x1e7d
 bnez t3, 213b
 j 212f
 211:
@@ -192,8 +192,8 @@ j 212f
         // addi a1, zero, 0
         // addi a2, s7, 32
         // addi a3, zero, 64
-        r".insn 4, 0x000c8513
-.insn 4, 0x00000593
+        r".insn 2, 0x8566
+.insn 2, 0x4581
 .insn 4, 0x020b8613
 .insn 4, 0x04000693
 call {vg_sha256_update}",
@@ -222,7 +222,7 @@ call {vg_sha256_update}",
         // ld s8, 144(s8)
         // addi sp, sp, 176
         // ret
-        r".insn 4, 0x00000313
+        r".insn 2, 0x4301
 .insn 4, 0x006c3023
 .insn 4, 0x006c3423
 .insn 4, 0x006c3823
@@ -245,8 +245,8 @@ call {vg_sha256_update}",
 .insn 4, 0x0a0c3d03
 .insn 4, 0x0a8c3d83
 .insn 4, 0x090c3c03
-.insn 4, 0x0b010113
-.insn 4, 0x00008067
+.insn 2, 0x614d
+.insn 2, 0x8082
 .option pop",
         vg_sha224_init = sym super::sha256::vg_sha224_init,
         vg_sha256_update = sym super::sha256::vg_sha256_update,
@@ -270,7 +270,7 @@ call {vg_sha256_update}",
 pub unsafe extern "C" fn vg_hmac_sha224_finalize(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi sp, sp, -80
         // addi t0, sp, 0
         // sd ra, 32(t0)
@@ -285,20 +285,20 @@ pub unsafe extern "C" fn vg_hmac_sha224_finalize(inner: *mut [u8; 96], outer: *c
         // addi s10, a3, 0
         // addi a1, a2, 0
         // addi a2, t0, 0
-        r".insn 4, 0xfb010113
-.insn 4, 0x00010293
+        r".insn 2, 0x715d
+.insn 2, 0x828a
 .insn 4, 0x0212b023
 .insn 4, 0x0372b423
 .insn 4, 0x0382b823
 .insn 4, 0x0392bc23
 .insn 4, 0x05a2b023
 .insn 4, 0x05b2b423
-.insn 4, 0x00050b93
-.insn 4, 0x00028c13
-.insn 4, 0x00058c93
-.insn 4, 0x00068d13
-.insn 4, 0x00060593
-.insn 4, 0x00028613
+.insn 2, 0x8baa
+.insn 2, 0x8c16
+.insn 2, 0x8cae
+.insn 2, 0x8d36
+.insn 2, 0x85b2
+.insn 2, 0x8616
 call {vg_sha224_finalize}",
         // lbu t1, 0(s9)
         // sb t1, 0(s7)
@@ -432,17 +432,17 @@ call {vg_sha224_finalize}",
 .insn 4, 0x006b8f23
 .insn 4, 0x01fcc303
 .insn 4, 0x006b8fa3
-.insn 4, 0x000b8513
+.insn 2, 0x855e
 .insn 4, 0x04000593
-.insn 4, 0x000c0613
-.insn 4, 0x01c00693
+.insn 2, 0x8662
+.insn 2, 0x46f1
 call {vg_sha256_update}",
         // addi a0, s7, 0
         // addi a1, zero, 92
         // addi a2, s10, 0
-        r".insn 4, 0x000b8513
+        r".insn 2, 0x855e
 .insn 4, 0x05c00593
-.insn 4, 0x000d0613
+.insn 2, 0x866a
 call {vg_sha224_finalize}",
         // ld ra, 32(s8)
         // ld s7, 40(s8)
@@ -458,8 +458,8 @@ call {vg_sha224_finalize}",
 .insn 4, 0x040c3d03
 .insn 4, 0x048c3d83
 .insn 4, 0x030c3c03
-.insn 4, 0x05010113
-.insn 4, 0x00008067
+.insn 2, 0x6161
+.insn 2, 0x8082
 .option pop",
         vg_sha224_finalize = sym super::sha256::vg_sha224_finalize,
         vg_sha256_update = sym super::sha256::vg_sha256_update,

@@ -19,7 +19,7 @@
 pub unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi sp, sp, -624
         // addi a7, sp, 0
         // addi t0, a7, 7
@@ -171,7 +171,7 @@ pub unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: 
         // addi a0, t0, 0
         // addi a1, a0, 64
         r".insn 4, 0xd9010113
-.insn 4, 0x00010893
+.insn 2, 0x888a
 .insn 4, 0x00788293
 .insn 4, 0xff82f293
 .insn 4, 0x2372b823
@@ -180,11 +180,11 @@ pub unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: 
 .insn 4, 0x25a2b423
 .insn 4, 0x25b2b823
 .insn 4, 0x2412bc23
-.insn 4, 0x00060b93
-.insn 4, 0x00068c13
-.insn 4, 0x00070c93
-.insn 4, 0x00078d13
-.insn 4, 0x00080d93
+.insn 2, 0x8bb2
+.insn 2, 0x8c36
+.insn 2, 0x8cba
+.insn 2, 0x8d3e
+.insn 2, 0x8dc2
 .insn 4, 0x06500313
 .insn 4, 0x00628023
 .insn 4, 0x07800313
@@ -281,13 +281,13 @@ pub unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: 
 .insn 4, 0x02628723
 .insn 4, 0x01f54303
 .insn 4, 0x026287a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02628823
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x026288a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02628923
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x026289a3
 .insn 4, 0x0005c303
 .insn 4, 0x02628a23
@@ -313,12 +313,12 @@ pub unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: 
 .insn 4, 0x02628f23
 .insn 4, 0x00b5c303
 .insn 4, 0x02628fa3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x2062b023
 .insn 4, 0x2062b423
 .insn 4, 0x2182b823
 .insn 4, 0x21a2bc23
-.insn 4, 0x00028513
+.insn 2, 0x8516
 .insn 4, 0x04050593
 call {vg_chacha20_block}",
         // addi a1, a0, 64
@@ -329,19 +329,19 @@ call {vg_poly1305_init}",
         // addi a1, zero, 0
         // addi a2, s7, 0
         // addi a3, s8, 0
-        r".insn 4, 0x00000593
-.insn 4, 0x000b8613
-.insn 4, 0x000c0693
+        r".insn 2, 0x4581
+.insn 2, 0x865e
+.insn 2, 0x86e2
 call {vg_poly1305_update}",
         // addi a1, s8, 0
         // addi a3, zero, 0
         // sub a3, a3, s8
         // andi a3, a3, 15
         // addi a2, a0, 128
-        r".insn 4, 0x000c0593
-.insn 4, 0x00000693
+        r".insn 2, 0x85e2
+.insn 2, 0x4681
 .insn 4, 0x418686b3
-.insn 4, 0x00f6f693
+.insn 2, 0x8abd
 .insn 4, 0x08050613
 call {vg_poly1305_update}",
         // addi a0, a0, -384
@@ -351,10 +351,10 @@ call {vg_poly1305_update}",
         // addi a2, s10, 0
         // addi a3, a0, 64
         r".insn 4, 0xe8050513
-.insn 4, 0x00100293
+.insn 2, 0x4285
 .insn 4, 0x02550823
-.insn 4, 0x000c8593
-.insn 4, 0x000d0613
+.insn 2, 0x85e6
+.insn 2, 0x866a
 .insn 4, 0x04050693
 call {vg_chacha20_xor}",
         // addi a0, a0, 384
@@ -364,9 +364,9 @@ call {vg_chacha20_xor}",
         // addi a3, s10, 0
         r".insn 4, 0x18050513
 .insn 4, 0x00fc0593
-.insn 4, 0xff05f593
-.insn 4, 0x000c8613
-.insn 4, 0x000d0693
+.insn 2, 0x99c1
+.insn 2, 0x8666
+.insn 2, 0x86ea
 call {vg_poly1305_update}",
         // addi a1, s8, 15
         // andi a1, a1, -16
@@ -376,11 +376,11 @@ call {vg_poly1305_update}",
         // andi a3, a3, 15
         // addi a2, a0, 128
         r".insn 4, 0x00fc0593
-.insn 4, 0xff05f593
-.insn 4, 0x01a585b3
-.insn 4, 0x00000693
+.insn 2, 0x99c1
+.insn 2, 0x95ea
+.insn 2, 0x4681
 .insn 4, 0x41a686b3
-.insn 4, 0x00f6f693
+.insn 2, 0x8abd
 .insn 4, 0x08050613
 call {vg_poly1305_update}",
         // addi a1, s8, 15
@@ -391,12 +391,12 @@ call {vg_poly1305_update}",
         // addi a2, a0, 144
         // addi a3, zero, 16
         r".insn 4, 0x00fc0593
-.insn 4, 0xff05f593
+.insn 2, 0x99c1
 .insn 4, 0x00fd0293
 .insn 4, 0xff02f293
-.insn 4, 0x005585b3
+.insn 2, 0x9596
 .insn 4, 0x09050613
-.insn 4, 0x01000693
+.insn 2, 0x46c1
 call {vg_poly1305_update}",
         // addi a1, s8, 15
         // andi a1, a1, -16
@@ -406,12 +406,12 @@ call {vg_poly1305_update}",
         // addi a1, a1, 16
         // addi a2, s11, 0
         r".insn 4, 0x00fc0593
-.insn 4, 0xff05f593
+.insn 2, 0x99c1
 .insn 4, 0x00fd0293
 .insn 4, 0xff02f293
-.insn 4, 0x005585b3
-.insn 4, 0x01058593
-.insn 4, 0x000d8613
+.insn 2, 0x9596
+.insn 2, 0x05c1
+.insn 2, 0x866e
 call {vg_poly1305_finalize}",
         // addi t0, a0, -384
         // ld s7, 560(t0)
@@ -508,8 +508,8 @@ call {vg_poly1305_finalize}",
 .insn 4, 0x2482bd03
 .insn 4, 0x2502bd83
 .insn 4, 0x2582b083
-.insn 4, 0x00010f13
-.insn 4, 0x00000f93
+.insn 2, 0x8f0a
+.insn 2, 0x4f81
 .insn 4, 0x01ff3023
 .insn 4, 0x01ff3423
 .insn 4, 0x01ff3823
@@ -588,7 +588,7 @@ call {vg_poly1305_finalize}",
 .insn 4, 0x25ff3c23
 .insn 4, 0x27ff3023
 .insn 4, 0x27010113
-.insn 4, 0x00008067
+.insn 2, 0x8082
 .option pop",
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
@@ -615,7 +615,7 @@ call {vg_poly1305_finalize}",
 pub unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi sp, sp, -624
         // addi a7, sp, 0
         // addi t0, a7, 7
@@ -767,7 +767,7 @@ pub unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: 
         // addi a0, t0, 0
         // addi a1, a0, 64
         r".insn 4, 0xd9010113
-.insn 4, 0x00010893
+.insn 2, 0x888a
 .insn 4, 0x00788293
 .insn 4, 0xff82f293
 .insn 4, 0x2372b823
@@ -776,11 +776,11 @@ pub unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: 
 .insn 4, 0x25a2b423
 .insn 4, 0x25b2b823
 .insn 4, 0x2412bc23
-.insn 4, 0x00060b93
-.insn 4, 0x00068c13
-.insn 4, 0x00070c93
-.insn 4, 0x00078d13
-.insn 4, 0x00080d93
+.insn 2, 0x8bb2
+.insn 2, 0x8c36
+.insn 2, 0x8cba
+.insn 2, 0x8d3e
+.insn 2, 0x8dc2
 .insn 4, 0x06500313
 .insn 4, 0x00628023
 .insn 4, 0x07800313
@@ -877,13 +877,13 @@ pub unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: 
 .insn 4, 0x02628723
 .insn 4, 0x01f54303
 .insn 4, 0x026287a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02628823
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x026288a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02628923
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x026289a3
 .insn 4, 0x0005c303
 .insn 4, 0x02628a23
@@ -909,12 +909,12 @@ pub unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: 
 .insn 4, 0x02628f23
 .insn 4, 0x00b5c303
 .insn 4, 0x02628fa3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x2062b023
 .insn 4, 0x2062b423
 .insn 4, 0x2182b823
 .insn 4, 0x21a2bc23
-.insn 4, 0x00028513
+.insn 2, 0x8516
 .insn 4, 0x04050593
 call {vg_chacha20_block}",
         // addi a1, a0, 64
@@ -925,19 +925,19 @@ call {vg_poly1305_init}",
         // addi a1, zero, 0
         // addi a2, s7, 0
         // addi a3, s8, 0
-        r".insn 4, 0x00000593
-.insn 4, 0x000b8613
-.insn 4, 0x000c0693
+        r".insn 2, 0x4581
+.insn 2, 0x865e
+.insn 2, 0x86e2
 call {vg_poly1305_update}",
         // addi a1, s8, 0
         // addi a3, zero, 0
         // sub a3, a3, s8
         // andi a3, a3, 15
         // addi a2, a0, 128
-        r".insn 4, 0x000c0593
-.insn 4, 0x00000693
+        r".insn 2, 0x85e2
+.insn 2, 0x4681
 .insn 4, 0x418686b3
-.insn 4, 0x00f6f693
+.insn 2, 0x8abd
 .insn 4, 0x08050613
 call {vg_poly1305_update}",
         // addi a1, s8, 15
@@ -945,9 +945,9 @@ call {vg_poly1305_update}",
         // addi a2, s9, 0
         // addi a3, s10, 0
         r".insn 4, 0x00fc0593
-.insn 4, 0xff05f593
-.insn 4, 0x000c8613
-.insn 4, 0x000d0693
+.insn 2, 0x99c1
+.insn 2, 0x8666
+.insn 2, 0x86ea
 call {vg_poly1305_update}",
         // addi a1, s8, 15
         // andi a1, a1, -16
@@ -957,11 +957,11 @@ call {vg_poly1305_update}",
         // andi a3, a3, 15
         // addi a2, a0, 128
         r".insn 4, 0x00fc0593
-.insn 4, 0xff05f593
-.insn 4, 0x01a585b3
-.insn 4, 0x00000693
+.insn 2, 0x99c1
+.insn 2, 0x95ea
+.insn 2, 0x4681
 .insn 4, 0x41a686b3
-.insn 4, 0x00f6f693
+.insn 2, 0x8abd
 .insn 4, 0x08050613
 call {vg_poly1305_update}",
         // addi a1, s8, 15
@@ -972,12 +972,12 @@ call {vg_poly1305_update}",
         // addi a2, a0, 144
         // addi a3, zero, 16
         r".insn 4, 0x00fc0593
-.insn 4, 0xff05f593
+.insn 2, 0x99c1
 .insn 4, 0x00fd0293
 .insn 4, 0xff02f293
-.insn 4, 0x005585b3
+.insn 2, 0x9596
 .insn 4, 0x09050613
-.insn 4, 0x01000693
+.insn 2, 0x46c1
 call {vg_poly1305_update}",
         // addi a1, s8, 15
         // andi a1, a1, -16
@@ -987,11 +987,11 @@ call {vg_poly1305_update}",
         // addi a1, a1, 16
         // addi a2, a0, 160
         r".insn 4, 0x00fc0593
-.insn 4, 0xff05f593
+.insn 2, 0x99c1
 .insn 4, 0x00fd0293
 .insn 4, 0xff02f293
-.insn 4, 0x005585b3
-.insn 4, 0x01058593
+.insn 2, 0x9596
+.insn 2, 0x05c1
 .insn 4, 0x0a050613
 call {vg_poly1305_finalize}",
         // addi a0, a0, -384
@@ -1001,10 +1001,10 @@ call {vg_poly1305_finalize}",
         // addi a2, s10, 0
         // addi a3, a0, 64
         r".insn 4, 0xe8050513
-.insn 4, 0x00100293
+.insn 2, 0x4285
 .insn 4, 0x02550823
-.insn 4, 0x000c8593
-.insn 4, 0x000d0613
+.insn 2, 0x85e6
+.insn 2, 0x866a
 .insn 4, 0x04050693
 call {vg_chacha20_xor}",
         // addi a0, a0, 384
@@ -1166,7 +1166,7 @@ call {vg_chacha20_xor}",
         // ret
         r".insn 4, 0x18050513
 .insn 4, 0xe8050293
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x2202c383
 .insn 4, 0x000dce03
 .insn 4, 0x01c3c3b3
@@ -1231,7 +1231,7 @@ call {vg_chacha20_xor}",
 .insn 4, 0x00fdce03
 .insn 4, 0x01c3c3b3
 .insn 4, 0x00736333
-.insn 4, 0x00100393
+.insn 2, 0x4385
 .insn 4, 0x00733333
 .insn 4, 0x2302bb83
 .insn 4, 0x2382bc03
@@ -1239,9 +1239,9 @@ call {vg_chacha20_xor}",
 .insn 4, 0x2482bd03
 .insn 4, 0x2502bd83
 .insn 4, 0x2582b083
-.insn 4, 0x00030513
-.insn 4, 0x00010f13
-.insn 4, 0x00000f93
+.insn 2, 0x851a
+.insn 2, 0x8f0a
+.insn 2, 0x4f81
 .insn 4, 0x01ff3023
 .insn 4, 0x01ff3423
 .insn 4, 0x01ff3823
@@ -1320,7 +1320,7 @@ call {vg_chacha20_xor}",
 .insn 4, 0x25ff3c23
 .insn 4, 0x27ff3023
 .insn 4, 0x27010113
-.insn 4, 0x00008067
+.insn 2, 0x8082
 .option pop",
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
@@ -1350,17 +1350,17 @@ call {vg_chacha20_xor}",
 pub unsafe extern "C" fn vg_chacha20_poly1305_seal_gather(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi sp, sp, -16
         // sd ra, 8(sp)
         // addi t5, sp, 16
         // ld t5, 0(t5)
         // addi t6, a6, 0
-        r".insn 4, 0xff010113
-.insn 4, 0x00113423
+        r".insn 2, 0x1141
+.insn 2, 0xe406
 .insn 4, 0x01010f13
 .insn 4, 0x000f3f03
-.insn 4, 0x00080f93
+.insn 2, 0x8fc2
 beqz a5, 20f
 22:",
         // lbu t0, 0(a4)
@@ -1410,49 +1410,49 @@ beqz a5, 20f
         // addi a4, a4, 16
         r".insn 4, 0x00074283
 .insn 4, 0x00174e03
-.insn 4, 0x008e1e13
+.insn 2, 0x0e22
 .insn 4, 0x01c2e2b3
 .insn 4, 0x00274e03
-.insn 4, 0x010e1e13
+.insn 2, 0x0e42
 .insn 4, 0x01c2e2b3
 .insn 4, 0x00374e03
-.insn 4, 0x018e1e13
+.insn 2, 0x0e62
 .insn 4, 0x01c2e2b3
 .insn 4, 0x00474e83
 .insn 4, 0x00574e03
-.insn 4, 0x008e1e13
+.insn 2, 0x0e22
 .insn 4, 0x01ceeeb3
 .insn 4, 0x00674e03
-.insn 4, 0x010e1e13
+.insn 2, 0x0e42
 .insn 4, 0x01ceeeb3
 .insn 4, 0x00774e03
-.insn 4, 0x018e1e13
+.insn 2, 0x0e62
 .insn 4, 0x01ceeeb3
-.insn 4, 0x020e9e93
+.insn 2, 0x1e82
 .insn 4, 0x01d2e2b3
 .insn 4, 0x00874303
 .insn 4, 0x00974e03
-.insn 4, 0x008e1e13
+.insn 2, 0x0e22
 .insn 4, 0x01c36333
 .insn 4, 0x00a74e03
-.insn 4, 0x010e1e13
+.insn 2, 0x0e42
 .insn 4, 0x01c36333
 .insn 4, 0x00b74e03
-.insn 4, 0x018e1e13
+.insn 2, 0x0e62
 .insn 4, 0x01c36333
 .insn 4, 0x00c74e83
 .insn 4, 0x00d74e03
-.insn 4, 0x008e1e13
+.insn 2, 0x0e22
 .insn 4, 0x01ceeeb3
 .insn 4, 0x00e74e03
-.insn 4, 0x010e1e13
+.insn 2, 0x0e42
 .insn 4, 0x01ceeeb3
 .insn 4, 0x00f74e03
-.insn 4, 0x018e1e13
+.insn 2, 0x0e62
 .insn 4, 0x01ceeeb3
-.insn 4, 0x020e9e93
+.insn 2, 0x1e82
 .insn 4, 0x01d36333
-.insn 4, 0x01070713
+.insn 2, 0x0741
 beqz t1, 23f
 25:",
         // lbu t2, 0(t0)
@@ -1462,15 +1462,15 @@ beqz t1, 23f
         // addi t1, t1, -1
         r".insn 4, 0x0002c383
 .insn 4, 0x00780023
-.insn 4, 0x00128293
-.insn 4, 0x00180813
-.insn 4, 0xfff30313
+.insn 2, 0x0285
+.insn 2, 0x0805
+.insn 2, 0x137d
 bnez t1, 25b
 j 24f
 23:
 24:",
         // addi a5, a5, -1
-        r".insn 4, 0xfff78793
+        r".insn 2, 0x17fd
 bnez a5, 22b
 j 21f
 20:
@@ -1478,16 +1478,16 @@ j 21f
         // addi a4, t6, 0
         // addi a5, a7, 0
         // addi a6, t5, 0
-        r".insn 4, 0x000f8713
-.insn 4, 0x00088793
-.insn 4, 0x000f0813
+        r".insn 2, 0x877e
+.insn 2, 0x87c6
+.insn 2, 0x887a
 call {vg_chacha20_poly1305_seal}",
         // ld ra, 8(sp)
         // addi sp, sp, 16
         // ret
-        r".insn 4, 0x00813083
-.insn 4, 0x01010113
-.insn 4, 0x00008067
+        r".insn 2, 0x60a2
+.insn 2, 0x0141
+.insn 2, 0x8082
 .option pop",
         vg_chacha20_poly1305_seal = sym super::chacha20poly1305::vg_chacha20_poly1305_seal,
     )

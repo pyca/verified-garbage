@@ -68,7 +68,8 @@ register). -/
 def dstOf : Instr → Option Reg
   | .add d .. | .sub d .. | .addw d .. | .subw d .. | .sltu d .. | .mul d .. | .mulhu d ..
   | .logic _ d .. | .addi d ..
-  | .addiw d .. | .logicImm _ d .. | .li d _ | .lui d _ | .shift _ _ d .. | .load _ d ..
+  | .addiw d .. | .logicImm _ d .. | .li d _ | .lui d _ | .shift _ _ d .. | .shiftReg _ _ d ..
+  | .load _ d ..
   | .pop d | .addSp d _ | .lla d _ => some d
   | .store .. | .push _ | .alloc _ | .free _ => none
 
@@ -111,6 +112,8 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
       split at h <;> [skip; cases h]
       rename_i hh; simp only [Option.some.injEq] at h; subst h
       split <;> [rfl; (exfalso; simp_all)]
+  | shiftReg op sz =>
+    cases sz <;> simp only [exec, Option.some.injEq] at h ⊢ <;> subst h <;> rfl
   | _ =>
     simp only [exec] at h ⊢
     first
@@ -147,6 +150,9 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
     · simp only [exec] at h
       split at h <;> [skip; cases h]
       simp only [Option.some.injEq] at h; subst h; exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩
+  | shiftReg op sz =>
+    cases sz <;> simp only [exec, Option.some.injEq] at h <;> subst h <;>
+      exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩
   | _ =>
     simp only [exec] at h
     first
@@ -178,6 +184,10 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : dstOf i ≠ some r) (h : exec i s =
     · simp only [exec] at h
       split at h <;> [skip; cases h]
       simp only [Option.some.injEq] at h; subst h
+      exact hw _ _ _ fun e => hi (by simp [dstOf, e])
+  | shiftReg op sz d n m =>
+    cases sz <;>
+    · simp only [exec, Option.some.injEq] at h; subst h
       exact hw _ _ _ fun e => hi (by simp [dstOf, e])
   | _ =>
     simp only [exec] at h

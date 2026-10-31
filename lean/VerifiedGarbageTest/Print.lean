@@ -544,6 +544,8 @@ def sampleRV : Prog RISCV64.isa :=
       .li .a4 (-1), .li .a4 2047, .lui .a5 0x6a09e, .lui .a5 0xfffff,
       .shift .sll .d .a6 .a6 63, .shift .srl .d .a6 .a6 1, .shift .sra .d .a6 .a6 0,
       .shift .sll .w .a7 .a7 31, .shift .srl .w .a7 .a7 7, .shift .sra .w .a7 .a7 0,
+      .shiftReg .sll .d .a6 .a6 .a5, .shiftReg .srl .d .t0 .t1 .t2, .shiftReg .sra .d .s0 .s1 .s2,
+      .shiftReg .sll .w .a7 .a7 .a5, .shiftReg .srl .w .t3 .t4 .t5, .shiftReg .sra .w .s3 .s4 .s5,
       .load .b .t0 .a0 0, .load .h .t0 .a0 2046, .load .w .t1 .a1 4, .load .d .t2 .a2 2040,
       .store .b .t0 .a0 2047, .store .h .t0 .a0 0, .store .w .t1 .a1 4, .store .d .t2 .a2 8,
       .addSp .a0 2047, .lla .s1 "VG_TABLE"]) (.nonzero .t6))))))
@@ -579,20 +581,26 @@ def sampleRV : Prog RISCV64.isa :=
   "// xor s6, s7, s8", ".insn 4, 0x018bcb33",
   "// addi s9, s10, 2047", ".insn 4, 0x7ffd0c93",
   "// addi s11, ra, -2048", ".insn 4, 0x80008d93",
-  "// addiw a0, a0, -1", ".insn 4, 0xfff5051b",
+  "// addiw a0, a0, -1", ".insn 2, 0x357d",
   "// andi a1, a1, 255", ".insn 4, 0x0ff5f593",
   "// ori a2, a2, -2048", ".insn 4, 0x80066613",
   "// xori a3, a3, -1", ".insn 4, 0xfff6c693",
-  "// addi a4, zero, -1", ".insn 4, 0xfff00713",
+  "// addi a4, zero, -1", ".insn 2, 0x577d",
   "// addi a4, zero, 2047", ".insn 4, 0x7ff00713",
   "// lui a5, 434334", ".insn 4, 0x6a09e7b7",
-  "// lui a5, 1048575", ".insn 4, 0xfffff7b7",
-  "// slli a6, a6, 63", ".insn 4, 0x03f81813",
+  "// lui a5, 1048575", ".insn 2, 0x77fd",
+  "// slli a6, a6, 63", ".insn 2, 0x187e",
   "// srli a6, a6, 1", ".insn 4, 0x00185813",
   "// srai a6, a6, 0", ".insn 4, 0x40085813",
   "// slliw a7, a7, 31", ".insn 4, 0x01f8989b",
   "// srliw a7, a7, 7", ".insn 4, 0x0078d89b",
   "// sraiw a7, a7, 0", ".insn 4, 0x4008d89b",
+  "// sll a6, a6, a5", ".insn 4, 0x00f81833",
+  "// srl t0, t1, t2", ".insn 4, 0x007352b3",
+  "// sra s0, s1, s2", ".insn 4, 0x4124d433",
+  "// sllw a7, a7, a5", ".insn 4, 0x00f898bb",
+  "// srlw t3, t4, t5", ".insn 4, 0x01eede3b",
+  "// sraw s3, s4, s5", ".insn 4, 0x415a59bb",
   "// lbu t0, 0(a0)", ".insn 4, 0x00054283",
   "// lhu t0, 2046(a0)", ".insn 4, 0x7fe55283",
   "// lwu t1, 4(a1)", ".insn 4, 0x0045e303",
@@ -607,13 +615,14 @@ def sampleRV : Prog RISCV64.isa :=
   "j 29f",
   "28:",
   "29:",
-  "// ret", ".insn 4, 0x00008067"
+  "// ret", ".insn 2, 0x8082"
 ]
 
 -- Each base instruction is its machine code (`Encode.lean`), after its
 -- text as a comment: the words in the expected lines above and below are
--- LLVM's encodings of that text (`llvm-mc -triple=riscv64 -mattr=+m,-c
--- -show-encoding`, LLVM 18), not `encode`'s. An operand that does not fit
+-- LLVM's encodings of that text (`llvm-mc -triple=riscv64 -mattr=+m,+c
+-- -show-encoding`, LLVM 18, which compresses those that have a compressed
+-- encoding), not `encode`'s. An operand that does not fit
 -- its field has no encoding, which the emitter refuses; `lla` is text.
 #guard [RISCV64.Instr.addi .a0 .a0 2048, .addi .a0 .a0 (-2049), .li .a0 4096,
     .addiw .a0 .a0 2048, .logicImm .and .a0 .a0 (-2049), .shift .sll .d .a0 .a0 64,
@@ -644,18 +653,18 @@ def sampleRV : Prog RISCV64.isa :=
 #guard text (RISCV64.printer.function
     (.frame (.push .ra) (.frame (.alloc 2032) (.call "vg_f" (.block [])) (.free 2032))
       (.pop .ra) : Prog RISCV64.isa)) == [
-  "// addi sp, sp, -16", ".insn 4, 0xff010113", "// sd ra, 8(sp)", ".insn 4, 0x00113423", "// addi sp, sp, -2032", ".insn 4, 0x81010113", "<call vg_f>",
-  "// addi sp, sp, 2032", ".insn 4, 0x7f010113", "// ld ra, 8(sp)", ".insn 4, 0x00813083", "// addi sp, sp, 16", ".insn 4, 0x01010113", "// ret", ".insn 4, 0x00008067"]
+  "// addi sp, sp, -16", ".insn 2, 0x1141", "// sd ra, 8(sp)", ".insn 2, 0xe406", "// addi sp, sp, -2032", ".insn 4, 0x81010113", "<call vg_f>",
+  "// addi sp, sp, 2032", ".insn 4, 0x7f010113", "// ld ra, 8(sp)", ".insn 2, 0x60a2", "// addi sp, sp, 16", ".insn 2, 0x0141", "// ret", ".insn 2, 0x8082"]
 #guard Rust.line RISCV64.printer.call (.call "vg_f") == "        r\"call {vg_f}\",\n"
 -- A buffer of 2048 bytes or more: two `addi`s each way, of at most 2032
 -- bytes, the largest frame being 4064 bytes; 2047 bytes and less is one.
 #guard text (RISCV64.printer.function
     (.frame (.alloc 2048) (.call "vg_f" (.block [])) (.free 2048) : Prog RISCV64.isa)) == [
-  "// addi sp, sp, -2032", ".insn 4, 0x81010113", "// addi sp, sp, -16", ".insn 4, 0xff010113", "<call vg_f>", "// addi sp, sp, 16", ".insn 4, 0x01010113", "// addi sp, sp, 2032", ".insn 4, 0x7f010113", "// ret", ".insn 4, 0x00008067"]
+  "// addi sp, sp, -2032", ".insn 4, 0x81010113", "// addi sp, sp, -16", ".insn 2, 0x1141", "<call vg_f>", "// addi sp, sp, 16", ".insn 2, 0x0141", "// addi sp, sp, 2032", ".insn 4, 0x7f010113", "// ret", ".insn 2, 0x8082"]
 #guard text (RISCV64.printer.function
     (.frame (.alloc 4064) (.block [.addSp .a0 0]) (.free 4064) : Prog RISCV64.isa)) == [
-  "// addi sp, sp, -2032", ".insn 4, 0x81010113", "// addi sp, sp, -2032", ".insn 4, 0x81010113", "// addi a0, sp, 0", ".insn 4, 0x00010513", "// addi sp, sp, 2032", ".insn 4, 0x7f010113", "// addi sp, sp, 2032", ".insn 4, 0x7f010113",
-  "// ret", ".insn 4, 0x00008067"]
+  "// addi sp, sp, -2032", ".insn 4, 0x81010113", "// addi sp, sp, -2032", ".insn 4, 0x81010113", "// addi a0, sp, 0", ".insn 2, 0x850a", "// addi sp, sp, 2032", ".insn 4, 0x7f010113", "// addi sp, sp, 2032", ".insn 4, 0x7f010113",
+  "// ret", ".insn 2, 0x8082"]
 #guard RISCV64.Instr.asm (.alloc 2304) == ["addi sp, sp, -2032", "addi sp, sp, -272"]
 #guard RISCV64.Instr.asm (.free 2304) == ["addi sp, sp, 272", "addi sp, sp, 2032"]
 #guard RISCV64.Instr.asm (.alloc 2032) == ["addi sp, sp, -2032"]
@@ -664,7 +673,7 @@ def sampleRV : Prog RISCV64.isa :=
 -- which the assembler expands to `auipc` and `addi`. `asm` gives the text
 -- `Rust.line` writes, for reading.
 #guard text (RISCV64.printer.function (.block [.lla .a5 "VG_TABLE"] : Prog RISCV64.isa)) == [
-  "lla a5, <sym VG_TABLE>", "// ret", ".insn 4, 0x00008067"]
+  "lla a5, <sym VG_TABLE>", "// ret", ".insn 2, 0x8082"]
 #guard Rust.line RISCV64.printer.call (.sym "lla a5, " .bare "VG_TABLE") ==
   "        r\"lla a5, {VG_TABLE}\",\n"
 #guard RISCV64.Instr.asm (.lla .a5 "VG_TABLE") == ["lla a5, VG_TABLE"]
@@ -672,30 +681,30 @@ def sampleRV : Prog RISCV64.isa :=
 -- same string literal.
 #guard Rust.template RISCV64.printer.call
     (RISCV64.printer.function (.block [.li .a0 1, .lla .a5 "VG_TABLE"] : Prog RISCV64.isa)) ==
-  "        // addi a0, zero, 1\n        r\".insn 4, 0x00100513\nlla a5, {VG_TABLE}\",\n        // ret\n        r\".insn 4, 0x00008067\",\n"
+  "        // addi a0, zero, 1\n        r\".insn 2, 0x4505\nlla a5, {VG_TABLE}\",\n        // ret\n        r\".insn 2, 0x8082\",\n"
 
--- Every RISC-V function's text enables the M extension for itself alone
--- (`Rust.funcOptions`): `.option push` and `.option arch, +m` are its first
+-- Every RISC-V function's text enables the M and C extensions for itself alone
+-- (`Rust.funcOptions`): `.option push` and `.option arch, +m, +c` are its first
 -- lines and `.option pop` its last, after its labels, branches and return
 -- (`vg_ct_eq`, the code of `crates/verified-garbage-asm-riscv64/src/ct.rs`). Other targets' functions
 -- get no such directives.
 #guard Rust.funcOptions RISCV64.target.name ==
-  ([".option push", ".option arch, +m"], [".option pop"])
+  ([".option push", ".option arch, +m, +c"], [".option pop"])
 #guard ["x86_64", "x86", "aarch64", "arm", "powerpc64le"].all (Rust.funcOptions · == ([], []))
 #guard match Artifacts.Ct.RISCV64.artifacts with
   | [a] => ((Rust.function a (fun _ => "")).splitOn "naked_asm!(\n").getLast! == "        r\".option push
-.option arch, +m\",
+.option arch, +m, +c\",
         // addi a4, zero, 0
         // sub a7, a1, a3
-        r\".insn 4, 0x00000713
+        r\".insn 2, 0x4701
 .insn 4, 0x40d588b3
 beqz a7, 20f\",
         // addi a0, zero, 0
-        r\".insn 4, 0x00000513
+        r\".insn 2, 0x4501
 j 21f
 20:\",
         // addi a5, zero, 0
-        r\".insn 4, 0x00000793
+        r\".insn 2, 0x4781
 beqz a1, 22f
 24:\",
         // add t0, a0, a5
@@ -712,7 +721,7 @@ beqz a1, 22f
 .insn 4, 0x0002c383
 .insn 4, 0x00734333
 .insn 4, 0x00676733
-.insn 4, 0x00178793
+.insn 2, 0x0785
 .insn 4, 0x40b788b3
 bnez a7, 24b
 j 23f
@@ -720,11 +729,11 @@ j 23f
 23:\",
         // addi a4, a4, -1
         // srli a0, a4, 63
-        r\".insn 4, 0xfff70713
+        r\".insn 2, 0x177d
 .insn 4, 0x03f75513
 21:\",
         // ret
-        r\".insn 4, 0x00008067
+        r\".insn 2, 0x8082
 .option pop\",
     )
 }

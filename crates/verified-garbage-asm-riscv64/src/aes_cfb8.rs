@@ -20,7 +20,7 @@
 pub unsafe extern "C" fn vg_aes_cfb8_encrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi t0, a5, 2047
         // addi t0, t0, 8
         // andi t0, t0, -8
@@ -38,7 +38,7 @@ pub unsafe extern "C" fn vg_aes_cfb8_encrypt(schedule: *const [u8; 240], rounds:
         // addi s5, a4, 0
         // addi s6, a5, 0
         r".insn 4, 0x7ff78293
-.insn 4, 0x00828293
+.insn 2, 0x02a1
 .insn 4, 0xff82f293
 .insn 4, 0x0012b823
 .insn 4, 0x0092bc23
@@ -47,12 +47,12 @@ pub unsafe extern "C" fn vg_aes_cfb8_encrypt(schedule: *const [u8; 240], rounds:
 .insn 4, 0x0342b823
 .insn 4, 0x0352bc23
 .insn 4, 0x0562b023
-.insn 4, 0x00050493
-.insn 4, 0x00058913
-.insn 4, 0x00060993
-.insn 4, 0x00068a13
-.insn 4, 0x00070a93
-.insn 4, 0x00078b13
+.insn 2, 0x84aa
+.insn 2, 0x892e
+.insn 2, 0x89b2
+.insn 2, 0x8a36
+.insn 2, 0x8aba
+.insn 2, 0x8b3e
 beqz s5, 20f
 22:",
         // addi t0, s6, 2047
@@ -96,7 +96,7 @@ beqz s5, 20f
         // addi a3, zero, 1
         // addi a4, s6, 0
         r".insn 4, 0x7ffb0293
-.insn 4, 0x00828293
+.insn 2, 0x02a1
 .insn 4, 0xff82f293
 .insn 4, 0x0009ce03
 .insn 4, 0x01c28023
@@ -130,11 +130,11 @@ beqz s5, 20f
 .insn 4, 0x01c28723
 .insn 4, 0x00f9ce03
 .insn 4, 0x01c287a3
-.insn 4, 0x00048513
-.insn 4, 0x00090593
-.insn 4, 0x00028613
-.insn 4, 0x00100693
-.insn 4, 0x000b0713
+.insn 2, 0x8526
+.insn 2, 0x85ca
+.insn 2, 0x8616
+.insn 2, 0x4685
+.insn 2, 0x875a
 call {vg_aes_encrypt_blocks}",
         // addi t0, s6, 2047
         // addi t0, t0, 8
@@ -209,7 +209,7 @@ call {vg_aes_encrypt_blocks}",
         // addi s4, s4, 1
         // addi s5, s5, -1
         r".insn 4, 0x7ffb0293
-.insn 4, 0x00828293
+.insn 2, 0x02a1
 .insn 4, 0xff82f293
 .insn 4, 0x000a4303
 .insn 4, 0x0002c383
@@ -278,8 +278,8 @@ call {vg_aes_encrypt_blocks}",
 .insn 4, 0x01c98723
 .insn 4, 0x00f2ce03
 .insn 4, 0x01c987a3
-.insn 4, 0x001a0a13
-.insn 4, 0xfffa8a93
+.insn 2, 0x0a05
+.insn 2, 0x1afd
 bnez s5, 22b
 j 21f
 20:
@@ -296,7 +296,7 @@ j 21f
         // ld s6, 64(t0)
         // ret
         r".insn 4, 0x7ffb0293
-.insn 4, 0x00828293
+.insn 2, 0x02a1
 .insn 4, 0xff82f293
 .insn 4, 0x0102b083
 .insn 4, 0x0182b483
@@ -305,7 +305,7 @@ j 21f
 .insn 4, 0x0302ba03
 .insn 4, 0x0382ba83
 .insn 4, 0x0402bb03
-.insn 4, 0x00008067
+.insn 2, 0x8082
 .option pop",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
@@ -329,7 +329,7 @@ j 21f
 pub unsafe extern "C" fn vg_aes_cfb8_decrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi t0, a5, 2047
         // addi t0, t0, 8
         // andi t0, t0, -8
@@ -347,7 +347,7 @@ pub unsafe extern "C" fn vg_aes_cfb8_decrypt(schedule: *const [u8; 240], rounds:
         // addi s5, a4, 0
         // addi s6, a5, 0
         r".insn 4, 0x7ff78293
-.insn 4, 0x00828293
+.insn 2, 0x02a1
 .insn 4, 0xff82f293
 .insn 4, 0x0012b823
 .insn 4, 0x0092bc23
@@ -356,12 +356,12 @@ pub unsafe extern "C" fn vg_aes_cfb8_decrypt(schedule: *const [u8; 240], rounds:
 .insn 4, 0x0342b823
 .insn 4, 0x0352bc23
 .insn 4, 0x0562b023
-.insn 4, 0x00050493
-.insn 4, 0x00058913
-.insn 4, 0x00060993
-.insn 4, 0x00068a13
-.insn 4, 0x00070a93
-.insn 4, 0x00078b13
+.insn 2, 0x84aa
+.insn 2, 0x892e
+.insn 2, 0x89b2
+.insn 2, 0x8a36
+.insn 2, 0x8aba
+.insn 2, 0x8b3e
 beqz s5, 20f
 22:",
         // addi t0, s6, 2047
@@ -405,7 +405,7 @@ beqz s5, 20f
         // addi a3, zero, 1
         // addi a4, s6, 0
         r".insn 4, 0x7ffb0293
-.insn 4, 0x00828293
+.insn 2, 0x02a1
 .insn 4, 0xff82f293
 .insn 4, 0x0009ce03
 .insn 4, 0x01c28023
@@ -439,11 +439,11 @@ beqz s5, 20f
 .insn 4, 0x01c28723
 .insn 4, 0x00f9ce03
 .insn 4, 0x01c287a3
-.insn 4, 0x00048513
-.insn 4, 0x00090593
-.insn 4, 0x00028613
-.insn 4, 0x00100693
-.insn 4, 0x000b0713
+.insn 2, 0x8526
+.insn 2, 0x85ca
+.insn 2, 0x8616
+.insn 2, 0x4685
+.insn 2, 0x875a
 call {vg_aes_encrypt_blocks}",
         // addi t0, s6, 2047
         // addi t0, t0, 8
@@ -518,7 +518,7 @@ call {vg_aes_encrypt_blocks}",
         // addi s4, s4, 1
         // addi s5, s5, -1
         r".insn 4, 0x7ffb0293
-.insn 4, 0x00828293
+.insn 2, 0x02a1
 .insn 4, 0xff82f293
 .insn 4, 0x000a4303
 .insn 4, 0x0002c383
@@ -587,8 +587,8 @@ call {vg_aes_encrypt_blocks}",
 .insn 4, 0x01c98723
 .insn 4, 0x00f2ce03
 .insn 4, 0x01c987a3
-.insn 4, 0x001a0a13
-.insn 4, 0xfffa8a93
+.insn 2, 0x0a05
+.insn 2, 0x1afd
 bnez s5, 22b
 j 21f
 20:
@@ -605,7 +605,7 @@ j 21f
         // ld s6, 64(t0)
         // ret
         r".insn 4, 0x7ffb0293
-.insn 4, 0x00828293
+.insn 2, 0x02a1
 .insn 4, 0xff82f293
 .insn 4, 0x0102b083
 .insn 4, 0x0182b483
@@ -614,7 +614,7 @@ j 21f
 .insn 4, 0x0302ba03
 .insn 4, 0x0382ba83
 .insn 4, 0x0402bb03
-.insn 4, 0x00008067
+.insn 2, 0x8082
 .option pop",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )

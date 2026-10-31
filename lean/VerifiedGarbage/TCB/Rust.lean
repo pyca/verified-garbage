@@ -478,8 +478,8 @@ def cfgGate : List String → String
 of the target named `t`: the first and last lines of its template, so that
 they apply to all of it and to nothing after it.
 
-On RISC-V (`riscv64`), `.option push` and `.option arch, +m`, then
-`.option pop`, enable the M extension for the function alone. The model's
+On RISC-V (`riscv64`), `.option push` and `.option arch, +m, +c`, then
+`.option pop`, enable the M and C extensions for the function alone. The model's
 multiplies, `mul` and `mulhu`, are M's (`TCB/RISCV64/Isa.lean`), and the
 target compiles them only where Rust enables it (`target_feature = "m"`,
 `TCB/RISCV64/Target.lean`'s `rustCfg`), but rustc does not always tell the
@@ -495,10 +495,13 @@ bound an `.option arch, +` ("We recommend `.option arch, +` and
 options after the function are what they were before it. The directives
 emit no bytes and change no instruction: the assembler accepts the `mul` and
 `mulhu` that the model describes, the only instructions of M the printer
-emits. (They are keyed on the target here, rather than being a field of its
+emits. `+c` likewise enables the C extension, whose compressed encodings
+the printer emits as `.insn 2, …` (`TCB/RISCV64/Encode.lean`'s `compress`),
+which the assembler accepts only with it, and which the target compiles only
+where Rust enables it (`target_feature = "c"`). (They are keyed on the target here, rather than being a field of its
 `Printer`, so that adding them did not change what every proof imports.) -/
 def funcOptions : String → List String × List String
-  | "riscv64" => ([".option push", ".option arch, +m"], [".option pop"])
+  | "riscv64" => ([".option push", ".option arch, +m, +c"], [".option pop"])
   | _ => ([], [])
 
 /-- The `cfg` attribute of `a`'s function and constants (`cfgGate` of

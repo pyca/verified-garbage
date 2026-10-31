@@ -20,7 +20,7 @@
 pub unsafe extern "C" fn vg_aes_xts_encrypt(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi t0, a5, 2047
         // addi t0, t0, 8
         // andi t0, t0, -8
@@ -38,7 +38,7 @@ pub unsafe extern "C" fn vg_aes_xts_encrypt(schedule: *const [u8; 240], rounds: 
         // addi s5, a4, 0
         // addi s6, a5, 0
         r".insn 4, 0x7ff78293
-.insn 4, 0x00828293
+.insn 2, 0x02a1
 .insn 4, 0xff82f293
 .insn 4, 0x0012b823
 .insn 4, 0x0092bc23
@@ -47,12 +47,12 @@ pub unsafe extern "C" fn vg_aes_xts_encrypt(schedule: *const [u8; 240], rounds: 
 .insn 4, 0x0342b823
 .insn 4, 0x0352bc23
 .insn 4, 0x0562b023
-.insn 4, 0x00050493
-.insn 4, 0x00058913
-.insn 4, 0x00060993
-.insn 4, 0x00068a13
-.insn 4, 0x00070a93
-.insn 4, 0x00078b13
+.insn 2, 0x84aa
+.insn 2, 0x892e
+.insn 2, 0x89b2
+.insn 2, 0x8a36
+.insn 2, 0x8aba
+.insn 2, 0x8b3e
 beqz s5, 20f
 22:",
         // lbu t3, 0(s4)
@@ -188,11 +188,11 @@ beqz s5, 20f
 .insn 4, 0x00f9ce83
 .insn 4, 0x01de4e33
 .insn 4, 0x01ca07a3
-.insn 4, 0x00048513
-.insn 4, 0x00090593
-.insn 4, 0x000a0613
-.insn 4, 0x00100693
-.insn 4, 0x000b0713
+.insn 2, 0x8526
+.insn 2, 0x85ca
+.insn 2, 0x8652
+.insn 2, 0x4685
+.insn 2, 0x875a
 call {vg_aes_encrypt_blocks}",
         // lbu t3, 0(s4)
         // lbu t4, 0(s3)
@@ -410,46 +410,46 @@ call {vg_aes_encrypt_blocks}",
 .insn 4, 0x01ca07a3
 .insn 4, 0x0009c303
 .insn 4, 0x0019c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x0029c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x0039c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x0049ce03
 .insn 4, 0x0059c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x007e6e33
 .insn 4, 0x0069c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x007e6e33
 .insn 4, 0x0079c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x007e6e33
 .insn 4, 0x0089ce83
 .insn 4, 0x0099c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x007eeeb3
 .insn 4, 0x00a9c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x007eeeb3
 .insn 4, 0x00b9c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x007eeeb3
 .insn 4, 0x00c9cf03
 .insn 4, 0x00d9c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x007f6f33
 .insn 4, 0x00e9c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x007f6f33
 .insn 4, 0x00f9c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x007f6f33
 .insn 4, 0x01ff5f93
-.insn 4, 0x00000393
+.insn 2, 0x4381
 .insn 4, 0x41f38fb3
 .insn 4, 0x08700393
 .insn 4, 0x007fffb3
@@ -492,8 +492,8 @@ call {vg_aes_encrypt_blocks}",
 .insn 4, 0x00798723
 .insn 4, 0x01885393
 .insn 4, 0x007987a3
-.insn 4, 0x010a0a13
-.insn 4, 0xfffa8a93
+.insn 2, 0x0a41
+.insn 2, 0x1afd
 bnez s5, 22b
 j 21f
 20:
@@ -510,7 +510,7 @@ j 21f
         // ld s6, 64(t0)
         // ret
         r".insn 4, 0x7ffb0293
-.insn 4, 0x00828293
+.insn 2, 0x02a1
 .insn 4, 0xff82f293
 .insn 4, 0x0102b083
 .insn 4, 0x0182b483
@@ -519,7 +519,7 @@ j 21f
 .insn 4, 0x0302ba03
 .insn 4, 0x0382ba83
 .insn 4, 0x0402bb03
-.insn 4, 0x00008067
+.insn 2, 0x8082
 .option pop",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
@@ -543,7 +543,7 @@ j 21f
 pub unsafe extern "C" fn vg_aes_xts_decrypt(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi t0, a5, 2047
         // addi t0, t0, 8
         // andi t0, t0, -8
@@ -561,7 +561,7 @@ pub unsafe extern "C" fn vg_aes_xts_decrypt(schedule: *const [u8; 240], rounds: 
         // addi s5, a4, 0
         // addi s6, a5, 0
         r".insn 4, 0x7ff78293
-.insn 4, 0x00828293
+.insn 2, 0x02a1
 .insn 4, 0xff82f293
 .insn 4, 0x0012b823
 .insn 4, 0x0092bc23
@@ -570,12 +570,12 @@ pub unsafe extern "C" fn vg_aes_xts_decrypt(schedule: *const [u8; 240], rounds: 
 .insn 4, 0x0342b823
 .insn 4, 0x0352bc23
 .insn 4, 0x0562b023
-.insn 4, 0x00050493
-.insn 4, 0x00058913
-.insn 4, 0x00060993
-.insn 4, 0x00068a13
-.insn 4, 0x00070a93
-.insn 4, 0x00078b13
+.insn 2, 0x84aa
+.insn 2, 0x892e
+.insn 2, 0x89b2
+.insn 2, 0x8a36
+.insn 2, 0x8aba
+.insn 2, 0x8b3e
 beqz s5, 20f
 22:",
         // lbu t3, 0(s4)
@@ -711,11 +711,11 @@ beqz s5, 20f
 .insn 4, 0x00f9ce83
 .insn 4, 0x01de4e33
 .insn 4, 0x01ca07a3
-.insn 4, 0x00048513
-.insn 4, 0x00090593
-.insn 4, 0x000a0613
-.insn 4, 0x00100693
-.insn 4, 0x000b0713
+.insn 2, 0x8526
+.insn 2, 0x85ca
+.insn 2, 0x8652
+.insn 2, 0x4685
+.insn 2, 0x875a
 call {vg_aes_decrypt_blocks}",
         // lbu t3, 0(s4)
         // lbu t4, 0(s3)
@@ -933,46 +933,46 @@ call {vg_aes_decrypt_blocks}",
 .insn 4, 0x01ca07a3
 .insn 4, 0x0009c303
 .insn 4, 0x0019c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x0029c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x0039c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x0049ce03
 .insn 4, 0x0059c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x007e6e33
 .insn 4, 0x0069c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x007e6e33
 .insn 4, 0x0079c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x007e6e33
 .insn 4, 0x0089ce83
 .insn 4, 0x0099c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x007eeeb3
 .insn 4, 0x00a9c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x007eeeb3
 .insn 4, 0x00b9c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x007eeeb3
 .insn 4, 0x00c9cf03
 .insn 4, 0x00d9c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x007f6f33
 .insn 4, 0x00e9c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x007f6f33
 .insn 4, 0x00f9c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x007f6f33
 .insn 4, 0x01ff5f93
-.insn 4, 0x00000393
+.insn 2, 0x4381
 .insn 4, 0x41f38fb3
 .insn 4, 0x08700393
 .insn 4, 0x007fffb3
@@ -1015,8 +1015,8 @@ call {vg_aes_decrypt_blocks}",
 .insn 4, 0x00798723
 .insn 4, 0x01885393
 .insn 4, 0x007987a3
-.insn 4, 0x010a0a13
-.insn 4, 0xfffa8a93
+.insn 2, 0x0a41
+.insn 2, 0x1afd
 bnez s5, 22b
 j 21f
 20:
@@ -1033,7 +1033,7 @@ j 21f
         // ld s6, 64(t0)
         // ret
         r".insn 4, 0x7ffb0293
-.insn 4, 0x00828293
+.insn 2, 0x02a1
 .insn 4, 0xff82f293
 .insn 4, 0x0102b083
 .insn 4, 0x0182b483
@@ -1042,7 +1042,7 @@ j 21f
 .insn 4, 0x0302ba03
 .insn 4, 0x0382ba83
 .insn 4, 0x0402bb03
-.insn 4, 0x00008067
+.insn 2, 0x8082
 .option pop",
         vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
     )
@@ -1068,7 +1068,7 @@ j 21f
 pub unsafe extern "C" fn vg_aes_xts_encrypt_unit(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi t0, a6, 39
         // andi t0, t0, -8
         // sd ra, 0(t0)
@@ -1162,11 +1162,11 @@ pub unsafe extern "C" fn vg_aes_xts_encrypt_unit(schedule: *const [u8; 240], twe
 .insn 4, 0x0342b023
 .insn 4, 0x0352b423
 .insn 4, 0x0362b823
-.insn 4, 0x00050493
-.insn 4, 0x00060913
-.insn 4, 0x00070a13
-.insn 4, 0x00078a93
-.insn 4, 0x00080b13
+.insn 2, 0x84aa
+.insn 2, 0x8932
+.insn 2, 0x8a3a
+.insn 2, 0x8abe
+.insn 2, 0x8b42
 .insn 4, 0x0006ce03
 .insn 4, 0x01cb0023
 .insn 4, 0x0016ce03
@@ -1199,43 +1199,43 @@ pub unsafe extern "C" fn vg_aes_xts_encrypt_unit(schedule: *const [u8; 240], twe
 .insn 4, 0x01cb0723
 .insn 4, 0x00f6ce03
 .insn 4, 0x01cb07a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0823
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b08a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0923
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b09a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0a23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0aa3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0b23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0ba3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0c23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0ca3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0d23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0da3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0e23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0ea3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0f23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0fa3
-.insn 4, 0x00058513
-.insn 4, 0x00090593
+.insn 2, 0x852e
+.insn 2, 0x85ca
 .insn 4, 0x010b0613
-.insn 4, 0x000b0693
-.insn 4, 0x00100713
+.insn 2, 0x86da
+.insn 2, 0x4705
 .insn 4, 0x060b0793
 call {vg_aes_xts_encrypt}",
         // addi a0, s1, 0
@@ -1244,10 +1244,10 @@ call {vg_aes_xts_encrypt}",
         // addi a3, s4, 0
         // srli a4, s5, 4
         // addi a5, s6, 96
-        r".insn 4, 0x00048513
-.insn 4, 0x00090593
-.insn 4, 0x000b0613
-.insn 4, 0x000a0693
+        r".insn 2, 0x8526
+.insn 2, 0x85ca
+.insn 2, 0x865a
+.insn 2, 0x86d2
 .insn 4, 0x004ad713
 .insn 4, 0x060b0793
 call {vg_aes_xts_encrypt}",
@@ -1255,13 +1255,13 @@ call {vg_aes_xts_encrypt}",
         // slli t1, t1, 4
         // sub t2, s5, t1
         r".insn 4, 0x004ad313
-.insn 4, 0x00431313
+.insn 2, 0x0312
 .insn 4, 0x406a83b3
 beqz t2, 20f",
         // add t3, s4, t1
         // addi t3, t3, -16
         r".insn 4, 0x006a0e33
-.insn 4, 0xff0e0e13
+.insn 2, 0x1e41
 22:",
         // lbu t4, 0(t3)
         // lbu t5, 16(t3)
@@ -1273,8 +1273,8 @@ beqz t2, 20f",
 .insn 4, 0x010e4f03
 .insn 4, 0x01ee0023
 .insn 4, 0x01de0823
-.insn 4, 0x001e0e13
-.insn 4, 0xfff38393
+.insn 2, 0x0e05
+.insn 2, 0x13fd
 bnez t2, 22b",
         // add a3, s4, t1
         // addi a3, a3, -16
@@ -1284,11 +1284,11 @@ bnez t2, 22b",
         // addi a4, zero, 1
         // addi a5, s6, 96
         r".insn 4, 0x006a06b3
-.insn 4, 0xff068693
-.insn 4, 0x00048513
-.insn 4, 0x00090593
-.insn 4, 0x000b0613
-.insn 4, 0x00100713
+.insn 2, 0x16c1
+.insn 2, 0x8526
+.insn 2, 0x85ca
+.insn 2, 0x865a
+.insn 2, 0x4705
 .insn 4, 0x060b0793
 call {vg_aes_xts_encrypt}
 j 21f
@@ -1313,7 +1313,7 @@ j 21f
 .insn 4, 0x0202ba03
 .insn 4, 0x0282ba83
 .insn 4, 0x0302bb03
-.insn 4, 0x00008067
+.insn 2, 0x8082
 .option pop",
         vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt,
     )
@@ -1339,7 +1339,7 @@ j 21f
 pub unsafe extern "C" fn vg_aes_xts_decrypt_unit(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi t0, a6, 39
         // andi t0, t0, -8
         // sd ra, 0(t0)
@@ -1433,11 +1433,11 @@ pub unsafe extern "C" fn vg_aes_xts_decrypt_unit(schedule: *const [u8; 240], twe
 .insn 4, 0x0342b023
 .insn 4, 0x0352b423
 .insn 4, 0x0362b823
-.insn 4, 0x00050493
-.insn 4, 0x00060913
-.insn 4, 0x00070a13
-.insn 4, 0x00078a93
-.insn 4, 0x00080b13
+.insn 2, 0x84aa
+.insn 2, 0x8932
+.insn 2, 0x8a3a
+.insn 2, 0x8abe
+.insn 2, 0x8b42
 .insn 4, 0x0006ce03
 .insn 4, 0x01cb0023
 .insn 4, 0x0016ce03
@@ -1470,50 +1470,50 @@ pub unsafe extern "C" fn vg_aes_xts_decrypt_unit(schedule: *const [u8; 240], twe
 .insn 4, 0x01cb0723
 .insn 4, 0x00f6ce03
 .insn 4, 0x01cb07a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0823
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b08a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0923
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b09a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0a23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0aa3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0b23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0ba3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0c23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0ca3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0d23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0da3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0e23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0ea3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0f23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006b0fa3
-.insn 4, 0x00058513
-.insn 4, 0x00090593
+.insn 2, 0x852e
+.insn 2, 0x85ca
 .insn 4, 0x010b0613
-.insn 4, 0x000b0693
-.insn 4, 0x00100713
+.insn 2, 0x86da
+.insn 2, 0x4705
 .insn 4, 0x060b0793
 call {vg_aes_xts_encrypt}",
         // srli t1, s5, 4
         // slli t1, t1, 4
         // sub t2, s5, t1
         r".insn 4, 0x004ad313
-.insn 4, 0x00431313
+.insn 2, 0x0312
 .insn 4, 0x406a83b3
 beqz t2, 20f",
         // addi a0, s1, 0
@@ -1523,13 +1523,13 @@ beqz t2, 20f",
         // srli a4, s5, 4
         // addi a5, s6, 96
         // addi a4, a4, -1
-        r".insn 4, 0x00048513
-.insn 4, 0x00090593
-.insn 4, 0x000b0613
-.insn 4, 0x000a0693
+        r".insn 2, 0x8526
+.insn 2, 0x85ca
+.insn 2, 0x865a
+.insn 2, 0x86d2
 .insn 4, 0x004ad713
 .insn 4, 0x060b0793
-.insn 4, 0xfff70713
+.insn 2, 0x177d
 call {vg_aes_xts_decrypt}",
         // addi s3, s6, 16
         // lbu t3, 0(s6)
@@ -1693,46 +1693,46 @@ call {vg_aes_xts_decrypt}",
 .insn 4, 0x01cb0fa3
 .insn 4, 0x0009c303
 .insn 4, 0x0019c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x0029c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x0039c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x0049ce03
 .insn 4, 0x0059c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x007e6e33
 .insn 4, 0x0069c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x007e6e33
 .insn 4, 0x0079c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x007e6e33
 .insn 4, 0x0089ce83
 .insn 4, 0x0099c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x007eeeb3
 .insn 4, 0x00a9c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x007eeeb3
 .insn 4, 0x00b9c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x007eeeb3
 .insn 4, 0x00c9cf03
 .insn 4, 0x00d9c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x007f6f33
 .insn 4, 0x00e9c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x007f6f33
 .insn 4, 0x00f9c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x007f6f33
 .insn 4, 0x01ff5f93
-.insn 4, 0x00000393
+.insn 2, 0x4381
 .insn 4, 0x41f38fb3
 .insn 4, 0x08700393
 .insn 4, 0x007fffb3
@@ -1776,14 +1776,14 @@ call {vg_aes_xts_decrypt}",
 .insn 4, 0x01885393
 .insn 4, 0x007987a3
 .insn 4, 0x004ad313
-.insn 4, 0x00431313
+.insn 2, 0x0312
 .insn 4, 0x406a83b3
 .insn 4, 0x006a06b3
-.insn 4, 0xff068693
-.insn 4, 0x00048513
-.insn 4, 0x00090593
+.insn 2, 0x16c1
+.insn 2, 0x8526
+.insn 2, 0x85ca
 .insn 4, 0x010b0613
-.insn 4, 0x00100713
+.insn 2, 0x4705
 .insn 4, 0x060b0793
 call {vg_aes_xts_decrypt}",
         // srli t1, s5, 4
@@ -1792,10 +1792,10 @@ call {vg_aes_xts_decrypt}",
         // add t3, s4, t1
         // addi t3, t3, -16
         r".insn 4, 0x004ad313
-.insn 4, 0x00431313
+.insn 2, 0x0312
 .insn 4, 0x406a83b3
 .insn 4, 0x006a0e33
-.insn 4, 0xff0e0e13
+.insn 2, 0x1e41
 22:",
         // lbu t4, 0(t3)
         // lbu t5, 16(t3)
@@ -1807,8 +1807,8 @@ call {vg_aes_xts_decrypt}",
 .insn 4, 0x010e4f03
 .insn 4, 0x01ee0023
 .insn 4, 0x01de0823
-.insn 4, 0x001e0e13
-.insn 4, 0xfff38393
+.insn 2, 0x0e05
+.insn 2, 0x13fd
 bnez t2, 22b",
         // add a3, s4, t1
         // addi a3, a3, -16
@@ -1818,11 +1818,11 @@ bnez t2, 22b",
         // addi a4, zero, 1
         // addi a5, s6, 96
         r".insn 4, 0x006a06b3
-.insn 4, 0xff068693
-.insn 4, 0x00048513
-.insn 4, 0x00090593
-.insn 4, 0x000b0613
-.insn 4, 0x00100713
+.insn 2, 0x16c1
+.insn 2, 0x8526
+.insn 2, 0x85ca
+.insn 2, 0x865a
+.insn 2, 0x4705
 .insn 4, 0x060b0793
 call {vg_aes_xts_decrypt}
 j 21f
@@ -1833,10 +1833,10 @@ j 21f
         // addi a3, s4, 0
         // srli a4, s5, 4
         // addi a5, s6, 96
-        r".insn 4, 0x00048513
-.insn 4, 0x00090593
-.insn 4, 0x000b0613
-.insn 4, 0x000a0693
+        r".insn 2, 0x8526
+.insn 2, 0x85ca
+.insn 2, 0x865a
+.insn 2, 0x86d2
 .insn 4, 0x004ad713
 .insn 4, 0x060b0793
 call {vg_aes_xts_decrypt}
@@ -1860,7 +1860,7 @@ call {vg_aes_xts_decrypt}
 .insn 4, 0x0202ba03
 .insn 4, 0x0282ba83
 .insn 4, 0x0302bb03
-.insn 4, 0x00008067
+.insn 2, 0x8082
 .option pop",
         vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt,
         vg_aes_xts_decrypt = sym super::aes_xts::vg_aes_xts_decrypt,

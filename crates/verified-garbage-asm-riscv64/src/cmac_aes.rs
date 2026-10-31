@@ -19,7 +19,7 @@
 pub unsafe extern "C" fn vg_cmac_aes_subkeys(schedule: *const [u8; 240], rounds: usize, subkeys: *mut [u8; 32], scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi t0, a3, 2047
         // addi t0, t0, 8
         // andi t0, t0, -8
@@ -64,48 +64,48 @@ pub unsafe extern "C" fn vg_cmac_aes_subkeys(schedule: *const [u8; 240], rounds:
         // addi a3, zero, 1
         // addi a4, s2, 0
         r".insn 4, 0x7ff68293
-.insn 4, 0x00828293
+.insn 2, 0x02a1
 .insn 4, 0xff82f293
 .insn 4, 0x0012b823
 .insn 4, 0x0092bc23
 .insn 4, 0x0322b023
-.insn 4, 0x00060493
-.insn 4, 0x00068913
-.insn 4, 0x00000313
+.insn 2, 0x84b2
+.insn 2, 0x8936
+.insn 2, 0x4301
 .insn 4, 0x00648023
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006480a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x00648123
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006481a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x00648223
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006482a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x00648323
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006483a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x00648423
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006484a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x00648523
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006485a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x00648623
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006486a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x00648723
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x006487a3
-.insn 4, 0x00048613
-.insn 4, 0x00100693
-.insn 4, 0x00090713
+.insn 2, 0x8626
+.insn 2, 0x4685
+.insn 2, 0x874a
 call {vg_aes_encrypt_blocks}",
         // lbu t1, 0(s1)
         // srli t2, t1, 7
@@ -312,207 +312,207 @@ call {vg_aes_encrypt_blocks}",
         // ret
         r".insn 4, 0x0004c303
 .insn 4, 0x00735393
-.insn 4, 0xfff38393
+.insn 2, 0x13fd
 .insn 4, 0x0873f393
 .insn 4, 0x0873c393
 .insn 4, 0x0014ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x00648023
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x0024ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x006480a3
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x0034ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x00648123
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x0044ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x006481a3
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x0054ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x00648223
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x0064ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x006482a3
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x0074ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x00648323
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x0084ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x006483a3
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x0094ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x00648423
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x00a4ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x006484a3
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x00b4ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x00648523
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x00c4ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x006485a3
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x00d4ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x00648623
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x00e4ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x006486a3
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x00f4ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x00648723
-.insn 4, 0x000e0313
-.insn 4, 0x00131313
+.insn 2, 0x8372
+.insn 2, 0x0306
 .insn 4, 0x00734333
 .insn 4, 0x006487a3
 .insn 4, 0x0004c303
 .insn 4, 0x00735393
-.insn 4, 0xfff38393
+.insn 2, 0x13fd
 .insn 4, 0x0873f393
 .insn 4, 0x0873c393
 .insn 4, 0x0014ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x00648823
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x0024ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x006488a3
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x0034ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x00648923
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x0044ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x006489a3
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x0054ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x00648a23
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x0064ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x00648aa3
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x0074ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x00648b23
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x0084ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x00648ba3
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x0094ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x00648c23
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x00a4ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x00648ca3
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x00b4ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x00648d23
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x00c4ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x00648da3
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x00d4ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x00648e23
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x00e4ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x00648ea3
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x00f4ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x00648f23
-.insn 4, 0x000e0313
-.insn 4, 0x00131313
+.insn 2, 0x8372
+.insn 2, 0x0306
 .insn 4, 0x00734333
 .insn 4, 0x00648fa3
 .insn 4, 0x7ff90293
-.insn 4, 0x00828293
+.insn 2, 0x02a1
 .insn 4, 0xff82f293
 .insn 4, 0x0102b083
 .insn 4, 0x0182b483
 .insn 4, 0x0202b903
-.insn 4, 0x00008067
+.insn 2, 0x8082
 .option pop",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
@@ -536,7 +536,7 @@ call {vg_aes_encrypt_blocks}",
 pub unsafe extern "C" fn vg_cmac_aes_update(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi t0, a5, 2047
         // addi t0, t0, 8
         // andi t0, t0, -8
@@ -554,7 +554,7 @@ pub unsafe extern "C" fn vg_cmac_aes_update(schedule: *const [u8; 240], rounds: 
         // addi s5, a4, 0
         // addi s6, a5, 0
         r".insn 4, 0x7ff78293
-.insn 4, 0x00828293
+.insn 2, 0x02a1
 .insn 4, 0xff82f293
 .insn 4, 0x0012b823
 .insn 4, 0x0092bc23
@@ -563,12 +563,12 @@ pub unsafe extern "C" fn vg_cmac_aes_update(schedule: *const [u8; 240], rounds: 
 .insn 4, 0x0342b823
 .insn 4, 0x0352bc23
 .insn 4, 0x0562b023
-.insn 4, 0x00050493
-.insn 4, 0x00058913
-.insn 4, 0x00060993
-.insn 4, 0x00068a13
-.insn 4, 0x00070a93
-.insn 4, 0x00078b13
+.insn 2, 0x84aa
+.insn 2, 0x892e
+.insn 2, 0x89b2
+.insn 2, 0x8a36
+.insn 2, 0x8aba
+.insn 2, 0x8b3e
 beqz s5, 20f
 22:",
         // lbu t3, 0(s3)
@@ -704,16 +704,16 @@ beqz s5, 20f
 .insn 4, 0x00fa4e83
 .insn 4, 0x01de4e33
 .insn 4, 0x01c987a3
-.insn 4, 0x00048513
-.insn 4, 0x00090593
-.insn 4, 0x00098613
-.insn 4, 0x00100693
-.insn 4, 0x000b0713
+.insn 2, 0x8526
+.insn 2, 0x85ca
+.insn 2, 0x864e
+.insn 2, 0x4685
+.insn 2, 0x875a
 call {vg_aes_encrypt_blocks}",
         // addi s4, s4, 16
         // addi s5, s5, -1
-        r".insn 4, 0x010a0a13
-.insn 4, 0xfffa8a93
+        r".insn 2, 0x0a41
+.insn 2, 0x1afd
 bnez s5, 22b
 j 21f
 20:
@@ -730,7 +730,7 @@ j 21f
         // ld s6, 64(t0)
         // ret
         r".insn 4, 0x7ffb0293
-.insn 4, 0x00828293
+.insn 2, 0x02a1
 .insn 4, 0xff82f293
 .insn 4, 0x0102b083
 .insn 4, 0x0182b483
@@ -739,7 +739,7 @@ j 21f
 .insn 4, 0x0302ba03
 .insn 4, 0x0382ba83
 .insn 4, 0x0402bb03
-.insn 4, 0x00008067
+.insn 2, 0x8082
 .option pop",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
@@ -764,7 +764,7 @@ j 21f
 pub unsafe extern "C" fn vg_cmac_aes_finalize(key: *const [u8; 272], rounds: usize, state: *mut [u8; 16], last: *const u8, last_len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi t0, a5, 2047
         // addi t0, t0, 8
         // andi t0, t0, -8
@@ -773,19 +773,19 @@ pub unsafe extern "C" fn vg_cmac_aes_finalize(key: *const [u8; 272], rounds: usi
         // addi s1, a5, 0
         // addi t1, a4, -16
         r".insn 4, 0x7ff78293
-.insn 4, 0x00828293
+.insn 2, 0x02a1
 .insn 4, 0xff82f293
 .insn 4, 0x0012b823
 .insn 4, 0x0092bc23
-.insn 4, 0x00078493
+.insn 2, 0x84be
 .insn 4, 0xff070313
 beqz t1, 20f",
         // addi t5, a3, 0
         // addi t6, a2, 0
         // addi t1, a4, 0
-        r".insn 4, 0x00068f13
-.insn 4, 0x00060f93
-.insn 4, 0x00070313
+        r".insn 2, 0x8f36
+.insn 2, 0x8fb2
+.insn 2, 0x833a
 beqz t1, 22f
 24:",
         // lbu t3, 0(t5)
@@ -799,9 +799,9 @@ beqz t1, 22f
 .insn 4, 0x000fce83
 .insn 4, 0x01de4e33
 .insn 4, 0x01cf8023
-.insn 4, 0x001f0f13
-.insn 4, 0x001f8f93
-.insn 4, 0xfff30313
+.insn 2, 0x0f05
+.insn 2, 0x0f85
+.insn 2, 0x137d
 bnez t1, 24b
 j 23f
 22:
@@ -1205,8 +1205,8 @@ j 21f
 21:",
         // addi a3, zero, 1
         // addi a4, s1, 0
-        r".insn 4, 0x00100693
-.insn 4, 0x00048713
+        r".insn 2, 0x4685
+.insn 2, 0x8726
 call {vg_aes_encrypt_blocks}",
         // addi t0, s1, 2047
         // addi t0, t0, 8
@@ -1215,11 +1215,11 @@ call {vg_aes_encrypt_blocks}",
         // ld s1, 24(t0)
         // ret
         r".insn 4, 0x7ff48293
-.insn 4, 0x00828293
+.insn 2, 0x02a1
 .insn 4, 0xff82f293
 .insn 4, 0x0102b083
 .insn 4, 0x0182b483
-.insn 4, 0x00008067
+.insn 2, 0x8082
 .option pop",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
@@ -1240,7 +1240,7 @@ call {vg_aes_encrypt_blocks}",
 pub unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi sp, sp, -2032
         // addi sp, sp, -272
         // addi a3, sp, 0
@@ -1259,8 +1259,8 @@ pub unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8,
         // addi a1, a2, 0
         // addi a2, s1, 0
         r".insn 4, 0x81010113
-.insn 4, 0xef010113
-.insn 4, 0x00010693
+.insn 2, 0x716d
+.insn 2, 0x868a
 .insn 4, 0x7ff68293
 .insn 4, 0x08828293
 .insn 4, 0xff82f293
@@ -1268,22 +1268,22 @@ pub unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8,
 .insn 4, 0x0092b423
 .insn 4, 0x0122b823
 .insn 4, 0x0132bc23
-.insn 4, 0x00050493
-.insn 4, 0x00068913
+.insn 2, 0x84aa
+.insn 2, 0x8936
 .insn 4, 0x00265993
-.insn 4, 0x00698993
-.insn 4, 0x00058513
-.insn 4, 0x00060593
-.insn 4, 0x00048613
+.insn 2, 0x0999
+.insn 2, 0x852e
+.insn 2, 0x85b2
+.insn 2, 0x8626
 call {vg_aes_expand_key_scratch}",
         // addi a0, s1, 0
         // addi a1, s3, 0
         // addi a2, s1, 240
         // addi a3, s2, 0
-        r".insn 4, 0x00048513
-.insn 4, 0x00098593
+        r".insn 2, 0x8526
+.insn 2, 0x85ce
 .insn 4, 0x0f048613
-.insn 4, 0x00090693
+.insn 2, 0x86ca
 call {vg_cmac_aes_subkeys}",
         // addi t1, zero, 0
         // sb t1, 272(s1)
@@ -1327,37 +1327,37 @@ call {vg_cmac_aes_subkeys}",
         // addi sp, sp, 272
         // addi sp, sp, 2032
         // ret
-        r".insn 4, 0x00000313
+        r".insn 2, 0x4301
 .insn 4, 0x10648823
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x106488a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x10648923
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x106489a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x10648a23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x10648aa3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x10648b23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x10648ba3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x10648c23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x10648ca3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x10648d23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x10648da3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x10648e23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x10648ea3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x10648f23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x10648fa3
 .insn 4, 0x7ff90293
 .insn 4, 0x08828293
@@ -1366,9 +1366,9 @@ call {vg_cmac_aes_subkeys}",
 .insn 4, 0x0082b483
 .insn 4, 0x0102b903
 .insn 4, 0x0182b983
-.insn 4, 0x11010113
+.insn 2, 0x6151
 .insn 4, 0x7f010113
-.insn 4, 0x00008067
+.insn 2, 0x8082
 .option pop",
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys,
@@ -1390,7 +1390,7 @@ call {vg_cmac_aes_subkeys}",
 pub unsafe extern "C" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi sp, sp, -2032
         // addi sp, sp, -272
         // addi a5, sp, 0
@@ -1410,8 +1410,8 @@ pub unsafe extern "C" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize
         // addi s4, a4, 0
         // addi s6, a5, 0
         r".insn 4, 0x81010113
-.insn 4, 0xef010113
-.insn 4, 0x00010793
+.insn 2, 0x716d
+.insn 2, 0x878a
 .insn 4, 0x7ff78293
 .insn 4, 0x08828293
 .insn 4, 0xff82f293
@@ -1422,53 +1422,53 @@ pub unsafe extern "C" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize
 .insn 4, 0x0342b023
 .insn 4, 0x0352b423
 .insn 4, 0x0362b823
-.insn 4, 0x00050493
-.insn 4, 0x00058913
-.insn 4, 0x00068993
-.insn 4, 0x00070a13
-.insn 4, 0x00078b13
+.insn 2, 0x84aa
+.insn 2, 0x892e
+.insn 2, 0x89b6
+.insn 2, 0x8a3a
+.insn 2, 0x8b3e
 beqz a2, 20f",
         // addi t1, a2, -1
         // andi t1, t1, 15
         // addi t1, t1, 1
         r".insn 4, 0xfff60313
 .insn 4, 0x00f37313
-.insn 4, 0x00130313
+.insn 2, 0x0305
 j 21f
 20:",
         // addi t1, zero, 0
-        r".insn 4, 0x00000313
+        r".insn 2, 0x4301
 21:",
         // srli t2, s4, 4
         r".insn 4, 0x004a5393
 beqz t2, 22f",
         // addi t2, zero, 16
-        r".insn 4, 0x01000393
+        r".insn 2, 0x43c1
 j 23f
 22:",
         // addi t2, s4, 0
-        r".insn 4, 0x000a0393
+        r".insn 2, 0x83d2
 23:",
         // addi t3, zero, 16
         // sub t3, t3, t1
         // sltu t4, t2, t3
-        r".insn 4, 0x01000e13
+        r".insn 2, 0x4e41
 .insn 4, 0x406e0e33
 .insn 4, 0x01c3beb3
 beqz t4, 24f
 j 25f
 24:",
         // addi t2, t3, 0
-        r".insn 4, 0x000e0393
+        r".insn 2, 0x83f2
 25:",
         // addi a7, t2, 0
         // add t5, s1, t1
         // addi t5, t5, 288
         // addi t6, s3, 0
-        r".insn 4, 0x00038893
+        r".insn 2, 0x889e
 .insn 4, 0x00648f33
 .insn 4, 0x120f0f13
-.insn 4, 0x00098f93
+.insn 2, 0x8fce
 beqz t2, 26f
 28:",
         // lbu t3, 0(t6)
@@ -1478,9 +1478,9 @@ beqz t2, 26f
         // addi t2, t2, -1
         r".insn 4, 0x000fce03
 .insn 4, 0x01cf0023
-.insn 4, 0x001f8f93
-.insn 4, 0x001f0f13
-.insn 4, 0xfff38393
+.insn 2, 0x0f85
+.insn 2, 0x0f05
+.insn 2, 0x13fd
 bnez t2, 28b
 j 27f
 26:
@@ -1488,12 +1488,12 @@ j 27f
         // add s3, s3, a7
         // sub s4, s4, a7
         // addi a4, zero, 0
-        r".insn 4, 0x011989b3
+        r".insn 2, 0x99c6
 .insn 4, 0x411a0a33
-.insn 4, 0x00000713
+.insn 2, 0x4701
 beqz s4, 29f",
         // addi a4, zero, 1
-        r".insn 4, 0x00100713
+        r".insn 2, 0x4705
 j 210f
 29:
 210:",
@@ -1502,14 +1502,14 @@ j 210f
         // addi a2, s1, 272
         // addi a3, s1, 288
         // addi a5, s6, 0
-        r".insn 4, 0x00048513
-.insn 4, 0x00090593
+        r".insn 2, 0x8526
+.insn 2, 0x85ca
 .insn 4, 0x11048613
 .insn 4, 0x12048693
-.insn 4, 0x000b0793
+.insn 2, 0x87da
 call {vg_cmac_aes_update}",
         // addi s5, zero, 0
-        r".insn 4, 0x00000a93
+        r".insn 2, 0x4a81
 beqz s4, 211f",
         // addi s5, s4, -1
         // andi t1, s5, 15
@@ -1527,22 +1527,22 @@ j 212f
         // addi a3, s3, 0
         // addi a5, s6, 0
         r".insn 4, 0x004ad713
-.insn 4, 0x00048513
-.insn 4, 0x00090593
+.insn 2, 0x8526
+.insn 2, 0x85ca
 .insn 4, 0x11048613
-.insn 4, 0x00098693
-.insn 4, 0x000b0793
+.insn 2, 0x86ce
+.insn 2, 0x87da
 call {vg_cmac_aes_update}",
         // add s3, s3, s5
         // sub s4, s4, s5
         // addi t5, s1, 288
         // addi t6, s3, 0
         // addi t2, s4, 0
-        r".insn 4, 0x015989b3
+        r".insn 2, 0x99d6
 .insn 4, 0x415a0a33
 .insn 4, 0x12048f13
-.insn 4, 0x00098f93
-.insn 4, 0x000a0393
+.insn 2, 0x8fce
+.insn 2, 0x83d2
 beqz t2, 213f
 215:",
         // lbu t3, 0(t6)
@@ -1552,9 +1552,9 @@ beqz t2, 213f
         // addi t2, t2, -1
         r".insn 4, 0x000fce03
 .insn 4, 0x01cf0023
-.insn 4, 0x001f8f93
-.insn 4, 0x001f0f13
-.insn 4, 0xfff38393
+.insn 2, 0x0f85
+.insn 2, 0x0f05
+.insn 2, 0x13fd
 bnez t2, 215b
 j 214f
 213:
@@ -1582,9 +1582,9 @@ j 214f
 .insn 4, 0x0202ba03
 .insn 4, 0x0282ba83
 .insn 4, 0x0302bb03
-.insn 4, 0x11010113
+.insn 2, 0x6151
 .insn 4, 0x7f010113
-.insn 4, 0x00008067
+.insn 2, 0x8082
 .option pop",
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update,
     )
@@ -1606,7 +1606,7 @@ j 214f
 pub unsafe extern "C" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi sp, sp, -2032
         // addi sp, sp, -272
         // addi a4, sp, 0
@@ -1653,8 +1653,8 @@ pub unsafe extern "C" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize
         // addi a2, a3, 0
         // addi a3, a0, 288
         r".insn 4, 0x81010113
-.insn 4, 0xef010113
-.insn 4, 0x00010713
+.insn 2, 0x716d
+.insn 2, 0x870a
 .insn 4, 0x11054303
 .insn 4, 0x00668023
 .insn 4, 0x11154303
@@ -1692,18 +1692,18 @@ pub unsafe extern "C" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize
 .insn 4, 0xff82f293
 .insn 4, 0x0012b023
 .insn 4, 0x0092b423
-.insn 4, 0x00070493
-.insn 4, 0x00070793
-.insn 4, 0x00060713
-.insn 4, 0x00068613
+.insn 2, 0x84ba
+.insn 2, 0x87ba
+.insn 2, 0x8732
+.insn 2, 0x8636
 .insn 4, 0x12050693
 beqz a4, 20f",
         // addi a4, a4, -1
         // andi a4, a4, 15
         // addi a4, a4, 1
-        r".insn 4, 0xfff70713
-.insn 4, 0x00f77713
-.insn 4, 0x00170713
+        r".insn 2, 0x177d
+.insn 2, 0x8b3d
+.insn 2, 0x0705
 j 21f
 20:
 21:
@@ -1721,9 +1721,9 @@ call {vg_cmac_aes_finalize}",
 .insn 4, 0xff82f293
 .insn 4, 0x0002b083
 .insn 4, 0x0082b483
-.insn 4, 0x11010113
+.insn 2, 0x6151
 .insn 4, 0x7f010113
-.insn 4, 0x00008067
+.insn 2, 0x8082
 .option pop",
         vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize,
     )

@@ -14,14 +14,14 @@
 pub unsafe extern "C" fn vg_zeroize(p: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi t0, zero, 0
         // addi t1, zero, 0
         // sub t1, t1, a0
         // andi t1, t1, 7
         // sltu t2, a1, t1
-        r".insn 4, 0x00000293
-.insn 4, 0x00000313
+        r".insn 2, 0x4281
+.insn 2, 0x4301
 .insn 4, 0x40a30333
 .insn 4, 0x00737313
 .insn 4, 0x0065b3b3
@@ -29,7 +29,7 @@ bnez t2, 20f
 j 21f
 20:",
         // addi t1, a1, 0
-        r".insn 4, 0x00058313
+        r".insn 2, 0x832e
 21:",
         // sub a1, a1, t1
         r".insn 4, 0x406585b3
@@ -39,8 +39,8 @@ beqz t1, 22f
         // addi a0, a0, 1
         // addi t1, t1, -1
         r".insn 4, 0x00550023
-.insn 4, 0x00150513
-.insn 4, 0xfff30313
+.insn 2, 0x0505
+.insn 2, 0x137d
 bnez t1, 24b
 j 23f
 22:
@@ -48,35 +48,35 @@ j 23f
         // srli t1, a1, 3
         // andi a1, a1, 7
         r".insn 4, 0x0035d313
-.insn 4, 0x0075f593
+.insn 2, 0x899d
 beqz t1, 25f
 27:",
         // sd t0, 0(a0)
         // addi a0, a0, 8
         // addi t1, t1, -1
         r".insn 4, 0x00553023
-.insn 4, 0x00850513
-.insn 4, 0xfff30313
+.insn 2, 0x0521
+.insn 2, 0x137d
 bnez t1, 27b
 j 26f
 25:
 26:",
         // addi t1, a1, 0
-        r".insn 4, 0x00058313
+        r".insn 2, 0x832e
 beqz t1, 28f
 210:",
         // sb t0, 0(a0)
         // addi a0, a0, 1
         // addi t1, t1, -1
         r".insn 4, 0x00550023
-.insn 4, 0x00150513
-.insn 4, 0xfff30313
+.insn 2, 0x0505
+.insn 2, 0x137d
 bnez t1, 210b
 j 29f
 28:
 29:",
         // ret
-        r".insn 4, 0x00008067
+        r".insn 2, 0x8082
 .option pop",
     )
 }

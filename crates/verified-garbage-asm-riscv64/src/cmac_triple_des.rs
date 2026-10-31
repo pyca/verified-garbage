@@ -17,7 +17,7 @@
 pub unsafe extern "C" fn vg_cmac_triple_des_stream_init(state: *mut [u64; 52], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi sp, sp, -640
         // addi a3, sp, 0
         // addi t0, a3, 7
@@ -31,17 +31,17 @@ pub unsafe extern "C" fn vg_cmac_triple_des_stream_init(state: *mut [u64; 52], k
         // addi a1, a2, 0
         // addi a2, s1, 0
         r".insn 4, 0xd8010113
-.insn 4, 0x00010693
+.insn 2, 0x868a
 .insn 4, 0x00768293
 .insn 4, 0xff82f293
 .insn 4, 0x0012b023
 .insn 4, 0x0092b423
 .insn 4, 0x0122b823
-.insn 4, 0x00050493
-.insn 4, 0x00068913
-.insn 4, 0x00058513
-.insn 4, 0x00060593
-.insn 4, 0x00048613
+.insn 2, 0x84aa
+.insn 2, 0x8936
+.insn 2, 0x852e
+.insn 2, 0x85b2
+.insn 2, 0x8626
 call {vg_triple_des_expand_key}",
         // addi t0, zero, 0
         // sb t0, 384(s1)
@@ -62,25 +62,25 @@ call {vg_triple_des_expand_key}",
         // addi a0, s1, 0
         // addi a1, s1, 384
         // addi a2, zero, 1
-        r".insn 4, 0x00000293
+        r".insn 2, 0x4281
 .insn 4, 0x18548023
-.insn 4, 0x00000293
+.insn 2, 0x4281
 .insn 4, 0x185480a3
-.insn 4, 0x00000293
+.insn 2, 0x4281
 .insn 4, 0x18548123
-.insn 4, 0x00000293
+.insn 2, 0x4281
 .insn 4, 0x185481a3
-.insn 4, 0x00000293
+.insn 2, 0x4281
 .insn 4, 0x18548223
-.insn 4, 0x00000293
+.insn 2, 0x4281
 .insn 4, 0x185482a3
-.insn 4, 0x00000293
+.insn 2, 0x4281
 .insn 4, 0x18548323
-.insn 4, 0x00000293
+.insn 2, 0x4281
 .insn 4, 0x185483a3
-.insn 4, 0x00048513
+.insn 2, 0x8526
 .insn 4, 0x18048593
-.insn 4, 0x00100613
+.insn 2, 0x4605
 call {vg_triple_des_ecb_encrypt}",
         // lbu t1, 384(s1)
         // srli t2, t1, 7
@@ -207,119 +207,119 @@ call {vg_triple_des_ecb_encrypt}",
         // ret
         r".insn 4, 0x1804c303
 .insn 4, 0x00735393
-.insn 4, 0xfff38393
+.insn 2, 0x13fd
 .insn 4, 0x01b3f393
 .insn 4, 0x01b3c393
 .insn 4, 0x1814ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x18648023
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x1824ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x186480a3
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x1834ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x18648123
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x1844ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x186481a3
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x1854ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x18648223
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x1864ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x186482a3
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x1874ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x18648323
-.insn 4, 0x000e0313
-.insn 4, 0x00131313
+.insn 2, 0x8372
+.insn 2, 0x0306
 .insn 4, 0x00734333
 .insn 4, 0x186483a3
 .insn 4, 0x1804c303
 .insn 4, 0x00735393
-.insn 4, 0xfff38393
+.insn 2, 0x13fd
 .insn 4, 0x01b3f393
 .insn 4, 0x01b3c393
 .insn 4, 0x1814ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x18648423
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x1824ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x186484a3
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x1834ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x18648523
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x1844ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x186485a3
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x1854ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x18648623
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x1864ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x186486a3
-.insn 4, 0x000e0313
+.insn 2, 0x8372
 .insn 4, 0x1874ce03
-.insn 4, 0x00131313
+.insn 2, 0x0306
 .insn 4, 0x007e5e93
 .insn 4, 0x01d36333
 .insn 4, 0x18648723
-.insn 4, 0x000e0313
-.insn 4, 0x00131313
+.insn 2, 0x8372
+.insn 2, 0x0306
 .insn 4, 0x00734333
 .insn 4, 0x186487a3
-.insn 4, 0x00000293
+.insn 2, 0x4281
 .insn 4, 0x18548823
-.insn 4, 0x00000293
+.insn 2, 0x4281
 .insn 4, 0x185488a3
-.insn 4, 0x00000293
+.insn 2, 0x4281
 .insn 4, 0x18548923
-.insn 4, 0x00000293
+.insn 2, 0x4281
 .insn 4, 0x185489a3
-.insn 4, 0x00000293
+.insn 2, 0x4281
 .insn 4, 0x18548a23
-.insn 4, 0x00000293
+.insn 2, 0x4281
 .insn 4, 0x18548aa3
-.insn 4, 0x00000293
+.insn 2, 0x4281
 .insn 4, 0x18548b23
-.insn 4, 0x00000293
+.insn 2, 0x4281
 .insn 4, 0x18548ba3
 .insn 4, 0x00790293
 .insn 4, 0xff82f293
@@ -327,7 +327,7 @@ call {vg_triple_des_ecb_encrypt}",
 .insn 4, 0x0082b483
 .insn 4, 0x0102b903
 .insn 4, 0x28010113
-.insn 4, 0x00008067
+.insn 2, 0x8082
 .option pop",
         vg_triple_des_expand_key = sym super::triple_des::vg_triple_des_expand_key,
         vg_triple_des_ecb_encrypt = sym super::triple_des::vg_triple_des_ecb_encrypt,
@@ -348,7 +348,7 @@ call {vg_triple_des_ecb_encrypt}",
 pub unsafe extern "C" fn vg_cmac_triple_des_absorb(state: *mut [u64; 52], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi sp, sp, -688
         // addi a4, sp, 0
         // addi t0, a4, 7
@@ -363,7 +363,7 @@ pub unsafe extern "C" fn vg_cmac_triple_des_absorb(state: *mut [u64; 52], count:
         // addi s2, a4, 0
         // addi s3, a2, 0
         r".insn 4, 0xd5010113
-.insn 4, 0x00010713
+.insn 2, 0x870a
 .insn 4, 0x00770293
 .insn 4, 0xff82f293
 .insn 4, 0x0012b023
@@ -372,25 +372,25 @@ pub unsafe extern "C" fn vg_cmac_triple_des_absorb(state: *mut [u64; 52], count:
 .insn 4, 0x0132bc23
 .insn 4, 0x0342b023
 .insn 4, 0x0352b423
-.insn 4, 0x00050493
-.insn 4, 0x00070913
-.insn 4, 0x00060993
+.insn 2, 0x84aa
+.insn 2, 0x893a
+.insn 2, 0x89b2
 beqz a1, 20f",
         // addi t0, a1, -1
         // andi t0, t0, 7
         // addi t0, t0, 1
         r".insn 4, 0xfff58293
 .insn 4, 0x0072f293
-.insn 4, 0x00128293
+.insn 2, 0x0285
 j 21f
 20:",
         // addi t0, zero, 0
-        r".insn 4, 0x00000293
+        r".insn 2, 0x4281
 21:",
         // addi t1, zero, 8
         // sub t1, t1, t0
         // sltu t2, t1, a3
-        r".insn 4, 0x00800313
+        r".insn 2, 0x4321
 .insn 4, 0x40530333
 .insn 4, 0x00d333b3
 bnez t2, 22f",
@@ -399,9 +399,9 @@ bnez t2, 22f",
         // addi t4, s3, 0
         // addi t5, a3, 0
         r".insn 4, 0x19848e13
-.insn 4, 0x005e0e33
-.insn 4, 0x00098e93
-.insn 4, 0x00068f13
+.insn 2, 0x9e16
+.insn 2, 0x8ece
+.insn 2, 0x8f36
 beqz t5, 24f
 26:",
         // lbu t6, 0(t4)
@@ -411,9 +411,9 @@ beqz t5, 24f
         // addi t5, t5, -1
         r".insn 4, 0x000ecf83
 .insn 4, 0x01fe0023
-.insn 4, 0x001e8e93
-.insn 4, 0x001e0e13
-.insn 4, 0xffff0f13
+.insn 2, 0x0e85
+.insn 2, 0x0e05
+.insn 2, 0x1f7d
 bnez t5, 26b
 j 25f
 24:
@@ -427,9 +427,9 @@ j 23f
         // addi t5, t1, 0
         r".insn 4, 0x40668a33
 .insn 4, 0x19848e13
-.insn 4, 0x005e0e33
-.insn 4, 0x00098e93
-.insn 4, 0x00030f13
+.insn 2, 0x9e16
+.insn 2, 0x8ece
+.insn 2, 0x8f1a
 beqz t5, 27f
 29:",
         // lbu t6, 0(t4)
@@ -439,9 +439,9 @@ beqz t5, 27f
         // addi t5, t5, -1
         r".insn 4, 0x000ecf83
 .insn 4, 0x01fe0023
-.insn 4, 0x001e8e93
-.insn 4, 0x001e0e13
-.insn 4, 0xffff0f13
+.insn 2, 0x0e85
+.insn 2, 0x0e05
+.insn 2, 0x1f7d
 bnez t5, 29b
 j 28f
 27:
@@ -488,7 +488,7 @@ j 28f
         // addi a0, s1, 0
         // addi a1, s1, 400
         // addi a2, zero, 1
-        r".insn 4, 0x006989b3
+        r".insn 2, 0x999a
 .insn 4, 0xfffa0393
 .insn 4, 0x0033da93
 .insn 4, 0x003a9393
@@ -527,9 +527,9 @@ j 28f
 .insn 4, 0x0075c303
 .insn 4, 0x0062c2b3
 .insn 4, 0x005503a3
-.insn 4, 0x00048513
+.insn 2, 0x8526
 .insn 4, 0x19048593
-.insn 4, 0x00100613
+.insn 2, 0x4605
 call {vg_triple_des_ecb_encrypt}
 beqz s5, 210f
 212:",
@@ -604,11 +604,11 @@ beqz s5, 210f
 .insn 4, 0x0079c303
 .insn 4, 0x0062c2b3
 .insn 4, 0x005e03a3
-.insn 4, 0x00898993
-.insn 4, 0xfffa8a93
-.insn 4, 0x00048513
+.insn 2, 0x09a1
+.insn 2, 0x1afd
+.insn 2, 0x8526
 .insn 4, 0x19048593
-.insn 4, 0x00100613
+.insn 2, 0x4605
 call {vg_triple_des_ecb_encrypt}
 bnez s5, 212b
 j 211f
@@ -618,8 +618,8 @@ j 211f
         // addi t4, s3, 0
         // addi t5, s4, 0
         r".insn 4, 0x19848e13
-.insn 4, 0x00098e93
-.insn 4, 0x000a0f13
+.insn 2, 0x8ece
+.insn 2, 0x8f52
 beqz t5, 213f
 215:",
         // lbu t6, 0(t4)
@@ -629,9 +629,9 @@ beqz t5, 213f
         // addi t5, t5, -1
         r".insn 4, 0x000ecf83
 .insn 4, 0x01fe0023
-.insn 4, 0x001e8e93
-.insn 4, 0x001e0e13
-.insn 4, 0xffff0f13
+.insn 2, 0x0e85
+.insn 2, 0x0e05
+.insn 2, 0x1f7d
 bnez t5, 215b
 j 214f
 213:
@@ -656,7 +656,7 @@ j 214f
 .insn 4, 0x0202ba03
 .insn 4, 0x0282ba83
 .insn 4, 0x2b010113
-.insn 4, 0x00008067
+.insn 2, 0x8082
 .option pop",
         vg_triple_des_ecb_encrypt = sym super::triple_des::vg_triple_des_ecb_encrypt,
     )
@@ -677,7 +677,7 @@ j 214f
 pub unsafe extern "C" fn vg_cmac_triple_des_finish(state: *mut [u64; 52], count: u64, out: *mut [u8; 8]) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi sp, sp, -640
         // addi a3, sp, 0
         // addi t0, a3, 7
@@ -690,27 +690,27 @@ pub unsafe extern "C" fn vg_cmac_triple_des_finish(state: *mut [u64; 52], count:
         // addi s2, a3, 0
         // addi s3, a2, 0
         r".insn 4, 0xd8010113
-.insn 4, 0x00010693
+.insn 2, 0x868a
 .insn 4, 0x00768293
 .insn 4, 0xff82f293
 .insn 4, 0x0012b023
 .insn 4, 0x0092b423
 .insn 4, 0x0122b823
 .insn 4, 0x0132bc23
-.insn 4, 0x00050493
-.insn 4, 0x00068913
-.insn 4, 0x00060993
+.insn 2, 0x84aa
+.insn 2, 0x8936
+.insn 2, 0x89b2
 beqz a1, 20f",
         // addi t0, a1, -1
         // andi t0, t0, 7
         // addi t0, t0, 1
         r".insn 4, 0xfff58293
 .insn 4, 0x0072f293
-.insn 4, 0x00128293
+.insn 2, 0x0285
 j 21f
 20:",
         // addi t0, zero, 0
-        r".insn 4, 0x00000293
+        r".insn 2, 0x4281
 21:",
         // addi t1, t0, -8
         r".insn 4, 0xff828313
@@ -734,25 +734,25 @@ beqz t1, 22f",
         // addi t3, s2, 64
         // addi t4, s1, 408
         // addi t5, t0, 0
-        r".insn 4, 0x00000393
+        r".insn 2, 0x4381
 .insn 4, 0x04790023
-.insn 4, 0x00000393
+.insn 2, 0x4381
 .insn 4, 0x047900a3
-.insn 4, 0x00000393
+.insn 2, 0x4381
 .insn 4, 0x04790123
-.insn 4, 0x00000393
+.insn 2, 0x4381
 .insn 4, 0x047901a3
-.insn 4, 0x00000393
+.insn 2, 0x4381
 .insn 4, 0x04790223
-.insn 4, 0x00000393
+.insn 2, 0x4381
 .insn 4, 0x047902a3
-.insn 4, 0x00000393
+.insn 2, 0x4381
 .insn 4, 0x04790323
-.insn 4, 0x00000393
+.insn 2, 0x4381
 .insn 4, 0x047903a3
 .insn 4, 0x04090e13
 .insn 4, 0x19848e93
-.insn 4, 0x00028f13
+.insn 2, 0x8f16
 beqz t5, 24f
 26:",
         // lbu t6, 0(t4)
@@ -762,9 +762,9 @@ beqz t5, 24f
         // addi t5, t5, -1
         r".insn 4, 0x000ecf83
 .insn 4, 0x01fe0023
-.insn 4, 0x001e8e93
-.insn 4, 0x001e0e13
-.insn 4, 0xffff0f13
+.insn 2, 0x0e85
+.insn 2, 0x0e05
+.insn 2, 0x1f7d
 bnez t5, 26b
 j 25f
 24:
@@ -776,7 +776,7 @@ j 25f
         // addi t5, s2, 64
         // addi t6, s1, 392
         r".insn 4, 0x04090e13
-.insn 4, 0x005e0e33
+.insn 2, 0x9e16
 .insn 4, 0x08000393
 .insn 4, 0x007e0023
 .insn 4, 0x04090f13
@@ -921,9 +921,9 @@ j 23f
 .insn 4, 0x007fce03
 .insn 4, 0x01c3c3b3
 .insn 4, 0x007503a3
-.insn 4, 0x00048513
+.insn 2, 0x8526
 .insn 4, 0x19048593
-.insn 4, 0x00100613
+.insn 2, 0x4605
 call {vg_triple_des_ecb_encrypt}",
         // lbu t0, 400(s1)
         // sb t0, 0(s3)
@@ -972,7 +972,7 @@ call {vg_triple_des_ecb_encrypt}",
 .insn 4, 0x0102b903
 .insn 4, 0x0182b983
 .insn 4, 0x28010113
-.insn 4, 0x00008067
+.insn 2, 0x8082
 .option pop",
         vg_triple_des_ecb_encrypt = sym super::triple_des::vg_triple_des_ecb_encrypt,
     )

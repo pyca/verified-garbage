@@ -98,6 +98,7 @@ theorem ecb_ok (up : Bool) (hw : writesOnly ecbRegs (ecb up) = true) (hn : callF
       dataScr := dDS
       nv := hn'
       trd := List.mem_append_left _ trd
+      tal := ConstsOk.aligned hk List.mem_cons_self
       held := ConstsOk.held1 hk
       tblData := twr _ (by rw [hwr]; simp)
       tblScr := twr _ (by rw [hwr]; simp) }

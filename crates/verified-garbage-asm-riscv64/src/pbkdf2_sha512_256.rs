@@ -19,7 +19,7 @@
 pub unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256_iterate(key: *const [u8; 384], u: *const [u8; 32], n: u32, t: *mut [u8; 32], scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // slli a2, a2, 32
         // srli a2, a2, 32
         // addi a4, a4, 7
@@ -293,23 +293,23 @@ pub unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256_iterate(key: *const [u8; 384]
         // sb t1, 126(s3)
         // addi t1, zero, 0
         // sb t1, 127(s3)
-        r".insn 4, 0x02061613
-.insn 4, 0x02065613
-.insn 4, 0x00770713
-.insn 4, 0xff877713
+        r".insn 2, 0x1602
+.insn 2, 0x9201
+.insn 2, 0x071d
+.insn 2, 0x9b61
 .insn 4, 0x08173823
-.insn 4, 0x08973c23
+.insn 2, 0xef44
 .insn 4, 0x0b273023
 .insn 4, 0x0b373423
 .insn 4, 0x0b473823
 .insn 4, 0x0b573c23
 .insn 4, 0x0d673023
-.insn 4, 0x00070913
+.insn 2, 0x893a
 .insn 4, 0x0c870493
 .insn 4, 0x10870993
-.insn 4, 0x00050a13
-.insn 4, 0x00068a93
-.insn 4, 0x00060b13
+.insn 2, 0x8a2a
+.insn 2, 0x8ab6
+.insn 2, 0x8b32
 .insn 4, 0x0005c303
 .insn 4, 0x00698023
 .insn 4, 0x0015c303
@@ -376,195 +376,195 @@ pub unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256_iterate(key: *const [u8; 384]
 .insn 4, 0x00698fa3
 .insn 4, 0x08000313
 .insn 4, 0x02698023
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x026980a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698123
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x026981a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698223
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x026982a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698323
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x026983a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698423
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x026984a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698523
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x026985a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698623
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x026986a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698723
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x026987a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698823
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x026988a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698923
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x026989a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698a23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698aa3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698b23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698ba3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698c23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698ca3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698d23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698da3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698e23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698ea3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698f23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x02698fa3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x04698023
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x046980a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x04698123
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x046981a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x04698223
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x046982a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x04698323
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x046983a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x04698423
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x046984a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x04698523
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x046985a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x04698623
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x046986a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x04698723
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x046987a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x04698823
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x046988a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x04698923
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x046989a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x04698a23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x04698aa3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x04698b23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x04698ba3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x04698c23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x04698ca3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x04698d23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x04698da3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x04698e23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x04698ea3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x04698f23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x04698fa3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x06698023
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x066980a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x06698123
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x066981a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x06698223
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x066982a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x06698323
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x066983a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x06698423
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x066984a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x06698523
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x066985a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x06698623
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x066986a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x06698723
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x066987a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x06698823
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x066988a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x06698923
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x066989a3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x06698a23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x06698aa3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x06698b23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x06698ba3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x06698c23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x06698ca3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x06698d23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x06698da3
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x06698e23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x06698ea3
-.insn 4, 0x00500313
+.insn 2, 0x4315
 .insn 4, 0x06698f23
-.insn 4, 0x00000313
+.insn 2, 0x4301
 .insn 4, 0x06698fa3
 beqz s6, 20f
 22:",
@@ -828,10 +828,10 @@ beqz s6, 20f
 .insn 4, 0x02648f23
 .insn 4, 0x03fa4303
 .insn 4, 0x02648fa3
-.insn 4, 0x00048513
-.insn 4, 0x00098593
-.insn 4, 0x00100613
-.insn 4, 0x00090693
+.insn 2, 0x8526
+.insn 2, 0x85ce
+.insn 2, 0x4605
+.insn 2, 0x86ca
 call {vg_sha512_compress}",
         // lbu t1, 0(s1)
         // lbu t2, 1(s1)
@@ -1119,25 +1119,25 @@ call {vg_sha512_compress}",
         // addi a3, s2, 0
         r".insn 4, 0x0004c303
 .insn 4, 0x0014c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x0024c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x0034c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x0044ce83
 .insn 4, 0x0054c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x007eeeb3
 .insn 4, 0x0064c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x007eeeb3
 .insn 4, 0x0074c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x007eeeb3
-.insn 4, 0x020e9e93
+.insn 2, 0x1e82
 .insn 4, 0x01d36333
 .insn 4, 0x03835393
 .insn 4, 0x00798023
@@ -1157,25 +1157,25 @@ call {vg_sha512_compress}",
 .insn 4, 0x007983a3
 .insn 4, 0x0084c303
 .insn 4, 0x0094c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x00a4c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x00b4c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x00c4ce83
 .insn 4, 0x00d4c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x007eeeb3
 .insn 4, 0x00e4c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x007eeeb3
 .insn 4, 0x00f4c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x007eeeb3
-.insn 4, 0x020e9e93
+.insn 2, 0x1e82
 .insn 4, 0x01d36333
 .insn 4, 0x03835393
 .insn 4, 0x00798423
@@ -1195,25 +1195,25 @@ call {vg_sha512_compress}",
 .insn 4, 0x007987a3
 .insn 4, 0x0104c303
 .insn 4, 0x0114c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x0124c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x0134c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x0144ce83
 .insn 4, 0x0154c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x007eeeb3
 .insn 4, 0x0164c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x007eeeb3
 .insn 4, 0x0174c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x007eeeb3
-.insn 4, 0x020e9e93
+.insn 2, 0x1e82
 .insn 4, 0x01d36333
 .insn 4, 0x03835393
 .insn 4, 0x00798823
@@ -1233,25 +1233,25 @@ call {vg_sha512_compress}",
 .insn 4, 0x00798ba3
 .insn 4, 0x0184c303
 .insn 4, 0x0194c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x01a4c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x01b4c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x01c4ce83
 .insn 4, 0x01d4c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x007eeeb3
 .insn 4, 0x01e4c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x007eeeb3
 .insn 4, 0x01f4c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x007eeeb3
-.insn 4, 0x020e9e93
+.insn 2, 0x1e82
 .insn 4, 0x01d36333
 .insn 4, 0x03835393
 .insn 4, 0x00798c23
@@ -1397,10 +1397,10 @@ call {vg_sha512_compress}",
 .insn 4, 0x02648f23
 .insn 4, 0x0ffa4303
 .insn 4, 0x02648fa3
-.insn 4, 0x00048513
-.insn 4, 0x00098593
-.insn 4, 0x00100613
-.insn 4, 0x00090693
+.insn 2, 0x8526
+.insn 2, 0x85ce
+.insn 2, 0x4605
+.insn 2, 0x86ca
 call {vg_sha512_compress}",
         // lbu t1, 0(s1)
         // lbu t2, 1(s1)
@@ -1685,25 +1685,25 @@ call {vg_sha512_compress}",
         // addi s6, s6, -1
         r".insn 4, 0x0004c303
 .insn 4, 0x0014c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x0024c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x0034c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x0044ce83
 .insn 4, 0x0054c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x007eeeb3
 .insn 4, 0x0064c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x007eeeb3
 .insn 4, 0x0074c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x007eeeb3
-.insn 4, 0x020e9e93
+.insn 2, 0x1e82
 .insn 4, 0x01d36333
 .insn 4, 0x03835393
 .insn 4, 0x00798023
@@ -1723,25 +1723,25 @@ call {vg_sha512_compress}",
 .insn 4, 0x007983a3
 .insn 4, 0x0084c303
 .insn 4, 0x0094c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x00a4c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x00b4c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x00c4ce83
 .insn 4, 0x00d4c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x007eeeb3
 .insn 4, 0x00e4c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x007eeeb3
 .insn 4, 0x00f4c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x007eeeb3
-.insn 4, 0x020e9e93
+.insn 2, 0x1e82
 .insn 4, 0x01d36333
 .insn 4, 0x03835393
 .insn 4, 0x00798423
@@ -1761,25 +1761,25 @@ call {vg_sha512_compress}",
 .insn 4, 0x007987a3
 .insn 4, 0x0104c303
 .insn 4, 0x0114c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x0124c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x0134c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x0144ce83
 .insn 4, 0x0154c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x007eeeb3
 .insn 4, 0x0164c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x007eeeb3
 .insn 4, 0x0174c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x007eeeb3
-.insn 4, 0x020e9e93
+.insn 2, 0x1e82
 .insn 4, 0x01d36333
 .insn 4, 0x03835393
 .insn 4, 0x00798823
@@ -1799,25 +1799,25 @@ call {vg_sha512_compress}",
 .insn 4, 0x00798ba3
 .insn 4, 0x0184c303
 .insn 4, 0x0194c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x00736333
 .insn 4, 0x01a4c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x00736333
 .insn 4, 0x01b4c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x00736333
 .insn 4, 0x01c4ce83
 .insn 4, 0x01d4c383
-.insn 4, 0x00839393
+.insn 2, 0x03a2
 .insn 4, 0x007eeeb3
 .insn 4, 0x01e4c383
-.insn 4, 0x01039393
+.insn 2, 0x03c2
 .insn 4, 0x007eeeb3
 .insn 4, 0x01f4c383
-.insn 4, 0x01839393
+.insn 2, 0x03e2
 .insn 4, 0x007eeeb3
-.insn 4, 0x020e9e93
+.insn 2, 0x1e82
 .insn 4, 0x01d36333
 .insn 4, 0x03835393
 .insn 4, 0x00798c23
@@ -1963,7 +1963,7 @@ call {vg_sha512_compress}",
 .insn 4, 0x01f9c383
 .insn 4, 0x00734333
 .insn 4, 0x006a8fa3
-.insn 4, 0xfffb0b13
+.insn 2, 0x1b7d
 bnez s6, 22b
 j 21f
 20:
@@ -1983,7 +1983,7 @@ j 21f
 .insn 4, 0x0b893a83
 .insn 4, 0x0c093b03
 .insn 4, 0x0a093903
-.insn 4, 0x00008067
+.insn 2, 0x8082
 .option pop",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
     )
@@ -2005,7 +2005,7 @@ j 21f
 pub unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi sp, sp, -400
         // addi sp, sp, -720
         // addi t0, sp, 0
@@ -2027,9 +2027,9 @@ pub unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256(password: *const u8, password
         // addi a3, a1, 0
         // addi a0, s1, 64
         // addi a1, s1, 256
-        r".insn 4, 0xe7010113
+        r".insn 2, 0x7165
 .insn 4, 0xd3010113
-.insn 4, 0x00010293
+.insn 2, 0x828a
 .insn 4, 0x0012b023
 .insn 4, 0x0092b423
 .insn 4, 0x0122b823
@@ -2038,19 +2038,19 @@ pub unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256(password: *const u8, password
 .insn 4, 0x0352b423
 .insn 4, 0x0362b823
 .insn 4, 0x0372bc23
-.insn 4, 0x00028493
-.insn 4, 0x00068913
-.insn 4, 0x00070993
-.insn 4, 0x00078a13
-.insn 4, 0x00080a93
-.insn 4, 0x00060b13
-.insn 4, 0x00050613
-.insn 4, 0x00058693
+.insn 2, 0x8496
+.insn 2, 0x8936
+.insn 2, 0x89ba
+.insn 2, 0x8a3e
+.insn 2, 0x8ac2
+.insn 2, 0x8b32
+.insn 2, 0x862a
+.insn 2, 0x86ae
 .insn 4, 0x04048513
 .insn 4, 0x10048593
 call {vg_hmac_sha512_256_init}",
         // addi s7, zero, 1
-        r".insn 4, 0x00100b93
+        r".insn 2, 0x4b85
 beqz s5, 20f
 22:",
         // lbu t1, 64(s1)
@@ -2827,8 +2827,8 @@ beqz s5, 20f
 .insn 4, 0x26648fa3
 .insn 4, 0x1c048513
 .insn 4, 0x08000593
-.insn 4, 0x000b0613
-.insn 4, 0x00090693
+.insn 2, 0x865a
+.insn 2, 0x86ca
 call {vg_sha512_update}",
         // srli t1, s7, 24
         // sb t1, 704(s1)
@@ -2851,7 +2851,7 @@ call {vg_sha512_update}",
 .insn 4, 0x1c048513
 .insn 4, 0x08090593
 .insn 4, 0x2c048613
-.insn 4, 0x00400693
+.insn 2, 0x4691
 call {vg_sha512_update}",
         // addi a0, s1, 448
         // addi a1, s1, 256
@@ -3006,7 +3006,7 @@ call {vg_pbkdf2_hmac_sha512_256_iterate}",
         // addi t2, s5, 0
         r".insn 4, 0xfe0a8313
 .insn 4, 0x03f35313
-.insn 4, 0x000a8393
+.insn 2, 0x83d6
 bnez t1, 23f",
         // addi t2, zero, 32
         r".insn 4, 0x02000393
@@ -3014,7 +3014,7 @@ j 24f
 23:
 24:",
         // addi t3, zero, 0
-        r".insn 4, 0x00000e13
+        r".insn 2, 0x4e01
 25:",
         // add t4, s1, t3
         // lbu t1, 672(t4)
@@ -3026,15 +3026,15 @@ j 24f
 .insn 4, 0x2a0ec303
 .insn 4, 0x01ca0eb3
 .insn 4, 0x006e8023
-.insn 4, 0x001e0e13
-.insn 4, 0xfff38393
+.insn 2, 0x0e05
+.insn 2, 0x13fd
 bnez t2, 25b",
         // add s4, s4, t3
         // sub s5, s5, t3
         // addi s7, s7, 1
-        r".insn 4, 0x01ca0a33
+        r".insn 2, 0x9a72
 .insn 4, 0x41ca8ab3
-.insn 4, 0x001b8b93
+.insn 2, 0x0b85
 bnez s5, 22b
 j 21f
 20:
@@ -3057,10 +3057,10 @@ j 21f
 .insn 4, 0x0284ba83
 .insn 4, 0x0304bb03
 .insn 4, 0x0384bb83
-.insn 4, 0x0084b483
+.insn 2, 0x6484
 .insn 4, 0x2d010113
-.insn 4, 0x19010113
-.insn 4, 0x00008067
+.insn 2, 0x6159
+.insn 2, 0x8082
 .option pop",
         vg_hmac_sha512_256_init = sym super::hmac_sha512_256::vg_hmac_sha512_256_init,
         vg_sha512_update = sym super::sha512::vg_sha512_update,

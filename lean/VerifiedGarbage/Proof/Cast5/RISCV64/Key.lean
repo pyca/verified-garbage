@@ -125,8 +125,8 @@ theorem copyStep_ok (u : State) {m0 : Mem} {kp cb : Addr} {j : Nat} (hj : j < 16
 
 /-- What key expansion may assume: the key readable, the schedule and the
 working space writable, the working space apart from both, none wrapping
-around, a valid key length; and the table `VG_CAST5_S5678`, readable and
-apart from the schedule and the working space. -/
+around, a valid key length; and the table `VG_CAST5_S5678`, readable,
+64-byte aligned and apart from the schedule and the working space. -/
 structure KeyPre (s : State) : Prop where
   key : (⟨s.gpr .a0, (s.gpr .a1).toNat⟩ : Region) ∈ s.rd ++ s.wr
   kfit : (s.gpr .a0).toNat + (s.gpr .a1).toNat ≤ 2 ^ 64
@@ -138,6 +138,7 @@ structure KeyPre (s : State) : Prop where
   schScr : (⟨s.gpr .a2, 128⟩ : Region).Disjoint ⟨s.gpr .a3, 256⟩
   valid : Spec.Cast5.validKey (s.gpr .a1).toNat
   trd : (⟨s.syms s5678Sym, 4096⟩ : Region) ∈ s.rd ++ s.wr
+  tal : (s.syms s5678Sym).toNat % 64 = 0
   held : Held s.mem (s.syms s5678Sym) s5678
   tblSch : (⟨s.syms s5678Sym, 4096⟩ : Region).Disjoint ⟨s.gpr .a2, 128⟩
   tblScr : (⟨s.syms s5678Sym, 4096⟩ : Region).Disjoint ⟨s.gpr .a3, 256⟩
@@ -162,12 +163,12 @@ theorem key_wp {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s) := by
   obtain ⟨T, hT⟩ : ∃ T, s.syms s5678Sym = T := ⟨_, rfl⟩
   have hkey := h.key; have hkf := h.kfit; have hsch := h.sch; have hKf := h.Kfit; have hscr := h.scr
   have hcf := h.sfit; have dkS := h.keyScr; have dKS := h.schScr; have hn := h.valid
-  have htrd := h.trd; have hheld := h.held; have dTK := h.tblSch; have dTS := h.tblScr
+  have htrd := h.trd; have htal := h.tal; have hheld := h.held; have dTK := h.tblSch; have dTS := h.tblScr
   rw [hnn] at hkey hkf dkS hn
   rw [hkp] at hkey hkf dkS
   rw [hkb] at hsch hKf dKS dTK
   rw [hP] at hscr hcf dkS dKS dTS
-  rw [hT] at htrd hheld dTK dTS
+  rw [hT] at htrd htal hheld dTK dTS
   have hn5 : 5 ≤ n ∧ n ≤ 16 := hn
   have cbT := wbase_toNat hcf
   have hpad := Align.pad_lt P
@@ -243,6 +244,7 @@ theorem key_wp {s : State} (h : KeyPre s) : WP isa expandKey s (KeyPost s) := by
       dKS := dKS.sub_right (wbase_sub0 P (by decide))
       tblR := by rw [gw tbl, t₀, hT]
       trd := by rw [rdw, wrw]; exact htrd
+      tal := htal
       held0 := by
         rw [← hM]
         refine held_frame (hM ▸ fr₀) (fun r hr => ?_) (by rw [s5678_len]; decide) hheld

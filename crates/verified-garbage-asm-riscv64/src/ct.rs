@@ -15,18 +15,18 @@
 pub unsafe extern "C" fn vg_ct_eq(a: *const u8, a_len: usize, b: *const u8, b_len: usize) -> u32 {
     core::arch::naked_asm!(
         r".option push
-.option arch, +m",
+.option arch, +m, +c",
         // addi a4, zero, 0
         // sub a7, a1, a3
-        r".insn 4, 0x00000713
+        r".insn 2, 0x4701
 .insn 4, 0x40d588b3
 beqz a7, 20f",
         // addi a0, zero, 0
-        r".insn 4, 0x00000513
+        r".insn 2, 0x4501
 j 21f
 20:",
         // addi a5, zero, 0
-        r".insn 4, 0x00000793
+        r".insn 2, 0x4781
 beqz a1, 22f
 24:",
         // add t0, a0, a5
@@ -43,7 +43,7 @@ beqz a1, 22f
 .insn 4, 0x0002c383
 .insn 4, 0x00734333
 .insn 4, 0x00676733
-.insn 4, 0x00178793
+.insn 2, 0x0785
 .insn 4, 0x40b788b3
 bnez a7, 24b
 j 23f
@@ -51,11 +51,11 @@ j 23f
 23:",
         // addi a4, a4, -1
         // srli a0, a4, 63
-        r".insn 4, 0xfff70713
+        r".insn 2, 0x177d
 .insn 4, 0x03f75513
 21:",
         // ret
-        r".insn 4, 0x00008067
+        r".insn 2, 0x8082
 .option pop",
     )
 }
