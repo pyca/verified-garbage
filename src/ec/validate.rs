@@ -143,19 +143,17 @@ validate!(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::cpu::feature;
     use crate::ecdh::*;
 
     #[test]
     fn select() {
         let required = crate::arch::ec_p256_validate::VG_EC_P256_VALIDATE_PUBLIC_KEY_ADX_FEATURES;
-        for names in [&[][..], &["bmi2"][..], &["adx"][..]] {
-            assert_eq!(
-                Backend::select(Features::of(names), required),
-                Backend::Baseline
-            );
+        for bits in [0, feature::BMI2, feature::ADX] {
+            assert_eq!(Backend::select(Features(bits), required), Backend::Baseline);
         }
         assert_eq!(
-            Backend::select(Features::of(&["bmi2", "adx"]), required),
+            Backend::select(Features(feature::BMI2 | feature::ADX), required),
             Backend::Adx
         );
     }

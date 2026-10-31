@@ -228,7 +228,10 @@ mod tests {
         {
             let adx = VG_X448_ADX_FEATURES;
             assert_eq!(Backend::select(adx), Backend::Adx);
-            assert_eq!(Backend::select(Features::of(&["bmi2"])), Backend::Baseline);
+            assert_eq!(
+                Backend::select(Features(crate::cpu::feature::BMI2)),
+                Backend::Baseline
+            );
         }
     }
 

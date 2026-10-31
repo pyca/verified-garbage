@@ -1779,69 +1779,121 @@ mod tests {
     /// GHASH's, independently.
     #[test]
     fn backend() {
-        let f = |names: &[&str]| select(Features::of(names));
+        let f = |bits: u32| select(Features(bits));
         #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
         {
-            assert_eq!(f(&["aes", "pclmulqdq", "ssse3"]), Backend::AesNiPclmul);
-            assert_eq!(f(&["aes", "ssse3"]), Backend::AesNi);
-            assert_eq!(f(&["pclmulqdq", "ssse3"]), Backend::Pclmul);
+            assert_eq!(
+                f(crate::cpu::feature::AES
+                    | crate::cpu::feature::PCLMULQDQ
+                    | crate::cpu::feature::SSSE3),
+                Backend::AesNiPclmul
+            );
+            assert_eq!(
+                f(crate::cpu::feature::AES | crate::cpu::feature::SSSE3),
+                Backend::AesNi
+            );
+            assert_eq!(
+                f(crate::cpu::feature::PCLMULQDQ | crate::cpu::feature::SSSE3),
+                Backend::Pclmul
+            );
         }
         // AES-NI needs SSSE3 too on x86-64 (`vg_aes_ctr32_aesni`'s byte
         // shuffles), not on x86.
         #[cfg(target_arch = "x86_64")]
-        assert_eq!(f(&["aes", "pclmulqdq"]), Backend::Scalar);
+        assert_eq!(
+            f(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ),
+            Backend::Scalar
+        );
         // VAES and VPCLMULQDQ, each with the other, the other's 128-bit
         // instruction or neither; their 256-bit code needs AVX2 too.
         #[cfg(target_arch = "x86_64")]
         {
-            let all = [
-                "aes",
-                "avx",
-                "avx2",
-                "pclmulqdq",
-                "ssse3",
-                "vaes",
-                "vpclmulqdq",
-            ];
-            assert_eq!(f(&all), Backend::VaesVpclmul);
+            let all = crate::cpu::feature::AES
+                | crate::cpu::feature::AVX
+                | crate::cpu::feature::AVX2
+                | crate::cpu::feature::PCLMULQDQ
+                | crate::cpu::feature::SSSE3
+                | crate::cpu::feature::VAES
+                | crate::cpu::feature::VPCLMULQDQ;
+            assert_eq!(f(all), Backend::VaesVpclmul);
             // The 512-bit loops need AVX512F and AVX512BW too.
-            let avx512 = [&all[..], &["avx512f", "avx512bw"]].concat();
-            assert_eq!(f(&avx512), Backend::VaesVpclmulAvx512);
-            assert_eq!(f(&[&all[..], &["avx512f"]].concat()), Backend::VaesVpclmul);
-            assert_eq!(f(&all[..6]), Backend::VaesPclmul);
+            let avx512 = all | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512BW;
+            assert_eq!(f(avx512), Backend::VaesVpclmulAvx512);
+            assert_eq!(f(all | crate::cpu::feature::AVX512F), Backend::VaesVpclmul);
             assert_eq!(
-                f(&["aes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]),
+                f(all & !crate::cpu::feature::VPCLMULQDQ),
+                Backend::VaesPclmul
+            );
+            assert_eq!(
+                f(crate::cpu::feature::AES
+                    | crate::cpu::feature::AVX
+                    | crate::cpu::feature::AVX2
+                    | crate::cpu::feature::PCLMULQDQ
+                    | crate::cpu::feature::SSSE3
+                    | crate::cpu::feature::VPCLMULQDQ),
                 Backend::AesNiVpclmul
             );
-            assert_eq!(f(&["aes", "avx", "avx2", "ssse3", "vaes"]), Backend::Vaes);
             assert_eq!(
-                f(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]),
+                f(crate::cpu::feature::AES
+                    | crate::cpu::feature::AVX
+                    | crate::cpu::feature::AVX2
+                    | crate::cpu::feature::SSSE3
+                    | crate::cpu::feature::VAES),
+                Backend::Vaes
+            );
+            assert_eq!(
+                f(crate::cpu::feature::AVX
+                    | crate::cpu::feature::AVX2
+                    | crate::cpu::feature::PCLMULQDQ
+                    | crate::cpu::feature::SSSE3
+                    | crate::cpu::feature::VPCLMULQDQ),
                 Backend::Vpclmul
             );
             // AES-NI and PCLMULQDQ with AVX (and without AVX2, which the
             // 256-bit code needs): one pass.
             assert_eq!(
-                f(&["aes", "avx", "pclmulqdq", "ssse3", "vaes", "vpclmulqdq"]),
+                f(crate::cpu::feature::AES
+                    | crate::cpu::feature::AVX
+                    | crate::cpu::feature::PCLMULQDQ
+                    | crate::cpu::feature::SSSE3
+                    | crate::cpu::feature::VAES
+                    | crate::cpu::feature::VPCLMULQDQ),
                 Backend::AesNiPclmulAvx
             );
             assert_eq!(
-                f(&["aes", "avx", "pclmulqdq", "ssse3"]),
+                f(crate::cpu::feature::AES
+                    | crate::cpu::feature::AVX
+                    | crate::cpu::feature::PCLMULQDQ
+                    | crate::cpu::feature::SSSE3),
                 Backend::AesNiPclmulAvx
             );
-            assert_eq!(f(&["aes", "avx", "ssse3"]), Backend::AesNi);
+            assert_eq!(
+                f(
+                    crate::cpu::feature::AES
+                        | crate::cpu::feature::AVX
+                        | crate::cpu::feature::SSSE3
+                ),
+                Backend::AesNi
+            );
         }
         #[cfg(target_arch = "x86")]
         {
-            assert_eq!(f(&["aes"]), Backend::AesNi);
-            assert_eq!(f(&["aes", "pclmulqdq"]), Backend::AesNi);
+            assert_eq!(f(crate::cpu::feature::AES), Backend::AesNi);
+            assert_eq!(
+                f(crate::cpu::feature::AES | crate::cpu::feature::PCLMULQDQ),
+                Backend::AesNi
+            );
         }
         #[cfg(target_arch = "aarch64")]
         {
-            assert_eq!(f(&["aes"]), Backend::Aes);
-            assert_eq!(f(&["aes", "sha3"]), Backend::AesSha3);
-            assert_eq!(f(&["sha3"]), Backend::Scalar);
+            assert_eq!(f(crate::cpu::feature::AES), Backend::Aes);
+            assert_eq!(
+                f(crate::cpu::feature::AES | crate::cpu::feature::SHA3),
+                Backend::AesSha3
+            );
+            assert_eq!(f(crate::cpu::feature::SHA3), Backend::Scalar);
         }
-        assert_eq!(f(&[]), Backend::Scalar);
+        assert_eq!(f(0), Backend::Scalar);
         let best = AesGcm::new(&[0; 16]).unwrap().fns.backend;
         assert_eq!(best, select(detected()));
         for &(b, need) in Backend::ALL {
@@ -2438,7 +2490,7 @@ mod tests {
         };
         use core::ptr::{eq, fn_addr_eq};
         let (b, p) = (Backend::AesNiPclmulAvx, &PREPARED_AESNI_PCLMUL_AVX);
-        assert!(eq(b.fns(Features::of(&[])), &FNS_AESNI_PCLMUL_AVX));
+        assert!(eq(b.fns(Features(0)), &FNS_AESNI_PCLMUL_AVX));
         assert!(eq(b.fns(b.features()), &FNS_AESNI_PCLMUL_AVX_PREPARED));
         let with = b.plain_fns().with(p);
         assert!(fn_addr_eq(with.seal, p.seal));

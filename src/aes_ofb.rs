@@ -208,17 +208,22 @@ mod tests {
     #[test]
     fn select_features() {
         use crate::aes::Backend;
-        use crate::cpu::Features;
+        use crate::cpu::{Features, feature};
         assert_eq!(select(Features(0)), Backend::Scalar);
         #[cfg(target_arch = "x86_64")]
         {
-            assert_eq!(select(Features::of(&["aes", "ssse3"])), Backend::AesNi);
-            let vaes = Features::of(&["aes", "avx", "avx2", "ssse3", "vaes"]);
+            assert_eq!(
+                select(Features(feature::AES | feature::SSSE3)),
+                Backend::AesNi
+            );
+            let vaes = Features(
+                feature::AES | feature::AVX | feature::AVX2 | feature::SSSE3 | feature::VAES,
+            );
             assert_eq!(select(vaes), Backend::Vaes);
         }
         #[cfg(target_arch = "x86")]
-        assert_eq!(select(Features::of(&["aes"])), Backend::AesNi);
+        assert_eq!(select(Features(feature::AES)), Backend::AesNi);
         #[cfg(target_arch = "aarch64")]
-        assert_eq!(select(Features::of(&["aes"])), Backend::Aes);
+        assert_eq!(select(Features(feature::AES)), Backend::Aes);
     }
 }

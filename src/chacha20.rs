@@ -108,7 +108,7 @@ pub(crate) enum Backend {
 /// `vg_chacha20_apply_avx512`) does not use: it is chosen on the CPUs whose
 /// ChaCha20-Poly1305 runs its `_ifma` instances, which need it.
 #[cfg(target_arch = "x86_64")]
-const IFMA: Features = Features::of(&["avx512ifma"]);
+const IFMA: Features = Features(crate::cpu::feature::AVX512IFMA);
 
 impl Backend {
     /// AdvSIMD is part of our AArch64 baseline. Tracking it also lets
@@ -117,11 +117,11 @@ impl Backend {
     /// ChaCha20-Poly1305's need too, see its tests).
     #[cfg(target_arch = "aarch64")]
     pub(crate) fn select(f: Features) -> Backend {
-        if f.contains(const { Features::of(&["neon"]) })
+        if f.contains(const { Features(crate::cpu::feature::NEON) })
             && f.contains(VG_CHACHA20_APPLY_SVE2_FEATURES)
         {
             Backend::Sve2
-        } else if f.contains(const { Features::of(&["neon"]) }) {
+        } else if f.contains(const { Features(crate::cpu::feature::NEON) }) {
             Backend::Neon
         } else {
             Backend::Scalar
@@ -526,13 +526,21 @@ mod tests {
         #[cfg(target_arch = "aarch64")]
         {
             use crate::cpu::Features;
-            assert_eq!(Backend::select(Features::of(&["neon"])), Backend::Neon);
             assert_eq!(
-                Backend::select(Features::of(&["neon", "sve2"])),
+                Backend::select(Features(crate::cpu::feature::NEON)),
+                Backend::Neon
+            );
+            assert_eq!(
+                Backend::select(Features(
+                    crate::cpu::feature::NEON | crate::cpu::feature::SVE2
+                )),
                 Backend::Sve2
             );
-            assert_eq!(Backend::select(Features::of(&["sve2"])), Backend::Scalar);
-            assert_eq!(Backend::select(Features::of(&[])), Backend::Scalar);
+            assert_eq!(
+                Backend::select(Features(crate::cpu::feature::SVE2)),
+                Backend::Scalar
+            );
+            assert_eq!(Backend::select(Features(0)), Backend::Scalar);
         }
         #[cfg(target_arch = "x86_64")]
         {
@@ -563,7 +571,10 @@ mod tests {
                 ])),
                 Backend::Avx512
             );
-            assert_eq!(Backend::select(Features::of(&["avx"])), Backend::Scalar);
+            assert_eq!(
+                Backend::select(Features(crate::cpu::feature::AVX)),
+                Backend::Scalar
+            );
         }
         #[cfg(target_arch = "x86")]
         {
@@ -573,7 +584,7 @@ mod tests {
                 Backend::select(VG_CHACHA20_APPLY_SSSE3_FEATURES),
                 Backend::Ssse3
             );
-            assert_eq!(Backend::select(Features::of(&[])), Backend::Scalar);
+            assert_eq!(Backend::select(Features(0)), Backend::Scalar);
         }
     }
 }
