@@ -42,7 +42,7 @@ artifacts remain readable; collection never requires a successful build.
   ci_metrics.py bundle OUT --output FILE.json.gz
                                   export the last fetch selection for sharing
 
-See ci/metrics-analysis.md for collection, transport, and analysis guidance.
+See .agents/skills/ci-metrics/collecting.md for collection, transport, and analysis guidance.
 """
 
 import argparse

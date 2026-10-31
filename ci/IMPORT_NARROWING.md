@@ -201,3 +201,10 @@ removed consumer/dependency exposures. Narrower public boundaries can leave loca
 access unchanged when downstream users genuinely need direct repairs. This graph
 model does not claim a measured build-time improvement or a globally minimal
 import set.
+
+Reports keep declaration visibility apart from Lake's source dependencies.
+The latter follow the sharder's trace rules (`lean_shards.py`'s `reads`),
+including private IR behind meta imports, and count the dependency-reader
+pairs added and removed within the verification scope. They leave out
+native-library dependencies, and estimate neither wall time nor the rebuilds
+that applying the import edit itself causes.

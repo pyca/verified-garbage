@@ -26,7 +26,7 @@ does not find), and `unseen` otherwise (import the literal's module). Only
 literals the module could import are reported: not those whose module
 imports it. A file that is not a module imports the modules' private
 imports too, so the environment has every literal they reach.
-`ci/check_lit_imports.py` runs it and weighs each line by the kernel time
+`ci/lit_imports.py` runs it and weighs each line by the kernel time
 the build's profile records for the declaration.
 -/
 

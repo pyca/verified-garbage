@@ -4,7 +4,7 @@ When someone asks to check or analyze CI metrics, start with the retained
 `ci-metrics` artifacts. They contain job timings, cache restores, module
 builds, native facets, and the planning inputs available at collection.
 You do not need Lean, a build cache, or a local build to inspect them.
-Read [the schema and interpretation notes](README.md) before comparing runs.
+Read [the schema and interpretation notes](schema.md) before comparing runs.
 
 ## Collect with the existing fetch command
 
@@ -205,7 +205,7 @@ For interpretation and validation:
 - Separate modeled improvements from measured behavior. Validate dependency
   changes against observed builds across runs and live Lean fixtures; report
   both missed rebuilds and predicted-but-unrecorded work. See
-  [the schema/replay notes](README.md) and `ci/lean_shard_replay.py`.
+  [the schema/replay notes](schema.md) and `ci/lean_shard_replay.py`.
 
 Only install Lean or restore a cache when a hypothesis needs a live build.
 Do not start by rebuilding the project to answer a metrics question.

@@ -6,7 +6,7 @@ description: "Use when asked to check or analyze CI: job and step times, shard b
 # Measuring CI
 
 When asked to check or analyze CI metrics, follow
-[Collecting and analyzing CI metrics](../../../ci/metrics-analysis.md). Start with the
+[Collecting and analyzing CI metrics](collecting.md). Start with the
 retained artifacts and their coverage, not a local build. The guide covers
 time-window downloads with uv, splitting/reassembling uploads with checksums,
 and streaming analysis of large bundles.
@@ -27,4 +27,4 @@ The metrics embed the full planning snapshot (including the import graph,
 historical timing inputs, stale set, candidates and assignments), so a future
 planner can replay it after the working plan artifact expires. Native facets
 are separate from Lean module builds. See [the metrics schema and retention
-limits](../../../ci/README.md) before comparing runs or interpreting missing data.
+limits](schema.md) before comparing runs or interpreting missing data.

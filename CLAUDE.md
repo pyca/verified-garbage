@@ -322,8 +322,9 @@ lemmas and tactics to use; read it before writing a proof:
   `List Reg`). Code, tables and values it evaluates get a literal
   (`materialize_code`, `materialize_table`, `materialize_value`), checked
   with `lit_decide` or `taint_decide`, never `decide +kernel`, and every
-  module that evaluates the code imports its `Lit` module
-  (`ci/check_lit_imports.py`), registration files too.
+  module that evaluates the code imports its `Lit` module, registration
+  files too (nothing checks this: `ci/lit_imports.py` ranks the misses
+  that cost the build).
 * **Arithmetic side conditions:** finite facts by one `decide` on the
   bounded statement, not `interval_cases`; nested `if`s with
   `↓ite_eq_left`/`↓ite_eq_right`; ranges at offsets with `VG.Offset`, not

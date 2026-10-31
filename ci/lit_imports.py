@@ -34,7 +34,7 @@ without, each with its `lit_eq` time and module:
 Measure every change as .agents/skills/lean-profiling/SKILL.md says; the
 times here only rank.
 
-  check_lit_imports.py [--target T ...] [-j N] [--min-kernel S]
+  lit_imports.py [--target T ...] [-j N] [--min-kernel S]
                        [--min-literal S] [--top N] [--raw FILE]
 
 `--min-kernel` (default 2 s) and `--min-literal` (default 0.3 s) leave out

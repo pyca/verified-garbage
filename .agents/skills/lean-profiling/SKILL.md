@@ -19,7 +19,7 @@ python3 ci/lean_profile.py --sort kernel          # by kernel time alone
 python3 ci/lean_profile.py --by module --top 50   # the costliest modules
 python3 ci/lean_profile.py --module VerifiedGarbage.Proof.Sha256 --json
 python3 ci/lean_profile.py --tests                # with the known-answer tests
-python3 ci/check_lit_imports.py                   # checks evaluating code without its literal
+python3 ci/lit_imports.py                   # checks evaluating code without its literal
 python3 ci/lean_closure.py rank                   # modules by what CI spends building them
 python3 ci/lean_closure.py rank --by decl         # declarations, likewise
 ```

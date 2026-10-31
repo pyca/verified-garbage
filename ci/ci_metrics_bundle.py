@@ -3,7 +3,7 @@
 # requires-python = ">=3.11"
 # dependencies = ["ijson>=3.3,<4"]
 # ///
-"""Transport and stream exported CI metrics bundles. See ci/metrics-analysis.md.
+"""Transport and stream exported CI metrics bundles. See .agents/skills/ci-metrics/collecting.md.
 
 Collect and export with ci_metrics.py fetch/bundle; this utility makes no
 network requests. The bundle preserves the original planning snapshots.
