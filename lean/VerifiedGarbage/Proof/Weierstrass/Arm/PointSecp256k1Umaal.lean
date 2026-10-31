@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Weierstrass.Arm.PointContract
 import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
 import VerifiedGarbage.Proof.Weierstrass.Arm.MontSecp256k1
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
-import VerifiedGarbage.Proof.Weierstrass.Arm.PointSecp256k1
 import VerifiedGarbage.Proof.Weierstrass.Arm.PointVerified
 public import VerifiedGarbage.Proof.Weierstrass.Arm.Point0
 import VerifiedGarbage.Proof.Framework.Arm.Contract
