@@ -1819,8 +1819,6 @@ pub(crate) const VG_EC_BRAINPOOLP384R1_PUBLIC_KEY_UMAAL_FEATURES: crate::cpu::Fe
 ///
 /// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
 ///
-/// `vg_ec_brainpoolp384r1_public_key`'s code, but for its calls of the `_umaal` point functions. Field multiplications are calls of `vg_brainpoolp384r1_mul_mod_p_umaal` (and `vg_brainpoolp384r1_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`).
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 97 bytes.

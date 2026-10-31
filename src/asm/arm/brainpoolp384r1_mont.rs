@@ -981,8 +981,6 @@ pub(crate) const VG_BRAINPOOLP384R1_MUL_MOD_P_UMAAL_FEATURES: crate::cpu::Featur
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function saves `r4`–`r9` and `lr` in its own working space. Montgomery multiplication scans the numbers' packed 32-bit words: each word of each row (`r3:acc[j] = acc[j] + x y[j] + r3`) is one `umaal` (`hi:lo = n m + hi + lo`, the CPU feature `umaal`). Fixed-offset rows keep `r10` and `r11` unchanged and `r12` as the workspace pointer. The accumulator is expanded to half-word digits for the mask-selected final subtraction. No stack is used.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -3771,8 +3769,6 @@ pub(crate) const VG_BRAINPOOLP384R1_MUL_MOD_N_UMAAL_FEATURES: crate::cpu::Featur
 /// Montgomery's product modulo brainpoolP384r1's order `n`: writes the number below the modulus congruent to `a b 2^-384` to `o`. The numbers are 6 64-bit words (`48` bytes), little-endian, at the byte offsets `o`, `a` and `b` of the working space `ws`; `o` may be `a` or `b`. Every byte of `ws` but the result's and the function's own working space (bytes 3712 to 4095) keeps its value.
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
-///
-/// The function saves `r4`–`r9` and `lr` in its own working space. Montgomery multiplication scans the numbers' packed 32-bit words: each word of each row (`r3:acc[j] = acc[j] + x y[j] + r3`) is one `umaal` (`hi:lo = n m + hi + lo`, the CPU feature `umaal`). Fixed-offset rows keep `r10` and `r11` unchanged and `r12` as the workspace pointer. The accumulator is expanded to half-word digits for the mask-selected final subtraction. No stack is used.
 ///
 /// # Safety
 ///

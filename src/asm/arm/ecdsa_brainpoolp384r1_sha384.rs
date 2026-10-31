@@ -922,8 +922,6 @@ pub(crate) const VG_ECDSA_BRAINPOOLP384R1_SHA384_SIGN_UMAAL_FEATURES: crate::cpu
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers and that number, not otherwise on the key or the hash.
 ///
-/// Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 48 bytes, and each HMAC with `vg_hmac_sha384_init_scratch`, `vg_sha512_update_scratch` and `vg_hmac_sha384_finalize_scratch`, using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the leftmost 48 bytes of `V`, is tried with `vg_ecdsa_brainpoolp384r1_sign_umaal`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that. `K`, `V`, `h` and our caller's registers are kept in a 216-byte frame, whose secrets are cleared before it is freed; the calls use the 24 bytes below it.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 96 bytes.
