@@ -17,9 +17,9 @@ and faults on misaligned accesses:
   argument buffers, whose alignment the contract does not state: the
   prologue copies the hash value, a byte at a time, to `scratch` (`hOff`),
   where the blocks update it, and the epilogue copies it back; each block is
-  copied to `scratch` (`mOff`) with aligned word loads when possible and
-  byte loads otherwise before its rounds, whose
-  `G`s load their message words from there.
+  copied to `scratch` (`mOff`) before its rounds. Aligned blocks use native
+  word loads; other blocks use byte loads. The `G`s read their message words
+  from scratch.
 * The sixteen words of the work vector `v` live in registers throughout
   (`wreg`); the rounds are fully unrolled. A rotation right by `r` is a
   right shift by `r` into `s6` and a left shift by `w - r`, combined by `or`

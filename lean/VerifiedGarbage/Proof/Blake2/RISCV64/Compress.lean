@@ -1026,7 +1026,6 @@ theorem body_ok (hR : ROk P) {s₀ : State} (hp : Pre z s₀) {i : Nat} (hi : i 
       (eval (.nonzero .a2) s' = some true ∧ i + 1 < nb s₀ ∧ LInv P s₀ (i + 1) s') := by
   have hC := hL.toCommon
   have h8 := zB_le z
-  have h16 : mOff + 16 * zB z ≤ 2040 := by simp only [mOff]; omega
   have hmR : 16 * zB z ≤ 16 * 8 := Nat.mul_le_mul_left _ h8
   -- Copy the block.
   refine WP.seq (WP.mono (copyBlock_ok s (by rw [hC.base]; exact sb_al s₀)
