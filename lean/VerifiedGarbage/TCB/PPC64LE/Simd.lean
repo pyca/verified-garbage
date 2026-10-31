@@ -83,6 +83,11 @@ inductive VOp
   | sha512 (d n : VReg) (st : Bool) (six : Nat)
   | pmsumd (d n m : VReg)
   | logic (op : VLogic) (d n m : VReg)
+  /-- `vsel`: mask bit zero selects VA, mask bit one selects VB.
+  NXP AltiVec Programming Environments Manual (06/2014), p. 6-163,
+  Figure 6-124; no other registers are changed. Baseline AltiVec.
+  https://www.nxp.com/docs/en/reference-manual/ALTIVECPOWERISAPEM.pdf#page=257 -/
+  | sel (d n m mask : VReg)
   /-- `vadduwm` / `vaddudm`: add modulo 2^32 / 2^64 per element. -/
   | add (doubleword : Bool) (d n m : VReg)
   /-- `vperm`: each byte selects the low five bits of its control byte. -/
@@ -110,6 +115,7 @@ def VOp.eval (v : VReg → BitVec 128) : VOp → Option (VReg × BitVec 128)
       VectorCrypto.polyMul (vdword (v n) 1) (vdword (v m) 1))
   | .logic op d n m => some (d, match op with
       | .and => v n &&& v m | .or => v n ||| v m | .xor => v n ^^^ v m)
+  | .sel d n m mask => some (d, (v n &&& ~~~v mask) ||| (v m &&& v mask))
   | .add dw d n m => some (d, if dw then
       (vdword (v n) 0 + vdword (v m) 0) ++ (vdword (v n) 1 + vdword (v m) 1)
     else (List.range 4).foldl (fun x i => x |||
