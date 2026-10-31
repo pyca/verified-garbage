@@ -10,9 +10,9 @@ public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 The same structure as the SHA-256 implementation (`VG.Impl.Sha256.PPC64LE`),
 on whole 64-bit registers:
-* The working variables `a … h` live in `r7`–`r12`, `r14` and `r15`; the
-  fully unrolled rounds rename them: in round `t`, variable `k` is in
-  `var t k`.
+* The working variables `a … h` stay in `v4`–`v11`; round `t` names
+  variable `k` with `vvar t k`. The high doubleword carries each word.
+  The unused low doubleword never influences the result.
 * The message schedule is a 16-word window in `scratch[0..128)`. The words
   of a block are loaded big-endian with `ldbrx`, indexed by `r0`.
 * `Kₜ` is built with `lis`, `ori`, `sldi`, `oris` and `ori` (`movImm64`).
@@ -34,6 +34,11 @@ def work : List Reg := [.r7, .r8, .r9, .r10, .r11, .r12, .r14, .r15]
 
 /-- The register holding working variable `k` (`a = 0, …, h = 7`) at the start of round `t`. -/
 def var (t k : Nat) : Reg := work.getD ((k + 8 - t % 8) % 8) .r7
+
+/-- Volatile vector registers hold the working state throughout the rounds. -/
+def vwork : List VReg := [.v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11]
+
+def vvar (t k : Nat) : VReg := vwork.getD ((k + 8 - t % 8) % 8) .v4
 
 /-- Temporaries; `T0` holds `Wₜ` at the start of each round. -/
 def T0 : Reg := .r16
@@ -74,20 +79,20 @@ def schedule (t : Nat) : List Instr :=
     .mfvsrd T2 .v1, .add T0 T0 T2,
     .load .d T2 .r6 (slot t), .add T0 T0 T2, .store .d T0 .r6 (slot t)]
 
-/-- Round `t`, with `Wₜ` in `T0`. Form `h + (Kₜ + Wₜ)` independently
-of the state-dependent sigma and choice functions, shortening the serial
-addition chain without adding instructions. -/
+/-- Round `t`, with `Wₜ` in `T0`. Only `Kₜ + Wₜ` crosses from scalar
+to vector registers; the state, sigma, choice and majority remain vector values. -/
 def round (t : Nat) : List Instr :=
-  let a := var t 0; let b := var t 1; let c := var t 2; let d := var t 3
-  let e := var t 4; let f := var t 5; let g := var t 6; let h := var t 7
-  ([.mtvsrd .v2 e, .mtvsrd .v3 a,
-    .vop (.sha512 .v2 .v2 true 8), .vop (.sha512 .v3 .v3 true 0)] : List Instr) ++
+  let a := vvar t 0; let b := vvar t 1; let c := vvar t 2; let d := vvar t 3
+  let e := vvar t 4; let f := vvar t 5; let g := vvar t 6; let h := vvar t 7
   movImm64 T1 (K t) ++
-  [.add T1 T1 T0, .add h h T1,
-   .logic .xor T2 f g, .logic .and T2 T2 e, .logic .xor T2 T2 g,
-   .mfvsrd T1 .v2, .add h h T1, .add h h T2, .add d d h,
-   .logic .or T2 a b, .logic .and T2 T2 c, .logic .and T3 a b, .logic .or T2 T2 T3,
-   .mfvsrd T1 .v3, .add T1 T1 T2, .add h h T1]
+  [.add T1 T1 T0, .mtvsrd .v15 T1,
+   .vop (.sha512 .v12 e true 8), .vop (.sha512 .v14 a true 0),
+   .vop (.logic .xor .v13 f g), .vop (.logic .and .v13 .v13 e), .vop (.logic .xor .v13 .v13 g),
+   .vop (.add true .v15 h .v15), .vop (.add true .v15 .v15 .v12), .vop (.add true .v15 .v15 .v13),
+   .vop (.add true d d .v15),
+   .vop (.logic .or .v12 a b), .vop (.logic .and .v12 .v12 c),
+   .vop (.logic .and .v13 a b), .vop (.logic .or .v12 .v12 .v13),
+   .vop (.add true .v14 .v14 .v12), .vop (.add true h .v15 .v14)]
 
 /-- Rounds `0 … n-1`. -/
 def rounds : Nat → Prog isa
@@ -96,11 +101,13 @@ def rounds : Nat → Prog isa
 
 /-- Load the hash value (`80 % 8 = 0`, so the variables are in the same
 registers after the 80 rounds). -/
-def load : List Instr := (List.range 8).map fun k => .load .d (var 0 k) .r3 (8 * k)
+def load : List Instr := (List.range 8).flatMap fun k =>
+  [.load .d T1 .r3 (8 * k), .mtvsrd (vvar 0 k) T1]
 
 /-- Add the hash value into the working variables (loading all of it before
 storing any of it), and store the result. -/
 def update : List Instr :=
+  (List.range 8).map (fun k => .mfvsrd (var 0 k) (vvar 0 k)) ++
   (List.range 4).map (fun k => .load .d ([T0, T1, T2, T3].getD k T0) .r3 (8 * k)) ++
   (List.range 4).map (fun k => .add (var 0 k) (var 0 k) ([T0, T1, T2, T3].getD k T0)) ++
   (List.range 4).map (fun k => .load .d ([T0, T1, T2, T3].getD k T0) .r3 (8 * (k + 4))) ++
