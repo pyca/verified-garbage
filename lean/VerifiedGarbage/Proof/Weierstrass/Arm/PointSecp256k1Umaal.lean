@@ -21,7 +21,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.PointSecp256k1
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.PointVerified
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.Point0
-meta meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
