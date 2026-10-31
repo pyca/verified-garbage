@@ -17,12 +17,18 @@ written by this script:
 * every other run of bytes between them it writes as data: `.octa` on
   targets without mapping symbols, `.inst` (so that the bytes stay code to
   the tools that read mapping symbols, such as linkers' erratum fixes) on
-  AArch64 and ARM, `.inst.n`/`.inst.w` in Thumb, `.insn` on RISC-V.
+  AArch64.
 
 Everything else of each file (documentation, signatures, constants) is
 copied as it is. This script is not trusted: `ci/check_preassembled.py`
 checks that compiling `src/` gives each function the same bytes,
 relocations and symbols as compiling `asm/`.
+
+Two crates compile the emitter's output itself, and are not pre-assembled:
+ARM's (`asm/`), which is built both as ARM and as Thumb code, whose bytes
+differ, and which Rust cannot tell apart at compile time; and RISC-V's
+(`src/`), whose printer already emits each instruction's machine code
+(`lean/VerifiedGarbage/TCB/RISCV64/Encode.lean`).
 
     python3 ci/preassemble.py [TARGET ...]          # rewrite src/
     python3 ci/preassemble.py --check [TARGET ...]  # fail if src/ is stale
@@ -49,7 +55,6 @@ TRIPLES = {
     "x86": "i686-unknown-linux-gnu",
     "aarch64": "aarch64-unknown-linux-gnu",
     "powerpc64le": "powerpc64le-unknown-linux-gnu",
-    "riscv64": "riscv64gc-unknown-linux-gnu",
 }
 
 NAKED = re.compile(r"^    core::arch::naked_asm!\(\n(.*?)^    \)\n", re.M | re.S)
@@ -233,20 +238,6 @@ def words(b, directive, width=4):
     return [f"{directive} " + ",".join(vals[i:i + 8]) for i in range(0, len(vals), 8)]
 
 
-def riscv(b):
-    """RISC-V code: 32-bit instructions (low bits 0b11) and compressed
-    16-bit ones, as `.insn`."""
-    out, i = [], 0
-    while i < len(b):
-        if b[i] & 3 == 3:
-            out.append(f".insn 4, 0x{int.from_bytes(b[i:i + 4], 'little'):x}")
-            i += 4
-        else:
-            out.append(f".insn 2, 0x{int.from_bytes(b[i:i + 2], 'little'):x}")
-            i += 2
-    return out
-
-
 def encode(target, b):
     if not b:
         return []
@@ -254,8 +245,6 @@ def encode(target, b):
         return octa(b)
     if target == "aarch64":
         return words(b, ".inst")
-    if target == "riscv64":
-        return riscv(b)
     raise ValueError(target)
 
 

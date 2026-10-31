@@ -8,7 +8,9 @@ public import VerifiedGarbage.TCB.Artifact
 
 **Trusted.** Functions are emitted as Rust `extern "C"` naked functions,
 compiled for little-endian `riscv64` with the M extension (the model's
-multiplies, see `Isa.lean`), whose C calling convention is the
+multiplies, see `Isa.lean`) and the C extension (the compressed encodings
+the printer emits for the instructions that have one, `Encode.lean`'s
+`compress`: every `riscv64gc` target has both), whose C calling convention is the
 RISC-V ELF psABI's (RISC-V ABIs Specification, Version 1.0, "RISC-V Calling
 Conventions"): its integer
 calling convention, which every RV64 ABI (LP64, LP64F, LP64D, LP64Q; the
@@ -107,7 +109,8 @@ abbrev target : Target where
   isa := isa
   printer := printer
   abiPreserved := abiPreserved
-  rustCfg := "all(target_arch = \"riscv64\", target_endian = \"little\", target_feature = \"m\")"
+  rustCfg := "all(target_arch = \"riscv64\", target_endian = \"little\", target_feature = \"m\", \
+    target_feature = \"c\")"
   rustAbi := "C"
   abi := abi
 

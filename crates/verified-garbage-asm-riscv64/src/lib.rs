@@ -39,282 +39,282 @@ macro_rules! vg_sym_pageoff {
     };
 }
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod aes;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod aes_cbc;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod aes_cfb;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod aes_cfb8;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod aes_ctr;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod aes_ofb;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod aes_xts;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod blake2b;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod blake2s;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod blowfish;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod blowfish_cbc;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod blowfish_cfb;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod blowfish_ofb;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod camellia;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod cast5;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod cast5_cbc;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod cast5_cfb;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod cast5_ofb;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod chacha20;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod chacha20poly1305;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod cmac_aes;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod cmac_triple_des;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod consts;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod ct;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod ed25519;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod ed25519_r32;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod ed448;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod gf25519_r32;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod hmac_md5;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod hmac_sha1;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod hmac_sha224;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod hmac_sha256;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod hmac_sha384;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod hmac_sha512;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod hmac_sha512_224;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod hmac_sha512_256;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod idea;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod idea_cbc;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod idea_cfb;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod idea_ofb;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod md5;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod pbkdf2_md5;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod pbkdf2_sha1;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod pbkdf2_sha224;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod pbkdf2_sha256;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod pbkdf2_sha384;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod pbkdf2_sha512;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod pbkdf2_sha512_224;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod pbkdf2_sha512_256;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod poly1305;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod rc2;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod rc4;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod seed;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod seed_cbc;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod seed_cfb;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod seed_ofb;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod sha1;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod sha256;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod sha3;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod sha512;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod sm3;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod sm4;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod triple_des;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod triple_des_cbc;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod triple_des_cfb;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod triple_des_cfb8;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod triple_des_ofb;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod x25519;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod x448;
 
-#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m"))]
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
 pub mod zeroize;

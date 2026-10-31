@@ -195,15 +195,10 @@ class Encode(unittest.TestCase):
         with self.assertRaises(AssertionError):
             preassemble.words(b"\0\0", ".inst")
 
-    def test_riscv(self):
-        self.assertEqual(preassemble.riscv(bytes.fromhex("13050500" "8280")),
-                         [".insn 4, 0x50513", ".insn 2, 0x8082"])
-
     def test_encode(self):
         self.assertEqual(preassemble.encode("aarch64", b""), [])
         self.assertEqual(preassemble.encode("x86_64", b"\xc3"), [".byte 195"])
         self.assertEqual(preassemble.encode("aarch64", bytes.fromhex("c0035fd6")), [".inst 0xd65f03c0"])
-        self.assertEqual(preassemble.encode("riscv64", bytes.fromhex("8280")), [".insn 2, 0x8082"])
         with self.assertRaises(ValueError):
             preassemble.encode("arm", b"\0\0\0\0")
 
@@ -303,7 +298,8 @@ class Check(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = pathlib.Path(d)
             for p in ["verified-garbage-asm-x86_64/src", "verified-garbage-asm-x86_64/asm",
-                      "verified-garbage-asm-arm/asm", "verified-garbage-asm-mips/src",
+                      "verified-garbage-asm-arm/asm", "verified-garbage-asm-riscv64/src",
+                      "verified-garbage-asm-mips/asm", "verified-garbage-asm-mips/src",
                       "verified-garbage-cpu/src"]:
                 (root / p).mkdir(parents=True)
             self.assertEqual(check_preassembled.unassembled(root), ["verified-garbage-asm-mips"])

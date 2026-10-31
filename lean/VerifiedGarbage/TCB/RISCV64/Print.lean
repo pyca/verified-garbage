@@ -1,21 +1,30 @@
 module
 
-public import VerifiedGarbage.TCB.RISCV64.Isa
+public import VerifiedGarbage.TCB.RISCV64.Encode
 public import VerifiedGarbage.TCB.Print
 
 /-!
 # Printer for the 64-bit RISC-V model
 
 **Trusted.** Emits the GNU/LLVM assembler syntax used by Rust's
-`asm!`/`naked_asm!` on RISC-V, with registers written by their ABI names
-(`a0`, `sp`, `zero`). Every instruction is printed as the base instruction
-the model's semantics describes, not as a pseudoinstruction that the
-assembler may expand to several (`li` of a large immediate), except `call`
-and `ret` (see `Isa.lean`), the branches on zero (`beqz`, `bnez`), which
-are one instruction each, and `lla` (see `Isa.lean`), whose operand is the
-static's symbol (`SymPart.bare`), which the assembler expands to `auipc` and
-`addi` with their relocations. A frame of 2048 bytes or more (`alloc`,
-`free`) is printed as its two `addi`s (see `push` in `Isa.lean`).
+`asm!`/`naked_asm!` on RISC-V.
+
+Each straight-line instruction, and the return, is printed as its machine
+code (`Encode.lean`), one `.insn 4, <word>` per base instruction, each after
+a line `// <the instruction's text>`, which the emitter writes as a Rust
+comment (`Rust.template`): the assembler only copies the words. The text
+(`Instr.asm`) is the base instruction the model's semantics describes, with
+registers written by their ABI names (`a0`, `sp`, `zero`); a frame of 2048
+bytes or more (`alloc`, `free`) is its two `addi`s (see `push` in
+`Isa.lean`).
+
+The branches (`beqz`, `bnez`, `beq`, `bne`, `bltu`, `bgeu`), the jump (`j`)
+and `call`, whose bytes depend on where their target is, are printed as
+text for the assembler and linker to lay out, as is `lla` (see `Isa.lean`),
+whose operand is the static's symbol (`SymPart.bare`), which the assembler
+expands to `auipc` and `addi` with their relocations. `call` and the
+branches on zero are pseudoinstructions of one instruction each, but for
+`call`'s `auipc` and `jalr` (see `Isa.lean`).
 -/
 
 @[expose] public section
@@ -73,6 +82,21 @@ def Instr.asm : Instr → List String
   | .addSp d imm => [s!"addi {d.name}, sp, {imm}"]
   | .lla d name => [s!"lla {d.name}, {name}"]
 
+/-- The lines of an instruction: each of its base instructions' text
+(`asm`) as a comment, then that instruction's word (`encode`); its text if
+it has no encoding (`lla`, printed by `symLines`, or an instruction that
+`unencodable` reports, which the emitter refuses). -/
+def Instr.code (i : Instr) : List String :=
+  match i.encode with
+  | some ws => (i.asm.zip ws).flatMap fun (t, w) => [s!"// {t}", insnLine w]
+  | none => i.asm
+
+/-- Why `i` has no encoding (`encode`): an operand that does not fit its
+field; `none` for `lla`, which is text. -/
+def Instr.unencodable : Instr → Option String
+  | .lla .. => none
+  | i => if i.encode.isNone then some "an operand does not fit its field" else none
+
 def Cond.asm (c : Cond) (l : String) : String :=
   match c with
   | .zero r => s!"beqz {r.name}, {l}"
@@ -83,13 +107,14 @@ def Cond.asm (c : Cond) (l : String) : String :=
   | .geu a b => s!"bgeu {a.name}, {b.name}, {l}"
 
 def printer : Printer isa where
-  instr := Instr.asm
+  instr := Instr.code
   branch c l := [c.asm l]
   jump l := s!"j {l}"
-  ret := ["ret"]
+  ret := ["// ret", insnLine retWord]
   call := "call"
   symLines
     | .lla d name => some [.sym s!"lla {d.name}, " .bare name]
     | _ => none
+  unencodable := Instr.unencodable
 
 end VG.RISCV64
