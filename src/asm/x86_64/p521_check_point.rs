@@ -6,8 +6,6 @@
 ///
 /// Contract: `checkContract` of `VG.Spec.Weierstrass.CheckPoint.Curve`.
 ///
-/// The function keeps `rbx`, `rbp` and `r12`–`r15` in `xmm0` to `xmm5` while it runs. It compares `x` and `y` with `p` by subtraction with borrow, takes them into Montgomery's form and computes `y² - (x³ + a x + b)` modulo `p` by `mul` and word-by-word Montgomery reduction, and selects the point by masks; nothing depends on the numbers but through masks.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -4115,8 +4113,6 @@ pub(crate) const VG_P521_CHECK_POINT_ADX_FEATURES: crate::cpu::Features = crate:
 /// The check of a public point `(x, y)` on P-521 (SEC 1 §3.2.2.1, steps 2 and 3): ANDs into the flag, the 64-bit word at byte 3232 of `ws`, the mask (all ones or zero) of `x < p`, `y < p` and `y² = x³ + a x + b` modulo P-521's prime `p`. Numbers are 9 64-bit words (`72` bytes), little-endian: the function reads `x` at byte 2440, `y` at byte 2656, `p` at byte 64, `R² mod p` at byte 2872 and the curve's `a R mod p` and `b R mod p` at bytes 496 and 2944, for `R = 2^576`. It writes `x R mod p` at bytes 2512 to 2583 and `y R mod p` at bytes 2584 to 2655, and at bytes 2800 to 2871 and 3160 to 3231 the same if the flag is set on return, else the numbers at bytes 640 and 712. Bytes 208 to 279, 2728 to 2799, 3016 to 3087, 3088 to 3159 and 3520 to 4095 of `ws` are the function's own working space; every other byte of `ws` but the results' keeps its value. Constant time: only the pointer may affect timing.
 ///
 /// Contract: `checkContract` of `VG.Spec.Weierstrass.CheckPoint.Curve`.
-///
-/// The function keeps `rbx`, `rbp` and `r12`–`r15` in `xmm0` to `xmm5` while it runs. It compares `x` and `y` with `p` by subtraction with borrow, takes them into Montgomery's form and computes `y² - (x³ + a x + b)` modulo `p` by rows of BMI2's `mulx` with ADX's two carry chains (`adcx`, `adox`), and selects the point by masks; nothing depends on the numbers but through masks.
 ///
 /// # Safety
 ///

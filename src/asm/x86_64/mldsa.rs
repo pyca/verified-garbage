@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.MlDsa.nttContract`. Constant time: only the pointers may affect timing, not the data.
 ///
-/// The function computes on four coefficients at a time in SSE2 registers, with a table of the 256 zetas that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning.
-///
 /// # Safety
 ///
 /// * `f` must be valid for reads and writes of 1024 bytes.
@@ -586,8 +584,6 @@ ret
 /// The inverse of the ML-DSA number-theoretic transform, `NTT⁻¹` (FIPS 204 Algorithm 42), of `*f` (256 coefficients less than `q` = 8380417), in place.
 ///
 /// Contract: `VG.Spec.MlDsa.nttInvContract`. Constant time: only the pointers may affect timing, not the data.
-///
-/// The function computes on four coefficients at a time in SSE2 registers, with a table of the 256 zetas that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning.
 ///
 /// # Safety
 ///
@@ -1174,8 +1170,6 @@ ret
 ///
 /// Contract: `VG.Spec.MlDsa.mulContract`. Constant time: only the pointers may affect timing, not the data.
 ///
-/// The function computes on four coefficients at a time in SSE2 registers. It sets MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing), through the last 8 bytes of `h`, which it stores last, and loads the caller's MXCSR back before returning.
-///
 /// # Safety
 ///
 /// * `h` must be valid for reads and writes of 1024 bytes.
@@ -1296,8 +1290,6 @@ ret
 /// Adds the product of two elements of `T_q` to a third, `AddNTT(h, MultiplyNTT(f, g))` (FIPS 204 Algorithms 44 and 45): adds the coefficientwise product of `*f` and `*g` to `*h`, modulo `q` = 8380417.
 ///
 /// Contract: `VG.Spec.MlDsa.mulAddContract`. Constant time: only the pointers may affect timing, not the data.
-///
-/// The function computes on four coefficients at a time in SSE2 registers. It sets MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing), through the last 8 bytes of `h`, which it stores last, and loads the caller's MXCSR back before returning.
 ///
 /// # Safety
 ///
@@ -1433,8 +1425,6 @@ ret
 ///
 /// Contract: `VG.Spec.MlDsa.addContract`. Constant time: only the pointers may affect timing, not the data.
 ///
-/// The function computes on four coefficients at a time in SSE2 registers.
-///
 /// # Safety
 ///
 /// * `f` must be valid for reads and writes of 1024 bytes.
@@ -1472,8 +1462,6 @@ ret
 /// Subtracts the polynomial `*g` from `*f` modulo `q` = 8380417, coefficient by coefficient.
 ///
 /// Contract: `VG.Spec.MlDsa.subContract`. Constant time: only the pointers may affect timing, not the data.
-///
-/// The function computes on four coefficients at a time in SSE2 registers.
 ///
 /// # Safety
 ///
@@ -1514,8 +1502,6 @@ pub(crate) const VG_MLDSA_NTT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::
 /// The ML-DSA number-theoretic transform, `NTT` (FIPS 204 Algorithm 41), of the polynomial `*f` (256 coefficients less than `q` = 8380417), in place.
 ///
 /// Contract: `VG.Spec.MlDsa.nttContract`. Constant time: only the pointers may affect timing, not the data.
-///
-/// The function computes on eight coefficients at a time in AVX2 registers, with a table of the 256 zetas that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning.
 ///
 /// # Safety
 ///
@@ -1940,8 +1926,6 @@ pub(crate) const VG_MLDSA_MONTGOMERY_INV_NTT_AVX2_FEATURES: crate::cpu::Features
 /// Replaces `*f` with `R * NTT^-1(*f)`, coefficientwise modulo `q` = 8380417, reduced, where `R = 2^32 mod q`. An input scaled by `R^-1` produces the ordinary inverse transform of the unscaled polynomial.
 ///
 /// Contract: `VG.Spec.MlDsa.montgomeryNttInvContract`. Constant time: only the pointers may affect timing, not the data.
-///
-/// The function computes on eight coefficients at a time in AVX2 registers, with a table of the 256 zetas that it stores in `scratch`. Its butterflies do not reduce: a coefficient's bound doubles each layer, from `q` to `256 q`, and the final multiplication by `R/256` reduces each. It sets MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning.
 ///
 /// # Safety
 ///
@@ -2392,8 +2376,6 @@ pub(crate) const VG_MLDSA_MONTGOMERY_MULTIPLY_NTT_AVX2_FEATURES: crate::cpu::Fea
 ///
 /// Contract: `VG.Spec.MlDsa.montgomeryMulContract`. Constant time: only the pointers may affect timing, not the data.
 ///
-/// The function computes on eight coefficients at a time in AVX2 registers. It sets MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing), through the last 8 bytes of `h`, which it stores last, and loads the caller's MXCSR back before returning.
-///
 /// # Safety
 ///
 /// * `h` must be valid for reads and writes of 1024 bytes.
@@ -2487,8 +2469,6 @@ pub(crate) const VG_MLDSA_MONTGOMERY_MULTIPLY_ADD_NTT_AVX2_FEATURES: crate::cpu:
 /// Adds `R^-1 * MultiplyNTT(*f, *g)` to `*h`, coefficientwise modulo `q` = 8380417, reduced, where `R = 2^32 mod q`. The existing accumulator is not rescaled; callers must keep every accumulated term at the same scale.
 ///
 /// Contract: `VG.Spec.MlDsa.montgomeryMulAddContract`. Constant time: only the pointers may affect timing, not the data.
-///
-/// The function computes on eight coefficients at a time in AVX2 registers. It sets MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing), through the last 8 bytes of `h`, which it stores last, and loads the caller's MXCSR back before returning.
 ///
 /// # Safety
 ///
@@ -2595,8 +2575,6 @@ pub(crate) const VG_MLDSA_ADD_AVX2_FEATURES: crate::cpu::Features = crate::cpu::
 ///
 /// Contract: `VG.Spec.MlDsa.addContract`. Constant time: only the pointers may affect timing, not the data.
 ///
-/// The function computes on eight coefficients at a time in AVX2 registers.
-///
 /// # Safety
 ///
 /// * `f` must be valid for reads and writes of 1024 bytes.
@@ -2639,8 +2617,6 @@ pub(crate) const VG_MLDSA_SUB_AVX2_FEATURES: crate::cpu::Features = crate::cpu::
 ///
 /// Contract: `VG.Spec.MlDsa.subContract`. Constant time: only the pointers may affect timing, not the data.
 ///
-/// The function computes on eight coefficients at a time in AVX2 registers.
-///
 /// # Safety
 ///
 /// * `f` must be valid for reads and writes of 1024 bytes.
@@ -2676,8 +2652,6 @@ ret
 }
 
 /// Writes the canonical inverse NTT of the sum of coefficientwise products of 4 pairs of polynomials. Each input family is contiguous. Timing depends only on pointers, as specified by `dotInverseContract`.
-///
-/// The function computes on four coefficients at a time in SSE2 registers: it sums the products in 64-bit lanes, reduces each sum once, then runs `vg_mldsa_inv_ntt`'s code, with a table of the 256 zetas that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning.
 ///
 /// # Safety
 ///
@@ -3357,8 +3331,6 @@ ret
 }
 
 /// Writes the canonical inverse NTT of the sum of coefficientwise products of 5 pairs of polynomials. Each input family is contiguous. Timing depends only on pointers, as specified by `dotInverseContract`.
-///
-/// The function computes on four coefficients at a time in SSE2 registers: it sums the products in 64-bit lanes, reduces each sum once, then runs `vg_mldsa_inv_ntt`'s code, with a table of the 256 zetas that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning.
 ///
 /// # Safety
 ///
@@ -4048,8 +4020,6 @@ ret
 }
 
 /// Writes the canonical inverse NTT of the sum of coefficientwise products of 7 pairs of polynomials. Each input family is contiguous. Timing depends only on pointers, as specified by `dotInverseContract`.
-///
-/// The function computes on four coefficients at a time in SSE2 registers: it sums the products in 64-bit lanes, reduces each sum once, then runs `vg_mldsa_inv_ntt`'s code, with a table of the 256 zetas that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning.
 ///
 /// # Safety
 ///
@@ -4763,8 +4733,6 @@ pub(crate) const VG_MLDSA_DOT_INVERSE4_AVX2_FEATURES: crate::cpu::Features = cra
 
 /// Writes the canonical inverse NTT of the sum of coefficientwise products of 4 pairs of polynomials. Each input family is contiguous. Timing depends only on pointers, as specified by `dotInverseContract`.
 ///
-/// The function computes on eight coefficients at a time in AVX2 registers: it sums the products in 64-bit lanes, reduces each sum once to the sum times `2⁻³²`, then runs `vg_mldsa_montgomery_inv_ntt_avx2`'s code, which cancels the factor, with a table of the 256 zetas that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 1024 bytes.
@@ -5275,8 +5243,6 @@ ret
 pub(crate) const VG_MLDSA_DOT_INVERSE5_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
 
 /// Writes the canonical inverse NTT of the sum of coefficientwise products of 5 pairs of polynomials. Each input family is contiguous. Timing depends only on pointers, as specified by `dotInverseContract`.
-///
-/// The function computes on eight coefficients at a time in AVX2 registers: it sums the products in 64-bit lanes, reduces each sum once to the sum times `2⁻³²`, then runs `vg_mldsa_montgomery_inv_ntt_avx2`'s code, which cancels the factor, with a table of the 256 zetas that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning.
 ///
 /// # Safety
 ///
@@ -5796,8 +5762,6 @@ ret
 pub(crate) const VG_MLDSA_DOT_INVERSE7_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
 
 /// Writes the canonical inverse NTT of the sum of coefficientwise products of 7 pairs of polynomials. Each input family is contiguous. Timing depends only on pointers, as specified by `dotInverseContract`.
-///
-/// The function computes on eight coefficients at a time in AVX2 registers: it sums the products in 64-bit lanes, reduces each sum once to the sum times `2⁻³²`, then runs `vg_mldsa_montgomery_inv_ntt_avx2`'s code, which cancels the factor, with a table of the 256 zetas that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning.
 ///
 /// # Safety
 ///
@@ -7401,8 +7365,6 @@ pub(crate) const VG_MLDSA_HIGH_BITS_AVX2_FEATURES: crate::cpu::Features = crate:
 ///
 /// Contract: `VG.Spec.MlDsa.highBitsContract`. Constant time: only the pointers and `gamma2` may affect timing, not the data.
 ///
-/// The function computes on eight coefficients at a time in AVX2 registers, multiplying by shifts and additions; it needs AVX and AVX2.
-///
 /// # Safety
 ///
 /// * `r` must be valid for reads of 1024 bytes.
@@ -7502,8 +7464,6 @@ pub(crate) const VG_MLDSA_LOW_BITS_AVX2_FEATURES: crate::cpu::Features = crate::
 /// `LowBits` (FIPS 204 Algorithm 38) of each coefficient of `*r`, with `gamma2` = `γ₂`: writes the `r0`s, modulo `q` = 8380417, to `*out`.
 ///
 /// Contract: `VG.Spec.MlDsa.lowBitsContract`. Constant time: only the pointers and `gamma2` may affect timing, not the data.
-///
-/// The function computes on eight coefficients at a time in AVX2 registers, multiplying by shifts and additions; it needs AVX and AVX2.
 ///
 /// # Safety
 ///
@@ -7764,8 +7724,6 @@ pub(crate) const VG_MLDSA_NORM_LT_AVX2_FEATURES: crate::cpu::Features = crate::c
 ///
 /// Contract: `VG.Spec.MlDsa.normLtContract`. Constant time: only the pointer and `bound` may affect timing, not the data.
 ///
-/// The function compares eight coefficients at a time in AVX2 registers; it needs AVX and AVX2.
-///
 /// # Safety
 ///
 /// * `f` must be valid for reads of 1024 bytes.
@@ -7818,8 +7776,6 @@ pub(crate) const VG_MLDSA_MAKE_HINT_AVX2_FEATURES: crate::cpu::Features = crate:
 /// `MakeHint` (FIPS 204 Algorithm 39) of each pair of coefficients of `*z` and `*r`, with `gamma2` = `γ₂`: writes 1 for true and 0 for false to `*h`, and returns the number of 1s.
 ///
 /// Contract: `VG.Spec.MlDsa.makeHintContract`. Constant time: only the pointers and `gamma2` may affect timing, not the data.
-///
-/// The function computes eight hints at a time in AVX2 registers, multiplying by shifts and additions; it needs AVX and AVX2.
 ///
 /// # Safety
 ///
@@ -8107,8 +8063,6 @@ pub(crate) const VG_MLDSA_USE_HINT_AVX2_FEATURES: crate::cpu::Features = crate::
 ///
 /// Contract: `VG.Spec.MlDsa.useHintContract`. Constant time: only the pointers and `gamma2` may affect timing, not the data.
 ///
-/// The function computes on eight coefficients at a time in AVX2 registers, multiplying by shifts and additions; it needs AVX and AVX2.
-///
 /// # Safety
 ///
 /// * `h` must be valid for reads of 1024 bytes.
@@ -8257,8 +8211,6 @@ ret
 ///
 /// Contract: `VG.Spec.MlDsa.rejNTTContract`. Not constant time in the seed: timing may depend on the pointers and on `*seed` (public in ML-DSA: the seed `ρ` of the matrix and two indices), but not on anything else.
 ///
-/// It squeezes 1008 bytes of SHAKE128 output (6 blocks) and runs the loop of `RejNTTPoly` over them.
-///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 34 bytes.
@@ -8371,8 +8323,6 @@ ret
 ///
 /// Contract: `VG.Spec.MlDsa.rejNTT4Contract`. Not constant time in the seeds: timing may depend on the pointers and on `*seeds` (public in ML-DSA: the seed `ρ` of the matrix and indices), but not on anything else.
 ///
-/// It calls `vg_mldsa_rej_ntt_poly` on each seed, and saves its caller's callee-saved registers in `scratch`.
-///
 /// # Safety
 ///
 /// * `seeds` must be valid for reads of 136 bytes.
@@ -8443,8 +8393,6 @@ pub(crate) const VG_MLDSA_REJ_NTT_POLY4_AVX2_FEATURES: crate::cpu::Features = cr
 /// `RejNTTPoly` (FIPS 204 Algorithm 30) four times: for each `k` < 4, writes the element of `T_q` sampled from the SHAKE128 output of the 34 bytes of `*seeds` from byte `34 k` to the 256 coefficients of `*a` from coefficient `256 k` (each less than `q` = 8380417), and returns 1. Returns 0 if the loop reaches its bound, which is at least 894 bytes of SHAKE128 output for each (FIPS 204 Appendix C; this happens with probability about 2^-256 or less): `*a` is then unspecified, and the caller must destroy it and treat the operation as failed. The four are independent, so an implementation may compute them together (e.g. four SHAKE128 instances at once in vector registers).
 ///
 /// Contract: `VG.Spec.MlDsa.rejNTT4Contract`. Not constant time in the seeds: timing may depend on the pointers and on `*seeds` (public in ML-DSA: the seed `ρ` of the matrix and indices), but not on anything else.
-///
-/// It runs the four instances of SHAKE128 at once, in the four 64-bit elements of AVX2 registers. It first samples from five blocks (840 bytes) per seed, and squeezes a sixth block only if any polynomial is incomplete. Its coefficients and six-block failure bound match `vg_mldsa_rej_ntt_poly`. It parses eight candidates at a time in AVX2 registers while there is room for eight more coefficients, keeping those less than `q` with `vpshufb` by the static table `VG_MLDSA_REJ_TBL`, indexed by the mask of each 128-bit lane; it parses the rest one at a time. It saves callee-saved registers in `scratch`.
 ///
 /// # Safety
 ///
@@ -11590,8 +11538,6 @@ ret
 ///
 /// Contract: `VG.Spec.MlDsa.rejBoundedContract`. Not constant time in which half-bytes of the SHAKE256 output it rejects: timing may depend on the pointers, `eta`, and whether each half-byte of the first 1088 bytes of output is rejected (`rejBoundedLeak`), which is independent of the coefficients sampled from those accepted; but not on anything else of the seed or the output.
 ///
-/// It squeezes 544 bytes of SHAKE256 output (4 blocks) and runs the loop of `RejBoundedPoly` over them. The coefficient of an accepted half-byte is computed without a branch or a table, so only whether each half-byte is accepted affects timing.
-///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 66 bytes.
@@ -11792,8 +11738,6 @@ ret
 ///
 /// Contract: `VG.Spec.MlDsa.expandMaskContract`. Constant time: only the pointers and `gamma1` may affect timing, not the data.
 ///
-/// It squeezes 640 bytes of SHAKE256 output (5 blocks, which hold the 576 or 640 bytes it unpacks) and unpacks four coefficients at a time.
-///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 66 bytes.
@@ -11969,8 +11913,6 @@ ret
 ///
 /// Contract: `VG.Spec.MlDsa.expandMask4Contract`. Constant time: only the pointers and `gamma1` may affect timing, not the data.
 ///
-/// It calls `vg_mldsa_expand_mask_poly` on each seed, and saves its caller's callee-saved registers in `scratch`.
-///
 /// # Safety
 ///
 /// * `seeds` must be valid for reads of 264 bytes.
@@ -12041,8 +11983,6 @@ pub(crate) const VG_MLDSA_EXPAND_MASK_POLY4_AVX2_FEATURES: crate::cpu::Features 
 /// Four polynomials of `ExpandMask` (FIPS 204 Algorithm 34, lines 4 and 5): for each `k` < 4, writes `BitUnpack(H(seed, 32c), gamma1 - 1, gamma1)`, for the 66 bytes `seed` of `*seeds` from byte `66 k` and `c = 1 + bitlen (gamma1 - 1)`, to the 256 coefficients of `*a` from coefficient `256 k` (each modulo `q` = 8380417). The four are independent, so an implementation may compute them together (e.g. four SHAKE256 instances at once in vector registers).
 ///
 /// Contract: `VG.Spec.MlDsa.expandMask4Contract`. Constant time: only the pointers and `gamma1` may affect timing, not the data.
-///
-/// It runs the four instances of SHAKE256 at once, in the four 64-bit elements of AVX2 registers (as `vg_mldsa_rej_ntt_poly4_avx2` does with SHAKE128), squeezing five blocks of each, and unpacks the 576 or 640 bytes of each seed's output as `vg_mldsa_expand_mask_poly` does. It saves its caller's callee-saved registers in `scratch`.
 ///
 /// # Safety
 ///
@@ -13316,8 +13256,6 @@ ret
 /// `SampleInBall` (FIPS 204 Algorithm 29): writes the polynomial with `tau` coefficients 1 or -1 and the others 0 sampled from the SHAKE256 output of the `len` bytes at `ctilde` to `*c` (each coefficient modulo `q` = 8380417), and returns 1. Returns 0 if the loop reaches its bound, which is at least 221 bytes of SHAKE256 output (FIPS 204 Appendix C; this happens with probability about 2^-256 or less): `*c` is then unspecified, and the caller must destroy it and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.sampleInBallContract`. Not constant time in the seed: timing may depend on the pointers, `len`, `tau` and the seed `c̃` at `ctilde`, but not on anything else.
-///
-/// It squeezes 272 bytes of SHAKE256 output (2 blocks) and runs the loop of `SampleInBall` over the 264 after the sign bits.
 ///
 /// # Safety
 ///

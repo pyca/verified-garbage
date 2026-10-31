@@ -1367,8 +1367,6 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Sha3.absorbContract`. Constant time: only the pointers, `rate`, `pos` and `len` may affect timing, not the state or the data.
 ///
-/// The function saves its return address in its working space.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 200 bytes.
@@ -1437,8 +1435,6 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Sha3.absorbScratchContract`. Constant time: only the pointers, `rate`, `pos` and `len` may affect timing, not the state or the data.
 ///
-/// The function uses no stack: it saves its return address in `scratch`.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 200 bytes.
@@ -1500,8 +1496,6 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Sha3.padContract`. Constant time: only the pointers, `rate`, `pos` and `suffix` may affect timing, not the state.
 ///
-/// The function saves its return address in its working space.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 200 bytes.
@@ -1540,8 +1534,6 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Sha3.padScratchContract`. Constant time: only the pointers, `rate`, `pos` and `suffix` may affect timing, not the state.
 ///
-/// The function uses no stack: it saves its return address in `scratch`.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 200 bytes.
@@ -1575,8 +1567,6 @@ bx lr",
 /// Squeezes output from a padded SHA-3 or SHAKE state: writes to `out` the `outlen` bytes of the output of the sponge with rate `rate` from the state `*state` (FIPS 202 Algorithm 8, steps 7 to 10), from byte `pos` of that output on; leaves in `*state` a state, and returns a position, from which the output continues after them. Start from the state `vg_keccak_pad` leaves and position 0.
 ///
 /// Contract: `VG.Spec.Sha3.squeezeContract`. Constant time: only the pointers, `rate`, `pos` and `outlen` may affect timing, not the state.
-///
-/// The function saves its return address in its working space.
 ///
 /// # Safety
 ///
@@ -1642,8 +1632,6 @@ bx lr",
 /// `vg_keccak_squeeze`, with its working space in `*scratch`.
 ///
 /// Contract: `VG.Spec.Sha3.squeezeScratchContract`. Constant time: only the pointers, `rate`, `pos` and `outlen` may affect timing, not the state.
-///
-/// The function uses no stack: it saves its return address in `scratch`.
 ///
 /// # Safety
 ///

@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Camellia.ctrContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the counter block or the data.
 ///
-/// Baseline AArch64: eight counter blocks at a time, encrypted bitsliced in general-purpose registers, the S-boxes as Boolean circuits, with no table lookups; the table of bitsliced subkeys is built once per call, by a call of `vg_camellia_prepare_keys`, and each batch is a call of `vg_camellia_crypt_prepared`. The mode is the generic CTR of `Impl/Modes/AArch64/`, over Camellia's ECB core.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 272 bytes.

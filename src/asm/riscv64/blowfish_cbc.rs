@@ -6,10 +6,6 @@
 ///
 /// Contract: `VG.Spec.Blowfish.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline RV64I: one block at a time, with ECB's verified block function inlined (each S-box lookup reads all 256 entries of its byte planes under masks, so no address depends on the data or the schedule). The mode is the generic one of `Impl/Modes/RISCV64/`, which runs in a frame of 4224 bytes on the stack, 16-byte aligned: it keeps its state in `s1`–`s4`, saving our caller's there, and the block function reads a copy of the schedule there, made a byte at a time, since the contracts state no alignment for it. The frame is zeroed before returning.
-///
-/// The chaining value, the last ciphertext block, goes back to the IV at the end.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 4168 bytes.
@@ -680,10 +676,6 @@ ret
 /// Blowfish-CBC decryption (NIST SP 800-38A §6.2, Schneier, FSE 1994) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is Blowfish decryption under the schedule written by `vg_blowfish_expand_key`. No padding is removed.
 ///
 /// Contract: `VG.Spec.Blowfish.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
-///
-/// Baseline RV64I: one block at a time, with ECB's verified block function inlined (each S-box lookup reads all 256 entries of its byte planes under masks, so no address depends on the data or the schedule). The mode is the generic one of `Impl/Modes/RISCV64/`, which runs in a frame of 4224 bytes on the stack, 16-byte aligned: it keeps its state in `s1`–`s4`, saving our caller's there, and the block function reads a copy of the schedule there, made a byte at a time, since the contracts state no alignment for it. The frame is zeroed before returning.
-///
-/// The chaining value, the last ciphertext block, goes back to the IV at the end.
 ///
 /// # Safety
 ///

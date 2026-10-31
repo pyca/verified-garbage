@@ -6,8 +6,6 @@
 ///
 /// Contract: `pow250Contract` of `VG.Spec.X25519.Field32`. Constant time: only the pointer may affect timing.
 ///
-/// Uses baseline integer instructions. The function saves `ebx`, `esi`, `edi` and `ebp` in its own working space, copies `a` to it, and runs the addition chain of ref10's `fe_invert` up to `a^(2^250 - 1)` (249 squarings, most in loops counted by `esi`, and 10 multiplications) with X25519's x86 product: the 512-bit product by columns (product scanning, each product of two different words of a square computed once and doubled), folded with `2^256 = 38` into eight words. It then restores the registers.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 4096 bytes.

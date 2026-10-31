@@ -24,20 +24,14 @@ namespace VG.Artifacts.ChaCha20Poly1305.RISCV64
 
 def artifacts : List Artifact := [
   Spec.ChaCha20Poly1305.sealApi.artifact RISCV64.target {
-    notes := ["The working space is rounded up to a multiple of 8, so that the registers saved \
-      there take aligned doubleword accesses."]
     code := Impl.StackScratch.RISCV64.withStackScratchWiped 624 .a7 77 Impl.ChaCha20Poly1305.RISCV64.«seal»
     stack := 624
     verified := Proof.ChaCha20Poly1305.RISCV64.seal_framed },
   Spec.ChaCha20Poly1305.openApi.artifact RISCV64.target {
-    notes := ["The working space is rounded up to a multiple of 8, so that the registers saved \
-      there take aligned doubleword accesses; the tags are compared without a branch."]
     code := Impl.StackScratch.RISCV64.withStackScratchWiped 624 .a7 77 Impl.ChaCha20Poly1305.RISCV64.«open»
     stack := 624
     verified := Proof.ChaCha20Poly1305.RISCV64.open_framed },
   Spec.ChaCha20Poly1305.sealGatherApi.artifact RISCV64.target {
-    notes := ["The descriptors are read a word at a time and the slices copied a byte at a time, \
-      since the contract states no alignment for them."]
     code := Impl.ChaCha20Poly1305.RISCV64.SealGather.sealGather
     stack := 640
     verified := Proof.ChaCha20Poly1305.RISCV64.Gather.sealGather_verified }]

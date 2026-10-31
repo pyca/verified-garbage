@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Blowfish.expandKeyContract`. Constant time: only pointers and `key_len` may affect timing, not the key, including the S-box indices of the key schedule's encryptions.
 ///
-/// The 521 encryptions run the ECB rounds on one lane of AdvSIMD registers, with the S-boxes looked up by `tbl`/`tbx` from the schedule's byte planes as it is written; the initial schedule is copied from a static table. No stack.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -986,8 +984,6 @@ ret
 /// Blowfish ECB encryption (SP 800-38A §6.1's construction) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_blowfish_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Blowfish.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
-///
-/// Sixteen blocks at a time in AdvSIMD registers, each S-box looked up by `tbl` and three `tbx` per byte plane, in place in the data; the blocks left after the last sixteen through the scratch buffer.
 ///
 /// # Safety
 ///
@@ -2809,8 +2805,6 @@ ret
 /// Blowfish ECB decryption (SP 800-38A §6.1's construction) of `n` complete 8-byte blocks at `data`, in place, under the schedule written by `vg_blowfish_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Blowfish.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including the S-box indices.
-///
-/// Sixteen blocks at a time in AdvSIMD registers, each S-box looked up by `tbl` and three `tbx` per byte plane, in place in the data; the blocks left after the last sixteen through the scratch buffer.
 ///
 /// # Safety
 ///

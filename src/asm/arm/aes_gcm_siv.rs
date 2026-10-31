@@ -8,8 +8,6 @@
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key`) and computes POLYVAL with `vg_ghash`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -541,10 +539,6 @@ bx lr",
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key`) and computes POLYVAL with `vg_ghash`.
-///
-/// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
 /// # Safety
 ///

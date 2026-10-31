@@ -6,8 +6,6 @@
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function loads all nine input words before writing the output, computes the symmetric square in registers, folds at bit 521, and conditionally corrects to the canonical field residue. A cyclic 55-bit rotation supplies the Montgomery factor. Callee-saved registers are kept in vector lanes; the output pointer is duplicated in v22. The function has no stack frame and permits the output to alias the input.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -307,8 +305,6 @@ ret
 /// Montgomery's product modulo P-521's prime `p`: writes the number below the modulus congruent to `a b 2^-576` to `o`. The numbers are 9 64-bit words (`72` bytes), little-endian, at the byte offsets `o`, `a` and `b` of the working space `ws`; `o` may be `a` or `b`. Every byte of `ws` but the result's and the function's own working space (bytes 3520 to 4095) keeps its value.
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
-///
-/// The function zero-extends the offsets, saves the callee-saved registers it writes in lanes of `v16`–`v20`, and keeps every word it multiplies by in a register: all of `[b]`. The product is word-by-word Montgomery multiplication (CIOS, with `mul` and `umulh`, the accumulator in registers, one word of `[a]` loaded per round), whose reductions multiply by no word of the modulus: P-521's `p` reduces by shifts. A final conditional subtraction against the modulus, built in registers (`movz`/`movk`), is selected by `csel`.
 ///
 /// # Safety
 ///
@@ -805,8 +801,6 @@ ret
 /// Montgomery's product modulo P-521's order `n`: writes the number below the modulus congruent to `a b 2^-576` to `o`. The numbers are 9 64-bit words (`72` bytes), little-endian, at the byte offsets `o`, `a` and `b` of the working space `ws`; `o` may be `a` or `b`. Every byte of `ws` but the result's and the function's own working space (bytes 3520 to 4095) keeps its value.
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
-///
-/// The function zero-extends the offsets, saves the callee-saved registers it writes in lanes of `v16`–`v19`, writes the modulus's words (`movz`/`movk`) into its own working space, and runs the inline product of the curve's code through pointers to the operands and the result: word-by-word Montgomery multiplication (CIOS, with `mul` and `umulh`, the accumulator in registers, four words of `[b]` in registers and the others loaded), each reduction step multiplying the accumulator's low word by `-m⁻¹ mod 2⁶⁴` and adding that multiple of the modulus, then a final conditional subtraction selected by `csel`.
 ///
 /// # Safety
 ///

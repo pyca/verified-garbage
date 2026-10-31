@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Idea.expandKeyContract`. Constant time: only pointers may affect timing, not the key.
 ///
-/// The key, as a 128-bit number, is held in two registers and rotated left by 25 bits between groups of eight subkeys with shifts; each subkey is a 16-bit window of one of them, without branches. The key and the schedule are accessed a byte at a time, since the contract states no alignment for them.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 16 bytes.
@@ -315,8 +313,6 @@ ret
 /// IDEA decryption key schedule (Lai, 1992, §3.3): writes to `*inverse` the 52 decryption subkeys of the 52 encryption subkeys at `schedule` (both as little-endian 16-bit words, as `vg_idea_expand_key` writes them): the multiplicative inverses modulo 2^16 + 1 (with 0 standing for 2^16), additive inverses modulo 2^16 and copies of the encryption subkeys, in reverse round order.
 ///
 /// Contract: `VG.Spec.Idea.invertKeyContract`. Constant time: only pointers may affect timing, not the subkeys, including those that are 0 or 1.
-///
-/// Each inverse is `a ^ (2^16 - 1)` modulo 2^16 + 1, fifteen squarings and multiplications by `mul`, each reduced without branches. The subkeys are accessed a byte at a time.
 ///
 /// # Safety
 ///
@@ -1495,8 +1491,6 @@ ret
 /// IDEA in ECB mode (Lai, 1992, §3.3; SP 800-38A §6.1) on `n` complete 8-byte blocks at `data`, in place, under the 52 subkeys at `schedule`: encryption under the subkeys `vg_idea_expand_key` writes, decryption under those `vg_idea_invert_key` writes. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Idea.ecbContract`. Constant time: only pointers and `n` may affect timing, not the subkeys or data, including words or subkeys that are 0.
-///
-/// A block at a time in temporaries and argument registers: each multiplication modulo 2^16 + 1 is a `mul` of the residues and a reduction of the product from its halves, without branches. Subkeys and data are accessed a byte at a time, since the contract states no alignment for them.
 ///
 /// # Safety
 ///

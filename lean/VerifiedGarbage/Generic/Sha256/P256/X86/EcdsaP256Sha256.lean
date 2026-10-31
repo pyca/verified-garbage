@@ -26,15 +26,13 @@ It is generic over P-256's group law `h` too, the variant
 
 namespace VG.Generic.Sha256.P256.X86.EcdsaP256Sha256
 
-open VG.Proof.Ecdsa.Rfc6979.X86 (cfgOf sign_spSafe signNotes)
+open VG.Proof.Ecdsa.Rfc6979.X86 (cfgOf sign_spSafe)
 open VG.Proof.Ecdsa.Rfc6979.X86.Sha256 (pack sign_verified)
 
 def artifacts (v : Proof.Sha256.X86.Variants.Backend) (h : Proof.Weierstrass.X86.Inv.HasLawInvOrd Spec.P256.curve) :
     List Artifact := [
   Spec.Ecdsa.Rfc6979.P256Sha256.signApi.artifact X86.target {
     suffix := v.suffix
-    notes := [signNotes v.F.hiN v.F.H.updN v.F.hfN 32
-      Spec.Ecdsa.P256.signApi.name]
     code := (cfgOf (pack h.law h.inv v)).sign
     consts := Impl.Ecdsa.X86.p256Comb.combConsts
     stack := 272

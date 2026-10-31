@@ -22,14 +22,11 @@ A generic file (see `TCB/Emit.lean`) over P-256's group law `h`, the variant
 
 namespace VG.Generic.P256.X86.EcdsaP256Sha384
 
-open VG.Proof.Ecdsa.Rfc6979.X86 (cfgOf sign_spSafe signNotes)
+open VG.Proof.Ecdsa.Rfc6979.X86 (cfgOf sign_spSafe)
 open VG.Proof.Ecdsa.Rfc6979.X86.Sha384 (pack sign_verified)
 
 def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInvOrd Spec.P256.curve) : List Artifact := [
   Spec.Ecdsa.Rfc6979.P256Sha384.signApi.artifact X86.target {
-    notes := [signNotes
-      Proof.Pbkdf2.Whole.X86.sha384F.hiN Proof.Pbkdf2.Whole.X86.sha384F.H.updN
-      Proof.Pbkdf2.Whole.X86.sha384F.hfN 32 Spec.Ecdsa.P256.signApi.name]
     code := (cfgOf (pack h.law h.inv)).sign
     consts := Impl.Ecdsa.X86.p256Comb.combConsts
     stack := 272

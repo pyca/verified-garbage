@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Sha512.compressContract`. Constant time: only the pointers and `n` may affect timing, not the hash value or the blocks.
 ///
-/// The hash value and the blocks are read and written a byte at a time, since the contract states no alignment for them; `scratch` is rounded up to a multiple of 8, so that the message schedule in it takes aligned doubleword accesses.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 64 bytes, and aligned for `u64`.
@@ -6658,8 +6656,6 @@ ret
 ///
 /// Contract: `VG.Spec.Sha512.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// Keeps its working space, and the registers it saves, in a frame of 208 bytes on the stack.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -6792,8 +6788,6 @@ ret
 /// Finishes a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (64 bytes) to `*out`. The SHA-512 digest is all of it; the SHA-384, SHA-512/224 and SHA-512/256 digests are its first 48, 28 and 32 bytes.
 ///
 /// Contract: `VG.Spec.Sha512.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// Keeps its working space, and the registers it saves, in a frame of 208 bytes on the stack.
 ///
 /// # Safety
 ///
@@ -7215,8 +7209,6 @@ ret
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_384` and `VG.Spec.Sha512.sha384`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
-/// Keeps its working space, and the registers it saves, in a frame of 208 bytes on the stack.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -7561,8 +7553,6 @@ ret
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_256` and `VG.Spec.Sha512.sha512_256`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
-/// Keeps its working space, and the registers it saves, in a frame of 208 bytes on the stack.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -7830,8 +7820,6 @@ ret
 /// Finishes a SHA-512/224 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from the initial hash value of SHA-512/224 (as `vg_sha512_224_init` starts it), writes the SHA-512/224 digest of that message (28 bytes, `VG.Spec.Sha512.sha512_224`) to `*out`.
 ///
 /// Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.H0_512_224` and `VG.Spec.Sha512.sha512_224`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// Keeps its working space, and the registers it saves, in a frame of 208 bytes on the stack.
 ///
 /// # Safety
 ///

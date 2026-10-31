@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Camellia.ofbContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline x86-64: one block at a time (each block's input depends on the block before), encrypted bitsliced in general-purpose registers (the S-boxes as Boolean circuits), with no table lookups, in a batch of eight of which the other seven are unused; the subkeys are prepared once per call, inline, and each batch is a call of `vg_camellia_crypt_prepared`. The mode is the generic OFB of `Impl/Modes/X86_64/`, over Camellia's ECB core.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 272 bytes.

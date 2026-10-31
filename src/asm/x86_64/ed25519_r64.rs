@@ -6,8 +6,6 @@
 ///
 /// Contract: `doubleContract` (`ext := true`) of `VG.Spec.Ed25519.Point64`. Constant time: only the pointer may affect timing.
 ///
-/// Uses baseline integer instructions, and SSE2 moves. The function keeps `rbp` and `r12`–`r15` in `xmm0`–`xmm4` while it runs, and runs RFC 8032's doubling formula (§5.1.4), with `-E = 2XY` from one product and `F`, `G` and `H` negated: eight products as `vg_ed25519_verify_equation` inlined it, with the temporaries in slots 8–15: X25519's field operations on four 64-bit words, multiplied with `mul` by rows (squares computing each cross product once), folded with `2^256 = 38`, and additions and subtractions, each folded once where an operand is a product.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -1439,8 +1437,6 @@ ret
 /// Point addition on edwards25519: replaces the point at byte 64 of the working space `ws` with its sum with the point `q` whose cached form, `[Y - X, Y + X, 2dT, 2Z]`, is at byte 192, by RFC 8032's complete addition formula in extended coordinates. A point is four coordinates `X, Y, Z, T` of 32 bytes each, consecutive; a coordinate is a little-endian number below `2^256` standing for its residue modulo `p = 2^255 - 19`. Every byte of `ws` but the result's and the function's own working space (bytes 320 to 575) keeps its value.
 ///
 /// Contract: `addCachedContract` (`ext := true`) of `VG.Spec.Ed25519.Point64`. Constant time: only the pointer may affect timing.
-///
-/// Uses baseline integer instructions, and SSE2 moves. The function keeps `rbp` and `r12`–`r15` in `xmm0`–`xmm4` while it runs, and runs RFC 8032's complete addition formula of the point in slots 4–7, cached, eight products as `vg_ed25519_verify_equation` inlined it, with the temporaries in slots 8–15: X25519's field operations on four 64-bit words, multiplied with `mul` by rows (squares computing each cross product once), folded with `2^256 = 38`, and additions and subtractions, each folded once where an operand is a product.
 ///
 /// # Safety
 ///
@@ -2967,8 +2963,6 @@ ret
 ///
 /// Contract: `addCachedContract` (`ext := false`) of `VG.Spec.Ed25519.Point64`. Constant time: only the pointer may affect timing.
 ///
-/// Uses baseline integer instructions, and SSE2 moves. The function keeps `rbp` and `r12`–`r15` in `xmm0`–`xmm4` while it runs, and runs RFC 8032's complete addition formula of the point in slots 4–7, cached, seven products, leaving out `T`'s as `vg_ed25519_verify_equation` inlined it, with the temporaries in slots 8–15: X25519's field operations on four 64-bit words, multiplied with `mul` by rows (squares computing each cross product once), folded with `2^256 = 38`, and additions and subtractions, each folded once where an operand is a product.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -4324,8 +4318,6 @@ pub(crate) const VG_ED25519_R64_DOUBLE_EXT_ADX_FEATURES: crate::cpu::Features = 
 ///
 /// Contract: `doubleContract` (`ext := true`) of `VG.Spec.Ed25519.Point64`. Constant time: only the pointer may affect timing.
 ///
-/// Uses BMI2 and ADX, and SSE2 moves. The function keeps `rbp` and `r12`–`r15` in `xmm0`–`xmm4` while it runs, and runs RFC 8032's doubling formula (§5.1.4), with `-E = 2XY` from one product and `F`, `G` and `H` negated: eight products as `vg_ed25519_verify_equation` inlined it, with the temporaries in slots 8–15: X25519's field operations on four 64-bit words, multiplied with BMI2's `mulx` and ADX's `adcx` and `adox` (two carry chains at once), folded with `2^256 = 38`, and additions and subtractions, each folded once where an operand is a product.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -5079,8 +5071,6 @@ pub(crate) const VG_ED25519_R64_ADD_CACHED_EXT_ADX_FEATURES: crate::cpu::Feature
 /// Point addition on edwards25519: replaces the point at byte 64 of the working space `ws` with its sum with the point `q` whose cached form, `[Y - X, Y + X, 2dT, 2Z]`, is at byte 192, by RFC 8032's complete addition formula in extended coordinates. A point is four coordinates `X, Y, Z, T` of 32 bytes each, consecutive; a coordinate is a little-endian number below `2^256` standing for its residue modulo `p = 2^255 - 19`. Every byte of `ws` but the result's and the function's own working space (bytes 320 to 575) keeps its value.
 ///
 /// Contract: `addCachedContract` (`ext := true`) of `VG.Spec.Ed25519.Point64`. Constant time: only the pointer may affect timing.
-///
-/// Uses BMI2 and ADX, and SSE2 moves. The function keeps `rbp` and `r12`–`r15` in `xmm0`–`xmm4` while it runs, and runs RFC 8032's complete addition formula of the point in slots 4–7, cached, eight products as `vg_ed25519_verify_equation` inlined it, with the temporaries in slots 8–15: X25519's field operations on four 64-bit words, multiplied with BMI2's `mulx` and ADX's `adcx` and `adox` (two carry chains at once), folded with `2^256 = 38`, and additions and subtractions, each folded once where an operand is a product.
 ///
 /// # Safety
 ///
@@ -5899,8 +5889,6 @@ pub(crate) const VG_ED25519_R64_ADD_CACHED_PROJ_ADX_FEATURES: crate::cpu::Featur
 ///
 /// Contract: `addCachedContract` (`ext := false`) of `VG.Spec.Ed25519.Point64`. Constant time: only the pointer may affect timing.
 ///
-/// Uses BMI2 and ADX, and SSE2 moves. The function keeps `rbp` and `r12`–`r15` in `xmm0`–`xmm4` while it runs, and runs RFC 8032's complete addition formula of the point in slots 4–7, cached, seven products, leaving out `T`'s as `vg_ed25519_verify_equation` inlined it, with the temporaries in slots 8–15: X25519's field operations on four 64-bit words, multiplied with BMI2's `mulx` and ADX's `adcx` and `adox` (two carry chains at once), folded with `2^256 = 38`, and additions and subtractions, each folded once where an operand is a product.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -6630,8 +6618,6 @@ ret
 /// Point addition on edwards25519: replaces the point at byte 64 of the working space `ws` with its sum with the point `q` with `Z = 1` whose cached form's first three coordinates, `[Y - X, Y + X, 2dT]`, are at byte 192, by RFC 8032's complete addition formula in extended coordinates. The 32 bytes at byte 288, where its `2Z` would be, need not hold anything. A point is four coordinates `X, Y, Z, T` of 32 bytes each, consecutive; a coordinate is a little-endian number below `2^256` standing for its residue modulo `p = 2^255 - 19`. Every byte of `ws` but the result's and the function's own working space (bytes 320 to 575) keeps its value.
 ///
 /// Contract: `addAffineContract` (`ext := true`) of `VG.Spec.Ed25519.Point64`. Constant time: only the pointer may affect timing.
-///
-/// Uses baseline integer instructions, and SSE2 moves. The function keeps `rbp` and `r12`–`r15` in `xmm0`–`xmm4` while it runs, and runs RFC 8032's complete addition formula of the point in slots 4–6, affine and cached, its `2Z` `2` (so that `Z₁ · 2Z₂ = Z₁ + Z₁`): seven products, as `vg_ed25519_scalar_base`'s comb adds its table entries, with the temporaries in slots 8–15: X25519's field operations on four 64-bit words, multiplied with `mul` by rows (squares computing each cross product once), folded with `2^256 = 38`, and additions and subtractions, each folded once where an operand is a product.
 ///
 /// # Safety
 ///
@@ -8008,8 +7994,6 @@ pub(crate) const VG_ED25519_R64_ADD_AFFINE_EXT_ADX_FEATURES: crate::cpu::Feature
 /// Point addition on edwards25519: replaces the point at byte 64 of the working space `ws` with its sum with the point `q` with `Z = 1` whose cached form's first three coordinates, `[Y - X, Y + X, 2dT]`, are at byte 192, by RFC 8032's complete addition formula in extended coordinates. The 32 bytes at byte 288, where its `2Z` would be, need not hold anything. A point is four coordinates `X, Y, Z, T` of 32 bytes each, consecutive; a coordinate is a little-endian number below `2^256` standing for its residue modulo `p = 2^255 - 19`. Every byte of `ws` but the result's and the function's own working space (bytes 320 to 575) keeps its value.
 ///
 /// Contract: `addAffineContract` (`ext := true`) of `VG.Spec.Ed25519.Point64`. Constant time: only the pointer may affect timing.
-///
-/// Uses BMI2 and ADX, and SSE2 moves. The function keeps `rbp` and `r12`–`r15` in `xmm0`–`xmm4` while it runs, and runs RFC 8032's complete addition formula of the point in slots 4–6, affine and cached, its `2Z` `2` (so that `Z₁ · 2Z₂ = Z₁ + Z₁`): seven products, as `vg_ed25519_scalar_base`'s comb adds its table entries, with the temporaries in slots 8–15: X25519's field operations on four 64-bit words, multiplied with BMI2's `mulx` and ADX's `adcx` and `adox` (two carry chains at once), folded with `2^256 = 38`, and additions and subtractions, each folded once where an operand is a product.
 ///
 /// # Safety
 ///

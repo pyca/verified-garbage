@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Rc4.initContract`. Constant time: only pointers and `key_len` may affect timing, not the key or key-dependent table indices.
 ///
-/// Secret-indexed table operations visit every word of the table at fixed addresses, selecting and replacing bytes with masks made by `cmp` and `adc`. Our caller's `r4`–`r11` are saved in a 64-byte working space on the stack, which is zeroed before returning.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -1001,8 +999,6 @@ bx lr",
 /// Continues raw RC4 encryption or decryption: XORs the next `len` stream bytes into `data` in place and preserves the next stream position in `*ctx` (`VG.Spec.Rc4.contextAt`). Empty input leaves the context unchanged. There is no nonce, padding, authentication, automatic discard or final output.
 ///
 /// Contract: `VG.Spec.Rc4.applyContract`. Constant time: only pointers, `len` and the initial PRGA index `i` (the public byte count modulo 256 for an initialized context) may affect timing. Key bytes, the permutation, `j`, keystream lookup indices and data remain secret. The function may leak `i`.
-///
-/// Secret-indexed table operations visit every word of the table at fixed addresses, selecting and replacing bytes with masks made by `cmp` and `adc`. Our caller's `r4`–`r11` are saved in a 64-byte working space on the stack, which is zeroed before returning.
 ///
 /// # Safety
 ///

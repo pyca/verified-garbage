@@ -9,8 +9,6 @@ pub(crate) const VG_AES_SIV_INIT_AESNI_FEATURES: crate::cpu::Features = crate::c
 ///
 /// Contract: `VG.Spec.Siv.initContract`. The key context is `VG.Spec.Siv.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation expands the keys with `vg_aes_expand_key_scratch_aesni` and computes the CMAC subkeys with `vg_cmac_aes_subkeys_aesni`.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -72,8 +70,6 @@ ret
 /// The AES-SIV key setup (RFC 5297 §2.6): writes the key context of the `key_len`-byte key `K = K1 ‖ K2` at `key` (the halves of `key_len / 2` bytes) to `*ctx`: the key schedule of `K1` for `Nr = key_len / 8 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, its CMAC subkeys (NIST SP 800-38B §6.1) in bytes 240–271, and the key schedule of `K2` in the `16 * (Nr + 1)` bytes from byte 272. The other bytes are unspecified. The other `vg_aes_siv_*` functions read it, with `Nr` as their `rounds`.
 ///
 /// Contract: `VG.Spec.Siv.initContract`. The key context is `VG.Spec.Siv.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// This implementation expands the keys with `vg_aes_expand_key_scratch` and computes the CMAC subkeys with `vg_cmac_aes_subkeys`.
 ///
 /// # Safety
 ///
@@ -139,8 +135,6 @@ pub(crate) const VG_AES_SIV_INIT_VAES_FEATURES: crate::cpu::Features = crate::cp
 ///
 /// Contract: `VG.Spec.Siv.initContract`. The key context is `VG.Spec.Siv.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation expands the keys with `vg_aes_expand_key_scratch_aesni` and computes the CMAC subkeys with `vg_cmac_aes_subkeys_vaes`.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -205,8 +199,6 @@ pub(crate) const VG_AES_SIV_ENCRYPT_AESNI_FEATURES: crate::cpu::Features = crate
 /// AES-SIV encryption, `SIV-ENCRYPT` (RFC 5297 §2.6): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds, computes the synthetic IV `V = S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes; for nonce-based encryption, §3, the nonce is the last) and the `len` bytes of plaintext `P` at `data`, writes it to `*siv`, and encrypts the plaintext in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared. The RFC's output is `V` followed by the encrypted data.
 ///
 /// Contract: `VG.Spec.Siv.encryptContract`. Constant time: only the pointers, `rounds`, `ads_count`, `len` and where the components are (their addresses and lengths) may affect timing, not the key context, the associated data or the plaintext.
-///
-/// This implementation chains the blocks of CMAC with `vg_cmac_aes_update_aesni`, calls the other CMAC functions made with `vg_aes_ctr32_aesni` (e.g. `vg_cmac_aes_finalize_aesni`), and encrypts with `vg_aes_ctr32_aesni`.
 ///
 /// # Safety
 ///
@@ -626,10 +618,6 @@ pub(crate) const VG_AES_SIV_DECRYPT_AESNI_FEATURES: crate::cpu::Features = crate
 /// AES-SIV decryption, `SIV-DECRYPT` (RFC 5297 §2.7): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds and the received synthetic IV `V` at `siv`, decrypts the `len` bytes of ciphertext at `data` in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared, computes `S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes) and the plaintext `P`, and returns 1 if it is `V`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The IVs are compared without a branch.
 ///
 /// Contract: `VG.Spec.Siv.decryptContract`. Constant time but for the result: only the pointers, `rounds`, `ads_count`, `len`, where the components are (their addresses and lengths) and whether the function returns 1 or 0 may affect timing, not the key context, the associated data, the data or `V`.
-///
-/// This implementation chains the blocks of CMAC with `vg_cmac_aes_update_aesni`, calls the other CMAC functions made with `vg_aes_ctr32_aesni` (e.g. `vg_cmac_aes_finalize_aesni`), and encrypts with `vg_aes_ctr32_aesni`.
-///
-/// It compares the IVs and overwrites the data with zeros without a branch on the result.
 ///
 /// # Safety
 ///
@@ -1092,8 +1080,6 @@ pub(crate) const VG_AES_SIV_ENCRYPT_AESNI_CBC_FEATURES: crate::cpu::Features = c
 ///
 /// Contract: `VG.Spec.Siv.encryptContract`. Constant time: only the pointers, `rounds`, `ads_count`, `len` and where the components are (their addresses and lengths) may affect timing, not the key context, the associated data or the plaintext.
 ///
-/// This implementation chains the blocks of CMAC with `vg_cmac_aes_update_aesni_cbc`, calls the other CMAC functions made with `vg_aes_ctr32_aesni` (e.g. `vg_cmac_aes_finalize_aesni`), and encrypts with `vg_aes_ctr32_aesni`.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 512 bytes.
@@ -1512,10 +1498,6 @@ pub(crate) const VG_AES_SIV_DECRYPT_AESNI_CBC_FEATURES: crate::cpu::Features = c
 /// AES-SIV decryption, `SIV-DECRYPT` (RFC 5297 §2.7): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds and the received synthetic IV `V` at `siv`, decrypts the `len` bytes of ciphertext at `data` in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared, computes `S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes) and the plaintext `P`, and returns 1 if it is `V`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The IVs are compared without a branch.
 ///
 /// Contract: `VG.Spec.Siv.decryptContract`. Constant time but for the result: only the pointers, `rounds`, `ads_count`, `len`, where the components are (their addresses and lengths) and whether the function returns 1 or 0 may affect timing, not the key context, the associated data, the data or `V`.
-///
-/// This implementation chains the blocks of CMAC with `vg_cmac_aes_update_aesni_cbc`, calls the other CMAC functions made with `vg_aes_ctr32_aesni` (e.g. `vg_cmac_aes_finalize_aesni`), and encrypts with `vg_aes_ctr32_aesni`.
-///
-/// It compares the IVs and overwrites the data with zeros without a branch on the result.
 ///
 /// # Safety
 ///
@@ -1975,8 +1957,6 @@ ret
 ///
 /// Contract: `VG.Spec.Siv.encryptContract`. Constant time: only the pointers, `rounds`, `ads_count`, `len` and where the components are (their addresses and lengths) may affect timing, not the key context, the associated data or the plaintext.
 ///
-/// This implementation chains the blocks of CMAC with `vg_cmac_aes_update`, calls the other CMAC functions made with `vg_aes_ctr32` (e.g. `vg_cmac_aes_finalize`), and encrypts with `vg_aes_ctr32`.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 512 bytes.
@@ -2391,10 +2371,6 @@ ret
 /// AES-SIV decryption, `SIV-DECRYPT` (RFC 5297 §2.7): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds and the received synthetic IV `V` at `siv`, decrypts the `len` bytes of ciphertext at `data` in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared, computes `S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes) and the plaintext `P`, and returns 1 if it is `V`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The IVs are compared without a branch.
 ///
 /// Contract: `VG.Spec.Siv.decryptContract`. Constant time but for the result: only the pointers, `rounds`, `ads_count`, `len`, where the components are (their addresses and lengths) and whether the function returns 1 or 0 may affect timing, not the key context, the associated data, the data or `V`.
-///
-/// This implementation chains the blocks of CMAC with `vg_cmac_aes_update`, calls the other CMAC functions made with `vg_aes_ctr32` (e.g. `vg_cmac_aes_finalize`), and encrypts with `vg_aes_ctr32`.
-///
-/// It compares the IVs and overwrites the data with zeros without a branch on the result.
 ///
 /// # Safety
 ///
@@ -2856,8 +2832,6 @@ pub(crate) const VG_AES_SIV_ENCRYPT_VAES_FEATURES: crate::cpu::Features = crate:
 ///
 /// Contract: `VG.Spec.Siv.encryptContract`. Constant time: only the pointers, `rounds`, `ads_count`, `len` and where the components are (their addresses and lengths) may affect timing, not the key context, the associated data or the plaintext.
 ///
-/// This implementation chains the blocks of CMAC with `vg_cmac_aes_update_vaes`, calls the other CMAC functions made with `vg_aes_ctr32_vaes` (e.g. `vg_cmac_aes_finalize_vaes`), and encrypts with `vg_aes_ctr32_vaes`.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 512 bytes.
@@ -3276,10 +3250,6 @@ pub(crate) const VG_AES_SIV_DECRYPT_VAES_FEATURES: crate::cpu::Features = crate:
 /// AES-SIV decryption, `SIV-DECRYPT` (RFC 5297 §2.7): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds and the received synthetic IV `V` at `siv`, decrypts the `len` bytes of ciphertext at `data` in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared, computes `S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes) and the plaintext `P`, and returns 1 if it is `V`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The IVs are compared without a branch.
 ///
 /// Contract: `VG.Spec.Siv.decryptContract`. Constant time but for the result: only the pointers, `rounds`, `ads_count`, `len`, where the components are (their addresses and lengths) and whether the function returns 1 or 0 may affect timing, not the key context, the associated data, the data or `V`.
-///
-/// This implementation chains the blocks of CMAC with `vg_cmac_aes_update_vaes`, calls the other CMAC functions made with `vg_aes_ctr32_vaes` (e.g. `vg_cmac_aes_finalize_vaes`), and encrypts with `vg_aes_ctr32_vaes`.
-///
-/// It compares the IVs and overwrites the data with zeros without a branch on the result.
 ///
 /// # Safety
 ///

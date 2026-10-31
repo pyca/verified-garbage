@@ -18,12 +18,10 @@ namespace VG.Artifacts.MlDsaArith.X86
 
 def artifacts : List Artifact := [
   Spec.MlDsa.nttApi.artifact X86.target {
-    notes := ["The function stores a table of the 256 zetas, in Montgomery form, in `scratch`."]
     code := Impl.MlDsa.X86.Arith.ntt
     stack := 16
     verified := Proof.MlDsa.X86.Arith.NttFwd.verified },
   Spec.MlDsa.nttInvApi.artifact X86.target {
-    notes := ["The function stores a table of the 256 negated zetas, in Montgomery form, in `scratch`."]
     code := Impl.MlDsa.X86.Arith.nttInv
     stack := 16
     verified := Proof.MlDsa.X86.Arith.NttInvP.verified },

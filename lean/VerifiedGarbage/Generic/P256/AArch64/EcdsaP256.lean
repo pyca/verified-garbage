@@ -263,42 +263,10 @@ namespace VG.Generic.P256.AArch64.EcdsaP256
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvToMOrd Spec.P256.curve) : List Artifact := [
   Spec.Ecdsa.P256.signApi.artifact AArch64.target {
-    notes := ["The function saves `x19`–`x25` in its 8 KB \
-      scratch buffer. Field elements and scalars are four 64-bit Montgomery words. `[k]G` \
-      uses 37 width-7 Booth digits in `[-64,64]`, with no initial correction point. Each \
-      affine entry is selected by scanning all 64 entries of its row in `VG_P256_COMB`, \
-      with vector loads interleaved with the previous window's scalar mixed addition; \
-      sign correction uses a mask. From the lowest window upward, a Jacobian accumulator \
-      uses mixed additions (8 products and 3 squares), specialized P-256 squaring, and \
-      register forwarding between field operations. The Booth partial-sum and generator-order \
-      proofs exclude equal nonzero inputs to the mixed formula. Infinity and zero-digit \
-      cases use masks. The result is converted once to homogeneous coordinates `(XZ,Y,Z³)`. \
-      Field and scalar inversions use 590 fixed divsteps in ten batches of 59. The signature \
-      or zeros is selected by a validity mask. The loops, table accesses and arithmetic \
-      have timing independent of the secret key, nonce and digest."]
     consts := Impl.Ecdsa.AArch64.p256.combConsts
     code := Impl.P256.Booth.sign
     verified := Proof.Ecdsa.AArch64.booth_sign_verified h.law h.inv (Proof.P256.combOk7 h.law) },
   Spec.Ecdsa.P256.verifyApi.artifact AArch64.target {
-    notes := ["The function saves the callee-saved registers \
-      `x19`–`x28` and `x30` in its 8 KB scratch buffer. Field elements and scalars are four \
-      64-bit words in Montgomery form; field squares use the specialized P-256 Montgomery \
-      square. The key is checked without branches, and multiplication uses the key's point \
-      if valid, else `G`. The scalar inverse uses nine batches of 59 divsteps, with a tenth \
-      batch when the public input requires it. `[u]G + [v]Q` uses one \
-      joint Jacobian accumulator with width-9 and width-5 sparse signed digits, respectively. \
-      Generator digits, stored as sixteen-bit words, index the affine multiples `[m]G`, \
-      `m = 1 … 256`, in the static `VG_P256_GTAB` (16 KB). The eight \
-      odd multiples of `Q` are built with co-Z arithmetic (ECDH's DBLU and ZADDU, adding `2Q` \
-      at a shared `Z`), which also yields the `Z²` and `Z³` values they cache. The joint loop doubles \
-      its accumulator in place with five squares and three products, each linear combination \
-      (`12a − 9b`, `4a − b`, `3a − 8b`) reduced once (ECDH's doubling), specializes arithmetic to the sparse P-256 prime, and keeps \
-      field values in scalar registers across operations with checked scheduling and allocation, \
-      then converts once to homogeneous coordinates. Verification compares the projective \
-      x-coordinate with `r` and, when in range, `r + n`, without a field inversion. Table \
-      lookups, skipped zero digits and exceptional-point branches depend on the public key, \
-      digest and signature already declared public by the contract. The result combines \
-      the key and scalar checks, rejection of infinity, and `x ≡ r` modulo `n` into a mask."]
     consts := Impl.Ecdsa.Verify.AArch64.P256Joint.p256v.combConsts
     code := Impl.Ecdsa.Verify.AArch64.P256Allocated.verify
     verified := Proof.Ecdsa.Verify.AArch64.allocatedVerify_verified h.law h.prime h.inv h.invToM (Proof.P256.gtabOk9 h.law) }]

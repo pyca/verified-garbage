@@ -6,8 +6,6 @@
 ///
 /// Contract: `mulContract`, `addContract`, `subContract` or `mulA24Contract` of `VG.Spec.X448.Field16`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// Uses baseline integer instructions. The function saves `ebx`, `esi`, `edi` and `ebp` in its own working space and reads the operands and writes the result through pointers. A product's 28 rows of 32-bit `mul`s propagate their carries as they go; the 56 limbs of the product are folded with `2^448 = 2^224 + 1`; sums, differences (with twice the prime added) and products are normalized by carrying, folding the carry out of the top limb into limbs 0 and 14, twice, and carrying again.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -7074,8 +7072,6 @@ ret
 ///
 /// Contract: `mulContract`, `addContract`, `subContract` or `mulA24Contract` of `VG.Spec.X448.Field16`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// Uses baseline integer instructions. The function saves `ebx`, `esi`, `edi` and `ebp` in its own working space and reads the operands and writes the result through pointers. A product's 28 rows of 32-bit `mul`s propagate their carries as they go; the 56 limbs of the product are folded with `2^448 = 2^224 + 1`; sums, differences (with twice the prime added) and products are normalized by carrying, folding the carry out of the top limb into limbs 0 and 14, twice, and carrying again.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -7714,8 +7710,6 @@ ret
 /// Subtraction in curve448's field: writes an element congruent to `a - b` modulo `p` to `o`. An element of GF(p), `p = 2^448 - 2^224 - 1`, is twenty-eight 32-bit little-endian words, least significant first, each a limb below `2^16`: the number `Σ l_i 2^(16 i)`, not necessarily below `p`. The elements are at the byte offsets `o`, `a` (and `b`) of the working space `ws`; `o` may be `a` or `b`. The result's limbs are below `2^16`. Every byte of `ws` but the result's and the function's own working space (bytes 3584 to 4095) keeps its value.
 ///
 /// Contract: `mulContract`, `addContract`, `subContract` or `mulA24Contract` of `VG.Spec.X448.Field16`. Constant time: only the pointer and the offsets may affect timing.
-///
-/// Uses baseline integer instructions. The function saves `ebx`, `esi`, `edi` and `ebp` in its own working space and reads the operands and writes the result through pointers. A product's 28 rows of 32-bit `mul`s propagate their carries as they go; the 56 limbs of the product are folded with `2^448 = 2^224 + 1`; sums, differences (with twice the prime added) and products are normalized by carrying, folding the carry out of the top limb into limbs 0 and 14, twice, and carrying again.
 ///
 /// # Safety
 ///
@@ -8383,8 +8377,6 @@ ret
 /// Multiplication by `a24 = 39081` in curve448's field (RFC 7748 §5): writes an element congruent to `39081 a` modulo `p` to `o`. An element of GF(p), `p = 2^448 - 2^224 - 1`, is twenty-eight 32-bit little-endian words, least significant first, each a limb below `2^16`: the number `Σ l_i 2^(16 i)`, not necessarily below `p`. The elements are at the byte offsets `o`, `a` (and `b`) of the working space `ws`; `o` may be `a` or `b`. The result's limbs are below `2^16`. Every byte of `ws` but the result's and the function's own working space (bytes 3584 to 4095) keeps its value.
 ///
 /// Contract: `mulContract`, `addContract`, `subContract` or `mulA24Contract` of `VG.Spec.X448.Field16`. Constant time: only the pointer and the offsets may affect timing.
-///
-/// Uses baseline integer instructions. The function saves `ebx`, `esi`, `edi` and `ebp` in its own working space and reads the operands and writes the result through pointers. A product's 28 rows of 32-bit `mul`s propagate their carries as they go; the 56 limbs of the product are folded with `2^448 = 2^224 + 1`; sums, differences (with twice the prime added) and products are normalized by carrying, folding the carry out of the top limb into limbs 0 and 14, twice, and carrying again.
 ///
 /// # Safety
 ///

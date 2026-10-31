@@ -4,8 +4,6 @@
 
 /// Ed25519 scalar multiply-add (RFC 8032 §5.1.6): writes the canonical 32-byte little-endian encoding of `(r + k*s) mod L` to `*out`. The inputs are unsigned 256-bit little-endian integers; they need not be canonical scalars. Contract: `VG.Spec.Ed25519.scalarMulAddContract`. Constant time: only pointers may affect timing.
 ///
-/// Computes the complete 512-bit multiply-add before reducing it modulo the subgroup order a 64-bit word at a time. All three input scalars may use all 256 bits. The function saves callee-saved registers and the output's address in `scratch`.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.
@@ -282,8 +280,6 @@ ret
 
 /// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, for the 32-byte private seed whose SHA-512 digest (§5.1.5, step 1) is at `expanded`, including pruning. Contract: `VG.Spec.Ed25519.publicKeyExpandedContract`. Constant time: only pointers may affect timing.
 ///
-/// Copies the seed's SHA-512 digest to `scratch + 1568` and encodes `[s]B` with `vg_ed25519_scalar_base`, as `vg_ed25519_public_key` does after hashing the seed. The pruned scalar `s` is kept in a 56-byte stack frame with the pointers and cleared before the frame is popped; the calls use the 16 bytes below it.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.
@@ -364,8 +360,6 @@ ret
 pub(crate) const VG_ED25519_PUBLIC_KEY_EXPANDED_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi2", "adx"]);
 
 /// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, for the 32-byte private seed whose SHA-512 digest (§5.1.5, step 1) is at `expanded`, including pruning. Contract: `VG.Spec.Ed25519.publicKeyExpandedContract`. Constant time: only pointers may affect timing.
-///
-/// Copies the seed's SHA-512 digest to `scratch + 1568` and encodes `[s]B` with `vg_ed25519_scalar_base_adx`, as `vg_ed25519_public_key_adx` does after hashing the seed. The pruned scalar `s` is kept in a 56-byte stack frame with the pointers and cleared before the frame is popped; the calls use the 16 bytes below it.
 ///
 /// # Safety
 ///
@@ -449,8 +443,6 @@ pub(crate) const VG_ED25519_PUBLIC_KEY_EXPANDED_IFMA_FEATURES: crate::cpu::Featu
 
 /// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, for the 32-byte private seed whose SHA-512 digest (§5.1.5, step 1) is at `expanded`, including pruning. Contract: `VG.Spec.Ed25519.publicKeyExpandedContract`. Constant time: only pointers may affect timing.
 ///
-/// Copies the seed's SHA-512 digest to `scratch + 1568` and encodes `[s]B` with `vg_ed25519_scalar_base_ifma`, as `vg_ed25519_public_key_ifma` does after hashing the seed. The pruned scalar `s` is kept in a 56-byte stack frame with the pointers and cleared before the frame is popped; the calls use the 16 bytes below it.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.
@@ -529,8 +521,6 @@ ret
 }
 
 /// Ed25519 scalar reduction (RFC 8032 §5.1.6): writes the canonical 32-byte little-endian encoding of `wide mod L` to `*out`, using all 64 input bytes. Contract: `VG.Spec.Ed25519.scalarReduceContract`. Constant time: only pointers may affect timing.
-///
-/// Processes the eight input words from the top into a four-word remainder: each step folds the bits above 2^252 back with one 64x128-bit product, then subtracts the subgroup order and selects with a borrow mask. Callee-saved registers are saved in the first 48 bytes of `scratch`, and the output's address in the next 8.
 ///
 /// # Safety
 ///
@@ -650,8 +640,6 @@ ret
 }
 
 /// Ed25519 base-point multiplication (RFC 8032 §5.1.4): writes the encoding of `[s]B` to `*out`, for the unsigned little-endian 256-bit integer at `scalar`, without pruning. Contract: `VG.Spec.Ed25519.scalarBaseContract`. Constant time: only pointers may affect timing.
-///
-/// Uses baseline integer instructions and a comb: 26 tables of the multiples [k 1024^j]B (1 ≤ k ≤ 16) of the base point, affine, precomputed as [Y - X, Y + X, 2dT] and checked against the specification in Lean, in the static `VG_ED25519_COMB`. Each of the scalar's 52 chunks n of five bits (the last is bit 255 alone) gives the digit n - 16, whose magnitude selects its table entry in constant time (every entry of the table is loaded with SSE2 and kept under a mask; a zero digit selects the identity) and whose sign negates it, or not, under a mask; the odd digits are added first, then five doublings make their sum 32 times as large, then the even ones are added. The comb starts at [G' + (b - 16) 1024^25]B for bit 255 b, the top digit's share, one of two constants chosen in constant time, so that the doublings make up for the offset of the digits, 33 G (G = 16 Σ 1024^j; G' = 33 G / 32 modulo the group's order): 51 additions, calls of `vg_ed25519_r64_add_affine_ext`, and five doublings, calls of `vg_ed25519_r64_double_ext`. The working values, masks and saved registers reside in `scratch`. The point's encoding inverts Z with a call of `vg_gf25519_r64_invert`.
 ///
 /// # Safety
 ///
@@ -1876,8 +1864,6 @@ pub(crate) const VG_ED25519_SCALAR_BASE_ADX_FEATURES: crate::cpu::Features = cra
 
 /// Ed25519 base-point multiplication (RFC 8032 §5.1.4): writes the encoding of `[s]B` to `*out`, for the unsigned little-endian 256-bit integer at `scalar`, without pruning. Contract: `VG.Spec.Ed25519.scalarBaseContract`. Constant time: only pointers may affect timing.
 ///
-/// The code of `vg_ed25519_scalar_base` but for the field multiplications and squarings, which use BMI2's `mulx` and ADX's `adcx` and `adox` (two carry chains at once), as `vg_x25519_adx` does, and so its doublings and additions call `vg_ed25519_r64_double_ext_adx` and `vg_ed25519_r64_add_affine_ext_adx`. Its comb selects each of the scalar's 52 signed digits' table entry in constant time from the static `VG_ED25519_COMB`, 32 bytes at a time with AVX2 (as `vg_ed25519_scalar_base_ifma`'s did); the working values, masks and saved registers reside in `scratch`.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.
@@ -2697,8 +2683,6 @@ ret
 pub(crate) const VG_ED25519_SCALAR_BASE_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]);
 
 /// Ed25519 base-point multiplication (RFC 8032 §5.1.4): writes the encoding of `[s]B` to `*out`, for the unsigned little-endian 256-bit integer at `scalar`, without pruning. Contract: `VG.Spec.Ed25519.scalarBaseContract`. Constant time: only pointers may affect timing.
-///
-/// The comb of `vg_ed25519_scalar_base_adx` with two accumulated points, one in each half of `zmm` registers, (X, Y, Z, T) in the four quadwords of the half as five limbs of 51 bits: one sums the entries of the odd digits, the other those of the even digits, so each of the 26 steps adds two tables' entries at once, each addition two products of eight field multiplications at once with AVX512_IFMA's `vpmadd52luq` and `vpmadd52huq`. Each entry is selected from the static `VG_ED25519_COMB` in constant time, 32 bytes at a time into both halves, split into limbs and negated under the mask of its digit's sign. The odd digits' sum is then doubled five times as `vg_ed25519_verify_ifma`'s doublings (on `ymm` registers, with AVX512VL) and the even digits' added. The comb runs with MXCSR `0x1FBF` (Intel's MCDT prologue and epilogue), saved in `scratch` and restored; the rest uses BMI2's and ADX's field multiplications.
 ///
 /// # Safety
 ///
@@ -5916,8 +5900,6 @@ ret
 }
 
 /// Checks Ed25519 encodings and the equation `[S]B = R + [k]A` (RFC 8032 §5.1.7), returning 1 if they pass and 0 otherwise. `pk` holds A, `signature` holds R || S, and `challenge` holds all 64 bytes of k as a little-endian integer, used as given: it is not reduced modulo L. To verify a signature on M as RFC 8032 §6 and `VG.Spec.Ed25519.verify` do, the caller must reduce SHA-512(R || A || M) modulo L (e.g. with `vg_ed25519_scalar_reduce`) and supply the 32-byte result followed by 32 zero bytes as `challenge`; this function does not hash M. Passing the unreduced digest instead checks the equation with the full 512-bit k, which RFC 8032 §5.1.7 also permits but which differs from §6 and OpenSSL whenever A has a small-order component. Rejects noncanonical points and S >= L, with no additional subgroup or small-order check. Contract: `VG.Spec.Ed25519.verifyEquationContract`. Not constant time: timing may depend on all inputs.
-///
-/// Uses baseline integer instructions. Checks canonical point encodings and S < L, then evaluates the uncofactored equation using all 512 challenge bits. No additional subgroup or small-order policy is imposed. Computes [k]A - [S]B with one chain of doublings, recoding both scalars into signed odd digits at least w positions apart (w = 5 for k, from a table of ±[1]A to ±[15]A; w = 8 for S, from the static VG_ED25519_VERIFY_BASE of ∓[1]B to ∓[127]B), both cached for addition as [Y - X, Y + X, 2dT, 2Z], skipping the leading zero bytes of k above its low 32 and the leading zero digits, computing T only in a doubling or addition that an addition follows, and compares it with -R projectively. The additions, and the doubling of the table, are calls of vg_ed25519_r64_add_cached_ext and _proj and vg_ed25519_r64_double_ext, whose return address takes 8 bytes of stack; the chain's doublings are inline, and so are the additions of the static's entries below the highest position, which take one product fewer since their Z is 1.
 ///
 /// # Safety
 ///
@@ -25880,8 +25862,6 @@ pub(crate) const VG_ED25519_VERIFY_EQUATION_ADX_FEATURES: crate::cpu::Features =
 
 /// Checks Ed25519 encodings and the equation `[S]B = R + [k]A` (RFC 8032 §5.1.7), returning 1 if they pass and 0 otherwise. `pk` holds A, `signature` holds R || S, and `challenge` holds all 64 bytes of k as a little-endian integer, used as given: it is not reduced modulo L. To verify a signature on M as RFC 8032 §6 and `VG.Spec.Ed25519.verify` do, the caller must reduce SHA-512(R || A || M) modulo L (e.g. with `vg_ed25519_scalar_reduce`) and supply the 32-byte result followed by 32 zero bytes as `challenge`; this function does not hash M. Passing the unreduced digest instead checks the equation with the full 512-bit k, which RFC 8032 §5.1.7 also permits but which differs from §6 and OpenSSL whenever A has a small-order component. Rejects noncanonical points and S >= L, with no additional subgroup or small-order check. Contract: `VG.Spec.Ed25519.verifyEquationContract`. Not constant time: timing may depend on all inputs.
 ///
-/// The code of `vg_ed25519_verify_equation` but for the field multiplications and squarings, which use BMI2's `mulx` and ADX's `adcx` and `adox` (two carry chains at once), as `vg_x25519_adx` does. Checks canonical point encodings and S < L, then evaluates the uncofactored equation using all 512 challenge bits, with one chain of doublings and signed odd digits of k (w = 5) and of S (w = 8), skipping the leading zero bytes of k above its low 32 and the leading zero digits. The additions, and the doubling of the table, are calls of the `_adx` point functions, whose return address takes 8 bytes of stack; the chain's doublings are inline, and so are the additions of the static's entries below the highest position, which take one product fewer since their Z is 1.
-///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 32 bytes.
@@ -40509,8 +40489,6 @@ ret
 pub(crate) const VG_ED25519_VERIFY_EQUATION_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi2", "adx", "avx512ifma", "avx512vl"]);
 
 /// Checks Ed25519 encodings and the equation `[S]B = R + [k]A` (RFC 8032 §5.1.7), returning 1 if they pass and 0 otherwise. `pk` holds A, `signature` holds R || S, and `challenge` holds all 64 bytes of k as a little-endian integer, used as given: it is not reduced modulo L. To verify a signature on M as RFC 8032 §6 and `VG.Spec.Ed25519.verify` do, the caller must reduce SHA-512(R || A || M) modulo L (e.g. with `vg_ed25519_scalar_reduce`) and supply the 32-byte result followed by 32 zero bytes as `challenge`; this function does not hash M. Passing the unreduced digest instead checks the equation with the full 512-bit k, which RFC 8032 §5.1.7 also permits but which differs from §6 and OpenSSL whenever A has a small-order component. Rejects noncanonical points and S >= L, with no additional subgroup or small-order check. Contract: `VG.Spec.Ed25519.verifyEquationContract`. Not constant time: timing may depend on all inputs.
-///
-/// The code of `vg_ed25519_verify_equation_adx` but for its windows, which hold the point's coordinates `X, Y, Z, T` in the four lanes of `ymm` registers throughout, as five 51-bit limbs each: each doubling, and each addition of a digit's cached table entry (loaded and split into limbs), is two four-lane multiplications (AVX512_IFMA's `vpmadd52luq` and `vpmadd52huq` on `ymm` registers, with AVX512VL), as in `vg_ed25519_scalar_base_ifma`'s comb. The windows run between Intel's MXCSR prologue and epilogue, which save MXCSR through bytes 1600 to 1608 of `scratch`. The table of A's multiples is built with calls of vg_ed25519_r64_double_ext_adx and vg_ed25519_r64_add_cached_ext_adx, whose return address takes 8 bytes of stack.
 ///
 /// # Safety
 ///
@@ -55279,8 +55257,6 @@ ret
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
-/// Hashes R, the public key and the message with the selected SHA-512 backend, reduces the challenge modulo L, and calls `vg_ed25519_verify_equation`. The digest and zero-extended reduced challenge occupy separate buffers in a 168-byte stack frame; calls, and the point functions' calls from `vg_ed25519_verify_equation`, use another 16 bytes below it.
-///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 32 bytes.
@@ -55392,8 +55368,6 @@ ret
 }
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
-///
-/// Copies the seed's cached SHA-512 digest, computes the nonce and challenge hashes with the selected backend, reduces them, encodes the nonce point with `vg_ed25519_scalar_base`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
 ///
 /// # Safety
 ///
@@ -55634,8 +55608,6 @@ pub(crate) const VG_ED25519_VERIFY_ADX_FEATURES: crate::cpu::Features = crate::c
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
-/// Hashes R, the public key and the message with the selected SHA-512 backend, reduces the challenge modulo L, and calls `vg_ed25519_verify_equation_adx`. The digest and zero-extended reduced challenge occupy separate buffers in a 168-byte stack frame; calls, and the point functions' calls from `vg_ed25519_verify_equation_adx`, use another 16 bytes below it.
-///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 32 bytes.
@@ -55751,8 +55723,6 @@ ret
 pub(crate) const VG_ED25519_SIGN_EXPANDED_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi2", "adx"]);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
-///
-/// Copies the seed's cached SHA-512 digest, computes the nonce and challenge hashes with the selected backend, reduces them, encodes the nonce point with `vg_ed25519_scalar_base_adx`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
 ///
 /// # Safety
 ///
@@ -55994,8 +55964,6 @@ pub(crate) const VG_ED25519_VERIFY_IFMA_FEATURES: crate::cpu::Features = crate::
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
-/// Hashes R, the public key and the message with the selected SHA-512 backend, reduces the challenge modulo L, and calls `vg_ed25519_verify_equation_ifma`. The digest and zero-extended reduced challenge occupy separate buffers in a 168-byte stack frame; calls, and the point functions' calls from `vg_ed25519_verify_equation_ifma`, use another 16 bytes below it.
-///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 32 bytes.
@@ -56111,8 +56079,6 @@ ret
 pub(crate) const VG_ED25519_SIGN_EXPANDED_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
-///
-/// Copies the seed's cached SHA-512 digest, computes the nonce and challenge hashes with the selected backend, reduces them, encodes the nonce point with `vg_ed25519_scalar_base_ifma`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
 ///
 /// # Safety
 ///
@@ -56354,8 +56320,6 @@ pub(crate) const VG_ED25519_VERIFY_AVX2_FEATURES: crate::cpu::Features = crate::
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
-/// Hashes R, the public key and the message with the selected SHA-512 backend, reduces the challenge modulo L, and calls `vg_ed25519_verify_equation`. The digest and zero-extended reduced challenge occupy separate buffers in a 168-byte stack frame; calls, and the point functions' calls from `vg_ed25519_verify_equation`, use another 16 bytes below it.
-///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 32 bytes.
@@ -56471,8 +56435,6 @@ ret
 pub(crate) const VG_ED25519_SIGN_EXPANDED_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2"]);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
-///
-/// Copies the seed's cached SHA-512 digest, computes the nonce and challenge hashes with the selected backend, reduces them, encodes the nonce point with `vg_ed25519_scalar_base`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
 ///
 /// # Safety
 ///
@@ -56714,8 +56676,6 @@ pub(crate) const VG_ED25519_VERIFY_AVX2_ADX_FEATURES: crate::cpu::Features = cra
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
-/// Hashes R, the public key and the message with the selected SHA-512 backend, reduces the challenge modulo L, and calls `vg_ed25519_verify_equation_adx`. The digest and zero-extended reduced challenge occupy separate buffers in a 168-byte stack frame; calls, and the point functions' calls from `vg_ed25519_verify_equation_adx`, use another 16 bytes below it.
-///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 32 bytes.
@@ -56831,8 +56791,6 @@ ret
 pub(crate) const VG_ED25519_SIGN_EXPANDED_AVX2_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2", "adx"]);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
-///
-/// Copies the seed's cached SHA-512 digest, computes the nonce and challenge hashes with the selected backend, reduces them, encodes the nonce point with `vg_ed25519_scalar_base_adx`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
 ///
 /// # Safety
 ///
@@ -57074,8 +57032,6 @@ pub(crate) const VG_ED25519_VERIFY_AVX2_IFMA_FEATURES: crate::cpu::Features = cr
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
-/// Hashes R, the public key and the message with the selected SHA-512 backend, reduces the challenge modulo L, and calls `vg_ed25519_verify_equation_ifma`. The digest and zero-extended reduced challenge occupy separate buffers in a 168-byte stack frame; calls, and the point functions' calls from `vg_ed25519_verify_equation_ifma`, use another 16 bytes below it.
-///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 32 bytes.
@@ -57191,8 +57147,6 @@ ret
 pub(crate) const VG_ED25519_SIGN_EXPANDED_AVX2_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
-///
-/// Copies the seed's cached SHA-512 digest, computes the nonce and challenge hashes with the selected backend, reduces them, encodes the nonce point with `vg_ed25519_scalar_base_ifma`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
 ///
 /// # Safety
 ///
@@ -57434,8 +57388,6 @@ pub(crate) const VG_ED25519_VERIFY_SHANI_FEATURES: crate::cpu::Features = crate:
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
-/// Hashes R, the public key and the message with the selected SHA-512 backend, reduces the challenge modulo L, and calls `vg_ed25519_verify_equation`. The digest and zero-extended reduced challenge occupy separate buffers in a 168-byte stack frame; calls, and the point functions' calls from `vg_ed25519_verify_equation`, use another 16 bytes below it.
-///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 32 bytes.
@@ -57551,8 +57503,6 @@ ret
 pub(crate) const VG_ED25519_SIGN_EXPANDED_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "sha512"]);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
-///
-/// Copies the seed's cached SHA-512 digest, computes the nonce and challenge hashes with the selected backend, reduces them, encodes the nonce point with `vg_ed25519_scalar_base`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
 ///
 /// # Safety
 ///
@@ -57794,8 +57744,6 @@ pub(crate) const VG_ED25519_VERIFY_SHANI_ADX_FEATURES: crate::cpu::Features = cr
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
-/// Hashes R, the public key and the message with the selected SHA-512 backend, reduces the challenge modulo L, and calls `vg_ed25519_verify_equation_adx`. The digest and zero-extended reduced challenge occupy separate buffers in a 168-byte stack frame; calls, and the point functions' calls from `vg_ed25519_verify_equation_adx`, use another 16 bytes below it.
-///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 32 bytes.
@@ -57911,8 +57859,6 @@ ret
 pub(crate) const VG_ED25519_SIGN_EXPANDED_SHANI_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "sha512", "bmi2", "adx"]);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
-///
-/// Copies the seed's cached SHA-512 digest, computes the nonce and challenge hashes with the selected backend, reduces them, encodes the nonce point with `vg_ed25519_scalar_base_adx`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
 ///
 /// # Safety
 ///
@@ -58154,8 +58100,6 @@ pub(crate) const VG_ED25519_VERIFY_SHANI_IFMA_FEATURES: crate::cpu::Features = c
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
-/// Hashes R, the public key and the message with the selected SHA-512 backend, reduces the challenge modulo L, and calls `vg_ed25519_verify_equation_ifma`. The digest and zero-extended reduced challenge occupy separate buffers in a 168-byte stack frame; calls, and the point functions' calls from `vg_ed25519_verify_equation_ifma`, use another 16 bytes below it.
-///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 32 bytes.
@@ -58271,8 +58215,6 @@ ret
 pub(crate) const VG_ED25519_SIGN_EXPANDED_SHANI_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "sha512", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]);
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed whose SHA-512 digest (§5.1.6, step 1) is cached at `expanded`, using its cached public key at `pk`. Includes the remaining hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signExpandedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
-///
-/// Copies the seed's cached SHA-512 digest, computes the nonce and challenge hashes with the selected backend, reduces them, encodes the nonce point with `vg_ed25519_scalar_base_ifma`, and computes the final scalar. The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest and saved arguments; its secret buffers are cleared before return. Calls use another 16 bytes below the frame.
 ///
 /// # Safety
 ///

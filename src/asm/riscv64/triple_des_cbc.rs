@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.TripleDes.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline RV64I: one block at a time, with ECB's verified block function inlined (the eight S-boxes looked up at once in the 64 lanes of a word, from words of constants in the frame, with no table lookups at secret addresses). The mode is the generic one of `Impl/Modes/RISCV64/`, which runs in a frame of 944 bytes on the stack, 16-byte aligned: it keeps its state in `s1`–`s4`, saving our caller's there, and the block function reads a copy of the schedule there, made a byte at a time, since the contracts state no alignment for it. The frame is zeroed before returning.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.
@@ -1526,8 +1524,6 @@ ret
 /// Triple DES-CBC decryption (NIST SP 800-38A §6.2, FIPS 46-3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is Triple DES decryption under the schedule written by `vg_triple_des_expand_key`. No padding is removed.
 ///
 /// Contract: `VG.Spec.TripleDes.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
-///
-/// Baseline RV64I: one block at a time, with ECB's verified block function inlined (the eight S-boxes looked up at once in the 64 lanes of a word, from words of constants in the frame, with no table lookups at secret addresses). The mode is the generic one of `Impl/Modes/RISCV64/`, which runs in a frame of 944 bytes on the stack, 16-byte aligned: it keeps its state in `s1`–`s4`, saving our caller's there, and the block function reads a copy of the schedule there, made a byte at a time, since the contracts state no alignment for it. The frame is zeroed before returning.
 ///
 /// # Safety
 ///

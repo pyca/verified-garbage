@@ -4,8 +4,6 @@
 
 /// DSA verification of a prehashed digest. The key is big-endian p||q||g||y with widths p_len, q_len, p_len, p_len; signature is r||s with q_len bytes each. Returns 1 if verification succeeds, otherwise 0. Checks algebraic consistency, not primality; caller must assure domain validity. Timing may depend on p,q,g,y and the result, not otherwise on signature or digest. Contract: `VG.Spec.Dsa.verifyContract`.
 ///
-/// The key's public part is checked first (sizes, oddness, p mod q = 1, the orders of g and y), branching only on it. The verification computes w = s^(q − 2) mod q, g^u1 and y^u2 with the fixed-window secret-exponent power of the RSA code on PPC64LE, and keeps the range checks of r and s as a mask: signature and digest do not affect the leakage trace.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -9606,8 +9604,6 @@ blr",
 
 /// One DSA signing attempt on a prehashed digest. The key is big-endian p||q||g||y||x with component widths p_len, q_len, p_len, p_len, q_len; nonce is q_len bytes. Returns 1 and r||s (q_len bytes each), or 0 and zero output for invalid components, nonce or zero r/s. Checks algebraic consistency, not primality. Caller must assure domain validity and supply fresh independent nonces. Timing may depend on public p,q,g,y and success, not otherwise on x, nonce or digest. Contract: `VG.Spec.Dsa.signContract`.
 ///
-/// The key's public part is checked as for verification, branching only on it. Signing compares g^x mod p with y, computes r = (g^k mod p) mod q, w = k^(q − 2) mod q and s = w (z + x r) mod q with the fixed-window secret-exponent power of the RSA code on PPC64LE, and keeps the checks of x, k, r and s as a mask that selects the signature or zeros: the private key, the nonce and the digest do not affect the leakage trace.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -19168,8 +19164,6 @@ blr",
 
 /// DSA domain checks on big-endian p||q||g (widths p_len, q_len, p_len), those of key generation before it samples: returns 1 if the widths are supported and the domain is algebraically consistent (supported bit lengths, odd p and q, q divides p-1, 1 < g < p, g^q = 1 mod p), otherwise 0. Checks algebraic consistency, not primality. All inputs are public. Contract: `VG.Spec.Dsa.checkParametersContract`.
 ///
-/// The domain is checked as the key's public part is for verification (sizes, oddness, p mod q = 1, the order of g), with the fixed-window power of the RSA code on PPC64LE, branching only on the domain, which is public.
-///
 /// # Safety
 ///
 /// * `params` must be valid for reads of `params_len` bytes.
@@ -21196,8 +21190,6 @@ blr",
 }
 
 /// Derive a DSA private key from big-endian p||q||g and a supplied q_len-byte scalar x, as key generation does after sampling x: checks the domain and 0 < x < q, computes y = g^x mod p and checks the key. Returns 1 with p||q||g||y||x, or 0 and zero output. Checks algebraic consistency, not primality. x must be a fresh uniform scalar the caller sampled. Timing may depend on p, q, g and success, not otherwise on x. Contract: `VG.Spec.Dsa.deriveKeyContract`.
-///
-/// The domain is checked as for `vg_dsa_check_parameters`, branching only on it. The derivation computes y = g^x mod p with the fixed-window secret-exponent power of the RSA code on PPC64LE, which is below p, and of order dividing q since g's is; it keeps the checks of y ≠ 0, y ≠ 1 and 0 < x < q as a mask, and'ed into each octet of p||q||g||y||x as it goes to out: x and y do not affect the leakage trace.
 ///
 /// # Safety
 ///
@@ -24895,8 +24887,6 @@ blr",
 
 /// Randomized DSA signing of a prehashed digest from fresh independent random octets. Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for invalid key/retry exhaustion, or 2 for insufficient random bytes. On failure out is zero. used counts consumed complete draws on every return. Checks algebraic consistency, not primality. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignContract`.
 ///
-/// Rejection sampling and signing retries are verified against the bounded random-tape specification; each signing attempt calls `vg_dsa_sign`. A draw is copied, its first octet masked, into the last octets of a zeroed nonce in the stack frame and compared with q by a borrow chain without a branch: only the tape's length, the draws' acceptance and each attempt's success affect the leakage trace. Every failure zeroes `out`, and every exit zeroes the nonce. The nonvolatile registers, which hold the loop's state, are saved in the frame.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -25157,8 +25147,6 @@ blr",
 }
 
 /// Generate a DSA private key from p||q||g and fresh independent random bytes. Uses at most 128 rejection-sampling draws, computes y=g^x mod p, and checks algebraic consistency, not primality. Returns 1 with p||q||g||y||x, 0 for invalid input/draw limit, or 2 for insufficient randomness. Failure zeros out; used counts consumed complete draws on every return. Timing may depend on public parameters, sampling decisions, consumption and success, not otherwise on x or randomness. Contract: `VG.Spec.Dsa.generateKeyContract`.
-///
-/// The domain is checked by calling `vg_dsa_check_parameters`, branching only on it. x is sampled as for `vg_dsa_sign_random`: each draw is copied, its first octet masked, into the last octets of a zeroed nonce in the stack frame and compared with q by a borrow chain without a branch, so only the tape's length and the draws' acceptance affect the leakage trace. An accepted x is passed to `vg_dsa_derive_key`, which writes p||q||g||y||x or zeroes `out`. Every failure zeroes `out`, and every exit zeroes the nonce. The nonvolatile registers, which hold the state, are saved in the frame.
 ///
 /// # Safety
 ///
@@ -25423,8 +25411,6 @@ blr",
 }
 
 /// Validate packed DSA p||q||g||y, including domain consistency and both subgroup memberships. Returns 1 exactly when validation succeeds, otherwise 0. Does not test primality. The key is public; scratch contents are unspecified on return. Contract: `VG.Spec.Dsa.validatePublicKeyContract`.
-///
-/// The key's public part is checked as for verification (sizes, oddness, p mod q = 1, the orders of g and y), with the fixed-window power of the RSA code on PPC64LE, branching only on the key, which is public.
 ///
 /// # Safety
 ///
@@ -28906,8 +28892,6 @@ blr",
 }
 
 /// DSA verification with the same result as vg_dsa_verify, for an already validated packed public key. Signature scalars and digest handling retain the fully checked API's behavior. Timing may depend on p,q,g,y and the result, not otherwise on signature or digest. Contract: `VG.Spec.Dsa.verifyPrevalidatedContract`.
-///
-/// As `vg_dsa_verify`, without the checks of the key the precondition establishes: only the sizes are checked (which give q's significant octets), then p, R² mod p and q are loaded into the working spaces and the verification is `vg_dsa_verify`'s, with the range checks of r and s kept as a mask: signature and digest do not affect the leakage trace.
 ///
 /// # Safety
 ///
@@ -35415,8 +35399,6 @@ blr",
 }
 
 /// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
-///
-/// The complete bounded parameter search runs in verified code: seed hashing by calls of `vg_sha1_compress` or `vg_sha256_compress` on one padded block, q and p built in the key working space of the RSA key routines in `scratch` (its subtractions, selections and division on 64-bit words with the carry bit for an even count of 32-bit digits), the probable-prime tests of each size over the same Miller–Rabin round, `g` by RSA's fixed-window power in the P space, the domain check of `vg_dsa_check_parameters`, and the output copied or zeroed. The search's state is kept in a header of `scratch`, whose address stays in `r28`. The three input tapes are public under the contract. Only 1024/160, 2048/256 and 3072/256 are generated.
 ///
 /// # Safety
 ///
@@ -45355,8 +45337,6 @@ blr",
 ///
 /// Contract: `VG.Spec.Dsa.ProbablePrime.contract`. The candidate and the tape are public: timing may depend on both.
 ///
-/// The candidate's big-endian octets are loaded into RSA's Montgomery working space of at least four 64-bit words, at byte 552 of `ws`, behind the caller's saved registers. Trial division by the shared table of 32-bit primes and their inverses (Montgomery reduction by 2^32 of the candidate's 32-bit digits) returns at the first divisor. The blinded loop draws each witness from the tape, cut to the candidate's width, forces a non-uniform draw into range rather than rejecting it, and calls the shared Miller–Rabin round.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -46912,8 +46892,6 @@ blr",
 /// DSA's probable-prime test (`VG.Spec.Dsa.probablePrime`: trial division, then RSA's blinded Miller–Rabin loop with 64 uniform witnesses through 2048 bits and 128 above) of the odd 256-bit number of 32 big-endian bytes at byte 0 of `ws`, with witnesses drawn from the front of `rand`. Returns 1 for a probable prime, 2 for a composite, and 0 if `rand` ran out; for 1 and 2 writes the octets read to `used`. Every byte of `ws` but those of the ranges 384..2152 keeps its value. Acceptance is probable primality, not a certificate.
 ///
 /// Contract: `VG.Spec.Dsa.ProbablePrime.contract`. The candidate and the tape are public: timing may depend on both.
-///
-/// The candidate's big-endian octets are loaded into RSA's Montgomery working space of at least four 64-bit words, at byte 552 of `ws`, behind the caller's saved registers. Trial division by the shared table of 32-bit primes and their inverses (Montgomery reduction by 2^32 of the candidate's 32-bit digits) returns at the first divisor. The blinded loop draws each witness from the tape, cut to the candidate's width, forces a non-uniform draw into range rather than rejecting it, and calls the shared Miller–Rabin round.
 ///
 /// # Safety
 ///
@@ -48471,8 +48449,6 @@ blr",
 ///
 /// Contract: `VG.Spec.Dsa.ProbablePrime.contract`. The candidate and the tape are public: timing may depend on both.
 ///
-/// The candidate's big-endian octets are loaded into RSA's Montgomery working space of at least four 64-bit words, at byte 552 of `ws`, behind the caller's saved registers. Trial division by the shared table of 32-bit primes and their inverses (Montgomery reduction by 2^32 of the candidate's 32-bit digits) returns at the first divisor. The blinded loop draws each witness from the tape, cut to the candidate's width, forces a non-uniform draw into range rather than rejecting it, and calls the shared Miller–Rabin round.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -50029,8 +50005,6 @@ blr",
 ///
 /// Contract: `VG.Spec.Dsa.ProbablePrime.contract`. The candidate and the tape are public: timing may depend on both.
 ///
-/// The candidate's big-endian octets are loaded into RSA's Montgomery working space of at least four 64-bit words, at byte 552 of `ws`, behind the caller's saved registers. Trial division by the shared table of 32-bit primes and their inverses (Montgomery reduction by 2^32 of the candidate's 32-bit digits) returns at the first divisor. The blinded loop draws each witness from the tape, cut to the candidate's width, forces a non-uniform draw into range rather than rejecting it, and calls the shared Miller–Rabin round.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -51586,8 +51560,6 @@ blr",
 /// DSA's probable-prime test (`VG.Spec.Dsa.probablePrime`: trial division, then RSA's blinded Miller–Rabin loop with 64 uniform witnesses through 2048 bits and 128 above) of the odd 3072-bit number of 384 big-endian bytes at byte 0 of `ws`, with witnesses drawn from the front of `rand`. Returns 1 for a probable prime, 2 for a composite, and 0 if `rand` ran out; for 1 and 2 writes the octets read to `used`. Every byte of `ws` but those of the ranges 384..12008 keeps its value. Acceptance is probable primality, not a certificate.
 ///
 /// Contract: `VG.Spec.Dsa.ProbablePrime.contract`. The candidate and the tape are public: timing may depend on both.
-///
-/// The candidate's big-endian octets are loaded into RSA's Montgomery working space of at least four 64-bit words, at byte 552 of `ws`, behind the caller's saved registers. Trial division by the shared table of 32-bit primes and their inverses (Montgomery reduction by 2^32 of the candidate's 32-bit digits) returns at the first divisor. The blinded loop draws each witness from the tape, cut to the candidate's width, forces a non-uniform draw into range rather than rejecting it, and calls the shared Miller–Rabin round.
 ///
 /// # Safety
 ///

@@ -19,10 +19,6 @@ namespace VG.Artifacts.AesCtr.RISCV64
 
 def artifacts : List Artifact := [
   Spec.Ctr.aesApi.artifact RISCV64.target {
-    notes := [
-      "This implementation calls `vg_aes_ctr32` on as many blocks at once as the counter's \
-        last 32 bits allow, as OpenSSL's `CRYPTO_ctr128_encrypt_ctr32` does. The counter block is \
-        accessed a byte at a time, since the contract states no alignment for it."]
     code := Impl.AesCtr.RISCV64.crypt
     verified := Proof.AesCtr.RISCV64.crypt_verified }]
 

@@ -80,11 +80,6 @@ namespace VG.Generic.BrainpoolP384r1.AArch64.EcdhBrainpoolP384r1
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.BrainpoolP384r1.curve) : List Artifact := [
   Spec.Ecdh.BrainpoolP384r1.exchangeApi.artifact AArch64.target {
-    notes := ["Field elements are six 64-bit words in Montgomery form. \
-      Scalar multiplication uses a fixed 384-iteration ladder with the general complete addition \
-      formulas of Renes, Costello and Batina (Algorithm 1), which hold for any `a`. \
-      The inversion is a call of `vg_brainpoolp384r1_inv_mod_p`, by divsteps. \
-      Branches and memory addresses depend only on pointers and loop counters."]
     code := Impl.Ecdh.AArch64.BrainpoolP384r1.exchange
     verified := Proof.Ecdh.AArch64.BrainpoolP384r1.ecdh_verified h.law h.inv }]
 

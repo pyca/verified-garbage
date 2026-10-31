@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.compressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
 ///
-/// The functions are `vg_ecdh_p384`'s setup, field arithmetic and checks: they save `r14`, `r31` and `lr` in `scratch` (in `r3` during the function), keep `out` in `r14` and `public` in `r12` while they read it; field elements are six 64-bit words in Montgomery form, multiplied by calls of `vg_p384_mul_mod_p` and the other functions of `p384_mont`. Compression checks the key as ECDH checks the peer's (its first byte, both coordinates below `p` and the curve's equation) and writes the tag from `y`'s low bit. Decompression checks the tag and `x < p`, computes `x³ + a x + b` and a square root's candidate by `rhs^((p+1)/4)`, by square-and-always-multiply, takes it or `p` minus it by the tag's parity, and checks its square and parity. The result (or zeros) is selected by a mask of the checks, without branches, so the time depends only on the pointers.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 49 bytes.
@@ -1119,8 +1117,6 @@ blr",
 /// Validate and decompress a P-384 public key (SEC 1 §2.3.4, SP 800-56A §5.6.2.3.3): reads `02` or `03` followed by `x` in 48 bytes, most significant first; checks `x` below the field prime and recovers a coordinate `y` satisfying the curve equation with even parity for `02`, odd for `03`. Writes `04` followed by `x` and `y` in 48 bytes each and returns 1. If no such finite point exists, writes 97 zero bytes and returns 0. Rejects infinity and hybrid encodings. The curve has cofactor one, so no subgroup multiplication is required.
 ///
 /// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
-///
-/// The functions are `vg_ecdh_p384`'s setup, field arithmetic and checks: they save `r14`, `r31` and `lr` in `scratch` (in `r3` during the function), keep `out` in `r14` and `public` in `r12` while they read it; field elements are six 64-bit words in Montgomery form, multiplied by calls of `vg_p384_mul_mod_p` and the other functions of `p384_mont`. Compression checks the key as ECDH checks the peer's (its first byte, both coordinates below `p` and the curve's equation) and writes the tag from `y`'s low bit. Decompression checks the tag and `x < p`, computes `x³ + a x + b` and a square root's candidate by `rhs^((p+1)/4)`, by square-and-always-multiply, takes it or `p` minus it by the tag's parity, and checks its square and parity. The result (or zeros) is selected by a mask of the checks, without branches, so the time depends only on the pointers.
 ///
 /// # Safety
 ///

@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Aes.expandKeyContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// `SUBWORD` uses a constant-time bitsliced S-box, in the style of BearSSL's `aes_ct64` (Thomas Pornin, MIT licence). The working space is in a frame of 520 bytes on the stack, zeroed before returning.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -1539,8 +1537,6 @@ ret
 ///
 /// Contract: `VG.Spec.Aes.expandKeyScratchContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// `SUBWORD` uses a constant-time bitsliced S-box, in the style of BearSSL's `aes_ct64` (Thomas Pornin, MIT licence).
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -3004,8 +3000,6 @@ ret
 /// AES counter mode with GCM's 32-bit increment (NIST SP 800-38D §6.5, on whole blocks): XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Gcm.ctr32Contract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the counter block or the data.
-///
-/// Constant-time bitsliced AES, four blocks at a time, in the style of BearSSL's `aes_ct64` (Thomas Pornin, MIT licence).
 ///
 /// # Safety
 ///
@@ -4735,8 +4729,6 @@ pub(crate) const VG_AES_EXPAND_KEY_AESNI_FEATURES: crate::cpu::Features = crate:
 ///
 /// Contract: `VG.Spec.Aes.expandKeyContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// Uses AES-NI: four words at a time, with AESKEYGENASSIST. The working space is in a frame of 520 bytes on the stack, zeroed before returning.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -5276,8 +5268,6 @@ pub(crate) const VG_AES_EXPAND_KEY_SCRATCH_AESNI_FEATURES: crate::cpu::Features 
 ///
 /// Contract: `VG.Spec.Aes.expandKeyScratchContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// Uses AES-NI: four words at a time, with AESKEYGENASSIST.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -5750,8 +5740,6 @@ pub(crate) const VG_AES_CTR32_AESNI_FEATURES: crate::cpu::Features = crate::cpu:
 ///
 /// Contract: `VG.Spec.Gcm.ctr32Contract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the counter block or the data.
 ///
-/// Uses AES-NI: eight blocks at a time, then one at a time.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -6052,8 +6040,6 @@ pub(crate) const VG_AES_CTR32_VAES_FEATURES: crate::cpu::Features = crate::cpu::
 /// AES counter mode with GCM's 32-bit increment (NIST SP 800-38D §6.5, on whole blocks): XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Gcm.ctr32Contract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the counter block or the data.
-///
-/// Uses VAES: sixteen blocks at a time, two in each 256-bit register; the blocks left go eight and then one at a time with AES-NI, as in `vg_aes_ctr32_aesni`.
 ///
 /// # Safety
 ///
@@ -6829,8 +6815,6 @@ ret
 /// AES encryption of whole blocks (FIPS 197 §5.1, `CIPHER`): replaces each of the `n` 16-byte blocks at `data` with its encryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Aes.encryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
-///
-/// Constant-time bitsliced AES, four blocks at a time, in the style of BearSSL's `aes_ct64` (Thomas Pornin, MIT licence).
 ///
 /// # Safety
 ///
@@ -8516,8 +8500,6 @@ ret
 /// AES decryption of whole blocks (FIPS 197 §5.3, `INVCIPHER`): replaces each of the `n` 16-byte blocks at `data` with its decryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule, which the inverse cipher uses in the reverse order).
 ///
 /// Contract: `VG.Spec.Aes.decryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
-///
-/// Constant-time bitsliced AES, four blocks at a time, in the style of BearSSL's `aes_ct64` (Thomas Pornin, MIT licence): the inverse S-box is the forward one between two inverse affine maps.
 ///
 /// # Safety
 ///
@@ -10401,8 +10383,6 @@ pub(crate) const VG_AES_ENCRYPT_BLOCKS_AESNI_SCRATCH_WRITTEN: usize = 0;
 ///
 /// Contract: `VG.Spec.Aes.encryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
 ///
-/// Uses AES-NI: eight blocks at a time, then one at a time.
-///
 /// It writes at most the first 0 bytes of `scratch` (`VG_AES_ENCRYPT_BLOCKS_AESNI_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
 /// # Safety
@@ -10657,8 +10637,6 @@ pub(crate) const VG_AES_DECRYPT_BLOCKS_AESNI_FEATURES: crate::cpu::Features = cr
 /// AES decryption of whole blocks (FIPS 197 §5.3, `INVCIPHER`): replaces each of the `n` 16-byte blocks at `data` with its decryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule, which the inverse cipher uses in the reverse order).
 ///
 /// Contract: `VG.Spec.Aes.decryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
-///
-/// Uses AES-NI: eight blocks at a time, then one at a time, with the Equivalent Inverse Cipher (FIPS 197 §5.3.5): the middle round keys go through AESIMC into the working space first.
 ///
 /// # Safety
 ///
@@ -10964,8 +10942,6 @@ pub(crate) const VG_AES_ENCRYPT_BLOCKS_VAES_SCRATCH_WRITTEN: usize = 0;
 /// AES encryption of whole blocks (FIPS 197 §5.1, `CIPHER`): replaces each of the `n` 16-byte blocks at `data` with its encryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Aes.encryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
-///
-/// Uses VAES: sixteen blocks at a time, two in each 256-bit register; the blocks left go eight and then one at a time with AES-NI, as in `vg_aes_encrypt_blocks_aesni`.
 ///
 /// It writes at most the first 0 bytes of `scratch` (`VG_AES_ENCRYPT_BLOCKS_VAES_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
@@ -11393,8 +11369,6 @@ pub(crate) const VG_AES_DECRYPT_BLOCKS_VAES_FEATURES: crate::cpu::Features = cra
 /// AES decryption of whole blocks (FIPS 197 §5.3, `INVCIPHER`): replaces each of the `n` 16-byte blocks at `data` with its decryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule, which the inverse cipher uses in the reverse order).
 ///
 /// Contract: `VG.Spec.Aes.decryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
-///
-/// Uses VAES: sixteen blocks at a time, two in each 256-bit register, with the Equivalent Inverse Cipher (FIPS 197 §5.3.5): the middle round keys go through AESIMC into the working space first; the blocks left go eight and then one at a time with AES-NI, as in `vg_aes_decrypt_blocks_aesni`.
 ///
 /// # Safety
 ///

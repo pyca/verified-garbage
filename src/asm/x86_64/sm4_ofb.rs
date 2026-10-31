@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Sm4.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline x86-64: one block at a time (each block's input depends on the block before), encrypted bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups, in a batch of sixteen of which the other fifteen are unused; the key schedule's table of round keys is built once per call, inline, rearranging each key word before broadcast, and each batch is a call of `vg_sm4_crypt_prepared`. The mode is the generic OFB of `Impl/Modes/X86_64/`, over SM4's ECB core.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.

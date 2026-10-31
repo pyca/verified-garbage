@@ -22,84 +22,37 @@ open VG.AArch64
 def artifacts : List Artifact := [
   Spec.Ffdh.generationPrecomputeApi.artifact target {
     consts := Impl.Ffdh.AArch64.Cached.Policy.tableConsts
-    notes := ["Recognizes exact RFC 3526/RFC 7919 groups with the reviewed shorter-exponent policy; \
-      other domains retain their full public bound. Initializes one immutable canonical five-tooth \
-      comb context using the existing eight-limb product and dedicated squaring implementation."]
     code := Impl.Ffdh.AArch64.Cached.Precompute.code Proof.Bignum.AArch64.Mont.productEight.mm
     verified := Proof.Ffdh.AArch64.Cached.precompute_verified _ },
   Spec.Ffdh.cachedGenerateKeyApi.artifact target {
-    notes := ["Uses the context's public width and five-tooth comb schedule for every scalar, \
-      including secret leading zeros. Scalar range checks, public-value checks and failure zeroing \
-      implement the existing vetted generation contract."]
     code := Impl.Ffdh.AArch64.Cached.Generate.code Proof.Bignum.AArch64.Mont.productEight.mm
     verified := Proof.Ffdh.AArch64.Cached.attempt_verified _ },
   Spec.Ffdh.cachedKeySearchApi.artifact target {
     stack := 64
-    notes := ["The whole cached rejection search is verified, including both budgets, entropy \
-      refills, octets consumed, output zeroing and public status leakage. The immutable context \
-      is reloaded from the caller's public arguments; a 48-byte attempt frame shares the existing \
-      16-byte link-register frame."]
     code := Proof.Ffdh.AArch64.Cached.cachedSearch
     verified := Proof.Ffdh.AArch64.Cached.cachedSearch_verified },
   Spec.Ffdh.checkPublicApi.artifact target {
-    notes := ["Baseline AArch64: p is checked as `vg_rsa_public_precompute` checks a modulus, in a \
-        working space of `w = ⌈p_len / 8⌉` words with an inner one for p (its 32-entry window table \
-        included). y is compared with 1 and with p − 1 by a subtraction's borrow over all the words; \
-        with q, `R² mod p` is computed by doublings and squarings and `y^q mod p` by RSA's \
-        exponentiation with five-bit windows (the `vg_rsa_square_window5` helper and a constant-time \
-        table scan) from q's first nonzero octet."]
     code := Impl.Ffdh.AArch64.Domain.CheckPublic.code Proof.Bignum.AArch64.WindowFive.called.code
       Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
     verified := Proof.Ffdh.AArch64.CheckPublic.cp_verified _ _ _ },
   Spec.Ffdh.checkDomainApi.artifact target {
     consts := Impl.Ffdh.AArch64.Cached.Policy.tableConsts
-    notes := ["Exact RFC 3526/RFC 7919 domain matches use kernel-checked fixed-parameter \
-      certificates for the existing algebraic validation rules, including the subgroup power. \
-      Every byte of p, g and an optional q must match; other inputs retain the general validator."]
     code := Impl.Ffdh.AArch64.VettedValidation.code Proof.Bignum.AArch64.WindowFive.called.code
       Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
     verified := Proof.Ffdh.AArch64.VettedValidation.verified _ _ _ },
   Spec.Ffdh.exchangeApi.artifact target {
-    notes := ["Baseline AArch64: p is checked as `vg_rsa_public_precompute` checks a modulus, in a \
-        working space of `w = ⌈p_len / 8⌉` words with an inner one for p. `y^x mod p` is computed by \
-        RSA's exponentiation with five-bit windows over all `x_len` octets of x (the \
-        `vg_rsa_square_window5` helper and a constant-time table scan); z is compared with 1 and \
-        with p − 1 by a subtraction's borrow over all the words, and stored masked by the result, \
-        zeros for 0, without a branch."]
     code := Impl.Ffdh.AArch64.Domain.Exchange.code Proof.Bignum.AArch64.WindowFive.called.code
       Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
     verified := Proof.Ffdh.AArch64.Exchange.ex_verified _ _ _ },
   Spec.Ffdh.checkPrivateApi.artifact target {
-    notes := ["Baseline AArch64: p is checked as `vg_rsa_public_precompute` checks a modulus, in a \
-        working space of `w = ⌈p_len / 8⌉` words with an inner one for p. x's range and y's are \
-        comparisons by a subtraction's borrow over all the words, and the only branch on x is on \
-        its range; with q, `y^q mod p` and then `g^x mod p` are computed by RSA's exponentiation \
-        with five-bit windows (the `vg_rsa_square_window5` helper and a constant-time table scan), \
-        the latter over all `x_len` octets of x, and compared with y over all the words."]
     code := Impl.Ffdh.AArch64.Domain.CheckPrivate.code Proof.Bignum.AArch64.WindowFive.called.code
       Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
     verified := Proof.Ffdh.AArch64.CheckPrivate.kp_verified _ _ _ },
   Spec.Ffdh.derivePublicApi.artifact target {
-    notes := ["Baseline AArch64: p is checked as `vg_rsa_public_precompute` checks a modulus, in a \
-        working space of `w = ⌈p_len / 8⌉` words with an inner one for p. x's range is a comparison \
-        by a subtraction's borrow over all the words, as in `vg_ffdh_check_private`, and the only \
-        branch on x is on its range; `g^x mod p` is computed by RSA's exponentiation with five-bit \
-        windows (the `vg_rsa_square_window5` helper and a constant-time table scan) over all `x_len` \
-        octets of x, compared with 1 and with p − 1 by a subtraction's borrow over all the words, and \
-        stored masked by the result, zeros for 3, without a branch. Powers of a checked generator \
-        remain in its q subgroup, so y needs only its range check."]
     code := Impl.Ffdh.AArch64.Domain.DerivePublic.code Proof.Bignum.AArch64.WindowFive.called.code
       Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
     verified := Proof.Ffdh.AArch64.Derive.dv_verified _ _ _ },
   Spec.Ffdh.generateKeyApi.artifact target {
-    notes := ["Baseline AArch64: p is checked as `vg_rsa_public_precompute` checks a modulus, in a \
-        working space of `w = ⌈p_len / 8⌉` words with an inner one for p. The scalar's octets are cut \
-        from `rand` by a loop over all `p_len` of them, written to `x`, and its range is a \
-        comparison by a subtraction's borrow over all the words; the only branch on it is on its \
-        range. `g^x mod p` is computed by RSA's exponentiation with five-bit windows (the \
-        `vg_rsa_square_window5` helper and a constant-time table scan) over x's octets from the \
-        bound's first nonzero one, and stored to `y`; with q, `y^q mod p` too. x and y are then \
-        masked by y's validity, zeros for 3, without a branch."]
     code := Impl.Ffdh.AArch64.Domain.GenerateKey.code Proof.Bignum.AArch64.WindowFive.called.code
       Proof.Bignum.AArch64.WindowVector.selector.code Proof.Bignum.AArch64.Mont.base.mm
     verified := Proof.Ffdh.AArch64.GenerateKey.gk_verified _ _ _ },
@@ -111,11 +64,6 @@ def artifacts : List Artifact := [
     verified := Proof.Ffdh.AArch64.KeyGeneration.init_verified },
   Spec.Ffdh.keySearchApi.artifact target {
     stack := 48
-    notes := ["The whole key search runs in verified code: both rejection budgets, the \
-        octets each attempt consumes, and the next entropy request. Each attempt calls \
-        `vg_ffdh_generate_key`, in a frame of 32 bytes holding its stack arguments, within \
-        a frame saving `x30`. Timing depends on the domain, the controller's public words and \
-        the attempts' statuses."]
     code := Proof.Ffdh.AArch64.KeyGeneration.keyCode
     verified := Proof.Ffdh.AArch64.KeyGeneration.key_verified_base }]
 

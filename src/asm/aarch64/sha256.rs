@@ -2691,8 +2691,6 @@ pub(crate) const VG_SHA256_COMPRESS_SHA2_FEATURES: crate::cpu::Features = crate:
 ///
 /// Contract: `VG.Spec.Sha256.compressContract`. Constant time: only the pointers and `n` may affect timing, not the hash value or the blocks.
 ///
-/// Uses the AArch64 SHA-256 instructions. The state stays in AdvSIMD registers between blocks, each block copying its original state to `v30` and `v31` for the feed-forward, and is stored once, after the last block. The first block builds the round-constant vectors of the first fourteen groups of rounds, each just before its rounds, in `v16`–`v29`, where the later blocks find them; the last two groups load theirs every block.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 32 bytes.

@@ -65,16 +65,9 @@ namespace VG.Generic.CmacAesUpdate.AArch64.AesSiv
 
 open VG.Proof.AesSiv.AArch64
 
-/-- Which functions an instance of `encrypt` or `decrypt` calls. -/
-def cryptNote (v : Proof.CmacAes.AArch64.UpdateImpl) : String :=
-  "This implementation chains the blocks of CMAC with `" ++ v.callee.name ++ "`, calls the other CMAC \
-    functions made with `" ++ v.ctr.callee.name ++ "` (e.g. `" ++ Spec.Cmac.aesFinalizeApi.name ++
-    v.ctr.suffix ++ "`), and encrypts with `" ++ v.ctr.callee.name ++ "`."
-
 def artifacts (v : Proof.CmacAes.AArch64.UpdateImpl) : List Artifact := [
   Spec.Siv.encryptApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := [cryptNote v]
     code := Impl.StackScratch.AArch64.withStackScratch 2576 .x7
       (Impl.AesSiv.AArch64.encrypt v.callee v.ctr.callee v.ctr.suffix)
     stack := 2576
@@ -82,8 +75,6 @@ def artifacts (v : Proof.CmacAes.AArch64.UpdateImpl) : List Artifact := [
     features := v.features },
   Spec.Siv.decryptApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := [cryptNote v,
-      "It compares the IVs and overwrites the data with zeros without a branch on the result."]
     code := Impl.StackScratch.AArch64.withStackScratch 2576 .x7
       (Impl.AesSiv.AArch64.decrypt v.callee v.ctr.callee v.ctr.suffix)
     stack := 2576

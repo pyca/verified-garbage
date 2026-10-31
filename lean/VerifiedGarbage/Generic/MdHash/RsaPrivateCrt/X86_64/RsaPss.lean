@@ -37,10 +37,6 @@ open VG.Proof.RsaPss.X86_64 (signStack signC_verified signC_spAll encOf)
 def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (c : Proof.Rsa.X86_64.CrtImpl) : List Artifact := [
   (Spec.RsaPss.signApi v.mgf.G v.mgf.G).artifact X86_64.target {
     suffix := Emit.qualifiedName "" [(v.mgf.G.rust, v.suffix), ("crt", c.suffix)]
-    notes := ["This implementation calls `" ++ (encOf v).name ++ "` for EMSA-PSS's encoding, \
-      after a zero byte if the modulus' first byte is 1, and signs it with `" ++ (privOf c).name ++
-      "`, which checks the signature against `e`. Only the lengths, `salt_len` and the public key \
-      decide a branch or an address."]
     code := Impl.RsaPss.X86_64.signC (encOf v).name (encOf v).code (privOf c).name (privOf c).code
     stack := signStack
     verified := signC_verified (hvE := (encOf v).ok) (hctE := (encOf v).ct)

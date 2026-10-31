@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.MillerRabin.roundContract`. Timing may depend on the pointers, lengths and limb count, not on the candidate, witness, exponent or test result.
 ///
-/// Four-bit windows using RSA's verified Montgomery arithmetic. The round result is returned without branching on it.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.

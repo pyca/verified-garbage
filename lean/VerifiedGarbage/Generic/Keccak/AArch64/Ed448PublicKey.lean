@@ -31,14 +31,6 @@ def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   Spec.Ed448.publicKeyApi.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features
-    notes := ["Uses baseline integer instructions, and \
-      those of the Keccak permutation it calls. Hashes the private key with \
-      `vg_keccak_absorb_scratch`, `vg_keccak_pad_scratch` and `vg_keccak_squeeze_scratch` \
-      (SHAKE256, into its stack frame, with the Keccak state in `scratch`), prunes the first 57 \
-      bytes of the hash into the frame, encodes `[s]B` \
-      with `vg_ed448_scalar_base`, and clears the frame's scalar and hash. The base-point \
-      multiplication's working values are left in `scratch`. The function saves `x30` and its \
-      arguments on the stack, and the functions it calls use 16 bytes below its frame."]
     consts := Impl.X448.AArch64.Base.combConsts
     code := Impl.Ed448.AArch64.PublicKey.publicKeyWith v.callee
     stack := 352

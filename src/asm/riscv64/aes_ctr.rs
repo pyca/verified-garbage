@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Ctr.aesContract`. Constant time: only the pointers, `rounds`, `n` and the last four bytes of `*ctr` (the 32-bit counter, public in OpenSSL, BoringSSL and AWS-LC, which split the blocks where it wraps) may affect timing, not the key schedule, the rest of the counter block or the data.
 ///
-/// This implementation calls `vg_aes_ctr32` on as many blocks at once as the counter's last 32 bits allow, as OpenSSL's `CRYPTO_ctr128_encrypt_ctr32` does. The counter block is accessed a byte at a time, since the contract states no alignment for it.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.

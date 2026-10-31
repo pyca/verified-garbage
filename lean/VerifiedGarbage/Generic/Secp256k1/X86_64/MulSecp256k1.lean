@@ -23,20 +23,8 @@ namespace VG.Generic.Secp256k1.X86_64.MulSecp256k1
 
 open VG.Impl.Ecdsa.X86_64 VG.Proof.Ecdsa.X86_64.Secp256k1.Mul
 
-/-- What the function runs. -/
-def note : String :=
-  "The function keeps `rbx`, `rbp` and `r12`–`r15` in `xmm0` to `xmm5` while it runs, expands \
-  `k` into a table of its bits, one per byte, at bytes 1504 to 1767, copies `Q` to bytes 992 to \
-  1055 (slots 29 and 30), and runs a ladder over the 256 bits of `k`'s four words, from the \
-  top: each step doubles the accumulator and adds the affine `Q` by the complete formulas for \
-  `a = 0` of Renes, Costello and Batina (Algorithms 9 and 8, with `3 b` read from `ws`; `a` is \
-  not read), and keeps the sum or the double by a mask of the bit. Field elements are four 64-bit words in Montgomery \
-  form, multiplied by word-by-word Montgomery multiplication (CIOS) with a final conditional \
-  subtraction; nothing depends on `k` or `Q` but through masks."
-
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.Secp256k1.curve) : List Artifact :=
   [C.mulApi.artifact X86_64.target {
-      notes := [note]
       code := secp256k1.mulFn
       verified := mul_verified h.law h.inv }]
 

@@ -173,8 +173,6 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Ffdh.checkDomainContract`. Timing may depend on the pointers, the lengths and the domain.
 ///
-/// ARMv7: exact recognition certifies the ten standard MODP/FFDHE domains. All other parameters use RSA's packed-u64 working space and native 32-bit arithmetic check the modulus, generator, subgroup bound, divisibility and subgroup relation. Exponentiation uses fixed three-bit windows; every selected Montgomery row is verified.
-///
 /// # Safety
 ///
 /// * `domain` must be valid for reads of `domain_len` bytes.
@@ -11157,8 +11155,6 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Ffdh.checkPrivateContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
 ///
-/// ARMv7: scalar bounds, public-value range, subgroup membership and equality with the generator's power run in verified code. RSA's fixed three-bit windows process every supplied private-scalar byte, including leading zeros.
-///
 /// # Safety
 ///
 /// * `domain` must be valid for reads of `domain_len` bytes.
@@ -20703,8 +20699,6 @@ pub(crate) const VG_FFDH_CHECK_DOMAIN_UMAAL_FEATURES: crate::cpu::Features = cra
 /// Checks imported finite-field Diffie–Hellman parameters (SP 800-56A Rev. 3 §5.5.2, without primality tests). `domain` is p, g and, if `domain_len` is `3 * p_len`, q, each `p_len` bytes, most significant first. Returns 1 if p has 512 to 8192 bits, its first byte is not zero and it is odd, `1 < g < p − 1`, and, with q, q is odd, `2 < q < p − 1`, q divides `p − 1` and `g^q mod p = 1`; otherwise 0. Does not test p or q for primality: the caller must establish their provenance.
 ///
 /// Contract: `VG.Spec.Ffdh.checkDomainContract`. Timing may depend on the pointers, the lengths and the domain.
-///
-/// ARMv7: exact recognition certifies the ten standard MODP/FFDHE domains. All other parameters use RSA's packed-u64 working space and native 32-bit arithmetic check the modulus, generator, subgroup bound, divisibility and subgroup relation. Exponentiation uses fixed three-bit windows; every selected Montgomery row is verified.
 ///
 /// # Safety
 ///
@@ -30829,8 +30823,6 @@ pub(crate) const VG_FFDH_CHECK_PRIVATE_UMAAL_FEATURES: crate::cpu::Features = cr
 ///
 /// Contract: `VG.Spec.Ffdh.checkPrivateContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
 ///
-/// ARMv7: scalar bounds, public-value range, subgroup membership and equality with the generator's power run in verified code. RSA's fixed three-bit windows process every supplied private-scalar byte, including leading zeros.
-///
 /// # Safety
 ///
 /// * `domain` must be valid for reads of `domain_len` bytes.
@@ -39670,8 +39662,6 @@ bx lr",
 }
 
 /// One FFDH probable safe-prime candidate with RSA's trial-division sieve. Uses the original candidate shaping and generator congruences. Tests p and q against the first 512 primes through 1024 bits, or 1024 primes above that, before drawing witnesses. The requested p width selects both sieve bounds. Draws and tests one uniform p witness first, then the full q batch, then the remaining p witnesses. Acceptance requires the original 64 witnesses per modulus, or 128 above 2048 bits; the first p witness counts toward that total. Returns 1 and p on acceptance, 2 on rejection, or 0 on entropy shortage; output is zero otherwise. `used` is the exact consumed prefix, or zero on shortage. Contract: `VG.Spec.Ffdh.sievedParameterCandidateContract`. Timing may depend on the public tape.
-///
-/// ARMv7: candidate shaping, generator congruences, the shared RSA small-prime sieve (512 primes through 1024 bits, 1024 above), early composite rejection, q/p preparation, witness rejection sampling and entropy accounting run in verified code. Both primality tests call the selected shared RSA four-bit-window Miller–Rabin round. Caller arithmetic uses the same baseline or UMAAL variant.
 ///
 /// # Safety
 ///
@@ -59102,8 +59092,6 @@ bx lr",
 
 /// Run native FFDH parameter generation with RSA's trial-division sieve. The routine owns candidate retries, witness selection, all primality rounds, attempt limits and entropy budgets. Initialize with `vg_ffdh_parameter_generation_init`. Returns 1 with p, 3 on exhaustion, or 0 to request more entropy. On 0, discard `used` bytes and extend the preserved suffix to `state[3]` bytes before retrying. Output is zero for 0 and 3. Accepted p and q retain the original 64/128 independent witness counts. Contract: `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the public tape and the first four controller words.
 ///
-/// ARMv7: the whole safe-prime search runs in verified code, including the full u64 attempt counter, candidate retries, exact entropy consumption, bounded refill requests, exhaustion and output clearing. Rust allocates buffers and supplies entropy. The public contract discloses the tape and first four controller words; the remaining controller workspace and scratch contents need not agree.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -59342,8 +59330,6 @@ bx lr",
 pub(crate) const VG_FFDH_PARAMETER_CANDIDATE_SIEVED_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
 
 /// One FFDH probable safe-prime candidate with RSA's trial-division sieve. Uses the original candidate shaping and generator congruences. Tests p and q against the first 512 primes through 1024 bits, or 1024 primes above that, before drawing witnesses. The requested p width selects both sieve bounds. Draws and tests one uniform p witness first, then the full q batch, then the remaining p witnesses. Acceptance requires the original 64 witnesses per modulus, or 128 above 2048 bits; the first p witness counts toward that total. Returns 1 and p on acceptance, 2 on rejection, or 0 on entropy shortage; output is zero otherwise. `used` is the exact consumed prefix, or zero on shortage. Contract: `VG.Spec.Ffdh.sievedParameterCandidateContract`. Timing may depend on the public tape.
-///
-/// ARMv7: candidate shaping, generator congruences, the shared RSA small-prime sieve (512 primes through 1024 bits, 1024 above), early composite rejection, q/p preparation, witness rejection sampling and entropy accounting run in verified code. Both primality tests call the selected shared RSA four-bit-window Miller–Rabin round. Caller arithmetic uses the same baseline or UMAAL variant.
 ///
 /// # Safety
 ///
@@ -77562,8 +77548,6 @@ pub(crate) const VG_FFDH_GENERATE_PARAMETERS_SIEVED_UMAAL_FEATURES: crate::cpu::
 
 /// Run native FFDH parameter generation with RSA's trial-division sieve. The routine owns candidate retries, witness selection, all primality rounds, attempt limits and entropy budgets. Initialize with `vg_ffdh_parameter_generation_init`. Returns 1 with p, 3 on exhaustion, or 0 to request more entropy. On 0, discard `used` bytes and extend the preserved suffix to `state[3]` bytes before retrying. Output is zero for 0 and 3. Accepted p and q retain the original 64/128 independent witness counts. Contract: `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the public tape and the first four controller words.
 ///
-/// ARMv7: the whole safe-prime search runs in verified code, including the full u64 attempt counter, candidate retries, exact entropy consumption, bounded refill requests, exhaustion and output clearing. Rust allocates buffers and supplies entropy. The public contract discloses the tape and first four controller words; the remaining controller workspace and scratch contents need not agree.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -77800,8 +77784,6 @@ bx lr",
 }
 
 /// Initialize a reusable public fixed-base context for finite-field Diffie–Hellman key generation. The checked domain is p, g and optional q, each p_len bytes. Writes generationPrecompute: three public metadata words followed by RSA's modulus/R-squared values and 32 five-tooth comb entries. Returns 1. Word 0 is generationScalarBits, word 1 is its byte length and word 2 is the comb row count. The context has no pointers and is independent of the arithmetic backend. Contract: VG.Spec.Ffdh.generationPrecomputeContract. Timing may depend on the public domain, pointers and lengths.
-///
-/// ARMv7: build the canonical immutable five-tooth comb context once per domain. Modulus and Montgomery constants reuse the RSA precomputation layout. The exact vetted-group table selects the reviewed scalar width.
 ///
 /// # Safety
 ///
@@ -78922,8 +78904,6 @@ bx lr",
 
 /// One native finite-field Diffie–Hellman key-generation attempt using a reusable public five-tooth comb context. Takes p_len random bytes and implements the same vettedScalarOfOctets, keyStatus and output conventions as vg_ffdh_generate_key_vetted for checked parameters. The context's public maximum width fixes the schedule, including secret leading zeros. Contract: VG.Spec.Ffdh.cachedGenerateKeyContract. Timing may depend on the public domain, pointers, lengths and returned status, not otherwise on the random bytes or private scalar.
 ///
-/// ARMv7: import cached modulus and Montgomery constants, mask the full-size entropy draw to the reviewed width, and use a fixed five-tooth comb schedule. Every secret digit scans all 32 table entries. Product and square operations call the same shared RSA Montgomery helper.
-///
 /// # Safety
 ///
 /// * `x` must be valid for reads and writes of `x_len` bytes.
@@ -80000,8 +79980,6 @@ bx lr",
 
 /// Generate a finite-field Diffie–Hellman key pair using a reusable public five-tooth comb context and the existing vettedKeySearch rejection policy. Returns 1 with a key pair, 3 when a budget is exhausted, or 0 to request entropy. On 0, discard used bytes, preserve the suffix and extend it to state[3] bytes before calling again. On 0 and 3 both outputs are zero. Entropy consumption, retry budgets and statuses are unchanged. Contract: VG.Spec.Ffdh.cachedKeySearchContract. Timing may depend on the public domain, pointers, lengths, controller policy and sequence of attempt statuses, not otherwise on private scalar bytes.
 ///
-/// ARMv7: the shared native retry controller calls the cached attempt, retaining both rejection budgets, full-size entropy requests, and refill behavior. The immutable comb context remains read-only across every attempt.
-///
 /// # Safety
 ///
 /// * `x` must be valid for reads and writes of `x_len` bytes.
@@ -80253,8 +80231,6 @@ bx lr",
 /// Derives the public value of an imported finite-field Diffie–Hellman private key (SP 800-56A Rev. 3 §5.6.2.1.2 for x's range, §5.6.1.1 for `y = g^x mod p`). With `domain` as `vg_ffdh_check_domain` takes it and x (`x_len` bytes, most significant first): returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if `y = g^x mod p` is a valid public value (as `vg_ffdh_check_public` checks it), writing y (`p_len` bytes, most significant first) to `y`; 3 otherwise. Writes zeros to `y` unless it returns 1.
 ///
 /// Contract: `VG.Spec.Ffdh.derivePublicContract`. Timing may depend on the pointers, the lengths, the domain and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
-///
-/// ARMv7: the scalar's range is checked as `vg_ffdh_check_private` checks it, the one branch on x. The power of g uses RSA's fixed three-bit windows over every supplied scalar byte, as the exchange does; y's range is the acceptance mask, which clears the output. Powers of a checked generator remain in its q subgroup, so y needs only its range check. Products and squares call the shared RSA arithmetic helper.
 ///
 /// # Safety
 ///
@@ -81649,8 +81625,6 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Ffdh.checkPublicContract`. Timing may depend on the pointers, the lengths, the domain and y.
 ///
-/// ARMv7: public-value range checking and optional subgroup exponentiation retain RSA's three-bit fixed-window schedule. Montgomery preparation, multiplication, and specialized squaring call the shared RSA arithmetic helper.
-///
 /// # Safety
 ///
 /// * `domain` must be valid for reads of `domain_len` bytes.
@@ -82937,8 +82911,6 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
 ///
-/// ARMv7: RSA's fixed three-bit windows process every supplied private-scalar byte. Normalized modulus setup, products and squares call the shared RSA arithmetic helper. Shared-value range checking, fixed-width export and rejection masking remain in verified code.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -84143,8 +84115,6 @@ pub(crate) const VG_FFDH_GENERATE_KEY_PRECOMPUTE_UMAAL_FEATURES: crate::cpu::Fea
 
 /// Initialize a reusable public fixed-base context for finite-field Diffie–Hellman key generation. The checked domain is p, g and optional q, each p_len bytes. Writes generationPrecompute: three public metadata words followed by RSA's modulus/R-squared values and 32 five-tooth comb entries. Returns 1. Word 0 is generationScalarBits, word 1 is its byte length and word 2 is the comb row count. The context has no pointers and is independent of the arithmetic backend. Contract: VG.Spec.Ffdh.generationPrecomputeContract. Timing may depend on the public domain, pointers and lengths.
 ///
-/// ARMv7: build the canonical immutable five-tooth comb context once per domain. Modulus and Montgomery constants reuse the RSA precomputation layout. The exact vetted-group table selects the reviewed scalar width.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads and writes of `8 * ctx_len` bytes.
@@ -85253,8 +85223,6 @@ pub(crate) const VG_FFDH_GENERATE_KEY_CACHED_UMAAL_FEATURES: crate::cpu::Feature
 
 /// One native finite-field Diffie–Hellman key-generation attempt using a reusable public five-tooth comb context. Takes p_len random bytes and implements the same vettedScalarOfOctets, keyStatus and output conventions as vg_ffdh_generate_key_vetted for checked parameters. The context's public maximum width fixes the schedule, including secret leading zeros. Contract: VG.Spec.Ffdh.cachedGenerateKeyContract. Timing may depend on the public domain, pointers, lengths and returned status, not otherwise on the random bytes or private scalar.
 ///
-/// ARMv7: import cached modulus and Montgomery constants, mask the full-size entropy draw to the reviewed width, and use a fixed five-tooth comb schedule. Every secret digit scans all 32 table entries. Product and square operations call the same shared RSA Montgomery helper.
-///
 /// # Safety
 ///
 /// * `x` must be valid for reads and writes of `x_len` bytes.
@@ -86337,8 +86305,6 @@ pub(crate) const VG_FFDH_GENERATE_KEY_SEARCH_CACHED_UMAAL_FEATURES: crate::cpu::
 
 /// Generate a finite-field Diffie–Hellman key pair using a reusable public five-tooth comb context and the existing vettedKeySearch rejection policy. Returns 1 with a key pair, 3 when a budget is exhausted, or 0 to request entropy. On 0, discard used bytes, preserve the suffix and extend it to state[3] bytes before calling again. On 0 and 3 both outputs are zero. Entropy consumption, retry budgets and statuses are unchanged. Contract: VG.Spec.Ffdh.cachedKeySearchContract. Timing may depend on the public domain, pointers, lengths, controller policy and sequence of attempt statuses, not otherwise on private scalar bytes.
 ///
-/// ARMv7: the shared native retry controller calls the cached attempt, retaining both rejection budgets, full-size entropy requests, and refill behavior. The immutable comb context remains read-only across every attempt.
-///
 /// # Safety
 ///
 /// * `x` must be valid for reads and writes of `x_len` bytes.
@@ -86596,8 +86562,6 @@ pub(crate) const VG_FFDH_DERIVE_PUBLIC_UMAAL_FEATURES: crate::cpu::Features = cr
 /// Derives the public value of an imported finite-field Diffie–Hellman private key (SP 800-56A Rev. 3 §5.6.2.1.2 for x's range, §5.6.1.1 for `y = g^x mod p`). With `domain` as `vg_ffdh_check_domain` takes it and x (`x_len` bytes, most significant first): returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if `y = g^x mod p` is a valid public value (as `vg_ffdh_check_public` checks it), writing y (`p_len` bytes, most significant first) to `y`; 3 otherwise. Writes zeros to `y` unless it returns 1.
 ///
 /// Contract: `VG.Spec.Ffdh.derivePublicContract`. Timing may depend on the pointers, the lengths, the domain and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
-///
-/// ARMv7: the scalar's range is checked as `vg_ffdh_check_private` checks it, the one branch on x. The power of g uses RSA's fixed three-bit windows over every supplied scalar byte, as the exchange does; y's range is the acceptance mask, which clears the output. Powers of a checked generator remain in its q subgroup, so y needs only its range check. Products and squares call the shared RSA arithmetic helper.
 ///
 /// # Safety
 ///
@@ -87981,8 +87945,6 @@ pub(crate) const VG_FFDH_CHECK_PUBLIC_UMAAL_FEATURES: crate::cpu::Features = cra
 ///
 /// Contract: `VG.Spec.Ffdh.checkPublicContract`. Timing may depend on the pointers, the lengths, the domain and y.
 ///
-/// ARMv7: public-value range checking and optional subgroup exponentiation retain RSA's three-bit fixed-window schedule. Montgomery preparation, multiplication, and specialized squaring call the shared RSA arithmetic helper.
-///
 /// # Safety
 ///
 /// * `domain` must be valid for reads of `domain_len` bytes.
@@ -89257,8 +89219,6 @@ pub(crate) const VG_FFDH_EXCHANGE_UMAAL_FEATURES: crate::cpu::Features = crate::
 /// Finite-field Diffie–Hellman (SP 800-56A Rev. 3 §5.7.1.1, PKCS #3 §8). With `domain` as `vg_ffdh_check_domain` takes it, the private scalar x (`x_len` bytes) and the peer's public value y (`p_len` bytes), most significant first, computes `z = y^x mod p`; returns 0 and writes zeros if z is 0, 1 or `p − 1`, and otherwise returns 1 and writes z (`p_len` bytes, most significant first) to `out`. Applies no KDF.
 ///
 /// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
-///
-/// ARMv7: RSA's fixed three-bit windows process every supplied private-scalar byte. Normalized modulus setup, products and squares call the shared RSA arithmetic helper. Shared-value range checking, fixed-width export and rejection masking remain in verified code.
 ///
 /// # Safety
 ///

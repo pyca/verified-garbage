@@ -65,20 +65,10 @@ namespace VG.Generic.BrainpoolP256r1.AArch64.EcdsaBrainpoolP256r1
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.BrainpoolP256r1.curve) : List Artifact := [
   Spec.Ecdsa.BrainpoolP256r1.signApi.artifact AArch64.target {
-    notes := ["Field elements are four 64-bit words in Montgomery form. \
-      Scalar multiplication uses a seven-bit fixed-base comb with 37 complete general-curve additions. \
-      Each table is scanned in constant time and the signed entry is selected with SIMD masks. \
-      Inversions are calls of `vg_brainpoolp256r1_inv_mod_p` and `vg_brainpoolp256r1_inv_mod_n`, by divsteps. \
-      Branches and memory addresses depend only on pointers and loop counters."]
     consts := Impl.Ecdsa.AArch64.BrainpoolP256r1.combCfg.combConsts
     code := Impl.Ecdsa.AArch64.BrainpoolP256r1.signComb
     verified := Proof.Ecdsa.AArch64.BrainpoolP256r1.Comb.sign_verified h.law h.inv },
   Spec.Ecdsa.BrainpoolP256r1.verifyApi.artifact AArch64.target {
-    notes := ["Field elements are four 64-bit words in Montgomery form. \
-      Public scalar multiplication uses a joint radix-four table built by a shared addition loop, \
-      with 256 shared doublings and at most 128 additions using complete general RCB formulas. \
-      The inversion modulo `n` is a call of `vg_brainpoolp256r1_inv_mod_n`, by divsteps. \
-      Branches and memory addresses depend only on pointers, counters and public verification scalars."]
     code := Impl.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.verify
     verified := Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Joint.verify_verified h.law h.inv }]
 

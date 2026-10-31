@@ -9,8 +9,6 @@ pub(crate) const VG_ED448_R64_POINT_DOUBLE_ADX_FEATURES: crate::cpu::Features = 
 ///
 /// Contract: `doubleContract` of `VG.Spec.Ed448.Point64`. Constant time: only the pointer may affect timing.
 ///
-/// Uses BMI2/ADX field multiplication, and SSE2 moves to keep `rbp` and `r12`–`r15` in `xmm0`–`xmm4` while it runs. Runs RFC 8032's doubling formulas, seven products, with `vg_x448`'s field operations on seven 64-bit words (using the selected field multiplier), the temporaries in slots 12 to 20 and the product's words at byte 1536.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -2047,8 +2045,6 @@ pub(crate) const VG_ED448_R64_POINT_ADD_AFFINE_ADX_FEATURES: crate::cpu::Feature
 /// Point addition on edwards448: writes to slots 3 to 5 of the working space `ws` (bytes 256 to 447) the sum of the point in slots 0 to 2 (bytes 64 to 255) and the point `(x : y : 1)`, for `x` and `y` in slots 8 and 9 (bytes 576 and 640), by RFC 8032's complete addition formula in projective coordinates (§5.2.4), with `d` read from slot 11 (byte 768). A point is three coordinates `X, Y, Z` in consecutive slots; slot `n` of `ws` is the 64 bytes from byte `64 + 64 n`, of which a coordinate takes the first 56: a little-endian number below `2^448`, standing for its residue modulo `p = 2^448 - 2^224 - 1`, not necessarily reduced. Every byte of `ws` but the result's and the function's own working space (bytes 832 to 1647) keeps its value.
 ///
 /// Contract: `addAffineContract` of `VG.Spec.Ed448.Point64`. Constant time: only the pointer may affect timing.
-///
-/// Uses BMI2/ADX field multiplication, and SSE2 moves to keep `rbp` and `r12`–`r15` in `xmm0`–`xmm4` while it runs. Runs RFC 8032's complete addition formula with `A = Z₁` for `Z₁ Z₂`, as `Z₂ = 1`: nine full products and multiplication by `d = -39081` using negation and X448's small-constant multiplier, with `vg_x448`'s field operations on seven 64-bit words (using the selected field multiplier), the temporaries in slots 12 to 20 and the product's words at byte 1536.
 ///
 /// # Safety
 ///
@@ -5134,8 +5130,6 @@ ret
 ///
 /// Contract: `doubleContract` of `VG.Spec.Ed448.Point64`. Constant time: only the pointer may affect timing.
 ///
-/// Uses baseline integer arithmetic, and SSE2 moves to keep `rbp` and `r12`–`r15` in `xmm0`–`xmm4` while it runs. Runs RFC 8032's doubling formulas, seven products, with `vg_x448`'s field operations on seven 64-bit words (using the selected field multiplier), the temporaries in slots 12 to 20 and the product's words at byte 1536.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -7681,8 +7675,6 @@ ret
 /// Point addition on edwards448: writes to slots 3 to 5 of the working space `ws` (bytes 256 to 447) the sum of the point in slots 0 to 2 (bytes 64 to 255) and the point `(x : y : 1)`, for `x` and `y` in slots 8 and 9 (bytes 576 and 640), by RFC 8032's complete addition formula in projective coordinates (§5.2.4), with `d` read from slot 11 (byte 768). A point is three coordinates `X, Y, Z` in consecutive slots; slot `n` of `ws` is the 64 bytes from byte `64 + 64 n`, of which a coordinate takes the first 56: a little-endian number below `2^448`, standing for its residue modulo `p = 2^448 - 2^224 - 1`, not necessarily reduced. Every byte of `ws` but the result's and the function's own working space (bytes 832 to 1647) keeps its value.
 ///
 /// Contract: `addAffineContract` of `VG.Spec.Ed448.Point64`. Constant time: only the pointer may affect timing.
-///
-/// Uses baseline integer arithmetic, and SSE2 moves to keep `rbp` and `r12`–`r15` in `xmm0`–`xmm4` while it runs. Runs RFC 8032's complete addition formula with `A = Z₁` for `Z₁ Z₂`, as `Z₂ = 1`: nine full products and multiplication by `d = -39081` using negation and X448's small-constant multiplier, with `vg_x448`'s field operations on seven 64-bit words (using the selected field multiplier), the temporaries in slots 12 to 20 and the product's words at byte 1536.
 ///
 /// # Safety
 ///

@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
 ///
-/// The function is `vg_ecdsa_p384_sign`'s code up to the inversion of `Z`, with `d` as both the key and the secret number: it saves its caller's callee-saved registers in `scratch`; field elements are six 64-bit words in Montgomery form, multiplied (modulo `p`, by calls of `vg_p384_mul_mod_p`) by word-by-word Montgomery multiplication (CIOS) with a final conditional subtraction; `[d]G` is the signature's call of `vg_p384_mul_base`, a comb over the 7-bit windows of `d`, from the static `VG_P384_COMB`, each entry selected by loading every entry of its table, 16 bytes at a time, and keeping (`pand`, `por`) the one of the digit's magnitude; and `Z⁻¹` is the signature's call of `vg_p384_inv_mod_p`. The result (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 97 bytes.
@@ -492,8 +490,6 @@ pub(crate) const VG_EC_P384_PUBLIC_KEY_ADX_FEATURES: crate::cpu::Features = crat
 /// P-384 public-key derivation (FIPS 186-5 §A.2, SP 800-56A §5.6.1.2): writes the public key `Q = dG` of the private key `d` at `d` (48 bytes, most significant first) to `*out`, in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 48 bytes each, most significant first), and returns 1; or, if `d` is not in `[1, n-1]`, writes zeros and returns 0.
 ///
 /// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
-///
-/// The function is `vg_ecdsa_p384_sign_adx`'s code up to the inversion of `Z`, with `d` as both the key and the secret number: it saves its caller's callee-saved registers in `scratch`; field elements are six 64-bit words in Montgomery form, multiplied (modulo `p`, by calls of `vg_p384_mul_mod_p_adx`) by Montgomery multiplication by rows (operand scanning) of BMI2's `mulx`, each product's low half added through OF (`adox`) and its high half through CF (`adcx`), two carry chains that do not wait for each other, each row followed by the reduction's row by the modulus (its multiplier `u = t₀ (-m⁻¹) mod 2⁶⁴`), with a final conditional subtraction; `[d]G` is the signature's call of `vg_p384_mul_base_adx`, a comb over the 7-bit windows of `d`, from the static `VG_P384_COMB`, each entry selected by loading every entry of its table, 32 bytes at a time with AVX2, and keeping (`vpand`, `vpor`, under the mask of `vpcmpeqd` of a counter and the magnitude, broadcast) the one of the digit's magnitude; and `Z⁻¹` is the signature's call of `vg_p384_inv_mod_p_adx`. The result (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers.
 ///
 /// # Safety
 ///

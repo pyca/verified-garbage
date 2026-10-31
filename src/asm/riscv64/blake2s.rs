@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Blake2.compressSContract`. Constant time: only the pointers, `n`, `t` and `last` may affect timing, not the state or the blocks.
 ///
-/// The state and the blocks are accessed a byte at a time, since the contract states no alignment for them: the hash value and each block are copied to `scratch`, rounded up to a multiple of 8, where the rounds read and write them as aligned words.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 32 bytes.
@@ -2384,8 +2382,6 @@ ret
 ///
 /// Contract: `VG.Spec.Blake2.initSContract`. The streaming state is the hash state followed by a buffered last block (`VG.Spec.Blake2.Repr`). Constant time: only the pointers, `outlen` and `keylen` may affect timing, not the key.
 ///
-/// The state and the key are accessed a byte at a time, since the contract states no alignment for them.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
@@ -2559,8 +2555,6 @@ ret
 ///
 /// Contract: `VG.Spec.Blake2.updateSContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// The state and the data are accessed a byte at a time, since the contract states no alignment for them. A frame of 576 bytes on the stack holds the compression function's scratch space, then the return address and the registers saved.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
@@ -2696,8 +2690,6 @@ ret
 /// Finishes a BLAKE2s computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (32 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
 ///
 /// Contract: `VG.Spec.Blake2.finalizeSContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// The state and the output are accessed a byte at a time, since the contract states no alignment for them. A frame of 576 bytes on the stack holds the compression function's scratch space, then the return address and the registers saved.
 ///
 /// # Safety
 ///

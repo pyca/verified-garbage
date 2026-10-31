@@ -227,31 +227,18 @@ open VG.Proof.Rsa.Arm
 def artifacts (v : CrtImpl) : List Artifact := [
   Spec.Rsa.privateCheckedApi.artifact Arm.target {
     suffix := v.suffix
-    notes := ["This implementation computes the result `m` with `" ++ v.name ++
-      "` into its frame, then `m^e mod n` with `" ++ v.pcName ++ "` and `" ++ v.pdName ++
-      "`, which also checks `e`. It compares that with the input in constant time, and copies `m` \
-      to `out` under a mask, which is clear unless the CRT and the public operation succeeded and \
-      the two match. The result is computed from the mask without a branch. Then it overwrites \
-      the frame's copy of `m` with zeros."]
     code := privCode v
     stack := stackBytes
     verified := code_verified v
     features := v.features },
   Spec.Rsa.publicPrecomputeApi.artifact Arm.target {
     suffix := v.suffix
-    notes := ["ARMv7 with the selected RSA arithmetic: `n` is checked and read into 32-bit limbs, its 64-bit Montgomery \
-        inverse computed from pairs of them, and R² mod n by a fixed number of modular \
-        doublings. The output is cleared for an invalid modulus."]
     code := v.pc
     stack := 56
     verified := v.pcVerified
     features := v.features },
   Spec.Rsa.publicPrecomputedCheckedApi.artifact Arm.target {
     suffix := v.suffix
-    notes := ["ARMv7 with the selected RSA arithmetic: `pre` is read and checked (`n` odd, its top word not zero, \
-        `R² mod n` below it) before any arithmetic, so that values of no modulus are safe; then \
-        `vg_rsa_public_checked`'s Montgomery inverse and exponentiation. The input's acceptance \
-        and the clearing of the output are under masks."]
     code := v.pd
     stack := 56
     verified := v.pdVerified

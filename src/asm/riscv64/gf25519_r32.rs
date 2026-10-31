@@ -6,8 +6,6 @@
 ///
 /// Contract: `mulContract` of `VG.Spec.X25519.Field32`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// Uses baseline integer instructions, only caller-saved registers and no stack. The function copies its operands a byte at a time from `ws` plus each offset (which the contract does not align) to bytes 768 and 800 of `ws`, runs X25519's RISC-V product there (row by row, with `mul`, into sixteen 32-bit limbs at byte 864, then `lo + 38 hi` and the carry folded in twice), and copies the result's bytes to `ws` plus `o`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 4096 bytes, and aligned for `u64`.
@@ -447,8 +445,6 @@ ret
 /// Powers in curve25519's field: for `a` the element at byte 128 of the working space `ws`, writes an element congruent to `a^(2^250 - 1)` modulo `p = 2^255 - 19` to byte 544, and one congruent to `a^11` to byte 512: the addition chain that inversion (`a^(p-2)`, five squarings of the first and a product with the second) and decoding's square root (`a^((p-5)/8)`, two squarings of the first and a product with `a`) share. An element is 32 bytes, a little-endian number below `2^256`, not necessarily below `p`. Every byte of `ws` but the results' and the function's own working space (bytes 576 to 1023) keeps its value.
 ///
 /// Contract: `pow250Contract` of `VG.Spec.X25519.Field32`. Constant time: only the pointer may affect timing.
-///
-/// Uses baseline integer instructions, only caller-saved registers and no stack. The function runs the addition chain of ref10's `fe_invert` up to `a^(2^250 - 1)` (249 squarings, most in loops counted by `t1`, and 10 multiplications), with X25519's RISC-V product inlined (row by row, with `mul`, then `lo + 38 hi` and the carry folded in) and its temporaries in bytes 512 to 639.
 ///
 /// # Safety
 ///

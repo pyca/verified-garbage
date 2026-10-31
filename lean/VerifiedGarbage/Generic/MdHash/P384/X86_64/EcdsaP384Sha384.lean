@@ -32,7 +32,7 @@ It is generic over P-384's group law and inversions `h` too, the variant
 
 namespace VG.Generic.MdHash.P384.X86_64.EcdsaP384Sha384
 
-open VG.Proof.Ecdsa.Rfc6979.X86_64 (cfgOf sign_spSafe signNotes)
+open VG.Proof.Ecdsa.Rfc6979.X86_64 (cfgOf sign_spSafe)
 open VG.Proof.Ecdsa.Rfc6979.X86_64.P384Sha384 (pack sign_verified)
 
 /-- The signature with the hash's compression function `c`, and P-384's
@@ -42,8 +42,6 @@ def withMul (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P384.curve) (c : Pro
     (adx : Bool) : Artifact :=
   Spec.Ecdsa.Rfc6979.P384Sha384.signApi.artifact X86_64.target {
     suffix := c.suffix ++ (if adx then "_adx" else "")
-    notes := [signNotes (cfgOf (pack adx h.law (Proof.P384.combOk7 h.law) h.inv c)).H 48
-        (Spec.Ecdsa.P384.signApi.name ++ (if adx then "_adx" else ""))]
     code := (cfgOf (pack adx h.law (Proof.P384.combOk7 h.law) h.inv c)).sign
     consts := Impl.Ecdsa.X86_64.p384.combConsts
     stack := 240

@@ -47,19 +47,10 @@ namespace VG.Generic.MlDsaArith.X86_64.MlDsaSign
 open VG.Proof.MlDsa.X86_64 (ArithImpl)
 open VG.Proof.MlDsa.X86_64.Sign (primsWith)
 
-/-- Notes on the implementation, the same for every parameter set. -/
-def notes : List String :=
-  ["The function saves its caller's callee-saved registers in `scratch`; its calls use the 32 \
-    bytes of stack below its return address.",
-   "The signing loop runs at most 814 iterations (FIPS 204 Appendix C). Each iteration computes \
-    every validity check and combines them without branching: the one branch on their result \
-    is the only place an iteration's outcome affects timing."]
-
 def artifacts (v : ArithImpl) : List Artifact := [
   Spec.MlDsa.sign44Api.artifact X86_64.target {
     suffix := v.code.sfx
     features := v.features
-    notes := notes
     code := Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa44
     stack := 32
     verified := Proof.MlDsa.X86_64.Sign.sign_verified' v (.inl rfl)
@@ -67,7 +58,6 @@ def artifacts (v : ArithImpl) : List Artifact := [
   Spec.MlDsa.sign65Api.artifact X86_64.target {
     suffix := v.code.sfx
     features := v.features
-    notes := notes
     code := Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa65
     stack := 32
     verified := Proof.MlDsa.X86_64.Sign.sign_verified' v (.inr (.inl rfl))
@@ -75,7 +65,6 @@ def artifacts (v : ArithImpl) : List Artifact := [
   Spec.MlDsa.sign87Api.artifact X86_64.target {
     suffix := v.code.sfx
     features := v.features
-    notes := notes
     code := Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa87
     stack := 32
     verified := Proof.MlDsa.X86_64.Sign.sign_verified' v (.inr (.inr rfl))

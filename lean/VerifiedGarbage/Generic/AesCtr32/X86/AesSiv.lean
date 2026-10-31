@@ -89,17 +89,9 @@ namespace VG.Generic.AesCtr32.X86.AesSiv
 
 open VG.Proof.AesSiv.X86
 
-/-- Which functions an instance of `encrypt` or `decrypt` calls. -/
-def cryptNote (v : Proof.Aes.X86.Ctr32Impl) : String :=
-  "This implementation calls the CMAC functions made with `" ++ v.callee.name ++ "` (e.g. `" ++
-    Spec.Cmac.aesUpdateApi.name ++ v.suffix ++ "`), and encrypts with `" ++ v.callee.name ++ "`."
-
 def artifacts (v : Proof.Aes.X86.Ctr32Impl) : List Artifact := [
   Spec.Siv.initApi.artifact X86.target {
     suffix := v.suffix
-    notes := [
-      "This implementation expands the keys with `" ++ v.expand.name ++ "` and computes the CMAC subkeys \
-      with `" ++ Spec.Cmac.aesSubkeysApi.name ++ v.suffix ++ "`."]
     code := Impl.StackScratch.X86.withStackScratch 2580 3 (Impl.AesSiv.X86.initCore v.expand v.callee v.suffix)
     stack := 2628
     verified := init_framed v
@@ -107,7 +99,6 @@ def artifacts (v : Proof.Aes.X86.Ctr32Impl) : List Artifact := [
     features := v.features },
   Spec.Siv.encryptApi.artifact X86.target {
     suffix := v.suffix
-    notes := [cryptNote v]
     code := Impl.StackScratch.X86.withStackScratch 2612 7 (Impl.AesSiv.X86.encrypt v.callee v.suffix)
     stack := 2668
     verified := encrypt_framed v
@@ -115,8 +106,6 @@ def artifacts (v : Proof.Aes.X86.Ctr32Impl) : List Artifact := [
     features := v.features },
   Spec.Siv.decryptApi.artifact X86.target {
     suffix := v.suffix
-    notes := [cryptNote v,
-      "It compares the IVs and overwrites the data with zeros without a branch on the result."]
     code := Impl.StackScratch.X86.withStackScratch 2612 7 (Impl.AesSiv.X86.decrypt v.callee v.suffix)
     stack := 2668
     verified := decrypt_framed v

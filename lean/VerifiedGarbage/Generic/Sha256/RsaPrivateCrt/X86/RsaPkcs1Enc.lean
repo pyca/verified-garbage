@@ -31,12 +31,6 @@ open VG.Proof.Rsa.X86.PrivChecked (CrtImpl)
 def artifacts (v : Backend) (c : CrtImpl) : List Artifact := [
   Spec.RsaPkcs1Enc.decryptApi.artifact X86.target {
     suffix := Emit.qualifiedName "" [("sha256", v.stream.suffix), ("crt", c.suffix)]
-    notes := ["This implementation calls `" ++ Proof.RsaPkcs1Enc.X86.Dec.privName c ++ "`, then derives \
-      `KDK` and the alternative message and lengths with `" ++ v.F.H.initN ++ "`, `" ++ v.F.H.updN ++ "`, `" ++
-      v.F.H.finN ++ "`, `" ++ v.F.hiN ++ "` and `" ++ v.F.hfN ++ "`, a block of IRPRF per HMAC. The \
-      padding's checks, the scan for the separator, the choice of the alternative length and of the \
-      message are masks computed without branches, from the borrow of subtractions, and every byte of \
-      `EM` and of the alternative message is read whichever is returned."]
     code := Proof.RsaPkcs1Enc.X86.Dec.decryptCode v c
     stack := Proof.RsaPkcs1Enc.X86.Dec.stackBytes
     verified := Proof.RsaPkcs1Enc.X86.Dec.code_verified v c

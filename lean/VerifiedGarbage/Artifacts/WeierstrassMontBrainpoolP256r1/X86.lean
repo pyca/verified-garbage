@@ -15,37 +15,23 @@ namespace VG.Artifacts.WeierstrassMontBrainpoolP256r1.X86
 
 open VG.Spec.Weierstrass.Mont VG.Impl.Weierstrass.X86.Mont VG.Proof.Weierstrass.X86.Mont
 
-/-- How the functions work. -/
-def notes : List String := ["The function saves `ebp` (and the product `ebx`, `esi` and `edi`) in \
-  its own working space and addresses it through `ebp`, `[a]` and `[b]` through pointers, and \
-  `[o]` through `ecx`. The numbers are 32-bit words: the product is word-by-word Montgomery \
-  multiplication (CIOS, unrolled, with `mul`, the modulus as immediates and the accumulator in \
-  the own working space), and every result is reduced by a conditional subtraction selected by \
-  a mask."]
-
 def artifacts : List Artifact := [
   brainpoolp256r1p.mulApi.artifact X86.target {
-    notes := notes
     code := mulFn brainpoolp256r1p.k brainpoolp256r1p.m
     verified := brainpoolp256r1p_mul_verified },
   brainpoolp256r1p.addApi.artifact X86.target {
-    notes := notes
     code := addFn brainpoolp256r1p.k brainpoolp256r1p.m
     verified := brainpoolp256r1p_add_verified },
   brainpoolp256r1p.subApi.artifact X86.target {
-    notes := notes
     code := subFn brainpoolp256r1p.k brainpoolp256r1p.m
     verified := brainpoolp256r1p_sub_verified },
   brainpoolp256r1n.mulApi.artifact X86.target {
-    notes := notes
     code := mulFn brainpoolp256r1n.k brainpoolp256r1n.m
     verified := brainpoolp256r1n_mul_verified },
   brainpoolp256r1n.addApi.artifact X86.target {
-    notes := notes
     code := addFn brainpoolp256r1n.k brainpoolp256r1n.m
     verified := brainpoolp256r1n_add_verified },
   brainpoolp256r1n.subApi.artifact X86.target {
-    notes := notes
     code := subFn brainpoolp256r1n.k brainpoolp256r1n.m
     verified := brainpoolp256r1n_sub_verified }]
 

@@ -6,8 +6,6 @@
 ///
 /// Contract: `checkContract` of `VG.Spec.Weierstrass.CheckPoint.Curve`.
 ///
-/// The function keeps `rbx`, `rbp` and `r12`–`r15` in `xmm0` to `xmm5` while it runs. It compares `x` and `y` with `p` by subtraction with borrow, takes them into Montgomery's form and computes `y² - (x³ + a x + b)` modulo `p` by `mul` and column-wise Montgomery reduction, and selects the point by masks; nothing depends on the numbers but through masks.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.

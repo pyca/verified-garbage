@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.X448.x448Contract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate.
 ///
-/// The function uses only caller-saved registers and no stack. Field elements are fourteen 32-bit limbs, one to a word of `scratch` (rounded up to a multiple of 8), multiplied row by row with `mul` (each step `a_i b_j + acc + carry` fits in 64 bits) and reduced with `2^448 = 2^224 + 1` (mod p); the inversion is square-and-multiply over the public bits of `p - 2`. The u-coordinate and the result are read and written a byte at a time.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 56 bytes.

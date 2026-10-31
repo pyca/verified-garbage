@@ -10,8 +10,6 @@
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.verifyPrecomputedContract`.
 ///
-/// This implementation calls `vg_rsa_public_precomputed_checked` with the cached modulus values, then compares the recovered encoding with EMSA-PKCS1-v1_5's encoding of `digest`. It combines the padding result with the public operation's status without branching on that status. It uses 2224 bytes of stack, its frame: the call uses none.
-///
 /// # Safety
 ///
 /// * `n` must be valid for reads of `n_len` bytes.
@@ -999,8 +997,6 @@ blr",
 /// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it writes and returns exactly what is specified above. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety still applies.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.recoverPrecomputedContract`.
-///
-/// This implementation calls `vg_rsa_public_precomputed_checked` with the cached modulus values into its frame, writes EMSA-PKCS1-v1_5's encoding of the last `out_len` bytes of the result beside it and compares the two, then copies those bytes to `out` and masks them to zeros, and the result to 0, unless the public operation succeeded and the two are equal: nothing after the call branches on its result. It uses 2224 bytes of stack, its frame: the call uses none.
 ///
 /// # Safety
 ///
@@ -2039,8 +2035,6 @@ blr",
 /// RSASSA-PKCS1-v1_5 signature generation (RFC 8017 §8.2.1) of a hash value, as BoringSSL's `RSA_sign` does it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits) and the private key `(p, q, dP, dQ, qInv)` (as `vg_rsa_private_checked` takes it), encodes `digest` with EMSA-PKCS1-v1_5 (RFC 8017 §9.2: `0x00 0x01`, bytes `0xff`, `0x00` and the DER encoding of its `DigestInfo`) to `n_len` bytes and computes the signature from it as `vg_rsa_private_checked` does: writes it to `out` (`n_len` bytes, most significant first) and returns 1; writes zeros and returns 0 if `hash` names no hash function, `digest` is not as long as its values, `n_len` is less than the encoding's 11 bytes more than the `DigestInfo`, or `vg_rsa_private_checked` refuses the key; and writes zeros and returns 2 (an internal error) if the signature fails the check against `e`, which is the case for no hash value if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. A signature it writes is one `vg_rsa_pkcs1_verify` accepts. `hash` names the hash function: 0 MD5, 1 SHA-1, 2 SHA-224, 3 SHA-256, 4 SHA-384, 5 SHA-512, 6 SHA-512/224, 7 SHA-512/256, 8 SHA3-224, 9 SHA3-256, 10 SHA3-384, 11 SHA3-512 (`VG.Spec.RsaPkcs1Sig.Hash.ofId`).
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.signContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `hash` and the contents of `n` and `e`, not on `digest` or the private key.
-///
-/// This implementation writes EMSA-PKCS1-v1_5's encoding of `digest` into its frame and signs it with `vg_rsa_private_checked`, which checks the signature against `e`, then overwrites the encoding with zeros. Only the lengths, the hash function and the public key decide a branch or an address. It uses 4592 bytes of stack: its frame of 1264 bytes and `vg_rsa_private_checked`'s.
 ///
 /// # Safety
 ///

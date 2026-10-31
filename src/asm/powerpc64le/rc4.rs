@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Rc4.initContract`. Constant time: only pointers and `key_len` may affect timing, not the key or key-dependent table indices.
 ///
-/// The table is visited as 32 doublewords at fixed addresses: a secret-indexed read keeps, with masks, the doubleword and then the byte that hold it, and a write stores every doubleword back XORed with a masked difference, so no address or branch depends on the key, the table or `j`.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -854,8 +852,6 @@ blr",
 /// Continues raw RC4 encryption or decryption: XORs the next `len` stream bytes into `data` in place and preserves the next stream position in `*ctx` (`VG.Spec.Rc4.contextAt`). Empty input leaves the context unchanged. There is no nonce, padding, authentication, automatic discard or final output.
 ///
 /// Contract: `VG.Spec.Rc4.applyContract`. Constant time: only pointers, `len` and the initial PRGA index `i` (the public byte count modulo 256 for an initialized context) may affect timing. Key bytes, the permutation, `j`, keystream lookup indices and data remain secret. The function may leak `i`.
-///
-/// The table is visited as 32 doublewords at fixed addresses: a secret-indexed read keeps, with masks, the doubleword and then the byte that hold it, and a write stores every doubleword back XORed with a masked difference, so no address or branch depends on the table, `j` or the data.
 ///
 /// # Safety
 ///

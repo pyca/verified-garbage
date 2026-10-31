@@ -63,11 +63,6 @@ def artifacts (v v2 : Proof.Pbkdf2.Md.AArch64.MdHash) (c : Proof.Rsa.AArch64.Crt
   if emitted v v2 then [
     (Spec.RsaOaep.decryptApi v.mgf.G v2.mgf.G).artifact AArch64.target {
       suffix := Emit.qualifiedName "" (parts v v2 ++ [("crt", c.suffix)])
-      notes := ["This implementation calls `" ++ (privOf c).name ++ "`, hashes the label with `" ++
-          v.H.stream.updN ++ "` and unmasks the seed and `DB` with MGF1 calling `" ++ v2.H.stream.updN ++
-          "`. The checks of `Y`, `lHash'` and the separator, the scan for it and the shift of the \
-          message to the start of `out` are masks computed without branches, reading every byte of \
-          `EM` whatever the outcome."]
       code := Impl.RsaOaep.AArch64.decrypt v.H v2.H (privOf c).name (privOf c).code
       stack := decStack (privOf c)
       verified := dec_verified v.ok.stream v2.ok.stream v.mgf.hash v.mgf.len (mgf_valid v.mgf) v2.mgf.hash

@@ -25,41 +25,28 @@ namespace VG.Artifacts.CmacAes.Arm
 
 open VG.Proof.CmacAes.Arm
 
-/-- How the functions encrypt a block. -/
-def ctrNote : String := "This implementation encrypts each block with `vg_aes_ctr32`."
-
 def artifacts : List Artifact := [
   Spec.Cmac.aesSubkeysApi.artifact Arm.target {
-    notes := [ctrNote]
     code := Impl.CmacAes.Arm.subkeys
     stack := 8
     verified := subkeys_verified },
   Spec.Cmac.aesUpdateApi.artifact Arm.target {
-    notes := [ctrNote]
     code := Impl.CmacAes.Arm.update
     stack := 8
     verified := update_verified },
   Spec.Cmac.aesFinalizeApi.artifact Arm.target {
-    notes := [ctrNote]
     code := Impl.CmacAes.Arm.finalize
     stack := 8
     verified := finalize_verified },
   Spec.Cmac.aesInitApi.artifact Arm.target {
-    notes := [
-      "This implementation expands the key with `vg_aes_expand_key_scratch` and derives the subkeys with \
-        `vg_cmac_aes_subkeys`."]
     code := Impl.StackScratch.Arm.withRegScratch 2304 .r3 Impl.CmacAes.Stream.Arm.init
     stack := 2312
     verified := Proof.CmacAes.Stream.Arm.init_framed },
   Spec.Cmac.aesAbsorbApi.artifact Arm.target {
-    notes := [
-      "This implementation chains the blocks with `vg_cmac_aes_update`."]
     code := Impl.StackScratch.Arm.withStackScratch 2320 2 Impl.CmacAes.Stream.Arm.absorb
     stack := 2336
     verified := Proof.CmacAes.Stream.Arm.absorb_framed },
   Spec.Cmac.aesFinishApi.artifact Arm.target {
-    notes := [
-      "This implementation computes the MAC with `vg_cmac_aes_finalize`."]
     code := Impl.StackScratch.Arm.withStackScratch 2320 1 Impl.CmacAes.Stream.Arm.finish
     stack := 2336
     verified := Proof.CmacAes.Stream.Arm.finish_framed }]

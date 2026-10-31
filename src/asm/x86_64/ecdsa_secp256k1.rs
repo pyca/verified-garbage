@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.signContract`. Constant time: only the pointers may affect timing, not the key, the hash or `k`.
 ///
-/// Field elements are four 64-bit words in Montgomery form. Scalar multiplication calls `vg_secp256k1_mul`, a fixed 256-iteration ladder with the complete formulas for a = 0 of Renes, Costello and Batina (Algorithm 9 doubles, Algorithm 8 adds the affine point). Inversions use divsteps, by calls of `vg_secp256k1_inv_mod_p` and `vg_secp256k1_inv_mod_n`. Branches and memory addresses depend only on pointers and loop counters.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 64 bytes.
@@ -3077,8 +3075,6 @@ ret
 /// ECDSA signature verification over secp256k1 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 32 bytes each, most significant first) of the hash at `digest` (its leftmost 32 bytes, or, for a shorter hash, the hash padded on the left with zeros to 32 bytes) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 32 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
-///
-/// The function saves its caller's callee-saved registers in `scratch`. Field elements and scalars are four 64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS) with a final conditional subtraction. The public key is checked without branches (a call of `vg_secp256k1_check_point`); an invalid key is replaced with `G` for the point operations and rejected by the final validity flag. Divsteps computes `s⁻¹` modulo `n` (a call of `vg_secp256k1_inv_mod_n`), then `u = e/s` and `v = r/s`. Both public scalars are recoded as non-adjacent signed digits, width nine for `u` (sixteen bits each) and width five for `v`. A single Jacobian accumulator computes `[u]G + [v]Q` with 256 doublings, adding only nonzero digits. Generator digits directly index the affine odd multiples `[m]G`, `m ≤ 255`, in the static `VG_SECP256K1_GTAB` of `[m]G` for `m = 1 … 256` (16 KB, in Montgomery form), added by mixed additions; peer digits index eight odd multiples of `Q` in `scratch`, built by Jacobian additions of `2Q`, with cached squares and cubes of their Z coordinates. The digits' additions are calls of `vg_secp256k1_jac_add_cached` (the peer's digits) and `vg_secp256k1_jac_add_affine` (the generator's), which cover infinity, equal points and opposite points; the doubling and the table of odd multiples are inline. Doubling is Jacobian, for `a = 0` (dbl-2009-l, 2 products and 5 squares), with `Z' = 2YZ` as a direct product, in place: each coordinate of the accumulator is read for the last time before it is written, so no copy. The final comparison squares the Jacobian Z coordinate and checks `X = rZ²`, or `X = (r+n)Z²` when `r+n < p` (secp256k1 has `n < p ≤ 2n`), without a field inversion. It rejects infinity and returns the conjunction of the key, scalar-range and coordinate checks as 0 or 1. Timing may depend on the public verification inputs, as permitted by the contract.
 ///
 /// # Safety
 ///

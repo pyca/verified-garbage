@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Sm3.compressContract`. Constant time: only the pointers and `n` may affect timing, not the hash value or the blocks.
 ///
-/// The hash value and the blocks are read and written a byte at a time, since the contract states no alignment for them; `scratch` is rounded up to a multiple of 8, so that the message schedule in it takes aligned word accesses.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 32 bytes.
@@ -4356,8 +4354,6 @@ ret
 ///
 /// Contract: `VG.Spec.Sm3.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// Keeps its working space, and the registers it saves, in a frame of 144 bytes on the stack.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
@@ -4490,8 +4486,6 @@ ret
 /// Finishes an SM3 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SM3 hash value of that message (32 bytes) to `*out`.
 ///
 /// Contract: `VG.Spec.Sm3.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// Keeps its working space, and the registers it saves, in a frame of 144 bytes on the stack.
 ///
 /// # Safety
 ///

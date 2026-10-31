@@ -6,8 +6,6 @@
 ///
 /// Contract: `mulContract` of `VG.Spec.X25519.Field16`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// Uses baseline integer instructions. The function saves `r4` to `r11` in its own working space and runs X25519's ARMv7 product (row by row, with only the low 32-bit `mul`, into 32 limbs at byte 1472, then `lo + 38 hi` and the carry folded in twice) with its operands and result through pointers: `ws` plus each offset. It then restores the registers; it never writes `r12` or `lr`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 4096 bytes.
@@ -416,8 +414,6 @@ bx lr",
 /// Powers in curve25519's field: for `a` the element at byte 192 of the working space `ws`, writes an element congruent to `a^(2^250 - 1)` modulo `p = 2^255 - 19` to byte 1024, and one congruent to `a^11` to byte 960: the addition chain that inversion (`a^(p-2)`, five squarings of the first and a product with the second) and decoding's square root (`a^((p-5)/8)`, two squarings of the first and a product with `a`) share. An element is sixteen 32-bit little-endian words, least significant first, each a limb below `2^16`: the number `Σ l_i 2^(16 i)`, not necessarily below `p`. The results' limbs are below `2^16`. Every byte of `ws` but the results', bytes 1088 to 1215 and the function's own working space (bytes 1472 to 1631) keeps its value.
 ///
 /// Contract: `pow250Contract` of `VG.Spec.X25519.Field16`. Constant time: only the pointer may affect timing.
-///
-/// Uses baseline integer instructions. The function saves `r4` to `r10` in its own working space and runs the addition chain of ref10's `fe_invert` up to `a^(2^250 - 1)` (249 squarings, most in loops counted by `r10`, and 10 multiplications) as the ARMv7 Ed25519 code inlined it, with X25519's ARMv7 product (row by row, with only the low 32-bit `mul`, then `lo + 38 hi` and the carry folded in) and its two temporaries in bytes 1088 to 1215. It then restores the registers.
 ///
 /// # Safety
 ///

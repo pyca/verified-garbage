@@ -27,28 +27,18 @@ open VG.Proof.AesXts.AArch64
 
 def artifacts : List Artifact := [
   Spec.Xts.aesEncryptApi.artifact AArch64.target {
-    notes := ["This implementation enciphers one block at a time with `vg_aes_encrypt_blocks`."]
     code := (XtsImpl.blocks .scalar).enc.code
     verified := encrypt_verified .scalar },
   Spec.Xts.aesDecryptApi.artifact AArch64.target {
-    notes := ["This implementation deciphers one block at a time with `vg_aes_decrypt_blocks`."]
     code := (XtsImpl.blocks .scalar).dec.code
     verified := decrypt_verified .scalar },
   Spec.Xts.aesEncryptApi.artifact AArch64.target {
     suffix := "_aes"
-    notes := [
-      "This implementation reads each block once: it enciphers eight blocks at a time with the AES " ++
-      "instructions, each round applied to all eight, then one at a time, computing each group's " ++
-      "tweaks in general-purpose registers while the group before it runs."]
     code := Impl.AesXts.AArch64Aes.encrypt
     verified := Aes.encrypt_verified
     features := ["aes"] },
   Spec.Xts.aesDecryptApi.artifact AArch64.target {
     suffix := "_aes"
-    notes := [
-      "This implementation reads each block once: it deciphers eight blocks at a time with the AES " ++
-      "instructions, each round applied to all eight, then one at a time, computing each group's " ++
-      "tweaks in general-purpose registers while the group before it runs."]
     code := Impl.AesXts.AArch64Aes.decrypt
     verified := Aes.decrypt_verified
     features := ["aes"] }]

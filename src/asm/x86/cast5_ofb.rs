@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Cast5.ofbContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline IA-32: one block at a time, through the generic OFB of `Impl/Modes/X86/` over CAST5's ECB block code: each S-box lookup is a scan of the whole table in the static `VG_CAST5_S1234`, so no secret is an address. The subkeys and the number of rounds are reloaded from the arguments for each block.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety

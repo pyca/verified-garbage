@@ -42,27 +42,6 @@ namespace VG.Proof.Ecdsa.X86_64.P384
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Impl.Ecdsa.X86_64
 open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
 
-/-- How P-384's field elements and scalars are multiplied, for the notes of its
-functions: with BMI2 and ADX (`adx`) or not. -/
-def mulNote (adx : Bool) : String :=
-  "multiplied (modulo `p`, by calls of `vg_p384_mul_mod_p" ++ (if adx then "_adx" else "") ++ "`) " ++
-  if adx then
-    "by Montgomery multiplication by rows (operand scanning) of BMI2's `mulx`, each \
-    product's low half added through OF (`adox`) and its high half through CF (`adcx`), two \
-    carry chains that do not wait for each other, each row followed by the reduction's row by \
-    the modulus (its multiplier `u = t₀ (-m⁻¹) mod 2⁶⁴`), with a final conditional subtraction"
-  else
-    "by word-by-word Montgomery multiplication (CIOS) with a final conditional \
-    subtraction"
-
-/-- How the comb's entries are selected, for the notes of its functions: with
-AVX2 (`adx`) or not. -/
-def selNote (adx : Bool) : String :=
-  if adx then
-    "32 bytes at a time with AVX2, and keeping (`vpand`, `vpor`, under the mask of `vpcmpeqd` \
-    of a counter and the magnitude, broadcast)"
-  else "16 bytes at a time, and keeping (`pand`, `por`)"
-
 /-! `p384x` is `p384` but for `adx` and `avx2`: its other fields, rewritten rather than
 compared by unfolding (which would evaluate the order's bits). -/
 

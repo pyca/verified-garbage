@@ -28,15 +28,9 @@ namespace VG.Artifacts.Pbkdf2Sha1.RISCV64
 
 def artifacts : List Artifact := [
   Spec.Hmac.sha1I.iterateApi.artifact RISCV64.target {
-    notes := ["The key, `u` and `t` are read and written a byte at a time, since the contract states no \
-        alignment for them; `scratch` is rounded up to a multiple of 8.",
-      "SHA-1's compression is inlined, the 16 words of the block in registers, two per step: each \
-        step does about 40% fewer instructions than two calls of `vg_sha1_compress`."]
     code := Impl.Pbkdf2.Sha1.RISCV64.iterate
     verified := Proof.Pbkdf2.Sha1.RISCV64.iterate_verified },
   Spec.Hmac.sha1I.pbkdf2Api.artifact RISCV64.target {
-    notes := ["The password, the salt and `out` are read and written a byte at a time, since the \
-        contract states no alignment for them."]
     code := Proof.Pbkdf2.Whole.RISCV64.Sha1.F.pbkdf2
     stack := Proof.Pbkdf2.Whole.RISCV64.Sha1.F.itB + Proof.Pbkdf2.Whole.RISCV64.Sha1.F.frB +
       Proof.Pbkdf2.Whole.RISCV64.Sha1.F.X

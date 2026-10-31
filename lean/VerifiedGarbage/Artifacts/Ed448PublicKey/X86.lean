@@ -22,13 +22,6 @@ open VG.X86
 
 def artifacts : List Artifact := [
   Spec.Ed448.publicKeyApi.artifact X86.target {
-    notes := ["Uses baseline integer instructions. \
-      Hashes the private key with `vg_keccak_absorb_scratch`, `vg_keccak_pad_scratch` and \
-      `vg_keccak_squeeze_scratch` (SHAKE256, the Keccak state in `scratch`) into a stack frame, \
-      prunes the first 57 bytes of the hash there, encodes `[s]B` with \
-      `vg_ed448_scalar_base`, and clears the frame, the hash and the scalar with it, \
-      before returning. The Keccak state, and the base-point multiplication's working \
-      values, are left in `scratch`."]
     code := Impl.Ed448.X86.PublicKey.code Impl.Ed448.X86.scalarBase
     stack := 280
     verified := Proof.Ed448.X86.PublicKey.publicKey_verified Proof.Ed448.X86.scalarBase_calleeOk }]

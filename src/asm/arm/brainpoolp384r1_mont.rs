@@ -6,8 +6,6 @@
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function saves `r4`–`r9` and `lr` in its existing working space. Montgomery multiplication scans packed 32-bit words, assembling each full product from four baseline 16-by-16 `mul` products. Fixed-offset rows keep `r10` and `r11` unchanged and `r12` as the workspace pointer. The accumulator is expanded to half-word digits for the existing mask-selected final subtraction. No stack or CPU extension is used.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -979,8 +977,6 @@ bx lr",
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function saves `r4`–`r11` in its own working space, stores the modulus there, and reads `[a]` and `[b]` and writes `[o]` through pointers. The numbers are 16-bit digits, each in a word: the product is digit-by-digit Montgomery multiplication (CIOS, with `mul` and the accumulator in the own working space), and every result is reduced by a conditional subtraction selected by a mask.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -1541,8 +1537,6 @@ bx lr",
 /// The difference modulo brainpoolP384r1's prime `p`: writes `(a - b) mod` the modulus to `o`. The numbers are 6 64-bit words (`48` bytes), little-endian, at the byte offsets `o`, `a` and `b` of the working space `ws`; `o` may be `a` or `b`. Every byte of `ws` but the result's and the function's own working space (bytes 3712 to 4095) keeps its value.
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
-///
-/// The function saves `r4`–`r11` in its own working space, stores the modulus there, and reads `[a]` and `[b]` and writes `[o]` through pointers. The numbers are 16-bit digits, each in a word: the product is digit-by-digit Montgomery multiplication (CIOS, with `mul` and the accumulator in the own working space), and every result is reduced by a conditional subtraction selected by a mask.
 ///
 /// # Safety
 ///
@@ -2189,8 +2183,6 @@ bx lr",
 /// Montgomery's product modulo brainpoolP384r1's order `n`: writes the number below the modulus congruent to `a b 2^-384` to `o`. The numbers are 6 64-bit words (`48` bytes), little-endian, at the byte offsets `o`, `a` and `b` of the working space `ws`; `o` may be `a` or `b`. Every byte of `ws` but the result's and the function's own working space (bytes 3712 to 4095) keeps its value.
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
-///
-/// The function saves `r4`–`r9` and `lr` in its existing working space. Montgomery multiplication scans packed 32-bit words, assembling each full product from four baseline 16-by-16 `mul` products. Fixed-offset rows keep `r10` and `r11` unchanged and `r12` as the workspace pointer. The accumulator is expanded to half-word digits for the existing mask-selected final subtraction. No stack or CPU extension is used.
 ///
 /// # Safety
 ///
@@ -3163,8 +3155,6 @@ bx lr",
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function saves `r4`–`r11` in its own working space, stores the modulus there, and reads `[a]` and `[b]` and writes `[o]` through pointers. The numbers are 16-bit digits, each in a word: the product is digit-by-digit Montgomery multiplication (CIOS, with `mul` and the accumulator in the own working space), and every result is reduced by a conditional subtraction selected by a mask.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -3725,8 +3715,6 @@ bx lr",
 /// The difference modulo brainpoolP384r1's order `n`: writes `(a - b) mod` the modulus to `o`. The numbers are 6 64-bit words (`48` bytes), little-endian, at the byte offsets `o`, `a` and `b` of the working space `ws`; `o` may be `a` or `b`. Every byte of `ws` but the result's and the function's own working space (bytes 3712 to 4095) keeps its value.
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
-///
-/// The function saves `r4`–`r11` in its own working space, stores the modulus there, and reads `[a]` and `[b]` and writes `[o]` through pointers. The numbers are 16-bit digits, each in a word: the product is digit-by-digit Montgomery multiplication (CIOS, with `mul` and the accumulator in the own working space), and every result is reduced by a conditional subtraction selected by a mask.
 ///
 /// # Safety
 ///

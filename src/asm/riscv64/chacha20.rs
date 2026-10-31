@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.ChaCha20.blockContract`. Constant time: only the pointers may affect timing, not the state.
 ///
-/// The state is read and the result written a byte at a time, since the contract states no alignment for them; the callee-saved registers the function uses are saved in `buf` at offset 64, rounded up to a multiple of 8.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads of 64 bytes.
@@ -2091,8 +2089,6 @@ ret
 ///
 /// Contract: `VG.Spec.ChaCha20.xorContract`. Constant time: only the pointers and `len` may affect timing, not the state or the data.
 ///
-/// Our caller's registers that the function uses across its calls of `vg_chacha20_block`, and the return address, are saved in `buf` at offset 256, rounded up to a multiple of 8; no stack is used.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 64 bytes.
@@ -2464,8 +2460,6 @@ ret
 /// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
-///
-/// Our caller's registers that the function uses across its calls, and the return address, are saved in the streaming state at offset 576, rounded up to a multiple of 8; no stack is used.
 ///
 /// # Safety
 ///

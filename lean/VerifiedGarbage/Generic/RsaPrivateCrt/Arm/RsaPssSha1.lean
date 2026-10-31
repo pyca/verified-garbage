@@ -30,23 +30,12 @@ open VG.Proof.Rsa.Arm (CrtImpl)
 def artifacts (v : CrtImpl) : List Artifact := [
   (Spec.RsaPss.signApi Spec.Mgf1.sha1 Spec.Mgf1.sha1).artifact Arm.target {
     suffix := v.suffix
-    notes := ["This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed \
-      over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `" ++
-      Proof.Rsa.Arm.privName v ++ "`, which checks the signature against `e`. Only the lengths, \
-      `salt_len` and the public key decide a branch or an address."]
     code := Proof.RsaPss.Arm.Sg.signCode Proof.RsaPss.Arm.sha1 v
     stack := 3624
     verified := (Proof.RsaPss.Arm.Sg.sign_verified Proof.RsaPss.Arm.sha1 Proof.RsaPss.Arm.Sg.sign_sat_sha1 v)
     features := v.features },
   (Spec.RsaPss.verifyPrecomputedApi Spec.Mgf1.sha1 Spec.Mgf1.sha1).artifact Arm.target {
     suffix := v.suffix
-    notes := ["ARMv7 with the selected RSA public implementation. This implementation calls `vg_rsa_public_precomputed_checked` with the \
-        cached modulus values, then checks EMSA-PSS in its working space without branching on the \
-        encoding: `maskedDB` is unmasked with MGF1, and the end of `DB`'s padding is found by a scan \
-        of all its bytes. A specified salt length copies that many trailing bytes of `DB` into `M'` \
-        and hashes only the blocks it needs; an unknown salt length shifts `DB` into place in ten \
-        masked passes and hashes the blocks of the longest salt. Only the lengths, the salt-length \
-        mode and the public key decide a branch or an address."]
     code := Proof.RsaPss.Arm.Vf.verifyCode Proof.RsaPss.Arm.sha1 (Proof.Rsa.Arm.pdOfCrt v)
     stack := 240
     verified := (Proof.RsaPss.Arm.Vf.verify_verified Proof.RsaPss.Arm.sha1 Proof.RsaPss.Arm.Vf.verify_sat_sha1

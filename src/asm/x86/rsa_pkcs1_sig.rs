@@ -1983,8 +1983,6 @@ ret
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.signContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `hash` and the contents of `n` and `e`, not on `digest` or the private key.
 ///
-/// Encodes the digest in a private frame, signs it with `vg_rsa_private_checked`, and overwrites the encoding with zeros. Only public lengths, the hash identifier, and the public key affect branches and addresses.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety

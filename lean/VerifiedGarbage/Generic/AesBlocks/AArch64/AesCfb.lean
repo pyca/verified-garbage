@@ -27,14 +27,11 @@ open VG.Proof.AesCfb.AArch64
 def artifacts (v : Proof.Aes.AArch64.BlocksImpl) : List Artifact := [
   Spec.Cfb.aesEncryptApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := ["This implementation enciphers one block at a time with `" ++
-      v.enc.name ++ "`."]
     code := Impl.AesCfb.AArch64.encrypt v.enc
     verified := encrypt_verified v
     features := v.features },
   Spec.Cfb.aesDecryptApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := [Caller.note v]
     code := Caller.decrypt v
     verified := Caller.verified v
     written := Caller.written v

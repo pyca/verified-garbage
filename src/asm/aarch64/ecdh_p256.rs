@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
 ///
-/// The peer's encoding and coordinates are checked without branches. Scalar multiplication uses the peer's point when it is valid and the generator otherwise. Field elements are four 64-bit Montgomery words. Signed 5-bit windows recode the scalar as `d + 16 Σ_{j<52} 32^j`; a 16-entry Jacobian table is built with co-Z doubling and additions and stores each point's `Z²` and `Z³`. The first digit initializes the accumulator, followed by 51 iterations of five Jacobian doublings and one cached Jacobian addition. Each selection scans all 16 entries with NEON masks, interleaved with the window's fifth doubling, which uses only general registers, and digit signs, zero digits and infinity accumulators are handled without secret branches or secret addresses. Prime-order bounds establish the nonexceptional additions for valid private scalars; invalid scalars still execute safely and are rejected by the existing final range check. Register-allocated point arithmetic uses explicit scratch spills and restores the additional ABI registers and live output pointer. Inversion retains the fixed 590-divstep schedule. The result or zeros is selected by the input checks, `d` in `[1, n-1]`, and a nonzero projective denominator. Time depends only on the pointers; the public contract and 8192-byte scratch requirement are unchanged.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.

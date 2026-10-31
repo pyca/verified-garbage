@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Rsa.Mont.mulContract`. Constant time but for `w`: timing may depend on the pointer, `ws_len`, the indices and `w`, not on the numbers.
 ///
-/// Baseline x86-64: coarsely integrated operand scanning (CIOS) on 64-bit words, the accumulator in array 2, then a subtraction of `m` into array 3 selected by a mask, as the RSA functions' Montgomery multiplication. It uses no stack: it keeps `rbx`, `rbp` and `r12`–`r15` in `xmm0`–`xmm2` and restores them through the first words of arrays 2 and 3, which hold them on return.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -293,8 +291,6 @@ pub(crate) const VG_RSA_MONT_MUL_ADX_FEATURES: crate::cpu::Features = crate::cpu
 /// Montgomery multiplication in the working space of the RSA functions: writes to array `o` the number below the modulus `m` (array 0) congruent to `a b 2^(-64 w)` modulo `m`, for the numbers in arrays `a` and `b`. The working space is a header of 32 words, then 8 arrays of `w + 2` words each: header word 6 holds `w`, word 7 `-m⁻¹ mod 2^64`, and words 8 to 15 the addresses of the arrays. The numbers are `w` 64-bit words, little-endian, at the start of their arrays; `o` may be `a` or `b`, and `a` may be `b`. Every byte of `ws` but those of arrays 2 and 3 (the function's own) and of array `o` keeps its value.
 ///
 /// Contract: `VG.Spec.Rsa.Mont.mulContract`. Constant time but for `w`: timing may depend on the pointer, `ws_len`, the indices and `w`, not on the numbers.
-///
-/// For `w` a multiple of 8 (below 2^30 + 8), BMI2 and ADX: the product by 8-by-8 tiles of `mulx` with two carry chains (`adcx`, `adox`), or, when `a = b`, the square by triangular tiles computing each cross product once; then a word-by-word reduction and the selected subtraction of `m`, eight words per iteration, with the borrow and the mask moved between `rbp` and the carry flag once per eight words and the selection by `cmovb`. Other sizes take `vg_rsa_mont_mul`'s code. The tiles read their operands' addresses from header words 16–18, which the function sets from `o`, `a` and `b` and, with words 19–21, restores before it returns. It uses no stack: it keeps `rbx`, `rbp` and `r12`–`r15` in `xmm0`–`xmm2`.
 ///
 /// # Safety
 ///
@@ -2760,8 +2756,6 @@ ret
 ///
 /// Contract: `VG.Spec.Rsa.Mont.mulLazyContract`. Constant time but for `w`: timing may depend on the pointer, `ws_len`, the indices and `w`, not on the numbers.
 ///
-/// Baseline x86-64: `vg_rsa_mont_mul`'s code. Its subtraction of `m` when it does not borrow leaves a result below `2^(64 w)` for any operands below `2^(64 w)`.
-///
 /// The machine code of this function is that of `vg_rsa_mont_mul`, which is emitted once and named both ways: the two are the same function.
 ///
 /// # Safety
@@ -2782,8 +2776,6 @@ pub(crate) const VG_RSA_LAZY_MONT_MUL_ADX_FEATURES: crate::cpu::Features = crate
 /// Lazy Montgomery multiplication in the working space of the RSA functions: writes to array `o` a number of `w` words congruent to `a b 2^(-64 w)` modulo the modulus `m` (array 0), for the numbers in arrays `a` and `b`, which, like the result, need not be below `m`. The working space is laid out as for `vg_rsa_mont_mul`: a header of 32 words, then 8 arrays of `w + 2` words each; header word 6 holds `w`, word 7 `-m⁻¹ mod 2^64`, and words 8 to 15 the addresses of the arrays. The numbers are `w` 64-bit words, little-endian, at the start of their arrays; `o` may be `a` or `b`, and `a` may be `b`. Every byte of `ws` but those of arrays 2 and 3 (the function's own) and of array `o` keeps its value.
 ///
 /// Contract: `VG.Spec.Rsa.Mont.mulLazyContract`. Constant time but for `w`: timing may depend on the pointer, `ws_len`, the indices and `w`, not on the numbers.
-///
-/// For `w` a multiple of 8 (below 2^30 + 8), BMI2 and ADX: `vg_rsa_mont_mul_adx`'s tiles and reduction, then, in one pass, the subtraction of `m` masked by the reduction's top word (four words of `m` masked per group, with the borrow moved between `rbp` and the carry flag once per group), rather than a subtraction and a selection. Other sizes take `vg_rsa_mont_mul`'s code. It uses no stack: it keeps `rbx`, `rbp` and `r12`–`r15` in `xmm8`–`xmm13`.
 ///
 /// # Safety
 ///

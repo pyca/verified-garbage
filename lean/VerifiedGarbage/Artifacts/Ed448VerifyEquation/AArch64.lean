@@ -25,16 +25,6 @@ namespace VG.Artifacts.Ed448VerifyEquation.AArch64
 
 def artifacts : List Artifact := [
   Spec.Ed448.verifyEquationApi.artifact AArch64.target {
-    notes := ["Uses baseline integer instructions and NEON field arithmetic. Accumulates \
-      encoding, canonical scalar and equation checks in x20. Decodes A and R with the \
-      existing square-root chain, and computes [S]B + [k](-A) with a shared doubling loop: \
-      width-eight signed digits select 64 odd affine base multiples from an 8 KiB static, \
-      and width-five signed digits select eight odd projective key multiples built in \
-      scratch. Zero digits skip additions; leading zero pairs skip doublings. These \
-      branches and direct table addresses depend only on the public verification scalars. \
-      Both full 456-bit inputs are retained. Compares the four cofactored projective cross \
-      products with [4]R, preserving the existing invalid-input behavior and 8192-byte \
-      scratch contract. Saves and restores callee-saved registers in scratch."]
     consts := Impl.Ed448.AArch64.Sparse.baseConsts
     code := Impl.Ed448.AArch64.Sparse.verifyEquation
     verified := Proof.Ed448.AArch64.Sparse.verifyEquation_verified Proof.Ed448.recover_ok }]

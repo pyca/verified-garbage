@@ -72,19 +72,6 @@ namespace VG.Generic.P192.Arm.EcP192
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P192.curve) : List Artifact := [
   Spec.EcKey.P192.publicKeyApi.artifact Arm.target {
-    notes := ["The function is `vg_ecdsa_p192_sign`'s \
-      code up to the inversion of `Z`, with `d` as both the key and the secret number: it \
-      saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`, and keeps `out` in \
-      `lr` (in `r10` during the calls); field elements are twelve 16-bit digits in Montgomery \
-      form, multiplied by \
-      digit-by-digit Montgomery multiplication (CIOS, with `mul` and the accumulator in \
-      `scratch`, in calls of `vg_p192_mul_mod_p` and the other functions of `p192_mont`) \
-      with a final conditional subtraction; `[d]G` is a double-and-add ladder over \
-      all 192 bits of `d`, with the complete addition formulas of Renes, Costello and Batina for \
-      every addition and doubling (calls of `vg_p192_point_double` and \
-      `vg_p192_point_add`) and a masked selection for each bit; and `Z⁻¹` is Fermat's, \
-      by square-and-always-multiply over the bits of `p - 2`. The result (or zeros) is selected \
-      by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."]
     code := Impl.EcKey.Arm.publicKeyP192
     verified := Proof.EcKey.Arm.P192.pk_verified h.law }]
 

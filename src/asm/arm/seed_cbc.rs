@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Seed.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline ARMv7: the generic CBC encryption of `Impl/Modes/Arm/`, one block at a time (CBC encryption is sequential), calling the verified `vg_seed_ecb_encrypt` on each block in a 72-byte working space on the stack, zeroed on return. The chaining value, the last ciphertext block, goes back to the IV at the end.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -130,8 +128,6 @@ bx lr",
 /// SEED-CBC decryption (NIST SP 800-38A §6.2, RFC 4269 §2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is SEED decryption under the schedule written by `vg_seed_expand_key`. No padding is removed.
 ///
 /// Contract: `VG.Spec.Seed.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
-///
-/// Baseline ARMv7: the generic CBC decryption of `Impl/Modes/Arm/`, one block at a time, calling the verified `vg_seed_ecb_decrypt` on each block in place, with the chaining value in a 72-byte working space on the stack, zeroed on return. The chaining value, the last ciphertext block, goes back to the IV at the end.
 ///
 /// # Safety
 ///

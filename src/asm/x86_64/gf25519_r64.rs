@@ -6,8 +6,6 @@
 ///
 /// Contract: `invertContract` of `VG.Spec.X25519.Field64`. Constant time: only the pointer may affect timing.
 ///
-/// Uses baseline integer instructions. The function keeps `rbx`, `rbp` and `r12`–`r15` in `xmm0`–`xmm5`, and inverts by Bernstein–Yang divsteps (`Proof/X25519/X86_64/Divstep/`): ten batches of 59 divsteps on the low words of `f` and `g`, each applied to the full `f`, `g`, `a` and `b` by a 2×2 matrix of signed words, then `a` times the constant `±2^-590`, with `vg_x25519`'s field multiplication.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 4096 bytes.

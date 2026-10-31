@@ -25,7 +25,6 @@ open VG.Proof.AesCbc.AArch64
 def artifacts (v : Proof.Aes.AArch64.BlocksImpl) : List Artifact := [
   Spec.Cbc.aesEncryptApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := [Caller.note v]
     code := Caller.encrypt v
     verified := Caller.verified v
     written := Caller.written v
@@ -33,8 +32,6 @@ def artifacts (v : Proof.Aes.AArch64.BlocksImpl) : List Artifact := [
     features := v.features },
   Spec.Cbc.aesDecryptApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := ["This implementation deciphers one block at a time with `" ++
-      v.dec.name ++ "`."]
     code := Impl.AesCbc.AArch64.decrypt v.dec
     verified := decrypt_verified v
     features := v.features }]

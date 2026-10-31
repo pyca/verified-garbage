@@ -26,8 +26,6 @@ open VG.Proof.AesCbc.X86
 def artifacts (v : Proof.Aes.X86.BlocksImpl) : List Artifact := [
   Spec.Cbc.aesEncryptApi.artifact X86.target {
     suffix := v.suffix
-    notes := ["This implementation enciphers one block at a time with `" ++
-      v.enc.name ++ "`."]
     code := Impl.AesCbc.X86.encrypt v.enc
     stack := 24
     verified := encrypt_verified v
@@ -35,8 +33,6 @@ def artifacts (v : Proof.Aes.X86.BlocksImpl) : List Artifact := [
     features := v.features },
   Spec.Cbc.aesDecryptApi.artifact X86.target {
     suffix := v.suffix
-    notes := ["This implementation deciphers one block at a time with `" ++
-      v.dec.name ++ "`."]
     code := Impl.AesCbc.X86.decrypt v.dec
     stack := 24
     verified := decrypt_verified v

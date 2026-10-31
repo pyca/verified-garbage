@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.iterateContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `n` may affect timing, not the key, `U` or `T`.
 ///
-/// The function uses no stack: it saves its return address in `scratch`.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 192 bytes.
@@ -685,8 +683,6 @@ pub(crate) const VG_PBKDF2_HMAC_SHA256_ITERATE_SHA2_FEATURES: crate::cpu::Featur
 /// Runs `n` steps of PBKDF2-HMAC-SHA-256's iteration: if, for a 64-byte key `K₀`, the SHA-256 streaming state in bytes 0 to 95 of `*key` represents `K₀ ⊕ ipad` and the one in bytes 96 to 191 represents `K₀ ⊕ opad` (as `vg_hmac_sha256_init` leaves them), repeats `U ← HMAC-SHA-256 (K₀, U)`, `T ← T ⊕ U` `n` times, from `U = *u` and `T = *t`, and leaves the final `T` in `*t` (RFC 8018, step 3 of `F`).
 ///
 /// Contract: `VG.Spec.Hmac.Instance.iterateContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `n` may affect timing, not the key, `U` or `T`.
-///
-/// The function uses no stack: it saves its return address in `scratch`.
 ///
 /// # Safety
 ///

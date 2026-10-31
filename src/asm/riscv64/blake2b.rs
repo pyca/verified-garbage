@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Blake2.compressBContract`. Constant time: only the pointers, `n`, `t` and `last` may affect timing, not the state or the blocks.
 ///
-/// The state and the blocks are accessed a byte at a time, since the contract states no alignment for them: the hash value and each block are copied to `scratch`, rounded up to a multiple of 8, where the rounds read and write them as aligned words.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 64 bytes, and aligned for `u64`.
@@ -3167,8 +3165,6 @@ ret
 ///
 /// Contract: `VG.Spec.Blake2.initBContract`. The streaming state is the hash state followed by a buffered last block (`VG.Spec.Blake2.Repr`). Constant time: only the pointers, `outlen` and `keylen` may affect timing, not the key.
 ///
-/// The state and the key are accessed a byte at a time, since the contract states no alignment for them.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -3518,8 +3514,6 @@ ret
 ///
 /// Contract: `VG.Spec.Blake2.updateBContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// `vg_blake2b_update_scratch`, with its working space in a frame of 576 bytes on the stack.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -3655,8 +3649,6 @@ ret
 /// Finishes a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (64 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
 ///
 /// Contract: `VG.Spec.Blake2.finalizeBContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// `vg_blake2b_finalize_scratch`, with its working space in a frame of 576 bytes on the stack.
 ///
 /// # Safety
 ///
@@ -3858,8 +3850,6 @@ ret
 ///
 /// Contract: `VG.Spec.Blake2.updateBScratchContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// The state and the data are accessed a byte at a time, since the contract states no alignment for them. `scratch`, rounded up to a multiple of 8, holds the compression function's scratch space, then the return address and the registers saved.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
@@ -3994,8 +3984,6 @@ ret
 /// `vg_blake2b_finalize`, with its working space in `*scratch`.
 ///
 /// Contract: `VG.Spec.Blake2.finalizeBScratchContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// The state and the output are accessed a byte at a time, since the contract states no alignment for them. `scratch`, rounded up to a multiple of 8, holds the compression function's scratch space, then the return address and the registers saved.
 ///
 /// # Safety
 ///

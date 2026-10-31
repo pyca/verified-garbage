@@ -16,9 +16,6 @@ open VG.Proof.Dsa.AArch64
 def artifacts (v : Backend) : List Artifact := [
   Spec.Dsa.randomSignApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := ["Rejection sampling and signing retries are verified \
-      against the bounded random-tape specification. The selected Montgomery backend is used \
-      for each signing attempt. Every failure zeros the entire output."]
     code := Impl.Dsa.AArch64.RandomSign.code (randomSignerName v) (Impl.Dsa.AArch64.SignVerify.sign v.mul)
     stack := v.stack + 256
     verified := random_sign_verified v
@@ -26,10 +23,6 @@ def artifacts (v : Backend) : List Artifact := [
     features := v.features },
   Spec.Dsa.signApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := ["Fixed-window exponentiation and streaming modular reduction \
-      use the selected Montgomery backend. Leading-zero component padding is supported. \
-      Signing derives public-key subgroup membership from g^q = 1 and g^x = y. \
-      Scratch is initialized before use; every failure zeros the entire output."]
     code := Impl.Dsa.AArch64.SignVerify.sign v.mul
     stack := v.stack
     verified := v.signVerified
@@ -37,9 +30,6 @@ def artifacts (v : Backend) : List Artifact := [
     features := v.features },
   Spec.Dsa.verifyApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := ["Fixed-window exponentiation and streaming modular reduction \
-      use the selected Montgomery backend. Leading-zero component padding is supported. \
-      Signature scalars and the digest do not affect the leakage trace."]
     code := Impl.Dsa.AArch64.SignVerify.verify v.mul
     stack := v.stack
     verified := v.verifyVerified
@@ -47,7 +37,6 @@ def artifacts (v : Backend) : List Artifact := [
     features := v.features },
   Spec.Dsa.validatePublicKeyApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := ["Checks domain consistency and both public subgroup memberships with the selected Montgomery backend."]
     code := Impl.Dsa.AArch64.Prevalidated.validate v.mul
     stack := v.stack
     verified := v.validateVerified
@@ -55,7 +44,6 @@ def artifacts (v : Backend) : List Artifact := [
     features := v.features },
   Spec.Dsa.verifyPrevalidatedApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := ["Retains signature range checks and digest handling; the caller establishes validation for the immutable key bytes."]
     code := Impl.Dsa.AArch64.Prevalidated.verify v.mul
     stack := v.stack
     verified := v.prevalidatedVerified
@@ -63,9 +51,6 @@ def artifacts (v : Backend) : List Artifact := [
     features := v.features },
   Spec.Dsa.generateKeyApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := ["Checks the domain before consuming randomness, samples x with the \
-      verified rejection sampler, then derives y = g^x with the selected Montgomery backend. \
-      Every failure zeros the entire output."]
     code := Impl.Dsa.AArch64.GenerateKey.code (keygenCheckName v) (keygenDeriveName v)
       (Impl.Dsa.AArch64.Generate.checkParameters v.mul) (Impl.Dsa.AArch64.Generate.deriveKey v.mul)
     stack := v.stack + 256
@@ -74,7 +59,6 @@ def artifacts (v : Backend) : List Artifact := [
     features := v.features },
   Spec.Dsa.checkParametersApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := ["g^q mod p uses the selected Montgomery backend."]
     code := Impl.Dsa.AArch64.Generate.checkParameters v.mul
     stack := v.stack
     verified := v.parametersVerified
@@ -82,8 +66,6 @@ def artifacts (v : Backend) : List Artifact := [
     features := v.features },
   Spec.Dsa.deriveKeyApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := ["y = g^x mod p uses the selected Montgomery backend. \
-      Every failure zeros the entire output."]
     code := Impl.Dsa.AArch64.Generate.deriveKey v.mul
     stack := v.stack
     verified := v.deriveVerified

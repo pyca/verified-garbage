@@ -175,10 +175,6 @@ def artifacts (v v2 : Proof.Pbkdf2.Md.X86_64.MdHash) (c : Proof.Rsa.X86_64.Publi
   if emitted v v2 then [
     (Spec.RsaOaep.encryptPrecomputedApi v.mgf.G v2.mgf.G).artifact X86_64.target {
       suffix := Emit.qualifiedName "" (parts v v2 ++ [("rsa", c.suffix)])
-      notes := ["This implementation hashes the label with `" ++ v.H.stream.updN ++ "`, masks `DB` \
-          and the seed with MGF1 calling `" ++ v2.H.stream.updN ++ "`, and calls `" ++ c.name ++
-          "` with the cached modulus values. The message's length is public; its bytes, the label's \
-          and the seed's are only copied, hashed and masked."]
       code := Impl.RsaOaep.X86_64.Precomputed.encrypt v.H.stream v2.H.stream c.name c.code
       stack := encStack
       verified := Proof.RsaOaep.X86_64.Pc.code_verified v.ok v.K v2.ok v2.K v.mgf v2.mgf c

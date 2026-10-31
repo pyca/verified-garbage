@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
 ///
-/// The function is `vg_ecdsa_p384_sign`'s setup, field arithmetic, ladder and inversion, with the peer's point in place of `G`: it saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`, and keeps `out` in `lr` (in `r10` during the calls); field elements are twelve packed 32-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, with four half-word `mul` products per word product and the accumulator in `scratch`, in calls of `vg_p384_mul_mod_p` and the other functions of `p384_mont`) with a final conditional subtraction. The peer's key is checked without branches (its first byte, both coordinates below `p`, and the curve's equation), and the ladder multiplies the peer's point if it is valid, else `G`, so it always runs on a point of the curve. `[d]P` is a call of `vg_p384_mul`, a double-and-add ladder over all 384 bits of `d`, with the complete addition formulas of Renes, Costello and Batina (calls of `vg_p384_point_double` and `vg_p384_point_add`) and a masked selection for each bit; `Z⁻¹` is Fermat's, by square-and-always-multiply. The result (or zeros) is selected by a mask of the checks, `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 48 bytes.
@@ -2057,8 +2055,6 @@ pub(crate) const VG_ECDH_P384_UMAAL_FEATURES: crate::cpu::Features = crate::cpu:
 /// ECDH over P-384 (the ECC CDH primitive of SP 800-56A §5.7.1.2): validates the peer's public key at `peer` (SP 800-56A §5.6.2.3.3: the uncompressed form of SEC 1 §2.3.3, `04` then `x` and `y` in 48 bytes each, most significant first, both below `p`, on the curve), and writes the x-coordinate of `dQ` (48 bytes, most significant first) for the private key `d` at `d` (48 bytes, most significant first) to `*out`, and returns 1; or writes zeros and returns 0 if `peer` is not a valid public key, `d` is not in `[1, n-1]`, or `dQ` is the point at infinity.
 ///
 /// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
-///
-/// `vg_ecdh_p384`'s code, but for its call of `vg_p384_mul_umaal`. Field multiplications are calls of `vg_p384_mul_mod_p_umaal` (and `vg_p384_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`).
 ///
 /// # Safety
 ///

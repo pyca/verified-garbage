@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Sm4.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline x86-64: one block at a time (CBC encryption is sequential), encrypted bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups, in a batch of sixteen of which the other fifteen are unused; the key schedule's table of round keys is built once per call, inline, rearranging each key word before broadcast, and each batch is a call of `vg_sm4_crypt_prepared`. The mode is the generic CBC encryption of `Impl/Modes/X86_64/`, over SM4's ECB core; the IV's address is kept in `xmm15`, and after the last block the core's buffer, the last ciphertext block, goes back to the IV.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -956,8 +954,6 @@ ret
 /// SM4-CBC decryption (NIST SP 800-38A §6.2, GB/T 32907-2016 §7.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is SM4's decryption under the schedule written by `vg_sm4_expand_key`. No padding is removed.
 ///
 /// Contract: `VG.Spec.Sm4.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
-///
-/// Baseline x86-64: sixteen blocks at a time, decrypted bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups; the key schedule's table of round keys is built once per call, inline, rearranging each key word before broadcast, and each batch is a call of `vg_sm4_crypt_prepared`. The mode is the generic CBC decryption of `Impl/Modes/X86_64/`, over SM4's ECB core; the last ciphertext block is copied to the IV before any block is decrypted.
 ///
 /// # Safety
 ///

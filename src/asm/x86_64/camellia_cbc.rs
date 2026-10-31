@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Camellia.cbcEncryptChainedContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline x86-64: one block at a time (CBC encryption is sequential), encrypted bitsliced in general-purpose registers, the S-boxes as Boolean circuits, with no table lookups, in a batch of eight of which the other seven are unused; the table of bitsliced subkeys is built once per call, inline, and each batch is a call of `vg_camellia_crypt_prepared`. The mode is the generic CBC encryption of `Impl/Modes/X86_64/`, over Camellia's ECB core. The IV's address is kept in `xmm15`, and after the last block the core's buffer, the last ciphertext block, goes back to the IV.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 272 bytes.
@@ -992,8 +990,6 @@ ret
 /// Camellia-CBC decryption (NIST SP 800-38A §6.2, RFC 3713 §2.3) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is Camellia's decryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them. No padding is removed.
 ///
 /// Contract: `VG.Spec.Camellia.cbcDecryptChainedContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
-///
-/// Baseline x86-64: eight blocks at a time, decrypted bitsliced in general-purpose registers, the S-boxes as Boolean circuits, with no table lookups; the table of bitsliced subkeys is built once per call, inline, and each batch is a call of `vg_camellia_crypt_prepared`. The mode is the generic CBC decryption of `Impl/Modes/X86_64/`, over Camellia's ECB core. The last ciphertext block is copied to the IV before any block is decrypted.
 ///
 /// # Safety
 ///

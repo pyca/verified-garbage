@@ -6,10 +6,6 @@
 ///
 /// Contract: `VG.Spec.TripleDes.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline IA-32: one block at a time, calling the verified block function (`vg_triple_des_encrypt_block` or `vg_triple_des_decrypt_block`), with Boolean S-box circuits and no table lookups; the schedule is copied into the working space once per call. The mode is the generic CBC of `Impl/Modes/X86/`.
-///
-/// The chaining value, the last ciphertext block, goes back to the IV at the end.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -543,10 +539,6 @@ ret
 /// Triple DES-CBC decryption (NIST SP 800-38A §6.2, FIPS 46-3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is Triple DES decryption under the schedule written by `vg_triple_des_expand_key`. No padding is removed.
 ///
 /// Contract: `VG.Spec.TripleDes.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
-///
-/// Baseline IA-32: one block at a time, calling the verified block function (`vg_triple_des_encrypt_block` or `vg_triple_des_decrypt_block`), with Boolean S-box circuits and no table lookups; the schedule is copied into the working space once per call. The mode is the generic CBC of `Impl/Modes/X86/`.
-///
-/// The chaining value, the last ciphertext block, goes back to the IV at the end.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

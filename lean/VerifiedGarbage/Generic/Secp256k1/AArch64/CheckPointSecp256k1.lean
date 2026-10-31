@@ -24,11 +24,6 @@ open VG.Impl.Ecdsa.AArch64 VG.Proof.Ecdh.AArch64.Secp256k1.Check
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.Secp256k1.curve) : List Artifact := [
   C.checkApi.artifact AArch64.target {
-    notes := ["The function compares `x` and `y` with `p` by chains of \
-      subtractions with borrow (`subs`, `sbcs`), multiplies them by `R² mod p` by word-by-word Montgomery multiplication (CIOS, with `mul` and `umulh`) inline, computes \
-      `y² - (x³ + a x + b)` by the same products and additions and subtractions modulo `p`, \
-      ANDs the masks of the comparisons and of that number being zero into the flag, and \
-      selects the point by masks; nothing depends on the numbers but through masks."]
     code := Impl.Ecdh.AArch64.Cfg.checkFn secp256k1
     verified := verified h.inv }]
 

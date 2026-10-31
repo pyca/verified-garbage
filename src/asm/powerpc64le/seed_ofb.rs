@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Seed.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline PPC64LE: one block at a time, each a call of `vg_seed_encrypt_blocks` or `vg_seed_decrypt_blocks` on a batch of one, with SEED's S-boxes computed bitsliced from AES's circuit and no table lookups, the other fifteen lanes unused, reading the round keys in place. The mode is the generic one of `Impl/Modes/PPC64LE/`, which keeps its state in `r29`–`r31` and saves the return address in the working space; the blocks function saves and restores every callee-saved register, and leaves the working space's address in `r8`, from which the core takes the scratch buffer's address back. The working space (1152 bytes, the blocks function's 1088 among them) is on the stack, zeroed before returning.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.

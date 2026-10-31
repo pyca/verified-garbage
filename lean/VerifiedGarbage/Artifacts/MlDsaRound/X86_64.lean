@@ -30,15 +30,11 @@ def artifacts : List Artifact := [
     verified := lowBits_verified },
   Spec.MlDsa.highBitsApi.artifact X86_64.target {
     suffix := "_avx2"
-    notes := ["The function computes on eight coefficients at a time in AVX2 \
-      registers, multiplying by shifts and additions; it needs AVX and AVX2."]
     code := Impl.MlDsa.X86_64.Round.highBitsAvx2
     verified := highBitsY_verified
     features := ["avx", "avx2"] },
   Spec.MlDsa.lowBitsApi.artifact X86_64.target {
     suffix := "_avx2"
-    notes := ["The function computes on eight coefficients at a time in AVX2 \
-      registers, multiplying by shifts and additions; it needs AVX and AVX2."]
     code := Impl.MlDsa.X86_64.Round.lowBitsAvx2
     verified := lowBitsY_verified
     features := ["avx", "avx2"] },
@@ -50,15 +46,11 @@ def artifacts : List Artifact := [
     verified := makeHint_verified },
   Spec.MlDsa.normLtApi.artifact X86_64.target {
     suffix := "_avx2"
-    notes := ["The function compares eight coefficients at a time in AVX2 \
-      registers; it needs AVX and AVX2."]
     code := Impl.MlDsa.X86_64.Round.normLtAvx2
     verified := normLtY_verified
     features := ["avx", "avx2"] },
   Spec.MlDsa.makeHintApi.artifact X86_64.target {
     suffix := "_avx2"
-    notes := ["The function computes eight hints at a time in AVX2 \
-      registers, multiplying by shifts and additions; it needs AVX and AVX2."]
     code := Impl.MlDsa.X86_64.Round.makeHintAvx2
     verified := makeHintY_verified
     features := ["avx", "avx2"] },
@@ -67,8 +59,6 @@ def artifacts : List Artifact := [
     verified := useHint_verified },
   Spec.MlDsa.useHintApi.artifact X86_64.target {
     suffix := "_avx2"
-    notes := ["The function computes on eight coefficients at a time in AVX2 \
-      registers, multiplying by shifts and additions; it needs AVX and AVX2."]
     code := Impl.MlDsa.X86_64.Round.useHintAvx2
     verified := useHintY_verified
     features := ["avx", "avx2"] }]

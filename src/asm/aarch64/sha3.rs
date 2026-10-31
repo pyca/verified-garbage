@@ -9,8 +9,6 @@ pub(crate) const VG_KECCAK_F1600_SHA3_FEATURES: crate::cpu::Features = crate::cp
 ///
 /// Contract: `VG.Spec.Sha3.permuteContract`. Constant time: only the pointers may affect timing, not the state.
 ///
-/// Uses the Arm SHA-3 instructions.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 200 bytes.
@@ -1755,8 +1753,6 @@ ret
 /// The permutation Keccak-f[1600] (FIPS 202 §3.4): applies it to the state `*state` (lane `x + 5y` at index `x + 5y`).
 ///
 /// Contract: `VG.Spec.Sha3.permuteContract`. Constant time: only the pointers may affect timing, not the state.
-///
-/// Scalar Keccak with deferred lane rotations and one final layout restoration.
 ///
 /// # Safety
 ///
@@ -4451,8 +4447,6 @@ ret
 /// The permutation Keccak-f[1600] (FIPS 202 §3.4) on two states at once: applies it to each of the two states interleaved in `*states`, lane `x + 5y` of the first at index `2(x + 5y)` and of the second at index `2(x + 5y) + 1`.
 ///
 /// Contract: `VG.Spec.Sha3.permuteX2Contract`. Constant time: only the pointers may affect timing, not the states.
-///
-/// Uses baseline AdvSIMD: each of `v0` to `v24` holds the same lane of both states, and the 24 rounds are unrolled. `q8` to `q15` are kept in `scratch`.
 ///
 /// # Safety
 ///
@@ -10205,8 +10199,6 @@ pub(crate) const VG_KECCAK_F1600_X2_SHA3_FEATURES: crate::cpu::Features = crate:
 ///
 /// Contract: `VG.Spec.Sha3.permuteX2Contract`. Constant time: only the pointers may affect timing, not the states.
 ///
-/// Uses the Arm SHA-3 instructions (`EOR3`, `RAX1`, `XAR`, `BCAX`): each of `v0` to `v24` holds the same lane of both states, and the 24 rounds are unrolled. `q8` to `q15` are kept in `scratch`.
-///
 /// # Safety
 ///
 /// * `states` must be valid for reads and writes of 400 bytes.
@@ -11952,8 +11944,6 @@ pub(crate) const VG_KECCAK_F1600_X3_SHA3_FEATURES: crate::cpu::Features = crate:
 /// The permutation Keccak-f[1600] (FIPS 202 §3.4) on three states at once: applies it to each of the two states interleaved in `*states`, lane `x + 5y` of the first at index `2(x + 5y)` and of the second at index `2(x + 5y) + 1`, and to the state `*state`, lane `x + 5y` at index `x + 5y`.
 ///
 /// Contract: `VG.Spec.Sha3.permuteX3Contract`. Constant time: only the pointers may affect timing, not the states.
-///
-/// Uses the Arm SHA-3 instructions (`EOR3`, `RAX1`, `XAR`, `BCAX`) for the two interleaved states, each of `v0` to `v24` holding the same lane of both, and the general registers for the third, its rounds woven into theirs; the 24 rounds are unrolled. `q8` to `q15` are kept in `scratch`, and the callee-saved general registers in a 128-byte frame.
 ///
 /// # Safety
 ///

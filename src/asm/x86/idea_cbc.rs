@@ -6,10 +6,6 @@
 ///
 /// Contract: `VG.Spec.Idea.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline IA-32: one block at a time, with branch-free ⊙ (`mul`, whose timing does not depend on its operands), the subkeys copied to the stack once per call. The mode is the generic CBC of `Impl/Modes/X86/`, over IDEA's ECB block.
-///
-/// The chaining value, the last ciphertext block, goes back to the IV at the end.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -1009,10 +1005,6 @@ ret
 /// IDEA-CBC decryption (NIST SP 800-38A §6.2, Lai 1992 §3.3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is IDEA under the decryption subkeys at `schedule`, as `vg_idea_invert_key` writes them. No padding is removed.
 ///
 /// Contract: `VG.Spec.Idea.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
-///
-/// Baseline IA-32: one block at a time, with branch-free ⊙ (`mul`, whose timing does not depend on its operands), the subkeys copied to the stack once per call. The mode is the generic CBC of `Impl/Modes/X86/`, over IDEA's ECB block.
-///
-/// The chaining value, the last ciphertext block, goes back to the IV at the end.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Cast5.ofbContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline AArch64: one block at a time, through the generic OFB of `Impl/Modes/AArch64/` over CAST5's ECB block code (inlined): each S-box lookup is a scan of the whole table in the static `VG_CAST5_S1234`, so no secret is an address. The subkeys are read where the caller passed them and the number of rounds stays in `x1`; the 112-byte working space on the stack is zeroed on return.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.

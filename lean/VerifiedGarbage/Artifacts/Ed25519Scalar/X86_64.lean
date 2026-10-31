@@ -17,11 +17,6 @@ namespace VG.Artifacts.Ed25519Scalar.X86_64
 
 def artifacts : List Artifact := [
   Spec.Ed25519.scalarReduceApi.artifact X86_64.target {
-    notes := ["Processes the eight input words \
-      from the top into a four-word remainder: each step folds the bits above 2^252 back with \
-      one 64x128-bit product, then subtracts the subgroup order and selects with a borrow mask. \
-      Callee-saved registers are saved in the first 48 bytes of `scratch`, and the output's \
-      address in the next 8."]
     code := Impl.Ed25519.X86_64.scalarReduce
     verified := Proof.Ed25519.X86_64.scalarReduce_verified }]
 

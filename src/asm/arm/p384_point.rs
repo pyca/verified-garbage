@@ -6,8 +6,6 @@
 ///
 /// Contract: `addContract` or `doubleContract` of `VG.Spec.Weierstrass.Point.Curve`. Constant time: only the pointer may affect timing.
 ///
-/// The function saves `lr` in its own working space and keeps `ws` in `r12`, and computes Renes, Costello and Batina's 40 steps by calls of `vg_p384_mul_mod_p`, `vg_p384_add_mod_p` and `vg_p384_sub_mod_p` on fixed offsets of `ws`, `movw` immediates in `r1`–`r3`. It writes no register but `r0`–`r3`, `r12` and `lr`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -230,8 +228,6 @@ bx lr",
 /// The doubling `O = P + P` of a point on P-384, by the complete addition (Renes, Costello and Batina's Algorithm 1). A point is three projective coordinates `X, Y, Z` in Montgomery's form modulo the curve's prime, each 6 64-bit words (`48` bytes), little-endian, at consecutive byte offsets of the working space `ws`: `O` at byte 2832, `P` at 2976 and `Q` at 3120. The curve's `a` and `3b`, in the same form, are read at bytes 3264 and 3312. Every byte of `ws` but `O`'s and the function's own working space (bytes 3360 to 4095) keeps its value.
 ///
 /// Contract: `addContract` or `doubleContract` of `VG.Spec.Weierstrass.Point.Curve`. Constant time: only the pointer may affect timing.
-///
-/// The function saves `lr` in its own working space and keeps `ws` in `r12`, and computes Renes, Costello and Batina's 40 steps by calls of `vg_p384_mul_mod_p`, `vg_p384_add_mod_p` and `vg_p384_sub_mod_p` on fixed offsets of `ws`, `movw` immediates in `r1`–`r3`. It writes no register but `r0`–`r3`, `r12` and `lr`.
 ///
 /// # Safety
 ///
@@ -459,10 +455,6 @@ pub(crate) const VG_P384_POINT_ADD_UMAAL_FEATURES: crate::cpu::Features = crate:
 /// The complete addition `O = P + Q` of points on P-384 (Renes, Costello and Batina's Algorithm 1). A point is three projective coordinates `X, Y, Z` in Montgomery's form modulo the curve's prime, each 6 64-bit words (`48` bytes), little-endian, at consecutive byte offsets of the working space `ws`: `O` at byte 2832, `P` at 2976 and `Q` at 3120. The curve's `a` and `3b`, in the same form, are read at bytes 3264 and 3312. Every byte of `ws` but `O`'s and the function's own working space (bytes 3360 to 4095) keeps its value.
 ///
 /// Contract: `addContract` or `doubleContract` of `VG.Spec.Weierstrass.Point.Curve`. Constant time: only the pointer may affect timing.
-///
-/// The function saves `lr` in its own working space and keeps `ws` in `r12`, and computes Renes, Costello and Batina's 40 steps by calls of `vg_p384_mul_mod_p`, `vg_p384_add_mod_p` and `vg_p384_sub_mod_p` on fixed offsets of `ws`, `movw` immediates in `r1`–`r3`. It writes no register but `r0`–`r3`, `r12` and `lr`.
-///
-/// Field multiplications are calls of `vg_p384_mul_mod_p_umaal` (and `vg_p384_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`).
 ///
 /// # Safety
 ///
@@ -692,10 +684,6 @@ pub(crate) const VG_P384_POINT_DOUBLE_UMAAL_FEATURES: crate::cpu::Features = cra
 /// The doubling `O = P + P` of a point on P-384, by the complete addition (Renes, Costello and Batina's Algorithm 1). A point is three projective coordinates `X, Y, Z` in Montgomery's form modulo the curve's prime, each 6 64-bit words (`48` bytes), little-endian, at consecutive byte offsets of the working space `ws`: `O` at byte 2832, `P` at 2976 and `Q` at 3120. The curve's `a` and `3b`, in the same form, are read at bytes 3264 and 3312. Every byte of `ws` but `O`'s and the function's own working space (bytes 3360 to 4095) keeps its value.
 ///
 /// Contract: `addContract` or `doubleContract` of `VG.Spec.Weierstrass.Point.Curve`. Constant time: only the pointer may affect timing.
-///
-/// The function saves `lr` in its own working space and keeps `ws` in `r12`, and computes Renes, Costello and Batina's 40 steps by calls of `vg_p384_mul_mod_p`, `vg_p384_add_mod_p` and `vg_p384_sub_mod_p` on fixed offsets of `ws`, `movw` immediates in `r1`–`r3`. It writes no register but `r0`–`r3`, `r12` and `lr`.
-///
-/// Field multiplications are calls of `vg_p384_mul_mod_p_umaal` (and `vg_p384_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`).
 ///
 /// # Safety
 ///

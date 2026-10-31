@@ -29,7 +29,7 @@ It is generic over P-224's group law and inversions `h` too, the variant
 
 namespace VG.Generic.MdHash.P224.X86_64.EcdsaP224Sha224
 
-open VG.Proof.Ecdsa.Rfc6979.X86_64 (cfgOf sign_spSafe signNotes)
+open VG.Proof.Ecdsa.Rfc6979.X86_64 (cfgOf sign_spSafe)
 open VG.Proof.Ecdsa.Rfc6979.X86_64.P224Sha224 (pack sign_verified)
 
 def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) :
@@ -39,8 +39,6 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (h : Proof.Weierstrass.X86_64.
   | some c => [
     Spec.Ecdsa.Rfc6979.P224Sha224.signApi.artifact X86_64.target {
       suffix := c.suffix
-      notes := [signNotes (cfgOf (pack h.law (Proof.P224.combOk7 h.law) h.inv c)).H 28
-          Spec.Ecdsa.P224.signApi.name]
       code := (cfgOf (pack h.law (Proof.P224.combOk7 h.law) h.inv c)).sign
       consts := Impl.Ecdsa.X86_64.p224.combConsts
       stack := 240

@@ -6,8 +6,6 @@
 ///
 /// Contract: `addContract` of `VG.Spec.Ed448.Point56`. Constant time: only the pointer may affect timing.
 ///
-/// Uses baseline integer instructions, and AdvSIMD moves to keep `x21` to `x28` in lanes of `v16` to `v19` while it runs. Runs RFC 8032's complete addition formula, twelve products as `vg_ed448_verify_equation` inlined it, with `vg_x448`'s field products (eight 56-bit limbs in 64-bit words), the temporaries in slots 10 to 18.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -4372,8 +4370,6 @@ ret
 ///
 /// Contract: `doubleContract` of `VG.Spec.Ed448.Point56`. Constant time: only the pointer may affect timing.
 ///
-/// Uses baseline integer instructions, and AdvSIMD moves to keep `x21` to `x28` in lanes of `v16` to `v19` while it runs. Runs RFC 8032's doubling formulas, eight products as `vg_ed448_verify_equation` inlined it, with `vg_x448`'s field products (eight 56-bit limbs in 64-bit words), the temporaries in slots 10 to 18.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -7175,8 +7171,6 @@ ret
 /// The fixed-base comb on edwards448: for the scalar `k` whose `8 n` bits, for `n` 56 or 57, are the bytes from byte 3072 of the working space `ws`, a bit (0 or 1) each, least significant first, and its nibbles `n_i`, writes `A = [Σ_{j < n} n_{2j+1} 256^j] B` to slots 0 to 2 of `ws` (bytes 64 to 447) and `C = [Σ_{j < n} n_{2j} 256^j] B` to slots 3 to 5 (bytes 448 to 831), for edwards448's base point `B` (RFC 8032 §5.2), in projective coordinates `X, Y, Z` with `Z` nonzero, so that `[k] B = [16] A + C`. The coordinates are those of some representation of each point: only the points are specified. Slot `n` of `ws` is the first 64 bytes from byte `64 + 128 n`, eight 64-bit little-endian words, least significant first, each a limb: the number `Σ l_i 2^(56 i)`, standing for its residue modulo `p = 2^448 - 2^224 - 1`, not necessarily reduced. Every byte of `ws` but the 22 slots (bytes 64 to 2879) and the function's own working space (bytes 3584 to 4735) keeps its value.
 ///
 /// Contract: `combBaseContract` of `VG.Spec.Ed448.Comb56`. Constant time: only the pointer and `n` may affect timing.
-///
-/// Uses baseline integer instructions and AdvSIMD. The comb of `vg_x448_base`, `vg_ed448_scalar_base` and `vg_ed448_verify_equation`: the scalar's signed radix-16 digits select, in constant time (reading every entry), entries `[m 256^j] B` (`m ≤ 8`) of `n` tables in the static `VG_X448_COMB`, added to two projective accumulators starting at `[G] B` for `G = 8 Σ_{j < n} 256^j`, with RFC 8032's complete addition (four pairs of the field products in AdvSIMD, each interleaved with independent scalar products), so that the accumulators are `A` and `C`. Field elements are eight 56-bit limbs, multiplied as `vg_x448`'s are. The products use every vector register, so the function keeps `x21` to `x28` in the upper halves of `v8` to `v15` and stores those in its own working space (bytes 3968 to 4095), and keeps `x19` and the return address after slot 21's element (bytes 2816 to 2831), while it runs.
 ///
 /// # Safety
 ///

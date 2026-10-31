@@ -9,8 +9,6 @@ pub(crate) const VG_X448_ADX_FEATURES: crate::cpu::Features = crate::cpu::Featur
 ///
 /// Contract: `VG.Spec.X448.x448Contract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate.
 ///
-/// Uses the selected Curve448 field backend throughout the ladder and inversion. The shared exponentiation chain is a call to the matching `vg_gf448_r64_pow223` variant. Callee-saved registers are kept in `scratch`.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 56 bytes.
@@ -4923,8 +4921,6 @@ ret
 /// Computes X448 (RFC 7748 §5): writes `X448(k, u)` to `*out`, for the 56-byte scalar `k` at `scalar` and the 56-byte u-coordinate `u` at `point`. The scalar is decoded (clamped); all 448 bits of `u` are used and noncanonical coordinates are reduced modulo the field prime. The result may be all zero (for a `u` of small order), which the caller must check for if its protocol requires it (RFC 7748 §6.2).
 ///
 /// Contract: `VG.Spec.X448.x448Contract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate.
-///
-/// Uses the selected Curve448 field backend throughout the ladder and inversion. The shared exponentiation chain is a call to the matching `vg_gf448_r64_pow223` variant. Callee-saved registers are kept in `scratch`.
 ///
 /// # Safety
 ///

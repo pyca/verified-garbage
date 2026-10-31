@@ -50,15 +50,9 @@ namespace VG.Generic.Poly1305Blocks.X86_64.Poly1305
 
 open VG.Proof.Poly1305.X86_64 (BlocksImpl)
 
-/-- Which implementation of `vg_poly1305_blocks` an instance calls. -/
-def note (v : BlocksImpl) : String :=
-  "This implementation absorbs the whole blocks of the data with `" ++ v.name ++
-    "`, and saves its caller's callee-saved registers in its working space."
-
 def artifacts (v : BlocksImpl) : List Artifact := [
   Spec.Poly1305.updateApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [note v]
     code := Impl.StackScratch.X86_64.withStackScratch 136 .r8
       (Impl.Poly1305.X86_64.update v.name v.code)
     stack := 160

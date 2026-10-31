@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
 ///
-/// Field elements are eight 64-bit words in Montgomery form. Scalar multiplication calls `vg_brainpoolp512r1_mul`, a fixed 512-iteration ladder with the general complete addition formulas of Renes, Costello and Batina (Algorithm 1), which hold for any `a`. Inversions use divsteps, by a call of `vg_brainpoolp512r1_inv_mod_p`. Branches and memory addresses depend only on pointers and loop counters.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 64 bytes.

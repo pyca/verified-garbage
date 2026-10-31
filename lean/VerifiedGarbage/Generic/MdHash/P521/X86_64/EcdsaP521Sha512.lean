@@ -34,7 +34,7 @@ It is generic over P-521's group law and inversions `h` too, the variant
 
 namespace VG.Generic.MdHash.P521.X86_64.EcdsaP521Sha512
 
-open VG.Proof.Ecdsa.Rfc6979.X86_64 (cfgOf sign_spSafe signNotesWide)
+open VG.Proof.Ecdsa.Rfc6979.X86_64 (cfgOf sign_spSafe)
 open VG.Proof.Ecdsa.Rfc6979.X86_64.P521Sha512 (pack sign_verified)
 
 /-- The signature with the hash's compression function `c`, and P-521's
@@ -44,8 +44,6 @@ def withMul (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P521.curve) (c : Pro
     (adx : Bool) : Artifact :=
   Spec.Ecdsa.Rfc6979.P521Sha512.signApi.artifact X86_64.target {
     suffix := c.suffix ++ (if adx then "_adx" else "")
-    notes := [signNotesWide (cfgOf (pack adx h.law (Proof.P521.combOk7 h.law) h.inv c)).H 66 521 64
-        (Spec.Ecdsa.P521.signApi.name ++ (if adx then "_adx" else ""))]
     code := (cfgOf (pack adx h.law (Proof.P521.combOk7 h.law) h.inv c)).sign
     consts := Impl.Ecdsa.X86_64.p521.combConsts
     stack := 384

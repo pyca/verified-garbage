@@ -25,9 +25,6 @@ open VG.Proof.AesXts.X86_64.Unit
 def artifacts (v : Proof.AesXts.X86_64.XtsImpl) : List Artifact := [
   Spec.Xts.aesEncryptUnitApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := ["This implementation enciphers the tweak value and the data with `" ++ v.enc.name ++
-      "` (the tweak value as one block from a zero tweak), and steals ciphertext by swapping bytes of the " ++
-      "last two blocks in place."]
     code := Impl.AesXts.X86_64Unit.encrypt v.xts
     stack := 16
     verified := encrypt_verified v
@@ -35,9 +32,6 @@ def artifacts (v : Proof.AesXts.X86_64.XtsImpl) : List Artifact := [
     features := v.features },
   Spec.Xts.aesDecryptUnitApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := ["This implementation enciphers the tweak value with `" ++ v.enc.name ++
-      "` (as one block from a zero tweak), deciphers the data with `" ++ v.dec.name ++
-      "`, and steals ciphertext by swapping bytes of the last two blocks in place."]
     code := Impl.AesXts.X86_64Unit.decrypt v.xts
     stack := 16
     verified := decrypt_verified v

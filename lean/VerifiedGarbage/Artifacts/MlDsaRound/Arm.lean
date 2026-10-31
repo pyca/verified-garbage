@@ -16,7 +16,6 @@ open VG.Proof.MlDsa.Arm.Round
 
 def artifacts : List Artifact := [
   Spec.MlDsa.power2RoundApi.artifact Arm.target {
-    notes := ["The function saves `r4` on the stack (the 4 bytes below the stack pointer)."]
     code := Impl.MlDsa.Arm.Round.power2Round
     stack := 4
     verified := P2R.verified },
@@ -27,17 +26,14 @@ def artifacts : List Artifact := [
     code := Impl.MlDsa.Arm.Round.lowBits
     verified := Bits.low_verified },
   Spec.MlDsa.normLtApi.artifact Arm.target {
-    notes := ["The function saves `r4` on the stack (the 4 bytes below the stack pointer)."]
     code := Impl.MlDsa.Arm.Round.normLt
     stack := 4
     verified := NormLt.verified },
   Spec.MlDsa.makeHintApi.artifact Arm.target {
-    notes := ["The function saves `r4`–`r6` on the stack (the 12 bytes below the stack pointer)."]
     code := Impl.MlDsa.Arm.Round.makeHint
     stack := 12
     verified := MakeHint.verified },
   Spec.MlDsa.useHintApi.artifact Arm.target {
-    notes := ["The function saves `r4`–`r6` on the stack (the 12 bytes below the stack pointer)."]
     code := Impl.MlDsa.Arm.Round.useHint
     stack := 12
     verified := UseHint.verified }]

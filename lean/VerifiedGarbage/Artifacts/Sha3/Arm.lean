@@ -15,30 +15,24 @@ def artifacts : List Artifact := [
     code := Impl.Sha3.Arm.permute
     verified := Proof.Sha3.Arm.Shared.permute },
   Spec.Sha3.absorbApi.artifact Arm.target {
-    notes := ["The function saves its return address in its working space."]
     code := Impl.StackScratch.Arm.withStackScratch 656 1 Impl.Sha3.Arm.Stream.absorb
     stack := 656
     verified := Proof.Sha3.Arm.Frame.absorb_framed },
   Spec.Sha3.absorbScratchApi.artifact Arm.target {
-    notes := ["The function uses no stack: it saves its return address in `scratch`."]
     code := Impl.Sha3.Arm.Stream.absorb
     verified := Proof.Sha3.Arm.Shared.absorb },
   Spec.Sha3.padApi.artifact Arm.target {
-    notes := ["The function saves its return address in its working space."]
     code := Impl.StackScratch.Arm.withStackScratch 656 0 Impl.Sha3.Arm.Stream.pad
     stack := 656
     verified := Proof.Sha3.Arm.Frame.pad_framed },
   Spec.Sha3.padScratchApi.artifact Arm.target {
-    notes := ["The function uses no stack: it saves its return address in `scratch`."]
     code := Impl.Sha3.Arm.Stream.pad
     verified := Proof.Sha3.Arm.Shared.pad },
   Spec.Sha3.squeezeApi.artifact Arm.target {
-    notes := ["The function saves its return address in its working space."]
     code := Impl.StackScratch.Arm.withStackScratch 656 1 Impl.Sha3.Arm.Stream.squeeze
     stack := 656
     verified := Proof.Sha3.Arm.Frame.squeeze_framed },
   Spec.Sha3.squeezeScratchApi.artifact Arm.target {
-    notes := ["The function uses no stack: it saves its return address in `scratch`."]
     code := Impl.Sha3.Arm.Stream.squeeze
     verified := Proof.Sha3.Arm.Shared.squeeze }]
 

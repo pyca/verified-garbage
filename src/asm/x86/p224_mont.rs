@@ -6,8 +6,6 @@
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function saves `ebp` (and the product `ebx`, `esi` and `edi`) in its own working space and addresses it through `ebp`, `[a]` and `[b]` through pointers, and `[o]` through `ecx`. The numbers are 32-bit words: the product is word-by-word Montgomery multiplication (CIOS, unrolled, with `mul`, the modulus as immediates and the accumulator in the own working space; P-256's `p` reduces by its sparse form), and every result is reduced by a conditional subtraction selected by a mask.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -1221,8 +1219,6 @@ ret
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function saves `ebp` (and the product `ebx`, `esi` and `edi`) in its own working space and addresses it through `ebp`, `[a]` and `[b]` through pointers, and `[o]` through `ecx`. The numbers are 32-bit words: the product is word-by-word Montgomery multiplication (CIOS, unrolled, with `mul`, the modulus as immediates and the accumulator in the own working space; P-256's `p` reduces by its sparse form), and every result is reduced by a conditional subtraction selected by a mask.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -1348,8 +1344,6 @@ ret
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function saves `ebp` (and the product `ebx`, `esi` and `edi`) in its own working space and addresses it through `ebp`, `[a]` and `[b]` through pointers, and `[o]` through `ecx`. The numbers are 32-bit words: the product is word-by-word Montgomery multiplication (CIOS, unrolled, with `mul`, the modulus as immediates and the accumulator in the own working space; P-256's `p` reduces by its sparse form), and every result is reduced by a conditional subtraction selected by a mask.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -1452,8 +1446,6 @@ ret
 /// Montgomery's product modulo P-224's order `n`: writes the number below the modulus congruent to `a b 2^-256` to `o`. The numbers are 4 64-bit words (`32` bytes), little-endian, at the byte offsets `o`, `a` and `b` of the working space `ws`; `o` may be `a` or `b`. Every byte of `ws` but the result's and the function's own working space (bytes 3840 to 4095) keeps its value.
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
-///
-/// The function saves `ebp` (and the product `ebx`, `esi` and `edi`) in its own working space and addresses it through `ebp`, `[a]` and `[b]` through pointers, and `[o]` through `ecx`. The numbers are 32-bit words: the product is word-by-word Montgomery multiplication (CIOS, unrolled, with `mul`, the modulus as immediates and the accumulator in the own working space; P-256's `p` reduces by its sparse form), and every result is reduced by a conditional subtraction selected by a mask.
 ///
 /// # Safety
 ///
@@ -2668,8 +2660,6 @@ ret
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function saves `ebp` (and the product `ebx`, `esi` and `edi`) in its own working space and addresses it through `ebp`, `[a]` and `[b]` through pointers, and `[o]` through `ecx`. The numbers are 32-bit words: the product is word-by-word Montgomery multiplication (CIOS, unrolled, with `mul`, the modulus as immediates and the accumulator in the own working space; P-256's `p` reduces by its sparse form), and every result is reduced by a conditional subtraction selected by a mask.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -2794,8 +2784,6 @@ ret
 /// The difference modulo P-224's order `n`: writes `(a - b) mod` the modulus to `o`. The numbers are 4 64-bit words (`32` bytes), little-endian, at the byte offsets `o`, `a` and `b` of the working space `ws`; `o` may be `a` or `b`. Every byte of `ws` but the result's and the function's own working space (bytes 3840 to 4095) keeps its value.
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
-///
-/// The function saves `ebp` (and the product `ebx`, `esi` and `edi`) in its own working space and addresses it through `ebp`, `[a]` and `[b]` through pointers, and `[o]` through `ecx`. The numbers are 32-bit words: the product is word-by-word Montgomery multiplication (CIOS, unrolled, with `mul`, the modulus as immediates and the accumulator in the own working space; P-256's `p` reduces by its sparse form), and every result is reduced by a conditional subtraction selected by a mask.
 ///
 /// # Safety
 ///

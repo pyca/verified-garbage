@@ -6,8 +6,6 @@
 ///
 /// Contract: `mulInRangeContract` of `VG.Spec.Weierstrass.Mul.Curve`.
 ///
-/// The function saves `ebx`, `esi`, `edi` and `ebp` in bytes 2224 to 2239 of `ws` (its argument, which it keeps in `edi`) while it runs. It expands `k` into a table of its bits, one per byte, at bytes 4096 to 4479, copies `Q` to bytes 1456 to 1551 (slots 29 and 30), and runs a double-and-add ladder over the 384 bits of `k`'s 6 64-bit words, from the top, with the complete addition formulas of Renes, Costello and Batina for every addition and doubling and a masked selection for each bit. Field elements are twelve 32-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, with `mul` and the accumulator in `ws`, in calls of `vg_p384_mul_mod_p` and the other functions of `p384_mont`); nothing depends on `k` or `Q` but through masks.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.

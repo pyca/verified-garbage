@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
 ///
-/// Field elements are four 64-bit words in Montgomery form. Scalar multiplication calls `vg_secp256k1_mul`, a fixed 256-iteration ladder with the complete formulas for a = 0 of Renes, Costello and Batina (Algorithm 9 doubles, Algorithm 8 adds the affine point). Inversions use divsteps, by a call of `vg_secp256k1_inv_mod_p`. Branches and memory addresses depend only on pointers and loop counters.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 65 bytes.

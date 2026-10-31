@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Rsa.Mont.mulContract`. Constant time but for `w`: timing may depend on the pointer, `ws_len`, the indices and `w`, not on the numbers.
 ///
-/// Finely integrated operand scanning in radix 2^64: each round computes `t_j + a_i b_j + u m_j` and the two carries for each word in one pass over the accumulator, the carries through XER's CA (`addc`, `addze`), four words at a time after `(w - 1) mod 4` single ones, with `-m⁻¹ mod 2^64` computed from the header's `-m⁻¹ mod 2^32` by a step of Newton's iteration; then the subtraction of `m`, word by word with the borrow in CA (`subfc`, `subfe`), selected with a mask. The nonvolatile registers it uses are saved in a 112-byte stack frame.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.

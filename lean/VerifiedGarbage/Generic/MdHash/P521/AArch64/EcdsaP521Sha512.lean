@@ -32,7 +32,7 @@ It is generic over P-521's group law `h` too, the variant
 
 namespace VG.Generic.MdHash.P521.AArch64.EcdsaP521Sha512
 
-open VG.Proof.Ecdsa.Rfc6979.AArch64 (cfgOf signNotesWide)
+open VG.Proof.Ecdsa.Rfc6979.AArch64 (cfgOf)
 open VG.Proof.Ecdsa.Rfc6979.AArch64.P521Sha512 (pack sign_verified)
 
 def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P521.curve) :
@@ -42,8 +42,6 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch6
   | some c => [
     Spec.Ecdsa.Rfc6979.P521Sha512.signApi.artifact AArch64.target {
       suffix := c.suffix
-      notes := [signNotesWide (cfgOf (pack h.law h.inv (Proof.P521.combOk7 h.law) c)).H 66 521 64
-          Spec.Ecdsa.P521.signApi.name]
       code := (cfgOf (pack h.law h.inv (Proof.P521.combOk7 h.law) c)).sign
       consts := Impl.Ecdsa.AArch64.p521.combConsts
       stack := 400

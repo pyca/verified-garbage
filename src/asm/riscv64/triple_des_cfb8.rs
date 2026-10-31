@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.TripleDes.cfb8EncryptContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the input block or the data.
 ///
-/// Baseline RV64I: one block at a time, with ECB's verified block function inlined (the eight S-boxes looked up at once in the 64 lanes of a word, from words of constants in the frame, with no table lookups at secret addresses). The mode is the generic one of `Impl/Modes/RISCV64/`, which runs in a frame of 944 bytes on the stack, 16-byte aligned: it keeps its state in `s1`–`s4`, saving our caller's there, and the block function reads a copy of the schedule there, made a byte at a time, since the contracts state no alignment for it. The frame is zeroed before returning.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.
@@ -1456,8 +1454,6 @@ ret
 /// Triple DES-CFB8 decryption (NIST SP 800-38A §6.3, with 8-bit segments; FIPS 46-3), in place: replaces the `len` bytes `C#₁ … C#ₙ` at `data` with `P#ⱼ = C#ⱼ ⊕ MSB₈(CIPH_K(Iⱼ))`, where `I₁` is the block at `*iv` and `Iⱼ₊₁` is `Iⱼ` without its first byte, followed by `C#ⱼ`, and `*iv` with `Iₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
 ///
 /// Contract: `VG.Spec.TripleDes.cfb8DecryptContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the input block or the data.
-///
-/// Baseline RV64I: one block at a time, with ECB's verified block function inlined (the eight S-boxes looked up at once in the 64 lanes of a word, from words of constants in the frame, with no table lookups at secret addresses). The mode is the generic one of `Impl/Modes/RISCV64/`, which runs in a frame of 944 bytes on the stack, 16-byte aligned: it keeps its state in `s1`–`s4`, saving our caller's there, and the block function reads a copy of the schedule there, made a byte at a time, since the contracts state no alignment for it. The frame is zeroed before returning.
 ///
 /// # Safety
 ///

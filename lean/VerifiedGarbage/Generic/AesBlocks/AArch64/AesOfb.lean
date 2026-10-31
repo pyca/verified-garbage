@@ -24,8 +24,6 @@ open VG.Proof.AesOfb.AArch64
 def artifacts (v : Proof.Aes.AArch64.BlocksImpl) : List Artifact := [
   Spec.Ofb.aesApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := ["This implementation enciphers one block at a time with `" ++
-      v.enc.name ++ "`."]
     code := Impl.AesOfb.AArch64.crypt v.enc
     verified := crypt_verified v
     features := v.features }]

@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Blowfish.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline x86-64: one block at a time, through `vg_blowfish_ecb_encrypt`'s block code (inlined): each S-box lookup scans every entry of the box in SSE2 registers, reusing one combined byte mask across its four planes, so no address depends on the key or the data; the schedule is read where it is. The mode is the generic OFB of `Impl/Modes/X86_64/`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 4168 bytes.

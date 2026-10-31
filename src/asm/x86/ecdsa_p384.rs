@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.signContract`. Constant time: only the pointers may affect timing, not the key, the hash or `k`.
 ///
-/// The function saves the callee-saved registers `ebx`, `esi`, `edi` and `ebp` in `scratch`. Field elements and scalars are twelve 32-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_p384_mul_mod_p` and the other functions of `p384_mont`) with a final conditional subtraction. `[k]G` is a call of `vg_p384_mul`, a double-and-add ladder over all 384 bits of `k`, with the complete addition formulas of Renes, Costello and Batina for every addition and doubling and a masked selection for each bit; the inversions modulo `p` and `n` are Fermat's, by square-and-always-multiply over the bits of `p - 2` and `n - 2`. The signature (or zeros) is selected by a mask, so the time depends only on the pointers.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -1346,8 +1344,6 @@ ret
 /// ECDSA signature verification over P-384 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 48 bytes each, most significant first) of the hash at `digest` (its leftmost 48 bytes, or, for a shorter hash, the hash padded on the left with zeros to 48 bytes) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 48 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
-///
-/// The function is `vg_ecdsa_p384_sign`'s setup, field arithmetic, ladder and inversions, with `vg_ecdh_p384`'s checks of the public key: it saves the callee-saved registers `ebx`, `esi`, `edi` and `ebp` in `scratch`; field elements and scalars are twelve 32-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_p384_mul_mod_p` and the other functions of `p384_mont`) with a final conditional subtraction. The key is checked without branches (its first byte, both coordinates below `p`, and the curve's equation), and the second ladder multiplies the key's point if it is valid, else `G`, so it always runs on a point of the curve. `s⁻¹` modulo `n` and `Z⁻¹` are Fermat's, by square-and-always-multiply; `[u]G` and `[v]Q` are calls of `vg_p384_mul`, double-and-add ladders over all 384 bits of `u` and `v`, with the complete addition formulas of Renes, Costello and Batina, which also add the two. The result is the conjunction of the checks (the key, `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `x ≡ r` modulo `n`) as a mask, so the time depends only on the pointers, although the contract would let every input affect it.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

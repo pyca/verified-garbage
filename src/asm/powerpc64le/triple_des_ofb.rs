@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.TripleDes.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline PPC64LE: one block at a time, calling the verified block function (`vg_triple_des_encrypt_block`), with Boolean S-box circuits and no table lookups, reading the schedule in place. The mode is the generic OFB of `Impl/Modes/PPC64LE/`, which keeps its state in `r29`–`r31`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.

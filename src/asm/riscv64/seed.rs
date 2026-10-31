@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Seed.expandKeyContract`. Constant time: only pointers may affect timing, not key bytes.
 ///
-/// The 32 inputs of `G` from 64-bit rotations of the key, then `G` of sixteen at a time, bitsliced in general-purpose registers through the AES S-box circuit, with no table lookups. The working space (1032 bytes, our caller's s0-s11 among them) is on the stack, zeroed before returning.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 16 bytes.
@@ -1320,8 +1318,6 @@ ret
 /// SEED ECB encryption (RFC 4269 §2, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the schedule written by `vg_seed_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Seed.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
-///
-/// Sixteen blocks at a time, each round's `G` of all of them bitsliced in general-purpose registers through the AES S-box circuit, with no table lookups. The working space (1032 bytes, our caller's s0-s11 among them) is on the stack, zeroed before returning.
 ///
 /// # Safety
 ///
@@ -4034,8 +4030,6 @@ ret
 /// SEED ECB decryption (RFC 4269 §2.4, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the schedule written by `vg_seed_expand_key`: the encryption procedure with the round keys in reverse order. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Seed.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
-///
-/// Sixteen blocks at a time, each round's `G` of all of them bitsliced in general-purpose registers through the AES S-box circuit, with no table lookups. The working space (1032 bytes, our caller's s0-s11 among them) is on the stack, zeroed before returning.
 ///
 /// # Safety
 ///

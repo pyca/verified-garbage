@@ -25,15 +25,11 @@ open VG.Proof.AesCfb8.AArch64
 def artifacts (v : Proof.Aes.AArch64.BlocksImpl) : List Artifact := [
   Spec.Cfb8.aesEncryptApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := ["This implementation enciphers one block for each byte with `" ++
-      v.enc.name ++ "`."]
     code := Impl.AesCfb8.AArch64.encrypt v.enc
     verified := encrypt_verified v
     features := v.features },
   Spec.Cfb8.aesDecryptApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := ["This implementation enciphers one block for each byte with `" ++
-      v.enc.name ++ "`."]
     code := Impl.AesCfb8.AArch64.decrypt v.enc
     verified := decrypt_verified v
     features := v.features }]

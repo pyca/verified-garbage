@@ -15,8 +15,6 @@ pub(crate) const VG_MLKEM768_KPKE_ENCRYPT_FEATURES: crate::cpu::Features = crate
 ///
 /// Contract: `VG.Spec.MlKem.Params.kpkeEncryptContract`. Constant time: only the pointers may affect timing.
 ///
-/// The function computes with the code of `vg_mlkem_ntt_avx2`, `vg_mlkem_multiply_ntts_avx2`, `vg_mlkem_inv_ntt_avx2` and its encodings and compressions inlined, on AVX2 registers, with 16-bit polynomials, and calls nothing. It sets MXCSR to `0x1FBF` once around all its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning.
-///
 /// # Safety
 ///
 /// * `ct` must be valid for reads and writes of 1088 bytes.
@@ -4833,8 +4831,6 @@ pub(crate) const VG_MLKEM768_KPKE_DECRYPT_FEATURES: crate::cpu::Features = crate
 ///
 /// Contract: `VG.Spec.MlKem.Params.kpkeDecryptContract`. Constant time: only the pointers may affect timing.
 ///
-/// The function computes with the code of `vg_mlkem_ntt_avx2`, `vg_mlkem_multiply_ntts_avx2`, `vg_mlkem_inv_ntt_avx2` and its encodings and compressions inlined, on AVX2 registers, with 16-bit polynomials, and calls nothing. It sets MXCSR to `0x1FBF` once around all its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning.
-///
 /// # Safety
 ///
 /// * `m` must be valid for reads and writes of 32 bytes.
@@ -8710,8 +8706,6 @@ ret
 ///
 /// Contract: `VG.Spec.MlKem.encryptMulContract`. Constant time: only the pointers may affect timing.
 ///
-/// The function computes with the code of `vg_mlkem_ntt`, `vg_mlkem_multiply_ntts`, `vg_mlkem_add` and `vg_mlkem_inv_ntt` inlined, on SSE2 registers. It sets MXCSR to `0x1FBF` once around all its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning.
-///
 /// # Safety
 ///
 /// * `u` must be valid for reads and writes of 4096 bytes.
@@ -10498,8 +10492,6 @@ ret
 ///
 /// Contract: `VG.Spec.MlKem.decryptMulContract`. Constant time: only the pointers may affect timing.
 ///
-/// The function computes with the code of `vg_mlkem_ntt`, `vg_mlkem_multiply_ntts`, `vg_mlkem_add` and `vg_mlkem_inv_ntt` inlined, on SSE2 registers. It sets MXCSR to `0x1FBF` once around all its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning.
-///
 /// # Safety
 ///
 /// * `w` must be valid for reads and writes of 1024 bytes.
@@ -11600,8 +11592,6 @@ ret
 /// The products of ML-KEM-768 key generation (FIPS 203 Algorithm 13, lines 16–18): `*s` becomes `ŝ = NTT(s)` and `t̂ = Â ∘ ŝ + NTT(e)` is written to `*t`, for the vectors `*s` and `*e` of 3 polynomials and the matrix `Â` in `*a` (9 polynomials, by rows), each polynomial 256 coefficients reduced modulo `q` = 3329.
 ///
 /// Contract: `VG.Spec.MlKem.keygenMulContract`. Constant time: only the pointers may affect timing.
-///
-/// The function computes with the code of `vg_mlkem_ntt`, `vg_mlkem_multiply_ntts` and `vg_mlkem_add` inlined, on SSE2 registers. It sets MXCSR to `0x1FBF` once around all its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning.
 ///
 /// # Safety
 ///
@@ -13184,8 +13174,6 @@ pub(crate) const VG_MLKEM768_CHECK_EK_AVX2_FEATURES: crate::cpu::Features = crat
 ///
 /// Contract: `VG.Spec.MlKem.checkEkContract`. Constant time: only the pointer may affect timing.
 ///
-/// The function checks eight fields at a time, from 12 bytes, in the doublewords of an AVX2 register.
-///
 /// # Safety
 ///
 /// * `ek` must be valid for reads of 1184 bytes.
@@ -13238,8 +13226,6 @@ pub(crate) const VG_MLKEM768_KPKE_KEYGEN_NTT_FEATURES: crate::cpu::Features = cr
 /// The transforms of ML-KEM-768 K-PKE key generation (FIPS 203 Algorithm 13, lines 16, 17 and 20). The input is the vectors `s` and `e` in `*se` (3 polynomials each, one after the other, 256 `u16` coefficients reduced modulo `q` = 3329). Writes `ŝ = NTT(s)` to `*s`, `ê = NTT(e)` to `*e` (3 polynomials of 256 `u32` coefficients each, reduced), and `ByteEncode₁₂(ŝ)` to `*dk`.
 ///
 /// Contract: `VG.Spec.MlKem.kpkeKeyGenNttContract`. Constant time: only the pointers may affect timing.
-///
-/// The function computes with the code of `vg_mlkem_ntt_avx2` and its encoding inlined, on AVX2 registers, with 16-bit polynomials, and calls nothing. It sets MXCSR to `0x1FBF` once around all its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning.
 ///
 /// # Safety
 ///
@@ -15035,8 +15021,6 @@ pub(crate) const VG_MLKEM768_KPKE_KEYGEN_ROW_FEATURES: crate::cpu::Features = cr
 ///
 /// Contract: `VG.Spec.MlKem.kpkeKeyGenRowContract`. Constant time: only the pointers may affect timing.
 ///
-/// The function computes with the code of `vg_mlkem_multiply_ntts_avx2` and its encoding inlined, on AVX2 registers, with 16-bit polynomials, and calls nothing. It sets MXCSR to `0x1FBF` once around all its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning.
-///
 /// # Safety
 ///
 /// * `ek` must be valid for reads and writes of 384 bytes.
@@ -15461,12 +15445,6 @@ pub(crate) const VG_MLKEM768_KEYGEN_AVX2_FEATURES: crate::cpu::Features = crate:
 /// ML-KEM-768 key generation from a seed, `ML-KEM.KeyGen_internal(d, z)` (FIPS 203 Algorithm 16): with `d` in bytes 0–31 of `*seed` and `z` in bytes 32–63, writes the encapsulation key to `*ek` and the decapsulation key to `*dk`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
-///
-/// The function saves its caller's callee-saved registers in `scratch`; its calls use the 32 bytes of stack below its return address. It computes `PRF(σ, 0)` and `PRF(σ, 1)` in the fourth Keccak state of the first row of the matrix (below), and the other outputs of `PRF` four at a time, with AVX2 (and the first one or two of `4k + 1` or `4k + 2` on their own).
-///
-/// Its polynomials are 16-bit words: it samples the noise with `vg_mlkem16_cbd2_avx2`, and computes the rest of K-PKE with `vg_mlkem768_kpke_keygen_ntt` and `vg_mlkem768_kpke_keygen_row`, a row of `t̂` at a time.
-///
-/// It computes `H(ek)` while it samples the matrix: it samples a row of the matrix at a time with the code of `vg_mlkem16_sample_ntt4_avx2` inlined, whose fourth Keccak state absorbs the blocks of the padded key that the rows before it wrote, 136 bytes at a time.
 ///
 /// # Safety
 ///
@@ -24905,10 +24883,6 @@ pub(crate) const VG_MLKEM768_ENCAPS_H_AVX2_FEATURES: crate::cpu::Features = crat
 ///
 /// Contract: `VG.Spec.MlKem.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
 ///
-/// The function saves its caller's callee-saved registers in `scratch`; its calls use the 32 bytes of stack below its return address. It samples the matrix four entries at a time with `vg_mlkem16_sample_ntt4_avx2`, and computes the outputs of `PRF` four at a time, with AVX2 (and the first one or two of `4k + 1` or `4k + 2` on their own).
-///
-/// Its polynomials are 16-bit words: it samples the noise with `vg_mlkem16_cbd2_avx2`, and computes the rest of K-PKE with `vg_mlkem768_kpke_encrypt`.
-///
 /// # Safety
 ///
 /// * `ek` must be valid for reads of 1184 bytes.
@@ -26887,12 +26861,6 @@ pub(crate) const VG_MLKEM768_ENCAPS_AVX2_FEATURES: crate::cpu::Features = crate:
 /// ML-KEM-768 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
-///
-/// The function saves its caller's callee-saved registers in `scratch`; its calls use the 32 bytes of stack below its return address. It samples the matrix four entries at a time with `vg_mlkem16_sample_ntt4_avx2`, and computes the outputs of `PRF` four at a time, with AVX2 (and the first one or two of `4k + 1` or `4k + 2` on their own).
-///
-/// Its polynomials are 16-bit words: it samples the noise with `vg_mlkem16_cbd2_avx2`, and computes the rest of K-PKE with `vg_mlkem768_kpke_encrypt`.
-///
-/// It computes `H(ek)` while it samples the matrix: it samples its first entries three at a time with the code of `vg_mlkem16_sample_ntt4_avx2` inlined, whose fourth Keccak state absorbs the padded key, three blocks of 136 bytes at a time.
 ///
 /// # Safety
 ///
@@ -35724,10 +35692,6 @@ pub(crate) const VG_MLKEM768_DECAPS_AVX2_FEATURES: crate::cpu::Features = crate:
 /// ML-KEM-768 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 2304–2335 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
-///
-/// The function saves its caller's callee-saved registers in `scratch`; its calls use the 32 bytes of stack below its return address. It samples the matrix four entries at a time with `vg_mlkem16_sample_ntt4_avx2`, and computes the outputs of `PRF` four at a time, with AVX2 (and the first one or two of `4k + 1` or `4k + 2` on their own).
-///
-/// Its polynomials are 16-bit words: it samples the noise with `vg_mlkem16_cbd2_avx2`, and computes the rest of K-PKE with `vg_mlkem768_kpke_decrypt`, `vg_mlkem768_kpke_encrypt`.
 ///
 /// # Safety
 ///
@@ -44597,12 +44561,6 @@ pub(crate) const VG_MLKEM768_KEYGEN_AVX512_FEATURES: crate::cpu::Features = crat
 ///
 /// Contract: `VG.Spec.MlKem.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
 ///
-/// The function saves its caller's callee-saved registers in `scratch`; its calls use the 32 bytes of stack below its return address. It computes `PRF(σ, 0)` and `PRF(σ, 1)` in the fourth Keccak state of the first row of the matrix (below), and the other outputs of `PRF` four at a time, with AVX-512VL quadword rotates (and the first one or two of `4k + 1` or `4k + 2` on their own).
-///
-/// Its polynomials are 16-bit words: it samples the noise with `vg_mlkem16_cbd2_avx2`, and computes the rest of K-PKE with `vg_mlkem768_kpke_keygen_ntt` and `vg_mlkem768_kpke_keygen_row`, a row of `t̂` at a time.
-///
-/// It computes `H(ek)` while it samples the matrix: it samples a row of the matrix at a time with the code of `vg_mlkem16_sample_ntt4_avx512` inlined, whose fourth Keccak state absorbs the blocks of the padded key that the rows before it wrote, 136 bytes at a time.
-///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 64 bytes.
@@ -50872,10 +50830,6 @@ pub(crate) const VG_MLKEM768_ENCAPS_H_AVX512_FEATURES: crate::cpu::Features = cr
 ///
 /// Contract: `VG.Spec.MlKem.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
 ///
-/// The function saves its caller's callee-saved registers in `scratch`; its calls use the 32 bytes of stack below its return address. It samples the matrix four entries at a time with `vg_mlkem16_sample_ntt4_avx512`, and computes the outputs of `PRF` four at a time, with AVX-512VL quadword rotates (and the first one or two of `4k + 1` or `4k + 2` on their own).
-///
-/// Its polynomials are 16-bit words: it samples the noise with `vg_mlkem16_cbd2_avx2`, and computes the rest of K-PKE with `vg_mlkem768_kpke_encrypt`.
-///
 /// # Safety
 ///
 /// * `ek` must be valid for reads of 1184 bytes.
@@ -52150,12 +52104,6 @@ pub(crate) const VG_MLKEM768_ENCAPS_AVX512_FEATURES: crate::cpu::Features = crat
 /// ML-KEM-768 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
-///
-/// The function saves its caller's callee-saved registers in `scratch`; its calls use the 32 bytes of stack below its return address. It samples the matrix four entries at a time with `vg_mlkem16_sample_ntt4_avx512`, and computes the outputs of `PRF` four at a time, with AVX-512VL quadword rotates (and the first one or two of `4k + 1` or `4k + 2` on their own).
-///
-/// Its polynomials are 16-bit words: it samples the noise with `vg_mlkem16_cbd2_avx2`, and computes the rest of K-PKE with `vg_mlkem768_kpke_encrypt`.
-///
-/// It computes `H(ek)` while it samples the matrix: it samples its first entries three at a time with the code of `vg_mlkem16_sample_ntt4_avx512` inlined, whose fourth Keccak state absorbs the padded key, three blocks of 136 bytes at a time.
 ///
 /// # Safety
 ///
@@ -58171,10 +58119,6 @@ pub(crate) const VG_MLKEM768_DECAPS_AVX512_FEATURES: crate::cpu::Features = crat
 /// ML-KEM-768 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 2304–2335 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
-///
-/// The function saves its caller's callee-saved registers in `scratch`; its calls use the 32 bytes of stack below its return address. It samples the matrix four entries at a time with `vg_mlkem16_sample_ntt4_avx512`, and computes the outputs of `PRF` four at a time, with AVX-512VL quadword rotates (and the first one or two of `4k + 1` or `4k + 2` on their own).
-///
-/// Its polynomials are 16-bit words: it samples the noise with `vg_mlkem16_cbd2_avx2`, and computes the rest of K-PKE with `vg_mlkem768_kpke_decrypt`, `vg_mlkem768_kpke_encrypt`.
 ///
 /// # Safety
 ///
@@ -64225,8 +64169,6 @@ ret
 ///
 /// Contract: `VG.Spec.MlKem.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
 ///
-/// The function saves its caller's callee-saved registers in `scratch`; its calls use the 32 bytes of stack below its return address. It samples the matrix four entries at a time with `vg_mlkem_sample_ntt4`, and computes the outputs of `PRF` one at a time.
-///
 /// # Safety
 ///
 /// * `seed` must be valid for reads of 64 bytes.
@@ -65070,8 +65012,6 @@ ret
 /// ML-KEM-768 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem768_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
-///
-/// The function saves its caller's callee-saved registers in `scratch`; its calls use the 32 bytes of stack below its return address. It samples the matrix four entries at a time with `vg_mlkem_sample_ntt4`, and computes the outputs of `PRF` one at a time.
 ///
 /// # Safety
 ///
@@ -65996,10 +65936,6 @@ ret
 /// ML-KEM-768 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
-///
-/// The function saves its caller's callee-saved registers in `scratch`; its calls use the 32 bytes of stack below its return address. It samples the matrix four entries at a time with `vg_mlkem_sample_ntt4`, and computes the outputs of `PRF` one at a time.
-///
-/// It computes `H(ek)` with the sponge functions of SHA3-256 first.
 ///
 /// # Safety
 ///
@@ -66964,8 +66900,6 @@ ret
 /// ML-KEM-768 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 2304–2335 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
-///
-/// The function saves its caller's callee-saved registers in `scratch`; its calls use the 32 bytes of stack below its return address. It samples the matrix four entries at a time with `vg_mlkem_sample_ntt4`, and computes the outputs of `PRF` one at a time.
 ///
 /// # Safety
 ///

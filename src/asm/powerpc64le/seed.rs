@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Seed.expandKeyContract`. Constant time: only pointers may affect timing, not key bytes.
 ///
-/// The 32 inputs of `G` from 64-bit rotations of the key, then `G` of sixteen at a time, bitsliced in general-purpose registers through the AES S-box circuit, with no table lookups. The working space (1040 bytes, our caller's r14-r31 among them) is on the stack, zeroed before returning.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 16 bytes.
@@ -1129,8 +1127,6 @@ blr",
 ///
 /// Contract: `VG.Spec.Seed.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
 ///
-/// Calls `vg_seed_encrypt_blocks` with its working space (1088 bytes) on the stack, zeroed before returning, saving the link register in a 48-byte stack frame.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -1297,8 +1293,6 @@ blr",
 ///
 /// Contract: `VG.Spec.Seed.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
 ///
-/// Calls `vg_seed_decrypt_blocks` with its working space (1088 bytes) on the stack, zeroed before returning, saving the link register in a 48-byte stack frame.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -1464,8 +1458,6 @@ blr",
 /// SEED encryption of whole blocks (RFC 4269 §2, SP 800-38A §6.1): replaces each of the `n` 16-byte blocks at `data` with its encryption under the schedule written by `vg_seed_expand_key`, with the working space in `*scratch`. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Seed.blocksContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
-///
-/// Sixteen blocks at a time, each round's `G` of all of them bitsliced in general-purpose registers through the AES S-box circuit, with no table lookups. Uses the first 1040 bytes of `scratch`, our caller's r14-r31 among them, saved around each batch's rounds.
 ///
 /// # Safety
 ///
@@ -4093,8 +4085,6 @@ blr",
 /// SEED decryption of whole blocks (RFC 4269 §2.4, SP 800-38A §6.1): replaces each of the `n` 16-byte blocks at `data` with its decryption under the schedule written by `vg_seed_expand_key` (the encryption procedure with the round keys in reverse order), with the working space in `*scratch`. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Seed.blocksContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
-///
-/// Sixteen blocks at a time, each round's `G` of all of them bitsliced in general-purpose registers through the AES S-box circuit, with no table lookups. Uses the first 1040 bytes of `scratch`, our caller's r14-r31 among them, saved around each batch's rounds.
 ///
 /// # Safety
 ///

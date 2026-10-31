@@ -24,8 +24,6 @@ open VG.Proof.AesCtr.AArch64
 def artifacts (v : Proof.Aes.AArch64.Ctr32Impl) : List Artifact := [
   Spec.Ctr.aesApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := ["This implementation enciphers the counter blocks with `" ++
-      v.callee.name ++ "`, as many at once as its 32-bit counter allows."]
     code := Impl.AesCtr.AArch64.crypt v.callee
     verified := crypt_verified v
     features := v.features }]

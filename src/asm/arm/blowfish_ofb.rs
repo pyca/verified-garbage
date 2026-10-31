@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Blowfish.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline ARMv7: the generic OFB of `Impl/Modes/Arm/`, one block at a time (each output block is the cipher of the one before), calling the verified `vg_blowfish_ecb_encrypt` on the chaining value in a 56-byte working space on the stack, zeroed on return.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 4168 bytes.

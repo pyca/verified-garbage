@@ -22,7 +22,7 @@ class Registrations(unittest.TestCase):
                     "module\n/-! Proven by `lit_decide` -/\n-- by decide\n"
                     "def artifacts : List Artifact := [\n"
                     "  api.artifact X86_64.target {\n"
-                    "    notes := [\"found by a mask\"]\n"
+                    "    suffix := \"_found by a mask\"\n"
                     "    verified := Proof.A.verified (.inl rfl) }]\n",
                     "VerifiedGarbage/Generic/B/X86_64/C.lean":
                     "module\ndef sign (code : Prog isa)\n"

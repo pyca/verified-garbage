@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Ofb.aesContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
-/// This implementation enciphers one block at a time with `vg_aes_encrypt_blocks`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.

@@ -142,37 +142,6 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
   Spec.Ecdsa.P256.signApi.artifact X86_64.target {
     suffix := (if adx then "_adx" else "")
-    notes := ["The function saves its caller's callee-saved \
-      registers in `scratch`. Field elements and scalars are four 64-bit words in Montgomery form, \
-      " ++ Proof.Ecdsa.X86_64.mulNote adx ++ ". `[k]G` is " ++
-      (if adx then "a call of `vg_p256_mul_base_adx`, which expands `k` into a table of its bits \
-      and runs " else "") ++ "a fixed-base comb of 7-bit signed digits: the 37 windows `k_j` of \
-      `k`'s bits as Booth's digits `d_j = k_j + c_j - 128 c_(j+1)` from `-64` to `64` (`c_j` the \
-      bit below window `j`, `c_0 = 0`), `[k]G = Σ [d_j 2^(7j)]G`, from 37 tables of `[m 2^(7j)]G` \
-      (`m = 1 … 64`, affine, in Montgomery form) in the static `VG_P256_COMB` (148 KB), with no \
-      doublings: each entry is selected in constant time by loading every entry of its table, " ++
-      (if adx then "32 bytes at a time with AVX2, and keeping (`vpand`, `vpor`, under the mask of \
-      `vpcmpeqd` of a counter and the magnitude, broadcast)" else "16 bytes at a time, and keeping \
-      (`pand`, `por`)") ++ " the one of the digit's magnitude (or the point \
-      at infinity for a zero digit), negated by a mask of its sign, and added, from `j = 0` up, to \
-      a Jacobian accumulator by the mixed addition formulas madd-2004-hmv (8 multiplications and \
-      3 squarings), which fail only for equal points: the accumulator, the sum of the digits' \
-      terms below `j`, is never the entry, since `n` is prime, `[n]G` is the point at infinity \
-      (which the proof's kernel computes) and the sums are smaller than any nonzero digit's term \
-      modulo `n`. The entry replaces the sum where the accumulator is the point at infinity \
-      (`Z = 0`), and the sum replaces the accumulator unless the digit is zero; the result is \
-      `(XZ : Y : Z³)` in projective coordinates (with `Y = 1` for the point at infinity); the \
-      inversions modulo `p` and `n` are calls of `vg_p256_inv_mod_p" ++
-      (if adx then "_adx" else "") ++ "` and `vg_p256_inv_mod_n" ++ (if adx then "_adx" else "") ++
-      "`, by divsteps (Bernstein and Yang's safegcd, half-delta form): 10 batches of 59 divsteps \
-      on the low 64-bit words of `f` and `g` (from `f = p`, \
-      `g = Z`, or `n` and `k`), each giving a matrix of 64-bit entries that updates `f`, `g` \
-      (divided by 2⁵⁹) and the coefficients `a`, `b` (divided by 2⁶⁴ modulo `p` or `n`, as in \
-      Montgomery reduction), 590 divsteps in all, enough for 256-bit moduli by Bernstein and \
-      Yang's bound (which the proof checks); then `f = ±1`, and `Z⁻¹` is `a` times a constant or \
-      its negation by `f`'s sign. The number of steps is fixed, so the time does not depend on \
-      `Z` or `k`. The signature (or zeros) is selected by a mask, so the time depends only on the \
-      pointers."]
     consts := Impl.Ecdsa.X86_64.p256.combConsts
     code
     stack := 8
@@ -189,27 +158,6 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
   Spec.Ecdsa.P256.verifyApi.artifact X86_64.target {
     suffix := (if adx then "_adx" else "")
-    notes := ["The function saves its caller's callee-saved \
-      registers in `scratch`. Field elements and scalars are four 64-bit words in Montgomery form, \
-      " ++ Proof.Ecdsa.X86_64.mulNote adx ++ ". The public key is checked without branches; an invalid \
-      key is replaced with `G` for the point operations and rejected by the final validity flag. \
-      Divsteps computes `s⁻¹` modulo `n`, a call of `vg_p256_inv_mod_n" ++
-      (if adx then "_adx" else "") ++ "`, then `u = e/s` and `v = r/s`. Both public scalars are \
-      recoded as non-adjacent signed digits, width nine for `u` (sixteen bits each) and width \
-      five for `v`. A single Jacobian accumulator computes `[u]G + [v]Q` with 256 doublings, \
-      adding only nonzero digits. Generator digits directly index the affine odd multiples \
-      `[m]G`, `m ≤ 255`, in the static `VG_P256_GTAB` of `[m]G` for `m = 1 … 256` (16 KB, in \
-      Montgomery form); peer digits index eight odd multiples of `Q` in `scratch`, with cached \
-      squares and cubes of their Z coordinates, built by co-Z arithmetic (Goundar, Joye, Miyaji, \
-      Rivain and Venelli): DBLU of the affine `Q` gives `2Q` and `Q` at one `Z`, then seven ZADDU \
-      (5 multiplications and 2 squarings each) add `2Q` and leave it at the sum's `Z`; the \
-      operands are never equal or opposite, since `n` is prime. Complete point operations cover infinity, \
-      equal points and opposite points. Doubling uses in-place field operations and modular \
-      halving; the ADX backend forwards stored register values between field operations. \
-      The final comparison squares the Jacobian Z coordinate and checks `X = rZ²`, or \
-      `X = (r+n)Z²` when `r+n < p`, without a field inversion. It rejects infinity and returns \
-      the conjunction of the key, scalar-range and coordinate checks as 0 or 1. Timing may \
-      depend on the public verification inputs, as permitted by the contract."]
     consts := Impl.P256.X86_64.p256v.combConsts
     code
     stack := 8

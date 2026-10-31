@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Sha512.compressContract`. Constant time: only the pointers and `n` may affect timing, not the hash value or the blocks.
 ///
-/// This implementation runs rounds 16–79 sixteen to an iteration of a loop, adding the round constants from a table.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 64 bytes.
@@ -1415,8 +1413,6 @@ pub(crate) const VG_SHA512_COMPRESS_AVX2_FEATURES: crate::cpu::Features = crate:
 /// The SHA-512 compression function (FIPS 180-4 §6.4.2), shared by SHA-384, SHA-512, SHA-512/224 and SHA-512/256: updates the hash value `*state` with the `n` 128-byte blocks starting at `blocks`, in order.
 ///
 /// Contract: `VG.Spec.Sha512.compressContract`. Constant time: only the pointers and `n` may affect timing, not the hash value or the blocks.
-///
-/// This implementation computes the message schedules of two blocks at a time in the two lanes of the AVX2 registers, and the rounds with BMI1 and BMI2, sixteen to an iteration of a loop, adding the round constants from a table.
 ///
 /// # Safety
 ///
@@ -2980,8 +2976,6 @@ pub(crate) const VG_SHA512_COMPRESS_SHANI_FEATURES: crate::cpu::Features = crate
 /// The SHA-512 compression function (FIPS 180-4 §6.4.2), shared by SHA-384, SHA-512, SHA-512/224 and SHA-512/256: updates the hash value `*state` with the `n` 128-byte blocks starting at `blocks`, in order.
 ///
 /// Contract: `VG.Spec.Sha512.compressContract`. Constant time: only the pointers and `n` may affect timing, not the hash value or the blocks.
-///
-/// This implementation uses the SHA512 extension.
 ///
 /// # Safety
 ///

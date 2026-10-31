@@ -20,21 +20,12 @@ def artifacts (v : Proof.MillerRabin.Arm.RoundImpl) : List Artifact :=
     features := b.features
     stack := 184
     code := b.candidate
-    verified := b.candidate_verified
-    notes := ["ARMv7: candidate shaping, generator congruences, the shared RSA small-prime \
-      sieve (512 primes through 1024 bits, 1024 above), early composite rejection, q/p preparation, witness rejection sampling and entropy accounting run in \
-      verified code. Both primality tests call the selected shared RSA four-bit-window \
-      Miller–Rabin round. Caller arithmetic uses the same baseline or UMAAL variant."] },
+    verified := b.candidate_verified },
    Spec.Ffdh.sievedParameterSearchApi.artifact VG.Arm.target {
     suffix := b.suffix
     features := b.features
     stack := 232
     code := Impl.Ffdh.Arm.ParameterSearch.code (.call b.candidateName b.candidate)
-    verified := Proof.Ffdh.Arm.ParameterSearch.verified b
-    notes := ["ARMv7: the whole safe-prime search runs in verified code, including the \
-      full u64 attempt counter, candidate retries, exact entropy consumption, bounded \
-      refill requests, exhaustion and output clearing. Rust allocates buffers and \
-      supplies entropy. The public contract discloses the tape and first four controller \
-      words; the remaining controller workspace and scratch contents need not agree."] }]
+    verified := Proof.Ffdh.Arm.ParameterSearch.verified b }]
 
 end VG.Generic.MillerRabin.Arm.Ffdh

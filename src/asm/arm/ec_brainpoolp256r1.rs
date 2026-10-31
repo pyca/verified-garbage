@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
 ///
-/// The function is `vg_ecdsa_brainpoolp256r1_sign`'s code up to the inversion of `Z`, with `d` as both the key and the secret number. `[d]G` uses the shared signed 7-bit comb: 37 complete Renes–Costello–Batina additions and a 151552-byte Montgomery table. Each digit scans all 64 entries in its public row and selects coordinates by masks. Field arithmetic uses sixteen 16-bit Montgomery digits. `Z⁻¹` is Fermat's. The result (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 65 bytes.

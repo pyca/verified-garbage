@@ -88,11 +88,6 @@ def artifacts (v v2 : Proof.Pbkdf2.Md.X86_64.MdHash) (c : Proof.Rsa.X86_64.CrtIm
   if emitted v v2 then [
     (Spec.RsaOaep.decryptApi v.mgf.G v2.mgf.G).artifact X86_64.target {
       suffix := Emit.qualifiedName "" (parts v v2 ++ [("crt", c.suffix)])
-      notes := ["This implementation calls `" ++ (privOf c).name ++ "`, hashes the label with `" ++
-          v.H.stream.updN ++ "` and unmasks the seed and `DB` with MGF1 calling `" ++ v2.H.stream.updN ++
-          "`. The checks of `Y`, `lHash'` and the separator, the scan for it and the shift of the \
-          message to the start of `out` are masks computed without branches, reading every byte of \
-          `EM` whatever the outcome."]
       code := Impl.RsaOaep.X86_64.decrypt v.H.stream v2.H.stream (privOf c).name (privOf c).code
       stack := decStack
       verified := dec_verified v.ok v.K v2.ok v2.K v.mgf v2.mgf (privOf c)

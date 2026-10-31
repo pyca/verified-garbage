@@ -77,19 +77,9 @@ namespace VG.Generic.AesCtr32.X86_64.CmacAes
 
 open VG.Proof.CmacAes.X86_64
 
-/-- Which implementation of `vg_aes_ctr32` an instance calls. -/
-def ctrNote (v : Proof.Aes.X86_64.Ctr32Impl) : String :=
-  "This implementation encrypts each block with `" ++ v.callee.name ++ "`."
-
-/-- Which CMAC functions an instance of a streaming function calls. -/
-def streamNote (v : Proof.Aes.X86_64.Ctr32Impl) : String :=
-  "This implementation calls the CMAC functions made with `" ++ v.callee.name ++ "` (e.g. `" ++
-    Spec.Cmac.aesUpdateApi.name ++ v.suffix ++ "`)."
-
 def artifacts (v : Proof.Aes.X86_64.Ctr32Impl) : List Artifact := [
   Spec.Cmac.aesSubkeysApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [ctrNote v]
     code := Impl.CmacAes.X86_64.subkeys v.callee
     stack := 8
     verified := subkeys_verified v
@@ -97,7 +87,6 @@ def artifacts (v : Proof.Aes.X86_64.Ctr32Impl) : List Artifact := [
     features := v.features },
   Spec.Cmac.aesUpdateApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [ctrNote v]
     code := Impl.CmacAes.X86_64.update v.callee
     stack := 8
     verified := update_verified v
@@ -105,7 +94,6 @@ def artifacts (v : Proof.Aes.X86_64.Ctr32Impl) : List Artifact := [
     features := v.features },
   Spec.Cmac.aesFinalizeApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [ctrNote v]
     code := Impl.CmacAes.X86_64.finalize v.callee
     stack := 8
     verified := finalize_verified v
@@ -113,8 +101,6 @@ def artifacts (v : Proof.Aes.X86_64.Ctr32Impl) : List Artifact := [
     features := v.features },
   Spec.Cmac.aesInitApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [streamNote v,
-      "It expands the key with `" ++ v.expand.name ++ "`."]
     code := Impl.StackScratch.X86_64.withStackScratch 2312 .rcx
       (Impl.CmacAes.Stream.X86_64.init v.expand v.callee v.suffix)
     stack := 2328
@@ -123,7 +109,6 @@ def artifacts (v : Proof.Aes.X86_64.Ctr32Impl) : List Artifact := [
     features := v.features },
   Spec.Cmac.aesFinishApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [streamNote v]
     code := Impl.StackScratch.X86_64.withStackScratch 2312 .r8
       (Impl.CmacAes.Stream.X86_64.finish v.callee v.suffix)
     stack := 2328

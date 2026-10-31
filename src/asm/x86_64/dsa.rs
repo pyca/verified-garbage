@@ -5035,8 +5035,6 @@ pub(crate) const VG_DSA_SIGN_RANDOM_ADX_FEATURES: crate::cpu::Features = crate::
 
 /// Randomized DSA signing of a prehashed digest from fresh independent random octets. Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for invalid key/retry exhaustion, or 2 for insufficient random bytes. On failure out is zero. used counts consumed complete draws on every return. Checks algebraic consistency, not primality. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignContract`.
 ///
-/// Rejection sampling and signing retries are verified against the bounded random-tape specification. The selected Montgomery backend is used for each signing attempt. Every failure zeros the entire output.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -5312,8 +5310,6 @@ ret
 pub(crate) const VG_DSA_SIGN_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["bmi2", "adx"]);
 
 /// One DSA signing attempt on a prehashed digest. The key is big-endian p||q||g||y||x with component widths p_len, q_len, p_len, p_len, q_len; nonce is q_len bytes. Returns 1 and r||s (q_len bytes each), or 0 and zero output for invalid components, nonce or zero r/s. Checks algebraic consistency, not primality. Caller must assure domain validity and supply fresh independent nonces. Timing may depend on public p,q,g,y and success, not otherwise on x, nonce or digest. Contract: `VG.Spec.Dsa.signContract`.
-///
-/// Fixed-window exponentiation and streaming modular reduction use the selected Montgomery backend. Leading-zero component padding is supported. Signing derives public-key subgroup membership from g^q = 1 and g^x = y. Scratch is initialized before use; every failure zeros the entire output.
 ///
 /// # Safety
 ///
@@ -11890,8 +11886,6 @@ ret
 pub(crate) const VG_DSA_VERIFY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["bmi2", "adx"]);
 
 /// DSA verification of a prehashed digest. The key is big-endian p||q||g||y with widths p_len, q_len, p_len, p_len; signature is r||s with q_len bytes each. Returns 1 if verification succeeds, otherwise 0. Checks algebraic consistency, not primality; caller must assure domain validity. Timing may depend on p,q,g,y and the result, not otherwise on signature or digest. Contract: `VG.Spec.Dsa.verifyContract`.
-///
-/// Fixed-window exponentiation and streaming modular reduction use the selected Montgomery backend. Leading-zero component padding is supported. Signature scalars and the digest do not affect the leakage trace.
 ///
 /// # Safety
 ///
@@ -18596,8 +18590,6 @@ pub(crate) const VG_DSA_GENERATE_KEY_ADX_FEATURES: crate::cpu::Features = crate:
 
 /// Generate a DSA private key from p||q||g and fresh independent random bytes. Uses at most 128 rejection-sampling draws, computes y=g^x mod p, and checks algebraic consistency, not primality. Returns 1 with p||q||g||y||x, 0 for invalid input/draw limit, or 2 for insufficient randomness. Failure zeros out; used counts consumed complete draws on every return. Timing may depend on public parameters, sampling decisions, consumption and success, not otherwise on x or randomness. Contract: `VG.Spec.Dsa.generateKeyContract`.
 ///
-/// Checks the domain before consuming randomness, samples x with the verified rejection sampler, then derives y = g^x with the selected Montgomery backend. Every failure zeros the entire output.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -18860,8 +18852,6 @@ ret
 pub(crate) const VG_DSA_CHECK_PARAMETERS_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["bmi2", "adx"]);
 
 /// DSA domain checks on big-endian p||q||g (widths p_len, q_len, p_len), those of key generation before it samples: returns 1 if the widths are supported and the domain is algebraically consistent (supported bit lengths, odd p and q, q divides p-1, 1 < g < p, g^q = 1 mod p), otherwise 0. Checks algebraic consistency, not primality. All inputs are public. Contract: `VG.Spec.Dsa.checkParametersContract`.
-///
-/// g^q mod p uses the selected Montgomery backend.
 ///
 /// # Safety
 ///
@@ -20776,8 +20766,6 @@ ret
 pub(crate) const VG_DSA_DERIVE_KEY_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["bmi2", "adx"]);
 
 /// Derive a DSA private key from big-endian p||q||g and a supplied q_len-byte scalar x, as key generation does after sampling x: checks the domain and 0 < x < q, computes y = g^x mod p and checks the key. Returns 1 with p||q||g||y||x, or 0 and zero output. Checks algebraic consistency, not primality. x must be a fresh uniform scalar the caller sampled. Timing may depend on p, q, g and success, not otherwise on x. Contract: `VG.Spec.Dsa.deriveKeyContract`.
-///
-/// y = g^x mod p uses the selected Montgomery backend. Every failure zeros the entire output.
 ///
 /// # Safety
 ///
@@ -23563,8 +23551,6 @@ ret
 
 /// Randomized DSA signing of a prehashed digest from fresh independent random octets. Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for invalid key/retry exhaustion, or 2 for insufficient random bytes. On failure out is zero. used counts consumed complete draws on every return. Checks algebraic consistency, not primality. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignContract`.
 ///
-/// Rejection sampling and signing retries are verified against the bounded random-tape specification. The selected Montgomery backend is used for each signing attempt. Every failure zeros the entire output.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -23836,8 +23822,6 @@ ret
 }
 
 /// One DSA signing attempt on a prehashed digest. The key is big-endian p||q||g||y||x with component widths p_len, q_len, p_len, p_len, q_len; nonce is q_len bytes. Returns 1 and r||s (q_len bytes each), or 0 and zero output for invalid components, nonce or zero r/s. Checks algebraic consistency, not primality. Caller must assure domain validity and supply fresh independent nonces. Timing may depend on public p,q,g,y and success, not otherwise on x, nonce or digest. Contract: `VG.Spec.Dsa.signContract`.
-///
-/// Fixed-window exponentiation and streaming modular reduction use the selected Montgomery backend. Leading-zero component padding is supported. Signing derives public-key subgroup membership from g^q = 1 and g^x = y. Scratch is initialized before use; every failure zeros the entire output.
 ///
 /// # Safety
 ///
@@ -30410,8 +30394,6 @@ ret
 }
 
 /// DSA verification of a prehashed digest. The key is big-endian p||q||g||y with widths p_len, q_len, p_len, p_len; signature is r||s with q_len bytes each. Returns 1 if verification succeeds, otherwise 0. Checks algebraic consistency, not primality; caller must assure domain validity. Timing may depend on p,q,g,y and the result, not otherwise on signature or digest. Contract: `VG.Spec.Dsa.verifyContract`.
-///
-/// Fixed-window exponentiation and streaming modular reduction use the selected Montgomery backend. Leading-zero component padding is supported. Signature scalars and the digest do not affect the leakage trace.
 ///
 /// # Safety
 ///
@@ -37112,8 +37094,6 @@ ret
 
 /// Generate a DSA private key from p||q||g and fresh independent random bytes. Uses at most 128 rejection-sampling draws, computes y=g^x mod p, and checks algebraic consistency, not primality. Returns 1 with p||q||g||y||x, 0 for invalid input/draw limit, or 2 for insufficient randomness. Failure zeros out; used counts consumed complete draws on every return. Timing may depend on public parameters, sampling decisions, consumption and success, not otherwise on x or randomness. Contract: `VG.Spec.Dsa.generateKeyContract`.
 ///
-/// Checks the domain before consuming randomness, samples x with the verified rejection sampler, then derives y = g^x with the selected Montgomery backend. Every failure zeros the entire output.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -37372,8 +37352,6 @@ ret
 }
 
 /// DSA domain checks on big-endian p||q||g (widths p_len, q_len, p_len), those of key generation before it samples: returns 1 if the widths are supported and the domain is algebraically consistent (supported bit lengths, odd p and q, q divides p-1, 1 < g < p, g^q = 1 mod p), otherwise 0. Checks algebraic consistency, not primality. All inputs are public. Contract: `VG.Spec.Dsa.checkParametersContract`.
-///
-/// g^q mod p uses the selected Montgomery backend.
 ///
 /// # Safety
 ///
@@ -39284,8 +39262,6 @@ ret
 }
 
 /// Derive a DSA private key from big-endian p||q||g and a supplied q_len-byte scalar x, as key generation does after sampling x: checks the domain and 0 < x < q, computes y = g^x mod p and checks the key. Returns 1 with p||q||g||y||x, or 0 and zero output. Checks algebraic consistency, not primality. x must be a fresh uniform scalar the caller sampled. Timing may depend on p, q, g and success, not otherwise on x. Contract: `VG.Spec.Dsa.deriveKeyContract`.
-///
-/// y = g^x mod p uses the selected Montgomery backend. Every failure zeros the entire output.
 ///
 /// # Safety
 ///
@@ -125735,8 +125711,6 @@ pub(crate) const VG_DSA_PROBABLE_PRIME_ADX_FEATURES: crate::cpu::Features = crat
 ///
 /// Contract: `VG.Spec.Dsa.ProbablePrime.sizedContract`, which is `VG.Spec.Dsa.ProbablePrime.contract` of the size's layout. The size, the candidate and the tape are public: timing may depend on all three.
 ///
-/// Parameter generation's test on the candidate at its size's offset of the generation's scratch space: trial division, then the blinded Miller–Rabin loop calling the shared round, with the arithmetic of the round's implementation. The size's words, octets, offset, draw and witness count are derived from `bits` on entry, without a branch, into the arithmetic workspace's header. A 56-byte frame keeps the callee-saved registers and `used`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -134157,8 +134131,6 @@ ret
 /// DSA's probable-prime test (`VG.Spec.Dsa.probablePrime`: trial division, then RSA's blinded Miller–Rabin loop with 64 uniform witnesses through 2048 bits and 128 above) of an odd number of exactly `bits` bits, for `bits` one of [160, 256, 1024, 2048, 3072], stored as `bits / 8` big-endian bytes in `ws` at the offset `VG.Spec.Dsa.ProbablePrime.api` gives that size, with witnesses drawn from the front of `rand`. Returns 1 for a probable prime, 2 for a composite, and 0 if `rand` ran out; for 1 and 2 writes the octets read to `used`. Every byte of `ws` keeps its value but those of the size's scratch ranges. Acceptance is probable primality, not a certificate.
 ///
 /// Contract: `VG.Spec.Dsa.ProbablePrime.sizedContract`, which is `VG.Spec.Dsa.ProbablePrime.contract` of the size's layout. The size, the candidate and the tape are public: timing may depend on all three.
-///
-/// Parameter generation's test on the candidate at its size's offset of the generation's scratch space: trial division, then the blinded Miller–Rabin loop calling the shared round, with the arithmetic of the round's implementation. The size's words, octets, offset, draw and witness count are derived from `bits` on entry, without a branch, into the arithmetic workspace's header. A 56-byte frame keeps the callee-saved registers and `used`.
 ///
 /// # Safety
 ///

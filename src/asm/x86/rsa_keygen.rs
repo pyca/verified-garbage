@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.RsaKeyGen.keyContract`. Timing may depend on the pointers, the lengths, `e`, and the value returned, not on the primes or the key.
 ///
-/// Shared runtime-width division with native paired-word multiplication; each inversion calls `vg_rsa_keygen_inverse` at its own width. The factors are ordered by masks, and their predecessors' LCM uses common halving and a prime-width binary GCD. For an odd public exponent, the private exponent uses a 64-bit inverse of L mod e modulo e and a small correction quotient; even exponents use a modulus-width inverse. The CRT inverse is prime-width. Final checks mask all seven outputs; control flow depends only on public widths, the public exponent and the released retry status.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -15140,8 +15138,6 @@ ret
 ///
 /// Contract: `VG.Spec.RsaKeyGen.inverseContract`. Timing may depend on the pointer and the lengths, not on the numbers.
 ///
-/// `KeyRt.inverse` on the caller's working space, in the frame of the registers cdecl preserves, at the width of its length argument.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -18794,8 +18790,6 @@ ret
 /// One candidate for a prime of an RSA key, as BoringSSL's `generate_prime` tests it (FIPS 186-5 Appendix A.1.3 steps 4 and 5). Reads from the front of `rand` `out_len` octets, most significant first, sets the two most significant bits and the least significant bit, and tests the candidate `c`: too close to `p` (`|p − c| ≤ 2^(8 out_len − 100)`, if `p_len` is not 0); then divisible by one of the first 512 primes (1024 above 1024 bits) but 2; then `gcd(c − 1, e) ≠ 1`; then Miller–Rabin (FIPS 186-5 B.3.1), with the witnesses read from `rand` after the candidate, at least 16 of them and as many as it takes for `BN_prime_checks_for_size` of them to be uniform. Returns 1 and writes `c` to `out` if it passes, 2 if it is too close to `p`, 3 if it fails otherwise, and writes the number of octets of `rand` it read to `used`; or returns 0 if `rand` is too short, for which the caller calls it again with `rand` extended by more random octets. `out` is zeros but for 1, and `used` is 0 for 0. `e` (`e_len` bytes) and `p` (`p_len` bytes) are most significant first.
 ///
 /// Contract: `VG.Spec.RsaKeyGen.candidateContract`. Timing may depend on the pointers, the lengths, `e`, and on what became of the candidate: for a probable prime, on how many octets of `rand` were read; for a candidate rejected for being too close to `p`, on nothing else; for a candidate rejected otherwise, on the octets of `rand` read. Not on `p`, or on the candidate if it is accepted.
-///
-/// Native paired 32-bit arithmetic with a prepared small-prime inverse table, a whole-word 65537 filter, and a fixed-step general public-exponent filter. Montgomery constants and the four-bit Miller–Rabin window are reused across blinded witnesses. One private call frame supplies the prepared multiplication capacity for the entire test. Distance checks, witness selection, and retry behavior satisfy the shared candidate contract.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

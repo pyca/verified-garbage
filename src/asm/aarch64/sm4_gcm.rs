@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Sm4.ctr32Contract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the counter block or the data.
 ///
-/// Baseline AArch64: `vg_sm4_ctr`'s code (sixteen counter blocks at a time, encrypted bitsliced in general-purpose registers through the AES S-box circuit, with no table lookups; the key schedule's table of round keys built once per call, by a call of `vg_sm4_prepare_keys`, and each batch a call of `vg_sm4_crypt_prepared`) with GCM's `inc₃₂` on the counter: the low 32 bits of the counter block's low half incremented by a 32-bit `add` and added back to its high 32 bits.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -469,8 +467,6 @@ ret
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.initContract`. The key context is `VG.Spec.Sm4.Gcm.KeyRepr`. Constant time: only the pointers may affect timing, not the key.
 ///
-/// Baseline AArch64: the key schedule from `vg_sm4_expand_key` in the context's first 128 bytes, then the hash subkey `CIPH_K(0¹²⁸)` from `vg_sm4_ctr32` on a zero block. The calls (`bl`) keep the return address in `x30`, saved in the working space, a frame of 768 bytes; the callees use 3264 bytes of stack below it.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 16 bytes.
@@ -533,8 +529,6 @@ pub(crate) const VG_SM4_GCM_SEAL_AES_FEATURES: crate::cpu::Features = crate::cpu
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
-///
-/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash_aes`.
 ///
 /// # Safety
 ///
@@ -1217,8 +1211,6 @@ pub(crate) const VG_SM4_GCM_OPEN_AES_FEATURES: crate::cpu::Features = crate::cpu
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.openContract`. Constant time but for the result: only the pointers, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
-///
-/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash_aes`.
 ///
 /// # Safety
 ///
@@ -1961,8 +1953,6 @@ pub(crate) const VG_SM4_GCM_STREAM_ENCRYPT_AES_FEATURES: crate::cpu::Features = 
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.streamEncryptContract`. Constant time: only the pointers, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash_aes`.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -2342,8 +2332,6 @@ pub(crate) const VG_SM4_GCM_STREAM_DECRYPT_AES_FEATURES: crate::cpu::Features = 
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.streamDecryptContract`. Constant time: only the pointers, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash_aes`.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -2721,8 +2709,6 @@ pub(crate) const VG_SM4_GCM_STREAM_FINISH_AES_FEATURES: crate::cpu::Features = c
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.streamFinishContract`. Constant time: only the pointers, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
-/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash_aes`.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -2881,8 +2867,6 @@ pub(crate) const VG_SM4_GCM_STREAM_VERIFY_AES_FEATURES: crate::cpu::Features = c
 /// Finishes an incremental SM4-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.streamVerifyContract`. Constant time: only the pointers, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
-///
-/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash_aes`.
 ///
 /// # Safety
 ///
@@ -3135,8 +3119,6 @@ pub(crate) const VG_SM4_GCM_STREAM_INIT_AES_FEATURES: crate::cpu::Features = cra
 ///
 /// Contract: `VG.Spec.Gcm.streamInitContract` (AES-GCM's, which reads only the hash subkey of the key context). The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
 ///
-/// This implementation is AES-GCM's `vg_aes_gcm_stream_init` (the key context has AES-GCM's layout, and the function reads only its hash subkey), hashing with `vg_ghash_aes`.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -3314,8 +3296,6 @@ pub(crate) const VG_SM4_GCM_STREAM_AAD_AES_FEATURES: crate::cpu::Features = crat
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract` (AES-GCM's, which reads only the hash subkey of the key context). Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// This implementation is AES-GCM's `vg_aes_gcm_stream_aad` (the key context has AES-GCM's layout, and the function reads only its hash subkey), hashing with `vg_ghash_aes`.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -3480,8 +3460,6 @@ ret
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
-///
-/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash`.
 ///
 /// # Safety
 ///
@@ -4158,8 +4136,6 @@ ret
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.openContract`. Constant time but for the result: only the pointers, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
-///
-/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash`.
 ///
 /// # Safety
 ///
@@ -4896,8 +4872,6 @@ ret
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.streamEncryptContract`. Constant time: only the pointers, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash`.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -5271,8 +5245,6 @@ ret
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.streamDecryptContract`. Constant time: only the pointers, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash`.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -5644,8 +5616,6 @@ ret
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.streamFinishContract`. Constant time: only the pointers, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
-/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash`.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -5798,8 +5768,6 @@ ret
 /// Finishes an incremental SM4-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.streamVerifyContract`. Constant time: only the pointers, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
-///
-/// This implementation encrypts with `vg_sm4_ctr32` and hashes with `vg_ghash`.
 ///
 /// # Safety
 ///
@@ -6046,8 +6014,6 @@ ret
 ///
 /// Contract: `VG.Spec.Gcm.streamInitContract` (AES-GCM's, which reads only the hash subkey of the key context). The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
 ///
-/// This implementation is AES-GCM's `vg_aes_gcm_stream_init` (the key context has AES-GCM's layout, and the function reads only its hash subkey), hashing with `vg_ghash`.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -6218,8 +6184,6 @@ ret
 /// Absorbs additional data into an incremental SM4-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract` (AES-GCM's, which reads only the hash subkey of the key context). Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// This implementation is AES-GCM's `vg_aes_gcm_stream_aad` (the key context has AES-GCM's layout, and the function reads only its hash subkey), hashing with `vg_ghash`.
 ///
 /// # Safety
 ///

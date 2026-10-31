@@ -75,9 +75,6 @@ def reduceHelper (n : Nat)
     (v : Verified Arm.target (Impl.Dsa.Arm.Arith.reduceBody n)
       (Spec.Dsa.ModArith.reduceContract (Impl.Dsa.Arm.Arith.reduceLayout n) Arm.abi)) : Artifact :=
   (Spec.Dsa.ModArith.reduceApi (Impl.Dsa.Arm.Arith.reduceLayout n)).artifact Arm.target {
-    notes := ["The context's setup of the DSA functions, then the bytes reduced one at a time: \
-      eight modular doublings and an addition each, on 16-bit digits. The callee-saved registers \
-      and the bytes' length reside in the header of `ws`."]
     code := Impl.Dsa.Arm.Arith.reduceBody n
     verified := v }
 
@@ -85,9 +82,6 @@ def mulHelper (n : Nat)
     (v : Verified Arm.target (Impl.Dsa.Arm.Arith.mulBody n)
       (Spec.Dsa.ModArith.mulContract (Impl.Dsa.Arm.Arith.mulLayout n) Arm.abi)) : Artifact :=
   (Spec.Dsa.ModArith.mulApi (Impl.Dsa.Arm.Arith.mulLayout n)).artifact Arm.target {
-    notes := ["The context's setup of the DSA functions, then two Montgomery multiplications on \
-      16-bit digits: by `R² mod m`, then by the other operand. The callee-saved registers reside \
-      in the header of `ws`."]
     code := Impl.Dsa.Arm.Arith.mulBody n
     verified := v }
 

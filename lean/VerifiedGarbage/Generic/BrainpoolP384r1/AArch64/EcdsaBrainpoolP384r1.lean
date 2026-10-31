@@ -65,19 +65,9 @@ namespace VG.Generic.BrainpoolP384r1.AArch64.EcdsaBrainpoolP384r1
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.BrainpoolP384r1.curve) : List Artifact := [
   Spec.Ecdsa.BrainpoolP384r1.signApi.artifact AArch64.target {
-    notes := ["Field elements are six 64-bit words in Montgomery form. \
-      Scalar multiplication uses a fixed 384-iteration ladder with the general complete addition \
-      formulas of Renes, Costello and Batina (Algorithm 1), which hold for any `a`. \
-      Inversions are calls of `vg_brainpoolp384r1_inv_mod_p` and `vg_brainpoolp384r1_inv_mod_n`, by divsteps. \
-      Branches and memory addresses depend only on pointers and loop counters."]
     code := Impl.Ecdsa.AArch64.signBrainpoolP384r1
     verified := Proof.Ecdsa.AArch64.BrainpoolP384r1.sign_verified h.law h.inv },
   Spec.Ecdsa.BrainpoolP384r1.verifyApi.artifact AArch64.target {
-    notes := ["Field elements are six 64-bit words in Montgomery form. \
-      Public scalar multiplication uses a joint radix-four table built by a shared addition loop, \
-      with 384 shared doublings and at most 192 additions using complete general RCB formulas. \
-      The inversion modulo `n` is a call of `vg_brainpoolp384r1_inv_mod_n`, by divsteps. \
-      Branches and memory addresses depend only on pointers, counters and public verification scalars."]
     code := Impl.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint.verify
     verified := Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint.verify_verified h.law h.inv }]
 

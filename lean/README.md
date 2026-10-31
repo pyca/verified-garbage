@@ -82,8 +82,8 @@ never import proofs.
    list every `Artifact`, bundling target, Rust name and signature, code,
    contract and proof: a function's `Api`, with what its implementation
    chooses (`Api.artifact`, `TCB/Registration.lean`): the target, the code
-   and its proof, the stack its calls and frames use (`stack`), and any
-   notes on the implementation and suffix of its name. An artifact
+   and its proof, the stack its calls and frames use (`stack`), and the
+   suffix of its name. An artifact
    made from an `Api` takes the contract from it with the name and signature
    (`Api.contracts`), and must be proven against exactly that contract on its
    target (`Artifact.ofApi`), so a registration file, or a proof building
@@ -134,8 +134,8 @@ constant.
   (including the CPU features each instruction requires), and the printers,
   which must print what the models mean.
 * For each artifact: its contract in `Spec/` (and the algorithm spec it
-  refers to), its `sig` and `doc` (its `Api` in `Spec/`, and any notes its
-  registration file adds), and `TCB/Emit.lean`, which decides what is emitted.
+  refers to), its `sig` and `doc` (its `Api` in `Spec/`), and
+  `TCB/Emit.lean`, which decides what is emitted.
 * Lean's kernel, and the assembler in `rustc`/LLVM.
 
 Everything in `Impl/` and `Proof/` is checked by Lean and need not be read.

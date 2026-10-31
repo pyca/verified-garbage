@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Ffdh.checkDomainContract`. Timing may depend on the pointers, the lengths and the domain.
 ///
-/// An exact full-domain comparison recognizes the ten certified MODP/FFDHE groups first. Every miss retains the complete validator, which runs on private CRT RSA's operations at p's width, reading their arguments from a frame of synthetic arguments; every Montgomery multiplication calls `vg_rsa_mont_mul_at`. The subgroup check is a fixed four-bit-window power. The domain's bytes choose the branches. Callee-saved registers reside in scratch.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -3895,8 +3893,6 @@ ret
 ///
 /// Contract: `VG.Spec.Ffdh.checkPublicContract`. Timing may depend on the pointers, the lengths, the domain and y.
 ///
-/// Runs on private CRT RSA's operations at p's width, as `vg_ffdh_check_domain` does. The subgroup check is a fixed four-bit-window power. The domain's and y's bytes choose the branches. Callee-saved registers reside in scratch.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -6330,8 +6326,6 @@ ret
 /// Checks an imported finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 §5.6.2.1.2 and §5.6.2.1.4). With `domain` as `vg_ffdh_check_domain` takes it, y (`p_len` bytes) and x (`x_len` bytes), most significant first: returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if y is a valid public value (as `vg_ffdh_check_public` checks it) and `y = g^x mod p`; 0 otherwise.
 ///
 /// Contract: `VG.Spec.Ffdh.checkPrivateContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
-///
-/// Runs on private CRT RSA's operations at p's width, as `vg_ffdh_check_domain` does. The scalar's range is the one branch on x; the power of g is a fixed four-bit-window power over all of p's width, and its comparison with y is masked. Powers of a checked generator remain in its q subgroup, so the generated power needs only its range check. Callee-saved registers reside in scratch.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -9239,8 +9233,6 @@ ret
 ///
 /// Contract: `VG.Spec.Ffdh.exchangeContract`. Timing may depend on the pointers, the lengths, the domain, y and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
 ///
-/// Runs on private CRT RSA's operations at p's width, as `vg_ffdh_check_domain` does. The power is a fixed four-bit-window power over all of p's width, scanning the whole table for each window; z's range is the acceptance mask, which clears the output, and the code has no branch. Callee-saved registers reside in scratch.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -11577,8 +11569,6 @@ ret
 /// Derives the public value of an imported finite-field Diffie–Hellman private key (SP 800-56A Rev. 3 §5.6.2.1.2 for x's range, §5.6.1.1 for `y = g^x mod p`). With `domain` as `vg_ffdh_check_domain` takes it and x (`x_len` bytes, most significant first): returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if `y = g^x mod p` is a valid public value (as `vg_ffdh_check_public` checks it), writing y (`p_len` bytes, most significant first) to `y`; 3 otherwise. Writes zeros to `y` unless it returns 1.
 ///
 /// Contract: `VG.Spec.Ffdh.derivePublicContract`. Timing may depend on the pointers, the lengths, the domain and the value returned, not otherwise on x; the exponentiation may run over all `x_len` bytes of x, leading zeros included.
-///
-/// Runs on private CRT RSA's operations at p's width, as `vg_ffdh_check_domain` does. The scalar's range is the one branch on x; the power of g is a fixed four-bit-window power over x's `x_len` bytes, loaded at the top of the exponent, and y's range is the acceptance mask, which clears the output. Powers of a checked generator remain in its q subgroup, so y needs only its range check. Callee-saved registers reside in scratch.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -14592,8 +14582,6 @@ ret
 /// One attempt at a finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 §5.6.1.1.4, rejection sampling). With `domain` as `vg_ffdh_check_domain` takes it, takes `rand` (`p_len` random bytes, most significant first) modulo `2^b`, where b is the bit length of q (of `p − 1` without q), as x. Returns 2 if x is not in `1..q` (`1..p − 1`); 3 if `y = g^x mod p` is not a valid public value (as `vg_ffdh_check_public` checks it); otherwise 1, and writes x and y (`p_len` bytes each, most significant first) to `x` and `y`. `x` and `y` are zeros but for 1. For 2 and 3 the caller tries again with fresh random bytes.
 ///
 /// Contract: `VG.Spec.Ffdh.generateKeyContract`. Timing may depend on the pointers, the lengths, the domain and the value returned, not otherwise on `rand` or x; the exponentiation may run over the bytes of q (`p − 1`).
-///
-/// Runs on private CRT RSA's operations at p's width, as `vg_ffdh_check_domain` does. The bound's octets are scanned and `rand`'s cut to its bit length without a branch; the scalar's range is the one branch on x. The power of g is a fixed four-bit-window power over all of p's width; y's range and, with q, its subgroup membership are the acceptance mask, which clears both outputs. Callee-saved registers reside in scratch.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -19944,8 +19932,6 @@ ret
 
 /// Generate a finite-field Diffie–Hellman key pair with native rejection sampling. Owns both range-rejection and degenerate-public-value retry budgets. Returns 1 with the key pair, 3 when a budget is exhausted, or 0 to request more entropy. On 0, discard `used` bytes from `rand`, preserve the suffix and extend it to `state[3]` bytes before calling again. On 0 and 3, both outputs are zero. Contract: `VG.Spec.Ffdh.keySearchContract`. Timing may depend on the public domain, controller policy and sequence of attempt statuses, not otherwise on secret scalar bytes.
 ///
-/// The whole key search runs in verified code: both rejection budgets, the octets each attempt consumes, and the next entropy request. Each attempt calls `vg_ffdh_generate_key` with its eleven arguments in a 44-byte frame. The controller's words live in the state; timing depends on the domain, the controller's public words and the attempts' statuses.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -20304,8 +20290,6 @@ ret
 }
 
 /// One FFDH probable safe-prime candidate with RSA's trial-division sieve. Uses the original candidate shaping and generator congruences. Tests p and q against the first 512 primes through 1024 bits, or 1024 primes above that, before drawing witnesses. The requested p width selects both sieve bounds. Draws and tests one uniform p witness first, then the full q batch, then the remaining p witnesses. Acceptance requires the original 64 witnesses per modulus, or 128 above 2048 bits; the first p witness counts toward that total. Returns 1 and p on acceptance, 2 on rejection, or 0 on entropy shortage; output is zero otherwise. `used` is the exact consumed prefix, or zero on shortage. Contract: `VG.Spec.Ffdh.sievedParameterCandidateContract`. Timing may depend on the public tape.
-///
-/// Runs on private CRT RSA's operations at p's width, as `vg_ffdh_check_domain` does. Candidate shaping, the generator congruences, RSA's small-prime sieve (512 primes through 1024 bits, 1024 above) of p and q, the witnesses' rejection sampling and every Miller–Rabin round run inline; each round is a four-bit-window power and its squarings. Timing depends on the tape. Callee-saved registers reside in scratch.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -31205,8 +31189,6 @@ ret
 }
 
 /// Run native FFDH parameter generation with RSA's trial-division sieve. The routine owns candidate retries, witness selection, all primality rounds, attempt limits and entropy budgets. Initialize with `vg_ffdh_parameter_generation_init`. Returns 1 with p, 3 on exhaustion, or 0 to request more entropy. On 0, discard `used` bytes and extend the preserved suffix to `state[3]` bytes before retrying. Output is zero for 0 and 3. Accepted p and q retain the original 64/128 independent witness counts. Contract: `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the public tape and the first four controller words.
-///
-/// The whole parameter search runs in verified code: candidate retries, the 64-bit attempt count, the octets each candidate consumes, and the next entropy request, computed without a branch. Each attempt calls `vg_ffdh_parameter_candidate_sieved` with its nine arguments in a 36-byte frame; the candidate writes its `used` into the state. Timing depends on the tape and the controller's public words.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

@@ -62,9 +62,6 @@ def helper (n e : Nat)
     (v : Verified Arm.target (Impl.Dsa.Arm.Pow.body n e)
       (Spec.Dsa.ModPow.powContract (Impl.Dsa.Arm.Pow.layout n e) Arm.abi)) : Artifact :=
   (Spec.Dsa.ModPow.powApi (Impl.Dsa.Arm.Pow.layout n e)).artifact Arm.target {
-    notes := ["The context's setup and the fixed-schedule square-and-multiply of the DSA functions, \
-      on 16-bit digits, with a masked selection. The callee-saved registers reside in the header \
-      of `ws`."]
     code := Impl.Dsa.Arm.Pow.body n e
     verified := v }
 

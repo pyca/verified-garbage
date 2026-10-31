@@ -43,12 +43,6 @@ open VG.Proof.Rsa.AArch64
 def artifacts (v : CrtImpl) : List Artifact := [
   Spec.Rsa.privateCheckedApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := ["This implementation computes the result `m` with `" ++
-      v.name ++ "` into its frame, then `m^e mod n` with `" ++ v.pcName ++ "` and `" ++ v.pdName ++
-      "`, which also checks `e`. It compares that with the input in constant time, and copies `m` to `out` \
-      under a mask, which is clear unless the CRT and the public operation succeeded and the two match. \
-      The result, 1, 2 or 0, is computed from the mask without a branch. Then it overwrites the frame's \
-      copy of `m` with zeros."]
     code := privCode v
     stack := stackBytes
     verified := code_verified v

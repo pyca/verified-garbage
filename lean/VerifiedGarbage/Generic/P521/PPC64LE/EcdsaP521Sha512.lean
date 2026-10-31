@@ -23,13 +23,11 @@ A generic file (see `TCB/Emit.lean`) over P-521's group law `h`, the variant
 
 namespace VG.Generic.P521.PPC64LE.EcdsaP521Sha512
 
-open VG.Proof.Ecdsa.Rfc6979.PPC64LE (signNotesWide sha512K)
+open VG.Proof.Ecdsa.Rfc6979.PPC64LE (sha512K)
 open VG.Proof.Ecdsa.Rfc6979.PPC64LE.P521Sha512 (pack sign_verified)
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := [
   Spec.Ecdsa.Rfc6979.P521Sha512.signApi.artifact PPC64LE.target {
-    notes := [signNotesWide Spec.Hmac.sha512I.initScratchApi.name sha512K.H.updN
-      Spec.Hmac.sha512I.finalizeScratchApi.name 66 521 64 Spec.Ecdsa.P521.signApi.name]
     code := (pack h.law).c.sign
     stack := 544
     verified := sign_verified h.law }]

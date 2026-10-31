@@ -30,27 +30,15 @@ def common : String := "The function keeps `rbp` and `r12`–`r15` in `xmm0`–`
   multiplied with `mul` by word-by-word Montgomery multiplication, the products' temporary area \
   bytes 128 to 159."
 
-/-- What the additions run. -/
-def addWhat (cached : Bool) : String :=
-  "Branches on the coordinates, which are public: `Q` copied if `P`'s `Z` is zero, " ++
-  (if cached then "`P` kept if `Q`'s, " else "") ++
-  "else `H` and `r` from " ++ (if cached then "six" else "four") ++ " products; the doubling of `P` \
-  for `a = 0` (dbl-2009-l) if both are zero, `(0 : 1 : 0)` if only `H` is, else the sum's tail, \
-  eight products."
-
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.Secp256k1.curve) : List Artifact :=
   let hFe : Proof.Weierstrass.Point.Fermat C.p := Proof.Weierstrass.Point.fermat_of_law h.law
   [C.doubleApi.artifact X86_64.target {
-      notes := [common, "The doubling for `a = 0` (dbl-2009-l): 2 products and 5 squares, \
-        `Z' = 2YZ` a product, into `D` and copied back to `P`; constant time."]
       code := doubleFn
       verified := double_verified hFe },
     C.addCachedApi.artifact X86_64.target {
-      notes := [common, addWhat true]
       code := addCachedFn
       verified := addCached_verified hFe },
     C.addAffineApi.artifact X86_64.target {
-      notes := [common, addWhat false]
       code := addAffineFn
       verified := addAffine_verified hFe }]
 

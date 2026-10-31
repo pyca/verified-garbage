@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
 ///
-/// Field elements are eight 32-bit words in Montgomery form, multiplied, added and subtracted in calls of `vg_p256_mul_mod_p` and the other functions of `p256_mont`. `[d]G` uses a seven-bit signed comb with 37 complete point additions and no doublings, scanning every entry of each static table with SSE2. The function obtains `VG_P256_COMB` with a position-independent four-byte CALL frame and saves callee-saved registers in `scratch`. `Z⁻¹` uses 20 batches of 30 constant-time divsteps. A mask selects the encoded public key or zeros; only addresses affect timing.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety

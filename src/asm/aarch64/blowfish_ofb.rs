@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Blowfish.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline AArch64: through the batch of sixteen blocks of `vg_blowfish_ecb_encrypt` (inlined), one block per batch: each S-box lookup is `tbl`/`tbx` over the whole box in AdvSIMD registers, so no address depends on the key or the data; the schedule is read where it is. The mode is the generic OFB of `Impl/Modes/AArch64/`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 4168 bytes.

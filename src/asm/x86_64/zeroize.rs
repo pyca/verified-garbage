@@ -66,8 +66,6 @@ pub(crate) const VG_ZEROIZE_AVX_FEATURES: crate::cpu::Features = crate::cpu::Fea
 ///
 /// Contract: `VG.Spec.Zeroize.zeroizeContract`. Constant time: only `p` and `len` may affect timing, not the bytes wiped.
 ///
-/// It stores 64 bytes at a time from `ymm0`, and clears the upper halves of the vector registers (`vzeroupper`) before returning.
-///
 /// # Safety
 ///
 /// * `p` must be valid for reads and writes of `len` bytes.

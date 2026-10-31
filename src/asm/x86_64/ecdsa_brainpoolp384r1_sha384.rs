@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers and that number, not otherwise on the key or the hash.
 ///
-/// Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 48 bytes, and each HMAC with `vg_hmac_sha384_init_scratch`, `vg_sha512_update_scratch` and `vg_hmac_sha384_finalize_scratch`, using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the leftmost 48 bytes of `V`, is tried with `vg_ecdsa_brainpoolp384r1_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that. `K`, `V`, `h`, the count and the pointers are kept in a 216-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 96 bytes.
@@ -999,8 +997,6 @@ pub(crate) const VG_ECDSA_BRAINPOOLP384R1_SHA384_SIGN_AVX2_FEATURES: crate::cpu:
 /// Deterministic ECDSA signature generation over brainpoolP384r1 with HMAC-SHA-384 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (48 bytes, most significant first), signs the SHA-384 hash at `digest` (48 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (48 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 128 candidates for `k` is suitable (which does not happen in practice).
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers and that number, not otherwise on the key or the hash.
-///
-/// Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 48 bytes, and each HMAC with `vg_hmac_sha384_init_scratch_avx2`, `vg_sha512_update_scratch_avx2` and `vg_hmac_sha384_finalize_scratch_avx2`, using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the leftmost 48 bytes of `V`, is tried with `vg_ecdsa_brainpoolp384r1_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that. `K`, `V`, `h`, the count and the pointers are kept in a 216-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
 ///
 /// # Safety
 ///
@@ -1994,8 +1990,6 @@ pub(crate) const VG_ECDSA_BRAINPOOLP384R1_SHA384_SIGN_SHANI_FEATURES: crate::cpu
 /// Deterministic ECDSA signature generation over brainpoolP384r1 with HMAC-SHA-384 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (48 bytes, most significant first), signs the SHA-384 hash at `digest` (48 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (48 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 128 candidates for `k` is suitable (which does not happen in practice).
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers and that number, not otherwise on the key or the hash.
-///
-/// Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 48 bytes, and each HMAC with `vg_hmac_sha384_init_scratch_shani`, `vg_sha512_update_scratch_shani` and `vg_hmac_sha384_finalize_scratch_shani`, using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the leftmost 48 bytes of `V`, is tried with `vg_ecdsa_brainpoolp384r1_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that. `K`, `V`, `h`, the count and the pointers are kept in a 216-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
 ///
 /// # Safety
 ///

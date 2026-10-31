@@ -71,18 +71,6 @@ namespace VG.Generic.P521.Arm.EcP521
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := [
   Spec.EcKey.P521.publicKeyApi.artifact Arm.target {
-    notes := ["The function is `vg_ecdsa_p521_sign`'s \
-      code up to the inversion of `Z`, with `d` as both the key and the secret number: it \
-      saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`, and keeps `out` in \
-      `lr` (in `r10` during the calls); field elements are eighteen packed 32-bit words in Montgomery form, multiplied by \
-      packed-word Montgomery multiplication (CIOS, with `mul` and the accumulator in \
-      `scratch`, in calls of `vg_p521_mul_mod_p` and the other functions of `p521_mont`) \
-      with a final conditional subtraction; `[d]G` is a call of `vg_p521_mul`, a double-and-add ladder over \
-      all 528 bits of the 66-byte encoding of `d`, with the complete addition formulas of Renes, \
-      Costello and Batina for every addition and doubling and a masked selection for each bit; \
-      and `Z⁻¹` is Fermat's, by square-and-always-multiply over the bits of `p - 2`. The result \
-      (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only \
-      on the pointers."]
     code := Impl.EcKey.Arm.publicKeyP521
     verified := Proof.EcKey.Arm.P521.pk_verified h.law }]
 

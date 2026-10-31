@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.TripleDes.cfb8EncryptContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the input block or the data.
 ///
-/// Baseline IA-32: one block at a time, calling the verified block function (`vg_triple_des_encrypt_block`), with Boolean S-box circuits and no table lookups; the schedule is copied into the working space once per call. The mode is the generic CFB8 of `Impl/Modes/X86/`.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -551,8 +549,6 @@ ret
 /// Triple DES-CFB8 decryption (NIST SP 800-38A §6.3, with 8-bit segments; FIPS 46-3), in place: replaces the `len` bytes `C#₁ … C#ₙ` at `data` with `P#ⱼ = C#ⱼ ⊕ MSB₈(CIPH_K(Iⱼ))`, where `I₁` is the block at `*iv` and `Iⱼ₊₁` is `Iⱼ` without its first byte, followed by `C#ⱼ`, and `*iv` with `Iₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message. `CIPH_K` is Triple DES encryption under the schedule written by `vg_triple_des_expand_key`.
 ///
 /// Contract: `VG.Spec.TripleDes.cfb8DecryptContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the input block or the data.
-///
-/// Baseline IA-32: one block at a time, calling the verified block function (`vg_triple_des_encrypt_block`), with Boolean S-box circuits and no table lookups; the schedule is copied into the working space once per call. The mode is the generic CFB8 of `Impl/Modes/X86/`.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

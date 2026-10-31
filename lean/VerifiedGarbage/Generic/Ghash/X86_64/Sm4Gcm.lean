@@ -18,12 +18,11 @@ implementation `n` of `vg_ghash`, are emitted once for each
 `vg_sm4_ctr32`, in the baseline ISA. `vg_sm4_gcm_init`, which does not hash,
 is registered once (`Artifacts/Sm4Gcm/X86_64.lean`). `stream_init` and
 `stream_aad`, which only hash, are AES-GCM's code (and proofs), whose
-contracts theirs are. The proofs take AES-GCM's callees (`GcmImpl`), here
-with the implementation `n` of `vg_ghash` and the baseline AES, which no
-SM4-GCM function calls. **Review note**: `sig` and `doc` are trusted, as they
-tie the Rust caller to the contract; these artifacts are made from each
-function's `Api` (in `Spec/`, reviewed with the contract), and this file adds
-only notes on the implementation.
+contracts theirs are. The proofs take AES-GCM's callees (`GcmImpl`), here with
+the implementation `n` of `vg_ghash` and the baseline AES, which no SM4-GCM
+function calls. **Review note**: `sig` and `doc` are trusted, as they tie the
+Rust caller to the contract; these artifacts are made from each function's
+`Api` (in `Spec/`, reviewed with the contract).
 
 Every function keeps its working space in a frame on the stack
 (`Proof/Sm4Gcm/X86_64/Frame.lean`): 2568 bytes for `stream_init`,
@@ -45,20 +44,11 @@ open VG.Proof.AesGcm.X86_64 (GcmImpl GhashName KeyImpl)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
 open VG.Proof.Sm4Gcm.X86_64
 
-/-- Which implementations an instance calls. -/
-def note (n : GhashName) : String :=
-  "This implementation encrypts with `vg_sm4_ctr32` and hashes with `" ++ n.impl.fn.name ++ "`."
-
-/-- Which implementation an instance that only hashes calls. -/
-def hashNote (n : GhashName) : String :=
-  "This implementation hashes with `" ++ n.impl.fn.name ++ "`."
-
 /-- The artifacts calling the implementation `n` of `vg_ghash`. -/
 def artifacts (n : GhashName) : List Artifact :=
   let v : GcmImpl := { ctr := Ctr32Impl.scalar, key := KeyImpl.scalar, gh := n.impl }
   [Spec.Sm4.Gcm.sealApi.artifact X86_64.target {
     suffix := n.impl.suffix
-    notes := [note n, "It encrypts the data and then hashes the ciphertext, in two passes."]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2592 2 (Impl.Sm4Gcm.X86_64.«seal» v.callees)
     stack := 5816
     verified := seal_framed v
@@ -66,8 +56,6 @@ def artifacts (n : GhashName) : List Artifact :=
     features := n.impl.features },
   Spec.Sm4.Gcm.openApi.artifact X86_64.target {
     suffix := n.impl.suffix
-    notes := [note n, "It hashes the ciphertext and compares the tags without a branch on the bytes, \
-      then decrypts the data only if they are equal."]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (Impl.Sm4Gcm.X86_64.«open» v.callees)
     stack := 5824
     verified := open_framed v
@@ -75,8 +63,6 @@ def artifacts (n : GhashName) : List Artifact :=
     features := n.impl.features },
   Spec.Sm4.Gcm.streamInitApi.artifact X86_64.target {
     suffix := n.impl.suffix
-    notes := [hashNote n, "It is `vg_aes_gcm_stream_init`'s code, which reads only the hash subkey \
-      of the key context."]
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .r8
       (Impl.AesGcm.X86_64.streamInit v.callees)
     stack := 2576
@@ -85,8 +71,6 @@ def artifacts (n : GhashName) : List Artifact :=
     features := n.impl.features },
   Spec.Sm4.Gcm.streamAadApi.artifact X86_64.target {
     suffix := n.impl.suffix
-    notes := [hashNote n, "It is `vg_aes_gcm_stream_aad`'s code, which reads only the hash subkey \
-      of the key context."]
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .r9
       (Impl.AesGcm.X86_64.streamAad v.callees)
     stack := 2576
@@ -95,7 +79,6 @@ def artifacts (n : GhashName) : List Artifact :=
     features := n.impl.features },
   Spec.Sm4.Gcm.streamEncryptApi.artifact X86_64.target {
     suffix := n.impl.suffix
-    notes := [note n]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2576 0
       (Impl.Sm4Gcm.X86_64.streamEncrypt v.callees)
     stack := 5800
@@ -104,7 +87,6 @@ def artifacts (n : GhashName) : List Artifact :=
     features := n.impl.features },
   Spec.Sm4.Gcm.streamDecryptApi.artifact X86_64.target {
     suffix := n.impl.suffix
-    notes := [note n]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2576 0
       (Impl.Sm4Gcm.X86_64.streamDecrypt v.callees)
     stack := 5800
@@ -113,7 +95,6 @@ def artifacts (n : GhashName) : List Artifact :=
     features := n.impl.features },
   Spec.Sm4.Gcm.streamFinishApi.artifact X86_64.target {
     suffix := n.impl.suffix
-    notes := [note n]
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .r9
       (Impl.Sm4Gcm.X86_64.streamFinish v.callees)
     stack := 5792
@@ -122,7 +103,6 @@ def artifacts (n : GhashName) : List Artifact :=
     features := n.impl.features },
   Spec.Sm4.Gcm.streamVerifyApi.artifact X86_64.target {
     suffix := n.impl.suffix
-    notes := [note n, "It compares the tags without a branch on their bytes."]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2576 0
       (Impl.Sm4Gcm.X86_64.streamVerify v.callees)
     stack := 5800

@@ -26,14 +26,10 @@ namespace VG.Artifacts.HmacMd5.RISCV64
 
 def artifacts : List Artifact := [
   Spec.Hmac.md5I.initAnyKeyApi.artifact RISCV64.target {
-    notes := ["The key and the states are read and written a byte at a time, since the contract \
-        states no alignment for them."]
     code := Proof.Hmac.Stream.RISCV64.Md5.hash.init
     stack := Proof.Hmac.Stream.RISCV64.Md5.hash.ibytes + Proof.Hmac.Stream.RISCV64.Md5.hash.F
     verified := Proof.Hmac.Stream.RISCV64.Md5.init },
   Spec.Hmac.md5I.finalizeApi.artifact RISCV64.target {
-    notes := ["The states are read and written a byte at a time, since the contract states no \
-        alignment for them."]
     code := Proof.Hmac.Stream.RISCV64.Md5.hash.finalize
     stack := Proof.Hmac.Stream.RISCV64.Md5.hash.fbytes + Proof.Hmac.Stream.RISCV64.Md5.hash.F
     verified := Proof.Hmac.Stream.RISCV64.Md5.finalize }]

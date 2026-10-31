@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Sm4.ctr32Contract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the counter block or the data.
 ///
-/// Baseline PPC64LE: SM4 bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -521,10 +519,6 @@ blr",
 /// The SM4-GCM key setup: writes the key context of the 16-byte SM4 key at `key` to `*ctx`: its key schedule (draft-ribose-cfrg-sm4-10 §7.3, as `vg_sm4_expand_key` writes it) in bytes 0–127, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255; bytes 128–239 are not used. The other `vg_sm4_gcm_*` functions read it.
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.initContract`. The key context is `VG.Spec.Sm4.Gcm.KeyRepr`. Constant time: only the pointers may affect timing, not the key.
-///
-/// Baseline PPC64LE: SM4 bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups.
-///
-/// Baseline PPC64LE: SM4's key expansion, then its counter mode on the zero block for the hash subkey, inlined, with their working space in a frame of its own.
 ///
 /// # Safety
 ///
@@ -5336,10 +5330,6 @@ blr",
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
 ///
-/// Baseline PPC64LE: SM4 bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups.
-///
-/// AES-GCM's code (GHASH with a 4-bit table) with SM4's counter mode inlined in place of AES's, its 3264-byte working space in a frame of its own.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -6166,10 +6156,6 @@ blr",
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.openContract`. Constant time but for the result: only the pointers, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
-///
-/// Baseline PPC64LE: SM4 bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups.
-///
-/// AES-GCM's code (GHASH with a 4-bit table) with SM4's counter mode inlined in place of AES's, its 3264-byte working space in a frame of its own.
 ///
 /// # Safety
 ///
@@ -7076,8 +7062,6 @@ blr",
 ///
 /// Contract: `VG.Spec.Gcm.streamInitContract` (AES-GCM's, which reads only the hash subkey of the key context). The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
 ///
-/// AES-GCM's code (`vg_aes_gcm_stream_init`, `vg_aes_gcm_stream_aad`), which reads only the hash subkey of the key context; GHASH with a 4-bit table, with no secret-dependent table lookups.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -7297,8 +7281,6 @@ blr",
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract` (AES-GCM's, which reads only the hash subkey of the key context). Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// AES-GCM's code (`vg_aes_gcm_stream_init`, `vg_aes_gcm_stream_aad`), which reads only the hash subkey of the key context; GHASH with a 4-bit table, with no secret-dependent table lookups.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -7446,10 +7428,6 @@ blr",
 /// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.streamEncryptContract`. Constant time: only the pointers, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// Baseline PPC64LE: SM4 bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups.
-///
-/// AES-GCM's code (GHASH with a 4-bit table) with SM4's counter mode inlined in place of AES's, its 3264-byte working space in a frame of its own.
 ///
 /// # Safety
 ///
@@ -7894,10 +7872,6 @@ blr",
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.streamDecryptContract`. Constant time: only the pointers, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// Baseline PPC64LE: SM4 bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups.
-///
-/// AES-GCM's code (GHASH with a 4-bit table) with SM4's counter mode inlined in place of AES's, its 3264-byte working space in a frame of its own.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -8339,10 +8313,6 @@ blr",
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.streamFinishContract`. Constant time: only the pointers, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
-/// Baseline PPC64LE: SM4 bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups.
-///
-/// AES-GCM's code (GHASH with a 4-bit table) with SM4's counter mode inlined in place of AES's, its 3264-byte working space in a frame of its own.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -8553,10 +8523,6 @@ blr",
 /// Finishes an incremental SM4-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Sm4.Gcm.streamVerifyContract`. Constant time: only the pointers, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
-///
-/// Baseline PPC64LE: SM4 bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups.
-///
-/// AES-GCM's code (GHASH with a 4-bit table) with SM4's counter mode inlined in place of AES's, its 3264-byte working space in a frame of its own.
 ///
 /// # Safety
 ///

@@ -34,7 +34,6 @@ namespace VG.Generic.CmacAesUpdate.AArch64.Absorb
 def artifacts (v : Proof.CmacAes.AArch64.UpdateImpl) : List Artifact := [
   Spec.Cmac.aesAbsorbApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := ["This implementation chains blocks with `" ++ v.callee.name ++ "`."]
     code := Impl.StackScratch.AArch64.withStackScratch 2304 .x5
       (Impl.CmacAes.Stream.AArch64.absorb v.callee)
     stack := 2304

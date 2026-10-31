@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Sm4.expandKeyContract`. Constant time: only pointers may affect timing, not key bytes.
 ///
-/// Baseline ARMv7: the key schedule's rounds bitsliced in general-purpose registers, eight copies of the key at a time, through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 16 bytes.
@@ -2992,8 +2990,6 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Sm4.ecbDirContract`. Constant time: only pointers, `n` and `decrypt` may affect timing, not the round keys or data.
 ///
-/// Baseline ARMv7: eight blocks at a time, bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups; `decrypt` selects the order in which the round keys are copied into the working space, and the rounds are the same.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -5399,8 +5395,6 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Sm4.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
 ///
-/// Baseline ARMv7: calls `vg_sm4_ecb` with `decrypt = 0`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -5425,8 +5419,6 @@ bx lr",
 ///
 /// Contract: `VG.Spec.Sm4.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
 ///
-/// Baseline ARMv7: calls `vg_sm4_ecb` with `decrypt = 1`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -5450,8 +5442,6 @@ bx lr",
 /// Prepares SM4's round keys for `vg_sm4_crypt_prepared`: writes at the bytes 384..1408 of `ws` the round keys written by `vg_sm4_expand_key` at `schedule`, in the order of encryption (`decrypt = 0`) or decryption (`decrypt = 1`), in the implementation's encoding (`VG.Spec.Sm4.Prepared.Layout.encode`). Every byte of `ws` but those of the ranges 0..1456 keeps its value. It is not part of the library's Rust API.
 ///
 /// Contract: `VG.Spec.Sm4.Prepared.prepareContract`. Constant time: only pointers, `ws_len` and `decrypt` may affect timing, not the round keys.
-///
-/// Baseline ARMv7: bitslices the round keys once into ECB's working space, in the selected direction, with no table lookups.
 ///
 /// # Safety
 ///
@@ -5601,8 +5591,6 @@ bx lr",
 /// SM4 ECB (draft-ribose-cfrg-sm4-10 §7.1–7.2, SP 800-38A §6.1) of the 8 16-byte blocks at byte 256 of `ws`, in place, under the round keys that `vg_sm4_prepare_keys` wrote at the bytes 384..1408, in the direction it prepared them for. Every byte of `ws` but those of the ranges 0..384, 1408..1456 (the blocks' among them, not the round keys') keeps its value, so the round keys serve every batch. It is not part of the library's Rust API.
 ///
 /// Contract: `VG.Spec.Sm4.Prepared.cryptContract`. Constant time: only pointers and `ws_len` may affect timing, not the round keys or the blocks.
-///
-/// Baseline ARMv7: ECB's eight-block bitsliced core under the prepared round keys, which it preserves for further batches, with no table lookups.
 ///
 /// # Safety
 ///

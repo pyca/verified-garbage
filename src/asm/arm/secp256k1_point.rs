@@ -6,8 +6,6 @@
 ///
 /// Contract: `addContract` or `doubleContract` of `VG.Spec.Weierstrass.Point.Curve`. Constant time: only the pointer may affect timing.
 ///
-/// The function saves `lr` in its own working space and keeps `ws` in `r12`, and computes Renes, Costello and Batina's 40 steps by calls of `vg_secp256k1_mul_mod_p`, `vg_secp256k1_add_mod_p` and `vg_secp256k1_sub_mod_p` on fixed offsets of `ws`, `movw` immediates in `r1`–`r3`. It writes no register but `r0`–`r3`, `r12` and `lr`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -231,8 +229,6 @@ bx lr",
 ///
 /// Contract: `double0Contract` or `add0mContract` of `VG.Spec.Weierstrass.Point.Curve`. Constant time: only the pointer may affect timing.
 ///
-/// The function saves `lr` in its own working space and keeps `ws` in `r12`, and computes Renes, Costello and Batina's Algorithm 9 for `a = 0` by calls of `vg_secp256k1_mul_mod_p`, `vg_secp256k1_add_mod_p` and `vg_secp256k1_sub_mod_p` on fixed offsets of `ws`, `movw` immediates in `r1`–`r3`. It writes no register but `r0`–`r3`, `r12` and `lr`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -345,8 +341,6 @@ bx lr",
 /// The addition `O = P + Q` of points on secp256k1, whose `a` is zero, for `Q = (X : Y : 1)`, by Renes, Costello and Batina's complete mixed addition for `a = 0` (Algorithm 8): `Q`'s `Z` is not read. A point is three projective coordinates `X, Y, Z` in Montgomery's form modulo the curve's prime, each 4 64-bit words (`32` bytes), little-endian, at consecutive byte offsets of the working space `ws`: `O` at byte 3232, `P` at 3328 and `Q` at 3424. The curve's `a` and `3b`, in the same form, are at bytes 3520 and 3552; `a` is not read. Every byte of `ws` but `O`'s and the function's own working space (bytes 3584 to 4095) keeps its value.
 ///
 /// Contract: `double0Contract` or `add0mContract` of `VG.Spec.Weierstrass.Point.Curve`. Constant time: only the pointer may affect timing.
-///
-/// The function saves `lr` in its own working space and keeps `ws` in `r12`, and computes Renes, Costello and Batina's Algorithm 8 for `a = 0` by calls of `vg_secp256k1_mul_mod_p`, `vg_secp256k1_add_mod_p` and `vg_secp256k1_sub_mod_p` on fixed offsets of `ws`, `movw` immediates in `r1`–`r3`. It writes no register but `r0`–`r3`, `r12` and `lr`.
 ///
 /// # Safety
 ///

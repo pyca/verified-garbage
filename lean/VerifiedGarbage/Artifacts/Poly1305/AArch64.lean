@@ -27,10 +27,6 @@ def artifacts : List Artifact := [
     verified := Proof.Poly1305.AArch64.Radix64.update_framed },
   Spec.Poly1305.updateApi.artifact AArch64.target {
     suffix := "_neon"
-    notes := ["This implementation absorbs the whole blocks of data of at \
-      least 128 bytes four at a time in NEON (AdvSIMD), and the rest one at a time. It is faster than \
-      `vg_poly1305_update` on Apple's cores, and slower on Arm's Neoverse N2, whose two vector pipelines \
-      the multiplications saturate."]
     code := Impl.StackScratch.AArch64.withStackScratch 128 .x4 Impl.Poly1305.AArch64.Vector.update
     stack := 128
     verified := Proof.Poly1305.AArch64.Vector.update_framed },

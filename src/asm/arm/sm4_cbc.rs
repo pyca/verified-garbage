@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Sm4.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline ARMv7: prepare the bitsliced round keys once, then encrypt each block along the serial CBC feedback chain. The last ciphertext becomes the continuation IV. The 1512-byte working space is kept on the stack and zeroed on return.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -2351,8 +2349,6 @@ bx lr",
 /// SM4-CBC decryption (NIST SP 800-38A §6.2, GB/T 32907-2016 §7.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is SM4's decryption under the schedule written by `vg_sm4_expand_key`. No padding is removed.
 ///
 /// Contract: `VG.Spec.Sm4.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
-///
-/// Baseline ARMv7: prepare decryption round keys once, decrypt up to eight ciphertext blocks independently, and XOR with preceding ciphertext in reverse order before it is overwritten. The last ciphertext is retained for continuation. The 1512-byte working space is kept on the stack and zeroed on return.
 ///
 /// # Safety
 ///

@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Rsa.recoverPrimesContract`. Constant time but for the public key and the number of candidates the recovery tried (1 or 2 for most keys): timing may depend on the pointers, the lengths, the contents of `n` and `e`, and that number, not otherwise on `d`.
 ///
-/// The modulus's length gives the numbers' width at run time; every Montgomery multiplication calls `vg_rsa_mont_mul_at`. At 2048 bits and above a fixed-width binary pass fuses exponentiation and root search; smaller moduli use the windowed schedule. The public candidate index selects repeated addition or a bounded seven-bit multiplication. The search ends after the attempt that recovers the factors, so the attempt count is public. GCDs at 2048/3072/4096 bits apply matrices of thirty divsteps per full-width update. Private values select no branch. Callee-saved registers reside in scratch.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -26799,8 +26797,6 @@ jmp 254b
 ///
 /// Contract: `VG.Spec.Rsa.checkKeyContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key.
 ///
-/// The modulus's length gives the numbers' width at run time: every operation computes its arrays' addresses from it. The three checks of `e dP`, `e dQ` and `q qInv` share one loop, its index and the product's steps in `esi`. The length is public; only the checks of the modulus and the public exponent select a branch. Callee-saved registers reside in scratch.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -32556,8 +32552,6 @@ ret
 ///
 /// Contract: `VG.Spec.Rsa.checkCrtKeyContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key.
 ///
-/// The modulus's length gives the numbers' width at run time: every operation computes its arrays' addresses from it. The three checks of `e dP`, `e dQ` and `q qInv` share one loop, its index and the product's steps in `esi`. The length is public; only the checks of the modulus and the public exponent select a branch. Callee-saved registers reside in scratch.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -36400,8 +36394,6 @@ ret
 /// The CRT values of an RSA private key `(p, q, d)` (SP 800-56B Rev. 2 §6.2.2's prime-factor format), which bring it to the CRT format `(p, q, dP, dQ, qInv)` that `vg_rsa_private_crt` takes: `dP = d mod (p - 1)`, `dQ = d mod (q - 1)` and `qInv = q⁻¹ mod p` (§6.2.2's CRT format). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), `p` (`p_len` bytes), `q` (`q_len` bytes) and `d` (`d_len` bytes), all most significant first, writes `dP` to `dp` and `qInv` to `qinv` (`p_len` bytes each) and `dQ` to `dq` (`q_len` bytes), most significant first, and returns 1; or writes zeros to all three and returns 0 if `n` is not such a modulus, `p q ≠ n`, or `q` has no inverse modulo `p`. Nothing checks that `p` and `q` are prime or that `d` is the key's private exponent.
 ///
 /// Contract: `VG.Spec.Rsa.crtValuesContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on the private key.
-///
-/// The modulus and prime lengths are public. Balanced 2048/3072/4096-bit keys use thirty-step batched inversion at the prime width; other lengths call `vg_rsa_keygen_inverse`, the general binary inverse, at the modulus's width. Each batch updates signed GCD rows and Montgomery-reduced coefficient rows. The shared key-workspace carry chains process eight words per iteration, then scalar tails, preserving carry between words. Private values select no branch. Callee-saved registers reside in scratch.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -43727,8 +43719,6 @@ ret
 /// The RSA private-key operation: RSADP (RFC 8017 §5.1.2), which is also RSASP1 (§5.2.1), with the private key `(p, q, dP, dQ, qInv)` (§3.2's second form, with two primes). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), writes the result of step 2.b for the input (`n_len` bytes, most significant first) to `out` (`n_len` bytes, most significant first) and returns 1; or writes zeros and returns 0 if `n` is not such a modulus, the input is not below `n`, `p q ≠ n`, or `qInv ≥ p`. `p`, `dp` and `qinv` are `p_len` bytes, and `q` and `dq` are `q_len` bytes, all most significant first. For a valid RSA key the result is `input^d mod n`; nothing checks that `p` and `q` are prime or that the exponents match a public exponent.
 ///
 /// Contract: `VG.Spec.Rsa.privateCrtContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on the input or the private key.
-///
-/// The modulus's length gives the numbers' width at run time; every Montgomery multiplication calls `vg_rsa_mont_mul_at`. Each factor whose length (`p_len`, `q_len`) fits half the modulus's width has the input reduced modulo it at the modulus's width, then its windowed exponentiation at half the width; a longer factor's runs at the modulus's width. The lengths are public; the factors' values select no branch. Callee-saved registers reside in scratch.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -51771,8 +51761,6 @@ ret
 ///
 /// Contract: `VG.Spec.Rsa.publicPrecomputedCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `pre` and `e`, not on the input.
 ///
-/// The modulus's length gives the numbers' width at run time; every Montgomery multiplication calls `vg_rsa_mont_mul_at`. The exponentiation branches on each bit of the public exponent, multiplying by the base only for a set bit, and ends after its top bit without computing an unused final square. An odd exponent seeds the accumulator from the converted input and consumes its low bit, avoiding two Montgomery products. The input acceptance mask is applied after exponentiation. Callee-saved registers reside in scratch.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -52420,8 +52408,6 @@ ret
 ///
 /// Contract: `VG.Spec.Rsa.publicPrecomputeContract`. Timing may depend on the pointers, the lengths and the contents of `n`.
 ///
-/// The modulus's length gives the numbers' width at run time: `pre_len` is overwritten with `n_len`, from which every loop reads it. `R² mod n` from `2^(8 (n_len - 1))`, below n, by `65 w + 8 - 8 n_len` modular doublings (masked subtractions) to `2^(65 w)`, then six Montgomery squares, each a call of `vg_rsa_mont_mul_at`. Only the public modulus and its length select a branch. Callee-saved registers reside in scratch.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -52832,8 +52818,6 @@ ret
 /// The RSA public-key operation: RSAEP (RFC 8017 §5.1.1), which is also RSAVP1 (§5.2.2), for a public key within BoringSSL's limits. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), writes `input^e mod n` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` or `e` is not such a number or the input (`n_len` bytes, most significant first) is not below `n`.
 ///
 /// Contract: `VG.Spec.Rsa.publicCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the input.
-///
-/// The modulus's length gives the numbers' width at run time; every Montgomery multiplication calls `vg_rsa_mont_mul_at`. The exponentiation branches on each bit of the public exponent, multiplying by the base only for a set bit, and ends after its top bit without computing an unused final square. An odd exponent seeds the accumulator from the converted input and consumes its low bit, avoiding two Montgomery products. The input acceptance mask is applied after exponentiation. Callee-saved registers reside in scratch.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -53605,8 +53589,6 @@ ret
 /// The RSA private-key operation: RSADP (RFC 8017 §5.1.2), which is also RSASP1 (§5.2.1), with the private key `(p, q, dP, dQ, qInv)` (§3.2's second form, with two primes), checked against the public exponent as BoringSSL checks it (`rsa_default_private_transform`). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the result `m` of step 2.b for the input (`n_len` bytes, most significant first), and if `m^e mod n` is the input, writes `m` to `out` (`n_len` bytes, most significant first) and returns 1. Writes zeros and returns 0 if `n` or `e` is not such a number, the input is not below `n`, `p q ≠ n`, or `qInv ≥ p`; writes zeros and returns 2 (an internal error) if `m^e mod n` is not the input, which is the case for no input if `vg_rsa_check_key` accepts the key and `p` and `q` are prime: the result is never released unless it passes the check, so that a fault in its computation does not reveal the key. `p`, `dp` and `qinv` are `p_len` bytes, and `q` and `dq` are `q_len` bytes, all most significant first.
 ///
 /// Contract: `VG.Spec.Rsa.privateCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the input or the private key.
-///
-/// Computes the private candidate using `vg_rsa_private_crt`, checks it by public re-exponentiation using `vg_rsa_public_precompute` and `vg_rsa_public_precomputed_checked`, and releases it only under the acceptance mask. All three calls and the comparison follow a fixed schedule. The frame's candidate buffer is overwritten with zeros.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

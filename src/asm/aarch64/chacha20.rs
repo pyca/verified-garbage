@@ -1135,8 +1135,6 @@ ret
 ///
 /// Contract: `VG.Spec.ChaCha20.xorContract`. Constant time: only the pointers and `len` may affect timing, not the state or the data.
 ///
-/// Interleaves six NEON blocks with two integer blocks, processing 512 bytes at a time.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 64 bytes.
@@ -3311,8 +3309,6 @@ ret
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
 ///
-/// This implementation XORs the whole blocks with `vg_chacha20_xor_neon`.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 768 bytes.
@@ -3441,8 +3437,6 @@ ret
 ///
 /// Contract: `VG.Spec.ChaCha20.xorContract`. Constant time: only the pointers and `len` may affect timing, not the state or the data.
 ///
-/// Calls `vg_chacha20_block` for each 64 bytes.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 64 bytes.
@@ -3501,8 +3495,6 @@ ret
 /// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
-///
-/// This implementation XORs the whole blocks with `vg_chacha20_xor`.
 ///
 /// # Safety
 ///
@@ -3634,8 +3626,6 @@ pub(crate) const VG_CHACHA20_XOR_SVE2_FEATURES: crate::cpu::Features = crate::cp
 /// XORs the first `len` bytes of the ChaCha20 keystream of the 16-word state `*state` (RFC 8439 §2.4: the block function of the state with its block counter, word 12, advanced by 0, 1, … modulo 2³²) into the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.ChaCha20.xorContract`. Constant time: only the pointers and `len` may affect timing, not the state or the data.
-///
-/// Interleaves six NEON blocks with two integer blocks, processing 512 bytes at a time; each XOR and rotation of the NEON blocks is one SVE2 XAR.
 ///
 /// # Safety
 ///
@@ -5528,8 +5518,6 @@ pub(crate) const VG_CHACHA20_APPLY_SVE2_FEATURES: crate::cpu::Features = crate::
 /// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
-///
-/// This implementation XORs the whole blocks with `vg_chacha20_xor_sve2`.
 ///
 /// # Safety
 ///

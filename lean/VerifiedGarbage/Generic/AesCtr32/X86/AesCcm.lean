@@ -84,15 +84,9 @@ namespace VG.Generic.AesCtr32.X86.AesCcm
 
 open VG.Proof.AesCcm.X86
 
-/-- Which functions an instance of `seal` or `open` calls. -/
-def callNote (v : Proof.Aes.X86.Ctr32Impl) : String :=
-  "This implementation computes the CBC-MAC with `" ++ Spec.Cmac.aesUpdateApi.name ++ v.suffix ++
-    "`, and encrypts with `" ++ v.callee.name ++ "`."
-
 def artifacts (v : Proof.Aes.X86.Ctr32Impl) : List Artifact := [
   Spec.Ccm.sealApi.artifact X86.target {
     suffix := v.suffix
-    notes := [callNote v]
     code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesCcm.X86.seal v.callee v.suffix)
     stack := 2664
     verified := seal_framed v
@@ -100,8 +94,6 @@ def artifacts (v : Proof.Aes.X86.Ctr32Impl) : List Artifact := [
     features := v.features },
   Spec.Ccm.openApi.artifact X86.target {
     suffix := v.suffix
-    notes := [callNote v,
-      "It compares the tags and overwrites the data with zeros without a branch on the result."]
     code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesCcm.X86.open v.callee v.suffix)
     stack := 2664
     verified := open_framed v

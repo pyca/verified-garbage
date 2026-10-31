@@ -23,14 +23,10 @@ open VG.Proof.AesCfb8.Arm
 
 def artifacts : List Artifact := [
   Spec.Cfb8.aesEncryptApi.artifact Arm.target {
-    notes := [
-      "This implementation enciphers one block for each byte with `vg_aes_encrypt_blocks`."]
     code := Impl.AesCfb8.Arm.encrypt
     stack := 8
     verified := encrypt_verified },
   Spec.Cfb8.aesDecryptApi.artifact Arm.target {
-    notes := [
-      "This implementation enciphers one block for each byte with `vg_aes_encrypt_blocks`."]
     code := Impl.AesCfb8.Arm.decrypt
     stack := 8
     verified := decrypt_verified }]

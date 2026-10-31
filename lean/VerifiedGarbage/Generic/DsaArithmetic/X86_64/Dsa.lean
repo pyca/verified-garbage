@@ -17,9 +17,6 @@ open VG.Proof.Dsa.X86_64
 def artifacts (v : Backend) : List Artifact := [
   Spec.Dsa.randomSignApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := ["Rejection sampling and signing retries are verified \
-      against the bounded random-tape specification. The selected Montgomery backend is used \
-      for each signing attempt. Every failure zeros the entire output."]
     code := Impl.Dsa.X86_64.RandomSign.code (randomSignerName v) (Impl.Dsa.X86_64.SignVerify.sign v.sq v.mul)
     stack := v.stack + 256
     verified := random_sign_verified v
@@ -27,10 +24,6 @@ def artifacts (v : Backend) : List Artifact := [
     features := v.features },
   Spec.Dsa.signApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := ["Fixed-window exponentiation and streaming modular reduction \
-      use the selected Montgomery backend. Leading-zero component padding is supported. \
-      Signing derives public-key subgroup membership from g^q = 1 and g^x = y. \
-      Scratch is initialized before use; every failure zeros the entire output."]
     code := Impl.Dsa.X86_64.SignVerify.sign v.sq v.mul
     stack := v.stack
     verified := v.signVerified
@@ -38,9 +31,6 @@ def artifacts (v : Backend) : List Artifact := [
     features := v.features },
   Spec.Dsa.verifyApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := ["Fixed-window exponentiation and streaming modular reduction \
-      use the selected Montgomery backend. Leading-zero component padding is supported. \
-      Signature scalars and the digest do not affect the leakage trace."]
     code := Impl.Dsa.X86_64.SignVerify.verify v.sq v.mul
     stack := v.stack
     verified := v.verifyVerified
@@ -48,9 +38,6 @@ def artifacts (v : Backend) : List Artifact := [
     features := v.features },
   Spec.Dsa.generateKeyApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := ["Checks the domain before consuming randomness, samples x with the \
-      verified rejection sampler, then derives y = g^x with the selected Montgomery backend. \
-      Every failure zeros the entire output."]
     code := Impl.Dsa.X86_64.GenerateKey.code (keygenCheckName v) (keygenDeriveName v)
       (Impl.Dsa.X86_64.Generate.checkParameters v.sq v.mul) (Impl.Dsa.X86_64.Generate.deriveKey v.sq v.mul)
     stack := v.stack + 256
@@ -59,7 +46,6 @@ def artifacts (v : Backend) : List Artifact := [
     features := v.features },
   Spec.Dsa.checkParametersApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := ["g^q mod p uses the selected Montgomery backend."]
     code := Impl.Dsa.X86_64.Generate.checkParameters v.sq v.mul
     stack := v.stack
     verified := v.parametersVerified
@@ -67,8 +53,6 @@ def artifacts (v : Backend) : List Artifact := [
     features := v.features },
   Spec.Dsa.deriveKeyApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := ["y = g^x mod p uses the selected Montgomery backend. \
-      Every failure zeros the entire output."]
     code := Impl.Dsa.X86_64.Generate.deriveKey v.sq v.mul
     stack := v.stack
     verified := v.deriveVerified

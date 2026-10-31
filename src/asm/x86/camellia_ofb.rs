@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Camellia.ofbContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline IA-32: one block at a time (OFB is sequential), encrypted bitsliced in general-purpose registers, the S-boxes as Boolean circuits, with no table lookups, in a batch of eight of which the other seven are unused; the table of bitsliced subkeys is built once per call, inline, and each batch is a call of `vg_camellia_crypt_prepared`, its arguments in a frame on the stack. The mode is the generic OFB of `Impl/Modes/X86/`, over Camellia's ECB core.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety

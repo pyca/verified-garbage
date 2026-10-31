@@ -126,10 +126,6 @@ def helper (n e : Nat)
     (v : Verified X86.target (Impl.Dsa.X86.Pow.body n e)
       (Spec.Dsa.ModPow.powContract (Impl.Dsa.X86.Pow.layout n e) X86.abi 96)) : Artifact :=
   (Spec.Dsa.ModPow.powApi (Impl.Dsa.X86.Pow.layout n e)).artifact X86.target {
-    notes := ["The context's setup and the fixed-schedule square-and-multiply of the DSA functions, \
-      with a masked selection; every Montgomery multiplication calls `vg_rsa_mont_mul_at`. The \
-      setup's modular doublings reach 2^(65 n), which six Montgomery squarings raise to R² mod m. \
-      The callee-saved registers reside in the header of `ws`."]
     code := Impl.Dsa.X86.Pow.body n e
     verified := v
     stack := 96

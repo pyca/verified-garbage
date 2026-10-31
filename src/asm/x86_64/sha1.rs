@@ -1483,8 +1483,6 @@ pub(crate) const VG_SHA1_COMPRESS_SHANI_FEATURES: crate::cpu::Features = crate::
 ///
 /// Contract: `VG.Spec.Sha1.compressContract`. Constant time: only the pointers and `n` may affect timing, not the hash value or the blocks.
 ///
-/// This implementation uses the SHA extensions.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 20 bytes.

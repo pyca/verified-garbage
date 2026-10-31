@@ -22,19 +22,12 @@ def artifacts : List Artifact := [
     code := Impl.Scrypt.Arm.salsa
     verified := Proof.Scrypt.Arm.salsa_verified },
   Spec.Scrypt.blockMixApi.artifact Arm.target {
-    notes := ["The function uses no stack: it saves its return address in `scratch`."]
     code := Impl.Scrypt.Arm.blockMix
     verified := Proof.Scrypt.Arm.BlockMix.blockMix_verified },
   Spec.Scrypt.roMixApi.artifact Arm.target {
-    notes := ["The function uses no stack: it saves its return address in `scratch`."]
     code := Impl.Scrypt.Arm.roMix
     verified := Proof.Scrypt.Arm.RoMix.roMix_verified },
   Spec.Scrypt.scryptApi.artifact Arm.target {
-    notes := ["Derives both keys with `vg_pbkdf2_hmac_sha256_scratch` and runs \
-      scryptROMix on each block with `vg_scrypt_romix`, using the start of `scratch` as the working \
-      space of each. The function has no stack frame of its own: the caller's `r4`–`r11` and the return \
-      address are saved in the last of the `r + 16` chunks of `scratch`, which neither callee uses; each \
-      call's stack arguments are pushed in a frame of their own."]
     code := Impl.Scrypt.Arm.scrypt Spec.Hmac.sha256I.pbkdf2ScratchApi.name Proof.Scrypt.Arm.Whole.pbkC
     stack := 40
     verified := Proof.Scrypt.Arm.Whole.scrypt_verified }]

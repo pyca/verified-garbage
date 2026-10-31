@@ -41,11 +41,6 @@ namespace VG.Generic.BrainpoolP512r1.AArch64.EcBrainpoolP512r1
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.BrainpoolP512r1.curve) : List Artifact := [
   Spec.EcKey.BrainpoolP512r1.publicKeyApi.artifact AArch64.target {
-    notes := ["Field elements are eight 64-bit words in Montgomery form. \
-      Scalar multiplication uses a fixed 512-iteration ladder with the general complete addition \
-      formulas of Renes, Costello and Batina (Algorithm 1), which hold for any `a`. \
-      The inversion is a call of `vg_brainpoolp512r1_inv_mod_p`, by divsteps. \
-      Branches and memory addresses depend only on pointers and loop counters."]
     code := Impl.EcKey.AArch64.publicKeyBrainpoolP512r1
     verified := Proof.EcKey.AArch64.BrainpoolP512r1.pk_verified h.law h.inv }]
 

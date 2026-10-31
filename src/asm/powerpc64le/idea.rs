@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Idea.expandKeyContract`. Constant time: only pointers may affect timing, not the key.
 ///
-/// Each doubleword of subkeys is a fixed bit permutation of the key's two doublewords, assembled with rotations and masks, without branches.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 16 bytes.
@@ -582,8 +580,6 @@ blr",
 /// IDEA decryption key schedule (Lai, 1992, §3.3): writes to `*inverse` the 52 decryption subkeys of the 52 encryption subkeys at `schedule` (both as little-endian 16-bit words, as `vg_idea_expand_key` writes them): the multiplicative inverses modulo 2^16 + 1 (with 0 standing for 2^16), additive inverses modulo 2^16 and copies of the encryption subkeys, in reverse round order.
 ///
 /// Contract: `VG.Spec.Idea.invertKeyContract`. Constant time: only pointers may affect timing, not the subkeys, including those that are 0 or 1.
-///
-/// Each inverse is `a ^ (2^16 - 1)` modulo 2^16 + 1, fifteen squarings and multiplications by `mulld`, each reduced without branches.
 ///
 /// # Safety
 ///
@@ -1586,8 +1582,6 @@ blr",
 /// IDEA in ECB mode (Lai, 1992, §3.3; SP 800-38A §6.1) on `n` complete 8-byte blocks at `data`, in place, under the 52 subkeys at `schedule`: encryption under the subkeys `vg_idea_expand_key` writes, decryption under those `vg_idea_invert_key` writes. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Idea.ecbContract`. Constant time: only pointers and `n` may affect timing, not the subkeys or data, including words or subkeys that are 0.
-///
-/// A block at a time in general-purpose registers: each multiplication modulo 2^16 + 1 is a `mulld` of the residues and a reduction of the product from its halves, without branches.
 ///
 /// # Safety
 ///

@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Sm4.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline IA-32: one block at a time (CBC encryption is sequential), encrypted bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups, in a batch of eight of which the other seven are unused; the key schedule's table of round keys is built once per call, by `vg_sm4_prepare_keys`, and the batch encrypted by `vg_sm4_crypt_prepared`. The mode is the generic CBC encryption of `Impl/Modes/X86/`, over SM4's ECB core, with the chaining value, the last ciphertext block, back to the IV at the end.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -510,8 +508,6 @@ ret
 /// SM4-CBC decryption (NIST SP 800-38A §6.2, GB/T 32907-2016 §7.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is SM4's decryption under the schedule written by `vg_sm4_expand_key`. No padding is removed.
 ///
 /// Contract: `VG.Spec.Sm4.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
-///
-/// Baseline IA-32: one block at a time, decrypted bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups, in a batch of eight of which the other seven are unused; the key schedule's table of round keys is built once per call, by `vg_sm4_prepare_keys`, and the batch encrypted by `vg_sm4_crypt_prepared`. The mode is the generic CBC decryption of `Impl/Modes/X86/`, over SM4's ECB core, with the chaining value, the last ciphertext block, back to the IV at the end.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

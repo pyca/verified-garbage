@@ -30,7 +30,7 @@ It is generic over P-384's group law `h` too, the variant
 
 namespace VG.Generic.MdHash.P384.AArch64.EcdsaP384Sha384
 
-open VG.Proof.Ecdsa.Rfc6979.AArch64 (cfgOf signNotes)
+open VG.Proof.Ecdsa.Rfc6979.AArch64 (cfgOf)
 open VG.Proof.Ecdsa.Rfc6979.AArch64.P384Sha384 (pack sign_verified)
 
 def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch64.HasLawInvOrd Spec.P384.curve) :
@@ -40,7 +40,6 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch6
   | some c => [
     Spec.Ecdsa.Rfc6979.P384Sha384.signApi.artifact AArch64.target {
       suffix := c.suffix
-      notes := [signNotes (cfgOf (pack h.law h.inv (Proof.P384.combOk7 h.law) c)).H 48 Spec.Ecdsa.P384.signApi.name]
       code := (cfgOf (pack h.law h.inv (Proof.P384.combOk7 h.law) c)).sign
       consts := Impl.Ecdsa.AArch64.p384.combConsts
       stack := 256

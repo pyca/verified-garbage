@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Seed.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline IA-32: one block at a time (each output block is the encryption of the one before), through `vg_seed_encrypt_blocks`, called on the block with the first 1088 bytes of the working space, its arguments pushed in a frame (20 bytes of stack with the return address). The mode is the generic OFB of `Impl/Modes/X86/`, whose data pointer and steps left wait in `esi` and `ebp` across the call.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety

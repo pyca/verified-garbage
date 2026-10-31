@@ -6,8 +6,6 @@
 ///
 /// Contract: `doubleContract`, `addCachedContract`, `addAffineContract` or `projAddContract` of `VG.Spec.Weierstrass.PointOps.Curve`. Constant time: only the pointer may affect timing.
 ///
-/// The function runs the twelve products, two products by `b` and the additions and subtractions of Algorithm 4 in their order, on four 64-bit words modulo `p` read at byte 64, multiplied by word-by-word Montgomery multiplication (CIOS, with `mul` and `umulh`; each reduction step multiplies the accumulator's low word by `-p⁻¹ mod 2⁶⁴` and adds that multiple of `p`) with a final conditional subtraction, its temporaries `t0`–`t5` at bytes 800 to 991 and the products' temporary area at bytes 128 to 159. It writes no vector register.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.

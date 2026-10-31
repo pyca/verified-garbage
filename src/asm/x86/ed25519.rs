@@ -4,8 +4,6 @@
 
 /// Ed25519 scalar multiply-add (RFC 8032 §5.1.6): writes the canonical 32-byte little-endian encoding of `(r + k*s) mod L` to `*out`. The inputs are unsigned 256-bit little-endian integers; they need not be canonical scalars. Contract: `VG.Spec.Ed25519.scalarMulAddContract`. Constant time: only pointers may affect timing.
 ///
-/// Computes the full 512-bit multiply-add with 32-bit product columns, then reduces every input bit modulo the subgroup order. Callee-saved registers are saved in the first 16 bytes of `scratch`.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -2371,8 +2369,6 @@ ret
 
 /// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, from the 32-byte private seed at `seed`, including SHA-512 and pruning. Contract: `VG.Spec.Ed25519.publicKeyContract`. Constant time: only pointers may affect timing.
 ///
-/// Includes SHA-512 of the seed, RFC 8032 pruning, and base-point multiplication. The temporary seed hash and scalar are cleared before returning.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -2700,8 +2696,6 @@ ret
 }
 
 /// Ed25519 scalar reduction (RFC 8032 §5.1.6): writes the canonical 32-byte little-endian encoding of `wide mod L` to `*out`, using all 64 input bytes. Contract: `VG.Spec.Ed25519.scalarReduceContract`. Constant time: only pointers may affect timing.
-///
-/// Processes all 512 input bits using eight 32-bit remainder words, a fixed byte loop, and masked subtraction of the subgroup order. Callee-saved registers are saved in the first 16 bytes of `scratch`.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -4572,8 +4566,6 @@ ret
 }
 
 /// Ed25519 base-point multiplication (RFC 8032 §5.1.4): writes the encoding of `[s]B` to `*out`, for the unsigned little-endian 256-bit integer at `scalar`, without pruning. Contract: `VG.Spec.Ed25519.scalarBaseContract`. Constant time: only pointers may affect timing.
-///
-/// Multiplies with a comb of precomputed multiples of the base point (64 signed radix-16 digits, 32 tables of 8 points, every entry of a table read and masked), then writes a canonical compressed point. The tables are the static `VG_ED25519_COMB`, whose address the function obtains with a position-independent four-byte CALL frame and keeps in `scratch`. The odd digits' additions call `vg_ed25519_r32_add_affine` (the even digits' are inline), the four doublings `vg_ed25519_r32_double`, the final point addition `vg_ed25519_r32_point_add`, and the inversion's addition chain `vg_gf25519_r32_pow250`. Callee-saved registers are saved in the first 16 bytes of `scratch`.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -15241,8 +15233,6 @@ ret
 
 /// Deterministic Ed25519 signing (RFC 8032 §5.1.6): writes the 64-byte signature to `*out`, for the `len` bytes at `message` and the 32-byte private seed at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses pure Ed25519, with no context or prehash. Contract: `VG.Spec.Ed25519.signCachedContract`. Constant time: only pointers and the message length may affect timing, not any buffer contents.
 ///
-/// Includes SHA-512, scalar reduction, base-point multiplication, and scalar multiply-add. Secret intermediate buffers are cleared before returning.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -15757,8 +15747,6 @@ ret
 }
 
 /// Checks Ed25519 encodings and the equation `[S]B = R + [k]A` (RFC 8032 §5.1.7), returning 1 if they pass and 0 otherwise. `pk` holds A, `signature` holds R || S, and `challenge` holds all 64 bytes of k as a little-endian integer, used as given: it is not reduced modulo L. To verify a signature on M as RFC 8032 §6 and `VG.Spec.Ed25519.verify` do, the caller must reduce SHA-512(R || A || M) modulo L (e.g. with `vg_ed25519_scalar_reduce`) and supply the 32-byte result followed by 32 zero bytes as `challenge`; this function does not hash M. Passing the unreduced digest instead checks the equation with the full 512-bit k, which RFC 8032 §5.1.7 also permits but which differs from §6 and OpenSSL whenever A has a small-order component. Rejects noncanonical points and S >= L, with no additional subgroup or small-order check. Contract: `VG.Spec.Ed25519.verifyEquationContract`. Not constant time: timing may depend on all inputs.
-///
-/// Checks canonical point encodings (A's, then R's, by one loop running the decoding twice) and S < L, then evaluates the uncofactored equation using all 512 challenge bits. Computes [k]A - [S]B with one chain of doublings and 4-bit windows of the public scalars, from a table of [1]A to [15]A and one of -[1]B to -[15]B copied into `scratch` from the static `VG_ED25519_VERIFY_NEG_BASE`, skipping the leading zero bytes of k above its low 32, and compares it with -R projectively. Point additions call `vg_ed25519_r32_point_add`, and the decodings' square root's addition chain `vg_gf25519_r32_pow250`. Point tables and callee-saved registers reside in `scratch`.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -37150,8 +37138,6 @@ ret
 }
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
-///
-/// Includes SHA-512 of R || A || message, challenge reduction, and strict verification of the Ed25519 equation.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

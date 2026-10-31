@@ -26,19 +26,12 @@ namespace VG.Artifacts.AesGcmSiv.PPC64LE
 
 open VG.Proof.AesGcmSiv.PPC64LE
 
-/-- Which functions the implementation calls. -/
-def note : String := "This implementation encrypts with `vg_aes_ctr32` (and expands keys with \
-  `vg_aes_expand_key_scratch`) and computes POLYVAL with `vg_ghash`."
-
 def artifacts : List Artifact := [
   Spec.GcmSiv.sealApi.artifact PPC64LE.target {
-    notes := [note]
     code := Impl.StackScratch.PPC64LE.withStackScratchArgs 3936 0 Impl.AesGcmSiv.PPC64LE.«seal»
     stack := 3936
     verified := seal_framed Proof.GcmSiv.Polyval.tagInput_eq_tagInputG },
   Spec.GcmSiv.openApi.artifact PPC64LE.target {
-    notes := [note,
-      "It compares the tags and overwrites the data with zeros without a branch on the result."]
     code := Impl.StackScratch.PPC64LE.withStackScratchArgs 3936 0 Impl.AesGcmSiv.PPC64LE.«open»
     stack := 3936
     verified := open_framed Proof.GcmSiv.Polyval.tagInput_eq_tagInputG }]

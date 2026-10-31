@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Aes.expandKeyContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// `SUBWORD` uses a constant-time bitsliced S-box, in the style of BearSSL's `aes_ct64` (Thomas Pornin, MIT licence). The working space is in a frame of 512 bytes on the stack, zeroed before returning.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -1276,8 +1274,6 @@ ret
 ///
 /// Contract: `VG.Spec.Aes.expandKeyScratchContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// `SUBWORD` uses a constant-time bitsliced S-box, in the style of BearSSL's `aes_ct64` (Thomas Pornin, MIT licence).
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -2510,8 +2506,6 @@ ret
 /// AES counter mode with GCM's 32-bit increment (NIST SP 800-38D §6.5, on whole blocks): XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Gcm.ctr32Contract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the counter block or the data.
-///
-/// Constant-time bitsliced AES, four blocks at a time, in the style of BearSSL's `aes_ct64` (Thomas Pornin, MIT licence).
 ///
 /// # Safety
 ///
@@ -3979,8 +3973,6 @@ pub(crate) const VG_AES_EXPAND_KEY_AES_FEATURES: crate::cpu::Features = crate::c
 ///
 /// Contract: `VG.Spec.Aes.expandKeyContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// Uses the Armv8 Cryptographic Extension: one word at a time, with AESE for `SUBWORD`. The working space is in a frame of 512 bytes on the stack, zeroed before returning.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -4510,8 +4502,6 @@ pub(crate) const VG_AES_EXPAND_KEY_SCRATCH_AES_FEATURES: crate::cpu::Features = 
 ///
 /// Contract: `VG.Spec.Aes.expandKeyScratchContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// Uses the Armv8 Cryptographic Extension: one word at a time, with AESE for `SUBWORD`.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -5006,8 +4996,6 @@ pub(crate) const VG_AES_CTR32_AES_FEATURES: crate::cpu::Features = crate::cpu::F
 ///
 /// Contract: `VG.Spec.Gcm.ctr32Contract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the counter block or the data.
 ///
-/// Uses the Armv8 Cryptographic Extension (AESE, AESMC). The round keys stay in registers; eight blocks at a time, then one at a time.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -5407,8 +5395,6 @@ ret
 /// AES encryption of whole blocks (FIPS 197 §5.1, `CIPHER`): replaces each of the `n` 16-byte blocks at `data` with its encryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Aes.encryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
-///
-/// Constant-time bitsliced AES, four blocks at a time, in the style of BearSSL's `aes_ct64` (Thomas Pornin, MIT licence).
 ///
 /// # Safety
 ///
@@ -6834,8 +6820,6 @@ ret
 /// AES decryption of whole blocks (FIPS 197 §5.3, `INVCIPHER`): replaces each of the `n` 16-byte blocks at `data` with its decryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule, which the inverse cipher uses in the reverse order).
 ///
 /// Contract: `VG.Spec.Aes.decryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
-///
-/// Constant-time bitsliced AES, four blocks at a time, in the style of BearSSL's `aes_ct64` (Thomas Pornin, MIT licence): the inverse S-box is the forward one between two inverse affine maps.
 ///
 /// # Safety
 ///
@@ -8410,8 +8394,6 @@ pub(crate) const VG_AES_ENCRYPT_BLOCKS_AES_SCRATCH_WRITTEN: usize = 0;
 ///
 /// Contract: `VG.Spec.Aes.encryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
 ///
-/// Uses the Armv8 Cryptographic Extension (AESE, AESMC). The round keys stay in registers; eight blocks at a time, then one at a time. `scratch` is not used.
-///
 /// It writes at most the first 0 bytes of `scratch` (`VG_AES_ENCRYPT_BLOCKS_AES_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
 /// # Safety
@@ -8767,8 +8749,6 @@ pub(crate) const VG_AES_DECRYPT_BLOCKS_AES_SCRATCH_WRITTEN: usize = 0;
 /// AES decryption of whole blocks (FIPS 197 §5.3, `INVCIPHER`): replaces each of the `n` 16-byte blocks at `data` with its decryption by AES with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule, which the inverse cipher uses in the reverse order).
 ///
 /// Contract: `VG.Spec.Aes.decryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
-///
-/// Uses the Armv8 Cryptographic Extension (AESD, AESIMC): the equivalent inverse cipher (FIPS 197 §5.3.5), with the round keys of the middle rounds through AESIMC, kept in registers; eight blocks at a time, then one at a time. `scratch` is not used.
 ///
 /// It writes at most the first 0 bytes of `scratch` (`VG_AES_DECRYPT_BLOCKS_AES_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///

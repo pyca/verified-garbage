@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.MillerRabin.roundContract`. Timing may depend on the pointers, lengths and limb count, not on the candidate, witness, exponent or test result.
 ///
-/// Fixed four-bit windows and a full masked scan of all sixteen powers, each a masked copy of 64-bit words into arrays 3 and 5 in turn; comparisons `or` the words' `xor`s. The Montgomery products are `vg_rsa_mont_mul`'s finely integrated operand scanning in radix 2^64, inline. Four unconditional squares precede each window; three final squares mask their flag updates with the threshold derived from the prepared exponent marker. The result is returned without branching on it. The nonvolatile registers it uses are saved in a 176-byte stack frame.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.

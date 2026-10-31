@@ -9,8 +9,6 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_CRT_ADX_FEATURES: crate::cpu::Features = c
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
 ///
-/// This implementation calls `vg_rsa_private_checked_adx`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch`, `vg_hmac_sha256_init_scratch` and `vg_hmac_sha256_finalize_scratch`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -407,8 +405,6 @@ ret
 /// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
-///
-/// This implementation calls `vg_rsa_private_checked`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch`, `vg_hmac_sha256_init_scratch` and `vg_hmac_sha256_finalize_scratch`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
 ///
 /// # Safety
 ///
@@ -808,8 +804,6 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_CRT_IFMA_FEATURES: crate::cpu::Features = 
 /// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
-///
-/// This implementation calls `vg_rsa_private_checked_ifma`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch`, `vg_hmac_sha256_init_scratch` and `vg_hmac_sha256_finalize_scratch`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
 ///
 /// # Safety
 ///
@@ -1211,8 +1205,6 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_ADX_FEATURES: crate::cpu::
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
 ///
-/// This implementation calls `vg_rsa_private_checked_adx`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch_avx2`, `vg_hmac_sha256_init_scratch_avx2` and `vg_hmac_sha256_finalize_scratch_avx2`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -1612,8 +1604,6 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_FEATURES: crate::cpu::Features
 /// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
-///
-/// This implementation calls `vg_rsa_private_checked`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch_avx2`, `vg_hmac_sha256_init_scratch_avx2` and `vg_hmac_sha256_finalize_scratch_avx2`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
 ///
 /// # Safety
 ///
@@ -2015,8 +2005,6 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_AVX2_CRT_IFMA_FEATURES: crate::cpu:
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
 ///
-/// This implementation calls `vg_rsa_private_checked_ifma`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch_avx2`, `vg_hmac_sha256_init_scratch_avx2` and `vg_hmac_sha256_finalize_scratch_avx2`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -2416,8 +2404,6 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_ADX_FEATURES: crate::cpu:
 /// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
-///
-/// This implementation calls `vg_rsa_private_checked_adx`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch_shani`, `vg_hmac_sha256_init_scratch_shani` and `vg_hmac_sha256_finalize_scratch_shani`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
 ///
 /// # Safety
 ///
@@ -2819,8 +2805,6 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_FEATURES: crate::cpu::Feature
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
 ///
-/// This implementation calls `vg_rsa_private_checked`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch_shani`, `vg_hmac_sha256_init_scratch_shani` and `vg_hmac_sha256_finalize_scratch_shani`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -3220,8 +3204,6 @@ pub(crate) const VG_RSA_PKCS1_DECRYPT_SHA256_SHANI_CRT_IFMA_FEATURES: crate::cpu
 /// RSAES-PKCS1-v1_5 decryption with implicit rejection: RSAES-PKCS1-V1_5-DECRYPT (RFC 8017 §7.2.2) as draft-irtf-cfrg-rsa-guidance-10 §7.2 implements it, with the private key `(n, e, d, p, q, dP, dQ, qInv)`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the encoded message `EM` of the ciphertext `input` (`n_len` bytes, most significant first) with RSADP as `vg_rsa_private_checked` does. If its padding is valid (`0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M`, `PS` at least 8 nonzero bytes), the message is `M`; otherwise it is a message derived from `d` and the ciphertext (the draft's §7.1 PRF keyed with HMAC-SHA-256 of the ciphertext under the SHA-256 digest of `d`), of at most `n_len - 11` bytes, which is the same every time the same key decrypts the same ciphertext. Writes the message at the end of `out` (`n_len` bytes), after zeros, and its length to `*msg_len`, and returns 1. Writes zeros to both and returns 0 if `n` or `e` is not such a number, the ciphertext is not below `n`, `p q ≠ n`, or `qInv ≥ p`; and returns 2 (an internal error) if RSADP's result fails its check against `e`, which is the case for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. An invalid padding is never an error. `d` is used as given, never recomputed. `p`, `dp` and `qinv` are `p_len` bytes, `q` and `dq` are `q_len` bytes, and `d` is `d_len` bytes, all most significant first.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
-///
-/// This implementation calls `vg_rsa_private_checked_ifma`, then derives `KDK` and the alternative message and lengths with `vg_sha256_update_scratch_shani`, `vg_hmac_sha256_init_scratch_shani` and `vg_hmac_sha256_finalize_scratch_shani`, a block of IRPRF per HMAC. The padding's checks, the scan for the separator, the choice of the alternative length and of the message are masks computed without branches, and every byte of `EM` and of the alternative message is read whichever is returned.
 ///
 /// # Safety
 ///
@@ -3627,8 +3609,6 @@ pub(crate) const VG_RSA_PKCS1_ENCRYPT_PRECOMPUTED_ADX_FEATURES: crate::cpu::Feat
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.encryptPrecomputedContract`.
 ///
-/// This implementation builds `EM = 0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M` in its frame, finding whether `PS` has a zero byte without a branch, and calls `vg_rsa_public_precomputed_checked_adx` on it with the cached modulus values. It then sets `out` to zeros and the result to 0 under a mask if `PS` had a zero byte, without branching on the public operation's result, and overwrites the frame's `EM` with zeros either way.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -3746,8 +3726,6 @@ ret
 /// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it writes and returns exactly what is specified above. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the contents of `pre`.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.encryptPrecomputedContract`.
-///
-/// This implementation builds `EM = 0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M` in its frame, finding whether `PS` has a zero byte without a branch, and calls `vg_rsa_public_precomputed_checked` on it with the cached modulus values. It then sets `out` to zeros and the result to 0 under a mask if `PS` had a zero byte, without branching on the public operation's result, and overwrites the frame's `EM` with zeros either way.
 ///
 /// # Safety
 ///
@@ -3868,8 +3846,6 @@ pub(crate) const VG_RSA_PKCS1_ENCRYPT_PRECOMPUTED_IFMA_FEATURES: crate::cpu::Fea
 /// This entry point also takes `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1). With those values, it writes and returns exactly what is specified above. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety and the timing guarantee still apply. Timing may additionally depend on the contents of `pre`.
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.encryptPrecomputedContract`.
-///
-/// This implementation builds `EM = 0x00 ‖ 0x02 ‖ PS ‖ 0x00 ‖ M` in its frame, finding whether `PS` has a zero byte without a branch, and calls `vg_rsa_public_precomputed_checked_ifma` on it with the cached modulus values. It then sets `out` to zeros and the result to 0 under a mask if `PS` had a zero byte, without branching on the public operation's result, and overwrites the frame's `EM` with zeros either way.
 ///
 /// # Safety
 ///

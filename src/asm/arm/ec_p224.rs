@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
 ///
-/// The function is `vg_ecdsa_p224_sign`'s code up to the inversion of `Z`, with `d` as both the key and the secret number. `[d]G` uses the shared signed 7-bit comb: 32 complete Renes–Costello–Batina additions and a 131072-byte Montgomery table. Each digit scans all 64 entries in its public row and selects coordinates by masks. Field elements are sixteen 16-bit digits in Montgomery form. `Z⁻¹` is Fermat's. The result (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 57 bytes.
@@ -1613,8 +1611,6 @@ pub(crate) const VG_EC_P224_PUBLIC_KEY_UMAAL_FEATURES: crate::cpu::Features = cr
 /// P-224 public-key derivation (FIPS 186-5 §A.2, SP 800-56A §5.6.1.2): writes the public key `Q = dG` of the private key `d` at `d` (28 bytes, most significant first) to `*out`, in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 28 bytes each, most significant first), and returns 1; or, if `d` is not in `[1, n-1]`, writes zeros and returns 0.
 ///
 /// Contract: `VG.Spec.EcKey.Instance.publicKeyContract`. Constant time: only the pointers may affect timing, not the private key.
-///
-/// `vg_ec_p224_public_key`'s code, but for its calls of `vg_p224_point_add_umaal` in the comb. Field multiplications are calls of `vg_p224_mul_mod_p_umaal` (and `vg_p224_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`).
 ///
 /// # Safety
 ///

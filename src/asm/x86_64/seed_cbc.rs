@@ -6,10 +6,6 @@
 ///
 /// Contract: `VG.Spec.Seed.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline x86-64: each batch of sixteen blocks is a call of `vg_seed_encrypt_blocks` or `vg_seed_decrypt_blocks`, with SEED's S-boxes computed bitsliced from AES's circuit and no table lookups, grouping the affine layer's parity-specific XOR sums before masking; decryption deciphers sixteen blocks per batch; encryption, whose blocks depend on each other, one, with the other fifteen lanes unused. The schedule is copied into the working space once per call. The mode is the generic CBC of `Impl/Modes/X86_64/`.
-///
-/// The IV's address is kept in `xmm15`, and after the last block the core's buffer, the last ciphertext block, goes back to the IV.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -331,10 +327,6 @@ ret
 /// SEED-CBC decryption (NIST SP 800-38A §6.2, RFC 4269 §2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is SEED decryption under the schedule written by `vg_seed_expand_key`. No padding is removed.
 ///
 /// Contract: `VG.Spec.Seed.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
-///
-/// Baseline x86-64: each batch of sixteen blocks is a call of `vg_seed_encrypt_blocks` or `vg_seed_decrypt_blocks`, with SEED's S-boxes computed bitsliced from AES's circuit and no table lookups, grouping the affine layer's parity-specific XOR sums before masking; decryption deciphers sixteen blocks per batch; encryption, whose blocks depend on each other, one, with the other fifteen lanes unused. The schedule is copied into the working space once per call. The mode is the generic CBC of `Impl/Modes/X86_64/`.
-///
-/// The last ciphertext block is copied to the IV before any block is decrypted.
 ///
 /// # Safety
 ///

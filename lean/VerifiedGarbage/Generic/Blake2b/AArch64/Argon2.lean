@@ -15,8 +15,6 @@ namespace VG.Generic.Blake2b.AArch64.Argon2
 def artifacts (v : Proof.Argon2.AArch64.HPrime.Backend) : List Artifact := [
   Spec.Argon2.hPrimeApi.artifact VG.AArch64.target {
     suffix := v.suffix
-    notes := ["Calls the selected BLAKE2b streaming backend for every hash; \
-        only argument handling, chaining, and output copying are specific to H′."]
     code := Impl.Argon2.AArch64.HPrime.code v.hash
     stack := 16
     verified := Proof.Argon2.AArch64.HPrime.verified v
@@ -24,8 +22,6 @@ def artifacts (v : Proof.Argon2.AArch64.HPrime.Backend) : List Artifact := [
     features := v.features },
   Spec.Argon2.deriveApi.artifact VG.AArch64.target {
     suffix := v.suffix
-    notes := ["Serial lane evaluation honors every positive worker limit. All hashing uses \
-        the selected BLAKE2b streaming backend, including H₀ and every H′ call."]
     code := Impl.Argon2.AArch64.Derive.code (Spec.Argon2.hPrimeApi.name ++ v.suffix)
       v.hash
     stack := 400

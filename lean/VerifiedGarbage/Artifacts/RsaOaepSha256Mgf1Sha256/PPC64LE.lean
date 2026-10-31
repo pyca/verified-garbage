@@ -23,19 +23,10 @@ namespace VG.Artifacts.RsaOaepSha256Mgf1Sha256.PPC64LE
 
 def artifacts : List Artifact := [
   (Spec.RsaOaep.encryptPrecomputedApi Spec.Mgf1.sha256 Spec.Mgf1.sha256).artifact PPC64LE.target {
-    notes := ["This implementation hashes the label with `" ++ Proof.Hmac.Stream.PPC64LE.Sha256.hash.updN ++
-      "`, masks `DB` and the seed with MGF1 calling `" ++ Proof.Hmac.Stream.PPC64LE.Sha256.hash.updN ++
-      "`, and calls `vg_rsa_public_precomputed_checked` with the cached modulus values. The message's \
-      length is public; its bytes, the label's and the seed's are only copied, hashed and masked."]
     code := Impl.RsaOaep.PPC64LE.encrypt Proof.Hmac.Stream.PPC64LE.Sha256.hash Proof.Hmac.Stream.PPC64LE.Sha256.hash
     stack := 304
     verified := Proof.RsaOaep.PPC64LE.link_verified Proof.RsaOaep.PPC64LE.sha256L Proof.RsaOaep.PPC64LE.sha256L },
   (Spec.RsaOaep.decryptApi Spec.Mgf1.sha256 Spec.Mgf1.sha256).artifact PPC64LE.target {
-    notes := ["This implementation calls `vg_rsa_private_checked`, hashes the label with `" ++
-      Proof.Hmac.Stream.PPC64LE.Sha256.hash.updN ++ "` and unmasks the seed and `DB` with MGF1 calling `" ++
-      Proof.Hmac.Stream.PPC64LE.Sha256.hash.updN ++ "`. The checks of `Y`, `lHash'` and the separator, the scan for it \
-      and the shift of the message to the start of `out` are masks computed without branches, reading \
-      every byte of `EM` whatever the outcome."]
     code := Impl.RsaOaep.PPC64LE.Dec.decrypt Proof.Hmac.Stream.PPC64LE.Sha256.hash
       Proof.Hmac.Stream.PPC64LE.Sha256.hash
     stack := 3776

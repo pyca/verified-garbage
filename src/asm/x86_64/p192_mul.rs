@@ -6,8 +6,6 @@
 ///
 /// Contract: `mulContract` of `VG.Spec.Weierstrass.Mul.Curve`.
 ///
-/// The function keeps `rbx`, `rbp` and `r12`–`r15` in `xmm0` to `xmm5` while it runs, expands `k` into a table of its bits, one per byte, at bytes 1504 to 1767, copies `Q` to bytes 992 to 1055 (slots 29 and 30), and runs a ladder over the 256 bits of `k`'s four words, from the top: each step doubles the accumulator and adds `Q` by the general complete addition formulas of Renes, Costello and Batina (Algorithm 1, with `a` and `3 b` read from `ws`), and keeps the sum or the double by a mask of the bit. Field elements are four 64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS) with a final conditional subtraction; nothing depends on `k` or `Q` but through masks.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.

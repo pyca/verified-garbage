@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Idea.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline RV64IM: one block at a time, with ECB's verified block code inlined (each multiplication modulo 2^16 + 1 a `mul` of the residues and a reduction of the product from its halves, without branches), reading the subkeys in place a byte at a time. The mode is the generic one of `Impl/Modes/RISCV64/`, which runs in a frame of 64 bytes on the stack, 16-byte aligned: it keeps its state in `s1`–`s4`, saving our caller's there. The frame is zeroed before returning.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 104 bytes.

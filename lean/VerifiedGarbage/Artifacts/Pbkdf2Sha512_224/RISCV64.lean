@@ -27,13 +27,9 @@ namespace VG.Artifacts.Pbkdf2Sha512_224.RISCV64
 
 def artifacts : List Artifact := [
   Spec.Hmac.sha512_224I.iterateApi.artifact RISCV64.target {
-    notes := ["The key, `u` and `t` are read and written a byte at a time, since the contract states no \
-        alignment for them; `scratch` is rounded up to a multiple of 8."]
     code := Proof.Pbkdf2.RISCV64.Sha512_224.code
     verified := Proof.Pbkdf2.RISCV64.Sha512_224.iterate },
   Spec.Hmac.sha512_224I.pbkdf2Api.artifact RISCV64.target {
-    notes := ["The password, the salt and `out` are read and written a byte at a time, since the \
-        contract states no alignment for them."]
     code := Proof.Pbkdf2.Whole.RISCV64.Sha512_224.F.pbkdf2
     stack := Proof.Pbkdf2.Whole.RISCV64.Sha512_224.F.itB + Proof.Pbkdf2.Whole.RISCV64.Sha512_224.F.frB +
       Proof.Pbkdf2.Whole.RISCV64.Sha512_224.F.X

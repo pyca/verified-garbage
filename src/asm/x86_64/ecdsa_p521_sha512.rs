@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers and that number, not otherwise on the key or the hash.
 ///
-/// Computes `h = bits2octets(digest)` as 2 zero bytes and the digest (whose integer is below `n`), and each HMAC with `vg_hmac_sha512_init_scratch`, `vg_sha512_update_scratch` and `vg_hmac_sha512_finalize_scratch`, using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the leftmost 521 bits of two successive `V`s, is shifted into 66 bytes, as is the digest for the signature (its integer shifted left by 7 bits), with word loads, shifts and stores, and tried with `vg_ecdsa_p521_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that. `K`, `V`, `h`, the count, the pointers, the candidate and the shifted digest are kept in a 360-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 132 bytes.
@@ -1425,8 +1423,6 @@ pub(crate) const VG_ECDSA_P521_SHA512_SIGN_ADX_FEATURES: crate::cpu::Features = 
 /// Deterministic ECDSA signature generation over P-521 with HMAC-SHA-512 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (66 bytes, most significant first), signs the SHA-512 hash at `digest` (64 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (66 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers and that number, not otherwise on the key or the hash.
-///
-/// Computes `h = bits2octets(digest)` as 2 zero bytes and the digest (whose integer is below `n`), and each HMAC with `vg_hmac_sha512_init_scratch`, `vg_sha512_update_scratch` and `vg_hmac_sha512_finalize_scratch`, using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the leftmost 521 bits of two successive `V`s, is shifted into 66 bytes, as is the digest for the signature (its integer shifted left by 7 bits), with word loads, shifts and stores, and tried with `vg_ecdsa_p521_sign_adx`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that. `K`, `V`, `h`, the count, the pointers, the candidate and the shifted digest are kept in a 360-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
 ///
 /// # Safety
 ///
@@ -2847,8 +2843,6 @@ pub(crate) const VG_ECDSA_P521_SHA512_SIGN_AVX2_FEATURES: crate::cpu::Features =
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers and that number, not otherwise on the key or the hash.
 ///
-/// Computes `h = bits2octets(digest)` as 2 zero bytes and the digest (whose integer is below `n`), and each HMAC with `vg_hmac_sha512_init_scratch_avx2`, `vg_sha512_update_scratch_avx2` and `vg_hmac_sha512_finalize_scratch_avx2`, using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the leftmost 521 bits of two successive `V`s, is shifted into 66 bytes, as is the digest for the signature (its integer shifted left by 7 bits), with word loads, shifts and stores, and tried with `vg_ecdsa_p521_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that. `K`, `V`, `h`, the count, the pointers, the candidate and the shifted digest are kept in a 360-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 132 bytes.
@@ -4267,8 +4261,6 @@ pub(crate) const VG_ECDSA_P521_SHA512_SIGN_AVX2_ADX_FEATURES: crate::cpu::Featur
 /// Deterministic ECDSA signature generation over P-521 with HMAC-SHA-512 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (66 bytes, most significant first), signs the SHA-512 hash at `digest` (64 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (66 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers and that number, not otherwise on the key or the hash.
-///
-/// Computes `h = bits2octets(digest)` as 2 zero bytes and the digest (whose integer is below `n`), and each HMAC with `vg_hmac_sha512_init_scratch_avx2`, `vg_sha512_update_scratch_avx2` and `vg_hmac_sha512_finalize_scratch_avx2`, using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the leftmost 521 bits of two successive `V`s, is shifted into 66 bytes, as is the digest for the signature (its integer shifted left by 7 bits), with word loads, shifts and stores, and tried with `vg_ecdsa_p521_sign_adx`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that. `K`, `V`, `h`, the count, the pointers, the candidate and the shifted digest are kept in a 360-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
 ///
 /// # Safety
 ///
@@ -5689,8 +5681,6 @@ pub(crate) const VG_ECDSA_P521_SHA512_SIGN_SHANI_FEATURES: crate::cpu::Features 
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers and that number, not otherwise on the key or the hash.
 ///
-/// Computes `h = bits2octets(digest)` as 2 zero bytes and the digest (whose integer is below `n`), and each HMAC with `vg_hmac_sha512_init_scratch_shani`, `vg_sha512_update_scratch_shani` and `vg_hmac_sha512_finalize_scratch_shani`, using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the leftmost 521 bits of two successive `V`s, is shifted into 66 bytes, as is the digest for the signature (its integer shifted left by 7 bits), with word loads, shifts and stores, and tried with `vg_ecdsa_p521_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that. `K`, `V`, `h`, the count, the pointers, the candidate and the shifted digest are kept in a 360-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 132 bytes.
@@ -7109,8 +7099,6 @@ pub(crate) const VG_ECDSA_P521_SHA512_SIGN_SHANI_ADX_FEATURES: crate::cpu::Featu
 /// Deterministic ECDSA signature generation over P-521 with HMAC-SHA-512 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (66 bytes, most significant first), signs the SHA-512 hash at `digest` (64 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (66 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers and that number, not otherwise on the key or the hash.
-///
-/// Computes `h = bits2octets(digest)` as 2 zero bytes and the digest (whose integer is below `n`), and each HMAC with `vg_hmac_sha512_init_scratch_shani`, `vg_sha512_update_scratch_shani` and `vg_hmac_sha512_finalize_scratch_shani`, using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the leftmost 521 bits of two successive `V`s, is shifted into 66 bytes, as is the digest for the signature (its integer shifted left by 7 bits), with word loads, shifts and stores, and tried with `vg_ecdsa_p521_sign_adx`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that. `K`, `V`, `h`, the count, the pointers, the candidate and the shifted digest are kept in a 360-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
 ///
 /// # Safety
 ///

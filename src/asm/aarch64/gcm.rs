@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Gcm.ghashContract`. Constant time: only the pointers and `n` may affect timing, not `H`, `Y` or the data.
 ///
-/// `•` is computed bit by bit as Algorithm 1 of §6.3 does, with masks instead of branches.
-///
 /// # Safety
 ///
 /// * `h` must be valid for reads of 16 bytes.
@@ -217,8 +215,6 @@ pub(crate) const VG_GHASH_AES_FEATURES: crate::cpu::Features = crate::cpu::Featu
 /// GHASH (NIST SP 800-38D §6.4) continued over whole blocks: with the hash subkey `H` the block at `h`, replaces the block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at `data` (blocks big-endian, `•` the multiplication of §6.3).
 ///
 /// Contract: `VG.Spec.Gcm.ghashContract`. Constant time: only the pointers and `n` may affect timing, not `H`, `Y` or the data.
-///
-/// Uses PMULL: eight blocks at a time, with `H²` to `H⁸` computed on each call that has at least eight blocks, then four, two and one.
 ///
 /// # Safety
 ///
@@ -617,8 +613,6 @@ pub(crate) const VG_GHASH_WITH_POWERS_AES_FEATURES: crate::cpu::Features = crate
 /// `vg_ghash` with the 8 prepared powers of the hash subkey `H` at `h` at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Replaces the block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at `data` (NIST SP 800-38D §6.4). The hash subkey, its powers, `Y` and the data are secret.
 ///
 /// Contract: `VG.Spec.Gcm.ghashWithPowersContract`. Constant time: only the pointers and `n` may affect timing.
-///
-/// Uses PMULL as `vg_ghash_aes` does, loading `H'` to `H'⁸` (`H'ᵏ = Hᵏ · x⁻¹`) from `pw` instead of computing them.
 ///
 /// # Safety
 ///
@@ -1038,8 +1032,6 @@ pub(crate) const VG_GHASH_STORE_POWERS_AES_FEATURES: crate::cpu::Features = crat
 pub(crate) const VG_GHASH_STORE_POWERS_AES_SCRATCH_WRITTEN: usize = 0;
 
 /// `vg_ghash`, which also writes to `*pw` the 8 prepared powers of its hash subkey `H`: at byte `32*k`, for `k` from 0 to 3, `preparedPower(H^(2*k+2))` then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words (`VG.Spec.Gcm.Powers8Repr`, `VG.Spec.Gcm.preparedPower`). Its other results are those of `vg_ghash`. The powers are secret, as the hash subkey is: they may not affect timing. Contract: `VG.Spec.Gcm.ghashStorePowersContract`. Only the pointers and `n` may affect timing.
-///
-/// Uses PMULL as `vg_ghash_aes` does, computing `H'` to `H'⁸` on every call and storing them to `pw` after the hash. `scratch` is not used.
 ///
 /// It writes at most the first 0 bytes of `scratch` (`VG_GHASH_STORE_POWERS_AES_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
@@ -1551,8 +1543,6 @@ pub(crate) const VG_AES_GCM_INIT_AES_FEATURES: crate::cpu::Features = crate::cpu
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -1624,10 +1614,6 @@ pub(crate) const VG_AES_GCM_SEAL_AES_FEATURES: crate::cpu::Features = crate::cpu
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
 /// Contract: `VG.Spec.Gcm.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
-///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
-///
-/// For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes the hash subkey's `H · x⁻¹` once and multiplies the additional data, the last bytes of the ciphertext and the lengths block into the hash with PMULL in registers, calling `vg_ghash_aes` once, on the whole blocks of the ciphertext.
 ///
 /// # Safety
 ///
@@ -2798,10 +2784,6 @@ pub(crate) const VG_AES_GCM_OPEN_AES_FEATURES: crate::cpu::Features = crate::cpu
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Gcm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
-///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
-///
-/// For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes the tag as `seal` does on that path, calling `vg_ghash_aes` once, on the whole blocks of the ciphertext, and decrypts only if it matches.
 ///
 /// # Safety
 ///
@@ -4125,8 +4107,6 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_AES_FEATURES: crate::cpu::Features = cra
 ///
 /// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -4304,8 +4284,6 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_AES_FEATURES: crate::cpu::Features = crat
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -4473,8 +4451,6 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_AES_FEATURES: crate::cpu::Features = 
 /// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
 ///
 /// # Safety
 ///
@@ -4861,8 +4837,6 @@ pub(crate) const VG_AES_GCM_STREAM_DECRYPT_AES_FEATURES: crate::cpu::Features = 
 ///
 /// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -5246,8 +5220,6 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_AES_FEATURES: crate::cpu::Features = c
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -5410,8 +5382,6 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_AES_FEATURES: crate::cpu::Features = c
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
-///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
 ///
 /// # Safety
 ///
@@ -5668,8 +5638,6 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_AES_FEATURES: crate::cpu::Features = cra
 ///
 /// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
 ///
-/// This implementation copies the slices one after the other to `dst`, 16 bytes at a time and then the last bytes of each eight, four and one at a time, and encrypts them there in place with `vg_aes_gcm_seal_aes`.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -5771,10 +5739,6 @@ ret
 pub(crate) const VG_AES_GCM_SEAL_WITH_POWERS_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
 /// `vg_aes_gcm_seal` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_seal`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealWithPowersContract`.
-///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
-///
-/// For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes the tag as `vg_aes_gcm_seal_aes` does, calling `vg_ghash_with_powers_aes` once, on the whole blocks of the text, which reads the powers of `H` from `pw`. Otherwise it never reads `pw`, and computes as `vg_aes_gcm_seal_aes` does.
 ///
 /// # Safety
 ///
@@ -6953,10 +6917,6 @@ ret
 pub(crate) const VG_AES_GCM_OPEN_WITH_POWERS_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
 /// `vg_aes_gcm_open` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openWithPowersContract`.
-///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
-///
-/// For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes the tag as `vg_aes_gcm_open_aes` does, calling `vg_ghash_with_powers_aes` once, on the whole blocks of the text, which reads the powers of `H` from `pw`. Otherwise it never reads `pw`, and computes as `vg_aes_gcm_open_aes` does.
 ///
 /// # Safety
 ///
@@ -8290,8 +8250,6 @@ pub(crate) const VG_AES_GCM_INIT_AES_SHA3_FEATURES: crate::cpu::Features = crate
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
-///
 /// The machine code of this function is that of `vg_aes_gcm_init_aes`, which is emitted once and named both ways: the two are the same function.
 ///
 /// # Safety
@@ -8313,10 +8271,6 @@ pub(crate) const VG_AES_GCM_SEAL_AES_SHA3_FEATURES: crate::cpu::Features = crate
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
 /// Contract: `VG.Spec.Gcm.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
-///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
-///
-/// For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes the hash subkey's `H · x⁻¹` once and multiplies the additional data, the last bytes of the ciphertext and the lengths block into the hash with PMULL in registers, calling `vg_ghash_aes` once, on the whole blocks of the ciphertext.
 ///
 /// The machine code of this function is that of `vg_aes_gcm_seal_aes`, which is emitted once and named both ways: the two are the same function.
 ///
@@ -8343,10 +8297,6 @@ pub(crate) const VG_AES_GCM_OPEN_AES_SHA3_FEATURES: crate::cpu::Features = crate
 ///
 /// Contract: `VG.Spec.Gcm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
-///
-/// For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes the tag as `seal` does on that path, calling `vg_ghash_aes` once, on the whole blocks of the ciphertext, and decrypts only if it matches.
-///
 /// The machine code of this function is that of `vg_aes_gcm_open_aes`, which is emitted once and named both ways: the two are the same function.
 ///
 /// # Safety
@@ -8372,8 +8322,6 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_AES_SHA3_FEATURES: crate::cpu::Features 
 ///
 /// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
-///
 /// The machine code of this function is that of `vg_aes_gcm_stream_init_aes`, which is emitted once and named both ways: the two are the same function.
 ///
 /// # Safety
@@ -8393,8 +8341,6 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_AES_SHA3_FEATURES: crate::cpu::Features =
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
 ///
 /// The machine code of this function is that of `vg_aes_gcm_stream_aad_aes`, which is emitted once and named both ways: the two are the same function.
 ///
@@ -8417,8 +8363,6 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_AES_SHA3_FEATURES: crate::cpu::Featur
 /// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
 ///
 /// The machine code of this function is that of `vg_aes_gcm_stream_encrypt_aes`, which is emitted once and named both ways: the two are the same function.
 ///
@@ -8443,8 +8387,6 @@ pub(crate) const VG_AES_GCM_STREAM_DECRYPT_AES_SHA3_FEATURES: crate::cpu::Featur
 ///
 /// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
-///
 /// The machine code of this function is that of `vg_aes_gcm_stream_decrypt_aes`, which is emitted once and named both ways: the two are the same function.
 ///
 /// # Safety
@@ -8465,8 +8407,6 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_AES_SHA3_FEATURES: crate::cpu::Feature
 /// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
-///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
 ///
 /// The machine code of this function is that of `vg_aes_gcm_stream_finish_aes`, which is emitted once and named both ways: the two are the same function.
 ///
@@ -8489,8 +8429,6 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_AES_SHA3_FEATURES: crate::cpu::Feature
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
-///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
 ///
 /// The machine code of this function is that of `vg_aes_gcm_stream_verify_aes`, which is emitted once and named both ways: the two are the same function.
 ///
@@ -8515,8 +8453,6 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_AES_SHA3_FEATURES: crate::cpu::Features 
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
 /// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
-///
-/// This implementation copies the slices one after the other to `dst`, 16 bytes at a time and then the last bytes of each eight, four and one at a time, and encrypts them there in place with `vg_aes_gcm_seal_aes_sha3`.
 ///
 /// # Safety
 ///
@@ -8619,14 +8555,6 @@ ret
 pub(crate) const VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "sha3"]);
 
 /// `vg_aes_gcm_seal` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_seal`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealWithPowersContract`.
-///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
-///
-/// For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes the tag as `vg_aes_gcm_seal_aes_sha3` does, calling `vg_ghash_with_powers_aes` once, on the whole blocks of the text, which reads the powers of `H` from `pw`. Otherwise it never reads `pw`, and computes as `vg_aes_gcm_seal_aes_sha3` does.
-///
-/// With the interleaved loops, it encrypts or decrypts the first 128 ⌊n / 128⌋ bytes of the text and hashes them eight blocks at a time, in one loop that interleaves the AES rounds with the PMULL products and their reduction (with `eor3`, which needs `FEAT_SHA3`), from a table of the powers, and hashes the rest's whole blocks with the call.
-///
-/// On the path for TLS records, a text of 17 to 96 bytes is sealed without the call: its blocks, the additional data and the lengths are laid out in `work`, encrypted in one pass of the loop's AES rounds and hashed in one pass of its products, from the table of the powers read from `pw`.
 ///
 /// # Safety
 ///
@@ -14079,14 +14007,6 @@ pub(crate) const VG_AES_GCM_OPEN_WITH_POWERS_AES_SHA3_FEATURES: crate::cpu::Feat
 
 /// `vg_aes_gcm_open` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openWithPowersContract`.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
-///
-/// For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes the tag as `vg_aes_gcm_open_aes_sha3` does, calling `vg_ghash_with_powers_aes` once, on the whole blocks of the text, which reads the powers of `H` from `pw`. Otherwise it never reads `pw`, and computes as `vg_aes_gcm_open_aes_sha3` does.
-///
-/// With the interleaved loops, it encrypts or decrypts the first 128 ⌊n / 128⌋ bytes of the text and hashes them eight blocks at a time, in one loop that interleaves the AES rounds with the PMULL products and their reduction (with `eor3`, which needs `FEAT_SHA3`), from a table of the powers, and hashes the rest's whole blocks with the call.
-///
-/// On the path for TLS records, a text of at most 96 bytes is opened without the call: its blocks, the additional data and the lengths are laid out in `work`, encrypted in one pass of the loop's AES rounds and hashed in one pass of its products, from the table of the powers read from `pw`.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -19055,8 +18975,6 @@ ret
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and hashes with `vg_ghash`.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -19122,8 +19040,6 @@ ret
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
 /// Contract: `VG.Spec.Gcm.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
-///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and hashes with `vg_ghash`.
 ///
 /// # Safety
 ///
@@ -19811,8 +19727,6 @@ ret
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Gcm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
-///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and hashes with `vg_ghash`.
 ///
 /// # Safety
 ///
@@ -20559,8 +20473,6 @@ ret
 ///
 /// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
 ///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and hashes with `vg_ghash`.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -20732,8 +20644,6 @@ ret
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and hashes with `vg_ghash`.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -20895,8 +20805,6 @@ ret
 /// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and hashes with `vg_ghash`.
 ///
 /// # Safety
 ///
@@ -21277,8 +21185,6 @@ ret
 ///
 /// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and hashes with `vg_ghash`.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -21656,8 +21562,6 @@ ret
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and hashes with `vg_ghash`.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
@@ -21814,8 +21718,6 @@ ret
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
-///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and hashes with `vg_ghash`.
 ///
 /// # Safety
 ///
@@ -22065,8 +21967,6 @@ ret
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
 /// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
-///
-/// This implementation copies the slices one after the other to `dst`, 16 bytes at a time and then the last bytes of each eight, four and one at a time, and encrypts them there in place with `vg_aes_gcm_seal`.
 ///
 /// # Safety
 ///

@@ -42,35 +42,6 @@ namespace VG.Proof.Ecdsa.X86_64.P521
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Impl.Ecdsa.X86_64
 open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
 
-/-- How P-521's field elements are multiplied modulo `p`, for the notes of its
-functions: with BMI2 and ADX (`adx`) or not. -/
-def mulNote (adx : Bool) : String :=
-  "multiplied modulo `p` by calls of `vg_p521_mul_mod_p" ++ (if adx then "_adx" else "") ++ "`, " ++
-  if adx then
-    "Montgomery multiplication by rows (operand scanning) of BMI2's \
-    `mulx`, each product's low half added through OF (`adox`) and its high half through CF \
-    (`adcx`), two carry chains that do not wait for each other, into nine registers, each row's \
-    low word stored once final; as `p = 2⁵²¹ - 1 ≡ -1 (mod 2⁶⁴)`, the reduction's multipliers \
-    are the product's low words (the ninth plus 512 times the first, modulo 2⁶⁴), and a row of \
-    products by 512 adds `512 U` eight words up, which leaves `(a b + U p) / 2⁵⁷⁶ < 2p`; that is \
-    reduced below `p` by adding 1, whose bit 521 is whether it is at least `p`, subtracting 1 \
-    less that bit, and clearing the bits from 521 up"
-  else
-    "Montgomery multiplication by columns (product scanning, the \
-    accumulator in three registers; as `p = 2⁵²¹ - 1 ≡ -1 (mod 2⁶⁴)`, each reduction's \
-    multiplier is its column's low word, added 512 times eight columns up; a square computes \
-    each product of two different words once and adds it twice) with a final conditional \
-    subtraction"
-
-/-- How the comb's entries are selected, for the notes of its functions: with
-AVX2 (`adx`) or not. -/
-def selNote (adx : Bool) : String :=
-  if adx then
-    "32 bytes at a time with AVX2 (the last 32 bytes of each 144-byte entry overlapping the 32 \
-    before), and keeping (`vpand`, `vpor`, under the mask of `vpcmpeqd` of a counter and the \
-    magnitude, broadcast)"
-  else "16 bytes at a time, and keeping (`pand`, `por`)"
-
 /-! `p521x` is `p521` but for `adx` and `avx2`: its other fields, rewritten rather than
 compared by unfolding (which would evaluate the order's bits). -/
 

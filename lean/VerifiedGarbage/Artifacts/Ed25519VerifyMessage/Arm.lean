@@ -9,8 +9,6 @@ namespace VG.Artifacts.Ed25519VerifyMessage.Arm
 
 def artifacts : List Artifact := [
   Spec.Ed25519.verifyApi.artifact Arm.target {
-    notes := ["Includes SHA-512 of R || A || message, challenge \
-      reduction, and strict verification of the Ed25519 equation."]
     code := Impl.Ed25519.Arm.VerifyMessage.code
     stack := 280
     verified := Proof.Ed25519.Arm.VerifyMessage.verifyMessage_verified }]

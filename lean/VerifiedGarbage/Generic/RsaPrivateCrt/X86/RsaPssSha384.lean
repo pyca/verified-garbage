@@ -27,10 +27,6 @@ open VG.Proof.Rsa.X86.PrivChecked (CrtImpl)
 def artifacts (c : CrtImpl) : List Artifact := [
   (Spec.RsaPss.signApi Spec.Mgf1.sha384 Spec.Mgf1.sha384).artifact X86.target {
     suffix := c.suffix
-    notes := ["This implementation builds EMSA-PSS's encoding in its working space: `M'` is hashed \
-      over the blocks its length needs, `DB` is masked with MGF1, and the encoding is signed with `" ++
-      Proof.RsaPss.X86.Sg.privName c ++ "`, which checks the signature against `e`. Only the lengths, \
-      `salt_len` and the public key decide a branch or an address."]
     code := Proof.RsaPss.X86.Sg.signCode Proof.RsaPss.X86.sha384 c
     stack := Proof.RsaPss.X86.Sg.stackBytes
     verified := Proof.RsaPss.X86.Sg.sign_verified Proof.RsaPss.X86.sha384 Proof.RsaPss.X86.Sg.sign_sat_sha384 c

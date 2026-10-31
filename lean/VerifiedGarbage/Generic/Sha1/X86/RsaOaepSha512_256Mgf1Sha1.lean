@@ -27,10 +27,6 @@ namespace VG.Generic.Sha1.X86.RsaOaepSha512_256Mgf1Sha1
 def artifacts (v : Proof.Sha1.X86.Variants.Backend) : List Artifact := [
   (Spec.RsaOaep.encryptPrecomputedApi Spec.Mgf1.sha512_256 Spec.Mgf1.sha1).artifact X86.target {
     suffix := v.stream.suffix
-    notes := ["This implementation calls `" ++ Proof.RsaPkcs1Sig.X86.Ver.baseline.name ++ "` with the cached modulus \
-      values; it hashes the label with `vg_sha512_update`, and masks `DB` and the seed with MGF1 calling \
-      `vg_sha1_update`. The message's length is public; its bytes, the label's and the seed's are only \
-      copied, hashed and masked."]
     code := Proof.RsaOaep.X86.Enc.encryptCode Proof.RsaOaep.X86.sha512_256 (Proof.RsaOaep.X86.sha1 v) Proof.RsaPkcs1Sig.X86.Ver.baseline
     stack := Proof.RsaOaep.X86.Enc.stackBytes
     verified := Proof.RsaOaep.X86.Enc.encrypt_verified Proof.RsaOaep.X86.sha512_256 (Proof.RsaOaep.X86.sha1 v)

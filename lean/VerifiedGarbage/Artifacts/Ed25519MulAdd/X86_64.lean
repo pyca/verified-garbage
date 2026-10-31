@@ -11,9 +11,6 @@ namespace VG.Artifacts.Ed25519MulAdd.X86_64
 
 def artifacts : List Artifact := [
   Spec.Ed25519.scalarMulAddApi.artifact X86_64.target {
-    notes := ["Computes the complete 512-bit \
-      multiply-add before reducing it modulo the subgroup order a 64-bit word at a time. All three input scalars \
-      may use all 256 bits. The function saves callee-saved registers and the output's address in `scratch`."]
     code := Impl.Ed25519.X86_64.scalarMulAdd
     verified := Proof.Ed25519.X86_64.scalarMulAdd_verified }]
 

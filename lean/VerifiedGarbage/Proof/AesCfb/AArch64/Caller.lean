@@ -22,11 +22,6 @@ def decrypt (v : BlocksImpl) : Prog isa :=
 def written (v : BlocksImpl) : List (String × Nat) :=
   if v.enc.name="vg_aes_encrypt_blocks_aes" then [("scratch",0)] else []
 
-def note (v : BlocksImpl) : String :=
-  if v.enc.name="vg_aes_encrypt_blocks_aes" then
-    "With FEAT_AES: eight independent forward AES states with resident round keys, a four-block tail, and the remaining single blocks. Original ciphertext is loaded before stores. No stack or scratch memory is used."
-  else "This implementation enciphers one block at a time with `" ++ v.enc.name ++ "`."
-
 theorem verified (v : BlocksImpl) :
     Verified AArch64.target (decrypt v) (Spec.Cfb.aesDecryptContract AArch64.abi) := by
   unfold decrypt

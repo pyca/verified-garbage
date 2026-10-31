@@ -118,12 +118,6 @@ def pdName (v : CrtImpl) : String := v.pubOp.name
 def artifacts (v : CrtImpl) : List Artifact := [
   Spec.Rsa.privateCheckedApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := ["This implementation computes the result `m` with `" ++
-      v.name ++ "` into its frame, then `m^e mod n` with `" ++ pcName v ++ "` and `" ++ pdName v ++
-      "`, which also checks `e`. It compares that with the input in constant time, and copies `m` to `out` \
-      under a mask, which is clear unless the CRT and the public operation succeeded and the two match. \
-      The result, 1, 2 or 0, is computed from the mask without a branch. Then it overwrites the frame's \
-      copy of `m` with zeros."]
     code := Impl.Rsa.X86_64.PrivChecked.code v.name v.code (pcName v) v.pc (pdName v) v.pubOp.code
     stack := stackBytes
     verified := code_verified v _ _

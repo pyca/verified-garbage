@@ -6,10 +6,6 @@
 ///
 /// Contract: `VG.Spec.Cmac.tdesStreamInitContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation looks up DES's S-boxes with AdvSIMD `tbl` in tables held in the vector registers (two boxes to a 64-byte table), which takes a time independent of the index, and computes its bit permutations as rotations and masks; the halves are kept rotated and spread so that the expansion is a byte layout, and the round keys are spread once per call (before all the blocks of an update).
-///
-/// This implementation's streaming functions are built from three pieces of code, run inline on the streaming state: one expands the key and derives the subkeys, one chains whole blocks, and one masks, pads and encrypts the last block.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 416 bytes.
@@ -4071,10 +4067,6 @@ ret
 ///
 /// Contract: `VG.Spec.Cmac.tdesAbsorbContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// This implementation looks up DES's S-boxes with AdvSIMD `tbl` in tables held in the vector registers (two boxes to a 64-byte table), which takes a time independent of the index, and computes its bit permutations as rotations and masks; the halves are kept rotated and spread so that the expansion is a byte layout, and the round keys are spread once per call (before all the blocks of an update).
-///
-/// This implementation's streaming functions are built from three pieces of code, run inline on the streaming state: one expands the key and derives the subkeys, one chains whole blocks, and one masks, pads and encrypts the last block.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 416 bytes.
@@ -6631,10 +6623,6 @@ ret
 /// Finishes a TDEA-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 64`): if the streaming state `*state` represents a message of `count` bytes, shorter than 2⁶⁴ bytes, under a TDEA key (as `vg_cmac_triple_des_stream_init` and `vg_cmac_triple_des_absorb` set it up), writes the MAC of that message under that key to `*out`: `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if the message's last bytes `Mₙ*` are a complete block, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise (step 4). The caller truncates it (step 7) and compares it (§6.3).
 ///
 /// Contract: `VG.Spec.Cmac.tdesFinishContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// This implementation looks up DES's S-boxes with AdvSIMD `tbl` in tables held in the vector registers (two boxes to a 64-byte table), which takes a time independent of the index, and computes its bit permutations as rotations and masks; the halves are kept rotated and spread so that the expansion is a byte layout, and the round keys are spread once per call (before all the blocks of an update).
-///
-/// This implementation's streaming functions are built from three pieces of code, run inline on the streaming state: one expands the key and derives the subkeys, one chains whole blocks, and one masks, pads and encrypts the last block.
 ///
 /// # Safety
 ///

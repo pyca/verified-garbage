@@ -9,8 +9,6 @@ pub(crate) const VG_MILLER_RABIN_ROUND_ADX_FEATURES: crate::cpu::Features = crat
 ///
 /// Contract: `VG.Spec.MillerRabin.roundContract`. Timing may depend on the pointers, lengths and limb count, not on the candidate, witness, exponent or test result.
 ///
-/// Fixed four-bit windows with the verified Montgomery kernel. The saved frame restores the caller's bookkeeping without making it public. Shared by RSA and FFDH.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -1034,8 +1032,6 @@ ret
 /// One strong Miller–Rabin round (FIPS 186-5 Appendix B.3.1, steps 4.3–4.5) in a prepared RSA Montgomery workspace. Returns 1 if the witness passes, 0 otherwise. Uses fixed windows of four bits, with no witness-dependent table address. This is neither a primality certificate nor a choice of witness distribution or round count. The caller supplies those policies.
 ///
 /// Contract: `VG.Spec.MillerRabin.roundContract`. Timing may depend on the pointers, lengths and limb count, not on the candidate, witness, exponent or test result.
-///
-/// Fixed four-bit windows with the verified Montgomery kernel. The saved frame restores the caller's bookkeeping without making it public. Shared by RSA and FFDH.
 ///
 /// # Safety
 ///

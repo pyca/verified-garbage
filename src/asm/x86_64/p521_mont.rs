@@ -6,10 +6,6 @@
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function zero-extends the offsets, keeps `o` in `rsi` and saves the callee-saved registers it writes in `xmm0`–`xmm5` (`movq`); it writes only `[o]` and its temporary area, the last nine words below byte 4096 of `ws`. It reads `[a]` through `rbx = ws + a` and squares (when `a = b`, a public comparison) or multiplies by `[b]` into its temporary area. As `p = 2⁵²¹ - 1 ≡ -1 (mod 2⁶⁴)`, each reduction's multiplier is a word of the product, and adding `u p` adds `512 u` eight words up. The result `W < 2p`, plus one, is reduced by its bit 521: `W - p` if it is set, else `W`, stored at `o` with `rdi` moved there; the registers come back from `xmm0`–`xmm5`.
-///
-/// Montgomery multiplication by columns (product scanning, the accumulator in three registers, `mul`, `[b]` through `rbp = ws + b`; a square computes each product of two different words once and adds it twice).
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -1149,10 +1145,6 @@ pub(crate) const VG_P521_MUL_MOD_P_ADX_FEATURES: crate::cpu::Features = crate::c
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function zero-extends the offsets, keeps `o` in `rsi` and saves the callee-saved registers it writes in `xmm0`–`xmm5` (`movq`); it writes only `[o]` and its temporary area, the last nine words below byte 4096 of `ws`. It reads `[a]` through `rbx = ws + a` and squares (when `a = b`, a public comparison) or multiplies by `[b]` into its temporary area. As `p = 2⁵²¹ - 1 ≡ -1 (mod 2⁶⁴)`, each reduction's multiplier is a word of the product, and adding `u p` adds `512 u` eight words up. The result `W < 2p`, plus one, is reduced by its bit 521: `W - p` if it is set, else `W`, stored at `o` with `rdi` moved there; the registers come back from `xmm0`–`xmm5`.
-///
-/// With BMI2 and ADX: the product by rows, each row's products by `mulx` added through two carry chains (`adcx`, `adox`), `[a]` first copied into the temporary area (row `i` reads `a_i` there before it stores its low word over it) and `[b]` through `rbx = ws + b`; a square computes the products of two different words by rows, then doubles them and adds the squares in one pass.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -1809,8 +1801,6 @@ ret
 /// Montgomery's product modulo P-521's order `n`: writes the number below the modulus congruent to `a b 2^-576` to `o`. The numbers are 9 64-bit words (`72` bytes), little-endian, at the byte offsets `o`, `a` and `b` of the working space `ws`; `o` may be `a` or `b`. Every byte of `ws` but the result's and the function's own working space (bytes 3520 to 4095) keeps its value.
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
-///
-/// The function zero-extends the offsets and saves the callee-saved registers it writes in `xmm0`–`xmm5` (`movq`), and the eighty bytes of `ws` from byte 3944 in `xmm6`–`xmm10`, over which it stores `n`; it writes only `[o]` and its temporary area, the last nine words below byte 4096 of `ws`, and restores those bytes. It runs the inline product of the other P-521 functions modulo `n` with its operands read through registers: `[a]` through `rbx = ws + a`, `[b]` through `rbp = ws + b` and `[o]` through `rsi = ws + o`. Montgomery multiplication by columns (product scanning, the accumulator in three registers, `mul`): column `c` adds its products and the reduction's `u_k n_j`, and for `c < 9` computes `u_c = t₀ (-n⁻¹) mod 2⁶⁴`, which clears the low word; the result, below `2n`, is reduced by subtracting `n` and selecting the difference unless it borrowed.
 ///
 /// # Safety
 ///

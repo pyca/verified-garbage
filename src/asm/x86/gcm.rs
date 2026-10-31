@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Gcm.ghashContract`. Constant time: only the pointers and `n` may affect timing, not `H`, `Y` or the data.
 ///
-/// `•` is computed bit by bit as Algorithm 1 of §6.3 does, with masks instead of branches.
-///
 /// # Safety
 ///
 /// * `h` must be valid for reads of 16 bytes.
@@ -444,8 +442,6 @@ pub(crate) const VG_GHASH_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Fe
 ///
 /// Contract: `VG.Spec.Gcm.ghashContract`. Constant time: only the pointers and `n` may affect timing, not `H`, `Y` or the data.
 ///
-/// PCLMULQDQ multiplication with SSSE3 byte reversal, processing one block at a time. The implementation retains the accumulator and transformed hash key in SSE registers and does not use the scratch buffer.
-///
 /// # Safety
 ///
 /// * `h` must be valid for reads of 16 bytes.
@@ -580,8 +576,6 @@ pub(crate) const VG_AES_GCM_INIT_AESNI_FEATURES: crate::cpu::Features = crate::c
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation calls `vg_aes_ctr32_aesni`, `vg_ghash` and `vg_aes_expand_key_scratch_aesni` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -677,8 +671,6 @@ ret
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// This implementation calls `vg_aes_ctr32_aesni`, `vg_ghash` and `vg_aes_expand_key_scratch_aesni` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// The machine code of this function is that of `vg_aes_gcm_stream_aad`, which is emitted once and named both ways: the two are the same function.
@@ -698,8 +690,6 @@ pub(crate) use self::vg_aes_gcm_stream_aad as vg_aes_gcm_stream_aad_aesni;
 /// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
-///
-/// This implementation calls `vg_aes_ctr32_aesni`, `vg_ghash` and `vg_aes_expand_key_scratch_aesni` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -723,8 +713,6 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_AESNI_FEATURES: crate::cpu::Features 
 /// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// This implementation calls `vg_aes_ctr32_aesni`, `vg_ghash` and `vg_aes_expand_key_scratch_aesni` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -1112,8 +1100,6 @@ pub(crate) const VG_AES_GCM_STREAM_DECRYPT_AESNI_FEATURES: crate::cpu::Features 
 ///
 /// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// This implementation calls `vg_aes_ctr32_aesni`, `vg_ghash` and `vg_aes_expand_key_scratch_aesni` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -1498,8 +1484,6 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES: crate::cpu::Features =
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
-/// This implementation calls `vg_aes_ctr32_aesni`, `vg_ghash` and `vg_aes_expand_key_scratch_aesni` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -1715,8 +1699,6 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES: crate::cpu::Features =
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
-///
-/// This implementation calls `vg_aes_ctr32_aesni`, `vg_ghash` and `vg_aes_expand_key_scratch_aesni` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -1996,8 +1978,6 @@ pub(crate) const VG_AES_GCM_SEAL_AESNI_FEATURES: crate::cpu::Features = crate::c
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
 /// Contract: `VG.Spec.Gcm.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
-///
-/// This implementation calls `vg_aes_ctr32_aesni`, `vg_ghash` and `vg_aes_expand_key_scratch_aesni` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -2880,8 +2860,6 @@ pub(crate) const VG_AES_GCM_OPEN_AESNI_FEATURES: crate::cpu::Features = crate::c
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Gcm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
-///
-/// This implementation calls `vg_aes_ctr32_aesni`, `vg_ghash` and `vg_aes_expand_key_scratch_aesni` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -3833,8 +3811,6 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_AESNI_FEATURES: crate::cpu::Features = c
 ///
 /// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
 ///
-/// This implementation copies the slices, a word at a time, one after the other to `dst`, and encrypts them there in place with `vg_aes_gcm_seal_aesni`.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -3933,8 +3909,6 @@ pub(crate) const VG_AES_GCM_INIT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = c
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation calls `vg_aes_ctr32_aesni`, `vg_ghash_pclmul` and `vg_aes_expand_key_scratch_aesni` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// The machine code of this function is that of `vg_aes_gcm_init_aesni`, which is emitted once and named both ways: the two are the same function.
@@ -3956,8 +3930,6 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_FEATURES: crate::cpu::Featur
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// This implementation calls `vg_aes_ctr32_aesni`, `vg_ghash_pclmul` and `vg_aes_expand_key_scratch_aesni` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -3983,8 +3955,6 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_FEATURES: crate::cpu::Featu
 ///
 /// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
 ///
-/// This implementation calls `vg_aes_ctr32_aesni`, `vg_ghash_pclmul` and `vg_aes_expand_key_scratch_aesni` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// The machine code of this function is that of `vg_aes_gcm_stream_init_pclmul`, which is emitted once and named both ways: the two are the same function.
@@ -4008,8 +3978,6 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_FEATURES: crate::cpu::Fe
 /// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// This implementation calls `vg_aes_ctr32_aesni`, `vg_ghash_pclmul` and `vg_aes_expand_key_scratch_aesni` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -4397,8 +4365,6 @@ pub(crate) const VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_FEATURES: crate::cpu::Fe
 ///
 /// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// This implementation calls `vg_aes_ctr32_aesni`, `vg_ghash_pclmul` and `vg_aes_expand_key_scratch_aesni` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -4783,8 +4749,6 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES: crate::cpu::Fea
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
-/// This implementation calls `vg_aes_ctr32_aesni`, `vg_ghash_pclmul` and `vg_aes_expand_key_scratch_aesni` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -5000,8 +4964,6 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES: crate::cpu::Fea
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
-///
-/// This implementation calls `vg_aes_ctr32_aesni`, `vg_ghash_pclmul` and `vg_aes_expand_key_scratch_aesni` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -5281,8 +5243,6 @@ pub(crate) const VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES: crate::cpu::Features = c
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
 /// Contract: `VG.Spec.Gcm.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
-///
-/// This implementation calls `vg_aes_ctr32_aesni`, `vg_ghash_pclmul` and `vg_aes_expand_key_scratch_aesni` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -6165,8 +6125,6 @@ pub(crate) const VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES: crate::cpu::Features = c
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Gcm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
-///
-/// This implementation calls `vg_aes_ctr32_aesni`, `vg_ghash_pclmul` and `vg_aes_expand_key_scratch_aesni` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -7118,8 +7076,6 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_FEATURES: crate::cpu::Featu
 ///
 /// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
 ///
-/// This implementation copies the slices, a word at a time, one after the other to `dst`, and encrypts them there in place with `vg_aes_gcm_seal_aesni_pclmul`.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -7215,8 +7171,6 @@ ret
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation calls `vg_aes_ctr32`, `vg_ghash_pclmul` and `vg_aes_expand_key_scratch` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// The machine code of this function is that of `vg_aes_gcm_init`, which is emitted once and named both ways: the two are the same function.
@@ -7237,8 +7191,6 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES: crate::cpu::Features = c
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// This implementation calls `vg_aes_ctr32`, `vg_ghash_pclmul` and `vg_aes_expand_key_scratch` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -7419,8 +7371,6 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES: crate::cpu::Features = 
 /// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
-///
-/// This implementation calls `vg_aes_ctr32`, `vg_ghash_pclmul` and `vg_aes_expand_key_scratch` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -7730,8 +7680,6 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES: crate::cpu::Features
 /// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// This implementation calls `vg_aes_ctr32`, `vg_ghash_pclmul` and `vg_aes_expand_key_scratch` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -8119,8 +8067,6 @@ pub(crate) const VG_AES_GCM_STREAM_DECRYPT_PCLMUL_FEATURES: crate::cpu::Features
 ///
 /// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// This implementation calls `vg_aes_ctr32`, `vg_ghash_pclmul` and `vg_aes_expand_key_scratch` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -8505,8 +8451,6 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES: crate::cpu::Features 
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
-/// This implementation calls `vg_aes_ctr32`, `vg_ghash_pclmul` and `vg_aes_expand_key_scratch` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -8722,8 +8666,6 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES: crate::cpu::Features 
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
-///
-/// This implementation calls `vg_aes_ctr32`, `vg_ghash_pclmul` and `vg_aes_expand_key_scratch` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -9003,8 +8945,6 @@ pub(crate) const VG_AES_GCM_SEAL_PCLMUL_FEATURES: crate::cpu::Features = crate::
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
 /// Contract: `VG.Spec.Gcm.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
-///
-/// This implementation calls `vg_aes_ctr32`, `vg_ghash_pclmul` and `vg_aes_expand_key_scratch` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -9887,8 +9827,6 @@ pub(crate) const VG_AES_GCM_OPEN_PCLMUL_FEATURES: crate::cpu::Features = crate::
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Gcm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
-///
-/// This implementation calls `vg_aes_ctr32`, `vg_ghash_pclmul` and `vg_aes_expand_key_scratch` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -10840,8 +10778,6 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_PCLMUL_FEATURES: crate::cpu::Features = 
 ///
 /// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
 ///
-/// This implementation copies the slices, a word at a time, one after the other to `dst`, and encrypts them there in place with `vg_aes_gcm_seal_pclmul`.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -10937,8 +10873,6 @@ ret
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation calls `vg_aes_ctr32`, `vg_ghash` and `vg_aes_expand_key_scratch` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -11032,8 +10966,6 @@ ret
 /// Absorbs additional data into an incremental AES-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// This implementation calls `vg_aes_ctr32`, `vg_ghash` and `vg_aes_expand_key_scratch` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -11210,8 +11142,6 @@ ret
 /// The function checks no length: GCM requires a nonce of 1 to `2^61 - 1` bytes (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
-///
-/// This implementation calls `vg_aes_ctr32`, `vg_ghash` and `vg_aes_expand_key_scratch` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -11517,8 +11447,6 @@ ret
 /// The function checks no length: GCM requires at most `2^36 - 32` bytes of text and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
-///
-/// This implementation calls `vg_aes_ctr32`, `vg_ghash` and `vg_aes_expand_key_scratch` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -11902,8 +11830,6 @@ ret
 ///
 /// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// This implementation calls `vg_aes_ctr32`, `vg_ghash` and `vg_aes_expand_key_scratch` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -12284,8 +12210,6 @@ ret
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
-/// This implementation calls `vg_aes_ctr32`, `vg_ghash` and `vg_aes_expand_key_scratch` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -12497,8 +12421,6 @@ ret
 /// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
-///
-/// This implementation calls `vg_aes_ctr32`, `vg_ghash` and `vg_aes_expand_key_scratch` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -12774,8 +12696,6 @@ ret
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
 /// Contract: `VG.Spec.Gcm.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
-///
-/// This implementation calls `vg_aes_ctr32`, `vg_ghash` and `vg_aes_expand_key_scratch` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -13654,8 +13574,6 @@ ret
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
 /// Contract: `VG.Spec.Gcm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
-///
-/// This implementation calls `vg_aes_ctr32`, `vg_ghash` and `vg_aes_expand_key_scratch` for the block cipher, GHASH and the key schedule, with the arguments it keeps in the working space.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -14602,8 +14520,6 @@ ret
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
 /// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
-///
-/// This implementation copies the slices, a word at a time, one after the other to `dst`, and encrypts them there in place with `vg_aes_gcm_seal`.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

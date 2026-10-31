@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Ecdh.Instance.exchangeContract`. Constant time but for the peer's public key: timing may depend on the pointers and the contents of `peer`, not on the private key.
 ///
-/// The function is `vg_ecdsa_secp256k1_sign`'s setup, field arithmetic, ladder and inversion, with the peer's point in place of `G`: it saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`, and keeps `out` in `lr` (in `r10` during the calls); field elements are sixteen 16-bit digits in Montgomery form, multiplied by digit-by-digit Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_secp256k1_mul_mod_p` and the other functions of `secp256k1_mont`) with a final conditional subtraction. The peer's key is checked without branches (its first byte, both coordinates below `p`, and the curve's equation), and the ladder multiplies the peer's point if it is valid, else `G`, so it always runs on a point of the curve. `[d]P` is a double-and-add ladder over all 256 bits of `d`, with the complete addition formulas of Renes, Costello and Batina (calls of `vg_secp256k1_point_a0_double` and `vg_secp256k1_point_a0_add_affine`, Algorithms 9 and 8 for `a = 0`) and a masked selection for each bit; `Z⁻¹` is Fermat's, by square-and-always-multiply. The result (or zeros) is selected by a mask of the checks, `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.

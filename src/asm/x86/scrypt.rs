@@ -568,8 +568,6 @@ ret
 ///
 /// Contract: `VG.Spec.Scrypt.scryptContract`. Not constant time in the indices: timing may depend on the pointers, the lengths, `r`, `N`, `p` and the indices `j` of step 3 of each scryptROMix, which are derived from the password and the salt and so leak information about them (as in every scrypt that indexes `V` directly), but on nothing else.
 ///
-/// Derives both keys with `vg_pbkdf2_hmac_sha256_scratch` and runs scryptROMix on each block with `vg_scrypt_romix`, using the start of `scratch` as the working space of each. The arguments of each call and the next block are kept in a 36-byte stack frame; our own arguments are read from the stack whenever they are needed, and the calls use the 80 bytes below the frame.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -681,8 +679,6 @@ pub(crate) const VG_SCRYPT_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Fe
 /// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`. Calls `vg_pbkdf2_hmac_sha256_scratch` for its two PBKDF2-HMAC-SHA256 steps and `vg_scrypt_romix` for each of the `p` blocks.
 ///
 /// Contract: `VG.Spec.Scrypt.scryptContract`. Not constant time in the indices: timing may depend on the pointers, the lengths, `r`, `N`, `p` and the indices `j` of step 3 of each scryptROMix, which are derived from the password and the salt and so leak information about them (as in every scrypt that indexes `V` directly), but on nothing else.
-///
-/// Derives both keys with `vg_pbkdf2_hmac_sha256_scratch_shani` and runs scryptROMix on each block with `vg_scrypt_romix`, using the start of `scratch` as the working space of each. The arguments of each call and the next block are kept in a 36-byte stack frame; our own arguments are read from the stack whenever they are needed, and the calls use the 80 bytes below the frame.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

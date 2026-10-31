@@ -89,16 +89,6 @@ namespace VG.Generic.P256.AArch64.EcP256
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvToMOrd Spec.P256.curve) : List Artifact := [
   Spec.EcKey.P256.publicKeyApi.artifact AArch64.target {
-    notes := ["Public-key derivation shares signing's \
-      width-7 Booth/Jacobian fixed-base comb and its existing 37 rows of 64 affine entries \
-      in `VG_P256_COMB`. Every row is scanned in full, interleaved with the previous window's \
-      mixed addition; all secret-dependent selections use \
-      masks. Mixed additions use specialized P-256 squaring and register forwarding. The \
-      Booth/order proof excludes equal nonzero operands; masks handle zero digits and an \
-      infinite accumulator. After conversion to homogeneous coordinates, fixed divsteps \
-      invert `Z` and the affine coordinates are encoded. The function saves `x19`–`x25` in \
-      its 8 KB scratch buffer and returns zeros for an invalid scalar. Timing depends only \
-      on the pointers and the static table address."]
     consts := Impl.Ecdsa.AArch64.p256.combConsts
     code := Impl.P256.Booth.publicKey
     verified := Proof.EcKey.AArch64.booth_pk_verified h.law h.inv (Proof.P256.combOk7 h.law) }]

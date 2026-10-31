@@ -4,8 +4,6 @@
 
 /// Ed25519 scalar multiply-add (RFC 8032 §5.1.6): writes the canonical 32-byte little-endian encoding of `(r + k*s) mod L` to `*out`. The inputs are unsigned 256-bit little-endian integers; they need not be canonical scalars. Contract: `VG.Spec.Ed25519.scalarMulAddContract`. Constant time: only pointers may affect timing.
 ///
-/// Computes the complete 512-bit multiply-add before reducing it modulo the subgroup order a 64-bit word at a time. All three input scalars may use all 256 bits. The function saves callee-saved registers in `scratch`.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.
@@ -296,8 +294,6 @@ ret
 
 /// Ed25519 public-key derivation (RFC 8032 §5.1.5): writes the 32-byte public key to `*out`, for the 32-byte private seed whose SHA-512 digest (§5.1.5, step 1) is at `expanded`, including pruning. Contract: `VG.Spec.Ed25519.publicKeyExpandedContract`. Constant time: only pointers may affect timing.
 ///
-/// Copies the seed's SHA-512 digest to the frame and encodes `[s]B` with `vg_ed25519_scalar_base`, as `vg_ed25519_public_key` does after hashing the seed.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.
@@ -468,8 +464,6 @@ ret
 
 /// Ed25519 scalar reduction (RFC 8032 §5.1.6): writes the canonical 32-byte little-endian encoding of `wide mod L` to `*out`, using all 64 input bytes. Contract: `VG.Spec.Ed25519.scalarReduceContract`. Constant time: only pointers may affect timing.
 ///
-/// Processes the eight input words from the top into a four-word remainder: each step folds the bits above 2^252 back as multiples of `2^252 - L` with `mul` and `umulh`, then subtracts the subgroup order and selects with a borrow mask. Callee-saved registers are saved in the first 48 bytes of `scratch`.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 32 bytes.
@@ -583,8 +577,6 @@ ret
 }
 
 /// Ed25519 base-point multiplication (RFC 8032 §5.1.4): writes the encoding of `[s]B` to `*out`, for the unsigned little-endian 256-bit integer at `scalar`, without pruning. Contract: `VG.Spec.Ed25519.scalarBaseContract`. Constant time: only pointers may affect timing.
-///
-/// Uses baseline integer instructions and a comb: the scalar's 64 nibbles n_i give the digits n_i - 8, and digit i's multiple of [16^i]B is an entry of table i, [k 16^i]B for k <= 8, affine, cached as [Y - X, Y + X, 2dT] in the static `VG_ED25519_COMB` and checked against the specification in Lean. Each entry is selected in constant time (reading every entry of its table) and negated under its sign's mask; the 64 additions, and no doublings, run inline on s2n-bignum's `_alt` field operations (`mul_4`, `add_twice4`, `sub_twice4`), operation for operation as in `edwards25519_scalarmulbase_alt`, the accumulator's coordinates below 2·(2^255 - 19) between additions. The working values and saved registers reside in `scratch`.
 ///
 /// # Safety
 ///
@@ -3459,8 +3451,6 @@ ret
 }
 
 /// Checks Ed25519 encodings and the equation `[S]B = R + [k]A` (RFC 8032 §5.1.7), returning 1 if they pass and 0 otherwise. `pk` holds A, `signature` holds R || S, and `challenge` holds all 64 bytes of k as a little-endian integer, used as given: it is not reduced modulo L. To verify a signature on M as RFC 8032 §6 and `VG.Spec.Ed25519.verify` do, the caller must reduce SHA-512(R || A || M) modulo L (e.g. with `vg_ed25519_scalar_reduce`) and supply the 32-byte result followed by 32 zero bytes as `challenge`; this function does not hash M. Passing the unreduced digest instead checks the equation with the full 512-bit k, which RFC 8032 §5.1.7 also permits but which differs from §6 and OpenSSL whenever A has a small-order component. Rejects noncanonical points and S >= L, with no additional subgroup or small-order check. Contract: `VG.Spec.Ed25519.verifyEquationContract`. Not constant time: timing may depend on all inputs.
-///
-/// Uses baseline integer and AdvSIMD instructions. Checks canonical point encodings and S < L, then evaluates the uncofactored equation using all 512 challenge bits. No additional subgroup or small-order policy is imposed. Computes [k]A - [S]B with one chain of doublings and 4-bit windows of the public scalars, split into nibbles with AdvSIMD instructions, from a table of [1]A to [15]A and one of -[1]B to -[15]B, cached as [Y - X, Y + X, 2dT, 2Z] and copied into `scratch` from the static `VG_ED25519_VERIFY_NEG_BASE`, skipping the leading zero nibbles of k above its low 64, and compares it with -R projectively.
 ///
 /// # Safety
 ///
@@ -13719,8 +13709,6 @@ ret
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
 ///
-/// Hashes R, the public key and the message with the selected SHA-512 backend, reduces the challenge modulo L, and checks the signature equation. The 336-byte stack frame holds the digest, challenge, saved arguments and return address; the SHA-512 calls use another 16 bytes below it.
-///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 32 bytes.
@@ -14108,8 +14096,6 @@ ret
 pub(crate) const VG_ED25519_VERIFY_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
 
 /// Ed25519 verification (RFC 8032 §5.1.7): returns 1 if the 64-byte signature at `signature` verifies for the 32-byte public key at `pk` and the `len` bytes at `message`, and 0 otherwise. Uses pure Ed25519, with no context or prehash. Checks canonical point encodings, S < L, and `[S]B = R + [k]A` with the challenge k = SHA-512(R || A || M) reduced modulo L, as in RFC 8032 §6. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed25519.verifyContract`. Not constant time: timing may depend on the public key, message and signature.
-///
-/// Hashes R, the public key and the message with the selected SHA-512 backend, reduces the challenge modulo L, and checks the signature equation. The 336-byte stack frame holds the digest, challenge, saved arguments and return address; the SHA-512 calls use another 16 bytes below it.
 ///
 /// # Safety
 ///

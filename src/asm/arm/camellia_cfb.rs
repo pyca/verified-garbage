@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Camellia.cfbEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline ARMv7: the generic CFB of `Impl/Modes/Arm/`, one block at a time (each block's input is the ciphertext block before), calling the verified `vg_camellia_ecb_encrypt` (bitsliced, in a batch of eight) on the chaining value with the number of rounds, in a 72-byte working space on the stack, zeroed on return.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 272 bytes.
@@ -135,8 +133,6 @@ bx lr",
 /// Camellia-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments; RFC 3713 §2.3) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is Camellia's encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them.
 ///
 /// Contract: `VG.Spec.Camellia.cfbDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
-///
-/// Baseline ARMv7: the generic CFB of `Impl/Modes/Arm/`, one block at a time (each block's input is the ciphertext block before), calling the verified `vg_camellia_ecb_encrypt` (bitsliced, in a batch of eight) on the chaining value with the number of rounds, in a 72-byte working space on the stack, zeroed on return.
 ///
 /// # Safety
 ///

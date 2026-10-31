@@ -6,10 +6,6 @@
 ///
 /// Contract: `VG.Spec.Idea.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline PPC64LE: one block at a time, with ECB's verified block code inlined (each multiplication modulo 2^16 + 1 a `mulld` of the residues and a reduction of the product from its halves, without branches), reading the subkeys in place. The mode is the generic one of `Impl/Modes/PPC64LE/`, which keeps its state in `r29`–`r31`, with its working space on the stack, zeroed before returning.
-///
-/// The chaining value, the last ciphertext block, goes back to the IV at the end.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 104 bytes.
@@ -861,10 +857,6 @@ blr",
 /// IDEA-CBC decryption (NIST SP 800-38A §6.2, Lai 1992 §3.3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is IDEA under the decryption subkeys at `schedule`, as `vg_idea_invert_key` writes them. No padding is removed.
 ///
 /// Contract: `VG.Spec.Idea.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
-///
-/// Baseline PPC64LE: one block at a time, with ECB's verified block code inlined (each multiplication modulo 2^16 + 1 a `mulld` of the residues and a reduction of the product from its halves, without branches), reading the subkeys in place. The mode is the generic one of `Impl/Modes/PPC64LE/`, which keeps its state in `r29`–`r31`, with its working space on the stack, zeroed before returning.
-///
-/// The chaining value, the last ciphertext block, goes back to the IV at the end.
 ///
 /// # Safety
 ///

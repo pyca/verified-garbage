@@ -4,8 +4,6 @@
 
 /// Ed448 public-key derivation (RFC 8032 §5.2.5): writes the 57-byte public key to `*out`, from the 57-byte private key at `seed`, including SHAKE256 and pruning. Contract: `VG.Spec.Ed448.publicKeyContract`. Constant time: only pointers may affect timing.
 ///
-/// Uses baseline integer instructions. Hashes the private key with `vg_keccak_absorb_scratch`, `vg_keccak_pad_scratch` and `vg_keccak_squeeze_scratch` (SHAKE256, the Keccak state in `scratch`) into a stack frame, prunes the first 57 bytes of the hash there, encodes `[s]B` with `vg_ed448_scalar_base`, and clears the frame, the hash and the scalar with it, before returning. The Keccak state, and the base-point multiplication's working values, are left in `scratch`.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 57 bytes.
@@ -314,8 +312,6 @@ bx lr",
 }
 
 /// Ed448 scalar reduction (RFC 8032 §5.2.6): writes the canonical 57-byte little-endian encoding of `wide mod L` to `*out`, using all 114 input bytes. Contract: `VG.Spec.Ed448.scalarReduceContract`. Constant time: only pointers may affect timing.
-///
-/// Processes the input from the top, sixteen bits at a time, into a remainder of twenty-eight 16-bit limbs: each step folds the bits above 2^446 back with one multiplication by the 224-bit 2^446 - L, using only the low 32-bit `mul` instruction on 16-bit limbs, then adds 2^448 - L and selects the sum or the folded value with a carry mask. Callee-saved registers are saved in the first 32 bytes of `scratch`, and the output's address in the next 4.
 ///
 /// # Safety
 ///
@@ -1035,8 +1031,6 @@ bx lr",
 }
 
 /// Ed448 scalar multiply-add (RFC 8032 §5.2.6): writes the canonical 57-byte little-endian encoding of `(r + k*s) mod L` to `*out`. The inputs are unsigned 456-bit little-endian integers; they need not be canonical scalars. Contract: `VG.Spec.Ed448.scalarMulAddContract`. Constant time: only pointers may affect timing.
-///
-/// Reduces `k`, `s` and `r` modulo L as `vg_ed448_scalar_reduce` does, multiplies the first two with X448's rows of 16-bit limbs (its field multiplication without the reduction), reduces the 56-limb product the same way, and adds the third with a last conditional subtraction. Callee-saved registers are saved in the first 32 bytes of `scratch`, and the arguments' addresses in the next 16.
 ///
 /// # Safety
 ///
@@ -4270,8 +4264,6 @@ bx lr",
 
 /// Ed448 base-point multiplication (RFC 8032 §5.2.4): writes the 57-byte encoding of `[s]B` to `*out`, for the unsigned little-endian 456-bit integer at `scalar`, without pruning. Contract: `VG.Spec.Ed448.scalarBaseContract`. Constant time: only pointers may affect timing.
 ///
-/// Expands the scalar's 456 bits into bytes, then for each bit from the top doubles `R` and adds the base point to it with RFC 8032's projective formulas, and swaps the sum into `R` with a mask of the bit: the same operations for every bit. Field elements are X448's twenty-eight 16-bit limbs; multiplications, additions and subtractions are calls of the `vg_gf448_r16_*` functions on `scratch`; `Z` is inverted with X448's addition chain for `p - 2`. Callee-saved registers are saved in the first 32 bytes of `scratch`.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 57 bytes.
@@ -7413,8 +7405,6 @@ bx lr",
 
 /// Ed448 signing (RFC 8032 §5.2.6): writes the 114-byte signature to `*out`, for the `len` bytes at `message`, the `ctxlen` bytes of context at `context` and the 57-byte private key at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses Ed448 with a context, not Ed448ph (no prehash); the context is empty for plain Ed448. Contract: `VG.Spec.Ed448.signCachedContract`. Constant time: only pointers and the context and message lengths may affect timing, not any buffer contents.
 ///
-/// Uses baseline integer instructions. Hashes with `vg_keccak_absorb_scratch`, `vg_keccak_pad_scratch` and `vg_keccak_squeeze_scratch` (SHAKE256, into its stack frame, with the Keccak state and the sponge functions' working space in `scratch`): the private key, whose first half, pruned in place, is the secret scalar s; then dom4(0, C), the prefix and the message, reduced modulo L with `vg_ed448_scalar_reduce` into the second half of `out` (r); R = [r]B with `vg_ed448_scalar_base` into the first half of `out`; then dom4(0, C), R, the public key and the message, reduced into the frame (k); and S = (r + k s) mod L with `vg_ed448_scalar_mul_add` over r. Clears the frame, the hash, s and k with it, before returning; the callees' working values are left in `scratch`.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 114 bytes.
@@ -8063,8 +8053,6 @@ bx lr",
 
 /// Ed448 verification (RFC 8032 §5.2.7): returns 1 if the 114-byte signature at `signature` verifies for the 57-byte public key at `pk`, the `ctxlen` bytes of context at `context` and the `len` bytes at `message`, and 0 otherwise (always 0 for a context longer than 255 bytes). Uses Ed448 with a context, not Ed448ph (no prehash). Checks canonical point encodings, S < L, and the cofactored equation `[4][S]B = [4]R + [4][k]A` with the challenge k = SHAKE256(dom4(0, C) || R || A || M, 114) reduced modulo L. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed448.verifyContract`. Not constant time: timing may depend on the public key, context, message and signature.
 ///
-/// Uses baseline integer instructions. Returns 0 at once for a context of 256 bytes or more. Otherwise writes the first ten bytes of dom4(0, C) into a stack frame, hashes them, the context, R, the public key and the message with `vg_keccak_absorb_scratch`, `vg_keccak_pad_scratch` and `vg_keccak_squeeze_scratch` (SHAKE256, with the Keccak state and the sponge functions' working space in `scratch`) into the frame, reduces the hash modulo L there with `vg_ed448_scalar_reduce`, and returns `vg_ed448_verify_equation`'s result. The frame (the hash and k) is not cleared: verification has no secrets.
-///
 /// # Safety
 ///
 /// * `pk` must be valid for reads of 57 bytes.
@@ -8287,8 +8275,6 @@ bx lr",
 }
 
 /// Checks Ed448 encodings and the cofactored equation `[4][S]B = [4]R + [4][k]A` (RFC 8032 §5.2.7), returning 1 if they pass and 0 otherwise. `pk` holds A, `signature` holds R || S, and `challenge` holds k as a 57-byte little-endian integer, used as given. To verify a signature on M with the context C as `VG.Spec.Ed448.verify` does, the caller must reduce SHAKE256(dom4(0, C) || R || A || M, 114) modulo L (e.g. with `vg_ed448_scalar_reduce`) and supply the 57-byte result as `challenge`; this function does not hash M. Rejects noncanonical points and S >= L, with no additional subgroup or small-order check. Contract: `VG.Spec.Ed448.verifyEquationContract`. Not constant time: timing may depend on all inputs.
-///
-/// Uses baseline integer instructions, and runs the same operations whatever the inputs: the checks (the encodings of A and R, S < L, and the comparison) are accumulated in a register, 0 exactly when all pass. Decodes A with RFC 8032's square root (X448's addition chain up to z^(2^223 - 1), then 223 squarings) and negates it; computes [S]B + [k](-A) with one chain of doublings, adding B and -A for every bit of S and k and swapping each sum in with a mask of the bit; then compares [4] of it with [4]R projectively. Field elements are X448's twenty-eight 16-bit limbs; multiplications, additions and subtractions are calls of the `vg_gf448_r16_*` functions on `scratch`. Callee-saved registers are saved in the first 32 bytes of `scratch`.
 ///
 /// # Safety
 ///

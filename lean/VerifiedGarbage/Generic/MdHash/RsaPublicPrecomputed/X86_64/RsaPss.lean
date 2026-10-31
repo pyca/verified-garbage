@@ -26,9 +26,6 @@ open VG.Proof.RsaPss.X86_64 (verifyStack chkOf)
 def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (c : Proof.Rsa.X86_64.PublicImpl) : List Artifact := [
   (Spec.RsaPss.verifyPrecomputedApi v.mgf.G v.mgf.G).artifact X86_64.target {
     suffix := Emit.qualifiedName "" [(v.mgf.G.rust, v.suffix), ("rsa", c.suffix)]
-    notes := ["This implementation calls `" ++ c.name ++ "` with the cached public-key values, \
-        then `" ++ (chkOf v).name ++ "` on the last `emLen` bytes of its output, and checks \
-        that the bytes before them are zero."]
     code := Impl.RsaPss.X86_64.verifyC (chkOf v).name (chkOf v).code c.name c.code
     stack := verifyStack
     verified := Proof.RsaPss.X86_64.Pc.codeC_verified (hvK := (chkOf v).ok) (hctK := (chkOf v).ct)

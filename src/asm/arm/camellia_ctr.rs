@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Camellia.ctrContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the counter block or the data.
 ///
-/// Baseline ARMv7: the generic CTR mode calls the verified vg_camellia_ecb_encrypt once per counter block. The full 128-bit big-endian counter increment is verified. Its 72-byte working space is kept on the stack and zeroed on return.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 272 bytes.

@@ -3026,8 +3026,6 @@ pub(crate) const VG_SHA256_COMPRESS_SHANI_FEATURES: crate::cpu::Features = crate
 ///
 /// Contract: `VG.Spec.Sha256.compressContract`. Constant time: only the pointers and `n` may affect timing, not the hash value or the blocks.
 ///
-/// This implementation uses the SHA extensions.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 32 bytes.
@@ -3230,8 +3228,6 @@ pub(crate) const VG_SHA256_COMPRESS_AVX2_FEATURES: crate::cpu::Features = crate:
 /// The SHA-256 compression function (FIPS 180-4 §6.2.2): updates the hash value `*state` with the `n` 64-byte blocks starting at `blocks`, in order.
 ///
 /// Contract: `VG.Spec.Sha256.compressContract`. Constant time: only the pointers and `n` may affect timing, not the hash value or the blocks.
-///
-/// This implementation computes the message schedules of two blocks at a time in the two lanes of the AVX2 registers, and the rounds with BMI1 and BMI2.
 ///
 /// # Safety
 ///

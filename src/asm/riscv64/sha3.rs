@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Sha3.permuteContract`. Constant time: only the pointers may affect timing, not the state.
 ///
-/// The state is copied a byte at a time into a frame of 608 bytes on the stack, since the contract states no alignment for it, and back; the rounds run on that copy and a second state in the frame, with the round constants and the registers it saves. `scratch` is not used.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 200 bytes, and aligned for `u64`.
@@ -1792,8 +1790,6 @@ ret
 ///
 /// Contract: `VG.Spec.Sha3.absorbContract`. Constant time: only the pointers, `rate`, `pos` and `len` may affect timing, not the state or the data.
 ///
-/// The state and the data are accessed a byte at a time, since the contract states no alignment for them. Keeps the permutation's scratch space, and the registers it saves, in a frame of 560 bytes on the stack, above the permutation's own frame.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 200 bytes, and aligned for `u64`.
@@ -1861,8 +1857,6 @@ ret
 ///
 /// Contract: `VG.Spec.Sha3.padContract`. Constant time: only the pointers, `rate`, `pos` and `suffix` may affect timing, not the state.
 ///
-/// Keeps the permutation's scratch space, and the return address, in a frame of 528 bytes on the stack, above the permutation's own frame.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 200 bytes, and aligned for `u64`.
@@ -1899,8 +1893,6 @@ ret
 /// Squeezes output from a padded SHA-3 or SHAKE state: writes to `out` the `outlen` bytes of the output of the sponge with rate `rate` from the state `*state` (FIPS 202 Algorithm 8, steps 7 to 10), from byte `pos` of that output on; leaves in `*state` a state, and returns a position, from which the output continues after them. Start from the state `vg_keccak_pad` leaves and position 0.
 ///
 /// Contract: `VG.Spec.Sha3.squeezeContract`. Constant time: only the pointers, `rate`, `pos` and `outlen` may affect timing, not the state.
-///
-/// The state and the output are accessed a byte at a time, since the contract states no alignment for them. Keeps the permutation's scratch space, and the registers it saves, in a frame of 560 bytes on the stack, above the permutation's own frame.
 ///
 /// # Safety
 ///

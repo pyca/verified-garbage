@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Blowfish.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// One block at a time: each S-box lookup reads the 256 entries of its four byte planes under masks, as in ECB, and the schedule is read in place through its argument. The mode is the generic OFB of `Impl/Modes/X86/`, over Blowfish's ECB block.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety

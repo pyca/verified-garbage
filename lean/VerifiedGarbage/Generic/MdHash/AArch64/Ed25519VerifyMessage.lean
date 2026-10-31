@@ -24,10 +24,6 @@ def artifacts (h : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
   | some v => [
     Spec.Ed25519.verifyApi.artifact AArch64.target {
       suffix := v.suffix
-      notes := ["Hashes R, the public key and the message with \
-        the selected SHA-512 backend, reduces the challenge modulo L, and checks the signature \
-        equation. The 336-byte stack frame holds the digest, challenge, saved arguments and return address; \
-        the SHA-512 calls use another 16 bytes below it."]
       consts := Impl.Ed25519.AArch64.bConsts
       code := Impl.Ed25519.AArch64.VerifyMessage.code v.code v.suffix
       stack := 352

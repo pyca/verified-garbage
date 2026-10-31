@@ -6,8 +6,6 @@
 ///
 /// Contract: `invPContract` of `VG.Spec.Weierstrass.Inverse.Curve`.
 ///
-/// The function keeps `rbx`, `rbp` and `r12`–`r15` in bytes 1984 to 2031 of `ws` (slot 30) while it runs, and computes the inverse modulo `p` by Bernstein and Yang's divsteps, in batches of 59 (23 batches for eight words), each run on the low words of `f` and `g` packed into 64-bit registers and applied to `f`, `g` and the numbers `d`, `e` by the batch's matrix, in its working area at bytes 4504 to 5079, then multiplies by a constant (`2^(5 B) R³ mod p`) to return to Montgomery form, by `mul` and column-wise Montgomery reduction; nothing depends on the numbers but through masks and `cmov`.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -3283,8 +3281,6 @@ ret
 /// The power `A = x^(n-2)` modulo brainpoolP512r1's order `n` (the inverse of `x` if it is nonzero), of the number `x` at byte 2432 of `ws`. Numbers are 8 64-bit words (`64` bytes), little-endian, in Montgomery's form modulo brainpoolP512r1's order `n`. The function reads `n` at byte 128 and the number to invert at byte 2432, and writes the result at bytes 1920 to 1983, below `n`. Bytes 1984 to 2047, 192 to 255 and 4504 to 5127 of `ws` are the function's own working space; every other byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect timing.
 ///
 /// Contract: `invNContract` of `VG.Spec.Weierstrass.Inverse.Curve`.
-///
-/// The function keeps `rbx`, `rbp` and `r12`–`r15` in bytes 1984 to 2031 of `ws` (slot 30) while it runs, and computes the inverse modulo `n` by Bernstein and Yang's divsteps, in batches of 59 (23 batches for eight words), each run on the low words of `f` and `g` packed into 64-bit registers and applied to `f`, `g` and the numbers `d`, `e` by the batch's matrix, in its working area at bytes 4504 to 5079, then multiplies by a constant (`2^(5 B) R³ mod n`) to return to Montgomery form, by `mul` and column-wise Montgomery reduction; nothing depends on the numbers but through masks and `cmov`.
 ///
 /// # Safety
 ///

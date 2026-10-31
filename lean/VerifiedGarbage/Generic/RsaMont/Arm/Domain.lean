@@ -15,9 +15,6 @@ def artifacts (b : Proof.Bignum.Arm.MontBackend) : List Artifact :=
     features := b.features
     stack := 176
     code := Proof.Ffdh.Arm.SharedCheckPublic.calledCode b
-    verified := Proof.Ffdh.Arm.SharedCheckPublic.called_verified b
-    notes := ["ARMv7: public-value range checking and optional subgroup exponentiation \
-      retain RSA's three-bit fixed-window schedule. Montgomery preparation, \
-      multiplication, and specialized squaring call the shared RSA arithmetic helper."] }]
+    verified := Proof.Ffdh.Arm.SharedCheckPublic.called_verified b }]
 
 end VG.Generic.RsaMont.Arm.Domain

@@ -97,21 +97,12 @@ namespace VG.Generic.BrainpoolP256r1.X86.PointBrainpoolP256r1
 
 open VG.Proof.Weierstrass.X86.Point VG.Proof.Weierstrass.Point
 
-/-- How the functions work. -/
-def notes : List String := ["The function saves `ebx` in its own working space, and computes \
-  Renes, Costello and Batina's 40 steps by calls of `vg_brainpoolp256r1_mul_mod_p`, `vg_brainpoolp256r1_add_mod_p` and \
-  `vg_brainpoolp256r1_sub_mod_p` on fixed offsets of `ws`, loading `ws` from its argument into `ebx` before \
-  each call and pushing it and the offsets as the callee's arguments. It writes no register but \
-  `eax`, `ecx` and `edx` (and `ebx`, which it restores)."]
-
 def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInv Spec.BrainpoolP256r1.curve) : List Artifact := [
   Spec.Weierstrass.Point.brainpoolp256r1.addApi.artifact X86.target {
-    notes := notes
     code := Impl.Weierstrass.X86.Point.pointAdd Spec.Weierstrass.Point.brainpoolp256r1
     stack := 20
     verified := brainpoolp256r1_add_verified (fermat_of_law h.law) },
   Spec.Weierstrass.Point.brainpoolp256r1.doubleApi.artifact X86.target {
-    notes := notes
     code := Impl.Weierstrass.X86.Point.pointDouble Spec.Weierstrass.Point.brainpoolp256r1
     stack := 20
     verified := brainpoolp256r1_double_verified (fermat_of_law h.law) }]

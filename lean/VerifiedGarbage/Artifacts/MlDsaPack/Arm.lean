@@ -21,12 +21,10 @@ def artifacts : List Artifact := [
     code := Impl.MlDsa.Arm.Pack.simpleBitPack
     verified := Proof.MlDsa.Arm.Pack.simpleBitPack_verified },
   Spec.MlDsa.bitPackApi.artifact Arm.target {
-    notes := ["The function saves `r4` in a frame of 4 bytes on the stack, below the stack pointer."]
     code := Impl.MlDsa.Arm.Pack.bitPack
     stack := 4
     verified := Proof.MlDsa.Arm.Pack.bitPack_verified },
   Spec.MlDsa.bitUnpackApi.artifact Arm.target {
-    notes := ["The function saves `r4` in a frame of 4 bytes on the stack, below the stack pointer."]
     code := Impl.MlDsa.Arm.Pack.bitUnpack
     stack := 4
     verified := Proof.MlDsa.Arm.Pack.bitUnpack_verified },
@@ -34,12 +32,10 @@ def artifacts : List Artifact := [
     code := Impl.MlDsa.Arm.Pack.unpackT1
     verified := Proof.MlDsa.Arm.Pack.unpackT1_verified },
   Spec.MlDsa.hintBitPackApi.artifact Arm.target {
-    notes := ["The function saves `r4` and `r5` in a frame of 8 bytes on the stack, below the stack pointer."]
     code := Impl.MlDsa.Arm.Pack.hintBitPack
     stack := 8
     verified := Proof.MlDsa.Arm.Pack.Hint.hintBitPack_verified },
   Spec.MlDsa.hintBitUnpackApi.artifact Arm.target {
-    notes := ["The function saves `r4`–`r7` in a frame of 16 bytes on the stack, below the stack pointer."]
     code := Impl.MlDsa.Arm.Pack.hintBitUnpack
     stack := 16
     verified := Proof.MlDsa.Arm.Pack.Hint.hintBitUnpack_verified }]

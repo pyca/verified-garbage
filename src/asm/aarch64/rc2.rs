@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Rc2.cbcInitContract`. Constant time: only the pointers, `key_len`, `effective_bits` and `iv_len` may affect timing, not the key or the IV.
 ///
-/// Baseline AArch64: copies the IV and calls the verified key expansion, saving the link register in a 16-byte stack frame.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -98,8 +96,6 @@ ret
 /// Continues RC2-CBC encryption without padding: if `*ctx` is a context with `pending_len` pending bytes (`VG.Spec.Rc2.contextAt`, written by `vg_rc2_cbc_init` and updated by this function), encrypts the complete 8-byte blocks of the pending bytes followed by the `len` bytes at `data`, `C[i] = RC2(schedule, P[i] XOR C[i-1])` from the context's chaining value, writes them to `out` (`out_len` bytes), and leaves in `*ctx` the last ciphertext block as the chaining value and the remaining `(pending_len + len) % 8` bytes as the pending input. The caller keeps the number of pending bytes; when the input ends, it is an incomplete block unless it is 0.
 ///
 /// Contract: `VG.Spec.Rc2.cbcEncryptUpdateContract`. Constant time: only the pointers, `pending_len`, `len` and `out_len` may affect timing, not the context or the data.
-///
-/// Baseline AArch64: copies bytes one at a time and calls the verified CBC encryption on the complete blocks, saving the link register in a 16-byte stack frame.
 ///
 /// # Safety
 ///
@@ -228,8 +224,6 @@ ret
 ///
 /// Contract: `VG.Spec.Rc2.cbcDecryptUpdateContract`. Constant time: only the pointers, `pending_len`, `len` and `out_len` may affect timing, not the context or the data.
 ///
-/// Baseline AArch64: copies bytes one at a time and calls the verified CBC decryption on the complete blocks, saving the link register in a 16-byte stack frame.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads and writes of 144 bytes.
@@ -357,8 +351,6 @@ ret
 ///
 /// Contract: `VG.Spec.Rc2.cbcEncryptContract`. Constant time: only pointers and `n` may affect timing, not the key schedule, IV contents or data.
 ///
-/// Baseline AArch64, calling the verified RC2 block primitive.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -405,8 +397,6 @@ ret
 /// RC2-CBC decryption on `n` complete 8-byte blocks at `data`, in place: `P[i] = RC2_inverse(schedule, C[i]) XOR C[i-1]`, starting with `C[0] = *iv`. Writes the last input ciphertext block to `*iv`; for `n = 0`, leaves `*iv` unchanged. The schedule is the 64 little-endian 16-bit words written by `vg_rc2_expand_key`. No padding is removed.
 ///
 /// Contract: `VG.Spec.Rc2.cbcDecryptContract`. Constant time: only pointers and `n` may affect timing, not the key schedule, IV contents or data.
-///
-/// Baseline AArch64. Groups of eight blocks are decrypted together in AdvSIMD registers, each word of four blocks in the 32-bit lanes of one register, with the schedule in `v16`–`v23` for key-word broadcasts and the mashing's `tbl` lookups; the blocks left are decrypted one at a time by the block primitive, preserving the input ciphertext for the next IV.
 ///
 /// # Safety
 ///
@@ -1948,8 +1938,6 @@ ret
 ///
 /// Contract: `VG.Spec.Rc2.expandKeyContract`. Constant time: only pointers, `key_len` and `effective_bits` may affect timing, not the key.
 ///
-/// Baseline AArch64. Each PITABLE lookup builds the table in `v16`–`v31` from immediates and selects from it with four `tbl`s.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -2621,8 +2609,6 @@ ret
 /// RC2 block encryption (RFC 2268 §3): encrypts `*data` in place under `*schedule`, the 64 little-endian 16-bit words written by `vg_rc2_expand_key`.
 ///
 /// Contract: `VG.Spec.Rc2.encryptBlockContract`. Constant time: only pointers may affect timing, not the key schedule or data, including the mashing indices.
-///
-/// Baseline AArch64. Mashing loads the schedule into `v16`–`v23` and selects a word from it with two `tbl`s.
 ///
 /// # Safety
 ///
@@ -3781,8 +3767,6 @@ ret
 /// RC2 block decryption (RFC 2268 §4): decrypts `*data` in place under `*schedule`, the 64 little-endian 16-bit words written by `vg_rc2_expand_key`.
 ///
 /// Contract: `VG.Spec.Rc2.decryptBlockContract`. Constant time: only pointers may affect timing, not the key schedule or data, including the reverse-mashing indices.
-///
-/// Baseline AArch64. Reverse mashing loads the schedule into `v16`–`v23` and selects a word from it with two `tbl`s.
 ///
 /// # Safety
 ///

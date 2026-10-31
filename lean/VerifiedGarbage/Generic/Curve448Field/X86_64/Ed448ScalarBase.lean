@@ -29,13 +29,6 @@ def artifacts (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
   Spec.Ed448.scalarBaseApi.artifact X86_64.target {
     suffix := v.suffix
     features := v.features
-    notes := ["Expands all 456 scalar bits into bytes, \
-      then uses a four-column comb with 114 rows and 16 precomputed affine points. Each row \
-      doubles the accumulator and adds one point, selected by scanning the entire table \
-      with constant-time masks. Point operations call `vg_ed448_r64_point_double` and \
-      `vg_ed448_r64_point_add_affine`. Field elements use X448's seven 64-bit words. \
-      The final inversion calls `vg_gf448_r64_pow223`. Callee-saved registers occupy the \
-      first 48 bytes of scratch; the output address occupies the next 8."]
     code := Impl.Ed448.X86_64.scalarBaseFor v
     stack := 8
     verified := Proof.Ed448.X86_64.scalarBaseFor_verified v Proof.Ed448.baseLadder_ok }]

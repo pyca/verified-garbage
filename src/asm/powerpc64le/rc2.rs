@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Rc2.cbcInitContract`. Constant time: only the pointers, `key_len`, `effective_bits` and `iv_len` may affect timing, not the key or the IV.
 ///
-/// Copies the IV and calls the verified key expansion. The return address and our caller's r25 are kept in the last 64 bytes of the working space on the stack, zeroed before returning.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -145,8 +143,6 @@ blr",
 /// Continues RC2-CBC encryption without padding: if `*ctx` is a context with `pending_len` pending bytes (`VG.Spec.Rc2.contextAt`, written by `vg_rc2_cbc_init` and updated by this function), encrypts the complete 8-byte blocks of the pending bytes followed by the `len` bytes at `data`, `C[i] = RC2(schedule, P[i] XOR C[i-1])` from the context's chaining value, writes them to `out` (`out_len` bytes), and leaves in `*ctx` the last ciphertext block as the chaining value and the remaining `(pending_len + len) % 8` bytes as the pending input. The caller keeps the number of pending bytes; when the input ends, it is an incomplete block unless it is 0.
 ///
 /// Contract: `VG.Spec.Rc2.cbcEncryptUpdateContract`. Constant time: only the pointers, `pending_len`, `len` and `out_len` may affect timing, not the context or the data.
-///
-/// Copies bytes one at a time and calls the verified CBC encryption on the complete blocks. The return address and our caller's r25 are kept in the last 64 bytes of the working space on the stack, zeroed before returning.
 ///
 /// # Safety
 ///
@@ -323,8 +319,6 @@ blr",
 ///
 /// Contract: `VG.Spec.Rc2.cbcDecryptUpdateContract`. Constant time: only the pointers, `pending_len`, `len` and `out_len` may affect timing, not the context or the data.
 ///
-/// Copies bytes one at a time and calls the verified CBC decryption on the complete blocks. The return address and our caller's r25 are kept in the last 64 bytes of the working space on the stack, zeroed before returning.
-///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads and writes of 144 bytes.
@@ -500,8 +494,6 @@ blr",
 ///
 /// Contract: `VG.Spec.Rc2.cbcEncryptContract`. Constant time: only pointers and `n` may affect timing, not the key schedule, IV contents or data.
 ///
-/// Calls the verified block encryption on each block in turn. Our caller's r26-r31 and the return address are kept in the working space.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -564,8 +556,6 @@ blr",
 ///
 /// Contract: `VG.Spec.Rc2.cbcDecryptContract`. Constant time: only pointers and `n` may affect timing, not the key schedule, IV contents or data.
 ///
-/// Calls the verified block decryption on each block in turn, keeping the input ciphertext for the next IV. Our caller's r26-r31 and the return address are kept in the working space.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -627,8 +617,6 @@ blr",
 /// RC2 key expansion (RFC 2268 §2): expands the `key_len` bytes at `key` with `effective_bits` effective key bits into `*schedule`, as 64 little-endian 16-bit words. Effective bits are independent of the supplied key length.
 ///
 /// Contract: `VG.Spec.Rc2.expandKeyContract`. Constant time: only pointers, `key_len` and `effective_bits` may affect timing, not the key.
-///
-/// PITABLE is written from immediates into the working space, and each lookup reads all 32 of its doublewords, keeping the one that holds the index under a mask computed from it. Our caller's r14 and r15 are kept in the working space.
 ///
 /// # Safety
 ///
@@ -1078,8 +1066,6 @@ blr",
 /// RC2 block encryption (RFC 2268 §3): encrypts `*data` in place under `*schedule`, the 64 little-endian 16-bit words written by `vg_rc2_expand_key`.
 ///
 /// Contract: `VG.Spec.Rc2.encryptBlockContract`. Constant time: only pointers may affect timing, not the key schedule or data, including the mashing indices.
-///
-/// The four words in general-purpose registers. Mashing reads all 16 doublewords of the schedule, keeping the one that holds the index under a mask computed from it.
 ///
 /// # Safety
 ///
@@ -2315,8 +2301,6 @@ blr",
 /// RC2 block decryption (RFC 2268 §4): decrypts `*data` in place under `*schedule`, the 64 little-endian 16-bit words written by `vg_rc2_expand_key`.
 ///
 /// Contract: `VG.Spec.Rc2.decryptBlockContract`. Constant time: only pointers may affect timing, not the key schedule or data, including the reverse-mashing indices.
-///
-/// The four words in general-purpose registers. Reverse mashing reads all 16 doublewords of the schedule, keeping the one that holds the index under a mask computed from it.
 ///
 /// # Safety
 ///

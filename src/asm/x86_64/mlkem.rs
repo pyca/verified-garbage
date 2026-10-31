@@ -862,8 +862,6 @@ ret
 ///
 /// Contract: `VG.Spec.MlKem.sampleNTT4Contract`. Not constant time in the seeds: timing may depend on the pointer and on `*seeds` (public in ML-KEM: the seed `ρ` of the matrix and indices), but not on anything else.
 ///
-/// The function calls `vg_mlkem_sample_ntt` on each seed, with 24 bytes of stack below its return address.
-///
 /// # Safety
 ///
 /// * `seeds` must be valid for reads of 136 bytes.

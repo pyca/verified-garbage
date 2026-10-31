@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Xts.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the tweak or the data.
 ///
-/// This implementation enciphers one block at a time with `vg_aes_encrypt_blocks`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -98,8 +96,6 @@ blr",
 ///
 /// Contract: `VG.Spec.Xts.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the tweak or the data.
 ///
-/// This implementation deciphers one block at a time with `vg_aes_decrypt_blocks`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -189,8 +185,6 @@ blr",
 /// XTS-AES encryption (IEEE Std 1619-2007 §5.3.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their encryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `P₀ … Pₘ₋₁` and `b` bytes `Pₘ` after them, each `Pⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Cⱼ = AES-enc(Key1, Pⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Cₘ` the first `b` bytes of `CC`, the encryption of `Pₘ₋₁` with `Tₘ₋₁`, and `Cₘ₋₁` the encryption with `Tₘ` of `Pₘ` followed by the other `16 - b` bytes of `CC`. `AES-enc(Key1, ·)` and `AES-enc(Key2, ·)` are AES (FIPS 197) with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
 ///
 /// Contract: `VG.Spec.Xts.aesEncryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
-///
-/// This implementation enciphers the tweak value and the data with `vg_aes_xts_encrypt` (the tweak value as one block from a zero tweak), and steals ciphertext by swapping bytes of the last two blocks in place.
 ///
 /// # Safety
 ///
@@ -284,8 +278,6 @@ blr",
 /// XTS-AES decryption (IEEE Std 1619-2007 §5.4.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their decryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `C₀ … Cₘ₋₁` and `b` bytes `Cₘ` after them, each `Cⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Pⱼ = AES-dec(Key1, Cⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Pₘ` the first `b` bytes of `PP`, the decryption of `Cₘ₋₁` with `Tₘ`, and `Pₘ₋₁` the decryption with `Tₘ₋₁` of `Cₘ` followed by the other `16 - b` bytes of `PP`. `AES-dec(Key1, ·)` is the AES inverse cipher (FIPS 197 §5.3) and `AES-enc(Key2, ·)` AES, with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
 ///
 /// Contract: `VG.Spec.Xts.aesDecryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
-///
-/// This implementation enciphers the tweak value with `vg_aes_xts_encrypt` (as one block from a zero tweak), deciphers the data with `vg_aes_xts_decrypt`, and steals ciphertext by swapping bytes of the last two blocks in place.
 ///
 /// # Safety
 ///

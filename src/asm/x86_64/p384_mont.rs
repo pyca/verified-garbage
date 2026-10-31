@@ -6,10 +6,6 @@
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function zero-extends the offsets and saves the callee-saved registers it writes in `xmm0`–`xmm5` (`movq`); it writes only `[o]` and its temporary area, the last six words below byte 4096 of `ws`. It runs the inline product of the other P-384 functions with its operands read through registers: `[a]` through `rbx = ws + a`, and it squares (when `a = b`, a public comparison), `[o]` through `rsi = ws + o`, or multiplies by `[b]` through `rsi = ws + b`, `o` kept in `xmm6` meanwhile. Each reduction adds `u p` for `u = t₀ (2³² + 1) mod 2⁶⁴`, which makes the low word zero, as `2³⁸⁴ u` less `u (2¹²⁸ + 2⁹⁶ - 2³² + 1)`. The result, below `2p`, is reduced against `p` built in registers: `p` subtracted and added back under the mask of the borrow.
-///
-/// Montgomery multiplication by rows of `mul` (operand scanning, the accumulator in eight registers); a square computes each product of two different words once, doubles them and adds the squares, and reduces its low half by six rounds, to which its high half is added.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -854,10 +850,6 @@ pub(crate) const VG_P384_MUL_MOD_P_ADX_FEATURES: crate::cpu::Features = crate::c
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
 ///
-/// The function zero-extends the offsets and saves the callee-saved registers it writes in `xmm0`–`xmm5` (`movq`); it writes only `[o]` and its temporary area, the last six words below byte 4096 of `ws`. It runs the inline product of the other P-384 functions with its operands read through registers: `[a]` through `rbx = ws + a`, and it squares (when `a = b`, a public comparison), `[o]` through `rsi = ws + o`, or multiplies by `[b]` through `rsi = ws + b`, `o` kept in `xmm6` meanwhile. Each reduction adds `u p` for `u = t₀ (2³² + 1) mod 2⁶⁴`, which makes the low word zero, as `2³⁸⁴ u` less `u (2¹²⁸ + 2⁹⁶ - 2³² + 1)`. The result, below `2p`, is reduced against `p` built in registers: `p` subtracted and added back under the mask of the borrow.
-///
-/// With BMI2 and ADX: the product by rows, each row's products by `mulx` added through two carry chains (`adcx`, `adox`), the first row's through one, each reduction's `u` by `imul` and its products by `mulx`; a square computes the products of two different words by rows, then doubles them through CF and adds the squares through OF.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -1429,8 +1421,6 @@ ret
 /// Montgomery's product modulo P-384's order `n`: writes the number below the modulus congruent to `a b 2^-384` to `o`. The numbers are 6 64-bit words (`48` bytes), little-endian, at the byte offsets `o`, `a` and `b` of the working space `ws`; `o` may be `a` or `b`. Every byte of `ws` but the result's and the function's own working space (bytes 3712 to 4095) keeps its value.
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
-///
-/// The function zero-extends the offsets and saves the callee-saved registers it writes in `xmm0`–`xmm5` (`movq`), `o` in `xmm6`, and the forty-eight bytes of `ws` from byte 4000 in `xmm7`–`xmm12`, over which it stores `n`; it writes only `[o]` and its temporary area, the last six words below byte 4096 of `ws`, and restores those bytes. It runs the inline product of the other P-384 functions modulo `n` with its operands read through registers: `[a]` through `rbx = ws + a` and `[b]` through `rsi = ws + b`. Montgomery multiplication by rows (operand scanning, `mul`): row `i` adds `a_i b`, computes `u = t₀ (-n⁻¹) mod 2⁶⁴` and adds `u n`, which clears the low word, the accumulator in registers; the result, below `2n`, is reduced by subtracting `n` and selecting the difference unless it borrowed, then stored through `rsi = ws + o`.
 ///
 /// # Safety
 ///
@@ -2122,8 +2112,6 @@ pub(crate) const VG_P384_MUL_MOD_N_ADX_FEATURES: crate::cpu::Features = crate::c
 /// Montgomery's product modulo P-384's order `n`: writes the number below the modulus congruent to `a b 2^-384` to `o`. The numbers are 6 64-bit words (`48` bytes), little-endian, at the byte offsets `o`, `a` and `b` of the working space `ws`; `o` may be `a` or `b`. Every byte of `ws` but the result's and the function's own working space (bytes 3712 to 4095) keeps its value.
 ///
 /// Contract: `mulContract`, `addContract` or `subContract` of `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may affect timing.
-///
-/// The function zero-extends the offsets and saves the callee-saved registers it writes in `xmm0`–`xmm5` (`movq`), `o` in `xmm6`, and the forty-eight bytes of `ws` from byte 4000 in `xmm7`–`xmm12`, over which it stores `n`; it writes only `[o]` and its temporary area, the last six words below byte 4096 of `ws`, and restores those bytes. It runs the inline product of the other P-384 functions modulo `n` with its operands read through registers: `[a]` through `rbx = ws + a` and `[b]` through `rsi = ws + b`. With BMI2 and ADX, Montgomery multiplication by rows (operand scanning, `mulx`, the carries through CF and OF): row `i` adds `a_i b`, computes `u = t₀ (-n⁻¹) mod 2⁶⁴` and adds `u n`, which clears the low word, the accumulator in registers; the result, below `2n`, is reduced by subtracting `n` and selecting the difference unless it borrowed, then stored through `rsi = ws + o`.
 ///
 /// # Safety
 ///

@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers and that number, not otherwise on the key or the hash.
 ///
-/// Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 64 bytes, and each HMAC with `vg_hmac_sha512_init_scratch`, `vg_sha512_update_scratch` and `vg_hmac_sha512_finalize_scratch`, using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the leftmost 64 bytes of `V`, is tried with `vg_ecdsa_brainpoolp512r1_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that. `K`, `V`, `h`, the count and our caller's registers are kept in a 260-byte stack frame, whose secrets are cleared before it is released; the calls use the 76 bytes below it.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety

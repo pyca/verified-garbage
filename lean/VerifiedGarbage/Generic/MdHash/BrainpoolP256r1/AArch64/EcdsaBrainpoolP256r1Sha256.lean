@@ -27,7 +27,7 @@ It is generic over brainpoolP256r1's group law and inversions `h` too, the varia
 
 namespace VG.Generic.MdHash.BrainpoolP256r1.AArch64.EcdsaBrainpoolP256r1Sha256
 
-open VG.Proof.Ecdsa.Rfc6979.AArch64 (cfgOf signNotes)
+open VG.Proof.Ecdsa.Rfc6979.AArch64 (cfgOf)
 open VG.Proof.Ecdsa.Rfc6979.AArch64.BrainpoolP256r1Sha256 (pack sign_verified)
 
 def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch64.HasLawInv Spec.BrainpoolP256r1.curve) :
@@ -37,8 +37,6 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch6
   | some c => [
     Spec.Ecdsa.Rfc6979.BrainpoolP256r1Sha256.signApi.artifact AArch64.target {
       suffix := c.suffix
-      notes := [signNotes (cfgOf (pack h.law h.inv c)).H 32
-          Spec.Ecdsa.BrainpoolP256r1.signApi.name]
       code := (cfgOf (pack h.law h.inv c)).sign
       consts := Impl.Ecdsa.AArch64.BrainpoolP256r1.combCfg.combConsts
       stack := 256

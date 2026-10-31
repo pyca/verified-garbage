@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Camellia.cfbEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline AArch64: a single-block scalar Feistel core with the S-box resident in NEON registers. Table loads use fixed public addresses; secret indices select bytes only within registers. The raw expanded keys and constant table are prepared once per call, by a call of `vg_camellia_prepare_encrypt_keys`, and each block is a call of `vg_camellia_encrypt_prepared`. Generic CFB retains the IV pointer in x19, which neither function writes.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 272 bytes.
@@ -316,8 +314,6 @@ ret
 /// Camellia-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments; RFC 3713 §2.3) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is Camellia's encryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them.
 ///
 /// Contract: `VG.Spec.Camellia.cfbDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
-///
-/// Baseline AArch64: a single-block scalar Feistel core with the S-box resident in NEON registers. Table loads use fixed public addresses; secret indices select bytes only within registers. The raw expanded keys and constant table are prepared once per call, by a call of `vg_camellia_prepare_encrypt_keys`, and each block is a call of `vg_camellia_encrypt_prepared`. Generic CFB retains the IV pointer in x19, which neither function writes.
 ///
 /// # Safety
 ///

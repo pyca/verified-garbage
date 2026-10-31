@@ -18,10 +18,6 @@ namespace VG.Artifacts.AesOfb.RISCV64
 
 def artifacts : List Artifact := [
   Spec.Ofb.aesApi.artifact RISCV64.target {
-    notes := [
-      "This implementation enciphers one block at a time with `vg_aes_encrypt_blocks`. The IV \
-        and the data are accessed a byte at a time, since the contract states no alignment for \
-        them."]
     code := Impl.AesOfb.RISCV64.crypt
     verified := Proof.AesOfb.RISCV64.crypt_verified }]
 

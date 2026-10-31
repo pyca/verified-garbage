@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Rsa.MontSquare.squareContract`. Constant time except for the public working-space address, its length, and the limb count `w`; the modulus and the number being squared remain secret.
 ///
-/// Baseline AArch64 symmetric square with eight-limb blocked reduction for widths of at least sixteen limbs divisible by eight; other widths retain the row-wise reduction.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -1597,8 +1595,6 @@ ret
 /// Squares array 6 in the RSA working space, in place: the result is below the modulus `m` (array 0), and its product with `2^(64 w)` is congruent modulo `m` to the square of the original array. The working space has a header of 32 words and 8 arrays of `w + 2` words, as in `VG.Spec.Rsa.Mont.Layout`. Only array 6 and arrays 2 and 3 (the accumulator and temporary) may change.
 ///
 /// Contract: `VG.Spec.Rsa.MontSquare.squareContract`. Constant time except for the public working-space address, its length, and the limb count `w`; the modulus and the number being squared remain secret.
-///
-/// Baseline AArch64 symmetric square with eight-limb blocked reduction for widths of at least sixteen limbs divisible by eight; other widths retain the row-wise reduction.
 ///
 /// # Safety
 ///
@@ -6210,8 +6206,6 @@ ret
 /// Performs five Montgomery squares of accumulator array 6, then multiplies it by entry `d` of the 32-entry table following the eight workspace arrays. For `R = 2^(64 w)`, the canonical result `Y'` satisfies `Y' R^32 = Y^32 T[d] (mod M)`. Header word 27 holds the secret digit `d`. Header words 20 and 27 are reset to zero. Arrays 2, 3, 5 and 6, and header words 20, 26, 27 and 28 may change; all other workspace bytes, including the entire table and packed exponent, are preserved.
 ///
 /// Contract: `VG.Spec.Rsa.MontWindow.windowContract`. Constant time except for the public workspace address, its length and limb count `w`; the modulus, accumulator, selected digit and table contents remain secret.
-///
-/// Baseline AArch64: shares register saves across five lazy Montgomery squares and one canonical product, with a constant-time four-vector table scan. Widths of at least sixteen limbs divisible by eight use eight-limb product tiles and blocked reduction; other widths retain the existing canonical square and multiplication kernels.
 ///
 /// # Safety
 ///
@@ -12001,8 +11995,6 @@ ret
 ///
 /// Contract: `VG.Spec.Rsa.publicPrecomputeContract`. Timing may depend on the pointers, the lengths and the contents of `n`.
 ///
-/// Baseline AArch64: n is read a word at a time when its length is a multiple of eight. R² mod n, for n of `w` words whose top bit is set (every modulus of a whole number of words), by `w` word steps of long division from `R - n`, each step's quotient estimated from the top words with a reciprocal of n's top word, and n added back only while the remainder is negative, by a branch on values of n alone; for other n, from `2^(b - 1)`, for n of `b` bits, by doublings to `2^w R mod n`, then six Montgomery squarings.
-///
 /// # Safety
 ///
 /// * `pre` must be valid for reads and writes of `8 * pre_len` bytes.
@@ -12477,8 +12469,6 @@ ret
 /// The RSA public-key operation: RSAEP (RFC 8017 §5.1.1), which is also RSAVP1 (§5.2.2), for a public key within BoringSSL's limits, with the modulus given by the values `vg_rsa_public_precompute` wrote for it to `pre`. With those values of a modulus `n` of `out_len` bytes and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), writes `input^e mod n` (`out_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `e` is not such a number or the input (`out_len` bytes, most significant first) is not below `n`.
 ///
 /// Contract: `VG.Spec.Rsa.publicPrecomputedCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `pre` and `e`, not on the input.
-///
-/// Baseline AArch64: `e` is checked first, its bytes read into a register saturated at `2^34 - 1` once they reach `2^33`; then Montgomery multiplication. The exponent 65537 (three bytes) uses sixteen squares and a final multiplication by the ordinary input that also converts out of Montgomery form; other exponents are scanned left to right from their first set bit, which starts the result as the input, a square per later bit and a multiplication per later set bit. `pre` is checked (`n` odd, its top word not zero, `R² mod n` below it) before any arithmetic, so that values of no modulus are safe. The input and the result are read and written a word at a time when their length is a multiple of eight.
 ///
 /// # Safety
 ///
@@ -20099,8 +20089,6 @@ ret
 ///
 /// Contract: `VG.Spec.Rsa.privateCrtContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on the input or the private key.
 ///
-/// Baseline AArch64: the checks (`n` as `vg_rsa_public_precompute` checks it, the input below `n`, `p q = n` by a product of the two, `qInv < p`) give a mask; the primes are replaced by 3 under a clear mask, so that the arithmetic is the same whatever the key, and the result is stored masked. Each prime has its own working space, with its own Montgomery multiplication; the input is reduced modulo it by Montgomery reduction of chunks of its size, and the exponents are scanned left to right over all their bits. Moduli of at least 128 bytes whose two prime byte lengths are multiples of 64 use shared five-bit windows, 32-entry tables within the existing scratch allocation, and a four-vector masked scan. Other lengths retain the four-bit window. The final partial window consumes exactly its remaining bits.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of `out_len` bytes.
@@ -25588,8 +25576,6 @@ ret
 ///
 /// Contract: `VG.Spec.Rsa.crtValuesContract`. Constant time but for the modulus: timing may depend on the pointers, the lengths and the contents of `n`, not on the private key.
 ///
-/// Baseline AArch64: `n` is checked as `vg_rsa_public_precompute` checks it; then the checks (`p q = n`, as `n mod p = 0`, `n / p = q` and `p` odd, and `gcd(q, p) = 1`) give a mask, the arithmetic is the same whatever the key, and the results are stored masked. The remainders and quotients are computed by bit-serial division, `64 w` steps for `w`-word numbers, and `qInv` by `128 w` steps of the binary extended Euclidean algorithm modulo `p`, each step's swaps and subtractions under masks.
-///
 /// # Safety
 ///
 /// * `dp` must be valid for reads and writes of `dp_len` bytes.
@@ -27041,8 +27027,6 @@ ret
 /// The prime factors `p > q` of the modulus of an RSA private key `(n, e, d)` (SP 800-56B Rev. 2 §6.2.2's basic format), which bring it to the prime-factor format `(p, q, d)` that `vg_rsa_crt_values` takes, recovered by SP 800-56B Rev. 2 Appendix C.1 with the candidates `g = 2, 3, …` and at most 100 of them. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes) and the private exponent `d` (`d_len` bytes), both most significant first, writes `p` and `q` (`n_len` bytes each, most significant first) and returns 1; or writes zeros to both and returns 0 if `n` is not such a modulus or its factors are not found. For a valid RSA key the factors are found, but for a negligible fraction of keys.
 ///
 /// Contract: `VG.Spec.Rsa.recoverPrimesContract`. Constant time but for the public key and the number of candidates the recovery tried (1 or 2 for most keys): timing may depend on the pointers, the lengths, the contents of `n` and `e`, and that number, not otherwise on `d`.
-///
-/// Baseline AArch64: `n` is checked as `vg_rsa_public_precompute` checks it; `d e` and the halvings of `d e - 1` (`r` odd and `t` its twos) run over `64 Bw` steps for `Bw` words of `d e`, whatever their values. Each candidate `g` computes `g^r mod n` by Montgomery multiplication (eight-limb product tiles and RSA's shared scheduled square for widths of at least sixteen limbs divisible by eight) over all the bits of `r`, a square and a multiplication by `g` or 1 (a masked selection) per bit, then `64 Bw` squarings, each kept or not under masks; the candidates stop at the first that finds the factors, which is the only branch on the key. `gcd(y - 1, n)` is `128 w` steps of the binary extended Euclidean algorithm, and `n / p` `64 w` steps of bit-serial division.
 ///
 /// # Safety
 ///
@@ -29325,8 +29309,6 @@ ret
 /// Checks an RSA private key `(n, e, d, p, q, dP, dQ, qInv)` exactly as BoringSSL's `RSA_check_key` does. With the modulus `n` (`n_len` bytes), the public exponent `e` (`e_len` bytes), the private exponent `d` (`d_len` bytes), `p`, `dp` and `qinv` (`p_len` bytes) and `q` and `dq` (`q_len` bytes), all most significant first, returns 1 if `n` is odd, from 512 to 8192 bits and its first byte not zero, `e` is odd and from 3 to `2^33 - 1`, `d < n`, `p < n`, `q < n`, `p q = n`, `d e ≡ 1 (mod p - 1)`, `d e ≡ 1 (mod q - 1)`, `dP < p - 1`, `e dP ≡ 1 (mod p - 1)`, `dQ < q - 1`, `e dQ ≡ 1 (mod q - 1)`, `qInv < p` and `q qInv ≡ 1 (mod p)`; and 0 otherwise. Like `RSA_check_key`, it does not check that `p` and `q` are prime; if they are, `vg_rsa_private_checked` never returns its internal error for a key it accepts.
 ///
 /// Contract: `VG.Spec.Rsa.checkKeyContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key.
-///
-/// Baseline AArch64: `e` is checked as `vg_rsa_public_precomputed_checked` checks it and `n` as `vg_rsa_public_precompute` checks it, which are the only branches on the key. Then every check of the private key is computed whatever its outcome and and'ed into a mask, in a working space of `W = 2 w + 2` words for `w`-word numbers: the comparisons by a subtraction's borrow, `p q = n` by a product of the two, and each remainder (`d e mod (p - 1)` and the others, `q qInv mod p`) by bounded bit-serial division with masked subtraction. The full-exponent checks process `64 (⌈other_factor_len / 8⌉ + 1)` bits, using `d < n = p q`; the CRT checks process 64 bits for `e dP` and `e dQ`, and `64 ⌈q_len / 8⌉` bits for `q qInv`.
 ///
 /// # Safety
 ///
@@ -31784,8 +31766,6 @@ ret
 ///
 /// Contract: `VG.Spec.Rsa.checkCrtKeyContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key.
 ///
-/// Baseline AArch64: `vg_rsa_check_key`'s code without the checks of `d`. `e` and `n` are checked first, which are the only branches on the key; then every check of the private key is computed whatever its outcome and and'ed into a mask. Each remainder (`e dP mod (p - 1)`, `e dQ mod (q - 1)`, `q qInv mod p`) is computed by bit-serial division in the layout's `W = 2 w + 2` words, starting from the product's words above its low `c` (`c = 1`, or `⌈q_len / 8⌉` for `q qInv`), which are below the divisor when the comparison before it holds: `64 c` steps rather than `64 W`.
-///
 /// # Safety
 ///
 /// * `n` must be valid for reads of `n_len` bytes.
@@ -33450,8 +33430,6 @@ ret
 ///
 /// Contract: `VG.Spec.Rsa.MontMulFixed.mulContract`. Constant time except for the public working-space address, its length, and the limb count `w`; the modulus and the numbers remain secret.
 ///
-/// Baseline AArch64: the eight-limb product kernel with blocked reduction when the width is a multiple of eight limbs; other widths retain the row-wise multiplication.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -34900,8 +34878,6 @@ ret
 /// Montgomery multiplication in the working space of the RSA functions, for fixed arrays: writes to array 6 the number below the modulus `m` (array 0) congruent to `a b 2^(-64 w)` modulo `m`, for the numbers a in array 5 and b in array 6. The working space has a header of 32 words and 8 arrays of `w + 2` words, as `vg_rsa_mont_mul` takes it (`VG.Spec.Rsa.Mont.Layout`). Every byte of `ws` but those of arrays 2 and 3 (the function's own) and of array 6 keeps its value.
 ///
 /// Contract: `VG.Spec.Rsa.MontMulFixed.mulContract`. Constant time except for the public working-space address, its length, and the limb count `w`; the modulus and the numbers remain secret.
-///
-/// Baseline AArch64: the eight-limb product kernel with blocked reduction when the width is a multiple of eight limbs; other widths retain the row-wise multiplication.
 ///
 /// # Safety
 ///
@@ -36352,8 +36328,6 @@ ret
 ///
 /// Contract: `VG.Spec.Rsa.MontMulFixed.mulContract`. Constant time except for the public working-space address, its length, and the limb count `w`; the modulus and the numbers remain secret.
 ///
-/// Baseline AArch64: the eight-limb product kernel with blocked reduction when the width is a multiple of eight limbs; other widths retain the row-wise multiplication.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -37802,8 +37776,6 @@ ret
 /// Montgomery multiplication in the working space of the RSA functions, for fixed arrays: writes to array 5 the number below the modulus `m` (array 0) congruent to `a b 2^(-64 w)` modulo `m`, for the numbers a in array 5 and b in array 4. The working space has a header of 32 words and 8 arrays of `w + 2` words, as `vg_rsa_mont_mul` takes it (`VG.Spec.Rsa.Mont.Layout`). Every byte of `ws` but those of arrays 2 and 3 (the function's own) and of array 5 keeps its value.
 ///
 /// Contract: `VG.Spec.Rsa.MontMulFixed.mulContract`. Constant time except for the public working-space address, its length, and the limb count `w`; the modulus and the numbers remain secret.
-///
-/// Baseline AArch64: the eight-limb product kernel with blocked reduction when the width is a multiple of eight limbs; other widths retain the row-wise multiplication.
 ///
 /// # Safety
 ///
@@ -39254,8 +39226,6 @@ ret
 ///
 /// Contract: `VG.Spec.Rsa.MontMulFixed.mulContract`. Constant time except for the public working-space address, its length, and the limb count `w`; the modulus and the numbers remain secret.
 ///
-/// Baseline AArch64: the eight-limb product kernel with blocked reduction when the width is a multiple of eight limbs; other widths retain the row-wise multiplication.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -40704,8 +40674,6 @@ ret
 /// Montgomery multiplication in the working space of the RSA functions, for fixed arrays: writes to array 6 the number below the modulus `m` (array 0) congruent to `a b 2^(-64 w)` modulo `m`, for the numbers a in array 6 and b in array 7. The working space has a header of 32 words and 8 arrays of `w + 2` words, as `vg_rsa_mont_mul` takes it (`VG.Spec.Rsa.Mont.Layout`). Every byte of `ws` but those of arrays 2 and 3 (the function's own) and of array 6 keeps its value.
 ///
 /// Contract: `VG.Spec.Rsa.MontMulFixed.mulContract`. Constant time except for the public working-space address, its length, and the limb count `w`; the modulus and the numbers remain secret.
-///
-/// Baseline AArch64: the eight-limb product kernel with blocked reduction when the width is a multiple of eight limbs; other widths retain the row-wise multiplication.
 ///
 /// # Safety
 ///
@@ -42156,8 +42124,6 @@ ret
 ///
 /// Contract: `VG.Spec.Rsa.MontMulFixed.mulContract`. Constant time except for the public working-space address, its length, and the limb count `w`; the modulus and the numbers remain secret.
 ///
-/// Baseline AArch64: the eight-limb product kernel with blocked reduction when the width is a multiple of eight limbs; other widths retain the row-wise multiplication.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -43606,8 +43572,6 @@ ret
 /// Montgomery multiplication in the working space of the RSA functions, for fixed arrays: writes to array 6 the number below the modulus `m` (array 0) congruent to `a b 2^(-64 w)` modulo `m`, for the numbers a in array 5 and b in array 1. The working space has a header of 32 words and 8 arrays of `w + 2` words, as `vg_rsa_mont_mul` takes it (`VG.Spec.Rsa.Mont.Layout`). Every byte of `ws` but those of arrays 2 and 3 (the function's own) and of array 6 keeps its value.
 ///
 /// Contract: `VG.Spec.Rsa.MontMulFixed.mulContract`. Constant time except for the public working-space address, its length, and the limb count `w`; the modulus and the numbers remain secret.
-///
-/// Baseline AArch64: the eight-limb product kernel with blocked reduction when the width is a multiple of eight limbs; other widths retain the row-wise multiplication.
 ///
 /// # Safety
 ///
@@ -45058,8 +45022,6 @@ ret
 ///
 /// Contract: `VG.Spec.Rsa.MontMulFixed.mulContract`. Constant time except for the public working-space address, its length, and the limb count `w`; the modulus and the numbers remain secret.
 ///
-/// Baseline AArch64: the eight-limb product kernel with blocked reduction when the width is a multiple of eight limbs; other widths retain the row-wise multiplication.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -46508,8 +46470,6 @@ ret
 /// Montgomery multiplication in the working space of the RSA functions, for fixed arrays: writes to array 1 the number below the modulus `m` (array 0) congruent to `a b 2^(-64 w)` modulo `m`, for the numbers a in array 1 and b in array 6. The working space has a header of 32 words and 8 arrays of `w + 2` words, as `vg_rsa_mont_mul` takes it (`VG.Spec.Rsa.Mont.Layout`). Every byte of `ws` but those of arrays 2 and 3 (the function's own) and of array 1 keeps its value.
 ///
 /// Contract: `VG.Spec.Rsa.MontMulFixed.mulContract`. Constant time except for the public working-space address, its length, and the limb count `w`; the modulus and the numbers remain secret.
-///
-/// Baseline AArch64: the eight-limb product kernel with blocked reduction when the width is a multiple of eight limbs; other widths retain the row-wise multiplication.
 ///
 /// # Safety
 ///
@@ -47960,8 +47920,6 @@ ret
 ///
 /// Contract: `VG.Spec.Rsa.MontMulFixed.mulContract`. Constant time except for the public working-space address, its length, and the limb count `w`; the modulus and the numbers remain secret.
 ///
-/// Baseline AArch64: the eight-limb product kernel with blocked reduction when the width is a multiple of eight limbs; other widths retain the row-wise multiplication.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -49411,8 +49369,6 @@ ret
 ///
 /// Contract: `VG.Spec.Rsa.MontMulFixed.mulContract`. Constant time except for the public working-space address, its length, and the limb count `w`; the modulus and the numbers remain secret.
 ///
-/// Baseline AArch64: the eight-limb product kernel with blocked reduction when the width is a multiple of eight limbs; other widths retain the row-wise multiplication.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -50861,8 +50817,6 @@ ret
 /// The RSA private-key operation: RSADP (RFC 8017 §5.1.2), which is also RSASP1 (§5.2.1), with the private key `(p, q, dP, dQ, qInv)` (§3.2's second form, with two primes), checked against the public exponent as BoringSSL checks it (`rsa_default_private_transform`). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the result `m` of step 2.b for the input (`n_len` bytes, most significant first), and if `m^e mod n` is the input, writes `m` to `out` (`n_len` bytes, most significant first) and returns 1. Writes zeros and returns 0 if `n` or `e` is not such a number, the input is not below `n`, `p q ≠ n`, or `qInv ≥ p`; writes zeros and returns 2 (an internal error) if `m^e mod n` is not the input, which is the case for no input if `vg_rsa_check_key` accepts the key and `p` and `q` are prime: the result is never released unless it passes the check, so that a fault in its computation does not reveal the key. `p`, `dp` and `qinv` are `p_len` bytes, and `q` and `dq` are `q_len` bytes, all most significant first.
 ///
 /// Contract: `VG.Spec.Rsa.privateCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the input or the private key.
-///
-/// This implementation computes the result `m` with `vg_rsa_private_crt` into its frame, then `m^e mod n` with `vg_rsa_public_precompute` and `vg_rsa_public_precomputed_checked`, which also checks `e`. It compares that with the input in constant time, and copies `m` to `out` under a mask, which is clear unless the CRT and the public operation succeeded and the two match. The result, 1, 2 or 0, is computed from the mask without a branch. Then it overwrites the frame's copy of `m` with zeros.
 ///
 /// # Safety
 ///

@@ -17,11 +17,6 @@ def encrypt (v : BlocksImpl) : Prog isa :=
 def written (v : BlocksImpl) : List (String × Nat) :=
   if v.enc.name="vg_aes_encrypt_blocks_aes" then [("scratch",0)] else []
 
-def note (v : BlocksImpl) : String :=
-  if v.enc.name="vg_aes_encrypt_blocks_aes" then
-    "With FEAT_AES: round keys remain in registers. The next plaintext is preloaded during the current block's rounds and combined with the first/last round keys as AESE's key operand, removing the between-block dependent XOR. Key-size dispatch is outside the loop. No stack or scratch memory is used."
-  else "This implementation enciphers one block at a time with `" ++ v.enc.name ++ "`."
-
 theorem verified (v : BlocksImpl) :
     Verified AArch64.target (encrypt v) (Spec.Cbc.aesEncryptContract AArch64.abi) := by
   unfold encrypt

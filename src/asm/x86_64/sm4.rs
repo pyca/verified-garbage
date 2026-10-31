@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Sm4.expandKeyContract`. Constant time: only pointers may affect timing, not key bytes.
 ///
-/// Baseline x86-64: the key schedule's rounds bitsliced in general-purpose registers, sixteen copies of the key at a time, through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 16 bytes.
@@ -4507,8 +4505,6 @@ ret
 /// SM4 ECB encryption (draft-ribose-cfrg-sm4-10 §7.1, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the schedule written by `vg_sm4_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Sm4.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
-///
-/// Baseline x86-64: sixteen blocks at a time, bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups; round-key bytes are rearranged once before broadcast into the bitsliced planes.
 ///
 /// # Safety
 ///
@@ -9064,8 +9060,6 @@ ret
 ///
 /// Contract: `VG.Spec.Sm4.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
 ///
-/// Baseline x86-64: sixteen blocks at a time, bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups; round-key bytes are rearranged once before broadcast into the bitsliced planes.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -13619,8 +13613,6 @@ ret
 /// SM4 ECB (draft-ribose-cfrg-sm4-10 §7.1–7.2, SP 800-38A §6.1) of the 16 16-byte blocks at byte 768 of `ws`, in place, under the round keys that `vg_sm4_prepare_keys` wrote at the bytes 384..408, 1024..3072, in the direction it prepared them for. Every byte of `ws` but those of the ranges 0..384, 408..1024, 3072..3136 (the blocks' among them, not the round keys') keeps its value, so the round keys serve every batch. It is not part of the library's Rust API.
 ///
 /// Contract: `VG.Spec.Sm4.Prepared.cryptContract`. Constant time: only pointers and `ws_len` may affect timing, not the round keys or the blocks.
-///
-/// Baseline x86-64: ECB's sixteen blocks alone, for the modes: bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups, under the table of round keys in the working space.
 ///
 /// # Safety
 ///

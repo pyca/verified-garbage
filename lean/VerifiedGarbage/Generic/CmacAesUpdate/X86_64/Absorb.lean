@@ -72,8 +72,6 @@ namespace VG.Generic.CmacAesUpdate.X86_64.Absorb
 def artifacts (v : Proof.CmacAes.X86_64.UpdateImpl) : List Artifact := [
   Spec.Cmac.aesAbsorbApi.artifact X86_64.target {
     suffix := v.suffix
-    notes := [
-      "This implementation chains blocks with `" ++ v.callee.name ++ "`."]
     code := Impl.StackScratch.X86_64.withStackScratch 2312 .r9 (Impl.CmacAes.Stream.X86_64.absorb v.callee)
     stack := 2328
     verified := Proof.CmacAes.Stream.X86_64.absorb_framed v

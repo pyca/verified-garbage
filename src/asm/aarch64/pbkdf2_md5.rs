@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.iterateContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `n` may affect timing, not the key, `U` or `T`.
 ///
-/// The function uses no stack: it saves its return address in `scratch`.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 160 bytes.

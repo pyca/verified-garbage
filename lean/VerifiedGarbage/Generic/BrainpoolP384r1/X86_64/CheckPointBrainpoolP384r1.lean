@@ -21,16 +21,8 @@ namespace VG.Generic.BrainpoolP384r1.X86_64.CheckPointBrainpoolP384r1
 
 open VG.Impl.Ecdsa.X86_64 VG.Proof.Ecdh.X86_64.BrainpoolP384r1.Check
 
-/-- What the function runs. -/
-def note : String :=
-  "The function keeps `rbx`, `rbp` and `r12`–`r15` in `xmm0` to `xmm5` while it runs. It \
-  compares `x` and `y` with `p` by subtraction with borrow, takes them into Montgomery's form \
-  and computes `y² - (x³ + a x + b)` modulo `p` by `mul` and word-by-word Montgomery reduction, \
-  and selects the point by masks; nothing depends on the numbers but through masks."
-
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.BrainpoolP384r1.curve) : List Artifact :=
   [C.checkApi.artifact X86_64.target {
-      notes := [note]
       code := code
       verified := verified h.inv }]
 

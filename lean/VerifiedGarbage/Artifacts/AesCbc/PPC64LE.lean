@@ -20,13 +20,9 @@ open VG.Proof.AesCbc.PPC64LE
 
 def artifacts : List Artifact := [
   Spec.Cbc.aesEncryptApi.artifact PPC64LE.target {
-    notes := [
-      "This implementation enciphers one block at a time with `vg_aes_encrypt_blocks`."]
     code := Impl.AesCbc.PPC64LE.encrypt
     verified := encrypt_verified },
   Spec.Cbc.aesDecryptApi.artifact PPC64LE.target {
-    notes := [
-      "This implementation deciphers one block at a time with `vg_aes_decrypt_blocks`."]
     code := Impl.AesCbc.PPC64LE.decrypt
     verified := decrypt_verified }]
 

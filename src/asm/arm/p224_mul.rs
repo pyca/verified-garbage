@@ -6,8 +6,6 @@
 ///
 /// Contract: `mulInRangeContract` of `VG.Spec.Weierstrass.Mul.Curve`.
 ///
-/// The function keeps `r4`–`r9`, `r11` and `lr` in bytes 1504 to 1539 of `ws` and `r10` in `lr` while it runs, expands `k` into a table of its bits, one per byte, at bytes 4096 to 4351, copies `Q` to bytes 992 to 1055 (slots 29 and 30), and runs a double-and-add ladder over the 224 bits of `k`'s 28 bytes, from the top, with the complete addition formulas of Renes, Costello and Batina for every addition and doubling (calls of `vg_p224_point_double` and `vg_p224_point_add`, with `a` and `3 b` read from `ws`) and a masked selection for each bit. Field elements are sixteen 16-bit digits in Montgomery form, multiplied by digit-by-digit Montgomery multiplication in calls of `vg_p224_mul_mod_p` and the other functions of `p224_mont`; nothing depends on `k` or `Q` but through masks.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -500,8 +498,6 @@ pub(crate) const VG_P224_MUL_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::
 /// The multiple `P = [k]Q` of a point `Q` of P-224, for the number `k` of 4 64-bit words (`32` bytes), little-endian, at byte 1056 of `ws`, and `Q`'s affine coordinates `x` and `y` at bytes 512 and 544, in projective coordinates (`(X : Y : Z)` for `(X / Z, Y / Z)`, and `(0 : Y : 0)` for the point at infinity) in `Q`'s place, at bytes 512 to 607: coordinates of 4 64-bit words, little-endian, in Montgomery's form modulo P-224's prime `p`, below it, for `k` in `[1, n - 1]`, `n` the order of P-224's base point (for any other `k` the coordinates are unspecified). The function reads `p` at byte 64, zero at byte 160, and one, `a` and `3 b` in Montgomery's form at bytes 224, 256 and 288. Bytes 608 to 1055, 1344 to 1375, 128 to 159 and 1504 to 8191 of `ws` are the function's own working space; every other byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect timing.
 ///
 /// Contract: `mulInRangeContract` of `VG.Spec.Weierstrass.Mul.Curve`.
-///
-/// `vg_p224_mul`'s code, but for its calls of `vg_p224_point_double_umaal` and `vg_p224_point_add_umaal`. Field multiplications are calls of `vg_p224_mul_mod_p_umaal` (and `vg_p224_mul_mod_n_umaal`), which multiply the numbers' 32-bit words with one `umaal` per word of each Montgomery row (`hi:lo = n m + hi + lo`).
 ///
 /// # Safety
 ///

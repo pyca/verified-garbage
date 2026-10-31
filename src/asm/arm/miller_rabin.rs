@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.MillerRabin.roundContract`. Timing may depend on the pointers, lengths and limb count, not on the candidate, witness, exponent or test result.
 ///
-/// ARMv7: fixed windows of four bits, by `vg_rsa_public_checked`'s Montgomery multiplication on 32-bit limbs, and a dedicated Montgomery square for the squarings (each cross product once, doubled, the words' squares added, then reduced in place). The table of the 16 powers is built once (14 products, each result copied directly to its final slot); each window squares four times, or'ing the flag with `y = −1` under masks, selects its entry by a scan of all 16 under masks into array 5, multiplies, and sets the flag under the mask of a nonzero digit. Three last squarings use the threshold `4 − σ` from the word after the exponent. The round result is returned without branching on it.
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
@@ -2144,8 +2142,6 @@ pub(crate) const VG_MILLER_RABIN_ROUND_UMAAL_FEATURES: crate::cpu::Features = cr
 /// One strong Miller–Rabin round (FIPS 186-5 Appendix B.3.1, steps 4.3–4.5) in a prepared RSA Montgomery workspace. Returns 1 if the witness passes, 0 otherwise. Uses fixed windows of four bits, with no witness-dependent table address. This is neither a primality certificate nor a choice of witness distribution or round count. The caller supplies those policies.
 ///
 /// Contract: `VG.Spec.MillerRabin.roundContract`. Timing may depend on the pointers, lengths and limb count, not on the candidate, witness, exponent or test result.
-///
-/// ARMv7: fixed windows of four bits, by `vg_rsa_public_checked`'s Montgomery multiplication on 32-bit limbs, and a dedicated Montgomery square for the squarings (each cross product once, doubled, the words' squares added, then reduced in place). The table of the 16 powers is built once (14 products, each result copied directly to its final slot); each window squares four times, or'ing the flag with `y = −1` under masks, selects its entry by a scan of all 16 under masks into array 5, multiplies, and sets the flag under the mask of a nonzero digit. Three last squarings use the threshold `4 − σ` from the word after the exponent. The round result is returned without branching on it.
 ///
 /// # Safety
 ///

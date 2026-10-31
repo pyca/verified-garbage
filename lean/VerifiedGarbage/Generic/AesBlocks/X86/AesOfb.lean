@@ -24,8 +24,6 @@ open VG.Proof.AesOfb.X86
 def artifacts (v : Proof.Aes.X86.BlocksImpl) : List Artifact := [
   Spec.Ofb.aesApi.artifact X86.target {
     suffix := v.suffix
-    notes := ["This implementation enciphers one block at a time with `" ++
-      v.enc.name ++ "`."]
     code := Impl.AesOfb.X86.crypt v.enc
     stack := 24
     verified := crypt_verified v

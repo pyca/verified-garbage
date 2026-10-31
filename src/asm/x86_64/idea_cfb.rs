@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Idea.cfbEncryptContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline x86-64: one block at a time, through `vg_idea_ecb`'s block code (inlined): ⊙ by `imul` and a branchless reduction, no table lookups; the schedule is copied into the working space once per call. The mode is the generic CFB of `Impl/Modes/X86_64/`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 104 bytes.
@@ -977,8 +975,6 @@ ret
 /// IDEA-CFB64 decryption (NIST SP 800-38A §6.3, with 64-bit segments; Lai 1992 §3.3) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is IDEA (also for decryption) under the encryption subkeys at `schedule`, as `vg_idea_expand_key` writes them.
 ///
 /// Contract: `VG.Spec.Idea.cfbDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the subkeys, the chaining value or the data.
-///
-/// Baseline x86-64: one block at a time, through `vg_idea_ecb`'s block code (inlined): ⊙ by `imul` and a branchless reduction, no table lookups; the schedule is copied into the working space once per call. The mode is the generic CFB of `Impl/Modes/X86_64/`.
 ///
 /// # Safety
 ///

@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Poly1305.initContract`. The streaming state is the accumulator followed by the key (`VG.Spec.Poly1305.Repr`). Constant time: only the pointers may affect timing, not the key.
 ///
-/// The key is copied into the state a byte at a time, since the contract states no alignment for either.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 128 bytes, and aligned for `u64`.
@@ -139,8 +137,6 @@ ret
 /// Absorbs whole blocks into a Poly1305 computation: if the streaming state `*state` represents a message under a key, it then represents that message followed by the `n` 16-byte blocks at `blocks`, under the same key.
 ///
 /// Contract: `VG.Spec.Poly1305.blocksContract`. Constant time: only the pointers and `n` may affect timing, not the state or the data.
-///
-/// The arithmetic is in radix 2^64, with `mul` and `mulhu` for the products and `sltu` for the carries; the state and the blocks are read and written a byte at a time, since the contract states no alignment for them.
 ///
 /// # Safety
 ///
@@ -443,8 +439,6 @@ ret
 /// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
-///
-/// The arithmetic is in radix 2^64, with `mul` and `mulhu` for the products and `sltu` for the carries; the state and the data are read and written a byte at a time, since the contract states no alignment for them. No stack is used.
 ///
 /// # Safety
 ///
@@ -882,8 +876,6 @@ ret
 ///
 /// Contract: `VG.Spec.Poly1305.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
-/// No stack is used.
-///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 128 bytes, and aligned for `u64`.
@@ -1228,8 +1220,6 @@ ret
 /// `vg_poly1305_finalize`, with its working space in `*scratch`.
 ///
 /// Contract: `VG.Spec.Poly1305.finalizeScratchContract`. Constant time: only the pointers and `count` may affect timing, not the state.
-///
-/// The same code as `vg_poly1305_finalize`: it does not use `scratch`.
 ///
 /// # Safety
 ///

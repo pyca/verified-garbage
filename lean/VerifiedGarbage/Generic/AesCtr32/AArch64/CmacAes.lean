@@ -49,38 +49,24 @@ namespace VG.Generic.AesCtr32.AArch64.CmacAes
 
 open VG.Proof.CmacAes.AArch64
 
-/-- Which implementation of `vg_aes_ctr32` an instance calls. -/
-def ctrNote (v : Proof.Aes.AArch64.Ctr32Impl) : String :=
-  "This implementation encrypts each block with `" ++ v.callee.name ++ "`."
-
-/-- Which CMAC functions an instance of a streaming function calls. -/
-def streamNote (v : Proof.Aes.AArch64.Ctr32Impl) : String :=
-  "This implementation calls the CMAC functions made with `" ++ v.callee.name ++ "` (e.g. `" ++
-    Spec.Cmac.aesUpdateApi.name ++ v.suffix ++ "`)."
-
 def artifacts (v : Proof.Aes.AArch64.Ctr32Impl) : List Artifact := [
   Spec.Cmac.aesSubkeysApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := [ctrNote v]
     code := Impl.CmacAes.AArch64.subkeys v.callee
     verified := subkeys_verified v
     features := v.features },
   Spec.Cmac.aesUpdateApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := [ctrNote v]
     code := Impl.CmacAes.AArch64.update v.callee
     verified := update_verified v
     features := v.features },
   Spec.Cmac.aesFinalizeApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := [ctrNote v]
     code := Impl.CmacAes.AArch64.finalize v.callee
     verified := finalize_verified v
     features := v.features },
   Spec.Cmac.aesInitApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := [streamNote v,
-      "It expands the key with `" ++ v.expand.name ++ "`."]
     code := Impl.StackScratch.AArch64.withStackScratch 2304 .x3
       (Impl.CmacAes.Stream.AArch64.init v.expand v.callee v.suffix)
     stack := 2304
@@ -88,7 +74,6 @@ def artifacts (v : Proof.Aes.AArch64.Ctr32Impl) : List Artifact := [
     features := v.features },
   Spec.Cmac.aesFinishApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := [streamNote v]
     code := Impl.StackScratch.AArch64.withStackScratch 2304 .x4
       (Impl.CmacAes.Stream.AArch64.finish v.callee v.suffix)
     stack := 2304

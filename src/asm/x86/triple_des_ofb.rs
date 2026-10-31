@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.TripleDes.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline IA-32: one block at a time, calling the verified block function (`vg_triple_des_encrypt_block`), with Boolean S-box circuits and no table lookups; the schedule is copied into the working space once per call. The mode is the generic OFB of `Impl/Modes/X86/`.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety

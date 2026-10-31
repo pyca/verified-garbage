@@ -1716,8 +1716,6 @@ ret
 ///
 /// Contract: `VG.Spec.ChaCha20.xorContract`. Constant time: only the pointers and `len` may affect timing, not the state or the data.
 ///
-/// Four blocks at a time with SSE2 while more than 64 bytes remain (the last four for all that is left), keeping seven of the sixteen words of the four states in XMM registers during the rounds; then, for the last 64 bytes or fewer, calls `vg_chacha20_block` and XORs its output 16 bytes at a time.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -4343,8 +4341,6 @@ pub(crate) const VG_CHACHA20_XOR_SSSE3_FEATURES: crate::cpu::Features = crate::c
 ///
 /// Contract: `VG.Spec.ChaCha20.xorContract`. Constant time: only the pointers and `len` may affect timing, not the state or the data.
 ///
-/// Uses SSSE3: as `vg_chacha20_xor`, but rotates by 16 and 8 bits with `pshufb` (its controls stored in `buf`).
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -6926,8 +6922,6 @@ ret
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
 ///
-/// This implementation XORs the whole blocks with `vg_chacha20_xor`.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
@@ -7071,8 +7065,6 @@ pub(crate) const VG_CHACHA20_APPLY_SSSE3_FEATURES: crate::cpu::Features = crate:
 /// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
-///
-/// This implementation XORs the whole blocks with `vg_chacha20_xor_ssse3`.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

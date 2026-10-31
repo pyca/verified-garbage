@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.signContract`. Constant time: only the pointers may affect timing, not the key, the hash or `k`.
 ///
-/// Field elements are four 64-bit words in Montgomery form. Scalar multiplication uses a fixed 256-iteration ladder with the complete formulas for a = 0 of Renes, Costello and Batina (Algorithm 9 doubles, Algorithm 8 adds the affine point). Inversions are calls of `vg_secp256k1_inv_mod_p` and `vg_secp256k1_inv_mod_n`, by divsteps. Branches and memory addresses depend only on pointers and loop counters.
-///
 /// # Safety
 ///
 /// * `out` must be valid for reads and writes of 64 bytes.
@@ -2567,8 +2565,6 @@ ret
 /// ECDSA signature verification over secp256k1 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 32 bytes each, most significant first) of the hash at `digest` (its leftmost 32 bytes, or, for a shorter hash, the hash padded on the left with zeros to 32 bytes) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 32 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyContract`. Every input is public: timing may depend on the pointers and the contents of `public`, `digest` and `sig`.
-///
-/// Field elements are four 64-bit words in Montgomery form. Public scalar multiplication uses a joint radix-four table of fifteen projective points, built by a shared addition loop, 256 shared doublings and at most 128 additions with complete general RCB formulas. The inversion modulo `n` is a call of `vg_secp256k1_inv_mod_n`, by divsteps. Branches and memory addresses depend only on pointers, counters and the public verification scalars.
 ///
 /// # Safety
 ///

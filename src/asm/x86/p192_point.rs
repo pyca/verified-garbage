@@ -6,8 +6,6 @@
 ///
 /// Contract: `addContract` or `doubleContract` of `VG.Spec.Weierstrass.Point.Curve`. Constant time: only the pointer may affect timing.
 ///
-/// The function saves `ebx` in its own working space, and computes Renes, Costello and Batina's 40 steps by calls of `vg_p192_mul_mod_p`, `vg_p192_add_mod_p` and `vg_p192_sub_mod_p` on fixed offsets of `ws`, loading `ws` from its argument into `ebx` before each call and pushing it and the offsets as the callee's arguments. It writes no register but `eax`, `ecx` and `edx` (and `ebx`, which it restores).
-///
 /// # Safety
 ///
 /// * `ws` must be valid for reads and writes of 8192 bytes.
@@ -513,8 +511,6 @@ ret
 /// The doubling `O = P + P` of a point on P-192, by the complete addition (Renes, Costello and Batina's Algorithm 1). A point is three projective coordinates `X, Y, Z` in Montgomery's form modulo the curve's prime, each 3 64-bit words (`24` bytes), little-endian, at consecutive byte offsets of the working space `ws`: `O` at byte 3432, `P` at 3504 and `Q` at 3576. The curve's `a` and `3b`, in the same form, are read at bytes 3648 and 3672. Every byte of `ws` but `O`'s and the function's own working space (bytes 3696 to 4095) keeps its value.
 ///
 /// Contract: `addContract` or `doubleContract` of `VG.Spec.Weierstrass.Point.Curve`. Constant time: only the pointer may affect timing.
-///
-/// The function saves `ebx` in its own working space, and computes Renes, Costello and Batina's 40 steps by calls of `vg_p192_mul_mod_p`, `vg_p192_add_mod_p` and `vg_p192_sub_mod_p` on fixed offsets of `ws`, loading `ws` from its argument into `ebx` before each call and pushing it and the offsets as the callee's arguments. It writes no register but `eax`, `ecx` and `edx` (and `ebx`, which it restores).
 ///
 /// # Safety
 ///

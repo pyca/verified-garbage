@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.TripleDes.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline x86-64: one block at a time, through the scalar block function (`vg_triple_des_encrypt_block`'s code, inlined), with Boolean S-box circuits and no table lookups; the schedule is copied into the working space once per call. The mode is the generic OFB of `Impl/Modes/X86_64/`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.

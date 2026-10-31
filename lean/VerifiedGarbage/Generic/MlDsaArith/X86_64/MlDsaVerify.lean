@@ -65,16 +65,10 @@ open VG
 open VG.Proof.MlDsa.X86_64 (ArithImpl)
 open VG.Proof.MlDsa.X86_64.Verify (primsWith prims_okWith verify_prims verify_spSafe)
 
-/-- What the documentation says of the implementation. -/
-def note : String :=
-  "It calls the `vg_mldsa_*` primitives and the SHAKE256 sponge. The samplers' results are combined \
-  without a branch, so the only branches depend on the public key and the signature."
-
 def artifacts (v : ArithImpl) : List Artifact := [
   Spec.MlDsa.verify44Api.artifact X86_64.target {
     suffix := v.code.sfx
     features := v.features
-    notes := [note]
     code := Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa44
     stack := 32
     verified := verify_prims v (List.mem_cons_self ..)
@@ -82,7 +76,6 @@ def artifacts (v : ArithImpl) : List Artifact := [
   Spec.MlDsa.verify65Api.artifact X86_64.target {
     suffix := v.code.sfx
     features := v.features
-    notes := [note]
     code := Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa65
     stack := 32
     verified := verify_prims v (List.mem_cons_of_mem _ (List.mem_cons_self ..))
@@ -90,7 +83,6 @@ def artifacts (v : ArithImpl) : List Artifact := [
   Spec.MlDsa.verify87Api.artifact X86_64.target {
     suffix := v.code.sfx
     features := v.features
-    notes := [note]
     code := Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa87
     stack := 32
     verified := verify_prims v (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))

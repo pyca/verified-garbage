@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.TripleDes.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline ARMv7: the generic OFB of `Impl/Modes/Arm/`, calling the verified `vg_triple_des_ecb_encrypt` on one block at a time, with the chaining block in a 56-byte working space on the stack, zeroed on return.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 384 bytes.

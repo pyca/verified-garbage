@@ -22,12 +22,6 @@ namespace VG.Artifacts.CmacAes.X86_64
 def artifacts : List Artifact := [
   Spec.Cmac.aesUpdateApi.artifact X86_64.target {
     suffix := "_aesni_cbc"
-    notes := [
-      "This implementation keeps the round keys in SSE registers and the chaining value in `xmm0` \
-      across all blocks: it loads them once, and stores the chaining value once. The first round \
-      key is folded into the chaining value and the last one, so each block is one `pxor`, the \
-      `aesenc` rounds and one `aesenclast`; the number of rounds is selected once. It uses no \
-      stack and does not use `scratch`."]
     code := Impl.CmacAes.X86_64.AesNi.update
     verified := Proof.CmacAes.X86_64.AesNi.verified
     features := ["aes"] }]

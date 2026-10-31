@@ -16,8 +16,6 @@ namespace VG.Artifacts.Ed25519SignCached.X86
 
 def artifacts : List Artifact := [
   Spec.Ed25519.signCachedApi.artifact X86.target {
-    notes := ["Includes SHA-512, scalar reduction, \
-      base-point multiplication, and scalar multiply-add. Secret intermediate buffers are cleared before returning."]
     consts := Impl.Ed25519.X86.combConsts
     code := Impl.Ed25519.X86.SignCached.code
     stack := 280

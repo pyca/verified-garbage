@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Sm4.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline IA-32: one block at a time (each output block is the encryption of the one before), encrypted bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups, in a batch of eight of which the other seven are unused; the key schedule's table of round keys is built once per call. The mode is the generic OFB of `Impl/Modes/X86/`, over SM4's ECB core.
-///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety

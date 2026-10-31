@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Sm4.cfbEncryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline PPC64LE: one block at a time, bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups, in a batch of sixteen of which the other fifteen are unused: the table of round keys is built once per call, by a call of `vg_sm4_prepare_keys`, and each block is a call of `vg_sm4_crypt_prepared`. The mode is the generic CFB128 of `Impl/Modes/PPC64LE/`, which keeps its state in `r29`–`r31`; the prepared functions save them in the working space and restore them.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -525,8 +523,6 @@ blr",
 /// SM4-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments; GB/T 32907-2016 §7.1) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SM4's forward function (encryption) under the schedule written by `vg_sm4_expand_key`.
 ///
 /// Contract: `VG.Spec.Sm4.cfbDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
-///
-/// Baseline PPC64LE: one block at a time, bitsliced in general-purpose registers through the AES S-box circuit (SM4's S-box is an affine map of AES's), with no table lookups, in a batch of sixteen of which the other fifteen are unused: the table of round keys is built once per call, by a call of `vg_sm4_prepare_keys`, and each block is a call of `vg_sm4_crypt_prepared`. The mode is the generic CFB128 of `Impl/Modes/PPC64LE/`, which keeps its state in `r29`–`r31`; the prepared functions save them in the working space and restore them.
 ///
 /// # Safety
 ///

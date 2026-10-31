@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Seed.ofbContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
-/// Baseline AArch64: through `vg_seed_ecb_encrypt` and `vg_seed_ecb_decrypt`'s batch of sixteen blocks (inlined), with SEED's S-boxes computed bitsliced from AES's circuit and no table lookups; one block per batch, of which the other fifteen lanes are unused. The schedule is copied into the working space once per call. The mode is the generic OFB of `Impl/Modes/AArch64/`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.

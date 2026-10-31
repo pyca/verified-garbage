@@ -6,8 +6,6 @@
 ///
 /// Contract: `VG.Spec.Cast5.expandKeyContract`. Constant time: only pointers and `key_len` may affect timing, not the key bytes.
 ///
-/// Key expansion keeps `x` and `z` in `scratch` and makes the four main lookups of each line of §2.4 together by a scan of the static `VG_CAST5_S5678`, entry `i` the four dwords `S8[i], S7[i], S6[i], S5[i]`, like the scans of ECB; a group of four lines makes its four extra lookups by one more scan. Each scan selects among four adjacent entries using SSE2 masks before updating its result. Only `key_len` decides the number of bytes copied.
-///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
@@ -2343,8 +2341,6 @@ ret
 ///
 /// Contract: `VG.Spec.Cast5.ecbEncryptContract`. Constant time: only pointers, `rounds` and `n` may affect timing, not the subkeys or data, including S-box indices and rotation amounts.
 ///
-/// Each S-box lookup scans the whole static `VG_CAST5_S1234` table, whose entry `i` contains `S4[i], S3[i], S2[i], S1[i]`. SSE2 XOR/AND masks select among four adjacent entries using the low two index bits, and `pcmpeqd` compares the remaining bits with the public group number. Every entry is loaded in order, so no secret is an address. The four lookups of a round function are made together. The rotation by secret `Kr` uses five masked rotations by 1, 2, 4, 8 and 16. One block at a time, rounds three at a time; callee-saved registers are saved in `scratch`.
-///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
@@ -2856,8 +2852,6 @@ ret
 /// CAST-128 (CAST5) ECB decryption (RFC 2144 §2, SP 800-38A §6.1) of `n` complete 8-byte blocks at `data`, in place, with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`: 12 for a key of up to 10 bytes, 16 for a longer one (§2.5). Only the least significant 5 bits of each rotate subkey are used. No padding is removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Cast5.ecbDecryptContract`. Constant time: only pointers, `rounds` and `n` may affect timing, not the subkeys or data, including S-box indices and rotation amounts.
-///
-/// Each S-box lookup scans the whole static `VG_CAST5_S1234` table, whose entry `i` contains `S4[i], S3[i], S2[i], S1[i]`. SSE2 XOR/AND masks select among four adjacent entries using the low two index bits, and `pcmpeqd` compares the remaining bits with the public group number. Every entry is loaded in order, so no secret is an address. The four lookups of a round function are made together. The rotation by secret `Kr` uses five masked rotations by 1, 2, 4, 8 and 16. One block at a time, rounds three at a time; callee-saved registers are saved in `scratch`.
 ///
 /// # Safety
 ///
