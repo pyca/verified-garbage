@@ -142,8 +142,9 @@ lwu t4, 0(a6)
 xor a3, a3, t4
 slli t1, a3, 32
 srli t1, t1, 59
-xori t3, t1, 0
-addi t3, t3, -1
+addi t3, zero, 1
+sll t1, t3, t1
+slli t3, t1, 63
 srai t3, t3, 63
 ld t2, 0(a7)
 and t2, t2, t3
@@ -153,8 +154,7 @@ ld t6, 512(a7)
 and t6, t6, t3
 ld t0, 768(a7)
 and t0, t0, t3
-xori t3, t1, 1
-addi t3, t3, -1
+slli t3, t1, 62
 srai t3, t3, 63
 ld t4, 8(a7)
 and t4, t4, t3
@@ -168,8 +168,7 @@ or t6, t6, t4
 ld t4, 776(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 2
-addi t3, t3, -1
+slli t3, t1, 61
 srai t3, t3, 63
 ld t4, 16(a7)
 and t4, t4, t3
@@ -183,8 +182,7 @@ or t6, t6, t4
 ld t4, 784(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 3
-addi t3, t3, -1
+slli t3, t1, 60
 srai t3, t3, 63
 ld t4, 24(a7)
 and t4, t4, t3
@@ -198,8 +196,7 @@ or t6, t6, t4
 ld t4, 792(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 4
-addi t3, t3, -1
+slli t3, t1, 59
 srai t3, t3, 63
 ld t4, 32(a7)
 and t4, t4, t3
@@ -213,8 +210,7 @@ or t6, t6, t4
 ld t4, 800(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 5
-addi t3, t3, -1
+slli t3, t1, 58
 srai t3, t3, 63
 ld t4, 40(a7)
 and t4, t4, t3
@@ -228,8 +224,7 @@ or t6, t6, t4
 ld t4, 808(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 6
-addi t3, t3, -1
+slli t3, t1, 57
 srai t3, t3, 63
 ld t4, 48(a7)
 and t4, t4, t3
@@ -243,8 +238,7 @@ or t6, t6, t4
 ld t4, 816(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 7
-addi t3, t3, -1
+slli t3, t1, 56
 srai t3, t3, 63
 ld t4, 56(a7)
 and t4, t4, t3
@@ -258,8 +252,7 @@ or t6, t6, t4
 ld t4, 824(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 8
-addi t3, t3, -1
+slli t3, t1, 55
 srai t3, t3, 63
 ld t4, 64(a7)
 and t4, t4, t3
@@ -273,8 +266,7 @@ or t6, t6, t4
 ld t4, 832(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 9
-addi t3, t3, -1
+slli t3, t1, 54
 srai t3, t3, 63
 ld t4, 72(a7)
 and t4, t4, t3
@@ -288,8 +280,7 @@ or t6, t6, t4
 ld t4, 840(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 10
-addi t3, t3, -1
+slli t3, t1, 53
 srai t3, t3, 63
 ld t4, 80(a7)
 and t4, t4, t3
@@ -303,8 +294,7 @@ or t6, t6, t4
 ld t4, 848(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 11
-addi t3, t3, -1
+slli t3, t1, 52
 srai t3, t3, 63
 ld t4, 88(a7)
 and t4, t4, t3
@@ -318,8 +308,7 @@ or t6, t6, t4
 ld t4, 856(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 12
-addi t3, t3, -1
+slli t3, t1, 51
 srai t3, t3, 63
 ld t4, 96(a7)
 and t4, t4, t3
@@ -333,8 +322,7 @@ or t6, t6, t4
 ld t4, 864(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 13
-addi t3, t3, -1
+slli t3, t1, 50
 srai t3, t3, 63
 ld t4, 104(a7)
 and t4, t4, t3
@@ -348,8 +336,7 @@ or t6, t6, t4
 ld t4, 872(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 14
-addi t3, t3, -1
+slli t3, t1, 49
 srai t3, t3, 63
 ld t4, 112(a7)
 and t4, t4, t3
@@ -363,8 +350,7 @@ or t6, t6, t4
 ld t4, 880(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 15
-addi t3, t3, -1
+slli t3, t1, 48
 srai t3, t3, 63
 ld t4, 120(a7)
 and t4, t4, t3
@@ -378,8 +364,7 @@ or t6, t6, t4
 ld t4, 888(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 16
-addi t3, t3, -1
+slli t3, t1, 47
 srai t3, t3, 63
 ld t4, 128(a7)
 and t4, t4, t3
@@ -393,8 +378,7 @@ or t6, t6, t4
 ld t4, 896(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 17
-addi t3, t3, -1
+slli t3, t1, 46
 srai t3, t3, 63
 ld t4, 136(a7)
 and t4, t4, t3
@@ -408,8 +392,7 @@ or t6, t6, t4
 ld t4, 904(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 18
-addi t3, t3, -1
+slli t3, t1, 45
 srai t3, t3, 63
 ld t4, 144(a7)
 and t4, t4, t3
@@ -423,8 +406,7 @@ or t6, t6, t4
 ld t4, 912(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 19
-addi t3, t3, -1
+slli t3, t1, 44
 srai t3, t3, 63
 ld t4, 152(a7)
 and t4, t4, t3
@@ -438,8 +420,7 @@ or t6, t6, t4
 ld t4, 920(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 20
-addi t3, t3, -1
+slli t3, t1, 43
 srai t3, t3, 63
 ld t4, 160(a7)
 and t4, t4, t3
@@ -453,8 +434,7 @@ or t6, t6, t4
 ld t4, 928(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 21
-addi t3, t3, -1
+slli t3, t1, 42
 srai t3, t3, 63
 ld t4, 168(a7)
 and t4, t4, t3
@@ -468,8 +448,7 @@ or t6, t6, t4
 ld t4, 936(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 22
-addi t3, t3, -1
+slli t3, t1, 41
 srai t3, t3, 63
 ld t4, 176(a7)
 and t4, t4, t3
@@ -483,8 +462,7 @@ or t6, t6, t4
 ld t4, 944(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 23
-addi t3, t3, -1
+slli t3, t1, 40
 srai t3, t3, 63
 ld t4, 184(a7)
 and t4, t4, t3
@@ -498,8 +476,7 @@ or t6, t6, t4
 ld t4, 952(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 24
-addi t3, t3, -1
+slli t3, t1, 39
 srai t3, t3, 63
 ld t4, 192(a7)
 and t4, t4, t3
@@ -513,8 +490,7 @@ or t6, t6, t4
 ld t4, 960(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 25
-addi t3, t3, -1
+slli t3, t1, 38
 srai t3, t3, 63
 ld t4, 200(a7)
 and t4, t4, t3
@@ -528,8 +504,7 @@ or t6, t6, t4
 ld t4, 968(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 26
-addi t3, t3, -1
+slli t3, t1, 37
 srai t3, t3, 63
 ld t4, 208(a7)
 and t4, t4, t3
@@ -543,8 +518,7 @@ or t6, t6, t4
 ld t4, 976(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 27
-addi t3, t3, -1
+slli t3, t1, 36
 srai t3, t3, 63
 ld t4, 216(a7)
 and t4, t4, t3
@@ -558,8 +532,7 @@ or t6, t6, t4
 ld t4, 984(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 28
-addi t3, t3, -1
+slli t3, t1, 35
 srai t3, t3, 63
 ld t4, 224(a7)
 and t4, t4, t3
@@ -573,8 +546,7 @@ or t6, t6, t4
 ld t4, 992(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 29
-addi t3, t3, -1
+slli t3, t1, 34
 srai t3, t3, 63
 ld t4, 232(a7)
 and t4, t4, t3
@@ -588,8 +560,7 @@ or t6, t6, t4
 ld t4, 1000(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 30
-addi t3, t3, -1
+slli t3, t1, 33
 srai t3, t3, 63
 ld t4, 240(a7)
 and t4, t4, t3
@@ -603,8 +574,7 @@ or t6, t6, t4
 ld t4, 1008(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 31
-addi t3, t3, -1
+slli t3, t1, 32
 srai t3, t3, 63
 ld t4, 248(a7)
 and t4, t4, t3
@@ -618,32 +588,18 @@ or t6, t6, t4
 ld t4, 1016(a7)
 and t4, t4, t3
 or t0, t0, t4
-slli t3, a3, 32
-xori t3, t3, -1
-slli t4, t3, 7
-srai t4, t4, 63
-srli t4, t4, 56
-addi t4, t4, 1
-slli t1, t3, 6
-srai t1, t1, 63
-srli t1, t1, 48
-addi t1, t1, 1
-mul t4, t4, t1
-slli t1, t3, 5
-srai t1, t1, 63
-srli t1, t1, 32
-addi t1, t1, 1
-mul t1, t4, t1
-mul t2, t2, t1
-srli t2, t2, 56
-mul t5, t5, t1
-srli t5, t5, 56
+slli t3, a3, 37
+srli t3, t3, 61
+slli t3, t3, 3
+srl t2, t2, t3
+andi t2, t2, 255
+srl t5, t5, t3
+andi t5, t5, 255
 slli t5, t5, 8
-mul t6, t6, t1
-srli t6, t6, 56
+srl t6, t6, t3
+andi t6, t6, 255
 slli t6, t6, 16
-mul t0, t0, t1
-srli t0, t0, 56
+srl t0, t0, t3
 slli t0, t0, 24
 or t2, t2, t5
 or t6, t6, t0
@@ -652,8 +608,9 @@ or a5, t2, t2
 addi a7, a7, 1024
 slli t1, a3, 40
 srli t1, t1, 59
-xori t3, t1, 0
-addi t3, t3, -1
+addi t3, zero, 1
+sll t1, t3, t1
+slli t3, t1, 63
 srai t3, t3, 63
 ld t2, 0(a7)
 and t2, t2, t3
@@ -663,8 +620,7 @@ ld t6, 512(a7)
 and t6, t6, t3
 ld t0, 768(a7)
 and t0, t0, t3
-xori t3, t1, 1
-addi t3, t3, -1
+slli t3, t1, 62
 srai t3, t3, 63
 ld t4, 8(a7)
 and t4, t4, t3
@@ -678,8 +634,7 @@ or t6, t6, t4
 ld t4, 776(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 2
-addi t3, t3, -1
+slli t3, t1, 61
 srai t3, t3, 63
 ld t4, 16(a7)
 and t4, t4, t3
@@ -693,8 +648,7 @@ or t6, t6, t4
 ld t4, 784(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 3
-addi t3, t3, -1
+slli t3, t1, 60
 srai t3, t3, 63
 ld t4, 24(a7)
 and t4, t4, t3
@@ -708,8 +662,7 @@ or t6, t6, t4
 ld t4, 792(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 4
-addi t3, t3, -1
+slli t3, t1, 59
 srai t3, t3, 63
 ld t4, 32(a7)
 and t4, t4, t3
@@ -723,8 +676,7 @@ or t6, t6, t4
 ld t4, 800(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 5
-addi t3, t3, -1
+slli t3, t1, 58
 srai t3, t3, 63
 ld t4, 40(a7)
 and t4, t4, t3
@@ -738,8 +690,7 @@ or t6, t6, t4
 ld t4, 808(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 6
-addi t3, t3, -1
+slli t3, t1, 57
 srai t3, t3, 63
 ld t4, 48(a7)
 and t4, t4, t3
@@ -753,8 +704,7 @@ or t6, t6, t4
 ld t4, 816(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 7
-addi t3, t3, -1
+slli t3, t1, 56
 srai t3, t3, 63
 ld t4, 56(a7)
 and t4, t4, t3
@@ -768,8 +718,7 @@ or t6, t6, t4
 ld t4, 824(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 8
-addi t3, t3, -1
+slli t3, t1, 55
 srai t3, t3, 63
 ld t4, 64(a7)
 and t4, t4, t3
@@ -783,8 +732,7 @@ or t6, t6, t4
 ld t4, 832(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 9
-addi t3, t3, -1
+slli t3, t1, 54
 srai t3, t3, 63
 ld t4, 72(a7)
 and t4, t4, t3
@@ -798,8 +746,7 @@ or t6, t6, t4
 ld t4, 840(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 10
-addi t3, t3, -1
+slli t3, t1, 53
 srai t3, t3, 63
 ld t4, 80(a7)
 and t4, t4, t3
@@ -813,8 +760,7 @@ or t6, t6, t4
 ld t4, 848(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 11
-addi t3, t3, -1
+slli t3, t1, 52
 srai t3, t3, 63
 ld t4, 88(a7)
 and t4, t4, t3
@@ -828,8 +774,7 @@ or t6, t6, t4
 ld t4, 856(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 12
-addi t3, t3, -1
+slli t3, t1, 51
 srai t3, t3, 63
 ld t4, 96(a7)
 and t4, t4, t3
@@ -843,8 +788,7 @@ or t6, t6, t4
 ld t4, 864(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 13
-addi t3, t3, -1
+slli t3, t1, 50
 srai t3, t3, 63
 ld t4, 104(a7)
 and t4, t4, t3
@@ -858,8 +802,7 @@ or t6, t6, t4
 ld t4, 872(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 14
-addi t3, t3, -1
+slli t3, t1, 49
 srai t3, t3, 63
 ld t4, 112(a7)
 and t4, t4, t3
@@ -873,8 +816,7 @@ or t6, t6, t4
 ld t4, 880(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 15
-addi t3, t3, -1
+slli t3, t1, 48
 srai t3, t3, 63
 ld t4, 120(a7)
 and t4, t4, t3
@@ -888,8 +830,7 @@ or t6, t6, t4
 ld t4, 888(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 16
-addi t3, t3, -1
+slli t3, t1, 47
 srai t3, t3, 63
 ld t4, 128(a7)
 and t4, t4, t3
@@ -903,8 +844,7 @@ or t6, t6, t4
 ld t4, 896(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 17
-addi t3, t3, -1
+slli t3, t1, 46
 srai t3, t3, 63
 ld t4, 136(a7)
 and t4, t4, t3
@@ -918,8 +858,7 @@ or t6, t6, t4
 ld t4, 904(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 18
-addi t3, t3, -1
+slli t3, t1, 45
 srai t3, t3, 63
 ld t4, 144(a7)
 and t4, t4, t3
@@ -933,8 +872,7 @@ or t6, t6, t4
 ld t4, 912(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 19
-addi t3, t3, -1
+slli t3, t1, 44
 srai t3, t3, 63
 ld t4, 152(a7)
 and t4, t4, t3
@@ -948,8 +886,7 @@ or t6, t6, t4
 ld t4, 920(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 20
-addi t3, t3, -1
+slli t3, t1, 43
 srai t3, t3, 63
 ld t4, 160(a7)
 and t4, t4, t3
@@ -963,8 +900,7 @@ or t6, t6, t4
 ld t4, 928(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 21
-addi t3, t3, -1
+slli t3, t1, 42
 srai t3, t3, 63
 ld t4, 168(a7)
 and t4, t4, t3
@@ -978,8 +914,7 @@ or t6, t6, t4
 ld t4, 936(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 22
-addi t3, t3, -1
+slli t3, t1, 41
 srai t3, t3, 63
 ld t4, 176(a7)
 and t4, t4, t3
@@ -993,8 +928,7 @@ or t6, t6, t4
 ld t4, 944(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 23
-addi t3, t3, -1
+slli t3, t1, 40
 srai t3, t3, 63
 ld t4, 184(a7)
 and t4, t4, t3
@@ -1008,8 +942,7 @@ or t6, t6, t4
 ld t4, 952(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 24
-addi t3, t3, -1
+slli t3, t1, 39
 srai t3, t3, 63
 ld t4, 192(a7)
 and t4, t4, t3
@@ -1023,8 +956,7 @@ or t6, t6, t4
 ld t4, 960(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 25
-addi t3, t3, -1
+slli t3, t1, 38
 srai t3, t3, 63
 ld t4, 200(a7)
 and t4, t4, t3
@@ -1038,8 +970,7 @@ or t6, t6, t4
 ld t4, 968(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 26
-addi t3, t3, -1
+slli t3, t1, 37
 srai t3, t3, 63
 ld t4, 208(a7)
 and t4, t4, t3
@@ -1053,8 +984,7 @@ or t6, t6, t4
 ld t4, 976(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 27
-addi t3, t3, -1
+slli t3, t1, 36
 srai t3, t3, 63
 ld t4, 216(a7)
 and t4, t4, t3
@@ -1068,8 +998,7 @@ or t6, t6, t4
 ld t4, 984(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 28
-addi t3, t3, -1
+slli t3, t1, 35
 srai t3, t3, 63
 ld t4, 224(a7)
 and t4, t4, t3
@@ -1083,8 +1012,7 @@ or t6, t6, t4
 ld t4, 992(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 29
-addi t3, t3, -1
+slli t3, t1, 34
 srai t3, t3, 63
 ld t4, 232(a7)
 and t4, t4, t3
@@ -1098,8 +1026,7 @@ or t6, t6, t4
 ld t4, 1000(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 30
-addi t3, t3, -1
+slli t3, t1, 33
 srai t3, t3, 63
 ld t4, 240(a7)
 and t4, t4, t3
@@ -1113,8 +1040,7 @@ or t6, t6, t4
 ld t4, 1008(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 31
-addi t3, t3, -1
+slli t3, t1, 32
 srai t3, t3, 63
 ld t4, 248(a7)
 and t4, t4, t3
@@ -1128,32 +1054,18 @@ or t6, t6, t4
 ld t4, 1016(a7)
 and t4, t4, t3
 or t0, t0, t4
-slli t3, a3, 40
-xori t3, t3, -1
-slli t4, t3, 7
-srai t4, t4, 63
-srli t4, t4, 56
-addi t4, t4, 1
-slli t1, t3, 6
-srai t1, t1, 63
-srli t1, t1, 48
-addi t1, t1, 1
-mul t4, t4, t1
-slli t1, t3, 5
-srai t1, t1, 63
-srli t1, t1, 32
-addi t1, t1, 1
-mul t1, t4, t1
-mul t2, t2, t1
-srli t2, t2, 56
-mul t5, t5, t1
-srli t5, t5, 56
+slli t3, a3, 45
+srli t3, t3, 61
+slli t3, t3, 3
+srl t2, t2, t3
+andi t2, t2, 255
+srl t5, t5, t3
+andi t5, t5, 255
 slli t5, t5, 8
-mul t6, t6, t1
-srli t6, t6, 56
+srl t6, t6, t3
+andi t6, t6, 255
 slli t6, t6, 16
-mul t0, t0, t1
-srli t0, t0, 56
+srl t0, t0, t3
 slli t0, t0, 24
 or t2, t2, t5
 or t6, t6, t0
@@ -1162,8 +1074,9 @@ add a5, a5, t2
 addi a7, a7, 1024
 slli t1, a3, 48
 srli t1, t1, 59
-xori t3, t1, 0
-addi t3, t3, -1
+addi t3, zero, 1
+sll t1, t3, t1
+slli t3, t1, 63
 srai t3, t3, 63
 ld t2, 0(a7)
 and t2, t2, t3
@@ -1173,8 +1086,7 @@ ld t6, 512(a7)
 and t6, t6, t3
 ld t0, 768(a7)
 and t0, t0, t3
-xori t3, t1, 1
-addi t3, t3, -1
+slli t3, t1, 62
 srai t3, t3, 63
 ld t4, 8(a7)
 and t4, t4, t3
@@ -1188,8 +1100,7 @@ or t6, t6, t4
 ld t4, 776(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 2
-addi t3, t3, -1
+slli t3, t1, 61
 srai t3, t3, 63
 ld t4, 16(a7)
 and t4, t4, t3
@@ -1203,8 +1114,7 @@ or t6, t6, t4
 ld t4, 784(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 3
-addi t3, t3, -1
+slli t3, t1, 60
 srai t3, t3, 63
 ld t4, 24(a7)
 and t4, t4, t3
@@ -1218,8 +1128,7 @@ or t6, t6, t4
 ld t4, 792(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 4
-addi t3, t3, -1
+slli t3, t1, 59
 srai t3, t3, 63
 ld t4, 32(a7)
 and t4, t4, t3
@@ -1233,8 +1142,7 @@ or t6, t6, t4
 ld t4, 800(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 5
-addi t3, t3, -1
+slli t3, t1, 58
 srai t3, t3, 63
 ld t4, 40(a7)
 and t4, t4, t3
@@ -1248,8 +1156,7 @@ or t6, t6, t4
 ld t4, 808(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 6
-addi t3, t3, -1
+slli t3, t1, 57
 srai t3, t3, 63
 ld t4, 48(a7)
 and t4, t4, t3
@@ -1263,8 +1170,7 @@ or t6, t6, t4
 ld t4, 816(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 7
-addi t3, t3, -1
+slli t3, t1, 56
 srai t3, t3, 63
 ld t4, 56(a7)
 and t4, t4, t3
@@ -1278,8 +1184,7 @@ or t6, t6, t4
 ld t4, 824(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 8
-addi t3, t3, -1
+slli t3, t1, 55
 srai t3, t3, 63
 ld t4, 64(a7)
 and t4, t4, t3
@@ -1293,8 +1198,7 @@ or t6, t6, t4
 ld t4, 832(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 9
-addi t3, t3, -1
+slli t3, t1, 54
 srai t3, t3, 63
 ld t4, 72(a7)
 and t4, t4, t3
@@ -1308,8 +1212,7 @@ or t6, t6, t4
 ld t4, 840(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 10
-addi t3, t3, -1
+slli t3, t1, 53
 srai t3, t3, 63
 ld t4, 80(a7)
 and t4, t4, t3
@@ -1323,8 +1226,7 @@ or t6, t6, t4
 ld t4, 848(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 11
-addi t3, t3, -1
+slli t3, t1, 52
 srai t3, t3, 63
 ld t4, 88(a7)
 and t4, t4, t3
@@ -1338,8 +1240,7 @@ or t6, t6, t4
 ld t4, 856(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 12
-addi t3, t3, -1
+slli t3, t1, 51
 srai t3, t3, 63
 ld t4, 96(a7)
 and t4, t4, t3
@@ -1353,8 +1254,7 @@ or t6, t6, t4
 ld t4, 864(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 13
-addi t3, t3, -1
+slli t3, t1, 50
 srai t3, t3, 63
 ld t4, 104(a7)
 and t4, t4, t3
@@ -1368,8 +1268,7 @@ or t6, t6, t4
 ld t4, 872(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 14
-addi t3, t3, -1
+slli t3, t1, 49
 srai t3, t3, 63
 ld t4, 112(a7)
 and t4, t4, t3
@@ -1383,8 +1282,7 @@ or t6, t6, t4
 ld t4, 880(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 15
-addi t3, t3, -1
+slli t3, t1, 48
 srai t3, t3, 63
 ld t4, 120(a7)
 and t4, t4, t3
@@ -1398,8 +1296,7 @@ or t6, t6, t4
 ld t4, 888(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 16
-addi t3, t3, -1
+slli t3, t1, 47
 srai t3, t3, 63
 ld t4, 128(a7)
 and t4, t4, t3
@@ -1413,8 +1310,7 @@ or t6, t6, t4
 ld t4, 896(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 17
-addi t3, t3, -1
+slli t3, t1, 46
 srai t3, t3, 63
 ld t4, 136(a7)
 and t4, t4, t3
@@ -1428,8 +1324,7 @@ or t6, t6, t4
 ld t4, 904(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 18
-addi t3, t3, -1
+slli t3, t1, 45
 srai t3, t3, 63
 ld t4, 144(a7)
 and t4, t4, t3
@@ -1443,8 +1338,7 @@ or t6, t6, t4
 ld t4, 912(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 19
-addi t3, t3, -1
+slli t3, t1, 44
 srai t3, t3, 63
 ld t4, 152(a7)
 and t4, t4, t3
@@ -1458,8 +1352,7 @@ or t6, t6, t4
 ld t4, 920(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 20
-addi t3, t3, -1
+slli t3, t1, 43
 srai t3, t3, 63
 ld t4, 160(a7)
 and t4, t4, t3
@@ -1473,8 +1366,7 @@ or t6, t6, t4
 ld t4, 928(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 21
-addi t3, t3, -1
+slli t3, t1, 42
 srai t3, t3, 63
 ld t4, 168(a7)
 and t4, t4, t3
@@ -1488,8 +1380,7 @@ or t6, t6, t4
 ld t4, 936(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 22
-addi t3, t3, -1
+slli t3, t1, 41
 srai t3, t3, 63
 ld t4, 176(a7)
 and t4, t4, t3
@@ -1503,8 +1394,7 @@ or t6, t6, t4
 ld t4, 944(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 23
-addi t3, t3, -1
+slli t3, t1, 40
 srai t3, t3, 63
 ld t4, 184(a7)
 and t4, t4, t3
@@ -1518,8 +1408,7 @@ or t6, t6, t4
 ld t4, 952(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 24
-addi t3, t3, -1
+slli t3, t1, 39
 srai t3, t3, 63
 ld t4, 192(a7)
 and t4, t4, t3
@@ -1533,8 +1422,7 @@ or t6, t6, t4
 ld t4, 960(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 25
-addi t3, t3, -1
+slli t3, t1, 38
 srai t3, t3, 63
 ld t4, 200(a7)
 and t4, t4, t3
@@ -1548,8 +1436,7 @@ or t6, t6, t4
 ld t4, 968(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 26
-addi t3, t3, -1
+slli t3, t1, 37
 srai t3, t3, 63
 ld t4, 208(a7)
 and t4, t4, t3
@@ -1563,8 +1450,7 @@ or t6, t6, t4
 ld t4, 976(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 27
-addi t3, t3, -1
+slli t3, t1, 36
 srai t3, t3, 63
 ld t4, 216(a7)
 and t4, t4, t3
@@ -1578,8 +1464,7 @@ or t6, t6, t4
 ld t4, 984(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 28
-addi t3, t3, -1
+slli t3, t1, 35
 srai t3, t3, 63
 ld t4, 224(a7)
 and t4, t4, t3
@@ -1593,8 +1478,7 @@ or t6, t6, t4
 ld t4, 992(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 29
-addi t3, t3, -1
+slli t3, t1, 34
 srai t3, t3, 63
 ld t4, 232(a7)
 and t4, t4, t3
@@ -1608,8 +1492,7 @@ or t6, t6, t4
 ld t4, 1000(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 30
-addi t3, t3, -1
+slli t3, t1, 33
 srai t3, t3, 63
 ld t4, 240(a7)
 and t4, t4, t3
@@ -1623,8 +1506,7 @@ or t6, t6, t4
 ld t4, 1008(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 31
-addi t3, t3, -1
+slli t3, t1, 32
 srai t3, t3, 63
 ld t4, 248(a7)
 and t4, t4, t3
@@ -1638,32 +1520,18 @@ or t6, t6, t4
 ld t4, 1016(a7)
 and t4, t4, t3
 or t0, t0, t4
-slli t3, a3, 48
-xori t3, t3, -1
-slli t4, t3, 7
-srai t4, t4, 63
-srli t4, t4, 56
-addi t4, t4, 1
-slli t1, t3, 6
-srai t1, t1, 63
-srli t1, t1, 48
-addi t1, t1, 1
-mul t4, t4, t1
-slli t1, t3, 5
-srai t1, t1, 63
-srli t1, t1, 32
-addi t1, t1, 1
-mul t1, t4, t1
-mul t2, t2, t1
-srli t2, t2, 56
-mul t5, t5, t1
-srli t5, t5, 56
+slli t3, a3, 53
+srli t3, t3, 61
+slli t3, t3, 3
+srl t2, t2, t3
+andi t2, t2, 255
+srl t5, t5, t3
+andi t5, t5, 255
 slli t5, t5, 8
-mul t6, t6, t1
-srli t6, t6, 56
+srl t6, t6, t3
+andi t6, t6, 255
 slli t6, t6, 16
-mul t0, t0, t1
-srli t0, t0, 56
+srl t0, t0, t3
 slli t0, t0, 24
 or t2, t2, t5
 or t6, t6, t0
@@ -1672,8 +1540,9 @@ xor a5, a5, t2
 addi a7, a7, 1024
 slli t1, a3, 56
 srli t1, t1, 59
-xori t3, t1, 0
-addi t3, t3, -1
+addi t3, zero, 1
+sll t1, t3, t1
+slli t3, t1, 63
 srai t3, t3, 63
 ld t2, 0(a7)
 and t2, t2, t3
@@ -1683,8 +1552,7 @@ ld t6, 512(a7)
 and t6, t6, t3
 ld t0, 768(a7)
 and t0, t0, t3
-xori t3, t1, 1
-addi t3, t3, -1
+slli t3, t1, 62
 srai t3, t3, 63
 ld t4, 8(a7)
 and t4, t4, t3
@@ -1698,8 +1566,7 @@ or t6, t6, t4
 ld t4, 776(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 2
-addi t3, t3, -1
+slli t3, t1, 61
 srai t3, t3, 63
 ld t4, 16(a7)
 and t4, t4, t3
@@ -1713,8 +1580,7 @@ or t6, t6, t4
 ld t4, 784(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 3
-addi t3, t3, -1
+slli t3, t1, 60
 srai t3, t3, 63
 ld t4, 24(a7)
 and t4, t4, t3
@@ -1728,8 +1594,7 @@ or t6, t6, t4
 ld t4, 792(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 4
-addi t3, t3, -1
+slli t3, t1, 59
 srai t3, t3, 63
 ld t4, 32(a7)
 and t4, t4, t3
@@ -1743,8 +1608,7 @@ or t6, t6, t4
 ld t4, 800(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 5
-addi t3, t3, -1
+slli t3, t1, 58
 srai t3, t3, 63
 ld t4, 40(a7)
 and t4, t4, t3
@@ -1758,8 +1622,7 @@ or t6, t6, t4
 ld t4, 808(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 6
-addi t3, t3, -1
+slli t3, t1, 57
 srai t3, t3, 63
 ld t4, 48(a7)
 and t4, t4, t3
@@ -1773,8 +1636,7 @@ or t6, t6, t4
 ld t4, 816(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 7
-addi t3, t3, -1
+slli t3, t1, 56
 srai t3, t3, 63
 ld t4, 56(a7)
 and t4, t4, t3
@@ -1788,8 +1650,7 @@ or t6, t6, t4
 ld t4, 824(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 8
-addi t3, t3, -1
+slli t3, t1, 55
 srai t3, t3, 63
 ld t4, 64(a7)
 and t4, t4, t3
@@ -1803,8 +1664,7 @@ or t6, t6, t4
 ld t4, 832(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 9
-addi t3, t3, -1
+slli t3, t1, 54
 srai t3, t3, 63
 ld t4, 72(a7)
 and t4, t4, t3
@@ -1818,8 +1678,7 @@ or t6, t6, t4
 ld t4, 840(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 10
-addi t3, t3, -1
+slli t3, t1, 53
 srai t3, t3, 63
 ld t4, 80(a7)
 and t4, t4, t3
@@ -1833,8 +1692,7 @@ or t6, t6, t4
 ld t4, 848(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 11
-addi t3, t3, -1
+slli t3, t1, 52
 srai t3, t3, 63
 ld t4, 88(a7)
 and t4, t4, t3
@@ -1848,8 +1706,7 @@ or t6, t6, t4
 ld t4, 856(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 12
-addi t3, t3, -1
+slli t3, t1, 51
 srai t3, t3, 63
 ld t4, 96(a7)
 and t4, t4, t3
@@ -1863,8 +1720,7 @@ or t6, t6, t4
 ld t4, 864(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 13
-addi t3, t3, -1
+slli t3, t1, 50
 srai t3, t3, 63
 ld t4, 104(a7)
 and t4, t4, t3
@@ -1878,8 +1734,7 @@ or t6, t6, t4
 ld t4, 872(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 14
-addi t3, t3, -1
+slli t3, t1, 49
 srai t3, t3, 63
 ld t4, 112(a7)
 and t4, t4, t3
@@ -1893,8 +1748,7 @@ or t6, t6, t4
 ld t4, 880(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 15
-addi t3, t3, -1
+slli t3, t1, 48
 srai t3, t3, 63
 ld t4, 120(a7)
 and t4, t4, t3
@@ -1908,8 +1762,7 @@ or t6, t6, t4
 ld t4, 888(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 16
-addi t3, t3, -1
+slli t3, t1, 47
 srai t3, t3, 63
 ld t4, 128(a7)
 and t4, t4, t3
@@ -1923,8 +1776,7 @@ or t6, t6, t4
 ld t4, 896(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 17
-addi t3, t3, -1
+slli t3, t1, 46
 srai t3, t3, 63
 ld t4, 136(a7)
 and t4, t4, t3
@@ -1938,8 +1790,7 @@ or t6, t6, t4
 ld t4, 904(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 18
-addi t3, t3, -1
+slli t3, t1, 45
 srai t3, t3, 63
 ld t4, 144(a7)
 and t4, t4, t3
@@ -1953,8 +1804,7 @@ or t6, t6, t4
 ld t4, 912(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 19
-addi t3, t3, -1
+slli t3, t1, 44
 srai t3, t3, 63
 ld t4, 152(a7)
 and t4, t4, t3
@@ -1968,8 +1818,7 @@ or t6, t6, t4
 ld t4, 920(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 20
-addi t3, t3, -1
+slli t3, t1, 43
 srai t3, t3, 63
 ld t4, 160(a7)
 and t4, t4, t3
@@ -1983,8 +1832,7 @@ or t6, t6, t4
 ld t4, 928(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 21
-addi t3, t3, -1
+slli t3, t1, 42
 srai t3, t3, 63
 ld t4, 168(a7)
 and t4, t4, t3
@@ -1998,8 +1846,7 @@ or t6, t6, t4
 ld t4, 936(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 22
-addi t3, t3, -1
+slli t3, t1, 41
 srai t3, t3, 63
 ld t4, 176(a7)
 and t4, t4, t3
@@ -2013,8 +1860,7 @@ or t6, t6, t4
 ld t4, 944(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 23
-addi t3, t3, -1
+slli t3, t1, 40
 srai t3, t3, 63
 ld t4, 184(a7)
 and t4, t4, t3
@@ -2028,8 +1874,7 @@ or t6, t6, t4
 ld t4, 952(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 24
-addi t3, t3, -1
+slli t3, t1, 39
 srai t3, t3, 63
 ld t4, 192(a7)
 and t4, t4, t3
@@ -2043,8 +1888,7 @@ or t6, t6, t4
 ld t4, 960(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 25
-addi t3, t3, -1
+slli t3, t1, 38
 srai t3, t3, 63
 ld t4, 200(a7)
 and t4, t4, t3
@@ -2058,8 +1902,7 @@ or t6, t6, t4
 ld t4, 968(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 26
-addi t3, t3, -1
+slli t3, t1, 37
 srai t3, t3, 63
 ld t4, 208(a7)
 and t4, t4, t3
@@ -2073,8 +1916,7 @@ or t6, t6, t4
 ld t4, 976(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 27
-addi t3, t3, -1
+slli t3, t1, 36
 srai t3, t3, 63
 ld t4, 216(a7)
 and t4, t4, t3
@@ -2088,8 +1930,7 @@ or t6, t6, t4
 ld t4, 984(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 28
-addi t3, t3, -1
+slli t3, t1, 35
 srai t3, t3, 63
 ld t4, 224(a7)
 and t4, t4, t3
@@ -2103,8 +1944,7 @@ or t6, t6, t4
 ld t4, 992(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 29
-addi t3, t3, -1
+slli t3, t1, 34
 srai t3, t3, 63
 ld t4, 232(a7)
 and t4, t4, t3
@@ -2118,8 +1958,7 @@ or t6, t6, t4
 ld t4, 1000(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 30
-addi t3, t3, -1
+slli t3, t1, 33
 srai t3, t3, 63
 ld t4, 240(a7)
 and t4, t4, t3
@@ -2133,8 +1972,7 @@ or t6, t6, t4
 ld t4, 1008(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 31
-addi t3, t3, -1
+slli t3, t1, 32
 srai t3, t3, 63
 ld t4, 248(a7)
 and t4, t4, t3
@@ -2148,32 +1986,18 @@ or t6, t6, t4
 ld t4, 1016(a7)
 and t4, t4, t3
 or t0, t0, t4
-slli t3, a3, 56
-xori t3, t3, -1
-slli t4, t3, 7
-srai t4, t4, 63
-srli t4, t4, 56
-addi t4, t4, 1
-slli t1, t3, 6
-srai t1, t1, 63
-srli t1, t1, 48
-addi t1, t1, 1
-mul t4, t4, t1
-slli t1, t3, 5
-srai t1, t1, 63
-srli t1, t1, 32
-addi t1, t1, 1
-mul t1, t4, t1
-mul t2, t2, t1
-srli t2, t2, 56
-mul t5, t5, t1
-srli t5, t5, 56
+slli t3, a3, 61
+srli t3, t3, 61
+slli t3, t3, 3
+srl t2, t2, t3
+andi t2, t2, 255
+srl t5, t5, t3
+andi t5, t5, 255
 slli t5, t5, 8
-mul t6, t6, t1
-srli t6, t6, 56
+srl t6, t6, t3
+andi t6, t6, 255
 slli t6, t6, 16
-mul t0, t0, t1
-srli t0, t0, 56
+srl t0, t0, t3
 slli t0, t0, 24
 or t2, t2, t5
 or t6, t6, t0
@@ -2506,8 +2330,9 @@ lwu t4, 0(a6)
 xor a3, a3, t4
 slli t1, a3, 32
 srli t1, t1, 59
-xori t3, t1, 0
-addi t3, t3, -1
+addi t3, zero, 1
+sll t1, t3, t1
+slli t3, t1, 63
 srai t3, t3, 63
 ld t2, 0(a7)
 and t2, t2, t3
@@ -2517,8 +2342,7 @@ ld t6, 512(a7)
 and t6, t6, t3
 ld t0, 768(a7)
 and t0, t0, t3
-xori t3, t1, 1
-addi t3, t3, -1
+slli t3, t1, 62
 srai t3, t3, 63
 ld t4, 8(a7)
 and t4, t4, t3
@@ -2532,8 +2356,7 @@ or t6, t6, t4
 ld t4, 776(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 2
-addi t3, t3, -1
+slli t3, t1, 61
 srai t3, t3, 63
 ld t4, 16(a7)
 and t4, t4, t3
@@ -2547,8 +2370,7 @@ or t6, t6, t4
 ld t4, 784(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 3
-addi t3, t3, -1
+slli t3, t1, 60
 srai t3, t3, 63
 ld t4, 24(a7)
 and t4, t4, t3
@@ -2562,8 +2384,7 @@ or t6, t6, t4
 ld t4, 792(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 4
-addi t3, t3, -1
+slli t3, t1, 59
 srai t3, t3, 63
 ld t4, 32(a7)
 and t4, t4, t3
@@ -2577,8 +2398,7 @@ or t6, t6, t4
 ld t4, 800(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 5
-addi t3, t3, -1
+slli t3, t1, 58
 srai t3, t3, 63
 ld t4, 40(a7)
 and t4, t4, t3
@@ -2592,8 +2412,7 @@ or t6, t6, t4
 ld t4, 808(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 6
-addi t3, t3, -1
+slli t3, t1, 57
 srai t3, t3, 63
 ld t4, 48(a7)
 and t4, t4, t3
@@ -2607,8 +2426,7 @@ or t6, t6, t4
 ld t4, 816(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 7
-addi t3, t3, -1
+slli t3, t1, 56
 srai t3, t3, 63
 ld t4, 56(a7)
 and t4, t4, t3
@@ -2622,8 +2440,7 @@ or t6, t6, t4
 ld t4, 824(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 8
-addi t3, t3, -1
+slli t3, t1, 55
 srai t3, t3, 63
 ld t4, 64(a7)
 and t4, t4, t3
@@ -2637,8 +2454,7 @@ or t6, t6, t4
 ld t4, 832(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 9
-addi t3, t3, -1
+slli t3, t1, 54
 srai t3, t3, 63
 ld t4, 72(a7)
 and t4, t4, t3
@@ -2652,8 +2468,7 @@ or t6, t6, t4
 ld t4, 840(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 10
-addi t3, t3, -1
+slli t3, t1, 53
 srai t3, t3, 63
 ld t4, 80(a7)
 and t4, t4, t3
@@ -2667,8 +2482,7 @@ or t6, t6, t4
 ld t4, 848(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 11
-addi t3, t3, -1
+slli t3, t1, 52
 srai t3, t3, 63
 ld t4, 88(a7)
 and t4, t4, t3
@@ -2682,8 +2496,7 @@ or t6, t6, t4
 ld t4, 856(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 12
-addi t3, t3, -1
+slli t3, t1, 51
 srai t3, t3, 63
 ld t4, 96(a7)
 and t4, t4, t3
@@ -2697,8 +2510,7 @@ or t6, t6, t4
 ld t4, 864(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 13
-addi t3, t3, -1
+slli t3, t1, 50
 srai t3, t3, 63
 ld t4, 104(a7)
 and t4, t4, t3
@@ -2712,8 +2524,7 @@ or t6, t6, t4
 ld t4, 872(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 14
-addi t3, t3, -1
+slli t3, t1, 49
 srai t3, t3, 63
 ld t4, 112(a7)
 and t4, t4, t3
@@ -2727,8 +2538,7 @@ or t6, t6, t4
 ld t4, 880(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 15
-addi t3, t3, -1
+slli t3, t1, 48
 srai t3, t3, 63
 ld t4, 120(a7)
 and t4, t4, t3
@@ -2742,8 +2552,7 @@ or t6, t6, t4
 ld t4, 888(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 16
-addi t3, t3, -1
+slli t3, t1, 47
 srai t3, t3, 63
 ld t4, 128(a7)
 and t4, t4, t3
@@ -2757,8 +2566,7 @@ or t6, t6, t4
 ld t4, 896(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 17
-addi t3, t3, -1
+slli t3, t1, 46
 srai t3, t3, 63
 ld t4, 136(a7)
 and t4, t4, t3
@@ -2772,8 +2580,7 @@ or t6, t6, t4
 ld t4, 904(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 18
-addi t3, t3, -1
+slli t3, t1, 45
 srai t3, t3, 63
 ld t4, 144(a7)
 and t4, t4, t3
@@ -2787,8 +2594,7 @@ or t6, t6, t4
 ld t4, 912(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 19
-addi t3, t3, -1
+slli t3, t1, 44
 srai t3, t3, 63
 ld t4, 152(a7)
 and t4, t4, t3
@@ -2802,8 +2608,7 @@ or t6, t6, t4
 ld t4, 920(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 20
-addi t3, t3, -1
+slli t3, t1, 43
 srai t3, t3, 63
 ld t4, 160(a7)
 and t4, t4, t3
@@ -2817,8 +2622,7 @@ or t6, t6, t4
 ld t4, 928(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 21
-addi t3, t3, -1
+slli t3, t1, 42
 srai t3, t3, 63
 ld t4, 168(a7)
 and t4, t4, t3
@@ -2832,8 +2636,7 @@ or t6, t6, t4
 ld t4, 936(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 22
-addi t3, t3, -1
+slli t3, t1, 41
 srai t3, t3, 63
 ld t4, 176(a7)
 and t4, t4, t3
@@ -2847,8 +2650,7 @@ or t6, t6, t4
 ld t4, 944(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 23
-addi t3, t3, -1
+slli t3, t1, 40
 srai t3, t3, 63
 ld t4, 184(a7)
 and t4, t4, t3
@@ -2862,8 +2664,7 @@ or t6, t6, t4
 ld t4, 952(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 24
-addi t3, t3, -1
+slli t3, t1, 39
 srai t3, t3, 63
 ld t4, 192(a7)
 and t4, t4, t3
@@ -2877,8 +2678,7 @@ or t6, t6, t4
 ld t4, 960(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 25
-addi t3, t3, -1
+slli t3, t1, 38
 srai t3, t3, 63
 ld t4, 200(a7)
 and t4, t4, t3
@@ -2892,8 +2692,7 @@ or t6, t6, t4
 ld t4, 968(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 26
-addi t3, t3, -1
+slli t3, t1, 37
 srai t3, t3, 63
 ld t4, 208(a7)
 and t4, t4, t3
@@ -2907,8 +2706,7 @@ or t6, t6, t4
 ld t4, 976(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 27
-addi t3, t3, -1
+slli t3, t1, 36
 srai t3, t3, 63
 ld t4, 216(a7)
 and t4, t4, t3
@@ -2922,8 +2720,7 @@ or t6, t6, t4
 ld t4, 984(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 28
-addi t3, t3, -1
+slli t3, t1, 35
 srai t3, t3, 63
 ld t4, 224(a7)
 and t4, t4, t3
@@ -2937,8 +2734,7 @@ or t6, t6, t4
 ld t4, 992(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 29
-addi t3, t3, -1
+slli t3, t1, 34
 srai t3, t3, 63
 ld t4, 232(a7)
 and t4, t4, t3
@@ -2952,8 +2748,7 @@ or t6, t6, t4
 ld t4, 1000(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 30
-addi t3, t3, -1
+slli t3, t1, 33
 srai t3, t3, 63
 ld t4, 240(a7)
 and t4, t4, t3
@@ -2967,8 +2762,7 @@ or t6, t6, t4
 ld t4, 1008(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 31
-addi t3, t3, -1
+slli t3, t1, 32
 srai t3, t3, 63
 ld t4, 248(a7)
 and t4, t4, t3
@@ -2982,32 +2776,18 @@ or t6, t6, t4
 ld t4, 1016(a7)
 and t4, t4, t3
 or t0, t0, t4
-slli t3, a3, 32
-xori t3, t3, -1
-slli t4, t3, 7
-srai t4, t4, 63
-srli t4, t4, 56
-addi t4, t4, 1
-slli t1, t3, 6
-srai t1, t1, 63
-srli t1, t1, 48
-addi t1, t1, 1
-mul t4, t4, t1
-slli t1, t3, 5
-srai t1, t1, 63
-srli t1, t1, 32
-addi t1, t1, 1
-mul t1, t4, t1
-mul t2, t2, t1
-srli t2, t2, 56
-mul t5, t5, t1
-srli t5, t5, 56
+slli t3, a3, 37
+srli t3, t3, 61
+slli t3, t3, 3
+srl t2, t2, t3
+andi t2, t2, 255
+srl t5, t5, t3
+andi t5, t5, 255
 slli t5, t5, 8
-mul t6, t6, t1
-srli t6, t6, 56
+srl t6, t6, t3
+andi t6, t6, 255
 slli t6, t6, 16
-mul t0, t0, t1
-srli t0, t0, 56
+srl t0, t0, t3
 slli t0, t0, 24
 or t2, t2, t5
 or t6, t6, t0
@@ -3016,8 +2796,9 @@ or a5, t2, t2
 addi a7, a7, 1024
 slli t1, a3, 40
 srli t1, t1, 59
-xori t3, t1, 0
-addi t3, t3, -1
+addi t3, zero, 1
+sll t1, t3, t1
+slli t3, t1, 63
 srai t3, t3, 63
 ld t2, 0(a7)
 and t2, t2, t3
@@ -3027,8 +2808,7 @@ ld t6, 512(a7)
 and t6, t6, t3
 ld t0, 768(a7)
 and t0, t0, t3
-xori t3, t1, 1
-addi t3, t3, -1
+slli t3, t1, 62
 srai t3, t3, 63
 ld t4, 8(a7)
 and t4, t4, t3
@@ -3042,8 +2822,7 @@ or t6, t6, t4
 ld t4, 776(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 2
-addi t3, t3, -1
+slli t3, t1, 61
 srai t3, t3, 63
 ld t4, 16(a7)
 and t4, t4, t3
@@ -3057,8 +2836,7 @@ or t6, t6, t4
 ld t4, 784(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 3
-addi t3, t3, -1
+slli t3, t1, 60
 srai t3, t3, 63
 ld t4, 24(a7)
 and t4, t4, t3
@@ -3072,8 +2850,7 @@ or t6, t6, t4
 ld t4, 792(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 4
-addi t3, t3, -1
+slli t3, t1, 59
 srai t3, t3, 63
 ld t4, 32(a7)
 and t4, t4, t3
@@ -3087,8 +2864,7 @@ or t6, t6, t4
 ld t4, 800(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 5
-addi t3, t3, -1
+slli t3, t1, 58
 srai t3, t3, 63
 ld t4, 40(a7)
 and t4, t4, t3
@@ -3102,8 +2878,7 @@ or t6, t6, t4
 ld t4, 808(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 6
-addi t3, t3, -1
+slli t3, t1, 57
 srai t3, t3, 63
 ld t4, 48(a7)
 and t4, t4, t3
@@ -3117,8 +2892,7 @@ or t6, t6, t4
 ld t4, 816(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 7
-addi t3, t3, -1
+slli t3, t1, 56
 srai t3, t3, 63
 ld t4, 56(a7)
 and t4, t4, t3
@@ -3132,8 +2906,7 @@ or t6, t6, t4
 ld t4, 824(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 8
-addi t3, t3, -1
+slli t3, t1, 55
 srai t3, t3, 63
 ld t4, 64(a7)
 and t4, t4, t3
@@ -3147,8 +2920,7 @@ or t6, t6, t4
 ld t4, 832(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 9
-addi t3, t3, -1
+slli t3, t1, 54
 srai t3, t3, 63
 ld t4, 72(a7)
 and t4, t4, t3
@@ -3162,8 +2934,7 @@ or t6, t6, t4
 ld t4, 840(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 10
-addi t3, t3, -1
+slli t3, t1, 53
 srai t3, t3, 63
 ld t4, 80(a7)
 and t4, t4, t3
@@ -3177,8 +2948,7 @@ or t6, t6, t4
 ld t4, 848(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 11
-addi t3, t3, -1
+slli t3, t1, 52
 srai t3, t3, 63
 ld t4, 88(a7)
 and t4, t4, t3
@@ -3192,8 +2962,7 @@ or t6, t6, t4
 ld t4, 856(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 12
-addi t3, t3, -1
+slli t3, t1, 51
 srai t3, t3, 63
 ld t4, 96(a7)
 and t4, t4, t3
@@ -3207,8 +2976,7 @@ or t6, t6, t4
 ld t4, 864(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 13
-addi t3, t3, -1
+slli t3, t1, 50
 srai t3, t3, 63
 ld t4, 104(a7)
 and t4, t4, t3
@@ -3222,8 +2990,7 @@ or t6, t6, t4
 ld t4, 872(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 14
-addi t3, t3, -1
+slli t3, t1, 49
 srai t3, t3, 63
 ld t4, 112(a7)
 and t4, t4, t3
@@ -3237,8 +3004,7 @@ or t6, t6, t4
 ld t4, 880(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 15
-addi t3, t3, -1
+slli t3, t1, 48
 srai t3, t3, 63
 ld t4, 120(a7)
 and t4, t4, t3
@@ -3252,8 +3018,7 @@ or t6, t6, t4
 ld t4, 888(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 16
-addi t3, t3, -1
+slli t3, t1, 47
 srai t3, t3, 63
 ld t4, 128(a7)
 and t4, t4, t3
@@ -3267,8 +3032,7 @@ or t6, t6, t4
 ld t4, 896(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 17
-addi t3, t3, -1
+slli t3, t1, 46
 srai t3, t3, 63
 ld t4, 136(a7)
 and t4, t4, t3
@@ -3282,8 +3046,7 @@ or t6, t6, t4
 ld t4, 904(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 18
-addi t3, t3, -1
+slli t3, t1, 45
 srai t3, t3, 63
 ld t4, 144(a7)
 and t4, t4, t3
@@ -3297,8 +3060,7 @@ or t6, t6, t4
 ld t4, 912(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 19
-addi t3, t3, -1
+slli t3, t1, 44
 srai t3, t3, 63
 ld t4, 152(a7)
 and t4, t4, t3
@@ -3312,8 +3074,7 @@ or t6, t6, t4
 ld t4, 920(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 20
-addi t3, t3, -1
+slli t3, t1, 43
 srai t3, t3, 63
 ld t4, 160(a7)
 and t4, t4, t3
@@ -3327,8 +3088,7 @@ or t6, t6, t4
 ld t4, 928(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 21
-addi t3, t3, -1
+slli t3, t1, 42
 srai t3, t3, 63
 ld t4, 168(a7)
 and t4, t4, t3
@@ -3342,8 +3102,7 @@ or t6, t6, t4
 ld t4, 936(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 22
-addi t3, t3, -1
+slli t3, t1, 41
 srai t3, t3, 63
 ld t4, 176(a7)
 and t4, t4, t3
@@ -3357,8 +3116,7 @@ or t6, t6, t4
 ld t4, 944(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 23
-addi t3, t3, -1
+slli t3, t1, 40
 srai t3, t3, 63
 ld t4, 184(a7)
 and t4, t4, t3
@@ -3372,8 +3130,7 @@ or t6, t6, t4
 ld t4, 952(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 24
-addi t3, t3, -1
+slli t3, t1, 39
 srai t3, t3, 63
 ld t4, 192(a7)
 and t4, t4, t3
@@ -3387,8 +3144,7 @@ or t6, t6, t4
 ld t4, 960(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 25
-addi t3, t3, -1
+slli t3, t1, 38
 srai t3, t3, 63
 ld t4, 200(a7)
 and t4, t4, t3
@@ -3402,8 +3158,7 @@ or t6, t6, t4
 ld t4, 968(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 26
-addi t3, t3, -1
+slli t3, t1, 37
 srai t3, t3, 63
 ld t4, 208(a7)
 and t4, t4, t3
@@ -3417,8 +3172,7 @@ or t6, t6, t4
 ld t4, 976(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 27
-addi t3, t3, -1
+slli t3, t1, 36
 srai t3, t3, 63
 ld t4, 216(a7)
 and t4, t4, t3
@@ -3432,8 +3186,7 @@ or t6, t6, t4
 ld t4, 984(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 28
-addi t3, t3, -1
+slli t3, t1, 35
 srai t3, t3, 63
 ld t4, 224(a7)
 and t4, t4, t3
@@ -3447,8 +3200,7 @@ or t6, t6, t4
 ld t4, 992(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 29
-addi t3, t3, -1
+slli t3, t1, 34
 srai t3, t3, 63
 ld t4, 232(a7)
 and t4, t4, t3
@@ -3462,8 +3214,7 @@ or t6, t6, t4
 ld t4, 1000(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 30
-addi t3, t3, -1
+slli t3, t1, 33
 srai t3, t3, 63
 ld t4, 240(a7)
 and t4, t4, t3
@@ -3477,8 +3228,7 @@ or t6, t6, t4
 ld t4, 1008(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 31
-addi t3, t3, -1
+slli t3, t1, 32
 srai t3, t3, 63
 ld t4, 248(a7)
 and t4, t4, t3
@@ -3492,32 +3242,18 @@ or t6, t6, t4
 ld t4, 1016(a7)
 and t4, t4, t3
 or t0, t0, t4
-slli t3, a3, 40
-xori t3, t3, -1
-slli t4, t3, 7
-srai t4, t4, 63
-srli t4, t4, 56
-addi t4, t4, 1
-slli t1, t3, 6
-srai t1, t1, 63
-srli t1, t1, 48
-addi t1, t1, 1
-mul t4, t4, t1
-slli t1, t3, 5
-srai t1, t1, 63
-srli t1, t1, 32
-addi t1, t1, 1
-mul t1, t4, t1
-mul t2, t2, t1
-srli t2, t2, 56
-mul t5, t5, t1
-srli t5, t5, 56
+slli t3, a3, 45
+srli t3, t3, 61
+slli t3, t3, 3
+srl t2, t2, t3
+andi t2, t2, 255
+srl t5, t5, t3
+andi t5, t5, 255
 slli t5, t5, 8
-mul t6, t6, t1
-srli t6, t6, 56
+srl t6, t6, t3
+andi t6, t6, 255
 slli t6, t6, 16
-mul t0, t0, t1
-srli t0, t0, 56
+srl t0, t0, t3
 slli t0, t0, 24
 or t2, t2, t5
 or t6, t6, t0
@@ -3526,8 +3262,9 @@ add a5, a5, t2
 addi a7, a7, 1024
 slli t1, a3, 48
 srli t1, t1, 59
-xori t3, t1, 0
-addi t3, t3, -1
+addi t3, zero, 1
+sll t1, t3, t1
+slli t3, t1, 63
 srai t3, t3, 63
 ld t2, 0(a7)
 and t2, t2, t3
@@ -3537,8 +3274,7 @@ ld t6, 512(a7)
 and t6, t6, t3
 ld t0, 768(a7)
 and t0, t0, t3
-xori t3, t1, 1
-addi t3, t3, -1
+slli t3, t1, 62
 srai t3, t3, 63
 ld t4, 8(a7)
 and t4, t4, t3
@@ -3552,8 +3288,7 @@ or t6, t6, t4
 ld t4, 776(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 2
-addi t3, t3, -1
+slli t3, t1, 61
 srai t3, t3, 63
 ld t4, 16(a7)
 and t4, t4, t3
@@ -3567,8 +3302,7 @@ or t6, t6, t4
 ld t4, 784(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 3
-addi t3, t3, -1
+slli t3, t1, 60
 srai t3, t3, 63
 ld t4, 24(a7)
 and t4, t4, t3
@@ -3582,8 +3316,7 @@ or t6, t6, t4
 ld t4, 792(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 4
-addi t3, t3, -1
+slli t3, t1, 59
 srai t3, t3, 63
 ld t4, 32(a7)
 and t4, t4, t3
@@ -3597,8 +3330,7 @@ or t6, t6, t4
 ld t4, 800(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 5
-addi t3, t3, -1
+slli t3, t1, 58
 srai t3, t3, 63
 ld t4, 40(a7)
 and t4, t4, t3
@@ -3612,8 +3344,7 @@ or t6, t6, t4
 ld t4, 808(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 6
-addi t3, t3, -1
+slli t3, t1, 57
 srai t3, t3, 63
 ld t4, 48(a7)
 and t4, t4, t3
@@ -3627,8 +3358,7 @@ or t6, t6, t4
 ld t4, 816(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 7
-addi t3, t3, -1
+slli t3, t1, 56
 srai t3, t3, 63
 ld t4, 56(a7)
 and t4, t4, t3
@@ -3642,8 +3372,7 @@ or t6, t6, t4
 ld t4, 824(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 8
-addi t3, t3, -1
+slli t3, t1, 55
 srai t3, t3, 63
 ld t4, 64(a7)
 and t4, t4, t3
@@ -3657,8 +3386,7 @@ or t6, t6, t4
 ld t4, 832(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 9
-addi t3, t3, -1
+slli t3, t1, 54
 srai t3, t3, 63
 ld t4, 72(a7)
 and t4, t4, t3
@@ -3672,8 +3400,7 @@ or t6, t6, t4
 ld t4, 840(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 10
-addi t3, t3, -1
+slli t3, t1, 53
 srai t3, t3, 63
 ld t4, 80(a7)
 and t4, t4, t3
@@ -3687,8 +3414,7 @@ or t6, t6, t4
 ld t4, 848(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 11
-addi t3, t3, -1
+slli t3, t1, 52
 srai t3, t3, 63
 ld t4, 88(a7)
 and t4, t4, t3
@@ -3702,8 +3428,7 @@ or t6, t6, t4
 ld t4, 856(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 12
-addi t3, t3, -1
+slli t3, t1, 51
 srai t3, t3, 63
 ld t4, 96(a7)
 and t4, t4, t3
@@ -3717,8 +3442,7 @@ or t6, t6, t4
 ld t4, 864(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 13
-addi t3, t3, -1
+slli t3, t1, 50
 srai t3, t3, 63
 ld t4, 104(a7)
 and t4, t4, t3
@@ -3732,8 +3456,7 @@ or t6, t6, t4
 ld t4, 872(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 14
-addi t3, t3, -1
+slli t3, t1, 49
 srai t3, t3, 63
 ld t4, 112(a7)
 and t4, t4, t3
@@ -3747,8 +3470,7 @@ or t6, t6, t4
 ld t4, 880(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 15
-addi t3, t3, -1
+slli t3, t1, 48
 srai t3, t3, 63
 ld t4, 120(a7)
 and t4, t4, t3
@@ -3762,8 +3484,7 @@ or t6, t6, t4
 ld t4, 888(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 16
-addi t3, t3, -1
+slli t3, t1, 47
 srai t3, t3, 63
 ld t4, 128(a7)
 and t4, t4, t3
@@ -3777,8 +3498,7 @@ or t6, t6, t4
 ld t4, 896(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 17
-addi t3, t3, -1
+slli t3, t1, 46
 srai t3, t3, 63
 ld t4, 136(a7)
 and t4, t4, t3
@@ -3792,8 +3512,7 @@ or t6, t6, t4
 ld t4, 904(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 18
-addi t3, t3, -1
+slli t3, t1, 45
 srai t3, t3, 63
 ld t4, 144(a7)
 and t4, t4, t3
@@ -3807,8 +3526,7 @@ or t6, t6, t4
 ld t4, 912(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 19
-addi t3, t3, -1
+slli t3, t1, 44
 srai t3, t3, 63
 ld t4, 152(a7)
 and t4, t4, t3
@@ -3822,8 +3540,7 @@ or t6, t6, t4
 ld t4, 920(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 20
-addi t3, t3, -1
+slli t3, t1, 43
 srai t3, t3, 63
 ld t4, 160(a7)
 and t4, t4, t3
@@ -3837,8 +3554,7 @@ or t6, t6, t4
 ld t4, 928(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 21
-addi t3, t3, -1
+slli t3, t1, 42
 srai t3, t3, 63
 ld t4, 168(a7)
 and t4, t4, t3
@@ -3852,8 +3568,7 @@ or t6, t6, t4
 ld t4, 936(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 22
-addi t3, t3, -1
+slli t3, t1, 41
 srai t3, t3, 63
 ld t4, 176(a7)
 and t4, t4, t3
@@ -3867,8 +3582,7 @@ or t6, t6, t4
 ld t4, 944(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 23
-addi t3, t3, -1
+slli t3, t1, 40
 srai t3, t3, 63
 ld t4, 184(a7)
 and t4, t4, t3
@@ -3882,8 +3596,7 @@ or t6, t6, t4
 ld t4, 952(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 24
-addi t3, t3, -1
+slli t3, t1, 39
 srai t3, t3, 63
 ld t4, 192(a7)
 and t4, t4, t3
@@ -3897,8 +3610,7 @@ or t6, t6, t4
 ld t4, 960(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 25
-addi t3, t3, -1
+slli t3, t1, 38
 srai t3, t3, 63
 ld t4, 200(a7)
 and t4, t4, t3
@@ -3912,8 +3624,7 @@ or t6, t6, t4
 ld t4, 968(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 26
-addi t3, t3, -1
+slli t3, t1, 37
 srai t3, t3, 63
 ld t4, 208(a7)
 and t4, t4, t3
@@ -3927,8 +3638,7 @@ or t6, t6, t4
 ld t4, 976(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 27
-addi t3, t3, -1
+slli t3, t1, 36
 srai t3, t3, 63
 ld t4, 216(a7)
 and t4, t4, t3
@@ -3942,8 +3652,7 @@ or t6, t6, t4
 ld t4, 984(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 28
-addi t3, t3, -1
+slli t3, t1, 35
 srai t3, t3, 63
 ld t4, 224(a7)
 and t4, t4, t3
@@ -3957,8 +3666,7 @@ or t6, t6, t4
 ld t4, 992(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 29
-addi t3, t3, -1
+slli t3, t1, 34
 srai t3, t3, 63
 ld t4, 232(a7)
 and t4, t4, t3
@@ -3972,8 +3680,7 @@ or t6, t6, t4
 ld t4, 1000(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 30
-addi t3, t3, -1
+slli t3, t1, 33
 srai t3, t3, 63
 ld t4, 240(a7)
 and t4, t4, t3
@@ -3987,8 +3694,7 @@ or t6, t6, t4
 ld t4, 1008(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 31
-addi t3, t3, -1
+slli t3, t1, 32
 srai t3, t3, 63
 ld t4, 248(a7)
 and t4, t4, t3
@@ -4002,32 +3708,18 @@ or t6, t6, t4
 ld t4, 1016(a7)
 and t4, t4, t3
 or t0, t0, t4
-slli t3, a3, 48
-xori t3, t3, -1
-slli t4, t3, 7
-srai t4, t4, 63
-srli t4, t4, 56
-addi t4, t4, 1
-slli t1, t3, 6
-srai t1, t1, 63
-srli t1, t1, 48
-addi t1, t1, 1
-mul t4, t4, t1
-slli t1, t3, 5
-srai t1, t1, 63
-srli t1, t1, 32
-addi t1, t1, 1
-mul t1, t4, t1
-mul t2, t2, t1
-srli t2, t2, 56
-mul t5, t5, t1
-srli t5, t5, 56
+slli t3, a3, 53
+srli t3, t3, 61
+slli t3, t3, 3
+srl t2, t2, t3
+andi t2, t2, 255
+srl t5, t5, t3
+andi t5, t5, 255
 slli t5, t5, 8
-mul t6, t6, t1
-srli t6, t6, 56
+srl t6, t6, t3
+andi t6, t6, 255
 slli t6, t6, 16
-mul t0, t0, t1
-srli t0, t0, 56
+srl t0, t0, t3
 slli t0, t0, 24
 or t2, t2, t5
 or t6, t6, t0
@@ -4036,8 +3728,9 @@ xor a5, a5, t2
 addi a7, a7, 1024
 slli t1, a3, 56
 srli t1, t1, 59
-xori t3, t1, 0
-addi t3, t3, -1
+addi t3, zero, 1
+sll t1, t3, t1
+slli t3, t1, 63
 srai t3, t3, 63
 ld t2, 0(a7)
 and t2, t2, t3
@@ -4047,8 +3740,7 @@ ld t6, 512(a7)
 and t6, t6, t3
 ld t0, 768(a7)
 and t0, t0, t3
-xori t3, t1, 1
-addi t3, t3, -1
+slli t3, t1, 62
 srai t3, t3, 63
 ld t4, 8(a7)
 and t4, t4, t3
@@ -4062,8 +3754,7 @@ or t6, t6, t4
 ld t4, 776(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 2
-addi t3, t3, -1
+slli t3, t1, 61
 srai t3, t3, 63
 ld t4, 16(a7)
 and t4, t4, t3
@@ -4077,8 +3768,7 @@ or t6, t6, t4
 ld t4, 784(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 3
-addi t3, t3, -1
+slli t3, t1, 60
 srai t3, t3, 63
 ld t4, 24(a7)
 and t4, t4, t3
@@ -4092,8 +3782,7 @@ or t6, t6, t4
 ld t4, 792(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 4
-addi t3, t3, -1
+slli t3, t1, 59
 srai t3, t3, 63
 ld t4, 32(a7)
 and t4, t4, t3
@@ -4107,8 +3796,7 @@ or t6, t6, t4
 ld t4, 800(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 5
-addi t3, t3, -1
+slli t3, t1, 58
 srai t3, t3, 63
 ld t4, 40(a7)
 and t4, t4, t3
@@ -4122,8 +3810,7 @@ or t6, t6, t4
 ld t4, 808(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 6
-addi t3, t3, -1
+slli t3, t1, 57
 srai t3, t3, 63
 ld t4, 48(a7)
 and t4, t4, t3
@@ -4137,8 +3824,7 @@ or t6, t6, t4
 ld t4, 816(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 7
-addi t3, t3, -1
+slli t3, t1, 56
 srai t3, t3, 63
 ld t4, 56(a7)
 and t4, t4, t3
@@ -4152,8 +3838,7 @@ or t6, t6, t4
 ld t4, 824(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 8
-addi t3, t3, -1
+slli t3, t1, 55
 srai t3, t3, 63
 ld t4, 64(a7)
 and t4, t4, t3
@@ -4167,8 +3852,7 @@ or t6, t6, t4
 ld t4, 832(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 9
-addi t3, t3, -1
+slli t3, t1, 54
 srai t3, t3, 63
 ld t4, 72(a7)
 and t4, t4, t3
@@ -4182,8 +3866,7 @@ or t6, t6, t4
 ld t4, 840(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 10
-addi t3, t3, -1
+slli t3, t1, 53
 srai t3, t3, 63
 ld t4, 80(a7)
 and t4, t4, t3
@@ -4197,8 +3880,7 @@ or t6, t6, t4
 ld t4, 848(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 11
-addi t3, t3, -1
+slli t3, t1, 52
 srai t3, t3, 63
 ld t4, 88(a7)
 and t4, t4, t3
@@ -4212,8 +3894,7 @@ or t6, t6, t4
 ld t4, 856(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 12
-addi t3, t3, -1
+slli t3, t1, 51
 srai t3, t3, 63
 ld t4, 96(a7)
 and t4, t4, t3
@@ -4227,8 +3908,7 @@ or t6, t6, t4
 ld t4, 864(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 13
-addi t3, t3, -1
+slli t3, t1, 50
 srai t3, t3, 63
 ld t4, 104(a7)
 and t4, t4, t3
@@ -4242,8 +3922,7 @@ or t6, t6, t4
 ld t4, 872(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 14
-addi t3, t3, -1
+slli t3, t1, 49
 srai t3, t3, 63
 ld t4, 112(a7)
 and t4, t4, t3
@@ -4257,8 +3936,7 @@ or t6, t6, t4
 ld t4, 880(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 15
-addi t3, t3, -1
+slli t3, t1, 48
 srai t3, t3, 63
 ld t4, 120(a7)
 and t4, t4, t3
@@ -4272,8 +3950,7 @@ or t6, t6, t4
 ld t4, 888(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 16
-addi t3, t3, -1
+slli t3, t1, 47
 srai t3, t3, 63
 ld t4, 128(a7)
 and t4, t4, t3
@@ -4287,8 +3964,7 @@ or t6, t6, t4
 ld t4, 896(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 17
-addi t3, t3, -1
+slli t3, t1, 46
 srai t3, t3, 63
 ld t4, 136(a7)
 and t4, t4, t3
@@ -4302,8 +3978,7 @@ or t6, t6, t4
 ld t4, 904(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 18
-addi t3, t3, -1
+slli t3, t1, 45
 srai t3, t3, 63
 ld t4, 144(a7)
 and t4, t4, t3
@@ -4317,8 +3992,7 @@ or t6, t6, t4
 ld t4, 912(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 19
-addi t3, t3, -1
+slli t3, t1, 44
 srai t3, t3, 63
 ld t4, 152(a7)
 and t4, t4, t3
@@ -4332,8 +4006,7 @@ or t6, t6, t4
 ld t4, 920(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 20
-addi t3, t3, -1
+slli t3, t1, 43
 srai t3, t3, 63
 ld t4, 160(a7)
 and t4, t4, t3
@@ -4347,8 +4020,7 @@ or t6, t6, t4
 ld t4, 928(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 21
-addi t3, t3, -1
+slli t3, t1, 42
 srai t3, t3, 63
 ld t4, 168(a7)
 and t4, t4, t3
@@ -4362,8 +4034,7 @@ or t6, t6, t4
 ld t4, 936(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 22
-addi t3, t3, -1
+slli t3, t1, 41
 srai t3, t3, 63
 ld t4, 176(a7)
 and t4, t4, t3
@@ -4377,8 +4048,7 @@ or t6, t6, t4
 ld t4, 944(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 23
-addi t3, t3, -1
+slli t3, t1, 40
 srai t3, t3, 63
 ld t4, 184(a7)
 and t4, t4, t3
@@ -4392,8 +4062,7 @@ or t6, t6, t4
 ld t4, 952(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 24
-addi t3, t3, -1
+slli t3, t1, 39
 srai t3, t3, 63
 ld t4, 192(a7)
 and t4, t4, t3
@@ -4407,8 +4076,7 @@ or t6, t6, t4
 ld t4, 960(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 25
-addi t3, t3, -1
+slli t3, t1, 38
 srai t3, t3, 63
 ld t4, 200(a7)
 and t4, t4, t3
@@ -4422,8 +4090,7 @@ or t6, t6, t4
 ld t4, 968(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 26
-addi t3, t3, -1
+slli t3, t1, 37
 srai t3, t3, 63
 ld t4, 208(a7)
 and t4, t4, t3
@@ -4437,8 +4104,7 @@ or t6, t6, t4
 ld t4, 976(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 27
-addi t3, t3, -1
+slli t3, t1, 36
 srai t3, t3, 63
 ld t4, 216(a7)
 and t4, t4, t3
@@ -4452,8 +4118,7 @@ or t6, t6, t4
 ld t4, 984(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 28
-addi t3, t3, -1
+slli t3, t1, 35
 srai t3, t3, 63
 ld t4, 224(a7)
 and t4, t4, t3
@@ -4467,8 +4132,7 @@ or t6, t6, t4
 ld t4, 992(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 29
-addi t3, t3, -1
+slli t3, t1, 34
 srai t3, t3, 63
 ld t4, 232(a7)
 and t4, t4, t3
@@ -4482,8 +4146,7 @@ or t6, t6, t4
 ld t4, 1000(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 30
-addi t3, t3, -1
+slli t3, t1, 33
 srai t3, t3, 63
 ld t4, 240(a7)
 and t4, t4, t3
@@ -4497,8 +4160,7 @@ or t6, t6, t4
 ld t4, 1008(a7)
 and t4, t4, t3
 or t0, t0, t4
-xori t3, t1, 31
-addi t3, t3, -1
+slli t3, t1, 32
 srai t3, t3, 63
 ld t4, 248(a7)
 and t4, t4, t3
@@ -4512,32 +4174,18 @@ or t6, t6, t4
 ld t4, 1016(a7)
 and t4, t4, t3
 or t0, t0, t4
-slli t3, a3, 56
-xori t3, t3, -1
-slli t4, t3, 7
-srai t4, t4, 63
-srli t4, t4, 56
-addi t4, t4, 1
-slli t1, t3, 6
-srai t1, t1, 63
-srli t1, t1, 48
-addi t1, t1, 1
-mul t4, t4, t1
-slli t1, t3, 5
-srai t1, t1, 63
-srli t1, t1, 32
-addi t1, t1, 1
-mul t1, t4, t1
-mul t2, t2, t1
-srli t2, t2, 56
-mul t5, t5, t1
-srli t5, t5, 56
+slli t3, a3, 61
+srli t3, t3, 61
+slli t3, t3, 3
+srl t2, t2, t3
+andi t2, t2, 255
+srl t5, t5, t3
+andi t5, t5, 255
 slli t5, t5, 8
-mul t6, t6, t1
-srli t6, t6, 56
+srl t6, t6, t3
+andi t6, t6, 255
 slli t6, t6, 16
-mul t0, t0, t1
-srli t0, t0, 56
+srl t0, t0, t3
 slli t0, t0, 24
 or t2, t2, t5
 or t6, t6, t0
