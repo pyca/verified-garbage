@@ -13,7 +13,11 @@ import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Framework.PPC64LE.Reduce
+import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Framework.PPC64LE.Reduce
+import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-!
@@ -271,12 +275,18 @@ structure LInv (s₀ : State) (i : Nat) (s : State) : Prop extends Common s₀ i
 /-! ## One block -/
 
 theorem load_eq : load = [
-    .load .w .r7 .r3 (4 * 0), .load .w .r8 .r3 (4 * 1), .load .w .r9 .r3 (4 * 2),
-    .load .w .r10 .r3 (4 * 3), .load .w .r11 .r3 (4 * 4), .load .w .r12 .r3 (4 * 5),
-    .load .w .r14 .r3 (4 * 6), .load .w .r15 .r3 (4 * 7)] := by
+    .load .w .r17 .r3 (4 * 0), .mtvsrd .v4 .r17,
+    .load .w .r17 .r3 (4 * 1), .mtvsrd .v5 .r17,
+    .load .w .r17 .r3 (4 * 2), .mtvsrd .v6 .r17,
+    .load .w .r17 .r3 (4 * 3), .mtvsrd .v7 .r17,
+    .load .w .r17 .r3 (4 * 4), .mtvsrd .v8 .r17,
+    .load .w .r17 .r3 (4 * 5), .mtvsrd .v9 .r17,
+    .load .w .r17 .r3 (4 * 6), .mtvsrd .v10 .r17,
+    .load .w .r17 .r3 (4 * 7), .mtvsrd .v11 .r17] := by
   decide
 
 theorem update_eq : update ++ advance = [
+.mfvsrd .r7 .v4, .mfvsrd .r8 .v5, .mfvsrd .r9 .v6, .mfvsrd .r10 .v7, .mfvsrd .r11 .v8, .mfvsrd .r12 .v9, .mfvsrd .r14 .v10, .mfvsrd .r15 .v11,
     .load .w .r16 .r3 (4 * 0), .load .w .r17 .r3 (4 * 1), .load .w .r18 .r3 (4 * 2),
     .load .w .r19 .r3 (4 * 3),
     .add .r7 .r7 .r16, .add .r8 .r8 .r17, .add .r9 .r9 .r18, .add .r10 .r10 .r19,
@@ -290,10 +300,19 @@ theorem update_eq : update ++ advance = [
   decide
 
 theorem vars0 (s : State) (v : HashValue) : Vars 0 s v ↔
-    (s.gpr .r7).setWidth 32 = v[0] ∧ (s.gpr .r8).setWidth 32 = v[1] ∧
-    (s.gpr .r9).setWidth 32 = v[2] ∧ (s.gpr .r10).setWidth 32 = v[3] ∧
-    (s.gpr .r11).setWidth 32 = v[4] ∧ (s.gpr .r12).setWidth 32 = v[5] ∧
-    (s.gpr .r14).setWidth 32 = v[6] ∧ (s.gpr .r15).setWidth 32 = v[7] := Iff.rfl
+    vword (s.vpr .v4) 1 = v[0] ∧
+    vword (s.vpr .v5) 1 = v[1] ∧
+    vword (s.vpr .v6) 1 = v[2] ∧
+    vword (s.vpr .v7) 1 = v[3] ∧
+    vword (s.vpr .v8) 1 = v[4] ∧
+    vword (s.vpr .v9) 1 = v[5] ∧
+    vword (s.vpr .v10) 1 = v[6] ∧
+    vword (s.vpr .v11) 1 = v[7] := Iff.rfl
+
+theorem word1_as_low32 (a : BitVec 128) :
+    (a.extractLsb' 64 64).setWidth 32 = vword a 1 := by
+  simp only [vword, Nat.reduceSub, Nat.reduceMul,
+    BitVec.setWidth_extractLsb'_of_le (show 32 ≤ 64 by decide)]
 
 theorem load_ok {s₀ : State} (hp : Pre s₀) {s : State} (hr3 : s.gpr .r3 = st s₀)
     (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
@@ -308,7 +327,9 @@ theorem load_ok {s₀ : State} (hp : Pre s₀) {s : State} (hr3 : s.gpr .r3 = st
   simp only [Nat.reduceMul] at h0 h1 h2 h3 h4 h5 h6 h7
   apply WP.of_runBlock
   rw [load_eq]
-  simp only [vars0, runBlock_cons, runStep_some, runBlock_nil, exec_load_w, isa, State.write, hr3,
+  simp only [vars0, runBlock_cons, runStep_some, runBlock_nil, exec_load_w, reduceExec, isa, vpr_writeV, vpr_write, gpr_writeV, mem_writeV, rd_writeV, wr_writeV,
+    RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
+    vword, Nat.reduceSub, high_word_append, hr3,
     h0, h1, h2, h3, h4, h5, h6, h7, Option.some.injEq, exists_eq_left', Nat.reduceMul,
     Nat.reducePow, Nat.reduceLT, reduceCtorEq, ↓reduceIte, ne_eq, not_false_eq_true, and_self,
     and_true]
@@ -371,10 +392,13 @@ theorem update_ok {s₀ : State} (hp : Pre s₀) {s : State} (V H : HashValue) (
   have m6 := hH (2 + 4) (by decide); have m7 := hH (3 + 4) (by decide)
   rw [vars0] at hv
   obtain ⟨v0, v1, v2, v3, v4, v5, v6, v7⟩ := hv
+  simp only [← word1_as_low32] at v0 v1 v2 v3 v4 v5 v6 v7
   apply WP.of_runBlock
   rw [update_eq]
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec_load_w, exec_store_w, exec_add,
-    exec_addi, exec_subi, State.write, hr3, i0, i1, i2, i3, i4, i5, i6, i7, o0, o1, o2, o3, o4, o5,
+    exec_addi, exec_subi, reduceExec, vpr_write,
+    RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
+    vdword, Nat.sub_zero, Nat.mul_one, hr3, i0, i1, i2, i3, i4, i5, i6, i7, o0, o1, o2, o3, o4, o5,
     o6, o7, Option.some.injEq, exists_eq_left', Nat.reduceAdd, Nat.reduceMul, Nat.reducePow,
     Nat.reduceLeDiff, Nat.reduceLT, reduceCtorEq, ↓reduceIte, ne_eq, not_false_eq_true, and_self,
     true_and, and_true]

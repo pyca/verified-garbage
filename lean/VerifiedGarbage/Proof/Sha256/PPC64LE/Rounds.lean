@@ -56,99 +56,86 @@ theorem word1_append (a b : BitVec 64) : vword (a ++ b) 1 = a.setWidth 32 := by
   rw [ite_eq_right (show ¬64+j < 64 by omega)]
   simp only [Nat.add_sub_cancel_left]
 
+theorem high_word_append (a b : BitVec 64) :
+    (a ++ b).extractLsb' 64 32 = a.setWidth 32 := by
+  simpa only [vword, Nat.reduceSub, Nat.reduceMul] using word1_append a b
+
 /-- The working variables `v` are in the registers of round `t`. -/
 def Vars (t : Nat) (s : State) (v : HashValue) : Prop :=
-  (s.gpr (var t 0)).setWidth 32 = v[0] ∧ (s.gpr (var t 1)).setWidth 32 = v[1] ∧
-  (s.gpr (var t 2)).setWidth 32 = v[2] ∧ (s.gpr (var t 3)).setWidth 32 = v[3] ∧
-  (s.gpr (var t 4)).setWidth 32 = v[4] ∧ (s.gpr (var t 5)).setWidth 32 = v[5] ∧
-  (s.gpr (var t 6)).setWidth 32 = v[6] ∧ (s.gpr (var t 7)).setWidth 32 = v[7]
+  vword (s.vpr (vvar t 0)) 1 = v[0] ∧ vword (s.vpr (vvar t 1)) 1 = v[1] ∧
+  vword (s.vpr (vvar t 2)) 1 = v[2] ∧ vword (s.vpr (vvar t 3)) 1 = v[3] ∧
+  vword (s.vpr (vvar t 4)) 1 = v[4] ∧ vword (s.vpr (vvar t 5)) 1 = v[5] ∧
+  vword (s.vpr (vvar t 6)) 1 = v[6] ∧ vword (s.vpr (vvar t 7)) 1 = v[7]
 
 /-- The pointers, the count and the nonvolatile registers the rounds do not
 use: never written by the rounds. -/
 def pubRegs : List Reg := [.r3, .r4, .r5, .r6, .r2, .r20, .r21, .r22, .r23, .r24, .r25, .r26,
   .r27, .r28, .r29, .r30, .r31]
 
-/-- The working variables move one register along each round. -/
-theorem var_succ (t k : Nat) (hk : k < 7) : var (t + 1) (k + 1) = var t k := by
-  simp only [var]; congr 1; omega
-
-theorem var_succ_zero (t : Nat) : var (t + 1) 0 = var t 7 := by
-  simp only [var]; congr 1; omega
-
-/-- The registers of a round are all different. -/
-theorem round_nodup (t : Nat) :
-    ([var t 0, var t 1, var t 2, var t 3, var t 4, var t 5, var t 6, var t 7, T0, T1, T2, T3] ++
-      pubRegs).Nodup := by
-  simp only [var]
-  have := Nat.mod_lt t (show 8 > 0 by omega)
-  generalize t % 8 = c at *
-  revert this; revert c; decide
-
 /-- Reassociate the independent constant/message sum before the state-dependent terms. -/
 theorem t1_add_tree (h k w s c : Word) :
     h + (k + w) + s + c = h + s + c + k + w := by
   ac_rfl
 
-/-- The round is symbolically executed once, for any registers `a … h`
-(which `round_nodup` says are different from each other and the others). -/
+theorem vvar_succ (t k : Nat) (hk : k < 7) : vvar (t + 1) (k + 1) = vvar t k := by
+  simp only [vvar]; congr 1; omega
+
+theorem vvar_succ_zero (t : Nat) : vvar (t + 1) 0 = vvar t 7 := by
+  simp only [vvar]; congr 1; omega
+
+theorem vround_nodup (t : Nat) :
+    ([vvar t 0, vvar t 1, vvar t 2, vvar t 3, vvar t 4, vvar t 5, vvar t 6, vvar t 7,
+      .v12, .v13, .v14, .v15] : List VReg).Nodup := by
+  simp only [vvar]
+  have := Nat.mod_lt t (show 8 > 0 by omega)
+  generalize t % 8 = c at *
+  revert this; revert c; decide
+
+/-- The working state stays in vectors, so neither sigma needs a register-bank transfer. -/
 theorem round_ok (t : Nat) (s : State) (v : HashValue) (w : Word)
     (hv : Vars t s v) (hw : (s.gpr T0).setWidth 32 = w) :
     WP isa (.block (round t)) s fun s' =>
       Vars (t + 1) s' (roundKW v (K t) w) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ ∀ r ∈ pubRegs, s'.gpr r = s.gpr r := by
-  -- The registers the round reads and writes.
-  have hs := (List.nodup_append.mp (round_nodup t)).1
+  have hs := vround_nodup t
   have hs' := List.nodup_reverse.mpr hs
-  have hdj := (List.nodup_append.mp (round_nodup t)).2.2
-  -- The registers the round writes are not in `pubRegs`.
-  have hpw : ∀ r ∈ pubRegs, r ≠ var t 3 ∧ r ≠ var t 7 ∧ r ≠ T1 ∧ r ≠ T2 ∧ r ≠ T3 :=
-    fun r hr => ⟨fun e => hdj _ (by simp) r hr e.symm, fun e => hdj _ (by simp) r hr e.symm,
-      fun e => hdj _ (by simp) r hr e.symm, fun e => hdj _ (by simp) r hr e.symm,
-      fun e => hdj _ (by simp) r hr e.symm⟩
-  clear hdj
-  simp only [Vars, var_succ_zero, var_succ t _ (show 0 < 7 by omega),
-    var_succ t _ (show 1 < 7 by omega), var_succ t _ (show 2 < 7 by omega),
-    var_succ t _ (show 3 < 7 by omega), var_succ t _ (show 4 < 7 by omega),
-    var_succ t _ (show 5 < 7 by omega), var_succ t _ (show 6 < 7 by omega)] at hv ⊢
+  simp only [Vars, vvar_succ_zero, vvar_succ t _ (show 0 < 7 by omega),
+    vvar_succ t _ (show 1 < 7 by omega), vvar_succ t _ (show 2 < 7 by omega),
+    vvar_succ t _ (show 3 < 7 by omega), vvar_succ t _ (show 4 < 7 by omega),
+    vvar_succ t _ (show 5 < 7 by omega), vvar_succ t _ (show 6 < 7 by omega)] at hv ⊢
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := hv
   apply WP.of_runBlock
-  simp only [Impl.Sha256.PPC64LE.round, List.cons_append, List.nil_append]
-  generalize var t 0 = a at *
-  generalize var t 1 = b at *
-  generalize var t 2 = c at *
-  generalize var t 3 = d at *
-  generalize var t 4 = e at *
-  generalize var t 5 = f at *
-  generalize var t 6 = g at *
-  generalize var t 7 = h at *
-  simp only [T0, T1, T2, T3] at hpw hw ⊢
-  simp only [T0, T1, T2, T3, List.nodup_cons, List.mem_cons, List.not_mem_nil,
-    List.reverse_cons, List.reverse_nil, List.nil_append, List.cons_append, or_false, not_or,
+  simp only [Impl.Sha256.PPC64LE.round]
+  generalize vvar t 0 = a at *
+  generalize vvar t 1 = b at *
+  generalize vvar t 2 = c at *
+  generalize vvar t 3 = d at *
+  generalize vvar t 4 = e at *
+  generalize vvar t 5 = f at *
+  generalize vvar t 6 = g at *
+  generalize vvar t 7 = h at *
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.reverse_cons,
+    List.reverse_nil, List.nil_append, List.cons_append, or_false, not_or,
     List.nodup_nil, and_true] at hs hs'
-  simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, reduceVOpEval, Option.map_some, vpr_writeV, vpr_write, gpr_writeV, mem_writeV, rd_writeV, wr_writeV,
-    vdword, Nat.sub_zero, Nat.mul_one, isa, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write,
-    RegUpd.wr_write,
-    hs, hs', Option.some.injEq, exists_eq_left',
-    Nat.reduceAdd, 
-    Nat.reduceLT, reduceCtorEq, ↓reduceIte, 
-    true_and]
-  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, fun r hr => ?_⟩
-  rotate_right
-  · obtain ⟨n3, n7, n17, n18, n19⟩ := hpw r hr
-    simp only [n3, n7, n17, n18, n19, ↓reduceIte]
-  all_goals
-    simp only [lo32_add, packed_low32, word1_append, Nat.reduceSub,
-      show (4 : Nat).testBit 2 = true by decide, show (0 : Nat).testBit 2 = false by decide,
-      VG.PPC64LE.sigma256, ite_true, ite_false, Bool.false_eq_true, BitVec.setWidth_xor, BitVec.setWidth_and, BitVec.setWidth_or,
-      BitVec.setWidth_setWidth_of_le, lis_ori', h0, h1, h2, h3, h4, h5, h6, h7,
-      hw, 
-      Nat.reduceLeDiff
-      ]
-  all_goals
-    simp (config := {failIfUnchanged := false}) only [roundKW, bsig1, ch_eq, bsig0, maj_eq,
-      Vector.getElem_mk, List.getElem_toArray, List.getElem_cons_zero,
-      List.getElem_cons_succ]
-  all_goals rw [t1_add_tree]
+  simp only [vword, Nat.reduceSub, Nat.reduceMul] at h0 h1 h2 h3 h4 h5 h6 h7
+  simp only [T0] at hw
+  simp only [T0, T1, runBlock_cons, runStep_some, runBlock_nil, reduceExec, reduceVOpEval,
+    Option.map_some, vpr_writeV, vpr_write, gpr_writeV, mem_writeV, rd_writeV, wr_writeV,
+    vword, Nat.reduceSub, Nat.reduceMul, packed_word1, high_word_append, lo32_add, lis_ori, BitVec.extractLsb'_xor,
+    BitVec.extractLsb'_and, BitVec.extractLsb'_or,
+    show (4 : Nat).testBit 2 = true by decide, show (0 : Nat).testBit 2 = false by decide,
+    isa, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
+    hs, hs', h0, h1, h2, h3, h4, h5, h6, h7, hw, Option.some.injEq, exists_eq_left',
+    Nat.reduceAdd, Nat.reduceLT, reduceCtorEq, ↓reduceIte, true_and]
+  refine ⟨?_, fun r hr => ?_⟩
+  · simp only [roundKW, bsig1, ch_eq, bsig0, maj_eq, VG.PPC64LE.sigma256,
+      ite_true, ite_false, Bool.false_eq_true, Vector.getElem_mk,
+      List.getElem_toArray, List.getElem_cons_zero, List.getElem_cons_succ]
+    simp only [t1_add_tree, and_self]
+  · have hn : r ≠ .r17 := by
+      simp only [pubRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+    simp only [hn, ite_false]
 
 theorem slot_ok (j : Nat) : slot j < 2 ^ 15 := by
   simp only [slot]; omega
@@ -167,7 +154,8 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp scr : Addr)
       (s'.gpr T0).setWidth 32 = W M t ∧
       s'.mem = s.mem.writeW (slotAddr scr t) (W M t) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      ∀ r, r ≠ T0 → r ≠ T1 → r ≠ T2 → r ≠ T3 → r ≠ .r0 → s'.gpr r = s.gpr r := by
+      (∀ r, r ≠ T0 → r ≠ T1 → r ≠ T2 → r ≠ T3 → r ≠ .r0 → s'.gpr r = s.gpr r) ∧
+      ∀ r ∈ vwork, s'.vpr r = s.vpr r := by
   simp only [slotAddr] at hin hout hwin ⊢
   apply WP.of_runBlock
   by_cases ht : t < 16
@@ -175,12 +163,12 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp scr : Addr)
     have hb := hblk ht
     simp only [Impl.Sha256.PPC64LE.schedule, ht, ite_true, T0, T1, T2, T3]
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec_li (show 4 * t < 2 ^ 15 by omega),
-      exec_loadRev_w, exec_store_w, slot_ok, isa, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, hr4, hr6, hi, hout, 
+      exec_loadRev_w, exec_store_w, slot_ok, isa, vpr_write, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, hr4, hr6, hi, hout, 
       BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq, hb, Option.some.injEq,
       exists_eq_left', 
       Nat.reduceLeDiff, reduceCtorEq, ↓reduceIte, ne_eq,
       not_false_eq_true, true_and]
-    refine fun r h0 _ _ _ h4 => ?_
+    refine ⟨fun r h0 _ _ _ h4 => ?_, fun _ _ => True.intro⟩
     simp [h0, h4]
   · have hw := hwin (by omega)
     have e2 := hw (t - 2) (by omega) (by omega)
@@ -207,21 +195,15 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp scr : Addr)
       Nat.reduceLeDiff
       ]
     have hW := W_ge M (t := t) (by omega)
-    refine ⟨by rw [hW]; rfl, by rw [hW]; rfl, fun r h0 h1 h2 h3 _ => ?_⟩
-    simp [h0, h1, h2]
+    refine ⟨by rw [hW]; rfl, by rw [hW]; rfl, (fun r h0 h1 h2 h3 _ => ?_), fun r hr => ?_⟩
+    · simp [h0, h1, h2]
+    · have hn : r ≠ .v0 ∧ r ≠ .v1 := by
+        simp only [vwork, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+      simp only [hn.1, hn.2, ite_false]
+
 
 /-! ## The 64 rounds -/
-
-theorem var_mem (t k : Nat) : var t k ∈ work := by
-  unfold var List.getD
-  cases h : work[(k + 8 - t % 8) % 8]?
-  · simp [work]
-  · exact List.mem_of_getElem? h
-
-theorem work_ne' : ∀ r ∈ work, r ≠ T0 ∧ r ≠ T1 ∧ r ≠ T2 ∧ r ≠ T3 ∧ r ≠ .r0 := by decide
-
-theorem work_ne {r : Reg} (h : r ∈ work) : r ≠ T0 ∧ r ≠ T1 ∧ r ≠ T2 ∧ r ≠ T3 ∧ r ≠ .r0 :=
-  work_ne' r h
 
 theorem pubRegs_ne' : ∀ r ∈ pubRegs, r ≠ T0 ∧ r ≠ T1 ∧ r ≠ T2 ∧ r ≠ T3 ∧ r ≠ .r0 := by decide
 
@@ -280,11 +262,14 @@ theorem rounds_ok (H : HashValue) (M : Block) (bp scr : Addr) (sB : State)
     refine WP.mono (schedule_ok t s M bp scr hs_rsi hs_rcx
       (by rw [hs.rd, hs.wr]; exact hin) (by rw [hs.wr]; exact hout)
       (fun h => by rw [hs.rd, hs.wr]; exact hbin t h) (hblk _ hs.frame t)
-      (fun _ => hs.win)) fun s₁ ⟨hT0, hm₁, hrd₁, hwr₁, hr₁⟩ => ?_
+      (fun _ => hs.win)) fun s₁ ⟨hT0, hm₁, hrd₁, hwr₁, hr₁, hvr₁⟩ => ?_
     have hv₁ : Vars t s₁ (VG.Spec.Sha256.rounds H M t) := by
       have hv := hs.vars
-      have e : ∀ k, s₁.gpr (var t k) = s.gpr (var t k) := fun k =>
-        have := work_ne (var_mem t k); hr₁ _ this.1 this.2.1 this.2.2.1 this.2.2.2.1 this.2.2.2.2
+      have e : ∀ k, s₁.vpr (vvar t k) = s.vpr (vvar t k) := fun k => hvr₁ _ (by
+        unfold vvar List.getD
+        cases h : vwork[(k + 8 - t % 8) % 8]?
+        · simp [vwork]
+        · exact List.mem_of_getElem? h)
       simp only [Vars, e] at hv ⊢
       exact hv
     refine WP.mono (round_ok t s₁ _ _ hv₁ hT0) fun s₂ ⟨hv₂, hm₂, hrd₂, hwr₂, hr₂⟩ => ?_
