@@ -39,51 +39,33 @@ open VG.Impl.Words.RISCV64 (copyBytes)
 /-- The bytes of the frame holding the table. -/
 def frameBytes : Nat := 256
 
-/-- `t2` := all ones if `t2` (below `2 ^ 63`) is zero, else 0. -/
-def isZero : List Instr := [.addi .t2 .t2 (-1), .shift .srl .d .t2 .t2 63, .sub .t2 .t6 .t2]
+/-- `t5 := 1 << (a4 >> 3)`, a bit at the doubleword of byte `a4`, through `t2`. -/
+def rowBit : List Instr := [.shift .srl .d .t5 .a4 3, .li .t2 1, .shiftReg .sll .d .t5 .t2 .t5]
 
-/-- `t2` := all ones if `a4 XOR 8k < 8` (byte `a4` is in doubleword `k`), else 0. -/
-def rowMask (k : Nat) : List Instr :=
-  [.li .t2 (8 * k : Nat), .logic .xor .t2 .t2 .a4, .shift .srl .d .t2 .t2 3] ++ isZero
+/-- `t2` := all ones if bit `k` of `t5` is set (byte `a4` is in doubleword
+`k`), else 0. -/
+def rowMask (k : Nat) : List Instr := [.shift .sll .d .t2 .t5 (63 - k), .shift .sra .d .t2 .t2 63]
 
-/-- `t2` := all ones if `a4 AND 7 = j`, else 0. -/
-def laneMask (j : Nat) : List Instr :=
-  [.li .t2 (j : Nat), .logic .xor .t2 .t2 .a4, .shift .sll .d .t2 .t2 61,
-    .shift .srl .d .t2 .t2 61] ++ isZero
+/-- `t2 := 8 (a4 AND 7)`, the bit offset of byte `a4` in its doubleword. -/
+def laneShift : List Instr := [.logicImm .and .t2 .a4 7, .shift .sll .d .t2 .t2 3]
 
 /-- Keep doubleword `k` in `t1` if it holds byte `a4`. -/
 def gatherStep (k : Nat) : List Instr :=
   rowMask k ++ ([.load .d .t0 .a7 (8 * k), .logic .and .t0 .t0 .t2, .logic .or .t1 .t1 .t0] :
     List Instr)
 
-/-- Keep byte `j` of the doubleword in `t1` (shifted down by `8j` so far) in
-`a5` if it is byte `a4`. -/
-def pickStep (j : Nat) : List Instr :=
-  laneMask j ++ ([.logic .and .t0 .t1 .t2, .logic .or .a5 .a5 .t0, .shift .srl .d .t1 .t1 8] :
-    List Instr)
-
-/-- The byte of the table at `a7` indexed by the low byte `a4`, into `a5`.
-Clobbers `t0`, `t1` and `t2`. -/
+/-- The byte of the table at `a7` indexed by the low byte `a4`, into `a5`;
+`t5` the bit of its doubleword. Clobbers `t0`, `t1` and `t2`. -/
 def lookup : List Instr :=
-  ([.li .t1 0] : List Instr) ++ (List.range 32).flatMap gatherStep ++
-    ([.li .a5 0] : List Instr) ++ (List.range 8).flatMap pickStep ++
-    ([.shift .sll .d .a5 .a5 56, .shift .srl .d .a5 .a5 56] : List Instr)
-
-/-- Shift the difference in `t1` up a byte and add the byte in `a5` if `j`
-is the lane of `a4`: run for `j` from 7 down to 0, it leaves `a5` shifted to
-the lane of `a4`. -/
-def spreadStep (j : Nat) : List Instr :=
-  laneMask j ++ ([.logic .and .t0 .a5 .t2, .shift .sll .d .t1 .t1 8, .logic .or .t1 .t1 .t0] :
-    List Instr)
+  rowBit ++ rowMask 0 ++ ([.load .d .t1 .a7 0, .logic .and .t1 .t1 .t2] : List Instr) ++
+    (List.range 31).flatMap (fun k => gatherStep (k + 1)) ++ laneShift ++
+    ([.shiftReg .srl .d .a5 .t1 .t2, .logicImm .and .a5 .a5 255] : List Instr)
 
 /-- XOR doubleword `k` with the difference in `t1` if it holds byte `a4`,
 and store it back. -/
 def scatterStep (k : Nat) : List Instr :=
   rowMask k ++ ([.logic .and .t2 .t2 .t1, .load .d .t0 .a7 (8 * k),
     .logic .xor .t0 .t0 .t2, .store .d .t0 .a7 (8 * k)] : List Instr)
-
-/-- The lanes 7 down to 0. -/
-def lanesDown : List Nat := [7, 6, 5, 4, 3, 2, 1, 0]
 
 /-- `t0` := the byte at the public index `a3` of the table, through `t2`. -/
 def loadI : List Instr := [.add .t2 .a7 .a3, .load .b .t0 .t2 0]
@@ -92,8 +74,8 @@ def loadI : List Instr := [.add .t2 .a7 .a3, .load .b .t0 .t2 0]
 with the byte at the public index `a3`, returning its original value in
 `a5`. Clobbers `t0`, `t1` and `t2`. -/
 def replace : List Instr :=
-  lookup ++ loadI ++ ([.logic .xor .a5 .a5 .t0, .li .t1 0] : List Instr) ++
-    lanesDown.flatMap spreadStep ++ loadI ++ ([.logic .xor .a5 .a5 .t0] : List Instr) ++
+  lookup ++ loadI ++ ([.logic .xor .a5 .a5 .t0] : List Instr) ++ laneShift ++
+    ([.shiftReg .sll .d .t1 .a5 .t2] : List Instr) ++ loadI ++ ([.logic .xor .a5 .a5 .t0] : List Instr) ++
     (List.range 32).flatMap scatterStep
 
 /-- Zero the frame at `a7`, from `t6`. -/
