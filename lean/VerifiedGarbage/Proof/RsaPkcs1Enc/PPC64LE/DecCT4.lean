@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecCT1
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecCT3
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecFin
@@ -31,7 +34,6 @@ earlier parts, the function (`code_ct`).
 namespace VG.Proof.RsaPkcs1Enc.PPC64LE.Dec
 
 open VG VG.PPC64LE VG.PPC64LE.Taint VG.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
-open VG.Proof.Bignum.PPC64LE (Keep)
 open VG.Proof.RsaPkcs1Enc (bitMask)
 
 section
@@ -40,8 +42,8 @@ variable {e : Env}
 /-- A block split where a pointer it loads is used: the first part's taint
 from `rs₁`, the second's from `rs₂`, which `X` fixes. -/
 theorem rel_split {P Q X : State → State → Prop} {l₁ l₂ : List Instr} (rs₁ rs₂ : List Reg)
-    {hc₁ : VG.Taint.Hint T} (ht₁ : (taint.check (ofRegs rs₁) (.block l₁) hc₁).isSome = true)
-    {hc₂ : VG.Taint.Hint T} (ht₂ : (taint.check (ofRegs rs₂) (.block l₂) hc₂).isSome = true)
+    {hc₁ : VG.Taint.Hint T} (ht₁ : (vectorTaint.check (ofRegs rs₁) (.block l₁) hc₁).isSome = true)
+    {hc₂ : VG.Taint.Hint T} (ht₂ : (vectorTaint.check (ofRegs rs₂) (.block l₂) hc₂).isSome = true)
     (hpin₁ : ∀ a b, P e.s₁ a → P e.s₂ b → AgreeOn rs₁ a b) (hpin₂ : ∀ a b, X e.s₁ a → X e.s₂ b → AgreeOn rs₂ a b)
     (hw₁ : ∀ s u, DPre s → P s u → WP isa (.block l₁) u (X s))
     (hw : ∀ s u, DPre s → P s u → WP isa (.block (l₁ ++ l₂)) u (Q s)) :
@@ -203,7 +205,7 @@ theorem selLoop_run {s : State} (h : DPre s) {R : BitVec 64} {t : State} (hc : F
     have hwo := h.wo; rw [h.h4] at hwo
     have hsub : Region.Sub ⟨s.gpr .r3 + BitVec.ofNat 64 i, 1⟩ (oR s) := by
       rw [show oR s = ⟨s.gpr .r3, (s.gpr .r7).toNat⟩ by simp only [oR, h.h4]]; exact Offset.sub_base _ (by omega)
-    have kk : Keep [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12] u x :=
+    have kk : VG.Proof.Bignum.PPC64LE.Keep [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12] u x :=
       (kw.mono (by decide)).trans' (kx.mono (by decide))
     exact hu.store h kk.rd kk.wr kk.sp (fun r hr => kk.gpr r (by revert r; decide)) (.inl rfl) hsub hf
   · rw [x11, kw.gpr _ (by decide), u11, Offset.add_add]

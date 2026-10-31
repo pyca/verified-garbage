@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecCalls
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecPost
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -97,7 +100,7 @@ theorem rel_post {P P' : State → State → Prop} {c : Prog isa} (hct : RelCT i
 
 /-- A step the taint analysis checks from the registers `rs`, which `P` fixes. -/
 theorem rel_step {P P' : State → State → Prop} {c : Prog isa} (rs : List Reg) {hc : VG.Taint.Hint T}
-    (h : (taint.check (ofRegs rs) c hc).isSome = true) (hpin : ∀ a b, P e.s₁ a → P e.s₂ b → AgreeOn rs a b)
+    (h : (vectorTaint.check (ofRegs rs) c hc).isSome = true) (hpin : ∀ a b, P e.s₁ a → P e.s₂ b → AgreeOn rs a b)
     (hw : ∀ s u, DPre s → P s u → WP isa c u (P' s)) : RelCT isa (Rel e P) c (Rel e P') :=
   rel_post (rel_of h fun a b hab => hpin a b hab.1 hab.2) hw
 

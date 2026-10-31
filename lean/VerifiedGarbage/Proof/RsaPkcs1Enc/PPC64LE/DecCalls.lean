@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -34,9 +37,9 @@ open VG VG.PPC64LE VG.PPC64LE.Taint VG.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
 def AgreeOn (rs : List Reg) (a b : State) : Prop := a.sp = b.sp ∧ ∀ r ∈ rs, a.gpr r = b.gpr r
 
 theorem rel_of {rs : List Reg} {c : Prog isa} {hc : VG.Taint.Hint T}
-    (h : (taint.check (ofRegs rs) c hc).isSome = true) {P : State → State → Prop}
+    (h : (vectorTaint.check (ofRegs rs) c hc).isSome = true) {P : State → State → Prop}
     (hp : ∀ a b, P a b → AgreeOn rs a b) : RelCT isa P c fun _ _ => True :=
-  RelCT.taint (A := taint) (ofRegs rs) (fun a b hab => ⟨(hp a b hab).1, fun r hr =>
+  RelCT.taint (A := vectorTaint) (ofRegs rs) (fun a b hab => ⟨(hp a b hab).1, fun r hr =>
     (hp a b hab).2 r (RegSet.mem_ofList.mp hr)⟩) h
 
 theorem init_rel {P : State → State → Prop} (hp : ∀ a b, P a b → AgreeOn [.r3] a b) :

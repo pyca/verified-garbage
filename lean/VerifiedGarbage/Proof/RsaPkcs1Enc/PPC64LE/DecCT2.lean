@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecCTBase
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecKdk
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.PPC64LE.DecCTBase
@@ -20,7 +23,6 @@ arguments correctness fixes: `hashD_ct`, `kdkMac_ct`.
 namespace VG.Proof.RsaPkcs1Enc.PPC64LE.Dec
 
 open VG VG.PPC64LE VG.PPC64LE.Taint VG.Impl.RsaPkcs1Enc.PPC64LE.Decrypt
-open VG.Proof.Bignum.PPC64LE (Keep)
 
 /-- `Post`, for some result and `EM`. -/
 def PP (s u : State) : Prop := ∃ R EM, Post s R EM u
@@ -86,7 +88,7 @@ end
 /-- A block of the frame's registers, after which `Post` holds still, with
 `X`. -/
 theorem pp_block {s : State} {c : List Instr} {u : State} (hu : PP s u) {X : State → Prop} (rs : List Reg)
-    (hw : ∀ R EM, Post s R EM u → WP isa (.block c) u fun v => (v.mem = u.mem ∧ X v) ∧ Keep rs u v)
+    (hw : ∀ R EM, Post s R EM u → WP isa (.block c) u fun v => (v.mem = u.mem ∧ X v) ∧ VG.Proof.Bignum.PPC64LE.Keep rs u v)
     (hrs : ∀ r ∈ rs, r ∉ preserved := by decide) :
     WP isa (.block c) u fun v => PP s v ∧ v.mem = u.mem ∧ X v :=
   let ⟨R, EM, hc⟩ := hu
@@ -163,7 +165,7 @@ theorem pmi_agree {key : Nat} {a b : State} (ha : PMI key e.s₁ a) (hb : PMI ke
 
 /-- The arguments of HMAC's `init` for the key at `scratch + key`. -/
 theorem macInitArgs_ct {key : Nat} (hk : key < 2 ^ 15) {hc : VG.Taint.Hint T}
-    (ht : (taint.check (ofRegs []) (.block (macInitArgs key)) hc).isSome = true) {P : State → State → Prop}
+    (ht : (vectorTaint.check (ofRegs []) (.block (macInitArgs key)) hc).isSome = true) {P : State → State → Prop}
     (hP : ∀ s u, P s u → PP s u) :
     RelCT isa (Rel e P) (.block (macInitArgs key)) (Rel e (PMI key)) :=
   rel_step [] ht (fun a b ha hb => ⟨pp_sp (hP _ _ ha) (hP _ _ hb), fun _ h => nomatch h⟩)
