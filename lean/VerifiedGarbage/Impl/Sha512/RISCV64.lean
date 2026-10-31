@@ -50,28 +50,43 @@ def T1 : Reg := .a6
 def T2 : Reg := .a7
 def T3 : Reg := .s0
 
-/-- Round `scratch` up to a multiple of 8, and save `s0` in it. -/
-def save : List Instr := [.addi .a3 .a3 7, .logicImm .and .a3 .a3 (-8), .store .d .s0 .a3 128]
+/-- The rotation amounts whose constants `2 ^ (64 - r)` live in registers. -/
+def rots : List Nat := [14, 18, 41, 28, 34, 39, 19, 61, 1, 8]
 
-/-- Restore `s0`. -/
-def restore : List Instr := [.load .d .s0 .a3 128]
+/-- The callee-saved registers holding the constants, in the order of `rots`. -/
+def cregs : List Reg := [.s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10]
+
+/-- The register holding `2 ^ (64 - r)`. -/
+def C (r : Nat) : Reg := cregs.getD (rots.idxOf r) .s1
+
+/-- Round `scratch` up to a multiple of 8, save `s0`–`s10` in it, and load the constants. -/
+def save : List Instr := [.addi .a3 .a3 7, .logicImm .and .a3 .a3 (-8)] ++
+  ((Reg.s0 :: cregs).zipIdx.map fun (r, i) => .store .d r .a3 (128 + 8 * i)) ++
+  rots.flatMap fun r => [.li (C r) 1, .shift .sll .d (C r) (C r) (64 - r)]
+
+/-- Restore `s0`–`s10`. -/
+def restore : List Instr := (Reg.s0 :: cregs).zipIdx.map fun (r, i) => .load .d r .a3 (128 + 8 * i)
 
 /-- The offset of `W[i mod 16]` in the scratch buffer. -/
 def slot (i : Nat) : Nat := 8 * (i % 16)
 
-/-- `d := d ⊕ (x ⋙ r)`, as two shifts into `tmp` (`0 < r < 64`). -/
-def xorRotr (d tmp x : Reg) (r : Nat) : List Instr :=
-  [.shift .srl .d tmp x r, .logic .xor d d tmp, .shift .sll .d tmp x (64 - r), .logic .xor d d tmp]
+/-- `d := x ⋙ r`'s right half, by `srli` (`hu = false`) or `mulhu` by `2 ^ (64 - r)`. -/
+def shr (hu : Bool) (d x : Reg) (r : Nat) : Instr :=
+  if hu then .mulhu d x (C r) else .shift .srl .d d x r
+
+/-- `d := d ⊕ (x ⋙ r)`. -/
+def xorRotr (hu : Bool) (d tmp x : Reg) (r : Nat) : List Instr :=
+  [shr hu tmp x r, .logic .xor d d tmp, .mul tmp x (C r), .logic .xor d d tmp]
 
 /-- `d := (x ⋙ r₁) ⊕ (x ⋙ r₂) ⊕ (x ⋙ r₃)` (a `Σ`), with `tmp` clobbered. -/
-def bsig (d tmp x : Reg) (r₁ r₂ r₃ : Nat) : List Instr :=
-  [.shift .srl .d d x r₁, .shift .sll .d tmp x (64 - r₁), .logic .xor d d tmp] ++
-    xorRotr d tmp x r₂ ++ xorRotr d tmp x r₃
+def bsig (hu : Bool) (d tmp x : Reg) (r₁ r₂ r₃ : Nat) : List Instr :=
+  [shr hu d x r₁, .mul tmp x (C r₁), .logic .xor d d tmp] ++
+    xorRotr hu d tmp x r₂ ++ xorRotr hu d tmp x r₃
 
 /-- `d := (x ⋙ r₁) ⊕ (x ⋙ r₂) ⊕ (x ≫ r₃)` (a `σ`), with `tmp` clobbered. -/
 def ssig (d tmp x : Reg) (r₁ r₂ r₃ : Nat) : List Instr :=
-  [.shift .srl .d d x r₁, .shift .sll .d tmp x (64 - r₁), .logic .xor d d tmp] ++
-    xorRotr d tmp x r₂ ++ [.shift .srl .d tmp x r₃, .logic .xor d d tmp]
+  [shr true d x r₁, .mul tmp x (C r₁), .logic .xor d d tmp] ++
+    xorRotr true d tmp x r₂ ++ [.shift .srl .d tmp x r₃, .logic .xor d d tmp]
 
 /-- Leave `Wₜ` in `T0` and in its slot. The additions are in the order of the
 specification. -/
@@ -93,7 +108,7 @@ def round (t : Nat) : List Instr :=
   let a := var t 0; let b := var t 1; let c := var t 2; let d := var t 3
   let e := var t 4; let f := var t 5; let g := var t 6; let h := var t 7
   -- h := h + Σ₁(e)
-  bsig T1 T2 e 14 18 41 ++ [.add h h T1,
+  bsig false T1 T2 e 14 18 41 ++ [.add h h T1,
     -- h := h + Ch(e, f, g), as ((f ⊕ g) ∧ e) ⊕ g
     .logic .xor T1 f g, .logic .and T1 T1 e, .logic .xor T1 T1 g, .add h h T1] ++
   -- h := h + Kₜ + Wₜ, which is T₁
@@ -101,7 +116,7 @@ def round (t : Nat) : List Instr :=
     -- e' := d + T₁
     .add d d h] ++
   -- h := h + Σ₀(a)
-  bsig T1 T2 a 28 34 39 ++ [.add h h T1,
+  bsig true T1 T2 a 28 34 39 ++ [.add h h T1,
     -- h := h + Maj(a, b, c), as ((a ∨ b) ∧ c) ∨ (a ∧ b); now h = a' = T₁ + T₂
     .logic .or T1 a b, .logic .and T1 T1 c, .logic .and T2 a b, .logic .or T1 T1 T2,
     .add h h T1]

@@ -55,18 +55,18 @@ def initWith (iv : Spec.Sha512.HashValue) : Prog isa :=
 
 /-- The bytes of the frame: the compression function's scratch space (144
 bytes), then the saved registers. -/
-def frameBytes : Nat := 208
+def frameBytes : Nat := 288
 
 /-- The registers we save, and where in the frame. -/
 def saved : List (Reg × Nat) :=
-  [(.ra, 144), (.s1, 152), (.s2, 160), (.s3, 168), (.s4, 176), (.s5, 184), (.s6, 192)]
+  [(.ra, 224), (.s1, 232), (.s2, 240), (.s3, 248), (.s4, 256), (.s5, 264), (.s6, 272)]
 
 /-- Save them, with the frame's address in `t0`. -/
 def save : List Instr := .addSp .t0 0 :: saved.map fun (r, d) => .store .d r .t0 d
 
 /-- Restore them from the frame at `s2` (`s2`, the base, last). -/
 def restore : List Instr :=
-  (saved.filter (·.1 != .s2)).map (fun (r, d) => .load .d r .s2 d) ++ [.load .d .s2 .s2 160]
+  (saved.filter (·.1 != .s2)).map (fun (r, d) => .load .d r .s2 d) ++ [.load .d .s2 .s2 240]
 
 /-- Compress the block at `a1` into the hash value at `s1`, with scratch
 space `s2`. -/

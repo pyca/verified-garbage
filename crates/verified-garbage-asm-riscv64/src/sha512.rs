@@ -22,6 +22,36 @@ pub unsafe extern "C" fn vg_sha512_compress(state: *mut [u64; 8], blocks: *const
 addi a3, a3, 7
 andi a3, a3, -8
 sd s0, 128(a3)
+sd s1, 136(a3)
+sd s2, 144(a3)
+sd s3, 152(a3)
+sd s4, 160(a3)
+sd s5, 168(a3)
+sd s6, 176(a3)
+sd s7, 184(a3)
+sd s8, 192(a3)
+sd s9, 200(a3)
+sd s10, 208(a3)
+addi s1, zero, 1
+slli s1, s1, 50
+addi s2, zero, 1
+slli s2, s2, 46
+addi s3, zero, 1
+slli s3, s3, 23
+addi s4, zero, 1
+slli s4, s4, 36
+addi s5, zero, 1
+slli s5, s5, 30
+addi s6, zero, 1
+slli s6, s6, 25
+addi s7, zero, 1
+slli s7, s7, 45
+addi s8, zero, 1
+slli s8, s8, 3
+addi s9, zero, 1
+slli s9, s9, 63
+addi s10, zero, 1
+slli s10, s10, 56
 beqz a2, 20f
 22:
 lbu t0, 0(a0)
@@ -224,15 +254,15 @@ lbu a6, 7(a1)
 or a5, a5, a6
 sd a5, 0(a3)
 srli a6, t4, 14
-slli a7, t4, 50
+mul a7, t4, s1
 xor a6, a6, a7
 srli a7, t4, 18
 xor a6, a6, a7
-slli a7, t4, 46
+mul a7, t4, s2
 xor a6, a6, a7
 srli a7, t4, 41
 xor a6, a6, a7
-slli a7, t4, 23
+mul a7, t4, s3
 xor a6, a6, a7
 add a4, a4, a6
 xor a6, t5, t6
@@ -248,16 +278,16 @@ add a6, a6, a7
 add a4, a4, a6
 add a4, a4, a5
 add t3, t3, a4
-srli a6, t0, 28
-slli a7, t0, 36
+mulhu a6, t0, s4
+mul a7, t0, s4
 xor a6, a6, a7
-srli a7, t0, 34
+mulhu a7, t0, s5
 xor a6, a6, a7
-slli a7, t0, 30
+mul a7, t0, s5
 xor a6, a6, a7
-srli a7, t0, 39
+mulhu a7, t0, s6
 xor a6, a6, a7
-slli a7, t0, 25
+mul a7, t0, s6
 xor a6, a6, a7
 add a4, a4, a6
 or a6, t0, t1
@@ -289,15 +319,15 @@ lbu a6, 15(a1)
 or a5, a5, a6
 sd a5, 8(a3)
 srli a6, t3, 14
-slli a7, t3, 50
+mul a7, t3, s1
 xor a6, a6, a7
 srli a7, t3, 18
 xor a6, a6, a7
-slli a7, t3, 46
+mul a7, t3, s2
 xor a6, a6, a7
 srli a7, t3, 41
 xor a6, a6, a7
-slli a7, t3, 23
+mul a7, t3, s3
 xor a6, a6, a7
 add t6, t6, a6
 xor a6, t4, t5
@@ -313,16 +343,16 @@ add a6, a6, a7
 add t6, t6, a6
 add t6, t6, a5
 add t2, t2, t6
-srli a6, a4, 28
-slli a7, a4, 36
+mulhu a6, a4, s4
+mul a7, a4, s4
 xor a6, a6, a7
-srli a7, a4, 34
+mulhu a7, a4, s5
 xor a6, a6, a7
-slli a7, a4, 30
+mul a7, a4, s5
 xor a6, a6, a7
-srli a7, a4, 39
+mulhu a7, a4, s6
 xor a6, a6, a7
-slli a7, a4, 25
+mul a7, a4, s6
 xor a6, a6, a7
 add t6, t6, a6
 or a6, a4, t0
@@ -354,15 +384,15 @@ lbu a6, 23(a1)
 or a5, a5, a6
 sd a5, 16(a3)
 srli a6, t2, 14
-slli a7, t2, 50
+mul a7, t2, s1
 xor a6, a6, a7
 srli a7, t2, 18
 xor a6, a6, a7
-slli a7, t2, 46
+mul a7, t2, s2
 xor a6, a6, a7
 srli a7, t2, 41
 xor a6, a6, a7
-slli a7, t2, 23
+mul a7, t2, s3
 xor a6, a6, a7
 add t5, t5, a6
 xor a6, t3, t4
@@ -378,16 +408,16 @@ add a6, a6, a7
 add t5, t5, a6
 add t5, t5, a5
 add t1, t1, t5
-srli a6, t6, 28
-slli a7, t6, 36
+mulhu a6, t6, s4
+mul a7, t6, s4
 xor a6, a6, a7
-srli a7, t6, 34
+mulhu a7, t6, s5
 xor a6, a6, a7
-slli a7, t6, 30
+mul a7, t6, s5
 xor a6, a6, a7
-srli a7, t6, 39
+mulhu a7, t6, s6
 xor a6, a6, a7
-slli a7, t6, 25
+mul a7, t6, s6
 xor a6, a6, a7
 add t5, t5, a6
 or a6, t6, a4
@@ -419,15 +449,15 @@ lbu a6, 31(a1)
 or a5, a5, a6
 sd a5, 24(a3)
 srli a6, t1, 14
-slli a7, t1, 50
+mul a7, t1, s1
 xor a6, a6, a7
 srli a7, t1, 18
 xor a6, a6, a7
-slli a7, t1, 46
+mul a7, t1, s2
 xor a6, a6, a7
 srli a7, t1, 41
 xor a6, a6, a7
-slli a7, t1, 23
+mul a7, t1, s3
 xor a6, a6, a7
 add t4, t4, a6
 xor a6, t2, t3
@@ -443,16 +473,16 @@ add a6, a6, a7
 add t4, t4, a6
 add t4, t4, a5
 add t0, t0, t4
-srli a6, t5, 28
-slli a7, t5, 36
+mulhu a6, t5, s4
+mul a7, t5, s4
 xor a6, a6, a7
-srli a7, t5, 34
+mulhu a7, t5, s5
 xor a6, a6, a7
-slli a7, t5, 30
+mul a7, t5, s5
 xor a6, a6, a7
-srli a7, t5, 39
+mulhu a7, t5, s6
 xor a6, a6, a7
-slli a7, t5, 25
+mul a7, t5, s6
 xor a6, a6, a7
 add t4, t4, a6
 or a6, t5, t6
@@ -484,15 +514,15 @@ lbu a6, 39(a1)
 or a5, a5, a6
 sd a5, 32(a3)
 srli a6, t0, 14
-slli a7, t0, 50
+mul a7, t0, s1
 xor a6, a6, a7
 srli a7, t0, 18
 xor a6, a6, a7
-slli a7, t0, 46
+mul a7, t0, s2
 xor a6, a6, a7
 srli a7, t0, 41
 xor a6, a6, a7
-slli a7, t0, 23
+mul a7, t0, s3
 xor a6, a6, a7
 add t3, t3, a6
 xor a6, t1, t2
@@ -508,16 +538,16 @@ add a6, a6, a7
 add t3, t3, a6
 add t3, t3, a5
 add a4, a4, t3
-srli a6, t4, 28
-slli a7, t4, 36
+mulhu a6, t4, s4
+mul a7, t4, s4
 xor a6, a6, a7
-srli a7, t4, 34
+mulhu a7, t4, s5
 xor a6, a6, a7
-slli a7, t4, 30
+mul a7, t4, s5
 xor a6, a6, a7
-srli a7, t4, 39
+mulhu a7, t4, s6
 xor a6, a6, a7
-slli a7, t4, 25
+mul a7, t4, s6
 xor a6, a6, a7
 add t3, t3, a6
 or a6, t4, t5
@@ -549,15 +579,15 @@ lbu a6, 47(a1)
 or a5, a5, a6
 sd a5, 40(a3)
 srli a6, a4, 14
-slli a7, a4, 50
+mul a7, a4, s1
 xor a6, a6, a7
 srli a7, a4, 18
 xor a6, a6, a7
-slli a7, a4, 46
+mul a7, a4, s2
 xor a6, a6, a7
 srli a7, a4, 41
 xor a6, a6, a7
-slli a7, a4, 23
+mul a7, a4, s3
 xor a6, a6, a7
 add t2, t2, a6
 xor a6, t0, t1
@@ -573,16 +603,16 @@ add a6, a6, a7
 add t2, t2, a6
 add t2, t2, a5
 add t6, t6, t2
-srli a6, t3, 28
-slli a7, t3, 36
+mulhu a6, t3, s4
+mul a7, t3, s4
 xor a6, a6, a7
-srli a7, t3, 34
+mulhu a7, t3, s5
 xor a6, a6, a7
-slli a7, t3, 30
+mul a7, t3, s5
 xor a6, a6, a7
-srli a7, t3, 39
+mulhu a7, t3, s6
 xor a6, a6, a7
-slli a7, t3, 25
+mul a7, t3, s6
 xor a6, a6, a7
 add t2, t2, a6
 or a6, t3, t4
@@ -614,15 +644,15 @@ lbu a6, 55(a1)
 or a5, a5, a6
 sd a5, 48(a3)
 srli a6, t6, 14
-slli a7, t6, 50
+mul a7, t6, s1
 xor a6, a6, a7
 srli a7, t6, 18
 xor a6, a6, a7
-slli a7, t6, 46
+mul a7, t6, s2
 xor a6, a6, a7
 srli a7, t6, 41
 xor a6, a6, a7
-slli a7, t6, 23
+mul a7, t6, s3
 xor a6, a6, a7
 add t1, t1, a6
 xor a6, a4, t0
@@ -638,16 +668,16 @@ add a6, a6, a7
 add t1, t1, a6
 add t1, t1, a5
 add t5, t5, t1
-srli a6, t2, 28
-slli a7, t2, 36
+mulhu a6, t2, s4
+mul a7, t2, s4
 xor a6, a6, a7
-srli a7, t2, 34
+mulhu a7, t2, s5
 xor a6, a6, a7
-slli a7, t2, 30
+mul a7, t2, s5
 xor a6, a6, a7
-srli a7, t2, 39
+mulhu a7, t2, s6
 xor a6, a6, a7
-slli a7, t2, 25
+mul a7, t2, s6
 xor a6, a6, a7
 add t1, t1, a6
 or a6, t2, t3
@@ -679,15 +709,15 @@ lbu a6, 63(a1)
 or a5, a5, a6
 sd a5, 56(a3)
 srli a6, t5, 14
-slli a7, t5, 50
+mul a7, t5, s1
 xor a6, a6, a7
 srli a7, t5, 18
 xor a6, a6, a7
-slli a7, t5, 46
+mul a7, t5, s2
 xor a6, a6, a7
 srli a7, t5, 41
 xor a6, a6, a7
-slli a7, t5, 23
+mul a7, t5, s3
 xor a6, a6, a7
 add t0, t0, a6
 xor a6, t6, a4
@@ -703,16 +733,16 @@ add a6, a6, a7
 add t0, t0, a6
 add t0, t0, a5
 add t4, t4, t0
-srli a6, t1, 28
-slli a7, t1, 36
+mulhu a6, t1, s4
+mul a7, t1, s4
 xor a6, a6, a7
-srli a7, t1, 34
+mulhu a7, t1, s5
 xor a6, a6, a7
-slli a7, t1, 30
+mul a7, t1, s5
 xor a6, a6, a7
-srli a7, t1, 39
+mulhu a7, t1, s6
 xor a6, a6, a7
-slli a7, t1, 25
+mul a7, t1, s6
 xor a6, a6, a7
 add t0, t0, a6
 or a6, t1, t2
@@ -744,15 +774,15 @@ lbu a6, 71(a1)
 or a5, a5, a6
 sd a5, 64(a3)
 srli a6, t4, 14
-slli a7, t4, 50
+mul a7, t4, s1
 xor a6, a6, a7
 srli a7, t4, 18
 xor a6, a6, a7
-slli a7, t4, 46
+mul a7, t4, s2
 xor a6, a6, a7
 srli a7, t4, 41
 xor a6, a6, a7
-slli a7, t4, 23
+mul a7, t4, s3
 xor a6, a6, a7
 add a4, a4, a6
 xor a6, t5, t6
@@ -768,16 +798,16 @@ add a6, a6, a7
 add a4, a4, a6
 add a4, a4, a5
 add t3, t3, a4
-srli a6, t0, 28
-slli a7, t0, 36
+mulhu a6, t0, s4
+mul a7, t0, s4
 xor a6, a6, a7
-srli a7, t0, 34
+mulhu a7, t0, s5
 xor a6, a6, a7
-slli a7, t0, 30
+mul a7, t0, s5
 xor a6, a6, a7
-srli a7, t0, 39
+mulhu a7, t0, s6
 xor a6, a6, a7
-slli a7, t0, 25
+mul a7, t0, s6
 xor a6, a6, a7
 add a4, a4, a6
 or a6, t0, t1
@@ -809,15 +839,15 @@ lbu a6, 79(a1)
 or a5, a5, a6
 sd a5, 72(a3)
 srli a6, t3, 14
-slli a7, t3, 50
+mul a7, t3, s1
 xor a6, a6, a7
 srli a7, t3, 18
 xor a6, a6, a7
-slli a7, t3, 46
+mul a7, t3, s2
 xor a6, a6, a7
 srli a7, t3, 41
 xor a6, a6, a7
-slli a7, t3, 23
+mul a7, t3, s3
 xor a6, a6, a7
 add t6, t6, a6
 xor a6, t4, t5
@@ -833,16 +863,16 @@ add a6, a6, a7
 add t6, t6, a6
 add t6, t6, a5
 add t2, t2, t6
-srli a6, a4, 28
-slli a7, a4, 36
+mulhu a6, a4, s4
+mul a7, a4, s4
 xor a6, a6, a7
-srli a7, a4, 34
+mulhu a7, a4, s5
 xor a6, a6, a7
-slli a7, a4, 30
+mul a7, a4, s5
 xor a6, a6, a7
-srli a7, a4, 39
+mulhu a7, a4, s6
 xor a6, a6, a7
-slli a7, a4, 25
+mul a7, a4, s6
 xor a6, a6, a7
 add t6, t6, a6
 or a6, a4, t0
@@ -874,15 +904,15 @@ lbu a6, 87(a1)
 or a5, a5, a6
 sd a5, 80(a3)
 srli a6, t2, 14
-slli a7, t2, 50
+mul a7, t2, s1
 xor a6, a6, a7
 srli a7, t2, 18
 xor a6, a6, a7
-slli a7, t2, 46
+mul a7, t2, s2
 xor a6, a6, a7
 srli a7, t2, 41
 xor a6, a6, a7
-slli a7, t2, 23
+mul a7, t2, s3
 xor a6, a6, a7
 add t5, t5, a6
 xor a6, t3, t4
@@ -898,16 +928,16 @@ add a6, a6, a7
 add t5, t5, a6
 add t5, t5, a5
 add t1, t1, t5
-srli a6, t6, 28
-slli a7, t6, 36
+mulhu a6, t6, s4
+mul a7, t6, s4
 xor a6, a6, a7
-srli a7, t6, 34
+mulhu a7, t6, s5
 xor a6, a6, a7
-slli a7, t6, 30
+mul a7, t6, s5
 xor a6, a6, a7
-srli a7, t6, 39
+mulhu a7, t6, s6
 xor a6, a6, a7
-slli a7, t6, 25
+mul a7, t6, s6
 xor a6, a6, a7
 add t5, t5, a6
 or a6, t6, a4
@@ -939,15 +969,15 @@ lbu a6, 95(a1)
 or a5, a5, a6
 sd a5, 88(a3)
 srli a6, t1, 14
-slli a7, t1, 50
+mul a7, t1, s1
 xor a6, a6, a7
 srli a7, t1, 18
 xor a6, a6, a7
-slli a7, t1, 46
+mul a7, t1, s2
 xor a6, a6, a7
 srli a7, t1, 41
 xor a6, a6, a7
-slli a7, t1, 23
+mul a7, t1, s3
 xor a6, a6, a7
 add t4, t4, a6
 xor a6, t2, t3
@@ -963,16 +993,16 @@ add a6, a6, a7
 add t4, t4, a6
 add t4, t4, a5
 add t0, t0, t4
-srli a6, t5, 28
-slli a7, t5, 36
+mulhu a6, t5, s4
+mul a7, t5, s4
 xor a6, a6, a7
-srli a7, t5, 34
+mulhu a7, t5, s5
 xor a6, a6, a7
-slli a7, t5, 30
+mul a7, t5, s5
 xor a6, a6, a7
-srli a7, t5, 39
+mulhu a7, t5, s6
 xor a6, a6, a7
-slli a7, t5, 25
+mul a7, t5, s6
 xor a6, a6, a7
 add t4, t4, a6
 or a6, t5, t6
@@ -1004,15 +1034,15 @@ lbu a6, 103(a1)
 or a5, a5, a6
 sd a5, 96(a3)
 srli a6, t0, 14
-slli a7, t0, 50
+mul a7, t0, s1
 xor a6, a6, a7
 srli a7, t0, 18
 xor a6, a6, a7
-slli a7, t0, 46
+mul a7, t0, s2
 xor a6, a6, a7
 srli a7, t0, 41
 xor a6, a6, a7
-slli a7, t0, 23
+mul a7, t0, s3
 xor a6, a6, a7
 add t3, t3, a6
 xor a6, t1, t2
@@ -1028,16 +1058,16 @@ add a6, a6, a7
 add t3, t3, a6
 add t3, t3, a5
 add a4, a4, t3
-srli a6, t4, 28
-slli a7, t4, 36
+mulhu a6, t4, s4
+mul a7, t4, s4
 xor a6, a6, a7
-srli a7, t4, 34
+mulhu a7, t4, s5
 xor a6, a6, a7
-slli a7, t4, 30
+mul a7, t4, s5
 xor a6, a6, a7
-srli a7, t4, 39
+mulhu a7, t4, s6
 xor a6, a6, a7
-slli a7, t4, 25
+mul a7, t4, s6
 xor a6, a6, a7
 add t3, t3, a6
 or a6, t4, t5
@@ -1069,15 +1099,15 @@ lbu a6, 111(a1)
 or a5, a5, a6
 sd a5, 104(a3)
 srli a6, a4, 14
-slli a7, a4, 50
+mul a7, a4, s1
 xor a6, a6, a7
 srli a7, a4, 18
 xor a6, a6, a7
-slli a7, a4, 46
+mul a7, a4, s2
 xor a6, a6, a7
 srli a7, a4, 41
 xor a6, a6, a7
-slli a7, a4, 23
+mul a7, a4, s3
 xor a6, a6, a7
 add t2, t2, a6
 xor a6, t0, t1
@@ -1093,16 +1123,16 @@ add a6, a6, a7
 add t2, t2, a6
 add t2, t2, a5
 add t6, t6, t2
-srli a6, t3, 28
-slli a7, t3, 36
+mulhu a6, t3, s4
+mul a7, t3, s4
 xor a6, a6, a7
-srli a7, t3, 34
+mulhu a7, t3, s5
 xor a6, a6, a7
-slli a7, t3, 30
+mul a7, t3, s5
 xor a6, a6, a7
-srli a7, t3, 39
+mulhu a7, t3, s6
 xor a6, a6, a7
-slli a7, t3, 25
+mul a7, t3, s6
 xor a6, a6, a7
 add t2, t2, a6
 or a6, t3, t4
@@ -1134,15 +1164,15 @@ lbu a6, 119(a1)
 or a5, a5, a6
 sd a5, 112(a3)
 srli a6, t6, 14
-slli a7, t6, 50
+mul a7, t6, s1
 xor a6, a6, a7
 srli a7, t6, 18
 xor a6, a6, a7
-slli a7, t6, 46
+mul a7, t6, s2
 xor a6, a6, a7
 srli a7, t6, 41
 xor a6, a6, a7
-slli a7, t6, 23
+mul a7, t6, s3
 xor a6, a6, a7
 add t1, t1, a6
 xor a6, a4, t0
@@ -1158,16 +1188,16 @@ add a6, a6, a7
 add t1, t1, a6
 add t1, t1, a5
 add t5, t5, t1
-srli a6, t2, 28
-slli a7, t2, 36
+mulhu a6, t2, s4
+mul a7, t2, s4
 xor a6, a6, a7
-srli a7, t2, 34
+mulhu a7, t2, s5
 xor a6, a6, a7
-slli a7, t2, 30
+mul a7, t2, s5
 xor a6, a6, a7
-srli a7, t2, 39
+mulhu a7, t2, s6
 xor a6, a6, a7
-slli a7, t2, 25
+mul a7, t2, s6
 xor a6, a6, a7
 add t1, t1, a6
 or a6, t2, t3
@@ -1199,15 +1229,15 @@ lbu a6, 127(a1)
 or a5, a5, a6
 sd a5, 120(a3)
 srli a6, t5, 14
-slli a7, t5, 50
+mul a7, t5, s1
 xor a6, a6, a7
 srli a7, t5, 18
 xor a6, a6, a7
-slli a7, t5, 46
+mul a7, t5, s2
 xor a6, a6, a7
 srli a7, t5, 41
 xor a6, a6, a7
-slli a7, t5, 23
+mul a7, t5, s3
 xor a6, a6, a7
 add t0, t0, a6
 xor a6, t6, a4
@@ -1223,16 +1253,16 @@ add a6, a6, a7
 add t0, t0, a6
 add t0, t0, a5
 add t4, t4, t0
-srli a6, t1, 28
-slli a7, t1, 36
+mulhu a6, t1, s4
+mul a7, t1, s4
 xor a6, a6, a7
-srli a7, t1, 34
+mulhu a7, t1, s5
 xor a6, a6, a7
-slli a7, t1, 30
+mul a7, t1, s5
 xor a6, a6, a7
-srli a7, t1, 39
+mulhu a7, t1, s6
 xor a6, a6, a7
-slli a7, t1, 25
+mul a7, t1, s6
 xor a6, a6, a7
 add t0, t0, a6
 or a6, t1, t2
@@ -1241,24 +1271,24 @@ and a7, t1, t2
 or a6, a6, a7
 add t0, t0, a6
 ld a6, 112(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 72(a3)
 add a5, a5, a7
 ld a6, 8(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -1267,15 +1297,15 @@ ld a7, 0(a3)
 add a5, a5, a7
 sd a5, 0(a3)
 srli a6, t4, 14
-slli a7, t4, 50
+mul a7, t4, s1
 xor a6, a6, a7
 srli a7, t4, 18
 xor a6, a6, a7
-slli a7, t4, 46
+mul a7, t4, s2
 xor a6, a6, a7
 srli a7, t4, 41
 xor a6, a6, a7
-slli a7, t4, 23
+mul a7, t4, s3
 xor a6, a6, a7
 add a4, a4, a6
 xor a6, t5, t6
@@ -1291,16 +1321,16 @@ add a6, a6, a7
 add a4, a4, a6
 add a4, a4, a5
 add t3, t3, a4
-srli a6, t0, 28
-slli a7, t0, 36
+mulhu a6, t0, s4
+mul a7, t0, s4
 xor a6, a6, a7
-srli a7, t0, 34
+mulhu a7, t0, s5
 xor a6, a6, a7
-slli a7, t0, 30
+mul a7, t0, s5
 xor a6, a6, a7
-srli a7, t0, 39
+mulhu a7, t0, s6
 xor a6, a6, a7
-slli a7, t0, 25
+mul a7, t0, s6
 xor a6, a6, a7
 add a4, a4, a6
 or a6, t0, t1
@@ -1309,24 +1339,24 @@ and a7, t0, t1
 or a6, a6, a7
 add a4, a4, a6
 ld a6, 120(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 80(a3)
 add a5, a5, a7
 ld a6, 16(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -1335,15 +1365,15 @@ ld a7, 8(a3)
 add a5, a5, a7
 sd a5, 8(a3)
 srli a6, t3, 14
-slli a7, t3, 50
+mul a7, t3, s1
 xor a6, a6, a7
 srli a7, t3, 18
 xor a6, a6, a7
-slli a7, t3, 46
+mul a7, t3, s2
 xor a6, a6, a7
 srli a7, t3, 41
 xor a6, a6, a7
-slli a7, t3, 23
+mul a7, t3, s3
 xor a6, a6, a7
 add t6, t6, a6
 xor a6, t4, t5
@@ -1359,16 +1389,16 @@ add a6, a6, a7
 add t6, t6, a6
 add t6, t6, a5
 add t2, t2, t6
-srli a6, a4, 28
-slli a7, a4, 36
+mulhu a6, a4, s4
+mul a7, a4, s4
 xor a6, a6, a7
-srli a7, a4, 34
+mulhu a7, a4, s5
 xor a6, a6, a7
-slli a7, a4, 30
+mul a7, a4, s5
 xor a6, a6, a7
-srli a7, a4, 39
+mulhu a7, a4, s6
 xor a6, a6, a7
-slli a7, a4, 25
+mul a7, a4, s6
 xor a6, a6, a7
 add t6, t6, a6
 or a6, a4, t0
@@ -1377,24 +1407,24 @@ and a7, a4, t0
 or a6, a6, a7
 add t6, t6, a6
 ld a6, 0(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 88(a3)
 add a5, a5, a7
 ld a6, 24(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -1403,15 +1433,15 @@ ld a7, 16(a3)
 add a5, a5, a7
 sd a5, 16(a3)
 srli a6, t2, 14
-slli a7, t2, 50
+mul a7, t2, s1
 xor a6, a6, a7
 srli a7, t2, 18
 xor a6, a6, a7
-slli a7, t2, 46
+mul a7, t2, s2
 xor a6, a6, a7
 srli a7, t2, 41
 xor a6, a6, a7
-slli a7, t2, 23
+mul a7, t2, s3
 xor a6, a6, a7
 add t5, t5, a6
 xor a6, t3, t4
@@ -1427,16 +1457,16 @@ add a6, a6, a7
 add t5, t5, a6
 add t5, t5, a5
 add t1, t1, t5
-srli a6, t6, 28
-slli a7, t6, 36
+mulhu a6, t6, s4
+mul a7, t6, s4
 xor a6, a6, a7
-srli a7, t6, 34
+mulhu a7, t6, s5
 xor a6, a6, a7
-slli a7, t6, 30
+mul a7, t6, s5
 xor a6, a6, a7
-srli a7, t6, 39
+mulhu a7, t6, s6
 xor a6, a6, a7
-slli a7, t6, 25
+mul a7, t6, s6
 xor a6, a6, a7
 add t5, t5, a6
 or a6, t6, a4
@@ -1445,24 +1475,24 @@ and a7, t6, a4
 or a6, a6, a7
 add t5, t5, a6
 ld a6, 8(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 96(a3)
 add a5, a5, a7
 ld a6, 32(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -1471,15 +1501,15 @@ ld a7, 24(a3)
 add a5, a5, a7
 sd a5, 24(a3)
 srli a6, t1, 14
-slli a7, t1, 50
+mul a7, t1, s1
 xor a6, a6, a7
 srli a7, t1, 18
 xor a6, a6, a7
-slli a7, t1, 46
+mul a7, t1, s2
 xor a6, a6, a7
 srli a7, t1, 41
 xor a6, a6, a7
-slli a7, t1, 23
+mul a7, t1, s3
 xor a6, a6, a7
 add t4, t4, a6
 xor a6, t2, t3
@@ -1495,16 +1525,16 @@ add a6, a6, a7
 add t4, t4, a6
 add t4, t4, a5
 add t0, t0, t4
-srli a6, t5, 28
-slli a7, t5, 36
+mulhu a6, t5, s4
+mul a7, t5, s4
 xor a6, a6, a7
-srli a7, t5, 34
+mulhu a7, t5, s5
 xor a6, a6, a7
-slli a7, t5, 30
+mul a7, t5, s5
 xor a6, a6, a7
-srli a7, t5, 39
+mulhu a7, t5, s6
 xor a6, a6, a7
-slli a7, t5, 25
+mul a7, t5, s6
 xor a6, a6, a7
 add t4, t4, a6
 or a6, t5, t6
@@ -1513,24 +1543,24 @@ and a7, t5, t6
 or a6, a6, a7
 add t4, t4, a6
 ld a6, 16(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 104(a3)
 add a5, a5, a7
 ld a6, 40(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -1539,15 +1569,15 @@ ld a7, 32(a3)
 add a5, a5, a7
 sd a5, 32(a3)
 srli a6, t0, 14
-slli a7, t0, 50
+mul a7, t0, s1
 xor a6, a6, a7
 srli a7, t0, 18
 xor a6, a6, a7
-slli a7, t0, 46
+mul a7, t0, s2
 xor a6, a6, a7
 srli a7, t0, 41
 xor a6, a6, a7
-slli a7, t0, 23
+mul a7, t0, s3
 xor a6, a6, a7
 add t3, t3, a6
 xor a6, t1, t2
@@ -1563,16 +1593,16 @@ add a6, a6, a7
 add t3, t3, a6
 add t3, t3, a5
 add a4, a4, t3
-srli a6, t4, 28
-slli a7, t4, 36
+mulhu a6, t4, s4
+mul a7, t4, s4
 xor a6, a6, a7
-srli a7, t4, 34
+mulhu a7, t4, s5
 xor a6, a6, a7
-slli a7, t4, 30
+mul a7, t4, s5
 xor a6, a6, a7
-srli a7, t4, 39
+mulhu a7, t4, s6
 xor a6, a6, a7
-slli a7, t4, 25
+mul a7, t4, s6
 xor a6, a6, a7
 add t3, t3, a6
 or a6, t4, t5
@@ -1581,24 +1611,24 @@ and a7, t4, t5
 or a6, a6, a7
 add t3, t3, a6
 ld a6, 24(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 112(a3)
 add a5, a5, a7
 ld a6, 48(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -1607,15 +1637,15 @@ ld a7, 40(a3)
 add a5, a5, a7
 sd a5, 40(a3)
 srli a6, a4, 14
-slli a7, a4, 50
+mul a7, a4, s1
 xor a6, a6, a7
 srli a7, a4, 18
 xor a6, a6, a7
-slli a7, a4, 46
+mul a7, a4, s2
 xor a6, a6, a7
 srli a7, a4, 41
 xor a6, a6, a7
-slli a7, a4, 23
+mul a7, a4, s3
 xor a6, a6, a7
 add t2, t2, a6
 xor a6, t0, t1
@@ -1631,16 +1661,16 @@ add a6, a6, a7
 add t2, t2, a6
 add t2, t2, a5
 add t6, t6, t2
-srli a6, t3, 28
-slli a7, t3, 36
+mulhu a6, t3, s4
+mul a7, t3, s4
 xor a6, a6, a7
-srli a7, t3, 34
+mulhu a7, t3, s5
 xor a6, a6, a7
-slli a7, t3, 30
+mul a7, t3, s5
 xor a6, a6, a7
-srli a7, t3, 39
+mulhu a7, t3, s6
 xor a6, a6, a7
-slli a7, t3, 25
+mul a7, t3, s6
 xor a6, a6, a7
 add t2, t2, a6
 or a6, t3, t4
@@ -1649,24 +1679,24 @@ and a7, t3, t4
 or a6, a6, a7
 add t2, t2, a6
 ld a6, 32(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 120(a3)
 add a5, a5, a7
 ld a6, 56(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -1675,15 +1705,15 @@ ld a7, 48(a3)
 add a5, a5, a7
 sd a5, 48(a3)
 srli a6, t6, 14
-slli a7, t6, 50
+mul a7, t6, s1
 xor a6, a6, a7
 srli a7, t6, 18
 xor a6, a6, a7
-slli a7, t6, 46
+mul a7, t6, s2
 xor a6, a6, a7
 srli a7, t6, 41
 xor a6, a6, a7
-slli a7, t6, 23
+mul a7, t6, s3
 xor a6, a6, a7
 add t1, t1, a6
 xor a6, a4, t0
@@ -1699,16 +1729,16 @@ add a6, a6, a7
 add t1, t1, a6
 add t1, t1, a5
 add t5, t5, t1
-srli a6, t2, 28
-slli a7, t2, 36
+mulhu a6, t2, s4
+mul a7, t2, s4
 xor a6, a6, a7
-srli a7, t2, 34
+mulhu a7, t2, s5
 xor a6, a6, a7
-slli a7, t2, 30
+mul a7, t2, s5
 xor a6, a6, a7
-srli a7, t2, 39
+mulhu a7, t2, s6
 xor a6, a6, a7
-slli a7, t2, 25
+mul a7, t2, s6
 xor a6, a6, a7
 add t1, t1, a6
 or a6, t2, t3
@@ -1717,24 +1747,24 @@ and a7, t2, t3
 or a6, a6, a7
 add t1, t1, a6
 ld a6, 40(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 0(a3)
 add a5, a5, a7
 ld a6, 64(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -1743,15 +1773,15 @@ ld a7, 56(a3)
 add a5, a5, a7
 sd a5, 56(a3)
 srli a6, t5, 14
-slli a7, t5, 50
+mul a7, t5, s1
 xor a6, a6, a7
 srli a7, t5, 18
 xor a6, a6, a7
-slli a7, t5, 46
+mul a7, t5, s2
 xor a6, a6, a7
 srli a7, t5, 41
 xor a6, a6, a7
-slli a7, t5, 23
+mul a7, t5, s3
 xor a6, a6, a7
 add t0, t0, a6
 xor a6, t6, a4
@@ -1767,16 +1797,16 @@ add a6, a6, a7
 add t0, t0, a6
 add t0, t0, a5
 add t4, t4, t0
-srli a6, t1, 28
-slli a7, t1, 36
+mulhu a6, t1, s4
+mul a7, t1, s4
 xor a6, a6, a7
-srli a7, t1, 34
+mulhu a7, t1, s5
 xor a6, a6, a7
-slli a7, t1, 30
+mul a7, t1, s5
 xor a6, a6, a7
-srli a7, t1, 39
+mulhu a7, t1, s6
 xor a6, a6, a7
-slli a7, t1, 25
+mul a7, t1, s6
 xor a6, a6, a7
 add t0, t0, a6
 or a6, t1, t2
@@ -1785,24 +1815,24 @@ and a7, t1, t2
 or a6, a6, a7
 add t0, t0, a6
 ld a6, 48(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 8(a3)
 add a5, a5, a7
 ld a6, 72(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -1811,15 +1841,15 @@ ld a7, 64(a3)
 add a5, a5, a7
 sd a5, 64(a3)
 srli a6, t4, 14
-slli a7, t4, 50
+mul a7, t4, s1
 xor a6, a6, a7
 srli a7, t4, 18
 xor a6, a6, a7
-slli a7, t4, 46
+mul a7, t4, s2
 xor a6, a6, a7
 srli a7, t4, 41
 xor a6, a6, a7
-slli a7, t4, 23
+mul a7, t4, s3
 xor a6, a6, a7
 add a4, a4, a6
 xor a6, t5, t6
@@ -1835,16 +1865,16 @@ add a6, a6, a7
 add a4, a4, a6
 add a4, a4, a5
 add t3, t3, a4
-srli a6, t0, 28
-slli a7, t0, 36
+mulhu a6, t0, s4
+mul a7, t0, s4
 xor a6, a6, a7
-srli a7, t0, 34
+mulhu a7, t0, s5
 xor a6, a6, a7
-slli a7, t0, 30
+mul a7, t0, s5
 xor a6, a6, a7
-srli a7, t0, 39
+mulhu a7, t0, s6
 xor a6, a6, a7
-slli a7, t0, 25
+mul a7, t0, s6
 xor a6, a6, a7
 add a4, a4, a6
 or a6, t0, t1
@@ -1853,24 +1883,24 @@ and a7, t0, t1
 or a6, a6, a7
 add a4, a4, a6
 ld a6, 56(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 16(a3)
 add a5, a5, a7
 ld a6, 80(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -1879,15 +1909,15 @@ ld a7, 72(a3)
 add a5, a5, a7
 sd a5, 72(a3)
 srli a6, t3, 14
-slli a7, t3, 50
+mul a7, t3, s1
 xor a6, a6, a7
 srli a7, t3, 18
 xor a6, a6, a7
-slli a7, t3, 46
+mul a7, t3, s2
 xor a6, a6, a7
 srli a7, t3, 41
 xor a6, a6, a7
-slli a7, t3, 23
+mul a7, t3, s3
 xor a6, a6, a7
 add t6, t6, a6
 xor a6, t4, t5
@@ -1903,16 +1933,16 @@ add a6, a6, a7
 add t6, t6, a6
 add t6, t6, a5
 add t2, t2, t6
-srli a6, a4, 28
-slli a7, a4, 36
+mulhu a6, a4, s4
+mul a7, a4, s4
 xor a6, a6, a7
-srli a7, a4, 34
+mulhu a7, a4, s5
 xor a6, a6, a7
-slli a7, a4, 30
+mul a7, a4, s5
 xor a6, a6, a7
-srli a7, a4, 39
+mulhu a7, a4, s6
 xor a6, a6, a7
-slli a7, a4, 25
+mul a7, a4, s6
 xor a6, a6, a7
 add t6, t6, a6
 or a6, a4, t0
@@ -1921,24 +1951,24 @@ and a7, a4, t0
 or a6, a6, a7
 add t6, t6, a6
 ld a6, 64(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 24(a3)
 add a5, a5, a7
 ld a6, 88(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -1947,15 +1977,15 @@ ld a7, 80(a3)
 add a5, a5, a7
 sd a5, 80(a3)
 srli a6, t2, 14
-slli a7, t2, 50
+mul a7, t2, s1
 xor a6, a6, a7
 srli a7, t2, 18
 xor a6, a6, a7
-slli a7, t2, 46
+mul a7, t2, s2
 xor a6, a6, a7
 srli a7, t2, 41
 xor a6, a6, a7
-slli a7, t2, 23
+mul a7, t2, s3
 xor a6, a6, a7
 add t5, t5, a6
 xor a6, t3, t4
@@ -1971,16 +2001,16 @@ add a6, a6, a7
 add t5, t5, a6
 add t5, t5, a5
 add t1, t1, t5
-srli a6, t6, 28
-slli a7, t6, 36
+mulhu a6, t6, s4
+mul a7, t6, s4
 xor a6, a6, a7
-srli a7, t6, 34
+mulhu a7, t6, s5
 xor a6, a6, a7
-slli a7, t6, 30
+mul a7, t6, s5
 xor a6, a6, a7
-srli a7, t6, 39
+mulhu a7, t6, s6
 xor a6, a6, a7
-slli a7, t6, 25
+mul a7, t6, s6
 xor a6, a6, a7
 add t5, t5, a6
 or a6, t6, a4
@@ -1989,24 +2019,24 @@ and a7, t6, a4
 or a6, a6, a7
 add t5, t5, a6
 ld a6, 72(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 32(a3)
 add a5, a5, a7
 ld a6, 96(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -2015,15 +2045,15 @@ ld a7, 88(a3)
 add a5, a5, a7
 sd a5, 88(a3)
 srli a6, t1, 14
-slli a7, t1, 50
+mul a7, t1, s1
 xor a6, a6, a7
 srli a7, t1, 18
 xor a6, a6, a7
-slli a7, t1, 46
+mul a7, t1, s2
 xor a6, a6, a7
 srli a7, t1, 41
 xor a6, a6, a7
-slli a7, t1, 23
+mul a7, t1, s3
 xor a6, a6, a7
 add t4, t4, a6
 xor a6, t2, t3
@@ -2039,16 +2069,16 @@ add a6, a6, a7
 add t4, t4, a6
 add t4, t4, a5
 add t0, t0, t4
-srli a6, t5, 28
-slli a7, t5, 36
+mulhu a6, t5, s4
+mul a7, t5, s4
 xor a6, a6, a7
-srli a7, t5, 34
+mulhu a7, t5, s5
 xor a6, a6, a7
-slli a7, t5, 30
+mul a7, t5, s5
 xor a6, a6, a7
-srli a7, t5, 39
+mulhu a7, t5, s6
 xor a6, a6, a7
-slli a7, t5, 25
+mul a7, t5, s6
 xor a6, a6, a7
 add t4, t4, a6
 or a6, t5, t6
@@ -2057,24 +2087,24 @@ and a7, t5, t6
 or a6, a6, a7
 add t4, t4, a6
 ld a6, 80(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 40(a3)
 add a5, a5, a7
 ld a6, 104(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -2083,15 +2113,15 @@ ld a7, 96(a3)
 add a5, a5, a7
 sd a5, 96(a3)
 srli a6, t0, 14
-slli a7, t0, 50
+mul a7, t0, s1
 xor a6, a6, a7
 srli a7, t0, 18
 xor a6, a6, a7
-slli a7, t0, 46
+mul a7, t0, s2
 xor a6, a6, a7
 srli a7, t0, 41
 xor a6, a6, a7
-slli a7, t0, 23
+mul a7, t0, s3
 xor a6, a6, a7
 add t3, t3, a6
 xor a6, t1, t2
@@ -2107,16 +2137,16 @@ add a6, a6, a7
 add t3, t3, a6
 add t3, t3, a5
 add a4, a4, t3
-srli a6, t4, 28
-slli a7, t4, 36
+mulhu a6, t4, s4
+mul a7, t4, s4
 xor a6, a6, a7
-srli a7, t4, 34
+mulhu a7, t4, s5
 xor a6, a6, a7
-slli a7, t4, 30
+mul a7, t4, s5
 xor a6, a6, a7
-srli a7, t4, 39
+mulhu a7, t4, s6
 xor a6, a6, a7
-slli a7, t4, 25
+mul a7, t4, s6
 xor a6, a6, a7
 add t3, t3, a6
 or a6, t4, t5
@@ -2125,24 +2155,24 @@ and a7, t4, t5
 or a6, a6, a7
 add t3, t3, a6
 ld a6, 88(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 48(a3)
 add a5, a5, a7
 ld a6, 112(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -2151,15 +2181,15 @@ ld a7, 104(a3)
 add a5, a5, a7
 sd a5, 104(a3)
 srli a6, a4, 14
-slli a7, a4, 50
+mul a7, a4, s1
 xor a6, a6, a7
 srli a7, a4, 18
 xor a6, a6, a7
-slli a7, a4, 46
+mul a7, a4, s2
 xor a6, a6, a7
 srli a7, a4, 41
 xor a6, a6, a7
-slli a7, a4, 23
+mul a7, a4, s3
 xor a6, a6, a7
 add t2, t2, a6
 xor a6, t0, t1
@@ -2175,16 +2205,16 @@ add a6, a6, a7
 add t2, t2, a6
 add t2, t2, a5
 add t6, t6, t2
-srli a6, t3, 28
-slli a7, t3, 36
+mulhu a6, t3, s4
+mul a7, t3, s4
 xor a6, a6, a7
-srli a7, t3, 34
+mulhu a7, t3, s5
 xor a6, a6, a7
-slli a7, t3, 30
+mul a7, t3, s5
 xor a6, a6, a7
-srli a7, t3, 39
+mulhu a7, t3, s6
 xor a6, a6, a7
-slli a7, t3, 25
+mul a7, t3, s6
 xor a6, a6, a7
 add t2, t2, a6
 or a6, t3, t4
@@ -2193,24 +2223,24 @@ and a7, t3, t4
 or a6, a6, a7
 add t2, t2, a6
 ld a6, 96(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 56(a3)
 add a5, a5, a7
 ld a6, 120(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -2219,15 +2249,15 @@ ld a7, 112(a3)
 add a5, a5, a7
 sd a5, 112(a3)
 srli a6, t6, 14
-slli a7, t6, 50
+mul a7, t6, s1
 xor a6, a6, a7
 srli a7, t6, 18
 xor a6, a6, a7
-slli a7, t6, 46
+mul a7, t6, s2
 xor a6, a6, a7
 srli a7, t6, 41
 xor a6, a6, a7
-slli a7, t6, 23
+mul a7, t6, s3
 xor a6, a6, a7
 add t1, t1, a6
 xor a6, a4, t0
@@ -2243,16 +2273,16 @@ add a6, a6, a7
 add t1, t1, a6
 add t1, t1, a5
 add t5, t5, t1
-srli a6, t2, 28
-slli a7, t2, 36
+mulhu a6, t2, s4
+mul a7, t2, s4
 xor a6, a6, a7
-srli a7, t2, 34
+mulhu a7, t2, s5
 xor a6, a6, a7
-slli a7, t2, 30
+mul a7, t2, s5
 xor a6, a6, a7
-srli a7, t2, 39
+mulhu a7, t2, s6
 xor a6, a6, a7
-slli a7, t2, 25
+mul a7, t2, s6
 xor a6, a6, a7
 add t1, t1, a6
 or a6, t2, t3
@@ -2261,24 +2291,24 @@ and a7, t2, t3
 or a6, a6, a7
 add t1, t1, a6
 ld a6, 104(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 64(a3)
 add a5, a5, a7
 ld a6, 0(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -2287,15 +2317,15 @@ ld a7, 120(a3)
 add a5, a5, a7
 sd a5, 120(a3)
 srli a6, t5, 14
-slli a7, t5, 50
+mul a7, t5, s1
 xor a6, a6, a7
 srli a7, t5, 18
 xor a6, a6, a7
-slli a7, t5, 46
+mul a7, t5, s2
 xor a6, a6, a7
 srli a7, t5, 41
 xor a6, a6, a7
-slli a7, t5, 23
+mul a7, t5, s3
 xor a6, a6, a7
 add t0, t0, a6
 xor a6, t6, a4
@@ -2311,16 +2341,16 @@ add a6, a6, a7
 add t0, t0, a6
 add t0, t0, a5
 add t4, t4, t0
-srli a6, t1, 28
-slli a7, t1, 36
+mulhu a6, t1, s4
+mul a7, t1, s4
 xor a6, a6, a7
-srli a7, t1, 34
+mulhu a7, t1, s5
 xor a6, a6, a7
-slli a7, t1, 30
+mul a7, t1, s5
 xor a6, a6, a7
-srli a7, t1, 39
+mulhu a7, t1, s6
 xor a6, a6, a7
-slli a7, t1, 25
+mul a7, t1, s6
 xor a6, a6, a7
 add t0, t0, a6
 or a6, t1, t2
@@ -2329,24 +2359,24 @@ and a7, t1, t2
 or a6, a6, a7
 add t0, t0, a6
 ld a6, 112(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 72(a3)
 add a5, a5, a7
 ld a6, 8(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -2355,15 +2385,15 @@ ld a7, 0(a3)
 add a5, a5, a7
 sd a5, 0(a3)
 srli a6, t4, 14
-slli a7, t4, 50
+mul a7, t4, s1
 xor a6, a6, a7
 srli a7, t4, 18
 xor a6, a6, a7
-slli a7, t4, 46
+mul a7, t4, s2
 xor a6, a6, a7
 srli a7, t4, 41
 xor a6, a6, a7
-slli a7, t4, 23
+mul a7, t4, s3
 xor a6, a6, a7
 add a4, a4, a6
 xor a6, t5, t6
@@ -2379,16 +2409,16 @@ add a6, a6, a7
 add a4, a4, a6
 add a4, a4, a5
 add t3, t3, a4
-srli a6, t0, 28
-slli a7, t0, 36
+mulhu a6, t0, s4
+mul a7, t0, s4
 xor a6, a6, a7
-srli a7, t0, 34
+mulhu a7, t0, s5
 xor a6, a6, a7
-slli a7, t0, 30
+mul a7, t0, s5
 xor a6, a6, a7
-srli a7, t0, 39
+mulhu a7, t0, s6
 xor a6, a6, a7
-slli a7, t0, 25
+mul a7, t0, s6
 xor a6, a6, a7
 add a4, a4, a6
 or a6, t0, t1
@@ -2397,24 +2427,24 @@ and a7, t0, t1
 or a6, a6, a7
 add a4, a4, a6
 ld a6, 120(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 80(a3)
 add a5, a5, a7
 ld a6, 16(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -2423,15 +2453,15 @@ ld a7, 8(a3)
 add a5, a5, a7
 sd a5, 8(a3)
 srli a6, t3, 14
-slli a7, t3, 50
+mul a7, t3, s1
 xor a6, a6, a7
 srli a7, t3, 18
 xor a6, a6, a7
-slli a7, t3, 46
+mul a7, t3, s2
 xor a6, a6, a7
 srli a7, t3, 41
 xor a6, a6, a7
-slli a7, t3, 23
+mul a7, t3, s3
 xor a6, a6, a7
 add t6, t6, a6
 xor a6, t4, t5
@@ -2447,16 +2477,16 @@ add a6, a6, a7
 add t6, t6, a6
 add t6, t6, a5
 add t2, t2, t6
-srli a6, a4, 28
-slli a7, a4, 36
+mulhu a6, a4, s4
+mul a7, a4, s4
 xor a6, a6, a7
-srli a7, a4, 34
+mulhu a7, a4, s5
 xor a6, a6, a7
-slli a7, a4, 30
+mul a7, a4, s5
 xor a6, a6, a7
-srli a7, a4, 39
+mulhu a7, a4, s6
 xor a6, a6, a7
-slli a7, a4, 25
+mul a7, a4, s6
 xor a6, a6, a7
 add t6, t6, a6
 or a6, a4, t0
@@ -2465,24 +2495,24 @@ and a7, a4, t0
 or a6, a6, a7
 add t6, t6, a6
 ld a6, 0(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 88(a3)
 add a5, a5, a7
 ld a6, 24(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -2491,15 +2521,15 @@ ld a7, 16(a3)
 add a5, a5, a7
 sd a5, 16(a3)
 srli a6, t2, 14
-slli a7, t2, 50
+mul a7, t2, s1
 xor a6, a6, a7
 srli a7, t2, 18
 xor a6, a6, a7
-slli a7, t2, 46
+mul a7, t2, s2
 xor a6, a6, a7
 srli a7, t2, 41
 xor a6, a6, a7
-slli a7, t2, 23
+mul a7, t2, s3
 xor a6, a6, a7
 add t5, t5, a6
 xor a6, t3, t4
@@ -2515,16 +2545,16 @@ add a6, a6, a7
 add t5, t5, a6
 add t5, t5, a5
 add t1, t1, t5
-srli a6, t6, 28
-slli a7, t6, 36
+mulhu a6, t6, s4
+mul a7, t6, s4
 xor a6, a6, a7
-srli a7, t6, 34
+mulhu a7, t6, s5
 xor a6, a6, a7
-slli a7, t6, 30
+mul a7, t6, s5
 xor a6, a6, a7
-srli a7, t6, 39
+mulhu a7, t6, s6
 xor a6, a6, a7
-slli a7, t6, 25
+mul a7, t6, s6
 xor a6, a6, a7
 add t5, t5, a6
 or a6, t6, a4
@@ -2533,24 +2563,24 @@ and a7, t6, a4
 or a6, a6, a7
 add t5, t5, a6
 ld a6, 8(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 96(a3)
 add a5, a5, a7
 ld a6, 32(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -2559,15 +2589,15 @@ ld a7, 24(a3)
 add a5, a5, a7
 sd a5, 24(a3)
 srli a6, t1, 14
-slli a7, t1, 50
+mul a7, t1, s1
 xor a6, a6, a7
 srli a7, t1, 18
 xor a6, a6, a7
-slli a7, t1, 46
+mul a7, t1, s2
 xor a6, a6, a7
 srli a7, t1, 41
 xor a6, a6, a7
-slli a7, t1, 23
+mul a7, t1, s3
 xor a6, a6, a7
 add t4, t4, a6
 xor a6, t2, t3
@@ -2583,16 +2613,16 @@ add a6, a6, a7
 add t4, t4, a6
 add t4, t4, a5
 add t0, t0, t4
-srli a6, t5, 28
-slli a7, t5, 36
+mulhu a6, t5, s4
+mul a7, t5, s4
 xor a6, a6, a7
-srli a7, t5, 34
+mulhu a7, t5, s5
 xor a6, a6, a7
-slli a7, t5, 30
+mul a7, t5, s5
 xor a6, a6, a7
-srli a7, t5, 39
+mulhu a7, t5, s6
 xor a6, a6, a7
-slli a7, t5, 25
+mul a7, t5, s6
 xor a6, a6, a7
 add t4, t4, a6
 or a6, t5, t6
@@ -2601,24 +2631,24 @@ and a7, t5, t6
 or a6, a6, a7
 add t4, t4, a6
 ld a6, 16(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 104(a3)
 add a5, a5, a7
 ld a6, 40(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -2627,15 +2657,15 @@ ld a7, 32(a3)
 add a5, a5, a7
 sd a5, 32(a3)
 srli a6, t0, 14
-slli a7, t0, 50
+mul a7, t0, s1
 xor a6, a6, a7
 srli a7, t0, 18
 xor a6, a6, a7
-slli a7, t0, 46
+mul a7, t0, s2
 xor a6, a6, a7
 srli a7, t0, 41
 xor a6, a6, a7
-slli a7, t0, 23
+mul a7, t0, s3
 xor a6, a6, a7
 add t3, t3, a6
 xor a6, t1, t2
@@ -2651,16 +2681,16 @@ add a6, a6, a7
 add t3, t3, a6
 add t3, t3, a5
 add a4, a4, t3
-srli a6, t4, 28
-slli a7, t4, 36
+mulhu a6, t4, s4
+mul a7, t4, s4
 xor a6, a6, a7
-srli a7, t4, 34
+mulhu a7, t4, s5
 xor a6, a6, a7
-slli a7, t4, 30
+mul a7, t4, s5
 xor a6, a6, a7
-srli a7, t4, 39
+mulhu a7, t4, s6
 xor a6, a6, a7
-slli a7, t4, 25
+mul a7, t4, s6
 xor a6, a6, a7
 add t3, t3, a6
 or a6, t4, t5
@@ -2669,24 +2699,24 @@ and a7, t4, t5
 or a6, a6, a7
 add t3, t3, a6
 ld a6, 24(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 112(a3)
 add a5, a5, a7
 ld a6, 48(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -2695,15 +2725,15 @@ ld a7, 40(a3)
 add a5, a5, a7
 sd a5, 40(a3)
 srli a6, a4, 14
-slli a7, a4, 50
+mul a7, a4, s1
 xor a6, a6, a7
 srli a7, a4, 18
 xor a6, a6, a7
-slli a7, a4, 46
+mul a7, a4, s2
 xor a6, a6, a7
 srli a7, a4, 41
 xor a6, a6, a7
-slli a7, a4, 23
+mul a7, a4, s3
 xor a6, a6, a7
 add t2, t2, a6
 xor a6, t0, t1
@@ -2719,16 +2749,16 @@ add a6, a6, a7
 add t2, t2, a6
 add t2, t2, a5
 add t6, t6, t2
-srli a6, t3, 28
-slli a7, t3, 36
+mulhu a6, t3, s4
+mul a7, t3, s4
 xor a6, a6, a7
-srli a7, t3, 34
+mulhu a7, t3, s5
 xor a6, a6, a7
-slli a7, t3, 30
+mul a7, t3, s5
 xor a6, a6, a7
-srli a7, t3, 39
+mulhu a7, t3, s6
 xor a6, a6, a7
-slli a7, t3, 25
+mul a7, t3, s6
 xor a6, a6, a7
 add t2, t2, a6
 or a6, t3, t4
@@ -2737,24 +2767,24 @@ and a7, t3, t4
 or a6, a6, a7
 add t2, t2, a6
 ld a6, 32(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 120(a3)
 add a5, a5, a7
 ld a6, 56(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -2763,15 +2793,15 @@ ld a7, 48(a3)
 add a5, a5, a7
 sd a5, 48(a3)
 srli a6, t6, 14
-slli a7, t6, 50
+mul a7, t6, s1
 xor a6, a6, a7
 srli a7, t6, 18
 xor a6, a6, a7
-slli a7, t6, 46
+mul a7, t6, s2
 xor a6, a6, a7
 srli a7, t6, 41
 xor a6, a6, a7
-slli a7, t6, 23
+mul a7, t6, s3
 xor a6, a6, a7
 add t1, t1, a6
 xor a6, a4, t0
@@ -2787,16 +2817,16 @@ add a6, a6, a7
 add t1, t1, a6
 add t1, t1, a5
 add t5, t5, t1
-srli a6, t2, 28
-slli a7, t2, 36
+mulhu a6, t2, s4
+mul a7, t2, s4
 xor a6, a6, a7
-srli a7, t2, 34
+mulhu a7, t2, s5
 xor a6, a6, a7
-slli a7, t2, 30
+mul a7, t2, s5
 xor a6, a6, a7
-srli a7, t2, 39
+mulhu a7, t2, s6
 xor a6, a6, a7
-slli a7, t2, 25
+mul a7, t2, s6
 xor a6, a6, a7
 add t1, t1, a6
 or a6, t2, t3
@@ -2805,24 +2835,24 @@ and a7, t2, t3
 or a6, a6, a7
 add t1, t1, a6
 ld a6, 40(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 0(a3)
 add a5, a5, a7
 ld a6, 64(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -2831,15 +2861,15 @@ ld a7, 56(a3)
 add a5, a5, a7
 sd a5, 56(a3)
 srli a6, t5, 14
-slli a7, t5, 50
+mul a7, t5, s1
 xor a6, a6, a7
 srli a7, t5, 18
 xor a6, a6, a7
-slli a7, t5, 46
+mul a7, t5, s2
 xor a6, a6, a7
 srli a7, t5, 41
 xor a6, a6, a7
-slli a7, t5, 23
+mul a7, t5, s3
 xor a6, a6, a7
 add t0, t0, a6
 xor a6, t6, a4
@@ -2855,16 +2885,16 @@ add a6, a6, a7
 add t0, t0, a6
 add t0, t0, a5
 add t4, t4, t0
-srli a6, t1, 28
-slli a7, t1, 36
+mulhu a6, t1, s4
+mul a7, t1, s4
 xor a6, a6, a7
-srli a7, t1, 34
+mulhu a7, t1, s5
 xor a6, a6, a7
-slli a7, t1, 30
+mul a7, t1, s5
 xor a6, a6, a7
-srli a7, t1, 39
+mulhu a7, t1, s6
 xor a6, a6, a7
-slli a7, t1, 25
+mul a7, t1, s6
 xor a6, a6, a7
 add t0, t0, a6
 or a6, t1, t2
@@ -2873,24 +2903,24 @@ and a7, t1, t2
 or a6, a6, a7
 add t0, t0, a6
 ld a6, 48(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 8(a3)
 add a5, a5, a7
 ld a6, 72(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -2899,15 +2929,15 @@ ld a7, 64(a3)
 add a5, a5, a7
 sd a5, 64(a3)
 srli a6, t4, 14
-slli a7, t4, 50
+mul a7, t4, s1
 xor a6, a6, a7
 srli a7, t4, 18
 xor a6, a6, a7
-slli a7, t4, 46
+mul a7, t4, s2
 xor a6, a6, a7
 srli a7, t4, 41
 xor a6, a6, a7
-slli a7, t4, 23
+mul a7, t4, s3
 xor a6, a6, a7
 add a4, a4, a6
 xor a6, t5, t6
@@ -2923,16 +2953,16 @@ add a6, a6, a7
 add a4, a4, a6
 add a4, a4, a5
 add t3, t3, a4
-srli a6, t0, 28
-slli a7, t0, 36
+mulhu a6, t0, s4
+mul a7, t0, s4
 xor a6, a6, a7
-srli a7, t0, 34
+mulhu a7, t0, s5
 xor a6, a6, a7
-slli a7, t0, 30
+mul a7, t0, s5
 xor a6, a6, a7
-srli a7, t0, 39
+mulhu a7, t0, s6
 xor a6, a6, a7
-slli a7, t0, 25
+mul a7, t0, s6
 xor a6, a6, a7
 add a4, a4, a6
 or a6, t0, t1
@@ -2941,24 +2971,24 @@ and a7, t0, t1
 or a6, a6, a7
 add a4, a4, a6
 ld a6, 56(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 16(a3)
 add a5, a5, a7
 ld a6, 80(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -2967,15 +2997,15 @@ ld a7, 72(a3)
 add a5, a5, a7
 sd a5, 72(a3)
 srli a6, t3, 14
-slli a7, t3, 50
+mul a7, t3, s1
 xor a6, a6, a7
 srli a7, t3, 18
 xor a6, a6, a7
-slli a7, t3, 46
+mul a7, t3, s2
 xor a6, a6, a7
 srli a7, t3, 41
 xor a6, a6, a7
-slli a7, t3, 23
+mul a7, t3, s3
 xor a6, a6, a7
 add t6, t6, a6
 xor a6, t4, t5
@@ -2991,16 +3021,16 @@ add a6, a6, a7
 add t6, t6, a6
 add t6, t6, a5
 add t2, t2, t6
-srli a6, a4, 28
-slli a7, a4, 36
+mulhu a6, a4, s4
+mul a7, a4, s4
 xor a6, a6, a7
-srli a7, a4, 34
+mulhu a7, a4, s5
 xor a6, a6, a7
-slli a7, a4, 30
+mul a7, a4, s5
 xor a6, a6, a7
-srli a7, a4, 39
+mulhu a7, a4, s6
 xor a6, a6, a7
-slli a7, a4, 25
+mul a7, a4, s6
 xor a6, a6, a7
 add t6, t6, a6
 or a6, a4, t0
@@ -3009,24 +3039,24 @@ and a7, a4, t0
 or a6, a6, a7
 add t6, t6, a6
 ld a6, 64(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 24(a3)
 add a5, a5, a7
 ld a6, 88(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -3035,15 +3065,15 @@ ld a7, 80(a3)
 add a5, a5, a7
 sd a5, 80(a3)
 srli a6, t2, 14
-slli a7, t2, 50
+mul a7, t2, s1
 xor a6, a6, a7
 srli a7, t2, 18
 xor a6, a6, a7
-slli a7, t2, 46
+mul a7, t2, s2
 xor a6, a6, a7
 srli a7, t2, 41
 xor a6, a6, a7
-slli a7, t2, 23
+mul a7, t2, s3
 xor a6, a6, a7
 add t5, t5, a6
 xor a6, t3, t4
@@ -3059,16 +3089,16 @@ add a6, a6, a7
 add t5, t5, a6
 add t5, t5, a5
 add t1, t1, t5
-srli a6, t6, 28
-slli a7, t6, 36
+mulhu a6, t6, s4
+mul a7, t6, s4
 xor a6, a6, a7
-srli a7, t6, 34
+mulhu a7, t6, s5
 xor a6, a6, a7
-slli a7, t6, 30
+mul a7, t6, s5
 xor a6, a6, a7
-srli a7, t6, 39
+mulhu a7, t6, s6
 xor a6, a6, a7
-slli a7, t6, 25
+mul a7, t6, s6
 xor a6, a6, a7
 add t5, t5, a6
 or a6, t6, a4
@@ -3077,24 +3107,24 @@ and a7, t6, a4
 or a6, a6, a7
 add t5, t5, a6
 ld a6, 72(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 32(a3)
 add a5, a5, a7
 ld a6, 96(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -3103,15 +3133,15 @@ ld a7, 88(a3)
 add a5, a5, a7
 sd a5, 88(a3)
 srli a6, t1, 14
-slli a7, t1, 50
+mul a7, t1, s1
 xor a6, a6, a7
 srli a7, t1, 18
 xor a6, a6, a7
-slli a7, t1, 46
+mul a7, t1, s2
 xor a6, a6, a7
 srli a7, t1, 41
 xor a6, a6, a7
-slli a7, t1, 23
+mul a7, t1, s3
 xor a6, a6, a7
 add t4, t4, a6
 xor a6, t2, t3
@@ -3127,16 +3157,16 @@ add a6, a6, a7
 add t4, t4, a6
 add t4, t4, a5
 add t0, t0, t4
-srli a6, t5, 28
-slli a7, t5, 36
+mulhu a6, t5, s4
+mul a7, t5, s4
 xor a6, a6, a7
-srli a7, t5, 34
+mulhu a7, t5, s5
 xor a6, a6, a7
-slli a7, t5, 30
+mul a7, t5, s5
 xor a6, a6, a7
-srli a7, t5, 39
+mulhu a7, t5, s6
 xor a6, a6, a7
-slli a7, t5, 25
+mul a7, t5, s6
 xor a6, a6, a7
 add t4, t4, a6
 or a6, t5, t6
@@ -3145,24 +3175,24 @@ and a7, t5, t6
 or a6, a6, a7
 add t4, t4, a6
 ld a6, 80(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 40(a3)
 add a5, a5, a7
 ld a6, 104(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -3171,15 +3201,15 @@ ld a7, 96(a3)
 add a5, a5, a7
 sd a5, 96(a3)
 srli a6, t0, 14
-slli a7, t0, 50
+mul a7, t0, s1
 xor a6, a6, a7
 srli a7, t0, 18
 xor a6, a6, a7
-slli a7, t0, 46
+mul a7, t0, s2
 xor a6, a6, a7
 srli a7, t0, 41
 xor a6, a6, a7
-slli a7, t0, 23
+mul a7, t0, s3
 xor a6, a6, a7
 add t3, t3, a6
 xor a6, t1, t2
@@ -3195,16 +3225,16 @@ add a6, a6, a7
 add t3, t3, a6
 add t3, t3, a5
 add a4, a4, t3
-srli a6, t4, 28
-slli a7, t4, 36
+mulhu a6, t4, s4
+mul a7, t4, s4
 xor a6, a6, a7
-srli a7, t4, 34
+mulhu a7, t4, s5
 xor a6, a6, a7
-slli a7, t4, 30
+mul a7, t4, s5
 xor a6, a6, a7
-srli a7, t4, 39
+mulhu a7, t4, s6
 xor a6, a6, a7
-slli a7, t4, 25
+mul a7, t4, s6
 xor a6, a6, a7
 add t3, t3, a6
 or a6, t4, t5
@@ -3213,24 +3243,24 @@ and a7, t4, t5
 or a6, a6, a7
 add t3, t3, a6
 ld a6, 88(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 48(a3)
 add a5, a5, a7
 ld a6, 112(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -3239,15 +3269,15 @@ ld a7, 104(a3)
 add a5, a5, a7
 sd a5, 104(a3)
 srli a6, a4, 14
-slli a7, a4, 50
+mul a7, a4, s1
 xor a6, a6, a7
 srli a7, a4, 18
 xor a6, a6, a7
-slli a7, a4, 46
+mul a7, a4, s2
 xor a6, a6, a7
 srli a7, a4, 41
 xor a6, a6, a7
-slli a7, a4, 23
+mul a7, a4, s3
 xor a6, a6, a7
 add t2, t2, a6
 xor a6, t0, t1
@@ -3263,16 +3293,16 @@ add a6, a6, a7
 add t2, t2, a6
 add t2, t2, a5
 add t6, t6, t2
-srli a6, t3, 28
-slli a7, t3, 36
+mulhu a6, t3, s4
+mul a7, t3, s4
 xor a6, a6, a7
-srli a7, t3, 34
+mulhu a7, t3, s5
 xor a6, a6, a7
-slli a7, t3, 30
+mul a7, t3, s5
 xor a6, a6, a7
-srli a7, t3, 39
+mulhu a7, t3, s6
 xor a6, a6, a7
-slli a7, t3, 25
+mul a7, t3, s6
 xor a6, a6, a7
 add t2, t2, a6
 or a6, t3, t4
@@ -3281,24 +3311,24 @@ and a7, t3, t4
 or a6, a6, a7
 add t2, t2, a6
 ld a6, 96(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 56(a3)
 add a5, a5, a7
 ld a6, 120(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -3307,15 +3337,15 @@ ld a7, 112(a3)
 add a5, a5, a7
 sd a5, 112(a3)
 srli a6, t6, 14
-slli a7, t6, 50
+mul a7, t6, s1
 xor a6, a6, a7
 srli a7, t6, 18
 xor a6, a6, a7
-slli a7, t6, 46
+mul a7, t6, s2
 xor a6, a6, a7
 srli a7, t6, 41
 xor a6, a6, a7
-slli a7, t6, 23
+mul a7, t6, s3
 xor a6, a6, a7
 add t1, t1, a6
 xor a6, a4, t0
@@ -3331,16 +3361,16 @@ add a6, a6, a7
 add t1, t1, a6
 add t1, t1, a5
 add t5, t5, t1
-srli a6, t2, 28
-slli a7, t2, 36
+mulhu a6, t2, s4
+mul a7, t2, s4
 xor a6, a6, a7
-srli a7, t2, 34
+mulhu a7, t2, s5
 xor a6, a6, a7
-slli a7, t2, 30
+mul a7, t2, s5
 xor a6, a6, a7
-srli a7, t2, 39
+mulhu a7, t2, s6
 xor a6, a6, a7
-slli a7, t2, 25
+mul a7, t2, s6
 xor a6, a6, a7
 add t1, t1, a6
 or a6, t2, t3
@@ -3349,24 +3379,24 @@ and a7, t2, t3
 or a6, a6, a7
 add t1, t1, a6
 ld a6, 104(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 64(a3)
 add a5, a5, a7
 ld a6, 0(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -3375,15 +3405,15 @@ ld a7, 120(a3)
 add a5, a5, a7
 sd a5, 120(a3)
 srli a6, t5, 14
-slli a7, t5, 50
+mul a7, t5, s1
 xor a6, a6, a7
 srli a7, t5, 18
 xor a6, a6, a7
-slli a7, t5, 46
+mul a7, t5, s2
 xor a6, a6, a7
 srli a7, t5, 41
 xor a6, a6, a7
-slli a7, t5, 23
+mul a7, t5, s3
 xor a6, a6, a7
 add t0, t0, a6
 xor a6, t6, a4
@@ -3399,16 +3429,16 @@ add a6, a6, a7
 add t0, t0, a6
 add t0, t0, a5
 add t4, t4, t0
-srli a6, t1, 28
-slli a7, t1, 36
+mulhu a6, t1, s4
+mul a7, t1, s4
 xor a6, a6, a7
-srli a7, t1, 34
+mulhu a7, t1, s5
 xor a6, a6, a7
-slli a7, t1, 30
+mul a7, t1, s5
 xor a6, a6, a7
-srli a7, t1, 39
+mulhu a7, t1, s6
 xor a6, a6, a7
-slli a7, t1, 25
+mul a7, t1, s6
 xor a6, a6, a7
 add t0, t0, a6
 or a6, t1, t2
@@ -3417,24 +3447,24 @@ and a7, t1, t2
 or a6, a6, a7
 add t0, t0, a6
 ld a6, 112(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 72(a3)
 add a5, a5, a7
 ld a6, 8(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -3443,15 +3473,15 @@ ld a7, 0(a3)
 add a5, a5, a7
 sd a5, 0(a3)
 srli a6, t4, 14
-slli a7, t4, 50
+mul a7, t4, s1
 xor a6, a6, a7
 srli a7, t4, 18
 xor a6, a6, a7
-slli a7, t4, 46
+mul a7, t4, s2
 xor a6, a6, a7
 srli a7, t4, 41
 xor a6, a6, a7
-slli a7, t4, 23
+mul a7, t4, s3
 xor a6, a6, a7
 add a4, a4, a6
 xor a6, t5, t6
@@ -3467,16 +3497,16 @@ add a6, a6, a7
 add a4, a4, a6
 add a4, a4, a5
 add t3, t3, a4
-srli a6, t0, 28
-slli a7, t0, 36
+mulhu a6, t0, s4
+mul a7, t0, s4
 xor a6, a6, a7
-srli a7, t0, 34
+mulhu a7, t0, s5
 xor a6, a6, a7
-slli a7, t0, 30
+mul a7, t0, s5
 xor a6, a6, a7
-srli a7, t0, 39
+mulhu a7, t0, s6
 xor a6, a6, a7
-slli a7, t0, 25
+mul a7, t0, s6
 xor a6, a6, a7
 add a4, a4, a6
 or a6, t0, t1
@@ -3485,24 +3515,24 @@ and a7, t0, t1
 or a6, a6, a7
 add a4, a4, a6
 ld a6, 120(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 80(a3)
 add a5, a5, a7
 ld a6, 16(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -3511,15 +3541,15 @@ ld a7, 8(a3)
 add a5, a5, a7
 sd a5, 8(a3)
 srli a6, t3, 14
-slli a7, t3, 50
+mul a7, t3, s1
 xor a6, a6, a7
 srli a7, t3, 18
 xor a6, a6, a7
-slli a7, t3, 46
+mul a7, t3, s2
 xor a6, a6, a7
 srli a7, t3, 41
 xor a6, a6, a7
-slli a7, t3, 23
+mul a7, t3, s3
 xor a6, a6, a7
 add t6, t6, a6
 xor a6, t4, t5
@@ -3535,16 +3565,16 @@ add a6, a6, a7
 add t6, t6, a6
 add t6, t6, a5
 add t2, t2, t6
-srli a6, a4, 28
-slli a7, a4, 36
+mulhu a6, a4, s4
+mul a7, a4, s4
 xor a6, a6, a7
-srli a7, a4, 34
+mulhu a7, a4, s5
 xor a6, a6, a7
-slli a7, a4, 30
+mul a7, a4, s5
 xor a6, a6, a7
-srli a7, a4, 39
+mulhu a7, a4, s6
 xor a6, a6, a7
-slli a7, a4, 25
+mul a7, a4, s6
 xor a6, a6, a7
 add t6, t6, a6
 or a6, a4, t0
@@ -3553,24 +3583,24 @@ and a7, a4, t0
 or a6, a6, a7
 add t6, t6, a6
 ld a6, 0(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 88(a3)
 add a5, a5, a7
 ld a6, 24(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -3579,15 +3609,15 @@ ld a7, 16(a3)
 add a5, a5, a7
 sd a5, 16(a3)
 srli a6, t2, 14
-slli a7, t2, 50
+mul a7, t2, s1
 xor a6, a6, a7
 srli a7, t2, 18
 xor a6, a6, a7
-slli a7, t2, 46
+mul a7, t2, s2
 xor a6, a6, a7
 srli a7, t2, 41
 xor a6, a6, a7
-slli a7, t2, 23
+mul a7, t2, s3
 xor a6, a6, a7
 add t5, t5, a6
 xor a6, t3, t4
@@ -3603,16 +3633,16 @@ add a6, a6, a7
 add t5, t5, a6
 add t5, t5, a5
 add t1, t1, t5
-srli a6, t6, 28
-slli a7, t6, 36
+mulhu a6, t6, s4
+mul a7, t6, s4
 xor a6, a6, a7
-srli a7, t6, 34
+mulhu a7, t6, s5
 xor a6, a6, a7
-slli a7, t6, 30
+mul a7, t6, s5
 xor a6, a6, a7
-srli a7, t6, 39
+mulhu a7, t6, s6
 xor a6, a6, a7
-slli a7, t6, 25
+mul a7, t6, s6
 xor a6, a6, a7
 add t5, t5, a6
 or a6, t6, a4
@@ -3621,24 +3651,24 @@ and a7, t6, a4
 or a6, a6, a7
 add t5, t5, a6
 ld a6, 8(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 96(a3)
 add a5, a5, a7
 ld a6, 32(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -3647,15 +3677,15 @@ ld a7, 24(a3)
 add a5, a5, a7
 sd a5, 24(a3)
 srli a6, t1, 14
-slli a7, t1, 50
+mul a7, t1, s1
 xor a6, a6, a7
 srli a7, t1, 18
 xor a6, a6, a7
-slli a7, t1, 46
+mul a7, t1, s2
 xor a6, a6, a7
 srli a7, t1, 41
 xor a6, a6, a7
-slli a7, t1, 23
+mul a7, t1, s3
 xor a6, a6, a7
 add t4, t4, a6
 xor a6, t2, t3
@@ -3671,16 +3701,16 @@ add a6, a6, a7
 add t4, t4, a6
 add t4, t4, a5
 add t0, t0, t4
-srli a6, t5, 28
-slli a7, t5, 36
+mulhu a6, t5, s4
+mul a7, t5, s4
 xor a6, a6, a7
-srli a7, t5, 34
+mulhu a7, t5, s5
 xor a6, a6, a7
-slli a7, t5, 30
+mul a7, t5, s5
 xor a6, a6, a7
-srli a7, t5, 39
+mulhu a7, t5, s6
 xor a6, a6, a7
-slli a7, t5, 25
+mul a7, t5, s6
 xor a6, a6, a7
 add t4, t4, a6
 or a6, t5, t6
@@ -3689,24 +3719,24 @@ and a7, t5, t6
 or a6, a6, a7
 add t4, t4, a6
 ld a6, 16(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 104(a3)
 add a5, a5, a7
 ld a6, 40(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -3715,15 +3745,15 @@ ld a7, 32(a3)
 add a5, a5, a7
 sd a5, 32(a3)
 srli a6, t0, 14
-slli a7, t0, 50
+mul a7, t0, s1
 xor a6, a6, a7
 srli a7, t0, 18
 xor a6, a6, a7
-slli a7, t0, 46
+mul a7, t0, s2
 xor a6, a6, a7
 srli a7, t0, 41
 xor a6, a6, a7
-slli a7, t0, 23
+mul a7, t0, s3
 xor a6, a6, a7
 add t3, t3, a6
 xor a6, t1, t2
@@ -3739,16 +3769,16 @@ add a6, a6, a7
 add t3, t3, a6
 add t3, t3, a5
 add a4, a4, t3
-srli a6, t4, 28
-slli a7, t4, 36
+mulhu a6, t4, s4
+mul a7, t4, s4
 xor a6, a6, a7
-srli a7, t4, 34
+mulhu a7, t4, s5
 xor a6, a6, a7
-slli a7, t4, 30
+mul a7, t4, s5
 xor a6, a6, a7
-srli a7, t4, 39
+mulhu a7, t4, s6
 xor a6, a6, a7
-slli a7, t4, 25
+mul a7, t4, s6
 xor a6, a6, a7
 add t3, t3, a6
 or a6, t4, t5
@@ -3757,24 +3787,24 @@ and a7, t4, t5
 or a6, a6, a7
 add t3, t3, a6
 ld a6, 24(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 112(a3)
 add a5, a5, a7
 ld a6, 48(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -3783,15 +3813,15 @@ ld a7, 40(a3)
 add a5, a5, a7
 sd a5, 40(a3)
 srli a6, a4, 14
-slli a7, a4, 50
+mul a7, a4, s1
 xor a6, a6, a7
 srli a7, a4, 18
 xor a6, a6, a7
-slli a7, a4, 46
+mul a7, a4, s2
 xor a6, a6, a7
 srli a7, a4, 41
 xor a6, a6, a7
-slli a7, a4, 23
+mul a7, a4, s3
 xor a6, a6, a7
 add t2, t2, a6
 xor a6, t0, t1
@@ -3807,16 +3837,16 @@ add a6, a6, a7
 add t2, t2, a6
 add t2, t2, a5
 add t6, t6, t2
-srli a6, t3, 28
-slli a7, t3, 36
+mulhu a6, t3, s4
+mul a7, t3, s4
 xor a6, a6, a7
-srli a7, t3, 34
+mulhu a7, t3, s5
 xor a6, a6, a7
-slli a7, t3, 30
+mul a7, t3, s5
 xor a6, a6, a7
-srli a7, t3, 39
+mulhu a7, t3, s6
 xor a6, a6, a7
-slli a7, t3, 25
+mul a7, t3, s6
 xor a6, a6, a7
 add t2, t2, a6
 or a6, t3, t4
@@ -3825,24 +3855,24 @@ and a7, t3, t4
 or a6, a6, a7
 add t2, t2, a6
 ld a6, 32(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 120(a3)
 add a5, a5, a7
 ld a6, 56(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -3851,15 +3881,15 @@ ld a7, 48(a3)
 add a5, a5, a7
 sd a5, 48(a3)
 srli a6, t6, 14
-slli a7, t6, 50
+mul a7, t6, s1
 xor a6, a6, a7
 srli a7, t6, 18
 xor a6, a6, a7
-slli a7, t6, 46
+mul a7, t6, s2
 xor a6, a6, a7
 srli a7, t6, 41
 xor a6, a6, a7
-slli a7, t6, 23
+mul a7, t6, s3
 xor a6, a6, a7
 add t1, t1, a6
 xor a6, a4, t0
@@ -3875,16 +3905,16 @@ add a6, a6, a7
 add t1, t1, a6
 add t1, t1, a5
 add t5, t5, t1
-srli a6, t2, 28
-slli a7, t2, 36
+mulhu a6, t2, s4
+mul a7, t2, s4
 xor a6, a6, a7
-srli a7, t2, 34
+mulhu a7, t2, s5
 xor a6, a6, a7
-slli a7, t2, 30
+mul a7, t2, s5
 xor a6, a6, a7
-srli a7, t2, 39
+mulhu a7, t2, s6
 xor a6, a6, a7
-slli a7, t2, 25
+mul a7, t2, s6
 xor a6, a6, a7
 add t1, t1, a6
 or a6, t2, t3
@@ -3893,24 +3923,24 @@ and a7, t2, t3
 or a6, a6, a7
 add t1, t1, a6
 ld a6, 40(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 0(a3)
 add a5, a5, a7
 ld a6, 64(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -3919,15 +3949,15 @@ ld a7, 56(a3)
 add a5, a5, a7
 sd a5, 56(a3)
 srli a6, t5, 14
-slli a7, t5, 50
+mul a7, t5, s1
 xor a6, a6, a7
 srli a7, t5, 18
 xor a6, a6, a7
-slli a7, t5, 46
+mul a7, t5, s2
 xor a6, a6, a7
 srli a7, t5, 41
 xor a6, a6, a7
-slli a7, t5, 23
+mul a7, t5, s3
 xor a6, a6, a7
 add t0, t0, a6
 xor a6, t6, a4
@@ -3943,16 +3973,16 @@ add a6, a6, a7
 add t0, t0, a6
 add t0, t0, a5
 add t4, t4, t0
-srli a6, t1, 28
-slli a7, t1, 36
+mulhu a6, t1, s4
+mul a7, t1, s4
 xor a6, a6, a7
-srli a7, t1, 34
+mulhu a7, t1, s5
 xor a6, a6, a7
-slli a7, t1, 30
+mul a7, t1, s5
 xor a6, a6, a7
-srli a7, t1, 39
+mulhu a7, t1, s6
 xor a6, a6, a7
-slli a7, t1, 25
+mul a7, t1, s6
 xor a6, a6, a7
 add t0, t0, a6
 or a6, t1, t2
@@ -3961,24 +3991,24 @@ and a7, t1, t2
 or a6, a6, a7
 add t0, t0, a6
 ld a6, 48(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 8(a3)
 add a5, a5, a7
 ld a6, 72(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -3987,15 +4017,15 @@ ld a7, 64(a3)
 add a5, a5, a7
 sd a5, 64(a3)
 srli a6, t4, 14
-slli a7, t4, 50
+mul a7, t4, s1
 xor a6, a6, a7
 srli a7, t4, 18
 xor a6, a6, a7
-slli a7, t4, 46
+mul a7, t4, s2
 xor a6, a6, a7
 srli a7, t4, 41
 xor a6, a6, a7
-slli a7, t4, 23
+mul a7, t4, s3
 xor a6, a6, a7
 add a4, a4, a6
 xor a6, t5, t6
@@ -4011,16 +4041,16 @@ add a6, a6, a7
 add a4, a4, a6
 add a4, a4, a5
 add t3, t3, a4
-srli a6, t0, 28
-slli a7, t0, 36
+mulhu a6, t0, s4
+mul a7, t0, s4
 xor a6, a6, a7
-srli a7, t0, 34
+mulhu a7, t0, s5
 xor a6, a6, a7
-slli a7, t0, 30
+mul a7, t0, s5
 xor a6, a6, a7
-srli a7, t0, 39
+mulhu a7, t0, s6
 xor a6, a6, a7
-slli a7, t0, 25
+mul a7, t0, s6
 xor a6, a6, a7
 add a4, a4, a6
 or a6, t0, t1
@@ -4029,24 +4059,24 @@ and a7, t0, t1
 or a6, a6, a7
 add a4, a4, a6
 ld a6, 56(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 16(a3)
 add a5, a5, a7
 ld a6, 80(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -4055,15 +4085,15 @@ ld a7, 72(a3)
 add a5, a5, a7
 sd a5, 72(a3)
 srli a6, t3, 14
-slli a7, t3, 50
+mul a7, t3, s1
 xor a6, a6, a7
 srli a7, t3, 18
 xor a6, a6, a7
-slli a7, t3, 46
+mul a7, t3, s2
 xor a6, a6, a7
 srli a7, t3, 41
 xor a6, a6, a7
-slli a7, t3, 23
+mul a7, t3, s3
 xor a6, a6, a7
 add t6, t6, a6
 xor a6, t4, t5
@@ -4079,16 +4109,16 @@ add a6, a6, a7
 add t6, t6, a6
 add t6, t6, a5
 add t2, t2, t6
-srli a6, a4, 28
-slli a7, a4, 36
+mulhu a6, a4, s4
+mul a7, a4, s4
 xor a6, a6, a7
-srli a7, a4, 34
+mulhu a7, a4, s5
 xor a6, a6, a7
-slli a7, a4, 30
+mul a7, a4, s5
 xor a6, a6, a7
-srli a7, a4, 39
+mulhu a7, a4, s6
 xor a6, a6, a7
-slli a7, a4, 25
+mul a7, a4, s6
 xor a6, a6, a7
 add t6, t6, a6
 or a6, a4, t0
@@ -4097,24 +4127,24 @@ and a7, a4, t0
 or a6, a6, a7
 add t6, t6, a6
 ld a6, 64(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 24(a3)
 add a5, a5, a7
 ld a6, 88(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -4123,15 +4153,15 @@ ld a7, 80(a3)
 add a5, a5, a7
 sd a5, 80(a3)
 srli a6, t2, 14
-slli a7, t2, 50
+mul a7, t2, s1
 xor a6, a6, a7
 srli a7, t2, 18
 xor a6, a6, a7
-slli a7, t2, 46
+mul a7, t2, s2
 xor a6, a6, a7
 srli a7, t2, 41
 xor a6, a6, a7
-slli a7, t2, 23
+mul a7, t2, s3
 xor a6, a6, a7
 add t5, t5, a6
 xor a6, t3, t4
@@ -4147,16 +4177,16 @@ add a6, a6, a7
 add t5, t5, a6
 add t5, t5, a5
 add t1, t1, t5
-srli a6, t6, 28
-slli a7, t6, 36
+mulhu a6, t6, s4
+mul a7, t6, s4
 xor a6, a6, a7
-srli a7, t6, 34
+mulhu a7, t6, s5
 xor a6, a6, a7
-slli a7, t6, 30
+mul a7, t6, s5
 xor a6, a6, a7
-srli a7, t6, 39
+mulhu a7, t6, s6
 xor a6, a6, a7
-slli a7, t6, 25
+mul a7, t6, s6
 xor a6, a6, a7
 add t5, t5, a6
 or a6, t6, a4
@@ -4165,24 +4195,24 @@ and a7, t6, a4
 or a6, a6, a7
 add t5, t5, a6
 ld a6, 72(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 32(a3)
 add a5, a5, a7
 ld a6, 96(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -4191,15 +4221,15 @@ ld a7, 88(a3)
 add a5, a5, a7
 sd a5, 88(a3)
 srli a6, t1, 14
-slli a7, t1, 50
+mul a7, t1, s1
 xor a6, a6, a7
 srli a7, t1, 18
 xor a6, a6, a7
-slli a7, t1, 46
+mul a7, t1, s2
 xor a6, a6, a7
 srli a7, t1, 41
 xor a6, a6, a7
-slli a7, t1, 23
+mul a7, t1, s3
 xor a6, a6, a7
 add t4, t4, a6
 xor a6, t2, t3
@@ -4215,16 +4245,16 @@ add a6, a6, a7
 add t4, t4, a6
 add t4, t4, a5
 add t0, t0, t4
-srli a6, t5, 28
-slli a7, t5, 36
+mulhu a6, t5, s4
+mul a7, t5, s4
 xor a6, a6, a7
-srli a7, t5, 34
+mulhu a7, t5, s5
 xor a6, a6, a7
-slli a7, t5, 30
+mul a7, t5, s5
 xor a6, a6, a7
-srli a7, t5, 39
+mulhu a7, t5, s6
 xor a6, a6, a7
-slli a7, t5, 25
+mul a7, t5, s6
 xor a6, a6, a7
 add t4, t4, a6
 or a6, t5, t6
@@ -4233,24 +4263,24 @@ and a7, t5, t6
 or a6, a6, a7
 add t4, t4, a6
 ld a6, 80(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 40(a3)
 add a5, a5, a7
 ld a6, 104(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -4259,15 +4289,15 @@ ld a7, 96(a3)
 add a5, a5, a7
 sd a5, 96(a3)
 srli a6, t0, 14
-slli a7, t0, 50
+mul a7, t0, s1
 xor a6, a6, a7
 srli a7, t0, 18
 xor a6, a6, a7
-slli a7, t0, 46
+mul a7, t0, s2
 xor a6, a6, a7
 srli a7, t0, 41
 xor a6, a6, a7
-slli a7, t0, 23
+mul a7, t0, s3
 xor a6, a6, a7
 add t3, t3, a6
 xor a6, t1, t2
@@ -4283,16 +4313,16 @@ add a6, a6, a7
 add t3, t3, a6
 add t3, t3, a5
 add a4, a4, t3
-srli a6, t4, 28
-slli a7, t4, 36
+mulhu a6, t4, s4
+mul a7, t4, s4
 xor a6, a6, a7
-srli a7, t4, 34
+mulhu a7, t4, s5
 xor a6, a6, a7
-slli a7, t4, 30
+mul a7, t4, s5
 xor a6, a6, a7
-srli a7, t4, 39
+mulhu a7, t4, s6
 xor a6, a6, a7
-slli a7, t4, 25
+mul a7, t4, s6
 xor a6, a6, a7
 add t3, t3, a6
 or a6, t4, t5
@@ -4301,24 +4331,24 @@ and a7, t4, t5
 or a6, a6, a7
 add t3, t3, a6
 ld a6, 88(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 48(a3)
 add a5, a5, a7
 ld a6, 112(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -4327,15 +4357,15 @@ ld a7, 104(a3)
 add a5, a5, a7
 sd a5, 104(a3)
 srli a6, a4, 14
-slli a7, a4, 50
+mul a7, a4, s1
 xor a6, a6, a7
 srli a7, a4, 18
 xor a6, a6, a7
-slli a7, a4, 46
+mul a7, a4, s2
 xor a6, a6, a7
 srli a7, a4, 41
 xor a6, a6, a7
-slli a7, a4, 23
+mul a7, a4, s3
 xor a6, a6, a7
 add t2, t2, a6
 xor a6, t0, t1
@@ -4351,16 +4381,16 @@ add a6, a6, a7
 add t2, t2, a6
 add t2, t2, a5
 add t6, t6, t2
-srli a6, t3, 28
-slli a7, t3, 36
+mulhu a6, t3, s4
+mul a7, t3, s4
 xor a6, a6, a7
-srli a7, t3, 34
+mulhu a7, t3, s5
 xor a6, a6, a7
-slli a7, t3, 30
+mul a7, t3, s5
 xor a6, a6, a7
-srli a7, t3, 39
+mulhu a7, t3, s6
 xor a6, a6, a7
-slli a7, t3, 25
+mul a7, t3, s6
 xor a6, a6, a7
 add t2, t2, a6
 or a6, t3, t4
@@ -4369,24 +4399,24 @@ and a7, t3, t4
 or a6, a6, a7
 add t2, t2, a6
 ld a6, 96(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 56(a3)
 add a5, a5, a7
 ld a6, 120(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -4395,15 +4425,15 @@ ld a7, 112(a3)
 add a5, a5, a7
 sd a5, 112(a3)
 srli a6, t6, 14
-slli a7, t6, 50
+mul a7, t6, s1
 xor a6, a6, a7
 srli a7, t6, 18
 xor a6, a6, a7
-slli a7, t6, 46
+mul a7, t6, s2
 xor a6, a6, a7
 srli a7, t6, 41
 xor a6, a6, a7
-slli a7, t6, 23
+mul a7, t6, s3
 xor a6, a6, a7
 add t1, t1, a6
 xor a6, a4, t0
@@ -4419,16 +4449,16 @@ add a6, a6, a7
 add t1, t1, a6
 add t1, t1, a5
 add t5, t5, t1
-srli a6, t2, 28
-slli a7, t2, 36
+mulhu a6, t2, s4
+mul a7, t2, s4
 xor a6, a6, a7
-srli a7, t2, 34
+mulhu a7, t2, s5
 xor a6, a6, a7
-slli a7, t2, 30
+mul a7, t2, s5
 xor a6, a6, a7
-srli a7, t2, 39
+mulhu a7, t2, s6
 xor a6, a6, a7
-slli a7, t2, 25
+mul a7, t2, s6
 xor a6, a6, a7
 add t1, t1, a6
 or a6, t2, t3
@@ -4437,24 +4467,24 @@ and a7, t2, t3
 or a6, a6, a7
 add t1, t1, a6
 ld a6, 104(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 64(a3)
 add a5, a5, a7
 ld a6, 0(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -4463,15 +4493,15 @@ ld a7, 120(a3)
 add a5, a5, a7
 sd a5, 120(a3)
 srli a6, t5, 14
-slli a7, t5, 50
+mul a7, t5, s1
 xor a6, a6, a7
 srli a7, t5, 18
 xor a6, a6, a7
-slli a7, t5, 46
+mul a7, t5, s2
 xor a6, a6, a7
 srli a7, t5, 41
 xor a6, a6, a7
-slli a7, t5, 23
+mul a7, t5, s3
 xor a6, a6, a7
 add t0, t0, a6
 xor a6, t6, a4
@@ -4487,16 +4517,16 @@ add a6, a6, a7
 add t0, t0, a6
 add t0, t0, a5
 add t4, t4, t0
-srli a6, t1, 28
-slli a7, t1, 36
+mulhu a6, t1, s4
+mul a7, t1, s4
 xor a6, a6, a7
-srli a7, t1, 34
+mulhu a7, t1, s5
 xor a6, a6, a7
-slli a7, t1, 30
+mul a7, t1, s5
 xor a6, a6, a7
-srli a7, t1, 39
+mulhu a7, t1, s6
 xor a6, a6, a7
-slli a7, t1, 25
+mul a7, t1, s6
 xor a6, a6, a7
 add t0, t0, a6
 or a6, t1, t2
@@ -4505,24 +4535,24 @@ and a7, t1, t2
 or a6, a6, a7
 add t0, t0, a6
 ld a6, 112(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 72(a3)
 add a5, a5, a7
 ld a6, 8(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -4531,15 +4561,15 @@ ld a7, 0(a3)
 add a5, a5, a7
 sd a5, 0(a3)
 srli a6, t4, 14
-slli a7, t4, 50
+mul a7, t4, s1
 xor a6, a6, a7
 srli a7, t4, 18
 xor a6, a6, a7
-slli a7, t4, 46
+mul a7, t4, s2
 xor a6, a6, a7
 srli a7, t4, 41
 xor a6, a6, a7
-slli a7, t4, 23
+mul a7, t4, s3
 xor a6, a6, a7
 add a4, a4, a6
 xor a6, t5, t6
@@ -4555,16 +4585,16 @@ add a6, a6, a7
 add a4, a4, a6
 add a4, a4, a5
 add t3, t3, a4
-srli a6, t0, 28
-slli a7, t0, 36
+mulhu a6, t0, s4
+mul a7, t0, s4
 xor a6, a6, a7
-srli a7, t0, 34
+mulhu a7, t0, s5
 xor a6, a6, a7
-slli a7, t0, 30
+mul a7, t0, s5
 xor a6, a6, a7
-srli a7, t0, 39
+mulhu a7, t0, s6
 xor a6, a6, a7
-slli a7, t0, 25
+mul a7, t0, s6
 xor a6, a6, a7
 add a4, a4, a6
 or a6, t0, t1
@@ -4573,24 +4603,24 @@ and a7, t0, t1
 or a6, a6, a7
 add a4, a4, a6
 ld a6, 120(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 80(a3)
 add a5, a5, a7
 ld a6, 16(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -4599,15 +4629,15 @@ ld a7, 8(a3)
 add a5, a5, a7
 sd a5, 8(a3)
 srli a6, t3, 14
-slli a7, t3, 50
+mul a7, t3, s1
 xor a6, a6, a7
 srli a7, t3, 18
 xor a6, a6, a7
-slli a7, t3, 46
+mul a7, t3, s2
 xor a6, a6, a7
 srli a7, t3, 41
 xor a6, a6, a7
-slli a7, t3, 23
+mul a7, t3, s3
 xor a6, a6, a7
 add t6, t6, a6
 xor a6, t4, t5
@@ -4623,16 +4653,16 @@ add a6, a6, a7
 add t6, t6, a6
 add t6, t6, a5
 add t2, t2, t6
-srli a6, a4, 28
-slli a7, a4, 36
+mulhu a6, a4, s4
+mul a7, a4, s4
 xor a6, a6, a7
-srli a7, a4, 34
+mulhu a7, a4, s5
 xor a6, a6, a7
-slli a7, a4, 30
+mul a7, a4, s5
 xor a6, a6, a7
-srli a7, a4, 39
+mulhu a7, a4, s6
 xor a6, a6, a7
-slli a7, a4, 25
+mul a7, a4, s6
 xor a6, a6, a7
 add t6, t6, a6
 or a6, a4, t0
@@ -4641,24 +4671,24 @@ and a7, a4, t0
 or a6, a6, a7
 add t6, t6, a6
 ld a6, 0(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 88(a3)
 add a5, a5, a7
 ld a6, 24(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -4667,15 +4697,15 @@ ld a7, 16(a3)
 add a5, a5, a7
 sd a5, 16(a3)
 srli a6, t2, 14
-slli a7, t2, 50
+mul a7, t2, s1
 xor a6, a6, a7
 srli a7, t2, 18
 xor a6, a6, a7
-slli a7, t2, 46
+mul a7, t2, s2
 xor a6, a6, a7
 srli a7, t2, 41
 xor a6, a6, a7
-slli a7, t2, 23
+mul a7, t2, s3
 xor a6, a6, a7
 add t5, t5, a6
 xor a6, t3, t4
@@ -4691,16 +4721,16 @@ add a6, a6, a7
 add t5, t5, a6
 add t5, t5, a5
 add t1, t1, t5
-srli a6, t6, 28
-slli a7, t6, 36
+mulhu a6, t6, s4
+mul a7, t6, s4
 xor a6, a6, a7
-srli a7, t6, 34
+mulhu a7, t6, s5
 xor a6, a6, a7
-slli a7, t6, 30
+mul a7, t6, s5
 xor a6, a6, a7
-srli a7, t6, 39
+mulhu a7, t6, s6
 xor a6, a6, a7
-slli a7, t6, 25
+mul a7, t6, s6
 xor a6, a6, a7
 add t5, t5, a6
 or a6, t6, a4
@@ -4709,24 +4739,24 @@ and a7, t6, a4
 or a6, a6, a7
 add t5, t5, a6
 ld a6, 8(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 96(a3)
 add a5, a5, a7
 ld a6, 32(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -4735,15 +4765,15 @@ ld a7, 24(a3)
 add a5, a5, a7
 sd a5, 24(a3)
 srli a6, t1, 14
-slli a7, t1, 50
+mul a7, t1, s1
 xor a6, a6, a7
 srli a7, t1, 18
 xor a6, a6, a7
-slli a7, t1, 46
+mul a7, t1, s2
 xor a6, a6, a7
 srli a7, t1, 41
 xor a6, a6, a7
-slli a7, t1, 23
+mul a7, t1, s3
 xor a6, a6, a7
 add t4, t4, a6
 xor a6, t2, t3
@@ -4759,16 +4789,16 @@ add a6, a6, a7
 add t4, t4, a6
 add t4, t4, a5
 add t0, t0, t4
-srli a6, t5, 28
-slli a7, t5, 36
+mulhu a6, t5, s4
+mul a7, t5, s4
 xor a6, a6, a7
-srli a7, t5, 34
+mulhu a7, t5, s5
 xor a6, a6, a7
-slli a7, t5, 30
+mul a7, t5, s5
 xor a6, a6, a7
-srli a7, t5, 39
+mulhu a7, t5, s6
 xor a6, a6, a7
-slli a7, t5, 25
+mul a7, t5, s6
 xor a6, a6, a7
 add t4, t4, a6
 or a6, t5, t6
@@ -4777,24 +4807,24 @@ and a7, t5, t6
 or a6, a6, a7
 add t4, t4, a6
 ld a6, 16(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 104(a3)
 add a5, a5, a7
 ld a6, 40(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -4803,15 +4833,15 @@ ld a7, 32(a3)
 add a5, a5, a7
 sd a5, 32(a3)
 srli a6, t0, 14
-slli a7, t0, 50
+mul a7, t0, s1
 xor a6, a6, a7
 srli a7, t0, 18
 xor a6, a6, a7
-slli a7, t0, 46
+mul a7, t0, s2
 xor a6, a6, a7
 srli a7, t0, 41
 xor a6, a6, a7
-slli a7, t0, 23
+mul a7, t0, s3
 xor a6, a6, a7
 add t3, t3, a6
 xor a6, t1, t2
@@ -4827,16 +4857,16 @@ add a6, a6, a7
 add t3, t3, a6
 add t3, t3, a5
 add a4, a4, t3
-srli a6, t4, 28
-slli a7, t4, 36
+mulhu a6, t4, s4
+mul a7, t4, s4
 xor a6, a6, a7
-srli a7, t4, 34
+mulhu a7, t4, s5
 xor a6, a6, a7
-slli a7, t4, 30
+mul a7, t4, s5
 xor a6, a6, a7
-srli a7, t4, 39
+mulhu a7, t4, s6
 xor a6, a6, a7
-slli a7, t4, 25
+mul a7, t4, s6
 xor a6, a6, a7
 add t3, t3, a6
 or a6, t4, t5
@@ -4845,24 +4875,24 @@ and a7, t4, t5
 or a6, a6, a7
 add t3, t3, a6
 ld a6, 24(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 112(a3)
 add a5, a5, a7
 ld a6, 48(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -4871,15 +4901,15 @@ ld a7, 40(a3)
 add a5, a5, a7
 sd a5, 40(a3)
 srli a6, a4, 14
-slli a7, a4, 50
+mul a7, a4, s1
 xor a6, a6, a7
 srli a7, a4, 18
 xor a6, a6, a7
-slli a7, a4, 46
+mul a7, a4, s2
 xor a6, a6, a7
 srli a7, a4, 41
 xor a6, a6, a7
-slli a7, a4, 23
+mul a7, a4, s3
 xor a6, a6, a7
 add t2, t2, a6
 xor a6, t0, t1
@@ -4895,16 +4925,16 @@ add a6, a6, a7
 add t2, t2, a6
 add t2, t2, a5
 add t6, t6, t2
-srli a6, t3, 28
-slli a7, t3, 36
+mulhu a6, t3, s4
+mul a7, t3, s4
 xor a6, a6, a7
-srli a7, t3, 34
+mulhu a7, t3, s5
 xor a6, a6, a7
-slli a7, t3, 30
+mul a7, t3, s5
 xor a6, a6, a7
-srli a7, t3, 39
+mulhu a7, t3, s6
 xor a6, a6, a7
-slli a7, t3, 25
+mul a7, t3, s6
 xor a6, a6, a7
 add t2, t2, a6
 or a6, t3, t4
@@ -4913,24 +4943,24 @@ and a7, t3, t4
 or a6, a6, a7
 add t2, t2, a6
 ld a6, 32(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 120(a3)
 add a5, a5, a7
 ld a6, 56(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -4939,15 +4969,15 @@ ld a7, 48(a3)
 add a5, a5, a7
 sd a5, 48(a3)
 srli a6, t6, 14
-slli a7, t6, 50
+mul a7, t6, s1
 xor a6, a6, a7
 srli a7, t6, 18
 xor a6, a6, a7
-slli a7, t6, 46
+mul a7, t6, s2
 xor a6, a6, a7
 srli a7, t6, 41
 xor a6, a6, a7
-slli a7, t6, 23
+mul a7, t6, s3
 xor a6, a6, a7
 add t1, t1, a6
 xor a6, a4, t0
@@ -4963,16 +4993,16 @@ add a6, a6, a7
 add t1, t1, a6
 add t1, t1, a5
 add t5, t5, t1
-srli a6, t2, 28
-slli a7, t2, 36
+mulhu a6, t2, s4
+mul a7, t2, s4
 xor a6, a6, a7
-srli a7, t2, 34
+mulhu a7, t2, s5
 xor a6, a6, a7
-slli a7, t2, 30
+mul a7, t2, s5
 xor a6, a6, a7
-srli a7, t2, 39
+mulhu a7, t2, s6
 xor a6, a6, a7
-slli a7, t2, 25
+mul a7, t2, s6
 xor a6, a6, a7
 add t1, t1, a6
 or a6, t2, t3
@@ -4981,24 +5011,24 @@ and a7, t2, t3
 or a6, a6, a7
 add t1, t1, a6
 ld a6, 40(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 0(a3)
 add a5, a5, a7
 ld a6, 64(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -5007,15 +5037,15 @@ ld a7, 56(a3)
 add a5, a5, a7
 sd a5, 56(a3)
 srli a6, t5, 14
-slli a7, t5, 50
+mul a7, t5, s1
 xor a6, a6, a7
 srli a7, t5, 18
 xor a6, a6, a7
-slli a7, t5, 46
+mul a7, t5, s2
 xor a6, a6, a7
 srli a7, t5, 41
 xor a6, a6, a7
-slli a7, t5, 23
+mul a7, t5, s3
 xor a6, a6, a7
 add t0, t0, a6
 xor a6, t6, a4
@@ -5031,16 +5061,16 @@ add a6, a6, a7
 add t0, t0, a6
 add t0, t0, a5
 add t4, t4, t0
-srli a6, t1, 28
-slli a7, t1, 36
+mulhu a6, t1, s4
+mul a7, t1, s4
 xor a6, a6, a7
-srli a7, t1, 34
+mulhu a7, t1, s5
 xor a6, a6, a7
-slli a7, t1, 30
+mul a7, t1, s5
 xor a6, a6, a7
-srli a7, t1, 39
+mulhu a7, t1, s6
 xor a6, a6, a7
-slli a7, t1, 25
+mul a7, t1, s6
 xor a6, a6, a7
 add t0, t0, a6
 or a6, t1, t2
@@ -5049,24 +5079,24 @@ and a7, t1, t2
 or a6, a6, a7
 add t0, t0, a6
 ld a6, 48(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 8(a3)
 add a5, a5, a7
 ld a6, 72(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -5075,15 +5105,15 @@ ld a7, 64(a3)
 add a5, a5, a7
 sd a5, 64(a3)
 srli a6, t4, 14
-slli a7, t4, 50
+mul a7, t4, s1
 xor a6, a6, a7
 srli a7, t4, 18
 xor a6, a6, a7
-slli a7, t4, 46
+mul a7, t4, s2
 xor a6, a6, a7
 srli a7, t4, 41
 xor a6, a6, a7
-slli a7, t4, 23
+mul a7, t4, s3
 xor a6, a6, a7
 add a4, a4, a6
 xor a6, t5, t6
@@ -5099,16 +5129,16 @@ add a6, a6, a7
 add a4, a4, a6
 add a4, a4, a5
 add t3, t3, a4
-srli a6, t0, 28
-slli a7, t0, 36
+mulhu a6, t0, s4
+mul a7, t0, s4
 xor a6, a6, a7
-srli a7, t0, 34
+mulhu a7, t0, s5
 xor a6, a6, a7
-slli a7, t0, 30
+mul a7, t0, s5
 xor a6, a6, a7
-srli a7, t0, 39
+mulhu a7, t0, s6
 xor a6, a6, a7
-slli a7, t0, 25
+mul a7, t0, s6
 xor a6, a6, a7
 add a4, a4, a6
 or a6, t0, t1
@@ -5117,24 +5147,24 @@ and a7, t0, t1
 or a6, a6, a7
 add a4, a4, a6
 ld a6, 56(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 16(a3)
 add a5, a5, a7
 ld a6, 80(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -5143,15 +5173,15 @@ ld a7, 72(a3)
 add a5, a5, a7
 sd a5, 72(a3)
 srli a6, t3, 14
-slli a7, t3, 50
+mul a7, t3, s1
 xor a6, a6, a7
 srli a7, t3, 18
 xor a6, a6, a7
-slli a7, t3, 46
+mul a7, t3, s2
 xor a6, a6, a7
 srli a7, t3, 41
 xor a6, a6, a7
-slli a7, t3, 23
+mul a7, t3, s3
 xor a6, a6, a7
 add t6, t6, a6
 xor a6, t4, t5
@@ -5167,16 +5197,16 @@ add a6, a6, a7
 add t6, t6, a6
 add t6, t6, a5
 add t2, t2, t6
-srli a6, a4, 28
-slli a7, a4, 36
+mulhu a6, a4, s4
+mul a7, a4, s4
 xor a6, a6, a7
-srli a7, a4, 34
+mulhu a7, a4, s5
 xor a6, a6, a7
-slli a7, a4, 30
+mul a7, a4, s5
 xor a6, a6, a7
-srli a7, a4, 39
+mulhu a7, a4, s6
 xor a6, a6, a7
-slli a7, a4, 25
+mul a7, a4, s6
 xor a6, a6, a7
 add t6, t6, a6
 or a6, a4, t0
@@ -5185,24 +5215,24 @@ and a7, a4, t0
 or a6, a6, a7
 add t6, t6, a6
 ld a6, 64(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 24(a3)
 add a5, a5, a7
 ld a6, 88(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -5211,15 +5241,15 @@ ld a7, 80(a3)
 add a5, a5, a7
 sd a5, 80(a3)
 srli a6, t2, 14
-slli a7, t2, 50
+mul a7, t2, s1
 xor a6, a6, a7
 srli a7, t2, 18
 xor a6, a6, a7
-slli a7, t2, 46
+mul a7, t2, s2
 xor a6, a6, a7
 srli a7, t2, 41
 xor a6, a6, a7
-slli a7, t2, 23
+mul a7, t2, s3
 xor a6, a6, a7
 add t5, t5, a6
 xor a6, t3, t4
@@ -5235,16 +5265,16 @@ add a6, a6, a7
 add t5, t5, a6
 add t5, t5, a5
 add t1, t1, t5
-srli a6, t6, 28
-slli a7, t6, 36
+mulhu a6, t6, s4
+mul a7, t6, s4
 xor a6, a6, a7
-srli a7, t6, 34
+mulhu a7, t6, s5
 xor a6, a6, a7
-slli a7, t6, 30
+mul a7, t6, s5
 xor a6, a6, a7
-srli a7, t6, 39
+mulhu a7, t6, s6
 xor a6, a6, a7
-slli a7, t6, 25
+mul a7, t6, s6
 xor a6, a6, a7
 add t5, t5, a6
 or a6, t6, a4
@@ -5253,24 +5283,24 @@ and a7, t6, a4
 or a6, a6, a7
 add t5, t5, a6
 ld a6, 72(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 32(a3)
 add a5, a5, a7
 ld a6, 96(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -5279,15 +5309,15 @@ ld a7, 88(a3)
 add a5, a5, a7
 sd a5, 88(a3)
 srli a6, t1, 14
-slli a7, t1, 50
+mul a7, t1, s1
 xor a6, a6, a7
 srli a7, t1, 18
 xor a6, a6, a7
-slli a7, t1, 46
+mul a7, t1, s2
 xor a6, a6, a7
 srli a7, t1, 41
 xor a6, a6, a7
-slli a7, t1, 23
+mul a7, t1, s3
 xor a6, a6, a7
 add t4, t4, a6
 xor a6, t2, t3
@@ -5303,16 +5333,16 @@ add a6, a6, a7
 add t4, t4, a6
 add t4, t4, a5
 add t0, t0, t4
-srli a6, t5, 28
-slli a7, t5, 36
+mulhu a6, t5, s4
+mul a7, t5, s4
 xor a6, a6, a7
-srli a7, t5, 34
+mulhu a7, t5, s5
 xor a6, a6, a7
-slli a7, t5, 30
+mul a7, t5, s5
 xor a6, a6, a7
-srli a7, t5, 39
+mulhu a7, t5, s6
 xor a6, a6, a7
-slli a7, t5, 25
+mul a7, t5, s6
 xor a6, a6, a7
 add t4, t4, a6
 or a6, t5, t6
@@ -5321,24 +5351,24 @@ and a7, t5, t6
 or a6, a6, a7
 add t4, t4, a6
 ld a6, 80(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 40(a3)
 add a5, a5, a7
 ld a6, 104(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -5347,15 +5377,15 @@ ld a7, 96(a3)
 add a5, a5, a7
 sd a5, 96(a3)
 srli a6, t0, 14
-slli a7, t0, 50
+mul a7, t0, s1
 xor a6, a6, a7
 srli a7, t0, 18
 xor a6, a6, a7
-slli a7, t0, 46
+mul a7, t0, s2
 xor a6, a6, a7
 srli a7, t0, 41
 xor a6, a6, a7
-slli a7, t0, 23
+mul a7, t0, s3
 xor a6, a6, a7
 add t3, t3, a6
 xor a6, t1, t2
@@ -5371,16 +5401,16 @@ add a6, a6, a7
 add t3, t3, a6
 add t3, t3, a5
 add a4, a4, t3
-srli a6, t4, 28
-slli a7, t4, 36
+mulhu a6, t4, s4
+mul a7, t4, s4
 xor a6, a6, a7
-srli a7, t4, 34
+mulhu a7, t4, s5
 xor a6, a6, a7
-slli a7, t4, 30
+mul a7, t4, s5
 xor a6, a6, a7
-srli a7, t4, 39
+mulhu a7, t4, s6
 xor a6, a6, a7
-slli a7, t4, 25
+mul a7, t4, s6
 xor a6, a6, a7
 add t3, t3, a6
 or a6, t4, t5
@@ -5389,24 +5419,24 @@ and a7, t4, t5
 or a6, a6, a7
 add t3, t3, a6
 ld a6, 88(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 48(a3)
 add a5, a5, a7
 ld a6, 112(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -5415,15 +5445,15 @@ ld a7, 104(a3)
 add a5, a5, a7
 sd a5, 104(a3)
 srli a6, a4, 14
-slli a7, a4, 50
+mul a7, a4, s1
 xor a6, a6, a7
 srli a7, a4, 18
 xor a6, a6, a7
-slli a7, a4, 46
+mul a7, a4, s2
 xor a6, a6, a7
 srli a7, a4, 41
 xor a6, a6, a7
-slli a7, a4, 23
+mul a7, a4, s3
 xor a6, a6, a7
 add t2, t2, a6
 xor a6, t0, t1
@@ -5439,16 +5469,16 @@ add a6, a6, a7
 add t2, t2, a6
 add t2, t2, a5
 add t6, t6, t2
-srli a6, t3, 28
-slli a7, t3, 36
+mulhu a6, t3, s4
+mul a7, t3, s4
 xor a6, a6, a7
-srli a7, t3, 34
+mulhu a7, t3, s5
 xor a6, a6, a7
-slli a7, t3, 30
+mul a7, t3, s5
 xor a6, a6, a7
-srli a7, t3, 39
+mulhu a7, t3, s6
 xor a6, a6, a7
-slli a7, t3, 25
+mul a7, t3, s6
 xor a6, a6, a7
 add t2, t2, a6
 or a6, t3, t4
@@ -5457,24 +5487,24 @@ and a7, t3, t4
 or a6, a6, a7
 add t2, t2, a6
 ld a6, 96(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 56(a3)
 add a5, a5, a7
 ld a6, 120(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -5483,15 +5513,15 @@ ld a7, 112(a3)
 add a5, a5, a7
 sd a5, 112(a3)
 srli a6, t6, 14
-slli a7, t6, 50
+mul a7, t6, s1
 xor a6, a6, a7
 srli a7, t6, 18
 xor a6, a6, a7
-slli a7, t6, 46
+mul a7, t6, s2
 xor a6, a6, a7
 srli a7, t6, 41
 xor a6, a6, a7
-slli a7, t6, 23
+mul a7, t6, s3
 xor a6, a6, a7
 add t1, t1, a6
 xor a6, a4, t0
@@ -5507,16 +5537,16 @@ add a6, a6, a7
 add t1, t1, a6
 add t1, t1, a5
 add t5, t5, t1
-srli a6, t2, 28
-slli a7, t2, 36
+mulhu a6, t2, s4
+mul a7, t2, s4
 xor a6, a6, a7
-srli a7, t2, 34
+mulhu a7, t2, s5
 xor a6, a6, a7
-slli a7, t2, 30
+mul a7, t2, s5
 xor a6, a6, a7
-srli a7, t2, 39
+mulhu a7, t2, s6
 xor a6, a6, a7
-slli a7, t2, 25
+mul a7, t2, s6
 xor a6, a6, a7
 add t1, t1, a6
 or a6, t2, t3
@@ -5525,24 +5555,24 @@ and a7, t2, t3
 or a6, a6, a7
 add t1, t1, a6
 ld a6, 104(a3)
-srli a5, a6, 19
-slli a7, a6, 45
+mulhu a5, a6, s7
+mul a7, a6, s7
 xor a5, a5, a7
-srli a7, a6, 61
+mulhu a7, a6, s8
 xor a5, a5, a7
-slli a7, a6, 3
+mul a7, a6, s8
 xor a5, a5, a7
 srli a7, a6, 6
 xor a5, a5, a7
 ld a7, 64(a3)
 add a5, a5, a7
 ld a6, 0(a3)
-srli a7, a6, 1
-slli s0, a6, 63
+mulhu a7, a6, s9
+mul s0, a6, s9
 xor a7, a7, s0
-srli s0, a6, 8
+mulhu s0, a6, s10
 xor a7, a7, s0
-slli s0, a6, 56
+mul s0, a6, s10
 xor a7, a7, s0
 srli s0, a6, 7
 xor a7, a7, s0
@@ -5551,15 +5581,15 @@ ld a7, 120(a3)
 add a5, a5, a7
 sd a5, 120(a3)
 srli a6, t5, 14
-slli a7, t5, 50
+mul a7, t5, s1
 xor a6, a6, a7
 srli a7, t5, 18
 xor a6, a6, a7
-slli a7, t5, 46
+mul a7, t5, s2
 xor a6, a6, a7
 srli a7, t5, 41
 xor a6, a6, a7
-slli a7, t5, 23
+mul a7, t5, s3
 xor a6, a6, a7
 add t0, t0, a6
 xor a6, t6, a4
@@ -5575,16 +5605,16 @@ add a6, a6, a7
 add t0, t0, a6
 add t0, t0, a5
 add t4, t4, t0
-srli a6, t1, 28
-slli a7, t1, 36
+mulhu a6, t1, s4
+mul a7, t1, s4
 xor a6, a6, a7
-srli a7, t1, 34
+mulhu a7, t1, s5
 xor a6, a6, a7
-slli a7, t1, 30
+mul a7, t1, s5
 xor a6, a6, a7
-srli a7, t1, 39
+mulhu a7, t1, s6
 xor a6, a6, a7
-slli a7, t1, 25
+mul a7, t1, s6
 xor a6, a6, a7
 add t0, t0, a6
 or a6, t1, t2
@@ -5903,6 +5933,16 @@ j 21f
 20:
 21:
 ld s0, 128(a3)
+ld s1, 136(a3)
+ld s2, 144(a3)
+ld s3, 152(a3)
+ld s4, 160(a3)
+ld s5, 168(a3)
+ld s6, 176(a3)
+ld s7, 184(a3)
+ld s8, 192(a3)
+ld s9, 200(a3)
+ld s10, 208(a3)
 ret
 .option pop",
     )
@@ -6667,15 +6707,15 @@ pub unsafe extern "C" fn vg_sha512_update(state: *mut [u8; 192], count: u64, dat
     core::arch::naked_asm!(
         r".option push
 .option arch, +m
-addi sp, sp, -208
+addi sp, sp, -288
 addi t0, sp, 0
-sd ra, 144(t0)
-sd s1, 152(t0)
-sd s2, 160(t0)
-sd s3, 168(t0)
-sd s4, 176(t0)
-sd s5, 184(t0)
-sd s6, 192(t0)
+sd ra, 224(t0)
+sd s1, 232(t0)
+sd s2, 240(t0)
+sd s3, 248(t0)
+sd s4, 256(t0)
+sd s5, 264(t0)
+sd s6, 272(t0)
 addi s1, a0, 0
 addi s2, t0, 0
 addi s3, a2, 0
@@ -6771,14 +6811,14 @@ bnez s4, 22b
 j 21f
 20:
 21:
-ld ra, 144(s2)
-ld s1, 152(s2)
-ld s3, 168(s2)
-ld s4, 176(s2)
-ld s5, 184(s2)
-ld s6, 192(s2)
-ld s2, 160(s2)
-addi sp, sp, 208
+ld ra, 224(s2)
+ld s1, 232(s2)
+ld s3, 248(s2)
+ld s4, 256(s2)
+ld s5, 264(s2)
+ld s6, 272(s2)
+ld s2, 240(s2)
+addi sp, sp, 288
 ret
 .option pop",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
@@ -6802,15 +6842,15 @@ pub unsafe extern "C" fn vg_sha512_finalize(state: *mut [u8; 192], count: u64, o
     core::arch::naked_asm!(
         r".option push
 .option arch, +m
-addi sp, sp, -208
+addi sp, sp, -288
 addi t0, sp, 0
-sd ra, 144(t0)
-sd s1, 152(t0)
-sd s2, 160(t0)
-sd s3, 168(t0)
-sd s4, 176(t0)
-sd s5, 184(t0)
-sd s6, 192(t0)
+sd ra, 224(t0)
+sd s1, 232(t0)
+sd s2, 240(t0)
+sd s3, 248(t0)
+sd s4, 256(t0)
+sd s5, 264(t0)
+sd s6, 272(t0)
 addi s1, a0, 0
 addi s2, t0, 0
 addi s3, a2, 0
@@ -7191,14 +7231,14 @@ srli t2, t1, 8
 sb t2, 62(s3)
 srli t2, t1, 0
 sb t2, 63(s3)
-ld ra, 144(s2)
-ld s1, 152(s2)
-ld s3, 168(s2)
-ld s4, 176(s2)
-ld s5, 184(s2)
-ld s6, 192(s2)
-ld s2, 160(s2)
-addi sp, sp, 208
+ld ra, 224(s2)
+ld s1, 232(s2)
+ld s3, 248(s2)
+ld s4, 256(s2)
+ld s5, 264(s2)
+ld s6, 272(s2)
+ld s2, 240(s2)
+addi sp, sp, 288
 ret
 .option pop",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
@@ -7222,15 +7262,15 @@ pub unsafe extern "C" fn vg_sha384_finalize(state: *mut [u8; 192], count: u64, o
     core::arch::naked_asm!(
         r".option push
 .option arch, +m
-addi sp, sp, -208
+addi sp, sp, -288
 addi t0, sp, 0
-sd ra, 144(t0)
-sd s1, 152(t0)
-sd s2, 160(t0)
-sd s3, 168(t0)
-sd s4, 176(t0)
-sd s5, 184(t0)
-sd s6, 192(t0)
+sd ra, 224(t0)
+sd s1, 232(t0)
+sd s2, 240(t0)
+sd s3, 248(t0)
+sd s4, 256(t0)
+sd s5, 264(t0)
+sd s6, 272(t0)
 addi s1, a0, 0
 addi s2, t0, 0
 addi s3, a2, 0
@@ -7535,14 +7575,14 @@ srli t2, t1, 8
 sb t2, 46(s3)
 srli t2, t1, 0
 sb t2, 47(s3)
-ld ra, 144(s2)
-ld s1, 152(s2)
-ld s3, 168(s2)
-ld s4, 176(s2)
-ld s5, 184(s2)
-ld s6, 192(s2)
-ld s2, 160(s2)
-addi sp, sp, 208
+ld ra, 224(s2)
+ld s1, 232(s2)
+ld s3, 248(s2)
+ld s4, 256(s2)
+ld s5, 264(s2)
+ld s6, 272(s2)
+ld s2, 240(s2)
+addi sp, sp, 288
 ret
 .option pop",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
@@ -7566,15 +7606,15 @@ pub unsafe extern "C" fn vg_sha512_256_finalize(state: *mut [u8; 192], count: u6
     core::arch::naked_asm!(
         r".option push
 .option arch, +m
-addi sp, sp, -208
+addi sp, sp, -288
 addi t0, sp, 0
-sd ra, 144(t0)
-sd s1, 152(t0)
-sd s2, 160(t0)
-sd s3, 168(t0)
-sd s4, 176(t0)
-sd s5, 184(t0)
-sd s6, 192(t0)
+sd ra, 224(t0)
+sd s1, 232(t0)
+sd s2, 240(t0)
+sd s3, 248(t0)
+sd s4, 256(t0)
+sd s5, 264(t0)
+sd s6, 272(t0)
 addi s1, a0, 0
 addi s2, t0, 0
 addi s3, a2, 0
@@ -7803,14 +7843,14 @@ srli t2, t1, 8
 sb t2, 30(s3)
 srli t2, t1, 0
 sb t2, 31(s3)
-ld ra, 144(s2)
-ld s1, 152(s2)
-ld s3, 168(s2)
-ld s4, 176(s2)
-ld s5, 184(s2)
-ld s6, 192(s2)
-ld s2, 160(s2)
-addi sp, sp, 208
+ld ra, 224(s2)
+ld s1, 232(s2)
+ld s3, 248(s2)
+ld s4, 256(s2)
+ld s5, 264(s2)
+ld s6, 272(s2)
+ld s2, 240(s2)
+addi sp, sp, 288
 ret
 .option pop",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
@@ -7834,15 +7874,15 @@ pub unsafe extern "C" fn vg_sha512_224_finalize(state: *mut [u8; 192], count: u6
     core::arch::naked_asm!(
         r".option push
 .option arch, +m
-addi sp, sp, -208
+addi sp, sp, -288
 addi t0, sp, 0
-sd ra, 144(t0)
-sd s1, 152(t0)
-sd s2, 160(t0)
-sd s3, 168(t0)
-sd s4, 176(t0)
-sd s5, 184(t0)
-sd s6, 192(t0)
+sd ra, 224(t0)
+sd s1, 232(t0)
+sd s2, 240(t0)
+sd s3, 248(t0)
+sd s4, 256(t0)
+sd s5, 264(t0)
+sd s6, 272(t0)
 addi s1, a0, 0
 addi s2, t0, 0
 addi s3, a2, 0
@@ -8051,14 +8091,14 @@ srli t2, t1, 8
 sb t2, 26(s3)
 srli t2, t1, 0
 sb t2, 27(s3)
-ld ra, 144(s2)
-ld s1, 152(s2)
-ld s3, 168(s2)
-ld s4, 176(s2)
-ld s5, 184(s2)
-ld s6, 192(s2)
-ld s2, 160(s2)
-addi sp, sp, 208
+ld ra, 224(s2)
+ld s1, 232(s2)
+ld s3, 248(s2)
+ld s4, 256(s2)
+ld s5, 264(s2)
+ld s6, 272(s2)
+ld s2, 240(s2)
+addi sp, sp, 288
 ret
 .option pop",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
