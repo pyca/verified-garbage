@@ -136,6 +136,9 @@ jobs:
             !/docs/
             !/src/asm/*/
             /src/asm/${{ matrix.asm }}/
+            !/crates/verified-garbage-asm-*/
+            /crates/verified-garbage-asm-*/Cargo.toml
+            /crates/verified-garbage-asm-${{ matrix.asm }}/
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: ${{ needs.arches.outputs.base }}
         with:
@@ -152,6 +155,9 @@ jobs:
             !/docs/
             !/src/asm/*/
             /src/asm/${{ matrix.asm }}/
+            !/crates/verified-garbage-asm-*/
+            /crates/verified-garbage-asm-*/Cargo.toml
+            /crates/verified-garbage-asm-${{ matrix.asm }}/
       - name: Record CPU and OpenSSL capabilities
         run: |
           openssl version -a

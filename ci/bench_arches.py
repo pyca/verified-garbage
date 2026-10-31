@@ -139,6 +139,8 @@ import re
 import sys
 import tomllib
 
+import asm_layout
+
 # The architectures benchmarked, by `target_arch`, and where each one runs
 # natively, in the images ci/runner.Dockerfile builds, as ci.yml's `rust` job
 # tests them (so that its build of the dependencies is the cache bench.yml
@@ -175,6 +177,10 @@ PLATFORMS = {
 # where it is not its `target_arch` (as in ci/rust_arches.py); each matrix
 # entry's `asm`, which bench.yml checks out.
 ASM_DIRS = {"powerpc64": "powerpc64le"}
+
+# The crate of `Features` and the features' bits, which `src/cpu.rs`
+# re-exports.
+CPU_CRATE = "crates/verified-garbage-cpu/"
 
 
 def asm_dir(arch):
@@ -329,14 +335,20 @@ ALL = None
 
 @functools.lru_cache(None)
 def read(path, revision=None, root="."):
-    if revision:
-        result = subprocess.run(["git", "show", f"{revision}:{path}"], cwd=root,
-                                capture_output=True, text=True, check=False)
-        return result.stdout if result.returncode == 0 else None
-    try:
-        return (pathlib.Path(root) / path).read_text()
-    except FileNotFoundError:
-        return None
+    """The text of `path` at `revision` (or in the tree), None if it has none;
+    a generated file's wherever the revision has it (`asm_layout.physical`)."""
+    for candidate in asm_layout.physical(path):
+        if revision:
+            result = subprocess.run(["git", "show", f"{revision}:{candidate}"], cwd=root,
+                                    capture_output=True, text=True, check=False)
+            if result.returncode == 0:
+                return result.stdout
+            continue
+        try:
+            return (pathlib.Path(root) / candidate).read_text()
+        except FileNotFoundError:
+            continue
+    return None
 
 
 def bench_uses(path, revision=None, root="."):
@@ -743,7 +755,10 @@ def submodule_arches(parent, name, base, root="."):
 
 
 def rust_files(root="."):
-    return sorted(p.relative_to(root).as_posix() for p in pathlib.Path(root, "src").glob("**/*.rs"))
+    """The library's Rust files, the generated ones by their path in the
+    library's layout (`asm_layout.logical`)."""
+    files = {p.relative_to(root).as_posix() for p in pathlib.Path(root, "src").glob("**/*.rs")}
+    return sorted(files | set(asm_layout.generated_files(root)))
 
 
 def hashes(root="."):
@@ -967,7 +982,8 @@ def allows(restriction, reqs):
 def arches(changed, base=None):
     # The modules to benchmark on each architecture that needs it, or ALL.
     needed = {}
-    changed = list(changed)
+    # Generated files by their path in the library's layout (`asm_layout`).
+    changed = [asm_layout.logical(p) for p in changed]
     catalogs = [bench_catalog(base), bench_catalog()]
     known = set().union(*catalogs[-1].values()) if catalogs[-1] else set()
     external_tests = None
@@ -985,6 +1001,17 @@ def arches(changed, base=None):
             need(arch, name)
 
     for path in changed:
+        if path.startswith(CPU_CRATE):
+            # `Features` and the features' bits, which every architecture
+            # compiles, as a change to them in `src/cpu.rs` (`cpu_changes`'s
+            # "*"): every module that chooses by a feature.
+            for a in PLATFORMS:
+                modules = cpu_modules(a, ALL, known, [base, None] if base else [None])
+                if modules is None:
+                    needed[a] = ALL
+                for module in modules or ():
+                    need(a, module)
+            continue
         asm, api, family = ASM.match(path), API.match(path), FAMILY.match(path)
         if path.startswith("src/") and not asm:
             revisions = [base, None] if base else [None]
