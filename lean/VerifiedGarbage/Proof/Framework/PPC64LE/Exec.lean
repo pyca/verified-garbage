@@ -240,6 +240,10 @@ namespace VG.PPC64LE
 
 theorem exec_sp {i : Instr} {s s' : State} (h : exec i s = some s') : s'.sp = s.sp := by
   cases i with
+  | vop op =>
+    simp only [reduceExec, Option.map_eq_some_iff] at h
+    obtain ⟨⟨d, v⟩, -, rfl⟩ := h
+    rfl
   | loadRev sz =>
     cases sz <;> simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h <;>
     obtain ⟨_, _, _, _, rfl⟩ := h <;> rfl
@@ -323,6 +327,10 @@ theorem exec_lr {i : Instr} {s s' : State} (h : exec i s = some s') (hi : i.writ
     s'.lr = s.lr := by
   cases i with
   | mtlr | adrSym => simp [Instr.writesLr] at hi
+  | vop op =>
+    simp only [reduceExec, Option.map_eq_some_iff] at h
+    obtain ⟨⟨d, v⟩, -, rfl⟩ := h
+    rfl
   | loadRev sz =>
     cases sz <;> simp only [reduceExec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h <;>
     obtain ⟨_, _, _, _, rfl⟩ := h <;> rfl

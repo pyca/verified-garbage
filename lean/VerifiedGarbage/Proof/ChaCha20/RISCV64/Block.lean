@@ -359,11 +359,11 @@ theorem main_ok {s₁ : State} (hp : Pre s₁) :
     exact wp_range_flatMap (M := isa) (LI s₁) (fun k s hk h => load_step hp hk h) 16 (Nat.le_refl _) s₁ hl₀
   refine WP.seq (WP.mono hload fun s₂ h₂ => ?_)
   have hh₂ : Holds (V s₁) s₂ := fun k hk => h₂.loaded k hk hk
-  refine WP.seq (WP.mono (rounds_ok hh₂ 10) fun s₃ h₃ => ?_)
+  refine WP.seq (WP.mono (rounds_ok hh₂) fun s₃ ⟨hh₃, hm₃, hrd₃, hwr₃, hk₃⟩ => ?_)
   have hf₃ : FI s₁ (Rs s₁) 0 s₃ :=
-    ⟨fun _ _ h => absurd h (by omega), fun j hj _ => h₃.holds j hj,
-      by rw [h₃.mem, h₂.mem]; exact Frame.refl _ _, h₃.rd.trans h₂.rd, h₃.wr.trans h₂.wr,
-      fun r hr _ => (h₃.keep r hr).trans (h₂.keep r hr)⟩
+    ⟨fun _ _ h => absurd h (by omega), fun j hj _ => hh₃ j hj,
+      by rw [hm₃, h₂.mem]; exact Frame.refl _ _, hrd₃.trans h₂.rd, hwr₃.trans h₂.wr,
+      fun r hr hru => (hk₃ r hr hru).trans (h₂.keep r hr)⟩
   unfold finish
   exact WP.mono (wp_range_flatMap (M := isa) (FI s₁ (Rs s₁)) (fun i s hi h => add_step hp hi h) 16
     (Nat.le_refl _) s₃ hf₃) fun s' h => ⟨fun j hj => h.done j hj hj, h.frame, h.rd, h.wr, h.keep⟩

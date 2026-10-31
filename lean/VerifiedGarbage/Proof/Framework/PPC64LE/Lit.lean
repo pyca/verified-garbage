@@ -16,6 +16,9 @@ namespace VG.PPC64LE
 
 deriving instance Lean.ToExpr for Size
 deriving instance Lean.ToExpr for LogicOp
+deriving instance Lean.ToExpr for VReg
+deriving instance Lean.ToExpr for VLogic
+deriving instance Lean.ToExpr for VOp
 deriving instance Lean.ToExpr for Instr
 deriving instance Lean.ToExpr for Cond
 

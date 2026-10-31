@@ -176,7 +176,7 @@ roots = []
 globs = ["VerifiedGarbage.TCB.Artifact", "VerifiedGarbage.TCB.Audit",
   "VerifiedGarbage.TCB.Axioms", "VerifiedGarbage.TCB.Code", "VerifiedGarbage.TCB.Emit",
   "VerifiedGarbage.TCB.Mem", "VerifiedGarbage.TCB.Print", "VerifiedGarbage.TCB.Registration",
-  "VerifiedGarbage.TCB.Rust", "VerifiedGarbage.TCB.Sig"]
+  "VerifiedGarbage.TCB.Rust", "VerifiedGarbage.TCB.Sig", "VerifiedGarbage.TCB.VectorCrypto"]
 precompileModules = true
 defaultFacets = ["shared"]
 
