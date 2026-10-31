@@ -992,7 +992,7 @@ ret
 }
 
 /// The CPU features `vg_ecdsa_brainpoolp384r1_sha384_sign_avx2` requires (`Artifact.features`).
-pub(crate) const VG_ECDSA_BRAINPOOLP384R1_SHA384_SIGN_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2"]);
+pub(crate) const VG_ECDSA_BRAINPOOLP384R1_SHA384_SIGN_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// Deterministic ECDSA signature generation over brainpoolP384r1 with HMAC-SHA-384 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (48 bytes, most significant first), signs the SHA-384 hash at `digest` (48 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (48 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 128 candidates for `k` is suitable (which does not happen in practice).
 ///
@@ -1985,7 +1985,7 @@ ret
 }
 
 /// The CPU features `vg_ecdsa_brainpoolp384r1_sha384_sign_shani` requires (`Artifact.features`).
-pub(crate) const VG_ECDSA_BRAINPOOLP384R1_SHA384_SIGN_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "sha512"]);
+pub(crate) const VG_ECDSA_BRAINPOOLP384R1_SHA384_SIGN_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// Deterministic ECDSA signature generation over brainpoolP384r1 with HMAC-SHA-384 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (48 bytes, most significant first), signs the SHA-384 hash at `digest` (48 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (48 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 128 candidates for `k` is suitable (which does not happen in practice).
 ///

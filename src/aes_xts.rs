@@ -402,29 +402,41 @@ mod tests {
     fn select_features() {
         use super::Impl;
         use crate::aes::Backend;
-        use crate::cpu::Features;
+        use crate::cpu::{Features, feature};
         assert_eq!(select(Features(0)), Impl::Blocks(Backend::Scalar));
         #[cfg(target_arch = "x86_64")]
         {
-            let aesni = Features::of(&["aes", "ssse3"]);
+            let aesni = Features(feature::AES | feature::SSSE3);
             assert_eq!(select(aesni), Impl::Blocks(Backend::AesNi));
-            let vaes = Features::of(&["aes", "avx", "avx2", "ssse3", "vaes"]);
+            let vaes = Features(
+                feature::AES | feature::AVX | feature::AVX2 | feature::SSSE3 | feature::VAES,
+            );
             assert_eq!(select(vaes), Impl::Blocks(Backend::Vaes));
-            let one_pass = Features::of(&["aes", "avx", "avx2", "ssse3", "vaes", "vpclmulqdq"]);
+            let one_pass = Features(
+                feature::AES
+                    | feature::AVX
+                    | feature::AVX2
+                    | feature::SSSE3
+                    | feature::VAES
+                    | feature::VPCLMULQDQ,
+            );
             assert_eq!(select(one_pass), Impl::VaesVpclmul);
             assert_eq!(Impl::VaesVpclmul.aes(), Backend::Vaes);
-            let aesni_pclmul = Features::of(&["aes", "avx", "pclmulqdq", "ssse3"]);
+            let aesni_pclmul =
+                Features(feature::AES | feature::AVX | feature::PCLMULQDQ | feature::SSSE3);
             assert_eq!(select(aesni_pclmul), Impl::AesNiPclmul);
             assert_eq!(Impl::AesNiPclmul.aes(), Backend::AesNi);
             // VPCLMULQDQ without VAES, and PCLMULQDQ without AVX.
-            let no_vaes = Features::of(&["aes", "avx", "avx2", "ssse3", "vpclmulqdq"]);
+            let no_vaes = Features(
+                feature::AES | feature::AVX | feature::AVX2 | feature::SSSE3 | feature::VPCLMULQDQ,
+            );
             assert_eq!(select(no_vaes), Impl::Blocks(Backend::AesNi));
-            let no_avx = Features::of(&["aes", "pclmulqdq", "ssse3"]);
+            let no_avx = Features(feature::AES | feature::PCLMULQDQ | feature::SSSE3);
             assert_eq!(select(no_avx), Impl::Blocks(Backend::AesNi));
         }
         #[cfg(target_arch = "x86")]
-        assert_eq!(select(Features::of(&["aes"])), Impl::Blocks(Backend::AesNi));
+        assert_eq!(select(Features(feature::AES)), Impl::Blocks(Backend::AesNi));
         #[cfg(target_arch = "aarch64")]
-        assert_eq!(select(Features::of(&["aes"])), Impl::Blocks(Backend::Aes));
+        assert_eq!(select(Features(feature::AES)), Impl::Blocks(Backend::Aes));
     }
 }

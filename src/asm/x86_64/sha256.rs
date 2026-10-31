@@ -3020,7 +3020,7 @@ ret
 }
 
 /// The CPU features `vg_sha256_compress_shani` requires (`Artifact.features`).
-pub(crate) const VG_SHA256_COMPRESS_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
+pub(crate) const VG_SHA256_COMPRESS_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
 
 /// The SHA-256 compression function (FIPS 180-4 §6.2.2): updates the hash value `*state` with the `n` 64-byte blocks starting at `blocks`, in order.
 ///
@@ -3223,7 +3223,7 @@ ret
 }
 
 /// The CPU features `vg_sha256_compress_avx2` requires (`Artifact.features`).
-pub(crate) const VG_SHA256_COMPRESS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2"]);
+pub(crate) const VG_SHA256_COMPRESS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// The SHA-256 compression function (FIPS 180-4 §6.2.2): updates the hash value `*state` with the `n` 64-byte blocks starting at `blocks`, in order.
 ///
@@ -7303,7 +7303,7 @@ ret
 }
 
 /// The CPU features `vg_sha224_finalize_avx2` requires (`Artifact.features`).
-pub(crate) const VG_SHA224_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2"]);
+pub(crate) const VG_SHA224_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// Finishes a SHA-224 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), hashed from the initial hash value of SHA-224 (as `vg_sha224_init` starts it), writes the SHA-224 digest of that message (28 bytes, `VG.Spec.Sha256.sha224`) to `*out`.
 ///
@@ -7466,7 +7466,7 @@ ret
 }
 
 /// The CPU features `vg_sha224_digest_avx2` requires (`Artifact.features`).
-pub(crate) const VG_SHA224_DIGEST_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2"]);
+pub(crate) const VG_SHA224_DIGEST_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// Computes the SHA-224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha256.sha224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-224 computation with that message.
 ///
@@ -7689,7 +7689,7 @@ ret
 }
 
 /// The CPU features `vg_sha224_finalize_shani` requires (`Artifact.features`).
-pub(crate) const VG_SHA224_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
+pub(crate) const VG_SHA224_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
 
 /// Finishes a SHA-224 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), hashed from the initial hash value of SHA-224 (as `vg_sha224_init` starts it), writes the SHA-224 digest of that message (28 bytes, `VG.Spec.Sha256.sha224`) to `*out`.
 ///
@@ -7852,7 +7852,7 @@ ret
 }
 
 /// The CPU features `vg_sha224_digest_shani` requires (`Artifact.features`).
-pub(crate) const VG_SHA224_DIGEST_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
+pub(crate) const VG_SHA224_DIGEST_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
 
 /// Computes the SHA-224 digest of the `len` bytes at `data` (28 bytes, `VG.Spec.Sha256.sha224`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-224 computation with that message.
 ///
@@ -8939,7 +8939,7 @@ ret
 }
 
 /// The CPU features `vg_sha256_update_avx2` requires (`Artifact.features`).
-pub(crate) const VG_SHA256_UPDATE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2"]);
+pub(crate) const VG_SHA256_UPDATE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// Absorbs data into a SHA-224 or SHA-256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
@@ -9104,7 +9104,7 @@ ret
 }
 
 /// The CPU features `vg_sha256_finalize_avx2` requires (`Artifact.features`).
-pub(crate) const VG_SHA256_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2"]);
+pub(crate) const VG_SHA256_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// Finishes a SHA-224 or SHA-256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (32 bytes) to `*out`. The SHA-256 digest is all of it; the SHA-224 digest is its first 28 bytes.
 ///
@@ -9270,7 +9270,7 @@ ret
 }
 
 /// The CPU features `vg_sha256_update_scratch_avx2` requires (`Artifact.features`).
-pub(crate) const VG_SHA256_UPDATE_SCRATCH_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2"]);
+pub(crate) const VG_SHA256_UPDATE_SCRATCH_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// `vg_sha256_update`, with its working space in `*scratch`.
 ///
@@ -9433,7 +9433,7 @@ ret
 }
 
 /// The CPU features `vg_sha256_finalize_scratch_avx2` requires (`Artifact.features`).
-pub(crate) const VG_SHA256_FINALIZE_SCRATCH_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2"]);
+pub(crate) const VG_SHA256_FINALIZE_SCRATCH_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// `vg_sha256_finalize`, with its working space in `*scratch`.
 ///
@@ -9597,7 +9597,7 @@ ret
 }
 
 /// The CPU features `vg_sha256_digest_avx2` requires (`Artifact.features`).
-pub(crate) const VG_SHA256_DIGEST_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2"]);
+pub(crate) const VG_SHA256_DIGEST_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// Computes the SHA-256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha256.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-256 computation with that message.
 ///
@@ -9823,7 +9823,7 @@ ret
 }
 
 /// The CPU features `vg_sha256_update_shani` requires (`Artifact.features`).
-pub(crate) const VG_SHA256_UPDATE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
+pub(crate) const VG_SHA256_UPDATE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
 
 /// Absorbs data into a SHA-224 or SHA-256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
@@ -9988,7 +9988,7 @@ ret
 }
 
 /// The CPU features `vg_sha256_finalize_shani` requires (`Artifact.features`).
-pub(crate) const VG_SHA256_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
+pub(crate) const VG_SHA256_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
 
 /// Finishes a SHA-224 or SHA-256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (32 bytes) to `*out`. The SHA-256 digest is all of it; the SHA-224 digest is its first 28 bytes.
 ///
@@ -10154,7 +10154,7 @@ ret
 }
 
 /// The CPU features `vg_sha256_update_scratch_shani` requires (`Artifact.features`).
-pub(crate) const VG_SHA256_UPDATE_SCRATCH_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
+pub(crate) const VG_SHA256_UPDATE_SCRATCH_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
 
 /// `vg_sha256_update`, with its working space in `*scratch`.
 ///
@@ -10317,7 +10317,7 @@ ret
 }
 
 /// The CPU features `vg_sha256_finalize_scratch_shani` requires (`Artifact.features`).
-pub(crate) const VG_SHA256_FINALIZE_SCRATCH_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
+pub(crate) const VG_SHA256_FINALIZE_SCRATCH_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
 
 /// `vg_sha256_finalize`, with its working space in `*scratch`.
 ///
@@ -10481,7 +10481,7 @@ ret
 }
 
 /// The CPU features `vg_sha256_digest_shani` requires (`Artifact.features`).
-pub(crate) const VG_SHA256_DIGEST_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
+pub(crate) const VG_SHA256_DIGEST_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA | crate::cpu::feature::SSSE3);
 
 /// Computes the SHA-256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha256.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-256 computation with that message.
 ///

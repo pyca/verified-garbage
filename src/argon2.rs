@@ -472,16 +472,20 @@ mod tests {
                 CompressBackend::Avx512
             );
             assert_eq!(
-                CompressBackend::select(Features::of(&["avx", "avx2", "avx512f"])),
+                CompressBackend::select(Features(
+                    crate::cpu::feature::AVX
+                        | crate::cpu::feature::AVX2
+                        | crate::cpu::feature::AVX512F
+                )),
                 CompressBackend::Avx512
             );
             assert_eq!(
-                CompressBackend::select(Features::of(&["avx"])),
+                CompressBackend::select(Features(crate::cpu::feature::AVX)),
                 CompressBackend::Scalar
             );
         }
         assert_eq!(
-            CompressBackend::select(Features::of(&[])),
+            CompressBackend::select(Features(0)),
             CompressBackend::Scalar
         );
     }

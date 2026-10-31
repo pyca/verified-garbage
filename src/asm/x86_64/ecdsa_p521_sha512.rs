@@ -1418,7 +1418,7 @@ ret
 }
 
 /// The CPU features `vg_ecdsa_p521_sha512_sign_adx` requires (`Artifact.features`).
-pub(crate) const VG_ECDSA_P521_SHA512_SIGN_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["bmi2", "adx", "avx", "avx2"]);
+pub(crate) const VG_ECDSA_P521_SHA512_SIGN_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// Deterministic ECDSA signature generation over P-521 with HMAC-SHA-512 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (66 bytes, most significant first), signs the SHA-512 hash at `digest` (64 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (66 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
 ///
@@ -2837,7 +2837,7 @@ ret
 }
 
 /// The CPU features `vg_ecdsa_p521_sha512_sign_avx2` requires (`Artifact.features`).
-pub(crate) const VG_ECDSA_P521_SHA512_SIGN_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2"]);
+pub(crate) const VG_ECDSA_P521_SHA512_SIGN_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2);
 
 /// Deterministic ECDSA signature generation over P-521 with HMAC-SHA-512 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (66 bytes, most significant first), signs the SHA-512 hash at `digest` (64 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (66 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
 ///
@@ -4256,7 +4256,7 @@ ret
 }
 
 /// The CPU features `vg_ecdsa_p521_sha512_sign_avx2_adx` requires (`Artifact.features`).
-pub(crate) const VG_ECDSA_P521_SHA512_SIGN_AVX2_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2", "adx"]);
+pub(crate) const VG_ECDSA_P521_SHA512_SIGN_AVX2_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::BMI1 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Deterministic ECDSA signature generation over P-521 with HMAC-SHA-512 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (66 bytes, most significant first), signs the SHA-512 hash at `digest` (64 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (66 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
 ///
@@ -5675,7 +5675,7 @@ ret
 }
 
 /// The CPU features `vg_ecdsa_p521_sha512_sign_shani` requires (`Artifact.features`).
-pub(crate) const VG_ECDSA_P521_SHA512_SIGN_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "sha512"]);
+pub(crate) const VG_ECDSA_P521_SHA512_SIGN_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512);
 
 /// Deterministic ECDSA signature generation over P-521 with HMAC-SHA-512 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (66 bytes, most significant first), signs the SHA-512 hash at `digest` (64 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (66 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
 ///
@@ -7094,7 +7094,7 @@ ret
 }
 
 /// The CPU features `vg_ecdsa_p521_sha512_sign_shani_adx` requires (`Artifact.features`).
-pub(crate) const VG_ECDSA_P521_SHA512_SIGN_SHANI_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "sha512", "bmi2", "adx"]);
+pub(crate) const VG_ECDSA_P521_SHA512_SIGN_SHANI_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::SHA512 | crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// Deterministic ECDSA signature generation over P-521 with HMAC-SHA-512 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (66 bytes, most significant first), signs the SHA-512 hash at `digest` (64 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (66 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
 ///

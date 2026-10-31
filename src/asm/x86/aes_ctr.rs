@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_aes_ctr_aesni` requires (`Artifact.features`).
-pub(crate) const VG_AES_CTR_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+pub(crate) const VG_AES_CTR_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
 
 /// AES-CTR encryption or decryption (NIST SP 800-38A §6.5) of whole blocks, in place: XORs the `n` 16-byte blocks at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///

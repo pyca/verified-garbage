@@ -63444,7 +63444,7 @@ bx lr",
 
 /// The CPU features `vg_dsa_generate_parameters_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_DSA_GENERATE_PARAMETERS_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
+pub(crate) const VG_DSA_GENERATE_PARAMETERS_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
 
 /// DSA parameter generation per FIPS 186-4 A.1.1.2 and A.2.1. Seeds are q_len-byte candidates; hs are p_len-byte candidates; witnesses are a separate random-octet tape consumed by the existing probable-prime specification. Returns 1 with p||q||g, or 0 with zero output if no parameters are produced, including tape exhaustion. Accepted parameters pass probable-prime tests, not primality certification. All three parameter-search tapes may affect timing. Contract: `VG.Spec.Dsa.generateParametersContract`.
 ///
@@ -68511,7 +68511,7 @@ bx lr",
 
 /// The CPU features `vg_dsa_probable_prime_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_DSA_PROBABLE_PRIME_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
+pub(crate) const VG_DSA_PROBABLE_PRIME_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
 
 /// DSA's probable-prime test (`VG.Spec.Dsa.probablePrime`: trial division, then RSA's blinded Miller–Rabin loop with 64 uniform witnesses through 2048 bits and 128 above) of an odd number of exactly `bits` bits, for `bits` one of [160, 256, 1024, 2048, 3072], stored as `bits / 8` big-endian bytes in `ws` at the offset `VG.Spec.Dsa.ProbablePrime.api` gives that size, with witnesses drawn from the front of `rand`. Returns 1 for a probable prime, 2 for a composite, and 0 if `rand` ran out; for 1 and 2 writes the octets read to `used`. Every byte of `ws` keeps its value but those of the size's scratch ranges. Acceptance is probable primality, not a certificate.
 ///

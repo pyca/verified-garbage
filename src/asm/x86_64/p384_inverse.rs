@@ -2575,7 +2575,7 @@ ret
 }
 
 /// The CPU features `vg_p384_inv_mod_p_adx` requires (`Artifact.features`).
-pub(crate) const VG_P384_INV_MOD_P_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["bmi2", "adx"]);
+pub(crate) const VG_P384_INV_MOD_P_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// The power `A = Z^(p-2)` modulo P-384's prime `p` (the inverse of `Z` if it is nonzero), of the number `Z` at byte 832 of `ws`. Numbers are 6 64-bit words (`48` bytes), little-endian, in Montgomery's form modulo P-384's prime `p`. The function reads `p` at byte 64 and the number to invert at byte 832, and writes the result at bytes 1456 to 1503, below `p`. Bytes 1504 to 1551, 4048 to 4095 and 3400 to 3847 of `ws` are the function's own working space; every other byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect timing.
 ///
@@ -7732,7 +7732,7 @@ ret
 }
 
 /// The CPU features `vg_p384_inv_mod_n_adx` requires (`Artifact.features`).
-pub(crate) const VG_P384_INV_MOD_N_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["bmi2", "adx"]);
+pub(crate) const VG_P384_INV_MOD_N_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// The power `A = x^(n-2)` modulo P-384's order `n` (the inverse of `x` if it is nonzero), of the number `x` at byte 1840 of `ws`. Numbers are 6 64-bit words (`48` bytes), little-endian, in Montgomery's form modulo P-384's order `n`. The function reads `n` at byte 112 and the number to invert at byte 1840, and writes the result at bytes 1456 to 1503, below `n`. Bytes 1504 to 1551, 4048 to 4095 and 3400 to 3847 of `ws` are the function's own working space; every other byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect timing.
 ///

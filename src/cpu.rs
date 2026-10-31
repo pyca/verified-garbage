@@ -11,14 +11,14 @@
 //! system the code was compiled for (`umaal`, on those that run on A-profile
 //! cores alone). Each object that can use such a function chooses its
 //! implementation when it is created, from the features detected. A feature
-//! detection does not know ([`NAMES`]) cannot be checked for:
-//! [`Features::of`] panics on it, so a generated constant naming one fails
-//! to compile.
+//! detection does not know (one without a bit in [`feature`]) cannot be
+//! checked for: a generated constant is the union of the bits of the
+//! features it names, so naming one fails to compile.
 //!
 //! With the `cpu-features-env` Cargo feature, the environment variable
 //! `VG_CPU_FEATURES` restricts the features detected, so that tests and
 //! benchmarks can run every implementation on one machine: `none`, or a
-//! comma-separated list of the names in [`NAMES`] (e.g. `aes,pclmulqdq`).
+//! comma-separated list of the names in `NAMES` (e.g. `aes,pclmulqdq`).
 //! Unset or empty, it restricts nothing. It can only remove features, so it
 //! can never choose code the CPU cannot run, and it names only features
 //! this library knows and the CPU has: anything else panics, rather than
@@ -29,156 +29,67 @@
 
 use core::sync::atomic::{AtomicU32, Ordering};
 
-/// The features detection knows, by their Rust `target_feature` names: bit
-/// `i` of a [`Features`] is `NAMES[i]`.
-pub(crate) const NAMES: [&str; 21] = [
-    "ssse3",
-    "sha",
-    "aes",
-    "pclmulqdq",
-    "avx",
-    "avx2",
-    "bmi1",
-    "bmi2",
-    "avx512f",
-    "sha512",
-    "sha2",
-    "sha3",
-    "adx",
-    "avx512ifma",
-    "avx512vl",
-    "neon",
-    "sve2",
-    "vaes",
-    "vpclmulqdq",
-    "avx512bw",
-    "umaal",
+/// The bit of each feature detection knows in a [`Features`], by its Rust
+/// `target_feature` name in uppercase: what the generated `_FEATURES`
+/// constants, and the code choosing among implementations, are made of.
+/// (Each target detects and uses only some of them.)
+#[allow(dead_code)]
+pub(crate) mod feature {
+    pub(crate) const SSSE3: u32 = 1 << 0;
+    pub(crate) const SHA: u32 = 1 << 1;
+    pub(crate) const AES: u32 = 1 << 2;
+    pub(crate) const PCLMULQDQ: u32 = 1 << 3;
+    pub(crate) const AVX: u32 = 1 << 4;
+    pub(crate) const AVX2: u32 = 1 << 5;
+    pub(crate) const BMI1: u32 = 1 << 6;
+    pub(crate) const BMI2: u32 = 1 << 7;
+    pub(crate) const AVX512F: u32 = 1 << 8;
+    pub(crate) const SHA512: u32 = 1 << 9;
+    pub(crate) const SHA2: u32 = 1 << 10;
+    pub(crate) const SHA3: u32 = 1 << 11;
+    pub(crate) const ADX: u32 = 1 << 12;
+    pub(crate) const AVX512IFMA: u32 = 1 << 13;
+    pub(crate) const AVX512VL: u32 = 1 << 14;
+    pub(crate) const NEON: u32 = 1 << 15;
+    pub(crate) const SVE2: u32 = 1 << 16;
+    pub(crate) const VAES: u32 = 1 << 17;
+    pub(crate) const VPCLMULQDQ: u32 = 1 << 18;
+    pub(crate) const AVX512BW: u32 = 1 << 19;
+    pub(crate) const UMAAL: u32 = 1 << 20;
+}
+
+/// Each feature's name and bit, for reading `VG_CPU_FEATURES` and for the
+/// tests: bit `i` is `NAMES[i]`'s.
+#[cfg(any(test, feature = "cpu-features-env"))]
+pub(crate) const NAMES: [(&str, u32); 21] = [
+    ("ssse3", feature::SSSE3),
+    ("sha", feature::SHA),
+    ("aes", feature::AES),
+    ("pclmulqdq", feature::PCLMULQDQ),
+    ("avx", feature::AVX),
+    ("avx2", feature::AVX2),
+    ("bmi1", feature::BMI1),
+    ("bmi2", feature::BMI2),
+    ("avx512f", feature::AVX512F),
+    ("sha512", feature::SHA512),
+    ("sha2", feature::SHA2),
+    ("sha3", feature::SHA3),
+    ("adx", feature::ADX),
+    ("avx512ifma", feature::AVX512IFMA),
+    ("avx512vl", feature::AVX512VL),
+    ("neon", feature::NEON),
+    ("sve2", feature::SVE2),
+    ("vaes", feature::VAES),
+    ("vpclmulqdq", feature::VPCLMULQDQ),
+    ("avx512bw", feature::AVX512BW),
+    ("umaal", feature::UMAAL),
 ];
-
-/// The bit of the feature `name` in a [`Features`]: its index in [`NAMES`],
-/// which [`Features::of`] checks. A `match`, which the compiler evaluates in
-/// a few steps, rather than a search of [`NAMES`]: evaluating the generated
-/// `_FEATURES` constants by searching took a second of every build of the
-/// crate.
-#[cfg_attr(
-    not(any(
-        target_arch = "x86",
-        target_arch = "x86_64",
-        target_arch = "aarch64",
-        all(
-            target_arch = "arm",
-            any(
-                target_os = "linux",
-                target_os = "android",
-                target_os = "freebsd",
-                target_os = "netbsd",
-                target_os = "openbsd"
-            )
-        )
-    )),
-    allow(dead_code)
-)]
-const fn bit(name: &str) -> usize {
-    match name.as_bytes() {
-        b"ssse3" => 0,
-        b"sha" => 1,
-        b"aes" => 2,
-        b"pclmulqdq" => 3,
-        b"avx" => 4,
-        b"avx2" => 5,
-        b"bmi1" => 6,
-        b"bmi2" => 7,
-        b"avx512f" => 8,
-        b"sha512" => 9,
-        b"sha2" => 10,
-        b"sha3" => 11,
-        b"adx" => 12,
-        b"avx512ifma" => 13,
-        b"avx512vl" => 14,
-        b"neon" => 15,
-        b"sve2" => 16,
-        b"vaes" => 17,
-        b"vpclmulqdq" => 18,
-        b"avx512bw" => 19,
-        b"umaal" => 20,
-        _ => panic!("a CPU feature this library does not know"),
-    }
-}
-
-/// Whether two names are equal (`==` on strings, which is not `const`).
-#[cfg_attr(
-    not(any(
-        target_arch = "x86",
-        target_arch = "x86_64",
-        target_arch = "aarch64",
-        all(
-            target_arch = "arm",
-            any(
-                target_os = "linux",
-                target_os = "android",
-                target_os = "freebsd",
-                target_os = "netbsd",
-                target_os = "openbsd"
-            )
-        )
-    )),
-    allow(dead_code)
-)]
-const fn eq(a: &str, b: &str) -> bool {
-    let (a, b) = (a.as_bytes(), b.as_bytes());
-    let mut same = a.len() == b.len();
-    let mut i = 0;
-    while same && i < a.len() {
-        same = a[i] == b[i];
-        i += 1;
-    }
-    same
-}
 
 /// A set of CPU features.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct Features(pub(crate) u32);
 
 impl Features {
-    /// The features named in `names` (as each generated `_FEATURES`
-    /// constant is made). A `const fn`, so that choosing an implementation
-    /// can compare precomputed sets rather than names.
-    ///
-    /// # Panics
-    ///
-    /// If `names` has a feature not in [`NAMES`], which detection does not
-    /// know. In a constant (`const { Features::of(…) }`), that fails to
-    /// compile, rather than quietly never choosing the code that needs it.
-    #[cfg_attr(
-        not(any(
-            target_arch = "x86",
-            target_arch = "x86_64",
-            target_arch = "aarch64",
-            all(
-                target_arch = "arm",
-                any(
-                    target_os = "linux",
-                    target_os = "android",
-                    target_os = "freebsd",
-                    target_os = "netbsd",
-                    target_os = "openbsd"
-                )
-            )
-        )),
-        allow(dead_code)
-    )]
-    pub(crate) const fn of(names: &[&str]) -> Features {
-        let mut acc = 0;
-        let mut i = 0;
-        while i < names.len() {
-            let j = bit(names[i]);
-            assert!(eq(names[i], NAMES[j]));
-            acc |= 1 << j;
-            i += 1;
-        }
-        Features(acc)
-    }
-
     /// The features in any of `sets`.
     #[cfg_attr(
         not(any(
@@ -296,9 +207,9 @@ fn allowed_by(names: &str, runtime: u32) -> u32 {
         allowed & !runtime
     };
     if lacking != 0 {
-        let lacking: std::vec::Vec<&str> = (NAMES.iter().enumerate())
-            .filter(|(i, _)| lacking >> i & 1 == 1)
-            .map(|(_, name)| *name)
+        let lacking: std::vec::Vec<&str> = (NAMES.iter())
+            .filter(|(_, bit)| lacking & bit != 0)
+            .map(|(name, _)| *name)
             .collect();
         panic!(
             "VG_CPU_FEATURES names {}, which this CPU does not have",
@@ -323,7 +234,10 @@ fn parse(names: &str) -> Option<u32> {
         "" => Some(u32::MAX),
         "none" => Some(0),
         _ => names.split(',').try_fold(0, |acc, n| {
-            NAMES.iter().position(|m| *m == n).map(|i| acc | 1 << i)
+            NAMES
+                .iter()
+                .find(|(m, _)| *m == n)
+                .map(|(_, bit)| acc | bit)
         }),
     }
 }
@@ -396,22 +310,22 @@ fn decode(cpuid: impl Fn(u32, u32) -> [u32; 4], xgetbv: impl Fn() -> u64) -> u32
     let vaes = (ecx7 >> 9) & avx;
     let vpclmulqdq = (ecx7 >> 10) & avx;
     let avx512bw = (ebx >> 30) & avx & zmm;
-    ssse3
-        | (sha << 1)
-        | (aes << 2)
-        | (pclmulqdq << 3)
-        | (avx << 4)
-        | (avx2 << 5)
-        | (bmi1 << 6)
-        | (bmi2 << 7)
-        | (avx512f << 8)
-        | (sha512 << 9)
-        | (adx << 12)
-        | (avx512ifma << 13)
-        | (avx512vl << 14)
-        | (vaes << 17)
-        | (vpclmulqdq << 18)
-        | (avx512bw << 19)
+    (ssse3 * feature::SSSE3)
+        | (sha * feature::SHA)
+        | (aes * feature::AES)
+        | (pclmulqdq * feature::PCLMULQDQ)
+        | (avx * feature::AVX)
+        | (avx2 * feature::AVX2)
+        | (bmi1 * feature::BMI1)
+        | (bmi2 * feature::BMI2)
+        | (avx512f * feature::AVX512F)
+        | (sha512 * feature::SHA512)
+        | (adx * feature::ADX)
+        | (avx512ifma * feature::AVX512IFMA)
+        | (avx512vl * feature::AVX512VL)
+        | (vaes * feature::VAES)
+        | (vpclmulqdq * feature::VPCLMULQDQ)
+        | (avx512bw * feature::AVX512BW)
 }
 
 /// AArch64 feature groups, using the same Rust names as the generated
@@ -420,13 +334,13 @@ fn decode(cpuid: impl Fn(u32, u32) -> [u32; 4], xgetbv: impl Fn() -> u64) -> u32
 /// FEAT_SVE2.
 #[cfg(target_arch = "aarch64")]
 fn runtime() -> u32 {
-    (u32::from(aarch64_aes()) * Features::of(&["aes"]).0)
-        | (u32::from(aarch64_sha2()) * Features::of(&["sha2"]).0)
-        | (u32::from(aarch64_sha3()) * Features::of(&["sha3"]).0)
-        | (u32::from(aarch64_sve2()) * Features::of(&["sve2"]).0)
+    (u32::from(aarch64_aes()) * feature::AES)
+        | (u32::from(aarch64_sha2()) * feature::SHA2)
+        | (u32::from(aarch64_sha3()) * feature::SHA3)
+        | (u32::from(aarch64_sve2()) * feature::SVE2)
         // AdvSIMD is the AArch64 baseline used by the verified ISA.
         // Keep a mask bit so tests and benchmarks can select scalar code.
-        | Features::of(&["neon"]).0
+        | feature::NEON
 }
 
 /// Whether the CPU has FEAT_AES and FEAT_PMULL, asked of the operating
@@ -498,7 +412,7 @@ fn aarch64_sve2() -> bool {
     )
 ))]
 fn runtime() -> u32 {
-    Features::of(&["umaal"]).0
+    feature::UMAAL
 }
 
 /// No features are detected on the other targets: on ARMv7 without an
@@ -527,75 +441,35 @@ fn runtime() -> u32 {
 mod tests {
     use super::*;
 
+    /// Each name's bit is its index in `NAMES`, and no name is there twice.
     #[test]
-    fn of_names() {
-        assert_eq!(Features::of(&[]), Features(0));
-        assert_eq!(Features::of(&["sha", "ssse3"]), Features(0b11));
-        assert_eq!(Features::of(&["pclmulqdq", "aes"]), Features(0b1100));
-        assert_eq!(Features::of(&["avx", "avx2"]), Features(0b11_0000));
-        assert_eq!(Features::of(&["bmi2", "bmi1"]), Features(0b1100_0000));
-        assert_eq!(Features::of(&["avx", "avx512f"]), Features(0b1_0001_0000));
-        assert_eq!(
-            Features::of(&["avx", "avx2", "sha512"]),
-            Features(0b10_0011_0000)
-        );
-        assert_eq!(
-            Features::of(&["bmi2", "adx"]),
-            Features((1 << 12) | (1 << 7))
-        );
-        assert_eq!(
-            Features::of(&["avx512vl", "avx512ifma"]),
-            Features((1 << 14) | (1 << 13))
-        );
-        assert_eq!(Features::of(&["sha2"]), Features(1 << 10));
-        assert_eq!(Features::of(&["sha3"]), Features(1 << 11));
-        assert_eq!(Features::of(&["neon"]), Features(1 << 15));
-        assert_eq!(Features::of(&["sve2"]), Features(1 << 16));
-        assert_eq!(Features::of(&["umaal"]), Features(1 << 20));
-        assert_eq!(
-            Features::of(&["vpclmulqdq", "vaes"]),
-            Features((1 << 18) | (1 << 17))
-        );
+    fn names_are_bits() {
+        for (i, (name, bit)) in NAMES.iter().enumerate() {
+            assert_eq!(*bit, 1 << i, "{name}");
+            assert_eq!(NAMES.iter().filter(|(n, _)| n == name).count(), 1);
+        }
+    }
+
+    #[test]
+    fn all() {
         assert_eq!(
             Features::all(&[
-                Features::of(&["sha"]),
-                Features::of(&[]),
-                Features::of(&["ssse3", "sha"])
+                Features(feature::SHA),
+                Features(0),
+                Features(feature::SSSE3 | feature::SHA)
             ]),
-            Features(0b11)
+            Features(feature::SSSE3 | feature::SHA)
         );
     }
 
     #[test]
     fn contains() {
-        let f = Features::of(&["sha", "ssse3"]);
-        assert!(f.contains(Features::of(&[])));
-        assert!(f.contains(Features::of(&["sha"])));
+        let f = Features(feature::SHA | feature::SSSE3);
+        assert!(f.contains(Features(0)));
+        assert!(f.contains(Features(feature::SHA)));
         assert!(f.contains(f));
-        assert!(!f.contains(Features::of(&["sha", "avx"])));
-        assert!(!Features::of(&[]).contains(f));
-    }
-
-    /// Each name's bit is its index in `NAMES`.
-    #[test]
-    fn bits_are_indices() {
-        for (j, name) in NAMES.iter().enumerate() {
-            assert_eq!(bit(name), j);
-        }
-    }
-
-    #[test]
-    fn eq_names() {
-        assert!(eq("avx2", "avx2"));
-        assert!(!eq("avx", "avx2"));
-        assert!(!eq("avx2", "avx"));
-        assert!(!eq("aes", "adx"));
-    }
-
-    #[test]
-    #[should_panic(expected = "a CPU feature this library does not know")]
-    fn of_unknown() {
-        Features::of(&["sha", "avx512vbmi"]);
+        assert!(!f.contains(Features(feature::SHA | feature::AVX)));
+        assert!(!Features(0).contains(f));
     }
 
     /// A CPU without leaf 7 (the oldest x86-64 ones; no runner's CPU lacks
@@ -612,7 +486,7 @@ mod tests {
         let f = decode(|leaf, _| leaves[leaf as usize], || 0b111);
         assert_eq!(
             Features(f),
-            Features::of(&["ssse3", "aes", "pclmulqdq", "avx"])
+            Features(feature::SSSE3 | feature::AES | feature::PCLMULQDQ | feature::AVX)
         );
     }
 
@@ -635,9 +509,9 @@ mod tests {
                 || 0b111,
             );
             let want = if subs == 1 {
-                Features::of(&["sha", "avx", "avx2", "sha512"])
+                Features(feature::SHA | feature::AVX | feature::AVX2 | feature::SHA512)
             } else {
-                Features::of(&["sha", "avx", "avx2"])
+                Features(feature::SHA | feature::AVX | feature::AVX2)
             };
             assert_eq!(Features(f), want);
         }

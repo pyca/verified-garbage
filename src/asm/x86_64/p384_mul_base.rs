@@ -9833,7 +9833,7 @@ ret
 }
 
 /// The CPU features `vg_p384_mul_base_adx` requires (`Artifact.features`).
-pub(crate) const VG_P384_MUL_BASE_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["bmi2", "adx", "avx", "avx2"]);
+pub(crate) const VG_P384_MUL_BASE_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX | crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// The multiple `P = [k]G` of P-384's base point `G`, for the number `k` of 6 64-bit words (`48` bytes), little-endian, at byte 1552 of `ws`, in projective coordinates (`(X : Y : Z)` for `(X / Z, Y / Z)`, and `(0 : Y : 0)` for the point at infinity) at bytes 736 to 879: coordinates of 6 64-bit words, little-endian, in Montgomery's form modulo P-384's prime `p`, below it. The function reads `p` at byte 64 and zero at byte 208, and tables of multiples of `G` that are constants of the library. Bytes 880 to 1551, 1984 to 2031, 4048 to 4095 and 2224 to 2615 of `ws` are the function's own working space; every other byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect timing.
 ///

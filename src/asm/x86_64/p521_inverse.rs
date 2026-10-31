@@ -3170,7 +3170,7 @@ ret
 }
 
 /// The CPU features `vg_p521_inv_mod_p_adx` requires (`Artifact.features`).
-pub(crate) const VG_P521_INV_MOD_P_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["bmi2", "adx"]);
+pub(crate) const VG_P521_INV_MOD_P_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::BMI2 | crate::cpu::feature::ADX);
 
 /// The power `A = Z^(p-2)` modulo P-521's prime `p` (the inverse of `Z` if it is nonzero), of the number `Z` at byte 1216 of `ws`. Numbers are 9 64-bit words (`72` bytes), little-endian, in Montgomery's form modulo P-521's prime `p`. The function reads `p` at byte 64 and the number to invert at byte 1216, and writes the result at bytes 2152 to 2223, below `p`. Bytes 2224 to 2295, 4024 to 4095 and 5056 to 5767 of `ws` are the function's own working space; every other byte of `ws` but the result's keeps its value. Constant time: only the pointer may affect timing.
 ///

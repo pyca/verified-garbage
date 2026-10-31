@@ -120,14 +120,20 @@ type's alignment.
 An artifact whose code needs CPU features beyond the target's baseline
 (`Artifact.features`) also gets a last `# Safety` item saying the CPU must
 support them, and a constant of them, for the Rust that checks for them
-before calling it: a `Features` set (`src/cpu.rs`), made from their names by
-`Features::of`, which does not compile with a name `src/cpu.rs` does not
-detect:
+before calling it: a `Features` set (`src/cpu.rs`), the union of the bits
+`crate::cpu::feature::<FEATURE>` of their names in uppercase (`featureConst`), which does not
+compile with a name `src/cpu.rs` does not detect (a constant it does not
+define):
 
 ```rust
 /// The CPU features `<name>` requires (`Artifact.features`).
-pub(crate) const <NAME>_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["<feature>", …]);
+pub(crate) const <NAME>_FEATURES: crate::cpu::Features =
+    crate::cpu::Features(crate::cpu::feature::<FEATURE> | …);
 ```
+
+(rustc evaluates every constant of the crate, and an `|` of constants is a
+few steps of its evaluator, where a call of a `const fn` on the names, as
+these once were, cost it a tenth of a build of the crate.)
 
 `files` checks that `features` are exactly the features the code requires.
 (The functions get no `#[target_feature]` attribute: Rust does not allow one
@@ -248,15 +254,22 @@ def featureDoc (doc : String) : List String → String
   | fs => doc ++ s!"\n* The CPU must support the {codeList fs} target \
     feature{if fs.length == 1 then "" else "s"}."
 
+/-- The name of the constant of the bit of the CPU feature `f` in a
+`Features` (`src/cpu.rs`'s `feature` module): `f` in uppercase, with `_` for
+each character that is not a letter or a digit (`sse4.1`'s is `SSE4_1`). -/
+def featureConst (f : String) : String :=
+  f.toUpper.map fun c => if c.isAlphanum then c else '_'
+
 /-- The constant of the CPU features `fs` that the function `name`
-requires; nothing if there are none. -/
+requires: the union of their bits (`featureConst`); nothing if there are
+none. -/
 def featuresConst (name gate : String) : List String → String
   | [] => ""
   | fs =>
     s!"/// The CPU features `{name}` requires (`Artifact.features`).\n" ++ gate ++
     s!"pub(crate) const {name.toUpper}_FEATURES: crate::cpu::Features = \
-      crate::cpu::Features::of(&[" ++
-    ", ".intercalate (fs.map fun f => s!"\"{escape f}\"") ++ "]);\n\n"
+      crate::cpu::Features(" ++
+    " | ".intercalate (fs.map fun f => s!"crate::cpu::feature::{featureConst f}") ++ ");\n\n"
 
 /-- The name of the constant of how much of its parameter `param` the
 function `name` writes (`Artifact.written`). -/

@@ -320,17 +320,22 @@ mod tests {
             assert_eq!(Backend::select(adx), Backend::Adx);
             // The ladder's features alone, without the comb's AVX2.
             assert_eq!(Backend::select(VG_X25519_ADX_FEATURES), Backend::Baseline);
-            assert_eq!(Backend::select(Features::of(&["bmi2"])), Backend::Baseline);
+            assert_eq!(
+                Backend::select(Features(crate::cpu::feature::BMI2)),
+                Backend::Baseline
+            );
             let ifma = Features(VG_X25519_IFMA_FEATURES.0 | VG_X25519_BASE_IFMA_FEATURES.0);
             assert_eq!(Backend::select(ifma), Backend::Ifma);
             assert_eq!(
-                Backend::select(Features(adx.0 | Features::of(&["avx512ifma"]).0)),
+                Backend::select(Features(
+                    adx.0 | Features(crate::cpu::feature::AVX512IFMA).0
+                )),
                 Backend::Adx
             );
             // Without AVX512F, which the ladder's EVEX-encoded instructions and
             // the comb need.
             assert_eq!(
-                Backend::select(Features(ifma.0 & !Features::of(&["avx512f"]).0)),
+                Backend::select(Features(ifma.0 & !Features(crate::cpu::feature::AVX512F).0)),
                 Backend::Adx
             );
         }

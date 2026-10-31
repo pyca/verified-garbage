@@ -88,7 +88,7 @@ SYM = re.compile(r" = sym (?:\w+::)*(vg_\w+)")
 WORD = re.compile(r"\w")
 FEATURES = re.compile(
     r"^pub\(crate\) const (VG_\w+)_FEATURES: crate::cpu::Features = "
-    r"crate::cpu::Features::of\(&\[(.*?)\]\);",
+    r"crate::cpu::Features\((.*?)\);",
     re.MULTILINE,
 )
 
@@ -147,7 +147,8 @@ def features(srcs):
     for target, text in srcs:
         feats = targets.setdefault(target, {})
         for m in FEATURES.finditer(text):
-            feats[m.group(1).lower()] = frozenset(re.findall(r'"(\w+)"', m.group(2)))
+            feats[m.group(1).lower()] = frozenset(
+                f.lower() for f in re.findall(r"crate::cpu::feature::(\w+)", m.group(2)))
     return targets
 
 

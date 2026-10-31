@@ -131,7 +131,7 @@ mod tests {
             }
             #[cfg(target_arch = "aarch64")]
             {
-                let expected = if Features(bits).contains(Features::of(&["sha2"])) {
+                let expected = if Features(bits).contains(Features(crate::cpu::feature::SHA2)) {
                     Sha256Backend::Sha2
                 } else {
                     Sha256Backend::Scalar
@@ -140,7 +140,9 @@ mod tests {
             }
             #[cfg(target_arch = "x86")]
             {
-                let expected = if Features(bits).contains(Features::of(&["sha", "ssse3"])) {
+                let expected = if Features(bits).contains(Features(
+                    crate::cpu::feature::SHA | crate::cpu::feature::SSSE3,
+                )) {
                     Sha256Backend::ShaNi
                 } else {
                     Sha256Backend::Scalar

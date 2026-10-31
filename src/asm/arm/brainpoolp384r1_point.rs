@@ -450,7 +450,7 @@ bx lr",
 
 /// The CPU features `vg_brainpoolp384r1_point_add_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_BRAINPOOLP384R1_POINT_ADD_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
+pub(crate) const VG_BRAINPOOLP384R1_POINT_ADD_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
 
 /// The complete addition `O = P + Q` of points on brainpoolP384r1 (Renes, Costello and Batina's Algorithm 1). A point is three projective coordinates `X, Y, Z` in Montgomery's form modulo the curve's prime, each 6 64-bit words (`48` bytes), little-endian, at consecutive byte offsets of the working space `ws`: `O` at byte 2832, `P` at 2976 and `Q` at 3120. The curve's `a` and `3b`, in the same form, are read at bytes 3264 and 3312. Every byte of `ws` but `O`'s and the function's own working space (bytes 3360 to 4095) keeps its value.
 ///
@@ -679,7 +679,7 @@ bx lr",
 
 /// The CPU features `vg_brainpoolp384r1_point_double_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_BRAINPOOLP384R1_POINT_DOUBLE_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
+pub(crate) const VG_BRAINPOOLP384R1_POINT_DOUBLE_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
 
 /// The doubling `O = P + P` of a point on brainpoolP384r1, by the complete addition (Renes, Costello and Batina's Algorithm 1). A point is three projective coordinates `X, Y, Z` in Montgomery's form modulo the curve's prime, each 6 64-bit words (`48` bytes), little-endian, at consecutive byte offsets of the working space `ws`: `O` at byte 2832, `P` at 2976 and `Q` at 3120. The curve's `a` and `3b`, in the same form, are read at bytes 3264 and 3312. Every byte of `ws` but `O`'s and the function's own working space (bytes 3360 to 4095) keeps its value.
 ///

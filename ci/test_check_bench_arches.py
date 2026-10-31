@@ -53,15 +53,32 @@ mod tests {
 """
 
 
-def asm(*features, old=False):
+def asm(*features, old=None):
     """A generated module with a variant needing each of `features`: as a
-    `Features` constant, or with `old` as the list of names generated before."""
-    if old:
+    `Features` constant of their bits, or as generated before, with `old`
+    `"of"` as one of their names (`Features::of`) and `"names"` as the list
+    of their names."""
+    if old == "names":
         return "".join(f"pub(crate) const VG_F{i}_FEATURES: &[&str] = &{json.dumps(f)};\n"
                        for i, f in enumerate(features))
+    if old == "of":
+        return "".join(f"pub(crate) const VG_F{i}_FEATURES: crate::cpu::Features = "
+                       f"crate::cpu::Features::of(&{json.dumps(f)});\n"
+                       for i, f in enumerate(features))
     return "".join(f"pub(crate) const VG_F{i}_FEATURES: crate::cpu::Features = "
-                   f"crate::cpu::Features::of(&{json.dumps(f)});\n"
+                   f"crate::cpu::Features({' | '.join(f'crate::cpu::feature::{n.upper()}' for n in f)});\n"
                    for i, f in enumerate(features))
+
+
+# `CPU` as it is written since its features are bits: a table of the names
+# and bits, and detection naming the bits.
+CPU_BITS = (CPU
+            .replace('const NAMES: [&str; 6] = ["ssse3", "aes", "bmi2", "adx", "sha3", "neon"];',
+                     'const NAMES: [(&str, u32); 6] = [("ssse3", feature::SSSE3), ("aes", feature::AES), '
+                     '("bmi2", feature::BMI2), ("adx", feature::ADX), ("sha3", feature::SHA3), '
+                     '("neon", feature::NEON)];')
+            .replace('Features::of(&["sha3"]).0', 'feature::SHA3')
+            .replace('Features::of(&["neon"]).0', 'feature::NEON'))
 
 
 class Selection(unittest.TestCase):
@@ -204,6 +221,17 @@ class Selection(unittest.TestCase):
         # A feature no module chooses by needs nothing.
         self.assertEqual(self.cpu('let aes = 1;', 'let aes = 2;'), [])
 
+    def test_cpu_detection_by_bits(self):
+        # Detection naming a feature's bit, `feature::SHA3`, as by its name.
+        rows = self.cpu('feature::SHA3\n', '(feature::SHA3 & 1)\n', base=CPU_BITS)
+        self.assertEqual(self.modules(rows), {'aarch64': 'keccak'})
+        # The table of names and bits names what detection can find.
+        self.assertEqual(planner.detectable('aarch64', CPU_BITS), {'sha3', 'neon'})
+        self.assertEqual(planner.detectable('x86_64', CPU_BITS), planner.detectable('x86_64', CPU))
+        # A name appended to the table needs nothing.
+        self.assertEqual(self.cpu('("neon", feature::NEON)];', '("neon", feature::NEON), ("vaes", feature::VAES)];',
+                                  base=CPU_BITS), [])
+
     def test_cpu_detection_naming_no_feature_selects_all_of_its_architectures(self):
         rows = self.cpu('    let ssse3 = 1;', '    let leaf = 7;\n    let ssse3 = 1;')
         self.assertEqual(self.modules(rows), {'x86_64': 'x448'})
@@ -239,7 +267,14 @@ class Selection(unittest.TestCase):
     def test_features_listed_by_names_at_base_count(self):
         # Only the base has the variant needing ADX, as a list of names.
         self.files['src/asm/x86_64/x448.rs'] = asm(['bmi2'])
-        self.base_files['src/asm/x86_64/x448.rs'] = asm(['bmi2'], ['bmi2', 'adx'], old=True)
+        self.base_files['src/asm/x86_64/x448.rs'] = asm(['bmi2'], ['bmi2', 'adx'], old="names")
+        rows = self.rows(['src/asm/x86_64/x448.rs'])
+        self.assertEqual(self.configurations(rows, 'x86_64'), ['', 'avx,avx2,bmi1,bmi2', 'none'])
+
+    def test_features_of_names_at_base_count(self):
+        # Only the base has the variant needing ADX, made by `Features::of`.
+        self.files['src/asm/x86_64/x448.rs'] = asm(['bmi2'])
+        self.base_files['src/asm/x86_64/x448.rs'] = asm(['bmi2'], ['bmi2', 'adx'], old="of")
         rows = self.rows(['src/asm/x86_64/x448.rs'])
         self.assertEqual(self.configurations(rows, 'x86_64'), ['', 'avx,avx2,bmi1,bmi2', 'none'])
 

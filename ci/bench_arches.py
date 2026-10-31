@@ -295,12 +295,19 @@ LIBRARY_MANIFEST = "Cargo.toml"
 LIBRARY_LOCK = "Cargo.lock"
 TARGET_CFG = re.compile(r"cfg\((.*)\)", re.S)
 QUOTED = re.compile(r'"([a-z0-9_]+)"')
-# A generated variant's CPU features (a `Features` constant, or a list of
-# names at a base revision from before it was one), and the features
-# `src/cpu.rs` knows.
+# A generated variant's CPU features: a `Features` constant of their bits
+# (`crate::cpu::feature::<NAME>`), or, at a base revision from before it was
+# one, of their names (`Features::of`) or a list of their names; and the
+# features `src/cpu.rs` knows.
 FEATURES = re.compile(
-    r"_FEATURES: (?:&\[&str\] = &\[|crate::cpu::Features = crate::cpu::Features::of\(&\[)([^\]]*)\]")
-NAMES = re.compile(r"const NAMES: \[&str; \d+\] = \[([^\]]*)\];")
+    r"_FEATURES: (?:&\[&str\] = &\[|crate::cpu::Features = crate::cpu::Features::of\(&\[)([^\]]*)\]"
+    r"|_FEATURES: crate::cpu::Features = crate::cpu::Features\(([^;]*)\);")
+FEATURE_BIT = re.compile(r"crate::cpu::feature::(\w+)")
+# The names of the features `src/cpu.rs` knows: a table of each name and its
+# bit, or, at a base revision from before it was one, a list of the names.
+NAMES = re.compile(r"const NAMES: \[(?:&str|\(&str, u32\)); \d+\] = \[([^\]]*)\];")
+# A feature's bit, by its name in uppercase (`feature::AES`).
+BIT = re.compile(r"\bfeature::([A-Z0-9_]+)")
 # Each architecture's feature detection in `src/cpu.rs`: its `cfg`, and the
 # body, which names each feature in quotes or as a `let`; on x86 and x86-64,
 # `runtime` reads the CPU and `decode` (under the same `cfg`) names them.
@@ -913,7 +920,8 @@ def detectable(arch, cpu):
     found = None
     for cfg, body in RUNTIME.findall(cpu):
         if arch in re.findall(r'target_arch = "([a-z0-9_]+)"', cfg):
-            found = (found or set()) | (set(QUOTED.findall(body)) | set(LET.findall(body))) & known
+            named = set(QUOTED.findall(body)) | set(LET.findall(body)) | {b.lower() for b in BIT.findall(body)}
+            found = (found or set()) | named & known
     return found
 
 
@@ -931,7 +939,8 @@ def requirements(arch, modules, revisions):
         quoted = re.compile(r'"(%s)"' % "|".join(map(re.escape, sorted(arch_features))))
         for module in modules:
             asm = read(f"src/asm/{asm_dir(arch)}/{module}.rs", revision) or ""
-            found = {frozenset(QUOTED.findall(lst)) for lst in FEATURES.findall(asm)}
+            found = {frozenset(QUOTED.findall(names) or (f.lower() for f in FEATURE_BIT.findall(bits)))
+                     for names, bits in FEATURES.findall(asm)}
             opt_in = False
             for path in sources(module):
                 text = without_tests(read(path, revision) or "")
@@ -1136,7 +1145,7 @@ def cpu_changes(base):
                         arches = "*"
                 key = (arches, first.strip())
                 # The feature a line detects comes first (`let vaes = … & avx`).
-                named = [n for n in re.findall(r"[a-z0-9_]+", code) if n in known]
+                named = [n.lower() for n in re.findall(r"[A-Za-z0-9_]+", code) if n.lower() in known]
                 items.setdefault(key, set()).update(named[:1])
     changes = {}
     for (arches, _), features in items.items():

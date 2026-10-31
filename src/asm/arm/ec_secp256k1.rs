@@ -1615,7 +1615,7 @@ bx lr",
 
 /// The CPU features `vg_ec_secp256k1_public_key_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_EC_SECP256K1_PUBLIC_KEY_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
+pub(crate) const VG_EC_SECP256K1_PUBLIC_KEY_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
 
 /// secp256k1 public-key derivation (FIPS 186-5 §A.2, SP 800-56A §5.6.1.2): writes the public key `Q = dG` of the private key `d` at `d` (32 bytes, most significant first) to `*out`, in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 32 bytes each, most significant first), and returns 1; or, if `d` is not in `[1, n-1]`, writes zeros and returns 0.
 ///

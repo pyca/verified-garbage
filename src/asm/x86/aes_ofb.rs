@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_aes_ofb_aesni` requires (`Artifact.features`).
-pub(crate) const VG_AES_OFB_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+pub(crate) const VG_AES_OFB_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AES);
 
 /// AES-OFB encryption or decryption (NIST SP 800-38A §6.4) of whole blocks, in place: XORs the `n` 16-byte blocks at `data` with the output blocks `Oⱼ = CIPH_K(Oⱼ₋₁)`, where `O₀` is the block at `*iv`, and replaces `*iv` with `Oₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///

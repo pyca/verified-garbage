@@ -925,7 +925,7 @@ ret
 }
 
 /// The CPU features `vg_hmac_sha512_256_init_sha3` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA512_256_INIT_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
+pub(crate) const VG_HMAC_SHA512_256_INIT_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// Starts an HMAC-SHA-512/256 computation with a key of any length: makes the SHA-512/256 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their SHA-512/256 digest, if there are more than 128) padded with zeros to 128 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_sha512_update` on `*inner` (its `count` starting at 128), and the MAC computed with `vg_hmac_sha512_256_finalize`.
 ///
@@ -1423,7 +1423,7 @@ b 21b
 }
 
 /// The CPU features `vg_hmac_sha512_256_finalize_sha3` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA512_256_FINALIZE_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
+pub(crate) const VG_HMAC_SHA512_256_FINALIZE_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// Finishes an HMAC-SHA-512/256 computation: if, for a 128-byte key `K₀` and a text of fewer than 2⁶⁴ − 128 bytes, the SHA-512/256 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-512/256 of the text under `K₀` (32 bytes) to `*out`.
 ///
@@ -1542,7 +1542,7 @@ ret
 }
 
 /// The CPU features `vg_hmac_sha512_256_init_scratch_sha3` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA512_256_INIT_SCRATCH_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
+pub(crate) const VG_HMAC_SHA512_256_INIT_SCRATCH_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// `vg_hmac_sha512_256_init`, with its working space in `*scratch`.
 ///
@@ -1753,7 +1753,7 @@ ret
 }
 
 /// The CPU features `vg_hmac_sha512_256_finalize_scratch_sha3` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA512_256_FINALIZE_SCRATCH_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
+pub(crate) const VG_HMAC_SHA512_256_FINALIZE_SCRATCH_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::SHA3);
 
 /// `vg_hmac_sha512_256_finalize`, with its working space in `*scratch`.
 ///

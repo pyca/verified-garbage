@@ -83,11 +83,12 @@ pub(crate) fn public_key(d: &[u8; 28]) -> Option<[u8; 57]> {
 #[cfg(all(test, target_arch = "arm"))]
 mod tests {
     use super::*;
+    use crate::cpu::feature;
 
     /// The multiplications chosen with `umaal`, or without it.
     #[test]
     fn select() {
-        assert_eq!(Mul::select(Features::of(&[])), Mul::Baseline);
-        assert_eq!(Mul::select(Features::of(&["umaal"])), Mul::Umaal);
+        assert_eq!(Mul::select(Features(0)), Mul::Baseline);
+        assert_eq!(Mul::select(Features(feature::UMAAL)), Mul::Umaal);
     }
 }

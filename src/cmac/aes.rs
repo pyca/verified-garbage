@@ -400,20 +400,34 @@ mod tests {
     fn backend() {
         #[cfg(target_arch = "x86_64")]
         {
-            assert_eq!(select(Features::of(&["aes", "ssse3"])), Backend::AesNi);
-            assert_eq!(select(Features::of(&["aes"])), Backend::Scalar);
             assert_eq!(
-                select(Features::of(&["aes", "avx", "avx2", "ssse3", "vaes"])),
+                select(Features(
+                    crate::cpu::feature::AES | crate::cpu::feature::SSSE3
+                )),
+                Backend::AesNi
+            );
+            assert_eq!(select(Features(crate::cpu::feature::AES)), Backend::Scalar);
+            assert_eq!(
+                select(Features(
+                    crate::cpu::feature::AES
+                        | crate::cpu::feature::AVX
+                        | crate::cpu::feature::AVX2
+                        | crate::cpu::feature::SSSE3
+                        | crate::cpu::feature::VAES
+                )),
                 Backend::Vaes
             );
         }
         #[cfg(target_arch = "x86")]
         {
-            assert_eq!(select(Features::of(&["aes"])), Backend::AesNi);
-            assert_eq!(select(Features::of(&["ssse3"])), Backend::Scalar);
+            assert_eq!(select(Features(crate::cpu::feature::AES)), Backend::AesNi);
+            assert_eq!(
+                select(Features(crate::cpu::feature::SSSE3)),
+                Backend::Scalar
+            );
         }
         #[cfg(target_arch = "aarch64")]
-        assert_eq!(select(Features::of(&["aes"])), Backend::Aes);
+        assert_eq!(select(Features(crate::cpu::feature::AES)), Backend::Aes);
         assert_eq!(select(Features(0)), Backend::Scalar);
         let best = AesCmac::new(&[0; 16]).unwrap().backend;
         assert_eq!(best, select(detected()));

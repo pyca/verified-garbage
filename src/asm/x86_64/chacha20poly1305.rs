@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_chacha20_poly1305_seal_avx2` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
+pub(crate) const VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. Composed of calls of `vg_chacha20_block`, `vg_chacha20_xor` and the Poly1305 functions.
 ///
@@ -30634,7 +30634,7 @@ jmp 2166b
 }
 
 /// The CPU features `vg_chacha20_poly1305_open_avx2` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_OPEN_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
+pub(crate) const VG_CHACHA20_POLY1305_OPEN_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unspecified (they must not be used). The tags are compared without a branch.
 ///
@@ -40809,7 +40809,7 @@ jmp 286b
 }
 
 /// The CPU features `vg_chacha20_poly1305_seal_gather_avx2` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
+pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
 ///
@@ -40952,7 +40952,7 @@ ret
 }
 
 /// The CPU features `vg_chacha20_poly1305_seal_avx512` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx2"]);
+pub(crate) const VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX2);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. Composed of calls of `vg_chacha20_block`, `vg_chacha20_xor` and the Poly1305 functions.
 ///
@@ -72036,7 +72036,7 @@ jmp 2232b
 }
 
 /// The CPU features `vg_chacha20_poly1305_open_avx512` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx2"]);
+pub(crate) const VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX2);
 
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unspecified (they must not be used). The tags are compared without a branch.
 ///
@@ -82673,7 +82673,7 @@ jmp 2152b
 }
 
 /// The CPU features `vg_chacha20_poly1305_seal_gather_avx512` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx2"]);
+pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX2);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
 ///
@@ -82960,7 +82960,7 @@ ret
 }
 
 /// The CPU features `vg_chacha20_poly1305_seal_split_avx512` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_SEAL_SPLIT_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx2"]);
+pub(crate) const VG_CHACHA20_POLY1305_SEAL_SPLIT_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX2);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8) of data whose first bytes are in another buffer: with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` of `dst` with its first `src_len` bytes read from `src`.
 ///
@@ -86391,7 +86391,7 @@ jmp 2186b
 }
 
 /// The CPU features `vg_chacha20_poly1305_seal_avx512vl` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "avx512f", "avx512vl"]);
+pub(crate) const VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. Composed of calls of `vg_chacha20_block`, `vg_chacha20_xor` and the Poly1305 functions.
 ///
@@ -114149,7 +114149,7 @@ jmp 2232b
 }
 
 /// The CPU features `vg_chacha20_poly1305_open_avx512vl` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_OPEN_AVX512VL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "avx512f", "avx512vl"]);
+pub(crate) const VG_CHACHA20_POLY1305_OPEN_AVX512VL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
 
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unspecified (they must not be used). The tags are compared without a branch.
 ///
@@ -123505,7 +123505,7 @@ jmp 2152b
 }
 
 /// The CPU features `vg_chacha20_poly1305_seal_gather_avx512vl` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512VL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "avx512f", "avx512vl"]);
+pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512VL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
 ///
@@ -123792,7 +123792,7 @@ ret
 }
 
 /// The CPU features `vg_chacha20_poly1305_seal_split_avx512vl` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_SEAL_SPLIT_AVX512VL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "avx512f", "avx512vl"]);
+pub(crate) const VG_CHACHA20_POLY1305_SEAL_SPLIT_AVX512VL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX512VL);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8) of data whose first bytes are in another buffer: with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` of `dst` with its first `src_len` bytes read from `src`.
 ///
@@ -127224,7 +127224,7 @@ jmp 2186b
 }
 
 /// The CPU features `vg_chacha20_poly1305_seal_ifma` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx2", "avx512ifma"]);
+pub(crate) const VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512IFMA);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. Composed of calls of `vg_chacha20_block`, `vg_chacha20_xor` and the Poly1305 functions.
 ///
@@ -127742,7 +127742,7 @@ jmp 257b
 }
 
 /// The CPU features `vg_chacha20_poly1305_open_ifma` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx2", "avx512ifma", "avx512vl"]);
+pub(crate) const VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512IFMA | crate::cpu::feature::AVX512VL);
 
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unspecified (they must not be used). The tags are compared without a branch.
 ///
@@ -137094,7 +137094,7 @@ jmp 2152b
 }
 
 /// The CPU features `vg_chacha20_poly1305_seal_gather_ifma` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx2", "avx512ifma"]);
+pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512IFMA);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
 ///
@@ -137399,7 +137399,7 @@ ret
 }
 
 /// The CPU features `vg_chacha20_poly1305_seal_split_ifma` requires (`Artifact.features`).
-pub(crate) const VG_CHACHA20_POLY1305_SEAL_SPLIT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f", "avx2", "avx512ifma"]);
+pub(crate) const VG_CHACHA20_POLY1305_SEAL_SPLIT_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::AVX | crate::cpu::feature::AVX512F | crate::cpu::feature::AVX2 | crate::cpu::feature::AVX512IFMA);
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8) of data whose first bytes are in another buffer: with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes made of the `src_len` bytes at `src` followed by the bytes at `dst` from `src_len` on, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` of `dst` with its first `src_len` bytes read from `src`.
 ///

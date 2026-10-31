@@ -493,7 +493,7 @@ bx lr",
 
 /// The CPU features `vg_secp256k1_point_add_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_SECP256K1_POINT_ADD_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
+pub(crate) const VG_SECP256K1_POINT_ADD_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
 
 /// The complete addition `O = P + Q` of points on secp256k1 (Renes, Costello and Batina's Algorithm 1). A point is three projective coordinates `X, Y, Z` in Montgomery's form modulo the curve's prime, each 4 64-bit words (`32` bytes), little-endian, at consecutive byte offsets of the working space `ws`: `O` at byte 3232, `P` at 3328 and `Q` at 3424. The curve's `a` and `3b`, in the same form, are read at bytes 3520 and 3552. Every byte of `ws` but `O`'s and the function's own working space (bytes 3584 to 4095) keeps its value.
 ///
@@ -722,7 +722,7 @@ bx lr",
 
 /// The CPU features `vg_secp256k1_point_a0_double_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_SECP256K1_POINT_A0_DOUBLE_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
+pub(crate) const VG_SECP256K1_POINT_A0_DOUBLE_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
 
 /// The doubling `O = P + P` of a point on secp256k1, whose `a` is zero, by Renes, Costello and Batina's complete doubling for `a = 0` (Algorithm 9). A point is three projective coordinates `X, Y, Z` in Montgomery's form modulo the curve's prime, each 4 64-bit words (`32` bytes), little-endian, at consecutive byte offsets of the working space `ws`: `O` at byte 3232, `P` at 3328 and `Q` at 3424. The curve's `a` and `3b`, in the same form, are at bytes 3520 and 3552; `a` is not read. Every byte of `ws` but `O`'s and the function's own working space (bytes 3584 to 4095) keeps its value.
 ///
@@ -841,7 +841,7 @@ bx lr",
 
 /// The CPU features `vg_secp256k1_point_a0_add_affine_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_SECP256K1_POINT_A0_ADD_AFFINE_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
+pub(crate) const VG_SECP256K1_POINT_A0_ADD_AFFINE_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features(crate::cpu::feature::UMAAL);
 
 /// The addition `O = P + Q` of points on secp256k1, whose `a` is zero, for `Q = (X : Y : 1)`, by Renes, Costello and Batina's complete mixed addition for `a = 0` (Algorithm 8): `Q`'s `Z` is not read. A point is three projective coordinates `X, Y, Z` in Montgomery's form modulo the curve's prime, each 4 64-bit words (`32` bytes), little-endian, at consecutive byte offsets of the working space `ws`: `O` at byte 3232, `P` at 3328 and `Q` at 3424. The curve's `a` and `3b`, in the same form, are at bytes 3520 and 3552; `a` is not read. Every byte of `ws` but `O`'s and the function's own working space (bytes 3584 to 4095) keeps its value.
 ///
