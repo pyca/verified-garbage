@@ -38,7 +38,8 @@ of the archives with `files.tar` (decompressed) first, to stdout.
 It packs with `leantar-batch` (`--leantar`), leantar with digama0/leangz#13
 (`.github/actions/leantar`), which packs every module in one process at zstd
 level `--level` (default 5); the toolchain's own `leantar` takes half a
-CPU-second for each module.
+CPU-second for each module. `restore` unpacks with it too: its unpacking
+(`ci/leantar/unpack.patch`) takes a third of the toolchain's CPU time.
 
 `store` does the same but for the tar to stdout, so that `.lake/ltar`
 alone holds the build: CI's Actions cache keeps it, and each job that
@@ -530,7 +531,8 @@ def main(argv=None):
     st.add_argument("roots", nargs="+", type=Path, help="directories to store, relative to it")
     r = sub.add_parser("restore", help="restore what `store` stored, keeping `.lake/ltar`")
     r.add_argument("lean", type=Path, help="the Lean project (lean/)")
-    r.add_argument("--leantar", help="the leantar to unpack with (default: the toolchain's)")
+    r.add_argument("--leantar", default="leantar-batch",
+                   help="the leantar to unpack with (default: leantar-batch)")
     only = r.add_mutually_exclusive_group()
     only.add_argument("--modules", type=Path,
                       help="a file of modules: unpack only their archives (and every package's)")

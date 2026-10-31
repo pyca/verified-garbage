@@ -5,7 +5,9 @@ description: >
   then installs Mathlib (`lean-setup`, `lean-mathlib`). Every job that
   builds the proofs starts with it, after checking out the repository. The
   cache holds `lean/.lake/ltar`, a module archive per module
-  (`ci/lean_cache.py store`), which it unpacks once Lean is installed.
+  (`ci/lean_cache.py store`), which it unpacks with `leantar-batch` (the
+  `leantar` action, which puts it on PATH for the rest of the job: the
+  restores here and `lean-assemble`'s `store`) while Lean installs.
 
 inputs:
   key:
@@ -114,6 +116,7 @@ runs:
           echo $? > "$RUNNER_TEMP/lean-setup.status.tmp"
           mv "$RUNNER_TEMP/lean-setup.status.tmp" "$RUNNER_TEMP/lean-setup.status"
         ) < /dev/null > /dev/null 2>&1 &
+    - uses: ./.github/actions/leantar
     - name: Restore this project's build
       id: lean-build
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -132,16 +135,17 @@ runs:
         path: lean/.lake/ltar
         key: ${{ inputs.key }}
         restore-keys: ${{ inputs.restore-keys }}
-    - uses: ./.github/actions/lean-setup
-      id: lean-setup
-    # With the toolchain's `leantar`, so after `lean-setup`. The archives
-    # stay, for the next `store` (lean-assemble).
+    # With `leantar-batch`, not the toolchain's, so while Lean installs
+    # (`lean-setup` waits for it). The archives stay, for the next `store`
+    # (lean-assemble).
     - name: Unpack this project's build
       if: ${{ hashFiles('lean/.lake/ltar/index.json') != '' }}
       shell: bash
       env:
         MODULES: ${{ inputs.modules }}
       run: python3 ci/lean_cache.py restore lean ${MODULES:+--modules "$MODULES"}
+    - uses: ./.github/actions/lean-setup
+      id: lean-setup
     - uses: ./.github/actions/lean-mathlib
       with:
         mods: ${{ steps.lean-setup.outputs.mods }}
