@@ -15,6 +15,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowEnd
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedHintPack
 
 
+-- separate module: keeps cached-row contracts independent of the private verification composition that consumes them.
+
 @[expose] public section
 
 /-! ## VerifyCopy -/
