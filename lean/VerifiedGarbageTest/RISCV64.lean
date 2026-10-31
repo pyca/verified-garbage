@@ -82,6 +82,23 @@ def reg (i : Instr) : Option (BitVec 64) := (exec i s0).map (·.gpr .a4)
 #guard reg (.shift .sra .w .a4 .a1 4) == some 0xffffffffff000000
 #guard reg (.shift .sra .w .a4 .a3 0) == some 0x01234567
 #guard (reg (.shift .sll .d .a4 .a1 64)).isNone && (reg (.shift .srl .w .a4 .a1 32)).isNone
+-- Shifts by a register: by its low 6 bits (doublewords) or low 5 bits
+-- (words). `a3`'s low byte is `0x67`, so it shifts a doubleword by 39 and a
+-- word by 7; `a1`'s is 1, `a2`'s 4 and `a5` is 0. (These expected values
+-- were computed from the manual's definitions by a separate Python model.)
+#guard reg (.shiftReg .sll .d .a4 .a3 .a2) == some 0xfffffff012345670
+#guard reg (.shiftReg .sll .d .a4 .a1 .a3) == some 0x8000000000
+#guard reg (.shiftReg .srl .d .a4 .a1 .a3) == some 0x1000000
+#guard reg (.shiftReg .sra .d .a4 .a1 .a3) == some 0xffffffffff000000
+#guard reg (.shiftReg .srl .d .a4 .a3 .a1) == some 0x7fffffff8091a2b3
+#guard reg (.shiftReg .sra .d .a4 .a3 .a2) == some 0xfffffffff0123456
+#guard reg (.shiftReg .sll .w .a4 .a1 .a2) == some 0x10
+#guard reg (.shiftReg .sll .w .a4 .a3 .a3) == some 0xffffffff91a2b380
+#guard reg (.shiftReg .srl .w .a4 .a1 .a2) == some 0x0f000000
+#guard reg (.shiftReg .srl .w .a4 .a1 .a5) == some 0xfffffffff0000001
+#guard reg (.shiftReg .srl .w .a4 .a3 .a1) == some 0x0091a2b3
+#guard reg (.shiftReg .sra .w .a4 .a1 .a2) == some 0xffffffffff000000
+#guard reg (.shiftReg .sra .w .a4 .a3 .a3) == some 0x0002468a
 
 -- Loads are little-endian and zero-extended.
 #guard reg (.load .b .a4 .a0 15) == some 0x8f

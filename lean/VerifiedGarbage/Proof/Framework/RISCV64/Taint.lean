@@ -42,7 +42,7 @@ def set (τ : T) (r : Reg) (p : Bool) : T :=
 
 def step (τ : T) : Instr → Option T
   | .add d n m | .sub d n m | .addw d n m | .subw d n m | .sltu d n m | .mul d n m
-  | .mulhu d n m | .logic _ d n m =>
+  | .mulhu d n m | .logic _ d n m | .shiftReg _ _ d n m =>
     some (set τ d (pub τ n && pub τ m))
   | .addi d n _ | .addiw d n _ | .logicImm _ d n _ | .shift _ _ d n _ => some (set τ d (pub τ n))
   | .li d _ | .lui d _ => some (set τ d true)
@@ -122,6 +122,13 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
       rw [ite_eq_left_of_eq_true _ _ (eq_true h)] at e₂
       cases e₁; cases e₂
       exact ⟨rfl, ha.write d fun hp => by rw [ha.reg hp]⟩
+  | shiftReg op sz d n m =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    cases sz <;>
+    · simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+      refine ⟨rfl, ha.write d fun hp => ?_⟩
+      simp only [Bool.and_eq_true] at hp
+      rw [ha.reg hp.1, ha.reg hp.2]
   | lui d imm =>
     simp only [step, Option.some.injEq] at hs; subst hs
     simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂

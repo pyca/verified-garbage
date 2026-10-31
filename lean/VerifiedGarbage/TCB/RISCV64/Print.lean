@@ -58,6 +58,8 @@ def Instr.asm : Instr → List String
   | .lui d imm => [s!"lui {d.name}, {imm.toNat}"]
   | .shift op .d d n sh => [s!"{op.name}i {d.name}, {n.name}, {sh}"]
   | .shift op .w d n sh => [s!"{op.name}iw {d.name}, {n.name}, {sh}"]
+  | .shiftReg op .d d n m => [s!"{op.name} {d.name}, {n.name}, {m.name}"]
+  | .shiftReg op .w d n m => [s!"{op.name}w {d.name}, {n.name}, {m.name}"]
   | .load wd t n off => [s!"{wd.load} {t.name}, {off}({n.name})"]
   | .store wd t n off => [s!"{wd.store} {t.name}, {off}({n.name})"]
   | .push r => ["addi sp, sp, -16", s!"sd {r.name}, 8(sp)"]
