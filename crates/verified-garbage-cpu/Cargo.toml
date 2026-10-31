@@ -1,10 +1,10 @@
 [package]
 name = "verified-garbage-cpu"
-version = "0.0.0"
-edition = "2024"
-rust-version = "1.88"
 description = "The CPU features verified-garbage chooses among implementations by"
-license = "Apache-2.0 OR BSD-3-Clause"
-repository = "https://github.com/pyca/verified-garbage"
-publish = false
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
 build = false
