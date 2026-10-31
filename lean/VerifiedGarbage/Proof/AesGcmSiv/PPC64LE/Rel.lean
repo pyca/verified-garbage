@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Wp
 import VerifiedGarbage.Proof.AesCcm.PPC64LE.CallArgs
 public import VerifiedGarbage.Proof.Gather.PPC64LE.LoopCT
@@ -96,7 +97,7 @@ theorem rel_ctr {σ₁ σ₂ : State} {K C D S : Addr} {R n : Nat} (h₁ : CtrCa
     RelCT isa (Eq2 σ₁ σ₂) Impl.AesGcm.PPC64LE.ctrCall TT :=
   Proof.AesGcm.PPC64LE.ctr_rel fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨K, C, D, S, R, n, h₁, h₂, hsp⟩
 
-theorem rel_gh {σ₁ σ₂ : State} {H Y D S : Addr} {n : Nat} (h₁ : GhCall σ₁ H Y D S n) (h₂ : GhCall σ₂ H Y D S n)
+theorem rel_gh [VG.Proof.Gcm.PPC64LE.GhashLaw] {σ₁ σ₂ : State} {H Y D S : Addr} {n : Nat} (h₁ : GhCall σ₁ H Y D S n) (h₂ : GhCall σ₂ H Y D S n)
     (hsp : σ₁.sp = σ₂.sp) : RelCT isa (Eq2 σ₁ σ₂) Impl.AesGcm.PPC64LE.ghCall TT :=
   Proof.AesGcm.PPC64LE.gh_rel fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨H, Y, D, S, n, h₁, h₂, hsp⟩
 
@@ -108,7 +109,7 @@ theorem ctr_runs {c : Cx} {s : State} {K C D S : Addr} {R n : Nat} (E : Env c s)
     Runs Impl.AesGcm.PPC64LE.ctrCall s (Kept c s) :=
   Runs.of_wp (WP.mono (Proof.AesGcm.PPC64LE.ctr_call h) fun _ U => kept_saved E U.rd U.wr U.sp U.saved)
 
-theorem gh_runs {c : Cx} {s : State} {H Y D S : Addr} {n : Nat} (E : Env c s) (h : GhCall s H Y D S n) :
+theorem gh_runs [VG.Proof.Gcm.PPC64LE.GhashLaw] {c : Cx} {s : State} {H Y D S : Addr} {n : Nat} (E : Env c s) (h : GhCall s H Y D S n) :
     Runs Impl.AesGcm.PPC64LE.ghCall s (Kept c s) :=
   Runs.of_wp (WP.mono (Proof.AesGcm.PPC64LE.gh_call h) fun _ U => kept_saved E U.rd U.wr U.sp U.saved)
 

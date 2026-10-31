@@ -2686,200 +2686,93 @@ blr",
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_ghash(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        r"std %r14, 0(%r7)
-std %r15, 8(%r7)
-std %r16, 16(%r7)
-std %r17, 24(%r7)
-std %r18, 32(%r7)
-cmpldi %cr0, %r6, 0
+        r"cmpldi %cr0, %r6, 0
 beq %cr0, 20f
+li %r0, 0
+vxor %v19, %v19, %v19
+lis %r8, -15872
+ori %r8, %r8, 0
+rldicr %r8, %r8, 32, 31
+oris %r8, %r8, 0
+ori %r8, %r8, 0
+mtvsrd 33, %r8
+mtvsrd 39, %r8
+vsldoi %v1, %v19, %v1, 8
+vsldoi %v1, %v1, %v7, 8
+lis %r8, 3854
+ori %r8, %r8, 3340
+rldicr %r8, %r8, 32, 31
+oris %r8, %r8, 2826
+ori %r8, %r8, 2312
+lis %r9, 1798
+ori %r9, %r9, 1284
+rldicr %r9, %r9, 32, 31
+oris %r9, %r9, 770
+ori %r9, %r9, 256
+mtvsrd 50, %r8
+mtvsrd 39, %r9
+vsldoi %v18, %v19, %v18, 8
+vsldoi %v18, %v18, %v7, 8
+lis %r8, 17920
+ori %r8, %r8, 0
+rldicr %r8, %r8, 32, 31
+oris %r8, %r8, 0
+ori %r8, %r8, 0
+li %r9, 3
+mtvsrd 48, %r8
+mtvsrd 39, %r9
+vsldoi %v16, %v19, %v16, 8
+vsldoi %v16, %v16, %v7, 8
+lxvd2x 38, %r3, %r0
+vperm %v6, %v6, %v6, %v18
+vsldoi %v2, %v6, %v19, 8
+vpmsumd %v5, %v2, %v16
+vsldoi %v2, %v19, %v6, 8
+vpmsumd %v3, %v2, %v16
+vpmsumd %v4, %v6, %v16
+vsldoi %v7, %v3, %v19, 8
+vpmsumd %v7, %v7, %v1
+vsldoi %v3, %v3, %v3, 8
+vxor %v4, %v4, %v3
+vxor %v4, %v4, %v7
+vsldoi %v7, %v4, %v19, 8
+vpmsumd %v7, %v7, %v1
+vsldoi %v5, %v5, %v5, 8
+vxor %v5, %v5, %v4
+vsldoi %v7, %v7, %v7, 8
+vxor %v16, %v5, %v7
+vsldoi %v16, %v16, %v16, 8
+lxvd2x 32, %r4, %r0
+vperm %v0, %v0, %v0, %v18
 22:
-li %r18, 0
-li %r0, 8
-ldbrx %r8, %r4, %r18
-ldbrx %r15, %r5, %r18
-xor %r8, %r8, %r15
-ldbrx %r9, %r4, %r0
-ldbrx %r15, %r5, %r0
-xor %r9, %r9, %r15
-ldbrx %r12, %r3, %r18
-ldbrx %r14, %r3, %r0
-li %r10, 0
-li %r11, 0
-lis %r16, -7936
-rldicr %r16, %r16, 32, 31
-li %r17, 16
-23:
-rldicl %r15, %r8, 1, 63
-subf %r0, %r15, %r18
-rldicr %r8, %r8, 1, 62
-rldicl %r15, %r9, 1, 63
-or %r8, %r8, %r15
-rldicr %r9, %r9, 1, 62
-and %r15, %r12, %r0
-xor %r10, %r10, %r15
-and %r15, %r14, %r0
-xor %r11, %r11, %r15
-li %r15, 1
-and %r15, %r14, %r15
-subf %r0, %r15, %r18
-rldicl %r14, %r14, 63, 1
-rldicr %r15, %r12, 63, 0
-or %r14, %r14, %r15
-rldicl %r12, %r12, 63, 1
-and %r0, %r0, %r16
-xor %r12, %r12, %r0
-rldicl %r15, %r8, 1, 63
-subf %r0, %r15, %r18
-rldicr %r8, %r8, 1, 62
-rldicl %r15, %r9, 1, 63
-or %r8, %r8, %r15
-rldicr %r9, %r9, 1, 62
-and %r15, %r12, %r0
-xor %r10, %r10, %r15
-and %r15, %r14, %r0
-xor %r11, %r11, %r15
-li %r15, 1
-and %r15, %r14, %r15
-subf %r0, %r15, %r18
-rldicl %r14, %r14, 63, 1
-rldicr %r15, %r12, 63, 0
-or %r14, %r14, %r15
-rldicl %r12, %r12, 63, 1
-and %r0, %r0, %r16
-xor %r12, %r12, %r0
-rldicl %r15, %r8, 1, 63
-subf %r0, %r15, %r18
-rldicr %r8, %r8, 1, 62
-rldicl %r15, %r9, 1, 63
-or %r8, %r8, %r15
-rldicr %r9, %r9, 1, 62
-and %r15, %r12, %r0
-xor %r10, %r10, %r15
-and %r15, %r14, %r0
-xor %r11, %r11, %r15
-li %r15, 1
-and %r15, %r14, %r15
-subf %r0, %r15, %r18
-rldicl %r14, %r14, 63, 1
-rldicr %r15, %r12, 63, 0
-or %r14, %r14, %r15
-rldicl %r12, %r12, 63, 1
-and %r0, %r0, %r16
-xor %r12, %r12, %r0
-rldicl %r15, %r8, 1, 63
-subf %r0, %r15, %r18
-rldicr %r8, %r8, 1, 62
-rldicl %r15, %r9, 1, 63
-or %r8, %r8, %r15
-rldicr %r9, %r9, 1, 62
-and %r15, %r12, %r0
-xor %r10, %r10, %r15
-and %r15, %r14, %r0
-xor %r11, %r11, %r15
-li %r15, 1
-and %r15, %r14, %r15
-subf %r0, %r15, %r18
-rldicl %r14, %r14, 63, 1
-rldicr %r15, %r12, 63, 0
-or %r14, %r14, %r15
-rldicl %r12, %r12, 63, 1
-and %r0, %r0, %r16
-xor %r12, %r12, %r0
-rldicl %r15, %r8, 1, 63
-subf %r0, %r15, %r18
-rldicr %r8, %r8, 1, 62
-rldicl %r15, %r9, 1, 63
-or %r8, %r8, %r15
-rldicr %r9, %r9, 1, 62
-and %r15, %r12, %r0
-xor %r10, %r10, %r15
-and %r15, %r14, %r0
-xor %r11, %r11, %r15
-li %r15, 1
-and %r15, %r14, %r15
-subf %r0, %r15, %r18
-rldicl %r14, %r14, 63, 1
-rldicr %r15, %r12, 63, 0
-or %r14, %r14, %r15
-rldicl %r12, %r12, 63, 1
-and %r0, %r0, %r16
-xor %r12, %r12, %r0
-rldicl %r15, %r8, 1, 63
-subf %r0, %r15, %r18
-rldicr %r8, %r8, 1, 62
-rldicl %r15, %r9, 1, 63
-or %r8, %r8, %r15
-rldicr %r9, %r9, 1, 62
-and %r15, %r12, %r0
-xor %r10, %r10, %r15
-and %r15, %r14, %r0
-xor %r11, %r11, %r15
-li %r15, 1
-and %r15, %r14, %r15
-subf %r0, %r15, %r18
-rldicl %r14, %r14, 63, 1
-rldicr %r15, %r12, 63, 0
-or %r14, %r14, %r15
-rldicl %r12, %r12, 63, 1
-and %r0, %r0, %r16
-xor %r12, %r12, %r0
-rldicl %r15, %r8, 1, 63
-subf %r0, %r15, %r18
-rldicr %r8, %r8, 1, 62
-rldicl %r15, %r9, 1, 63
-or %r8, %r8, %r15
-rldicr %r9, %r9, 1, 62
-and %r15, %r12, %r0
-xor %r10, %r10, %r15
-and %r15, %r14, %r0
-xor %r11, %r11, %r15
-li %r15, 1
-and %r15, %r14, %r15
-subf %r0, %r15, %r18
-rldicl %r14, %r14, 63, 1
-rldicr %r15, %r12, 63, 0
-or %r14, %r14, %r15
-rldicl %r12, %r12, 63, 1
-and %r0, %r0, %r16
-xor %r12, %r12, %r0
-rldicl %r15, %r8, 1, 63
-subf %r0, %r15, %r18
-rldicr %r8, %r8, 1, 62
-rldicl %r15, %r9, 1, 63
-or %r8, %r8, %r15
-rldicr %r9, %r9, 1, 62
-and %r15, %r12, %r0
-xor %r10, %r10, %r15
-and %r15, %r14, %r0
-xor %r11, %r11, %r15
-li %r15, 1
-and %r15, %r14, %r15
-subf %r0, %r15, %r18
-rldicl %r14, %r14, 63, 1
-rldicr %r15, %r12, 63, 0
-or %r14, %r14, %r15
-rldicl %r12, %r12, 63, 1
-and %r0, %r0, %r16
-xor %r12, %r12, %r0
-addi %r17, %r17, -1
-cmpldi %cr0, %r17, 0
-bne %cr0, 23b
-stdbrx %r10, %r4, %r18
-li %r0, 8
-stdbrx %r11, %r4, %r0
+lxvd2x 38, %r5, %r0
+vperm %v6, %v6, %v6, %v18
+vxor %v6, %v6, %v0
+vsldoi %v2, %v6, %v19, 8
+vpmsumd %v5, %v2, %v16
+vsldoi %v2, %v19, %v6, 8
+vpmsumd %v3, %v2, %v16
+vpmsumd %v4, %v6, %v16
+vsldoi %v7, %v3, %v19, 8
+vpmsumd %v7, %v7, %v1
+vsldoi %v3, %v3, %v3, 8
+vxor %v4, %v4, %v3
+vxor %v4, %v4, %v7
+vsldoi %v7, %v4, %v19, 8
+vpmsumd %v7, %v7, %v1
+vsldoi %v5, %v5, %v5, 8
+vxor %v5, %v5, %v4
+vsldoi %v7, %v7, %v7, 8
+vxor %v0, %v5, %v7
 addi %r5, %r5, 16
 addi %r6, %r6, -1
 cmpldi %cr0, %r6, 0
 bne %cr0, 22b
+vperm %v7, %v0, %v0, %v18
+stxvd2x 39, %r4, %r0
 b 21f
 20:
 21:
-ld %r14, 0(%r7)
-ld %r15, 8(%r7)
-ld %r16, 16(%r7)
-ld %r17, 24(%r7)
-ld %r18, 32(%r7)
 blr",
     )
 }

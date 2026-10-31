@@ -40,6 +40,8 @@ the counter blocks `k … k + 7` (`shortAesB_ok`): `aesPart_ok`, then
 
 @[expose] public section
 
+local notation "ofVDwords" => VG.Proof.Gcm.Clmul.ofVDwords
+
 set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesGcm.AArch64.Stitch

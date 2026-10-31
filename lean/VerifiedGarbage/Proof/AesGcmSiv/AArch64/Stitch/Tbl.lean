@@ -23,6 +23,8 @@ place in `W`.
 
 @[expose] public section
 
+local notation "ofVDwords" => VG.Proof.Gcm.Clmul.ofVDwords
+
 namespace VG.Proof.AesGcmSiv.AArch64.Stitch
 
 open VG VG.AArch64

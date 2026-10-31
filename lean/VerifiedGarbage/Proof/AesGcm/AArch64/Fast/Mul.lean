@@ -22,6 +22,8 @@ it as a hypothesis (`MulKey`), proven in `Pmull/Ghash.lean`
 
 @[expose] public section
 
+local notation "ofVDwords" => VG.Proof.Gcm.Clmul.ofVDwords
+
 namespace VG.Proof.AesGcm.AArch64.Fast
 
 open VG VG.AArch64 VG.Proof.Gcm.AArch64.Pmull

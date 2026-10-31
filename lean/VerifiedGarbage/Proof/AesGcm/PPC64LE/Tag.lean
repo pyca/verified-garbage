@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Crypt
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Flush
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
@@ -76,7 +77,7 @@ theorem j_tFrame : ∀ r ∈ tFrame (V .r30) (V .r31) 16, (⟨V .r30, 16⟩ : Re
   · simpa using L.st_w (a := 0) (n := 16) (d := 512) (k := 256) (by decide) (.inr ⟨by decide, by decide⟩)
 
 /-- The lengths block absorbed, before the copy. -/
-theorem tagLens_ok {R : Nat} {H J : Block} {s : State} (he : Env V sp s) (hR : R = 10 ∨ R = 12 ∨ R = 14)
+theorem tagLens_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {R : Nat} {H J : Block} {s : State} (he : Env V sp s) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (hH : blockAt s.mem (V .r29 + BitVec.ofNat 64 240) = H) (hJ : blockAt s.mem (V .r30) = J) :
     WP isa (lens 16) s (TagMid V sp R H (blockAt s.mem (V .r30 + BitVec.ofNat 64 16)) J
       (s.gpr .r24).toNat (s.gpr .r26).toNat s.mem) := by
@@ -191,7 +192,7 @@ theorem tagCall_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {H Y J : Block} {aLen cL
       · exact ⟨_, by simp, fun _ h => h⟩
 
 /-- `tag o`, for `o` of 0 or 112. -/
-theorem tag_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {H J : Block} {s : State} (he : Env V sp s)
+theorem tag_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] {o R : Nat} (ho : o = 0 ∨ o = 112) {H J : Block} {s : State} (he : Env V sp s)
     (h28 : V .r28 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (hH : blockAt s.mem (V .r29 + BitVec.ofNat 64 240) = H) (hJ : blockAt s.mem (V .r30) = J) :
     WP isa (tag o) s (TagOut V sp o R H (blockAt s.mem (V .r30 + BitVec.ofNat 64 16)) J

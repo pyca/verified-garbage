@@ -30,6 +30,9 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 
+local notation "vdword" => VG.Proof.Gcm.Clmul.vdword
+local notation "ofVDwords" => VG.Proof.Gcm.Clmul.ofVDwords
+
 section
 
 /-!

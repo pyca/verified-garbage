@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Contract
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.CryptOk
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.TextAbsorb
@@ -203,7 +204,7 @@ structure EncOut (s₀ : State) (icb : Block) (a ct : List Byte) (dec : Bool) (s
         xorKs (ctxCiph s₀.mem (s₀.gpr .r3) (scR s₀)) icb ct.length (bytesAt s₀.mem (s₀.gpr .r8) (s₀.gpr .r9).toNat)))
   j : blockAt s.mem (s₀.gpr .r5) = blockAt s₀.mem (s₀.gpr .r5)
 
-theorem enc_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : List Byte}
+theorem enc_run [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : List Byte}
     (ha : a.length % 16 = (s₀.gpr .r6).toNat % 16) (hP : (s₀.gpr .r7).toNat = ct.length) :
     WP isa streamEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ EncOut s₀ icb a ct false s' := by
   have L₀ := scLay h
@@ -281,7 +282,7 @@ theorem enc_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
       blockAt_frame cf (by simpa using stp_crFrame L₀ hd₂₀ (d := 0) (k := 16) (by decide)),
       blockAt_frame f₂ (by simpa using stp_saved L₀ (d := 0) (k := 16) (by decide))]
 
-theorem dec_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : List Byte}
+theorem dec_run [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : List Byte}
     (ha : a.length % 16 = (s₀.gpr .r6).toNat % 16) (hP : (s₀.gpr .r7).toNat = ct.length) :
     WP isa streamDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ EncOut s₀ icb a ct true s' := by
   have L₀ := scLay h
@@ -360,7 +361,7 @@ theorem dec_run {s₀ : State} (h : streamCryptPre s₀) (icb : Block) {a ct : L
   · rw [hm, blockAt_frame cf (by simpa using stp_crFrame L₀ hd₅₀ (d := 0) (k := 16) (by decide))]
     simpa using blk₅ (d := 0) (.inl (by decide))
 
-theorem streamEncrypt_wp {s₀ : State} (h : streamEncryptPPC64LE.pre s₀) :
+theorem streamEncrypt_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : streamEncryptPPC64LE.pre s₀) :
     WP isa streamEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ streamEncryptPPC64LE.post s₀ s' := by
   have h' : streamCryptPre s₀ := h
   have h₀ := enc_run h' 0 (a := List.replicate ((s₀.gpr .r6).toNat % 16) 0)
@@ -392,7 +393,7 @@ theorem streamEncrypt_wp {s₀ : State} (h : streamEncryptPPC64LE.pre s₀) :
     rw [Proof.Gcm.length_gctr, List.length_append, length_bytesAt]; exact eo₁
   · rw [eo₂, Proof.Gcm.gctr_append, List.drop_left' hl']
 
-theorem streamDecrypt_wp {s₀ : State} (h : streamDecryptPPC64LE.pre s₀) :
+theorem streamDecrypt_wp [VG.Proof.Gcm.PPC64LE.GhashLaw] {s₀ : State} (h : streamDecryptPPC64LE.pre s₀) :
     WP isa streamDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ streamDecryptPPC64LE.post s₀ s' := by
   have h' : streamCryptPre s₀ := h
   have h₀ := dec_run h' 0 (a := List.replicate ((s₀.gpr .r6).toNat % 16) 0)

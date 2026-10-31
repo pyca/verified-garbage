@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Vpmsum.Law
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Frame
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.Ctr32Verified
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Frame

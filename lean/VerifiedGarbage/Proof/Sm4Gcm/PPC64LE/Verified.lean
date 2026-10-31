@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PPC64LE.Ghash
 public import VerifiedGarbage.Proof.Sm4Gcm.PPC64LE.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Scratch
@@ -49,27 +50,27 @@ theorem init_correct (s : State) (hs : initPPC64LE.pre s) :
     ∃ t s', Exec isa init s t s' ∧ abiPreserved s s' ∧ initPPC64LE.post s s' :=
   init_wp hs
 
-theorem streamEncrypt_correct (s : State) (hs : streamEncryptPPC64LE.pre s) :
+theorem streamEncrypt_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] (s : State) (hs : streamEncryptPPC64LE.pre s) :
     ∃ t s', Exec isa streamEncrypt s t s' ∧ abiPreserved s s' ∧ streamEncryptPPC64LE.post s s' :=
   streamEncrypt_wp hs
 
-theorem streamDecrypt_correct (s : State) (hs : streamDecryptPPC64LE.pre s) :
+theorem streamDecrypt_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] (s : State) (hs : streamDecryptPPC64LE.pre s) :
     ∃ t s', Exec isa streamDecrypt s t s' ∧ abiPreserved s s' ∧ streamDecryptPPC64LE.post s s' :=
   streamDecrypt_wp hs
 
-theorem streamFinish_correct (s : State) (hs : streamFinishPPC64LE.pre s) :
+theorem streamFinish_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] (s : State) (hs : streamFinishPPC64LE.pre s) :
     ∃ t s', Exec isa streamFinish s t s' ∧ abiPreserved s s' ∧ streamFinishPPC64LE.post s s' :=
   streamFinish_wp hs
 
-theorem streamVerify_correct (s : State) (hs : streamVerifyPPC64LE.pre s) :
+theorem streamVerify_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] (s : State) (hs : streamVerifyPPC64LE.pre s) :
     ∃ t s', Exec isa streamVerify s t s' ∧ abiPreserved s s' ∧ streamVerifyPPC64LE.post s s' :=
   streamVerify_wp hs
 
-theorem seal_correct (s : State) (hs : sealPPC64LE.pre s) :
+theorem seal_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] (s : State) (hs : sealPPC64LE.pre s) :
     ∃ t s', Exec isa «seal» s t s' ∧ abiPreserved s s' ∧ sealPPC64LE.post s s' :=
   seal_wp hs
 
-theorem open_correct (s : State) (hs : openPPC64LE.pre s) :
+theorem open_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] (s : State) (hs : openPPC64LE.pre s) :
     ∃ t s', Exec isa «open» s t s' ∧ abiPreserved s s' ∧ openPPC64LE.post s s' :=
   open_wp hs
 
@@ -120,7 +121,7 @@ theorem init_verified :
     sig_implies [scratch2, Sig.scratchContract, Sig.withScratch, Curry.withScratch, Spec.Sm4.Gcm.initSig,
       Spec.Sm4.Gcm.initPost, initPPC64LE, PPC64LE.abi, PPC64LE.argRegs] [initSat] using initSat)
 
-theorem streamEncrypt_verified :
+theorem streamEncrypt_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target streamEncrypt (scratch2 Spec.Sm4.Gcm.streamCryptSig "scratch"
       (Curry.const (fun _ => True) _) (Spec.Sm4.Gcm.streamEncryptPost PPC64LE.abi.ptrBits)) :=
   Verified.of_correct streamEncrypt_correct streamEncrypt_ct (by
@@ -128,7 +129,7 @@ theorem streamEncrypt_verified :
       Spec.Sm4.Gcm.streamEncryptPost, streamEncryptPPC64LE, streamCryptPre, streamCryptPub, PPC64LE.abi,
       PPC64LE.argRegs] [streamCryptSat] using streamCryptSat)
 
-theorem streamDecrypt_verified :
+theorem streamDecrypt_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target streamDecrypt (scratch2 Spec.Sm4.Gcm.streamCryptSig "scratch"
       (Curry.const (fun _ => True) _) (Spec.Sm4.Gcm.streamDecryptPost PPC64LE.abi.ptrBits)) :=
   Verified.of_correct streamDecrypt_correct streamDecrypt_ct (by
@@ -136,7 +137,7 @@ theorem streamDecrypt_verified :
       Spec.Sm4.Gcm.streamDecryptPost, streamDecryptPPC64LE, streamCryptPre, streamCryptPub, PPC64LE.abi,
       PPC64LE.argRegs] [streamCryptSat] using streamCryptSat)
 
-theorem streamFinish_verified :
+theorem streamFinish_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target streamFinish (scratch2 Spec.Sm4.Gcm.streamFinishSig "work"
       (Curry.const (fun _ => True) _) (Spec.Sm4.Gcm.streamFinishPost PPC64LE.abi.ptrBits)) :=
   Verified.of_correct streamFinish_correct streamFinish_ct (by
@@ -144,7 +145,7 @@ theorem streamFinish_verified :
       Spec.Sm4.Gcm.streamFinishPost, streamFinishPPC64LE, finPre, PPC64LE.abi, PPC64LE.argRegs]
       [finSat] using finSat)
 
-theorem streamVerify_verified :
+theorem streamVerify_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target streamVerify (scratch2 Spec.Sm4.Gcm.streamVerifySig "work"
       (Curry.const (fun _ => True) _) (Spec.Sm4.Gcm.streamVerifyPost PPC64LE.abi.ptrBits)) :=
   Verified.of_correct streamVerify_correct streamVerify_ct (by
@@ -162,7 +163,7 @@ def sealSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x9060, 16⟩]
   wr := [⟨0x2800, 0⟩, ⟨0x5000, 16⟩, ⟨0x6000, 2560⟩, ⟨0x7000, 3264⟩]
 
-theorem seal_verified :
+theorem seal_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target «seal» (scratch2 Spec.Sm4.Gcm.sealSig "work" (Curry.const (fun _ => True) _)
       (Spec.Sm4.Gcm.sealPost PPC64LE.abi.ptrBits)) :=
   Verified.of_correct seal_correct seal_ct (by
@@ -187,7 +188,7 @@ theorem leak_bool {a b : Bool} (h : [if a = true then 1 else 0] = [if b = true t
 
 /-- The postconditions match on `openResult`; the result is the low 32 bits
 of `r3`; and `open`'s public data include its leak, whether it succeeds. -/
-theorem open_verified :
+theorem open_verified [VG.Proof.Gcm.PPC64LE.GhashLaw] :
     Verified PPC64LE.target «open» (scratch2 Spec.Sm4.Gcm.openSig "work" (Curry.const (fun _ => True) _)
       (Spec.Sm4.Gcm.openPost PPC64LE.abi.ptrBits) (some (Spec.Sm4.Gcm.openLeak PPC64LE.abi.ptrBits))) :=
   Verified.of_correct open_correct open_ct
