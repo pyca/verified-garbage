@@ -1,13 +1,12 @@
 [package]
 name = "verified-garbage"
-version = "0.0.0"
-edition = "2024"
-# Naked functions (`#[unsafe(naked)]`, `naked_asm!`) were stabilized in 1.88.
-rust-version = "1.88"
 description = "An experimental, formally verified cryptography library, implemented entirely by LLMs"
-license = "Apache-2.0 OR BSD-3-Clause"
-repository = "https://github.com/pyca/verified-garbage"
-publish = false
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
 # All assembly is inline, in naked functions generated from Lean: no build script.
 build = false
 include = ["/src", "/LICENSE*", "/README.md"]
@@ -65,6 +64,17 @@ exclude = [
     "crates/verified-garbage-asm-x86",
     "crates/verified-garbage-asm-x86_64",
 ]
+
+# What every crate of the workspace shares, which each inherits
+# (`<key>.workspace = true`).
+[workspace.package]
+version = "0.0.0"
+edition = "2024"
+# Naked functions (`#[unsafe(naked)]`, `naked_asm!`) were stabilized in 1.88.
+rust-version = "1.88"
+license = "Apache-2.0 OR BSD-3-Clause"
+repository = "https://github.com/pyca/verified-garbage"
+publish = false
 
 [[test]]
 name = "tests"
