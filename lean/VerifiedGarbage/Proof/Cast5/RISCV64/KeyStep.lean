@@ -76,7 +76,7 @@ theorem sel_ok (cs : List (List Instr)) (i : Nat) {s : State} {j : Nat} (hij : i
 /-! ## The state of key expansion -/
 
 /-- The registers a step writes. -/
-def stepRegs : List Reg := [tmp, wd, .t2, ep, .s4, .s5, .s6, .s7, .s0, .s1, .s2, .s3, vI, vKr, msk, stp]
+def stepRegs : List Reg := [tmp, wd, .t2, ep, .s4, .s5, .s6, .s7, .s0, .s1, .s2, .s3, vI, vKr, .a5, stp]
 
 /-- The state of key expansion from the memory `m0`: the working space,
 rounded up to a multiple of 8, at `cb` in `wkK` (its first 152 bytes, which

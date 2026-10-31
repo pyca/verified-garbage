@@ -22,7 +22,7 @@
 /// `$module` and its key types.
 macro_rules! mldsa_tests {
     ($n:literal, $module:ident, $SigningKey:ident, $VerifyingKey:ident) => {
-        use serde::Deserialize;
+        use crate::json_struct;
         use verified_garbage::$module::{Error, $SigningKey, $VerifyingKey};
 
         use super::harness::{self, Expectation, Hex};
@@ -30,40 +30,44 @@ macro_rules! mldsa_tests {
 
         type Sig = [u8; $VerifyingKey::SIGNATURE_SIZE];
 
-        #[derive(Deserialize)]
-        #[serde(rename_all = "camelCase")]
-        struct SignGroup {
-            private_seed: Hex,
-            #[serde(default)]
-            public_key: Option<Hex>,
+        json_struct! {
+            struct SignGroup {
+                #[json(rename = "privateSeed")]
+                private_seed: Hex,
+                #[json(rename = "publicKey", default)]
+                public_key: Option<Hex>,
+            }
         }
 
-        #[derive(Deserialize)]
-        struct Sign {
-            #[serde(default)]
-            msg: Option<Hex>,
-            #[serde(default)]
-            ctx: Option<Hex>,
-            #[serde(default)]
-            mu: Option<Hex>,
-            #[serde(default)]
-            rnd: Option<Hex>,
-            #[serde(default)]
-            sig: Option<Hex>,
+        json_struct! {
+            struct Sign {
+                #[json(default)]
+                msg: Option<Hex>,
+                #[json(default)]
+                ctx: Option<Hex>,
+                #[json(default)]
+                mu: Option<Hex>,
+                #[json(default)]
+                rnd: Option<Hex>,
+                #[json(default)]
+                sig: Option<Hex>,
+            }
         }
 
-        #[derive(Deserialize)]
-        #[serde(rename_all = "camelCase")]
-        struct VerifyGroup {
-            public_key: Hex,
+        json_struct! {
+            struct VerifyGroup {
+                #[json(rename = "publicKey")]
+                public_key: Hex,
+            }
         }
 
-        #[derive(Deserialize)]
-        struct Verify {
-            msg: Hex,
-            #[serde(default)]
-            ctx: Option<Hex>,
-            sig: Hex,
+        json_struct! {
+            struct Verify {
+                msg: Hex,
+                #[json(default)]
+                ctx: Option<Hex>,
+                sig: Hex,
+            }
         }
 
         #[test]

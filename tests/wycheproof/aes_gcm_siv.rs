@@ -12,27 +12,30 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use serde::Deserialize;
+use crate::json_struct;
 use verified_garbage::aes_gcm_siv::{AesGcmSiv, Error};
 
 use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Group {
-    iv_size: usize,
-    tag_size: usize,
+json_struct! {
+    struct Group {
+        #[json(rename = "ivSize")]
+        iv_size: usize,
+        #[json(rename = "tagSize")]
+        tag_size: usize,
+    }
 }
 
-#[derive(Deserialize)]
-struct Case {
-    key: Hex,
-    iv: Hex,
-    aad: Hex,
-    msg: Hex,
-    ct: Hex,
-    tag: Hex,
+json_struct! {
+    struct Case {
+        key: Hex,
+        iv: Hex,
+        aad: Hex,
+        msg: Hex,
+        ct: Hex,
+        tag: Hex,
+    }
 }
 
 #[test]

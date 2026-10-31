@@ -16,22 +16,24 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
-use serde::Deserialize;
+use crate::json_struct;
 use verified_garbage::x25519::{Error, PrivateKey, x25519};
 
 use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
-#[derive(Deserialize)]
-struct Group {
-    curve: String,
+json_struct! {
+    struct Group {
+        curve: String,
+    }
 }
 
-#[derive(Deserialize)]
-struct Case {
-    public: Hex,
-    private: Hex,
-    shared: Hex,
+json_struct! {
+    struct Case {
+        public: Hex,
+        private: Hex,
+        shared: Hex,
+    }
 }
 
 #[test]

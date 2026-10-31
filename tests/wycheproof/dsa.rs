@@ -11,32 +11,35 @@
 ))]
 
 use super::harness::{self, Count, Expectation, Hex};
+use crate::json_struct;
 use crate::require_vectors;
-use serde::Deserialize;
 use verified_garbage::dsa::PublicKey;
 use verified_garbage::hashes::{sha224::Sha224, sha256::Sha256};
 
-#[derive(Deserialize)]
-struct Key {
-    p: Hex,
-    q: Hex,
-    g: Hex,
-    y: Hex,
-    #[serde(rename = "keySize")]
-    bits: usize,
+json_struct! {
+    struct Key {
+        p: Hex,
+        q: Hex,
+        g: Hex,
+        y: Hex,
+        #[json(rename = "keySize")]
+        bits: usize,
+    }
 }
 
-#[derive(Deserialize)]
-struct Group {
-    #[serde(rename = "publicKey")]
-    public_key: Key,
-    sha: String,
+json_struct! {
+    struct Group {
+        #[json(rename = "publicKey")]
+        public_key: Key,
+        sha: String,
+    }
 }
 
-#[derive(Deserialize)]
-struct Case {
-    msg: Hex,
-    sig: Hex,
+json_struct! {
+    struct Case {
+        msg: Hex,
+        sig: Hex,
+    }
 }
 
 fn pad(value: &[u8], width: usize) -> Vec<u8> {
