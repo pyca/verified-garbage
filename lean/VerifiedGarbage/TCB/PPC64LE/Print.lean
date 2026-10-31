@@ -33,7 +33,31 @@ def LogicOp.name : LogicOp → String
 /-- A 16-bit immediate, as an unsigned number. -/
 def imm16 (v : BitVec 16) : String := toString v.toNat
 
+/-- VMX operands use VR numbers; VSX operands use the aliased VSR number. -/
+def VReg.name (r : VReg) : String := s!"%v{r.ctorIdx}"
+def VReg.vsx (r : VReg) : String := toString (r.ctorIdx + 32)
+
+def VOp.asm : VOp → String
+  | .cipher inv last d n m =>
+    let op := if inv then "vncipher" else "vcipher"
+    s!"{op}{if last then "last" else ""} {d.name}, {n.name}, {m.name}"
+  | .sbox d n => s!"vsbox {d.name}, {n.name}"
+  | .sha256 d n st six => s!"vshasigmaw {d.name}, {n.name}, {st.toNat}, {six}"
+  | .sha512 d n st six => s!"vshasigmad {d.name}, {n.name}, {st.toNat}, {six}"
+  | .pmsumd d n m => s!"vpmsumd {d.name}, {n.name}, {m.name}"
+  | .logic op d n m =>
+    let op := match op with | .and => "vand" | .or => "vor" | .xor => "vxor"
+    s!"{op} {d.name}, {n.name}, {m.name}"
+  | .add dw d n m => s!"{if dw then "vaddudm" else "vadduwm"} {d.name}, {n.name}, {m.name}"
+  | .perm d n m c => s!"vperm {d.name}, {n.name}, {m.name}, {c.name}"
+  | .sldoi d n m sh => s!"vsldoi {d.name}, {n.name}, {m.name}, {sh}"
+
 def Instr.asm : Instr → List String
+  | .vop op => [op.asm]
+  | .lxvd2x d a b => [s!"lxvd2x {d.vsx}, {a.name}, {b.name}"]
+  | .stxvd2x n a b => [s!"stxvd2x {n.vsx}, {a.name}, {b.name}"]
+  | .mtvsrd d n => [s!"mtvsrd {d.vsx}, {n.name}"]
+  | .mfvsrd d n => [s!"mfvsrd {d.name}, {n.vsx}"]
   | .add d n m => [s!"add {d.name}, {n.name}, {m.name}"]
   | .sub d n m => [s!"subf {d.name}, {m.name}, {n.name}"]
   | .mul d n m => [s!"mulld {d.name}, {n.name}, {m.name}"]

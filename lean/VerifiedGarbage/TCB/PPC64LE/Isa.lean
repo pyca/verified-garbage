@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.Code
+public import VerifiedGarbage.TCB.PPC64LE.Simd
 
 /-!
 # 64-bit little-endian PowerPC machine model
@@ -8,7 +9,8 @@ public import VerifiedGarbage.TCB.Code
 **Trusted.** A model of the subset of the 64-bit Power ISA used by our
 implementations, in little-endian mode. Each instruction's semantics here
 must agree with the Power ISA, Version 3.1C (OpenPOWER Foundation), Book I
-(chapter 2, "Branch Facility", and chapter 3, "Fixed-Point Facility"); when
+(chapter 2, "Branch Facility", chapter 3, "Fixed-Point Facility", chapter 6,
+"Vector Facility", and chapter 7, "Vector-Scalar Floating-Point Operations"); when
 adding an instruction, cite the section whose pseudocode (RTL) it
 transcribes. The RTL numbers bits from 0 at the most significant end:
 `(RS)32:63` is the low 32 bits of `RS`.
@@ -28,11 +30,18 @@ Modelling choices:
   calls (ELFv2 ABI §2.2.2.1, Table 2.21), so a contract says nothing of CA
   and code may not rely on it across a call or at its entry; nothing else
   reads or writes it, and it is never a branch condition or an address.
-* The registers are 64 bits. The only 32-bit operations are the rotates and
+* The integer registers are 64 bits. The only 32-bit GPR operations are the rotates and
   shifts of words (`rlwinm`, which reads the low 32 bits and zero-extends
   its 32-bit result), the loads of words (zero-extended), the stores of words
   (the low 32 bits) and the comparison of a word with zero; `add`, `subf`
   and the logical instructions always act on all 64 bits.
+* POWER8 / ISA 2.07 vector cryptography is baseline for this target (IBM,
+  "POWER8 Cryptography In-core Instructions"). Vector values and their
+  most-significant-first element numbering are in `PPC64LE/Simd.lean`.
+  Only volatile v0–v19 are modelled, so the nonvolatile vector and FPR
+  registers cannot be changed. VSX load/store doubleword pairs do not
+  require alignment; the first memory doubleword is the high register
+  half. `mtvsrd` leaves its low half undefined, supplied by `unknowns`.
 * In the forms that read `(RA|0)`, `RA = 0` means the value 0, not `r0`: the
   model has only `li` (`addi RT, 0, SI`) and `lis` (`addis RT, 0, SI`) of
   those, and every other such instruction with `r0` as its base (`RA`)
@@ -118,6 +127,8 @@ abbrev Size.bytes : Size → Nat
 
 structure State where
   gpr : Reg → BitVec 64
+  /-- Volatile vector registers only; the nonvolatile vectors cannot be operands. -/
+  vpr : VReg → BitVec 128 := fun _ => 0
   /-- The link register. -/
   lr : BitVec 64
   /-- The stack pointer, `r1`. -/
@@ -129,7 +140,8 @@ structure State where
   wr : List Region
   /-- Values the model does not know, used in order: the return address each
   call stores, what linkage code may leave in `r0`, `r11` and `r12` (see
-  `TCB/Code.lean`), and the address each `adrSym` leaves in `LR`. -/
+  `TCB/Code.lean`), the address each `adrSym` leaves in `LR`, and the
+  undefined low doubleword of each `mtvsrd`. -/
   unknowns : Nat → BitVec 64 := fun _ => 0
   /-- The address of each `static` the code can name (`adrSym`), by name. -/
   syms : String → BitVec 64 := fun _ => 0
@@ -226,6 +238,18 @@ inductive Instr
   /-- `addi RT, r1, SI` with `0 ≤ SI < 2 ^ 15`: a pointer `SI` bytes above the
   stack pointer -/
   | addSp (d : Reg) (imm : Nat)
+  /-- POWER8 vector arithmetic and cryptography (Book I chapter 6). -/
+  | vop (op : VOp)
+  /-- `lxvd2x XT, RA, RB`, XT = vector register + 32 (Book I §7.6.2.1.2).
+  Unaligned 16-byte access; RA must not be r0, as for `addrX`. -/
+  | lxvd2x (d : VReg) (a b : Reg)
+  /-- `stxvd2x XS, RA, RB`, XS = vector register + 32 (Book I §7.6.2.1.2). -/
+  | stxvd2x (n : VReg) (a b : Reg)
+  /-- `mtvsrd XT, RA`, XT = vector register + 32 (Book I §3.3.18).
+  The high doubleword is RA; the low doubleword is undefined, not zero. -/
+  | mtvsrd (d : VReg) (n : Reg)
+  /-- `mfvsrd RA, XS`, XS = vector register + 32: the high doubleword. -/
+  | mfvsrd (d : Reg) (n : VReg)
   deriving DecidableEq, Repr
 
 /-- Branch conditions: a comparison with zero into `CR0`, then the branch. -/
@@ -246,6 +270,10 @@ def read (s : State) (sz : Size) (r : Reg) : BitVec sz.bits := (s.gpr r).setWidt
 /-- Write all 64 bits of a register. -/
 def write (s : State) (r : Reg) (v : BitVec 64) : State :=
   { s with gpr := fun r' => if r' = r then v else s.gpr r' }
+
+/-- Write a volatile vector register (VSR32–VSR51). -/
+def writeV (s : State) (r : VReg) (v : BitVec 128) : State :=
+  { s with vpr := fun r' => if r' = r then v else s.vpr r' }
 
 /-- Write the low 64 bits of the sum `v` into a register, and its carry out
 (`2⁶⁴ ≤ v`) into CA. -/
@@ -288,6 +316,12 @@ def rev64 (a : BitVec 64) : BitVec 64 :=
 
 /-- The value `v` at the operand size, zero-extended into a register. -/
 abbrev Size.ext (sz : Size) (v : BitVec sz.bits) : BitVec 64 := v.setWidth 64
+
+/-- Swap the doublewords. In little-endian mode `lxvd2x` places MEM(EA,8)
+in architectural doubleword 0 (the HIGH half) and MEM(EA+8,8) in doubleword
+1. `stxvd2x` is the inverse (Book I §7.6.2.1.2, load/store doubleword*2 indexed).
+This is not a byte reversal, nor a plain 128-bit little-endian load. -/
+def swapDwords (x : BitVec 128) : BitVec 128 := vdword x 1 ++ vdword x 0
 
 /-- Semantics, transcribing the Power ISA 3.1C, Book I:
 * §3.3.9 "Add" (`RT ← (RA) + (RB)`), "Subtract From" (`RT ← ¬(RA) + (RB)
@@ -355,6 +389,14 @@ abbrev Size.ext (sz : Size) (v : BitVec sz.bits) : BitVec 64 := v.setWidth 64
   read 0 for `(RA|0)`, so the model faults. The model does not know `L`:
   `LR` gets the next of the state's `unknowns`. -/
 def exec : Instr → State → Option State
+  | .vop op, s => (op.eval s.vpr).map fun (d, v) => s.writeV d v
+  | .lxvd2x d a b, s =>
+    (addrX s a b).bind fun ea => (s.load ea 16).map fun v => s.writeV d (swapDwords v)
+  | .stxvd2x n a b, s =>
+    (addrX s a b).bind fun ea => s.store ea 16 (swapDwords (s.vpr n))
+  | .mtvsrd d n, s => some { s.writeV d (s.gpr n ++ s.unknowns 0) with
+      unknowns := fun i => s.unknowns (i + 1) }
+  | .mfvsrd d n, s => some (s.write d (vdword (s.vpr n) 0))
   | .add d n m, s => some (s.write d (s.gpr n + s.gpr m))
   | .sub d n m, s => some (s.write d (s.gpr n - s.gpr m))
   | .mul d n m, s => some (s.write d (s.gpr n * s.gpr m))
@@ -412,6 +454,7 @@ def exec : Instr → State → Option State
   | .push _, _ | .pop _, _ | .alloc _, _ | .free _, _ => none
 
 def addrs : Instr → State → List Addr
+  | .lxvd2x _ a b, s | .stxvd2x _ a b, s => [s.gpr a + s.gpr b]
   | .load _ _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
   | .store _ _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
   | .lbz _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
