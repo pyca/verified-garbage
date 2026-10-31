@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Sha512.PPC64LE.Lit
+meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Lit
+
 import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Common
 meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Common
 import all Init.Data.Nat.Bitwise.Basic

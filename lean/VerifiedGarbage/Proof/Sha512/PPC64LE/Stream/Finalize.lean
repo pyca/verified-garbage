@@ -1,5 +1,10 @@
 module
 
+import VerifiedGarbage.Proof.Sha512.PPC64LE.Lit
+meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Lit
+
+public import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Common
 meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Common
 import VerifiedGarbage.Proof.Sha512.Digest
@@ -21,6 +26,8 @@ public import VerifiedGarbage.Proof.MdStream.Spec
 public import VerifiedGarbage.Proof.Sha512.Stream
 public import VerifiedGarbage.Spec.Sha256
 public import VerifiedGarbage.TCB.Artifact
+import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 
 /-!
 # Streaming SHA-512 on PPC64LE: `finalize`
@@ -916,8 +923,16 @@ theorem untouched_fixed :
     ((instrs (finalizeWith [])).all fun i => untouched.all fun r => dstOf i != some r) = true :=
   keepsU_all _ (by rw [← Code.allInstrs_eq]; decide +kernel)
 
-theorem lr_fixed : (instrs (finalizeWith [])).all (fun i => !i.writesLr) = true := by
-  rw [← Code.allInstrs_eq]; decide +kernel
+theorem lr_fixed : lrSafe (finalizeWith []) = true := by decide +kernel
+
+theorem lr_finalizeWith (o : List Instr) (ho : o.all (fun i => !i.writesLr) = true) :
+    lrSafe (finalizeWith o) = true := by
+  have hb := lr_fixed
+  have hr : restore.all (fun i => !i.writesLr) = true := by decide +kernel
+  simp only [finalizeWith, lrSafe, Bool.and_eq_true, List.nil_append] at hb ⊢
+  refine ⟨hb.1, hb.2.1, lrSafeBlock_of_all ?_⟩
+  rw [List.all_append, ho, hr]
+  rfl
 
 theorem noCalls_finalizeWith (o : List Instr) : (finalizeWith o).noCalls = true := by
   have h : (finalizeWith []).noCalls = true := by decide +kernel
@@ -928,9 +943,8 @@ theorem finalize64_verified : Verified PPC64LE.target finalize (Proof.Sha512.fin
   · obtain ⟨t, s', he, hk, hsp, h⟩ := correct (pre_of hs)
       (untouched_of (by rw [all_finalizeWith, untouched_fixed]; decide)) (by decide)
       fun sD hD => words_ok (pre_of hs) (by decide) (n := 8) rfl hD
-    exact ⟨t, s', he, ⟨hk, hsp, Exec.lr he (noCalls_finalizeWith _)
-      (by rw [all_finalizeWith, lr_fixed]; decide)⟩, h⟩
-  · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) (fun _ _ _ _ hp => agree₀ hp)
+    exact ⟨t, s', he, ⟨hk, hsp, Exec.lr_safe he (lr_finalizeWith _ (by decide))⟩, h⟩
+  · exact VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) (fun _ _ _ _ hp => agree₀ hp)
       (by taint_decide)
 
 /-- `finalize`: SHA-512's, all 64 bytes of the final hash value. -/
@@ -948,9 +962,8 @@ theorem finalize384_verified : Verified PPC64LE.target finalize384 (Proof.Sha512
   · obtain ⟨t, s', he, hk, hsp, h⟩ := correct (pre_of hs)
       (untouched_of (by rw [all_finalizeWith, untouched_fixed]; decide)) (by decide)
       fun sD hD => words_ok (pre_of hs) (by decide) (n := 6) rfl hD
-    exact ⟨t, s', he, ⟨hk, hsp, Exec.lr he (noCalls_finalizeWith _)
-      (by rw [all_finalizeWith, lr_fixed]; decide)⟩, h⟩
-  · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) (fun _ _ _ _ hp => agree₀ hp)
+    exact ⟨t, s', he, ⟨hk, hsp, Exec.lr_safe he (lr_finalizeWith _ (by decide))⟩, h⟩
+  · exact VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) (fun _ _ _ _ hp => agree₀ hp)
       (by taint_decide)
 
 theorem finalize512_256_verified :
@@ -959,9 +972,8 @@ theorem finalize512_256_verified :
   · obtain ⟨t, s', he, hk, hsp, h⟩ := correct (pre_of hs)
       (untouched_of (by rw [all_finalizeWith, untouched_fixed]; decide)) (by decide)
       fun sD hD => words_ok (pre_of hs) (by decide) (n := 4) rfl hD
-    exact ⟨t, s', he, ⟨hk, hsp, Exec.lr he (noCalls_finalizeWith _)
-      (by rw [all_finalizeWith, lr_fixed]; decide)⟩, h⟩
-  · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) (fun _ _ _ _ hp => agree₀ hp)
+    exact ⟨t, s', he, ⟨hk, hsp, Exec.lr_safe he (lr_finalizeWith _ (by decide))⟩, h⟩
+  · exact VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) (fun _ _ _ _ hp => agree₀ hp)
       (by taint_decide)
 
 theorem finalize512_224_verified :
@@ -970,9 +982,8 @@ theorem finalize512_224_verified :
   · obtain ⟨t, s', he, hk, hsp, h⟩ := correct (pre_of hs)
       (untouched_of (by rw [all_finalizeWith, untouched_fixed]; decide)) (by decide)
       fun sD hD => out224_ok (pre_of hs) hD
-    exact ⟨t, s', he, ⟨hk, hsp, Exec.lr he (noCalls_finalizeWith _)
-      (by rw [all_finalizeWith, lr_fixed]; decide)⟩, h⟩
-  · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) (fun _ _ _ _ hp => agree₀ hp)
+    exact ⟨t, s', he, ⟨hk, hsp, Exec.lr_safe he (lr_finalizeWith _ (by decide))⟩, h⟩
+  · exact VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) (fun _ _ _ _ hp => agree₀ hp)
       (by taint_decide)
 
 end VG.Proof.Sha512.PPC64LE.Stream.Finalize

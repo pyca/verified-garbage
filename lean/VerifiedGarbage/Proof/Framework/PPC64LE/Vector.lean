@@ -314,6 +314,9 @@ open VG.PPC64LE.Taint (T pub set Agree)
 def step (τ : T) : Instr → Option T
   | .vop _ | .mtvsrd .. => some τ
   | .lxvd2x _ a b | .stxvd2x _ a b => if pub τ a && pub τ b then some τ else none
+  | .lxvd2xTbl _ _ b .. => if pub τ b then some τ else none
+  -- A static's address may vary between runs; only the table index leaks.
+  | .adrSym d _ => some (set τ d false)
   | .mfvsrd d _ => some (set τ d false)
   | i => Taint.step τ i
 
@@ -346,6 +349,24 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State}
     obtain ⟨_, -, _, -, rfl⟩ := e₁
     obtain ⟨_, -, _, -, rfl⟩ := e₂
     exact ha
+  | lxvd2xTbl d a b name ws =>
+    simp only [step] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hp; cases hs
+    refine ⟨by simp only [addrs, ha.reg hp], ?_⟩
+    simp only [reduceExec] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    split at e₂ <;> [skip; cases e₂]
+    cases e₁; cases e₂
+    exact ha
+  | adrSym d name =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [reduceExec] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    rename_i hd
+    rw [ite_eq_left_of_eq_true _ _ (eq_true hd)] at e₂
+    cases e₁; cases e₂
+    exact ⟨rfl, ha.write d fun h => by cases h⟩
   | stxvd2x n a b =>
     simp only [step] at hs
     split at hs <;> [skip; cases hs]

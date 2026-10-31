@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Sha512.PPC64LE.Lit
+meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Lit
+
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.PublicKey
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Sha512OK
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
@@ -25,6 +28,8 @@ public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Whole.Common
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Isa
+import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 
 /-!
 # `vg_ed25519_public_key` on PPC64LE, with its frame as an argument, verified
@@ -66,7 +71,7 @@ theorem pk_ok (s : State) (hs : pkC.pre s) :
   exact ⟨t, s', he, ⟨hg, hsp, hlr⟩, hq⟩
 
 theorem pk_ct : ConstantTime isa pkC.pre pkC.pub publicKey :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
     (fun s₁ s₂ _ _ ⟨p3, p4, p5, p6, psp⟩ => ⟨psp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption⟩) (by taint_decide)

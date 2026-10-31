@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Block
 import VerifiedGarbage.Proof.Pbkdf2.Whole.PPC64LE.Loop
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 
 /-!
 # PBKDF2 over any streaming hash function on PPC64LE, the whole derivation: constant time
@@ -37,7 +39,7 @@ open Spec.Sha256 (bytesAt)
 
 /-- A piece of code the taint analysis accepts with the registers `rs` public. -/
 abbrev Ck (rs : List Reg) (c : Prog isa) : Prop :=
-  ∃ hc, (VG.Taint.check taint (Taint.ofRegs rs) c hc).isSome = true
+  ∃ hc, (VG.Taint.check vectorTaint (Taint.ofRegs rs) c hc).isSome = true
 
 /-- The arguments public in the prologue, and the registers public in the loop. -/
 abbrev inRegs : List Reg := [.r3, .r4, .r5, .r6, .r8, .r9, .r10]
@@ -89,7 +91,7 @@ theorem rel_agree {P₁ P₂ G₁ G₂ : State → Prop} {c : Prog isa} {rs : Li
     (hw : ∀ s, P₁ s → WP isa c s G₁) (hw' : ∀ s, P₂ s → WP isa c s G₂) :
     RelCT isa (fun s s' => P₁ s ∧ P₂ s') c fun s s' => G₁ s ∧ G₂ s' := by
   obtain ⟨_, hc⟩ := hc
-  refine ((RelCT.taint (A := taint) (Taint.ofRegs rs) (fun s s' h => ?_) hc).wp
+  refine ((RelCT.taint (A := vectorTaint) (Taint.ofRegs rs) (fun s s' h => ?_) hc).wp
     fun s s' h => ⟨hw s h.1, hw' s' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
   obtain ⟨e, g⟩ := hag s s' h.1 h.2
   exact ⟨e, fun r hr => g r (Taint.mem_ofRegs.mp hr)⟩
@@ -345,7 +347,7 @@ theorem main_rel : RelCT isa (fun s s' => s = entry s₀ ∧ s' = entry s₀') F
   obtain ⟨_, hr⟩ := hc.restore
   have rr : RelCT isa (fun s s' => Inv hF s₀ (nbk s₀ (F := F)) s ∧ Inv hF s₀' (nbk s₀' (F := F)) s')
       (.block (Hash.restoreAt 0)) fun _ _ => True :=
-    RelCT.taint (A := taint) (Taint.ofRegs [.r21]) (fun s s' ⟨h, h'⟩ => ⟨by rw [h.kr.sp, h'.kr.sp, hq.sp],
+    RelCT.taint (A := vectorTaint) (Taint.ofRegs [.r21]) (fun s s' ⟨h, h'⟩ => ⟨by rw [h.kr.sp, h'.kr.sp, hq.sp],
       fun r hr => by
         rw [Taint.mem_ofRegs, List.mem_singleton] at hr; subst hr
         rw [h.kr.r21, h'.kr.r21, scr, scr, hq.r10]⟩) hr
@@ -406,7 +408,7 @@ theorem ct (hc : Checks F) :
     obtain ⟨t', x', he', -⟩ := main_ok hp' (hF := hF)
     exact ⟨⟨t, x, he⟩, ⟨t', x', he'⟩⟩
   have m2 : RelCT isa (fun x y : State => x.sp = y.sp) (.block [.mtlr .r0]) fun _ _ => True :=
-    RelCT.taint (A := taint) (Taint.ofRegs []) (fun x y h => ⟨h, by simp⟩) (hc := .block []) (by decide)
+    RelCT.taint (A := vectorTaint) (Taint.ofRegs []) (fun x y h => ⟨h, by simp⟩) (hc := .block []) (by decide)
   exact m1.seq (fr.seq m2)
 
 end VG.Proof.Pbkdf2.Whole.PPC64LE

@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Sha512.PPC64LE.Lit
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Shared
 
 /-! # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on PPC64LE -/
@@ -10,96 +11,46 @@ public import VerifiedGarbage.Proof.Sha512.PPC64LE.Shared
 namespace VG.Artifacts.Sha512.PPC64LE
 
 def artifacts : List Artifact := [
-  { Spec.Sha512.compressApi with
-    target := PPC64LE.target
-    doc := Spec.Sha512.compressApi.doc
+  Spec.Sha512.compressApi.artifact PPC64LE.target {
     code := Impl.Sha512.PPC64LE.compress
-    contract := Spec.Sha512.compressContract PPC64LE.abi
-    verified := Proof.Sha512.PPC64LE.Shared.compress
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sha512.init384Api with
-    target := PPC64LE.target
-    doc := Spec.Sha512.init384Api.doc
+    verified := Proof.Sha512.PPC64LE.Shared.compress },
+  Spec.Sha512.init384Api.artifact PPC64LE.target {
     code := Impl.Sha512.PPC64LE.Stream.init Spec.Sha512.H0_384
-    contract := Spec.Sha512.initContract PPC64LE.abi Spec.Sha512.H0_384
-    verified := Proof.Sha512.PPC64LE.Shared.init Spec.Sha512.H0_384
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sha512.init512Api with
-    target := PPC64LE.target
-    doc := Spec.Sha512.init512Api.doc
+    verified := Proof.Sha512.PPC64LE.Shared.init Spec.Sha512.H0_384 },
+  Spec.Sha512.init512Api.artifact PPC64LE.target {
     code := Impl.Sha512.PPC64LE.Stream.init Spec.Sha512.H0_512
-    contract := Spec.Sha512.initContract PPC64LE.abi Spec.Sha512.H0_512
-    verified := Proof.Sha512.PPC64LE.Shared.init Spec.Sha512.H0_512
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sha512.init512_224Api with
-    target := PPC64LE.target
-    doc := Spec.Sha512.init512_224Api.doc
+    verified := Proof.Sha512.PPC64LE.Shared.init Spec.Sha512.H0_512 },
+  Spec.Sha512.init512_224Api.artifact PPC64LE.target {
     code := Impl.Sha512.PPC64LE.Stream.init Spec.Sha512.H0_512_224
-    contract := Spec.Sha512.initContract PPC64LE.abi Spec.Sha512.H0_512_224
-    verified := Proof.Sha512.PPC64LE.Shared.init Spec.Sha512.H0_512_224
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sha512.init512_256Api with
-    target := PPC64LE.target
-    doc := Spec.Sha512.init512_256Api.doc
+    verified := Proof.Sha512.PPC64LE.Shared.init Spec.Sha512.H0_512_224 },
+  Spec.Sha512.init512_256Api.artifact PPC64LE.target {
     code := Impl.Sha512.PPC64LE.Stream.init Spec.Sha512.H0_512_256
-    contract := Spec.Sha512.initContract PPC64LE.abi Spec.Sha512.H0_512_256
-    verified := Proof.Sha512.PPC64LE.Shared.init Spec.Sha512.H0_512_256
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sha512.updateApi with
-    target := PPC64LE.target
-    doc := Spec.Sha512.updateApi.doc
+    verified := Proof.Sha512.PPC64LE.Shared.init Spec.Sha512.H0_512_256 },
+  Spec.Sha512.updateApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 1408 .r7 Impl.Sha512.PPC64LE.Stream.update
-    contract := Spec.Sha512.updateContract PPC64LE.abi 1408
     stack := 1408
-    verified := Proof.Sha512.PPC64LE.Shared.update
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sha512.finalizeApi with
-    target := PPC64LE.target
-    doc := Spec.Sha512.finalizeApi.doc
+    verified := Proof.Sha512.PPC64LE.Shared.update },
+  Spec.Sha512.finalizeApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 1408 .r6 Impl.Sha512.PPC64LE.Stream.finalize
-    contract := Spec.Sha512.finalizeContract PPC64LE.abi 1408
     stack := 1408
-    verified := Proof.Sha512.PPC64LE.Shared.finalize
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sha512.updateScratchApi with
-    target := PPC64LE.target
-    doc := Spec.Sha512.updateScratchApi.doc
+    verified := Proof.Sha512.PPC64LE.Shared.finalize },
+  Spec.Sha512.updateScratchApi.artifact PPC64LE.target {
     code := Impl.Sha512.PPC64LE.Stream.update
-    contract := Spec.Sha512.updateScratchContract PPC64LE.abi
-    verified := Proof.Sha512.PPC64LE.Shared.updateScratch
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sha512.finalizeScratchApi with
-    target := PPC64LE.target
-    doc := Spec.Sha512.finalizeScratchApi.doc
+    verified := Proof.Sha512.PPC64LE.Shared.updateScratch },
+  Spec.Sha512.finalizeScratchApi.artifact PPC64LE.target {
     code := Impl.Sha512.PPC64LE.Stream.finalize
-    contract := Spec.Sha512.finalizeScratchContract PPC64LE.abi
-    verified := Proof.Sha512.PPC64LE.Shared.finalizeScratch
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sha512.finalize384Api with
-    target := PPC64LE.target
-    doc := Spec.Sha512.finalize384Api.doc
+    verified := Proof.Sha512.PPC64LE.Shared.finalizeScratch },
+  Spec.Sha512.finalize384Api.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 1408 .r6 Impl.Sha512.PPC64LE.Stream.finalize384
-    contract := Spec.Sha512.finalizeDigestContract PPC64LE.abi Spec.Sha512.H0_384 48 Spec.Sha512.sha384 1408
     stack := 1408
-    verified := Proof.Sha512.PPC64LE.Shared.finalize384
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sha512.finalize512_256Api with
-    target := PPC64LE.target
-    doc := Spec.Sha512.finalize512_256Api.doc
+    verified := Proof.Sha512.PPC64LE.Shared.finalize384 },
+  Spec.Sha512.finalize512_256Api.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 1408 .r6 Impl.Sha512.PPC64LE.Stream.finalize512_256
-    contract := Spec.Sha512.finalizeDigestContract PPC64LE.abi Spec.Sha512.H0_512_256 32
-      Spec.Sha512.sha512_256 1408
     stack := 1408
-    verified := Proof.Sha512.PPC64LE.Shared.finalize512_256
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Sha512.finalize512_224Api with
-    target := PPC64LE.target
-    doc := Spec.Sha512.finalize512_224Api.doc
+    verified := Proof.Sha512.PPC64LE.Shared.finalize512_256 },
+  Spec.Sha512.finalize512_224Api.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 1408 .r6 Impl.Sha512.PPC64LE.Stream.finalize512_224
-    contract := Spec.Sha512.finalizeDigestContract PPC64LE.abi Spec.Sha512.H0_512_224 28
-      Spec.Sha512.sha512_224 1408
     stack := 1408
-    verified := Proof.Sha512.PPC64LE.Shared.finalize512_224
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Sha512.PPC64LE.Shared.finalize512_224 }]
 
 end VG.Artifacts.Sha512.PPC64LE
