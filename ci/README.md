@@ -58,6 +58,7 @@ Run by hand; none of these is a check.
 | `lit_imports.py` | Kernel checks that evaluate code without its literal, ranked by cost (the `proof-performance` skill) |
 | `lean_shard_replay.py` | Compares shard planners on retained CI metrics |
 | `trim_lean_imports.py` | Narrows the imports of many modules at once (the `lean-modules` skill) |
+| `preassemble.py`, `check_preassembled.py`, `objfile.py` | Write a generated crate's code as machine code, and check that it is the printed code (not yet used: the emitter still writes `src/` itself) |
 | `lean_import_build.py`, `lean_import_graph.py`, `lean_import_replay.py`, `lean_source_evidence.py`, `lean_module_uses.lean`, `stress_lean_imports.py` | The import planner behind `check_lean_public_imports.py --fix` and `trim_lean_imports.py` ([IMPORT_NARROWING.md](IMPORT_NARROWING.md)) |
 
 `fixtures/` holds the unit tests' fixtures.
