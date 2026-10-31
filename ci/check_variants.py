@@ -72,6 +72,8 @@ import pathlib
 import re
 import sys
 
+import asm_layout
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 ASM = ROOT / "src" / "asm"
 
@@ -97,7 +99,8 @@ FEATURES = re.compile(
 
 def sources():
     """Each generated file's target and text."""
-    return [(path.parent.name, path.read_text()) for path in sorted(ASM.glob("*/*.rs"))]
+    return [(target, path.read_text())
+            for target, d in asm_layout.target_dirs(ROOT).items() for path in sorted(d.glob("*.rs"))]
 
 
 def bodies(text):

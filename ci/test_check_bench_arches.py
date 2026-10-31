@@ -221,6 +221,15 @@ class Selection(unittest.TestCase):
         # A feature no module chooses by needs nothing.
         self.assertEqual(self.cpu('let aes = 1;', 'let aes = 2;'), [])
 
+    def test_generated_crates(self):
+        # A file of a target's crate is the same module as in `src/asm/`.
+        old = self.rows(['src/asm/x86_64/x448.rs'])
+        self.assertEqual(self.rows(['crates/verified-garbage-asm-x86_64/src/x448.rs']), old)
+        # The crate of `Features`: every module choosing by a feature, where
+        # a feature is detected, as `Features` in `src/cpu.rs`.
+        rows = self.rows(['crates/verified-garbage-cpu/src/lib.rs'])
+        self.assertEqual(self.modules(rows), {'x86_64': 'x448', 'aarch64': 'chacha keccak'})
+
     def test_cpu_detection_by_bits(self):
         # Detection naming a feature's bit, `feature::SHA3`, as by its name.
         rows = self.cpu('feature::SHA3\n', '(feature::SHA3 & 1)\n', base=CPU_BITS)
