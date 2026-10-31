@@ -385,24 +385,22 @@ still run everything before pushing.
 
 ## Checks to run before pushing
 
+Run every step of the `Static checks` job (`lean-imports` in
+`.github/workflows/ci.yml`): they take seconds and need no build. Read the
+list there, not a copy of it here; locally, give
+`check_lean_single_importer.py` `--base origin/main` (CI compares the
+merge commit with its first parent). Then, as a change needs them:
+
 ```sh
 (cd lean && lake build --log-level=warning && lake env lean --run Emit.lean --check)
-python3 ci/check_lean_imports.py
-python3 ci/check_lean_modules.py
-python3 ci/check_lean_single_importer.py --base origin/main
 git diff --name-only origin/main -- lean/VerifiedGarbage | sed -n 's#^lean/\(.*\)\.lean$#\1#p' | tr / . \
   | xargs -r python3 ci/check_lean_public_imports.py --base origin/main -m   # after building them; --fix applies it
-python3 ci/check_registrations.py
-python3 ci/check_lean_speed.py
-python3 ci/check_vectors.py
-python3 ci/check_arch_gates.py
-python3 ci/check_variants.py
-python3 ci/check_mcdt.py
-python3 ci/check_skills.py
-python3 ci/cpu_tests.py lint ci/rust_matrix.toml
 cargo fmt --check && cargo clippy --all-targets -- -D warnings
 WYCHEPROOF_ROOT=/path/to/wycheproof cargo test
 ```
+
+CI does not run `check_lean_public_imports.py`, which needs the edited
+modules built: it is yours to run.
 
 A primitive with implementations for different CPU features is tested (and
 benchmarked) end to end in each configuration, never through a special API:
