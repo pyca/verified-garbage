@@ -132,6 +132,7 @@ GROUPS = {
         "lib": ["ec::brainpoolp512r1", "ec::validate::tests::brainpoolp512r1", "ec::compressed::tests::brainpoolp512r1"],
         "tests": [
             "rfc7027::brainpoolp512r1",
+            "rfc7027::brainpoolp512r1_ecdsa",
             "wycheproof::ec_compressed::brainpoolp512r1",
             "wycheproof::ecdh_brainpoolp512r1",
             "wycheproof::ecdsa_brainpoolp512r1",
