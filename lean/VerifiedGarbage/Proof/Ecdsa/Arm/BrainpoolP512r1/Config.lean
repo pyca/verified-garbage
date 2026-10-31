@@ -51,4 +51,36 @@ theorem brainpoolp512r1_ok : CfgOk brainpoolp512r1 where
   fn := ⟨rfl, rfl, Mont.brainpoolp512r1n_ok, rfl⟩
   mulNf := fun _ h => nomatch h
 
+
+/-- brainpoolp512r1 with its field multiplications by `vg_brainpoolp512r1_mul_mod_<p|n>_umaal`:
+what `brainpoolp512r1_ok` states. -/
+theorem brainpoolp512r1u_ok : CfgOk (brainpoolp512r1With true) where
+  n0 := by decide
+  n10 := by decide
+  onG := Proof.BrainpoolP512r1.onCurve_G
+  p_odd := by decide +kernel
+  n_odd := by decide +kernel
+  p_lt := by decide +kernel
+  n_lt := by decide +kernel
+  n_enc := by decide +kernel
+  p_ge := by decide +kernel
+  n_ge := by decide +kernel
+  p_lt_2n := by decide +kernel
+  minv_p := by decide +kernel
+  minv_n := by decide +kernel
+  len8 := by decide
+  len_lo := by decide
+  len_hi := by decide
+  sh := by
+    have h : 64 * 8 ≤ Spec.Ecdsa.nBits (brainpoolp512r1With true).C := brainpoolp512r1_nBits
+    rw [show (brainpoolp512r1With true).sh = 0 from Nat.sub_eq_zero_of_le h]; decide
+  fp := ⟨rfl, rfl, Mont.brainpoolp512r1p_ok, rfl⟩
+  fn := ⟨rfl, rfl, Mont.brainpoolp512r1n_ok, rfl⟩
+  mulNf := fun _ h => nomatch h
+
+/-- Either configuration. -/
+theorem brainpoolp512r1With_ok (u : Bool) : CfgOk (brainpoolp512r1With u) := by
+  cases u
+  · exact brainpoolp512r1_ok
+  · exact brainpoolp512r1u_ok
 end VG.Proof.Ecdsa.Arm.BrainpoolP512r1

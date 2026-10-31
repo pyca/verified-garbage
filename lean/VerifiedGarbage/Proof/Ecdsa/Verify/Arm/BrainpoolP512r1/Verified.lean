@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.BrainpoolP512r1.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.BrainpoolP512r1.Lit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP512r1.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Config
@@ -18,6 +19,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.BrainpoolP512r1.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.BrainpoolP512r1.Lit
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP512r1.Arm
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 meta import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
 meta import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Config
@@ -48,19 +50,19 @@ namespace VG.Proof.Ecdsa.Verify.Arm.BrainpoolP512r1
 
 open VG VG.Arm VG.Impl.Ecdsa.Arm VG.Impl.Ecdsa.Verify.Arm VG.Proof.Ecdsa.Arm VG.Proof.Ecdsa.Arm.BrainpoolP512r1 Spec.Weierstrass
 
-theorem pre_of {s : State} (h : verifyArm.pre s) : VPre brainpoolp512r1 s := by
+theorem pre_of {u : Bool} {s : State} (h : verifyArm.pre s) : VPre (brainpoolp512r1With u) s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
 
-theorem post_of {s s' : State} (h : VPost brainpoolp512r1 s s') : verifyArm.post s s' := by
+theorem post_of {u : Bool} {s s' : State} (h : VPost (brainpoolp512r1With u) s s') : verifyArm.post s s' := by
   show BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = _
   rw [BitVec.setWidth_append_eq_right]
   exact h
 
-theorem verify_arm (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (s : State) (hs : verifyArm.pre s) :
-    ∃ t s', Exec isa verifyBrainpoolP512r1 s t s' ∧ abiPreserved s s' ∧ verifyArm.post s s' := by
-  have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := verify_ok brainpoolp512r1_ok hL hp
+theorem verify_arm (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (u : Bool) (s : State) (hs : verifyArm.pre s) :
+    ∃ t s', Exec isa (verifyBrainpoolP512r1With u) s t s' ∧ abiPreserved s s' ∧ verifyArm.post s s' := by
+  have hp := pre_of (u := u) hs
+  obtain ⟨t, s', he, K, hpost⟩ := verify_ok (brainpoolp512r1With_ok u) hL hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, K.sp⟩, post_of hpost⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -77,9 +79,10 @@ theorem verify_arm (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (s : State)
 /-- The taint analysis starts with the arguments' registers public. -/
 def τ₀ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2, .r3], flags := false }
 
-theorem verify_ct : ConstantTime isa verifyArm.pre verifyArm.pub verifyBrainpoolP512r1 := by
-  refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by native_taint_decide)
-  intro s t _ _ ⟨_, h0, h1, h2, h3⟩
+/-- The taint analysis's start agrees in the two states. -/
+theorem agree_τ₀ {s t : State} (_hs : verifyArm.pre s) (_ht : verifyArm.pre t) (h : verifyArm.pub s t) :
+    VG.Arm.Taint.Agree τ₀ s t := by
+  obtain ⟨_, h0, h1, h2, h3⟩ := h
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
     ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),
       fun _ h => (List.not_mem_nil h).elim⟩,
@@ -94,6 +97,12 @@ theorem verify_ct : ConstantTime isa verifyArm.pre verifyArm.pub verifyBrainpool
   · exact h2
   · exact h3
 
+theorem verify_ct : ConstantTime isa verifyArm.pre verifyArm.pub verifyBrainpoolP512r1 :=
+  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ hs ht h => agree_τ₀ hs ht h) (by native_taint_decide)
+
+theorem verifyU_ct : ConstantTime isa verifyArm.pre verifyArm.pub verifyBrainpoolP512r1U :=
+  VG.Taint.constantTime (A := taintU) τ₀ (fun _ _ hs ht h => agree_τ₀ hs ht h) (by taint_decide)
+
 /-- A state satisfying the precondition. -/
 def satState : State where
   gpr r := match r with
@@ -107,9 +116,10 @@ def satState : State where
   rd := [⟨0x1000, 129⟩, ⟨0x2000, 64⟩, ⟨0x3000, 128⟩]
   wr := [⟨0x8000, 8192⟩]
 
-theorem verify_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
-    Verified Arm.target verifyBrainpoolP512r1 (Spec.Ecdsa.BrainpoolP512r1.inst.verifyContract Arm.abi) :=
-  Verified.of_correct (verify_arm hL) verify_ct
+theorem verifyWith_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (u : Bool)
+    (hct : ConstantTime isa verifyArm.pre verifyArm.pub (verifyBrainpoolP512r1With u)) :
+    Verified Arm.target (verifyBrainpoolP512r1With u) (Spec.Ecdsa.BrainpoolP512r1.inst.verifyContract Arm.abi) :=
+  Verified.of_correct (verify_arm hL u) hct
     { pre := by
         sig_implies_pre [Spec.Ecdsa.BrainpoolP512r1.inst, Spec.Ecdsa.Instance.verifyContract,
           Spec.Ecdsa.Instance.verifySig, Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
@@ -129,5 +139,13 @@ theorem verify_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
           Spec.Ecdsa.Instance.verifySig, Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, verifyArm, vf, Arm.abi,
           Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
           [satState, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using satState }
+
+theorem verify_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
+    Verified Arm.target verifyBrainpoolP512r1 (Spec.Ecdsa.BrainpoolP512r1.inst.verifyContract Arm.abi) :=
+  verifyWith_verified hL false verify_ct
+
+theorem verifyU_verified (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) :
+    Verified Arm.target verifyBrainpoolP512r1U (Spec.Ecdsa.BrainpoolP512r1.inst.verifyContract Arm.abi) :=
+  verifyWith_verified hL true verifyU_ct
 
 end VG.Proof.Ecdsa.Verify.Arm.BrainpoolP512r1

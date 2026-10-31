@@ -55,15 +55,44 @@ def brainpoolp512r1 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) : RfcCurve
   coreX := by
     intro s hs
     have pre : Proof.Ecdsa.Arm.BrainpoolP512r1.signArm.pre s := by
-      simpa only [coreK,TablesOk,Impl.Ecdsa.Arm.brainpoolp512r1,Spec.BrainpoolP512r1.curve,Nat.reduceMul,List.not_mem_nil,forall_const,
+      simpa only [coreK,TablesOk,Impl.Ecdsa.Arm.brainpoolp512r1,Impl.Ecdsa.Arm.brainpoolp512r1With,Spec.BrainpoolP512r1.curve,Nat.reduceMul,List.not_mem_nil,forall_const,
         false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,Proof.Ecdsa.Arm.BrainpoolP512r1.signArm] using hs
-    obtain ⟨tr,t,exec,abi,post⟩ := Proof.Ecdsa.Arm.BrainpoolP512r1.sign_arm hL s pre
+    obtain ⟨tr,t,exec,abi,post⟩ := Proof.Ecdsa.Arm.BrainpoolP512r1.sign_arm hL false s pre
     refine ⟨tr,t,exec,abi,?_⟩
     change Proof.Ecdsa.Arm.BrainpoolP512r1.signArm.post s t
     exact post
   coreCT := by
-    simpa only [coreK,coreSigOf,Spec.BrainpoolP512r1.curve,Nat.reduceMul,Impl.Ecdsa.Arm.brainpoolp512r1,Proof.Ecdsa.Arm.BrainpoolP512r1.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
+    simpa only [coreK,coreSigOf,Spec.BrainpoolP512r1.curve,Nat.reduceMul,Impl.Ecdsa.Arm.brainpoolp512r1,Impl.Ecdsa.Arm.brainpoolp512r1With,Proof.Ecdsa.Arm.BrainpoolP512r1.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
       Proof.Ecdsa.Arm.BrainpoolP512r1.signArm] using Proof.Ecdsa.Arm.BrainpoolP512r1.sign_ct
+  coreStack := by lit_decide
+  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+
+/-- `brainpoolp512r1`, calling `vg_ecdsa_brainpoolp512r1_sign_umaal`. -/
+def brainpoolp512r1U (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) : RfcCurve where
+  E := Impl.Ecdsa.Arm.brainpoolp512r1
+  inst := Spec.Ecdsa.BrainpoolP512r1.inst
+  curve := rfl
+  wide := false
+  sizes := ⟨.inr (.inr (.inr rfl)), .inl rfl, brainpoolp512r1_nBits, by decide +kernel⟩
+  n_lt := by decide +kernel
+  hHigh := true
+  sh := 0
+  sh_eq := Proof.Ecdsa.Arm.BrainpoolP512r1.brainpoolp512r1_sh
+  coreN := Spec.Ecdsa.BrainpoolP512r1.signApi.name ++ "_umaal"
+  coreC := Impl.Ecdsa.Arm.signBrainpoolP512r1U
+  coreConsts := []
+  coreX := by
+    intro s hs
+    have pre : Proof.Ecdsa.Arm.BrainpoolP512r1.signArm.pre s := by
+      simpa only [coreK,TablesOk,Impl.Ecdsa.Arm.brainpoolp512r1,Impl.Ecdsa.Arm.brainpoolp512r1With,Spec.BrainpoolP512r1.curve,Nat.reduceMul,List.not_mem_nil,forall_const,
+        false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,Proof.Ecdsa.Arm.BrainpoolP512r1.signArm] using hs
+    obtain ⟨tr,t,exec,abi,post⟩ := Proof.Ecdsa.Arm.BrainpoolP512r1.sign_arm hL true s pre
+    refine ⟨tr,t,exec,abi,?_⟩
+    change Proof.Ecdsa.Arm.BrainpoolP512r1.signArm.post s t
+    exact post
+  coreCT := by
+    simpa only [coreK,coreSigOf,Spec.BrainpoolP512r1.curve,Nat.reduceMul,Impl.Ecdsa.Arm.brainpoolp512r1,Impl.Ecdsa.Arm.brainpoolp512r1With,Proof.Ecdsa.Arm.BrainpoolP512r1.sig,TablesOk,List.not_mem_nil,forall_const,false_implies,implies_true,and_true,Abi.constRegions,List.map_nil,List.append_nil,
+      Proof.Ecdsa.Arm.BrainpoolP512r1.signArm] using Proof.Ecdsa.Arm.BrainpoolP512r1.signU_ct
   coreStack := by lit_decide
   reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
 

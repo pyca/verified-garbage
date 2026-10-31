@@ -257,6 +257,12 @@ codec!(
     vg_ec_brainpoolp512r1_compress_public_key,
     vg_ec_brainpoolp512r1_decompress_public_key,
     []
+    [
+        vg_ec_brainpoolp512r1_compress_public_key_umaal,
+        vg_ec_brainpoolp512r1_decompress_public_key_umaal,
+        VG_EC_BRAINPOOLP512R1_COMPRESS_PUBLIC_KEY_UMAAL_FEATURES,
+        VG_EC_BRAINPOOLP512R1_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES
+    ]
 );
 
 #[cfg(test)]

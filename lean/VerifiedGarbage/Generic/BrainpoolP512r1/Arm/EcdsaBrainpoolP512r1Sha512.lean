@@ -22,12 +22,18 @@ A generic file (see `TCB/Emit.lean`) over brainpoolP512r1's group law `h`, the v
 namespace VG.Generic.BrainpoolP512r1.Arm.EcdsaBrainpoolP512r1Sha512
 
 open VG.Proof.Ecdsa.Rfc6979.Arm (cfgOf)
-open VG.Proof.Ecdsa.Rfc6979.Arm.BrainpoolP512r1Sha512 (pack sign_verified)
+open VG.Proof.Ecdsa.Rfc6979.Arm.BrainpoolP512r1Sha512 (pack packU sign_verified signU_verified)
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP512r1.curve) : List Artifact := [
   Spec.Ecdsa.Rfc6979.BrainpoolP512r1Sha512.signApi.artifact Arm.target {
     code := (cfgOf (pack h.law)).sign
     stack := 304
-    verified := sign_verified h.law }]
+    verified := sign_verified h.law },
+  Spec.Ecdsa.Rfc6979.BrainpoolP512r1Sha512.signApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := (cfgOf (packU h.law)).sign
+    stack := 304
+    verified := signU_verified h.law
+    features := ["umaal"] }]
 
 end VG.Generic.BrainpoolP512r1.Arm.EcdsaBrainpoolP512r1Sha512
