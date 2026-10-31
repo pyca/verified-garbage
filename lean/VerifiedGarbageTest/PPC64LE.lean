@@ -1,4 +1,4 @@
-import VerifiedGarbage.TCB.PPC64LE.Isa
+import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-!
 # Golden tests for the PPC64LE instruction semantics
@@ -130,5 +130,138 @@ def sCall : State := { s0 with unknowns := fun n => BitVec.ofNat 64 (n + 100) }
     s.unknowns 0)) == some (100, 101, 102, 103, 0x1000, 104)
 #guard ((call sCall).bind fun s₁ => (ret s₁ s₁).map (·.lr)) == some 100
 #guard ((call sCall).bind fun s₁ => ret s₁ { s₁ with lr := 0 }).isNone
+
+
+/-! POWER8 vector cryptography. Expected results below were obtained from
+QEMU 10.0.11, `qemu-ppc64le -cpu power8`, executing the Lean printer's
+assembly assembled by GCC 14.2.0 with `-mcpu=power8`. Values are architectural
+register order (most significant element first), not host memory order.
+The cases cover all valid SHA selectors, every byte shift, and AES inverse
+round key placement; these are instruction tests, not algorithm vectors. -/
+def cryptoCases : List Instr :=
+  ([false, true].flatMap fun inv => [false, true].map fun last =>
+    .vop (.cipher inv last .v3 .v0 .v1)) ++
+  [.vop (.sbox .v3 .v0)] ++
+  ([false, true].flatMap fun st => (List.range 16).map fun six =>
+    .vop (.sha256 .v3 .v0 st six)) ++
+  ([false, true].flatMap fun st => [0, 2, 8, 10].map fun six =>
+    .vop (.sha512 .v3 .v0 st six)) ++
+  [.vop (.pmsumd .v3 .v0 .v1), .vop (.logic .and .v3 .v0 .v1),
+   .vop (.logic .or .v3 .v0 .v1), .vop (.logic .xor .v3 .v0 .v1),
+   .vop (.add false .v3 .v0 .v1), .vop (.add true .v3 .v0 .v1),
+   .vop (.perm .v3 .v0 .v1 .v2)] ++
+  ((List.range 16).map fun sh => .vop (.sldoi .v3 .v0 .v1 sh))
+
+def cryptoInputs : List (BitVec 128) :=
+  [0x00112233445566778899aabbccddeeff, 0x0f1e2d3c4b5a69788796a5b4c3d2e1f0,
+   0x801f2091405f60917f0081a2c3e4f506]
+
+def sVec : State := { s0 with
+  vpr := fun r => if r = .v0 then cryptoInputs[0]! else if r = .v1 then cryptoInputs[1]!
+    else if r = .v2 then cryptoInputs[2]! else 0 }
+
+def cryptoExpected : List (BitVec 128) := [
+  0x6c67cbe5bf3d920e2a90994011396b53, 0x6ce2812a50b441bb435736418850d21a,
+  0x78178713c3c5fafe257639f90ac50aae, 0x5dd74f3ecdb9f086107b31c9e42b3296,
+  0x638293c31bfc33f5c4eeacea4bc12816, 0x2e8ec606bf9fd7170cace4249dbdf535,
+  0x2e8ec606bf9fd7170cace4244a93288e, 0x2e8ec606bf9fd717e02893359dbdf535,
+  0x2e8ec606bf9fd717e02893354a93288e, 0x2e8ec6061fe45ff90cace4249dbdf535,
+  0x2e8ec6061fe45ff90cace4244a93288e, 0x2e8ec6061fe45ff9e02893359dbdf535,
+  0x2e8ec6061fe45ff9e02893354a93288e, 0xb55fe442bf9fd7170cace4249dbdf535,
+  0xb55fe442bf9fd7170cace4244a93288e, 0xb55fe442bf9fd717e02893359dbdf535,
+  0xb55fe442bf9fd717e02893354a93288e, 0xb55fe4421fe45ff90cace4249dbdf535,
+  0xb55fe4421fe45ff90cace4244a93288e, 0xb55fe4421fe45ff9e02893359dbdf535,
+  0xb55fe4421fe45ff9e02893354a93288e, 0x95148405b736a627d150c041f372e263,
+  0x95148405b736a627d150c0414e3d93e0, 0x95148405b736a627f586285bf372e263,
+  0x95148405b736a627f586285b4e3d93e0, 0x95148405394ae497d150c041f372e263,
+  0x95148405394ae497d150c0414e3d93e0, 0x95148405394ae497f586285bf372e263,
+  0x95148405394ae497f586285b4e3d93e0, 0x82f15f2cb736a627d150c041f372e263,
+  0x82f15f2cb736a627d150c0414e3d93e0, 0x82f15f2cb736a627f586285bf372e263,
+  0x82f15f2cb736a627f586285b4e3d93e0, 0x82f15f2c394ae497d150c041f372e263,
+  0x82f15f2c394ae497d150c0414e3d93e0, 0x82f15f2c394ae497f586285bf372e263,
+  0x82f15f2c394ae497f586285b4e3d93e0, 0xf708a27ff7e64c913ad57fa22a3b914c,
+  0xf708a27ff7e64c91fb30c267bc8b79dc, 0xac47b510cbfc0eab3ad57fa22a3b914c,
+  0xac47b510cbfc0eabfb30c267bc8b79dc, 0xf2cb94212f1649fc49702f9a94adf247,
+  0xf2cb94212f1649fc9da7aeb7bf858c95, 0xd9e3eaf3fbc1c8d149702f9a94adf247,
+  0xd9e3eaf3fbc1c8d19da7aeb7bf858c95, 0x47b847b847b847b847b847b847b847b8,
+  0x00102030405060708090a0b0c0d0e0f0, 0x0f1f2f3f4f5f6f7f8f9fafbfcfdfefff,
+  0x0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f, 0x0f2f4f6f8fafcfef1030506f90b0d0ef,
+  0x0f2f4f6f8fafcfef1030507090b0d0ef, 0x00f0001e00f0001ef000112233445a66,
+  0x00112233445566778899aabbccddeeff, 0x112233445566778899aabbccddeeff0f,
+  0x2233445566778899aabbccddeeff0f1e, 0x33445566778899aabbccddeeff0f1e2d,
+  0x445566778899aabbccddeeff0f1e2d3c, 0x5566778899aabbccddeeff0f1e2d3c4b,
+  0x66778899aabbccddeeff0f1e2d3c4b5a, 0x778899aabbccddeeff0f1e2d3c4b5a69,
+  0x8899aabbccddeeff0f1e2d3c4b5a6978, 0x99aabbccddeeff0f1e2d3c4b5a697887,
+  0xaabbccddeeff0f1e2d3c4b5a69788796, 0xbbccddeeff0f1e2d3c4b5a69788796a5,
+  0xccddeeff0f1e2d3c4b5a69788796a5b4, 0xddeeff0f1e2d3c4b5a69788796a5b4c3,
+  0xeeff0f1e2d3c4b5a69788796a5b4c3d2, 0xff0f1e2d3c4b5a69788796a5b4c3d2e1]
+
+#guard cryptoCases.map (fun i => (exec i sVec).map (·.vpr .v3)) == cryptoExpected.map some
+
+-- Unencodable immediates and reserved SIX bits must fault.
+#guard (exec (.vop (.sha256 .v3 .v0 false 16)) sVec).isNone
+#guard [1, 4, 5, 15, 16].all fun six =>
+  (exec (.vop (.sha512 .v3 .v0 true six)) sVec).isNone
+#guard (exec (.vop (.sldoi .v3 .v0 .v1 16)) sVec).isNone
+
+-- The high doubleword of MT VSR is defined, the low one is arbitrary.
+-- Check with a nonzero unknown, so a spurious zero-fill cannot pass.
+def sVU : State := { sVec with unknowns := fun i => BitVec.ofNat 64 (i + 123) }
+#guard (exec (.mtvsrd .v3 .r4) sVU).map (·.vpr .v3) ==
+  some 0x80000001f0000001000000000000007b
+#guard (exec (.mtvsrd .v3 .r4) sVU).map (fun s => s.unknowns 0) == some 124
+#guard (exec (.mfvsrd .r7 .v0) sVec).map (·.gpr .r7) == some 0x0011223344556677
+
+-- LXVD2X loads the first memory doubleword into the HIGH register half.
+#guard (exec (.lxvd2x .v3 .r3 .r0) sVec).map (·.vpr .v3) ==
+  some 0x07060504030201000f0e0d0c0b0a0908
+#guard (exec (.lxvd2x .v3 .r3 .r5) sVec).isNone -- crosses the permitted region
+#guard (exec (.lxvd2x .v3 .r0 .r3) sVec).isNone -- forbidden RA=0 encoding
+#guard (exec (.stxvd2x .v0 .r3 .r0) sVec).map (fun s => s.mem.read 0x1000 16) ==
+  some 0x8899aabbccddeeff0011223344556677
+#guard (exec (.stxvd2x .v0 .r3 .r5) sVec).isNone
+#guard (exec (.stxvd2x .v0 .r0 .r3) sVec).isNone
+-- Accesses need not be aligned; no LVX-style address rounding.
+def sUnaligned : State := { sVec with wr := [⟨0x1000, 20⟩] }
+#guard (exec (.lxvd2x .v3 .r3 .r5) sUnaligned).map (·.vpr .v3) ==
+  some 0x0b0a090807060504131211100f0e0d0c
+#guard addrs (.lxvd2x .v0 .r3 .r5) sVec == [0x1004]
+#guard addrs (.stxvd2x .v0 .r3 .r5) sVec == [0x1004]
+
+-- Modular addition carries between bits within a lane, never between lanes.
+def sOnes : State := { sVec with vpr := fun r => if r = .v0 then -1 else 1 }
+#guard (exec (.vop (.add false .v3 .v0 .v1)) sOnes).map (·.vpr .v3) ==
+  some 0xffffffffffffffffffffffff00000000
+#guard (exec (.vop (.add true .v3 .v0 .v1)) sOnes).map (·.vpr .v3) ==
+  some 0xffffffffffffffff0000000000000000
+-- Both 64x64 polynomial products contribute; the highest possible bit is 126.
+def sPoly : State := { sVec with vpr := fun r =>
+  if r = .v0 then 0x80000000000000000000000000000001
+  else 0x80000000000000000000000000000003 }
+#guard (exec (.vop (.pmsumd .v3 .v0 .v1)) sPoly).map (·.vpr .v3) ==
+  some 0x40000000000000000000000000000003
+
+-- VMX uses VR numbers; VSX uses the aliased VSR numbers (+32).
+#guard Instr.asm (.lxvd2x .v19 .r3 .r4) == ["lxvd2x 51, %r3, %r4"]
+#guard Instr.asm (.stxvd2x .v0 .r3 .r4) == ["stxvd2x 32, %r3, %r4"]
+#guard Instr.asm (.mtvsrd .v0 .r3) == ["mtvsrd 32, %r3"]
+#guard Instr.asm (.mfvsrd .r3 .v19) == ["mfvsrd %r3, 51"]
+#guard Instr.asm (.vop (.cipher true true .v19 .v0 .v1)) ==
+  ["vncipherlast %v19, %v0, %v1"]
+#guard Instr.asm (.vop (.sha512 .v19 .v0 true 10)) ==
+  ["vshasigmad %v19, %v0, 1, 10"]
+
+#guard ([false, true].flatMap fun inv => [false, true].map fun last =>
+  VOp.asm (.cipher inv last .v3 .v0 .v1)) == [
+  "vcipher %v3, %v0, %v1", "vcipherlast %v3, %v0, %v1",
+  "vncipher %v3, %v0, %v1", "vncipherlast %v3, %v0, %v1"]
+#guard ([VOp.sbox .v3 .v0, .sha256 .v3 .v0 false 9, .pmsumd .v3 .v0 .v1,
+  .logic .and .v3 .v0 .v1, .logic .or .v3 .v0 .v1, .logic .xor .v3 .v0 .v1,
+  .add false .v3 .v0 .v1, .add true .v3 .v0 .v1, .perm .v3 .v0 .v1 .v2,
+  .sldoi .v3 .v0 .v1 15].map VOp.asm) == [
+  "vsbox %v3, %v0", "vshasigmaw %v3, %v0, 0, 9", "vpmsumd %v3, %v0, %v1",
+  "vand %v3, %v0, %v1", "vor %v3, %v0, %v1", "vxor %v3, %v0, %v1",
+  "vadduwm %v3, %v0, %v1", "vaddudm %v3, %v0, %v1", "vperm %v3, %v0, %v1, %v2",
+  "vsldoi %v3, %v0, %v1, 15"]
 
 end VG.Test.PPC64LE

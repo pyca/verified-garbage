@@ -19,11 +19,12 @@ pointer, is reserved; the model never changes it. The printer ends every
 function with `blr`, which returns to the address in the link register, so
 `LR` must be unchanged on exit.
 
-Not modelled: the floating-point and vector registers (never modified;
+Only volatile vectors `v0`–`v19` (`VSR32`–`VSR51`) are modelled. Not
+modelled: the floating-point registers and `v20`–`v31` (never modified;
 `f14`–`f31` and `v20`–`v31` are nonvolatile), the condition register (only
 field 0, which is volatile, is ever modified: the nonvolatile fields
-`CR2`–`CR4` are not), `XER` and `CTR` (never modified by the modelled
-instructions; both volatile), and memory below `r1` (never granted to a
+`CR2`–`CR4` are not), `XER` except its carry bit CA, and `CTR` (never modified;
+both volatile), and memory below `r1` (never granted to a
 function; the frames' pushes write there, see `push`).
 -/
 

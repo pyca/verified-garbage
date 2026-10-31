@@ -34,10 +34,10 @@ cpu-features-env = ["std"]
 getrandom = "0.4"
 # `Features`, the sets of CPU features that the generated `_FEATURES`
 # constants and the detection in `src/cpu.rs` name.
-verified-garbage-cpu = { path = "cpu" }
+verified-garbage-cpu = { path = "crates/verified-garbage-cpu" }
 
 [workspace]
-members = ["cpu"]
+members = ["crates/*"]
 
 [[test]]
 name = "tests"
