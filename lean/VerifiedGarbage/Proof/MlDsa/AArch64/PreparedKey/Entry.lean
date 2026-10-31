@@ -57,9 +57,10 @@ theorem secret_sp {p : Params} {s : State}
     VG.AArch64.argRegs] at hpre
   exact KeyGen.le_of_wfP hpre.1
 
-theorem entry_layout {bytes count : Nat} {σ s : State} (h : EntryPre bytes count σ)
+theorem entry_layout_covers {bytes count : Nat} {σ s : State} (h : EntryPre bytes count σ)
     (hb : bytes < 2 ^ 32) (ho : bytes + 1024 * count < 2 ^ 32)
-    (hr : s.rd = σ.rd) (hw : s.wr = σ.wr) (hsp : s.sp = σ.sp - 64)
+    (hr : Covers (σ.rd ++ σ.wr) (s.rd ++ s.wr)) (hw : Covers σ.wr s.wr)
+    (hsp : s.sp = σ.sp - 64)
     (h25 : s.gpr .x25 = σ.gpr .x0) (h26 : s.gpr .x26 = σ.gpr .x1)
     (h28 : s.gpr .x28 = σ.gpr .x2) :
     Lay 16 (input bytes) (output bytes count) s := by
@@ -94,14 +95,14 @@ theorem entry_layout {bytes count : Nat} {σ s : State} (h : EntryPre bytes coun
     simp only [input, output, List.cons_append, List.nil_append, List.mem_cons,
       List.not_mem_nil, or_false] at hb'
     rcases hb' with rfl | rfl | rfl <;> simp only [h25, h26, h28]
-    all_goals rw [hr, hw, h.rd, h.wr]
+    all_goals apply hr; rw [h.rd, h.wr]
     exacts [KeyGen.inR_self (r := ⟨σ.gpr .x0, bytes⟩) (by simp),
       KeyGen.inR_self (r := ⟨σ.gpr .x1, bytes + 1024 * count⟩) (by simp),
       KeyGen.inR_self (r := ⟨σ.gpr .x2, 1024⟩) (by simp)]
   · intro b hb'
     simp only [output, List.mem_cons, List.not_mem_nil, or_false] at hb'
     rcases hb' with rfl | rfl <;> simp only [h26, h28]
-    all_goals rw [hw, h.wr]
+    all_goals apply hw; rw [h.wr]
     exacts [KeyGen.inR_self (r := ⟨σ.gpr .x1, bytes + 1024 * count⟩) (by simp),
       KeyGen.inR_self (r := ⟨σ.gpr .x2, 1024⟩) (by simp)]
   · intro b hb'
@@ -113,6 +114,15 @@ theorem entry_layout {bytes count : Nat} {σ s : State} (h : EntryPre bytes coun
     rw [toNat_sub_ofNat' (by have := h.stack; omega)]
     have := h.stack
     omega
+
+theorem entry_layout {bytes count : Nat} {σ s : State} (h : EntryPre bytes count σ)
+    (hb : bytes < 2 ^ 32) (ho : bytes + 1024 * count < 2 ^ 32)
+    (hr : s.rd = σ.rd) (hw : s.wr = σ.wr) (hsp : s.sp = σ.sp - 64)
+    (h25 : s.gpr .x25 = σ.gpr .x0) (h26 : s.gpr .x26 = σ.gpr .x1)
+    (h28 : s.gpr .x28 = σ.gpr .x2) :
+    Lay 16 (input bytes) (output bytes count) s :=
+  entry_layout_covers h hb ho (by rw [hr, hw]; exact Covers.refl _)
+    (by rw [hw]; exact Covers.refl _) hsp h25 h26 h28
 
 theorem frame_guards {bytes count : Nat} {σ s : State} (h : EntryPre bytes count σ)
     {offset : Nat} (ho : offset ≤ 64) (hr : s.wr = σ.wr)

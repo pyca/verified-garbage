@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Depth
 
 /-! # Saving the caller's registers around key preparation -/
 
+-- separate module: generic ABI restoration is shared by public and secret preparation entry points.
+
 @[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.PreparedKey

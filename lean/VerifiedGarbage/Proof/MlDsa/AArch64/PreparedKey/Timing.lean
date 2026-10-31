@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-! # Key preparation does not branch on decoded coefficients -/
 
+-- separate module: isolates the shared decode/transform timing proofs and loop composition from register-save frames.
+
 @[expose] public section
 
 namespace VG.Proof.MlDsa.AArch64.PreparedKey
