@@ -76,53 +76,64 @@ def frameBytes : Nat := 4176
 
 /-! ## Lookups -/
 
-/-- `q` := the byte of xL that indexes S-box `j`: byte `3 - j`, shifted to
-the top of the doubleword and back. -/
+/-- The accumulator of plane `b`. -/
+def accOf : Nat → Reg
+  | 0 => .t2
+  | 1 => .t5
+  | 2 => .t6
+  | _ => .t0
+
+/-- `q` := the row of the byte of xL that indexes S-box `j`: byte `3 - j`,
+shifted to the top of the doubleword and back, less its lane. -/
 def index (j : Nat) : List Instr :=
-  [.shift .sll .d qReg xL (32 + 8 * j), .shift .srl .d qReg qReg 56]
+  [.shift .sll .d qReg xL (32 + 8 * j), .shift .srl .d qReg qReg 59]
 
-/-- `x` rotated right by `a` (as a doubleword) if bit `c` of `q` is set:
-`x := x XOR ((rotr x a XOR x) AND m)`, the mask `m` all ones if the bit is
-set (bit `c` shifted to the top, then arithmetically down). -/
-def condRot (x : Reg) (c a : Nat) : List Instr :=
-  [.shift .srl .d tmp x a, .shift .sll .d mReg x (64 - a), .logic .xor tmp tmp mReg,
-   .logic .xor tmp tmp x, .shift .sll .d mReg qReg (63 - c), .shift .sra .d mReg mReg 63,
-   .logic .and tmp tmp mReg, .logic .xor x x tmp]
+/-- Row `k`'s mask: all ones if `q` is `k` (`q XOR k` is zero, so less one
+it is negative), else zero. -/
+def rowMask (k : Nat) : List Instr :=
+  [.logicImm .xor mReg qReg k, .addi mReg mReg (-1), .shift .sra .d mReg mReg 63]
 
-/-- The lane mask `0xFF <<< 8L` for the index's lane `L` (of a doubleword),
-the accumulator and the row pointer, at S-box `j` (`sch + 1024 j`, in two
-steps). -/
-def lookupStart (j : Nat) : List Instr :=
-  [.li lane 255] ++ condRot lane 0 56 ++ condRot lane 1 48 ++ condRot lane 2 32 ++
-    [.li acc 0, .addi rowPtr sch (512 * j : Nat), .addi rowPtr rowPtr (512 * j : Nat)]
+/-- Plane `b`'s doubleword of row 0, masked, into its accumulator. -/
+def firstPlane (b : Nat) : List Instr :=
+  [.load .d (accOf b) sch (256 * b), .logic .and (accOf b) (accOf b) mReg]
 
-/-- Plane `b`'s doubleword of the row, masked, into the accumulator, rotated
-left by `8b`. -/
-def plane (b : Nat) : List Instr :=
-  if b = 0 then [.load .d tmp rowPtr 0, .logic .and tmp tmp mReg, .logic .or acc acc tmp]
-  else [.load .d tmp rowPtr (256 * b), .logic .and tmp tmp mReg,
-    .shift .srl .d tmp2 tmp (64 - 8 * b), .shift .sll .d tmp tmp (8 * b), .logic .xor tmp tmp tmp2,
-    .logic .or acc acc tmp]
+/-- Plane `b`'s doubleword of row `k`, masked, ORed into its accumulator. -/
+def plane (k b : Nat) : List Instr :=
+  [.load .d tmp sch (256 * b + 8 * k), .logic .and tmp tmp mReg, .logic .or (accOf b) (accOf b) tmp]
 
-/-- The row's mask: all ones in the index's lane if `q >> 3` is zero. -/
-def rowMask : List Instr :=
-  [.shift .srl .d mReg qReg 3, .addi mReg mReg (-1), .shift .sra .d mReg mReg 63,
-   .logic .and mReg mReg lane, .addi qReg qReg (-8)]
+/-- Row `k` (eight entries) of the S-box at `sch`: the mask and the four
+planes. -/
+def row (k : Nat) : List Instr :=
+  rowMask k ++ if k = 0 then firstPlane 0 ++ firstPlane 1 ++ firstPlane 2 ++ firstPlane 3
+    else plane k 0 ++ plane k 1 ++ plane k 2 ++ plane k 3
 
-/-- One row (eight entries) of S-box `j`: the mask, the four planes, and the
-next row; `tmp` is zero after the last. -/
-def row (j : Nat) : List Instr :=
-  rowMask ++ plane 0 ++ plane 1 ++ plane 2 ++ plane 3 ++
-    [.addi rowPtr rowPtr 8, .sub tmp rowPtr sch, .addi tmp tmp (-(512 * j : Nat)),
-     .addi tmp tmp (-(512 * j + 256 : Nat))]
+/-- Rows `0, …, n - 1`. -/
+def rows (n : Nat) : List Instr := (List.range n).flatMap row
 
-/-- The accumulator rotated right by `8L`. -/
-def lookupEnd : List Instr := condRot acc 0 8 ++ condRot acc 1 16 ++ condRot acc 2 32
+/-- `d := 2 ^ (8 * 2 ^ c)` if bit `c` of the lane (bit `56 + c` of `t3`'s
+complement) is clear, else 1: the bit shifted to the top, arithmetically
+down, logically down to `8 * 2 ^ c` ones, plus one. -/
+def factor (d : Reg) (c : Nat) : List Instr :=
+  [.shift .sll .d d mReg (7 - c), .shift .sra .d d d 63, .shift .srl .d d d (64 - 8 * 2 ^ c), .addi d d 1]
 
-/-- S-box `j` of xL's byte `3 - j`, into the accumulator's low word. -/
-def lookup (j : Nat) : Prog isa :=
-  .seq (.block (index j ++ lookupStart j))
-    (.seq (.loop (.block (row j)) (.nonzero tmp)) (.block lookupEnd))
+/-- Plane `b`'s byte of the entry from its accumulator: the accumulator
+times `2 ^ (56 - 8L)` (in `q`), whose top byte is lane `L`'s, shifted down
+to byte `b`. -/
+def pick (b : Nat) : List Instr :=
+  [.mul (accOf b) (accOf b) qReg, .shift .srl .d (accOf b) (accOf b) 56] ++
+    if b = 0 then [] else [.shift .sll .d (accOf b) (accOf b) (8 * b)]
+
+/-- The entry from the accumulators, into the low word of `acc`: `q :=
+2 ^ (56 - 8L)` for the index's lane `L`, a product of three factors, then
+each plane's byte and their OR. -/
+def extract (j : Nat) : List Instr :=
+  [.shift .sll .d mReg xL (32 + 8 * j), .logicImm .xor mReg mReg (-1)] ++ factor tmp 0 ++ factor qReg 1 ++
+    [.mul tmp tmp qReg] ++ factor qReg 2 ++ [.mul qReg tmp qReg] ++ pick 0 ++ pick 1 ++ pick 2 ++ pick 3 ++
+    [.logic .or acc acc (accOf 1), .logic .or (accOf 2) (accOf 2) (accOf 3), .logic .or acc acc (accOf 2)]
+
+/-- The S-box at `sch` (`sch` is moved to S-box `j`), of xL's byte `3 - j`,
+into the accumulator's low word. -/
+def lookup (j : Nat) : Prog isa := .block (index j ++ rows 32 ++ extract j)
 
 /-- F's accumulation of S-box `j`: S₁, then + S₂, XOR S₃, + S₄. -/
 def combine (j : Nat) : Instr :=
@@ -130,10 +141,13 @@ def combine (j : Nat) : Instr :=
   else if j = 2 then .logic .xor fReg fReg acc
   else .add fReg fReg acc
 
-/-- F of xL into `fReg`'s low word. -/
+/-- F of xL into `fReg`'s low word: `sch` moves to each S-box in turn, and
+back. -/
 def f : Prog isa :=
-  .seq (lookup 0) (.seq (.block [combine 0]) (.seq (lookup 1) (.seq (.block [combine 1])
-    (.seq (lookup 2) (.seq (.block [combine 2]) (.seq (lookup 3) (.block [combine 3])))))))
+  .seq (lookup 0) (.seq (.block [combine 0, .addi sch sch 1024]) (.seq (lookup 1)
+    (.seq (.block [combine 1, .addi sch sch 1024]) (.seq (lookup 2)
+      (.seq (.block [combine 2, .addi sch sch 1024]) (.seq (lookup 3)
+        (.block [combine 3, .addi sch sch (-2048), .addi sch sch (-1024)])))))))
 
 /-! ## Rounds
 
