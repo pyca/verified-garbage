@@ -299,10 +299,10 @@ mod tests {
         let _ = backend();
         #[cfg(target_arch = "x86_64")]
         {
-            use crate::cpu::Features;
+            use crate::cpu::{Features, feature};
             assert_eq!(Backend::select(Features(0)), Backend::Scalar);
-            assert_eq!(Backend::select(Features::of(&["bmi2"])), Backend::Scalar);
-            assert_eq!(Backend::select(Features::of(&["adx"])), Backend::Scalar);
+            assert_eq!(Backend::select(Features(feature::BMI2)), Backend::Scalar);
+            assert_eq!(Backend::select(Features(feature::ADX)), Backend::Scalar);
             assert_eq!(
                 Backend::select(Features::all(&[
                     VG_ED448_PUBLIC_KEY_ADX_FEATURES,

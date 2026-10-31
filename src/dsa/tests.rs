@@ -1,4 +1,5 @@
 use super::*;
+use crate::cpu::feature;
 #[cfg(any(target_arch = "aarch64", target_arch = "powerpc64"))]
 extern crate std;
 use crate::hashes::{sha1::Sha1, sha224::Sha224, sha256::Sha256, sha384::Sha384, sha512::Sha512};
@@ -423,11 +424,11 @@ fn import_lengths_errors_and_backends() {
         PrivateKey::from_components(&[0; 128], &[0; 20], &[0; 128], &[0; 128], &[]).unwrap_err(),
         Error::Length
     );
-    assert_eq!(Backend::select(Features::of(&[])), Backend::Baseline);
-    assert_eq!(Backend::select(Features::of(&["bmi2"])), Backend::Baseline);
+    assert_eq!(Backend::select(Features(0)), Backend::Baseline);
+    assert_eq!(Backend::select(Features(feature::BMI2)), Backend::Baseline);
     #[cfg(target_arch = "x86_64")]
     assert_eq!(
-        Backend::select(Features::of(&["bmi2", "adx"])),
+        Backend::select(Features(feature::BMI2 | feature::ADX)),
         Backend::Adx
     );
     for error in [Error::Length, Error::InvalidKeyOrNonce, Error::Randomness] {

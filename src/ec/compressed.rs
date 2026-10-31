@@ -277,9 +277,9 @@ mod tests {
     fn backends() {
         let required = crate::arch::ec_p256_compressed::VG_EC_P256_COMPRESS_PUBLIC_KEY_ADX_FEATURES;
         for features in [
-            Features::of(&[]),
-            Features::of(&["bmi2"]),
-            Features::of(&["adx"]),
+            Features(0),
+            Features(crate::cpu::feature::BMI2),
+            Features(crate::cpu::feature::ADX),
         ] {
             assert_eq!(Backend::select(features, required), Backend::Baseline);
         }
@@ -291,10 +291,7 @@ mod tests {
     fn backends() {
         let required =
             crate::arch::ec_p256_compressed::VG_EC_P256_COMPRESS_PUBLIC_KEY_UMAAL_FEATURES;
-        assert_eq!(
-            Backend::select(Features::of(&[]), required),
-            Backend::Baseline
-        );
+        assert_eq!(Backend::select(Features(0), required), Backend::Baseline);
         assert_eq!(Backend::select(required, required), Backend::Fast);
     }
 

@@ -62,10 +62,16 @@ mod tests {
             #[cfg(target_arch = "x86_64")]
             {
                 let f = Features(bits);
-                let expected = if f.contains(Features::of(&["avx", "avx2", "avx512f", "avx512vl"]))
-                {
+                let expected = if f.contains(Features(
+                    crate::cpu::feature::AVX
+                        | crate::cpu::feature::AVX2
+                        | crate::cpu::feature::AVX512F
+                        | crate::cpu::feature::AVX512VL,
+                )) {
                     Blake2bBackend::Avx512
-                } else if f.contains(Features::of(&["avx", "avx2"])) {
+                } else if f.contains(Features(
+                    crate::cpu::feature::AVX | crate::cpu::feature::AVX2,
+                )) {
                     Blake2bBackend::Avx2
                 } else {
                     Blake2bBackend::Scalar

@@ -132,7 +132,7 @@ mod tests {
             }
             #[cfg(target_arch = "aarch64")]
             {
-                let expected = if Features(bits).contains(Features::of(&["sha3"])) {
+                let expected = if Features(bits).contains(Features(crate::cpu::feature::SHA3)) {
                     Sha512Backend::Sha3
                 } else {
                     Sha512Backend::Scalar

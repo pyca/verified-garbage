@@ -90,6 +90,7 @@ impl Backend {
 #[cfg(all(test, target_arch = "x86_64"))]
 mod tests {
     use super::*;
+    use crate::cpu::feature;
 
     #[test]
     fn backend_feature_requirements() {
@@ -97,34 +98,45 @@ mod tests {
         // sets of the functions it calls. AVX, AVX2 and IFMA belong to
         // other RSA routines: they neither enable ADX nor gate it when BMI2
         // and ADX are present.
-        let cases: &[(&[&str], Backend)] = &[
-            (&[], Backend::Baseline),
-            (&["bmi2"], Backend::Baseline),
-            (&["adx"], Backend::Baseline),
-            (&["avx", "avx2"], Backend::Baseline),
-            (&["avx", "avx2", "bmi2"], Backend::Baseline),
-            (&["avx", "avx2", "adx"], Backend::Baseline),
+        let cases: &[(u32, Backend)] = &[
+            (0, Backend::Baseline),
+            (feature::BMI2, Backend::Baseline),
+            (feature::ADX, Backend::Baseline),
+            (feature::AVX | feature::AVX2, Backend::Baseline),
             (
-                &["avx", "avx2", "avx512f", "avx512ifma", "avx512vl"],
+                feature::AVX | feature::AVX2 | feature::BMI2,
                 Backend::Baseline,
             ),
-            (&["bmi2", "adx"], Backend::Adx),
-            (&["avx", "avx2", "bmi2", "adx"], Backend::Adx),
             (
-                &[
-                    "avx",
-                    "avx2",
-                    "avx512f",
-                    "bmi2",
-                    "adx",
-                    "avx512ifma",
-                    "avx512vl",
-                ],
+                feature::AVX | feature::AVX2 | feature::ADX,
+                Backend::Baseline,
+            ),
+            (
+                feature::AVX
+                    | feature::AVX2
+                    | feature::AVX512F
+                    | feature::AVX512IFMA
+                    | feature::AVX512VL,
+                Backend::Baseline,
+            ),
+            (feature::BMI2 | feature::ADX, Backend::Adx),
+            (
+                feature::AVX | feature::AVX2 | feature::BMI2 | feature::ADX,
+                Backend::Adx,
+            ),
+            (
+                feature::AVX
+                    | feature::AVX2
+                    | feature::AVX512F
+                    | feature::BMI2
+                    | feature::ADX
+                    | feature::AVX512IFMA
+                    | feature::AVX512VL,
                 Backend::Adx,
             ),
         ];
         for &(features, expected) in cases {
-            let selected = Backend::ffdh(Features::of(features));
+            let selected = Backend::ffdh(Features(features));
             assert_eq!(selected, expected, "{features:?}");
         }
     }
@@ -133,15 +145,16 @@ mod tests {
 #[cfg(all(test, target_arch = "arm"))]
 mod arm_tests {
     use super::*;
+    use crate::cpu::feature;
     #[test]
     fn backend_feature_requirements() {
         for (names, expected) in [
-            (&[][..], Backend::Baseline),
-            (&["neon"][..], Backend::Baseline),
-            (&["umaal"][..], Backend::Umaal),
-            (&["neon", "umaal"][..], Backend::Umaal),
+            (0, Backend::Baseline),
+            (feature::NEON, Backend::Baseline),
+            (feature::UMAAL, Backend::Umaal),
+            (feature::NEON | feature::UMAAL, Backend::Umaal),
         ] {
-            assert_eq!(Backend::ffdh(Features::of(names)), expected);
+            assert_eq!(Backend::ffdh(Features(names)), expected);
         }
     }
 }
